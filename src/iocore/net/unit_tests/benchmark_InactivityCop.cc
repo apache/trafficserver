@@ -168,11 +168,17 @@ public:
   }
 
   int
-  callback(int /* event */ = CONTINUATION_EVENT_NONE, void * /* data */ = nullptr) override
+  callback(int event = CONTINUATION_EVENT_NONE, void * /* data */ = nullptr) override
   {
     ++_counters->callbacks;
+    last_event = event;
     return EVENT_DONE;
   }
+
+  /// Which timeout this mock was last told about. The queue-management path
+  /// picks between VC_EVENT_INACTIVITY_TIMEOUT and VC_EVENT_ACTIVE_TIMEOUT, and
+  /// that choice is the thing worth asserting.
+  int last_event = CONTINUATION_EVENT_NONE;
 
   // Mirrors UnixNetVConnection::set_inactivity_timeout / set_default_inactivity_timeout /
   // is_default_inactivity_timeout (UnixNetVConnection.cc:1290-1310).
@@ -1150,6 +1156,163 @@ TEST_CASE("InactivityCop: one pass covers every tick it advances through", "[net
   for (auto &m : fx.mocks) {
     CHECK_FALSE(fx.nh.timer_wheel.is_scheduled(m.get()));
   }
+}
+
+// --- Step 0: NetHandler::_close_ne event selection -------------------------
+//
+// _close_ne is the queue-management close path (capacity eviction from
+// manage_keep_alive_queue, expired-deadline close from manage_active_queue). It
+// is reached only when the per-thread limits are non-zero, which is why the
+// scenarios above -- which set them to 0 so the queue managers early-return --
+// never touch it.
+//
+// Drive it through manage_keep_alive_queue() by putting mocks in the keep-alive
+// queue and setting the limit below the queue size.
+namespace
+{
+struct EvictionFixture {
+  NetHandler                               nh;
+  Counters                                 counters;
+  std::vector<std::unique_ptr<PaddedMock>> mocks;
+  InactivityCop                            cop;
+
+  explicit EvictionFixture(size_t n) : cop(Ptr<ProxyMutex>(new_ProxyMutex()), nh)
+  {
+    ensure_net_metrics_registered();
+
+    nh.mutex  = new_ProxyMutex();
+    nh.thread = this_ethread();
+    nh.timer_wheel.init(ink_get_hrtime());
+    nh.config.default_inactivity_timeout = 30;
+    // High while populating, so add_to_keep_alive_queue()'s own call to
+    // manage_keep_alive_queue() does not evict during setup. evict() lowers it.
+    nh.max_connections_per_thread_in = 1000000;
+    nh.max_requests_per_thread_in    = 0;
+
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    for (size_t i = 0; i < n; ++i) {
+      mocks.emplace_back(std::make_unique<PaddedMock>(this_ethread(), &counters));
+      mocks.back()->nh = &nh;
+      nh.startCop(mocks.back().get());
+    }
+  }
+
+  ~EvictionFixture()
+  {
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    for (auto &m : mocks) {
+      nh.stopCop(m.get());
+    }
+  }
+
+  /// Drop the limit below the queue size and run exactly one eviction pass.
+  void
+  evict()
+  {
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    nh.max_connections_per_thread_in = 1;
+    nh.manage_keep_alive_queue();
+  }
+};
+} // namespace
+
+// The bug: a connection relying on default_inactivity_timeout has
+// inactivity_timeout_in == 0, and _close_ne's predicate required it to be
+// non-zero, so eviction fired nothing at all -- the queue stayed over capacity
+// and the walk closed nothing.
+TEST_CASE("NetHandler::_close_ne evicts a default-timeout connection", "[net][nethandler][close_ne]")
+{
+  EvictionFixture fx(4);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      // On the default timeout: no explicit inactivity duration, deadline not
+      // yet reached. Eviction is for capacity, not expiry.
+      m->inactivity_timeout_in      = 0;
+      m->next_inactivity_timeout_at = ink_get_hrtime() + HRTIME_SECONDS(300);
+      m->active_timeout_in          = 0;
+      m->next_activity_timeout_at   = 0;
+      fx.nh.add_to_keep_alive_queue(m.get());
+    }
+  }
+
+  fx.evict();
+
+  INFO("capacity eviction must close default-timeout connections, not silently skip them");
+  CHECK(fx.counters.callbacks > 0);
+}
+
+// An expired active timeout must be reported as such. This is what rules out
+// "just drop inactivity_timeout_in from the condition": because the clobbered
+// next_inactivity_timeout_at <= now is always true, that would make the
+// inactivity branch unconditional and the active branch dead.
+TEST_CASE("NetHandler::_close_ne reports an expired active timeout as ACTIVE", "[net][nethandler][close_ne]")
+{
+  EvictionFixture  fx(2);
+  ink_hrtime const now = ink_get_hrtime();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = 0;
+      m->next_inactivity_timeout_at = 0;
+      m->active_timeout_in          = HRTIME_SECONDS(10);
+      m->next_activity_timeout_at   = now - HRTIME_SECONDS(1); // expired
+      fx.nh.add_to_keep_alive_queue(m.get());
+    }
+  }
+
+  fx.evict();
+
+  INFO("an expired active timeout must not be reported as an inactivity timeout");
+  REQUIRE(fx.counters.callbacks > 0);
+  CHECK(fx.mocks.front()->last_event == VC_EVENT_ACTIVE_TIMEOUT);
+}
+
+TEST_CASE("NetHandler::_close_ne reports an expired inactivity timeout as INACTIVITY", "[net][nethandler][close_ne]")
+{
+  EvictionFixture  fx(2);
+  ink_hrtime const now = ink_get_hrtime();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(10);
+      m->next_inactivity_timeout_at = now - HRTIME_SECONDS(1); // expired
+      m->active_timeout_in          = 0;
+      m->next_activity_timeout_at   = 0;
+      fx.nh.add_to_keep_alive_queue(m.get());
+    }
+  }
+
+  fx.evict();
+
+  REQUIRE(fx.counters.callbacks > 0);
+  CHECK(fx.mocks.front()->last_event == VC_EVENT_INACTIVITY_TIMEOUT);
+}
+
+// Both expired: inactivity wins, matching InactivityCop::Fire's precedence.
+TEST_CASE("NetHandler::_close_ne prefers INACTIVITY when both deadlines expired", "[net][nethandler][close_ne]")
+{
+  EvictionFixture  fx(2);
+  ink_hrtime const now = ink_get_hrtime();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(10);
+      m->next_inactivity_timeout_at = now - HRTIME_SECONDS(2);
+      m->active_timeout_in          = HRTIME_SECONDS(10);
+      m->next_activity_timeout_at   = now - HRTIME_SECONDS(1);
+      fx.nh.add_to_keep_alive_queue(m.get());
+    }
+  }
+
+  fx.evict();
+
+  REQUIRE(fx.counters.callbacks > 0);
+  CHECK(fx.mocks.front()->last_event == VC_EVENT_INACTIVITY_TIMEOUT);
 }
 
 CATCH_REGISTER_LISTENER(ProvenanceListener);

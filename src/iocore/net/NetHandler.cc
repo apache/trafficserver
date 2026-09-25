@@ -544,19 +544,23 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
     free_netevent(ne);
     ++closed;
   } else {
+    // Decide which timeout to report before clobbering the deadline below,
+    // since that assignment destroys the evidence. Inactivity wins when both
+    // have expired, matching InactivityCop's precedence. Neither expired means
+    // this is a capacity eviction rather than a timeout, and inactivity is the
+    // honest label for reclaiming an idle connection - reporting nothing at all
+    // left the caller's queue over capacity with nothing closed.
+    bool const inactivity_expired = ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at <= now;
+    bool const active_expired     = ne->next_activity_timeout_at && ne->next_activity_timeout_at <= now;
+    int const  timeout_event      = (active_expired && !inactivity_expired) ? VC_EVENT_ACTIVE_TIMEOUT : VC_EVENT_INACTIVITY_TIMEOUT;
+
     ne->next_inactivity_timeout_at = now;
     ne->rearm_timer();
     // create a dummy event
     Event event;
     event.ethread = this_ethread();
-    if (ne->inactivity_timeout_in && ne->next_inactivity_timeout_at <= now) {
-      if (ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, &event) == EVENT_DONE) {
-        ++handle_event;
-      }
-    } else if (ne->active_timeout_in && ne->next_activity_timeout_at <= now) {
-      if (ne->callback(VC_EVENT_ACTIVE_TIMEOUT, &event) == EVENT_DONE) {
-        ++handle_event;
-      }
+    if (ne->callback(timeout_event, &event) == EVENT_DONE) {
+      ++handle_event;
     }
   }
 }
