@@ -99,6 +99,9 @@ template <> struct convert<HostDBCache> {
 
       Node partition_node;
       partition_node["id"] = i;
+      // Always a sequence, so a partition whose entries are all filtered out by `hostname`
+      // emits `"records": []` rather than dropping the key.
+      partition_node["records"] = Node{YAML::NodeType::Sequence};
 
       for (RefCountCacheHashEntry *entry : partition_entries) {
         HostDBRecord *record = static_cast<HostDBRecord *>(entry->item.get());
