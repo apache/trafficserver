@@ -26,6 +26,7 @@
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
+#include <pthread.h>
 
 #include <array>
 #include <vector>
@@ -80,6 +81,70 @@ my_free(void *ptr, void * /*caller*/)
 }
 
 //----------------------------------------------------------------------------
+// One match context is shared by every thread that matches through it, and PCRE2
+// requires a distinct JIT stack per thread, so the stack comes from a callback
+// invoked at match time rather than a pointer baked in when the context is built.
+//
+// The per thread stack is held in a pthread key rather than a thread_local. A
+// thread_local with a destructor registers it through __cxa_thread_atexit, which
+// takes the dynamic loader lock; doing that from a match would invert lock order
+// against a dlopen caller running a plugin's static initialization. See the same
+// hazard described at Diags::tag_activated. A pthread key registers its destructor
+// once, at key creation, and never from the matching path.
+pthread_key_t  jit_stack_key;
+bool           jit_stack_key_valid = false;
+pthread_once_t jit_stack_key_once  = PTHREAD_ONCE_INIT;
+
+void
+destroy_jit_stack(void *stack)
+{
+  if (stack != nullptr) {
+    pcre2_jit_stack_free(static_cast<pcre2_jit_stack *>(stack));
+  }
+}
+
+void
+make_jit_stack_key()
+{
+  jit_stack_key_valid = pthread_key_create(&jit_stack_key, destroy_jit_stack) == 0;
+}
+
+pcre2_jit_stack *
+jit_stack_for_this_thread(void *)
+{
+  pthread_once(&jit_stack_key_once, make_jit_stack_key);
+  if (!jit_stack_key_valid) {
+    // Without a key there is nowhere to keep a stack, and jit_stack_key holds a
+    // default value that may name an unrelated key. Returning null tells PCRE2 to
+    // use its own default stack, which pcre2jit documents as thread safe.
+    return nullptr;
+  }
+
+  auto *stack = static_cast<pcre2_jit_stack *>(pthread_getspecific(jit_stack_key));
+  if (stack == nullptr) {
+    // One page to start, one mebibyte at most. The maximum is address space reserved at
+    // creation and made resident only as deep as a match actually goes, so a larger one
+    // costs nothing per match.
+    //
+    // It does NOT cover every subject a client can send. Measured with the pattern the
+    // unit tests use, a mebibyte resolves about 26,213 characters, while
+    // proxy.config.http.request_header_max_size defaults to 32768. A longer subject
+    // fails with PCRE2_ERROR_JIT_STACKLIMIT, which exec() returns as a negative code.
+    // There is no retreat to a smaller stack and none to the interpreter: measured at
+    // 26,214 characters and again at 100,000, the match returns -46 rather than
+    // completing by another route.
+    stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr);
+    if (pthread_setspecific(jit_stack_key, stack) != 0) {
+      // Nothing holds the stack now, so it would leak once per match. Give it back and
+      // let PCRE2 use its own default stack for this call.
+      pcre2_jit_stack_free(stack);
+      return nullptr;
+    }
+  }
+  return stack;
+}
+
+//----------------------------------------------------------------------------
 class RegexContext
 {
 public:
@@ -99,9 +164,6 @@ public:
     }
     if (_match_context != nullptr) {
       pcre2_match_context_free(_match_context);
-    }
-    if (_jit_stack != nullptr) {
-      pcre2_jit_stack_free(_jit_stack);
     }
   }
   pcre2_general_context *
@@ -126,13 +188,11 @@ private:
     _general_context = pcre2_general_context_create(my_malloc, my_free, nullptr);
     _compile_context = pcre2_compile_context_create(_general_context);
     _match_context   = pcre2_match_context_create(_general_context);
-    _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
-    pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
+    pcre2_jit_stack_assign(_match_context, jit_stack_for_this_thread, nullptr);
   }
   pcre2_general_context *_general_context = nullptr;
   pcre2_compile_context *_compile_context = nullptr;
   pcre2_match_context   *_match_context   = nullptr;
-  pcre2_jit_stack       *_jit_stack       = nullptr;
 };
 
 } // namespace
@@ -257,8 +317,24 @@ struct RegexMatchContext::_MatchContext {
 //----------------------------------------------------------------------------
 RegexMatchContext::RegexMatchContext()
 {
-  auto ctx = pcre2_match_context_create(nullptr);
-  debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
+  // A blank context silently drops the JIT stack callback, which is how this type
+  // came to run with PCRE2's fallback 32KiB stack instead of the 1MiB one. Assign
+  // the callback directly rather than copying the shared context.
+  //
+  // Copying it would mean calling RegexContext::get_instance(), and that constructs
+  // a thread_local whose destructor registers through __cxa_thread_atexit, taking
+  // the dynamic loader lock. A plugin that builds one of these during its static
+  // initialization is already inside dlopen holding that lock, so reaching it from
+  // this constructor would invert lock order for exactly the reason described above
+  // jit_stack_key. Nothing else the shared context carries is needed here: the
+  // callback is thread independent because it resolves its stack through the
+  // pthread key, and a null general context is what this constructor used before.
+  auto *ctx = pcre2_match_context_create(nullptr);
+
+  debug_assert_message(ctx, "Failed to obtain a pcre2 match context");
+  if (ctx != nullptr) {
+    pcre2_jit_stack_assign(ctx, jit_stack_for_this_thread, nullptr);
+  }
   _MatchContext::set(_match_context, ctx);
 }
 
@@ -278,12 +354,49 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
 {
   if (&other != this) {
     auto ptr = _MatchContext::get(other._match_context);
-    if (nullptr != ptr) {
-      pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
-      _MatchContext::set(_match_context, ctx);
-    } else {
-      _MatchContext::set(_match_context, nullptr);
+
+    // Take the copy before releasing what this object already holds, so a failing
+    // copy leaves it holding its old context rather than a freed one. Releasing it
+    // is what this operator used to omit, and every assignment leaked one context.
+    pcre2_match_context *const ctx = nullptr != ptr ? pcre2_match_context_copy(ptr) : nullptr;
+
+    // pcre2_match_context_copy() returns nullptr when it cannot allocate. Assigning it
+    // anyway would free the old context and leave this object empty, which is the very
+    // thing the ordering above exists to prevent, so leave the object untouched instead.
+    if (nullptr != ptr && nullptr == ctx) {
+      return *this;
     }
+
+    pcre2_match_context *const old = _MatchContext::get(_match_context);
+
+    _MatchContext::set(_match_context, ctx);
+    if (old != nullptr) {
+      pcre2_match_context_free(old);
+    }
+  }
+  return *this;
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext(RegexMatchContext &&that) noexcept
+{
+  // Through the typed accessors rather than std::exchange on the raw member: _ptr is
+  // void *, and void * does not implicitly convert to pcre2_match_context *, which is
+  // what set() takes.
+  _MatchContext::set(_match_context, _MatchContext::get(that._match_context));
+  _MatchContext::set(that._match_context, nullptr);
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext &
+RegexMatchContext::operator=(RegexMatchContext &&that) noexcept
+{
+  if (this != &that) {
+    if (auto *const old = _MatchContext::get(_match_context); old != nullptr) {
+      pcre2_match_context_free(old);
+    }
+    _MatchContext::set(_match_context, _MatchContext::get(that._match_context));
+    _MatchContext::set(that._match_context, nullptr);
   }
   return *this;
 }
@@ -291,9 +404,8 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
 //----------------------------------------------------------------------------
 RegexMatchContext::~RegexMatchContext()
 {
-  auto ptr = _MatchContext::get(_match_context);
-  debug_assert_message(ptr, "Failed to get the match context");
-  if (ptr != nullptr) {
+  // A moved-from object holds no context.
+  if (auto *const ptr = _MatchContext::get(_match_context); ptr != nullptr) {
     pcre2_match_context_free(ptr);
   }
 }

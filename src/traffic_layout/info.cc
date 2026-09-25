@@ -180,6 +180,49 @@ produce_features(bool json)
   print_feature("TS_HAS_128BIT_CAS", TS_HAS_128BIT_CAS, json);
   print_feature("TS_HAS_128BIT_CAS_LIBATOMIC", TS_HAS_128BIT_CAS_LIBATOMIC, json);
   print_feature("TS_HAS_TESTS", TS_HAS_TESTS, json);
+  // Whether PCRE2 can run a pattern on the just-in-time engine. This is a property of the
+  // PCRE2 that ATS is linked against, not of ATS, and it decides which resource limit a
+  // pathological pattern reaches: the JIT stack, or the interpreter's far larger match,
+  // depth and heap limits, because the interpreter keeps its backtracking frames on the
+  // heap. Tests that assert on one of those limits need to know.
+  //
+  // PCRE2_JIT_TEST_ALLOC (PCRE2 10.45) also confirms the JIT can allocate executable
+  // memory. PCRE2_CONFIG_JIT does not, and reports success on a hardened runtime where
+  // every JIT compile then fails, which is the direction that misleads a test gate.
+  {
+    uint32_t has_jit = 0;
+
+#ifdef PCRE2_JIT_TEST_ALLOC
+    has_jit = pcre2_jit_compile(nullptr, PCRE2_JIT_TEST_ALLOC) == 0;
+#else
+    // Below 10.45 there is no library-wide probe that also proves the allocator works,
+    // and PCRE2_CONFIG_JIT alone is exactly the misleading answer described above. This
+    // tree still supports those versions: Rocky 8.10 links PCRE2 10.32, so this is the
+    // live path on that CI lane rather than a theoretical one.
+    //
+    // So ask the question that cannot be wrong about it. JIT compile a real pattern and
+    // see whether a JIT block came back, which is what the unit tests already do per
+    // pattern in pattern_has_jit(). A hardened runtime fails the compile and reports a
+    // zero JIT size, and the feature correctly reads false.
+    {
+      int         errnum    = 0;
+      PCRE2_SIZE  erroffset = 0;
+      pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>("a"), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+
+      if (code != nullptr) {
+        size_t jit_size = 0;
+
+        pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+        pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+        pcre2_code_free(code);
+        has_jit = jit_size > 0;
+      }
+      // A pattern as trivial as "a" failing to compile means the library is unusable,
+      // and reporting no JIT is the right answer in that case too.
+    }
+#endif
+    print_feature("TS_HAS_PCRE2_JIT", has_jit != 0, json);
+  }
   print_feature("TS_MAX_THREADS_IN_EACH_THREAD_TYPE", TS_MAX_THREADS_IN_EACH_THREAD_TYPE, json);
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
   print_feature("TS_MAX_HOST_NAME_LEN", TS_MAX_HOST_NAME_LEN, json);

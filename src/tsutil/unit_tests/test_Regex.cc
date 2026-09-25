@@ -20,7 +20,13 @@
   limitations under the License.
 */
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <string>
 #include <string_view>
+#include <thread>
+#include <utility>
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -1146,4 +1152,357 @@ TEST_CASE("Regex copies answer the same as their original", "[libts][Regex][copy
     RegexMatches copy_ordinary;
     CHECK(original.exec(ordinary, original_ordinary) == copy.exec(ordinary, copy_ordinary));
   }
+}
+
+namespace
+{
+/** Does PCRE2 have JIT code for this pattern?
+ *
+ * The two tests below are about the JIT stack, and PCRE2 consults it only when it
+ * has JIT code to run. Without it both a blank context and the shared one take the
+ * interpreter and return the same answer, so the tests would pass whether or not
+ * the behaviour they describe is present. Ask PCRE2 rather than assume.
+ *
+ * This asks about one pattern, deliberately: PCRE2 declines some pattern items and
+ * leaves PCRE2_INFO_JITSIZE at zero on a build whose JIT is otherwise fine, so the
+ * library-wide probes (pcre2_config, PCRE2_JIT_TEST_ALLOC) answer a different
+ * question. Call it from the test thread only; Catch2 assertions are not thread safe.
+ */
+bool
+pattern_has_jit(char const *pattern)
+{
+  int         errnum    = 0;
+  PCRE2_SIZE  erroffset = 0;
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+
+  // A pattern that will not compile is a broken test, not a build without a JIT.
+  // Reporting it as "no JIT" would turn a typo into a silent skip.
+  REQUIRE(code != nullptr);
+
+  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+  size_t jit_size = 0;
+
+  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+  pcre2_code_free(code);
+  return jit_size > 0;
+}
+} // namespace
+
+// A caller-supplied RegexMatchContext must behave like the shared context that
+// Regex::exec uses when none is supplied. A context built from scratch silently
+// drops everything the shared one configures, which is how regex_remap came to
+// run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB one.
+TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexMatchContext]")
+{
+  // Quantified alternation of capture groups: every subject character pushes a
+  // backtracking frame, so the JIT stack size is what bounds this.
+  char const *const pattern = R"(^(?:(a)|(b))+$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so the JIT stack is never consulted");
+  }
+
+  Regex re;
+  REQUIRE(re.compile(pattern));
+
+  // 40 bytes of JIT stack per subject character, so PCRE2's 32KiB fallback stops at
+  // 818 characters and the shared context's 1MiB stack at 26,213. 5,000 sits six
+  // times above the first and five times below the second, so a blank context and
+  // the shared one give different answers with margin either way.
+  std::string const subject(5000, 'a');
+
+  RegexMatches      shared_matches;
+  RegexMatchContext match_context;
+  RegexMatches      own_matches;
+
+  int const shared_rc = re.exec(subject, shared_matches);
+  int const own_rc    = re.exec(subject, own_matches, 0, &match_context);
+  CAPTURE(shared_rc, own_rc);
+
+  REQUIRE(shared_rc > 0);
+  REQUIRE(own_rc == shared_rc);
+
+  // The copy paths must carry the inherited configuration too. Building a blank
+  // context in either of them is the same defect, and nothing else here notices.
+  RegexMatchContext const copied{match_context};
+  RegexMatchContext       assigned;
+
+  assigned = match_context;
+
+  RegexMatches copied_matches;
+  RegexMatches assigned_matches;
+
+  REQUIRE(re.exec(subject, copied_matches, 0, &copied) == shared_rc);
+  REQUIRE(re.exec(subject, assigned_matches, 0, &assigned) == shared_rc);
+}
+
+// Ownership only, and deliberately NOT inside the case above.
+//
+// That case SKIPs when pattern_has_jit() is false, which is right for what it tests and
+// wrong for this: move construction and move assignment have nothing to do with the JIT.
+// Gating them there meant the only coverage of the double free stopped running on exactly
+// the builds it was written for, a PCRE2 without JIT or the hardened runtime where JIT
+// allocation fails. A regression test that disappears on the affected platform is worse
+// than none, because it reports green.
+TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex][RegexMatchContext]")
+{
+  Regex re;
+
+  REQUIRE(re.compile("^(a+)(b+)$"));
+
+  std::string_view const subject{"aaabbb"};
+
+  auto matches_through = [&](RegexMatchContext const *ctx) {
+    RegexMatches m;
+    return re.exec(subject, m, 0, ctx);
+  };
+
+  // Baseline through a plain context, so a later mismatch means the move broke something
+  // rather than the pattern never having matched.
+  RegexMatchContext plain;
+  int const         expected = matches_through(&plain);
+
+  REQUIRE(expected > 0);
+
+  SECTION("move construction")
+  {
+    RegexMatchContext       donor;
+    RegexMatchContext const moved{std::move(donor)};
+
+    REQUIRE(matches_through(&moved) == expected);
+    // A double free aborts when donor and moved are both destroyed, so leaving this
+    // section is itself the second assertion.
+  }
+
+  SECTION("move assignment onto a destination that already holds a context")
+  {
+    // HONEST LABEL: on an ordinary build the assertions below do NOT detect a dropped
+    // pcre2_match_context_free(old). Measured: removing that call leaves this section
+    // passing, because a leak has no observer here. The oracle for the leak is
+    // LeakSanitizer on the ci-rocky lane, which is the only PR check inheriting asan.
+    //
+    // The section still earns its place: it is what gives LSan an assignment onto a
+    // live context to observe, which no other case in this file produces. Without it
+    // the leak is unreachable and therefore undetectable anywhere.
+    RegexMatchContext destination;
+
+    REQUIRE(matches_through(&destination) == expected);
+
+    RegexMatchContext donor;
+
+    destination = std::move(donor);
+
+    REQUIRE(matches_through(&destination) == expected);
+  }
+
+  SECTION("self move assignment")
+  {
+    RegexMatchContext ctx;
+
+    REQUIRE(matches_through(&ctx) == expected);
+
+    // Without the this != &that guard this frees the context and then reads the freed
+    // pointer back into itself, so the match below runs on freed memory.
+    //
+    // HONEST LABEL: measured, removing that guard leaves this section passing on an
+    // ordinary build, because a use after free does not reliably fault. AddressSanitizer
+    // on ci-rocky is the oracle. As above, the value here is producing the access at all.
+    auto &alias = ctx;
+
+    ctx = std::move(alias);
+
+    REQUIRE(matches_through(&ctx) == expected);
+  }
+}
+
+// The guard from #5762: a pattern that backtracks once per character must fail
+// cleanly rather than run the thread out of stack. PCRE1 recursed on the machine
+// stack and a long enough subject crashed the server; PCRE2 must report an error
+// instead.
+TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex][limits]")
+{
+  // Only the JIT path has a bound to exhaust here. PCRE2's interpreter keeps its
+  // backtracking frames on the heap, so it matches this subject rather than running
+  // out of anything, and there is no resource error to assert.
+  char const *const pattern = R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so there is no stack bound to exhaust");
+  }
+
+  Regex re;
+  REQUIRE(re.compile(pattern));
+
+  // This pattern starts failing at roughly 43KiB of subject against a 1MiB JIT
+  // stack, measured identically on x86_64 and arm64. Smaller JIT frames get more
+  // subject out of the same stack and so push that threshold up; 256KiB keeps a
+  // six times margin against that. Do not trim this to just above 43KiB.
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+
+  RegexMatches matches;
+  int const    rc = re.exec(subject, matches);
+  CAPTURE(rc);
+
+  // Reaching this line at all is the crash assertion.
+  REQUIRE(rc < 0);
+  REQUIRE(rc != RE_ERROR_NOMATCH);
+
+  // The paired positive control, and the only part of this case that can tell a
+  // 1MiB stack from PCRE2's 32KiB fallback: 256KiB overruns both bounds, so every
+  // assertion above also holds with the JIT stack callback deleted. 10,000 is seven
+  // times over the fallback's bound and four times under the 1MiB stack's. Neither
+  // bound pins 1MiB itself; the suite only requires a maximum in roughly
+  // [240KB, 6MB].
+  std::string smaller{"/alpha/bravo/?"};
+  smaller.append(10000, 'x');
+
+  RegexMatches small_matches;
+  int const    small_rc = re.exec(smaller, small_matches);
+  CAPTURE(small_rc);
+
+  REQUIRE(small_rc > 0);
+}
+
+namespace
+{
+/** A start gate, so every thread is inside the match loop before any of them gets far
+ * and the matching actually overlaps. std::latch would say this directly; it is
+ * hand-rolled here to match notstd::barrier in benchmark_LogObject.cc.
+ *
+ * Single-use, like the std::latch it stands in for: once the gate opens it stays open
+ * and a second round returns immediately. Exactly `expected` threads must call
+ * arrive_and_wait() or the rest block forever, and the gate must outlive all of them,
+ * since destroying a condition_variable with waiters on it is undefined.
+ */
+class ThreadGate
+{
+public:
+  explicit ThreadGate(int expected) : _expected{expected} { REQUIRE(expected > 0); }
+
+  /// Count this thread in, then block until every expected thread has done the same.
+  void
+  arrive_and_wait()
+  {
+    std::unique_lock<std::mutex> lock{_mutex};
+
+    if (++_arrived == _expected) {
+      _open = true;
+      _cv.notify_all();
+      return;
+    }
+    _cv.wait(lock, [this]() { return _open; });
+  }
+
+private:
+  std::mutex              _mutex;
+  std::condition_variable _cv;
+  int const               _expected;
+  int                     _arrived = 0;
+  bool                    _open    = false;
+};
+
+/** A subject the deep pattern below backtracks through once per character.
+ *
+ * At 40 bytes of JIT stack per character the longest of these needs about 223KiB: six
+ * times what PCRE2's 32KiB fallback resolves, and under a quarter of the shared
+ * context's 1MiB stack. Each thread gets its own length and its own content, so no two
+ * threads are matching identical bytes.
+ */
+std::string
+stack_hungry_subject(int thread_index)
+{
+  std::string subject(5000 + thread_index * 100, 'a');
+
+  subject[11 + thread_index] = 'b';
+  return subject;
+}
+
+// One pass of the three matches every thread in the concurrency case performs: a hit that
+// must yield the same three captures, a miss that must stay a miss, and a deep subject that
+// only resolves on the 1MiB stack. Returns false on the first disagreement, so a caller
+// counts rounds that went wrong rather than individual assertions. The case asserts on zero
+// either way, so the change of denominator does not weaken it.
+bool
+concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
+                       std::string const &deep, RegexMatchContext const *const use)
+{
+  RegexMatches matches;
+  if (re_captures.exec(hit, matches, 0, use) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+    return false;
+  }
+
+  RegexMatches no_matches;
+  if (re_captures.exec(miss, no_matches, 0, use) != RE_ERROR_NOMATCH) {
+    return false;
+  }
+
+  // Needs the 1MiB stack, and must consume the whole subject to have used it.
+  RegexMatches deep_matches;
+  if (re_deep.exec(deep, deep_matches, 0, use) <= 0 || deep_matches[0].size() != deep.size()) {
+    return false;
+  }
+
+  return true;
+}
+
+} // namespace
+
+// The header promises that exec() may be called concurrently on one instance. Every thread
+// must reach the same verdict, whether it matches through a caller-supplied context shared
+// by several threads or through the thread-global one.
+//
+// The deep subjects are longer than PCRE2's 32KiB fallback stack can resolve, so on a JIT
+// build this also fails if the callback stops handing every thread a 1MiB stack: deleting
+// the callback, or returning null from it, turns every deep match here into
+// PCRE2_ERROR_JIT_STACKLIMIT. Without a JIT the interpreter resolves them either way, so
+// only the concurrency half of this case carries over to such a build.
+//
+// It does not establish that the stacks are distinct. One stack shared by all eight threads
+// corrupts a result only when two matches are deep at the same instant, so it fails
+// intermittently rather than reliably and is not an oracle for that. ThreadSanitizer does
+// not close the gap either: the racing writes come from sljit-generated code it never sees.
+TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
+{
+  Regex re_captures;
+  REQUIRE(re_captures.compile(R"(^/([a-z]+)/([0-9]+)/(.*)$)"));
+
+  Regex re_deep;
+  REQUIRE(re_deep.compile(R"(^(?:(a)|(b))+$)"));
+
+  constexpr int THREADS    = 8;
+  constexpr int ITERATIONS = 2000;
+
+  std::string const hit{"/alpha/42/tail"};
+  std::string const miss{"/Alpha/xx/tail"};
+
+  std::atomic<int> failures{0};
+  ThreadGate       gate{THREADS};
+
+  // One caller-supplied context, built here and shared by half the threads. That is the
+  // production shape: regex_remap builds a context when it loads a rule and every net
+  // thread then matches through it.
+  RegexMatchContext shared_caller_context;
+
+  std::vector<std::thread> threads;
+  threads.reserve(THREADS);
+  for (int i = 0; i < THREADS; ++i) {
+    threads.emplace_back([&, i]() {
+      bool const                     use_caller_context = (i % 2) == 0;
+      RegexMatchContext const *const use                = use_caller_context ? &shared_caller_context : nullptr;
+      std::string const              deep               = stack_hungry_subject(i);
+
+      gate.arrive_and_wait();
+
+      for (int n = 0; n < ITERATIONS; ++n) {
+        if (!concurrent_match_round(re_captures, re_deep, hit, miss, deep, use)) {
+          ++failures;
+        }
+      }
+    });
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+
+  CHECK(failures.load() == 0);
 }

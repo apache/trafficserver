@@ -88,7 +88,13 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|regex_remap',
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
+        'proxy.config.dns.resolv_conf': 'NULL',
+        # Run 3b sends a query past the 1 MB JIT stack's ~44 KB bound, which is over the
+        # 32 KB default. Do not raise request_line_max_size to match: http_parser_parse_req
+        # asserts `parsed.size() < UINT16_MAX` before it rejects an over-long line, so on
+        # any assert-enabled build a request line past 65,535 aborts traffic_server instead
+        # of getting a 414. 65,535 is the real ceiling here, whatever the record says.
+        'proxy.config.http.request_header_max_size': 131072
     })
 
 # 0 Test - Load cache (miss) (path1)
@@ -123,18 +129,59 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
 
-# 3 Test - Preserve the original crash guard from #5762. This request must
-# survive resource exhaustion without redirecting, regardless of which matching
-# resource limit is reached (JIT stack, match work, depth, or heap).
-tr = Test.AddTestRun("resource exhaustion does not crash ATS")
+# 3 Test - A 3 KB query redirects. This rule backtracks once per subject
+# character, so it used to exhaust the 32 KB stack PCRE2 falls back to when a
+# match context carries none, and the rule was skipped. The plugin's context now
+# inherits the shared 1 MB stack, so the rule matches and the redirect fires.
+#
+# This run needs no JIT gate. With JIT the 1 MB stack resolves the subject, and
+# without JIT the interpreter resolves it on the heap, so the redirect is the
+# answer either way. It only demonstrates the fix on a build that has a JIT.
+tr = Test.AddTestRun("long query redirects rather than exhausting the JIT stack")
 creq = replay_txns[1]['client-request']
-tr.MakeCurlCommand(curl_and_args + f"--header 'uuid: {creq['headers']['fields'][1][1]}' '{creq['url']}'", ts=ts)
+tr.MakeCurlCommand(
+    curl_and_args + f"--header 'uuid: {creq['headers']['fields'][1][1]}' '{creq['url']}'" + " | grep -e '^HTTP/' -e '^Location'",
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
-ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r'ERROR: \[regex_remap\] Bad regular expression result -(?:46|47|53|63).*"\^/alpha/bravo/',
-    "The crash-guard rule must report resource exhaustion")
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
 tr.StillRunningAfter = ts
+
+# 3b Test - Preserve the original crash guard from #5762. This request must
+# survive resource exhaustion without redirecting, regardless of which matching
+# resource limit is reached (JIT stack, match work, depth, or heap). Against the
+# shared 1 MB stack this rule needs a subject past ~44 KB to exhaust it (measured:
+# 43,514 matches, 44,021 does not), which is why the header limit is raised above.
+# Shortening this query silently turns the run into a plain redirect test.
+#
+# This run is boxed in, and the box cannot be widened by configuration. The floor is
+# that ~44 KB bound; the ceiling is the 65,535 request line the parser asserts on. So
+# the usable window is roughly 44,100 to 65,475 bytes of query, about 1.5x wide, and
+# 64,000 is near the top of it. A platform whose JIT frames are enough smaller to push
+# the floor over the ceiling cannot run this case at any query length: prefer the
+# test_Regex.cc unit test, which bounds the stack directly, over stretching this one.
+#
+# Note this run is a crash guard, not a check on the stack size: its ContainsExpression
+# accepts any of -46/-47/-53/-63, and the 32 KB fallback reaches -46 too. Run 3 above is
+# what actually fails if the fix is reverted, because its 3 KB subject redirects on the
+# 1 MB stack and errors on the fallback.
+#
+# Only the JIT engine has a stack to exhaust here. PCRE2's interpreter keeps its
+# backtracking frames on the heap, so on a build without JIT this subject simply
+# matches, the rule redirects, and both assertions below fail for a reason that has
+# nothing to do with the behaviour under test. The crash property itself is not lost
+# on such a build: run 4 reaches the match limit through the interpreter, and the
+# unit test in test_Regex.cc asserts it directly.
+if Condition.HasATSFeature('TS_HAS_PCRE2_JIT'):
+    crash_guard_query = 'x' * 64000
+    tr = Test.AddTestRun("resource exhaustion does not crash ATS")
+    tr.MakeCurlCommand(
+        curl_and_args + "--header 'uuid: 180' " + f"'http://example.one/alpha/bravo/?action=newsfed;{crash_guard_query}'", ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
+    ts.Disk.diags_log.Content += Testers.ContainsExpression(
+        r'ERROR: \[regex_remap\] Bad regular expression result -(?:46|47|53|63).*"\^/alpha/bravo/',
+        "The crash-guard rule must report resource exhaustion")
+    tr.StillRunningAfter = ts
 
 # 4 Test - The nested quantifiers must exceed PCRE2's default matching-work limit.
 tr = Test.AddTestRun("excessive backtracking reaches the match limit")
