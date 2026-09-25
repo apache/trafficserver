@@ -1158,6 +1158,118 @@ TEST_CASE("InactivityCop: one pass covers every tick it advances through", "[net
   }
 }
 
+// --- The audit scan -------------------------------------------------------
+//
+// An audit that always reports clean is worse than none, so each anomaly class
+// is constructed deliberately and checked. audit() returns the count so this is
+// assertable; the debug tag carries the per-offender detail for humans.
+
+// Baseline: a correctly scheduled population must be silent.
+TEST_CASE("InactivityCop::audit is silent on a healthy population", "[net][inactivity_cop][audit]")
+{
+  constexpr size_t n = 8;
+  Fixture          fx(n);
+
+  ink_hrtime const now = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->next_inactivity_timeout_at = now + HRTIME_SECONDS(30);
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  CHECK(fx.cop.audit(now) == 0);
+}
+
+// A connection with no deadline at all is legitimately unscheduled.
+TEST_CASE("InactivityCop::audit does not flag a connection with no deadline", "[net][inactivity_cop][audit]")
+{
+  Fixture fx(4);
+
+  ink_hrtime const now = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->next_inactivity_timeout_at = 0;
+      m->next_activity_timeout_at   = 0;
+      fx.nh.rearm_timer(m.get()); // cancels; nothing to fire
+    }
+  }
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  CHECK(fx.cop.audit(now) == 0);
+}
+
+// The bug class this exists to catch: a live deadline with no wheel entry.
+// Nothing will ever visit it, so it can never time out.
+TEST_CASE("InactivityCop::audit flags a live deadline with no wheel entry", "[net][inactivity_cop][audit]")
+{
+  constexpr size_t n    = 6;
+  constexpr size_t lost = 2;
+  Fixture          fx(n);
+
+  ink_hrtime const now = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->next_inactivity_timeout_at = now + HRTIME_SECONDS(30);
+      fx.nh.rearm_timer(m.get());
+    }
+    // Drop a couple out of the wheel while leaving their deadline live, exactly
+    // as a missed rearm_timer() call site would.
+    for (size_t i = 0; i < lost; ++i) {
+      fx.nh.timer_wheel.cancel(fx.mocks[i].get());
+    }
+  }
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  INFO("a connection with a live deadline and no wheel entry can never time out");
+  CHECK(fx.cop.audit(now) == static_cast<int>(lost));
+}
+
+// The other invariant: a cached deadline later than the true one fires late.
+TEST_CASE("InactivityCop::audit flags a cached deadline later than the true one", "[net][inactivity_cop][audit]")
+{
+  Fixture fx(4);
+
+  ink_hrtime const now = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->next_inactivity_timeout_at = now + HRTIME_SECONDS(300);
+      fx.nh.rearm_timer(m.get());
+    }
+    // Shorten the true deadline without re-arming - the forbidden direction.
+    fx.mocks.front()->next_inactivity_timeout_at = now + HRTIME_SECONDS(1);
+  }
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  INFO("shortening a deadline without re-arming leaves the wheel firing late");
+  CHECK(fx.cop.audit(now) == 1);
+}
+
+// Lagging behind the budget is not an anomaly, or the audit would cry wolf
+// every time a burst exceeds TIMEOUT_BUDGET.
+TEST_CASE("InactivityCop::audit does not flag overdue but scheduled connections", "[net][inactivity_cop][audit]")
+{
+  Fixture fx(4);
+
+  ink_hrtime const now = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      // Well past due, but still scheduled: that is lag, not loss.
+      m->next_inactivity_timeout_at = now - HRTIME_SECONDS(60);
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  CHECK(fx.cop.audit(now) == 0);
+}
+
 // --- Step 0: NetHandler::_close_ne event selection -------------------------
 //
 // _close_ne is the queue-management close path (capacity eviction from
