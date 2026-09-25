@@ -42,6 +42,14 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'rpc|config',
 })
 
+# Used by Test 12: a single-entry reload of this id must find it on disk.
+ts.Disk.virtualhost_yaml.AddLines([
+    'virtualhost:',
+    '  - id: myhost.example.com',
+    '    domains:',
+    '      - myhost.example.com',
+])
+
 # ============================================================================
 # Test 1: File-based reload (no configs parameter)
 # ============================================================================
@@ -424,30 +432,36 @@ tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_dir
 tr.StillRunningAfter = ts
 
 # ============================================================================
-# Test 12: Reload directive for unregistered config (virtualhost)
-# virtualhost is not registered yet — should get 6010.
-# This is the intended use case once the virtualhost handler is registered.
+# Test 12: Reload directive routes to registered handler (virtualhost)
+# virtualhost is registered as FileAndRpc — the _reload directive should be
+# accepted by the framework and forwarded to VirtualHost's handler, which
+# schedules an inline reload and returns a task token.
 # ============================================================================
-tr = Test.AddTestRun("Reload directive for unregistered config (virtualhost)")
+tr = Test.AddTestRun("Reload directive routed to registered virtualhost handler")
 tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"virtualhost": {"_reload": {"id": "myhost.example.com"}}}))
 
 
-def validate_directive_unregistered(resp: Response):
-    '''virtualhost is not registered — rejected with 6010'''
+def validate_directive_routed(resp: Response):
+    '''virtualhost is registered as FileAndRpc — the directive should be accepted and scheduled'''
     result = resp.result
     errors = result.get('errors', [])
 
-    if not errors:
-        return (False, f"Expected error for unregistered config, got: {result}")
+    if errors:
+        error_str = str(errors)
+        if '6010' in error_str or 'not registered' in error_str:
+            return (False, f"virtualhost should now be registered, got: {errors}")
+        return (False, f"Unexpected synchronous error: {errors}")
 
-    error_str = str(errors)
-    if '6010' in error_str or 'not registered' in error_str:
-        return (True, f"Directive for unregistered config rejected: {errors}")
-    return (False, f"Expected error 6010, got: {errors}")
+    tasks = result.get('tasks', [])
+    message = result.get('message', [])
+    if tasks or message:
+        return (True, f"Directive accepted and reload scheduled: tasks={tasks}, message={message}")
+
+    return (False, f"Expected scheduled reload, got: {result}")
 
 
-tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_unregistered)
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_routed)
 tr.StillRunningAfter = ts
 
 # ============================================================================
@@ -488,4 +502,437 @@ def validate_directive_mixed(resp: Response):
 
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_mixed)
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 14: virtualhost config content over RPC is rejected
+# virtualhost is FileAndRpc, but only '_reload' directives are supported — a
+# supplied body must be refused instead of silently ignored. The handler reports
+# the rejection through the reload task log, so the rejection is verified by
+# querying the task status rather than by scanning diags.log.
+# ============================================================================
+vhost_reject_token = "vhost-content-reject"
+
+tr = Test.AddTestRun("virtualhost rejects pushed config content")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(
+    ts,
+    Request.admin_config_reload(
+        token=vhost_reject_token, configs={"virtualhost": [{
+            "id": "pushed.example.com",
+            "domains": ["pushed.example.com"]
+        }]}))
+
+
+def validate_content_rejected(resp: Response):
+    '''Content is accepted by the framework and rejected by the handler'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Content accepted by framework, handler expected to reject: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_content_rejected)
+tr.StillRunningAfter = ts
+
+# The handler's rejection lands in the reload task log — query it by token.
+tr = Test.AddTestRun("virtualhost content rejection is reported in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.get_reload_config_status(token=vhost_reject_token))
+
+
+def validate_content_rejection_logged(resp: Response):
+    '''The virtualhost subtask should be FAIL and carry the rejection message'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "virtualhost does not accept config content over rpc"
+
+    def find_rejection(task_list):
+        for t in task_list:
+            for entry in t.get('logs', []):
+                if expected in entry.get('text', ''):
+                    return t
+            found = find_rejection(t.get('sub_tasks', []))
+            if found:
+                return found
+        return None
+
+    tasks = result.get('tasks', [])
+    task = find_rejection(tasks)
+
+    if task is None:
+        return (False, f"Pushed virtualhost content should be rejected, no such log in: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the rejecting task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Pushed virtualhost content rejected and logged: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_content_rejection_logged)
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 15: single-entry reload of an id that is not in virtualhost.yaml
+# This logs a core ERROR, so it runs against its own ATS instance whose diags
+# expectations are replaced. The handler reports the failure through the reload
+# task log, which is where an operator sees it, so that is asserted too.
+# ============================================================================
+ts_unknown = Test.MakeATSProcess('ts-unknown-id')
+ts_unknown.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'rpc|config',
+})
+ts_unknown.Disk.virtualhost_yaml.AddLines(
+    [
+        'virtualhost:',
+        '  - id: present.example.com',
+        '    domains:',
+        '      - present.example.com',
+    ])
+ts_unknown.Disk.diags_log.Content = Testers.ContainsExpression(
+    "virtualhost with id 'absent.example.com' not found", "Reloading an unknown id should report it as not found")
+ts_unknown.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "Unknown id should not be fatal")
+
+vhost_unknown_id_token = "vhost-unknown-id"
+
+tr = Test.AddTestRun("Single-entry reload of an unknown virtualhost id")
+tr.Processes.Default.StartBefore(ts_unknown)
+tr.AddJsonRPCClientRequest(
+    ts_unknown,
+    Request.admin_config_reload(token=vhost_unknown_id_token, configs={"virtualhost": {
+        "_reload": {
+            "id": "absent.example.com"
+        }
+    }}))
+
+
+def validate_unknown_id(resp: Response):
+    '''Accepted by the framework; the handler fails because the id is not on disk'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Directive accepted, handler expected to fail: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_id)
+tr.StillRunningAfter = ts_unknown
+
+
+def find_failed_task_with(task_list, expected):
+    '''Depth-first search for a failed task whose log carries `expected`'''
+    for t in task_list:
+        for entry in t.get('logs', []):
+            if expected in entry.get('text', ''):
+                return t
+        found = find_failed_task_with(t.get('sub_tasks', []), expected)
+        if found:
+            return found
+    return None
+
+
+# The not-found diagnostic must reach the operator who asked for the reload, not
+# just diags.log — query the task log by token.
+tr = Test.AddTestRun("Unknown virtualhost id is reported in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts_unknown, Request.get_reload_config_status(token=vhost_unknown_id_token))
+
+
+def validate_unknown_id_logged(resp: Response):
+    '''The virtualhost subtask should be FAIL and name the missing id'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "virtualhost with id 'absent.example.com' not found"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Unknown id reported over rpc: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_id_logged)
+tr.StillRunningAfter = ts_unknown
+
+# ============================================================================
+# Test 16: single-entry reload with no virtualhost.yaml on disk
+# A missing file is handled like a missing config, not a parse failure — it must
+# not surface a yaml-cpp 'bad file' ERROR in diags.log.
+#
+# The startup path and the reload path report a missing file differently on
+# purpose: startup warns and carries on with no entries, a single-entry reload
+# fails. Asserting the reload-specific wording in the task log is what makes
+# this test depend on the RPC — the startup warning is emitted before any
+# request is sent, so asserting only that would pass with the handler removed.
+# ============================================================================
+ts_missing = Test.MakeATSProcess('ts-missing-file')
+ts_missing.Disk.records_config.update({
+    'proxy.config.diags.debug.enabled': 1,
+    'proxy.config.diags.debug.tags': 'rpc|config',
+})
+# No virtualhost.yaml is written for this instance.
+ts_missing.Disk.diags_log.Content = Testers.ContainsExpression(
+    "Virtualhost configuration .* doesn't exist, no virtualhost entries loaded",
+    "Startup with no virtualhost.yaml should warn and carry on")
+ts_missing.Disk.diags_log.Content += Testers.ExcludesExpression(
+    "bad file", "Missing virtualhost.yaml should not surface a yaml-cpp load failure")
+ts_missing.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "A missing virtualhost.yaml should not be fatal")
+
+vhost_missing_file_token = "vhost-missing-file"
+
+tr = Test.AddTestRun("Single-entry reload with no virtualhost.yaml")
+tr.Processes.Default.StartBefore(ts_missing)
+tr.AddJsonRPCClientRequest(
+    ts_missing,
+    Request.admin_config_reload(token=vhost_missing_file_token, configs={"virtualhost": {
+        "_reload": {
+            "id": "myhost.example.com"
+        }
+    }}))
+
+
+def validate_missing_file(resp: Response):
+    '''Accepted by the framework; the handler fails because the file is absent'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Directive accepted, handler expected to fail: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file)
+tr.StillRunningAfter = ts_missing
+
+tr = Test.AddTestRun("Missing virtualhost.yaml is reported in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts_missing, Request.get_reload_config_status(token=vhost_missing_file_token))
+
+
+def validate_missing_file_logged(resp: Response):
+    '''The failure must be distinguishable from the benign startup warning'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "Cannot reload virtualhost entry 'myhost.example.com'"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Missing file reported over rpc: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_logged)
+tr.StillRunningAfter = ts_missing
+
+# ============================================================================
+# Test 17: an empty '_reload' id is refused, not widened to a full reload
+# The scoped request must not silently rebuild the whole table from disk, which
+# would pick up every unrelated edit currently in the file.
+# ============================================================================
+vhost_empty_id_token = "vhost-empty-id"
+
+tr = Test.AddTestRun("Single-entry reload with an empty virtualhost id")
+tr.AddJsonRPCClientRequest(
+    ts, Request.admin_config_reload(token=vhost_empty_id_token, configs={"virtualhost": {
+        "_reload": {
+            "id": ""
+        }
+    }}))
+
+
+def validate_empty_id(resp: Response):
+    '''Accepted by the framework; the handler refuses the directive'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Directive accepted, handler expected to refuse: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_empty_id)
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Empty virtualhost id is refused in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.get_reload_config_status(token=vhost_empty_id_token))
+
+
+def validate_empty_id_refused(resp: Response):
+    '''The subtask must FAIL and point at the way to ask for a full reload'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "must name an entry"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Empty id refused: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_empty_id_refused)
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 18: a full reload with no virtualhost.yaml on disk fails
+# Startup tolerates an absent file; a reload must not, because publishing an
+# empty config would drop every live per-domain remap table and still report
+# success. Reuses the instance from Test 16, which has no virtualhost.yaml.
+# ============================================================================
+ts_missing.Disk.diags_log.Content += Testers.ContainsExpression(
+    "Cannot reload virtualhost config", "A full reload with no virtualhost.yaml must not report success")
+
+vhost_missing_full_token = "vhost-missing-file-full"
+
+tr = Test.AddTestRun("Full virtualhost reload with no virtualhost.yaml")
+tr.AddJsonRPCClientRequest(
+    ts_missing, Request.admin_config_reload(token=vhost_missing_full_token, configs={"virtualhost": {
+        "_reload": {}
+    }}))
+
+
+def validate_missing_file_full(resp: Response):
+    '''Accepted by the framework; the handler fails because the file is absent'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Request accepted, handler expected to fail: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_full)
+tr.StillRunningAfter = ts_missing
+
+tr = Test.AddTestRun("Full reload with no virtualhost.yaml is reported as a failure")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts_missing, Request.get_reload_config_status(token=vhost_missing_full_token))
+
+
+def validate_missing_file_full_logged(resp: Response):
+    '''The whole-file reload must fail rather than publish an empty table'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "Cannot reload virtualhost config"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Missing file refused on a full reload: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_full_logged)
+tr.StillRunningAfter = ts_missing
+
+# ============================================================================
+# Test 19: an unrecognized '_reload' key is refused, not widened to a full reload
+# A mistyped key like 'ID' must not rebuild the whole table from disk.
+# ============================================================================
+vhost_unknown_key_token = "vhost-unknown-key"
+
+tr = Test.AddTestRun("Reload directive with an unrecognized virtualhost key")
+tr.AddJsonRPCClientRequest(
+    ts,
+    Request.admin_config_reload(token=vhost_unknown_key_token, configs={"virtualhost": {
+        "_reload": {
+            "ID": "myhost.example.com"
+        }
+    }}))
+
+
+def validate_unknown_directive(resp: Response):
+    '''Accepted by the framework; the handler refuses the directive'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Directive accepted, handler expected to refuse: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_directive)
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Unrecognized virtualhost key is refused in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.get_reload_config_status(token=vhost_unknown_key_token))
+
+
+def validate_unknown_directive_refused(resp: Response):
+    '''The subtask must FAIL and name the offending key'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "directive 'ID' is not supported"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Unknown key refused: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_directive_refused)
 tr.StillRunningAfter = ts
