@@ -277,6 +277,9 @@ QUICMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
   Dbg(dbg_ctl_quic, "installing OpenSSL QUIC cert callback on SSL_CTX %p", ctx);
   SSL_CTX_set_client_hello_cb(ctx, quic_client_hello_callback, nullptr);
   SSL_CTX_set_tlsext_servername_callback(ctx, quic_servername_callback);
+  // This replaces ssl_cert_callback() rather than wrapping it, so the per-connection cert type
+  // negotiation it applies after switching contexts does not happen here. Raw public keys are
+  // consequently unsupported on a non-default entry for QUIC; see ssl_multicert.yaml docs.
   SSL_CTX_set_cert_cb(
     ctx,
     [](SSL *ssl, void *) -> int {
