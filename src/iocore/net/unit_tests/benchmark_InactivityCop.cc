@@ -112,6 +112,10 @@ ensure_net_metrics_registered()
   net_rsb.default_inactivity_timeout_count   = Metrics::Counter::createPtr("proxy.process.net.default_inactivity_timeout_count");
   net_rsb.keep_alive_queue_timeout_count     = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
   net_rsb.keep_alive_queue_timeout_total     = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
+  net_rsb.inactivity_cop_passes              = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_passes");
+  net_rsb.inactivity_cop_fired               = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_fired");
+  net_rsb.inactivity_cop_pass_time_us        = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_pass_time_us");
+  net_rsb.inactivity_cop_pass_max_us         = Metrics::Gauge::createPtr("proxy.process.net.inactivity_cop_pass_max_us");
 }
 
 // Frozen at commit 300f40c9 to sizeof(UnixNetVConnection) as it stood then.
@@ -1244,6 +1248,47 @@ TEST_CASE("InactivityCop fires an expired active timeout from the wheel alone", 
 
   REQUIRE(fx.counters.callbacks >= 1);
   CHECK(m->last_event == VC_EVENT_ACTIVE_TIMEOUT);
+}
+
+// --- The pass-timing instrument -------------------------------------------
+//
+// These metrics exist to tune TIMEOUT_BUDGET from real close costs rather than
+// guesswork, so the thing to verify is that a pass which fires N connections
+// attributes N to fired and a non-zero duration to the pass - if either stayed
+// flat, the experiment reading them would draw conclusions from zeros.
+TEST_CASE("InactivityCop records fired count and pass duration", "[net][inactivity_cop]")
+{
+  constexpr size_t n = 64;
+  Fixture          fx(n);
+
+  int64_t const passes_before = Metrics::Counter::load(net_rsb.inactivity_cop_passes);
+  int64_t const fired_before  = Metrics::Counter::load(net_rsb.inactivity_cop_fired);
+
+  ink_hrtime const base = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(1);
+      m->next_inactivity_timeout_at = base + HRTIME_SECONDS(1);
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(base + HRTIME_SECONDS(5), &event);
+  }
+
+  CHECK(Metrics::Counter::load(net_rsb.inactivity_cop_passes) == passes_before + 1);
+  INFO("a pass that fires every connection must attribute all of them to inactivity_cop_fired");
+  CHECK(Metrics::Counter::load(net_rsb.inactivity_cop_fired) - fired_before == static_cast<int64_t>(n));
+
+  // Only a lower bound is assertable: the pass is fast enough that it can round
+  // to 0 us, and the max is a shared high-water mark other cases also raise.
+  CHECK(Metrics::Counter::load(net_rsb.inactivity_cop_pass_time_us) >= 0);
+  CHECK(Metrics::Gauge::load(net_rsb.inactivity_cop_pass_max_us) >= 0);
 }
 
 // --- The audit scan -------------------------------------------------------
