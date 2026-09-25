@@ -18,8 +18,8 @@
 
 .. default-domain:: cpp
 
-TSHttpNextHopStrategyNameGet
-****************************
+TSRemapNextHopStrategyFind
+**************************
 
 Synopsis
 ========
@@ -28,13 +28,16 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: char const* TSHttpNextHopStrategyNameGet(void const* strategy)
+.. function:: TSStrategy TSRemapNextHopStrategyFind(const char *name)
 
 Description
 ===========
 
-Gets the name associated with the provided strategy.
-This may be nullptr indicating that parent.config is in use.
+Gets a pointer to the specified :arg:`name` NextHopSelectionStrategy.
+This may be nullptr indicating that no strategy exists with the given name.
+
+This function may ONLY be called during TSRemapNewInstance.
+The resulting strategy pointer is valid for all subsequent transactions.
 
 .. note::
 
@@ -46,4 +49,4 @@ This may be nullptr indicating that parent.config is in use.
 See Also
 ========
 
-:func:`TSHttpTxnNextHopStrategyGet`
+:func:`TSRemapNextHopStrategySet`
