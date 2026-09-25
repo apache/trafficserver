@@ -231,6 +231,7 @@ SSLInitializeStatistics()
   ssl_rsb.total_ticket_keys_renewed          = Metrics::Counter::createPtr("proxy.process.ssl.total_ticket_keys_renewed");
   ssl_rsb.total_tickets_created              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_created");
   ssl_rsb.total_tickets_not_found            = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_not_found");
+  ssl_rsb.total_tickets_no_certificate       = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_no_certificate");
   ssl_rsb.total_tickets_renewed              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_renewed");
   ssl_rsb.total_tickets_verified             = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified");
   ssl_rsb.total_tickets_verified_old_key     = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified_old_key");

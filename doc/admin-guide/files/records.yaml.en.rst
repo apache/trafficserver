@@ -4642,6 +4642,19 @@ SSL Termination
    note that OpenSSL session tickets are sensitive to the version of the ca-certificates. Once the
    file is changed with new tickets, use :option:`traffic_ctl config reload` to begin using them.
 
+   For a connection to an address with its own ``dest_ip`` entry in :file:`ssl_multicert.yaml`,
+   the ticket keys are derived from these keys and that entry's certificate. This applies to every
+   client, including one whose SNI selects a different certificate, so a ticket resumes only on
+   addresses whose ``dest_ip`` entries serve the same certificate. Servers sharing this file resume
+   each other's tickets for such an address only if they serve the same certificate. A ``dest_ip``
+   entry with ``action: tunnel`` has no certificate, so connections to it use these keys as they
+   are. Two consequences follow:
+
+   * Renewing the certificate invalidates the outstanding tickets for that address, and servers
+     cannot resume each other's tickets while a certificate rollout is only partly done.
+   * For an entry that lists both an RSA and an ECDSA certificate, the keys are derived from the
+     certificate loaded last, so servers must list the certificates in the same order.
+
 .. ts:cv:: CONFIG proxy.config.ssl.servername.filename STRING sni.yaml
    :deprecated:
 
