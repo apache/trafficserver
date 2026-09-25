@@ -296,10 +296,19 @@ get_first_ALPN(TSClientHello ch)
   std::size_t          buflen{};
   std::string          result{""};
   if (TS_SUCCESS == TSClientHelloExtensionGet(ch, EXT_ALPN, &buf, &buflen)) {
-    // The first two bytes are a 16bit encoding of the total length.
-    unsigned char first_ALPN_length{buf[2]};
-    TSAssert(buflen > 4);
-    TSAssert(0 != first_ALPN_length);
+    // The first two bytes are a 16bit encoding of the total length, followed by
+    // the length of the first protocol name. The shortest well-formed value
+    // therefore holds a one-byte name and occupies four bytes.
+    if (buflen < 4) {
+      return result;
+    }
+
+    unsigned char const first_ALPN_length{buf[2]};
+
+    if (0 == first_ALPN_length || first_ALPN_length > buflen - 3) {
+      return result;
+    }
+
     result.assign(&buf[3], (&buf[3]) + first_ALPN_length);
   }
 
