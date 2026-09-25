@@ -21,6 +21,9 @@
     limitations under the License.
 */
 
+#include <cstdio>
+#include <exception>
+
 #include "tscore/ink_config.h"
 #include <map>
 #include <list>
@@ -378,7 +381,7 @@ char reconnecting_animation[4] = {'|', '/', '-', '\\'};
 //----------------------------------------------------------------------------
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   static const char USAGE[] = "Usage: traffic_top [-s seconds]";
 
   int   sleep_time = 6; // In seconds
@@ -494,4 +497,10 @@ quit:
   endwin();
 
   return 0;
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_top: terminating on an unhandled exception: %s\n", ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "traffic_top: terminating on an unhandled exception\n");
+  return 1;
 }

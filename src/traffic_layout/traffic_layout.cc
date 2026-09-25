@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include "tscore/Layout.h"
 #include "tscore/runroot.h"
 #include "engine.h"
@@ -29,7 +32,7 @@ using namespace std::literals;
 
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   LayoutEngine engine;
 
   int i = 0;
@@ -77,4 +80,10 @@ main([[maybe_unused]] int argc, const char **argv)
   engine.arguments.invoke();
 
   return engine.status_code;
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_layout: terminating on an unhandled exception: %s\n", ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "traffic_layout: terminating on an unhandled exception\n");
+  return 1;
 }
