@@ -180,14 +180,31 @@ public:
 
     Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
 
-    Fire      fire{nh, now, e};
-    int const fired = nh.timer_wheel.expire(now, TIMEOUT_BUDGET, fire);
+    Fire             fire{nh, now, e};
+    ink_hrtime const started    = ink_get_hrtime();
+    int const        fired      = nh.timer_wheel.expire(now, TIMEOUT_BUDGET, fire);
+    int64_t const    elapsed_us = ink_hrtime_to_usec(ink_get_hrtime() - started);
 
     // The cop's own cost had no telemetry before the wheel, which is how an
     // O(N)-per-second sweep regressed unnoticed.
+    //
+    // The timing covers expire() only - the wheel walk plus the inline closes it
+    // dispatches - and deliberately not the keep-alive sweep below, so that
+    // pass_time_us divided by fired is a per-close figure and nothing else. Two
+    // clock reads per pass per thread is not worth gating behind a debug tag.
     Metrics::Counter::increment(net_rsb.inactivity_cop_visited, fire.visited);
+    Metrics::Counter::increment(net_rsb.inactivity_cop_passes);
+    Metrics::Counter::increment(net_rsb.inactivity_cop_fired, fired);
+    Metrics::Counter::increment(net_rsb.inactivity_cop_pass_time_us, elapsed_us);
     if (fired >= TIMEOUT_BUDGET) {
       Metrics::Counter::increment(net_rsb.inactivity_cop_budget_exhausted);
+    }
+
+    // Best-effort high-water mark: a concurrent update from another thread can
+    // lose a sample, which costs an underestimate of the worst pass and never a
+    // wrong value. Not worth a CAS loop for a diagnostic.
+    if (elapsed_us > Metrics::Gauge::load(net_rsb.inactivity_cop_pass_max_us)) {
+      Metrics::Gauge::store(net_rsb.inactivity_cop_pass_max_us, elapsed_us);
     }
 
     // Only the keep-alive queue needs sweeping here: it is bounded by
