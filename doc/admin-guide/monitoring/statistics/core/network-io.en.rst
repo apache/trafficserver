@@ -86,6 +86,33 @@ Network I/O
    connections came due together. A value that climbs steadily means the thread is retiring
    timeouts more slowly than they come due, and timeouts there are firing late.
    :type: counter
+.. ts:stat:: global proxy.process.net.inactivity_cop_passes integer
+   The number of inactivity cop passes made, across all threads. Chiefly a
+   denominator: divide the two metrics below by this for per-pass averages.
+   :type: counter
+.. ts:stat:: global proxy.process.net.inactivity_cop_fired integer
+   The total number of connections the inactivity cop has timed out. Compare
+   against :ts:stat:`proxy.process.net.inactivity_cop_visited`: the cop examines
+   a connection whose deadline came due but re-arms it without firing when the
+   deadline has since moved out, so ``visited`` is always at least ``fired``, and
+   a large gap means deadlines are being extended after being scheduled.
+   :type: counter
+.. ts:stat:: global proxy.process.net.inactivity_cop_pass_time_us integer
+   Accumulated microseconds spent in inactivity cop passes, covering the timer
+   wheel walk and the connection closes it dispatches inline. Divided by
+   :ts:stat:`proxy.process.net.inactivity_cop_fired` this gives the average cost
+   of timing out one connection, which is what determines how long a full-budget
+   pass can occupy an event thread.
+   :type: counter
+.. ts:stat:: global proxy.process.net.inactivity_cop_pass_max_us integer
+   The longest single inactivity cop pass observed, in microseconds. Because the
+   cop runs on an event thread, a pass of *N* microseconds delays that thread's
+   poll loop by *N* microseconds, so this is the latency a burst of simultaneous
+   timeouts imposes on unrelated connections. This is a best-effort high-water
+   mark updated without a lock, so simultaneous passes on different threads can
+   occasionally lose a sample; it may understate the true worst case but never
+   reports a value no pass took.
+   :type: gauge
 .. ts:stat:: global proxy.process.net.net_handler_run integer
    :type: counter
 
