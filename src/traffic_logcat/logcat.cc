@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
@@ -505,7 +508,7 @@ open_output_file(char *output_file_p)
 
 int
 main(int /* argc ATS_UNUSED */, const char *argv[])
-{
+try {
   enum {
     NO_ERROR              = 0,
     CMD_LINE_OPTION_ERROR = 1,
@@ -657,4 +660,10 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   }
 
   ::exit(error);
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_logcat: terminating on an unhandled exception: %s\n", ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "traffic_logcat: terminating on an unhandled exception\n");
+  return 1;
 }

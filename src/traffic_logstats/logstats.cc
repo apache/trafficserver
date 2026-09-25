@@ -22,6 +22,9 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "tscore/Layout.h"
@@ -2455,7 +2458,7 @@ open_main_log(ExitStatus &status)
 // main
 int
 main(int /* argc ATS_UNUSED */, const char *argv[])
-{
+try {
   ExitStatus   exit_status;
   int          res, cnt;
   int          main_fd;
@@ -2754,4 +2757,10 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     exit_status.append(" OK");
   }
   my_exit(exit_status);
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_logstats: terminating on an unhandled exception: %s\n", ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "traffic_logstats: terminating on an unhandled exception\n");
+  return 1;
 }

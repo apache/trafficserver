@@ -30,6 +30,9 @@
 
  ****************************************************************************/
 
+#include <cstdio>
+#include <exception>
+
 #include "iocore/aio/AIO.h"
 #include "iocore/cache/Store.h"
 #include "iocore/eventsystem/Watchdog.h"
@@ -1939,7 +1942,7 @@ configure_io_uring()
 //
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
-{
+try {
 #if TS_HAS_PROFILER
   HeapProfilerStart("/tmp/ts.hprof");
   ProfilerStart("/tmp/ts.prof");
@@ -2546,6 +2549,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     std::exit(1);
   }
 #endif
+} catch (std::exception const &ex) {
+  // ink_abort() rather than a return, so the core dump that std::terminate
+  // would have produced is still there to debug.
+  ink_abort("traffic_server: terminating on an unhandled exception: %s", ex.what());
+} catch (...) {
+  ink_abort("traffic_server: terminating on an unhandled exception");
 }
 
 namespace

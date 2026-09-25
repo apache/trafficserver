@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include <iostream>
 #include <csignal>
 
@@ -63,7 +66,7 @@ signal_register_handler(int signal_num, signal_handler_t handle_signal)
 
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   ts::ArgParser parser;
 
   std::unique_ptr<CtrlCommand> command;
@@ -396,4 +399,10 @@ main([[maybe_unused]] int argc, const char **argv)
   }
 
   return App_Exit_Status_Code;
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled exception: %s\n", ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled exception\n");
+  return 1;
 }
