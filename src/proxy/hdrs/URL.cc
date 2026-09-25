@@ -1206,17 +1206,12 @@ url_is_strictly_compliant(const char *start, const char *end)
 bool
 url_is_mostly_compliant(const char *start, const char *end)
 {
+  unsigned char bad = 0;
   for (const char *i = start; i < end; ++i) {
-    if (isspace(*i)) {
-      Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
-    if (!isprint(*i)) {
-      Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
+    unsigned char const c  = static_cast<unsigned char>(*i);
+    bad                   |= static_cast<unsigned char>((c < 0x21) | (c > 0x7E));
   }
-  return true;
+  return bad == 0;
 }
 
 } // namespace UrlImpl
