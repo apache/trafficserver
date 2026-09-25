@@ -58,6 +58,7 @@ cp tests/fuzzing/fuzz_* $OUT/
 mkdir -p tests/fuzzing/lib/
 cp -r tests/fuzzing/lib/ $OUT/
 cp $SRC/trafficserver/tests/fuzzing/*.zip  $OUT/
+zip -j $OUT/fuzz_chunked_seed_corpus.zip $SRC/trafficserver/tests/fuzzing/corpus/chunked/*
 
 cp /opt/h3-tools-boringssl/boringssl/lib/libssl.so $OUT/lib/
 cp /opt/h3-tools-boringssl/boringssl/lib/libcrypto.so $OUT/lib/
