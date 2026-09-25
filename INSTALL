@@ -9,7 +9,7 @@ For complete installation documentation, see the on-line documentation at
 Various popular platforms have up-to-date build instructions available
 online, at
 
-    https://cwiki.apache.org/confluence/display/TS/Building
+    https://docs.trafficserver.apache.org/en/latest/admin-guide/installation/index.en.html
 
 
 BUILD AND INSTALLATION
@@ -60,7 +60,7 @@ questions.  There are many valuable forums to help you get started.
 Please refer your questions to the appropriate forum, such as the
 Users Mailing List at
 
-    https://cwiki.apache.org/confluence/display/TS/Apache+Traffic+Server
+    https://github.com/apache/trafficserver/wiki
 
 Thanks for using the Apache Traffic Server.
 
