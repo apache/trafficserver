@@ -128,12 +128,23 @@ public:
       MAX_CONNECTIONS_IN,
       MAX_REQUESTS_IN,
       DEFAULT_INACTIVITY_TIMEOUT,
+      INACTIVITY_COP_BUDGET,
       COUNT ///< Number of config values, not a valid index.
     };
 
     uint32_t max_connections_in         = 0;
     uint32_t max_requests_in            = 0;
     uint32_t default_inactivity_timeout = 0;
+
+    /// Most timeouts one inactivity cop pass may fire before yielding.
+    ///
+    /// Tunable because it is a latency policy, not a correctness setting. A cop
+    /// pass runs on an event thread, so a pass that fires N timeouts delays that
+    /// thread's poll loop for as long as those N closes take. Reaping idle
+    /// connections is low priority work, so trading a longer total reap for
+    /// smaller slices is usually the right call: anything left over is picked up
+    /// a millisecond later rather than waiting for the next tick.
+    uint32_t inactivity_cop_budget = 4096;
 
     /// The config value identified by @a idx.
     uint32_t &
@@ -146,6 +157,8 @@ public:
         return max_requests_in;
       case Index::DEFAULT_INACTIVITY_TIMEOUT:
         return default_inactivity_timeout;
+      case Index::INACTIVITY_COP_BUDGET:
+        return inactivity_cop_budget;
       case Index::COUNT:
         break;
       }
