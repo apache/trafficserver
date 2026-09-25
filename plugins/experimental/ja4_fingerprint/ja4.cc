@@ -156,6 +156,16 @@ JA4::make_JA4_c_raw(TLSClientHelloSummary const &TLS_summary)
     result.push_back(',');
   }
   remove_trailing_character(result);
+
+  auto const &sig_algs = TLS_summary.get_signature_algorithms();
+  if (!sig_algs.empty()) {
+    result.push_back(JA4::PORTION_DELIMITER);
+    for (auto alg : sig_algs) {
+      result.append(hexify(alg));
+      result.push_back(',');
+    }
+    remove_trailing_character(result);
+  }
   return result;
 }
 

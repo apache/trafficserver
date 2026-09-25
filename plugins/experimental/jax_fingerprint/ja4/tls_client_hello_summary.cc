@@ -177,33 +177,12 @@ TLSClientHelloSummary::get_cipher_suites_hash(unsigned char out[32])
 void
 TLSClientHelloSummary::get_extension_hash(unsigned char out[32])
 {
-  if (this->_n_extensions == 0) {
-    memset(out, 0, 32);
-    return;
+  unsigned char const *sig_algs     = nullptr;
+  size_t               sig_algs_len = 0;
+
+  if (TS_SUCCESS != TSClientHelloExtensionGet(this->_ch, EXT_SIGNATURE_ALGORITHMS, &sig_algs, &sig_algs_len)) {
+    sig_algs     = nullptr;
+    sig_algs_len = 0;
   }
-
-  SHA256_CTX sha256ctx;
-  SHA256_Init(&sha256ctx);
-
-  for (int i = 0; i < this->_n_extensions; ++i) {
-    char  buf[5];
-    char *p = buf;
-    if (i != 0) {
-      *p  = ',';
-      p  += 1;
-    }
-    uint16_t &extension  = this->_extensions[i];
-    uint8_t   h1         = (extension & 0xF000) >> 12;
-    uint8_t   l1         = (extension & 0x0F00) >> 8;
-    uint8_t   h2         = (extension & 0x00F0) >> 4;
-    uint8_t   l2         = extension & 0x000F;
-    p[0]                 = h1 <= 9 ? ('0' + h1) : ('a' + h1 - 10);
-    p[1]                 = l1 <= 9 ? ('0' + l1) : ('a' + l1 - 10);
-    p[2]                 = h2 <= 9 ? ('0' + h2) : ('a' + h2 - 10);
-    p[3]                 = l2 <= 9 ? ('0' + l2) : ('a' + l2 - 10);
-    p                   += 4;
-    SHA256_Update(&sha256ctx, buf, p - buf);
-  }
-
-  SHA256_Final(out, &sha256ctx);
+  this->_hash_extensions(out, this->_extensions, this->_n_extensions, sig_algs, sig_algs_len);
 }

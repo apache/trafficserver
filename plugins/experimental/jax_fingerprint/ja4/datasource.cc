@@ -21,8 +21,11 @@
 
 #include "datasource.h"
 
+#include <openssl/sha.h>
+
 #include <array>
 #include <algorithm>
+#include <cstring>
 
 constexpr std::array<std::uint16_t, 16> GREASE_values{0x0a0a, 0x1a1a, 0x2a2a, 0x3a3a, 0x4a4a, 0x5a5a, 0x6a6a, 0x7a7a,
                                                       0x8a8a, 0x9a9a, 0xaaaa, 0xbaba, 0xcaca, 0xdada, 0xeaea, 0xfafa};
@@ -70,4 +73,56 @@ bool
 ja4::Datasource::_is_GREASE(uint16_t value)
 {
   return std::binary_search(GREASE_values.begin(), GREASE_values.end(), value);
+}
+
+static void
+update_with_hex(SHA256_CTX &ctx, char separator, uint16_t value)
+{
+  char  buf[5];
+  char *p = buf;
+
+  if (separator != '\0') {
+    *p++ = separator;
+  }
+  for (int shift = 12; shift >= 0; shift -= 4) {
+    uint8_t nibble = (value >> shift) & 0xF;
+    *p++           = nibble <= 9 ? ('0' + nibble) : ('a' + nibble - 10);
+  }
+  SHA256_Update(&ctx, buf, p - buf);
+}
+
+void
+ja4::Datasource::_hash_extensions(unsigned char out[32], uint16_t const *sorted_extensions, int n_extensions,
+                                  unsigned char const *sig_algs, size_t sig_algs_len)
+{
+  SHA256_CTX ctx;
+  bool       hashed_any = false;
+
+  SHA256_Init(&ctx);
+  for (int i = 0; i < n_extensions; ++i) {
+    update_with_hex(ctx, i == 0 ? '\0' : ',', sorted_extensions[i]);
+    hashed_any = true;
+  }
+
+  // The extension body is a 2-byte length followed by 2-byte algorithm codes, hashed in wire order.
+  if (sig_algs != nullptr && sig_algs_len >= 2) {
+    size_t end         = std::min(sig_algs_len, 2 + ((static_cast<size_t>(sig_algs[0]) << 8) | sig_algs[1]));
+    bool   hashed_algs = false;
+
+    for (size_t i = 2; i + 1 < end; i += 2) {
+      uint16_t alg = (static_cast<uint16_t>(sig_algs[i]) << 8) | sig_algs[i + 1];
+      if (this->_is_GREASE(alg)) {
+        continue;
+      }
+      update_with_hex(ctx, hashed_algs ? ',' : '_', alg);
+      hashed_algs = true;
+      hashed_any  = true;
+    }
+  }
+
+  if (!hashed_any) {
+    memset(out, 0, 32);
+    return;
+  }
+  SHA256_Final(out, &ctx);
 }

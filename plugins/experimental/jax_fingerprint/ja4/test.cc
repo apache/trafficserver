@@ -30,7 +30,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #include <cstring>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -85,34 +87,10 @@ public:
   void
   get_extension_hash(unsigned char out[32]) override
   {
-    if (this->_extensions.empty()) {
-      memset(out, 0, 32);
-      return;
-    }
     auto sorted = this->_extensions;
     std::sort(sorted.begin(), sorted.end());
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
-    for (size_t i = 0; i < sorted.size(); ++i) {
-      char  buf[5];
-      char *p = buf;
-      if (i != 0) {
-        *p  = ',';
-        p  += 1;
-      }
-      uint16_t e   = sorted[i];
-      uint8_t  h1  = (e & 0xF000) >> 12;
-      uint8_t  l1  = (e & 0x0F00) >> 8;
-      uint8_t  h2  = (e & 0x00F0) >> 4;
-      uint8_t  l2  = e & 0x000F;
-      p[0]         = h1 <= 9 ? ('0' + h1) : ('a' + h1 - 10);
-      p[1]         = l1 <= 9 ? ('0' + l1) : ('a' + l1 - 10);
-      p[2]         = h2 <= 9 ? ('0' + h2) : ('a' + h2 - 10);
-      p[3]         = l2 <= 9 ? ('0' + l2) : ('a' + l2 - 10);
-      p           += 4;
-      SHA256_Update(&ctx, buf, p - buf);
-    }
-    SHA256_Final(out, &ctx);
+    this->_hash_extensions(out, sorted.data(), static_cast<int>(sorted.size()),
+                           this->_sig_algs.empty() ? nullptr : this->_sig_algs.data(), this->_sig_algs.size());
   }
 
   void
@@ -161,11 +139,18 @@ public:
     this->_extensions.push_back(extension);
   }
 
+  void
+  set_signature_algorithms_extension(std::vector<unsigned char> body)
+  {
+    this->_sig_algs = std::move(body);
+  }
+
 private:
   std::string _first_alpn;
 
   std::vector<std::uint16_t> _ciphers;
   std::vector<std::uint16_t> _extensions;
+  std::vector<unsigned char> _sig_algs;
   SNI                        _SNI_type{SNI::to_IP};
 };
 
@@ -521,6 +506,75 @@ TEST_CASE("JA4")
     datasource.add_extension(2);
     datasource.add_extension(3);
     CHECK(36 == call_JA4(datasource).size());
+  }
+}
+
+// The worked example from https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md.
+TEST_CASE("JA4 specification example")
+{
+  MockDatasource datasource{};
+
+  datasource.set_protocol(ja4::Datasource::Protocol::TLS);
+  datasource.set_version(0x304);
+  datasource.set_first_alpn("h2");
+  for (std::uint16_t cipher :
+       {0x1301, 0x1302, 0x1303, 0xc02b, 0xc02f, 0xc02c, 0xc030, 0xcca9, 0xcca8, 0xc013, 0xc014, 0x009c, 0x009d, 0x002f, 0x0035}) {
+    datasource.add_cipher(cipher);
+  }
+  for (std::uint16_t extension : {0x001b, 0x0000, 0x0033, 0x0010, 0x4469, 0x0017, 0x002d, 0x000d, 0x0005, 0x0023, 0x0012, 0x002b,
+                                  0xff01, 0x000b, 0x000a, 0x0015}) {
+    datasource.add_extension(extension);
+  }
+
+  SECTION("Given the signature algorithms from the example, "
+          "when we create a JA4 fingerprint, "
+          "then it should match the one published in the specification.")
+  {
+    datasource.set_signature_algorithms_extension(
+      {0x00, 0x10, 0x04, 0x03, 0x08, 0x04, 0x04, 0x01, 0x05, 0x03, 0x08, 0x05, 0x05, 0x01, 0x08, 0x06, 0x06, 0x01});
+    CHECK("t13d1516h2_8daaf6152771_e5627efa2ab1" == call_JA4(datasource));
+  }
+
+  SECTION("Given GREASE values in the signature algorithms, "
+          "when we create a JA4 fingerprint, "
+          "then they should be ignored.")
+  {
+    datasource.set_signature_algorithms_extension({0x00, 0x14, 0x0a, 0x0a, 0x04, 0x03, 0x08, 0x04, 0x04, 0x01, 0x05,
+                                                   0x03, 0x08, 0x05, 0x05, 0x01, 0x08, 0x06, 0x06, 0x01, 0xfa, 0xfa});
+    CHECK("t13d1516h2_8daaf6152771_e5627efa2ab1" == call_JA4(datasource));
+  }
+
+  SECTION("Given no signature_algorithms extension, "
+          "when we create a JA4 fingerprint, "
+          "then the c section should match the one published in the specification.")
+  {
+    CHECK("6d807ffa2a79" == call_JA4(datasource).substr(24, 12));
+  }
+
+  SECTION("Given only GREASE values in the signature algorithms, "
+          "when we create a JA4 fingerprint, "
+          "then the c section should be hashed without the underscore.")
+  {
+    datasource.set_signature_algorithms_extension({0x00, 0x02, 0x0a, 0x0a});
+    CHECK("6d807ffa2a79" == call_JA4(datasource).substr(24, 12));
+  }
+
+  SECTION("Given a signature algorithms list shorter than the extension, "
+          "when we create a JA4 fingerprint, "
+          "then only the algorithms within the declared length should be hashed.")
+  {
+    datasource.set_signature_algorithms_extension({0x00, 0x02, 0x04, 0x03, 0x08, 0x04});
+    CHECK(SHA256_12("0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01_0403") ==
+          call_JA4(datasource).substr(24, 12));
+  }
+
+  SECTION("Given a signature algorithms list longer than the extension, "
+          "when we create a JA4 fingerprint, "
+          "then only the algorithms present should be hashed.")
+  {
+    datasource.set_signature_algorithms_extension({0x00, 0x10, 0x04, 0x03, 0x08});
+    CHECK(SHA256_12("0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01_0403") ==
+          call_JA4(datasource).substr(24, 12));
   }
 }
 
