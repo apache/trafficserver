@@ -194,13 +194,92 @@ public:
     nh.manage_active_queue(nullptr, true); // close any connections over the active timeout
     nh.manage_keep_alive_queue();
 
+    // Opt-in only: the check itself is the O(N) walk the wheel exists to avoid.
+    if (dbg_ctl_inactivity_cop_audit.on() && ++_passes_since_audit >= AUDIT_INTERVAL) {
+      _passes_since_audit = 0;
+      audit(now);
+    }
+
     return fired;
+  }
+
+  /** Walk every connection on the thread looking for ones the wheel will never
+   * visit. Returns the number of anomalies found.
+   *
+   * This is the TS-4131 failure mode made detectable. That bug - the cop not
+   * closing connections whose active timeout had expired - was worked around by
+   * having the cop force a full scan of the active queue every tick. The wheel
+   * removes the need for that scan, but "the cop silently stopped visiting a
+   * connection" is exactly the class of bug this refactor hit repeatedly, so the
+   * check survives as opt-in diagnostics instead of as a hot path.
+   *
+   * Only two states are anomalies:
+   *
+   *   - a live deadline with no wheel entry: nothing will ever visit it, so it
+   *     can never time out;
+   *   - a wheel entry whose cached deadline is *later* than the true one, which
+   *     violates the never-later rule and fires late.
+   *
+   * Being merely overdue is not an anomaly: the cop legitimately lags when it
+   * hits TIMEOUT_BUDGET. That case is reported separately, not counted.
+   *
+   * O(connections on the thread), so it is gated on the inactivity_cop_audit
+   * debug tag and only runs every AUDIT_INTERVAL passes.
+   */
+  int
+  audit(ink_hrtime now)
+  {
+    NetHandler &nh        = _nh;
+    int         anomalies = 0;
+    int         overdue   = 0;
+
+    forl_LL(NetEvent, ne, nh.open_list)
+    {
+      ink_hrtime const deadline  = nh._earliest_deadline(ne);
+      bool const       scheduled = nh.timer_wheel.is_scheduled(ne);
+
+      if (deadline == 0) {
+        continue; // no timeout wanted; not being scheduled is correct
+      }
+
+      if (!scheduled) {
+        ++anomalies;
+        Dbg(dbg_ctl_inactivity_cop_audit,
+            "LOST ne: %p deadline: %" PRId64 " is live but not scheduled; active_queue: %d keep_alive_queue: %d", ne,
+            ink_hrtime_to_sec(deadline), nh.active_queue.in(ne) ? 1 : 0, nh.keep_alive_queue.in(ne) ? 1 : 0);
+        continue;
+      }
+
+      if (ne->timer_hook.deadline > deadline) {
+        ++anomalies;
+        Dbg(dbg_ctl_inactivity_cop_audit, "LATE ne: %p cached deadline %" PRId64 " is later than true deadline %" PRId64, ne,
+            ink_hrtime_to_sec(ne->timer_hook.deadline), ink_hrtime_to_sec(deadline));
+        continue;
+      }
+
+      if (deadline < now - AUDIT_SLACK) {
+        ++overdue;
+      }
+    }
+
+    Dbg(dbg_ctl_inactivity_cop_audit, "audit on Thread-ID #%d: %d anomalies, %d overdue but scheduled", this_ethread()->id,
+        anomalies, overdue);
+    return anomalies;
   }
 
 private:
   NetHandler &_nh;
 
+  // Passes between audits, and how far past its deadline a connection may be
+  // before it is worth mentioning. The cop lags by up to a tick normally, and
+  // further when it hits TIMEOUT_BUDGET, so the slack is deliberately loose.
+  static constexpr int        AUDIT_INTERVAL = 60;
+  static constexpr ink_hrtime AUDIT_SLACK    = 2 * TimerWheel<NetEvent>::TICK;
+
+  int _passes_since_audit = 0;
+
   static inline DbgCtl dbg_ctl_inactivity_cop{"inactivity_cop"};
   static inline DbgCtl dbg_ctl_inactivity_cop_check{"inactivity_cop_check"};
   static inline DbgCtl dbg_ctl_inactivity_cop_verbose{"inactivity_cop_verbose"};
+  static inline DbgCtl dbg_ctl_inactivity_cop_audit{"inactivity_cop_audit"};
 };
