@@ -45,6 +45,28 @@ struct Http2HeaderName {
 
 static VersionConverter hvc;
 
+void
+establish_flow_control_policy(const char *name, std::atomic<Http2FlowControlPolicy> &policy)
+{
+  auto update = [](const char *name, RecDataT type, RecData data, void *cookie) -> int {
+    ink_assert(type == RECD_INT);
+    RecInt value = data.rec_int;
+
+    if (value < 0 || value > 2) {
+      Error("Invalid value for %s: %" PRId64, name, value);
+      value = 0;
+    }
+    static_cast<std::atomic<Http2FlowControlPolicy> *>(cookie)->store(static_cast<Http2FlowControlPolicy>(value),
+                                                                      std::memory_order_relaxed);
+    return REC_ERR_OKAY;
+  };
+  RecData data;
+
+  RecRegisterConfigUpdateCb(name, update, &policy);
+  data.rec_int = RecGetRecordInt(name).value_or(0);
+  update(name, RECD_INT, data, &policy);
+}
+
 } // namespace
 
 // Statistics
@@ -460,17 +482,17 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 }
 
 // Initialize this subsystem with librecords configs (for now)
-uint32_t               Http2::max_concurrent_streams_in    = 100;
-uint32_t               Http2::min_concurrent_streams_in    = 10;
-uint32_t               Http2::max_active_streams_in        = 200000;
-uint32_t               Http2::max_active_streams_policy_in = 0;
-bool                   Http2::throttling                   = false;
-uint32_t               Http2::stream_priority_enabled      = 0;
-uint32_t               Http2::initial_window_size_in       = 65535;
-Http2FlowControlPolicy Http2::flow_control_policy_in       = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
-uint32_t               Http2::max_frame_size               = 16384;
-uint32_t               Http2::header_table_size            = 4096;
-uint32_t               Http2::max_header_list_size         = 4294967295;
+uint32_t                            Http2::max_concurrent_streams_in    = 100;
+uint32_t                            Http2::min_concurrent_streams_in    = 10;
+uint32_t                            Http2::max_active_streams_in        = 200000;
+uint32_t                            Http2::max_active_streams_policy_in = 0;
+bool                                Http2::throttling                   = false;
+uint32_t                            Http2::stream_priority_enabled      = 0;
+uint32_t                            Http2::initial_window_size_in       = 65535;
+std::atomic<Http2FlowControlPolicy> Http2::flow_control_policy_in{Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM};
+uint32_t                            Http2::max_frame_size       = 16384;
+uint32_t                            Http2::header_table_size    = 4096;
+uint32_t                            Http2::max_header_list_size = 4294967295;
 
 uint32_t Http2::accept_no_activity_timeout   = 120;
 uint32_t Http2::no_activity_timeout_in       = 120;
@@ -479,12 +501,12 @@ uint32_t Http2::incomplete_header_timeout_in = 10;
 uint32_t Http2::push_diary_size              = 256;
 uint32_t Http2::zombie_timeout_in            = 0;
 
-uint32_t               Http2::max_concurrent_streams_out = 100;
-uint32_t               Http2::min_concurrent_streams_out = 10;
-uint32_t               Http2::max_active_streams_out     = 0;
-uint32_t               Http2::initial_window_size_out    = 65535;
-Http2FlowControlPolicy Http2::flow_control_policy_out    = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
-uint32_t               Http2::no_activity_timeout_out    = 120;
+uint32_t                            Http2::max_concurrent_streams_out = 100;
+uint32_t                            Http2::min_concurrent_streams_out = 10;
+uint32_t                            Http2::max_active_streams_out     = 0;
+uint32_t                            Http2::initial_window_size_out    = 65535;
+std::atomic<Http2FlowControlPolicy> Http2::flow_control_policy_out{Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM};
+uint32_t                            Http2::no_activity_timeout_out = 120;
 
 float    Http2::stream_error_rate_threshold        = 0.1;
 uint32_t Http2::stream_error_sampling_threshold    = 10;
@@ -519,22 +541,10 @@ Http2::init()
   RecEstablishStaticConfigUInt32(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
 
   RecEstablishStaticConfigUInt32(initial_window_size_in, "proxy.config.http2.initial_window_size_in");
-  uint32_t flow_control_policy_in_int = 0;
-  RecEstablishStaticConfigUInt32(flow_control_policy_in_int, "proxy.config.http2.flow_control.policy_in");
-  if (flow_control_policy_in_int > 2) {
-    Error("Invalid value for proxy.config.http2.flow_control.policy_in: %d", flow_control_policy_in_int);
-    flow_control_policy_in_int = 0;
-  }
-  flow_control_policy_in = static_cast<Http2FlowControlPolicy>(flow_control_policy_in_int);
+  establish_flow_control_policy("proxy.config.http2.flow_control.policy_in", flow_control_policy_in);
 
   RecEstablishStaticConfigUInt32(initial_window_size_out, "proxy.config.http2.initial_window_size_out");
-  uint32_t flow_control_policy_out_int = 0;
-  RecEstablishStaticConfigUInt32(flow_control_policy_out_int, "proxy.config.http2.flow_control.policy_out");
-  if (flow_control_policy_out_int > 2) {
-    Error("Invalid value for proxy.config.http2.flow_control.policy_out: %d", flow_control_policy_out_int);
-    flow_control_policy_out_int = 0;
-  }
-  flow_control_policy_out = static_cast<Http2FlowControlPolicy>(flow_control_policy_out_int);
+  establish_flow_control_policy("proxy.config.http2.flow_control.policy_out", flow_control_policy_out);
 
   RecEstablishStaticConfigUInt32(max_frame_size, "proxy.config.http2.max_frame_size");
   RecEstablishStaticConfigUInt32(header_table_size, "proxy.config.http2.header_table_size");
