@@ -173,6 +173,9 @@ NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, vo
   } else if (name == "proxy.config.net.default_inactivity_timeout"sv) {
     updated_index = Config::Index::DEFAULT_INACTIVITY_TIMEOUT;
     Dbg(dbg_ctl_net_queue, "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.inactivity_cop_budget"sv) {
+    updated_index = Config::Index::INACTIVITY_COP_BUDGET;
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.inactivity_cop_budget updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.additional_accepts"sv) {
     NetHandler::additional_accepts.store(data.rec_int, std::memory_order_relaxed);
     Dbg(dbg_ctl_net_queue, "proxy.config.net.additional_accepts updated to %" PRId64, data.rec_int);
@@ -211,6 +214,7 @@ NetHandler::init_for_process()
   global_config.max_connections_in         = RecGetRecordInt("proxy.config.net.max_connections_in").value_or(0);
   global_config.max_requests_in            = RecGetRecordInt("proxy.config.net.max_requests_in").value_or(0);
   global_config.default_inactivity_timeout = RecGetRecordInt("proxy.config.net.default_inactivity_timeout").value_or(0);
+  global_config.inactivity_cop_budget      = RecGetRecordInt("proxy.config.net.inactivity_cop_budget").value_or(4096);
 
   // Atomic configurations.
   {
@@ -227,6 +231,7 @@ NetHandler::init_for_process()
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.max_requests_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.inactivity_cop_budget", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.additional_accepts", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.per_client.max_connections_in", update_nethandler_config, nullptr);
 

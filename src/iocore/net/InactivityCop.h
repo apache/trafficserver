@@ -45,9 +45,10 @@
 class InactivityCop : public Continuation
 {
 public:
-  // A tick's worth of due elements is normally tiny; this is only a guard
-  // against one correlated wave monopolizing the thread. Anything deferred
-  // past the budget is picked up TIMEOUT_CONTINUE_DELAY later.
+  // Fallback budget, used only if the configured value is unusable. A tick's
+  // worth of due elements is normally tiny; the budget is only a guard against
+  // one correlated wave monopolizing the thread. Anything deferred past it is
+  // picked up TIMEOUT_CONTINUE_DELAY later, not on the next tick.
   static constexpr int TIMEOUT_BUDGET = 4096;
 
   // Deliberately not schedule_imm(): an immediate event is dispatched inline by
@@ -147,10 +148,25 @@ public:
     }
   };
 
+  /// Timeouts one pass may fire, from config, with the fallback applied.
+  ///
+  /// expire() treats a budget of 0 as "do nothing and leave the wheel alone", so
+  /// a misconfigured 0 here would silently stop every timeout in the process --
+  /// connections would accumulate with no error and no metric moving. The records
+  /// schema rejects 0, and this is the second line of defence for a value that
+  /// arrived some other way.
+  int
+  budget() const
+  {
+    uint32_t const configured = _nh.config.inactivity_cop_budget;
+
+    return configured > 0 ? static_cast<int>(configured) : TIMEOUT_BUDGET;
+  }
+
   int
   check_inactivity(int /* event */, Event *e)
   {
-    if (run(ink_get_hrtime(), e) >= TIMEOUT_BUDGET) {
+    if (run(ink_get_hrtime(), e) >= budget()) {
       // Deadlines are still due, so come back shortly instead of waiting out
       // the rest of the tick. The budget bounds how long one pass can hold the
       // poll thread; it is not a cap on how much work a tick may retire.
@@ -170,8 +186,8 @@ public:
    * deadline comparison in a pass uses this one timestamp.
    *
    * Scheduling policy stays in the handler, so driving this directly does not
-   * queue events. Returns the number of timeouts fired; reaching
-   * TIMEOUT_BUDGET means more are already due.
+   * queue events. Returns the number of timeouts fired; reaching the budget
+   * means more are already due.
    */
   int
   run(ink_hrtime now, Event *e)
@@ -181,9 +197,10 @@ public:
     Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
 
     Fire             fire{nh, now, e};
-    ink_hrtime const started    = ink_get_hrtime();
-    int const        fired      = nh.timer_wheel.expire(now, TIMEOUT_BUDGET, fire);
-    int64_t const    elapsed_us = ink_hrtime_to_usec(ink_get_hrtime() - started);
+    int const        pass_budget = budget();
+    ink_hrtime const started     = ink_get_hrtime();
+    int const        fired       = nh.timer_wheel.expire(now, pass_budget, fire);
+    int64_t const    elapsed_us  = ink_hrtime_to_usec(ink_get_hrtime() - started);
 
     // The cop's own cost had no telemetry before the wheel, which is how an
     // O(N)-per-second sweep regressed unnoticed.
@@ -196,7 +213,7 @@ public:
     Metrics::Counter::increment(net_rsb.inactivity_cop_passes);
     Metrics::Counter::increment(net_rsb.inactivity_cop_fired, fired);
     Metrics::Counter::increment(net_rsb.inactivity_cop_pass_time_us, elapsed_us);
-    if (fired >= TIMEOUT_BUDGET) {
+    if (fired >= pass_budget) {
       Metrics::Counter::increment(net_rsb.inactivity_cop_budget_exhausted);
     }
 
