@@ -105,6 +105,13 @@ enum AccessTokenStatus {
   MAX,
 };
 
+enum class ScopeValidationResult {
+  IN_SCOPE,
+  OUT_OF_SCOPE,
+  INVALID_SCOPE,
+  INVALID_REQUEST_PATH,
+};
+
 const char *accessTokenStatusToString(const AccessTokenStatus &state);
 
 /**
@@ -116,7 +123,8 @@ const char *accessTokenStatusToString(const AccessTokenStatus &state);
  * @param[in] scope The scope string extracted from the token.
  * @return True if the path is permitted by the scope, false otherwise.
  */
-bool validateScope(StringView requestPath, StringView scope);
+ScopeValidationResult validateScopeDetailed(StringView requestPath, StringView Scope);
+bool                  validateScope(StringView requestPath, StringView scope);
 
 /**
  *  Base Access Token class / interface + some basic implementations.

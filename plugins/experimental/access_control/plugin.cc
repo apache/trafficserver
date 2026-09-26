@@ -529,15 +529,18 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
           remapStatus =
             handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);
         } else {
-          int         pathLen = 0;
-          const char *path    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathLen);
-          if (path == nullptr) {
-            pathLen = 0;
-          }
-          StringView reqPath(path ? path : "", pathLen);
-
-          if (!validateScope(reqPath, token->getScope())) {
-            data->_vaState = OUT_OF_SCOPE;
+          int                   pathLen = 0;
+          const char           *path    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathLen);
+          StringView            reqPath(path ? path : "", pathLen);
+          ScopeValidationResult scopeResult = validateScopeDetailed(reqPath, token->getScope());
+          if (scopeResult != ScopeValidationResult::IN_SCOPE) {
+            if (scopeResult == ScopeValidationResult::INVALID_SCOPE) {
+              data->_vaState = INVALID_SCOPE;
+            } else if (scopeResult == ScopeValidationResult::INVALID_REQUEST_PATH) {
+              data->_vaState = INVALID_SYNTAX;
+            } else {
+              data->_vaState = OUT_OF_SCOPE;
+            }
             remapStatus =
               handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);
           } else {
