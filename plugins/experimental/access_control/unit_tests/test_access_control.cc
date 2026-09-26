@@ -170,3 +170,78 @@ TEST_CASE("AssetToken: simple HMAC SHA256 signature test", "[AssetToken][access_
   CHECK(INVALID_SIGNATURE == token.validateSignature());
   // DEBUG_OUT("Dumping token" << std::endl << token);
 }
+
+TEST_CASE("AccessToken: scope validation", "[AccessToken][access_control][scope]")
+{
+  SECTION("empty scope allows any request path")
+  {
+    CHECK(validateScope("/reports/2026/", "") == true);
+    CHECK(validateScope("/any/path/", "") == true);
+    CHECK(validateScope("/", "") == true);
+  }
+
+  SECTION("exact match and trailing slashes")
+  {
+    CHECK(validateScope("/reports", "/reports") == true);
+    CHECK(validateScope("/reports/", "/reports") == true);
+    CHECK(validateScope("/reports", "/reports/") == true);
+  }
+
+  SECTION("valid subpath matching")
+  {
+    CHECK(validateScope("/reports/2026/", "/reports/") == true);
+    CHECK(validateScope("/reports/2026/annual.pdf", "/reports") == true);
+    CHECK(validateScope("/api/v1/users/123", "/api/v1/users") == true);
+  }
+
+  SECTION("segment boundary enforcement")
+  {
+    CHECK(validateScope("/reports2/", "/reports/") == false);
+    CHECK(validateScope("/api/v1/users_admin", "/api/v1/users") == false);
+  }
+
+  SECTION("mismatched paths")
+  {
+    CHECK(validateScope("/other/", "/reports/") == false);
+    CHECK(validateScope("/reports", "/reports/2026") == false);
+  }
+
+  SECTION("normalization and edge cases")
+  {
+    CHECK(validateScope("/anything", "/") == true);
+    CHECK(validateScope("reports/2026/", "/reports/") == true);
+    CHECK(validateScope("//reports///2026//", "/reports") == true);
+  }
+
+  SECTION("path traversal security")
+  {
+    CHECK(validateScope("/reports/../hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/%2e%2e%2fhr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/..\\hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/hr/payroll", "/reports/..") == false);
+    CHECK(validateScope("/reports/%", "/reports/") == false);
+    CHECK(validateScope("/reports+archive", "/reports+archive") == true);
+  }
+}
+
+TEST_CASE("AccessToken: token scope claim integration", "[AccessToken][access_control][scope]")
+{
+  KvpAccessTokenConfig tokenConfig;
+
+  KvpAccessTokenBuilder atb(tokenConfig, secrets);
+  atb.addSubject("FinanceUser");
+  atb.addExpiration(1234567);
+  atb.addNotBefore(2345678);
+  atb.addIssuedAt(3456789);
+  atb.addTokenId("tokenidvalue");
+  atb.addVersion("1");
+  atb.addScope("/finance/");
+  atb.sign("1", WDN_HASH_SHA256);
+
+  KvpAccessToken token(tokenConfig, secrets, enableDebug);
+  CHECK(VALID == token.parse(atb.get()));
+  CHECK(token.getScope() == "/finance/");
+
+  CHECK(validateScope("/finance/q4_report.pdf", token.getScope()) == true);
+  CHECK(validateScope("/hr/payroll", token.getScope()) == false);
+}
