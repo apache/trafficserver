@@ -401,8 +401,8 @@ try {
   return App_Exit_Status_Code;
 } catch (std::exception const &ex) {
   fprintf(stderr, "traffic_ctl: terminating on an unhandled exception: %s\n", ex.what());
-  return 1;
+  return CTRL_EX_ERROR;
 } catch (...) {
   fprintf(stderr, "traffic_ctl: terminating on an unhandled exception\n");
-  return 1;
+  return CTRL_EX_ERROR;
 }

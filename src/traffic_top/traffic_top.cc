@@ -379,6 +379,22 @@ enum class HostStatus { UP, DOWN };
 char reconnecting_animation[4] = {'|', '/', '-', '\\'};
 
 //----------------------------------------------------------------------------
+namespace
+{
+/// Whether initscr() has run, so an exception handler knows if the terminal
+/// needs putting back. Calling endwin() without initscr() is undefined.
+bool curses_started = false;
+
+void
+restore_terminal()
+{
+  if (curses_started) {
+    endwin();
+    curses_started = false;
+  }
+}
+} // namespace
+
 int
 main([[maybe_unused]] int argc, const char **argv)
 try {
@@ -415,6 +431,7 @@ try {
   const string &host = stats.getHost();
 
   initscr();
+  curses_started = true;
   curs_set(0);
 
   start_color(); /* Start color functionality	*/
@@ -498,9 +515,11 @@ quit:
 
   return 0;
 } catch (std::exception const &ex) {
+  restore_terminal();
   fprintf(stderr, "traffic_top: terminating on an unhandled exception: %s\n", ex.what());
   return 1;
 } catch (...) {
+  restore_terminal();
   fprintf(stderr, "traffic_top: terminating on an unhandled exception\n");
   return 1;
 }
