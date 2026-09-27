@@ -124,7 +124,7 @@ def test_stats_over_http_prometheus_cache(ats_factory: ATSFactory, services: Ser
             families = ["plugin_test_metrics_requests_post=1"]
         scrape(services, ats, f"changed-{i}", path, help_lines, expect, families, wait=True)
 
-    # Renders on other threads that overlap one that uses the cache render without it.  Each body must still be complete.
+    # Concurrent requests share a render.  Each body must still be complete.
     for i, (path, help_lines, v2) in enumerate([ENDPOINTS[0], ENDPOINTS[-1]]):
         if v2:
             expect = ['plugin_test_metrics_requests{method="post"} 2', "plugin_test_metrics_late 7"]
