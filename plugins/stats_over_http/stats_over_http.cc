@@ -499,7 +499,7 @@ json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* regist
     APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    APPEND_STAT_JSON_NUMERIC(name, "%" PRId64, datum->rec_int);
     break;
   case TS_RECORDDATATYPE_FLOAT:
     APPEND_STAT_JSON_NUMERIC(name, "%f", datum->rec_float);
@@ -523,7 +523,7 @@ csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registe
     APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    APPEND_STAT_CSV_NUMERIC(name, "%" PRId64, datum->rec_int);
     break;
   case TS_RECORDDATATYPE_FLOAT:
     APPEND_STAT_CSV_NUMERIC(name, "%f", datum->rec_float);
@@ -768,7 +768,7 @@ format_prometheus_v2_sample(std::string &sample, const std::string &name, const 
   if (data_type == TS_RECORDDATATYPE_COUNTER) {
     len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(datum->rec_counter));
   } else if (data_type == TS_RECORDDATATYPE_INT) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(datum->rec_int));
+    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRId64 "\n", datum->rec_int);
   } else if (data_type == TS_RECORDDATATYPE_FLOAT) {
     len = snprintf(val_buffer, sizeof(val_buffer), "%g\n", datum->rec_float);
   }
@@ -865,7 +865,7 @@ prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* 
     APPEND("# TYPE ");
     APPEND(sanitized_name.c_str());
     APPEND(" gauge\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRId64, datum->rec_int);
     break;
   case TS_RECORDDATATYPE_FLOAT:
     APPEND("# HELP ");

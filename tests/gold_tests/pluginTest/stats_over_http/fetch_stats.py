@@ -21,6 +21,7 @@ import argparse
 import gzip
 import http.client
 import json
+import re
 import socket
 import struct
 import subprocess
@@ -78,6 +79,18 @@ def fetch_and_verify(args: argparse.Namespace) -> int:
     if values != list(range(args.count)):
         print(f'Found {len(values)} test metrics, expected {args.count} with values 0 to {args.count - 1}')
         return 1
+    lines = body.split('\n')
+    missing = False
+    for expected in args.expect:
+        if any(lines[i:i + len(expected)] == expected for i in range(len(lines))):
+            print(f'Found the lines {expected}')
+            continue
+        missing = True
+        # The last line of a group is a sample, whose name ends at a space, a comma or a colon.
+        name = re.split(r'[ ,:]', expected[-1], maxsplit=1)[0]
+        print(f'The body does not have the lines {expected}.  Its lines with {name}: {[line for line in lines if name in line]}')
+    if missing:
+        return 1
     print(f'Verified {len(values)} test metrics')
     return 0
 
@@ -113,6 +126,13 @@ def main() -> int:
     parser.add_argument('format', choices=['json', 'csv', 'prometheus', 'prometheus_v2'])
     parser.add_argument('--encoding', choices=['gzip', 'deflate', 'br'], help='the content coding to request')
     parser.add_argument('--count', type=int, default=0, help='the --count given to test_metrics.so')
+    parser.add_argument(
+        '--expect',
+        nargs='+',
+        action='append',
+        default=[],
+        metavar='LINE',
+        help='lines that the decoded body must have, one after the other.  Repeat the option for each group of lines')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         '--reset', action='store_true', help='reset the connection after the first response byte instead of verifying the body')

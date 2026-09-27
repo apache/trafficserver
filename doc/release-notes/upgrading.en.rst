@@ -49,6 +49,15 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+Plugins
+-------
+
+The :ref:`admin-plugins-stats-over-http` plugin prints gauge values as signed
+integers in its JSON, CSV and Prometheus output. Earlier versions printed a
+negative gauge as an unsigned value, for example ``18446744073709551574`` for
+``-42``, or ``9223372036854775767`` with ``--wrap-counters``. The
+``--wrap-counters`` option now applies only to counters.
+
 Upgrading to ATS v10.x
 ======================
 
