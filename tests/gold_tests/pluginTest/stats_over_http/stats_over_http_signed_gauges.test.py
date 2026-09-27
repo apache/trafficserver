@@ -40,7 +40,7 @@ class TestStatsOverHttpSignedGauges:
 
     def _configure_traffic_server(self) -> None:
         self._ts = self._make_traffic_server('ts', '_stats')
-        self._ts_wrap = self._make_traffic_server('ts_wrap', '--wrap-counters _stats')
+        self._ts_wrap = self._make_traffic_server('ts_wrap', '--wrap-counters --integer-counters _stats')
 
     def _make_traffic_server(self, name: str, options: str) -> Any:
         ts = Test.MakeATSProcess(name)
@@ -64,9 +64,9 @@ class TestStatsOverHttpSignedGauges:
 
     def _test_wrap_counters(self) -> None:
         self._verify(
-            'With --wrap-counters, wrap a counter above INT64_MAX and still print a negative gauge as a signed value',
-            self._ts_wrap, {
-                'json': [['"plugin.test_metrics.negative": "-42",'], ['"plugin.test_metrics.large_counter": "43",']],
+            'With --wrap-counters and --integer-counters, wrap a counter above INT64_MAX and print a negative gauge'
+            ' as a signed value', self._ts_wrap, {
+                'json': [['"plugin.test_metrics.negative": -42,'], ['"plugin.test_metrics.large_counter": 43,']],
                 'csv': [['plugin.test_metrics.negative,-42'], ['plugin.test_metrics.large_counter,43']],
                 'prometheus': self._prometheus('43'),
                 'prometheus_v2': self._prometheus('43'),
