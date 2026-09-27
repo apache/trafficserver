@@ -209,7 +209,10 @@ try {
   char           *logname;
   crashlog_target target;
 
-  DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, new BaseLogFile("stderr")));
+  // Split the allocations: with two news in one expression, whichever is
+  // sequenced first leaks if the second throws.
+  auto *log_file = new BaseLogFile("stderr");
+  DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, log_file));
 
   auto &version = AppVersionInfo::setup_version("traffic_crashlog");
 
