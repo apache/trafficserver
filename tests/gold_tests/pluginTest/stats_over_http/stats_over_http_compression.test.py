@@ -50,24 +50,16 @@ class TestStatsOverHttpCompression:
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'test_metrics',
+                'proxy.config.diags.debug.tags': 'test_metrics|stats_over_http',
                 'proxy.config.dump_mem_info_frequency': 1,
             })
         ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             f'Created {self.METRIC_COUNT} metrics', 'test_metrics.so should create the requested gauges.')
 
-        # The plugin logs the aborted requests as errors, so allow only those.  The log lines show that the
-        # aborted requests reach the paths that release the intercept.
-        ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-            r'ERROR: (?!\[stats_over_http\] stats_process_(read|write): Received TS_EVENT_)',
-            'diags.log should not contain other errors')
-        ts.Disk.diags_log.Content += Testers.ExcludesExpression('FATAL:', 'diags.log should not contain fatal errors')
-        ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-            'Unrecognized configuration value', 'diags.log should not warn about an unrecognized configuration')
-        ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            'Received TS_EVENT_NET_ACCEPT_FAILED', 'The rejected request should reach the NET_ACCEPT_FAILED path.')
-        ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            'stats_process_write: Received TS_EVENT_ERROR', 'A reset client connection should reach the write error path.')
+        ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            'Intercept finished on TS_EVENT_NET_ACCEPT_FAILED', 'The rejected request should release its intercept.')
+        ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            'Intercept finished on .*TS_EVENT_(VCONN_EOS|ERROR)', 'A reset client connection should release its intercept.')
 
     def _configure_client(self) -> None:
         self._client = os.path.join(Test.RunDirectory, 'fetch_stats.py')

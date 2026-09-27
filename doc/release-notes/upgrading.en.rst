@@ -67,6 +67,13 @@ Two changes affect the Prometheus version 0.0.4 output of the plugin:
   versions left out such a sample, but wrote its ``# HELP`` and ``# TYPE``
   lines.
 
+The plugin renders the statistics on a task thread. Each request waits for a
+render that starts after the request arrives. The ``--max-age-ms`` option lets
+a render also answer the requests that arrive up to that many milliseconds
+after it starts; the default is ``0``. When requests wait and no render
+finishes for ten seconds, the requests get a ``503`` response. The
+``--wait-timeout-ms`` option sets this time.
+
 Upgrading to ATS v10.x
 ======================
 

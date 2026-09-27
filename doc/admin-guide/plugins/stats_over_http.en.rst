@@ -67,6 +67,20 @@ This option omits the ``# HELP`` lines from the Prometheus output. Each
 ``# HELP`` line repeats the name of a metric, so the option makes the
 Prometheus output about half as large.
 
+.. option:: --max-age-ms=N
+
+The plugin reuses a render for later requests in the same format and
+encoding, for ``N`` milliseconds after the render starts. With ``0``, each
+request waits for a render that starts after the request arrives. The default
+is ``0`` for the global plugin and ``1000`` for a remap rule. ``N`` must be
+from ``0`` to ``86400000``, one day. See `Rendering`_.
+
+.. option:: --wait-timeout-ms=N
+
+When requests wait and no render finishes for ``N`` milliseconds, the
+requests get a ``503 Service Unavailable`` response. The default is ``10000``.
+``N`` must be from ``1`` to ``86400000``, one day. See `Rendering`_.
+
 You can optionally modify the path to use, and this is highly
 recommended in a public facing server. For example::
 
@@ -167,6 +181,29 @@ data in the specified encoding, for example:
 The plugin compresses gzip and deflate responses at zlib level 6, and br responses
 at brotli quality 6 with a 64 KiB window.
 
+Rendering
+=========
+
+The plugin renders the statistics on a task thread, so that a render of many
+metrics does not hold up an event thread. The request waits for the render,
+and then Traffic Server sends the response from an event thread.
+
+At most one render at a time runs for the global plugin, and at most one for
+each remap rule. One render answers every request that waits for it, in each format
+and encoding that they ask for. A render answers later requests for the same
+format and encoding for the time that :option:`--max-age-ms` sets, so a request
+can get values that are up to that old. After that time, the next request
+starts a new render.
+
+If no render finishes within the time that :option:`--wait-timeout-ms` sets,
+the waiting requests get a ``503 Service Unavailable`` response with an empty
+body and no ``Content-Type``. A remap rule adds its ``X-Stats-Format`` header to
+this response. The time starts when a request starts to wait and no other
+request is waiting. A request that starts to wait later does not restart it, so
+that request can get the ``503`` before it has waited the full time. When a
+render finishes and requests still wait for another render, the time starts
+again.
+
 Remap Plugin Usage
 ==================
 
@@ -191,7 +228,7 @@ A rule accepts these options:
    The format of every response from the rule. The default is ``json``. The path
    and the ``Accept`` header of the request do not change the format.
 
-``--integer-counters``, ``--wrap-counters`` and ``--no-prometheus-help``
+``--integer-counters``, ``--wrap-counters``, ``--no-prometheus-help``, ``--max-age-ms`` and ``--wait-timeout-ms``
    These options have the same effect as for the global plugin, for this rule
    only.
 
@@ -199,7 +236,7 @@ The rule answers ``GET`` with the statistics. It answers ``HEAD`` with the same
 headers, but without ``Content-Length`` and without a body. It answers other
 methods with ``405 Method Not Allowed`` and ``Allow: GET, HEAD``.
 
-A response to ``GET`` or ``HEAD`` has these headers:
+A ``200`` response to ``GET``, and a response to ``HEAD``, have these headers:
 
 * ``Content-Type`` as for the global plugin, for example
   ``text/plain; version=0.0.4; charset=utf-8`` for ``prometheus``.
