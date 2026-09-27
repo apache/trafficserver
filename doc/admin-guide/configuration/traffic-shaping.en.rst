@@ -39,9 +39,9 @@ network.
 Packet mark (``SO_MARK``)
    A 32-bit value attached to each packet inside the Linux kernel. It never
    leaves the host, so the shaper must run on the same machine as |TS|. Linux
-   requires ``CAP_NET_ADMIN`` to set it. When |TS| is built with POSIX
-   capability support it keeps that capability after switching to its
-   unprivileged user. On platforms without ``SO_MARK`` the setting is ignored.
+   requires ``CAP_NET_ADMIN`` to set it, or ``CAP_NET_RAW`` on Linux 5.17 and
+   later. When |TS| is built with POSIX capability support it keeps
+   ``CAP_NET_ADMIN`` after switching to its unprivileged user. On platforms without ``SO_MARK`` the setting is ignored.
 
 DSCP (``IP_TOS`` / ``IPV6_TCLASS``)
    The Differentiated Services field in the IPv4 or IPv6 header. It travels
