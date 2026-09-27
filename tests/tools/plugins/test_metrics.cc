@@ -8,6 +8,10 @@
   the gauge NAME with the signed value VALUE.  --counter=NAME=VALUE creates the counter NAME with the unsigned 64-bit value
   VALUE.
 
+  Plugin messages (traffic_ctl plugin msg TAG ARG):
+
+    test_metrics NAME=VALUE    creates the gauge NAME, or sets it if it exists.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -71,6 +75,34 @@ create_counter(std::string_view spec)
   ts::Metrics::Counter::increment(ts::Metrics::Counter::createPtr(name), swoc::svtou(value, nullptr, 10));
   return true;
 }
+
+bool
+assign_gauge(std::string_view arg)
+{
+  swoc::TextView       value{arg};
+  swoc::TextView const name = value.split_prefix_at('=');
+
+  if (name.empty()) {
+    TSError("[%s] %s", PLUGIN_NAME, USAGE);
+    return false;
+  }
+  return create_gauge(std::string{name}, swoc::svtoi(value, nullptr, 10));
+}
+
+int
+handle_message(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
+{
+  auto const *msg = static_cast<const TSPluginMsg *>(edata);
+
+  if (std::string_view{msg->tag} == PLUGIN_NAME) {
+    std::string_view const arg{static_cast<const char *>(msg->data), msg->data_size};
+
+    if (assign_gauge(arg)) {
+      Dbg(dbg_ctl, "Assigned %.*s", static_cast<int>(arg.size()), arg.data());
+    }
+  }
+  return 0;
+}
 } // namespace
 
 void
@@ -100,12 +132,11 @@ TSPluginInit(int argc, const char *argv[])
       }
     } else if (arg.starts_with(COUNTER_OPTION)) {
       created += create_counter(arg.substr(COUNTER_OPTION.size()));
-    } else if (auto const eq = arg.find('='); eq != std::string_view::npos && eq > 0) {
-      created += create_gauge(std::string{arg.substr(0, eq)}, swoc::svtoi(arg.substr(eq + 1), nullptr, 10));
     } else {
-      TSError("[%s] %s", PLUGIN_NAME, USAGE);
+      created += assign_gauge(arg);
     }
   }
 
   Dbg(dbg_ctl, "Created %d metrics", created);
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(handle_message, TSMutexCreate()));
 }

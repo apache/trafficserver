@@ -58,6 +58,15 @@ negative gauge as an unsigned value, for example ``18446744073709551574`` for
 ``-42``, or ``9223372036854775767`` with ``--wrap-counters``. The
 ``--wrap-counters`` option now applies only to counters.
 
+Two changes affect the Prometheus version 0.0.4 output of the plugin:
+
+* When two metric names map to the same Prometheus name, the plugin writes
+  them as one family: one ``# HELP`` and ``# TYPE`` block, then all of their
+  samples. Earlier versions wrote a separate block for each metric.
+* The plugin writes sample lines that are longer than 255 bytes. Earlier
+  versions left out such a sample, but wrote its ``# HELP`` and ``# TYPE``
+  lines.
+
 Upgrading to ATS v10.x
 ======================
 

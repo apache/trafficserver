@@ -61,6 +61,12 @@ This aids interoperability with Java, since prior to the Java SE 8
 release, Java did not have a 64-bit unsigned type. Gauge values are
 signed, so this option does not change them.
 
+.. option:: --no-prometheus-help
+
+This option omits the ``# HELP`` lines from the Prometheus output. Each
+``# HELP`` line repeats the name of a metric, so the option makes the
+Prometheus output about half as large.
+
 You can optionally modify the path to use, and this is highly
 recommended in a public facing server. For example::
 
@@ -133,6 +139,14 @@ The JSON format is the default, but you can also access it explicitly by using t
 
     http://host:port/_stats/json
 
+In both Prometheus formats, each metric family appears once: its ``# HELP``
+and ``# TYPE`` lines, then all of its samples. The first metric of a family
+sets the type of the family, and the name of that metric is the ``# HELP``
+text. In the version 0.0.4 format, a family whose first metric is a float has
+no ``# TYPE`` line. The plugin translates the name of each metric once and
+reuses the result for later requests. A metric that Traffic Server creates
+after the first request joins its family in later responses.
+
 Note that using a path suffix overrides any ``Accept`` header. Thus if you
 specify a path suffix, the plugin will return the data in that format regardless of
 the ``Accept`` header.
@@ -177,7 +191,7 @@ A rule accepts these options:
    The format of every response from the rule. The default is ``json``. The path
    and the ``Accept`` header of the request do not change the format.
 
-``--integer-counters`` and ``--wrap-counters``
+``--integer-counters``, ``--wrap-counters`` and ``--no-prometheus-help``
    These options have the same effect as for the global plugin, for this rule
    only.
 

@@ -15,7 +15,7 @@
 #
 #######################
 
-add_atsplugin(stats_over_http stats_over_http.cc)
+add_atsplugin(stats_over_http stats_over_http.cc prometheus_render.cc)
 
 target_link_libraries(stats_over_http PRIVATE libswoc::libswoc)
 
@@ -24,3 +24,10 @@ if(HAVE_BROTLI_ENCODE_H)
 endif()
 verify_global_plugin(stats_over_http)
 verify_remap_plugin(stats_over_http)
+
+if(BUILD_TESTING)
+  add_executable(test_prometheus_render unit_tests/test_prometheus_render.cc prometheus_render.cc)
+  target_include_directories(test_prometheus_render PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(test_prometheus_render PRIVATE Catch2::Catch2WithMain ts::tsutil)
+  add_catch2_test(NAME test_prometheus_render COMMAND test_prometheus_render)
+endif()
