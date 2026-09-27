@@ -34,6 +34,7 @@
 #include <ctime>
 #include <fstream>
 #include <getopt.h>
+#include <memory>
 #include <netinet/in.h>
 #include <string>
 #include <string_view>
@@ -129,6 +130,15 @@ struct config_holder_t {
 enum class output_format_t { JSON_OUTPUT, CSV_OUTPUT, PROMETHEUS_OUTPUT, PROMETHEUS_V2_OUTPUT };
 enum class encoding_format_t { NONE, DEFLATE, GZIP, BR };
 
+// The options of one remap rule.
+struct stats_options {
+  output_format_t format           = output_format_t::JSON_OUTPUT;
+  bool            integer_counters = false;
+  bool            wrap_counters    = false;
+};
+
+static bool parse_format(std::string_view name, output_format_t &format);
+
 int    configReloadRequests = 0;
 int    configReloads        = 0;
 time_t lastReloadRequest    = 0;
@@ -161,23 +171,28 @@ struct b_stream {
 };
 #endif
 
-struct stats_state {
+struct render_state {
+  TSIOBuffer                      resp_buffer      = nullptr;
+  int64_t                         output_bytes     = 0;
+  bool                            integer_counters = false;
+  bool                            wrap_counters    = false;
+  prometheus_v2_metric_family_map prometheus_v2_families;
+  std::vector<std::string>        prometheus_v2_family_order;
+};
+
+struct stats_state : render_state {
   TSVConn net_vc    = nullptr;
   TSVIO   read_vio  = nullptr;
   TSVIO   write_vio = nullptr;
 
   TSIOBuffer       req_buffer  = nullptr;
-  TSIOBuffer       resp_buffer = nullptr;
   TSIOBufferReader resp_reader = nullptr;
 
-  int64_t                         output_bytes  = 0;
-  int                             body_written  = 0;
-  output_format_t                 output_format = output_format_t::JSON_OUTPUT;
-  encoding_format_t               encoding      = encoding_format_t::NONE;
-  z_stream                        zstrm;
-  bool                            zstrm_active = false;
-  prometheus_v2_metric_family_map prometheus_v2_families;
-  std::vector<std::string>        prometheus_v2_family_order;
+  int               body_written  = 0;
+  output_format_t   output_format = output_format_t::JSON_OUTPUT;
+  encoding_format_t encoding      = encoding_format_t::NONE;
+  z_stream          zstrm;
+  bool              zstrm_active = false;
 #if HAVE_BROTLI_ENCODE_H
   b_stream bstrm;
 #endif
@@ -299,7 +314,7 @@ stats_process_accept(TSCont contp, stats_state *my_state)
 }
 
 static int64_t
-stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
+stats_add_data_to_resp_buffer(const char *s, render_state *my_state)
 {
   if (s == nullptr) {
     return 0;
@@ -436,7 +451,7 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 #define APPEND_STAT_JSON_NUMERIC(a, fmt, v)                                          \
   do {                                                                               \
     char b[256];                                                                     \
-    if (integer_counters) {                                                          \
+    if (my_state->integer_counters) {                                                \
       if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < (int)sizeof(b)) {     \
         APPEND(b);                                                                   \
       }                                                                              \
@@ -479,9 +494,9 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 // This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
 // can interoperate with a full uint64_t, but it's unlikely that much of the ecosystem supports that yet.
 static uint64_t
-wrap_unsigned_counter(uint64_t value)
+wrap_unsigned_counter(const render_state *my_state, uint64_t value)
 {
-  if (wrap_counters) {
+  if (my_state->wrap_counters) {
     return (value > INT64_MAX) ? value % INT64_MAX : value;
   } else {
     return value;
@@ -492,11 +507,11 @@ static void
 json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
               TSRecordDataType data_type, TSRecordData *datum)
 {
-  stats_state *my_state = static_cast<stats_state *>(edata);
+  render_state *my_state = static_cast<render_state *>(edata);
 
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(my_state, datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
     APPEND_STAT_JSON_NUMERIC(name, "%" PRId64, datum->rec_int);
@@ -517,10 +532,10 @@ static void
 csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
              TSRecordDataType data_type, TSRecordData *datum)
 {
-  stats_state *my_state = static_cast<stats_state *>(edata);
+  render_state *my_state = static_cast<render_state *>(edata);
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(my_state, datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
     APPEND_STAT_CSV_NUMERIC(name, "%" PRId64, datum->rec_int);
@@ -759,14 +774,14 @@ parse_metric_v2(std::string_view name)
 }
 
 static bool
-format_prometheus_v2_sample(std::string &sample, const std::string &name, const std::string &labels, TSRecordDataType data_type,
-                            TSRecordData *datum)
+format_prometheus_v2_sample(const render_state *my_state, std::string &sample, const std::string &name, const std::string &labels,
+                            TSRecordDataType data_type, TSRecordData *datum)
 {
   char val_buffer[128];
   int  len = 0;
 
   if (data_type == TS_RECORDDATATYPE_COUNTER) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(datum->rec_counter));
+    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(my_state, datum->rec_counter));
   } else if (data_type == TS_RECORDDATATYPE_INT) {
     len = snprintf(val_buffer, sizeof(val_buffer), "%" PRId64 "\n", datum->rec_int);
   } else if (data_type == TS_RECORDDATATYPE_FLOAT) {
@@ -794,7 +809,7 @@ static void
 prometheus_v2_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
                        TSRecordDataType data_type, TSRecordData *datum)
 {
-  stats_state *my_state = static_cast<stats_state *>(edata);
+  render_state *my_state = static_cast<render_state *>(edata);
 
   if (data_type == TS_RECORDDATATYPE_STRING) {
     return; // Prometheus does not support string values.
@@ -808,7 +823,7 @@ prometheus_v2_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int 
   }
 
   std::string sample;
-  if (!format_prometheus_v2_sample(sample, sanitized_name, v2.labels, data_type, datum)) {
+  if (!format_prometheus_v2_sample(my_state, sample, sanitized_name, v2.labels, data_type, datum)) {
     return;
   }
 
@@ -837,8 +852,8 @@ static void
 prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
                     TSRecordDataType data_type, TSRecordData *datum)
 {
-  stats_state *my_state       = static_cast<stats_state *>(edata);
-  std::string  sanitized_name = sanitize_metric_name_for_prometheus(name);
+  render_state *my_state       = static_cast<render_state *>(edata);
+  std::string   sanitized_name = sanitize_metric_name_for_prometheus(name);
 
   if (sanitized_name.empty()) {
     return;
@@ -854,7 +869,7 @@ prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* 
     APPEND("# TYPE ");
     APPEND(sanitized_name.c_str());
     APPEND(" counter\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(my_state, datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
     APPEND("# HELP ");
@@ -885,7 +900,7 @@ prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* 
 }
 
 static void
-json_out_stats(stats_state *my_state)
+json_out_stats(render_state *my_state)
 {
   const char *version;
   APPEND("{ \"global\": {\n");
@@ -992,7 +1007,7 @@ compress_out_stats(stats_state *my_state)
 }
 
 static void
-csv_out_stats(stats_state *my_state)
+csv_out_stats(render_state *my_state)
 {
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, my_state);
   const char *version = TSTrafficServerVersionGet();
@@ -1001,7 +1016,7 @@ csv_out_stats(stats_state *my_state)
 }
 
 static void
-prometheus_out_stats(stats_state *my_state)
+prometheus_out_stats(render_state *my_state)
 {
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_out_stat, my_state);
   APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
@@ -1009,7 +1024,7 @@ prometheus_out_stats(stats_state *my_state)
 }
 
 static void
-prometheus_v2_out_stats(stats_state *my_state)
+prometheus_v2_out_stats(render_state *my_state)
 {
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_v2_out_stat, my_state);
 
@@ -1040,25 +1055,31 @@ prometheus_v2_out_stats(stats_state *my_state)
 }
 
 static void
+render_stats(output_format_t format, render_state *my_state)
+{
+  switch (format) {
+  case output_format_t::JSON_OUTPUT:
+    json_out_stats(my_state);
+    break;
+  case output_format_t::CSV_OUTPUT:
+    csv_out_stats(my_state);
+    break;
+  case output_format_t::PROMETHEUS_OUTPUT:
+    prometheus_out_stats(my_state);
+    break;
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    prometheus_v2_out_stats(my_state);
+    break;
+  }
+}
+
+static void
 stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
       my_state->body_written = 1;
-      switch (my_state->output_format) {
-      case output_format_t::JSON_OUTPUT:
-        json_out_stats(my_state);
-        break;
-      case output_format_t::CSV_OUTPUT:
-        csv_out_stats(my_state);
-        break;
-      case output_format_t::PROMETHEUS_OUTPUT:
-        prometheus_out_stats(my_state);
-        break;
-      case output_format_t::PROMETHEUS_V2_OUTPUT:
-        prometheus_v2_out_stats(my_state);
-        break;
-      }
+      render_stats(my_state->output_format, my_state);
 
       if (my_state->encoding != encoding_format_t::NONE) {
         compress_out_stats(my_state);
@@ -1141,15 +1162,7 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     path_had_explicit_format = false;
   } else {
     request_path_suffix = request_path.remove_prefix(config->stats_path.length());
-    if (request_path_suffix == "/json") {
-      format_per_path = output_format_t::JSON_OUTPUT;
-    } else if (request_path_suffix == "/csv") {
-      format_per_path = output_format_t::CSV_OUTPUT;
-    } else if (request_path_suffix == "/prometheus") {
-      format_per_path = output_format_t::PROMETHEUS_OUTPUT;
-    } else if (request_path_suffix == "/prometheus_v2") {
-      format_per_path = output_format_t::PROMETHEUS_V2_OUTPUT;
-    } else {
+    if (!request_path_suffix.starts_with('/') || !parse_format(request_path_suffix.substr(1), format_per_path)) {
       Dbg(dbg_ctl, "Unknown suffix for stats path: %.*s", static_cast<int>(request_path_suffix.length()),
           request_path_suffix.data());
       goto notforme;
@@ -1171,6 +1184,9 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 
   my_state = new stats_state;
   icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
+
+  my_state->integer_counters = integer_counters;
+  my_state->wrap_counters    = wrap_counters;
 
   if (path_had_explicit_format) {
     Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %.*s", static_cast<int>(request_path_suffix.size()),
@@ -1536,6 +1552,317 @@ config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
     config_holder->config->stats_path = DEFAULT_URL_PATH;
   }
   return 0;
+}
+
+//
+// Remap plugin.
+//
+
+static constexpr std::string_view STATS_FORMAT_FIELD = "X-Stats-Format";
+static constexpr std::string_view ALLOWED_METHODS    = "GET, HEAD";
+
+static const char REMAP_USAGE[] = "[--format=json|csv|prometheus|prometheus_v2] [--integer-counters] [--wrap-counters]";
+
+static std::string_view
+format_name(output_format_t format)
+{
+  switch (format) {
+  case output_format_t::JSON_OUTPUT:
+    return "json";
+  case output_format_t::CSV_OUTPUT:
+    return "csv";
+  case output_format_t::PROMETHEUS_OUTPUT:
+    return "prometheus";
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    return "prometheus_v2";
+  }
+  return "json";
+}
+
+static std::string_view
+format_content_type(output_format_t format)
+{
+  switch (format) {
+  case output_format_t::JSON_OUTPUT:
+    return "text/json";
+  case output_format_t::CSV_OUTPUT:
+    return "text/csv";
+  case output_format_t::PROMETHEUS_OUTPUT:
+    return "text/plain; version=0.0.4; charset=utf-8";
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    return "text/plain; version=2.0.0; charset=utf-8";
+  }
+  return "text/json";
+}
+
+static bool
+parse_format(std::string_view name, output_format_t &format)
+{
+  for (auto candidate : {output_format_t::JSON_OUTPUT, output_format_t::CSV_OUTPUT, output_format_t::PROMETHEUS_OUTPUT,
+                         output_format_t::PROMETHEUS_V2_OUTPUT}) {
+    if (name == format_name(candidate)) {
+      format = candidate;
+      return true;
+    }
+  }
+  return false;
+}
+
+// One request to a remap rule.  The transaction hooks and the intercept share it.
+struct stats_scrape {
+  explicit stats_scrape(const stats_options &opts) : options(opts) {}
+  ~stats_scrape()
+  {
+    if (body != nullptr) {
+      TSIOBufferDestroy(body);
+    }
+  }
+  stats_scrape(const stats_scrape &)            = delete;
+  stats_scrape &operator=(const stats_scrape &) = delete;
+
+  stats_options    options;
+  TSIOBuffer       body        = nullptr; // Stays null for a HEAD request.
+  TSIOBufferReader body_reader = nullptr;
+  int64_t          body_bytes  = 0;
+};
+
+// The intercept holds only its scrape, because intercept events can arrive after the transaction and its remap rule are gone.
+struct scrape_intercept {
+  explicit scrape_intercept(std::shared_ptr<stats_scrape> s) : scrape(std::move(s)) {}
+  ~scrape_intercept()
+  {
+    if (net_vc != nullptr) {
+      TSVConnClose(net_vc);
+    }
+    if (req_buffer != nullptr) {
+      TSIOBufferDestroy(req_buffer);
+    }
+    if (resp_buffer != nullptr) {
+      TSIOBufferDestroy(resp_buffer);
+    }
+  }
+  scrape_intercept(const scrape_intercept &)            = delete;
+  scrape_intercept &operator=(const scrape_intercept &) = delete;
+
+  std::shared_ptr<stats_scrape> scrape;
+  TSVConn                       net_vc      = nullptr;
+  TSVIO                         write_vio   = nullptr;
+  TSIOBuffer                    req_buffer  = nullptr;
+  TSIOBuffer                    resp_buffer = nullptr;
+  TSIOBufferReader              resp_reader = nullptr;
+};
+
+static void
+scrape_render(stats_scrape &scrape)
+{
+  render_state render;
+
+  render.resp_buffer      = TSIOBufferCreate();
+  render.integer_counters = scrape.options.integer_counters;
+  render.wrap_counters    = scrape.options.wrap_counters;
+  scrape.body             = render.resp_buffer;
+  scrape.body_reader      = TSIOBufferReaderAlloc(scrape.body);
+  render_stats(scrape.options.format, &render);
+  scrape.body_bytes = render.output_bytes;
+
+  Dbg(dbg_ctl, "Rendered %" PRId64 " bytes", scrape.body_bytes);
+}
+
+static void
+scrape_send_response(TSCont contp, scrape_intercept *intercept)
+{
+  const stats_scrape &scrape = *intercept->scrape;
+  std::string         header{"HTTP/1.1 200 OK\r\nContent-Type: "};
+
+  header.append(format_content_type(scrape.options.format)).append("\r\nCache-Control: no-store\r\n");
+  header.append(STATS_FORMAT_FIELD).append(": ").append(format_name(scrape.options.format)).append("\r\n");
+  if (scrape.body != nullptr) {
+    header.append("Content-Length: ").append(std::to_string(scrape.body_bytes)).append("\r\n");
+  }
+  header.append("\r\n");
+
+  intercept->resp_buffer = TSIOBufferCreate();
+  intercept->resp_reader = TSIOBufferReaderAlloc(intercept->resp_buffer);
+
+  int64_t bytes = TSIOBufferWrite(intercept->resp_buffer, header.data(), header.size());
+
+  if (scrape.body != nullptr) {
+    bytes += TSIOBufferCopy(intercept->resp_buffer, scrape.body_reader, scrape.body_bytes, 0);
+  }
+  TSVConnShutdown(intercept->net_vc, 1, 0);
+  intercept->write_vio = TSVConnWrite(intercept->net_vc, contp, intercept->resp_reader, bytes);
+}
+
+static int
+scrape_intercept_handler(TSCont contp, TSEvent event, void *edata)
+{
+  auto *intercept = static_cast<scrape_intercept *>(TSContDataGet(contp));
+
+  switch (event) {
+  case TS_EVENT_NET_ACCEPT:
+    intercept->net_vc     = static_cast<TSVConn>(edata);
+    intercept->req_buffer = TSIOBufferCreate();
+    TSVConnRead(intercept->net_vc, contp, intercept->req_buffer, INT64_MAX);
+    break;
+  case TS_EVENT_VCONN_READ_READY:
+    scrape_send_response(contp, intercept);
+    break;
+  case TS_EVENT_VCONN_WRITE_READY:
+    TSVIOReenable(intercept->write_vio);
+    break;
+  case TS_EVENT_NET_ACCEPT_FAILED:
+  case TS_EVENT_VCONN_EOS:
+  case TS_EVENT_ERROR:
+  case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
+  case TS_EVENT_VCONN_ACTIVE_TIMEOUT:
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    Dbg(dbg_ctl, "Intercept finished on %s", TSHttpEventNameLookup(event));
+    delete intercept;
+    TSContDestroy(contp);
+    break;
+  default:
+    TSReleaseAssert(!"Unexpected Event");
+  }
+  return 0;
+}
+
+static int
+scrape_txn_handler(TSCont contp, TSEvent event, void *edata)
+{
+  auto *scrape = static_cast<std::shared_ptr<stats_scrape> *>(TSContDataGet(contp));
+
+  if (event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE) {
+    scrape_render(**scrape);
+  } else if (event == TS_EVENT_HTTP_TXN_CLOSE) {
+    delete scrape;
+    TSContDestroy(contp);
+  }
+  TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+static void
+add_allow_field(TSHttpTxn txnp)
+{
+  TSMBuffer bufp;
+  TSMLoc    hdr_loc;
+
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+    TSMLoc field_loc;
+
+    // A remap ACL filter that denies the request replaces the 405 with a 403.
+    if (TSHttpHdrStatusGet(bufp, hdr_loc) == TS_HTTP_STATUS_METHOD_NOT_ALLOWED &&
+        TSMimeHdrFieldCreateNamed(bufp, hdr_loc, TS_MIME_FIELD_ALLOW, TS_MIME_LEN_ALLOW, &field_loc) == TS_SUCCESS) {
+      TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, ALLOWED_METHODS.data(), ALLOWED_METHODS.size());
+      TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    }
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  }
+}
+
+static int
+allow_handler(TSCont contp, TSEvent event, void *edata)
+{
+  auto txnp = static_cast<TSHttpTxn>(edata);
+
+  if (event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
+    add_allow_field(txnp);
+  } else if (event == TS_EVENT_HTTP_TXN_CLOSE) {
+    TSContDestroy(contp);
+  }
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+TSReturnCode
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+{
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+{
+  static const struct option longopts[] = {
+    {"format",           required_argument, nullptr, 'f'},
+    {"integer-counters", no_argument,       nullptr, 'i'},
+    {"wrap-counters",    no_argument,       nullptr, 'w'},
+    {nullptr,            0,                 nullptr, 0  }
+  };
+  auto options = std::make_unique<stats_options>();
+
+  // argv[0] is the "from" URL.  Skip it so that the "to" URL poses as the program name.
+  --argc;
+  ++argv;
+  for (int opt; (opt = getopt_long(argc, argv, "", longopts, nullptr)) != -1;) {
+    switch (opt) {
+    case 'f':
+      if (!parse_format(optarg, options->format)) {
+        snprintf(errbuf, errbuf_size, "[%s] Unknown format '%s', usage: %s", PLUGIN_NAME, optarg, REMAP_USAGE);
+        return TS_ERROR;
+      }
+      break;
+    case 'i':
+      options->integer_counters = true;
+      break;
+    case 'w':
+      options->wrap_counters = true;
+      break;
+    default:
+      snprintf(errbuf, errbuf_size, "[%s] Invalid option '%s', usage: %s", PLUGIN_NAME, argv[optind - 1], REMAP_USAGE);
+      return TS_ERROR;
+    }
+  }
+  if (optind < argc) {
+    snprintf(errbuf, errbuf_size, "[%s] Unexpected argument '%s', usage: %s", PLUGIN_NAME, argv[optind], REMAP_USAGE);
+    return TS_ERROR;
+  }
+
+  *ih = options.release();
+  return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void *ih)
+{
+  delete static_cast<stats_options *>(ih);
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+{
+  int         method_len = 0;
+  const char *method     = TSHttpHdrMethodGet(rri->requestBufp, rri->requestHdrp, &method_len);
+
+  if (method != TS_HTTP_METHOD_GET && method != TS_HTTP_METHOD_HEAD) {
+    TSCont allow_cont = TSContCreate(allow_handler, nullptr);
+
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_METHOD_NOT_ALLOWED, PLUGIN_NAME);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, allow_cont);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, allow_cont);
+    return TSREMAP_NO_REMAP;
+  }
+
+  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
+
+  auto scrape = std::make_shared<stats_scrape>(*static_cast<const stats_options *>(ih));
+
+  // Render in the cache lookup hook, which runs after the remap ACL filters, so that a request they deny renders nothing.
+  if (method == TS_HTTP_METHOD_GET) {
+    TSCont txn_cont = TSContCreate(scrape_txn_handler, nullptr);
+
+    TSContDataSet(txn_cont, new std::shared_ptr<stats_scrape>(scrape));
+    TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_cont);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_cont);
+  }
+
+  TSCont intercept_cont = TSContCreate(scrape_intercept_handler, TSMutexCreate());
+
+  TSContDataSet(intercept_cont, new scrape_intercept(std::move(scrape)));
+  TSHttpTxnServerIntercept(intercept_cont, txnp);
+  Dbg(dbg_ctl, "Intercepting %.*s request", method_len, method);
+  return TSREMAP_NO_REMAP;
 }
 
 //

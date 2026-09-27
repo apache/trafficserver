@@ -30,7 +30,7 @@ standard ATS build process, and should be available after install.
 Enabling Stats Over HTTP
 ========================
 
-To enable this plugin, add to the :file:`plugin.config` file::
+To enable this plugin as a global plugin, add it to the :file:`plugin.config` file::
 
     stats_over_http.so
 
@@ -152,3 +152,47 @@ data in the specified encoding, for example:
 
 The plugin compresses gzip and deflate responses at zlib level 6, and br responses
 at brotli quality 6 with a 64 KiB window.
+
+Remap Plugin Usage
+==================
+
+The plugin can also serve the statistics from a rule in :file:`remap.config`.
+In this mode the plugin needs no :file:`plugin.config` entry and adds no global
+hook. The ACL filters of the rule control access, and each rule serves one
+format. For example::
+
+    map http://example.com/metrics http://127.0.0.1/ \
+        @plugin=stats_over_http.so @pparam=--format=prometheus \
+        @action=deny @src_ip=~10.0.0.0/8
+
+The filter ``@action=deny @src_ip=~10.0.0.0/8`` denies every client outside
+``10.0.0.0/8``. See :ref:`acl-filters`. The plugin answers the request itself, so
+Traffic Server does not connect to the target of the rule. Traffic Server still
+resolves the host name of the target, so use an IP address, for example
+``127.0.0.1``, as the target.
+
+A rule accepts these options:
+
+``--format=json|csv|prometheus|prometheus_v2``
+   The format of every response from the rule. The default is ``json``. The path
+   and the ``Accept`` header of the request do not change the format.
+
+``--integer-counters`` and ``--wrap-counters``
+   These options have the same effect as for the global plugin, for this rule
+   only.
+
+The rule answers ``GET`` with the statistics. It answers ``HEAD`` with the same
+headers, but without ``Content-Length`` and without a body. It answers other
+methods with ``405 Method Not Allowed`` and ``Allow: GET, HEAD``.
+
+A response to ``GET`` or ``HEAD`` has these headers:
+
+* ``Content-Type`` as for the global plugin, for example
+  ``text/plain; version=0.0.4; charset=utf-8`` for ``prometheus``.
+* ``Content-Length``, for ``GET`` only.
+* ``Cache-Control: no-store``. Traffic Server does not cache the response.
+* ``X-Stats-Format``, with the value of ``--format``, for example
+  ``X-Stats-Format: prometheus``. A client can use this header to tell a
+  statistics response from the response of another rule, such as a catch-all rule.
+
+A remap rule does not compress its responses.
