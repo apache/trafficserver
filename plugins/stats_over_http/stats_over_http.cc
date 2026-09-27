@@ -35,18 +35,20 @@
 #include <fstream>
 #include <getopt.h>
 #include <memory>
+#include <mutex>
 #include <netinet/in.h>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <sys/stat.h>
 #include <ts/ts.h>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <unistd.h>
 #include <zlib.h>
 
 #include <ts/remap.h>
+#include "prometheus_render.h"
 #include "swoc/TextView.h"
 #include "tscore/ink_config.h"
 #include <tsutil/ts_ip.h>
@@ -96,6 +98,7 @@ const int BROTLI_LGW               = 16;
 
 static bool integer_counters = false;
 static bool wrap_counters    = false;
+static bool prometheus_help  = true;
 
 #if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L && (!defined(__clang__) || __clang_major__ > 16)
 #define STATS_OVER_HTTP_HAS_CONSTEXPR_STRING 1
@@ -107,14 +110,6 @@ struct prometheus_v2_metric {
   std::string name;
   std::string labels;
 };
-
-struct prometheus_v2_metric_family {
-  TSRecordDataType         data_type = TS_RECORDDATATYPE_NULL;
-  std::string              help;
-  std::vector<std::string> samples;
-};
-
-using prometheus_v2_metric_family_map = std::unordered_map<std::string, prometheus_v2_metric_family>;
 
 struct config_t {
   unsigned int     recordTypes;
@@ -135,6 +130,7 @@ struct stats_options {
   output_format_t format           = output_format_t::JSON_OUTPUT;
   bool            integer_counters = false;
   bool            wrap_counters    = false;
+  bool            prometheus_help  = true;
 };
 
 static bool parse_format(std::string_view name, output_format_t &format);
@@ -172,12 +168,10 @@ struct b_stream {
 #endif
 
 struct render_state {
-  TSIOBuffer                      resp_buffer      = nullptr;
-  int64_t                         output_bytes     = 0;
-  bool                            integer_counters = false;
-  bool                            wrap_counters    = false;
-  prometheus_v2_metric_family_map prometheus_v2_families;
-  std::vector<std::string>        prometheus_v2_family_order;
+  TSIOBuffer resp_buffer      = nullptr;
+  int64_t    output_bytes     = 0;
+  bool       integer_counters = false;
+  bool       wrap_counters    = false;
 };
 
 struct stats_state : render_state {
@@ -479,18 +473,6 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
     }                                                                    \
   } while (0)
 
-//-----------------------------------------------------------------------------
-// Prometheus Formatters
-//-----------------------------------------------------------------------------
-// Note that Prometheus only supports numeric types.
-#define APPEND_STAT_PROMETHEUS_NUMERIC(a, fmt, v)                        \
-  do {                                                                   \
-    char b[256];                                                         \
-    if (snprintf(b, sizeof(b), "%s " fmt "\n", a, v) < (int)sizeof(b)) { \
-      APPEND(b);                                                         \
-    }                                                                    \
-  } while (0)
-
 // This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
 // can interoperate with a full uint64_t, but it's unlikely that much of the ecosystem supports that yet.
 static uint64_t
@@ -773,130 +755,63 @@ parse_metric_v2(std::string_view name)
   return {std::move(base_name), std::move(labels)};
 }
 
-static bool
-format_prometheus_v2_sample(const render_state *my_state, std::string &sample, const std::string &name, const std::string &labels,
-                            TSRecordDataType data_type, TSRecordData *datum)
+static PrometheusName
+prometheus_v1_name(std::string_view name, TSRecordDataType data_type)
 {
-  char val_buffer[128];
-  int  len = 0;
-
-  if (data_type == TS_RECORDDATATYPE_COUNTER) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(my_state, datum->rec_counter));
-  } else if (data_type == TS_RECORDDATATYPE_INT) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRId64 "\n", datum->rec_int);
-  } else if (data_type == TS_RECORDDATATYPE_FLOAT) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%g\n", datum->rec_float);
-  }
-
-  if (len <= 0 || len >= static_cast<int>(sizeof(val_buffer))) {
-    return false;
-  }
-
-  sample.reserve(name.size() + labels.size() + static_cast<size_t>(len) + 3);
-  sample += name;
-  if (!labels.empty()) {
-    sample += "{";
-    sample += labels;
-    sample += "}";
-  }
-  sample += " ";
-  sample += val_buffer;
-
-  return true;
-}
-
-static void
-prometheus_v2_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
-                       TSRecordDataType data_type, TSRecordData *datum)
-{
-  render_state *my_state = static_cast<render_state *>(edata);
-
-  if (data_type == TS_RECORDDATATYPE_STRING) {
-    return; // Prometheus does not support string values.
-  }
-
-  auto        v2             = parse_metric_v2(name);
-  std::string sanitized_name = sanitize_metric_name_for_prometheus(v2.name);
-
-  if (sanitized_name.empty()) {
-    return;
-  }
-
-  std::string sample;
-  if (!format_prometheus_v2_sample(my_state, sample, sanitized_name, v2.labels, data_type, datum)) {
-    return;
-  }
-
-  // Note: Prometheus requires all metrics with the same name to have the same type.
-  // If Traffic Server metrics with different types (e.g., COUNTER and INT) are collapsed
-  // into the same base name, the first one encountered will determine the reported TYPE.
-  auto [it, inserted] = my_state->prometheus_v2_families.try_emplace(sanitized_name);
-  if (inserted) {
-    it->second.data_type = data_type;
-    it->second.help      = name;
-    my_state->prometheus_v2_family_order.emplace_back(sanitized_name);
-  } else {
-    // Validate type consistency (at least between counter and gauge).
-    bool prev_is_counter = (it->second.data_type == TS_RECORDDATATYPE_COUNTER);
-    bool curr_is_counter = (data_type == TS_RECORDDATATYPE_COUNTER);
-    if (prev_is_counter != curr_is_counter) {
-      Dbg(dbg_ctl, "Inconsistent types for base metric %s: previously %s, now %s. Labels: %s", sanitized_name.c_str(),
-          prev_is_counter ? "counter" : "gauge", curr_is_counter ? "counter" : "gauge", v2.labels.c_str());
-    }
-  }
-
-  it->second.samples.emplace_back(std::move(sample));
-}
-
-static void
-prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
-                    TSRecordDataType data_type, TSRecordData *datum)
-{
-  render_state *my_state       = static_cast<render_state *>(edata);
-  std::string   sanitized_name = sanitize_metric_name_for_prometheus(name);
-
-  if (sanitized_name.empty()) {
-    return;
-  }
-
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(name);
-    APPEND("\n");
-    APPEND("# TYPE ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" counter\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(my_state, datum->rec_counter));
-    break;
+    return {sanitize_metric_name_for_prometheus(name), {}, PrometheusType::COUNTER};
   case TS_RECORDDATATYPE_INT:
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(name);
-    APPEND("\n");
-    APPEND("# TYPE ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" gauge\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRId64, datum->rec_int);
-    break;
-  case TS_RECORDDATATYPE_FLOAT:
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(name);
-    APPEND("\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%g", datum->rec_float);
-    break;
-  case TS_RECORDDATATYPE_STRING:
-    Dbg(dbg_ctl, "Prometheus does not support string values, skipping: %s", sanitized_name.c_str());
-    break;
+    return {sanitize_metric_name_for_prometheus(name), {}, PrometheusType::GAUGE};
   default:
-    Dbg(dbg_ctl, "unknown type for %s: %d", sanitized_name.c_str(), data_type);
-    break;
+    // Floats have no TYPE line in this format, for compatibility.
+    return {sanitize_metric_name_for_prometheus(name), {}, PrometheusType::UNTYPED};
   }
+}
+
+static PrometheusName
+prometheus_v2_name(std::string_view name, TSRecordDataType data_type)
+{
+  auto v2 = parse_metric_v2(name);
+
+  return {sanitize_metric_name_for_prometheus(v2.name), std::move(v2.labels),
+          data_type == TS_RECORDDATATYPE_COUNTER ? PrometheusType::COUNTER : PrometheusType::GAUGE};
+}
+
+// The renderer of one Prometheus format and the lock that serializes its renders.
+struct prometheus_cache {
+  explicit prometheus_cache(const PrometheusOptions &options) : renderer(options) {}
+
+  std::mutex         mutex;
+  PrometheusRenderer renderer;
+};
+
+static std::unique_ptr<prometheus_cache>
+make_prometheus_cache(output_format_t format, bool help, bool wrap)
+{
+  PrometheusOptions options;
+
+  options.help          = help;
+  options.wrap_counters = wrap;
+  if (format == output_format_t::PROMETHEUS_OUTPUT) {
+    options.namer = prometheus_v1_name;
+  } else if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
+    options.namer = prometheus_v2_name;
+  } else {
+    return nullptr;
+  }
+  return std::make_unique<prometheus_cache>(options);
+}
+
+// The caches of the global plugin, which live as long as the process.
+static prometheus_cache *global_prometheus_v1 = nullptr;
+static prometheus_cache *global_prometheus_v2 = nullptr;
+
+static void
+prometheus_add_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+                    TSRecordDataType data_type, TSRecordData *datum)
+{
+  static_cast<PrometheusRenderer *>(edata)->add(name, data_type, *datum);
 }
 
 static void
@@ -1016,46 +931,35 @@ csv_out_stats(render_state *my_state)
 }
 
 static void
-prometheus_out_stats(render_state *my_state)
+prometheus_out_stats(output_format_t format, prometheus_cache &cache, render_state *my_state)
 {
-  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_out_stat, my_state);
-  APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
-  // No version printed, since string stats are not supported by Prometheus.
-}
+  std::unique_lock                  lock{cache.mutex, std::try_to_lock};
+  std::optional<PrometheusRenderer> uncached;
+  PrometheusRenderer               *renderer = &cache.renderer;
 
-static void
-prometheus_v2_out_stats(render_state *my_state)
-{
-  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_v2_out_stat, my_state);
-
-  for (const auto &sanitized_name : my_state->prometheus_v2_family_order) {
-    const auto &family = my_state->prometheus_v2_families.at(sanitized_name);
-
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(family.help.c_str());
-    APPEND("\n");
-
-    const char *type_str = (family.data_type == TS_RECORDDATATYPE_COUNTER) ? "counter" : "gauge";
-    APPEND("# TYPE ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(type_str);
-    APPEND("\n");
-
-    for (const auto &sample : family.samples) {
-      APPEND(sample.c_str());
-    }
+  // Another thread is rendering from the cache.  Render without it rather than block this event thread on the lock.
+  if (!lock.owns_lock()) {
+    Dbg(dbg_ctl, "Rendering without the cache, which another thread is using");
+    renderer = &uncached.emplace(cache.renderer.options());
   }
 
-  APPEND("# HELP current_time_epoch_ms Current time in milliseconds since epoch.\n");
-  APPEND("# TYPE current_time_epoch_ms gauge\n");
-  APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
+  renderer->begin();
+  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_add_stat, renderer);
+
+  std::string &body = renderer->render();
+
+  if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
+    if (renderer->options().help) {
+      body.append("# HELP current_time_epoch_ms Current time in milliseconds since epoch.\n");
+    }
+    body.append("# TYPE current_time_epoch_ms gauge\n");
+  }
+  body.append("current_time_epoch_ms ").append(std::to_string(ms_since_epoch())).append("\n");
+  my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, body.data(), body.size());
 }
 
 static void
-render_stats(output_format_t format, render_state *my_state)
+render_stats(output_format_t format, render_state *my_state, prometheus_cache *prometheus)
 {
   switch (format) {
   case output_format_t::JSON_OUTPUT:
@@ -1065,10 +969,8 @@ render_stats(output_format_t format, render_state *my_state)
     csv_out_stats(my_state);
     break;
   case output_format_t::PROMETHEUS_OUTPUT:
-    prometheus_out_stats(my_state);
-    break;
   case output_format_t::PROMETHEUS_V2_OUTPUT:
-    prometheus_v2_out_stats(my_state);
+    prometheus_out_stats(format, *prometheus, my_state);
     break;
   }
 }
@@ -1079,7 +981,8 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
   if (event == TS_EVENT_VCONN_WRITE_READY) {
     if (my_state->body_written == 0) {
       my_state->body_written = 1;
-      render_stats(my_state->output_format, my_state);
+      render_stats(my_state->output_format, my_state,
+                   my_state->output_format == output_format_t::PROMETHEUS_OUTPUT ? global_prometheus_v1 : global_prometheus_v2);
 
       if (my_state->encoding != encoding_format_t::NONE) {
         compress_out_stats(my_state);
@@ -1279,11 +1182,12 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  static const char          usage[]    = PLUGIN_NAME ".so [--integer-counters] [PATH]";
+  static const char          usage[]    = PLUGIN_NAME ".so [--integer-counters] [--wrap-counters] [--no-prometheus-help] [PATH]";
   static const struct option longopts[] = {
-    {(char *)("integer-counters"), no_argument, nullptr, 'i'},
-    {(char *)("wrap-counters"),    no_argument, nullptr, 'w'},
-    {nullptr,                      0,           nullptr, 0  }
+    {(char *)("integer-counters"),   no_argument, nullptr, 'i'},
+    {(char *)("wrap-counters"),      no_argument, nullptr, 'w'},
+    {(char *)("no-prometheus-help"), no_argument, nullptr, 'n'},
+    {nullptr,                        0,           nullptr, 0  }
   };
   TSCont           main_cont, config_cont;
   config_holder_t *config_holder;
@@ -1305,6 +1209,9 @@ TSPluginInit(int argc, const char *argv[])
     case 'w':
       wrap_counters = true;
       break;
+    case 'n':
+      prometheus_help = false;
+      break;
     case -1:
       goto init;
     default:
@@ -1315,6 +1222,9 @@ TSPluginInit(int argc, const char *argv[])
 init:
   argc -= optind;
   argv += optind;
+
+  global_prometheus_v1 = make_prometheus_cache(output_format_t::PROMETHEUS_OUTPUT, prometheus_help, wrap_counters).release();
+  global_prometheus_v2 = make_prometheus_cache(output_format_t::PROMETHEUS_V2_OUTPUT, prometheus_help, wrap_counters).release();
 
   config_holder = new_config_holder(argc > 0 ? argv[0] : nullptr);
 
@@ -1561,7 +1471,8 @@ config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
 static constexpr std::string_view STATS_FORMAT_FIELD = "X-Stats-Format";
 static constexpr std::string_view ALLOWED_METHODS    = "GET, HEAD";
 
-static const char REMAP_USAGE[] = "[--format=json|csv|prometheus|prometheus_v2] [--integer-counters] [--wrap-counters]";
+static const char REMAP_USAGE[] =
+  "[--format=json|csv|prometheus|prometheus_v2] [--integer-counters] [--wrap-counters] [--no-prometheus-help]";
 
 static std::string_view
 format_name(output_format_t format)
@@ -1608,6 +1519,17 @@ parse_format(std::string_view name, output_format_t &format)
   return false;
 }
 
+// One remap rule.
+struct stats_instance {
+  explicit stats_instance(const stats_options &opts)
+    : options(opts), prometheus(make_prometheus_cache(opts.format, opts.prometheus_help, opts.wrap_counters))
+  {
+  }
+
+  stats_options                     options;
+  std::unique_ptr<prometheus_cache> prometheus; // Null for the JSON and CSV formats.
+};
+
 // One request to a remap rule.  The transaction hooks and the intercept share it.
 struct stats_scrape {
   explicit stats_scrape(const stats_options &opts) : options(opts) {}
@@ -1653,7 +1575,7 @@ struct scrape_intercept {
 };
 
 static void
-scrape_render(stats_scrape &scrape)
+scrape_render(stats_scrape &scrape, prometheus_cache *prometheus)
 {
   render_state render;
 
@@ -1662,7 +1584,7 @@ scrape_render(stats_scrape &scrape)
   render.wrap_counters    = scrape.options.wrap_counters;
   scrape.body             = render.resp_buffer;
   scrape.body_reader      = TSIOBufferReaderAlloc(scrape.body);
-  render_stats(scrape.options.format, &render);
+  render_stats(scrape.options.format, &render, prometheus);
   scrape.body_bytes = render.output_bytes;
 
   Dbg(dbg_ctl, "Rendered %" PRId64 " bytes", scrape.body_bytes);
@@ -1726,15 +1648,21 @@ scrape_intercept_handler(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
+// The transaction hooks of a GET request.  The transaction holds its remap rule, and with it the instance, until it is gone.
+struct scrape_txn {
+  stats_instance               *instance;
+  std::shared_ptr<stats_scrape> scrape;
+};
+
 static int
 scrape_txn_handler(TSCont contp, TSEvent event, void *edata)
 {
-  auto *scrape = static_cast<std::shared_ptr<stats_scrape> *>(TSContDataGet(contp));
+  auto *txn = static_cast<scrape_txn *>(TSContDataGet(contp));
 
   if (event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE) {
-    scrape_render(**scrape);
+    scrape_render(*txn->scrape, txn->instance->prometheus.get());
   } else if (event == TS_EVENT_HTTP_TXN_CLOSE) {
-    delete scrape;
+    delete txn;
     TSContDestroy(contp);
   }
   TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
@@ -1785,12 +1713,13 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   static const struct option longopts[] = {
-    {"format",           required_argument, nullptr, 'f'},
-    {"integer-counters", no_argument,       nullptr, 'i'},
-    {"wrap-counters",    no_argument,       nullptr, 'w'},
-    {nullptr,            0,                 nullptr, 0  }
+    {"format",             required_argument, nullptr, 'f'},
+    {"integer-counters",   no_argument,       nullptr, 'i'},
+    {"wrap-counters",      no_argument,       nullptr, 'w'},
+    {"no-prometheus-help", no_argument,       nullptr, 'n'},
+    {nullptr,              0,                 nullptr, 0  }
   };
-  auto options = std::make_unique<stats_options>();
+  stats_options options;
 
   // argv[0] is the "from" URL.  Skip it so that the "to" URL poses as the program name.
   --argc;
@@ -1798,16 +1727,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   for (int opt; (opt = getopt_long(argc, argv, "", longopts, nullptr)) != -1;) {
     switch (opt) {
     case 'f':
-      if (!parse_format(optarg, options->format)) {
+      if (!parse_format(optarg, options.format)) {
         snprintf(errbuf, errbuf_size, "[%s] Unknown format '%s', usage: %s", PLUGIN_NAME, optarg, REMAP_USAGE);
         return TS_ERROR;
       }
       break;
     case 'i':
-      options->integer_counters = true;
+      options.integer_counters = true;
       break;
     case 'w':
-      options->wrap_counters = true;
+      options.wrap_counters = true;
+      break;
+    case 'n':
+      options.prometheus_help = false;
       break;
     default:
       snprintf(errbuf, errbuf_size, "[%s] Invalid option '%s', usage: %s", PLUGIN_NAME, argv[optind - 1], REMAP_USAGE);
@@ -1819,14 +1751,14 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     return TS_ERROR;
   }
 
-  *ih = options.release();
+  *ih = new stats_instance(options);
   return TS_SUCCESS;
 }
 
 void
 TSRemapDeleteInstance(void *ih)
 {
-  delete static_cast<stats_options *>(ih);
+  delete static_cast<stats_instance *>(ih);
 }
 
 TSRemapStatus
@@ -1846,13 +1778,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
 
-  auto scrape = std::make_shared<stats_scrape>(*static_cast<const stats_options *>(ih));
+  auto *instance = static_cast<stats_instance *>(ih);
+  auto  scrape   = std::make_shared<stats_scrape>(instance->options);
 
   // Render in the cache lookup hook, which runs after the remap ACL filters, so that a request they deny renders nothing.
   if (method == TS_HTTP_METHOD_GET) {
     TSCont txn_cont = TSContCreate(scrape_txn_handler, nullptr);
 
-    TSContDataSet(txn_cont, new std::shared_ptr<stats_scrape>(scrape));
+    TSContDataSet(txn_cont, new scrape_txn{instance, scrape});
     TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_cont);
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_cont);
   }

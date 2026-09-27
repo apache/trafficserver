@@ -54,16 +54,26 @@ def test_metric_values(stats_format: str, body: str) -> list[int]:
     return sorted(int(value) for name, value in items if name.startswith(prefix))
 
 
-def fetch(args: argparse.Namespace, headers: dict[str, str], method: str = 'GET') -> tuple[http.client.HTTPResponse, bytes]:
-    headers = {'Connection': 'close', **headers}
-    if args.encoding:
-        headers['Accept-Encoding'] = args.encoding
-    conn = http.client.HTTPConnection('127.0.0.1', args.port, timeout=60)
-    conn.request(method, f'/_stats/{args.format}', headers=headers)
+def request(
+        port: int,
+        path: str,
+        encoding: str | None = None,
+        headers: dict[str, str] | None = None,
+        method: str = 'GET',
+        timeout: float = 60) -> tuple[http.client.HTTPResponse, bytes]:
+    headers = {'Connection': 'close', **(headers or {})}
+    if encoding:
+        headers['Accept-Encoding'] = encoding
+    conn = http.client.HTTPConnection('127.0.0.1', port, timeout=timeout)
+    conn.request(method, path, headers=headers)
     response = conn.getresponse()
     body = response.read()
     conn.close()
     return response, body
+
+
+def fetch(args: argparse.Namespace, headers: dict[str, str], method: str = 'GET') -> tuple[http.client.HTTPResponse, bytes]:
+    return request(args.port, f'/_stats/{args.format}', args.encoding, headers, method)
 
 
 def fetch_and_verify(args: argparse.Namespace) -> int:
