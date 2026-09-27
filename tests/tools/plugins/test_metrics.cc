@@ -2,10 +2,11 @@
 
   Create metrics for tests.
 
-  Usage: test_metrics.so [--count=N] [NAME=VALUE ...]
+  Usage: test_metrics.so [--count=N] [--counter=NAME=VALUE ...] [NAME=VALUE ...]
 
   --count=N creates the gauges plugin.test_metrics.gauge_<i> with the value i, for i from 0 to N - 1.  NAME=VALUE creates
-  the gauge NAME with the signed value VALUE.
+  the gauge NAME with the signed value VALUE.  --counter=NAME=VALUE creates the counter NAME with the unsigned 64-bit value
+  VALUE.
 
   @section license License
 
@@ -32,11 +33,14 @@
 
 #include <swoc/TextView.h>
 #include <ts/ts.h>
+#include <tsutil/Metrics.h>
 
 namespace
 {
-constexpr char             PLUGIN_NAME[] = "test_metrics";
-constexpr std::string_view COUNT_OPTION  = "--count=";
+constexpr char             PLUGIN_NAME[]  = "test_metrics";
+constexpr std::string_view COUNT_OPTION   = "--count=";
+constexpr std::string_view COUNTER_OPTION = "--counter=";
+constexpr char             USAGE[]        = "Usage: test_metrics.so [--count=N] [--counter=NAME=VALUE ...] [NAME=VALUE ...]";
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
@@ -50,6 +54,21 @@ create_gauge(const std::string &name, int64_t value)
     return false;
   }
   TSStatIntSet(id, value);
+  return true;
+}
+
+// TSStatCreate creates only gauges, so a counter comes from ts::Metrics.
+bool
+create_counter(std::string_view spec)
+{
+  swoc::TextView       value{spec};
+  swoc::TextView const name = value.split_prefix_at('=');
+
+  if (name.empty()) {
+    TSError("[%s] %s", PLUGIN_NAME, USAGE);
+    return false;
+  }
+  ts::Metrics::Counter::increment(ts::Metrics::Counter::createPtr(name), swoc::svtou(value, nullptr, 10));
   return true;
 }
 } // namespace
@@ -79,10 +98,12 @@ TSPluginInit(int argc, const char *argv[])
       for (long n = 0; n < count; ++n) {
         created += create_gauge("plugin.test_metrics.gauge_" + std::to_string(n), n);
       }
+    } else if (arg.starts_with(COUNTER_OPTION)) {
+      created += create_counter(arg.substr(COUNTER_OPTION.size()));
     } else if (auto const eq = arg.find('='); eq != std::string_view::npos && eq > 0) {
       created += create_gauge(std::string{arg.substr(0, eq)}, swoc::svtoi(arg.substr(eq + 1), nullptr, 10));
     } else {
-      TSError("[%s] Usage: %s.so [--count=N] [NAME=VALUE ...]", PLUGIN_NAME, PLUGIN_NAME);
+      TSError("[%s] %s", PLUGIN_NAME, USAGE);
     }
   }
 

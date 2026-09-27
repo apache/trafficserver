@@ -288,6 +288,15 @@ The following :file:`records.yaml` changes have been made:
   per-client limit, those addresses can now also connect when ATS is at the connection limit, and
   they can take ATS past that limit. Review the list before you upgrade.
 
+Plugins
+-------
+
+The :ref:`admin-plugins-stats-over-http` plugin prints gauge values as signed
+integers in its JSON, CSV and Prometheus output. Earlier versions printed a
+negative gauge as an unsigned value, for example ``18446744073709551574`` for
+``-42``, or ``9223372036854775767`` with ``--wrap-counters``. The
+``--wrap-counters`` option now applies only to counters.
+
 Upgrading to ATS v10.x
 ======================
 
