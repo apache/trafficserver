@@ -88,15 +88,15 @@ def test_stats_over_http_signed_gauges(ats_factory: ATSFactory, services: Servic
 
 
 def test_stats_over_http_wrap_counters(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """With --wrap-counters, wrap a counter above INT64_MAX and still print a negative gauge as a signed value.
+    """With --wrap-counters and --integer-counters, wrap a counter above INT64_MAX and print a negative gauge as a signed value.
 
     :param ats_factory: Proxy factory.
     :param services: Statistics client factory.
     """
-    ats = start_ats(ats_factory, "ts_wrap", "--wrap-counters _stats")
+    ats = start_ats(ats_factory, "ts_wrap", "--wrap-counters --integer-counters _stats")
     verify(
         services, ats, "wrap", {
-            "json": [['"plugin.test_metrics.negative": "-42",'], ['"plugin.test_metrics.large_counter": "43",']],
+            "json": [['"plugin.test_metrics.negative": -42,'], ['"plugin.test_metrics.large_counter": 43,']],
             "csv": [["plugin.test_metrics.negative,-42"], ["plugin.test_metrics.large_counter,43"]],
             "prometheus": prometheus("43"),
             "prometheus_v2": prometheus("43"),
