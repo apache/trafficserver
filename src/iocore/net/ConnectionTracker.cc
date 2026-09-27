@@ -410,21 +410,21 @@ ConnectionTracker::clear_client_exempt_list()
   _global_config->client_exempt_list.clear();
 }
 
+bool
+ConnectionTracker::is_client_exempt(IpEndpoint const &addr)
+{
+  if (_global_config == nullptr) {
+    return false;
+  }
+
+  ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(_global_config->client_exempt_list_mutex);
+  return _global_config->client_exempt_list.contains(swoc::IPAddr{addr});
+}
+
 ConnectionTracker::TxnState
 ConnectionTracker::obtain_inbound(IpEndpoint const &addr)
 {
-  TxnState zret;
-  // Check if the address is in the exempt list with shared (read) lock.
-  {
-    ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(_global_config->client_exempt_list_mutex);
-    if (_global_config->client_exempt_list.contains(swoc::IPAddr{addr})) {
-      // This short-circuits all our connection throttling logic. Save time by
-      // just setting the flag for the caller to see that connections are exempt
-      // this address.
-      zret._exempt_p = true;
-      return zret;
-    }
-  }
+  TxnState                    zret;
   CryptoHash                  hash;
   Group::Key                  key{addr, hash, MatchType::MATCH_IP};
   std::lock_guard<std::mutex> lock(_inbound_table._mutex); // Table lock

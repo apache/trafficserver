@@ -52,6 +52,23 @@ Network I/O
 .. ts:stat:: global proxy.process.net.connections_currently_open integer
    :type: counter
 
+   The number of open client and origin server connections, which
+   :ts:cv:`proxy.config.net.connections_throttle` limits.
+
+.. ts:stat:: global proxy.process.net.per_client.connections_exempt_currently_open integer
+   :type: gauge
+
+   The number of open client connections from addresses in
+   :ts:cv:`proxy.config.http.per_client.connection.exempt_list`. These
+   connections are also counted in
+   :ts:stat:`proxy.process.net.connections_currently_open`.
+
+.. ts:stat:: global proxy.process.net.per_client.connections_exempt_in integer
+   :type: counter
+
+   The number of client connections that |TS| accepted from addresses in
+   :ts:cv:`proxy.config.http.per_client.connection.exempt_list`.
+
 .. ts:stat:: global proxy.process.net.connections_throttled_in integer
    :type: counter
 

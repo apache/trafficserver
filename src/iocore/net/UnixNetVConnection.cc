@@ -1232,8 +1232,9 @@ UnixNetVConnection::clear()
     read.vio.buffer.clear();
     write.vio.buffer.clear();
   }
-  closed        = 0;
-  netvc_context = NET_VCONNECTION_UNSET;
+  closed         = 0;
+  netvc_context  = NET_VCONNECTION_UNSET;
+  _client_exempt = false;
   ink_assert(!read.ready_link.prev && !read.ready_link.next);
   ink_assert(!read.enable_link.next);
   ink_assert(!write.ready_link.prev && !write.ready_link.next);
@@ -1252,6 +1253,9 @@ UnixNetVConnection::free_thread(EThread *t)
   if (con.sock.is_ok()) {
     release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
+    if (_client_exempt) {
+      Metrics::Gauge::decrement(net_rsb.per_client_connections_exempt_currently_open);
+    }
   }
   con.close();
 
@@ -1337,6 +1341,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   // Create new VC:
   UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(this->_getNetProcessor()->allocate_vc(t));
   ink_assert(newvc != nullptr);
+  // Before populate() gives the socket to the new VC, which updates the exempt gauge when it is freed.
+  newvc->_client_exempt = _client_exempt;
   if (newvc->populate(hold_con, cont, arg) != EVENT_DONE) {
     newvc->do_io_close();
     newvc = nullptr;
