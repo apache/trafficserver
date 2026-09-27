@@ -304,6 +304,15 @@ check at or after its deadline. So a value raised to relieve load now only
 delays timeouts by up to that interval. If you tuned it for that reason,
 returning it to the default of 1 costs nothing and restores accuracy.
 
+Plugins
+-------
+
+The :ref:`admin-plugins-stats-over-http` plugin prints gauge values as signed
+integers in its JSON, CSV and Prometheus output. Earlier versions printed a
+negative gauge as an unsigned value, for example ``18446744073709551574`` for
+``-42``, or ``9223372036854775767`` with ``--wrap-counters``. The
+``--wrap-counters`` option now applies only to counters.
+
 Upgrading to ATS v10.x
 ======================
 
