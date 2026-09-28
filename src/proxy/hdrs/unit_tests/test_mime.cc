@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <cctype>
 #include <cstdio>
 #include <climits>
 #include <cstdint>
@@ -160,6 +161,7 @@ TEST_CASE("MimeParserTailAppendEquivalence", "[proxy][mimeparser]")
     {{"X-A", "1"}, {"X-B", "2"}, {"X-A", "3"}}, // interleaved
     {{"X-A", "1"}, {"X-A", "2"}, {"X-B", "3"}, {"X-B", "4"}}, // two adjacent runs
     {{"Set-Cookie", "a"}, {"Set-Cookie", "b"}, {"Set-Cookie", "c"}, {"Set-Cookie", "d"}}, // well-known dups
+    {{"Cache-Control", "no-cache"}, {"Cache-Control", "max-age=5"}}, // cooked state on an adjacent duplicate
     {{"X-A", "1"}, {"X-B", "2"}, {"X-C", "3"}}, // no dups
   }));
 
@@ -232,6 +234,8 @@ TEST_CASE("MimeParserTailAppendEquivalence", "[proxy][mimeparser]")
 
   CHECK(hdrA.fields_count() == hdrB.fields_count());
   CHECK(hdrA.m_mime->m_presence_bits == hdrB.m_mime->m_presence_bits);
+  CHECK(hdrA.get_cooked_cc_mask() == hdrB.get_cooked_cc_mask());
+  CHECK(hdrA.get_cooked_cc_max_age() == hdrB.get_cooked_cc_max_age());
 
   hdrA.destroy();
   hdrB.destroy();
@@ -294,10 +298,10 @@ TEST_CASE("HdrTokenFusedNameScanParity", "[proxy][hdrtoken]")
     std::string       upper{wks}, lower{wks};
 
     for (auto &ch : upper) {
-      ch = static_cast<char>(toupper(static_cast<unsigned char>(ch)));
+      ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
     }
     for (auto &ch : lower) {
-      ch = static_cast<char>(tolower(static_cast<unsigned char>(ch)));
+      ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
     }
 
     for (auto const &name : {wks, upper, lower}) {
@@ -309,7 +313,8 @@ TEST_CASE("HdrTokenFusedNameScanParity", "[proxy][hdrtoken]")
 
       CAPTURE(name);
       CHECK(colon == name_len);
-      CHECK(hdrtoken_tokenize_prehashed(name.data(), name_len, hash) == hdrtoken_tokenize(name.data(), name_len));
+      CHECK(hdrtoken_tokenize_prehashed(name.data(), name_len, hash) == idx);
+      CHECK(hdrtoken_tokenize(name.data(), name_len) == idx);
     }
   }
 

@@ -2670,8 +2670,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // The previous field must have the same name and be the chain's tail.
     // Duplicate chains follow slot order, so the new field belongs after it.
     //
-    // The pointer check below is required: mime_field_create_for_name() can
-    // reuse an older slot. Only use this shortcut when the new field occupies
+    // mime_field_create_for_name() can reuse an older slot. The pointer check
+    // below limits this shortcut to cases where the new field occupies
     // the last allocated slot in the tail block and has a predecessor there.
     // Otherwise, fall back to normal attachment.
     //

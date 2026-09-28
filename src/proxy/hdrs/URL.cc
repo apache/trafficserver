@@ -1206,6 +1206,7 @@ url_is_strictly_compliant(const char *start, const char *end)
 bool
 url_is_mostly_compliant(const char *start, const char *end)
 {
+  // Accumulate invalid bytes without an early exit so the compiler can vectorize the scan.
   unsigned char bad = 0;
   for (const char *i = start; i < end; ++i) {
     unsigned char const c  = static_cast<unsigned char>(*i);

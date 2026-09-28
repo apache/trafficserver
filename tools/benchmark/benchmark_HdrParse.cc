@@ -20,9 +20,10 @@
   be supplied with --corpus-file FILE or --corpus-dir DIR (blocks split on a
   blank line, classified request vs response by the first line); these are added
   to both modes, and each loaded request's request-target also feeds the url
-  target. In stats mode each target also gets a "corpus" benchmark that times one
-  pass over the loaded cases alone, so its result reflects only the supplied
-  traffic.
+  target. In stats mode the request, response, mime, and url targets also get a
+  "corpus" benchmark that times one pass over the loaded cases alone, so its
+  result reflects only the supplied traffic. The wks benchmarks combine field
+  names from the built-in and loaded cases.
 
   @section license License
 
@@ -410,6 +411,11 @@ constexpr int  PROD_STRICT = 2;     // proxy.config.http.strict_uri_parsing defa
 
 using ParseOutcome = std::pair<ParseResult, uint64_t>;
 
+struct ParseInput {
+  std::string_view data;
+  bool             remove_ws_from_field_name{false};
+};
+
 ParseOutcome
 drive_request(std::string_view raw, bool copy = PROD_COPY, int strict = PROD_STRICT)
 {
@@ -442,7 +448,7 @@ drive_response(std::string_view raw, bool copy = PROD_COPY)
 }
 
 ParseOutcome
-drive_mime(std::string_view fields, bool copy = PROD_COPY)
+drive_mime(std::string_view fields, bool remove_ws_from_field_name = false, bool copy = PROD_COPY)
 {
   MIMEParser parser;
   mime_parser_init(&parser);
@@ -451,7 +457,7 @@ drive_mime(std::string_view fields, bool copy = PROD_COPY)
   hdr.create(heap);
   const char *start = fields.data();
   ParseResult ret   = mime_parser_parse(&parser, hdr.m_heap, hdr.m_mime, &start, fields.data() + fields.size(), copy,
-                                        /*eof*/ true, /*remove_ws_from_field_name*/ false);
+                                        /*eof*/ true, remove_ws_from_field_name);
   uint64_t    sink  = static_cast<uint64_t>(start - fields.data());
   hdr.destroy();
   return {ret, sink};
@@ -541,11 +547,11 @@ int
 run_profile(Target target, uint64_t iters)
 {
   // Assemble the input set and a per-iteration byte count for throughput.
-  std::vector<std::string_view> inputs;
-  uint64_t                      bytes_per_pass = 0;
+  std::vector<ParseInput> inputs;
+  uint64_t                bytes_per_pass = 0;
 
-  auto add_input = [&](std::string_view v) {
-    inputs.push_back(v);
+  auto add_input = [&](std::string_view v, bool remove_ws_from_field_name = false) {
+    inputs.push_back({v, remove_ws_from_field_name});
     bytes_per_pass += v.size();
   };
 
@@ -566,7 +572,7 @@ run_profile(Target target, uint64_t iters)
     break;
   case Target::Mime:
     for (const auto &c : g_corpus.cases) {
-      add_input(strip_start_line(c.data));
+      add_input(strip_start_line(c.data), c.is_response);
     }
     break;
   case Target::Url:
@@ -610,20 +616,20 @@ run_profile(Target target, uint64_t iters)
     count = iters; // one full pass over all names per iter
   } else {
     for (uint64_t i = 0; i < iters; ++i) {
-      std::string_view in = inputs[i % inputs.size()];
-      ParseOutcome     r;
+      ParseInput const &in = inputs[i % inputs.size()];
+      ParseOutcome      r;
       switch (target) {
       case Target::Request:
-        r = drive_request(in);
+        r = drive_request(in.data);
         break;
       case Target::Response:
-        r = drive_response(in);
+        r = drive_response(in.data);
         break;
       case Target::Mime:
-        r = drive_mime(in);
+        r = drive_mime(in.data, in.remove_ws_from_field_name);
         break;
       case Target::Url:
-        r = drive_url(in);
+        r = drive_url(in.data);
         break;
       default:
         break;
@@ -777,10 +783,15 @@ TEST_CASE("hdr parse: mime only", "[bench][mime]")
   const auto &realistic = find_case("req_realistic");
   const auto &wksmiss   = find_case("adv_wks_miss");
 
-  std::vector<std::string_view> loaded;
+  std::vector<ParseInput> loaded;
   for (const auto &c : g_corpus.cases) {
+    CAPTURE(c.label);
+    std::string_view const fields = strip_start_line(c.data);
+    ParseOutcome const     result = drive_mime(fields, c.is_response);
+    REQUIRE(result.first == ParseResult::DONE);
+    REQUIRE(result.second == fields.size());
     if (is_file_case(c)) {
-      loaded.push_back(strip_start_line(c.data));
+      loaded.push_back({fields, c.is_response});
     }
   }
 
@@ -796,8 +807,8 @@ TEST_CASE("hdr parse: mime only", "[bench][mime]")
     BENCHMARK("mime: corpus (" + std::to_string(loaded.size()) + " blocks)")
     {
       uint64_t sink = 0;
-      for (auto fields : loaded) {
-        sink += drive_mime(fields).second;
+      for (ParseInput const &fields : loaded) {
+        sink += drive_mime(fields.data, fields.remove_ws_from_field_name).second;
       }
       return sink;
     };
@@ -900,6 +911,10 @@ main(int argc, char *argv[])
   }
 
   if (!profile_target.empty()) {
+    if (catch_args.size() > 1) {
+      std::fprintf(stderr, "unexpected argument in profile mode: %s\n", catch_args[1]);
+      return 2;
+    }
     Target t = parse_target(profile_target);
     if (t == Target::Unknown) {
       std::fprintf(stderr, "unknown target '%s' (want: request|response|mime|url|wks|wks-lower)\n", profile_target.c_str());
