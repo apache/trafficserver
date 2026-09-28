@@ -57,7 +57,10 @@ regress_rand_CacheKey(CacheKey *key)
 void
 dir_corrupt_bucket(Dir *b, int s, StripeSM *stripe)
 {
-  int  l   = (static_cast<int>(stripe->directory.bucket_length(b, s) * ts::Random::drandom()));
+  // Never the head: bucket 0's head is at offset 0, the end-of-chain sentinel, so linking it to itself loops nothing.
+  int length = stripe->directory.bucket_length(b, s);
+  ink_release_assert(length >= 2);
+  int  l   = 1 + static_cast<int>((length - 1) * ts::Random::drandom());
   Dir *e   = b;
   Dir *seg = stripe->directory.get_segment(s);
   for (int i = 0; i < l; i++) {
