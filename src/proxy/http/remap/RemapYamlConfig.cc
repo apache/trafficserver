@@ -674,7 +674,7 @@ parse_yaml_include_directive(const std::string &include_path, BUILD_TABLE_INFO *
   path = RecConfigReadConfigPath(nullptr, include_path.c_str());
 
   if (ink_file_is_directory(path)) {
-    struct dirent **entrylist;
+    struct dirent **entrylist = nullptr;
     int             n_entries;
 
     n_entries = scandir(path, &entrylist, nullptr, alphasort);
