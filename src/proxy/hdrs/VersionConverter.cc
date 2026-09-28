@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <algorithm>
 #include <string_view>
 
 using namespace std::literals;
@@ -200,7 +201,12 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    auto authority{field->value_get()};
+    // Copy out first: allocating from header.m_heap may coalesce it and free the field's storage.
+    auto                  value{field->value_get()};
+    ts::LocalBuffer<char> buf(value.length());
+    std::string_view      authority{buf.data(), value.length()};
+
+    std::copy(value.begin(), value.end(), buf.data());
 
     // Require full consumption: url_parse_internet() stops at a '/', '?' or '#'.
     const char *astart = authority.data();
