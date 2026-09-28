@@ -9,7 +9,7 @@ For complete installation documentation, see the on-line documentation at
 Various popular platforms have up-to-date build instructions available
 online, at
 
-    https://cwiki.apache.org/confluence/display/TS/Building
+    https://docs.trafficserver.apache.org/en/latest/admin-guide/installation/index.en.html
 
 
 BUILD AND INSTALLATION
@@ -58,9 +58,15 @@ INSTALLATION HELP
 The Apache Traffic Server group cannot field user's installation
 questions.  There are many valuable forums to help you get started.
 Please refer your questions to the appropriate forum, such as the
-Users Mailing List at
+users mailing list at users@trafficserver.apache.org. To join it, send
+an empty email to users-subscribe@trafficserver.apache.org. The list
+archive is at
 
-    https://cwiki.apache.org/confluence/display/TS/Apache+Traffic+Server
+    https://lists.apache.org/list.html?users@trafficserver.apache.org
+
+and how ASF mailing lists work is described at
+
+    https://www.apache.org/foundation/mailinglists.html
 
 Thanks for using the Apache Traffic Server.
 

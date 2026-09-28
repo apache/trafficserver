@@ -23,7 +23,7 @@
 
 #pragma once
 
-// See https://cwiki.apache.org/confluence/display/TS/RamCache
+// See https://docs.trafficserver.apache.org/en/latest/developer-guide/cache-architecture/ram-cache.en.html
 
 #include "P_RamCache.h"
 

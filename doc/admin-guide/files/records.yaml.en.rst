@@ -6110,7 +6110,7 @@ Sockets
    Set the packet mark on traffic destined for the client
    (the packets that make up a client response).
 
-   .. seealso:: `Traffic Shaping`_
+   .. seealso:: :ref:`admin-traffic-shaping`
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_mark_out INT 0x0
    :overridable:
@@ -6118,14 +6118,14 @@ Sockets
    Set the packet mark on traffic destined for the origin
    (the packets that make up an origin request).
 
-   .. seealso:: `Traffic Shaping`_
+   .. seealso:: :ref:`admin-traffic-shaping`
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_tos_in INT 0x0
 
    Set the ToS/DiffServ Field on packets sent to the client
    (the packets that make up a client response).
 
-   .. seealso:: `Traffic Shaping`_
+   .. seealso:: :ref:`admin-traffic-shaping`
 
 .. ts:cv:: CONFIG proxy.config.net.sock_packet_tos_out INT 0x0
    :overridable:
@@ -6133,7 +6133,7 @@ Sockets
    Set the ToS/DiffServ Field on packets sent to the origin
    (the packets that make up an origin request).
 
-   .. seealso:: `Traffic Shaping`_
+   .. seealso:: :ref:`admin-traffic-shaping`
 
 .. ts:cv:: CONFIG proxy.config.net.sock_notsent_lowat INT 16384
    :overridable:
@@ -6343,9 +6343,6 @@ Sockets
          valid and successfully initialized. Any error will cause |TS| to shut
          down.
    ===== ======================================================================
-
-.. _Traffic Shaping:
-                 https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
 
 IO_URING
 ========
