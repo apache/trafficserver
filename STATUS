@@ -88,17 +88,19 @@ Contributors looking for a mission:
 
   * Just do an egrep on "TODO" or "XXX" in the source.
 
-  * Review the bug database at: https://issues.apache.org/jira/browse/TS
+  * Review the open issues at: https://github.com/apache/trafficserver/issues
 
-      - Download, test and review patches attached to open bugs
+      - Test and review open pull requests at
+        https://github.com/apache/trafficserver/pulls
 
-  * Open bugs in the bug database.
+  * File new issues at: https://github.com/apache/trafficserver/issues/new
 
 UPCOMING WORK:
 
-A list of all bugs open for the next release can be found at
+Issues and pull requests planned for upcoming releases are tracked on the
+GitHub milestones at
 
-  http://s.apache.org/ats-next
+  https://github.com/apache/trafficserver/milestones
 
 RELEASE PROCESS
 
