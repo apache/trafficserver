@@ -243,10 +243,15 @@ Classifying received traffic
 Most of the bytes on the origin side are responses, which |TS| receives rather
 than sends, so its marks are not on them. Connection tracking can carry the
 mark from the request to the response. Save the packet mark that |TS| set on
-outgoing packets into the connection mark::
+outgoing packets into the connection mark, and do it for every packet |TS|
+sends, including unmarked ones. A pooled origin connection can pass from a
+marked transaction to an unmarked one, and saving only nonzero marks would
+leave the old mark on the connection, so its responses would keep landing in
+the old class. Match on the user |TS| runs as
+(:ts:cv:`proxy.config.admin.user_id`, ``nobody`` here)::
 
-   iptables -t mangle -A OUTPUT -m mark ! --mark 0 -j CONNMARK --save-mark
-   ip6tables -t mangle -A OUTPUT -m mark ! --mark 0 -j CONNMARK --save-mark
+   iptables -t mangle -A OUTPUT -m owner --uid-owner nobody -j CONNMARK --save-mark
+   ip6tables -t mangle -A OUTPUT -m owner --uid-owner nobody -j CONNMARK --save-mark
 
 Incoming traffic can only be shaped after it is redirected to an ``ifb``
 device. The ``connmark`` action copies the connection mark back onto each
