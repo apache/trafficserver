@@ -18,8 +18,8 @@
 # request header is normalized in the 2->1.1 converter and handed to the SM
 # without a serialize+reparse, and the response header is handed back to the
 # stream the same way. Covers request URL normalization (explicit-port and IPv6
-# :authority), query-string caching, and response emission (bodyless 204/304/HEAD
-# and header preservation).
+# :authority), query-string caching, response emission (bodyless 204/304/HEAD
+# and header preservation), and rejection of requests parse_req would refuse.
 
 meta:
   version: "1.0"
@@ -43,6 +43,7 @@ autest:
     records_config:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: 'http|http2|cache'
+      proxy.config.http.header_field_max_size: 256
 
     remap_config:
       - from: "https://example.com/"
@@ -320,3 +321,134 @@ sessions:
         fields:
         - [ETag, {value: '"v1"', as: equal}]
 
+# 6. Fast-path rejection. Skipping parse_req is only safe while these checks send
+#    anything parse_req would reject back to it. Each request is one that parse_req
+#    rejects but the fast path would forward to the origin's 200.
+
+# 6a. Userinfo in :authority, which RFC 9113 8.3.1 bans.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", "attacker@example.com"]
+            - [":path", /gate/userinfo]
+            - [uuid, gate-userinfo]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 400
+
+# 6b. A method that is not a token.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", "GE(T"]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /gate/method]
+            - [uuid, gate-method]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 400
+
+# 6c. A Content-Length that is not 1*DIGIT.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /gate/content-length]
+            - [content-length, "0x"]
+            - [uuid, gate-content-length]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 400
+
+# 6d. A non-printable byte in the path, rejected at strict_uri_parsing 2.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", "/gate/caf\u00e9"]
+            - [uuid, gate-uri]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 400
+
+# 6e. A header field over header_field_max_size. HPACK decode limits the name and
+#     value separately, parse_req limits their sum.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /gate/field-size]
+            - [x-long, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"]
+            - [uuid, gate-field-size]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 400

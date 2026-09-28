@@ -20,7 +20,9 @@ Verify HTTP/2 client request handling through the fast-path handoff to HttpSM.
 Test.Summary = '''
 Verify HTTP/2 header handling through the fast-path handoff to HttpSM: request
 URL normalization (explicit-port and IPv6 :authority), query-string caching,
-and response emission (bodyless 204/304/HEAD and response-header preservation).
+response emission (bodyless 204/304/HEAD and response-header preservation), and
+rejection of requests that parse_req would refuse.
 '''
 
 Test.ATSReplayTest(replay_file="replay/h2_request_handling.replay.yaml")
+Test.ATSReplayTest(replay_file="replay/h2_request_line_limit.replay.yaml")

@@ -664,14 +664,17 @@ public:
   int
   reported_client_response_hdr_bytes() const
   {
-    return client_response_hdr_bytes > 0 ? client_response_hdr_bytes : _direct_response_hdr_bytes;
+    return client_response_hdr_bytes + _direct_response_hdr_bytes;
   }
 
   void
-  clear_pending_send_header()
+  clear_pending_send_header(bool outbound)
   {
-    _client_response_header_is_ready = false;
-    _server_request_header_is_ready  = false;
+    if (outbound) {
+      _server_request_header_is_ready = false;
+    } else {
+      _client_response_header_is_ready = false;
+    }
   }
 
   ink_hrtime get_server_inactivity_timeout();

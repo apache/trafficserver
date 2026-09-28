@@ -372,8 +372,8 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
     this->_http_sm_id = this->_sm->sm_id;
   }
 
-  // parse_req is skipped here; re-apply strict_uri_parsing. Runs after the REQUEST type
-  // check below, since path_get() asserts that polarity.
+  // parse_req is skipped here, so re-apply its checks. Both run after the REQUEST type check
+  // below, since the accessors assert that polarity.
   auto uri_ok = [&]() {
     int const level = this->_sm->t_state.http_config_param->strict_uri_parsing;
 
@@ -382,11 +382,23 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
             url_is_uri_compliant(level, _receive_header.fragment_get()));
   };
 
-  // parse_req also enforces token methods, Host and Content-Length framing (RFC 9110 8.6).
   auto parse_req_would_accept = [&]() {
-    auto method{_receive_header.method_get()};
+    auto const *config    = this->_sm->t_state.http_config_param;
+    auto const  line_max  = static_cast<size_t>(config->http_request_line_max_size);
+    auto const  field_max = static_cast<size_t>(config->http_hdr_field_max_size);
+    auto        method{_receive_header.method_get()};
+
     if (method.empty() || std::any_of(method.begin(), method.end(), [](char c) { return !ParseRules::is_token(c); })) {
       return false;
+    }
+    // Upper bound of the serialized "METHOD URL HTTP/1.1\r\n", so parse_req makes the exact call.
+    if (method.size() + static_cast<size_t>(_receive_header.url_get()->length_get()) + 12 > line_max) {
+      return false;
+    }
+    for (auto const &field : _receive_header) {
+      if (field.name_get().size() + field.value_get().size() > field_max) {
+        return false;
+      }
     }
     // validate_hdr_host() never sees this Host; it rejects the userinfo RFC 9113 8.3.1 bans.
     if (MIMEField *host = _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_HOST)); host != nullptr) {
@@ -967,7 +979,7 @@ Http2Stream::update_write_request(bool call_update)
         f->value_set(this->_send_header.m_heap, this->_send_header.m_mime, field.value_get());
         this->_send_header.field_attach(f);
       }
-      this->_sm->clear_pending_send_header();
+      this->_sm->clear_pending_send_header(this->is_outbound_connection());
       state = ParseResult::DONE;
     } else if (this->is_outbound_connection()) {
       state = this->_send_header.parse_req(&http_parser, this->_send_reader, &bytes_used, false);
