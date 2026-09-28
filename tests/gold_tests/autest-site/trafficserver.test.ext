@@ -320,6 +320,10 @@ def MakeATSProcess(
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
+    fname = "virtualhost.yaml"
+    tmpname = os.path.join(config_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+
     # The big motivation in exposing this file is that we need to tell the traffic_ctl
     # where to find the socket to interact with the TS. traffic_ctl cannot rely only
     # in the build layout for unit test.

@@ -103,6 +103,7 @@ public:
   void deactivate();
   void indicatePreReload();
   void indicatePostReload(bool reloadSuccessful);
+  void collectUsedPlugins(std::unordered_map<PluginDso *, int> &pluginUsed);
 
   static void cleanup(); // For startup, clean out all temporary directory we may have left from before
 
