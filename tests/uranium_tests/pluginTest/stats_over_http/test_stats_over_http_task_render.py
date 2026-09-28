@@ -151,6 +151,12 @@ def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceF
     assert "no more than the baseline" in result.stdout, \
         "The requests, renders and watchdogs should release their continuations."
 
+    for process in (ats, ats_global):
+        result = process.traffic_ctl("metric", "get", "plugin.stats_over_http.waiter_timeouts")
+        assert result.returncode == 0, result.output
+        assert re.search(r"^plugin\.stats_over_http\.waiter_timeouts\s+[1-9][0-9]*$", result.output, re.MULTILINE), \
+            f"{process.name} should count the requests that timed out waiting for a render."
+
     ats.stop()
     ats_global.stop()
     check_task_thread_renders(ats)
