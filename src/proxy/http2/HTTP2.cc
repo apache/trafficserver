@@ -28,6 +28,7 @@
 #include "proxy/http2/HPACK.h"
 
 #include "tscore/ink_assert.h"
+#include "tscore/ParseRules.h"
 #include "tsutil/LocalBuffer.h"
 
 #include "../../records/P_RecCore.h"
@@ -433,6 +434,26 @@ http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
   }
 
   return ParseResult::DONE;
+}
+
+void
+http2_copy_send_header(HTTPHdr *send_hdr, HTTPHdr *src)
+{
+  if (src->type_get() == HTTPType::REQUEST) {
+    // method_set() would tokenize again without case, turning an extension method "head" into HEAD.
+    http_hdr_method_set(send_hdr->m_heap, send_hdr->m_http, src->method_get(), src->method_get_wksidx(), true);
+    send_hdr->url_set(src->url_get());
+  } else {
+    send_hdr->status_set(src->status_get());
+  }
+  for (auto const &field : *src) {
+    MIMEField     *f = send_hdr->field_create(field.name_get());
+    swoc::TextView value{field.value_get()};
+
+    value.trim_if(&ParseRules::is_ws);
+    f->value_set(send_hdr->m_heap, send_hdr->m_mime, value);
+    send_hdr->field_attach(f);
+  }
 }
 
 Http2ErrorCode

@@ -139,3 +139,41 @@ sessions:
       status: 200
       content:
         verify: {value: OB-POST-1, as: equal}
+
+  # 3. Leading and trailing whitespace in a value. The HTTP/1.1 parser trims it, and an
+  #    HTTP/2 origin rejects an untrimmed value (RFC 9113 8.2.1).
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /outbound/padded]
+            - [x-pad, " padded "]
+            - [uuid, ob-padded-value]
+    proxy-request:
+      protocol:
+        stack: http2
+        tls:
+          sni: example.com
+          proxy-verify-mode: 1
+          proxy-provided-cert: false
+      method: GET
+      headers:
+        fields:
+        - [ x-pad, { value: "padded", as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+      content:
+        encoding: plain
+        data: OB-PAD-1
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: OB-PAD-1, as: equal}
