@@ -105,13 +105,9 @@ convert_TLS_version_to_string(char *out, std::uint16_t version)
     out[0] = 's';
     out[1] = '3';
     break;
-  case 0x200:
+  case 0x002:
     out[0] = 's';
     out[1] = '2';
-    break;
-  case 0x100:
-    out[0] = 's';
-    out[1] = '1';
     break;
   case 0xfeff:
     out[0] = 'd';

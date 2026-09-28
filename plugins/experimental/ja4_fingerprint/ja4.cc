@@ -80,10 +80,8 @@ convert_TLS_version_to_string(std::uint16_t TLS_version)
     return "10";
   case 0x300:
     return "s3";
-  case 0x200:
+  case 0x002:
     return "s2";
-  case 0x100:
-    return "s1";
   case 0xfeff:
     return "d1";
   case 0xfefd:
