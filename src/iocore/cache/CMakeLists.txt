@@ -41,10 +41,6 @@ add_library(
 )
 add_library(ts::inkcache ALIAS inkcache)
 
-if(BUILD_REGRESSION_TESTING)
-  target_sources(inkcache PRIVATE CacheTest.cc RegressionSM.cc)
-endif()
-
 # For fastlz includes.
 target_include_directories(inkcache PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 
