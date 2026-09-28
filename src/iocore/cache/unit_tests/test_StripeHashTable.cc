@@ -78,6 +78,8 @@ TEST_CASE("Resizing one stripe moves hash table slots only to or from that strip
   before.stripes  = stripe_ptrs;
   before.num_vols = NUM_STRIPES;
   build_vol_hash_table(&before);
+  // stripe_ptrs is a stack array; ~CacheHostRecord would ats_free() it, even when a REQUIRE below unwinds.
+  before.stripes = nullptr;
 
   StripeSM &sample = *stripes[SAMPLE_IDX];
 
@@ -89,6 +91,7 @@ TEST_CASE("Resizing one stripe moves hash table slots only to or from that strip
   after.stripes  = stripe_ptrs;
   after.num_vols = NUM_STRIPES;
   build_vol_hash_table(&after);
+  after.stripes = nullptr;
 
   REQUIRE(before.vol_hash_table != nullptr);
   REQUIRE(after.vol_hash_table != nullptr);
@@ -119,8 +122,4 @@ TEST_CASE("Resizing one stripe moves hash table slots only to or from that strip
   INFO("moved " << moved << " of " << STRIPE_HASH_TABLE_SIZE << " slots; sample owned " << slots_before << ", now " << slots_after);
   CHECK(moved_between_others == 0);
   CHECK(slots_after > slots_before);
-
-  // stripe_ptrs is a stack array; ~CacheHostRecord would ats_free() it.
-  before.stripes = nullptr;
-  after.stripes  = nullptr;
 }

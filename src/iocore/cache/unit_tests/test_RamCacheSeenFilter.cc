@@ -286,8 +286,8 @@ TEST_CASE("RamCacheLRU re-put of a resident entry refreshes its recency", "[cach
   CHECK(rc->get(&others.front(), &probe) == 0);
 }
 
-// use_seen_filter = N > 1 engages the filter once the cache is (N - 1)/N full; 1 / N in integer arithmetic once
-// deferred it to 100% full (#13234).
+// use_seen_filter = N > 1 engages the filter once the cache is (N - 1)/N full. Computing 1 / N in integer arithmetic
+// used to defer it to 100% full (#13234).
 TEST_CASE("RamCacheLRU seen filter engages at the configured fill level", "[cache][ramcache][seen_filter]")
 {
   CacheDisk disk;
