@@ -93,6 +93,7 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *total_ticket_keys_renewed                      = nullptr;
   Metrics::Counter::AtomicType *total_tickets_created                          = nullptr;
   Metrics::Counter::AtomicType *total_tickets_not_found                        = nullptr;
+  Metrics::Counter::AtomicType *total_tickets_no_certificate                   = nullptr;
   Metrics::Counter::AtomicType *total_tickets_renewed                          = nullptr;
   Metrics::Counter::AtomicType *total_tickets_verified_old_key                 = nullptr;
   Metrics::Counter::AtomicType *total_tickets_verified                         = nullptr;

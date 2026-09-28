@@ -189,7 +189,7 @@ protected:
   in_port_t _get_local_port() override;
 
   // TLSSessionResumptionSupport
-  IpEndpoint const &_getLocalEndpoint() override;
+  IpEndpoint const &_getCertLookupEndpoint() override;
 
   // TLSCertSwitchSupport
   bool           _isTryingRenegotiation() const override;

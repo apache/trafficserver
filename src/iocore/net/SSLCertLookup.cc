@@ -238,7 +238,6 @@ SSLCertContext::SSLCertContext(SSLCertContext const &other)
   std::shared_lock lock(other.ctx_mutex);
   opt        = other.opt;
   userconfig = other.userconfig;
-  keyblock   = other.keyblock;
   ctx_type   = other.ctx_type;
   ctx        = other.ctx;
 }
@@ -250,7 +249,6 @@ SSLCertContext::operator=(SSLCertContext const &other)
     std::scoped_lock lock(this->ctx_mutex, other.ctx_mutex);
     this->opt        = other.opt;
     this->userconfig = other.userconfig;
-    this->keyblock   = other.keyblock;
     this->ctx_type   = other.ctx_type;
     this->ctx        = other.ctx;
   }
