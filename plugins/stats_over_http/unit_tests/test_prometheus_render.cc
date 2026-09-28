@@ -30,6 +30,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "prometheus_render.h"
+#include "test_stats.h"
 
 namespace
 {
@@ -53,58 +54,6 @@ test_name(std::string_view name, TSRecordDataType data_type)
     result.type = PrometheusType::GAUGE;
   }
   return result;
-}
-
-struct Stat {
-  const char      *name;
-  TSRecordDataType data_type;
-  TSRecordData     datum;
-};
-
-Stat
-counter(const char *name, int64_t value)
-{
-  Stat stat{name, TS_RECORDDATATYPE_COUNTER, {}};
-
-  stat.datum.rec_counter = value;
-  return stat;
-}
-
-Stat
-gauge(const char *name, int64_t value)
-{
-  Stat stat{name, TS_RECORDDATATYPE_INT, {}};
-
-  stat.datum.rec_int = value;
-  return stat;
-}
-
-Stat
-floating(const char *name, double value)
-{
-  Stat stat{name, TS_RECORDDATATYPE_FLOAT, {}};
-
-  stat.datum.rec_float = value;
-  return stat;
-}
-
-Stat
-string(const char *name, const char *value)
-{
-  Stat stat{name, TS_RECORDDATATYPE_STRING, {}};
-
-  stat.datum.rec_string = const_cast<char *>(value);
-  return stat;
-}
-
-std::string
-render(PrometheusRenderer &renderer, const std::vector<Stat> &stats)
-{
-  renderer.begin();
-  for (const Stat &stat : stats) {
-    renderer.add(stat.name, stat.data_type, stat.datum);
-  }
-  return renderer.render();
 }
 
 PrometheusOptions

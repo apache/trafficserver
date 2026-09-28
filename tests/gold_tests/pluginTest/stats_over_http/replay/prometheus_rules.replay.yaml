@@ -1,0 +1,200 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Name, label and type the Prometheus output of a remap rule with a configuration file'
+  server:
+    name: 'server'
+  client:
+    name: 'client'
+  ats:
+    name: 'ts'
+    copy_custom_plugin:
+      - '{AtsTestPluginsDir}/test_metrics.so'
+    copy_to_config_dir:
+      - 'rules/labels.yaml'
+      - 'rules/settings.yaml'
+    plugin_config:
+      - 'test_metrics.so plugin.test_metrics.requests.get=7 plugin.test_metrics.requests.post=9 plugin.test_metrics.a+b=5 plugin.test_metrics.queue=4'
+    remap_config:
+      - from: 'http://rules.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--config=labels.yaml']
+      - from: 'http://file-settings.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--config=settings.yaml']
+      - from: 'http://option-over-file.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--config=settings.yaml', '--format=json']
+    metric_checks:
+      - metric: 'plugin.stats_over_http.config_errors'
+        value: 0
+      - metric: 'plugin.stats_over_http.requests'
+        min: 7
+      - metric: 'plugin.stats_over_http.renders'
+        min: 2
+      - metric: 'plugin.stats_over_http.series'
+        min: 4
+      - metric: 'plugin.stats_over_http.series_relabeled'
+        min: 1
+      - metric: 'plugin.stats_over_http.bytes_out'
+        min: 1
+      - metric: 'plugin.stats_over_http.render_us'
+        min: 1
+      - metric: 'plugin.stats_over_http.intercept_us'
+        min: 1
+
+sessions:
+- transactions:
+  # A rule turns part of a name into a label.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, rules.example.com ]
+        - [ uuid, labeled-family ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=0.0.4; charset=utf-8', as: equal } ]
+        - [ Content-Length, { as: present } ]
+        - [ X-Stats-Format, { value: prometheus, as: equal } ]
+      content:
+        encoding: plain
+        data: "# TYPE plugin_test_metrics_requests counter\nplugin_test_metrics_requests{method=\"get\"} 7\nplugin_test_metrics_requests{method=\"post\"} 9\n"
+        verify: { as: contains }
+
+  # '+' becomes "plus".
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, rules.example.com ]
+        - [ uuid, plus-name ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      content:
+        encoding: plain
+        data: "# TYPE plugin_test_metrics_aplusb counter\nplugin_test_metrics_aplusb 5\n"
+        verify: { as: contains }
+
+  # A type rule makes a gauge.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, rules.example.com ]
+        - [ uuid, gauge-type ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      content:
+        encoding: plain
+        data: "# TYPE plugin_test_metrics_queue gauge\nplugin_test_metrics_queue 4\n"
+        verify: { as: contains }
+
+  # A listed string metric puts its value in a label.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, rules.example.com ]
+        - [ uuid, string-metric ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      content:
+        encoding: plain
+        data: "# TYPE proxy_process_version_server_short counter\nproxy_process_version_server_short{value=\""
+        verify: { as: contains }
+
+  # A remap rule ignores Accept-Encoding.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, rules.example.com ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, accept-encoding-ignored ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { as: absent } ]
+
+  # The file sets the format.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, file-settings.example.com ]
+        - [ uuid, file-settings ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=0.0.4; charset=utf-8', as: equal } ]
+        - [ X-Stats-Format, { value: prometheus, as: equal } ]
+
+  # The options of the remap rule take precedence over the file.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /stats
+      headers:
+        fields:
+        - [ Host, option-over-file.example.com ]
+        - [ uuid, option-over-file ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: text/json, as: equal } ]
+        - [ X-Stats-Format, { value: json, as: equal } ]

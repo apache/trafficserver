@@ -44,6 +44,7 @@ class TestStatsOverHttpTaskRender:
         self._test_scenarios()
         self._test_global_wait_timeouts()
         self._test_continuations_after()
+        self._test_waiter_timeouts()
 
     def _configure_traffic_server(self) -> None:
         # LeakSanitizer does not run on macOS, so cont_count.py counts live continuations to detect a leaked render, watchdog,
@@ -167,6 +168,16 @@ class TestStatsOverHttpTaskRender:
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'no more than the baseline', 'The requests, renders and watchdogs should release their continuations.')
         tr.StillRunningAfter = ts
+
+    def _test_waiter_timeouts(self) -> None:
+        for process in (self._ts, self._ts_global):
+            tr = Test.AddTestRun(f'Count the requests of {process.Name} that timed out waiting for a render')
+            tr.Processes.Default.Command = 'traffic_ctl metric get plugin.stats_over_http.waiter_timeouts'
+            tr.Processes.Default.Env = process.Env
+            tr.Processes.Default.ReturnCode = 0
+            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+                r'^plugin\.stats_over_http\.waiter_timeouts\s+[1-9][0-9]*$', 'The timed out requests should be counted.')
+            tr.StillRunningAfter = process
 
     def _run(self, description: str, scenario: str, path: str = '/', extra: str = '', process: Any = None) -> Any:
         '''Run one task_render.py scenario against a Traffic Server process, ts unless another is given.'''

@@ -111,6 +111,10 @@ class Client:
         subprocess.run(['traffic_ctl', 'plugin', 'msg', 'test_metrics.hold_task', str(ms)], check=True, capture_output=True)
         return log.wait_for(f'Queued a task that holds a task thread for {ms} ms')
 
+    def metric(self, name: str) -> int:
+        out = subprocess.run(['traffic_ctl', 'metric', 'get', name], check=True, capture_output=True, text=True).stdout
+        return int(out.split()[-1])
+
     def reload_remap(self) -> None:
         # Traffic Server reloads a file only when its modification time changes.
         os.utime(self.args.remap_config)
@@ -122,12 +126,16 @@ class Client:
 
 def concurrent(client: Client) -> None:
     '''Requests that arrive during a render all wait for it, and one render answers them all.'''
+    before = client.metric('plugin.stats_over_http.renders')
     log = client.stall(3000)
     with ThreadPoolExecutor(client.args.requests) as pool:
         list(pool.map(lambda _: client.verify(client.args.path, 'prometheus'), range(client.args.requests)))
     renders = log.all(RENDERED)
     if [int(render['count']) for render in renders] != [client.args.requests]:
         raise Failure(f'Expected one render for {client.args.requests} requests: {[render[0] for render in renders]}')
+    counted = client.metric('plugin.stats_over_http.renders') - before
+    if counted != 1:
+        raise Failure(f'plugin.stats_over_http.renders counted {counted} renders, expected 1')
     print(f'One render answered {client.args.requests} concurrent requests')
 
 
@@ -379,7 +387,7 @@ def main() -> int:
         help='what to run')
     parser.add_argument('--path', default='/', help='the path of the remap rule')
     parser.add_argument('--count', type=int, required=True, help='the --count given to test_metrics.so')
-    parser.add_argument('--requests', type=int, default=20, help='the number of concurrent requests')
+    parser.add_argument('--requests', type=int, default=50, help='the number of concurrent requests')
     parser.add_argument('--reloads', type=int, default=10, help='the number of remap reloads')
     parser.add_argument('--remap-config', help='the remap.config to touch before a reload')
     parser.add_argument('--brotli', action='store_true', help='Traffic Server supports br')

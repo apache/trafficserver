@@ -38,6 +38,7 @@
 #include <memory>
 #include <mutex>
 #include <netinet/in.h>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <sys/stat.h>
@@ -48,9 +49,12 @@
 #include <zlib.h>
 
 #include <ts/remap.h>
+#include <yaml-cpp/yaml.h>
 #include "prometheus_render.h"
+#include "prometheus_rules.h"
 #include "swoc/TextView.h"
 #include "tscore/ink_config.h"
+#include <tsutil/Metrics.h>
 #include <tsutil/ts_ip.h>
 #include <tsutil/StringCompare.h>
 
@@ -132,7 +136,72 @@ struct stats_options {
   bool            prometheus_help  = true;
   int64_t         max_age_ms       = 1000;
   int64_t         wait_timeout_ms  = 10000;
+  // The prometheus section of the configuration file of a remap rule, or null.
+  std::shared_ptr<const PrometheusRules> rules;
+  // The configuration file of the remap rule has an error, so each request gets a 503.
+  bool config_error = false;
+  // The Prometheus output ends with a current_time_epoch_ms sample.
+  bool prometheus_epoch = true;
 };
+
+// The metrics of the plugin itself.
+struct stats_metrics {
+  using counter = ts::Metrics::Counter::AtomicType;
+
+  counter *requests              = create("requests");
+  counter *renders               = create("renders");
+  counter *render_us             = create("render_us");
+  counter *intercept_us          = create("intercept_us");
+  counter *series                = create("series");
+  counter *series_dropped        = create("series_dropped");
+  counter *series_relabeled      = create("series_relabeled");
+  counter *series_duplicates     = create("series_duplicates");
+  counter *series_type_conflicts = create("series_type_conflicts");
+  counter *waiter_timeouts       = create("waiter_timeouts");
+  counter *config_errors         = create("config_errors");
+  counter *bytes_out             = create("bytes_out");
+
+  static counter *
+  create(std::string_view name)
+  {
+    return ts::Metrics::Counter::createPtr("plugin.stats_over_http.", name);
+  }
+};
+
+// createPtr returns the existing metric for a name, so each copy of the plugin that a remap reload loads uses the same metrics.
+static const stats_metrics &
+metrics()
+{
+  static const stats_metrics instance;
+
+  return instance;
+}
+
+static void
+count(ts::Metrics::Counter::AtomicType *metric, uint64_t value = 1)
+{
+  ts::Metrics::Counter::increment(metric, value);
+}
+
+static int64_t
+thread_cpu_ns()
+{
+  timespec now;
+
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
+  return static_cast<int64_t>(now.tv_sec) * 1000000000 + now.tv_nsec;
+}
+
+// @a rest carries the nanoseconds that do not make a whole microsecond to the next call on this thread.
+static void
+count_cpu_time(ts::Metrics::Counter::AtomicType *metric, int64_t start, int64_t &rest)
+{
+  rest += thread_cpu_ns() - start;
+  if (rest >= 1000) {
+    count(metric, rest / 1000);
+    rest %= 1000;
+  }
+}
 
 struct stats_instance;
 
@@ -343,35 +412,6 @@ sanitize_metric_name_for_prometheus(std::string_view name)
   return sanitized_name;
 }
 
-static std::string
-escape_prometheus_v2_label_value(std::string_view val)
-{
-  size_t escaped_len = 0;
-  for (char c : val) {
-    if (c == '"' || c == '\\' || c == '\n') {
-      escaped_len += 2;
-    } else {
-      escaped_len += 1;
-    }
-  }
-
-  std::string escaped;
-  if (escaped_len > 0) {
-    escaped.reserve(escaped_len);
-    for (char c : val) {
-      if (c == '"' || c == '\\') {
-        escaped += '\\';
-        escaped += c;
-      } else if (c == '\n') {
-        escaped += "\\n";
-      } else {
-        escaped += c;
-      }
-    }
-  }
-  return escaped;
-}
-
 static void
 append_prometheus_v2_label(std::string &labels, std::string_view key, std::string_view val)
 {
@@ -380,7 +420,7 @@ append_prometheus_v2_label(std::string &labels, std::string_view key, std::strin
   }
   labels += key;
   labels += "=\"";
-  labels += escape_prometheus_v2_label_value(val);
+  prometheus_escape_label_value(labels, val);
   labels += "\"";
 }
 
@@ -554,15 +594,23 @@ prometheus_v2_name(std::string_view name, TSRecordDataType data_type)
           data_type == TS_RECORDDATATYPE_COUNTER ? PrometheusType::COUNTER : PrometheusType::GAUGE};
 }
 
+static void
+warn_prometheus(const std::string &message)
+{
+  TSWarning("[%s] %s", PLUGIN_NAME, message.c_str());
+}
+
 static std::unique_ptr<PrometheusRenderer>
-make_prometheus_renderer(output_format_t format, bool help, bool wrap)
+make_prometheus_renderer(output_format_t format, const stats_options &stats)
 {
   PrometheusOptions options;
 
-  options.help          = help;
-  options.wrap_counters = wrap;
+  options.help          = stats.prometheus_help;
+  options.wrap_counters = stats.wrap_counters;
   if (format == output_format_t::PROMETHEUS_OUTPUT) {
     options.namer = prometheus_v1_name;
+    options.rules = stats.rules;
+    options.warn  = warn_prometheus;
   } else if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
     options.namer = prometheus_v2_name;
   } else {
@@ -742,14 +790,24 @@ prometheus_out_stats(output_format_t format, PrometheusRenderer &renderer, rende
 
   std::string &body = renderer.render();
 
-  if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
-    if (renderer.options().help) {
-      body.append("# HELP current_time_epoch_ms Current time in milliseconds since epoch.\n");
+  if (my_state->options->prometheus_epoch) {
+    if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
+      if (renderer.options().help) {
+        body.append("# HELP current_time_epoch_ms Current time in milliseconds since epoch.\n");
+      }
+      body.append("# TYPE current_time_epoch_ms gauge\n");
     }
-    body.append("# TYPE current_time_epoch_ms gauge\n");
+    body.append("current_time_epoch_ms ").append(std::to_string(ms_since_epoch())).append("\n");
   }
-  body.append("current_time_epoch_ms ").append(std::to_string(ms_since_epoch())).append("\n");
   TSIOBufferWrite(my_state->resp_buffer, body.data(), body.size());
+
+  auto const &stats = renderer.stats();
+
+  count(metrics().series, stats.series);
+  count(metrics().series_dropped, stats.dropped);
+  count(metrics().series_relabeled, stats.relabeled);
+  count(metrics().series_duplicates, stats.duplicates);
+  count(metrics().series_type_conflicts, stats.type_conflicts);
 }
 
 static void
@@ -955,6 +1013,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] registration failed", PLUGIN_NAME);
     goto done;
   }
+  metrics();
 
   for (;;) {
     switch (getopt_long(argc, (char *const *)argv, "iw", longopts, nullptr)) {
@@ -1238,7 +1297,8 @@ static constexpr std::string_view STATS_FORMAT_FIELD = "X-Stats-Format";
 static constexpr std::string_view ALLOWED_METHODS    = "GET, HEAD";
 
 static const char REMAP_USAGE[] = "[--format=json|csv|prometheus|prometheus_v2] [--integer-counters] [--wrap-counters] "
-                                  "[--no-prometheus-help] [--max-age-ms=N] [--wait-timeout-ms=N]";
+                                  "[--no-prometheus-help] [--max-age-ms=N] [--wait-timeout-ms=N] [--config=FILE] "
+                                  "[--on-config-error=fail|503]";
 
 static std::string_view
 format_name(output_format_t format)
@@ -1333,8 +1393,8 @@ struct stats_scrape {
   // When the request started to wait for a render.
   std::chrono::steady_clock::time_point arrived;
 
-  // scrape_wait, the render or the watchdog sets these before the transaction continues, and the intercept reads them only
-  // after that.  The snapshot is null for a HEAD request to a remap rule and for a 503.
+  // TSRemapDoRemap, scrape_wait, the render or the watchdog sets these before the transaction continues, and the intercept
+  // reads them only after that.  The snapshot is null for a HEAD request to a remap rule and for a 503.
   snapshot_ptr snapshot;
   TSHttpStatus status = TS_HTTP_STATUS_OK;
 };
@@ -1362,7 +1422,7 @@ struct stats_instance {
       return nullptr;
     }
     if (*renderer == nullptr) {
-      *renderer = make_prometheus_renderer(format, options.prometheus_help, options.wrap_counters);
+      *renderer = make_prometheus_renderer(format, options);
     }
     return renderer->get();
   }
@@ -1467,6 +1527,7 @@ watchdog_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata A
 
   Dbg(dbg_ctl, "Answering %zu requests with a 503 after %" PRId64 " ms without a render of stats instance %p", expired.size(),
       instance.options.wait_timeout_ms, &instance);
+  count(metrics().waiter_timeouts, expired.size());
   for (auto const &scrape : expired) {
     scrape->status = TS_HTTP_STATUS_SERVICE_UNAVAILABLE;
     TSHttpTxnReenable(scrape->txnp, TS_EVENT_HTTP_CONTINUE);
@@ -1545,7 +1606,12 @@ render_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS
   }
   // The watchdog can answer every waiting request before the render starts.
   if (waiting) {
+    static thread_local int64_t rest  = 0;
+    int64_t const               start = thread_cpu_ns();
+
     render_snapshots(instance, wanted, fresh);
+    count(metrics().renders);
+    count_cpu_time(metrics().render_us, start, rest);
   }
 
   std::vector<std::shared_ptr<stats_scrape>> ready;
@@ -1730,12 +1796,16 @@ scrape_send_response(TSCont contp, scrape_intercept *intercept)
   }
   TSVConnShutdown(intercept->net_vc, 1, 0);
   intercept->write_vio = TSVConnWrite(intercept->net_vc, contp, intercept->resp_reader, bytes);
+  count(metrics().requests);
+  count(metrics().bytes_out, bytes);
 }
 
 static int
 scrape_intercept_handler(TSCont contp, TSEvent event, void *edata)
 {
-  auto *intercept = static_cast<scrape_intercept *>(TSContDataGet(contp));
+  static thread_local int64_t rest      = 0;
+  int64_t const               start     = thread_cpu_ns();
+  auto                       *intercept = static_cast<scrape_intercept *>(TSContDataGet(contp));
 
   switch (event) {
   case TS_EVENT_NET_ACCEPT:
@@ -1762,6 +1832,7 @@ scrape_intercept_handler(TSCont contp, TSEvent event, void *edata)
   default:
     TSReleaseAssert(!"Unexpected Event");
   }
+  count_cpu_time(metrics().intercept_us, start, rest);
   return 0;
 }
 
@@ -1838,9 +1909,113 @@ allow_handler(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
+// The settings that a remap rule or its configuration file can set.
+struct stats_settings {
+  std::optional<output_format_t>         format;
+  std::optional<int64_t>                 max_age_ms;
+  std::optional<int64_t>                 wait_timeout_ms;
+  std::optional<bool>                    prometheus_help;
+  std::shared_ptr<const PrometheusRules> rules;
+};
+
+static std::string
+yaml_line(const YAML::Node &node)
+{
+  auto const mark = node.Mark();
+
+  return mark.is_null() ? std::string{} : "line " + std::to_string(mark.line + 1) + ": ";
+}
+
+// Reads the configuration file of a remap rule.  Returns an empty string, or a description of the first error.
+static std::string
+load_settings_file(const std::string &path, stats_settings &settings)
+{
+  std::ifstream file{path};
+
+  if (!file) {
+    return std::string{"cannot open the file: "} + strerror(errno);
+  }
+  try {
+    YAML::Node const root = YAML::Load(file);
+
+    if (!root.IsMap()) {
+      return yaml_line(root) + "the file must be a map";
+    }
+    for (auto const &item : root) {
+      std::string const key   = item.first.as<std::string>();
+      YAML::Node const  value = item.second;
+
+      if (key == "format") {
+        output_format_t format;
+
+        if (!value.IsScalar() || !parse_format(value.Scalar(), format)) {
+          return yaml_line(value) + "format must be json, csv, prometheus or prometheus_v2";
+        }
+        settings.format = format;
+      } else if (key == "render") {
+        if (!value.IsMap()) {
+          return yaml_line(value) + "render must be a map";
+        }
+        for (auto const &setting : value) {
+          std::string const name   = setting.first.as<std::string>();
+          std::string const text   = setting.second.IsScalar() ? setting.second.Scalar() : std::string{};
+          int64_t           number = 0;
+          int64_t           min    = 0;
+          bool              valid  = false;
+
+          if (name == "max_age_ms") {
+            valid               = parse_integer(text, min, MAX_MILLISECONDS, number);
+            settings.max_age_ms = number;
+          } else if (name == "wait_timeout_ms") {
+            min                      = 1;
+            valid                    = parse_integer(text, min, MAX_MILLISECONDS, number);
+            settings.wait_timeout_ms = number;
+          } else {
+            return yaml_line(setting.first) + "unknown key render." + name;
+          }
+          if (!valid) {
+            return yaml_line(setting.second) + "render." + name + " must be an integer from " + std::to_string(min) + " to " +
+                   std::to_string(MAX_MILLISECONDS) + ", not '" + text + "'";
+          }
+        }
+      } else if (key == "prometheus") {
+        auto rules = std::make_shared<PrometheusRules>();
+
+        if (std::string error = rules->load(value); !error.empty()) {
+          return error;
+        }
+        settings.prometheus_help = rules->help();
+        settings.rules           = std::move(rules);
+      } else {
+        return yaml_line(item.first) + "unknown key " + key;
+      }
+    }
+  } catch (const YAML::Exception &e) {
+    return e.what();
+  }
+  return {};
+}
+
+// Registers the configuration file of a remap rule as a child of the remap configuration.  After a change to the file, a
+// configuration reload loads the remap configuration again, and with it the file.
+static void
+watch_config_file(const std::string &path)
+{
+  TSMgmtString parent = nullptr;
+
+  if (TSMgmtStringGet("proxy.config.url_remap.filename", &parent) == TS_SUCCESS) {
+    TSMgmtConfigFileAdd(parent, path.c_str());
+  } else {
+    TSWarning("[%s] Cannot read proxy.config.url_remap.filename, so a configuration reload does not detect a change to %s",
+              PLUGIN_NAME, path.c_str());
+  }
+  TSfree(parent);
+}
+
 TSReturnCode
 TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
+  metrics();
   return TS_SUCCESS;
 }
 
@@ -1854,19 +2029,32 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     {"no-prometheus-help", no_argument,       nullptr, 'n'},
     {"max-age-ms",         required_argument, nullptr, 'a'},
     {"wait-timeout-ms",    required_argument, nullptr, 't'},
+    {"config",             required_argument, nullptr, 'c'},
+    {"on-config-error",    required_argument, nullptr, 'e'},
     {nullptr,              0,                 nullptr, 0  }
   };
-  stats_options options;
+  stats_options  options;
+  stats_settings rule;
+  std::string    config_path;
+  bool           answer_errors = false;
+  int64_t        number        = 0;
+
+  options.prometheus_epoch = false;
 
   // argv[0] is the "from" URL.  Skip it so that the "to" URL poses as the program name.
   --argc;
   ++argv;
-  for (int opt; (opt = getopt_long(argc, argv, "", longopts, nullptr)) != -1;) {
+  for (int opt, option_index = 0; (opt = getopt_long(argc, argv, "", longopts, &option_index)) != -1;) {
+    bool    valid = true;
+    int64_t min   = 0;
+    int64_t max   = 0;
+
     switch (opt) {
     case 'f':
-      if (!parse_format(optarg, options.format)) {
-        snprintf(errbuf, errbuf_size, "[%s] Unknown format '%s', usage: %s", PLUGIN_NAME, optarg, REMAP_USAGE);
-        return TS_ERROR;
+      if (output_format_t format; parse_format(optarg, format)) {
+        rule.format = format;
+      } else {
+        valid = false;
       }
       break;
     case 'i':
@@ -1876,24 +2064,41 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       options.wrap_counters = true;
       break;
     case 'n':
-      options.prometheus_help = false;
+      rule.prometheus_help = false;
       break;
     case 'a':
-      if (!parse_integer(optarg, 0, MAX_MILLISECONDS, options.max_age_ms)) {
-        snprintf(errbuf, errbuf_size, "[%s] --max-age-ms must be an integer from 0 to %" PRId64 ", not '%s', usage: %s",
-                 PLUGIN_NAME, MAX_MILLISECONDS, optarg, REMAP_USAGE);
-        return TS_ERROR;
-      }
+      max             = MAX_MILLISECONDS;
+      valid           = parse_integer(optarg, min, max, number);
+      rule.max_age_ms = number;
       break;
     case 't':
-      if (!parse_integer(optarg, 1, MAX_MILLISECONDS, options.wait_timeout_ms)) {
-        snprintf(errbuf, errbuf_size, "[%s] --wait-timeout-ms must be an integer from 1 to %" PRId64 ", not '%s', usage: %s",
-                 PLUGIN_NAME, MAX_MILLISECONDS, optarg, REMAP_USAGE);
-        return TS_ERROR;
+      min                  = 1;
+      max                  = MAX_MILLISECONDS;
+      valid                = parse_integer(optarg, min, max, number);
+      rule.wait_timeout_ms = number;
+      break;
+    case 'c':
+      config_path = optarg;
+      break;
+    case 'e':
+      if (std::string_view{optarg} == "503") {
+        answer_errors = true;
+      } else if (std::string_view{optarg} != "fail") {
+        valid = false;
       }
       break;
     default:
       snprintf(errbuf, errbuf_size, "[%s] Invalid option '%s', usage: %s", PLUGIN_NAME, argv[optind - 1], REMAP_USAGE);
+      return TS_ERROR;
+    }
+    if (!valid) {
+      if (max > 0) {
+        snprintf(errbuf, errbuf_size, "[%s] --%s must be an integer from %" PRId64 " to %" PRId64 ", not '%s', usage: %s",
+                 PLUGIN_NAME, longopts[option_index].name, min, max, optarg, REMAP_USAGE);
+      } else {
+        snprintf(errbuf, errbuf_size, "[%s] Invalid --%s '%s', usage: %s", PLUGIN_NAME, longopts[option_index].name, optarg,
+                 REMAP_USAGE);
+      }
       return TS_ERROR;
     }
   }
@@ -1901,6 +2106,40 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     snprintf(errbuf, errbuf_size, "[%s] Unexpected argument '%s', usage: %s", PLUGIN_NAME, argv[optind], REMAP_USAGE);
     return TS_ERROR;
   }
+
+  stats_settings file;
+
+  if (!config_path.empty()) {
+    if (config_path.front() != '/') {
+      config_path = std::string{TSConfigDirGet()} + "/" + config_path;
+    }
+    // Watch the file even when it has an error, so that a reload after a fix loads it.
+    watch_config_file(config_path);
+
+    std::string error  = load_settings_file(config_path, file);
+    auto const  format = rule.format.value_or(file.format.value_or(options.format));
+
+    if (error.empty() && file.rules != nullptr && format != output_format_t::PROMETHEUS_OUTPUT) {
+      error = "the prometheus settings need the prometheus format, not " + std::string{format_name(format)};
+    }
+    if (!error.empty()) {
+      count(metrics().config_errors);
+      if (!answer_errors) {
+        snprintf(errbuf, errbuf_size, "[%s] %s: %s", PLUGIN_NAME, config_path.c_str(), error.c_str());
+        return TS_ERROR;
+      }
+      TSError("[%s] %s: %s.  The remap rule answers each request with a 503", PLUGIN_NAME, config_path.c_str(), error.c_str());
+      file                 = {};
+      options.config_error = true;
+    }
+  }
+
+  // The options of the remap rule take precedence over the file.
+  options.format          = rule.format.value_or(file.format.value_or(options.format));
+  options.max_age_ms      = rule.max_age_ms.value_or(file.max_age_ms.value_or(options.max_age_ms));
+  options.wait_timeout_ms = rule.wait_timeout_ms.value_or(file.wait_timeout_ms.value_or(options.wait_timeout_ms));
+  options.prometheus_help = rule.prometheus_help.value_or(file.prometheus_help.value_or(options.prometheus_help));
+  options.rules           = std::move(file.rules);
 
   *ih = new std::shared_ptr<stats_instance>(make_stats_instance(options));
   return TS_SUCCESS;
@@ -1935,9 +2174,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   auto const &instance = *static_cast<std::shared_ptr<stats_instance> *>(ih);
   auto        scrape   = std::make_shared<stats_scrape>(txnp, instance->options.format, encoding_format_t::NONE, true);
 
-  // Wait for the stats in the cache lookup hook, which runs after the remap ACL filters, so that a request they deny starts no
-  // render.
-  if (method == TS_HTTP_METHOD_GET) {
+  if (instance->options.config_error) {
+    scrape->status = TS_HTTP_STATUS_SERVICE_UNAVAILABLE;
+  } else if (method == TS_HTTP_METHOD_GET) {
+    // Wait for the stats in the cache lookup hook, which runs after the remap ACL filters, so that a request they deny starts
+    // no render.
     TSCont txn_cont = TSContCreate(scrape_txn_handler, nullptr);
 
     TSContDataSet(txn_cont, new scrape_txn{instance, scrape});

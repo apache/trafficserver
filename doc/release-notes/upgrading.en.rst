@@ -74,6 +74,10 @@ after it starts; the default is ``0``. When requests wait and no render
 finishes for ten seconds, the requests get a ``503`` response. The
 ``--wait-timeout-ms`` option sets this time.
 
+The plugin creates metrics of its own, such as
+``plugin.stats_over_http.requests`` and ``plugin.stats_over_http.renders``, so
+its output has more metrics than before, in each format.
+
 Upgrading to ATS v10.x
 ======================
 
