@@ -140,8 +140,7 @@ std::string make_JA4_c_raw(TLSClientHelloSummary const &TLS_summary);
  * @param TLS_summary The TLS client hello. If there was no ALPN in the
  * Client Hello, TLS_summary.ALPN should either be empty or set to "00".
  * Behavior when the number of digits in TLS_summary.TLS_version is greater
- * than 2, the number of digits in TLS_summary.ALPN is greater than 2
- * (except when TLS_summary.ALPN is empty) is unspecified.
+ * than 2 is unspecified.
  * @param UnaryOp hasher A hash function. For a specification-compliant
  * JA4 fingerprint, this should be a sha256 hash.
  * @return Returns a string containing the JA4 fingerprint.
