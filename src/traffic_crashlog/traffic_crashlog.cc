@@ -23,6 +23,8 @@
 
 #include <cstdio>
 #include <exception>
+#include <memory>
+#include <typeinfo>
 
 #include "traffic_crashlog.h"
 #include "tscore/ink_args.h"
@@ -209,10 +211,11 @@ try {
   char           *logname;
   crashlog_target target;
 
-  // Split the allocations: with two news in one expression, whichever is
-  // sequenced first leaks if the second throws.
-  auto *log_file = new BaseLogFile("stderr");
-  DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, log_file));
+  // Hold the log file in a unique_ptr until Diags is actually constructed: the
+  // Diags constructor can throw, and it only takes ownership once it succeeds.
+  auto log_file = std::make_unique<BaseLogFile>("stderr");
+  DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, log_file.get()));
+  log_file.release();
 
   auto &version = AppVersionInfo::setup_version("traffic_crashlog");
 
@@ -358,7 +361,7 @@ try {
   fclose(fp);
   return 0;
 } catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_crashlog: terminating on an unhandled exception: %s\n", ex.what());
+  fprintf(stderr, "traffic_crashlog: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
   return 1;
 } catch (...) {
   fprintf(stderr, "traffic_crashlog: terminating on an unhandled exception\n");

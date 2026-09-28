@@ -23,6 +23,8 @@
 
 #include <cstdio>
 #include <exception>
+#include <typeinfo>
+#include <sysexits.h>
 
 #include "tscore/Layout.h"
 #include "tscore/runroot.h"
@@ -81,9 +83,11 @@ try {
 
   return engine.status_code;
 } catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_layout: terminating on an unhandled exception: %s\n", ex.what());
-  return 1;
+  // This tool returns sysexits values exclusively; EX_SOFTWARE is the one for
+  // an internal fault, and matches what ink_fatal() exits with.
+  fprintf(stderr, "traffic_layout: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  return EX_SOFTWARE;
 } catch (...) {
   fprintf(stderr, "traffic_layout: terminating on an unhandled exception\n");
-  return 1;
+  return EX_SOFTWARE;
 }

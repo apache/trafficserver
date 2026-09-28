@@ -23,6 +23,7 @@
 
 #include <cstdio>
 #include <exception>
+#include <typeinfo>
 
 #include "tscore/ink_config.h"
 #include <map>
@@ -382,7 +383,8 @@ char reconnecting_animation[4] = {'|', '/', '-', '\\'};
 namespace
 {
 /// Whether initscr() has run, so an exception handler knows if the terminal
-/// needs putting back. Calling endwin() without initscr() is undefined.
+/// needs putting back. X/Open Curses does not define endwin() before a
+/// successful initscr(); ncurses returns ERR, but do not rely on that.
 bool curses_started = false;
 
 void
@@ -511,12 +513,12 @@ try {
   }
 
 quit:
-  endwin();
+  restore_terminal();
 
   return 0;
 } catch (std::exception const &ex) {
   restore_terminal();
-  fprintf(stderr, "traffic_top: terminating on an unhandled exception: %s\n", ex.what());
+  fprintf(stderr, "traffic_top: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
   return 1;
 } catch (...) {
   restore_terminal();

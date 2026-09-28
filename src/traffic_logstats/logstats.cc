@@ -24,6 +24,7 @@
 
 #include <cstdio>
 #include <exception>
+#include <typeinfo>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
@@ -2758,9 +2759,11 @@ try {
   }
   my_exit(exit_status);
 } catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_logstats: terminating on an unhandled exception: %s\n", ex.what());
-  return 1;
+  // EXIT_UNKNOWN, not 1: 1 is EXIT_WARNING here, and a plugin that faulted is
+  // not a warning. Nagios-style wrappers read stdout, so the status goes there.
+  printf("unknown: traffic_logstats terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  return EXIT_UNKNOWN;
 } catch (...) {
-  fprintf(stderr, "traffic_logstats: terminating on an unhandled exception\n");
-  return 1;
+  printf("unknown: traffic_logstats terminating on an unhandled exception\n");
+  return EXIT_UNKNOWN;
 }
