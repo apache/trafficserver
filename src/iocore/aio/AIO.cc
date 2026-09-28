@@ -451,24 +451,27 @@ cache_op(AIOCallback *op)
 {
   bool read = (op->aiocb.aio_lio_opcode == LIO_READ);
   for (; op; op = op->then) {
-    ink_aiocb *a = &op->aiocb;
-    ssize_t    err, res = 0;
+    ink_aiocb *a    = &op->aiocb;
+    size_t     done = 0;
 
-    while (a->aio_nbytes - res > 0) {
+    while (done < a->aio_nbytes) {
+      char   *buf    = static_cast<char *>(a->aio_buf) + done;
+      size_t  nbytes = a->aio_nbytes - done;
+      off_t   offset = a->aio_offset + static_cast<off_t>(done);
+      ssize_t err;
+
       do {
         if (read) {
 #ifdef AIO_FAULT_INJECTION
-          err = aioFaultInjection.pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
-                                        a->aio_offset + res);
+          err = aioFaultInjection.pread(a->aio_fildes, buf, nbytes, offset);
 #else
-          err = pread(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pread(a->aio_fildes, buf, nbytes, offset);
 #endif
         } else {
 #ifdef AIO_FAULT_INJECTION
-          err = aioFaultInjection.pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res,
-                                         a->aio_offset + res);
+          err = aioFaultInjection.pwrite(a->aio_fildes, buf, nbytes, offset);
 #else
-          err = pwrite(a->aio_fildes, (static_cast<char *>(a->aio_buf)) + res, a->aio_nbytes - res, a->aio_offset + res);
+          err = pwrite(a->aio_fildes, buf, nbytes, offset);
 #endif
         }
       } while ((err < 0) && (errno == EINTR || errno == ENOBUFS || errno == ENOMEM));
@@ -477,9 +480,9 @@ cache_op(AIOCallback *op)
         op->aio_result = -errno;
         return (err);
       }
-      res += err;
+      done += static_cast<size_t>(err);
     }
-    op->aio_result = res;
+    op->aio_result = static_cast<int64_t>(done);
     ink_assert(op->ok());
   }
   return 1;
