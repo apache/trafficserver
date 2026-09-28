@@ -226,6 +226,10 @@ TEST_CASE("JA4")
     CHECK("00" == call_JA4(datasource).substr(1, 2));
     datasource.set_version(0x234);
     CHECK("00" == call_JA4(datasource).substr(1, 2));
+    datasource.set_version(0x200);
+    CHECK("00" == call_JA4(datasource).substr(1, 2));
+    datasource.set_version(0x100);
+    CHECK("00" == call_JA4(datasource).substr(1, 2));
   }
 
   SECTION("Given the TLS version is known, "
@@ -238,8 +242,7 @@ TEST_CASE("JA4")
       {0x302,  "11"},
       {0x301,  "10"},
       {0x300,  "s3"},
-      {0x200,  "s2"},
-      {0x100,  "s1"},
+      {0x002,  "s2"},
       {0xfeff, "d1"},
       {0xfefd, "d2"},
       {0xfefc, "d3"}
