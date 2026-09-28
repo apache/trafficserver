@@ -39,11 +39,9 @@ class Family:
     samples: list[str] = field(default_factory=list)
 
 
-def fetch(port: int, path: str) -> str:
+def fetch(port: int, path: str) -> tuple[int, str]:
     response, body = request(port, path)
-    if response.status != 200:
-        raise RuntimeError(f'{path} returned status {response.status}')
-    return body.decode('utf-8')
+    return response.status, body.decode('utf-8')
 
 
 def parse_families(body: str) -> dict[str, Family]:
@@ -114,28 +112,39 @@ def main() -> int:
     parser.add_argument('--help-lines', dest='help', action='store_true', help='every family should have a HELP line')
     parser.add_argument('--expect', action='append', default=[], help='a line that the body should have')
     parser.add_argument('--family', action='append', default=[], help='NAME=COUNT, the number of samples of a family')
-    parser.add_argument('--wait', action='store_true', help='fetch again until the body has every --expect line')
+    parser.add_argument('--status', type=int, default=200, help='the expected response status')
+    parser.add_argument('--wait', action='store_true', help='fetch again until the status and every --expect line are there')
     parser.add_argument('--concurrency', type=int, default=1, help='send this many requests at once and verify each body')
+    parser.add_argument('--fresh', action='store_true', help='fetch again, and expect another body from another render')
     args = parser.parse_args()
 
-    if args.concurrency > 1:
-        with ThreadPoolExecutor(args.concurrency) as pool:
-            bodies = list(pool.map(lambda _: fetch(args.port, args.path), range(args.concurrency)))
-    else:
-        deadline = time.monotonic() + 30
-        while True:
-            body = fetch(args.port, args.path)
-            if not args.wait or set(args.expect) <= set(body.splitlines()) or time.monotonic() > deadline:
-                break
-            time.sleep(0.2)
-        bodies = [body]
-
     try:
-        for body in bodies:
-            verify(args, body)
+        if args.concurrency > 1:
+            with ThreadPoolExecutor(args.concurrency) as pool:
+                responses = list(pool.map(lambda _: fetch(args.port, args.path), range(args.concurrency)))
+        else:
+            deadline = time.monotonic() + 30
+            while True:
+                status, body = fetch(args.port, args.path)
+                done = status == args.status and set(args.expect) <= set(body.splitlines())
+                if not args.wait or done or time.monotonic() > deadline:
+                    break
+                time.sleep(0.2)
+            responses = [(status, body)]
+            if args.fresh:
+                responses.append(fetch(args.port, args.path))
+
+        for status, body in responses:
+            if status != args.status:
+                raise RuntimeError(f'returned status {status}, expected {args.status}')
+            if status == 200:
+                verify(args, body)
+        if args.fresh and responses[0][1] == responses[1][1]:
+            raise RuntimeError('The second response has the body of the first, so the stats were not rendered again')
     except RuntimeError as e:
         print(f'{args.path}: {e}')
         return 1
+    print(f'{args.path}: status {args.status}')
     return 0
 
 

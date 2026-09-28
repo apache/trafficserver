@@ -156,10 +156,11 @@ The JSON format is the default, but you can also access it explicitly by using t
 In both Prometheus formats, each metric family appears once: its ``# HELP``
 and ``# TYPE`` lines, then all of its samples. The first metric of a family
 sets the type of the family, and the name of that metric is the ``# HELP``
-text. In the version 0.0.4 format, a family whose first metric is a float has
-no ``# TYPE`` line. The plugin translates the name of each metric once and
-reuses the result for later requests. A metric that Traffic Server creates
-after the first request joins its family in later responses.
+text. In the version 0.0.4 format without `Prometheus Rules`_, a family whose
+first metric is a float has no ``# TYPE`` line. The plugin translates the name
+of each metric once and reuses the result for later requests. A metric that
+Traffic Server creates after the first request joins its family in later
+responses.
 
 Note that using a path suffix overrides any ``Accept`` header. Thus if you
 specify a path suffix, the plugin will return the data in that format regardless of
@@ -226,11 +227,27 @@ A rule accepts these options:
 
 ``--format=json|csv|prometheus|prometheus_v2``
    The format of every response from the rule. The default is ``json``. The path
-   and the ``Accept`` header of the request do not change the format.
+   and the ``Accept`` header of the request do not change the format. The
+   Prometheus output of a rule has no ``current_time_epoch_ms`` sample.
 
 ``--integer-counters``, ``--wrap-counters``, ``--no-prometheus-help``, ``--max-age-ms`` and ``--wait-timeout-ms``
    These options have the same effect as for the global plugin, for this rule
    only.
+
+``--config=FILE``
+   Read more settings for the rule from ``FILE``, a YAML file. A relative path is
+   relative to the configuration directory of Traffic Server. See
+   `Configuration File`_.
+
+``--on-config-error=fail|503``
+   What to do when ``FILE`` is missing or has an error:
+
+   * ``fail``, the default: the rule fails to load, and so does the whole
+     remap configuration. At startup, Traffic Server exits. On a reload,
+     Traffic Server keeps the old remap configuration.
+   * ``503``: the plugin logs the error. The rule answers each ``GET`` and
+     ``HEAD`` request with ``503 Service Unavailable``, an ``X-Stats-Format``
+     header and no body.
 
 The rule answers ``GET`` with the statistics. It answers ``HEAD`` with the same
 headers, but without ``Content-Length`` and without a body. It answers other
@@ -247,3 +264,202 @@ A ``200`` response to ``GET``, and a response to ``HEAD``, have these headers:
   statistics response from the response of another rule, such as a catch-all rule.
 
 A remap rule does not compress its responses.
+
+Configuration File
+==================
+
+The ``--config`` file can set the format and the other settings of a remap
+rule. Its ``prometheus`` section sets how the plugin names the metrics in the
+``prometheus`` format. Each key is optional::
+
+    format: prometheus
+    render:
+      max_age_ms: 1000
+      wait_timeout_ms: 10000
+    prometheus:
+      exclude:
+        names: [proxy.process.http.tunnels]
+        match: ['^proxy\.process\.update\.']
+      rules:
+        - match: '^(proxy\.process\.http)\.([0-9xX]{3})_(responses)$'
+          labels: {code: 2}
+      name:
+        replace:
+          - {from: '+', to: 'plus'}
+        invalid: '[^a-zA-Z0-9_]'
+      types:
+        source: rules
+        rules:
+          - {match: 'current', type: gauge}
+          - {match: '', type: counter}   # '' matches every name
+      strings:
+        label: value
+        names: [proxy.process.version.server.short]
+      const_labels: {region: west}
+      limits:
+        max_series: 0
+      help: false
+
+``format``, ``render.max_age_ms`` and ``render.wait_timeout_ms`` have the
+effect of ``--format``, :option:`--max-age-ms` and :option:`--wait-timeout-ms`.
+An option on the remap rule takes precedence over the same setting in the file.
+The plugin rejects a key that it does not know.
+
+The ``prometheus`` section works only with the ``prometheus`` format. With
+another format, the plugin treats this as an error in the file, and
+``--on-config-error`` applies.
+
+Traffic Server tracks the file as a part of the remap configuration. After you
+change the file, run ``traffic_ctl config reload``. Traffic Server then loads
+the remap configuration again, from :file:`remap.yaml` or :file:`remap.config`,
+and with it the file. You do not need to change the remap configuration.
+
+Prometheus Rules
+----------------
+
+The ``prometheus`` settings turn each metric into a sample of a family, with
+labels. The plugin applies them once to each metric name. Each regular expression
+is a PCRE2 search for a match anywhere in the name.
+
+``exclude.names`` and ``exclude.match``
+   The output leaves out the metrics with these exact names, and the metrics
+   whose names match one of these regular expressions.
+
+``rules``
+   The plugin tries the rules in file order and uses the first rule whose
+   ``match`` matches the name. A name that no rule matches is the family name,
+   without labels.
+
+   * ``match`` needs at least one capture group.
+   * ``labels`` maps each label name to a capture group, from ``1`` to the
+     number of groups. The value of a label is the text of its group.
+   * The family name is capture group ``1``, then each later group that is not
+     a label and not empty, each with ``_`` before it. When group ``1`` is a
+     label, the family name starts with ``_``.
+
+   For example, the file above turns ``proxy.process.http.200_responses`` into
+   the sample ``proxy_process_http_responses{code="200",region="west"}``.
+
+``name.replace`` and ``name.invalid``
+   The plugin replaces each ``from`` with its ``to`` in the family name, in order.
+   Then each character of the family name that ``name.invalid`` matches becomes
+   ``_``. The default of ``name.invalid`` is ``[^a-zA-Z0-9_:]``. Label values do
+   not change. The output leaves out a metric whose family name is not a valid
+   Prometheus metric name, for example a name that starts with a digit.
+
+``types.source`` and ``types.rules``
+   With ``record``, the default, a counter metric is a ``counter``, and other
+   metrics are a ``gauge``. With ``rules``, the first rule in ``types.rules``
+   whose ``match`` matches the name sets the type, ``counter``, ``gauge`` or
+   ``untyped``. The rules match the name after the plugin removes the first
+   occurrence of each label value from it, so a label value cannot change the type
+   of a family. A name that no type rule matches gets the type that ``record``
+   gives it.
+
+``strings.names`` and ``strings.label``
+   A string metric in ``strings.names`` is a sample with the value ``1``, and
+   its string in the label ``strings.label``, ``value`` by default. For
+   example, ``proxy_process_version_server_short{value="10.2.0"} 1``. The output
+   leaves out a string metric that is not in ``strings.names``, unless its
+   string is a decimal number, ``Inf``, ``Infinity`` or ``NaN``. In that case, the
+   number is the value of its sample. No constant label or label of a rule
+   can have the same name as the label ``strings.label``.
+
+``const_labels``
+   Labels that every sample has.
+
+``limits.max_series``
+   The maximum number of samples in a response. When there are more, the output
+   leaves out the newest metrics, so that each response has the same series.
+   ``0``, the default, means no limit.
+
+``help``
+   Whether each family has a ``# HELP`` line. The default is ``false``, so a
+   remap rule with a ``prometheus`` section writes no ``# HELP`` lines unless
+   ``help`` is ``true``. A remap rule without a ``prometheus`` section writes
+   them, as the global plugin does. :option:`--no-prometheus-help` on the remap
+   rule omits the lines, whatever ``help`` is.
+
+The plugin writes each family once: its ``# TYPE`` line, then all of its
+samples. A family of type ``untyped`` has no ``# TYPE`` line. The plugin sorts
+the families by name, the samples of each family by their labels other than
+``strings.label``, and the labels of each sample by name. Within a family:
+
+* The first metric of the family that the plugin sees sets the type of the
+  family, even when the output leaves out that metric. A metric with another
+  type gets the type of the family.
+* The label names of the family come from the metric whose rule comes last in
+  the file, even when that metric has left the statistics, until Traffic Server
+  loads the remap configuration again. A metric that no rule matches counts as
+  after the last rule.
+* A metric with the same label names in another order keeps the value of each
+  label.
+* A metric with other label names, but the same number of labels, takes the
+  label names of the family by position.
+* The output leaves out a metric with another number of labels.
+* The samples of a family are all string metrics from ``strings.names``, or
+  all other metrics. The metric that sets the label names of the family
+  decides which. When a metric from ``strings.names`` and another metric have
+  the same rule, or both match no rule, the other metric sets the label names.
+  The output leaves out a metric of the other kind.
+* When two metrics have the same labels, the output has only the first one
+  that the plugin sees. The label ``strings.label`` is not a part of this
+  comparison, because its string is the value of the metric. Two metrics from
+  ``strings.names`` with the same other labels are therefore duplicates,
+  whatever their strings.
+
+For each family and each of these cases, the plugin logs a warning the first
+time that it leaves out, relabels or retypes a metric, or finds two metrics
+with the same labels. The metrics in `Plugin Metrics`_ count each such sample.
+
+Plugin Metrics
+==============
+
+The plugin counts its work in these metrics, which Traffic Server keeps for the
+whole process, for the global plugin and all remap rules together:
+
+``plugin.stats_over_http.requests``
+   Requests for the statistics that the plugin answered, ``503`` responses
+   included.
+
+``plugin.stats_over_http.renders``
+   Renders of the statistics.
+
+``plugin.stats_over_http.render_us``
+   The CPU time of the renders, in microseconds, on the task threads.
+
+``plugin.stats_over_http.intercept_us``
+   The CPU time, in microseconds, that the plugin uses on the event threads to
+   send the responses. It does not include the time that Traffic Server uses to
+   write the responses to the clients.
+
+``plugin.stats_over_http.bytes_out``
+   The bytes of the responses, headers included.
+
+``plugin.stats_over_http.series``
+   The samples that the plugin wrote in Prometheus renders.
+
+``plugin.stats_over_http.series_dropped``
+   The samples that the plugin left out because of their labels, their kind,
+   an invalid family name or ``limits.max_series``.
+
+``plugin.stats_over_http.series_relabeled``
+   The samples that the plugin wrote with the label names of their family.
+
+``plugin.stats_over_http.series_duplicates``
+   The samples that the plugin left out because another metric has the same
+   series.
+
+``plugin.stats_over_http.series_type_conflicts``
+   The samples that the plugin wrote with the type of their family instead of
+   their own.
+
+See `Prometheus Rules`_.
+
+``plugin.stats_over_http.waiter_timeouts``
+   Requests that got a ``503`` because no render finished within
+   :option:`--wait-timeout-ms`.
+
+``plugin.stats_over_http.config_errors``
+   Loads of a remap rule whose configuration file was missing or had an error.
+   Each remap reload that finds the error counts again.
