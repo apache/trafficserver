@@ -59,4 +59,7 @@ private:
 
   thread_local static State _state;
 };
+
+// Inline so plugins (cripts, cache_promote) don't depend on traffic_server happening to link Random.cc.o from libtscore.a.
+inline thread_local Random::State Random::_state;
 }; // namespace ts
