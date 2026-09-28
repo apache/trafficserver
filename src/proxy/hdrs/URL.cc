@@ -1221,6 +1221,10 @@ using namespace UrlImpl;
 bool
 url_is_uri_compliant(int strict_uri_parsing, std::string_view value)
 {
+  if (value.empty()) {
+    return true;
+  }
+
   const char *start = value.data();
   const char *end   = start + value.length();
 

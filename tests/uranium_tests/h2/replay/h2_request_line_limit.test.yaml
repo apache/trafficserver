@@ -57,8 +57,54 @@ sessions:
             - [":method", GET]
             - [":scheme", https]
             - [":authority", example.com]
-            - [":path", "/gate/llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll"]
+            - [":path", "/gate/llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
+              llllll"]
             - [uuid, gate-request-line]
+    proxy-request:
+      expect: absent
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 414
+
+  # Leading slashes count toward the limit, though url_parse_http() strips them.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", "////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              ////////////////////////////////////////////////////////////////////////////////////////////////////\
+              x"]
+            - [uuid, gate-leading-slashes]
+    proxy-request:
+      expect: absent
     server-response:
       status: 200
       reason: OK
