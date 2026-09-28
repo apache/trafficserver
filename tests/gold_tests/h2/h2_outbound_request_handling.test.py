@@ -20,8 +20,9 @@ header is handed to the outbound stream without a serialize+reparse.
 
 Test.Summary = '''
 Verify HTTP/2 outbound server-request handling: the server request header is
-handed to the outbound Http2Stream without a serialize+reparse, and reaches an
-HTTP/2 origin byte-correct (GET with query, POST with body).
+handed to the outbound Http2Stream without a serialize+reparse, reaches an
+HTTP/2 origin intact, and still counts as sent, so a POST is not retried.
 '''
 
 Test.ATSReplayTest(replay_file="replay/h2_outbound_request_handling.replay.yaml")
+Test.ATSReplayTest(replay_file="replay/h2_outbound_post_no_retry.replay.yaml")

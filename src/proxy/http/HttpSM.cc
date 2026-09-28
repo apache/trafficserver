@@ -7216,7 +7216,9 @@ HttpSM::setup_server_send_request()
 
   if (server_txn->supports_direct_header_passing()) {
     _server_request_header_is_ready = true;
-    server_request_hdr_bytes = hdr_length = 0;
+    // Only the write buffer is empty; retry decisions and stats need the real size.
+    server_request_hdr_bytes = t_state.hdr_info.server_request.length_get();
+    hdr_length               = 0;
   } else {
     server_request_hdr_bytes = hdr_length = write_header_into_buffer(&t_state.hdr_info.server_request, server_entry->write_buffer);
   }

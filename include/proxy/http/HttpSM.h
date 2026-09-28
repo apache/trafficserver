@@ -764,7 +764,7 @@ HttpSM::get_cache_sm()
 inline int
 HttpSM::write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 {
-  if (_ua.get_txn()->supports_direct_header_passing()) {
+  if (ProxyTransaction *txn = _ua.get_txn(); txn != nullptr && txn->supports_direct_header_passing()) {
     _client_response_header_is_ready = true;
     _direct_response_hdr_bytes       = h->length_get();
     return 0;

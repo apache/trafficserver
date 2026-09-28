@@ -201,8 +201,14 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
+    auto value{field->value_get()};
+
+    // No host to parse, and url_parse_internet() reads *start before checking the length.
+    if (value.empty()) {
+      return ParseResult::ERROR;
+    }
+
     // Copy out first: allocating from header.m_heap may coalesce it and free the field's storage.
-    auto                  value{field->value_get()};
     ts::LocalBuffer<char> buf(value.length());
     std::string_view      authority{buf.data(), value.length()};
 
@@ -245,8 +251,13 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     // :path
     if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH);
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      auto  path{field->value_get()};
-      auto *url = header.m_http->u.req.m_url_impl;
+      auto                  value{field->value_get()};
+      ts::LocalBuffer<char> buf(value.length());
+      std::string_view      path{buf.data(), value.length()};
+      auto                 *url = header.m_http->u.req.m_url_impl;
+
+      // Copy out, as for :authority.
+      std::copy(value.begin(), value.end(), buf.data());
 
       // Split as url_parse_http() would, so cache keys and remap see the same fields.
       if (auto hpos = path.find('#'); hpos != std::string_view::npos) {

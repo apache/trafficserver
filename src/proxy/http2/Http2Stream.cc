@@ -34,7 +34,6 @@
 #include "tscore/ParseRules.h"
 #include "tsutil/DbgCtl.h"
 
-#include <algorithm>
 #include <numeric>
 
 #define REMEMBER(e, r)                                    \
@@ -372,70 +371,21 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
     this->_http_sm_id = this->_sm->sm_id;
   }
 
-  // parse_req is skipped here, so re-apply its checks. Both run after the REQUEST type check
-  // below, since the accessors assert that polarity.
-  auto uri_ok = [&]() {
-    int const level = this->_sm->t_state.http_config_param->strict_uri_parsing;
-
-    return level == 0 ||
-           (url_is_uri_compliant(level, _receive_header.path_get()) && url_is_uri_compliant(level, _receive_header.query_get()) &&
-            url_is_uri_compliant(level, _receive_header.fragment_get()));
-  };
-
-  auto parse_req_would_accept = [&]() {
-    auto const *config    = this->_sm->t_state.http_config_param;
-    auto const  line_max  = static_cast<size_t>(config->http_request_line_max_size);
-    auto const  field_max = static_cast<size_t>(config->http_hdr_field_max_size);
-    auto        method{_receive_header.method_get()};
-
-    if (method.empty() || std::any_of(method.begin(), method.end(), [](char c) { return !ParseRules::is_token(c); })) {
-      return false;
-    }
-    // Upper bound of the serialized "METHOD URL HTTP/1.1\r\n", so parse_req makes the exact call.
-    if (method.size() + static_cast<size_t>(_receive_header.url_get()->length_get()) + 12 > line_max) {
-      return false;
-    }
-    for (auto const &field : _receive_header) {
-      if (field.name_get().size() + field.value_get().size() > field_max) {
-        return false;
-      }
-    }
-    // validate_hdr_host() never sees this Host; it rejects the userinfo RFC 9113 8.3.1 bans.
-    if (MIMEField *host = _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_HOST)); host != nullptr) {
-      std::string_view parsed_host;
-      int              port     = 0;
-      bool             has_port = false;
-
-      if (host->has_dups() || !http_parse_host_header(host->value_get(), parsed_host, port, has_port)) {
-        return false;
-      }
-    }
-    if (MIMEField *cl = _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH)); cl != nullptr) {
-      auto value{cl->value_get()};
-      if (cl->has_dups() || value.empty() || std::any_of(value.begin(), value.end(), [](char c) { return c < '0' || c > '9'; }) ||
-          _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) != nullptr) {
-        return false;
-      }
-    }
-    return true;
-  };
-
   // A failed conversion leaves a \xffVOID method that only parse_req can turn into a 400.
-  if (conversion_ok && !this->trailing_header_is_possible() && !this->is_outbound_connection() &&
-      _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0 && uri_ok() &&
-      parse_req_would_accept()) {
-    // The stream owns _receive_header and outlives the handoff, so the pulled pointer cannot dangle.
-    this->_is_parsed_receive_header_ready = true;
-    if (this->receive_end_stream) {
+  // Bodyless only: a trailer would reset _receive_header before HttpSM copies it.
+  if (conversion_ok && this->receive_end_stream && !this->trailing_header_is_possible() && !this->is_outbound_connection() &&
+      _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0) {
+    auto const *config = this->_sm->t_state.http_config_param;
+
+    if (_receive_header.parse_req_would_accept(config->strict_uri_parsing, config->http_request_line_max_size,
+                                               config->http_hdr_field_max_size)) {
+      this->_is_parsed_receive_header_ready = true;
       // nbytes == 0 reads as "paused" to the VIO layer, which swallows the signal.
-      this->read_vio.nbytes = this->data_length + _receive_header.length_get();
+      this->read_vio.nbytes = _receive_header.length_get();
       this->read_vio.ndone  = this->read_vio.nbytes;
       this->signal_read_event(VC_EVENT_READ_COMPLETE);
-    } else {
-      this->has_body = true;
-      this->signal_read_event(VC_EVENT_READ_READY);
+      return;
     }
-    return;
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
@@ -973,10 +923,13 @@ Http2Stream::update_write_request(bool call_update)
       } else {
         this->_send_header.status_set(send_hdr->status_get());
       }
-      for (auto &field : *send_hdr) {
-        MIMEField *f = this->_send_header.field_create(field.name_get());
+      for (auto const &field : *send_hdr) {
+        MIMEField     *f = this->_send_header.field_create(field.name_get());
+        swoc::TextView value{field.value_get()};
 
-        f->value_set(this->_send_header.m_heap, this->_send_header.m_mime, field.value_get());
+        // HTTP/2 peers reject a value with surrounding whitespace (RFC 9113 8.2.1).
+        value.trim_if(&ParseRules::is_ws);
+        f->value_set(this->_send_header.m_heap, this->_send_header.m_mime, value);
         this->_send_header.field_attach(f);
       }
       this->_sm->clear_pending_send_header(this->is_outbound_connection());

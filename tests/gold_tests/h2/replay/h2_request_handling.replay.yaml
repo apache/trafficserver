@@ -17,21 +17,39 @@
 # Exercises the HTTP/2 <-> HttpSM header handoff (the "fast path"): the decoded
 # request header is normalized in the 2->1.1 converter and handed to the SM
 # without a serialize+reparse, and the response header is handed back to the
-# stream the same way. Covers request URL normalization (explicit-port and IPv6
-# :authority), query-string caching, response emission (bodyless 204/304/HEAD
-# and header preservation), and rejection of requests parse_req would refuse.
+# stream the same way.
 
 meta:
   version: "1.0"
 
+  blocks:
+  # A request parse_req rejects gets a 400 and never reaches the origin.
+  - gate_rejected: &gate_rejected
+      proxy-request:
+        expect: absent
+
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [Content-Length, "0"]
+
+      proxy-response:
+        status: 400
+
 autest:
-  description: 'HTTP/2 request handling: URL normalization and caching'
+  description: 'HTTP/2 request handling: direct header handoff'
 
   server:
     name: 'server'
 
   client:
     name: 'client'
+    log_validation:
+      contains:
+        - expression: 'Equals Success: Key: "resp-pad", Field Name: "x-pad", Value: "padded"'
+          description: 'A hook-set value must reach the HTTP/2 client trimmed'
 
   ats:
     name: 'ts'
@@ -40,12 +58,21 @@ autest:
       enable_tls: true
       enable_cache: true
 
+    copy_to_config_dir:
+      - 'rules'
+
     records_config:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: 'http|http2|cache'
       proxy.config.http.header_field_max_size: 256
 
     remap_config:
+      - from: "https://example.com/pad/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/pad/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/pad_resp_hdr.conf"
       - from: "https://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
       - from: "https://example.com:8443/"
@@ -341,14 +368,7 @@ sessions:
             - [":authority", "attacker@example.com"]
             - [":path", /gate/userinfo]
             - [uuid, gate-userinfo]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "0"]
-    proxy-response:
-      status: 400
+    <<: *gate_rejected
 
 # 6b. A method that is not a token.
 - protocol:
@@ -366,14 +386,7 @@ sessions:
             - [":authority", example.com]
             - [":path", /gate/method]
             - [uuid, gate-method]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "0"]
-    proxy-response:
-      status: 400
+    <<: *gate_rejected
 
 # 6c. A Content-Length that is not 1*DIGIT.
 - protocol:
@@ -392,14 +405,7 @@ sessions:
             - [":path", /gate/content-length]
             - [content-length, "0x"]
             - [uuid, gate-content-length]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "0"]
-    proxy-response:
-      status: 400
+    <<: *gate_rejected
 
 # 6d. A non-printable byte in the path, rejected at strict_uri_parsing 2.
 - protocol:
@@ -417,14 +423,7 @@ sessions:
             - [":authority", example.com]
             - [":path", "/gate/caf\u00e9"]
             - [uuid, gate-uri]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "0"]
-    proxy-response:
-      status: 400
+    <<: *gate_rejected
 
 # 6e. A header field over header_field_max_size. HPACK decode limits the name and
 #     value separately, parse_req limits their sum.
@@ -442,8 +441,72 @@ sessions:
             - [":scheme", https]
             - [":authority", example.com]
             - [":path", /gate/field-size]
-            - [x-long, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"]
+            - [x-long, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\
+              vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\
+              vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"]
             - [uuid, gate-field-size]
+    <<: *gate_rejected
+
+# 6f. A field name with ':' after its first character, which parse_req splits there.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /gate/colon-name]
+            - ["content-length:extra", "0"]
+            - [uuid, gate-colon-name]
+    <<: *gate_rejected
+
+# 6g. A field name with a separator after its first character, which parse_req rejects.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /gate/separator-name]
+            - ["x(foo", bar]
+            - [uuid, gate-separator-name]
+    <<: *gate_rejected
+
+# 7. A field name that starts with a non-token character, which the HTTP/1.1
+#    parser drops rather than forwarding.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /bad-name]
+            - ["(foo", bar]
+            - [uuid, bad-name]
+    proxy-request:
+      headers:
+        fields:
+        - [ "(foo", { as: absent } ]
     server-response:
       status: 200
       reason: OK
@@ -451,4 +514,33 @@ sessions:
         fields:
         - [Content-Length, "0"]
     proxy-response:
-      status: 400
+      status: 200
+
+# 8. A response value a hook set with surrounding whitespace. The HTTP/1.1 parser
+#    trimmed it, and an HTTP/2 client rejects an untrimmed value (RFC 9113 8.2.1).
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /pad/item]
+            - [uuid, resp-pad]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ x-pad, { value: "padded", as: equal } ]

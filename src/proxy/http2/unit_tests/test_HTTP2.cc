@@ -35,6 +35,13 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
   ts::PostScript parser_defer([&]() -> void { http_parser_clear(&parser); });
   http_parser_init(&parser);
 
+  auto add_field = [](HTTPHdr &hdr, std::string_view name, std::string_view value) {
+    MIMEField *f = hdr.field_create(name);
+
+    hdr.field_attach(f);
+    f->value_set(hdr.m_heap, hdr.m_mime, value);
+  };
+
   SECTION("request")
   {
     const char request[] = "GET /index.html HTTP/1.1\r\n"
@@ -144,16 +151,9 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
     hdr.create(HTTPType::REQUEST);
 
-    auto add = [&hdr](std::string_view name, std::string_view value) {
-      MIMEField *f = hdr.field_create(name);
-
-      hdr.field_attach(f);
-      f->value_set(hdr.m_heap, hdr.m_mime, value);
-    };
-
-    add(PSEUDO_HEADER_METHOD, "CONNECT");
-    add(PSEUDO_HEADER_AUTHORITY, "www.example.com:443");
-    add("uuid", "connect");
+    add_field(hdr, PSEUDO_HEADER_METHOD, "CONNECT");
+    add_field(hdr, PSEUDO_HEADER_AUTHORITY, "www.example.com:443");
+    add_field(hdr, "uuid", "connect");
 
     REQUIRE(http2_convert_header_from_2_to_1_1(&hdr) == ParseResult::DONE);
     CHECK(hdr.method_get() == "CONNECT");
@@ -161,6 +161,20 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     CHECK(hdr.url_get()->port_get() == 443);
     CHECK(hdr.field_find(PSEUDO_HEADER_AUTHORITY) == nullptr);
     CHECK(hdr.field_find("uuid") != nullptr);
+  }
+
+  SECTION("reject empty :authority")
+  {
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST);
+
+    add_field(hdr, PSEUDO_HEADER_METHOD, "GET");
+    add_field(hdr, PSEUDO_HEADER_SCHEME, "https");
+    add_field(hdr, PSEUDO_HEADER_AUTHORITY, "");
+    add_field(hdr, PSEUDO_HEADER_PATH, "/");
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr) == ParseResult::ERROR);
   }
 
   SECTION("reject CRLF in header value")

@@ -2998,6 +2998,91 @@ TEST_CASE("HdrPromotesOnlyValidHostHeaderMutations", "[proxy][hdrtest]")
   req_hdr.destroy();
 }
 
+TEST_CASE("HdrParseReqWouldAccept", "[proxy][hdrtest]")
+{
+  hdrtoken_init();
+  url_init();
+  mime_init();
+  http_init();
+
+  std::string_view const request{"GET /path?q=1 HTTP/1.1\r\nHost: example.com\r\nContent-Length: 0\r\n\r\n"};
+  const char            *start = request.data();
+  HTTPHdr                hdr;
+  HTTPParser             parser;
+  ts::PostScript         cleanup([&]() -> void {
+    http_parser_clear(&parser);
+    hdr.destroy();
+          });
+
+  http_parser_init(&parser);
+  hdr.create(HTTPType::REQUEST);
+  REQUIRE(hdr.parse_req(&parser, &start, request.data() + request.size(), true) == ParseResult::DONE);
+
+  // These edits bypass parse_req(), as a header decoded from HTTP/2 does.
+  auto add_field = [&hdr](std::string_view name, std::string_view value) {
+    MIMEField *f = hdr.field_create(name);
+
+    f->value_set(hdr.m_heap, hdr.m_mime, value);
+    hdr.field_attach(f);
+  };
+  auto accepts = [&hdr]() { return hdr.parse_req_would_accept(2, 1024, 256); };
+
+  SECTION("a request parse_req() accepted")
+  {
+    CHECK(accepts());
+  }
+  SECTION("a field at the size limit")
+  {
+    add_field("x-long", std::string(250, 'v'));
+    CHECK(accepts());
+  }
+  SECTION("a field over the size limit")
+  {
+    add_field("x-long", std::string(251, 'v'));
+    CHECK_FALSE(accepts());
+  }
+  SECTION("a method that is not a token")
+  {
+    hdr.method_set("GE(T");
+    CHECK_FALSE(accepts());
+  }
+  SECTION("a non-printable path")
+  {
+    hdr.url_get()->path_set("gate\x7f");
+    CHECK_FALSE(accepts());
+  }
+  SECTION("a request line over the limit")
+  {
+    hdr.url_get()->path_set(std::string(1024, 'l'));
+    CHECK_FALSE(accepts());
+  }
+  SECTION("a field name with a separator")
+  {
+    add_field("x(foo", "bar");
+    CHECK_FALSE(accepts());
+  }
+  SECTION("a value with surrounding whitespace")
+  {
+    add_field("x-pad", " padded ");
+    CHECK_FALSE(accepts());
+  }
+  SECTION("userinfo in Host")
+  {
+    hdr.value_set(static_cast<std::string_view>(MIME_FIELD_HOST), "user@example.com");
+    CHECK_FALSE(accepts());
+  }
+  SECTION("a duplicate Host")
+  {
+    add_field(static_cast<std::string_view>(MIME_FIELD_HOST), "example.com");
+    CHECK_FALSE(accepts());
+  }
+  SECTION("a Content-Length that is not 1*DIGIT")
+  {
+    hdr.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH), "0x");
+    CHECK_FALSE(accepts());
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers for HTTPInfo::unmarshal frag-offset bounds-check tests.
 // Builds a minimal marshalled HTTPCacheAlt buffer.  All header-heap pointers
