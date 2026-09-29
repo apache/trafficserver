@@ -20,6 +20,7 @@
   limitations under the License.
 */
 
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -945,31 +946,89 @@ TEST_CASE("Regex back reference counting", "[libts][Regex][get_backref_max]")
   REQUIRE(r.get_backref_max() == item.backref_max);
 }
 
-struct match_context_test_t {
+struct options_test_t {
   std::string_view regex;
   std::string_view str;
   bool             valid;
   int32_t          rcode;
 };
 
-std::vector<match_context_test_t> match_context_test_data{
+std::vector<options_test_t> options_test_data{
   {{"abc"},                          {"abc"},          true,  1  },
   {{"abc"},                          {"a"},            true,  -1 },
   {{R"(^(\d{3})-(\d{3})-(\d{4})$)"}, {"123-456-7890"}, true,  -47},
   {{"(."},                           {"a"},            false, -51},
 };
 
-TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
+TEST_CASE("Regex::Options match limit", "[libts][Regex][Options]")
 {
-  RegexMatchContext match_context;
-  match_context.set_match_limit(2);
+  Regex::Options opts;
+  opts.match_limit = 2;
   RegexMatches matches;
 
-  auto item = GENERATE(from_range(match_context_test_data));
+  auto item = GENERATE(from_range(options_test_data));
   CAPTURE(item.regex, item.str, item.valid, item.rcode);
   Regex r;
   REQUIRE(r.compile(item.regex) == item.valid);
-  REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
+  REQUIRE(r.exec(item.str, matches, 0, opts) == item.rcode);
+}
+
+TEST_CASE("Regex::Options does not leak between calls", "[libts][Regex][Options]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(^(\d{3})-(\d{3})-(\d{4})$)"));
+
+  RegexMatches   matches;
+  Regex::Options limited;
+  limited.match_limit = 2;
+
+  REQUIRE(r.exec("123-456-7890", matches, 0, limited) == -47);
+  REQUIRE(r.exec("123-456-7890", matches, 0) == 4);
+  REQUIRE(r.exec("123-456-7890", matches, 0, Regex::Options{}) == 4);
+
+  Regex::Options generous;
+  generous.match_limit = 1000;
+  REQUIRE(r.exec("123-456-7890", matches, 0, generous) == 4);
+}
+
+TEST_CASE("Regex::Options keeps the shared JIT stack", "[libts][Regex][Options]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(^(?:(a)|b)*$)"));
+
+  std::string const subject(8000, 'a');
+  RegexMatches      matches;
+  Regex::Options    opts;
+  opts.match_limit = 100000000;
+
+  int const shared_rc = r.exec(subject, matches, 0);
+  int const opts_rc   = r.exec(subject, matches, 0, opts);
+  CAPTURE(shared_rc, opts_rc);
+  REQUIRE(opts_rc > 0);
+  REQUIRE(shared_rc == opts_rc);
+}
+
+TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex]")
+{
+  // The regex_remap rule from #5762. Under PCRE1 its per character recursion overflowed the native thread stack and
+  // crashed ATS. Under PCRE2 the JIT keeps its frames on the JIT stack, and exhausting that is reported as an error.
+  Regex r;
+  REQUIRE(r.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
+
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+  RegexMatches matches;
+
+  int const rc = r.exec(subject, matches, 0);
+  CAPTURE(rc);
+
+  // Without JIT the interpreter keeps its backtracking frames on the heap and simply matches, so there is nothing to
+  // assert beyond not crashing.
+  uint32_t has_jit = 0;
+  pcre2_config(PCRE2_CONFIG_JIT, &has_jit);
+  if (has_jit != 0) {
+    REQUIRE(rc == PCRE2_ERROR_JIT_STACKLIMIT);
+  }
 }
 
 TEST_CASE("Regex RE_FULL_MATCH rejects trailing content", "[libts][Regex][full_match]")
