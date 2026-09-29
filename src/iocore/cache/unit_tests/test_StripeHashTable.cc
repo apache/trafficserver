@@ -44,6 +44,8 @@ constexpr int      NUM_STRIPES  = 26;
 constexpr int      SAMPLE_IDX   = 16;
 constexpr uint64_t DIR_SKIP     = 8192;
 constexpr uint64_t STRIPE_BYTES = 1024ULL * 1024 * 1024 * 911;
+// The hash table reads only len and hash_id; a huge average object size keeps each directory tiny instead of ~1 GiB.
+constexpr int AVG_OBJ_SIZE = 1 << 30;
 
 void
 set_hash_id(StripeSM &stripe, int idx)
@@ -68,7 +70,7 @@ TEST_CASE("Resizing one stripe moves hash table slots only to or from that strip
   StripeSM                                          *stripe_ptrs[NUM_STRIPES];
 
   for (int i = 0; i < NUM_STRIPES; ++i) {
-    stripes[i]     = std::make_unique<StripeSM>(&disk, static_cast<off_t>(STRIPE_BYTES / STORE_BLOCK_SIZE), 0);
+    stripes[i]     = std::make_unique<StripeSM>(&disk, static_cast<off_t>(STRIPE_BYTES / STORE_BLOCK_SIZE), 0, AVG_OBJ_SIZE);
     stripe_ptrs[i] = stripes[i].get();
     set_hash_id(*stripes[i], i);
   }
