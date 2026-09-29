@@ -60,6 +60,9 @@ the default level, ``error``, the exit status only changes in these cases:
   --undo`` on one that is not, report a warning and exit ``0``. They used to exit ``2``. Pass
   ``--error-level=warn`` to keep treating them as failures.
 * With ``--format json``, a server error sets the exit status. It used to exit ``0``.
+* ``traffic_ctl server debug enable --append`` sets nothing when it cannot read the current tags, and
+  exits ``2``, or ``75`` when the error is below the level. It used to set the new tags on their own,
+  replacing the current ones.
 
 Upgrading to ATS v10.x
 ======================

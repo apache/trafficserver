@@ -255,7 +255,7 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Token 't1' alr
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('Warn: status warning', 'the status fetch failed next')
 
 # server debug --append reads the current tags first. If that read fails nothing is set: setting the new tags alone would
-# silently replace the current ones. The command fails even when the error is below the level, since nothing was done.
+# silently replace the current ones. Below the level the command is still not a success, so it exits 75 (not done).
 DEBUG_SET = {'result': {'record': [{'record_name': 'proxy.config.diags.debug.tags'}]}}
 UNAUTHORIZED = {
     'error': {
@@ -267,18 +267,19 @@ UNAUTHORIZED = {
         }]
     }
 }
-
 LOOKUP_WARNING = execution_error({'code': 1, 'severity': 4, 'message': 'lookup warning'})
+APPEND = 'server debug enable --tags http --append'
+
+denied_node, denied_ctl = stub('stub_debug', {'admin_lookup_records': UNAUTHORIZED, 'admin_config_set_records': DEBUG_SET})
+warned_node, warned_ctl = stub('stub_debug_warn', {'admin_lookup_records': LOOKUP_WARNING, 'admin_config_set_records': DEBUG_SET})
 
 DEBUG_LOOKUP_FAILURES = [
-    ('stub_debug', UNAUTHORIZED, 'Denied privileged API access'),
-    ('stub_debug_warn', LOOKUP_WARNING, 'lookup warning'),
+    ('the tag lookup is refused', denied_node, f'{denied_ctl} {APPEND}', 2, 'Denied privileged API access'),
+    ('the tag lookup warns: not done', warned_node, f'{warned_ctl} {APPEND}', 75, 'lookup warning'),
+    ('the tag lookup warns, --error-level warn', warned_node, f'{warned_ctl} --error-level warn {APPEND}', 2, 'lookup warning'),
 ]
-for name, lookup, why in DEBUG_LOOKUP_FAILURES:
-    debug_node, debug_ctl = stub(name, {'admin_lookup_records': lookup, 'admin_config_set_records': DEBUG_SET})
-    tr = on_stub(
-        f'server debug --append, the tag lookup fails: {why}', f'{debug_ctl} server debug enable --tags http --append', 2,
-        debug_node)
+for what, process, command, code, why in DEBUG_LOOKUP_FAILURES:
+    tr = on_stub(f'server debug --append, {what}', command, code, process)
     tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(why, 'the lookup error is shown')
     tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('TS Runtime debug set', 'nothing was set')
 

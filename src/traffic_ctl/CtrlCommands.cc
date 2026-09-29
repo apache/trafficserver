@@ -1267,10 +1267,11 @@ ServerCommand::server_debug()
     auto lookup_response = invoke_rpc(lookup_request);
 
     if (lookup_response.is_error()) {
-      // Without the current tags the append cannot be done: report it and set nothing.
+      // Without the current tags the append cannot be done: report it and set nothing. Below --error-level that is still not a
+      // success.
       _printer->write_output(lookup_response);
       if (App_Exit_Status_Code == CTRL_EX_OK) {
-        App_Exit_Status_Code = CTRL_EX_ERROR;
+        App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       }
       return;
     }

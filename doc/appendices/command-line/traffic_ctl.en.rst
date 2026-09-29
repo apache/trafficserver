@@ -137,6 +137,11 @@ Options
    ``--format json`` included. ``traffic_ctl rpc file`` and ``traffic_ctl rpc input`` are the
    exception: they print the raw response and their exit status does not look at errors in it.
 
+   A command that cannot finish because a request it depends on failed below the level exits
+   ``75`` rather than ``0``, since what was asked was not done: ``traffic_ctl config reload
+   --monitor`` when it cannot see how the reload ended, and ``traffic_ctl server debug enable
+   --append`` when it cannot read the current tags.
+
    .. note::
 
       Errors that do not come from a method handler always exit ``2``, whatever the level:
@@ -1228,6 +1233,7 @@ traffic_ctl server
 
    Append the specified tags to the existing debug tags instead of replacing them. This option requires
    ``--tags`` to be specified. The new tags will be combined with existing tags using the ``|`` separator.
+   If the existing tags cannot be read, nothing is set and the command fails.
 
    .. option:: --client_ip, -c ip
 
@@ -1655,6 +1661,8 @@ Exit Codes
 
 ``75``
    Temporary failure (aligned with ``EX_TEMPFAIL`` from ``sysexits.h``). The caller is invited to retry later.
+   Also returned when a command could not finish because a request it depends on failed with an error
+   below :option:`traffic_ctl --error-level`.
 
 See also
 ========
