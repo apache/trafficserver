@@ -1266,14 +1266,21 @@ ServerCommand::server_debug()
     lookup_request.emplace_rec("proxy.config.diags.debug.tags", shared::rpc::NOT_REGEX, shared::rpc::CONFIG_REC_TYPES);
     auto lookup_response = invoke_rpc(lookup_request);
 
-    if (!lookup_response.is_error()) {
-      auto const &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
-      if (!records.recordList.empty()) {
-        std::string current_tags = records.recordList[0].currentValue;
-        if (!current_tags.empty()) {
-          // Combine: current|new
-          tags = current_tags + "|" + tags;
-        }
+    if (lookup_response.is_error()) {
+      // Without the current tags the append cannot be done: report it and set nothing.
+      _printer->write_output(lookup_response);
+      if (App_Exit_Status_Code == CTRL_EX_OK) {
+        App_Exit_Status_Code = CTRL_EX_ERROR;
+      }
+      return;
+    }
+
+    auto const &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
+    if (!records.recordList.empty()) {
+      std::string current_tags = records.recordList[0].currentValue;
+      if (!current_tags.empty()) {
+        // Combine: current|new
+        tags = current_tags + "|" + tags;
       }
     }
   }

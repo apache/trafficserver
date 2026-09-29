@@ -254,6 +254,34 @@ tr = on_stub('an earlier failure is kept', f'{token_ctl} config reload -s -t t1'
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Token 't1' already in use", 'the reload was refused')
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('Warn: status warning', 'the status fetch failed next')
 
+# server debug --append reads the current tags first. If that read fails nothing is set: setting the new tags alone would
+# silently replace the current ones. The command fails even when the error is below the level, since nothing was done.
+DEBUG_SET = {'result': {'record': [{'record_name': 'proxy.config.diags.debug.tags'}]}}
+UNAUTHORIZED = {
+    'error': {
+        'code': 10,
+        'message': 'Unauthorized action',
+        'data': [{
+            'code': 2,
+            'message': 'Denied privileged API access'
+        }]
+    }
+}
+
+LOOKUP_WARNING = execution_error({'code': 1, 'severity': 4, 'message': 'lookup warning'})
+
+DEBUG_LOOKUP_FAILURES = [
+    ('stub_debug', UNAUTHORIZED, 'Denied privileged API access'),
+    ('stub_debug_warn', LOOKUP_WARNING, 'lookup warning'),
+]
+for name, lookup, why in DEBUG_LOOKUP_FAILURES:
+    debug_node, debug_ctl = stub(name, {'admin_lookup_records': lookup, 'admin_config_set_records': DEBUG_SET})
+    tr = on_stub(
+        f'server debug --append, the tag lookup fails: {why}', f'{debug_ctl} server debug enable --tags http --append', 2,
+        debug_node)
+    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(why, 'the lookup error is shown')
+    tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('TS Runtime debug set', 'nothing was set')
+
 # config reload --monitor stops when a status request fails, before it sees how the reload ended. An error at or above the
 # level fails the command; below it the outcome is unknown (75).
 RELOAD_SCHEDULED = {'result': {'token': 'm1', 'message': ['Reload task scheduled']}}
