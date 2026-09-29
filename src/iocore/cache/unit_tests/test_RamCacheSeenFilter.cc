@@ -285,3 +285,86 @@ TEST_CASE("RamCacheLRU re-put of a resident entry refreshes its recency", "[cach
   CHECK(rc->get(&extra, &probe) >= 1);
   CHECK(rc->get(&others.front(), &probe) == 0);
 }
+
+// use_seen_filter = N > 1 engages the filter once the cache is (N - 1)/N full. Computing 1 / N in integer arithmetic
+// used to defer it to 100% full (#13234).
+TEST_CASE("RamCacheLRU seen filter engages at the configured fill level", "[cache][ramcache][seen_filter]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  constexpr int64_t cache_size   = 1LL << 21;
+  int const         obj          = BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_16K);
+  int const         saved_filter = cache_config_ram_cache_use_seen_filter;
+  RamCache         *rc           = make_cache(new_RamCacheLRU, stripe, cache_size);
+
+  cache_config_ram_cache_use_seen_filter = 2;
+
+  std::vector<Ptr<IOBufferData>> keep;
+
+  auto key_for = [](uint64_t n) {
+    CryptoHash key;
+
+    key.u64[0] = (n << 32) + n;
+    key.u64[1] = (n << 32) + n;
+    return key;
+  };
+  auto put = [&](uint64_t n) {
+    CryptoHash        key = key_for(n);
+    Ptr<IOBufferData> data{make_ptr(new_IOBufferData(BUFFER_SIZE_INDEX_16K, MEMALIGNED))};
+
+    std::memset(data->data(), 0, obj);
+    keep.push_back(data);
+    rc->put(&key, data.get(), obj);
+  };
+  auto resident = [&](uint64_t n) {
+    CryptoHash        key = key_for(n);
+    Ptr<IOBufferData> got;
+
+    return rc->get(&key, &got) != 0;
+  };
+  // Each key is put twice so it lands whether or not the filter is active.
+  auto fill_to = [&](int64_t numerator, int64_t denominator) {
+    int const n = static_cast<int>((cache_size * numerator / denominator) / obj);
+
+    for (int i = 0; i < n; i++) {
+      put(1000 + i);
+      put(1000 + i);
+    }
+  };
+  auto count_admitted = [&](uint64_t first, int count) {
+    int admitted = 0;
+
+    for (int i = 0; i < count; i++) {
+      put(first + i);
+      if (resident(first + i)) {
+        ++admitted;
+      }
+    }
+    return admitted;
+  };
+
+  SECTION("below the threshold an unseen key is admitted on its first put")
+  {
+    fill_to(1, 4);
+    int const admitted = count_admitted(900000, 10);
+
+    INFO(admitted << "/10 unseen keys admitted at ~25% full");
+    CHECK(admitted >= 8);
+  }
+
+  SECTION("above the threshold an unseen key is filtered")
+  {
+    fill_to(6, 10);
+    // A batch, so an occasional seen-filter slot collision does not fail the test.
+    int const admitted = count_admitted(900000, 20);
+
+    INFO(admitted << "/20 unseen keys admitted at ~60% full");
+    CHECK(admitted <= 2);
+  }
+
+  cache_config_ram_cache_use_seen_filter = saved_filter;
+}
