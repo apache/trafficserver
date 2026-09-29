@@ -394,6 +394,11 @@ def MakeATSProcess(
     # For config reload tests, no need to wait the default 3 seconds to detect the need for a reload.
     p.Disk.records_config.update({'proxy.config.config_update_interval_ms': 20})
 
+    # The default time-based log rolling renames every log at 00:00 UTC. A test that is running
+    # across midnight then checks the fresh, empty file and fails. Tests that exercise rolling
+    # set this themselves, which overrides the default here.
+    p.Disk.records_config.update({'proxy.config.log.rolling_enabled': 0})
+
     if enable_cache:
         # In records.yaml, the cache is enabled by default so there's nothing
         # we have to do here to functionally enable it. However, the tests that
