@@ -20,6 +20,7 @@
   limitations under the License.
 */
 
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -959,17 +960,72 @@ std::vector<match_context_test_t> match_context_test_data{
   {{"(."},                           {"a"},            false, -51},
 };
 
-TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
+TEST_CASE("Regex::Options match limit", "[libts][Regex][Options]")
 {
-  RegexMatchContext match_context;
-  match_context.set_match_limit(2);
+  Regex::Options opts;
+  opts.match_limit = 2;
   RegexMatches matches;
 
   auto item = GENERATE(from_range(match_context_test_data));
   CAPTURE(item.regex, item.str, item.valid, item.rcode);
   Regex r;
   REQUIRE(r.compile(item.regex) == item.valid);
-  REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
+  REQUIRE(r.exec(item.str, matches, 0, opts) == item.rcode);
+}
+
+TEST_CASE("Regex::Options does not leak between calls", "[libts][Regex][Options]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(^(\d{3})-(\d{3})-(\d{4})$)"));
+
+  RegexMatches   matches;
+  Regex::Options limited;
+  limited.match_limit = 2;
+
+  REQUIRE(r.exec("123-456-7890", matches, 0, limited) == -47);
+  REQUIRE(r.exec("123-456-7890", matches, 0) == 4);
+  REQUIRE(r.exec("123-456-7890", matches, 0, Regex::Options{}) == 4);
+
+  Regex::Options generous;
+  generous.match_limit = 1000;
+  REQUIRE(r.exec("123-456-7890", matches, 0, generous) == 4);
+}
+
+TEST_CASE("Regex::Options keeps the shared JIT stack", "[libts][Regex][Options]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(^(?:(a)|b)*$)"));
+
+  std::string const subject(1000, 'a');
+  RegexMatches      matches;
+  Regex::Options    opts;
+  opts.match_limit = 100000000;
+
+  int const shared_rc = r.exec(subject, matches, 0);
+  int const opts_rc   = r.exec(subject, matches, 0, opts);
+  CAPTURE(shared_rc, opts_rc);
+  REQUIRE(opts_rc > 0);
+  REQUIRE(shared_rc == opts_rc);
+}
+
+TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex]")
+{
+  // The regex_remap rule from #5762, whose per character backtracking once exhausted the JIT stack and crashed.
+  Regex r;
+  REQUIRE(r.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
+
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+  RegexMatches matches;
+
+  int const rc = r.exec(subject, matches, 0);
+  CAPTURE(rc);
+
+  uint32_t has_jit = 0;
+  pcre2_config(PCRE2_CONFIG_JIT, &has_jit);
+  if (has_jit != 0) {
+    REQUIRE(rc < 0);
+  }
 }
 
 TEST_CASE("Regex RE_FULL_MATCH rejects trailing content", "[libts][Regex][full_match]")
