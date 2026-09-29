@@ -40,6 +40,26 @@ class Http2ContentLengthValidationTest:
         ('cl-negative', 'negative Content-Length'),
     )
 
+    # Each case sends a PADDED DATA frame too short to hold both the Pad Length
+    # field and the padding it declares. Miscounting that field wraps the counted
+    # payload length to 2^32 - 1, which the declared Content-Length matches.
+    rejected_padding_cases: tuple = (
+        ('padded-pad-length-equals-frame-length', 'PADDED DATA frame whose Pad Length equals the frame length'),
+        (
+            'padded-pad-length-equals-frame-length-then-body',
+            'PADDED DATA frame whose Pad Length equals the frame length, followed by more DATA',
+        ),
+        ('padded-empty-frame', 'PADDED DATA frame of length 0'),
+    )
+
+    # 'padded-no-data-then-body-matches' sends a PADDED DATA frame whose padding
+    # fills all but the Pad Length field, the largest padding RFC 9113 allows.
+    proxied_cases: tuple = (
+        ('cl-matches', 'Content-Length matching the DATA payload'),
+        ('padded-matches', 'Content-Length matching the payload of a validly PADDED DATA frame'),
+        ('padded-no-data-then-body-matches', 'Content-Length matching DATA that follows a padding-only DATA frame'),
+    )
+
     def __init__(self) -> None:
         '''Configure the processes shared by every test run.'''
         self._configure_server()
@@ -52,16 +72,17 @@ class Http2ContentLengthValidationTest:
         :return: The origin server process.
         '''
         server = Test.MakeOriginServer('server')
-        server.addResponse(
-            'sessionlog.json', {
-                'headers': 'POST /cl-matches HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 3\r\n\r\n',
-                'timestamp': '1469733493.993',
-                'body': 'abc',
-            }, {
-                'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n',
-                'timestamp': '1469733493.993',
-                'body': '',
-            })
+        for scenario, _ in self.proxied_cases:
+            server.addResponse(
+                'sessionlog.json', {
+                    'headers': f'POST /{scenario} HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 3\r\n\r\n',
+                    'timestamp': '1469733493.993',
+                    'body': 'abc',
+                }, {
+                    'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n',
+                    'timestamp': '1469733493.993',
+                    'body': '',
+                })
         self._server = server
         return server
 
@@ -85,10 +106,25 @@ class Http2ContentLengthValidationTest:
         # The warning reports the values that were compared. A truncated
         # comparison could not report a Content-Length of 2^32 alongside a
         # payload length of 3.
-        ts.Disk.diags_log.Content += Testers.ContainsExpression(
+        #
+        # The rejected padding cases are logged as HTTP/2 connection errors, so
+        # the default diags.log checks are replaced with ones that allow only
+        # that error.
+        ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r'Bad payload length content_length=4294967296 data_length=3',
             'ATS should compare the Content-Length and the payload length at full width.',
         )
+        ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            r'HTTP/2 connection error code=0x01 .* recv data pad >= payload',
+            'ATS should reject padding that leaves no room for the Pad Length field.',
+        )
+        ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+            r'ERROR: (?!HTTP/2 connection error code=0x01 .* recv data pad >= payload)',
+            'The only error ATS should log is the rejection of invalid padding.',
+        )
+        ts.Disk.diags_log.Content += Testers.ExcludesExpression('FATAL:', 'diags.log should not contain fatal errors.')
+        ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+            'Unrecognized configuration value', 'diags.log should not contain unrecognized configuration values.')
         self._ts = ts
         return ts
 
@@ -127,11 +163,21 @@ class Http2ContentLengthValidationTest:
                 f'ATS should reject an HTTP/2 POST with a {description}.',
             )
 
-        tr = self._add_test_run('cl-matches', 'HTTP/2 POST with a Content-Length matching the DATA payload is proxied', False)
-        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'Received HTTP/2 response with status 200',
-            'A consistent Content-Length should still be proxied to the origin.',
-        )
+        for scenario, description in self.rejected_padding_cases:
+            tr = self._add_test_run(scenario, f'HTTP/2 POST with a {description} is rejected', False)
+            # RFC 9113 section 6.1 requires a connection error of type
+            # PROTOCOL_ERROR for padding that fills the frame payload.
+            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+                r'Received GOAWAY with error code 1\b',
+                f'ATS should reject an HTTP/2 POST with a {description} with a PROTOCOL_ERROR.',
+            )
+
+        for scenario, description in self.proxied_cases:
+            tr = self._add_test_run(scenario, f'HTTP/2 POST with a {description} is proxied', False)
+            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+                'Received HTTP/2 response with status 200',
+                f'A POST with a {description} should still be proxied to the origin.',
+            )
 
 
 Http2ContentLengthValidationTest().run()
