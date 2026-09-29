@@ -49,6 +49,18 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+traffic_ctl Changes
+-------------------
+
+:program:`traffic_ctl` grades a server error by the severity of its annotations, see
+:option:`traffic_ctl --error-level`. An annotation without a severity counts as an error, so with
+the default level, ``error``, the exit status only changes in these cases:
+
+* ``traffic_ctl server drain`` on a server that is already draining, and ``traffic_ctl server drain
+  --undo`` on one that is not, report a warning and exit ``0``. They used to exit ``2``. Pass
+  ``--error-level=warn`` to keep treating them as failures.
+* With ``--format json``, a server error sets the exit status. It used to exit ``0``.
+
 Upgrading to ATS v10.x
 ======================
 

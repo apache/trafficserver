@@ -69,6 +69,64 @@ In some cases the data field could be populated:
    }
 
 
+.. _jsonrpc-node-errors-severity:
+
+Severity
+========
+
+When a method handler fails (``9``, ``Error during execution``), a ``data`` entry can also carry a
+``severity``, the integer value of the ``DiagsLevel`` the handler gave that annotation. The field
+is only present when the handler set one:
+
+.. code-block:: json
+
+   {
+      "jsonrpc": "2.0",
+      "error": {
+         "code": 9,
+         "message": "Error during execution",
+         "data": [
+            {
+               "code": 3000,
+               "severity": 4,
+               "message": "Server already draining."
+            }
+         ]
+      },
+      "id": "a3b5ef20-4c2e-11ef-8d76-001fc69cc946"
+   }
+
+====  ===========
+Code  Severity
+====  ===========
+0     Diag
+1     Debug
+2     Status
+3     Note
+4     Warn
+5     Error
+6     Fatal
+7     Alert
+8     Emergency
+====  ===========
+
+An entry without a ``severity`` counts as ``Error``, which is how the server classifies an
+annotation without one, and a client should treat it the same way. Older servers never send the
+field. Only the severity of the annotation itself is sent, not the one of the errata that holds it:
+a handler that wants a level other than ``Error`` sets it on the annotation, for example
+``note(ERRATA_FATAL, "...")``. A client should treat a ``severity`` that is not one of the integers
+above as the highest level.
+
+A handler that reports a condition which is not a failure, such as a state that is already in
+place, marks it ``Warn``. It cannot go lower: the server only answers with an error when the
+severity of the handler's errata is ``Warn`` or above, and otherwise returns a result and drops the
+annotations. That severity is the highest one set explicitly, or ``Error`` when none is, so a
+handler that adds a ``Warn`` next to a real failure must mark the failure ``Error`` explicitly.
+
+:program:`traffic_ctl` uses the ``severity`` to pick its exit status, see
+:option:`traffic_ctl --error-level`.
+
+
 .. _jsonrpc-node-errors-standard-errors:
 
 Standard errors
