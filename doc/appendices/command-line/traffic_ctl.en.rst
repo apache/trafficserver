@@ -130,7 +130,8 @@ Options
    drain`` on a server that is already draining reports a ``warn`` and exits ``0``.
 
    Accepted values, case-insensitive: ``diag``, ``debug``, ``status``, ``note``, ``warn`` (or
-   ``warning``), ``error``, ``fatal``, ``alert`` and ``emergency``. Default: ``error``.
+   ``warning``), ``error``, ``fatal``, ``alert`` and ``emergency``. Default: ``error``. The option
+   is refused when it is given more than once, or without a value.
 
    The level applies to every command that decodes the server response, in every output format,
    ``--format json`` included. ``traffic_ctl rpc file`` and ``traffic_ctl rpc input`` are the

@@ -107,16 +107,15 @@ on_ts('-e is not an option', 'traffic_ctl config set proxy.config.diags.debug.ta
 tr = on_ts('-e was set as the value', 'traffic_ctl config get proxy.config.diags.debug.tags', 0)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'proxy.config.diags.debug.tags: -e$', 'the record holds "-e"')
 
-tr = on_ts(
-    'level given twice, one of them unknown',
-    'traffic_ctl --error-level warn --error-level=bogus config get proxy.config.http.server_ports', 2)
-tr.Processes.Default.Streams.stderr = Testers.ContainsExpression('Unknown error level: bogus', 'a later value is checked too')
+# Given more than once, in any spelling, the option is refused: no value silently overrides another one.
+for twice in ('--error-level bogus --error-level warn', '--error-level=bogus --error-level warn',
+              '--error-level warn --error-level=bogus', '--error-level=warn --error-level=fatal'):
+    tr = on_ts(f'level given twice: {twice}', f'traffic_ctl {twice} config get proxy.config.http.server_ports', 64)
+    tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+        'at most one argument expected by --error-level', 'the repetition is refused')
 
-# Not draining at this point: undo reports a warning. Given twice, the last level wins.
-tr = on_ts(
-    'level given twice, the last one wins (warn)', 'traffic_ctl --error-level fatal --error-level warn server drain --undo', 2)
-tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Unknown error level', 'the level was accepted')
-on_ts('level given twice, the last one wins (fatal)', 'traffic_ctl --error-level warn --error-level fatal server drain --undo', 0)
+tr = on_ts('level given without a value', 'traffic_ctl config get proxy.config.http.server_ports --error-level', 2)
+tr.Processes.Default.Streams.stderr = Testers.ContainsExpression('--error-level needs a value', 'not the default')
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Against a stand-in JSONRPC node
