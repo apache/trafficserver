@@ -99,7 +99,8 @@ appExitCodeFromResponse(shared::rpc::JSONRPCResponse const &response)
     return CTRL_EX_ERROR;
   }
 
-  auto const worst = std::ranges::max_element(err.data, {}, exit_severity_of);
+  auto const worst = std::max_element(err.data.begin(), err.data.end(),
+                                      [](auto const &a, auto const &b) { return exit_severity_of(a) < exit_severity_of(b); });
 
   return exit_severity_of(*worst) >= App_Exit_Level_Error ? CTRL_EX_ERROR : CTRL_EX_OK;
 }
