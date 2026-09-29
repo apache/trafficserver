@@ -133,12 +133,12 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   if (frame.header().flags & HTTP2_FLAGS_DATA_PADDED) {
     frame.reader()->memcpy(&pad_length, HTTP2_DATA_PADLEN_LEN, nbytes);
     nbytes += HTTP2_DATA_PADLEN_LEN;
-    if (pad_length > payload_length) {
+    if (pad_length + HTTP2_DATA_PADLEN_LEN > payload_length) {
       // If the length of the padding is the length of the
       // frame payload or greater, the recipient MUST treat this as a
       // connection error of type PROTOCOL_ERROR.
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
-                        "recv data pad > payload");
+                        "recv data pad >= payload");
     }
   }
 
