@@ -16,11 +16,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """
-Send an HTTP/2 POST whose Content-Length does not describe the DATA payload.
+Send an HTTP/2 POST whose Content-Length may not describe the DATA payload.
 
 The declared Content-Length is chosen per scenario so that a proxy which
-truncates it to a narrower integer type sees a value that appears consistent
-with the payload actually sent.
+truncates it to a narrower integer type, or which miscounts the padding of a
+PADDED DATA frame, sees a value that appears consistent with the payload
+actually sent.
 """
 
 import argparse
@@ -41,6 +42,7 @@ TYPE_GOAWAY = 0x07
 FLAG_ACK = 0x01
 FLAG_END_STREAM = 0x01
 FLAG_END_HEADERS = 0x04
+FLAG_PADDED = 0x08
 
 NO_ERROR = 0x00
 PROTOCOL_ERROR = 0x01
@@ -52,17 +54,37 @@ BODY = b"abc"
 EXPECT_REJECTED = "rejected"
 EXPECT_PROXIED = "proxied"
 
-# Each scenario declares a Content-Length that disagrees with the 3 bytes of
-# DATA actually sent, except for 'cl-matches', which is the valid control case.
+# Each scenario declares a Content-Length that disagrees with the DATA actually
+# sent, except for the '*-matches' scenarios, which are valid control cases.
 #
 # 4294967296 is 2**32, which truncates to a uint32_t 0. 4294967299 is 2**32 + 3,
 # which truncates to a uint32_t 3 and so matches the payload length.
+#
+# The 'padded-*' rejection scenarios send a PADDED DATA frame too short to hold
+# both the Pad Length field and the padding it declares, which RFC 9113 section
+# 6.1 requires be treated as a PROTOCOL_ERROR. A proxy that omits the Pad Length
+# field from its padding check computes a data length of
+# payload_length - pad_length - 1 for such a frame: 4 - 4 - 1 for a Pad Length
+# equal to the frame length, and 0 - 0 - 1 for an empty frame. Either wraps to
+# 4294967295 as a uint32_t, so a Content-Length of 4294967295, or 4294967298
+# when 3 more bytes of DATA follow, appears consistent with it.
+#
+# Each value is (Content-Length, DATA frames as (flags, payload), expectation).
+PAD_FILLS_FRAME = bytes([len(BODY) + 1]) + BODY
+PAD_LEAVES_NO_DATA = bytes([len(BODY)]) + bytes(len(BODY))
 SCENARIOS = {
-    "cl-wraps-to-zero": ("4294967296", EXPECT_REJECTED),
-    "cl-wraps-to-payload-length": ("4294967299", EXPECT_REJECTED),
-    "cl-larger-than-payload": ("10", EXPECT_REJECTED),
-    "cl-negative": ("-3", EXPECT_REJECTED),
-    "cl-matches": (str(len(BODY)), EXPECT_PROXIED),
+    "cl-wraps-to-zero": ("4294967296", ((FLAG_END_STREAM, BODY),), EXPECT_REJECTED),
+    "cl-wraps-to-payload-length": ("4294967299", ((FLAG_END_STREAM, BODY),), EXPECT_REJECTED),
+    "cl-larger-than-payload": ("10", ((FLAG_END_STREAM, BODY),), EXPECT_REJECTED),
+    "cl-negative": ("-3", ((FLAG_END_STREAM, BODY),), EXPECT_REJECTED),
+    "cl-matches": (str(len(BODY)), ((FLAG_END_STREAM, BODY),), EXPECT_PROXIED),
+    "padded-pad-length-equals-frame-length": ("4294967295", ((FLAG_END_STREAM | FLAG_PADDED, PAD_FILLS_FRAME),), EXPECT_REJECTED),
+    "padded-pad-length-equals-frame-length-then-body":
+        ("4294967298", ((FLAG_PADDED, PAD_FILLS_FRAME), (FLAG_END_STREAM, BODY)), EXPECT_REJECTED),
+    "padded-empty-frame": ("4294967295", ((FLAG_END_STREAM | FLAG_PADDED, b""),), EXPECT_REJECTED),
+    "padded-matches": (str(len(BODY)), ((FLAG_END_STREAM | FLAG_PADDED, bytes([2]) + BODY + bytes(2)),), EXPECT_PROXIED),
+    "padded-no-data-then-body-matches":
+        (str(len(BODY)), ((FLAG_PADDED, PAD_LEAVES_NO_DATA), (FLAG_END_STREAM, BODY)), EXPECT_PROXIED),
 }
 
 
@@ -138,13 +160,24 @@ def main() -> int:
 
     tls_socket = connect_socket(args.port)
     decoder = hpack.Decoder()
-    expectation = SCENARIOS[args.scenario][1]
+    _, data_frames, expectation = SCENARIOS[args.scenario]
     rejection_expected = expectation == EXPECT_REJECTED
+    # Send the whole request in one write. ATS may reject the first DATA frame and
+    # close the connection before a later frame arrives, and a write after that
+    # close would fail before the GOAWAY explaining the rejection is read.
+    request = [
+        H2_PREFACE,
+        make_frame(TYPE_SETTINGS, 0, 0),
+        make_frame(TYPE_HEADERS, FLAG_END_HEADERS, 1, make_headers(args.scenario)),
+    ]
+    request += [make_frame(TYPE_DATA, data_flags, 1, data_payload) for data_flags, data_payload in data_frames]
     try:
-        tls_socket.sendall(H2_PREFACE)
-        tls_socket.sendall(make_frame(TYPE_SETTINGS, 0, 0))
-        tls_socket.sendall(make_frame(TYPE_HEADERS, FLAG_END_HEADERS, 1, make_headers(args.scenario)))
-        tls_socket.sendall(make_frame(TYPE_DATA, FLAG_END_STREAM, 1, BODY))
+        try:
+            tls_socket.sendall(b"".join(request))
+        except (ConnectionError, ssl.SSLError):
+            if not rejection_expected:
+                raise
+            # The rejection may already be waiting to be read.
 
         while True:
             frame = read_frame(tls_socket)
@@ -176,6 +209,9 @@ def main() -> int:
                 return 0 if status_code == 200 else 1
     except socket.timeout:
         print(f"Timed out waiting for a response for scenario {args.scenario}", file=sys.stderr)
+        return 1
+    except (ConnectionError, ssl.SSLError) as e:
+        print(f"Connection failed before a response for scenario {args.scenario}: {e}", file=sys.stderr)
         return 1
     finally:
         tls_socket.close()
