@@ -60,7 +60,7 @@ using ConfigReloadTaskPtr = std::shared_ptr<ConfigReloadTask>;
 /// Lifecycle:
 ///   - Scheduled on ET_TASK when a reload starts.
 ///   - check_progress() runs periodically (every check_interval).
-///   - Self-terminates (returns EVENT_DONE) when:
+///   - Deletes itself and returns EVENT_DONE when:
 ///       * The task reaches a terminal state (SUCCESS, FAIL, TIMEOUT).
 ///       * The task exceeds the configured timeout (marked as TIMEOUT, then stops).
 ///       * The _reload pointer is null (defensive).
@@ -208,8 +208,8 @@ public:
 
   using self_type    = ConfigReloadTask;
   ConfigReloadTask() = default;
-  ConfigReloadTask(std::string_view token, std::string_view description, bool main_task, ConfigReloadTaskPtr parent)
-    : _info(State::CREATED, token, description, main_task), _parent{std::move(parent)}
+  ConfigReloadTask(std::string_view token, std::string_view description, bool main_task, const ConfigReloadTaskPtr &parent)
+    : _info(State::CREATED, token, description, main_task), _parent{parent}
   {
     if (_info.main_task) {
       _info.state = State::IN_PROGRESS;
@@ -381,11 +381,11 @@ private:
   void        log_reload_summary(State final_state);
   static void dump_subtask_tree(const std::vector<ConfigReloadTaskPtr> &tasks, int indent);
 
-  mutable std::shared_mutex _mutex;
-  bool                      _reload_progress_checker_started{false};
-  bool                      _summary_logged{false};
-  Info                      _info;
-  ConfigReloadTaskPtr       _parent; ///< parent task, if any
+  mutable std::shared_mutex       _mutex;
+  bool                            _reload_progress_checker_started{false};
+  bool                            _summary_logged{false};
+  Info                            _info;
+  std::weak_ptr<ConfigReloadTask> _parent; ///< parent task, if any. Weak because the parent owns this task via sub_tasks.
 
   std::atomic<int64_t> _atomic_last_updated_ms{now_ms()};
 
