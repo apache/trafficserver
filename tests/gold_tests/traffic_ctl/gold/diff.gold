@@ -13,9 +13,6 @@ proxy.config.http.server_ports has changed
 proxy.config.http.wait_for_cache has changed
 ``Current Value: 1
 ``Default Value: 0
-proxy.config.log.rolling_enabled has changed
-``Current Value: 0
-``Default Value: 1
 proxy.config.udp.threads has changed
 ``Current Value: 1
 ``Default Value: 0

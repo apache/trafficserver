@@ -7,7 +7,5 @@ records:
   http:
     server_ports: ``  # default: 8080 8080:ipv6
     wait_for_cache: 1  # default: 0
-  log:
-    rolling_enabled: 0  # default: 1
   udp:
     threads: 1  # default: 0

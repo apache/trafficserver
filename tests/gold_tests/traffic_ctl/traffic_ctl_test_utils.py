@@ -651,7 +651,9 @@ class TrafficCtl(Config, Server):
         self._current_test_number = self._testNumber
         self._retcode = retcode
         self._Test = test
-        self._ts = self._Test.MakeATSProcess(f"ts_{self._testNumber}")
+        # Leave log rolling at its default: these tests check traffic_ctl's view of the
+        # records, and config diff would otherwise list the harness's rolling setting.
+        self._ts = self._Test.MakeATSProcess(f"ts_{self._testNumber}", disable_log_rolling=False)
         if records_yaml != None:
             self._ts.Disk.records_config.update(records_yaml)
         self._tests = []
