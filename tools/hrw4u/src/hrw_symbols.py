@@ -523,7 +523,8 @@ class InverseSymbolResolver(SymbolResolverBase):
                         raise SymbolResolutionError(line, f"Invalid index for {cmd}: {toks[1]}")
 
                     var_name = self._get_or_create_var_name(var_type, index, scope)
-                    if value.startswith('%{') and value.endswith('}'):
+                    # A "with" clause is only valid inside an interpolation.
+                    if value.startswith('%{') and value.endswith('}') and not split_percent_mods(value)[1]:
                         rewritten_value, _ = self.percent_to_ident_or_func(value, section)
                     else:
                         rewritten_value = self._rewrite_inline_percents(value, section)
