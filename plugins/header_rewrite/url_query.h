@@ -22,7 +22,8 @@
 
 // Sort the '&'-separated parameters of a URL query string by parameter
 // name. Sorting is stable: parameters that share the same name keep their
-// relative order. An empty input returns an empty string.
+// relative order. Empty parameters (from leading, trailing, or consecutive
+// '&') are dropped. An empty input returns an empty string.
 std::string sort_query(std::string_view query);
 
 // True when sort_query(query) would return query unchanged: parameters are
