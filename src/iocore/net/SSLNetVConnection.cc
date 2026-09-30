@@ -56,11 +56,6 @@
 
 using namespace std::literals;
 
-// This is missing from BoringSSL
-#ifndef BIO_eof
-#define BIO_eof(b) (int)BIO_ctrl(b, BIO_CTRL_EOF, 0, nullptr)
-#endif
-
 #define SSL_READ_ERROR_NONE        0
 #define SSL_READ_ERROR             1
 #define SSL_READ_READY             2
@@ -457,7 +452,8 @@ bool
 SSLNetVConnection::update_rbio(bool move_to_socket)
 {
   bool retval = false;
-  if (BIO_eof(SSL_get_rbio(this->ssl)) && this->handShakeReader != nullptr) {
+  // OpenSSL 4 does not report EOF for an empty memory BIO configured to retry reads.
+  if (this->handShakeReader != nullptr && BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) {
     Dbg(dbg_ctl_ssl, "Consuming handShakeBioStored=%d bytes from the handshake reader", this->handShakeBioStored);
     this->handShakeReader->consume(this->handShakeBioStored);
     this->handShakeBioStored = 0;
@@ -1354,8 +1350,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   // We only feed CLIENT_HELLO bytes into our temporary buffers. If we are past
   // the CLIENT_HELLO, then no need to buffer.
   if (in_client_hello && this->handShakeReader) {
-    if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
-                                            // Is this the first read?
+    if (BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) { // No more data in the buffer
+                                                          // Is this the first read?
 #if TS_USE_TLS_ASYNC
       if (SSLConfigParams::async_handshake_enabled) {
         SSL_set_mode(ssl, SSL_MODE_ASYNC);
