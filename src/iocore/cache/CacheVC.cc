@@ -134,7 +134,7 @@ make_vol_map(Stripe *stripe)
     Dir *seg = stripe->directory.get_segment(s);
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (stripe->directory.bucket_loop_fix(e, s)) {
+      if (stripe->directory.bucket_loop_fix(e, s, stripe)) {
         break;
       }
       while (e) {
