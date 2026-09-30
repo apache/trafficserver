@@ -115,6 +115,7 @@ struct HttpHeader {
 
   bool hasKey(char const *const key, int const keylen) const;
 
+  // removes every field (including duplicates) with this key.
   // returns false if header invalid or something went wrong with removal.
   bool removeKey(char const *const key, int const keylen);
 

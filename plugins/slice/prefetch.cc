@@ -159,7 +159,9 @@ BgBlockFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */
 
   switch (event) {
   case TS_EVENT_VCONN_WRITE_COMPLETE:
-    TSVConnShutdown(bg->m_stream.m_vc, 0, 1);
+    // The complete request header is sufficient for the background GET.
+    // Keep the write side open so the internal transaction does not receive
+    // an EOS and interpret it as a client abort.
     break;
   case TS_EVENT_VCONN_READ_READY: {
     TSIOBufferReader const reader = bg->m_stream.m_read.m_reader;
