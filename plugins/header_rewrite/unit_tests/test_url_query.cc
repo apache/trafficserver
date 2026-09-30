@@ -66,3 +66,44 @@ TEST_CASE("sort_query orders params by name", "[header_rewrite][url_query]")
     CHECK(sort_query("b=2&&a=1&&c=3") == "a=1&b=2&c=3");
   }
 }
+
+TEST_CASE("is_query_sorted detects queries sort_query would leave unchanged", "[header_rewrite][url_query]")
+{
+  SECTION("params in name order are sorted")
+  {
+    CHECK(is_query_sorted("a=1&b=2&c=3"));
+  }
+
+  SECTION("out-of-order params are not sorted")
+  {
+    CHECK_FALSE(is_query_sorted("b=2&a=1"));
+  }
+
+  SECTION("duplicate names in any value order are sorted, since the sort is stable")
+  {
+    CHECK(is_query_sorted("a=2&x=3&x=1"));
+  }
+
+  SECTION("empty query and single param are sorted")
+  {
+    CHECK(is_query_sorted(""));
+    CHECK(is_query_sorted("a=1"));
+  }
+
+  SECTION("empty params are not sorted, since sort_query drops them")
+  {
+    CHECK_FALSE(is_query_sorted("&a=1"));
+    CHECK_FALSE(is_query_sorted("a=1&"));
+    CHECK_FALSE(is_query_sorted("a=1&&b=2"));
+    CHECK_FALSE(is_query_sorted("&"));
+  }
+
+  SECTION("agrees with sort_query on every edge case")
+  {
+    for (std::string_view q : {"", "&", "&&", "a", "a=1", "a=1&", "&a=1", "a=1&&b=2", "b=2&a=1", "a=1&b=2", "b&a=1", "x=1&a=2&x=3",
+                               "a=2&x=3&x=1", "a=1=2", "=x&a=1", "a=1&=x", "a1=x&a=x", "a=x&a1=x"}) {
+      INFO("query: \"" << q << "\"");
+      CHECK(is_query_sorted(q) == (sort_query(q) == q));
+    }
+  }
+}

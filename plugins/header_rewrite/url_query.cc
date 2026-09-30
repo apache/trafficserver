@@ -70,3 +70,22 @@ sort_query(std::string_view query)
 
   return result;
 }
+
+bool
+is_query_sorted(std::string_view query)
+{
+  swoc::TextView   view(query);
+  std::string_view prev;
+
+  while (view) {
+    std::string_view param = view.take_prefix_at('&');
+
+    if (param.empty() || param_name(param) < param_name(prev)) {
+      return false;
+    }
+    prev = param;
+  }
+
+  // take_prefix_at() swallows a trailing '&' without yielding an empty param.
+  return query.empty() || query.back() != '&';
+}
