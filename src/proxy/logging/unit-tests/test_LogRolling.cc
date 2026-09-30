@@ -129,14 +129,15 @@ struct RollingFixture {
 
 /// An ASCII log object that rolls daily at local midnight, as the defaults do,
 /// and reopens its file after each roll.
-LogObject *
+std::unique_ptr<LogObject>
 make_daily_object(RollingFixture &fx, Log::RollingEnabledValues rolling_enabled)
 {
   LogFormat fmt("rolltest", "%<cqu>");
   REQUIRE(fmt.valid());
-  return new LogObject(fx.cfg.get(), &fmt, fx.dir.c_str(), "roll_test", LOG_FILE_ASCII, nullptr, rolling_enabled, 1, ONE_DAY,
-                       /* rolling_offset_hr */ 0, /* rolling_size_mb */ 0, /* auto_created */ false, /* rolling_max_count */ 0,
-                       /* rolling_min_count */ 0, /* reopen_after_rolling */ true, /* pipe_buffer_size */ 0, /* fast */ true);
+  return std::make_unique<LogObject>(
+    fx.cfg.get(), &fmt, fx.dir.c_str(), "roll_test", LOG_FILE_ASCII, nullptr, rolling_enabled, 1, ONE_DAY,
+    /* rolling_offset_hr */ 0, /* rolling_size_mb */ 0, /* auto_created */ false, /* rolling_max_count */ 0,
+    /* rolling_min_count */ 0, /* reopen_after_rolling */ true, /* pipe_buffer_size */ 0, /* fast */ true);
 }
 
 void
@@ -150,16 +151,19 @@ append(const fs::path &path, const std::string &line)
 TEST_CASE("roll_files rolls a daily log at local midnight, and only once", "[logging][rolling]")
 {
   RollingFixture fx("daily");
-  LogObject     *obj = make_daily_object(fx, Log::ROLL_ON_TIME_ONLY);
+  auto           obj = make_daily_object(fx, Log::ROLL_ON_TIME_ONLY);
   fs::path       log = fx.dir / "roll_test.log";
 
   REQUIRE(fs::exists(log)); // reopen_after_rolling opens it up front
   append(log, "before midnight");
 
-  // Tomorrow night, so the object's own "last rolled" time (now) is far behind.
-  time_t before  = local_time(1, 23, 59, 59);
-  time_t after   = local_time(2, 0, 0, 1);
-  time_t shortly = local_time(2, 0, 0, 5);
+  // Tomorrow night, so the object's own "last rolled" time (now) is far behind. Each boundary
+  // comes from the calendar rather than from adding 86400: a local day is 23 or 25 hours long
+  // across a DST change.
+  time_t before     = local_time(1, 23, 59, 59);
+  time_t after      = local_time(2, 0, 0, 1);
+  time_t shortly    = local_time(2, 0, 0, 5);
+  time_t next_night = local_time(3, 0, 0, 1);
 
   CHECK(obj->roll_files(before) == 0);
   CHECK(rolled_files(fx.dir).empty());
@@ -180,24 +184,20 @@ TEST_CASE("roll_files rolls a daily log at local midnight, and only once", "[log
 
   // The next midnight rolls again.
   append(log, "the next day");
-  CHECK(obj->roll_files(after + ONE_DAY) == 1);
+  CHECK(obj->roll_files(next_night) == 1);
   CHECK(rolled_files(fx.dir).size() == 2);
-
-  delete obj;
 }
 
 TEST_CASE("rolling_enabled 0 never rolls, even at midnight", "[logging][rolling]")
 {
   RollingFixture fx("disabled");
-  LogObject     *obj = make_daily_object(fx, Log::NO_ROLLING);
+  auto           obj = make_daily_object(fx, Log::NO_ROLLING);
   fs::path       log = fx.dir / "roll_test.log";
 
   append(log, "kept");
   CHECK(obj->roll_files(local_time(2, 0, 0, 1)) == 0);
   CHECK(rolled_files(fx.dir).empty());
   CHECK(slurp(log) == "kept\n");
-
-  delete obj;
 }
 
 TEST_CASE("a record written after a roll lands in the new file", "[logging][rolling]")
