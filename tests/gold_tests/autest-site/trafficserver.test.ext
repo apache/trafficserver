@@ -60,7 +60,8 @@ def MakeATSProcess(
         dump_runroot=True,
         enable_proxy_protocol=False,
         enable_proxy_protocol_cp_src=False,
-        disable_log_checks=False):
+        disable_log_checks=False,
+        disable_log_rolling=True):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -68,6 +69,13 @@ def MakeATSProcess(
     triggered by running traffic_server under a debugger. In the debugger,
     `set cmd_block = 0`, set any desired break points, then `c` to continue
     to let the test proceed.
+
+    :param disable_log_rolling: if True (the default), set
+    proxy.config.log.rolling_enabled to 0, which turns log rolling off. The
+    default value, 1, rolls on a timer only (daily, at 00:00 UTC), so this is
+    what stops a test running across midnight from having its logs renamed
+    before its content checks read them. Pass False to leave the records at
+    their defaults, as a test that inspects them does.
     """
     #####################################
     # common locations
@@ -393,6 +401,12 @@ def MakeATSProcess(
 
     # For config reload tests, no need to wait the default 3 seconds to detect the need for a reload.
     p.Disk.records_config.update({'proxy.config.config_update_interval_ms': 20})
+
+    # The default rolling_enabled of 1 rolls every log on a timer, daily at 00:00 UTC. A test
+    # that is running across midnight then checks the fresh, empty file and fails. 0 turns
+    # rolling off; tests that exercise rolling set rolling_enabled themselves, overriding this.
+    if disable_log_rolling:
+        p.Disk.records_config.update({'proxy.config.log.rolling_enabled': 0})
 
     if enable_cache:
         # In records.yaml, the cache is enabled by default so there's nothing
