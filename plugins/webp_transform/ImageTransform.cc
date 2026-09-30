@@ -53,8 +53,6 @@ using namespace atscppapi;
 
 namespace
 {
-GlobalPlugin *plugin;
-
 DbgCtl webp_dbg_ctl{TAG};
 
 enum class ImageEncoding { webp, jpeg, png, unknown };
@@ -519,5 +517,5 @@ TSPluginInit(int argc, const char *argv[])
   Magick::ResourceLimits::map(MAX_PIXEL_CACHE_BYTES);    // memory-mapped pixel-cache budget
   Magick::ResourceLimits::disk(0);                       // no disk-backed spill; fail rather than thrash
 
-  plugin = new GlobalHookPlugin();
+  new GlobalHookPlugin();
 }

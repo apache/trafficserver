@@ -68,8 +68,6 @@ using byte = unsigned char;
 
 namespace
 {
-GlobalPlugin *plugin;
-
 DbgCtl dbg_ctl{PLUGIN_TAG};
 } // namespace
 
@@ -638,5 +636,5 @@ TSPluginInit(int argc, const char **argv)
     key = argv[1];
   }
 
-  plugin = new GlobalHookPlugin(key);
+  new GlobalHookPlugin(key);
 }
