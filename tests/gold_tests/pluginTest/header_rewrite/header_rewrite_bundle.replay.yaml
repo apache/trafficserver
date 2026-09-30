@@ -2522,7 +2522,9 @@ sessions:
         - [ uuid, 95 ]
 
     proxy-request:
-      url: /to_24/?a=1&b=2&c=3
+      url:
+      - [ path, { value: /to_24/, as: equal } ]
+      - [ query, { value: "a=1&b=2&c=3", as: equal } ]
 
     server-response:
       status: 200
