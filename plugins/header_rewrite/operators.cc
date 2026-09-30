@@ -577,8 +577,11 @@ OperatorSortDestination::exec(const Resources &res) const
 
       std::string sorted = sort_query(query);
 
+      if (TSUrlHttpQuerySet(bufp, url_m_loc, sorted.c_str(), sorted.size()) != TS_SUCCESS) {
+        Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() unable to set QUERY");
+        break;
+      }
       const_cast<Resources &>(res).changed_url = true;
-      TSUrlHttpQuerySet(bufp, url_m_loc, sorted.c_str(), sorted.size());
       res.reset_query_cache();
       Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() rewrote QUERY to \"%s\"", sorted.c_str());
       break;
