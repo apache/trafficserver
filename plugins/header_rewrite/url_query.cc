@@ -25,19 +25,6 @@
 namespace
 {
 
-std::vector<std::string_view>
-split(std::string_view text, char delimiter)
-{
-  std::vector<std::string_view> tokens;
-  swoc::TextView                view(text);
-
-  while (view) {
-    tokens.push_back(view.take_prefix_at(delimiter));
-  }
-
-  return tokens;
-}
-
 std::string_view
 param_name(std::string_view param)
 {
@@ -53,7 +40,14 @@ sort_query(std::string_view query)
     return {};
   }
 
-  std::vector<std::string_view> params = split(query, '&');
+  std::vector<std::string_view> params;
+  swoc::TextView                view(query);
+
+  while (view) {
+    if (std::string_view param = view.take_prefix_at('&'); !param.empty()) {
+      params.push_back(param);
+    }
+  }
 
   std::stable_sort(params.begin(), params.end(),
                    [](std::string_view a, std::string_view b) { return param_name(a) < param_name(b); });

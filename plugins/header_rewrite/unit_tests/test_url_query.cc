@@ -65,6 +65,11 @@ TEST_CASE("sort_query orders params by name", "[header_rewrite][url_query]")
   {
     CHECK(sort_query("b=2&&a=1&&c=3") == "a=1&b=2&c=3");
   }
+
+  SECTION("empty params are dropped even between params with an empty name")
+  {
+    CHECK(sort_query("=x&&=y") == "=x&=y");
+  }
 }
 
 TEST_CASE("is_query_sorted detects queries sort_query would leave unchanged", "[header_rewrite][url_query]")
@@ -100,8 +105,9 @@ TEST_CASE("is_query_sorted detects queries sort_query would leave unchanged", "[
 
   SECTION("agrees with sort_query on every edge case")
   {
-    for (std::string_view q : {"", "&", "&&", "a", "a=1", "a=1&", "&a=1", "a=1&&b=2", "b=2&a=1", "a=1&b=2", "b&a=1", "x=1&a=2&x=3",
-                               "a=2&x=3&x=1", "a=1=2", "=x&a=1", "a=1&=x", "a1=x&a=x", "a=x&a1=x"}) {
+    for (std::string_view q :
+         {"",      "&",           "&&",          "a",     "a=1",    "a=1&",   "&a=1",     "a=1&&b=2", "b=2&a=1", "a=1&b=2",
+          "b&a=1", "x=1&a=2&x=3", "a=2&x=3&x=1", "a=1=2", "=x&a=1", "a=1&=x", "a1=x&a=x", "a=x&a1=x", "=x&=y",   "=x&&=y"}) {
       INFO("query: \"" << q << "\"");
       CHECK(is_query_sorted(q) == (sort_query(q) == q));
     }
