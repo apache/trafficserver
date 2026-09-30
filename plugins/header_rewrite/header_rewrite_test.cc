@@ -816,6 +816,33 @@ test_cidr()
 {
   int errors = 0;
 
+  auto check_qualifier = [&errors](std::string_view qualifier, CidrQualifierError expected_error, int expected_v4,
+                                   int expected_v6) {
+    int v4 = 24;
+    int v6 = 48;
+
+    auto const error = cidr_parse_qualifier(qualifier, v4, v6);
+    if (error != expected_error || v4 != expected_v4 || v6 != expected_v6) {
+      std::cerr << "FAIL: CIDR qualifier '" << qualifier << "' parsed as error=" << static_cast<int>(error) << ", v4=" << v4
+                << ", v6=" << v6 << "; expected error=" << static_cast<int>(expected_error) << ", v4=" << expected_v4
+                << ", v6=" << expected_v6 << std::endl;
+      ++errors;
+    }
+  };
+
+  check_qualifier("16", CidrQualifierError::NONE, 16, 48);
+  check_qualifier("18,42", CidrQualifierError::NONE, 18, 42);
+  check_qualifier("18/42", CidrQualifierError::NONE, 18, 42);
+  check_qualifier("18:42", CidrQualifierError::NONE, 18, 42);
+  check_qualifier(",8", CidrQualifierError::NONE, 24, 8);
+  check_qualifier("24,", CidrQualifierError::NONE, 24, 48);
+  check_qualifier("0,0", CidrQualifierError::NONE, 0, 0);
+  check_qualifier("abc", CidrQualifierError::IPV4, 24, 48);
+  check_qualifier("33", CidrQualifierError::IPV4, 24, 48);
+  check_qualifier("24,abc", CidrQualifierError::IPV6, 24, 48);
+  check_qualifier("24,129", CidrQualifierError::IPV6, 24, 48);
+  check_qualifier("24,8,7", CidrQualifierError::IPV6, 24, 48);
+
   // IPv4 masks, in network byte order. /0 must be 0 (and must not shift by 32).
   // Out-of-range prefixes clamp to [0, 32].
   const std::pair<int, in_addr_t> v4cases[] = {
