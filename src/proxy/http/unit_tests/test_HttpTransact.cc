@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include <memory>
+#include <string>
 #include <string_view>
 #include <vector>
 #include <cstdio>
@@ -969,5 +971,135 @@ TEST_CASE("HttpTransact", "[http]")
     MIMEField *field = hdr.field_find("X-Keep"sv);
     REQUIRE(field != nullptr);
     CHECK(field->value_get() == "ok"sv);
+  }
+}
+
+namespace
+{
+std::string
+print_header(HTTPHdr &h)
+{
+  std::string out(h.length_get(), '\0');
+  int         index  = 0;
+  int         offset = 0;
+
+  REQUIRE(h.print(out.data(), out.size(), &index, &offset) == 1);
+  out.resize(index);
+  return out;
+}
+
+int
+field_block_count(HTTPHdr &h)
+{
+  int blocks = 0;
+
+  for (MIMEFieldBlockImpl const *fblock = &h.m_mime->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    ++blocks;
+  }
+  return blocks;
+}
+
+void
+add_field(HTTPHdr &h, std::string_view name, std::string_view value)
+{
+  MIMEField *f = h.field_create(name);
+  h.field_value_set(f, value);
+  h.field_attach(f);
+}
+
+void
+build_response(HTTPHdr &h)
+{
+  h.create(HTTPType::RESPONSE, HTTP_1_1);
+  h.status_set(HTTPStatus::OK);
+  h.reason_set("OK"sv);
+  add_field(h, "Server"sv, "origin/3"sv);
+  add_field(h, "Date"sv, "Wed, 30 Sep 2026 17:07:26 GMT"sv);
+  add_field(h, "Content-Type"sv, "application/ocsp-response"sv);
+  add_field(h, "Cache-Control"sv, "max-age=21600"sv);
+  add_field(h, "Cache-Control"sv, "public"sv);
+  add_field(h, "Last-Modified"sv, "Wed, 30 Sep 2026 06:10:51 GMT"sv);
+  add_field(h, "Vary"sv, "Accept-Encoding"sv);
+  add_field(h, "Vary"sv, "Origin"sv);
+  add_field(h, "X-Served-By"sv, "origin-7.example.test"sv);
+  add_field(h, "ETag"sv, "\"t0\""sv);
+  add_field(h, "Expires"sv, "Wed, 30 Sep 2026 23:07:26 GMT"sv);
+}
+} // namespace
+
+TEST_CASE("HttpTransact compacts a bloated cached response header", "[http]")
+{
+  url_init();
+  mime_init();
+  http_init();
+
+  HTTPHdr        cached;
+  ts::PostScript cached_defer([&]() -> void { cached.destroy(); });
+
+  build_response(cached);
+
+  SECTION("an ordinary header is left alone")
+  {
+    std::string const before = print_header(cached);
+
+    CHECK(HttpTransact::compact_cached_response_header(&cached) == false);
+    CHECK(print_header(cached) == before);
+  }
+
+  SECTION("a header with hundreds of dead field blocks is rebuilt unchanged and small")
+  {
+    // The state an object cached by builds before #13405 can be in: a long field-block chain holding
+    // a few live fields. Freed slots are reused but blocks are never released, so fields added and
+    // then deleted leave that chain behind, and it survives the round trip through the cache.
+    for (int i = 0; i < 5000; ++i) {
+      add_field(cached, "X-Churn"sv, "v"sv);
+    }
+    cached.field_delete("X-Churn"sv);
+
+    struct PinnedRef : public RefCountObj {
+      void
+      free() override
+      {
+      }
+    } ref;
+    ref.refcount_inc();
+
+    int const len = cached.m_heap->marshal_length();
+    auto      buf = std::make_unique<uint64_t[]>(len / sizeof(uint64_t) + 1);
+    HTTPHdr   read_back;
+    HTTPHdr   stored;
+
+    REQUIRE(cached.m_heap->marshal(reinterpret_cast<char *>(buf.get()), len) > 0);
+    REQUIRE(read_back.unmarshal(reinterpret_cast<char *>(buf.get()), len, &ref) > 0);
+    stored.copy(&read_back);
+    ts::PostScript stored_defer([&]() -> void { stored.destroy(); });
+
+    int const         bloated_size = stored.m_heap->marshal_length();
+    std::string const before       = print_header(stored);
+
+    REQUIRE(field_block_count(stored) > 300);
+    REQUIRE(stored.fields_count() == 11);
+
+    CHECK(HttpTransact::compact_cached_response_header(&stored) == true);
+    CHECK(print_header(stored) == before);
+    CHECK(stored.status_get() == HTTPStatus::OK);
+    CHECK(stored.reason_get() == "OK"sv);
+    CHECK(stored.fields_count() == 11);
+    CHECK(field_block_count(stored) == 1);
+    CHECK(stored.m_heap->marshal_length() < bloated_size / 20);
+
+    MIMEField *cc = stored.field_find("Cache-Control"sv);
+    REQUIRE(cc != nullptr);
+    CHECK(cc->value_get() == "max-age=21600"sv);
+    REQUIRE(cc->m_next_dup != nullptr);
+    CHECK(cc->m_next_dup->value_get() == "public"sv);
+    CHECK(stored.presence(MIME_PRESENCE_EXPIRES));
+    CHECK(stored.presence(MIME_PRESENCE_ETAG));
+    CHECK(stored.presence(MIME_PRESENCE_VARY));
+
+    // A compacted header still takes new fields where #13455 would put them.
+    add_field(stored, "Age"sv, "0"sv);
+    CHECK(stored.fields_count() == 12);
+    CHECK(HttpTransact::compact_cached_response_header(&stored) == false);
   }
 }
