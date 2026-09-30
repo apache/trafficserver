@@ -60,7 +60,7 @@ using ConfigReloadTaskPtr = std::shared_ptr<ConfigReloadTask>;
 /// Lifecycle:
 ///   - Scheduled on ET_TASK when a reload starts.
 ///   - check_progress() runs periodically (every check_interval).
-///   - Self-terminates (returns EVENT_DONE) when:
+///   - Self-terminates (deletes itself and returns EVENT_DONE) when:
 ///       * The task reaches a terminal state (SUCCESS, FAIL, TIMEOUT).
 ///       * The task exceeds the configured timeout (marked as TIMEOUT, then stops).
 ///       * The _reload pointer is null (defensive).
@@ -385,7 +385,9 @@ private:
   bool                      _reload_progress_checker_started{false};
   bool                      _summary_logged{false};
   Info                      _info;
-  ConfigReloadTaskPtr       _parent; ///< parent task, if any
+  /// Parent task, if any. Weak because the parent owns this task through sub_tasks;
+  /// a strong reference back would be a cycle that keeps the whole tree alive.
+  std::weak_ptr<ConfigReloadTask> _parent;
 
   std::atomic<int64_t> _atomic_last_updated_ms{now_ms()};
 

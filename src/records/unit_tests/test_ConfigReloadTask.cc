@@ -132,6 +132,40 @@ TEST_CASE("ConfigReloadTask state transitions", "[config][reload][state]")
   }
 }
 
+TEST_CASE("ConfigReloadTask tree does not keep itself alive", "[config][reload][lifetime]")
+{
+  SECTION("Dropping the main task frees the whole tree")
+  {
+    std::weak_ptr<ConfigReloadTask> weak_main;
+    {
+      auto main = std::make_shared<ConfigReloadTask>("test-token-tree", "main task", true, nullptr);
+      weak_main = main;
+
+      // A child from add_child(), and a grandchild hanging off it, as SSLClientCoordinator does.
+      auto child = main->add_child("child task");
+      REQUIRE(child);
+      auto grandchild = child.add_dependent_ctx("grandchild task");
+      REQUIRE(grandchild);
+    }
+    // Children must not own their parent, or the tree is a shared_ptr cycle and leaks.
+    REQUIRE(weak_main.expired());
+  }
+
+  SECTION("A child that outlives its parent can still change state")
+  {
+    auto main  = std::make_shared<ConfigReloadTask>("test-token-orphan", "main task", true, nullptr);
+    auto child = std::make_shared<ConfigReloadTask>("test-token-orphan", "child task", false, main);
+
+    std::weak_ptr<ConfigReloadTask> weak_main = main;
+    main.reset();
+    REQUIRE(weak_main.expired());
+
+    // notify_parent() must tolerate the parent being gone.
+    child->set_completed();
+    REQUIRE(child->get_state() == ConfigReloadTask::State::SUCCESS);
+  }
+}
+
 TEST_CASE("State to string conversion", "[config][reload][state]")
 {
   // Runtime checks

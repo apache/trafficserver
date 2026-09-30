@@ -180,11 +180,12 @@ ConfigReloadTask::mark_as_bad_state(std::string_view reason)
 void
 ConfigReloadTask::notify_parent()
 {
-  Dbg(dbg_ctl_config, "parent null =%s , parent main task? %s", _parent ? "false" : "true",
-      (_parent && _parent->is_main_task()) ? "true" : "false");
+  auto parent = _parent.lock();
+  Dbg(dbg_ctl_config, "parent null =%s , parent main task? %s", parent ? "false" : "true",
+      (parent && parent->is_main_task()) ? "true" : "false");
 
-  if (_parent) {
-    _parent->aggregate_status();
+  if (parent) {
+    parent->aggregate_status();
   }
 }
 
@@ -292,8 +293,8 @@ ConfigReloadTask::aggregate_status()
   // Release lock before notifying parent to avoid potential deadlock
   lock.unlock();
 
-  if (_parent) {
-    _parent->aggregate_status();
+  if (auto parent = _parent.lock()) {
+    parent->aggregate_status();
   }
 }
 
@@ -403,7 +404,10 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
 {
   Dbg(dbg_ctl_config, "Checking progress for reload task %s - descr: %s", _reload ? _reload->get_token().c_str() : "null",
       _reload ? _reload->get_description().c_str() : "null");
+  // Nothing else references this checker or cancels its event, so every exit that
+  // stops rescheduling must delete it. That also drops its reference to the task.
   if (_reload == nullptr) {
+    delete this;
     return EVENT_DONE;
   }
 
@@ -415,6 +419,7 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
       Dbg(dbg_ctl_config, "Reload task %s confirmed %.*s after grace period, stopping progress check.",
           _reload->get_token().c_str(), static_cast<int>(state_str.size()), state_str.data());
       _reload->log_reload_summary(current_state);
+      delete this;
       return EVENT_DONE;
     }
     // First observation of terminal state — reschedule once more to confirm
@@ -455,6 +460,7 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
     }
     _reload->mark_as_bad_state(buf);
     Dbg(dbg_ctl_config, "%s", buf.c_str());
+    delete this;
     return EVENT_DONE;
   }
 
