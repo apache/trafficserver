@@ -82,14 +82,20 @@ GLOBAL_REQUEST = b'GET /hold HTTP/1.1\r\nHost: www.example.com\r\nConnection: cl
 REMAP_REQUEST = b'GET /remap-hold HTTP/1.1\r\nHost: remap.example.com\r\nConnection: close\r\n\r\n'
 
 
-def wait_for_active_state(marker: Path) -> bool:
-    """Wait until the Lua script reports a state busy in a request callback."""
+def wait_for_active_states(markers: list[Path]) -> list[Path]:
+    """Wait until each marker has been seen at least once, and return the ones that never were.
+
+    The markers are watched together, not one after another: remap_shutdown.lua
+    writes its marker only once, for half a second, so waiting for the global
+    marker first can let that window pass unseen.
+    """
+    pending = list(markers)
     deadline = time.monotonic() + STATES_ACTIVE_TIMEOUT_SECONDS
-    while time.monotonic() < deadline:
-        if marker.exists():
-            return True
-        time.sleep(0.01)
-    return False
+    while pending and time.monotonic() < deadline:
+        pending = [marker for marker in pending if not marker.exists()]
+        if pending:
+            time.sleep(0.01)
+    return pending
 
 
 def main() -> int:
@@ -111,10 +117,11 @@ def main() -> int:
     # __shutdown__ callback runs while state 1 is still executing Lua.
     # remap_shutdown.lua holds the single remap state, with the remaining remap
     # requests waiting on its mutex.
-    for marker in ('lua-state-1.active', 'lua-remap-state.active'):
-        if not wait_for_active_state(args.test_directory / marker):
-            print(f'{marker} never appeared', file=sys.stderr)
-            return 1
+    missing = wait_for_active_states([args.test_directory / name for name in ('lua-state-1.active', 'lua-remap-state.active')])
+    if missing:
+        for marker in missing:
+            print(f'{marker.name} never appeared', file=sys.stderr)
+        return 1
 
     try:
         process = ts_process_handler.get_ts_process_pid(args.ts_identifier)
