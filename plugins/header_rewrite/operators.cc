@@ -566,9 +566,16 @@ OperatorSortDestination::exec(const Resources &res) const
 
     switch (_url_qual) {
     case URL_QUAL_QUERY: {
-      int         q_len  = 0;
-      const char *query  = TSUrlHttpQueryGet(bufp, url_m_loc, &q_len);
-      std::string sorted = sort_query(q_len > 0 ? std::string_view(query, static_cast<size_t>(q_len)) : std::string_view());
+      int              q_len = 0;
+      const char      *q_ptr = TSUrlHttpQueryGet(bufp, url_m_loc, &q_len);
+      std::string_view query = q_len > 0 ? std::string_view(q_ptr, static_cast<size_t>(q_len)) : std::string_view();
+
+      if (is_query_sorted(query)) {
+        Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() QUERY already sorted, leaving it unchanged");
+        break;
+      }
+
+      std::string sorted = sort_query(query);
 
       const_cast<Resources &>(res).changed_url = true;
       TSUrlHttpQuerySet(bufp, url_m_loc, sorted.c_str(), sorted.size());
