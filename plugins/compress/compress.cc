@@ -811,7 +811,8 @@ add_vary_header_to_client_response(TSHttpTxn txnp)
 }
 
 // A 304 carries the origin's strong ETag, which the cache would merge over the weakened ETag of a
-// stored compressed copy. Keep it weak when both name the same entity.
+// stored compressed copy. Keep it weak when both name the same entity and the stored copy is
+// encoded; an identity copy's ETag is the origin's own, so it may legitimately become strong.
 static void
 keep_cached_etag_weak(TSHttpTxn txnp)
 {
@@ -834,6 +835,13 @@ keep_cached_etag_weak(TSHttpTxn txnp)
     return;
   }
   ts::PostScript cached_defer([&]() -> void { TSHandleMLocRelease(cached_buf, TS_NULL_MLOC, cached_loc); });
+
+  TSMLoc cached_ce = TSMimeHdrFieldFind(cached_buf, cached_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING);
+
+  if (cached_ce == TS_NULL_MLOC) {
+    return;
+  }
+  TSHandleMLocRelease(cached_buf, cached_loc, cached_ce);
 
   TSMLoc srv_etag = TSMimeHdrFieldFind(srv_buf, srv_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
 
