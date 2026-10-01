@@ -5112,7 +5112,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   return;
 }
 
-// Revalidation merges before #13405 deleted and re-added caching headers on every 304, and a cache
+// Revalidation merges in older builds deleted and re-added caching headers on every 304, and a cache
 // round trip left each dead slot unreclaimable, so a long-lived object's cached response could grow
 // to hundreds of field blocks. Deleted slots are now reused, but a header's blocks are never
 // released and every copy and marshal keeps them, so such a header stays bloated for as long as it

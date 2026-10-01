@@ -1048,7 +1048,7 @@ TEST_CASE("HttpTransact compacts a bloated cached response header", "[http]")
 
   SECTION("a header with hundreds of dead field blocks is rebuilt unchanged and small")
   {
-    // The state an object cached by builds before #13405 can be in: a long field-block chain holding
+    // The state an object cached by older builds can be in: a long field-block chain holding
     // a few live fields. Freed slots are reused but blocks are never released, so fields added and
     // then deleted leave that chain behind, and it survives the round trip through the cache.
     for (int i = 0; i < 5000; ++i) {
@@ -1097,7 +1097,7 @@ TEST_CASE("HttpTransact compacts a bloated cached response header", "[http]")
     CHECK(stored.presence(MIME_PRESENCE_ETAG));
     CHECK(stored.presence(MIME_PRESENCE_VARY));
 
-    // A compacted header still takes new fields where #13455 would put them.
+    // Fields can still be added afterwards, and doing so does not re-trigger compaction.
     add_field(stored, "Age"sv, "0"sv);
     CHECK(stored.fields_count() == 12);
     CHECK(HttpTransact::compact_cached_response_header(&stored) == false);
