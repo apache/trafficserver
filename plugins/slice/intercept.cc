@@ -60,9 +60,13 @@ intercept_hook(TSCont contp, TSEvent event, void *edata)
       }
     }
     // The complete request header is sufficient for GET, HEAD, and PURGE.
-    // Keep the write side open so the internal transaction does not receive
-    // an EOS and interpret it as a client abort.
+    // Mark the write channel done without shutting down the VC write side,
+    // so the internal transaction does not receive an EOS and interpret it
+    // as a client abort.
     else if (data->m_upstream.m_write.isOpen() && edata == data->m_upstream.m_write.m_vio) {
+      if (TS_EVENT_VCONN_WRITE_COMPLETE == event) {
+        data->m_upstream.m_write.close();
+      }
     }
     // server has data for us
     else if (data->m_upstream.m_read.isOpen() && edata == data->m_upstream.m_read.m_vio) {
