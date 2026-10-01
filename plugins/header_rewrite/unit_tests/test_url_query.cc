@@ -17,6 +17,8 @@
 */
 #include <catch2/catch_test_macros.hpp>
 
+#include <string>
+
 #include "url_query.h"
 
 TEST_CASE("sort_query orders params by name", "[header_rewrite][url_query]")
@@ -69,6 +71,25 @@ TEST_CASE("sort_query orders params by name", "[header_rewrite][url_query]")
   SECTION("empty params are dropped even between params with an empty name")
   {
     CHECK(sort_query("=x&&=y") == "=x&=y");
+  }
+
+  SECTION("params below, at, and above the inline capacity sort the same way")
+  {
+    auto param = [](int i) { return std::string("p") + static_cast<char>('a' + i / 26) + static_cast<char>('a' + i % 26) + "=v"; };
+
+    for (int n : {3, 16, 17, 40}) {
+      std::string query;
+      std::string expected;
+
+      for (int i = n - 1; i >= 0; --i) {
+        query += (query.empty() ? "" : "&") + param(i);
+      }
+      for (int i = 0; i < n; ++i) {
+        expected += (expected.empty() ? "" : "&") + param(i);
+      }
+      INFO("params: " << n);
+      CHECK(sort_query(query) == expected);
+    }
   }
 }
 
