@@ -111,9 +111,12 @@ struct BoundaryCase {
 
 // The production crash corrupted a 4K IOBuffer freelist. Approximate sizes are multiples of 512, so a 3584-byte read lands
 // in the same 4K block as a 4096-byte one, and the block's unread tail must not count as read. Each read size also has a
-// corrupt row, which proves the harness gets past the dir_valid/io.ok() gate for it.
-constexpr std::array<BoundaryCase, 8> boundary_cases = {
+// corrupt row, which proves the harness gets past the dir_valid/io.ok() gate for it. A len below sizeof(Doc) would wrap the
+// hlen bound and let any hlen through.
+constexpr std::array<BoundaryCase, 10> boundary_cases = {
   {
+   {4096, sizeof(Doc) - 1, 0, true},
+   {4096, sizeof(Doc), 0, false},
    {4096, sizeof(Doc) + 100, 0, false},
    {4096, 4096, 0, false},
    {4096, 4097, 0, true},
