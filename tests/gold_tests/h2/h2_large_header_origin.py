@@ -53,9 +53,9 @@ def printed_size(status: int, fields: list[tuple[str, str]]) -> int:
 def response_fields(size: int, status: int, with_body: bool) -> list[tuple[str, str]]:
     """Header fields, without :status, whose printed size is close to size bytes.
 
-    The block is made of fields of LARGE_FIELD_SIZE bytes (under the 64 KB limit on a
-    single field) followed by PAD_FIELD_SIZE byte fields, so fields cross many 4 KB
-    block boundaries.
+    The block is a few large fields of up to LARGE_FIELD_SIZE bytes (under the 64 KB
+    limit on a single field) followed by PAD_FIELD_SIZE byte fields, so fields cross
+    the 4 KB block boundaries.
     """
     fields = []
     if status == 302:
@@ -68,9 +68,10 @@ def response_fields(size: int, status: int, with_body: bool) -> list[tuple[str, 
         return size - printed_size(status, fields)
 
     large = 0
-    while remaining() > LARGE_FIELD_SIZE + 100:
+    while remaining() > 1500:
         large += 1
-        fields.append((f"x-large-{large}", filler(LARGE_FIELD_SIZE)))
+        name = "content-security-policy" if large == 1 else f"x-large-{large}"
+        fields.append((name, filler(min(LARGE_FIELD_SIZE, remaining() - len(name) - 4 - 1200))))
     pads = 0
     while remaining() > 0:
         pads += 1
@@ -140,14 +141,10 @@ def check(args: argparse.Namespace) -> int:
     head, _, body = response.partition(b"\r\n\r\n")
     lines = head.decode("latin-1").split("\r\n")
     got_status = int(lines[0].split(" ")[1])
-    expected_status = args.expect_status if args.expect_status else status
     print(f"{args.path}: status {got_status}, {len(head) + 4} header bytes, {len(body)} body bytes")
-    if got_status != expected_status:
-        print(f"FAIL: expected status {expected_status}, got {got_status}")
+    if got_status != status:
+        print(f"FAIL: expected status {status}, got {got_status}")
         return 1
-    if args.expect_status:
-        print("PASS")
-        return 0
 
     received = {}
     for line in lines[1:]:
@@ -187,7 +184,6 @@ def main() -> int:
     c.add_argument("port", type=int)
     c.add_argument("path")
     c.add_argument("--host", default="h2-origin.test")
-    c.add_argument("--expect-status", type=int, default=0)
     args = p.parse_args()
     return serve(args) if args.command == "serve" else check(args)
 
