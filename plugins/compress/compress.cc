@@ -23,6 +23,7 @@
 
 #include <cstring>
 #include <cinttypes>
+#include <string>
 
 #include "ts/apidefs.h"
 #include "tscore/ink_config.h"
@@ -278,8 +279,9 @@ vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
   return ret;
 }
 
-// FIXME: the etag alteration isn't proper. it should modify the value inside quotes
-//       specify a very header..
+// Compressed bytes differ from the origin's, so a strong ETag no longer holds. Weaken it
+// (RFC 9110 8.8.1) rather than suffixing it: every algorithm would share the same suffixed
+// strong tag, and the origin could never match it on revalidation.
 static TSReturnCode
 etag_header(TSMBuffer bufp, TSMLoc hdr_loc)
 {
@@ -292,16 +294,12 @@ etag_header(TSMBuffer bufp, TSMLoc hdr_loc)
     int         strl;
     const char *strv = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, ce_loc, -1, &strl);
 
-    // do not alter weak etags.
-    // FIXME: consider just making the etag weak for compressed content
-    if (strl >= 2) {
-      int changetag = 1;
-      if ((strv[0] == 'w' || strv[0] == 'W') && strv[1] == '/') {
-        changetag = 0;
-      }
-      if (changetag) {
-        ret = TSMimeHdrFieldValueAppend(bufp, hdr_loc, ce_loc, 0, "-df", 3);
-      }
+    if (strl >= 2 && !((strv[0] == 'w' || strv[0] == 'W') && strv[1] == '/')) {
+      // Copy before setting: strv points into the header heap being rewritten.
+      std::string weak_etag{"W/"};
+
+      weak_etag.append(strv, strl);
+      ret = TSMimeHdrFieldValueStringSet(bufp, hdr_loc, ce_loc, -1, weak_etag.data(), weak_etag.size());
     }
     TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
   }
