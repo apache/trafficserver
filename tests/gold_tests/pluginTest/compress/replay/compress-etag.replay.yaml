@@ -45,6 +45,7 @@ autest:
 
     copy_to_config_dir:
       - 'compress-etag.config'
+      - 'compress-etag-cache-false.config'
 
     records_config:
       proxy.config.diags.debug.enabled: 1
@@ -56,6 +57,11 @@ autest:
         plugins:
           - name: 'compress.so'
             args: ['compress-etag.config']
+      - from: "http://uncached.example/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: 'compress.so'
+            args: ['compress-etag-cache-false.config']
 
 sessions:
 - transactions:
@@ -347,3 +353,202 @@ sessions:
         fields:
         - [ Content-Encoding, { as: absent } ]
         - [ ETag, { value: '"v1"', as: equal } ]
+
+  #############################################################################
+  # No cache entry: ATS answers a client's weak If-None-Match from the
+  # origin's 200, so the 304 must carry the weak tag the compressed 200 had.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, private-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, '"p1"' ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"p1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, private-conditional ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, '"p1"' ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"p1"', as: equal } ]
+
+  #############################################################################
+  # A request ATS won't cache keeps its conditional, so the origin's own 304
+  # (with its strong tag) must also go out weak.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, private-origin-304 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: 'W/"p1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, '"p1"' ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"p1"', as: equal } ]
+
+  #############################################################################
+  # cache false stores the identity copy with the origin's strong tag. A
+  # compressed client's fresh conditional hit gets the weak tag; the stored
+  # copy and identity clients keep the strong one.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-false
+      headers:
+        fields:
+        - [ Host, uncached.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, cache-false-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"c1"' ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-false
+      headers:
+        fields:
+        - [ Host, uncached.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, cache-false-conditional ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-false
+      headers:
+        fields:
+        - [ Host, uncached.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, '"c1"' ]
+        - [ uuid, cache-false-strong-conditional ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  #############################################################################
+  # A client that doesn't accept compression holds the identity copy, so its
+  # 304 keeps the origin's strong tag.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, private-identity-conditional ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, '"p1"' ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"p1"', as: equal } ]
