@@ -1,0 +1,111 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify header fallback and slicing log fields"
+  server: {name: "origin"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    process_config:
+      enable_cache: false
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|log"
+      proxy.config.log.max_secs_per_buffer: 1
+      proxy.config.net.connections_throttle: 100
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    logging_yaml:
+      logging:
+        formats:
+          - name: "custom"
+            format: 'Transfer-Encoding:%<{Transfer-Encoding}ssh> Content-Type:%<{Content-Type}essh> Request-ID:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh> Request-ID-Default:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh??"missing-id"> Request-ID-Or-IP:%<{X-Primary-Id}cqh??{X-Secondary-Id}cqh??chi> Remote-IP:%<{X-Remote-Ip}cqh??chi> Path-Fallback:%<{X-Path-Fallback}cqh??cqup[0:7]>'
+        logs:
+          - filename: "field-test"
+            format: "custom"
+    file_checks:
+      - path: "{LOG_DIR}/field-test.log"
+        line_count_min: 3
+        timeout: 10
+    log_validation:
+      access_log:
+        filename: "field-test.log"
+        gold_file: "gold/field-test-replay.gold"
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, log-field-1]]}}
+        client-request:
+          method: GET
+          url: /test-1
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, test-1]
+              - [X-Primary-Id, primary-1]
+              - [X-Secondary-Id, secondary-1]
+              - [X-Remote-Ip, 203.0.113.10]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Test, 1]
+              - [Content-Type, application/json]
+              - [Content-Type, application/json]
+              - [Transfer-Encoding, chunked]
+          content: {data: "Test 1", size: 6}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, log-field-2]]}}
+        client-request:
+          method: GET
+          url: /test-2
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, test-2]
+              - [X-Secondary-Id, secondary-2]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Test, 2]
+              - [Content-Type, application/jason]
+              - [Content-Type, application/json]
+              - [Content-Length, 6]
+          content: {data: "Test 2", size: 6}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, log-field-3]]}}
+        client-request:
+          method: GET
+          url: /test-3
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, test-3]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Test, 3]
+              - [Content-Type, application/json]
+              - [Content-Length, 6]
+          content: {data: "Test 3", size: 6}
+        proxy-response: {status: 200}

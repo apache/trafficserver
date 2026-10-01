@@ -1,0 +1,82 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify quiche qlog generation"
+  requires:
+    ats_features: ["TS_USE_QUIC", "TS_HAS_QUICHE"]
+  server:
+    name: "qlog-origin"
+  client:
+    name: "qlog-client"
+    process_config:
+      http_ports: []
+      https_ports: []
+  ats:
+    name: "qlog-ts"
+    process_config:
+      enable_tls: true
+      enable_quic: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "vv_quic|v_quic"
+      proxy.config.quic.no_activity_timeout_in: 3000
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}"
+  variants:
+    - name: "enabled"
+      ats:
+        records_config:
+          proxy.config.quic.qlog.file_base: "{LOG_DIR}/test_qlog"
+        file_checks:
+          - glob: "{LOG_DIR}/test_qlog-*.sqlog"
+            contains: '"title":"Apache Traffic Server"'
+    - name: "disabled"
+      ats:
+        file_checks:
+          - {glob: "{LOG_DIR}/test_qlog-*.sqlog", exists: false}
+
+
+sessions:
+- protocol:
+    stack: http3
+    tls:
+      sni: test_sni
+  transactions:
+
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", example.com]
+        - [":path", /path/test1]
+        - [ uuid, generate_qlog1 ]
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+
+    proxy-response:
+      status: 200

@@ -44,18 +44,47 @@ from sphinx import version_info
 # For these reasons, despite what linting tools might say, this import is required.
 from manpages import man_pages
 
+from docutils import nodes
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('ext'))
 sys.path.insert(0, os.path.abspath('ext/extras'))  # Non core extensions
 sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, '@CMAKE_SOURCE_DIR@/tests')
+
+# Keep Uranium API signatures readable while retaining parameter types.
+autodoc_typehints = 'description'
+autodoc_type_aliases = {
+    'Path': 'pathlib.Path',
+    'ManagedProcess': 'tools.uranium.process.ManagedProcess',
+}
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 
 # Allow for us to add our override CSS file (new with Sphinx 1.x)
 def setup(app):
     """Sphinx setup function for custom configuration"""
     app.add_css_file('override.css')
+
+    def resolve_python_alias(app: Sphinx, env: BuildEnvironment, node: nodes.Element, content: nodes.Node) -> nodes.Node | None:
+        """Resolve short Path annotations in the generated Uranium API.
+
+        :param app: Active Sphinx application.
+        :param env: Documentation build environment.
+        :param node: Unresolved Python cross-reference.
+        :param content: Display content for the reference.
+        """
+        if node.get('refdomain') == 'py' and node.get('reftarget') == 'Path':
+            from sphinx.ext.intersphinx import missing_reference
+            node['reftarget'] = 'pathlib.Path'
+            return missing_reference(app, env, node, content)
+        return None
+
+    app.connect('missing-reference', resolve_python_alias)
 
     # Exclude index-latex.rst from all builders except latex
     def exclude_latex_index(app):

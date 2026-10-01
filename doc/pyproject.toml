@@ -34,6 +34,9 @@ dependencies = [
     "sphinx-intl",
 
     "pyyaml",
+    # The Uranium service API uses pytest for capability-based skips.
+    "pytest>=8,<10",
+    "dnslib>=0.9.26",
 
     # For parsing Doxygen XML output, to add links from an API description
     # to the source code for that object.
@@ -41,6 +44,4 @@ dependencies = [
 
     "polib>=1.0.3",
 ]
-
-
 

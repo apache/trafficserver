@@ -1,0 +1,118 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: ua-req
+      do:
+      - with: ua-req-path
+        select:
+        - match: [ "1", "2" ]
+          do:
+          - debug: "Fill is {txn-conf<proxy.config.http.background_fill_completed_threshold>}"
+          - var<Best-Band>: "Delain"
+
+    - when: proxy-rsp
+      do:
+        with: ua-req-path
+        select:
+        - match: "2"
+          do:
+          - proxy-rsp-field<Best-Band>: var<Best-Band>
+
+    remap-1:
+    - ua-req-host: "ex.three"
+    - var<Host> : ua-req-field<Host>
+    - ua-req-field<Host-Check>: var<Host>
+
+  blocks:
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+
+sessions:
+- protocol:
+    stack: http
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, example.one ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+    proxy-response:
+      headers:
+        fields:
+        - [ Best-Band, { as: absent } ]
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/2"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host, example.one ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+    proxy-response:
+      headers:
+        fields:
+        - [ Best-Band, { value: "Delain", as: equal } ]
+
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base_request
+      url: "/3"
+      headers:
+        fields:
+        - [ Host, example.one ]
+    proxy-request:
+      headers:
+        fields:
+        - [ Host-Check, { value: "ex.three", as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 130 ]
+    proxy-response:
+      status: 200
+
+urtest:
+  description: Verify txn_box smoke-test functions and directives
+  requires: {plugins: [txn_box.so]}
+  server: {name: txn-box-smoke-origin}
+  dns: {name: txn-box-smoke-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-smoke-client}
+  ats:
+    name: txn-box-smoke-ts
+    copy_to_config_dir: [smoke.test.yaml]
+    plugin_config:
+    - txn_box.so
+    - txn_box.so --key meta.txn_box.global {CONFIG_DIR}/smoke.test.yaml
+    remap_config:
+    - map http://example.one/3 http://example.one:{SERVER_HTTP_PORT}/3 @plugin=txn_box.so @pparam=--key=meta.txn_box.remap-1 @pparam={CONFIG_DIR}/smoke.test.yaml
+    - map http://example.one http://example.one:{SERVER_HTTP_PORT}

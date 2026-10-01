@@ -1,0 +1,334 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file executes traffic that verifies the correct handling of
+# incoming PROXY header.
+#
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify incoming Proxy Protocol addresses and forwarded headers"
+  server: {name: proxy-protocol-origin}
+  client:
+    name: proxy-protocol-client
+    process_config:
+      http_ports: ["{ATS_PROXY_PROTOCOL_PORT}"]
+      https_ports: ["{ATS_PROXY_PROTOCOL_HTTPS_PORT}"]
+  ats:
+    name: proxy-protocol-ts
+    process_config:
+      enable_tls: true
+      enable_cache: false
+      enable_proxy_protocol: true
+    records_config:
+      proxy.config.http.proxy_protocol_allowlist: 127.0.0.1
+      proxy.config.http.insert_forwarded: for|by=ip|proto
+      proxy.config.http.insert_client_ip: 2
+      proxy.config.http.insert_squid_x_forwarded_for: 1
+      proxy.config.log.max_secs_per_buffer: 1
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: proxyprotocol
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    logging_yaml:
+      logging:
+        formats:
+          - name: access
+            format: "%<chi> %<pps> %<rchi>"
+        logs:
+          - filename: access
+            format: access
+
+  variants:
+    - name: peer-address
+      ats:
+        file_checks:
+          - path: "{LOG_DIR}/access.log"
+            line_count_min: 8
+            matches:
+              - {expression: '^127\.0\.0\.1 0 127\.0\.0\.1$', min: 2, max: 2}
+              - {expression: '^127\.0\.0\.1 127\.0\.0\.1 127\.0\.0\.1$', min: 4, max: 4}
+              - {expression: '^127\.0\.0\.1 198\.51\.100\.1 127\.0\.0\.1$', min: 2, max: 2}
+
+    - name: proxy-source-address
+      ats:
+        process_config:
+          enable_proxy_protocol_cp_src: true
+        file_checks:
+          - path: "{LOG_DIR}/access.log"
+            line_count_min: 8
+            matches:
+              - {expression: '^127\.0\.0\.1 0 127\.0\.0\.1$', min: 2, max: 2}
+              - {expression: '^127\.0\.0\.1 127\.0\.0\.1 127\.0\.0\.1$', min: 4, max: 4}
+              - {expression: '^198\.51\.100\.1 198\.51\.100\.1 127\.0\.0\.1$', min: 2, max: 2}
+
+
+sessions:
+  # Test 1: Incoming PROXY Protocol v1 on TCP port
+  - protocol:
+      stack: http
+      proxy-protocol: 1
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 1]
+
+        proxy-request:
+          headers:
+            fields:
+              # Verify ATS inserted the Forwarded header
+              - [
+                  Forwarded,
+                  { value: for=127.0.0.1;by=127.0.0.1;proto=http, as: equal },
+                ]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
+
+  # Test 2: Incoming PROXY Protocol v1 on SSL port
+  - protocol:
+      stack: https
+      proxy-protocol: 1
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 2]
+
+        proxy-request:
+          headers:
+            fields:
+              # Verify ATS inserted the Forwarded header, with the correct https
+              # protocol
+              - [
+                  Forwarded,
+                  { value: for=127.0.0.1;by=127.0.0.1;proto=https, as: equal },
+                ]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
+
+  # Test 3: Incoming PROXY Protocol v2 on TCP port
+  - protocol:
+      stack: http
+      proxy-protocol: 2
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 3]
+
+        proxy-request:
+          headers:
+            fields:
+              # Verify ATS inserted the Forwarded header
+              - [
+                  Forwarded,
+                  { value: for=127.0.0.1;by=127.0.0.1;proto=http, as: equal },
+                ]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
+
+  # Test 4: Incoming PROXY Protocol v2 on SSL port
+  - protocol:
+      stack: https
+      proxy-protocol: 2
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 4]
+
+        proxy-request:
+          headers:
+            fields:
+              # Verify ATS inserted the Forwarded header, with the correct https
+              # protocol
+              - [
+                  Forwarded,
+                  { value: for=127.0.0.1;by=127.0.0.1;proto=https, as: equal },
+                ]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
+  # Test 3: Incoming PROXY Protocol v1 on TCP port, with arbitrary source and
+  # destination address in PROXY message
+  - protocol:
+      stack: http
+      proxy-protocol:
+        version: 1
+        src-addr: 198.51.100.1:51137
+        dst-addr: 198.51.100.2:80
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 5]
+              - [Host, 127.0.0.1:80]
+
+        proxy-request:
+          headers:
+            fields:
+              # Verify ATS inserted the Forwarded header, with the correct for
+              # address
+              - [
+                  Forwarded,
+                  {
+                    value: for=198.51.100.1;by=127.0.0.1;proto=http,
+                    as: equal,
+                  },
+                ]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
+
+  # Test 4: Verify ATS with :pp: server_ports designation can handle a
+  # connection without Proxy Protocol.
+  - protocol:
+      # not sending Proxy Protcol
+      stack: http
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 6]
+
+        proxy-request:
+          headers:
+            fields:
+              # Verify ATS inserted the Forwarded header
+              - [
+                  Forwarded,
+                  { value: for=127.0.0.1;by=127.0.0.1;proto=http, as: equal },
+                ]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
+
+  # Test 5: Verify ATS with :pp: server_ports designation can handle a TLS
+  # connection without Proxy Protocol.
+  - protocol:
+      # not sending Proxy Protcol
+      stack: https
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 7]
+
+        proxy-request:
+          headers:
+            fields:
+              # Verify ATS inserted the Forwarded header
+              - [
+                  Forwarded,
+                  { value: for=127.0.0.1;by=127.0.0.1;proto=https, as: equal },
+                ]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200
+
+  # Test 6: Incoming PROXY Protocol v2 on SSL port, with arbitrary source and
+  # destination address in PROXY message. Verifies that Client-ip and
+  # X-Forwarded-For (the legacy outbound header writers) carry the PROXY
+  # Protocol source address, in addition to the Forwarded: for= field. This
+  # exercises HttpTransact::add_client_ip_to_outgoing_request together with
+  # HttpTransactHeaders::add_forwarded_field_to_request.
+  - protocol:
+      - name: http
+        version: 1
+      - name: tls
+      - name: proxy-protocol
+        version: 2
+        src-addr: 198.51.100.1:51137
+        dst-addr: 198.51.100.2:443
+      - name: tcp
+      - name: ip
+
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get
+          headers:
+            fields:
+              - [uuid, 8]
+              - [Host, "127.0.0.1:443"]
+
+        proxy-request:
+          headers:
+            fields:
+              - [
+                  Forwarded,
+                  {
+                    value: for=198.51.100.1;by=127.0.0.1;proto=https,
+                    as: equal,
+                  },
+                ]
+              - [X-Forwarded-For, { value: 198.51.100.1, as: equal }]
+              - [Client-ip, { value: 198.51.100.1, as: equal }]
+
+        server-response:
+          status: 200
+
+        proxy-response:
+          status: 200

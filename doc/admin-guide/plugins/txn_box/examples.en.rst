@@ -39,7 +39,7 @@ Goal
    Force all proxy requests to have a value for the "Accept-Encoding" field. If not already set, it
    should be set to "identity".
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/example/accept-encoding.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/example/accept-encoding.test.yaml
    :start-after: doc.start
    :end-before: doc.end
 
@@ -57,7 +57,7 @@ paths. The paths for the two hosts are identical, only the host for the request 
 
 The simplest way to do this would be
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/ramp/multi-ramp-1.cfg.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/ramp/multi-ramp-1.cfg.yaml
    :start-after: doc.start
    :end-before: doc.end
 
@@ -72,7 +72,7 @@ This can be done in another way by generating the random value once and checking
 Given the no backtrack rule, this is challenging to do by checking the percentage first. Instead the
 use of tuples makes it possible to check both the value and the path together.
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/ramp/multi-ramp-2.cfg.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/ramp/multi-ramp-2.cfg.yaml
    :start-after: doc.start
    :end-before: doc.end
 
@@ -84,7 +84,7 @@ path. Because there is no nested :drtv:`with` there is no need to backtrack.
 It might be reasonable to split every path in to a different bucket to make adjusting the percentage
 easier. In that case the previous example could be changed to look like
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/ramp/multi-ramp-3.cfg.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/ramp/multi-ramp-3.cfg.yaml
    :lines: 1-12,16-17
 
 This style presumes the bucket action is identical for all buckets. If not, the previous style would
@@ -104,7 +104,7 @@ Goal
 
 Example configuration
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-1-->
    :end-before: doc-1--<
 
@@ -112,7 +112,7 @@ This checks on the upstream response. If the status is 404 (not found) and the p
 "security.txt" then change the response to a 200 and provide a hard wired default for the content.
 The text is retrieved via a YAML reference to an anchor.
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-secure-text-->
    :end-before: doc-secure-text--<
 
@@ -123,7 +123,7 @@ the anchor and reference in the previous configuration, to make sure the exact s
 both cases. Note this is done during YAML parsing, not at runtime, and is identical to using literal
 strings in both cases.
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-proxy-rsp-->
    :end-before: doc-proxy-rsp--<
 
@@ -147,14 +147,14 @@ that pushes default tokens to the file "/var/www/jwt/default-token.jwt", a text 
 to load that file and check it for changes every 12 hours. If the file is missing, a special marker
 "N/A" that signals this problem to the upstream.
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-jwt-->
    :end-before: doc-jwt--<
 
 To use this, the proxy request is checked for the "Author-i-tay" field. If set it is passed through
 on the presumption it is a valid token. If not, then the default token is added.
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box//static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-jwt-apply-->
    :end-before: doc-jwt-apply--<
 
@@ -172,7 +172,7 @@ discarded. If the parameter "ma=0" is present, then the base file name must have
 attached. If the parameter "mc=1" is present, then the base filename must have the string "_mac"
 attached. If both are present then both strings are added.
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/prod/vznith-1.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/prod/vznith-1.test.yaml
    :start-after: doc-start
    :end-before: doc-end
 
@@ -211,7 +211,7 @@ and
 The basic setup is to check the values on the client certificate and set the ``Authorization`` field
 if valid and remove it if not.
 
-.. literalinclude:: ../../../../tests/gold_tests/pluginTest/txn_box/prod/mTLS.txnbox.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/prod/mTLS.txnbox.yaml
 
 This checks two values - the issuer (authentication) and the subject field (authorization).
 

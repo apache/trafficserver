@@ -1,0 +1,96 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify H2 origin reuse re-checks the certificate hostname"
+  server:
+    name: "h2-origin"
+    replay: "../replay_h2_origin_cert_reverify.yaml"
+    process_config:
+      ssl_cert: "../tls/ssl/signed-foo.pem"
+      ca_cert: "../tls/ssl/signer.pem"
+  client:
+    name: "client"
+    process_config:
+      https_ports: []
+  ats:
+    name: "ts"
+    process_config:
+      enable_tls: true
+    copy_to_ssl_dir:
+      - "../tls/ssl/signer.pem"
+    records_config:
+      proxy.config.ssl.client.CA.cert.path: "{ATS_SSL_DIR}"
+      proxy.config.ssl.client.CA.cert.filename: "signer.pem"
+      proxy.config.ssl.client.alpn_protocols: "h2,http/1.1"
+      proxy.config.ssl.client.verify.server.policy: "ENFORCED"
+      proxy.config.ssl.client.verify.server.properties: "ALL"
+      proxy.config.url_remap.pristine_host_hdr: 1
+      proxy.config.http.server_session_sharing.pool: "thread"
+      proxy.config.http.server_session_sharing.match: "ip"
+      proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.exec_thread.limit: 1
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|ssl_verify"
+    remap_config:
+      - from: "/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+    log_validation:
+      diags_log:
+        contains:
+          - expression: 'WARNING: Origin hostname \(bar.com\) not in certificate. Action=Terminate'
+            description: "The pooled H2 origin session is rejected for bar.com"
+
+sessions:
+  - protocol:
+      stack: http
+    transactions:
+      - all:
+          headers:
+            fields:
+              - [uuid, foo]
+        client-request:
+          method: GET
+          url: /foo
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, foo.com]
+        proxy-response:
+          status: 200
+          content:
+            encoding: plain
+            data: foo-response
+            size: 12
+  - protocol:
+      stack: http
+    transactions:
+      - all:
+          headers:
+            fields:
+              - [uuid, bar]
+        client-request:
+          method: GET
+          url: /bar
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, bar.com]
+        proxy-response:
+          status: 502

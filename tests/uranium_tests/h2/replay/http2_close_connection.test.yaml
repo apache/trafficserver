@@ -1,0 +1,140 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+
+meta:
+  version: '1.0'
+
+urtest:
+  description: "Verify graceful HTTP/2 shutdown sends both GOAWAY frames"
+
+  requires:
+    proxy_verifier: "2.8.0"
+
+  server:
+    name: "http2-close-origin"
+    log_validation:
+      excludes:
+        - expression: "server_test_2"
+          description: "The origin must send only the first response"
+
+  client:
+    name: "http2-close-client"
+    log_validation:
+      contains:
+        - expression: 'Equals Success: Key: "1", Content Data: "body", Value: "server_test_1"'
+          description: "The first response body must arrive"
+        - expression: "Received GOAWAY frame with last stream id 2147483647, error code 0"
+          description: "The initial GOAWAY must advertise the maximum stream id"
+        - expression: "Received GOAWAY frame with last stream id 1, error code 0"
+          description: "The final GOAWAY must identify the last accepted stream"
+
+  ats:
+    name: "http2-close-ts"
+    process_config:
+      enable_tls: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 3
+      proxy.config.diags.debug.tags: "http"
+      proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.exec_thread.limit: 4
+      proxy.config.ssl.client.alpn_protocols: "h2,http/1.1"
+      proxy.config.ssl.client.verify.server.policy: "PERMISSIVE"
+      proxy.config.http.server_session_sharing.pool: "thread"
+      proxy.config.http.server_session_sharing.match: "ip,sni,cert"
+
+    copy_custom_plugin:
+      - "{AtsTestPluginsDir}/http2_close_connection.so"
+
+    plugin_config:
+      - "http2_close_connection.so"
+
+    remap_config:
+      - from: "/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: test_sni
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.data.com]
+            - [":path", /a/path]
+            - [Content-Type, text/html]
+            - [uuid, 1]
+
+    server-response:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":status", 200]
+            - [Content-Type, text/html]
+            - [Content-Length, '13']
+      - DATA:
+          delay: 4s
+          content:
+            encoding: plain
+            data: server_test_1
+            size: 13
+
+    proxy-response:
+      content:
+        encoding: plain
+        data: server_test_1
+        verify: {as: equal}
+
+  - client-request:
+      delay: 4s
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.data.com]
+            - [":path", /b/path]
+            - [Content-Type, text/html]
+            - [uuid, 2]
+
+    server-response:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":status", 200]
+            - [Content-Type, text/html]
+            - [Content-Length, '13']
+      - DATA:
+          content:
+            encoding: plain
+            data: server_test_2
+            size: 13
