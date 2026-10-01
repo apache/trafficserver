@@ -25,21 +25,20 @@ from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessS
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class TunnelTransformScenario:
-    """Compare a tunnel transform's byte metrics with an external observer."""
+def test_tunnel_transform(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Tunnel transforms report the exact encrypted byte counts on the wire.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        if curl.uses_uds:
-            pytest.skip("Tunnel byte accounting requires a TCP client connection")
-        self._services = services
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._proxy = self.configure_proxy(services)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _proxy_port: int
 
-    @staticmethod
     def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create the TLS origin behind the blind tunnel."""
+        """Create the TLS origin behind the blind tunnel.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         origin = services.origin("origin", ssl=True)
         origin.add_response(
@@ -48,8 +47,11 @@ class TunnelTransformScenario:
         )
         return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure the SNI tunnel and byte-counting transform plugin."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Configure the SNI tunnel and byte-counting transform plugin.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ts", enable_cache=False, enable_tls=True)
         ats.copy_to_ssl(TEST_DIRECTORY.parent / "tls" / "ssl" / "server.pem")
@@ -59,7 +61,7 @@ class TunnelTransformScenario:
         ats.records.update(
             {
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-                "proxy.config.http.connect_ports": str(self._origin.https_port),
+                "proxy.config.http.connect_ports": str(_origin.https_port),
             })
         ats.ssl_multicert_config.add_lines(
             (
@@ -72,16 +74,20 @@ class TunnelTransformScenario:
             "sni.yaml",
             "sni:\n"
             "  - fqdn: tunnel-test\n"
-            f"    tunnel_route: localhost:{self._origin.https_port}\n",
+            f"    tunnel_route: localhost:{_origin.https_port}\n",
         )
         ats.allow_private_connect()
         return ats
 
-    def configure_proxy(self, services: ServiceFactory) -> ProcessService:
-        """Create a byte-counting TCP forwarder in front of ATS."""
+    def configure_proxy(services: ServiceFactory) -> ProcessService:
+        """Create a byte-counting TCP forwarder in front of ATS.
+
+        :param services: Factory owning support services and their cleanup.
+        """
+        nonlocal _proxy_port
 
         port = services.allocate_port()
-        self._proxy_port = port
+        _proxy_port = port
         return services.process(
             "dumb-proxy",
             (
@@ -90,53 +96,55 @@ class TunnelTransformScenario:
                 "--listening_port",
                 str(port),
                 "--forwarding_port",
-                str(self._ats.https_port),
+                str(_ats.https_port),
             ),
             ready_port=port,
         )
 
-    @staticmethod
     def observed_bytes(output: str, key: str) -> int:
-        """Extract one direction's byte count from the proxy transcript."""
+        """Extract one direction's byte count from the proxy transcript.
+
+        :param output: Output used by this test step.
+        :param key: Key used by this test step.
+        """
 
         match = re.search(rf"{re.escape(key)}:\s+(\d+)", output)
         assert match is not None, output
         return int(match.group(1))
 
-    @staticmethod
     def metric(ats: ATS, name: str) -> int:
-        """Read one integer ATS metric."""
+        """Read one integer ATS metric.
+
+        :param ats: Traffic Server instance configured or queried by this step.
+        :param name: Unique service or case name within this test.
+        """
 
         result = ats.traffic_ctl("metric", "get", name)
         assert result.returncode == 0, result.output
         return int(result.stdout.split()[-1])
 
-    def run(self) -> None:
-        """Drive one tunnel and compare plugin and wire-observer byte counts."""
+    if curl.uses_uds:
+        pytest.skip("Tunnel byte accounting requires a TCP client connection")
+    _services = services
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory)
+    _proxy = configure_proxy(services)
 
-        self._origin.start()
-        self._ats.start()
-        self._proxy.start()
-        result = self._curl.run_for(
-            self._ats,
-            (
-                f"--insecure --http1.1 --header 'Connection: close' --verbose --silent --resolve "
-                f"'tunnel-test:{self._proxy_port}:127.0.0.1' 'https://tunnel-test:{self._proxy_port}/'"),
-        )
-        assert result.returncode == 0, result.output
-        proxy_result = self._proxy.wait(timeout=10)
+    _origin.start()
+    _ats.start()
+    _proxy.start()
+    result = curl.run_for(
+        _ats,
+        (
+            f"--insecure --http1.1 --header 'Connection: close' --verbose --silent --resolve "
+            f"'tunnel-test:{_proxy_port}:127.0.0.1' 'https://tunnel-test:{_proxy_port}/'"),
+    )
+    assert result.returncode == 0, result.output
+    proxy_result = _proxy.wait(timeout=10)
 
-        done = self._ats.traffic_ctl("plugin", "msg", "done", "done")
-        assert done.returncode == 0, done.output
-        wait_for_metric(self._ats, "tunnel_transform.test.done", 1)
-        wait_for_metric(self._ats, "tunnel_transform.error", 0)
-        assert self.metric(self._ats,
-                           "tunnel_transform.ua.bytes_sent") == self.observed_bytes(proxy_result.output, "client-to-server")
-        assert self.metric(self._ats,
-                           "tunnel_transform.os.bytes_sent") == self.observed_bytes(proxy_result.output, "server-to-client")
-
-
-def test_tunnel_transform(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Tunnel transforms report the exact encrypted byte counts on the wire."""
-
-    TunnelTransformScenario(ats_factory, services, curl).run()
+    done = _ats.traffic_ctl("plugin", "msg", "done", "done")
+    assert done.returncode == 0, done.output
+    wait_for_metric(_ats, "tunnel_transform.test.done", 1)
+    wait_for_metric(_ats, "tunnel_transform.error", 0)
+    assert metric(_ats, "tunnel_transform.ua.bytes_sent") == observed_bytes(proxy_result.output, "client-to-server")
+    assert metric(_ats, "tunnel_transform.os.bytes_sent") == observed_bytes(proxy_result.output, "server-to-client")

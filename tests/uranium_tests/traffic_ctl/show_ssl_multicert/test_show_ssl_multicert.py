@@ -19,41 +19,44 @@ from pathlib import Path
 from tools.uranium.services import ATS, ATSFactory, assert_matches_gold
 
 
-class ShowSSLMulticertScenario:
-    """Verify traffic_ctl renders ssl_multicert configuration as YAML and JSON."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Configure TLS with the default Uranium certificate.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._source = Path(__file__).parent
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure TLS with the default Uranium certificate."""
+    ats = ats_factory.create("ts", enable_cache=False, enable_tls=True)
+    ats.add_default_ssl_files()
+    return ats
 
-        ats = ats_factory.create("ts", enable_cache=False, enable_tls=True)
-        ats.add_default_ssl_files()
-        return ats
 
-    def verify_output(self, option: str | None, gold: str) -> None:
-        """Run the show command and compare its selected serialization."""
+def verify_output(option: str | None, gold: str, *, _ats: ATS, _source: Path) -> None:
+    """Run the show command and compare its selected serialization.
 
-        arguments = ["config", "ssl-multicert", "show"]
-        if option is not None:
-            arguments.append(option)
-        result = self._ats.traffic_ctl(*arguments)
-        assert result.returncode == 0, result.output
-        assert_matches_gold(result.stdout, self._source / "gold" / gold)
+    :param _ats: Test-local ats configured by the test.
+    :param _source: Test-local source configured by the test.
+    :param option: Option used by this test step.
+    :param gold: Gold used by this test step.
+    """
 
-    def run(self) -> None:
-        """Exercise default, long, and short output-format options."""
-
-        self._ats.start()
-        for option in (None, "--yaml", "-y"):
-            self.verify_output(option, "show_yaml.gold")
-        for option in ("--json", "-j"):
-            self.verify_output(option, "show_json.gold")
+    arguments = ["config", "ssl-multicert", "show"]
+    if option is not None:
+        arguments.append(option)
+    result = _ats.traffic_ctl(*arguments)
+    assert result.returncode == 0, result.output
+    assert_matches_gold(result.stdout, _source / "gold" / gold)
 
 
 def test_show_ssl_multicert(ats_factory: ATSFactory) -> None:
-    """ssl-multicert show supports its YAML and JSON spellings."""
+    """ssl-multicert show supports its YAML and JSON spellings.
 
-    ShowSSLMulticertScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _source = Path(__file__).parent
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    for option in (None, "--yaml", "-y"):
+        verify_output(option, "show_yaml.gold", _ats=_ats, _source=_source)
+    for option in ("--json", "-j"):
+        verify_output(option, "show_json.gold", _ats=_ats, _source=_source)

@@ -15,10 +15,15 @@
 #  limitations under the License.
 
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
-from uranium_tests.remap.basic_conf_remap import BasicConfRemapScenario
+from uranium_tests.remap.basic_conf_remap import run_basic_conf_remap
 
 
 def test_basic_conf_remap_yaml_yaml(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """conf_remap validates YAML overrides with YAML remap syntax."""
+    """conf_remap validates YAML overrides with YAML remap syntax.
 
-    BasicConfRemapScenario(ats_factory, services, curl, use_yaml=True).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_basic_conf_remap(ats_factory, services, curl, use_yaml=True)

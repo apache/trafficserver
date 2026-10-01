@@ -16,13 +16,17 @@
 
 from tools.uranium.services import ATSFactory, ServiceFactory
 
-from .sni_queue_scenario import RateLimitSniScenario
+from .sni_queue_scenario import run_rate_limit_sni
 
 
 def test_rate_limit_sni_queue(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Closing a queued SNI handshake does not underflow the active-slot counter."""
+    """Closing a queued SNI handshake does not underflow the active-slot counter.
 
-    RateLimitSniScenario(
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    run_rate_limit_sni(
         ats_factory,
         services,
         queue_lines=("    queue:", "      size: 1"),
@@ -30,4 +34,4 @@ def test_rate_limit_sni_queue(ats_factory: ATSFactory, services: ServiceFactory)
         client_marker="rate_limit-queue-crash-done",
         traffic_marker="Queueing the VC",
         failure_expression=r"_active <= _limit|received signal",
-    ).run()
+    )

@@ -23,21 +23,18 @@ import time
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
 
 
-class IpAllowReloadScenario:
-    """Exercise file and record dependencies registered by ip_allow."""
+def test_ip_allow_reload_triggered(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """ip_allow watches its own file, category file, and category record only.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._run_directory = ats_factory.run_directory
-        self._origin = self.configure_server(services)
-        self._allow_file, self._deny_file, self._restore_file, self._active_file = self.configure_categories()
-        self._ats = self.configure_ats(ats_factory)
-        self._curl = Curl(ats_factory.run_directory)
-        self._load_count = 1
-        self._mtime = int(time.time()) + 2
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
     def configure_server(services: ServiceFactory) -> OriginServer:
-        """Create the protected origin resource."""
+        """Create the protected origin resource.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         origin = services.origin("origin")
         origin.add_response(
@@ -49,28 +46,31 @@ class IpAllowReloadScenario:
         )
         return origin
 
-    def configure_categories(self) -> tuple[Path, Path, Path, Path]:
+    def configure_categories() -> tuple[Path, Path, Path, Path]:
         """Create allow, deny, restore, and active category documents."""
 
-        allow = self._run_directory / "categories_allow.yaml"
-        deny = self._run_directory / "categories_deny.yaml"
-        restore = self._run_directory / "categories_restore.yaml"
-        active = self._run_directory / "ip_categories.yaml"
+        allow = _run_directory / "categories_allow.yaml"
+        deny = _run_directory / "categories_deny.yaml"
+        restore = _run_directory / "categories_restore.yaml"
+        active = _run_directory / "ip_categories.yaml"
         allow.write_text("ip_categories:\n  - name: INTERNAL\n    ip_addrs: 127.0.0.1\n")
         deny.write_text("ip_categories:\n  - name: INTERNAL\n    ip_addrs: 1.2.3.4\n")
         restore.write_text(allow.read_text())
         shutil.copyfile(allow, active)
         return allow, deny, restore, active
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Allow all INTERNAL traffic and only HEAD for other clients."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Allow all INTERNAL traffic and only HEAD for other clients.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ats")
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "ip_allow|config",
-                "proxy.config.cache.ip_categories.filename": str(self._active_file),
+                "proxy.config.cache.ip_categories.filename": str(_active_file),
             })
         ats.ip_allow_config.add_lines(
             """ip_allow:
@@ -84,74 +84,77 @@ class IpAllowReloadScenario:
     methods:
       - HEAD
 """)
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
         return ats
 
-    def change_mtime(self, path: Path) -> None:
-        """Advance a config file timestamp beyond one-second detection granularity."""
+    def change_mtime(path: Path) -> None:
+        """Advance a config file timestamp beyond one-second detection granularity.
 
-        self._mtime = max(self._mtime, int(path.stat().st_mtime) + 2, int(time.time()) + 2)
-        os.utime(path, (self._mtime, self._mtime))
-        self._mtime += 1
+        :param path: Resource or file path used by this operation.
+        """
+        nonlocal _mtime
 
-    def reload(self, *, expect_ip_allow: bool) -> None:
-        """Run a full reload and verify whether ip_allow participated."""
+        _mtime = max(_mtime, int(path.stat().st_mtime) + 2, int(time.time()) + 2)
+        os.utime(path, (_mtime, _mtime))
+        _mtime += 1
 
-        result = self._ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
+    def reload(*, expect_ip_allow: bool) -> None:
+        """Run a full reload and verify whether ip_allow participated.
+
+        :param expect_ip_allow: Expect ip allow used by this test step.
+        """
+        nonlocal _load_count
+
+        result = _ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
         assert result.returncode == 0, result.output
         if expect_ip_allow:
-            self._load_count += 1
-            wait_for_file_lines(self._ats.diags_log, "ip_allow.yaml finished loading", self._load_count, timeout=15)
+            _load_count += 1
+            wait_for_file_lines(_ats.diags_log, "ip_allow.yaml finished loading", _load_count, timeout=15)
         else:
             time.sleep(2)
-            content = self._ats.diags_log.read_text(errors="replace")
-            assert content.count("ip_allow.yaml finished loading") == self._load_count
+            content = _ats.diags_log.read_text(errors="replace")
+            assert content.count("ip_allow.yaml finished loading") == _load_count
 
-    def status(self) -> str:
+    def status() -> str:
         """Return the response status for a GET from the loopback client."""
 
-        result = self._curl.get(
-            self._ats,
+        result = _curl.get(
+            _ats,
             "/test",
             options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
         )
         assert result.returncode == 0, result.output
         return result.stdout
 
-    def change_record(self) -> None:
-        """Point the category record at the restore file and await its callback."""
+    _run_directory = ats_factory.run_directory
+    _origin = configure_server(services)
+    _allow_file, _deny_file, _restore_file, _active_file = configure_categories()
+    _ats = configure_ats(ats_factory)
+    _curl = Curl(ats_factory.run_directory)
+    _load_count = 1
+    _mtime = int(time.time()) + 2
 
-        result = self._ats.traffic_ctl(
-            "config",
-            "set",
-            "proxy.config.cache.ip_categories.filename",
-            str(self._restore_file),
-        )
-        assert result.returncode == 0, result.output
-        self._load_count += 1
-        wait_for_file_lines(self._ats.diags_log, "ip_allow.yaml finished loading", self._load_count, timeout=30)
+    _origin.start()
+    _ats.start()
+    change_mtime(_ats.config_directory / "ip_allow.yaml")
+    reload(expect_ip_allow=True)
+    change_mtime(_active_file)
+    reload(expect_ip_allow=True)
+    change_mtime(_ats.config_directory / "hosting.config")
+    reload(expect_ip_allow=False)
+    assert status() == "200"
+    shutil.copyfile(_deny_file, _active_file)
+    change_mtime(_active_file)
+    reload(expect_ip_allow=True)
+    assert status() == "403"
 
-    def run(self) -> None:
-        """Verify direct, dependent, unrelated, content, and record reload triggers."""
-
-        self._origin.start()
-        self._ats.start()
-        self.change_mtime(self._ats.config_directory / "ip_allow.yaml")
-        self.reload(expect_ip_allow=True)
-        self.change_mtime(self._active_file)
-        self.reload(expect_ip_allow=True)
-        self.change_mtime(self._ats.config_directory / "hosting.config")
-        self.reload(expect_ip_allow=False)
-        assert self.status() == "200"
-        shutil.copyfile(self._deny_file, self._active_file)
-        self.change_mtime(self._active_file)
-        self.reload(expect_ip_allow=True)
-        assert self.status() == "403"
-        self.change_record()
-        assert self.status() == "200"
-
-
-def test_ip_allow_reload_triggered(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """ip_allow watches its own file, category file, and category record only."""
-
-    IpAllowReloadScenario(ats_factory, services).run()
+    result = _ats.traffic_ctl(
+        "config",
+        "set",
+        "proxy.config.cache.ip_categories.filename",
+        str(_restore_file),
+    )
+    assert result.returncode == 0, result.output
+    _load_count += 1
+    wait_for_file_lines(_ats.diags_log, "ip_allow.yaml finished loading", _load_count, timeout=30)
+    assert status() == "200"

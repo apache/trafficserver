@@ -24,72 +24,84 @@ from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, ProcessServ
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class ExpectContinueScenario:
-    """Exercise the two-stage response with the test's purpose-built client."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve the replay hostnames to the local verifier server.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._dns = self.configure_dns(services)
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_dns(services: ServiceFactory) -> DNSServer:
-        """Resolve the replay hostnames to the local verifier server."""
+    return services.dns("dns", default="127.0.0.1")
 
-        return services.dns("dns", default="127.0.0.1")
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> VerifierServer:
-        """Serve the final response after accepting the request body."""
+def configure_origin(services: ServiceFactory) -> VerifierServer:
+    """Serve the final response after accepting the request body.
 
-        return services.verifier_server("origin", "replay/expect-continue.replay.yaml")
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure ATS to generate the interim 100 Continue response."""
+    return services.verifier_server("origin", "replay/expect-continue.replay.yaml")
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.remap_config.add_line(f"map / http://backend.example.com:{self._origin.http_port}")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-                "proxy.config.http.send_100_continue_response": 1,
-            })
-        return ats
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Launch the ad hoc client that waits for 100 before sending its body."""
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: VerifierServer) -> ATS:
+    """Configure ATS to generate the interim 100 Continue response.
 
-        return services.process(
-            "expect-client",
-            (
-                sys.executable,
-                TEST_DIRECTORY / "expect_client.py",
-                "127.0.0.1",
-                str(self._ats.http_port),
-                "-s",
-                "example.com",
-            ),
-        )
+    :param _dns: Test-local dns configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run(self) -> None:
-        """Start dependencies, execute the client, and inspect both responses."""
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.remap_config.add_line(f"map / http://backend.example.com:{_origin.http_port}")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+            "proxy.config.http.send_100_continue_response": 1,
+        })
+    return ats
 
-        self._dns.start()
-        self._origin.start()
-        self._ats.start()
-        result = self._client.run()
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 100" in result.stdout
-        assert "HTTP/1.1 200" in result.stdout
+
+def configure_client(services: ServiceFactory, *, _ats: ATS) -> ProcessService:
+    """Launch the ad hoc client that waits for 100 before sending its body.
+
+    :param _ats: Test-local ats configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    return services.process(
+        "expect-client",
+        (
+            sys.executable,
+            TEST_DIRECTORY / "expect_client.py",
+            "127.0.0.1",
+            str(_ats.http_port),
+            "-s",
+            "example.com",
+        ),
+    )
 
 
 def test_expect_continue(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """ATS sends 100 Continue before forwarding the body to the origin."""
+    """ATS sends 100 Continue before forwarding the body to the origin.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
 
     if curl.uses_uds:
         pytest.skip("the purpose-built Expect client requires a TCP listener")
-    ExpectContinueScenario(ats_factory, services).run()
+    _dns = configure_dns(services)
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _dns=_dns, _origin=_origin)
+    _client = configure_client(services, _ats=_ats)
+
+    _dns.start()
+    _origin.start()
+    _ats.start()
+    result = _client.run()
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 100" in result.stdout
+    assert "HTTP/1.1 200" in result.stdout

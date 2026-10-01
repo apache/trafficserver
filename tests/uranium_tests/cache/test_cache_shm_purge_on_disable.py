@@ -20,54 +20,23 @@ from tools.uranium.services import ATS, ATSFactory
 from uranium_tests.cache.shm_helpers import assert_log, clean_shutdown, clear_shm, configure_shm_ats, make_disk, shm_prefix
 
 
-class CacheShmPurgeOnDisableScenario:
+def test_cache_shm_purge_on_disable(ats_factory: ATSFactory) -> None:
     """purge_stale_on_start removes leftover shm only when requested.
 
     Independent prefixes cover positive purge, configured retention, and a
     quiet no-op when no control segment exists. ``traffic_ctl`` checks the shm
     state before and after each disabled instance starts.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self.ats_factory = ats_factory
-        self.purge_prefix = shm_prefix("p")
-        self.keep_prefix = shm_prefix("k")
-        self.noop_prefix = shm_prefix("n")
+    def _shared_memory_status(ats: ATS, prefix: str, *, present: bool) -> str:
+        """shared memory status.
 
-    def _configure_storage(self) -> None:
-        self.purge_disk = make_disk(self.ats_factory.run_directory, "disk_p.img")
-        self.keep_disk = make_disk(self.ats_factory.run_directory, "disk_k.img")
-        self.noop_disk = make_disk(self.ats_factory.run_directory, "disk_n.img")
-
-    def _configure_traffic_servers(self) -> None:
-        self.seed_purge = configure_shm_ats(self.ats_factory, "cshm_seed_p", self.purge_prefix, [self.purge_disk])
-        self.seed_keep = configure_shm_ats(self.ats_factory, "cshm_seed_k", self.keep_prefix, [self.keep_disk])
-        self.run_purge = configure_shm_ats(
-            self.ats_factory,
-            "cshm_run_p",
-            self.purge_prefix,
-            [self.purge_disk],
-            enabled=False,
-            purge=True,
-        )
-        self.run_keep = configure_shm_ats(
-            self.ats_factory,
-            "cshm_run_k",
-            self.keep_prefix,
-            [self.keep_disk],
-            enabled=False,
-            purge=False,
-        )
-        self.run_noop = configure_shm_ats(
-            self.ats_factory,
-            "cshm_run_n",
-            self.noop_prefix,
-            [self.noop_disk],
-            enabled=False,
-            purge=True,
-        )
-
-    def _shared_memory_status(self, ats: ATS, prefix: str, *, present: bool) -> str:
+        :param ats: Traffic Server instance configured or queried by this step.
+        :param prefix: Prefix used by this test step.
+        :param present: Present used by this test step.
+        """
         result = ats.traffic_ctl("cache", "shm", "status", "--prefix", prefix)
         control_name = prefix + "control"
         if present:
@@ -79,64 +48,71 @@ class CacheShmPurgeOnDisableScenario:
         assert re.search(r"control segment '" + re.escape(control_name) + r"' not found", result.stderr)
         return result.stderr
 
-    def _seed_shared_memory_for_purge(self) -> None:
-        self.seed_purge.start()
-        self._shared_memory_status(self.seed_purge, self.purge_prefix, present=True)
-        clean_shutdown(self.seed_purge)
-        clean_state = self._shared_memory_status(self.seed_purge, self.purge_prefix, present=True)
+    purge_prefix = shm_prefix("p")
+    keep_prefix = shm_prefix("k")
+    noop_prefix = shm_prefix("n")
+    purge_disk = make_disk(ats_factory.run_directory, "disk_p.img")
+    keep_disk = make_disk(ats_factory.run_directory, "disk_k.img")
+    noop_disk = make_disk(ats_factory.run_directory, "disk_n.img")
+    seed_purge = configure_shm_ats(ats_factory, "cshm_seed_p", purge_prefix, [purge_disk])
+    seed_keep = configure_shm_ats(ats_factory, "cshm_seed_k", keep_prefix, [keep_disk])
+    run_purge = configure_shm_ats(
+        ats_factory,
+        "cshm_run_p",
+        purge_prefix,
+        [purge_disk],
+        enabled=False,
+        purge=True,
+    )
+    run_keep = configure_shm_ats(
+        ats_factory,
+        "cshm_run_k",
+        keep_prefix,
+        [keep_disk],
+        enabled=False,
+        purge=False,
+    )
+    run_noop = configure_shm_ats(
+        ats_factory,
+        "cshm_run_n",
+        noop_prefix,
+        [noop_disk],
+        enabled=False,
+        purge=True,
+    )
+    seed_purge.start()
+    _shared_memory_status(seed_purge, purge_prefix, present=True)
+    clean_shutdown(seed_purge)
+    clean_state = _shared_memory_status(seed_purge, purge_prefix, present=True)
 
-        assert re.search(r"clean_shutdown:\s+1 \(clean\)", clean_state)
-
-    def _purge_shared_memory_while_disabled(self) -> None:
-        self.run_purge.start()
-        self._shared_memory_status(self.run_purge, self.purge_prefix, present=False)
-
-    def _retain_shared_memory_while_disabled(self) -> None:
-        self.seed_keep.start()
-        self._shared_memory_status(self.seed_keep, self.keep_prefix, present=True)
-        clean_shutdown(self.seed_keep)
-        self.run_keep.start()
-        self._shared_memory_status(self.run_keep, self.keep_prefix, present=True)
-
-    def _purge_missing_shared_memory(self) -> None:
-        self.run_noop.start()
-        self._shared_memory_status(self.run_noop, self.noop_prefix, present=False)
-
-    def _verify_logs(self) -> None:
-        for seed in (self.seed_purge, self.seed_keep):
-            assert_log(
-                seed,
-                contains=(
-                    r"cache shm: creating fresh control segment",
-                    r"cache shm: marking clean shutdown",
-                ),
-            )
+    assert re.search(r"clean_shutdown:\s+1 \(clean\)", clean_state)
+    run_purge.start()
+    _shared_memory_status(run_purge, purge_prefix, present=False)
+    seed_keep.start()
+    _shared_memory_status(seed_keep, keep_prefix, present=True)
+    clean_shutdown(seed_keep)
+    run_keep.start()
+    _shared_memory_status(run_keep, keep_prefix, present=True)
+    run_noop.start()
+    _shared_memory_status(run_noop, noop_prefix, present=False)
+    for seed in (seed_purge, seed_keep):
         assert_log(
-            self.run_purge,
-            contains=(r"cache shm: purged stale segments while disabled \(removed [1-9]",),
-        )
-        assert_log(self.run_keep, excludes=(r"cache shm: purged stale segments",))
-        assert_log(
-            self.run_noop,
-            excludes=(
-                r"cache shm: purged stale segments",
-                r"cache shm: cannot open control segment",
+            seed,
+            contains=(
+                r"cache shm: creating fresh control segment",
+                r"cache shm: marking clean shutdown",
             ),
         )
-
-    def _clear_shared_memory(self) -> None:
-        clear_shm(self.run_keep, self.purge_prefix, self.keep_prefix, self.noop_prefix)
-
-    def run(self) -> None:
-        self._configure_storage()
-        self._configure_traffic_servers()
-        self._seed_shared_memory_for_purge()
-        self._purge_shared_memory_while_disabled()
-        self._retain_shared_memory_while_disabled()
-        self._purge_missing_shared_memory()
-        self._verify_logs()
-        self._clear_shared_memory()
-
-
-def test_cache_shm_purge_on_disable(ats_factory: ATSFactory) -> None:
-    CacheShmPurgeOnDisableScenario(ats_factory).run()
+    assert_log(
+        run_purge,
+        contains=(r"cache shm: purged stale segments while disabled \(removed [1-9]",),
+    )
+    assert_log(run_keep, excludes=(r"cache shm: purged stale segments",))
+    assert_log(
+        run_noop,
+        excludes=(
+            r"cache shm: purged stale segments",
+            r"cache shm: cannot open control segment",
+        ),
+    )
+    clear_shm(run_keep, purge_prefix, keep_prefix, noop_prefix)

@@ -21,9 +21,9 @@ import pytest
 from tools.uranium.services import ATSFactory, ServiceFactory
 from uranium_tests.remap.remap_acl import (
     AclCase,
-    OldAclActionScenario,
+    run_old_acl_action,
     OldActionCase,
-    RemapAclScenario,
+    run_remap_acl,
     combination_acl_cases,
     old_action_cases,
     standard_acl_cases,
@@ -39,13 +39,22 @@ ACL_CASES = (
 
 @pytest.mark.parametrize("case", ACL_CASES, ids=lambda case: case.name)
 def test_remap_acl_yaml(case: AclCase, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """YAML remap ACL syntax produces the expected method decisions."""
+    """YAML remap ACL syntax produces the expected method decisions.
 
-    RemapAclScenario(ats_factory, services, case, use_yaml=True, test_directory=TEST_DIRECTORY).run()
+    :param case: Case used by this test step.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    run_remap_acl(ats_factory, services, case, use_yaml=True, test_directory=TEST_DIRECTORY)
 
 
 @pytest.mark.parametrize("case", old_action_cases(use_yaml=True), ids=lambda case: case.name)
 def test_remap_acl_yaml_rejects_old_actions(case: OldActionCase, ats_factory: ATSFactory) -> None:
-    """YAML remap rejects obsolete actions under modern policy."""
+    """YAML remap rejects obsolete actions under modern policy.
 
-    OldAclActionScenario(ats_factory, case, use_yaml=True).run()
+    :param case: Case used by this test step.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    run_old_acl_action(ats_factory, case, use_yaml=True)

@@ -19,36 +19,32 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory
 
 
-class PrefetchBadCountScenario:
-    """Verify prefetch refuses a fetch count outside unsigned range."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Configure a remap rule with an out-of-range fetch count.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure a remap rule with an out-of-range fetch count."""
-
-        ats = ats_factory.create("ts")
-        if not ats.plugin_exists("prefetch.so"):
-            pytest.skip("prefetch.so is not installed")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "prefetch",
-        })
-        ats.remap_config.add_line(
-            "map http://domain.in http://127.0.0.1:8080 @plugin=prefetch.so "
-            "@pparam=--front=true @pparam=--fetch-policy=simple @pparam=--fetch-count=5000000000")
-        ats.expect_start_failure("invalid --fetch-count '5000000000'", 33)
-        return ats
-
-    def run(self) -> None:
-        """Start ATS and observe the expected remap load failure."""
-
-        self._ats.start()
-        assert not self._ats.is_running
+    ats = ats_factory.create("ts")
+    if not ats.plugin_exists("prefetch.so"):
+        pytest.skip("prefetch.so is not installed")
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "prefetch",
+    })
+    ats.remap_config.add_line(
+        "map http://domain.in http://127.0.0.1:8080 @plugin=prefetch.so "
+        "@pparam=--front=true @pparam=--fetch-policy=simple @pparam=--fetch-count=5000000000")
+    ats.expect_start_failure("invalid --fetch-count '5000000000'", 33)
+    return ats
 
 
 def test_prefetch_bad_count_refused(ats_factory: ATSFactory) -> None:
-    """An out-of-range prefetch count fails remap configuration loading."""
+    """An out-of-range prefetch count fails remap configuration loading.
 
-    PrefetchBadCountScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    assert not _ats.is_running

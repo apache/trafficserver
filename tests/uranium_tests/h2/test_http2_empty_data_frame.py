@@ -20,56 +20,65 @@ import sys
 from tools.uranium.services import ATS, ATSFactory, HttpBinServer, ServiceFactory
 
 
-class EmptyDataFrameScenario:
-    """Exercise empty end-of-stream DATA frames on one HTTP/2 connection."""
+def configure_origin(services: ServiceFactory) -> HttpBinServer:
+    """Create an origin that serves the cacheable response.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._services = services
-        self._client = Path(__file__).parent / "clients" / "h2empty_data_frame.py"
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> HttpBinServer:
-        """Create an origin that serves the cacheable response."""
+    return services.httpbin("httpbin")
 
-        return services.httpbin("httpbin")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure HTTP/2 error-rate accounting and the origin remap."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
+    """Configure HTTP/2 error-rate accounting and the origin remap.
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=True)
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http2",
-                "proxy.config.http.insert_response_via_str": 2,
-                "proxy.config.http2.active_timeout_in": 3,
-                "proxy.config.http2.stream_error_rate_threshold": 0.1,
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run_client(self, name: str, streams: int) -> None:
-        """Send empty DATA frames on @a streams streams."""
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=True)
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http2",
+            "proxy.config.http.insert_response_via_str": 2,
+            "proxy.config.http2.active_timeout_in": 3,
+            "proxy.config.http2.stream_error_rate_threshold": 0.1,
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    return ats
 
-        result = self._services.process(
-            name,
-            [sys.executable, self._client, str(self._ats.https_port), "/cache/10", "-n",
-             str(streams)],
-        ).run()
-        assert result.returncode == 0, result.output
 
-    def run(self) -> None:
-        """Prime the cache, then verify twenty streams do not trip the threshold."""
+def run_client(name: str, streams: int, *, _ats: ATS, _client: Path, _services: ServiceFactory) -> None:
+    """Send empty DATA frames on @a streams streams.
 
-        self._origin.start()
-        self._ats.start()
-        self.run_client("warm-cache", 1)
-        self.run_client("twenty-streams", 20)
-        assert self._ats.is_running
+    :param _ats: Test-local ats configured by the test.
+    :param _client: Test-local client configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param name: Unique service or case name within this test.
+    :param streams: Streams used by this test step.
+    """
+
+    result = _services.process(
+        name,
+        [sys.executable, _client, str(_ats.https_port), "/cache/10", "-n",
+         str(streams)],
+    ).run()
+    assert result.returncode == 0, result.output
 
 
 def test_http2_empty_data_frame(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Empty end-of-stream DATA frames are not counted as stream errors."""
+    """Empty end-of-stream DATA frames are not counted as stream errors.
 
-    EmptyDataFrameScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _client = Path(__file__).parent / "clients" / "h2empty_data_frame.py"
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    run_client("warm-cache", 1, _ats=_ats, _client=_client, _services=services)
+    run_client("twenty-streams", 20, _ats=_ats, _client=_client, _services=services)
+    assert _ats.is_running

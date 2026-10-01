@@ -21,95 +21,113 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
 
-class ParentConfigDestIpScenario:
-    """Verify that a dest_ip rule does not break later DNS parent selection."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create the health response and cacheable object.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        if curl.uses_uds:
-            pytest.skip("explicit forward-proxy coverage requires a TCP listener")
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._dns = self.configure_dns(services)
-        self._mid = self.configure_mid(ats_factory)
-        self._edge = self.configure_edge(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create the health response and cacheable object."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET /foo.txt HTTP/1.1\r\nHost: does.not.matter\r\n\r\n"},
+        {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
+            "body": "This is the body for foo.txt\n",
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {"headers": "GET /foo.txt HTTP/1.1\r\nHost: does.not.matter\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
-                "body": "This is the body for foo.txt\n",
-            },
-        )
-        return origin
 
-    def configure_dns(self, services: ServiceFactory) -> DNSServer:
-        """Resolve both ATS layers and the synthetic destination."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve both ATS layers and the synthetic destination.
 
-        dns = services.dns("dns")
-        dns.add_records({
-            "origin": ["127.0.0.1"],
-            "ts1": ["127.0.0.1"],
-            "ts0": ["127.0.0.1"],
-            "foo.bar": ["142.250.72.14"],
-        })
-        return dns
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def common_records(self, proxy_name: str) -> dict[str, object]:
-        """Return DNS and parent-selection records shared by both layers."""
+    dns = services.dns("dns")
+    dns.add_records({
+        "origin": ["127.0.0.1"],
+        "ts1": ["127.0.0.1"],
+        "ts0": ["127.0.0.1"],
+        "foo.bar": ["142.250.72.14"],
+    })
+    return dns
 
-        return {
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|dns|hostdb|parent",
-            "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-            "proxy.config.dns.resolv_conf": "NULL",
-            "proxy.config.hostdb.lookup_timeout": 2,
-            "proxy.config.http.connect_attempts_timeout": 1,
-            "proxy.config.http.parent_proxy.self_detect": 0,
-            "proxy.config.http.insert_response_via_str": 1,
-            "proxy.config.proxy_name": proxy_name,
-        }
 
-    def configure_mid(self, ats_factory: ATSFactory) -> ATS:
-        """Configure the parent layer that maps to the origin by DNS name."""
+def common_records(proxy_name: str, *, _dns: DNSServer) -> dict[str, object]:
+    """Return DNS and parent-selection records shared by both layers.
 
-        ats = ats_factory.create("ts1")
-        ats.remap_config.add_line(f"map / http://origin:{self._origin.port}")
-        ats.records.update(self.common_records("ts1"))
-        return ats
+    :param _dns: Test-local dns configured by the test.
+    :param proxy_name: Proxy name used by this test step.
+    """
 
-    def configure_edge(self, ats_factory: ATSFactory) -> ATS:
-        """Configure the edge with adjacent dest_ip and dest_host rules."""
+    return {
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "http|dns|hostdb|parent",
+        "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+        "proxy.config.dns.resolv_conf": "NULL",
+        "proxy.config.hostdb.lookup_timeout": 2,
+        "proxy.config.http.connect_attempts_timeout": 1,
+        "proxy.config.http.parent_proxy.self_detect": 0,
+        "proxy.config.http.insert_response_via_str": 1,
+        "proxy.config.proxy_name": proxy_name,
+    }
 
-        ats = ats_factory.create("ts0")
-        ats.remap_config.add_line("map http://foo.bar http://foo.bar")
-        ats.records.update(self.common_records("ts0"))
-        ats.parent_config.add_lines(
-            (
-                "dest_ip=93.184.216.34 port=80 go_direct=true",
-                f'dest_host=foo.bar port=80 parent="ts1:{self._mid.http_port}|1;" go_direct="false" parent_is_proxy="true"',
-            ))
-        return ats
 
-    def run(self) -> None:
-        """Fetch through both layers and require both Via entries."""
+def configure_mid(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginServer) -> ATS:
+    """Configure the parent layer that maps to the origin by DNS name.
 
-        self._origin.start()
-        self._dns.start()
-        self._mid.start()
-        self._edge.start()
-        result = self._curl.run(
-            (
-                f"--silent --dump-header /dev/stdout --output /dev/stderr --proxy "
-                f"'http://127.0.0.1:{self._edge.http_port}' http://foo.bar/foo.txt"),)
-        assert result.returncode == 0, result.output
-        assert re.search(r"Via:.* ts1 .* ts0 ", result.stdout), result.output
+    :param _dns: Test-local dns configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts1")
+    ats.remap_config.add_line(f"map / http://origin:{_origin.port}")
+    ats.records.update(common_records("ts1", _dns=_dns))
+    return ats
+
+
+def configure_edge(ats_factory: ATSFactory, *, _dns: DNSServer, _mid: ATS) -> ATS:
+    """Configure the edge with adjacent dest_ip and dest_host rules.
+
+    :param _dns: Test-local dns configured by the test.
+    :param _mid: Test-local mid configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts0")
+    ats.remap_config.add_line("map http://foo.bar http://foo.bar")
+    ats.records.update(common_records("ts0", _dns=_dns))
+    ats.parent_config.add_lines(
+        (
+            "dest_ip=93.184.216.34 port=80 go_direct=true",
+            f'dest_host=foo.bar port=80 parent="ts1:{_mid.http_port}|1;" go_direct="false" parent_is_proxy="true"',
+        ))
+    return ats
 
 
 def test_parent_config_dest_ip(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """parent.config dest_ip matching does not corrupt later destination DNS."""
+    """parent.config dest_ip matching does not corrupt later destination DNS.
 
-    ParentConfigDestIpScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    if curl.uses_uds:
+        pytest.skip("explicit forward-proxy coverage requires a TCP listener")
+    _origin = configure_origin(services)
+    _dns = configure_dns(services)
+    _mid = configure_mid(ats_factory, _dns=_dns, _origin=_origin)
+    _edge = configure_edge(ats_factory, _dns=_dns, _mid=_mid)
+
+    _origin.start()
+    _dns.start()
+    _mid.start()
+    _edge.start()
+    result = curl.run(
+        (
+            f"--silent --dump-header /dev/stdout --output /dev/stderr --proxy "
+            f"'http://127.0.0.1:{_edge.http_port}' http://foo.bar/foo.txt"),)
+    assert result.returncode == 0, result.output
+    assert re.search(r"Via:.* ts1 .* ts0 ", result.stdout), result.output

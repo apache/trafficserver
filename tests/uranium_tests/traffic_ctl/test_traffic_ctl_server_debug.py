@@ -17,74 +17,88 @@
 from tools.uranium.services import ATS, ATSFactory, CommandResult
 
 
-class ServerDebugScenario:
-    """Exercise traffic_ctl's runtime debug enable and disable operations."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Start with debug output disabled and a recognizable tag value.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Start with debug output disabled and a recognizable tag value."""
+    ats = ats_factory.create("ts")
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 0,
+        "proxy.config.diags.debug.tags": "xyz",
+    })
+    return ats
 
-        ats = ats_factory.create("ts")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 0,
-            "proxy.config.diags.debug.tags": "xyz",
-        })
-        return ats
 
-    def traffic_ctl(self, *arguments: str, expected: int = 0) -> CommandResult:
-        """Run traffic_ctl and validate its status."""
+def traffic_ctl(*arguments: str, expected: int = 0, _ats: ATS) -> CommandResult:
+    """Run traffic_ctl and validate its status.
 
-        result = self._ats.traffic_ctl(*arguments)
-        assert result.returncode == expected, result.output
-        return result
+    :param _ats: Test-local ats configured by the test.
+    :param expected: Expected result for this case.
+    :param arguments: Arguments used by this test step.
+    """
 
-    def assert_record(self, record: str, value: str) -> None:
-        """Verify one runtime record value."""
+    result = _ats.traffic_ctl(*arguments)
+    assert result.returncode == expected, result.output
+    return result
 
-        result = self.traffic_ctl("config", "get", record)
-        assert f"{record}: {value}" in result.stdout
 
-    def enable(self, tags: str, *, append: bool = False) -> None:
-        """Enable debug output with replacement or append semantics."""
+def assert_record(record: str, value: str, *, _ats: ATS) -> None:
+    """Verify one runtime record value.
 
-        arguments = ["server", "debug", "enable", "--tags", tags]
-        if append:
-            arguments.append("--append")
-        self.traffic_ctl(*arguments)
+    :param _ats: Test-local ats configured by the test.
+    :param record: Record used by this test step.
+    :param value: Value used by this test step.
+    """
 
-    def run(self) -> None:
-        """Verify replacement, append, disable, and invalid option handling."""
+    result = traffic_ctl("config", "get", record, _ats=_ats)
+    assert f"{record}: {value}" in result.stdout
 
-        self._ats.start()
-        self.enable("http")
-        self.assert_record("proxy.config.diags.debug.enabled", "1")
-        self.assert_record("proxy.config.diags.debug.tags", "http")
 
-        self.traffic_ctl("server", "debug", "disable")
-        self.assert_record("proxy.config.diags.debug.enabled", "0")
+def enable(tags: str, *, append: bool = False, _ats: ATS) -> None:
+    """Enable debug output with replacement or append semantics.
 
-        self.enable("cache")
-        self.assert_record("proxy.config.diags.debug.tags", "cache")
-        self.enable("http", append=True)
-        self.assert_record("proxy.config.diags.debug.tags", "cache|http")
-        self.enable("dns", append=True)
-        self.assert_record("proxy.config.diags.debug.tags", "cache|http|dns")
+    :param _ats: Test-local ats configured by the test.
+    :param tags: Tags used by this test step.
+    :param append: Append used by this test step.
+    """
 
-        self.traffic_ctl("server", "debug", "disable")
-        self.assert_record("proxy.config.diags.debug.enabled", "0")
-        result = self.traffic_ctl("server", "debug", "enable", "--append", expected=64)
-        assert "Option '--append' requires '--tags' to be specified" in result.output
-
-        result = self.traffic_ctl("server", "debug", "enable", "--tags", "--append", expected=64)
-        assert "1 argument(s) expected by tags" in result.output
-
-        result = self.traffic_ctl("server", "debug", "enable", "--tags", "--", "-a")
-        assert 'tags »"-a"«' in result.stdout
+    arguments = ["server", "debug", "enable", "--tags", tags]
+    if append:
+        arguments.append("--append")
+    traffic_ctl(*arguments, _ats=_ats)
 
 
 def test_traffic_ctl_server_debug(ats_factory: ATSFactory) -> None:
-    """traffic_ctl updates debug records and enforces its option contract."""
+    """traffic_ctl updates debug records and enforces its option contract.
 
-    ServerDebugScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    enable("http", _ats=_ats)
+    assert_record("proxy.config.diags.debug.enabled", "1", _ats=_ats)
+    assert_record("proxy.config.diags.debug.tags", "http", _ats=_ats)
+
+    traffic_ctl("server", "debug", "disable", _ats=_ats)
+    assert_record("proxy.config.diags.debug.enabled", "0", _ats=_ats)
+
+    enable("cache", _ats=_ats)
+    assert_record("proxy.config.diags.debug.tags", "cache", _ats=_ats)
+    enable("http", append=True, _ats=_ats)
+    assert_record("proxy.config.diags.debug.tags", "cache|http", _ats=_ats)
+    enable("dns", append=True, _ats=_ats)
+    assert_record("proxy.config.diags.debug.tags", "cache|http|dns", _ats=_ats)
+
+    traffic_ctl("server", "debug", "disable", _ats=_ats)
+    assert_record("proxy.config.diags.debug.enabled", "0", _ats=_ats)
+    result = traffic_ctl("server", "debug", "enable", "--append", expected=64, _ats=_ats)
+    assert "Option '--append' requires '--tags' to be specified" in result.output
+
+    result = traffic_ctl("server", "debug", "enable", "--tags", "--append", expected=64, _ats=_ats)
+    assert "1 argument(s) expected by tags" in result.output
+
+    result = traffic_ctl("server", "debug", "enable", "--tags", "--", "-a", _ats=_ats)
+    assert 'tags »"-a"«' in result.stdout

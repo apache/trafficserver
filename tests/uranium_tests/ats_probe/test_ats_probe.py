@@ -28,120 +28,108 @@ TEST_DIRECTORY = Path(__file__).parent
 REPLAY_FILE = TEST_DIRECTORY / "ats_probe.replay.yaml"
 
 
-class ATSProbeScenario:
-    """Trace the origin-connection USDT probe with bpftrace."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve the replay's backend hostname to the verifier origin.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        """Configure the probe scenario.
+    :param services: Factory that owns the DNS process.
+    """
 
-        :param ats_factory: Factory that owns the ATS instance.
-        :param services: Factory that owns DNS, verifier, and tracer processes.
-        """
+    return services.dns("dns", default="127.0.0.1")
 
-        self._tracer_command = self.tracer_command()
-        self._dns = self.configure_dns(services)
-        self._server = self.configure_server(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._tracer = self.configure_tracer(services)
-        self._client = self.configure_client(services)
 
-    @staticmethod
-    def configure_dns(services: ServiceFactory) -> DNSServer:
-        """Resolve the replay's backend hostname to the verifier origin.
+def configure_server(services: ServiceFactory) -> VerifierServer:
+    """Create the origin whose connection should fire the probe.
 
-        :param services: Factory that owns the DNS process.
-        """
+    :param services: Factory that owns the verifier origin.
+    """
 
-        return services.dns("dns", default="127.0.0.1")
+    return services.verifier_server("server", REPLAY_FILE, https_ports=[])
 
-    @staticmethod
-    def configure_server(services: ServiceFactory) -> VerifierServer:
-        """Create the origin whose connection should fire the probe.
 
-        :param services: Factory that owns the verifier origin.
-        """
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _server: VerifierServer) -> ATS:
+    """Route the replay through the test DNS server and origin.
 
-        return services.verifier_server("server", REPLAY_FILE, https_ports=[])
+    :param ats_factory: Factory that owns the ATS instance.
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Route the replay through the test DNS server and origin.
+    :param _dns: Test-local dns configured by the test.
+    :param _server: Test-local server configured by the test.
+    """
 
-        :param ats_factory: Factory that owns the ATS instance.
-        """
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+        })
+    ats.remap_config.add_line(f"map / http://backend.server.com:{_server.http_port}")
+    return ats
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-            })
-        ats.remap_config.add_line(f"map / http://backend.server.com:{self._server.http_port}")
-        return ats
 
-    @staticmethod
-    def tracer_command() -> tuple[str, ...]:
-        """Run bpftrace directly as root or through passwordless sudo."""
+def tracer_command() -> tuple[str, ...]:
+    """Run bpftrace directly as root or through passwordless sudo."""
 
-        if shutil.which("bpftrace") is None:
-            pytest.skip("bpftrace is required")
-        if os.geteuid() == 0:
-            return ("bpftrace", str(TEST_DIRECTORY / "ats_probe.bt"))
-        if shutil.which("sudo") is not None:
-            result = subprocess.run(("sudo", "-n", "true"), capture_output=True, text=True, check=False)
-            if result.returncode == 0:
-                return ("sudo", "-n", "bpftrace", str(TEST_DIRECTORY / "ats_probe.bt"))
-        pytest.skip("ATS probe tracing requires root or passwordless sudo")
+    if shutil.which("bpftrace") is None:
+        pytest.skip("bpftrace is required")
+    if os.geteuid() == 0:
+        return ("bpftrace", str(TEST_DIRECTORY / "ats_probe.bt"))
+    if shutil.which("sudo") is not None:
+        result = subprocess.run(("sudo", "-n", "true"), capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            return ("sudo", "-n", "bpftrace", str(TEST_DIRECTORY / "ats_probe.bt"))
+    pytest.skip("ATS probe tracing requires root or passwordless sudo")
 
-    def configure_tracer(self, services: ServiceFactory) -> ProcessService:
-        """Create the bpftrace process for the ATS probe script.
 
-        :param services: Factory that owns the tracer process.
-        """
+def configure_tracer(services: ServiceFactory, *, _tracer_command: tuple[str, ...]) -> ProcessService:
+    """Create the bpftrace process for the ATS probe script.
 
-        return services.process("bpftrace", self._tracer_command)
+    :param services: Factory that owns the tracer process.
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Create the request that opens the traced origin connection.
+    :param _tracer_command: Test-local tracer command configured by the test.
+    """
 
-        :param services: Factory that owns the verifier client.
-        """
+    return services.process("bpftrace", _tracer_command)
 
-        return services.verifier_client("client", REPLAY_FILE, http_ports=[self._ats.http_port])
 
-    def wait_for_tracer_attach(self) -> None:
-        """Give bpftrace time to attach and skip unsupported privilege setups."""
+def configure_client(services: ServiceFactory, *, _ats: ATS) -> ProcessService:
+    """Create the request that opens the traced origin connection.
 
-        deadline = time.monotonic() + 3
-        while time.monotonic() < deadline:
-            if not self._tracer.is_running:
-                pytest.skip(f"bpftrace cannot attach to the ATS probes:\n{self._tracer.output}")
-            time.sleep(0.1)
+    :param services: Factory that owns the verifier client.
 
-    def wait_for_probe(self) -> None:
-        """Require the probe to report the configured backend hostname."""
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            if "backend.server.com" in self._tracer.output:
-                return
-            if not self._tracer.is_running:
-                pytest.skip(f"bpftrace stopped before observing the ATS probe:\n{self._tracer.output}")
-            time.sleep(0.1)
-        raise AssertionError(f"The origin-connection probe did not fire:\n{self._tracer.output}")
+    return services.verifier_client("client", REPLAY_FILE, http_ports=[_ats.http_port])
 
-    def run(self) -> None:
-        """Start the topology, trace one request, and validate probe output."""
 
-        self._dns.start()
-        self._server.start()
-        self._ats.start()
-        self._tracer.start()
-        self.wait_for_tracer_attach()
-        result = self._client.run()
-        assert result.returncode == 0, result.output
-        self.wait_for_probe()
+def wait_for_tracer_attach(*, _tracer: ProcessService) -> None:
+    """Give bpftrace time to attach and skip unsupported privilege setups.
+
+    :param _tracer: Test-local tracer configured by the test.
+    """
+
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        if not _tracer.is_running:
+            pytest.skip(f"bpftrace cannot attach to the ATS probes:\n{_tracer.output}")
+        time.sleep(0.1)
+
+
+def wait_for_probe(*, _tracer: ProcessService) -> None:
+    """Require the probe to report the configured backend hostname.
+
+    :param _tracer: Test-local tracer configured by the test.
+    """
+
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if "backend.server.com" in _tracer.output:
+            return
+        if not _tracer.is_running:
+            pytest.skip(f"bpftrace stopped before observing the ATS probe:\n{_tracer.output}")
+        time.sleep(0.1)
+    raise AssertionError(f"The origin-connection probe did not fire:\n{_tracer.output}")
 
 
 @pytest.mark.manual(reason="requires privileged bpftrace access")
@@ -153,4 +141,18 @@ def test_ats_probe(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     :param services: Factory that owns the scenario's support processes.
     """
 
-    ATSProbeScenario(ats_factory, services).run()
+    _tracer_command = tracer_command()
+    _dns = configure_dns(services)
+    _server = configure_server(services)
+    _ats = configure_ats(ats_factory, _dns=_dns, _server=_server)
+    _tracer = configure_tracer(services, _tracer_command=_tracer_command)
+    _client = configure_client(services, _ats=_ats)
+
+    _dns.start()
+    _server.start()
+    _ats.start()
+    _tracer.start()
+    wait_for_tracer_attach(_tracer=_tracer)
+    result = _client.run()
+    assert result.returncode == 0, result.output
+    wait_for_probe(_tracer=_tracer)

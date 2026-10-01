@@ -20,63 +20,38 @@ from tools.uranium.services import ATSFactory, Curl
 from uranium_tests.cache.shm_helpers import assert_log, clean_shutdown, clear_shm, configure_shm_ats, get_200, make_disk, shm_prefix
 
 
-class CacheShmConcurrentAttachScenario:
+def test_cache_shm_concurrent_attach(ats_factory: ATSFactory, curl: Curl) -> None:
     """A second live writer refuses the first process's shm directory.
 
     The instances deliberately share a shm prefix but use independent disk
     spans. This isolates the live-owner guard from ordinary disk contention and
     verifies that the refused instance continues with shm disabled.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param curl: Transport-aware curl command runner.
     """
+    prefix = shm_prefix("c")
+    path = f"/cache/40/{uuid.uuid4()}"
+    disk_a = make_disk(ats_factory.run_directory, "disk_a.img")
+    disk_b = make_disk(ats_factory.run_directory, "disk_b.img")
+    ts1 = configure_shm_ats(ats_factory, "shmc_ts1", prefix, [disk_a])
+    ts2 = configure_shm_ats(ats_factory, "shmc_ts2", prefix, [disk_b])
+    ts1.start()
+    get_200(curl, ts1, path)
+    ts2.start()
+    get_200(curl, ts2, path)
 
-    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
-        self.ats_factory = ats_factory
-        self.curl = curl
-        self.prefix = shm_prefix("c")
-        self.path = f"/cache/40/{uuid.uuid4()}"
-
-    def _configure_storage(self) -> None:
-        self.disk_a = make_disk(self.ats_factory.run_directory, "disk_a.img")
-        self.disk_b = make_disk(self.ats_factory.run_directory, "disk_b.img")
-
-    def _configure_traffic_servers(self) -> None:
-        self.ts1 = configure_shm_ats(self.ats_factory, "shmc_ts1", self.prefix, [self.disk_a])
-        self.ts2 = configure_shm_ats(self.ats_factory, "shmc_ts2", self.prefix, [self.disk_b])
-
-    def _run_concurrent_instances(self) -> None:
-        self.ts1.start()
-        get_200(self.curl, self.ts1, self.path)
-        self.ts2.start()
-        get_200(self.curl, self.ts2, self.path)
-
-        assert self.ts1.is_running
-        assert self.ts2.is_running
-
-    def _cleanly_shutdown_instances(self) -> None:
-        clean_shutdown(self.ts2)
-        clean_shutdown(self.ts1)
-
-    def _verify_live_owner_was_refused(self) -> None:
-        assert_log(self.ts1, contains=(r"cache shm: creating fresh control segment",))
-        assert_log(
-            self.ts2,
-            contains=(r"disabling shm this run to avoid concurrent attach",),
-            excludes=(
-                r"cache shm: creating fresh control segment",
-                r"cache shm: attaching up to \d+ stripes \(fast restart",
-            ),
-        )
-
-    def _clear_shared_memory(self) -> None:
-        clear_shm(self.ts1, self.prefix)
-
-    def run(self) -> None:
-        self._configure_storage()
-        self._configure_traffic_servers()
-        self._run_concurrent_instances()
-        self._cleanly_shutdown_instances()
-        self._verify_live_owner_was_refused()
-        self._clear_shared_memory()
-
-
-def test_cache_shm_concurrent_attach(ats_factory: ATSFactory, curl: Curl) -> None:
-    CacheShmConcurrentAttachScenario(ats_factory, curl).run()
+    assert ts1.is_running
+    assert ts2.is_running
+    clean_shutdown(ts2)
+    clean_shutdown(ts1)
+    assert_log(ts1, contains=(r"cache shm: creating fresh control segment",))
+    assert_log(
+        ts2,
+        contains=(r"disabling shm this run to avoid concurrent attach",),
+        excludes=(
+            r"cache shm: creating fresh control segment",
+            r"cache shm: attaching up to \d+ stripes \(fast restart",
+        ),
+    )
+    clear_shm(ts1, prefix)

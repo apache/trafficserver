@@ -23,81 +23,87 @@ from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginS
 BIG_IMAGE_SIZE = 20 * 1024 * 1024
 
 
-class WebpTransformSizeCapScenario:
-    """Serve a Content-Length image larger than the default transform cap."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Serve a 20-MiB image/jpeg body.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Serve a 20-MiB image/jpeg body."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {
+            "headers": "GET /huge.jpg HTTP/1.1\r\nHost: *\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": ("HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n"
+                        f"Content-Length: {BIG_IMAGE_SIZE}\r\n\r\n"),
+            "body": "A" * BIG_IMAGE_SIZE,
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {
-                "headers": "GET /huge.jpg HTTP/1.1\r\nHost: *\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": ("HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n"
-                            f"Content-Length: {BIG_IMAGE_SIZE}\r\n\r\n"),
-                "body": "A" * BIG_IMAGE_SIZE,
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable the WebP transform on clear-text and HTTP/2 TLS ingress."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Enable the WebP transform on clear-text and HTTP/2 TLS ingress.
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        if not ats.plugin_exists("webp_transform.so"):
-            pytest.skip("webp_transform.so is required")
-        ats.plugin_config.add_line("webp_transform.so convert_to_webp")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "webp_transform",
-        })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def verify(result: CommandResult, status: str) -> None:
-        """Require a successful, truthfully typed passthrough response."""
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    if not ats.plugin_exists("webp_transform.so"):
+        pytest.skip("webp_transform.so is required")
+    ats.plugin_config.add_line("webp_transform.so convert_to_webp")
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "webp_transform",
+    })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
+    return ats
 
-        assert result.returncode == 0, result.output
-        assert status in result.stdout
-        assert re.search(r"content-type: image/jpeg", result.stdout, re.IGNORECASE)
-        assert "image/webp" not in result.stdout.lower()
 
-    def run(self) -> None:
-        """Exercise HTTP/1.1 and HTTP/2 clients against the oversized body."""
+def verify(result: CommandResult, status: str) -> None:
+    """Require a successful, truthfully typed passthrough response.
 
-        self._origin.start()
-        self._ats.start()
-        h1 = self._curl.get(
-            self._ats,
-            "/huge.jpg",
-            headers={"Accept": "image/webp"},
-            options=f"--http1.1 --silent --show-error --dump-header - --output /dev/null",
-            timeout=30,
-        )
-        self.verify(h1, "HTTP/1.1 200")
-        h2 = self._curl.run(
-            (
-                f"--http2 --insecure --silent --show-error --dump-header - --output /dev/null --header "
-                f"'Accept: image/webp' 'https://127.0.0.1:{self._ats.https_port}/huge.jpg'"),
-            timeout=30,
-        )
-        self.verify(h2, "HTTP/2 200")
-        wait_for_file_lines(self._ats.traffic_out, "exceeds cap 16777216", 2)
+    :param result: Completed command result to validate.
+    :param status: Status used by this test step.
+    """
+
+    assert result.returncode == 0, result.output
+    assert status in result.stdout
+    assert re.search(r"content-type: image/jpeg", result.stdout, re.IGNORECASE)
+    assert "image/webp" not in result.stdout.lower()
 
 
 def test_webp_transform_size_cap(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """webp_transform declines oversized bodies before buffering or decoding them."""
+    """webp_transform declines oversized bodies before buffering or decoding them.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
 
     if not curl.supports("http2"):
         pytest.skip("curl with HTTP/2 support is required")
-    WebpTransformSizeCapScenario(ats_factory, services, curl).run()
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    h1 = curl.get(
+        _ats,
+        "/huge.jpg",
+        headers={"Accept": "image/webp"},
+        options=f"--http1.1 --silent --show-error --dump-header - --output /dev/null",
+        timeout=30,
+    )
+    verify(h1, "HTTP/1.1 200")
+    h2 = curl.run(
+        (
+            f"--http2 --insecure --silent --show-error --dump-header - --output /dev/null --header "
+            f"'Accept: image/webp' 'https://127.0.0.1:{_ats.https_port}/huge.jpg'"),
+        timeout=30,
+    )
+    verify(h2, "HTTP/2 200")
+    wait_for_file_lines(_ats.traffic_out, "exceeds cap 16777216", 2)

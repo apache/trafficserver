@@ -19,46 +19,42 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory
 
 
-class ConfRemapFloatYamlScenario:
-    """Load an explicitly tagged float through a YAML remap plugin entry."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Configure YAML remap syntax with the float override file.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure YAML remap syntax with the float override file."""
-
-        ats = ats_factory.create("ts")
-        if not ats.plugin_exists("conf_remap.so"):
-            pytest.skip("conf_remap.so is required")
-        ats.write_config_file(
-            "conf_remap.yaml",
-            "records:\n  http:\n    background_fill_completed_threshold: !!float '0.5'\n",
-        )
-        ats.remap_yaml.add_lines(
-            [
-                "remap:",
-                "  - type: map",
-                "    from:",
-                "      url: http://cdn.example.com/",
-                "    to:",
-                "      url: http://origin.example.com/",
-                "    plugins:",
-                "      - name: conf_remap.so",
-                "        params:",
-                f"          - {ats.config_directory}/conf_remap.yaml",
-            ])
-        return ats
-
-    def run(self) -> None:
-        """Start ATS and verify traffic_ctl can describe the overridden float."""
-
-        self._ats.start()
-        result = self._ats.traffic_ctl("config", "describe", "proxy.config.http.background_fill_completed_threshold")
-        assert result.returncode == 0, result.output
+    ats = ats_factory.create("ts")
+    if not ats.plugin_exists("conf_remap.so"):
+        pytest.skip("conf_remap.so is required")
+    ats.write_config_file(
+        "conf_remap.yaml",
+        "records:\n  http:\n    background_fill_completed_threshold: !!float '0.5'\n",
+    )
+    ats.remap_yaml.add_lines(
+        [
+            "remap:",
+            "  - type: map",
+            "    from:",
+            "      url: http://cdn.example.com/",
+            "    to:",
+            "      url: http://origin.example.com/",
+            "    plugins:",
+            "      - name: conf_remap.so",
+            "        params:",
+            f"          - {ats.config_directory}/conf_remap.yaml",
+        ])
+    return ats
 
 
 def test_conf_remap_float_yaml(ats_factory: ATSFactory) -> None:
-    """conf_remap accepts a YAML float record with YAML remap syntax."""
+    """conf_remap accepts a YAML float record with YAML remap syntax.
 
-    ConfRemapFloatYamlScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    result = _ats.traffic_ctl("config", "describe", "proxy.config.http.background_fill_completed_threshold")
+    assert result.returncode == 0, result.output

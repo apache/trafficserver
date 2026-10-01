@@ -19,45 +19,43 @@ import re
 from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory
 
 
-class OriginOpenFailureScenario:
-    """Force the outbound TLS socket bind to fail before connect."""
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+    """Bind outbound sockets to a non-local documentation address.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin_port = services.allocate_port()
-        self._ats = self.configure_ats(ats_factory)
+    :param _origin_port: Test-local origin port configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Bind outbound sockets to a non-local documentation address."""
-
-        ats = ats_factory.create("ts")
-        ats.remap_config.add_line(f"map http://dead.test/ https://127.0.0.1:{self._origin_port}/")
-        ats.records.update(
-            {
-                "proxy.config.outgoing_ip_to_bind": "192.0.2.1",
-                "proxy.config.http.connect_attempts_max_retries": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http|ssl",
-            })
-        return ats
-
-    def run(self) -> None:
-        """Require a 5xx response while ATS stays alive."""
-
-        self._ats.start()
-        result = self._curl.get(
-            self._ats,
-            headers={"Host": "dead.test"},
-            options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
-        )
-        assert result.returncode == 0, result.output
-        assert re.fullmatch(r"50[02]", result.stdout)
-        assert self._ats.is_running
-        traffic_out = self._ats.traffic_out.read_text(errors="replace")
-        assert re.search(r"received signal|failed assertion", traffic_out) is None
+    ats = ats_factory.create("ts")
+    ats.remap_config.add_line(f"map http://dead.test/ https://127.0.0.1:{_origin_port}/")
+    ats.records.update(
+        {
+            "proxy.config.outgoing_ip_to_bind": "192.0.2.1",
+            "proxy.config.http.connect_attempts_max_retries": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|ssl",
+        })
+    return ats
 
 
 def test_tls_origin_open_failed(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A failed outbound TLS open yields a 5xx without crashing ATS."""
+    """A failed outbound TLS open yields a 5xx without crashing ATS.
 
-    OriginOpenFailureScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin_port = services.allocate_port()
+    _ats = configure_ats(ats_factory, _origin_port=_origin_port)
+
+    _ats.start()
+    result = curl.get(
+        _ats,
+        headers={"Host": "dead.test"},
+        options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
+    )
+    assert result.returncode == 0, result.output
+    assert re.fullmatch(r"50[02]", result.stdout)
+    assert _ats.is_running
+    traffic_out = _ats.traffic_out.read_text(errors="replace")
+    assert re.search(r"received signal|failed assertion", traffic_out) is None

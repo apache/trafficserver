@@ -37,98 +37,112 @@ class ProtocolCase:
     enable_quic: bool = False
 
 
-class EarlyHintsScenario:
-    """Verify two 103 responses precede the final response on each protocol."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve the synthetic backend name to loopback.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._ats_factory = ats_factory
-        self._services = services
-        self._curl = curl
-        self._dns = self.configure_dns(services)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_dns(services: ServiceFactory) -> DNSServer:
-        """Resolve the synthetic backend name to loopback."""
+    return services.dns("dns", default="127.0.0.1")
 
-        return services.dns("dns", default="127.0.0.1")
 
-    @staticmethod
-    def server_environment() -> dict[str, str]:
-        """Expose the shared HTTP helper module to the custom origin."""
+def server_environment() -> dict[str, str]:
+    """Expose the shared HTTP helper module to the custom origin."""
 
-        environment = os.environ.copy()
-        environment["PYTHONPATH"] = str(TOOLS_DIRECTORY)
-        return environment
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = str(TOOLS_DIRECTORY)
+    return environment
 
-    def configure_server(self, case: ProtocolCase) -> tuple[ProcessService, int]:
-        """Create a one-shot origin that emits two Early Hints responses."""
 
-        port = self._services.allocate_port()
-        server = self._services.process(
-            f"server_{case.name}",
-            (sys.executable, TEST_DIRECTORY / "early_hints_server.py", "127.0.0.1", str(port)),
-            environment=self.server_environment(),
-            ready_port=port,
-        )
-        return server, port
+def configure_server(case: ProtocolCase, *, _services: ServiceFactory) -> tuple[ProcessService, int]:
+    """Create a one-shot origin that emits two Early Hints responses.
 
-    def configure_ats(self, case: ProtocolCase, server_port: int) -> ATS:
-        """Create one ATS instance for @a case."""
+    :param _services: Test-local services configured by the test.
+    :param case: Case used by this test step.
+    """
 
-        ats = self._ats_factory.create(
-            f"ts_{case.name}",
-            enable_tls=case.scheme == "https",
-            enable_quic=case.enable_quic,
-        )
-        if case.scheme == "https":
-            ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / http://backend.server.com:{server_port}")
-        ats.records.update(
-            {
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-            })
-        return ats
+    port = _services.allocate_port()
+    server = _services.process(
+        f"server_{case.name}",
+        (sys.executable, TEST_DIRECTORY / "early_hints_server.py", "127.0.0.1", str(port)),
+        environment=server_environment(),
+        ready_port=port,
+    )
+    return server, port
 
-    def run_case(self, case: ProtocolCase) -> None:
-        """Run and validate one protocol exchange."""
 
-        server, server_port = self.configure_server(case)
-        ats = self.configure_ats(case, server_port)
-        server.start()
-        ats.start()
-        port = ats.https_port if case.scheme == "https" else ats.http_port
-        result = self._curl.run_for(
-            ats,
-            (
-                f"--verbose {shlex.join(case.curl_arguments)} --resolve 'server.com:{port}:127.0.0.1' --header "
-                f"'Host: server.com' '{case.scheme}://server.com:{port}/{case.name}'"),
-        )
-        assert result.returncode == 0, result.output
-        assert re.search(r"HTTP/.* 103.*HTTP/.* 103", result.output, re.DOTALL)
-        assert "ink: </style.css>; rel=preload" in result.output
-        assert re.search(r"HTTP/.* 200", result.output)
-        assert "10bytebody" in result.output
-        server.wait(timeout=10)
+def configure_ats(case: ProtocolCase, server_port: int, *, _ats_factory: ATSFactory, _dns: DNSServer) -> ATS:
+    """Create one ATS instance for @a case.
 
-    def run(self) -> None:
-        """Exercise clear-text HTTP, TLS, HTTP/2, and optional HTTP/3."""
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _dns: Test-local dns configured by the test.
+    :param case: Case used by this test step.
+    :param server_port: Allocated server listener port number.
+    """
 
-        self._dns.start()
-        cases = [
-            ProtocolCase("HTTP", ("--http1.1",), "http"),
-            ProtocolCase("HTTPS", ("--insecure", "--http1.1"), "https"),
-            ProtocolCase("HTTP2", ("--insecure", "--http2"), "https"),
-        ]
-        if self._ats_factory.has_feature("TS_USE_QUIC") and self._curl.supports("http3"):
-            cases.append(ProtocolCase("HTTP3", ("--insecure", "--http3-only"), "https", enable_quic=True))
-        for case in cases:
-            self.run_case(case)
+    ats = _ats_factory.create(
+        f"ts_{case.name}",
+        enable_tls=case.scheme == "https",
+        enable_quic=case.enable_quic,
+    )
+    if case.scheme == "https":
+        ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / http://backend.server.com:{server_port}")
+    ats.records.update(
+        {
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+        })
+    return ats
+
+
+def run_case(case: ProtocolCase, *, _ats_factory: ATSFactory, _curl: Curl, _dns: DNSServer, _services: ServiceFactory) -> None:
+    """Run and validate one protocol exchange.
+
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param _dns: Test-local dns configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param case: Case used by this test step.
+    """
+
+    server, server_port = configure_server(case, _services=_services)
+    ats = configure_ats(case, server_port, _ats_factory=_ats_factory, _dns=_dns)
+    server.start()
+    ats.start()
+    port = ats.https_port if case.scheme == "https" else ats.http_port
+    result = _curl.run_for(
+        ats,
+        (
+            f"--verbose {shlex.join(case.curl_arguments)} --resolve 'server.com:{port}:127.0.0.1' --header "
+            f"'Host: server.com' '{case.scheme}://server.com:{port}/{case.name}'"),
+    )
+    assert result.returncode == 0, result.output
+    assert re.search(r"HTTP/.* 103.*HTTP/.* 103", result.output, re.DOTALL)
+    assert "ink: </style.css>; rel=preload" in result.output
+    assert re.search(r"HTTP/.* 200", result.output)
+    assert "10bytebody" in result.output
+    server.wait(timeout=10)
 
 
 def test_early_hints(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """ATS forwards repeated 103 Early Hints responses before the final 200."""
+    """ATS forwards repeated 103 Early Hints responses before the final 200.
 
-    EarlyHintsScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _dns = configure_dns(services)
+
+    _dns.start()
+    cases = [
+        ProtocolCase("HTTP", ("--http1.1",), "http"),
+        ProtocolCase("HTTPS", ("--insecure", "--http1.1"), "https"),
+        ProtocolCase("HTTP2", ("--insecure", "--http2"), "https"),
+    ]
+    if ats_factory.has_feature("TS_USE_QUIC") and curl.supports("http3"):
+        cases.append(ProtocolCase("HTTP3", ("--insecure", "--http3-only"), "https", enable_quic=True))
+    for case in cases:
+        run_case(case, _ats_factory=ats_factory, _curl=curl, _dns=_dns, _services=services)

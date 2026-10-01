@@ -20,8 +20,37 @@ from types import SimpleNamespace
 import subprocess
 
 import pytest
+import yaml
 
 from tools.uranium.replay import ReplayTest
+
+
+@pytest.mark.parametrize("custom_multicert", [False, True])
+def test_tls_certificate_paths_use_the_sandbox(tmp_path: Path, custom_multicert: bool) -> None:
+    """Custom multicert documents use the same isolated TLS paths as defaults.
+
+    :param tmp_path: Temporary directory containing dummy TLS inputs.
+    :param custom_multicert: Whether the test supplies a multicert document.
+    """
+    tools = tmp_path / "tools"
+    (tools / "ssl").mkdir(parents=True)
+    for name in ("server.pem", "server.key"):
+        (tools / "ssl" / name).write_text("test TLS material")
+    paths = {"ssl": tmp_path / "sandbox-ssl", "config": tmp_path / "config"}
+    for path in paths.values():
+        path.mkdir()
+    document = {"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "custom.pem", "ssl_key_name": "custom.key"}]}
+    config = {"ssl_multicert_yaml": document} if custom_multicert else {}
+    records = {}
+    replay = object.__new__(ReplayTest)
+    replay.runtime = SimpleNamespace(test_tools=tools)
+    replay._configure_tls(config, records, paths)
+    assert records["ssl"]["server"]["cert"]["path"] == str(paths["ssl"])
+    assert records["ssl"]["server"]["private_key"]["path"] == str(paths["ssl"])
+    if custom_multicert:
+        assert yaml.safe_load((paths["config"] / "ssl_multicert.yaml").read_text()) == document
+    else:
+        assert (paths["ssl"] / "server.pem").read_text() == "test TLS material"
 
 
 def test_metric_check_retries_until_the_value_matches(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

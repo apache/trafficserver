@@ -19,49 +19,22 @@ import socket
 from tools.uranium.services import ATS, ServiceFactory
 
 
-class DenyAnyAddressScenario:
-    """Reject direct and redirected requests to IPv4 or IPv6 any-addresses."""
+def test_deny_any_address(ats: ATS, services: ServiceFactory) -> None:
+    """Reject direct and redirected requests to IPv4 or IPv6 any-addresses.
 
-    HOST = "redirect.test"
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def __init__(self, ats: ATS, services: ServiceFactory) -> None:
-        self.ats = ats
-        self.services = services
+    _HOST = "redirect.test"
 
-    def _configure_services(self) -> None:
-        self.redirect_origin = self.services.origin("redirect-origin", ip="0.0.0.0")
-        self.dns = self.services.dns("dns")
-        self.dns.add_records({self.HOST: ["127.0.0.1"]})
-
-    def _configure_redirects(self) -> None:
-        self.redirect_origin.add_response(
-            {"headers": "GET /redirect-0 HTTP/1.1\r\nHost: *\r\n\r\n"},
-            {"headers": f"HTTP/1.1 302 Found\r\nLocation: http://0:{self.ats.http_port}/\r\nConnection: close\r\n\r\n"},
-        )
-        self.redirect_origin.add_response(
-            {"headers": "GET /redirect-0v6 HTTP/1.1\r\nHost: *\r\n\r\n"},
-            {"headers": f"HTTP/1.1 302 Found\r\nLocation: http://[::]:{self.ats.http_port}/\r\nConnection: close\r\n\r\n"},
-        )
-
-    def _configure_traffic_server(self) -> None:
-        self.ats.records.update(
-            {
-                "proxy.config.http.server_ports": f"{self.ats.http_port} {self.ats.ipv6_port}:ipv6",
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http|dns|redirect",
-                "proxy.config.http.number_of_redirections": 1,
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self.dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-                "proxy.config.url_remap.remap_required": 0,
-            })
-
-    def _start_services(self) -> None:
-        self.redirect_origin.start()
-        self.dns.start()
-        self.ats.start()
-
-    @staticmethod
     def _first_response_line(address: str, port: int, request: str) -> str:
+        """first response line.
+
+        :param address: Address used by this test step.
+        :param port: Allocated TCP or UDP listener port number.
+        :param request: Request used by this test step.
+        """
         with socket.create_connection((address, port), timeout=5) as connection:
             connection.sendall(request.encode())
             response = b""
@@ -72,31 +45,43 @@ class DenyAnyAddressScenario:
                 response += data
         return response.split(b"\r\n", 1)[0].decode(errors="replace")
 
-    def _verify_rejections(self) -> None:
-        requests = [
-            ("127.0.0.1", self.ats.http_port, f"GET / HTTP/1.1\r\nHost: 0:{self.ats.http_port}\r\nConnection: close\r\n\r\n"),
-            ("::1", self.ats.ipv6_port, f"GET / HTTP/1.1\r\nHost: [::]:{self.ats.ipv6_port}\r\nConnection: close\r\n\r\n"),
-            (
-                "127.0.0.1",
-                self.ats.http_port,
-                f"GET /redirect-0 HTTP/1.1\r\nHost: {self.HOST}:{self.redirect_origin.port}\r\n\r\n",
-            ),
-            (
-                "127.0.0.1",
-                self.ats.http_port,
-                f"GET /redirect-0v6 HTTP/1.1\r\nHost: {self.HOST}:{self.redirect_origin.port}\r\n\r\n",
-            ),
-        ]
-        for address, port, request in requests:
-            assert self._first_response_line(address, port, request) == "HTTP/1.1 400 Bad Destination Address"
-
-    def run(self) -> None:
-        self._configure_services()
-        self._configure_redirects()
-        self._configure_traffic_server()
-        self._start_services()
-        self._verify_rejections()
-
-
-def test_deny_any_address(ats: ATS, services: ServiceFactory) -> None:
-    DenyAnyAddressScenario(ats, services).run()
+    redirect_origin = services.origin("redirect-origin", ip="0.0.0.0")
+    dns = services.dns("dns")
+    dns.add_records({_HOST: ["127.0.0.1"]})
+    redirect_origin.add_response(
+        {"headers": "GET /redirect-0 HTTP/1.1\r\nHost: *\r\n\r\n"},
+        {"headers": f"HTTP/1.1 302 Found\r\nLocation: http://0:{ats.http_port}/\r\nConnection: close\r\n\r\n"},
+    )
+    redirect_origin.add_response(
+        {"headers": "GET /redirect-0v6 HTTP/1.1\r\nHost: *\r\n\r\n"},
+        {"headers": f"HTTP/1.1 302 Found\r\nLocation: http://[::]:{ats.http_port}/\r\nConnection: close\r\n\r\n"},
+    )
+    ats.records.update(
+        {
+            "proxy.config.http.server_ports": f"{ats.http_port} {ats.ipv6_port}:ipv6",
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|dns|redirect",
+            "proxy.config.http.number_of_redirections": 1,
+            "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+            "proxy.config.url_remap.remap_required": 0,
+        })
+    redirect_origin.start()
+    dns.start()
+    ats.start()
+    requests = [
+        ("127.0.0.1", ats.http_port, f"GET / HTTP/1.1\r\nHost: 0:{ats.http_port}\r\nConnection: close\r\n\r\n"),
+        ("::1", ats.ipv6_port, f"GET / HTTP/1.1\r\nHost: [::]:{ats.ipv6_port}\r\nConnection: close\r\n\r\n"),
+        (
+            "127.0.0.1",
+            ats.http_port,
+            f"GET /redirect-0 HTTP/1.1\r\nHost: {_HOST}:{redirect_origin.port}\r\n\r\n",
+        ),
+        (
+            "127.0.0.1",
+            ats.http_port,
+            f"GET /redirect-0v6 HTTP/1.1\r\nHost: {_HOST}:{redirect_origin.port}\r\n\r\n",
+        ),
+    ]
+    for address, port, request in requests:
+        assert _first_response_line(address, port, request) == "HTTP/1.1 400 Bad Destination Address"

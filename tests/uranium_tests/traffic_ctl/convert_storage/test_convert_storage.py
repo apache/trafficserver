@@ -19,39 +19,44 @@ from pathlib import Path
 from tools.uranium.services import ATS, ATSFactory, assert_matches_gold
 
 
-class StorageConversionScenario:
-    """Verify traffic_ctl converts legacy storage and volume configuration."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Create the ATS environment used to invoke traffic_ctl.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._source = Path(__file__).parent
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Create the ATS environment used to invoke traffic_ctl."""
+    return ats_factory.create("ts", enable_cache=False)
 
-        return ats_factory.create("ts", enable_cache=False)
 
-    def convert(self, storage: str, volumes: str, gold: str, output: str = "-") -> None:
-        """Convert one input pair and compare it with its wildcard gold file."""
+def convert(storage: str, volumes: str, gold: str, output: str = "-", *, _ats: ATS, _source: Path) -> None:
+    """Convert one input pair and compare it with its wildcard gold file.
 
-        storage_path = self._source / "legacy_config" / storage
-        volumes_path = Path(volumes) if volumes.startswith("/") else self._source / "legacy_config" / volumes
-        result = self._ats.traffic_ctl("config", "convert", "storage", str(storage_path), str(volumes_path), output)
-        assert result.returncode == 0, result.output
-        actual = result.stdout if output == "-" else (self._ats.run_directory / output).read_text()
-        assert_matches_gold(actual, self._source / "gold" / gold)
+    :param _ats: Test-local ats configured by the test.
+    :param _source: Test-local source configured by the test.
+    :param storage: Storage used by this test step.
+    :param volumes: Volumes used by this test step.
+    :param gold: Gold used by this test step.
+    :param output: Output used by this test step.
+    """
 
-    def run(self) -> None:
-        """Exercise ordinary, exclusive-volume, missing-volume, and file output."""
-
-        self._ats.start()
-        self.convert("basic.storage.config", "basic.volume.config", "basic.yaml")
-        self.convert("exclusive.storage.config", "exclusive.volume.config", "exclusive.yaml")
-        self.convert("no_volumes.storage.config", "/nonexistent/volume.config", "no_volumes.yaml")
-        self.convert("basic.storage.config", "basic.volume.config", "basic.yaml", "generated.yaml")
+    storage_path = _source / "legacy_config" / storage
+    volumes_path = Path(volumes) if volumes.startswith("/") else _source / "legacy_config" / volumes
+    result = _ats.traffic_ctl("config", "convert", "storage", str(storage_path), str(volumes_path), output)
+    assert result.returncode == 0, result.output
+    actual = result.stdout if output == "-" else (_ats.run_directory / output).read_text()
+    assert_matches_gold(actual, _source / "gold" / gold)
 
 
 def test_convert_storage(ats_factory: ATSFactory) -> None:
-    """traffic_ctl converts supported storage.config and volume.config forms."""
+    """traffic_ctl converts supported storage.config and volume.config forms.
 
-    StorageConversionScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _source = Path(__file__).parent
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    convert("basic.storage.config", "basic.volume.config", "basic.yaml", _ats=_ats, _source=_source)
+    convert("exclusive.storage.config", "exclusive.volume.config", "exclusive.yaml", _ats=_ats, _source=_source)
+    convert("no_volumes.storage.config", "/nonexistent/volume.config", "no_volumes.yaml", _ats=_ats, _source=_source)
+    convert("basic.storage.config", "basic.volume.config", "basic.yaml", "generated.yaml", _ats=_ats, _source=_source)

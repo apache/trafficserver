@@ -16,7 +16,6 @@
 
 from collections.abc import Mapping
 import json
-import re
 import socket
 import subprocess
 
@@ -64,144 +63,163 @@ SCENARIOS: tuple[dict[str, str], ...] = (
 )
 
 
-class RedirectActionsScenario:
-    """Apply one redirect action table to every address class."""
+def discover_targets() -> dict[str, tuple[str, ...]]:
+    """Return representative IPv4/IPv6 addresses, including this test host."""
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, scenario: Mapping[str, str]) -> None:
-        self._scenario = scenario
-        self._targets = self.discover_targets()
-        self._origin = services.origin("origin", ip="0.0.0.0")
-        self._dns = self.configure_dns(services)
-        self.configure_origin()
-        self._ats = self.configure_ats(ats_factory)
+    host = socket.gethostname()
+    ipv4 = {
+        address for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
+        if family == socket.AF_INET and not address.startswith("127.")
+    }
+    ipv6 = {
+        f"[{address.split('%')[0]}]" for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
+        if family == socket.AF_INET6 and not address.lower().startswith("fe80")
+    }
+    if not ipv4:
+        result = subprocess.run(("ip", "-json", "address", "show"), capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            for interface in json.loads(result.stdout):
+                if interface.get("link_type") == "loopback":
+                    continue
+                for address in interface.get("addr_info", []):
+                    if address.get("family") == "inet":
+                        ipv4.add(address["local"])
+                    elif address.get("family") == "inet6" and address.get("scope") != "link":
+                        ipv6.add(f"[{address['local']}]")
+    return {
+        "private": ("10.0.0.1", "[fc00::1]"),
+        "loopback": ("127.1.2.3",),
+        "multicast": ("224.1.2.3", "[ff42::]"),
+        "linklocal": ("169.254.0.1", "[fe80::]"),
+        "routable": ("72.30.35.10", "[2001:4998:58:1836::10]"),
+        "self": tuple(sorted(ipv4 | ipv6)),
+    }
 
-    @staticmethod
-    def discover_targets() -> dict[str, tuple[str, ...]]:
-        """Return representative IPv4/IPv6 addresses, including this test host."""
 
-        host = socket.gethostname()
-        ipv4 = {
-            address for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
-            if family == socket.AF_INET and not address.startswith("127.")
-        }
-        ipv6 = {
-            f"[{address.split('%')[0]}]" for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
-            if family == socket.AF_INET6 and not address.lower().startswith("fe80")
-        }
-        if not ipv4:
-            result = subprocess.run(("ip", "-json", "address", "show"), capture_output=True, text=True, check=False)
-            if result.returncode == 0:
-                for interface in json.loads(result.stdout):
-                    if interface.get("link_type") == "loopback":
-                        continue
-                    for address in interface.get("addr_info", []):
-                        if address.get("family") == "inet":
-                            ipv4.add(address["local"])
-                        elif address.get("family") == "inet6" and address.get("scope") != "link":
-                            ipv6.add(f"[{address['local']}]")
-        return {
-            "private": ("10.0.0.1", "[fc00::1]"),
-            "loopback": ("127.1.2.3",),
-            "multicast": ("224.1.2.3", "[ff42::]"),
-            "linklocal": ("169.254.0.1", "[fe80::]"),
-            "routable": ("72.30.35.10", "[2001:4998:58:1836::10]"),
-            "self": tuple(sorted(ipv4 | ipv6)),
-        }
+def configure_dns(services: ServiceFactory, *, _targets: dict[str, tuple[str, ...]]) -> DNSServer:
+    """Map the initial origin and every redirect hostname to its target address.
 
-    def configure_dns(self, services: ServiceFactory) -> DNSServer:
-        """Map the initial origin and every redirect hostname to its target address."""
+    :param _targets: Test-local targets configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-        dns = services.dns("dns")
-        records: dict[str, list[str]] = {"iwillredirect.test": ["127.0.0.1"]}
-        for category, addresses in self._targets.items():
-            for index, address in enumerate(addresses):
-                records[self.domain(category, index)] = [address.strip("[]")]
-        dns.add_records(records)
-        return dns
+    dns = services.dns("dns")
+    records: dict[str, list[str]] = {"iwillredirect.test": ["127.0.0.1"]}
+    for category, addresses in _targets.items():
+        for index, address in enumerate(addresses):
+            records[domain(category, index)] = [address.strip("[]")]
+    dns.add_records(records)
+    return dns
 
-    @staticmethod
-    def domain(category: str, index: int) -> str:
-        """Return a stable redirect hostname for one representative address."""
 
-        return f"redirect-{category}-{index}.test"
+def domain(category: str, index: int) -> str:
+    """Return a stable redirect hostname for one representative address.
 
-    def configure_origin(self) -> None:
-        """Return redirects for every target and content for followed loopback redirects."""
+    :param category: Category used by this test step.
+    :param index: Index used by this test step.
+    """
 
-        self._origin.add_response(
-            {"headers": "GET / HTTP/1.1\r\nHost: ignored\r\n\r\n"},
-            {"headers": "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"},
-        )
-        for category, addresses in self._targets.items():
-            for index, address in enumerate(addresses):
-                path = f"/redirect/{category}/{index}"
-                self._origin.add_response(
-                    {"headers": f"GET {path} HTTP/1.1\r\nHost: ignored\r\n\r\n"},
-                    {
-                        "headers":
-                            (
-                                "HTTP/1.1 307 Temporary Redirect\r\n"
-                                f"Location: http://{self.domain(category, index)}:{self._origin.port}/\r\n"
-                                "Connection: close\r\n\r\n")
-                    },
-                )
-        self._origin.add_response(
-            {"headers": "GET /redirect/unresolved HTTP/1.1\r\nHost: ignored\r\n\r\n"},
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 307 Temporary Redirect\r\n"
-                        f"Location: http://redirect-unresolved.test:{self._origin.port}/\r\n"
-                        "Connection: close\r\n\r\n")
-            },
-        )
+    return f"redirect-{category}-{index}.test"
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure ATS with the selected class-to-action mapping."""
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        config = ",".join(f"{category}:{action}" for category, action in sorted(self._scenario.items()))
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http|dns|redirect",
-                "proxy.config.http.number_of_redirections": 1,
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-                "proxy.config.url_remap.remap_required": 0,
-                "proxy.config.http.redirect.actions": config,
-                "proxy.config.http.connect_attempts_timeout": 5,
-                "proxy.config.http.connect_attempts_max_retries": 0,
-            })
-        return ats
+def configure_origin(*, _origin: OriginServer, _targets: dict[str, tuple[str, ...]]) -> None:
+    """Return redirects for every target and content for followed loopback redirects.
 
-    def request(self, path: str) -> str:
-        """Send one raw request so the exact HTTP/1 status line remains visible."""
+    :param _origin: Test-local origin configured by the test.
+    :param _targets: Test-local targets configured by the test.
+    """
 
-        return send_tcp(
-            self._ats.http_port,
-            f"GET {path} HTTP/1.1\r\nHost: iwillredirect.test:{self._origin.port}\r\nConnection: close\r\n\r\n",
-            address="127.0.0.1",
-            timeout=10,
-        )
+    _origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: ignored\r\n\r\n"},
+        {"headers": "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"},
+    )
+    for category, addresses in _targets.items():
+        for index, address in enumerate(addresses):
+            path = f"/redirect/{category}/{index}"
+            _origin.add_response(
+                {"headers": f"GET {path} HTTP/1.1\r\nHost: ignored\r\n\r\n"},
+                {
+                    "headers":
+                        (
+                            "HTTP/1.1 307 Temporary Redirect\r\n"
+                            f"Location: http://{domain(category, index)}:{_origin.port}/\r\n"
+                            "Connection: close\r\n\r\n")
+                },
+            )
+    _origin.add_response(
+        {"headers": "GET /redirect/unresolved HTTP/1.1\r\nHost: ignored\r\n\r\n"},
+        {
+            "headers":
+                (
+                    "HTTP/1.1 307 Temporary Redirect\r\n"
+                    f"Location: http://redirect-unresolved.test:{_origin.port}/\r\n"
+                    "Connection: close\r\n\r\n")
+        },
+    )
 
-    def run(self) -> None:
-        """Verify the configured result for every address class and an unresolved name."""
 
-        self._dns.start()
-        self._origin.start()
-        self._ats.start()
-        for category, addresses in self._targets.items():
-            action = self._scenario.get(category, self._scenario["default"])
-            for index, _ in enumerate(addresses):
-                response = self.request(f"/redirect/{category}/{index}")
-                assert response.startswith(ACTION_STATUS[action]), response
-        unresolved = self.request("/redirect/unresolved")
-        assert unresolved.startswith(ACTION_STATUS["break"]), unresolved
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _scenario: Mapping[str, str]) -> ATS:
+    """Configure ATS with the selected class-to-action mapping.
+
+    :param _dns: Test-local dns configured by the test.
+    :param _scenario: Test-local scenario configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts", enable_cache=False)
+    config = ",".join(f"{category}:{action}" for category, action in sorted(_scenario.items()))
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|dns|redirect",
+            "proxy.config.http.number_of_redirections": 1,
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+            "proxy.config.url_remap.remap_required": 0,
+            "proxy.config.http.redirect.actions": config,
+            "proxy.config.http.connect_attempts_timeout": 5,
+            "proxy.config.http.connect_attempts_max_retries": 0,
+        })
+    return ats
+
+
+def request(path: str, *, _ats: ATS, _origin: OriginServer) -> str:
+    """Send one raw request so the exact HTTP/1 status line remains visible.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param path: Resource or file path used by this operation.
+    """
+
+    return send_tcp(
+        _ats.http_port,
+        f"GET {path} HTTP/1.1\r\nHost: iwillredirect.test:{_origin.port}\r\nConnection: close\r\n\r\n",
+        address="127.0.0.1",
+        timeout=10,
+    )
 
 
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_redirect_actions(ats_factory: ATSFactory, services: ServiceFactory, scenario: Mapping[str, str]) -> None:
-    """Redirect actions return, reject, or follow targets according to address class."""
+    """Redirect actions return, reject, or follow targets according to address class.
 
-    RedirectActionsScenario(ats_factory, services, scenario).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param scenario: Scenario used by this test step.
+    """
+    _targets = discover_targets()
+    _origin = services.origin("origin", ip="0.0.0.0")
+    _dns = configure_dns(services, _targets=_targets)
+    configure_origin(_origin=_origin, _targets=_targets)
+    _ats = configure_ats(ats_factory, _dns=_dns, _scenario=scenario)
+
+    _dns.start()
+    _origin.start()
+    _ats.start()
+    for category, addresses in _targets.items():
+        action = scenario.get(category, scenario["default"])
+        for index, _ in enumerate(addresses):
+            response = request(f"/redirect/{category}/{index}", _ats=_ats, _origin=_origin)
+            assert response.startswith(ACTION_STATUS[action]), response
+    unresolved = request("/redirect/unresolved", _ats=_ats, _origin=_origin)
+    assert unresolved.startswith(ACTION_STATUS["break"]), unresolved

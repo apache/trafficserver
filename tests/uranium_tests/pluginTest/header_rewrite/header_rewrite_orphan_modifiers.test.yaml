@@ -17,7 +17,8 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
+  requires: {plugins: [header_rewrite.so]}
   description: 'Verify header_rewrite rejects a modifier-only config line'
 
   server:

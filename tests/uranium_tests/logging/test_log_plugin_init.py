@@ -19,35 +19,31 @@ import time
 from tools.uranium.services import ATS, ATSFactory
 
 
-class PluginInitLoggingScenario:
-    """Verify a plugin can fill a text-log buffer during initialization."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Load test_log_interface with its initialization-write mode.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Load test_log_interface with its initialization-write mode."""
-
-        ats = ats_factory.create("ts")
-        ats.records.update({"proxy.config.log.log_buffer_size": 9216})
-        ats.copy_custom_plugin("{AtsTestPluginsDir}/test_log_interface.so")
-        ats.plugin_config.add_line("test_log_interface.so --write-during-init")
-        return ats
-
-    def run(self) -> None:
-        """Start ATS and wait for the initialization buffer to flush."""
-
-        self._ats.start()
-        plugin_log = self._ats.log_directory / "test_log_interface.log"
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            if plugin_log.exists() and "Writing during plugin initialization" in plugin_log.read_text(errors="replace"):
-                return
-            time.sleep(0.1)
-        raise AssertionError(f"Plugin initialization text was not flushed to {plugin_log}")
+    ats = ats_factory.create("ts")
+    ats.records.update({"proxy.config.log.log_buffer_size": 9216})
+    ats.copy_custom_plugin("{AtsTestPluginsDir}/test_log_interface.so")
+    ats.plugin_config.add_line("test_log_interface.so --write-during-init")
+    return ats
 
 
 def test_log_plugin_init(ats_factory: ATSFactory) -> None:
-    """Plugin initialization text reaches its configured log file."""
+    """Plugin initialization text reaches its configured log file.
 
-    PluginInitLoggingScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    plugin_log = _ats.log_directory / "test_log_interface.log"
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if plugin_log.exists() and "Writing during plugin initialization" in plugin_log.read_text(errors="replace"):
+            return
+        time.sleep(0.1)
+    raise AssertionError(f"Plugin initialization text was not flushed to {plugin_log}")

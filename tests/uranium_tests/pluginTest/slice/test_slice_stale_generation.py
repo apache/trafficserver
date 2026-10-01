@@ -32,198 +32,244 @@ from tools.uranium.services import (
 )
 
 TEST_DIRECTORY = Path(__file__).parent
+SLICE_STALE_GENERATION_SERVER_REPLAY = TEST_DIRECTORY / "replay" / "slice_stale_generation_server.replay.yaml"
+SLICE_STALE_GENERATION_CLIENT_REPLAY = TEST_DIRECTORY / "replay" / "slice_stale_generation_client.replay.yaml"
+
+SLICE_STALE_GENERATION_BLOCK_BYTES = 16
 
 
-class SliceHierarchyScenario:
-    """Build a slicing child, a parent cache, and a replay origin."""
+def slice_hierarchy_configure_dns(*, _name: str, _services: ServiceFactory) -> DNSServer:
+    """Resolve the logical origin name to loopback.
 
-    BLOCK_BYTES = 16
-    CLIENT_REPLAY = TEST_DIRECTORY / "replay" / "slice_stale_generation_client.replay.yaml"
-    SERVER_REPLAY = TEST_DIRECTORY / "replay" / "slice_stale_generation_server.replay.yaml"
+    :param _name: Test-local name configured by the test.
+    :param _services: Test-local services configured by the test.
+    """
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, name: str) -> None:
-        self._ats_factory = ats_factory
-        self._services = services
-        self._name = name
-        self._dns = self.configure_dns()
-        self._origin = self.configure_origin()
-        self._parent = self.configure_parent()
-        self._child = self.configure_child("child")
+    return _services.dns(f"dns-{_name}", default="127.0.0.1")
 
-    def configure_dns(self) -> DNSServer:
-        """Resolve the logical origin name to loopback."""
 
-        return self._services.dns(f"dns-{self._name}", default="127.0.0.1")
+def slice_hierarchy_configure_origin(*, _name: str, _services: ServiceFactory) -> VerifierServer:
+    """Key replay responses by URL, byte range, and phase UUID.
 
-    def configure_origin(self) -> VerifierServer:
-        """Key replay responses by URL, byte range, and phase UUID."""
+    :param _name: Test-local name configured by the test.
+    :param _services: Test-local services configured by the test.
+    """
 
-        return self._services.verifier_server(
-            f"origin-{self._name}",
-            self.SERVER_REPLAY,
-            other_args='--format "{url}{field.range}{field.uuid}"',
-        )
+    return _services.verifier_server(
+        f"origin-{_name}",
+        SLICE_STALE_GENERATION_SERVER_REPLAY,
+        other_args='--format "{url}{field.range}{field.uuid}"',
+    )
 
-    def slice_remap(self, source: str, upstream: str) -> str:
-        """Build a remap rule with slice before cache_range_requests."""
 
-        return (
-            f"map {source} {upstream} @plugin=slice.so @pparam=--blockbytes-test={self.BLOCK_BYTES} "
-            "@plugin=cache_range_requests.so")
+def slice_hierarchy_slice_remap(source: str, upstream: str) -> str:
+    """Build a remap rule with slice before cache_range_requests.
 
-    def configure_records(self, ats: ATS) -> None:
-        """Apply records shared by both cache tiers."""
+    :param source: Source used by this test step.
+    :param upstream: Upstream used by this test step.
+    """
 
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "slice|cache_range_requests",
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-                "proxy.config.http.parent_proxy.self_detect": 0,
-            })
+    return (
+        f"map {source} {upstream} @plugin=slice.so @pparam=--blockbytes-test={SLICE_STALE_GENERATION_BLOCK_BYTES} "
+        "@plugin=cache_range_requests.so")
 
-    def require_plugins(self, ats: ATS) -> None:
-        """Skip unless the hierarchy plugins and diagnostic plugin are installed."""
 
-        required = ("slice.so", "cache_range_requests.so", "xdebug.so")
-        if not all(ats.plugin_exists(plugin) for plugin in required):
-            pytest.skip("slice.so, cache_range_requests.so, and xdebug.so are required")
+def slice_hierarchy_configure_records(ats: ATS, *, _dns: DNSServer) -> None:
+    """Apply records shared by both cache tiers.
 
-    def configure_parent(self) -> ATS:
-        """Configure the cache that stores independent per-Range objects."""
+    :param _dns: Test-local dns configured by the test.
+    :param ats: Traffic Server instance configured or queried by this step.
+    """
 
-        parent = self._ats_factory.create(f"parent-{self._name}")
-        self.require_plugins(parent)
-        parent.remap_config.add_line(self.slice_remap("http://origin.test/", f"http://127.0.0.1:{self._origin.http_port}/"))
-        parent.plugin_config.add_line("xdebug.so --enable=x-cache")
-        self.configure_records(parent)
-        return parent
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "slice|cache_range_requests",
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+            "proxy.config.http.parent_proxy.self_detect": 0,
+        })
 
-    def configure_child(self, label: str) -> ATS:
-        """Configure a child that slices requests and forwards blocks to the parent."""
 
-        child = self._ats_factory.create(f"{label}-{self._name}")
-        child.remap_config.add_line(self.slice_remap("http://slice/", "http://origin.test/"))
-        child.parent_config.add_line(
-            f"dest_domain=. parent=127.0.0.1:{self._parent.http_port} round_robin=consistent_hash go_direct=false")
-        child.plugin_config.add_line("xdebug.so --enable=x-cache")
-        self.configure_records(child)
-        return child
+def slice_hierarchy_require_plugins(ats: ATS) -> None:
+    """Skip unless the hierarchy plugins and diagnostic plugin are installed.
 
-    def configure_client(
-        self,
+    :param ats: Traffic Server instance configured or queried by this step.
+    """
+
+    required = ("slice.so", "cache_range_requests.so", "xdebug.so")
+    if not all(ats.plugin_exists(plugin) for plugin in required):
+        pytest.skip("slice.so, cache_range_requests.so, and xdebug.so are required")
+
+
+def slice_hierarchy_configure_parent(*, _ats_factory: ATSFactory, _dns: DNSServer, _name: str, _origin: VerifierServer) -> ATS:
+    """Configure the cache that stores independent per-Range objects.
+
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _dns: Test-local dns configured by the test.
+    :param _name: Test-local name configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    """
+
+    parent = _ats_factory.create(f"parent-{_name}")
+    slice_hierarchy_require_plugins(parent)
+    parent.remap_config.add_line(slice_hierarchy_slice_remap("http://origin.test/", f"http://127.0.0.1:{_origin.http_port}/"))
+    parent.plugin_config.add_line("xdebug.so --enable=x-cache")
+    slice_hierarchy_configure_records(parent, _dns=_dns)
+    return parent
+
+
+def slice_hierarchy_configure_child(label: str, *, _ats_factory: ATSFactory, _dns: DNSServer, _name: str, _parent: ATS) -> ATS:
+    """Configure a child that slices requests and forwards blocks to the parent.
+
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _dns: Test-local dns configured by the test.
+    :param _name: Test-local name configured by the test.
+    :param _parent: Test-local parent configured by the test.
+    :param label: Label used by this test step.
+    """
+
+    child = _ats_factory.create(f"{label}-{_name}")
+    child.remap_config.add_line(slice_hierarchy_slice_remap("http://slice/", "http://origin.test/"))
+    child.parent_config.add_line(f"dest_domain=. parent=127.0.0.1:{_parent.http_port} round_robin=consistent_hash go_direct=false")
+    child.plugin_config.add_line("xdebug.so --enable=x-cache")
+    slice_hierarchy_configure_records(child, _dns=_dns)
+    return child
+
+
+def slice_hierarchy_configure_client(
         phase: str,
         *,
         ats: ATS | None = None,
         expected_return_code: int = 0,
-    ) -> ProcessService:
-        """Create a phase-selected replay client for one child."""
+        _child: ATS,
+        _name: str,
+        _services: ServiceFactory) -> ProcessService:
+    """Create a phase-selected replay client for one child.
 
-        target = self._child if ats is None else ats
-        return self._services.verifier_client(
-            f"client-{phase}-{self._name}",
-            self.CLIENT_REPLAY,
-            http_ports=[target.http_port],
-            keys=phase,
-            return_code=expected_return_code,
-            allow_errors=expected_return_code != 0,
-        )
+    :param _child: Test-local child configured by the test.
+    :param _name: Test-local name configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param phase: Phase used by this test step.
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param expected_return_code: Expected return code for this case.
+    """
 
-    def start_hierarchy(self) -> None:
-        """Start DNS, origin, parent, and the primary child in dependency order."""
-
-        self._dns.start()
-        self._origin.start()
-        self._parent.start()
-        self._child.start()
-
-    def assert_parent_bypass(self) -> None:
-        """Verify child block requests bypass slice on the parent."""
-
-        output = self._parent.traffic_out.read_text(errors="replace")
-        assert "slice passing GET or HEAD request through to next plugin" in output
-        assert "slice accepting and slicing" not in output
+    target = _child if ats is None else ats
+    return _services.verifier_client(
+        f"client-{phase}-{_name}",
+        SLICE_STALE_GENERATION_CLIENT_REPLAY,
+        http_ports=[target.http_port],
+        keys=phase,
+        return_code=expected_return_code,
+        allow_errors=expected_return_code != 0,
+    )
 
 
-class SliceStaleGenerationScenario(SliceHierarchyScenario):
-    """Verify a cached reference block pins a uniformly stale identity."""
+def slice_hierarchy_start_hierarchy(*, _child: ATS, _dns: DNSServer, _origin: VerifierServer, _parent: ATS) -> None:
+    """Start DNS, origin, parent, and the primary child in dependency order.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        super().__init__(ats_factory, services, "stale")
+    :param _child: Test-local child configured by the test.
+    :param _dns: Test-local dns configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param _parent: Test-local parent configured by the test.
+    """
 
-    def run(self) -> None:
-        """Fill the old object, then test clipped, refused, and uncached ranges."""
-
-        self.start_hierarchy()
-        for phase in ("fill", "clipped", "unsatisfiable", "control"):
-            result = self.configure_client(phase).run()
-            assert result.returncode == 0, result.output
-
-        origin_output = self._origin.output
-        for key in ("/objbytes=0-15clipped", "/objbytes=0-15unsatisfiable"):
-            assert f"request with key {key}" not in origin_output
-        child_diags = self._child.diags_log.read_text(errors="replace")
-        assert "logSliceError" not in child_diags
-        assert "Mismatch/Bad block Content-Range" not in child_diags
-        self.assert_parent_bypass()
+    _dns.start()
+    _origin.start()
+    _parent.start()
+    _child.start()
 
 
-class SliceMixedGenerationScenario(SliceHierarchyScenario):
-    """Verify an independent parent range cache can hold an unrecoverable mix."""
+def slice_hierarchy_assert_parent_bypass(*, _parent: ATS) -> None:
+    """Verify child block requests bypass slice on the parent.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        super().__init__(ats_factory, services, "mixed")
-        self._cold_child = self.configure_child("cold-child")
+    :param _parent: Test-local parent configured by the test.
+    """
 
-    def assert_mismatch_diagnostics(self, ats: ATS, *, both_blocks: bool) -> None:
-        """Verify the child reports the expected Content-Range identity mismatch."""
+    output = _parent.traffic_out.read_text(errors="replace")
+    assert "slice passing GET or HEAD request through to next plugin" in output
+    assert "slice accepting and slicing" not in output
 
-        content = wait_for_file_lines(ats.diags_log, "Mismatch/Bad block Content-Range", 1)
-        assert 'blk_range="16-31"' in content
-        assert 'etag_got="%22v1%22"' in content
-        if both_blocks:
-            content = wait_for_file_lines(ats.diags_log, "Mismatch/Bad block Content-Range", 2)
-            assert 'blk_range="0-15"' in content
-            assert 'etag_got="%22v2%22"' in content
 
-    def run(self) -> None:
-        """Create a parent-side mix and prove a cold child inherits it."""
+def slice_mixed_generation_assert_mismatch_diagnostics(ats: ATS, *, both_blocks: bool) -> None:
+    """Verify the child reports the expected Content-Range identity mismatch.
 
-        self.start_hierarchy()
-        fill = self.configure_client("fill-interior").run()
-        assert fill.returncode == 0, fill.output
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param both_blocks: Both blocks used by this test step.
+    """
 
-        time.sleep(2)
-        mixed = self.configure_client("mixed", expected_return_code=1).run()
-        # As in the original scenario, the abort may reach the client before
-        # or after the response header. Neither permits a complete response.
-        assert re.search(
-            r"Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE|"
-            r"Content-Length body underrun for key mixed",
-            mixed.output,
-        )
-        assert "Failed HTTP/1 transaction with key: mixed" in mixed.output
-        self.assert_mismatch_diagnostics(self._child, both_blocks=True)
-
-        self._cold_child.start()
-        cold = self.configure_client("cold-child", ats=self._cold_child, expected_return_code=1).run()
-        assert "Failed HTTP/1 transaction with key: cold-child" in cold.output
-        self.assert_mismatch_diagnostics(self._cold_child, both_blocks=False)
-
-        parent_diags = self._parent.diags_log.read_text(errors="replace")
-        assert "logSliceError" not in parent_diags
-        assert "Mismatch/Bad block Content-Range" not in parent_diags
-        self.assert_parent_bypass()
+    content = wait_for_file_lines(ats.diags_log, "Mismatch/Bad block Content-Range", 1)
+    assert 'blk_range="16-31"' in content
+    assert 'etag_got="%22v1%22"' in content
+    if both_blocks:
+        content = wait_for_file_lines(ats.diags_log, "Mismatch/Bad block Content-Range", 2)
+        assert 'blk_range="0-15"' in content
+        assert 'etag_got="%22v2%22"' in content
 
 
 def test_slice_stale_generation(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A fresh reference block consistently serves the stale object generation."""
+    """A fresh reference block consistently serves the stale object generation.
 
-    SliceStaleGenerationScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    name = "stale"
+    _dns = slice_hierarchy_configure_dns(_name=name, _services=services)
+    _origin = slice_hierarchy_configure_origin(_name=name, _services=services)
+    _parent = slice_hierarchy_configure_parent(_ats_factory=ats_factory, _dns=_dns, _name=name, _origin=_origin)
+    _child = slice_hierarchy_configure_child("child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent)
+
+    slice_hierarchy_start_hierarchy(_child=_child, _dns=_dns, _origin=_origin, _parent=_parent)
+    for phase in ("fill", "clipped", "unsatisfiable", "control"):
+        result = slice_hierarchy_configure_client(phase, _child=_child, _name=name, _services=services).run()
+        assert result.returncode == 0, result.output
+
+    origin_output = _origin.output
+    for key in ("/objbytes=0-15clipped", "/objbytes=0-15unsatisfiable"):
+        assert f"request with key {key}" not in origin_output
+    child_diags = _child.diags_log.read_text(errors="replace")
+    assert "logSliceError" not in child_diags
+    assert "Mismatch/Bad block Content-Range" not in child_diags
+    slice_hierarchy_assert_parent_bypass(_parent=_parent)
 
 
 def test_slice_mixed_generation(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A parent-side generation mix breaks both warm and cold child caches."""
+    """A parent-side generation mix breaks both warm and cold child caches.
 
-    SliceMixedGenerationScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    name = "mixed"
+    _dns = slice_hierarchy_configure_dns(_name=name, _services=services)
+    _origin = slice_hierarchy_configure_origin(_name=name, _services=services)
+    _parent = slice_hierarchy_configure_parent(_ats_factory=ats_factory, _dns=_dns, _name=name, _origin=_origin)
+    _child = slice_hierarchy_configure_child("child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent)
+    _cold_child = slice_hierarchy_configure_child("cold-child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent)
+
+    slice_hierarchy_start_hierarchy(_child=_child, _dns=_dns, _origin=_origin, _parent=_parent)
+    fill = slice_hierarchy_configure_client("fill-interior", _child=_child, _name=name, _services=services).run()
+    assert fill.returncode == 0, fill.output
+
+    time.sleep(2)
+    mixed = slice_hierarchy_configure_client("mixed", expected_return_code=1, _child=_child, _name=name, _services=services).run()
+    # As in the original scenario, the abort may reach the client before
+    # or after the response header. Neither permits a complete response.
+    assert re.search(
+        r"Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE|"
+        r"Content-Length body underrun for key mixed",
+        mixed.output,
+    )
+    assert "Failed HTTP/1 transaction with key: mixed" in mixed.output
+    slice_mixed_generation_assert_mismatch_diagnostics(_child, both_blocks=True)
+
+    _cold_child.start()
+    cold = slice_hierarchy_configure_client(
+        "cold-child", ats=_cold_child, expected_return_code=1, _child=_child, _name=name, _services=services).run()
+    assert "Failed HTTP/1 transaction with key: cold-child" in cold.output
+    slice_mixed_generation_assert_mismatch_diagnostics(_cold_child, both_blocks=False)
+
+    parent_diags = _parent.diags_log.read_text(errors="replace")
+    assert "logSliceError" not in parent_diags
+    assert "Mismatch/Bad block Content-Range" not in parent_diags
+    slice_hierarchy_assert_parent_bypass(_parent=_parent)

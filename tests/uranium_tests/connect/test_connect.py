@@ -32,161 +32,206 @@ from tools.uranium.services import (
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class CurlConnectScenario:
-    """Exercise curl's HTTP/1.1 proxy-tunnel mode and its access log entry."""
+def curl_connect_configure_origin(services: ServiceFactory) -> HttpBinServer:
+    """Create the HTTP origin reached after CONNECT succeeds.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> HttpBinServer:
-        """Create the HTTP origin reached after CONNECT succeeds."""
+    return services.httpbin("httpbin")
 
-        return services.httpbin("httpbin")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Allow CONNECT only to the allocated origin port."""
+def curl_connect_configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
+    """Allow CONNECT only to the allocated origin port.
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.http.server_ports": str(ats.http_port),
-                "proxy.config.http.connect_ports": str(self._origin.port),
-                "proxy.config.log.max_secs_per_buffer": 1,
-            })
-        ats.remap_config.add_line(f"map http://foo.com/ http://127.0.0.1:{self._origin.port}/")
-        ats.allow_private_connect()
-        ats.set_logging_yaml(
-            {
-                "logging":
-                    {
-                        "formats":
-                            [{
-                                "name": "common",
-                                "format": '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>',
-                            }],
-                        "logs": [{
-                            "filename": "access",
-                            "format": "common"
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.http.server_ports": str(ats.http_port),
+            "proxy.config.http.connect_ports": str(_origin.port),
+            "proxy.config.log.max_secs_per_buffer": 1,
+        })
+    ats.remap_config.add_line(f"map http://foo.com/ http://127.0.0.1:{_origin.port}/")
+    ats.allow_private_connect()
+    ats.set_logging_yaml(
+        {
+            "logging":
+                {
+                    "formats":
+                        [{
+                            "name": "common",
+                            "format": '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>',
                         }],
-                    }
-            })
-        return ats
-
-    def run(self) -> None:
-        """Tunnel one request and validate curl diagnostics and the CONNECT log."""
-
-        self._origin.start()
-        self._ats.start()
-        result = self._curl.run_for(
-            self._ats,
-            f"--verbose --fail --silent --proxytunnel --proxy '127.0.0.1:{self._ats.http_port}' http://foo.com/get",
-            timeout=10,
-        )
-        assert result.returncode == 0, result.output
-        assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / "connect_0_stderr.gold")
-        access_log = wait_for_file_lines(self._ats.log_directory / "access.log", "CONNECT", 1)
-        assert_matches_gold(access_log, TEST_DIRECTORY / "gold" / "connect_access.gold")
+                    "logs": [{
+                        "filename": "access",
+                        "format": "common"
+                    }],
+                }
+        })
+    return ats
 
 
-class VerifierConnectScenario:
-    """Exercise HTTP/1.1 or HTTP/2 CONNECT with Proxy Verifier."""
+def verifier_connect_configure_server(services: ServiceFactory, suffix: str, *, _replay: Path) -> VerifierServer:
+    """Create the verifier tunnel destination.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, *, use_http2: bool) -> None:
-        self._services = services
-        self._use_http2 = use_http2
-        replay_name = "connect_h2.replay.yaml" if use_http2 else "connect.replay.yaml"
-        self._replay = TEST_DIRECTORY / "replays" / replay_name
-        suffix = "h2" if use_http2 else "h1"
-        self._server = self.configure_server(services, suffix)
-        self._ats = self.configure_ats(ats_factory, suffix)
-        self._client = self.configure_client(services, suffix)
+    :param _replay: Test-local replay configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    :param suffix: Suffix used by this test step.
+    """
 
-    def configure_server(self, services: ServiceFactory, suffix: str) -> VerifierServer:
-        """Create the verifier tunnel destination."""
+    return services.verifier_server(f"connect-server-{suffix}", _replay)
 
-        return services.verifier_server(f"connect-server-{suffix}", self._replay)
 
-    def configure_ats(self, ats_factory: ATSFactory, suffix: str) -> ATS:
-        """Configure a listener and CONNECT ACL for the verifier origin."""
+def verifier_connect_configure_ats(ats_factory: ATSFactory, suffix: str, *, _server: VerifierServer, _use_http2: bool) -> ATS:
+    """Configure a listener and CONNECT ACL for the verifier origin.
 
-        ats = ats_factory.create(f"connect-ts-{suffix}", enable_tls=self._use_http2)
-        if self._use_http2:
-            ats.add_default_ssl_files()
-            server_ports = f"{ats.https_port}:ssl"
-            tags = "http|hpack"
-        else:
-            server_ports = str(ats.http_port)
-            tags = "http|iocore_net|rec"
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": tags,
-                "proxy.config.http.server_ports": server_ports,
-                "proxy.config.http.connect_ports": str(self._server.http_port),
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}/")
-        ats.allow_private_connect()
-        return ats
+    :param _server: Test-local server configured by the test.
+    :param _use_http2: Test-local use http2 configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param suffix: Suffix used by this test step.
+    """
 
-    def configure_client(self, services: ServiceFactory, suffix: str) -> ProcessService:
-        """Create the verifier client for the selected inbound protocol."""
+    ats = ats_factory.create(f"connect-ts-{suffix}", enable_tls=_use_http2)
+    if _use_http2:
+        ats.add_default_ssl_files()
+        server_ports = f"{ats.https_port}:ssl"
+        tags = "http|hpack"
+    else:
+        server_ports = str(ats.http_port)
+        tags = "http|iocore_net|rec"
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": tags,
+            "proxy.config.http.server_ports": server_ports,
+            "proxy.config.http.connect_ports": str(_server.http_port),
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}/")
+    ats.allow_private_connect()
+    return ats
 
-        options = {"https_ports": [self._ats.https_port]} if self._use_http2 else {"http_ports": [self._ats.http_port]}
-        return services.verifier_client(f"connect-client-{suffix}", self._replay, **options)
 
-    def verify_server_output(self) -> None:
-        """Require the tunneled request and exclude the CONNECT metadata at the origin."""
+def verifier_connect_configure_client(
+        services: ServiceFactory, suffix: str, *, _ats: ATS, _replay: Path, _use_http2: bool) -> ProcessService:
+    """Create the verifier client for the selected inbound protocol.
 
-        if self._use_http2:
-            assert "test: connect-request" not in self._server.output
-            assert re.search(r"GET /get HTTP/1\.1\nuuid: 1\ntest: real-request", self._server.output)
-        else:
-            assert "uuid: 1" not in self._server.output
-            assert re.search(r"GET /get HTTP/1\.1\nuuid: 2", self._server.output)
+    :param _ats: Test-local ats configured by the test.
+    :param _replay: Test-local replay configured by the test.
+    :param _use_http2: Test-local use http2 configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    :param suffix: Suffix used by this test step.
+    """
 
-    def verify_metrics(self) -> None:
-        """Compare the HTTP/1.1 tunnel connection metrics with their gold file."""
+    options = {"https_ports": [_ats.https_port]} if _use_http2 else {"http_ports": [_ats.http_port]}
+    return services.verifier_client(f"connect-client-{suffix}", _replay, **options)
 
-        gold = TEST_DIRECTORY / "gold" / "metrics.gold"
-        names = [line.split()[0] for line in gold.read_text().splitlines()]
-        result = self._ats.traffic_ctl("metric", "get", *names)
-        assert result.returncode == 0, result.output
-        assert_matches_gold(result.stdout, gold)
 
-    def run(self) -> None:
-        """Run the tunneled verifier transaction and validate ATS accounting."""
+def verifier_connect_verify_server_output(*, _server: VerifierServer, _use_http2: bool) -> None:
+    """Require the tunneled request and exclude the CONNECT metadata at the origin.
 
-        self._server.start()
-        self._ats.start()
-        self._client.run()
-        self.verify_server_output()
-        traffic_output = self._ats.traffic_out.read_text(errors="replace")
-        assert re.search(
-            rf"Proxy's Request.*\n.*\nCONNECT 127\.0\.0\.1:{self._server.http_port} HTTP/1\.1",
-            traffic_output,
-        )
-        if not self._use_http2:
-            self.verify_metrics()
+    :param _server: Test-local server configured by the test.
+    :param _use_http2: Test-local use http2 configured by the test.
+    """
+
+    if _use_http2:
+        assert "test: connect-request" not in _server.output
+        assert re.search(r"GET /get HTTP/1\.1\nuuid: 1\ntest: real-request", _server.output)
+    else:
+        assert "uuid: 1" not in _server.output
+        assert re.search(r"GET /get HTTP/1\.1\nuuid: 2", _server.output)
+
+
+def verifier_connect_verify_metrics(*, _ats: ATS) -> None:
+    """Compare the HTTP/1.1 tunnel connection metrics with their gold file.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    gold = TEST_DIRECTORY / "gold" / "metrics.gold"
+    names = [line.split()[0] for line in gold.read_text().splitlines()]
+    result = _ats.traffic_ctl("metric", "get", *names)
+    assert result.returncode == 0, result.output
+    assert_matches_gold(result.stdout, gold)
 
 
 def test_connect_curl(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """curl can tunnel an HTTP request through ATS."""
+    """curl can tunnel an HTTP request through ATS.
 
-    CurlConnectScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin = curl_connect_configure_origin(services)
+    _ats = curl_connect_configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    result = curl.run_for(
+        _ats,
+        f"--verbose --fail --silent --proxytunnel --proxy '127.0.0.1:{_ats.http_port}' http://foo.com/get",
+        timeout=10,
+    )
+    assert result.returncode == 0, result.output
+    assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / "connect_0_stderr.gold")
+    access_log = wait_for_file_lines(_ats.log_directory / "access.log", "CONNECT", 1)
+    assert_matches_gold(access_log, TEST_DIRECTORY / "gold" / "connect_access.gold")
 
 
 def test_connect_verifier_http1(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Proxy Verifier can carry HTTP/1.1 through an ATS CONNECT tunnel."""
+    """Proxy Verifier can carry HTTP/1.1 through an ATS CONNECT tunnel.
 
-    VerifierConnectScenario(ats_factory, services, use_http2=False).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    use_http2 = False
+    replay_name = "connect_h2.replay.yaml" if use_http2 else "connect.replay.yaml"
+    _replay = TEST_DIRECTORY / "replays" / replay_name
+    suffix = "h2" if use_http2 else "h1"
+    _server = verifier_connect_configure_server(services, suffix, _replay=_replay)
+    _ats = verifier_connect_configure_ats(ats_factory, suffix, _server=_server, _use_http2=use_http2)
+    _client = verifier_connect_configure_client(services, suffix, _ats=_ats, _replay=_replay, _use_http2=use_http2)
+
+    _server.start()
+    _ats.start()
+    _client.run()
+    verifier_connect_verify_server_output(_server=_server, _use_http2=use_http2)
+    traffic_output = _ats.traffic_out.read_text(errors="replace")
+    assert re.search(
+        rf"Proxy's Request.*\n.*\nCONNECT 127\.0\.0\.1:{_server.http_port} HTTP/1\.1",
+        traffic_output,
+    )
+    if not use_http2:
+        verifier_connect_verify_metrics(_ats=_ats)
 
 
 def test_connect_verifier_http2(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Proxy Verifier can carry HTTP/1.1 inside an HTTP/2 CONNECT stream."""
+    """Proxy Verifier can carry HTTP/1.1 inside an HTTP/2 CONNECT stream.
 
-    VerifierConnectScenario(ats_factory, services, use_http2=True).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    use_http2 = True
+    replay_name = "connect_h2.replay.yaml" if use_http2 else "connect.replay.yaml"
+    _replay = TEST_DIRECTORY / "replays" / replay_name
+    suffix = "h2" if use_http2 else "h1"
+    _server = verifier_connect_configure_server(services, suffix, _replay=_replay)
+    _ats = verifier_connect_configure_ats(ats_factory, suffix, _server=_server, _use_http2=use_http2)
+    _client = verifier_connect_configure_client(services, suffix, _ats=_ats, _replay=_replay, _use_http2=use_http2)
+
+    _server.start()
+    _ats.start()
+    _client.run()
+    verifier_connect_verify_server_output(_server=_server, _use_http2=use_http2)
+    traffic_output = _ats.traffic_out.read_text(errors="replace")
+    assert re.search(
+        rf"Proxy's Request.*\n.*\nCONNECT 127\.0\.0\.1:{_server.http_port} HTTP/1\.1",
+        traffic_output,
+    )
+    if not use_http2:
+        verifier_connect_verify_metrics(_ats=_ats)

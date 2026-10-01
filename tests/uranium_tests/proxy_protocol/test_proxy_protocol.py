@@ -22,67 +22,76 @@ from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory, Verifi
 
 TEST_DIRECTORY = Path(__file__).parent
 
+PROXY_PROTOCOL_ALLOWLIST_REPLAY = TEST_DIRECTORY / "replay" / "proxy_protocol_allowlist.replay.yaml"
 
-class ProxyProtocolAllowlistScenario:
-    """Mix ordinary and Proxy-Protocol-prefaced HTTP and TLS connections."""
 
-    REPLAY = TEST_DIRECTORY / "replay" / "proxy_protocol_allowlist.replay.yaml"
+def configure_server(services: ServiceFactory) -> VerifierServer:
+    """Create the origin for the two ordinary requests.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._server = self.configure_server(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._curl = Curl(ats_factory.run_directory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @classmethod
-    def configure_server(cls, services: ServiceFactory) -> VerifierServer:
-        """Create the origin for the two ordinary requests."""
+    return services.verifier_server("origin", PROXY_PROTOCOL_ALLOWLIST_REPLAY)
 
-        return services.verifier_server("origin", cls.REPLAY)
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Allow Proxy Protocol only from an address other than loopback."""
+def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
+    """Allow Proxy Protocol only from an address other than loopback.
 
-        ats = ats_factory.create("ats", enable_tls=True, enable_cache=False, enable_proxy_protocol=True)
-        ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}/")
-        ats.records.update(
-            {
-                "proxy.config.http.proxy_protocol_allowlist": "192.0.2.1",
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "proxyprotocol",
-            })
-        return ats
+    :param _server: Test-local server configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def request(self, *, tls: bool, proxy_protocol: bool, uuid: str | None = None) -> int:
-        """Issue one request and return curl's status."""
+    ats = ats_factory.create("ats", enable_tls=True, enable_cache=False, enable_proxy_protocol=True)
+    ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}/")
+    ats.records.update(
+        {
+            "proxy.config.http.proxy_protocol_allowlist": "192.0.2.1",
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "proxyprotocol",
+        })
+    return ats
 
-        port = self._ats.proxy_protocol_https_port if tls else self._ats.proxy_protocol_port
-        arguments = ["--silent", "--show-error", "--output", "/dev/null", "--max-time", "5"]
-        if tls:
-            arguments.append("--insecure")
-        if proxy_protocol:
-            arguments.append("--haproxy-protocol")
-        if uuid is not None:
-            arguments.extend(("--header", f"uuid: {uuid}"))
-        arguments.append(f"{'https' if tls else 'http'}://127.0.0.1:{port}/get")
-        return self._curl.run_for(
-            self._ats,
-            shlex.join(arguments),
-            timeout=10,
-        ).returncode
 
-    def run(self) -> None:
-        """Accept ordinary connections and reject prefaced loopback connections."""
+def request(*, tls: bool, proxy_protocol: bool, uuid: str | None = None, _ats: ATS, _curl: Curl) -> int:
+    """Issue one request and return curl's status.
 
-        self._server.start()
-        self._ats.start()
-        assert self.request(tls=False, proxy_protocol=False, uuid="1") == 0
-        assert self.request(tls=True, proxy_protocol=False, uuid="2") == 0
-        assert self.request(tls=False, proxy_protocol=True) in (52, 56)
-        assert self.request(tls=True, proxy_protocol=True) in (35, 52, 56)
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param tls: Tls used by this test step.
+    :param proxy_protocol: Proxy protocol used by this test step.
+    :param uuid: Uuid used by this test step.
+    """
+
+    port = _ats.proxy_protocol_https_port if tls else _ats.proxy_protocol_port
+    arguments = ["--silent", "--show-error", "--output", "/dev/null", "--max-time", "5"]
+    if tls:
+        arguments.append("--insecure")
+    if proxy_protocol:
+        arguments.append("--haproxy-protocol")
+    if uuid is not None:
+        arguments.extend(("--header", f"uuid: {uuid}"))
+    arguments.append(f"{'https' if tls else 'http'}://127.0.0.1:{port}/get")
+    return _curl.run_for(
+        _ats,
+        shlex.join(arguments),
+        timeout=10,
+    ).returncode
 
 
 def test_proxy_protocol_allowlist(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """The allowlist applies only when a peer sends a Proxy Protocol header."""
+    """The allowlist applies only when a peer sends a Proxy Protocol header.
 
-    ProxyProtocolAllowlistScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _server = configure_server(services)
+    _ats = configure_ats(ats_factory, _server=_server)
+    _curl = Curl(ats_factory.run_directory)
+
+    _server.start()
+    _ats.start()
+    assert request(tls=False, proxy_protocol=False, uuid="1", _ats=_ats, _curl=_curl) == 0
+    assert request(tls=True, proxy_protocol=False, uuid="2", _ats=_ats, _curl=_curl) == 0
+    assert request(tls=False, proxy_protocol=True, _ats=_ats, _curl=_curl) in (52, 56)
+    assert request(tls=True, proxy_protocol=True, _ats=_ats, _curl=_curl) in (35, 52, 56)

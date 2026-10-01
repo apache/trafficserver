@@ -20,100 +20,116 @@ import time
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-class CrashLogScenario:
-    """Crash ATS deliberately and verify traffic_crashlog's thread report."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create the origin used to establish a healthy baseline request.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create the origin used to establish a healthy baseline request."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {
+            "headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n",
+            "body": "Hello",
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {
-                "headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n",
-                "body": "Hello",
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Load the intentional crash plugin and enable the crash-log helper."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Load the intentional crash plugin and enable the crash-log helper.
 
-        ats = ats_factory.create("ts", return_code=-11, enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.proxy_name": "test_proxy",
-                "proxy.config.url_remap.remap_required": 0,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "crash_test",
-                "proxy.config.crash_log_helper": "traffic_crashlog",
-            })
-        ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/pluginTest/crash_test/.libs/crash_test.so")
-        ats.plugin_config.add_line("crash_test.so")
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def verify_healthy_request(self) -> None:
-        """Prove ATS is serving traffic before triggering the fault."""
+    ats = ats_factory.create("ts", return_code=-11, enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.proxy_name": "test_proxy",
+            "proxy.config.url_remap.remap_required": 0,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "crash_test",
+            "proxy.config.crash_log_helper": "traffic_crashlog",
+        })
+    ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/pluginTest/crash_test/.libs/crash_test.so")
+    ats.plugin_config.add_line("crash_test.so")
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
+    return ats
 
-        response = self._curl.get(
-            self._ats,
-            headers={"Host": "example.com"},
-            options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
-        )
-        assert response.returncode == 0, response.output
-        assert response.stdout == "200"
 
-    def trigger_crash(self) -> None:
-        """Send the header that makes crash_test dereference a null pointer."""
+def verify_healthy_request(*, _ats: ATS, _curl: Curl) -> None:
+    """Prove ATS is serving traffic before triggering the fault.
 
-        response = self._curl.get(
-            self._ats,
-            headers={
-                "Host": "example.com",
-                "X-Crash-Test": "now"
-            },
-            options=f"--silent --output /dev/null",
-        )
-        assert response.returncode in (52, 56), response.output
-        self._ats.wait()
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
 
-    def wait_for_crash_log(self) -> Path:
-        """Wait until traffic_crashlog has finished writing its report."""
+    response = _curl.get(
+        _ats,
+        headers={"Host": "example.com"},
+        options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
+    )
+    assert response.returncode == 0, response.output
+    assert response.stdout == "200"
 
-        deadline = time.monotonic() + 60
-        while time.monotonic() < deadline:
-            matches = list(self._ats.log_directory.glob("crash-*.log"))
-            if matches and "Other Non-Crashing Threads:" in matches[0].read_text(errors="replace"):
-                return matches[0]
-            time.sleep(0.1)
-        raise AssertionError("traffic_crashlog did not produce a complete crash report")
 
-    def run(self) -> None:
-        """Exercise the healthy and crashing transactions, then inspect the report."""
+def trigger_crash(*, _ats: ATS, _curl: Curl) -> None:
+    """Send the header that makes crash_test dereference a null pointer.
 
-        self._origin.start()
-        self._ats.start()
-        self.verify_healthy_request()
-        self.trigger_crash()
-        diagnostics = self._ats.diags_log.read_text(errors="replace")
-        assert "Received crash trigger header - crashing now!" in diagnostics
-        assert "This should never be reached." not in diagnostics
-        crash_log = self.wait_for_crash_log().read_text(errors="replace")
-        assert "Segmentation fault" in crash_log
-        assert "Crashing Thread" in crash_log
-        assert "Other Non-Crashing Threads:" in crash_log
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    response = _curl.get(
+        _ats,
+        headers={
+            "Host": "example.com",
+            "X-Crash-Test": "now"
+        },
+        options=f"--silent --output /dev/null",
+    )
+    assert response.returncode in (52, 56), response.output
+    _ats.wait()
+
+
+def wait_for_crash_log(*, _ats: ATS) -> Path:
+    """Wait until traffic_crashlog has finished writing its report.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        matches = list(_ats.log_directory.glob("crash-*.log"))
+        if matches and "Other Non-Crashing Threads:" in matches[0].read_text(errors="replace"):
+            return matches[0]
+        time.sleep(0.1)
+    raise AssertionError("traffic_crashlog did not produce a complete crash report")
 
 
 def test_crash_test(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """An ATS crash produces a complete, ordered crash-log backtrace."""
+    """An ATS crash produces a complete, ordered crash-log backtrace.
 
-    CrashLogScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    verify_healthy_request(_ats=_ats, _curl=curl)
+    trigger_crash(_ats=_ats, _curl=curl)
+    diagnostics = _ats.diags_log.read_text(errors="replace")
+    assert "Received crash trigger header - crashing now!" in diagnostics
+    assert "This should never be reached." not in diagnostics
+    crash_log = wait_for_crash_log(_ats=_ats).read_text(errors="replace")
+    assert "Segmentation fault" in crash_log
+    assert "Crashing Thread" in crash_log
+    assert "Other Non-Crashing Threads:" in crash_log

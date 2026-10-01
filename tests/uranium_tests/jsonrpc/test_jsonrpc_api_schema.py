@@ -24,134 +24,203 @@ from jsonschema import Draft4Validator
 from tools.uranium.services import ATS, ATSFactory
 
 
-class JsonRpcApiSchemaScenario:
-    """Validate representative management API requests and responses."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Configure records and storage used by the API calls.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._test_directory = Path(__file__).parent
-        self._schema_directory = self._test_directory.parents[2] / "src" / "mgmt" / "rpc" / "schema"
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def configure_ats(ats_factory: ATSFactory) -> ATS:
-        """Configure records and storage used by the API calls."""
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|filemanager|http|cache",
+            "proxy.config.jsonrpc.filename": "jsonrpc.yaml",
+        })
+    ats.storage_config.add_lines(
+        [
+            "cache:",
+            "  spans:",
+            "    - name: disk-1",
+            f"      path: {ats.storage_directory}",
+            "      size: 512M",
+        ])
+    return ats
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "rpc|filemanager|http|cache",
-                "proxy.config.jsonrpc.filename": "jsonrpc.yaml",
-            })
-        ats.storage_config.add_lines(
-            [
-                "cache:",
-                "  spans:",
-                "    - name: disk-1",
-                f"      path: {ats.storage_directory}",
-                "      size: 512M",
-            ])
-        return ats
 
-    def load_schema(self, name: str) -> dict[str, Any]:
-        """Load one JSON schema from the ATS source tree."""
+def load_schema(name: str, *, _schema_directory: Path) -> dict[str, Any]:
+    """Load one JSON schema from the ATS source tree.
 
-        return json.loads((self._schema_directory / name).read_text())
+    :param _schema_directory: Test-local schema directory configured by the test.
+    :param name: Unique service or case name within this test.
+    """
 
-    def load_request(self, name: str, context: dict[str, str] | None = None) -> dict[str, Any]:
-        """Load a request template and substitute scenario values."""
+    return json.loads((_schema_directory / name).read_text())
 
-        content = (self._test_directory / "json" / name).read_text()
-        if context is not None:
-            content = Template(content).substitute(context)
-        return json.loads(content)
 
-    def invoke(
-        self,
+def load_request(name: str, context: dict[str, str] | None = None, *, _test_directory: Path) -> dict[str, Any]:
+    """Load a request template and substitute scenario values.
+
+    :param _test_directory: Test-local test directory configured by the test.
+    :param name: Unique service or case name within this test.
+    :param context: Context used by this test step.
+    """
+
+    content = (_test_directory / "json" / name).read_text()
+    if context is not None:
+        content = Template(content).substitute(context)
+    return json.loads(content)
+
+
+def invoke(
         request_name: str,
         *,
         context: dict[str, str] | None = None,
         params_schema: str | None = None,
         result_schema: str | None = None,
-    ) -> dict[str, Any]:
-        """Validate, send, and validate one API exchange."""
+        _ats: ATS,
+        _schema_directory: Path,
+        _test_directory: Path) -> dict[str, Any]:
+    """Validate, send, and validate one API exchange.
 
-        request = self.load_request(request_name, context)
-        Draft4Validator(self.load_schema("jsonrpc_request_schema.json")).validate(request)
-        if params_schema is not None:
-            Draft4Validator(self.load_schema(params_schema)).validate(request["params"])
+    :param _ats: Test-local ats configured by the test.
+    :param _schema_directory: Test-local schema directory configured by the test.
+    :param _test_directory: Test-local test directory configured by the test.
+    :param request_name: Request name used by this test step.
+    :param context: Context used by this test step.
+    :param params_schema: Params schema used by this test step.
+    :param result_schema: Result schema used by this test step.
+    """
 
-        command = self._ats.rpc(request)
-        assert command.returncode == 0, command.output
-        response = json.loads(command.stdout)
-        Draft4Validator(self.load_schema("jsonrpc_response_schema.json")).validate(response)
-        if result_schema is not None:
-            assert "result" in response, response
-            Draft4Validator(self.load_schema(result_schema)).validate(response["result"])
-        return response
+    request = load_request(request_name, context, _test_directory=_test_directory)
+    Draft4Validator(load_schema("jsonrpc_request_schema.json", _schema_directory=_schema_directory)).validate(request)
+    if params_schema is not None:
+        Draft4Validator(load_schema(params_schema, _schema_directory=_schema_directory)).validate(request["params"])
 
-    def check_records(self) -> None:
-        """Validate record lookup and mutation requests."""
+    command = _ats.rpc(request)
+    assert command.returncode == 0, command.output
+    response = json.loads(command.stdout)
+    Draft4Validator(load_schema("jsonrpc_response_schema.json", _schema_directory=_schema_directory)).validate(response)
+    if result_schema is not None:
+        assert "result" in response, response
+        Draft4Validator(load_schema(result_schema, _schema_directory=_schema_directory)).validate(response["result"])
+    return response
 
-        record = {"record_name": "proxy.config.jsonrpc.filename"}
-        self.invoke(
-            "admin_lookup_records_req_1.json",
-            context=record,
-            params_schema="admin_lookup_records_params_schema.json",
-        )
-        self.invoke("admin_lookup_records_req_invalid_rec.json")
-        self.invoke("admin_lookup_records_req_1.json", context=record)
-        self.invoke("admin_lookup_records_req_multiple.json", context=record)
-        self.invoke(
-            "admin_lookup_records_req_metric.json",
-            context={"record_name_regex": "proxy.process.http.total_client_connections_ipv4*"},
-        )
-        self.invoke(
-            "admin_config_set_records_req.json",
+
+def check_records(*, _ats: ATS, _schema_directory: Path, _test_directory: Path) -> None:
+    """Validate record lookup and mutation requests.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _schema_directory: Test-local schema directory configured by the test.
+    :param _test_directory: Test-local test directory configured by the test.
+    """
+
+    record = {"record_name": "proxy.config.jsonrpc.filename"}
+    invoke(
+        "admin_lookup_records_req_1.json",
+        context=record,
+        params_schema="admin_lookup_records_params_schema.json",
+        _ats=_ats,
+        _schema_directory=_schema_directory,
+        _test_directory=_test_directory)
+    invoke(
+        "admin_lookup_records_req_invalid_rec.json",
+        _ats=_ats,
+        _schema_directory=_schema_directory,
+        _test_directory=_test_directory)
+    invoke(
+        "admin_lookup_records_req_1.json",
+        context=record,
+        _ats=_ats,
+        _schema_directory=_schema_directory,
+        _test_directory=_test_directory)
+    invoke(
+        "admin_lookup_records_req_multiple.json",
+        context=record,
+        _ats=_ats,
+        _schema_directory=_schema_directory,
+        _test_directory=_test_directory)
+    invoke(
+        "admin_lookup_records_req_metric.json",
+        context={"record_name_regex": "proxy.process.http.total_client_connections_ipv4*"},
+        _ats=_ats,
+        _schema_directory=_schema_directory,
+        _test_directory=_test_directory)
+    invoke(
+        "admin_config_set_records_req.json",
+        context={
+            "record_name": "proxy.config.jsonrpc.filename",
+            "record_value": "test_jsonrpc.yaml",
+        },
+        _ats=_ats,
+        _schema_directory=_schema_directory,
+        _test_directory=_test_directory)
+
+
+def check_host_and_drain(*, _ats: ATS, _schema_directory: Path, _test_directory: Path) -> None:
+    """Validate host status and server drain methods.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _schema_directory: Test-local schema directory configured by the test.
+    :param _test_directory: Test-local test directory configured by the test.
+    """
+
+    for operation in ("up", "down"):
+        invoke(
+            "admin_host_set_status_req.json",
             context={
-                "record_name": "proxy.config.jsonrpc.filename",
-                "record_value": "test_jsonrpc.yaml",
+                "operation": operation,
+                "host": "my.test.host.trafficserver.com"
             },
-        )
+            _ats=_ats,
+            _schema_directory=_schema_directory,
+            _test_directory=_test_directory)
+    for method in ("admin_server_start_drain", "admin_server_start_drain", "admin_server_stop_drain"):
+        invoke(
+            "method_call_no_params.json",
+            context={"method": method},
+            _ats=_ats,
+            _schema_directory=_schema_directory,
+            _test_directory=_test_directory)
 
-    def check_host_and_drain(self) -> None:
-        """Validate host status and server drain methods."""
 
-        for operation in ("up", "down"):
-            self.invoke(
-                "admin_host_set_status_req.json",
-                context={
-                    "operation": operation,
-                    "host": "my.test.host.trafficserver.com"
-                },
-            )
-        for method in ("admin_server_start_drain", "admin_server_start_drain", "admin_server_stop_drain"):
-            self.invoke("method_call_no_params.json", context={"method": method})
+def check_storage_and_plugin_message(*, _ats: ATS, _schema_directory: Path, _test_directory: Path) -> None:
+    """Validate storage and plugin-message methods.
 
-    def check_storage_and_plugin_message(self) -> None:
-        """Validate storage and plugin-message methods."""
+    :param _ats: Test-local ats configured by the test.
+    :param _schema_directory: Test-local schema directory configured by the test.
+    :param _test_directory: Test-local test directory configured by the test.
+    """
 
-        device = str(self._ats.storage_directory / "cache.db")
-        for method in ("admin_storage_get_device_status", "admin_storage_set_device_offline"):
-            self.invoke(
-                "admin_storage_x_device_status_req.json",
-                context={
-                    "method": method,
-                    "device": device
-                },
-            )
-        self.invoke("admin_plugin_send_basic_msg_req.json", result_schema="success_response_schema.json")
-
-    def run(self) -> None:
-        """Run all schema-validated API exchanges."""
-
-        self._ats.start()
-        self.check_records()
-        self.check_host_and_drain()
-        self.check_storage_and_plugin_message()
+    device = str(_ats.storage_directory / "cache.db")
+    for method in ("admin_storage_get_device_status", "admin_storage_set_device_offline"):
+        invoke(
+            "admin_storage_x_device_status_req.json",
+            context={
+                "method": method,
+                "device": device
+            },
+            _ats=_ats,
+            _schema_directory=_schema_directory,
+            _test_directory=_test_directory)
+    invoke(
+        "admin_plugin_send_basic_msg_req.json",
+        result_schema="success_response_schema.json",
+        _ats=_ats,
+        _schema_directory=_schema_directory,
+        _test_directory=_test_directory)
 
 
 def test_jsonrpc_api_schema(ats_factory: ATSFactory) -> None:
-    """JSON-RPC requests and responses conform to their published schemas."""
+    """JSON-RPC requests and responses conform to their published schemas.
 
-    JsonRpcApiSchemaScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _test_directory = Path(__file__).parent
+    _schema_directory = _test_directory.parents[2] / "src" / "mgmt" / "rpc" / "schema"
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    check_records(_ats=_ats, _schema_directory=_schema_directory, _test_directory=_test_directory)
+    check_host_and_drain(_ats=_ats, _schema_directory=_schema_directory, _test_directory=_test_directory)
+    check_storage_and_plugin_message(_ats=_ats, _schema_directory=_schema_directory, _test_directory=_test_directory)

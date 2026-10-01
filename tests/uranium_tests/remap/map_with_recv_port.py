@@ -17,18 +17,20 @@
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
 
-class MapWithRecvPortScenario:
-    """Select a remap rule according to the TCP or Unix receiving endpoint."""
+def run_map_with_recv_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, *, use_yaml: bool) -> None:
+    """Select a remap rule according to the TCP or Unix receiving endpoint.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, *, use_yaml: bool) -> None:
-        self._curl = curl
-        self._use_yaml = use_yaml
-        self._origin = self.configure_origin(services)
-        self._dns = self.configure_dns(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param use_yaml: Use yaml used by this test step.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create distinct responses for TCP, Unix, and incorrect rule selection."""
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create distinct responses for TCP, Unix, and incorrect rule selection.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         origin = services.origin("origin")
         for path, body in (("/ip", "ip"), ("/unix", "unix"), ("/error", "error")):
@@ -44,23 +46,29 @@ class MapWithRecvPortScenario:
             )
         return origin
 
-    def configure_dns(self, services: ServiceFactory) -> DNSServer:
-        """Resolve the remapped origin hostname locally."""
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve the remapped origin hostname locally.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         return services.dns("dns", default="127.0.0.1")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure equivalent classic or YAML receiving-port rules."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Configure equivalent classic or YAML receiving-port rules.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ts")
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|dns",
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
                 "proxy.config.dns.resolv_conf": "NULL",
             })
-        if self._use_yaml:
+        if use_yaml:
             ats.remap_yaml.add_lines(
                 [
                     "remap:",
@@ -68,35 +76,36 @@ class MapWithRecvPortScenario:
                     "    from:",
                     "      url: http://test.example.com",
                     "    to:",
-                    f"      url: http://origin.example.com:{self._origin.port}/error",
+                    f"      url: http://origin.example.com:{_origin.port}/error",
                     "  - type: map_with_recv_port",
                     "    from:",
                     f"      url: http://test.example.com:{ats.http_port}/",
                     "    to:",
-                    f"      url: http://origin.example.com:{self._origin.port}/ip",
+                    f"      url: http://origin.example.com:{_origin.port}/ip",
                     "  - type: map_with_recv_port",
                     "    from:",
                     "      url: http+unix://test.example.com",
                     "    to:",
-                    f"      url: http://origin.example.com:{self._origin.port}/unix",
+                    f"      url: http://origin.example.com:{_origin.port}/unix",
                 ])
         else:
             ats.remap_config.add_lines(
                 [
-                    f"map http://test.example.com http://origin.example.com:{self._origin.port}/error",
+                    f"map http://test.example.com http://origin.example.com:{_origin.port}/error",
                     f"map_with_recv_port http://test.example.com:{ats.http_port}/ "
-                    f"http://origin.example.com:{self._origin.port}/ip",
-                    f"map_with_recv_port http+unix://test.example.com http://origin.example.com:{self._origin.port}/unix",
+                    f"http://origin.example.com:{_origin.port}/ip",
+                    f"map_with_recv_port http+unix://test.example.com http://origin.example.com:{_origin.port}/unix",
                 ])
         return ats
 
-    def run(self) -> None:
-        """Send one request and verify the receiving-endpoint-specific response."""
+    _origin = configure_origin(services)
+    _dns = configure_dns(services)
+    _ats = configure_ats(ats_factory)
 
-        self._origin.start()
-        self._dns.start()
-        self._ats.start()
-        result = self._curl.get(self._ats, headers={"Host": "test.example.com"}, options=f"--verbose")
-        assert result.returncode == 0, result.output
-        expected = "unix" if self._curl.uses_uds else "ip"
-        assert result.stdout == expected, result.output
+    _origin.start()
+    _dns.start()
+    _ats.start()
+    result = curl.get(_ats, headers={"Host": "test.example.com"}, options=f"--verbose")
+    assert result.returncode == 0, result.output
+    expected = "unix" if curl.uses_uds else "ip"
+    assert result.stdout == expected, result.output

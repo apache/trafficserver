@@ -24,35 +24,37 @@ from tools.uranium.services import ATS, ATSFactory, CommandResult, ProcessServic
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class RateLimitSniScenario:
-    """Drive one rate_limit SNI queue or rejection disposition."""
+def run_rate_limit_sni(
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    *,
+    queue_lines: tuple[str, ...],
+    client_script: str,
+    client_marker: str,
+    traffic_marker: str,
+    failure_expression: str,
+) -> None:
+    """Drive one rate_limit SNI queue or rejection disposition.
 
-    def __init__(
-        self,
-        ats_factory: ATSFactory,
-        services: ServiceFactory,
-        *,
-        queue_lines: tuple[str, ...],
-        client_script: str,
-        client_marker: str,
-        traffic_marker: str,
-        failure_expression: str,
-    ) -> None:
-        self._queue_lines = queue_lines
-        self._client_script = client_script
-        self._client_marker = client_marker
-        self._traffic_marker = traffic_marker
-        self._failure_expression = failure_expression
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param queue_lines: YAML lines configuring the SNI handshake queue.
+    :param client_script: Client script relative to this test directory.
+    :param client_marker: Required marker in the client output.
+    :param traffic_marker: Regular expression identifying the required ATS diagnostic.
+    :param failure_expression: Regular expression forbidden in completed ATS output.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable the SNI limiter with a one-connection active limit."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Enable the SNI limiter with a one-connection active limit.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ts", enable_tls=True, enable_cache=False, server_args=["-f", "-F"])
         if not ats.plugin_exists("rate_limit.so"):
             pytest.skip("rate_limit.so is required")
-        config = ["selector:", "  - sni: rate.limited.com", "    limit: 1", *self._queue_lines]
+        config = ["selector:", "  - sni: rate.limited.com", "    limit: 1", *queue_lines]
         ats.write_config_file("rate_limit.config", "\n".join(config) + "\n")
         ats.plugin_config.add_line(f"rate_limit.so {ats.config_directory}/rate_limit.config")
         ats.records.update({
@@ -61,31 +63,42 @@ class RateLimitSniScenario:
         })
         return ats
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Run the shell driver that creates concurrent TLS handshakes."""
+    def configure_client(services: ServiceFactory) -> ProcessService:
+        """Run the shell driver that creates concurrent TLS handshakes.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         return services.process(
             "client",
             (
                 "/bin/bash",
-                TEST_DIRECTORY / self._client_script,
+                TEST_DIRECTORY / client_script,
                 "127.0.0.1",
-                str(self._ats.https_port),
+                str(_ats.https_port),
                 "rate.limited.com",
-                str(self._ats.traffic_out),
+                str(_ats.traffic_out),
             ),
         )
 
-    def verify(self, result: CommandResult) -> None:
-        """Require the target path and reject memory-safety or accounting faults."""
+    def verify(result: CommandResult) -> None:
+        """Require the target path and reject memory-safety or accounting faults.
+
+        :param result: Completed command result to validate.
+        """
 
         assert result.returncode == 0, result.output
-        assert self._client_marker in result.stdout
-        traffic_out = wait_for_file_lines(self._ats.traffic_out, self._traffic_marker, 1)
-        assert re.search(self._failure_expression, traffic_out) is None, traffic_out
+        assert client_marker in result.stdout
+        wait_for_file_lines(_ats.traffic_out, traffic_marker, 1)
+        _ats.stop()
+        traffic_out = _ats.traffic_out.read_text(errors="replace")
+        if client_script == "rate_limit_sni_expiry_client.sh":
+            assert "Queueing the VC" in traffic_out, traffic_out
+            assert "Queued VC is too old" in traffic_out, traffic_out
+        assert re.search(failure_expression, traffic_out) is None, traffic_out
 
-    def run(self) -> None:
-        """Start ATS, drive handshake churn, and inspect traffic.out."""
+    _ats = configure_ats(ats_factory)
+    _client = configure_client(services)
 
-        self._ats.start()
-        self.verify(self._client.run(timeout=30))
+    _ats.start()
+    verify(_client.run(timeout=30))

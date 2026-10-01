@@ -20,41 +20,62 @@ from pathlib import Path
 from tools.uranium.services import ATS
 
 
-class CacheConfigReloadScenario:
-    """Reload cache.config and hosting.config after each file changes."""
+def configure_traffic_server(*, _ats: ATS) -> None:
+    """Cache config reload configure traffic server.
 
-    def __init__(self, ats: ATS) -> None:
-        self.ats = ats
+    :param _ats: Test-local ats configured by the test.
+    """
+    _ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "rpc|config",
+    })
+    _ats.cache_config.add_line("dest_domain=example.com ttl-in-cache=30d")
 
-    def _configure_traffic_server(self) -> None:
-        self.ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "rpc|config",
-        })
-        self.ats.cache_config.add_line("dest_domain=example.com ttl-in-cache=30d")
 
-    def _start_traffic_server(self) -> None:
-        self.ats.start()
+def start_traffic_server(*, _ats: ATS) -> None:
+    """Cache config reload start traffic server.
 
-    def _reload_configuration(self, config_file: Path, token: str) -> None:
-        config_file.touch()
-        time.sleep(2)
-        result = self.ats.traffic_ctl("config", "reload", "-m", "-t", token, "-w", "1", "-r", "0.5", "-T", "30s")
-        assert result.returncode in (0, 2), result.output
-        time.sleep(3)
+    :param _ats: Test-local ats configured by the test.
+    """
+    _ats.start()
 
-    def _reload_cache_configuration(self) -> None:
-        self._reload_configuration(self.ats.cache_config.path, "reload_cache_test")
 
-    def _reload_hosting_configuration(self) -> None:
-        self._reload_configuration(self.ats.hosting_config.path, "reload_hosting_test")
+def reload_configuration(config_file: Path, token: str, *, _ats: ATS) -> None:
+    """Cache config reload reload configuration.
 
-    def run(self) -> None:
-        self._configure_traffic_server()
-        self._start_traffic_server()
-        self._reload_cache_configuration()
-        self._reload_hosting_configuration()
+    :param _ats: Test-local ats configured by the test.
+    :param config_file: Path to the config file.
+    :param token: Token used by this test step.
+    """
+    config_file.touch()
+    time.sleep(2)
+    result = _ats.traffic_ctl("config", "reload", "-m", "-t", token, "-w", "1", "-r", "0.5", "-T", "30s")
+    assert result.returncode in (0, 2), result.output
+    time.sleep(3)
+
+
+def reload_cache_configuration(*, _ats: ATS) -> None:
+    """Cache config reload reload cache configuration.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+    reload_configuration(_ats.cache_config.path, "reload_cache_test", _ats=_ats)
+
+
+def reload_hosting_configuration(*, _ats: ATS) -> None:
+    """Cache config reload reload hosting configuration.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+    reload_configuration(_ats.hosting_config.path, "reload_hosting_test", _ats=_ats)
 
 
 def test_cache_config_reload(ats: ATS) -> None:
-    CacheConfigReloadScenario(ats).run()
+    """Reload cache.config and hosting.config after each file changes.
+
+    :param ats: Traffic Server instance configured or queried by this step.
+    """
+    configure_traffic_server(_ats=ats)
+    start_traffic_server(_ats=ats)
+    reload_cache_configuration(_ats=ats)
+    reload_hosting_configuration(_ats=ats)

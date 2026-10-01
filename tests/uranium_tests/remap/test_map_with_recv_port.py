@@ -14,11 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from uranium_tests.remap.map_with_recv_port import MapWithRecvPortScenario
+from uranium_tests.remap.map_with_recv_port import run_map_with_recv_port
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
 
 
 def test_map_with_recv_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Classic map_with_recv_port distinguishes TCP and Unix listeners."""
+    """Classic map_with_recv_port distinguishes TCP and Unix listeners.
 
-    MapWithRecvPortScenario(ats_factory, services, curl, use_yaml=False).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_map_with_recv_port(ats_factory, services, curl, use_yaml=False)

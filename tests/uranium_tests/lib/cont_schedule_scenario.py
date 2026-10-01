@@ -24,28 +24,27 @@ import re
 from tools.uranium.services import ATS, ATSFactory, assert_matches_gold
 
 
-class ContScheduleScenario:
-    """Load one scheduling mode and validate its thread-affinity diagnostics."""
+def run_cont_schedule(
+    ats_factory: ATSFactory,
+    *,
+    directory: Path,
+    mode: str,
+    gold_name: str,
+    entire_pool_minimum: int | None = None,
+) -> None:
+    """Load one scheduling mode and validate its thread-affinity diagnostics.
 
-    def __init__(
-        self,
-        ats_factory: ATSFactory,
-        *,
-        directory: Path,
-        mode: str,
-        gold_name: str,
-        entire_pool_minimum: int | None = None,
-    ) -> None:
-        self._ats_factory = ats_factory
-        self._mode = mode
-        self._directory = directory
-        self._gold = self._directory / "gold" / gold_name
-        self._entire_pool_minimum = entire_pool_minimum
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param directory: Directory containing this operation's files.
+    :param mode: Mode used by this test step.
+    :param gold_name: Gold name used by this test step.
+    :param entire_pool_minimum: Entire pool minimum used by this test step.
+    """
 
-    def configure_ats(self) -> ATS:
+    def configure_ats() -> ATS:
         """Configure the test plugin and deterministic thread-pool sizes."""
 
-        ats = self._ats_factory.create("ts")
+        ats = ats_factory.create("ts")
         ats.records.update(
             {
                 "proxy.config.exec_thread.autoconfig.enabled": 0,
@@ -57,27 +56,30 @@ class ContScheduleScenario:
                 "proxy.config.diags.debug.tags": "TSContSchedule_test",
             })
         ats.copy_custom_plugin("{AtsTestPluginsDir}/cont_schedule.so")
-        ats.plugin_config.add_line(f"cont_schedule.so {self._mode}")
+        ats.plugin_config.add_line(f"cont_schedule.so {mode}")
         return ats
 
-    def collect_output(self, ats: ATS) -> str:
-        """Return either raw plugin output or the entire-pool summary."""
+    def collect_output(ats: ATS) -> str:
+        """Return either raw plugin output or the entire-pool summary.
+
+        :param ats: Traffic Server instance configured or queried by this step.
+        """
 
         # The recurring cases emit their third callback just under three
         # seconds after startup; leave time for the final line to be flushed.
         time.sleep(5)
         assert ats.traffic_out.exists()
         content = ats.traffic_out.read_text(errors="replace")
-        if self._entire_pool_minimum is None:
+        if entire_pool_minimum is None:
             return content
         result = subprocess.run(
             [
                 sys.executable,
-                self._directory / "entire_pool.py",
+                directory / "entire_pool.py",
                 ats.traffic_out,
                 "ET_NET",
                 "32",
-                str(self._entire_pool_minimum),
+                str(entire_pool_minimum),
             ],
             capture_output=True,
             text=True,
@@ -87,21 +89,20 @@ class ContScheduleScenario:
         assert result.returncode == 0, result.stdout + result.stderr
         return result.stdout
 
-    def run(self) -> None:
-        """Start ATS and compare the scheduling diagnostics with the gold output."""
+    _gold = directory / "gold" / gold_name
 
-        ats = self.configure_ats()
-        ats.start()
-        output = self.collect_output(ats)
-        assert "fail" not in output
-        if self._entire_pool_minimum is not None:
-            assert_matches_gold(output, self._gold)
-            return
+    ats = configure_ats()
+    ats.start()
+    output = collect_output(ats)
+    assert "fail" not in output
+    if entire_pool_minimum is not None:
+        assert_matches_gold(output, _gold)
+        return
 
-        position = 0
-        for fragment in re.split(r"(?:\{\}|``)", self._gold.read_text(errors="replace")):
-            if not fragment.strip():
-                continue
-            position = output.find(fragment, position)
-            assert position >= 0, f"Missing expected scheduling diagnostic {fragment!r}:\n{output}"
-            position += len(fragment)
+    position = 0
+    for fragment in re.split(r"(?:\{\}|``)", _gold.read_text(errors="replace")):
+        if not fragment.strip():
+            continue
+        position = output.find(fragment, position)
+        assert position >= 0, f"Missing expected scheduling diagnostic {fragment!r}:\n{output}"
+        position += len(fragment)

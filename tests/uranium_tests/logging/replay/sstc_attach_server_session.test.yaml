@@ -22,7 +22,7 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Verify sstc when the origin session is attached to the client session'
 
   server:

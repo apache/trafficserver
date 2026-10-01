@@ -28,185 +28,184 @@ from tools.uranium.services import ATS, ATSFactory, Curl, ProcessService, Servic
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class ConnectionTimeoutScenario:
-    """Distinguish a dropped SYN from a connected but delayed origin."""
+def privilege_command() -> tuple[str, ...]:
+    """Return root execution directly or through passwordless sudo."""
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        """Configure the privileged network-namespace scenario.
+    if os.geteuid() == 0:
+        return ()
+    if shutil.which("sudo") is not None:
+        result = subprocess.run(("sudo", "-n", "true"), capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            return ("sudo", "-n")
+    pytest.skip("network namespace setup requires root or passwordless sudo")
 
-        :param ats_factory: Factory that owns the ATS instance.
-        :param services: Factory that owns the delayed origin process.
-        :param curl: Curl client used for timeout requests.
-        """
 
-        if curl.uses_uds:
-            pytest.skip("the network-namespace scenario requires a TCP listener")
-        missing = [program for program in ("ip", "iptables", "nc") if shutil.which(program) is None]
-        if missing:
-            pytest.skip(f"required network tools are unavailable: {', '.join(missing)}")
-        self._privilege = self.privilege_command()
-        self._curl = curl
-        self._blocked_port = services.allocate_port()
-        self._upstream_port = services.allocate_port()
-        suffix = str(self._blocked_port)
-        self._namespace = f"urtest-{suffix}"
-        self._host_interface = f"uh{suffix}"[:15]
-        self._namespace_interface = f"un{suffix}"[:15]
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+def configure_origin(
+        services: ServiceFactory, *, _namespace: str, _privilege: tuple[str, ...], _upstream_port: int) -> ProcessService:
+    """Create the delayed server inside the test network namespace.
 
-    @staticmethod
-    def privilege_command() -> tuple[str, ...]:
-        """Return root execution directly or through passwordless sudo."""
+    :param services: Factory that owns the delayed origin process.
 
-        if os.geteuid() == 0:
-            return ()
-        if shutil.which("sudo") is not None:
-            result = subprocess.run(("sudo", "-n", "true"), capture_output=True, text=True, check=False)
-            if result.returncode == 0:
-                return ("sudo", "-n")
-        pytest.skip("network namespace setup requires root or passwordless sudo")
+    :param _namespace: Test-local namespace configured by the test.
+    :param _privilege: Test-local privilege configured by the test.
+    :param _upstream_port: Test-local upstream port configured by the test.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> ProcessService:
-        """Create the delayed server inside the test network namespace.
+    return services.process(
+        "delayed-origin",
+        (
+            *_privilege,
+            "ip",
+            "netns",
+            "exec",
+            _namespace,
+            "nc",
+            "-4",
+            "-l",
+            str(_upstream_port),
+            "-c",
+            f"sh {TEST_DIRECTORY / 'delay-server.sh'}",
+        ),
+    )
 
-        :param services: Factory that owns the delayed origin process.
-        """
 
-        return services.process(
-            "delayed-origin",
-            (
-                *self._privilege,
-                "ip",
-                "netns",
-                "exec",
-                self._namespace,
-                "nc",
-                "-4",
-                "-l",
-                str(self._upstream_port),
-                "-c",
-                f"sh {TEST_DIRECTORY / 'delay-server.sh'}",
-            ),
-        )
+def configure_ats(ats_factory: ATSFactory, *, _blocked_port: int, _upstream_port: int) -> ATS:
+    """Set a two-second connect timeout and access logging.
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Set a two-second connect timeout and access logging.
+    :param ats_factory: Factory that owns the ATS instance.
 
-        :param ats_factory: Factory that owns the ATS instance.
-        """
+    :param _blocked_port: Test-local blocked port configured by the test.
+    :param _upstream_port: Test-local upstream port configured by the test.
+    """
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
-            {
-                "proxy.config.url_remap.remap_required": 1,
-                "proxy.config.http.connect_attempts_timeout": 2,
-                "proxy.config.http.connect_attempts_max_retries": 0,
-                "proxy.config.http.transaction_no_activity_timeout_out": 5,
-                "proxy.config.log.max_secs_per_buffer": 1,
-            })
-        ats.remap_config.add_lines(
-            (
-                f"map /blocked http://10.1.1.1:{self._blocked_port}",
-                f"map /not-blocked http://10.1.1.1:{self._upstream_port}",
-            ))
-        ats.set_logging_yaml(
-            {
-                "logging":
-                    {
-                        "formats": [{
-                            "name": "testformat",
-                            "format": "%<pssc> %<pquc> %<pscert> %<cscert>",
-                        }],
-                        "logs": [{
-                            "mode": "ascii",
-                            "format": "testformat",
-                            "filename": "squid",
-                        }],
-                    }
-            })
-        return ats
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.url_remap.remap_required": 1,
+            "proxy.config.http.connect_attempts_timeout": 2,
+            "proxy.config.http.connect_attempts_max_retries": 0,
+            "proxy.config.http.transaction_no_activity_timeout_out": 5,
+            "proxy.config.log.max_secs_per_buffer": 1,
+        })
+    ats.remap_config.add_lines(
+        (
+            f"map /blocked http://10.1.1.1:{_blocked_port}",
+            f"map /not-blocked http://10.1.1.1:{_upstream_port}",
+        ))
+    ats.set_logging_yaml(
+        {
+            "logging":
+                {
+                    "formats": [{
+                        "name": "testformat",
+                        "format": "%<pssc> %<pquc> %<pscert> %<cscert>",
+                    }],
+                    "logs": [{
+                        "mode": "ascii",
+                        "format": "testformat",
+                        "filename": "squid",
+                    }],
+                }
+        })
+    return ats
 
-    def run_privileged(self, *arguments: str) -> subprocess.CompletedProcess[str]:
-        """Run one command with the selected privilege mechanism.
 
-        :param arguments: Command and arguments to execute as root.
-        """
+def run_privileged(*arguments: str, _privilege: tuple[str, ...]) -> subprocess.CompletedProcess[str]:
+    """Run one command with the selected privilege mechanism.
 
-        return subprocess.run(
-            (*self._privilege, *arguments),
-            cwd=TEST_DIRECTORY,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+    :param arguments: Command and arguments to execute as root.
 
-    def setup_namespace(self) -> None:
-        """Create the isolated dropped-SYN and delayed-origin network."""
+    :param _privilege: Test-local privilege configured by the test.
+    """
 
-        result = self.run_privileged(
-            "sh",
-            str(TEST_DIRECTORY / "setupnetns.sh"),
-            str(self._blocked_port),
-            str(self._upstream_port),
-            self._namespace,
-            self._host_interface,
-            self._namespace_interface,
-        )
-        if result.returncode != 0:
-            self.cleanup_namespace()
-            pytest.skip(f"network namespace setup is unavailable:\n{result.stdout}{result.stderr}")
+    return subprocess.run(
+        (*_privilege, *arguments),
+        cwd=TEST_DIRECTORY,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    def cleanup_namespace(self) -> None:
-        """Remove only the namespace and interface allocated by this scenario."""
 
-        self.run_privileged("ip", "netns", "del", self._namespace)
-        self.run_privileged("ip", "link", "del", self._host_interface)
+def setup_namespace(
+        *, _blocked_port: int, _host_interface: str, _namespace: str, _namespace_interface: str, _privilege: tuple[str, ...],
+        _upstream_port: int) -> None:
+    """Create the isolated dropped-SYN and delayed-origin network.
 
-    def request_blocked(self, method: str) -> None:
-        """Require a dropped SYN to reach ATS's connect timeout.
+    :param _blocked_port: Test-local blocked port configured by the test.
+    :param _host_interface: Test-local host interface configured by the test.
+    :param _namespace: Test-local namespace configured by the test.
+    :param _namespace_interface: Test-local namespace interface configured by the test.
+    :param _privilege: Test-local privilege configured by the test.
+    :param _upstream_port: Test-local upstream port configured by the test.
+    """
 
-        :param method: HTTP method to send through the blocked connection.
-        """
+    result = run_privileged(
+        "sh",
+        str(TEST_DIRECTORY / "setupnetns.sh"),
+        str(_blocked_port),
+        str(_upstream_port),
+        _namespace,
+        _host_interface,
+        _namespace_interface,
+        _privilege=_privilege)
+    if result.returncode != 0:
+        cleanup_namespace(_host_interface=_host_interface, _namespace=_namespace, _privilege=_privilege)
+        pytest.skip(f"network namespace setup is unavailable:\n{result.stdout}{result.stderr}")
 
-        arguments = ["--include"]
-        if method == "POST":
-            arguments.extend(("--data", "stuff"))
-        arguments.append(f"http://127.0.0.1:{self._ats.http_port}/blocked")
-        result = self._curl.run_for(
-            self._ats,
-            shlex.join(arguments),
-            timeout=6,
-        )
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 502 internal error - server connection terminated" in result.output
 
-    def request_delayed(self) -> None:
-        """Require an established connection to outlive the connect timeout."""
+def cleanup_namespace(*, _host_interface: str, _namespace: str, _privilege: tuple[str, ...]) -> None:
+    """Remove only the namespace and interface allocated by this scenario.
 
-        self._origin.start()
-        time.sleep(0.2)
-        result = self._curl.run_for(
-            self._ats,
-            f"--include 'http://127.0.0.1:{self._ats.http_port}/not-blocked'",
-            timeout=7,
-        )
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 200" in result.output
-        self._origin.wait(timeout=2)
+    :param _host_interface: Test-local host interface configured by the test.
+    :param _namespace: Test-local namespace configured by the test.
+    :param _privilege: Test-local privilege configured by the test.
+    """
 
-    def run(self) -> None:
-        """Exercise blocked and delayed connections, then clean the namespace."""
+    run_privileged("ip", "netns", "del", _namespace, _privilege=_privilege)
+    run_privileged("ip", "link", "del", _host_interface, _privilege=_privilege)
 
-        self.setup_namespace()
-        try:
-            self._ats.start()
-            self.request_blocked("GET")
-            self.request_blocked("POST")
-            self.request_delayed()
-            wait_for_file_lines(self._ats.log_directory / "squid.log", r"(?:502|200)", 3)
-        finally:
-            self.cleanup_namespace()
+
+def request_blocked(method: str, *, _ats: ATS, _curl: Curl) -> None:
+    """Require a dropped SYN to reach ATS's connect timeout.
+
+    :param method: HTTP method to send through the blocked connection.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    arguments = ["--include"]
+    if method == "POST":
+        arguments.extend(("--data", "stuff"))
+    arguments.append(f"http://127.0.0.1:{_ats.http_port}/blocked")
+    result = _curl.run_for(
+        _ats,
+        shlex.join(arguments),
+        timeout=6,
+    )
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 502 internal error - server connection terminated" in result.output
+
+
+def request_delayed(*, _ats: ATS, _curl: Curl, _origin: ProcessService) -> None:
+    """Require an established connection to outlive the connect timeout.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    """
+
+    _origin.start()
+    time.sleep(0.2)
+    result = _curl.run_for(
+        _ats,
+        f"--include 'http://127.0.0.1:{_ats.http_port}/not-blocked'",
+        timeout=7,
+    )
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 200" in result.output
+    _origin.wait(timeout=2)
 
 
 @pytest.mark.manual(reason="requires privileged network namespace setup")
@@ -219,4 +218,33 @@ def test_conn_timeout(ats_factory: ATSFactory, services: ServiceFactory, curl: C
     :param curl: Curl client used for timeout requests.
     """
 
-    ConnectionTimeoutScenario(ats_factory, services, curl).run()
+    if curl.uses_uds:
+        pytest.skip("the network-namespace scenario requires a TCP listener")
+    missing = [program for program in ("ip", "iptables", "nc") if shutil.which(program) is None]
+    if missing:
+        pytest.skip(f"required network tools are unavailable: {', '.join(missing)}")
+    _privilege = privilege_command()
+    _blocked_port = services.allocate_port()
+    _upstream_port = services.allocate_port()
+    suffix = str(_blocked_port)
+    _namespace = f"urtest-{suffix}"
+    _host_interface = f"uh{suffix}"[:15]
+    _namespace_interface = f"un{suffix}"[:15]
+    _origin = configure_origin(services, _namespace=_namespace, _privilege=_privilege, _upstream_port=_upstream_port)
+    _ats = configure_ats(ats_factory, _blocked_port=_blocked_port, _upstream_port=_upstream_port)
+
+    setup_namespace(
+        _blocked_port=_blocked_port,
+        _host_interface=_host_interface,
+        _namespace=_namespace,
+        _namespace_interface=_namespace_interface,
+        _privilege=_privilege,
+        _upstream_port=_upstream_port)
+    try:
+        _ats.start()
+        request_blocked("GET", _ats=_ats, _curl=curl)
+        request_blocked("POST", _ats=_ats, _curl=curl)
+        request_delayed(_ats=_ats, _curl=curl, _origin=_origin)
+        wait_for_file_lines(_ats.log_directory / "squid.log", r"(?:502|200)", 3)
+    finally:
+        cleanup_namespace(_host_interface=_host_interface, _namespace=_namespace, _privilege=_privilege)
