@@ -1,0 +1,150 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Regression test for the chunked-tunnel high-water throttle when the
+# producer is an outbound HTTP/2 stream.
+#
+# An HTTP/2 origin returns a body without Content-Length and an HTTP/1.1
+# client requests it, so ATS re-chunks the body for the client. With a small
+# default_buffer_water_mark the chunked output buffer crosses high_water
+# while the origin's DATA frames are still arriving, so the tunnel disables
+# the stream's read VIO. The origin's final DATA frame, carrying END_STREAM,
+# then lands while the read VIO is disabled. The stream has to deliver the
+# deferred final read event once the tunnel re-enables it, otherwise the
+# client never receives the terminating 0-size chunk. Whether END_STREAM
+# lands inside the throttle window depends on timing here;
+# chunked_flow_control.test.py pins it with a custom origin.
+
+autest:
+  description: 'HTTP/2 origin -> HTTP/1.1 chunked client END_STREAM while throttled'
+
+  dns:
+    name: 'dns-chunked-h2o-fc'
+
+  server:
+    name: 'server-chunked-h2o-fc'
+
+  client:
+    name: 'client-chunked-h2o-fc'
+
+  ats:
+    name: 'ts-chunked-h2o-fc'
+    process_config:
+      enable_tls: false
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_tunnel|http2_stream'
+      # Keep every transaction on one thread so they share the origin session.
+      proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.exec_thread.limit: 1
+      # Small water_mark so the chunked output buffer crosses high_water
+      # while the origin's DATA frames are still being received.
+      proxy.config.http.default_buffer_water_mark: 4096
+      proxy.config.ssl.client.alpn_protocols: 'h2,http/1.1'
+      proxy.config.ssl.client.verify.server.policy: 'PERMISSIVE'
+      # Bound a stalled transaction so the failure shows as a truncated
+      # response rather than a hung test.
+      proxy.config.http.transaction_no_activity_timeout_out: 10
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "https://backend.example.com:{SERVER_HTTPS_PORT}/"
+
+    log_validation:
+      diags_log:
+        excludes:
+          - expression: 'HTTP/2 unknown case of'
+            description: 'A stream stalled on a dropped END_STREAM must not linger.'
+
+    metric_checks:
+      - metric: proxy.process.http.tunnel.chunked_throttle
+        value: '[1-9][0-9]*'
+
+sessions:
+
+- protocol:
+    stack: http
+
+  transactions:
+
+  # The whole body fits in the initial stream window, so the origin sends
+  # every DATA frame back to back and the END_STREAM frame arrives while the
+  # tunnel still has the producer throttled.
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /h2o-rechunk
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, h2o-rechunk-1 ]
+
+    proxy-request:
+      protocol:
+        stack: http2
+
+    server-response:
+      headers:
+        fields:
+        - [ ":status", 200 ]
+        - [ Content-Type, text/plain ]
+      content:
+        size: 60000
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Transfer-Encoding", { value: "chunked", as: equal } ]
+      content:
+        size: { value: 60000, as: equal }
+
+  # A body several times the stream window, so the throttle and WINDOW_UPDATE
+  # cycles interleave with the final DATA frame.
+  - client-request:
+      delay: 100ms
+      method: GET
+      version: "1.1"
+      url: /h2o-rechunk-2
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, h2o-rechunk-2 ]
+
+    proxy-request:
+      protocol:
+        stack: http2
+
+    server-response:
+      headers:
+        fields:
+        - [ ":status", 200 ]
+        - [ Content-Type, text/plain ]
+      content:
+        size: 524288
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Transfer-Encoding", { value: "chunked", as: equal } ]
+      content:
+        size: { value: 524288, as: equal }

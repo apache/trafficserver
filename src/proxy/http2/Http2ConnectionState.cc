@@ -184,9 +184,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
       }
 
-      if (stream->is_read_enabled()) {
-        stream->signal_read_event(VC_EVENT_READ_COMPLETE);
-      }
+      stream->signal_final_read_event(VC_EVENT_READ_COMPLETE);
 
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
@@ -263,22 +261,19 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   myreader->writer()->dealloc_reader(myreader);
 
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
-    // TODO: set total written size to read_vio.nbytes
     stream->set_read_done();
   }
 
-  if (stream->is_read_enabled()) {
-    if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
-      if (this->get_peer_stream_count() > 1 && this->get_local_rwnd() == 0) {
-        // This final DATA frame for this stream consumed all the bytes for the
-        // session window. Send a WINDOW_UPDATE frame in order to open up the
-        // session window for other streams.
-        restart_receiving(nullptr);
-      }
-      stream->signal_read_event(VC_EVENT_READ_COMPLETE);
-    } else {
-      stream->signal_read_event(VC_EVENT_READ_READY);
+  if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
+    if (stream->is_read_enabled() && this->get_peer_stream_count() > 1 && this->get_local_rwnd() == 0) {
+      // This final DATA frame for this stream consumed all the bytes for the
+      // session window. Send a WINDOW_UPDATE frame in order to open up the
+      // session window for other streams.
+      restart_receiving(nullptr);
     }
+    stream->signal_final_read_event(VC_EVENT_READ_COMPLETE);
+  } else if (stream->is_read_enabled()) {
+    stream->signal_read_event(VC_EVENT_READ_READY);
   }
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
