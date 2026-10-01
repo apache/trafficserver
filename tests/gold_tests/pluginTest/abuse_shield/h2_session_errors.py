@@ -69,6 +69,9 @@ def send_error(port: int, mode: str, barrier: threading.Barrier) -> None:
                 expected_code = 9
             elif mode in ("received", "normal"):
                 connection.sendall(GoAwayFrame(0, error_code=2 if mode == "received" else 0).serialize())
+                # Wait for ATS to process GOAWAY before closing the TLS connection.
+                while connection.recv(4096):
+                    pass
                 return
             else:
                 # DATA on stream zero is a connection error before any HEADERS.
