@@ -58,6 +58,9 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   ParseResult state = ParseResult::CONT;
   *bytes_used       = 0;
 
+  // A field can be split across blocks, so only the last block ends the input.
+  int64_t remaining = eof ? r->read_avail() : 0;
+
   do {
     int64_t b_avail = r->block_read_avail();
 
@@ -68,8 +71,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     tmp = start = r->start();
     end         = start + b_avail;
 
-    // A field can be split across blocks, so only the last block ends the input.
-    bool const block_eof = eof && b_avail >= r->read_avail();
+    bool const block_eof = eof && b_avail >= remaining;
 
     int heap_slot = m_heap->attach_block(r->get_current_block(), start);
 
@@ -82,6 +84,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     used = static_cast<int>(tmp - start);
     r->consume(used);
     *bytes_used += used;
+    remaining   -= used;
 
   } while (state == ParseResult::CONT);
 
@@ -102,6 +105,9 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
   ParseResult state = ParseResult::CONT;
   *bytes_used       = 0;
 
+  // A field can be split across blocks, so only the last block ends the input.
+  int64_t remaining = eof ? r->read_avail() : 0;
+
   do {
     int64_t b_avail = r->block_read_avail();
     tmp = start = r->start();
@@ -120,8 +126,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
 
     end = start + b_avail;
 
-    // A field can be split across blocks, so only the last block ends the input.
-    bool const block_eof = eof && b_avail >= r->read_avail();
+    bool const block_eof = eof && b_avail >= remaining;
 
     int heap_slot = m_heap->attach_block(r->get_current_block(), start);
 
@@ -133,6 +138,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
     used = static_cast<int>(tmp - start);
     r->consume(used);
     *bytes_used += used;
+    remaining   -= used;
 
   } while (state == ParseResult::CONT);
 
