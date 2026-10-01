@@ -14,11 +14,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from uranium_tests.remap.remap_ip_resolve import RemapIpResolveScenario
+from uranium_tests.remap.remap_ip_resolve import run_remap_ip_resolve
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
 
 
 def test_remap_ip_resolve_yaml(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """YAML remap rules override the global DNS address-family policy."""
+    """YAML remap rules override the global DNS address-family policy.
 
-    RemapIpResolveScenario(ats_factory, services, curl, use_yaml=True).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_remap_ip_resolve(ats_factory, services, curl, use_yaml=True)

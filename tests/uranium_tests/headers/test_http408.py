@@ -25,67 +25,75 @@ TEST_DIRECTORY = Path(__file__).parent
 TCP_CLIENT = TEST_DIRECTORY.parents[1] / "tools" / "tcp_client.py"
 
 
-class RequestTimeoutScenario:
-    """Leave an HTTP request body incomplete until ATS times it out."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Provide the mapped origin, which the incomplete request never reaches.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Provide the mapped origin, which the incomplete request never reaches."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {
+            "headers": "GET / HTTP/1.1\r\nHost: www.http408.test\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "body": ""
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {
-                "headers": "GET / HTTP/1.1\r\nHost: www.http408.test\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": ""
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Use a short inbound transaction inactivity timeout."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Use a short inbound transaction inactivity timeout.
 
-        ats = ats_factory.create("ts")
-        ats.remap_config.add_line(f"map http://www.http408.test http://127.0.0.1:{self._origin.port}")
-        ats.records.update({"proxy.config.http.transaction_no_activity_timeout_in": 2})
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Use the raw client so the declared body remains unfinished."""
+    ats = ats_factory.create("ts")
+    ats.remap_config.add_line(f"map http://www.http408.test http://127.0.0.1:{_origin.port}")
+    ats.records.update({"proxy.config.http.transaction_no_activity_timeout_in": 2})
+    return ats
 
-        return services.process(
-            "timeout-client",
-            (
-                sys.executable,
-                TCP_CLIENT,
-                "127.0.0.1",
-                str(self._ats.http_port),
-                TEST_DIRECTORY / "data" / "www.http408.test.txt",
-                "--delay-after-send",
-                "4",
-            ),
-        )
 
-    def run(self) -> None:
-        """Execute the incomplete request and compare the 408 response."""
+def configure_client(services: ServiceFactory, *, _ats: ATS) -> ProcessService:
+    """Use the raw client so the declared body remains unfinished.
 
-        self._origin.start()
-        self._ats.start()
-        result = self._client.run(timeout=10)
-        assert_matches_gold(result.stdout, TEST_DIRECTORY / "http408.gold")
+    :param _ats: Test-local ats configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    return services.process(
+        "timeout-client",
+        (
+            sys.executable,
+            TCP_CLIENT,
+            "127.0.0.1",
+            str(_ats.http_port),
+            TEST_DIRECTORY / "data" / "www.http408.test.txt",
+            "--delay-after-send",
+            "4",
+        ),
+    )
 
 
 def test_http408(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """An incomplete request receives ATS's standard 408 response."""
+    """An incomplete request receives ATS's standard 408 response.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
 
     if curl.uses_uds:
         pytest.skip("the raw TCP client requires a TCP listener")
-    RequestTimeoutScenario(ats_factory, services).run()
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+    _client = configure_client(services, _ats=_ats)
+
+    _origin.start()
+    _ats.start()
+    result = _client.run(timeout=10)
+    assert_matches_gold(result.stdout, TEST_DIRECTORY / "http408.gold")

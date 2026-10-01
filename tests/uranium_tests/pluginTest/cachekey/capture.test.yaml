@@ -17,7 +17,8 @@
 meta:
   version: '1.0'
 
-autest:
+urtest:
+  requires: {plugins: [cachekey.so, xdebug.so]}
   description: 'Cachekey captures beyond the default regex match capacity'
   server:
     name: server

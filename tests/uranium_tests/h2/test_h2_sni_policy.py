@@ -21,90 +21,79 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-class H2SniPolicyScenario:
-    """Verify SNI policy can enable or disable HTTP/2 negotiation."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Configure the shared empty origin response.
 
-    def __init__(
-        self,
-        ats_factory: ATSFactory,
-        services: ServiceFactory,
-        curl: Curl,
-        *,
-        sni_enables_h2: bool,
-        accept_threads: int,
-    ) -> None:
-        if not Curl.supports("http2"):
-            pytest.skip("curl lacks HTTP/2 support")
-        self._curl = curl
-        self._sni_enables_h2 = sni_enables_h2
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory, accept_threads)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Configure the shared empty origin response."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {
+            "headers": "GET / HTTP/1.1\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "body": ""
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {
-                "headers": "GET / HTTP/1.1\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": ""
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory, accept_threads: int) -> ATS:
-        """Configure the global protocol and opposing SNI policy."""
+def configure_ats(ats_factory: ATSFactory, accept_threads: int, *, _origin: OriginServer, _sni_enables_h2: bool) -> ATS:
+    """Configure the global protocol and opposing SNI policy.
 
-        ats = ats_factory.create("ts", enable_tls=True)
-        ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 0,
-                "proxy.config.diags.debug.tags": "http|ssl",
-                "proxy.config.url_remap.pristine_host_hdr": 1,
-                "proxy.config.accept_threads": accept_threads,
-            })
-        if self._sni_enables_h2:
-            ats.records.update({
-                "proxy.config.http.server_ports": f"{ats.https_port}:ssl:proto=http {ats.http_port}",
-            })
-        state = "on" if self._sni_enables_h2 else "off"
-        ats.write_config_file("sni.yaml", f'''sni:
+    :param _origin: Test-local origin configured by the test.
+    :param _sni_enables_h2: Test-local sni enables h2 configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param accept_threads: Accept threads used by this test step.
+    """
+
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http|ssl",
+            "proxy.config.url_remap.pristine_host_hdr": 1,
+            "proxy.config.accept_threads": accept_threads,
+        })
+    if _sni_enables_h2:
+        ats.records.update({
+            "proxy.config.http.server_ports": f"{ats.https_port}:ssl:proto=http {ats.http_port}",
+        })
+    state = "on" if _sni_enables_h2 else "off"
+    ats.write_config_file("sni.yaml", f'''sni:
 - fqdn: bar.com
   http2: {state}
 - fqdn: "*.foo.com"
   http2: {state}
 ''')
-        return ats
+    return ats
 
-    def request(self, hostname: str, expects_h2: bool) -> None:
-        """Connect with one SNI name and verify the negotiated protocol."""
 
-        result = self._curl.run_for(
-            self._ats,
-            (
-                f"--verbose --insecure --ipv4 --resolve '{hostname}:{self._ats.https_port}:127.0.0.1' "
-                f"'https://{hostname}:{self._ats.https_port}/'"),
-            timeout=10,
-        )
-        assert result.returncode == 0, result.output
-        assert "Could Not Connect" not in result.output
-        negotiated_h2 = re.search(r"using HTTP/?2", result.output, re.IGNORECASE) is not None
-        assert negotiated_h2 is expects_h2, result.output
+def request(hostname: str, expects_h2: bool, *, _ats: ATS, _curl: Curl) -> None:
+    """Connect with one SNI name and verify the negotiated protocol.
 
-    def run(self) -> None:
-        """Compare the global default, exact SNI, and wildcard SNI behavior."""
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param hostname: Host name used for certificate or route selection.
+    :param expects_h2: Expects h2 used by this test step.
+    """
 
-        self._origin.start()
-        self._ats.start()
-        self.request("foo.com", not self._sni_enables_h2)
-        self.request("bar.com", self._sni_enables_h2)
-        self.request("bob.foo.com", self._sni_enables_h2)
+    result = _curl.run_for(
+        _ats,
+        (
+            f"--verbose --insecure --ipv4 --resolve '{hostname}:{_ats.https_port}:127.0.0.1' "
+            f"'https://{hostname}:{_ats.https_port}/'"),
+        timeout=10,
+    )
+    assert result.returncode == 0, result.output
+    assert "Could Not Connect" not in result.output
+    negotiated_h2 = re.search(r"using HTTP/?2", result.output, re.IGNORECASE) is not None
+    assert negotiated_h2 is expects_h2, result.output
 
 
 @pytest.mark.parametrize("accept_threads", [0, 1], ids=["net-thread-accept", "dedicated-accept-thread"])
@@ -116,12 +105,21 @@ def test_h2_sni_policy(
     sni_enables_h2: bool,
     accept_threads: int,
 ) -> None:
-    """SNI HTTP/2 policy works with either listener acceptance model."""
+    """SNI HTTP/2 policy works with either listener acceptance model.
 
-    H2SniPolicyScenario(
-        ats_factory,
-        services,
-        curl,
-        sni_enables_h2=sni_enables_h2,
-        accept_threads=accept_threads,
-    ).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param sni_enables_h2: Sni enables h2 used by this test step.
+    :param accept_threads: Accept threads used by this test step.
+    """
+    if not Curl.supports("http2"):
+        pytest.skip("curl lacks HTTP/2 support")
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, accept_threads, _origin=_origin, _sni_enables_h2=sni_enables_h2)
+
+    _origin.start()
+    _ats.start()
+    request("foo.com", not sni_enables_h2, _ats=_ats, _curl=curl)
+    request("bar.com", sni_enables_h2, _ats=_ats, _curl=curl)
+    request("bob.foo.com", sni_enables_h2, _ats=_ats, _curl=curl)

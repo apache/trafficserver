@@ -20,63 +20,72 @@ import sys
 from tools.uranium.services import ATS, ATSFactory, CommandResult, ServiceFactory, VerifierServer
 
 
-class ChunkExtensionQuotedStringScenario:
-    """Reject CR/LF embedded in a chunk-extension quoted string."""
+def configure_origin(*, _directory: Path, _services: ServiceFactory) -> VerifierServer:
+    """Serve the legitimate POST and a sentinel smuggled request.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._ats_factory = ats_factory
-        self._services = services
-        self._directory = Path(__file__).parent
-        self._origin = self.configure_origin()
-        self._ats = self.configure_ats()
+    :param _directory: Test-local directory configured by the test.
+    :param _services: Test-local services configured by the test.
+    """
 
-    def configure_origin(self) -> VerifierServer:
-        """Serve the legitimate POST and a sentinel smuggled request."""
+    return _services.verifier_server(
+        "verifier-server",
+        _directory / "replays/chunk_extension_quoted_string.replay.yaml",
+    )
 
-        return self._services.verifier_server(
-            "verifier-server",
-            self._directory / "replays/chunk_extension_quoted_string.replay.yaml",
-        )
 
-    def configure_ats(self) -> ATS:
-        """Enable strict chunk parsing in Traffic Server."""
+def configure_ats(*, _ats_factory: ATSFactory, _origin: VerifierServer) -> ATS:
+    """Enable strict chunk parsing in Traffic Server.
 
-        ats = self._ats_factory.create("ts", enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 0,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.http.strict_chunk_parsing": 1,
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.http_port}")
-        return ats
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    """
 
-    def run_client(self, name: str, *, split: bool) -> CommandResult:
-        """Run the bespoke client once and validate the anti-smuggling result."""
+    ats = _ats_factory.create("ts", enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.http.strict_chunk_parsing": 1,
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
+    return ats
 
-        command = [
-            sys.executable,
-            self._directory / "chunk_extension_client.py",
-            "127.0.0.1",
-            str(self._ats.http_port),
-        ]
-        if split:
-            command.append("--split")
-        result = self._services.process(name, command).run()
-        assert "responses=1" in result.stdout
-        assert "SECOND-ENDPOINT" not in result.stdout
-        return result
 
-    def run(self) -> None:
-        """Exercise one-write and split-write parser boundaries."""
+def run_client(name: str, *, split: bool, _ats: ATS, _directory: Path, _services: ServiceFactory) -> CommandResult:
+    """Run the bespoke client once and validate the anti-smuggling result.
 
-        self._origin.start()
-        self._ats.start()
-        self.run_client("quoted-extension", split=False)
-        self.run_client("split-quoted-extension", split=True)
+    :param _ats: Test-local ats configured by the test.
+    :param _directory: Test-local directory configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param name: Unique service or case name within this test.
+    :param split: Split used by this test step.
+    """
+
+    command = [
+        sys.executable,
+        _directory / "chunk_extension_client.py",
+        "127.0.0.1",
+        str(_ats.http_port),
+    ]
+    if split:
+        command.append("--split")
+    result = _services.process(name, command).run()
+    assert "responses=1" in result.stdout
+    assert "SECOND-ENDPOINT" not in result.stdout
+    return result
 
 
 def test_chunk_extension_quoted_string(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A malformed chunk extension cannot smuggle a second request."""
+    """A malformed chunk extension cannot smuggle a second request.
 
-    ChunkExtensionQuotedStringScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _directory = Path(__file__).parent
+    _origin = configure_origin(_directory=_directory, _services=services)
+    _ats = configure_ats(_ats_factory=ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    run_client("quoted-extension", split=False, _ats=_ats, _directory=_directory, _services=services)
+    run_client("split-quoted-extension", split=True, _ats=_ats, _directory=_directory, _services=services)

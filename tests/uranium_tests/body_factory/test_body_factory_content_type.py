@@ -18,68 +18,45 @@ import re
 from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory
 
 
-class BodyFactoryContentTypeScenario:
-    """Verify that body-factory metadata controls error-response media types."""
+def configure_ats(ats_factory: ATSFactory, name: str, origin_port: int, metadata: str) -> ATS:
+    """Configure one body-factory instance.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        """Configure default and customized body-factory instances.
+    :param ats_factory: Factory for isolated ATS processes.
+    :param name: Unique ATS process name.
+    :param origin_port: Unused TCP port in the otherwise-valid remap rule.
+    :param metadata: Complete ``.body_factory_info`` contents.
+    :return: Configured ATS process.
+    """
 
-        :param ats_factory: Factory for isolated ATS processes.
-        :param services: Factory used to reserve an unreachable origin port.
-        :param curl: Curl command helper.
-        """
+    ats = ats_factory.create(name)
+    ats.records.update({
+        "proxy.config.body_factory.enable_customizations": 1,
+        "proxy.config.url_remap.remap_required": 1,
+    })
+    ats.remap_config.add_line(f"map http://mapped.example.com http://127.0.0.1:{origin_port}")
+    ats.write_body_factory_file("default/.body_factory_info", metadata)
+    return ats
 
-        self._curl = curl
-        unused_port = services.allocate_port()
-        self._default = self.configure_ats(ats_factory, "ts-default", unused_port, "Content-Language: en\nContent-Charset: utf-8\n")
-        self._custom = self.configure_ats(ats_factory, "ts-custom", unused_port, "Content-Type: text/plain")
 
-    @staticmethod
-    def configure_ats(ats_factory: ATSFactory, name: str, origin_port: int, metadata: str) -> ATS:
-        """Configure one body-factory instance.
+def response_headers(ats: ATS, *, _curl: Curl) -> str:
+    """Request an unmapped URL and return its response headers.
 
-        :param ats_factory: Factory for isolated ATS processes.
-        :param name: Unique ATS process name.
-        :param origin_port: Unused TCP port in the otherwise-valid remap rule.
-        :param metadata: Complete ``.body_factory_info`` contents.
-        :return: Configured ATS process.
-        """
+    :param ats: Configured ATS process to query.
+    :return: Curl's response-header output.
 
-        ats = ats_factory.create(name)
-        ats.records.update({
-            "proxy.config.body_factory.enable_customizations": 1,
-            "proxy.config.url_remap.remap_required": 1,
-        })
-        ats.remap_config.add_line(f"map http://mapped.example.com http://127.0.0.1:{origin_port}")
-        ats.write_body_factory_file("default/.body_factory_info", metadata)
-        return ats
+    :param _curl: Test-local curl configured by the test.
+    """
 
-    def response_headers(self, ats: ATS) -> str:
-        """Request an unmapped URL and return its response headers.
-
-        :param ats: Configured ATS process to query.
-        :return: Curl's response-header output.
-        """
-
-        ats.start()
-        result = self._curl.get(
-            ats,
-            "/",
-            headers={"Host": "unmapped.example.com"},
-            options="--silent --show-error --dump-header - --output /dev/null",
-        )
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 404" in result.stdout
-        return result.stdout
-
-    def run(self) -> None:
-        """Verify both the default and explicitly configured media types."""
-
-        default_headers = self.response_headers(self._default)
-        assert re.search(r"(?im)^Content-Type:\s*text/html\s*;\s*charset=utf-8\s*$", default_headers)
-
-        custom_headers = self.response_headers(self._custom)
-        assert re.search(r"(?im)^Content-Type:\s*text/plain\s*$", custom_headers)
+    ats.start()
+    result = _curl.get(
+        ats,
+        "/",
+        headers={"Host": "unmapped.example.com"},
+        options="--silent --show-error --dump-header - --output /dev/null",
+    )
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 404" in result.stdout
+    return result.stdout
 
 
 def test_body_factory_content_type(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -89,5 +66,12 @@ def test_body_factory_content_type(ats_factory: ATSFactory, services: ServiceFac
     :param services: Factory for supporting test services.
     :param curl: Curl command helper.
     """
+    unused_port = services.allocate_port()
+    _default = configure_ats(ats_factory, "ts-default", unused_port, "Content-Language: en\nContent-Charset: utf-8\n")
+    _custom = configure_ats(ats_factory, "ts-custom", unused_port, "Content-Type: text/plain")
 
-    BodyFactoryContentTypeScenario(ats_factory, services, curl).run()
+    default_headers = response_headers(_default, _curl=curl)
+    assert re.search(r"(?im)^Content-Type:\s*text/html\s*;\s*charset=utf-8\s*$", default_headers)
+
+    custom_headers = response_headers(_custom, _curl=curl)
+    assert re.search(r"(?im)^Content-Type:\s*text/plain\s*$", custom_headers)

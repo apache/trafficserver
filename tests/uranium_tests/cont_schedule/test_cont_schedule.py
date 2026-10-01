@@ -18,7 +18,7 @@ from pathlib import Path
 
 import pytest
 
-from cont_schedule_scenario import ContScheduleScenario
+from cont_schedule_scenario import run_cont_schedule
 from tools.uranium.services import ATSFactory
 
 
@@ -40,12 +40,18 @@ def test_cont_schedule(
     gold_name: str,
     entire_pool_minimum: int | None,
 ) -> None:
-    """The continuation scheduling APIs run on their requested threads."""
+    """The continuation scheduling APIs run on their requested threads.
 
-    ContScheduleScenario(
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param mode: Mode used by this test step.
+    :param gold_name: Gold name used by this test step.
+    :param entire_pool_minimum: Entire pool minimum used by this test step.
+    """
+
+    run_cont_schedule(
         ats_factory,
         directory=Path(__file__).parent,
         mode=mode,
         gold_name=gold_name,
         entire_pool_minimum=entire_pool_minimum,
-    ).run()
+    )

@@ -19,19 +19,22 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-class BasicConfRemapScenario:
-    """Exercise valid and invalid conf_remap YAML overrides."""
+def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, *, use_yaml: bool) -> None:
+    """Exercise valid and invalid conf_remap YAML overrides.
 
-    _INVALID_RECORD = ("'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden")
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param use_yaml: Use yaml used by this test step.
+    """
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, *, use_yaml: bool) -> None:
-        self._ats_factory = ats_factory
-        self._curl = curl
-        self._use_yaml = use_yaml
-        self._origin = self.configure_origin(services)
+    __INVALID_RECORD = ("'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden")
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create the origin used by each successfully configured ATS."""
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the origin used by each successfully configured ATS.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         origin = services.origin("origin")
         origin.add_response(
@@ -46,10 +49,15 @@ class BasicConfRemapScenario:
         )
         return origin
 
-    def configure_ats(self, name: str, filename: str, content: str) -> ATS:
-        """Create one ATS instance with a conf_remap override file."""
+    def configure_ats(name: str, filename: str, content: str) -> ATS:
+        """Create one ATS instance with a conf_remap override file.
 
-        ats = self._ats_factory.create(name)
+        :param name: Unique service or case name within this test.
+        :param filename: Filename used by this test step.
+        :param content: Content used by this test step.
+        """
+
+        ats = ats_factory.create(name)
         if not ats.plugin_exists("conf_remap.so"):
             pytest.skip("conf_remap.so is required")
         ats.records.update(
@@ -62,13 +70,13 @@ class BasicConfRemapScenario:
             })
         ats.write_config_file(filename, content)
         parameter = ats.config_directory / filename
-        if self._use_yaml:
+        if use_yaml:
             ats.remap_yaml.add_lines(
                 [
                     "remap:",
                     "  - type: map",
                     "    from: {url: 'http://www.testexample.com/'}",
-                    f"    to: {{url: 'http://127.0.0.1:{self._origin.port}'}}",
+                    f"    to: {{url: 'http://127.0.0.1:{_origin.port}'}}",
                     "    plugins:",
                     "      - name: conf_remap.so",
                     "        params:",
@@ -76,58 +84,69 @@ class BasicConfRemapScenario:
                 ])
         else:
             ats.remap_config.add_line(
-                f"map http://www.testexample.com/ http://127.0.0.1:{self._origin.port} "
+                f"map http://www.testexample.com/ http://127.0.0.1:{_origin.port} "
                 f"@plugin=conf_remap.so @pparam={parameter}")
         return ats
 
-    def run_success(self, name: str, filename: str, content: str, warning: str = "") -> None:
-        """Start one valid configuration and verify it proxies a request."""
+    def run_success(name: str, filename: str, content: str, warning: str = "") -> None:
+        """Start one valid configuration and verify it proxies a request.
 
-        ats = self.configure_ats(name, filename, content)
+        :param name: Unique service or case name within this test.
+        :param filename: Filename used by this test step.
+        :param content: Content used by this test step.
+        :param warning: Warning used by this test step.
+        """
+
+        ats = configure_ats(name, filename, content)
         ats.start()
-        result = self._curl.get(ats, "/test", headers={"Host": "www.testexample.com"}, options=f"--verbose")
+        result = curl.get(ats, "/test", headers={"Host": "www.testexample.com"}, options=f"--verbose")
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.stderr, result.output
         if warning:
             assert warning in ats.diags_log.read_text(errors="replace")
         ats.stop()
 
-    def run_failure(self, name: str, filename: str, content: str, diagnostic: str) -> None:
-        """Start one invalid configuration and verify its fatal diagnostic."""
+    def run_failure(name: str, filename: str, content: str, diagnostic: str) -> None:
+        """Start one invalid configuration and verify its fatal diagnostic.
 
-        ats = self.configure_ats(name, filename, content)
+        :param name: Unique service or case name within this test.
+        :param filename: Filename used by this test step.
+        :param content: Content used by this test step.
+        :param diagnostic: Diagnostic used by this test step.
+        """
+
+        ats = configure_ats(name, filename, content)
         ats.expect_start_failure(diagnostic, 33)
         ats.start()
 
-    def run(self) -> None:
-        """Run the complete conf_remap validation matrix."""
+    _origin = configure_origin(services)
 
-        self._origin.start()
-        self.run_success(
-            "success",
-            "testexample_remap.yaml",
-            "records:\n  url_remap:\n    pristine_host_hdr: 1\n",
-        )
-        self.run_failure(
-            "type-mismatch",
-            "mismatch_field_type_remap.yaml",
-            "records:\n  url_remap:\n    pristine_host_hdr: !!float '1'\n",
-            "'proxy.config.url_remap.pristine_host_hdr' variable type mismatch",
-        )
-        self.run_failure(
-            "invalid-record",
-            "invalid_field_type_remap.yaml",
-            "records:\n  plugin:\n    dynamic_reload_mode: 1\n",
-            self._INVALID_RECORD,
-        )
-        self.run_success(
-            "mixed-records",
-            "testexample2_remap.yaml",
-            "records:\n  plugin:\n    dynamic_reload_mode: 1\n  url_remap:\n    pristine_host_hdr: 1\n",
-            self._INVALID_RECORD,
-        )
-        self.run_success(
-            "null-value",
-            "null_value_remap.yaml",
-            'records:\n  url_remap:\n    pristine_host_hdr: 1\n  hostdb:\n    ip_resolve: "NULL"\n',
-        )
+    _origin.start()
+    run_success(
+        "success",
+        "testexample_remap.yaml",
+        "records:\n  url_remap:\n    pristine_host_hdr: 1\n",
+    )
+    run_failure(
+        "type-mismatch",
+        "mismatch_field_type_remap.yaml",
+        "records:\n  url_remap:\n    pristine_host_hdr: !!float '1'\n",
+        "'proxy.config.url_remap.pristine_host_hdr' variable type mismatch",
+    )
+    run_failure(
+        "invalid-record",
+        "invalid_field_type_remap.yaml",
+        "records:\n  plugin:\n    dynamic_reload_mode: 1\n",
+        __INVALID_RECORD,
+    )
+    run_success(
+        "mixed-records",
+        "testexample2_remap.yaml",
+        "records:\n  plugin:\n    dynamic_reload_mode: 1\n  url_remap:\n    pristine_host_hdr: 1\n",
+        __INVALID_RECORD,
+    )
+    run_success(
+        "null-value",
+        "null_value_remap.yaml",
+        'records:\n  url_remap:\n    pristine_host_hdr: 1\n  hostdb:\n    ip_resolve: "NULL"\n',
+    )

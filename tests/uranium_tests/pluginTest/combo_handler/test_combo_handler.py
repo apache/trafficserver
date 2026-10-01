@@ -23,100 +23,112 @@ from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class ComboHandlerScenario:
-    """Fetch and combine origin assets through combo_handler."""
+def add_object(
+    origin: OriginServer,
+    content_type: str,
+    path: str,
+    cache_control: str = "public, max-age=31536000",
+) -> None:
+    """Add one cacheable object to the microserver.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        if not self._ats.plugin_exists("combo_handler.so"):
-            pytest.skip("combo_handler.so is not installed")
+    :param origin: Configured origin service.
+    :param content_type: Content type used by this test step.
+    :param path: Resource or file path used by this operation.
+    :param cache_control: Cache-Control response header value.
+    """
 
-    @staticmethod
-    def add_object(
-        origin: OriginServer,
-        content_type: str,
-        path: str,
-        cache_control: str = "public, max-age=31536000",
-    ) -> None:
-        """Add one cacheable object to the microserver."""
+    origin.add_response(
+        {"headers": f"GET {path} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n"},
+        {
+            "headers":
+                (
+                    "HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: \"359670651\"\r\n"
+                    f"Cache-Control: {cache_control}\r\nAccept-Ranges: bytes\r\nContent-Type: {content_type}\r\n\r\n"),
+            "body": f"Content for {path}\n",
+        },
+    )
 
-        origin.add_response(
-            {"headers": f"GET {path} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n"},
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: \"359670651\"\r\n"
-                        f"Cache-Control: {cache_control}\r\nAccept-Ranges: bytes\r\nContent-Type: {content_type}\r\n\r\n"),
-                "body": f"Content for {path}\n",
-            },
-        )
 
-    @classmethod
-    def configure_origin(cls, services: ServiceFactory) -> OriginServer:
-        """Create every asset used by the combo requests."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create every asset used by the combo requests.
 
-        origin = services.origin("origin")
-        cls.add_object(origin, "text/css ; charset=utf-8", "/obj1")
-        cls.add_object(origin, "text/javascript", "/sub/obj2")
-        cls.add_object(origin, "text/argh", "/obj3")
-        cls.add_object(origin, "application/javascript", "/obj4")
-        cls.add_object(origin, "application/javascript", "/s/assets/module:variant_v1.js")
-        cls.add_object(origin, "", "/obj_empty_ct")
-        cls.add_object(origin, "text/javascript", "/obj_priv_short", "private, max-age=60")
-        cls.add_object(origin, "text/javascript", "/obj_revalidate", "public, max-age=0")
-        return origin
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure the global and remap combo_handler instances."""
+    origin = services.origin("origin")
+    add_object(origin, "text/css ; charset=utf-8", "/obj1")
+    add_object(origin, "text/javascript", "/sub/obj2")
+    add_object(origin, "text/argh", "/obj3")
+    add_object(origin, "application/javascript", "/obj4")
+    add_object(origin, "application/javascript", "/s/assets/module:variant_v1.js")
+    add_object(origin, "", "/obj_empty_ct")
+    add_object(origin, "text/javascript", "/obj_priv_short", "private, max-age=60")
+    add_object(origin, "text/javascript", "/obj_revalidate", "public, max-age=0")
+    return origin
 
-        ats = ats_factory.create("ts", disable_log_checks=True)
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|combo_handler",
-        })
-        ats.plugin_config.add_line("combo_handler.so - - - ctwl.txt")
-        ats.remap_config.add_lines(
-            (
-                "map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so",
-                f"map http://localhost/127.0.0.1/ http://127.0.0.1:{self._origin.http_port}/",
-                f"map http://localhost/sub/ http://127.0.0.1:{self._origin.http_port}/sub/",
-                f"map http://localhost/s/ http://127.0.0.1:{self._origin.http_port}/s/",
-            ))
-        ats.copy_to_config(TEST_DIRECTORY / "ctwl.txt")
-        return ats
 
-    def request(self, query: str) -> str:
-        """Send one raw combo request and return its chunked response."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Configure the global and remap combo_handler instances.
 
-        return send_tcp(
-            self._ats.http_port,
-            f"GET /admin/v1/combo?{query} HTTP/1.1\nHost: xyz\nConnection: close\n\n",
-        )
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run(self) -> None:
-        """Verify type filtering, colon paths, and cache-control merging."""
+    ats = ats_factory.create("ts", disable_log_checks=True)
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "http|combo_handler",
+    })
+    ats.plugin_config.add_line("combo_handler.so - - - ctwl.txt")
+    ats.remap_config.add_lines(
+        (
+            "map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so",
+            f"map http://localhost/127.0.0.1/ http://127.0.0.1:{_origin.http_port}/",
+            f"map http://localhost/sub/ http://127.0.0.1:{_origin.http_port}/sub/",
+            f"map http://localhost/s/ http://127.0.0.1:{_origin.http_port}/s/",
+        ))
+    ats.copy_to_config(TEST_DIRECTORY / "ctwl.txt")
+    return ats
 
-        self._origin.start()
-        self._ats.start()
-        gold = TEST_DIRECTORY / "combo_handler_files"
-        cases = (
-            ("obj1&sub:obj2&obj3", "tr1.gold"),
-            ("obj1&sub:obj2&obj4", "tr2.gold"),
-            ("obj1&obj_empty_ct", "tr3.gold"),
-            ("obj1&obj_priv_short", "cache_control_aggregation.gold"),
-            ("obj1&obj_revalidate", "max_age_zero.gold"),
-        )
-        for query, filename in cases:
-            assert_matches_gold(self.request(query), gold / filename)
 
-        colon_response = self.request("s:assets/module:variant_v1.js")
-        assert "HTTP/1.1 200 OK" in colon_response
-        assert "Content for /s/assets/module:variant_v1.js" in colon_response
-        assert "ERROR" in self._ats.diags_log.read_text(errors="replace")
+def request(query: str, *, _ats: ATS) -> str:
+    """Send one raw combo request and return its chunked response.
+
+    :param _ats: Test-local ats configured by the test.
+    :param query: Query used by this test step.
+    """
+
+    return send_tcp(
+        _ats.http_port,
+        f"GET /admin/v1/combo?{query} HTTP/1.1\nHost: xyz\nConnection: close\n\n",
+    )
 
 
 def test_combo_handler(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """combo_handler combines only allowed objects and merges cache controls."""
+    """combo_handler combines only allowed objects and merges cache controls.
 
-    ComboHandlerScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+    if not _ats.plugin_exists("combo_handler.so"):
+        pytest.skip("combo_handler.so is not installed")
+
+    _origin.start()
+    _ats.start()
+    gold = TEST_DIRECTORY / "combo_handler_files"
+    cases = (
+        ("obj1&sub:obj2&obj3", "tr1.gold"),
+        ("obj1&sub:obj2&obj4", "tr2.gold"),
+        ("obj1&obj_empty_ct", "tr3.gold"),
+        ("obj1&obj_priv_short", "cache_control_aggregation.gold"),
+        ("obj1&obj_revalidate", "max_age_zero.gold"),
+    )
+    for query, filename in cases:
+        assert_matches_gold(request(query, _ats=_ats), gold / filename)
+
+    colon_response = request("s:assets/module:variant_v1.js", _ats=_ats)
+    assert "HTTP/1.1 200 OK" in colon_response
+    assert "Content for /s/assets/module:variant_v1.js" in colon_response
+    assert "ERROR" in _ats.diags_log.read_text(errors="replace")

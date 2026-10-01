@@ -14,173 +14,220 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import json
 import re
 import time
 
 from tools.uranium.services import ATS, ATSFactory, CommandResult
 
 
-class ConfigReloadScenario:
-    """Exercise traffic_ctl configuration reload scheduling and status output."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Enable RPC and configuration diagnostics for reload operations.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable RPC and configuration diagnostics for reload operations."""
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.udp.threads": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config",
+            "proxy.config.diags.debug.throttling_interval_msec": 0,
+        })
+    return ats
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
+
+def command(*arguments: str, expected: int | set[int] = 0, _ats: ATS) -> CommandResult:
+    """Run traffic_ctl and validate its exit status.
+
+    :param _ats: Test-local ats configured by the test.
+    :param expected: Expected result for this case.
+    :param arguments: Arguments used by this test step.
+    """
+
+    result = _ats.traffic_ctl(*arguments)
+    expected_codes = {expected} if isinstance(expected, int) else expected
+    assert result.returncode in expected_codes, result.output
+    return result
+
+
+def reload(*options: str, expected: int | set[int] = 0, _ats: ATS) -> CommandResult:
+    """Schedule one configuration reload.
+
+    :param _ats: Test-local ats configured by the test.
+    :param expected: Expected result for this case.
+    :param options: Options used by this test step.
+    """
+
+    return command("config", "reload", *options, expected=expected, _ats=_ats)
+
+
+def wait_for_reload(token: str, *, _ats: ATS) -> str:
+    """Poll a reload token until it reaches a terminal state.
+
+    :param _ats: Test-local ats configured by the test.
+    :param token: Token used by this test step.
+    """
+
+    deadline = time.monotonic() + 15
+    latest = {}
+    while time.monotonic() < deadline:
+        result = _ats.rpc(
             {
-                "proxy.config.udp.threads": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "rpc|config",
-                "proxy.config.diags.debug.throttling_interval_msec": 0,
+                "jsonrpc": "2.0",
+                "id": "reload-status",
+                "method": "get_reload_config_status",
+                "params": {
+                    "token": token
+                },
             })
-        return ats
+        assert result.returncode == 0, result.output
+        latest = json.loads(result.stdout)
+        assert "error" not in latest, latest
+        tasks = latest.get("result", {}).get("tasks", [])
+        # CLI summaries contain "0 success" even while the root is running.
+        if tasks and all(task["status"] in ("success", "fail", "timeout") for task in tasks):
+            assert all(task["status"] == "success" for task in tasks), latest
+            return command("config", "status", "--token", token, _ats=_ats).stdout
+        time.sleep(0.1)
+    raise AssertionError(f"Reload {token!r} did not finish:\n{latest}")
 
-    def command(self, *arguments: str, expected: int | set[int] = 0) -> CommandResult:
-        """Run traffic_ctl and validate its exit status."""
 
-        result = self._ats.traffic_ctl(*arguments)
-        expected_codes = {expected} if isinstance(expected, int) else expected
-        assert result.returncode in expected_codes, result.output
-        return result
+def verify_empty_status(*, _ats: ATS) -> None:
+    """Verify status diagnostics before any reload exists.
 
-    def reload(self, *options: str, expected: int | set[int] = 0) -> CommandResult:
-        """Schedule one configuration reload."""
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        return self.command("config", "reload", *options, expected=expected)
+    result = command("config", "status", expected={0, 2}, _ats=_ats)
+    assert "No reload tasks found" in result.output
+    assert "Code: 6005" in result.output
 
-    def wait_for_reload(self, token: str) -> str:
-        """Poll a reload token until it reaches a terminal state."""
+    result = command("config", "status", "--token", "test1", expected={0, 2}, _ats=_ats)
+    assert "Token 'test1' not found" in result.output
+    assert "Code: 6001" in result.output
 
-        deadline = time.monotonic() + 15
-        latest = ""
-        while time.monotonic() < deadline:
-            result = self.command("config", "status", "--token", token, expected={0, 2})
-            latest = result.output
-            if "success" in latest:
-                return latest
-            if "failed" in latest:
-                raise AssertionError(latest)
-            time.sleep(0.1)
-        raise AssertionError(f"Reload {token!r} did not finish:\n{latest}")
+    result = command("config", "status", "--count", "all", expected={0, 2}, _ats=_ats)
+    assert "No reload tasks found" in result.output
 
-    def verify_empty_status(self) -> None:
-        """Verify status diagnostics before any reload exists."""
+    result = command("config", "status", "--token", "test1", "--count", "all", expected={0, 2}, _ats=_ats)
+    assert "can't use both --token and --count" in result.output
+    assert "Token 'test1' not found" in result.output
 
-        result = self.command("config", "status", expected={0, 2})
-        assert "No reload tasks found" in result.output
-        assert "Code: 6005" in result.output
 
-        result = self.command("config", "status", "--token", "test1", expected={0, 2})
-        assert "Token 'test1' not found" in result.output
-        assert "Code: 6001" in result.output
+def verify_scheduling_and_tokens(*, _ats: ATS) -> None:
+    """Verify generated tokens, details, custom tokens, and duplicates.
 
-        result = self.command("config", "status", "--count", "all", expected={0, 2})
-        assert "No reload tasks found" in result.output
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        result = self.command("config", "status", "--token", "test1", "--count", "all", expected={0, 2})
-        assert "can't use both --token and --count" in result.output
-        assert "Token 'test1' not found" in result.output
+    result = reload(_ats=_ats)
+    assert "Reload scheduled" in result.stdout
+    match = re.search(r"Reload scheduled \[([^]]+)\]", result.stdout)
+    assert match is not None, result.stdout
+    generated_token = match.group(1)
+    assert f"traffic_ctl config reload -t {generated_token} -m" in result.stdout
+    assert f"traffic_ctl config reload -t {generated_token} -s -l" in result.stdout
+    wait_for_reload(generated_token, _ats=_ats)
 
-    def verify_scheduling_and_tokens(self) -> None:
-        """Verify generated tokens, details, custom tokens, and duplicates."""
+    result = reload("--token", "show-details", "--show-details", "--initial-wait", "0.1", _ats=_ats)
+    assert "Reload scheduled" in result.stdout
+    assert "Waiting for details" in result.stdout
+    assert "Reload [" in result.stdout
+    assert "Reload [success]" in wait_for_reload("show-details", _ats=_ats)
 
-        result = self.reload()
-        assert "Reload scheduled" in result.stdout
-        match = re.search(r"Reload scheduled \[([^]]+)\]", result.stdout)
-        assert match is not None, result.stdout
-        generated_token = match.group(1)
-        assert f"traffic_ctl config reload -t {generated_token} -m" in result.stdout
-        assert f"traffic_ctl config reload -t {generated_token} -s -l" in result.stdout
-        self.wait_for_reload(generated_token)
+    token = "testtoken_1234"
+    result = reload("--token", token, _ats=_ats)
+    assert f"Reload scheduled [{token}]" in result.stdout
+    wait_for_reload(token, _ats=_ats)
+    result = command("config", "status", "--token", token, _ats=_ats)
+    assert "success" in result.stdout
+    assert token in result.stdout
 
-        result = self.reload("--token", "show-details", "--show-details", "--initial-wait", "0.1")
-        assert "Reload scheduled" in result.stdout
-        assert "Waiting for details" in result.stdout
-        assert "Reload [success]" in result.stdout
+    result = reload("--token", token, expected=2, _ats=_ats)
+    assert f"Token '{token}' already in use" in result.stdout
+    assert f"traffic_ctl config status -t {token}" in result.stdout
 
-        token = "testtoken_1234"
-        result = self.reload("--token", token)
-        assert f"Reload scheduled [{token}]" in result.stdout
-        self.wait_for_reload(token)
-        result = self.command("config", "status", "--token", token)
-        assert "success" in result.stdout
-        assert token in result.stdout
 
-        result = self.reload("--token", token, expected=2)
-        assert f"Token '{token}' already in use" in result.stdout
-        assert f"traffic_ctl config status -t {token}" in result.stdout
+def verify_file_and_forced_reload(*, _ats: ATS) -> None:
+    """Verify changed-file details and a forced reload.
 
-    def verify_file_and_forced_reload(self) -> None:
-        """Verify changed-file details and a forced reload."""
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        (self._ats.config_directory / "ip_allow.yaml").touch()
-        token = "reload_ip_allow"
-        result = self.reload("--token", token, "--show-details", "--initial-wait", "0.1")
-        assert token in result.stdout
-        assert "success" in result.stdout
-        assert "ip_allow.yaml" in result.stdout
+    (_ats.config_directory / "ip_allow.yaml").touch()
+    token = "reload_ip_allow"
+    result = reload("--token", token, "--show-details", "--initial-wait", "0.1", _ats=_ats)
+    assert token in result.stdout
+    details = wait_for_reload(token, _ats=_ats)
+    assert "Reload [success]" in details
+    assert "ip_allow.yaml" in details
 
-        token = "force_reload"
-        result = self.reload("--force", "--token", token)
-        assert "Reload scheduled" in result.stdout
-        self.wait_for_reload(token)
+    token = "force_reload"
+    result = reload("--force", "--token", token, _ats=_ats)
+    assert "Reload scheduled" in result.stdout
+    wait_for_reload(token, _ats=_ats)
 
-    def verify_inline_data(self) -> None:
-        """Verify invalid inline and multi-key data do not leave a stuck task."""
 
-        result = self.reload("--force", "--data", "unknown_cfg: {foo: bar}", expected={0, 1, 2})
-        assert re.search(r"not registered|No configs were scheduled", result.output, re.IGNORECASE)
+def verify_inline_data(*, _ats: ATS) -> None:
+    """Verify invalid inline and multi-key data do not leave a stuck task.
 
-        token = "after_inline_test"
-        result = self.reload("--token", token)
-        assert f"Reload scheduled [{token}]" in result.stdout
-        self.wait_for_reload(token)
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        multi_config = self._ats.config_directory / "multi_test.yaml"
-        multi_config.write_text("config_a:\n  foo: bar\nconfig_b:\n  baz: qux\n")
-        result = self.reload("--force", "--data", f"@{multi_config}", expected={0, 1, 2})
-        assert re.search(r"not registered|No configs were scheduled|error", result.output, re.IGNORECASE)
+    result = reload("--force", "--data", "unknown_cfg: {foo: bar}", expected={0, 1, 2}, _ats=_ats)
+    assert re.search(r"not registered|No configs were scheduled", result.output, re.IGNORECASE)
 
-        result = self.reload("--force", "--data", "test_config: {key: value}", expected={0, 1, 2})
-        assert re.search(r"not registered|No configs were scheduled|scheduled", result.output, re.IGNORECASE)
+    token = "after_inline_test"
+    result = reload("--token", token, _ats=_ats)
+    assert f"Reload scheduled [{token}]" in result.stdout
+    wait_for_reload(token, _ats=_ats)
 
-    def verify_exit_codes(self) -> None:
-        """Verify successful, monitored, and duplicate-token exit codes."""
+    multi_config = _ats.config_directory / "multi_test.yaml"
+    multi_config.write_text("config_a:\n  foo: bar\nconfig_b:\n  baz: qux\n")
+    result = reload("--force", "--data", f"@{multi_config}", expected={0, 1, 2}, _ats=_ats)
+    assert re.search(r"not registered|No configs were scheduled|error", result.output, re.IGNORECASE)
 
-        token = "exit_code_ok"
-        self.reload("--token", token)
-        self.wait_for_reload(token)
+    result = reload("--force", "--data", "test_config: {key: value}", expected={0, 1, 2}, _ats=_ats)
+    assert re.search(r"not registered|No configs were scheduled|scheduled", result.output, re.IGNORECASE)
 
-        result = self.reload(
-            "--token",
-            "exit_code_monitor_ok",
-            "--monitor",
-            "--initial-wait",
-            "0.1",
-            "--refresh-int",
-            "0.1",
-            "--timeout",
-            "15s",
-        )
-        assert result.returncode == 0
-        self.reload("--token", token, expected=2)
 
-    def run(self) -> None:
-        """Run the complete configuration reload command matrix."""
+def verify_exit_codes(*, _ats: ATS) -> None:
+    """Verify successful, monitored, and duplicate-token exit codes.
 
-        self._ats.start()
-        self.verify_empty_status()
-        self.verify_scheduling_and_tokens()
-        self.verify_file_and_forced_reload()
-        self.verify_inline_data()
-        self.verify_exit_codes()
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    token = "exit_code_ok"
+    reload("--token", token, _ats=_ats)
+    wait_for_reload(token, _ats=_ats)
+
+    result = reload(
+        "--token",
+        "exit_code_monitor_ok",
+        "--monitor",
+        "--initial-wait",
+        "0.1",
+        "--refresh-int",
+        "0.1",
+        "--timeout",
+        "15s",
+        _ats=_ats)
+    assert result.returncode == 0
+    reload("--token", token, expected=2, _ats=_ats)
 
 
 def test_traffic_ctl_config_reload(ats_factory: ATSFactory) -> None:
-    """traffic_ctl reloads configs and reports stable status and exit codes."""
+    """traffic_ctl reloads configs and reports stable status and exit codes.
 
-    ConfigReloadScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    verify_empty_status(_ats=_ats)
+    verify_scheduling_and_tokens(_ats=_ats)
+    verify_file_and_forced_reload(_ats=_ats)
+    verify_inline_data(_ats=_ats)
+    verify_exit_codes(_ats=_ats)

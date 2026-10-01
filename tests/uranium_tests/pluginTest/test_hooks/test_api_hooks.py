@@ -32,98 +32,117 @@ from tools.uranium.services import (
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class ApiHooksScenario:
-    """Exercise HTTP and TLS hooks with strictly sequential client connections."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Serve the request used by each client protocol.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._hook_log = self._ats.log_directory / "log.txt"
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Serve the request used by each client protocol."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {
+            "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+            "body": ""
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {
-                "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-                "body": ""
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Load the hook test plugin on clear-text and TLS listeners."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Load the hook test plugin on clear-text and TLS listeners.
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.proxy_name": "Poxy_Proxy",
-                "proxy.config.url_remap.remap_required": 0,
-                "proxy.config.diags.debug.enabled": 0,
-                "proxy.config.diags.debug.tags": "http|test_hooks",
-            })
-        ats.copy_custom_plugin("{AtsTestPluginsDir}/test_hooks.so")
-        ats.plugin_config.add_line("test_hooks.so")
-        ats.remap_config.add_lines(
-            [
-                f"map http://one http://127.0.0.1:{self._origin.port}",
-                f"map https://one http://127.0.0.1:{self._origin.port}",
-            ])
-        ats.set_environment("OUTPUT_FILE", str(ats.log_directory / "log.txt"))
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def verify_response(result: CommandResult) -> None:
-        """Require a successful curl response without coupling to verbose formatting."""
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.proxy_name": "Poxy_Proxy",
+            "proxy.config.url_remap.remap_required": 0,
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http|test_hooks",
+        })
+    ats.copy_custom_plugin("{AtsTestPluginsDir}/test_hooks.so")
+    ats.plugin_config.add_line("test_hooks.so")
+    ats.remap_config.add_lines(
+        [
+            f"map http://one http://127.0.0.1:{_origin.port}",
+            f"map https://one http://127.0.0.1:{_origin.port}",
+        ])
+    ats.set_environment("OUTPUT_FILE", str(ats.log_directory / "log.txt"))
+    return ats
 
-        assert result.returncode == 0, result.output
-        assert "< HTTP/1.1 200" in result.stderr or "< HTTP/2 200" in result.stderr
 
-    def request_cleartext(self) -> None:
-        """Exercise the ordinary HTTP session and transaction hooks."""
+def verify_response(result: CommandResult) -> None:
+    """Require a successful curl response without coupling to verbose formatting.
 
-        result = self._curl.get(self._ats, "/argh", headers={"Host": "one"}, options=f"--verbose")
-        self.verify_response(result)
+    :param result: Completed command result to validate.
+    """
 
-    def request_tls(self) -> None:
-        """Exercise HTTP/2 and HTTP/1.1 TLS hooks on separate connections."""
+    assert result.returncode == 0, result.output
+    assert "< HTTP/1.1 200" in result.stderr or "< HTTP/2 200" in result.stderr
 
-        if self._curl.uses_uds:
-            return
-        if not self._curl.supports("http2"):
-            pytest.skip("curl with HTTP/2 support is required")
-        for version in ("--http2", "--http1.1"):
-            result = self._curl.run(
-                (
-                    f"--verbose --ipv4 '{version}' --insecure --header 'Host: one' "
-                    f"'https://127.0.0.1:{self._ats.https_port}/argh'"),)
-            self.verify_response(result)
 
-    def verify_hooks(self) -> None:
-        """Compare the complete ordered callback trace after close hooks run."""
+def request_cleartext(*, _ats: ATS, _curl: Curl) -> None:
+    """Exercise the ordinary HTTP session and transaction hooks.
 
-        expected_sessions = 1 if self._curl.uses_uds else 3
-        wait_for_file_lines(self._hook_log, r"^Session: event=TS_EVENT_HTTP_SSN_CLOSE$", expected_sessions)
-        gold = "log_uds.gold" if self._curl.uses_uds else "log.gold"
-        assert_matches_gold(self._hook_log.read_text(errors="replace"), TEST_DIRECTORY / gold)
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
 
-    def run(self) -> None:
-        """Start the services, run each protocol serially, and inspect the callback trace."""
+    result = _curl.get(_ats, "/argh", headers={"Host": "one"}, options=f"--verbose")
+    verify_response(result)
 
-        self._origin.start()
-        self._ats.start()
-        self.request_cleartext()
-        self.request_tls()
-        self.verify_hooks()
+
+def request_tls(*, _ats: ATS, _curl: Curl) -> None:
+    """Exercise HTTP/2 and HTTP/1.1 TLS hooks on separate connections.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    if _curl.uses_uds:
+        return
+    if not _curl.supports("http2"):
+        pytest.skip("curl with HTTP/2 support is required")
+    for version in ("--http2", "--http1.1"):
+        result = _curl.run(
+            (f"--verbose --ipv4 '{version}' --insecure --header 'Host: one' "
+             f"'https://127.0.0.1:{_ats.https_port}/argh'"),)
+        verify_response(result)
+
+
+def verify_hooks(*, _curl: Curl, _hook_log: Path) -> None:
+    """Compare the complete ordered callback trace after close hooks run.
+
+    :param _curl: Test-local curl configured by the test.
+    :param _hook_log: Test-local hook log configured by the test.
+    """
+
+    expected_sessions = 1 if _curl.uses_uds else 3
+    wait_for_file_lines(_hook_log, r"^Session: event=TS_EVENT_HTTP_SSN_CLOSE$", expected_sessions)
+    gold = "log_uds.gold" if _curl.uses_uds else "log.gold"
+    assert_matches_gold(_hook_log.read_text(errors="replace"), TEST_DIRECTORY / gold)
 
 
 def test_api_hooks(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Hook callbacks fire in the expected order for HTTP/1.1 and HTTP/2 sessions."""
+    """Hook callbacks fire in the expected order for HTTP/1.1 and HTTP/2 sessions.
 
-    ApiHooksScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+    _hook_log = _ats.log_directory / "log.txt"
+
+    _origin.start()
+    _ats.start()
+    request_cleartext(_ats=_ats, _curl=curl)
+    request_tls(_ats=_ats, _curl=curl)
+    verify_hooks(_curl=curl, _hook_log=_hook_log)

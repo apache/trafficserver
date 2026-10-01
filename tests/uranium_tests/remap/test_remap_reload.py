@@ -14,11 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from uranium_tests.remap.remap_reload import RemapReloadScenario
+from uranium_tests.remap.remap_reload import run_remap_reload
 from tools.uranium.services import ATSFactory, ServiceFactory
 
 
 def test_remap_reload(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A classic remap reload is atomic across rejected and accepted updates."""
+    """A classic remap reload is atomic across rejected and accepted updates.
 
-    RemapReloadScenario(ats_factory, services, use_yaml=False).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    run_remap_reload(ats_factory, services, use_yaml=False)

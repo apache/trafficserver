@@ -18,32 +18,29 @@
 from tools.uranium.services import ATS, ATSFactory
 
 
-class RemapLoadScenario:
-    """Verify the minimum-rule policy for an empty or missing remap file."""
+def run_remap_load(ats_factory: ATSFactory, *, use_yaml: bool, file_exists: bool, should_start: bool) -> None:
+    """Verify the minimum-rule policy for an empty or missing remap file.
 
-    def __init__(self, ats_factory: ATSFactory, *, use_yaml: bool, file_exists: bool, should_start: bool) -> None:
-        self._ats_factory = ats_factory
-        self._use_yaml = use_yaml
-        self._file_exists = file_exists
-        self._should_start = should_start
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param use_yaml: Use yaml used by this test step.
+    :param file_exists: File exists used by this test step.
+    :param should_start: Should start used by this test step.
+    """
 
-    def configure_ats(self) -> ATS:
+    def configure_ats() -> ATS:
         """Stage the selected remap file state and minimum-rule policy."""
 
-        ats = self._ats_factory.create("ts")
-        ats.records.update({"proxy.config.url_remap.min_rules_required": 0 if self._should_start else 1})
-        filename = "remap.yaml" if self._use_yaml else "remap.config"
-        if self._file_exists:
-            (ats.remap_yaml if self._use_yaml else ats.remap_config).add_line("")
+        ats = ats_factory.create("ts")
+        ats.records.update({"proxy.config.url_remap.min_rules_required": 0 if should_start else 1})
+        filename = "remap.yaml" if use_yaml else "remap.config"
+        if file_exists:
+            (ats.remap_yaml if use_yaml else ats.remap_config).add_line("")
         else:
             ats.omit_config_file(filename)
-        if not self._should_start:
+        if not should_start:
             ats.expect_start_failure(r"remap\.(?:yaml|config) failed to load")
         return ats
 
-    def run(self) -> None:
-        """Start ATS and assert whether the configured state is accepted."""
-
-        ats = self.configure_ats()
-        ats.start()
-        assert ats.is_running is self._should_start
+    ats = configure_ats()
+    ats.start()
+    assert ats.is_running is should_start

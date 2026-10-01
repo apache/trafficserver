@@ -23,82 +23,92 @@ from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceF
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class OriginServerAuthScenario:
-    """Verify origin_server_auth file parsing and GCP token configuration."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create successful responses for the S3 and GCP paths.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._rules = TEST_DIRECTORY / "rules" / "v4-parse-test.test_input"
-        self._token = next(
-            line.removeprefix("session_token=").strip()
-            for line in self._rules.read_text().splitlines()
-            if line.startswith("session_token="))
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        if not self._ats.plugin_exists("origin_server_auth.so"):
-            pytest.skip("origin_server_auth.so is required")
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create successful responses for the S3 and GCP paths."""
-
-        origin = services.origin("server")
-        for path in ("s3-bucket", "gcp"):
-            origin.add_response(
-                {"headers": f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
-                {
-                    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                    "body": "success!"
-                },
-            )
-        return origin
-
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure file-based AWS v4 and inline GCP authentication."""
-
-        ats = ats_factory.create("ts")
-        ats.records.update(
+    origin = services.origin("server")
+    for path in ("s3-bucket", "gcp"):
+        origin.add_response(
+            {"headers": f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
             {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.show_location": 0,
-                "proxy.config.diags.debug.tags": "origin_server_auth",
-            })
-        ats.copy_to_config(self._rules)
-        rules_path = ats.config_directory / self._rules.name
-        ats.remap_config.add_lines(
-            (
-                f"map http://www.example.com/s3-bucket http://127.0.0.1:{self._origin.port}/s3-bucket "
-                f"@plugin=origin_server_auth.so @pparam=--config @pparam={rules_path}",
-                f"map http://www.example.com/gcp http://127.0.0.1:{self._origin.port}/gcp "
-                f"@plugin=origin_server_auth.so @pparam=--access_key @pparam=1234567 "
-                f"@pparam=--session_token @pparam={self._token} @pparam=--version @pparam=gcpv1",
-            ))
-        return ats
-
-    def request(self, path: str) -> None:
-        """Request one authenticated origin path."""
-
-        result = self._curl.get(
-            self._ats,
-            f"/{path}",
-            headers={"Host": "www.example.com"},
-            options=f"--silent --verbose",
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": "success!"
+            },
         )
-        assert result.returncode == 0, result.output
-        assert "200 OK" in result.stderr
-        assert "Content-Length: 8" in result.stderr
+    return origin
 
-    def run(self) -> None:
-        """Exercise both configurations and compare the parsing diagnostics."""
 
-        self._origin.start()
-        self._ats.start()
-        self.request("s3-bucket")
-        self.request("gcp")
-        gold = "origin_server_auth_parsing_ts_uds.gold" if self._curl.uses_uds else "origin_server_auth_parsing_ts.gold"
-        assert_matches_gold(self._ats.traffic_out.read_text(errors="replace"), TEST_DIRECTORY / "gold" / gold)
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _rules: Path, _token: str) -> ATS:
+    """Configure file-based AWS v4 and inline GCP authentication.
+
+    :param _origin: Test-local origin configured by the test.
+    :param _rules: Test-local rules configured by the test.
+    :param _token: Test-local token configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.show_location": 0,
+            "proxy.config.diags.debug.tags": "origin_server_auth",
+        })
+    ats.copy_to_config(_rules)
+    rules_path = ats.config_directory / _rules.name
+    ats.remap_config.add_lines(
+        (
+            f"map http://www.example.com/s3-bucket http://127.0.0.1:{_origin.port}/s3-bucket "
+            f"@plugin=origin_server_auth.so @pparam=--config @pparam={rules_path}",
+            f"map http://www.example.com/gcp http://127.0.0.1:{_origin.port}/gcp "
+            f"@plugin=origin_server_auth.so @pparam=--access_key @pparam=1234567 "
+            f"@pparam=--session_token @pparam={_token} @pparam=--version @pparam=gcpv1",
+        ))
+    return ats
+
+
+def request(path: str, *, _ats: ATS, _curl: Curl) -> None:
+    """Request one authenticated origin path.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param path: Resource or file path used by this operation.
+    """
+
+    result = _curl.get(
+        _ats,
+        f"/{path}",
+        headers={"Host": "www.example.com"},
+        options=f"--silent --verbose",
+    )
+    assert result.returncode == 0, result.output
+    assert "200 OK" in result.stderr
+    assert "Content-Length: 8" in result.stderr
 
 
 def test_origin_server_auth(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """origin_server_auth parses long file values and inline GCP configuration."""
+    """origin_server_auth parses long file values and inline GCP configuration.
 
-    OriginServerAuthScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _rules = TEST_DIRECTORY / "rules" / "v4-parse-test.test_input"
+    _token = next(
+        line.removeprefix("session_token=").strip()
+        for line in _rules.read_text().splitlines()
+        if line.startswith("session_token="))
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin, _rules=_rules, _token=_token)
+    if not _ats.plugin_exists("origin_server_auth.so"):
+        pytest.skip("origin_server_auth.so is required")
+
+    _origin.start()
+    _ats.start()
+    request("s3-bucket", _ats=_ats, _curl=curl)
+    request("gcp", _ats=_ats, _curl=curl)
+    gold = "origin_server_auth_parsing_ts_uds.gold" if curl.uses_uds else "origin_server_auth_parsing_ts.gold"
+    assert_matches_gold(_ats.traffic_out.read_text(errors="replace"), TEST_DIRECTORY / "gold" / gold)

@@ -17,28 +17,24 @@
 from tools.uranium.services import ATS, ATSFactory
 
 
-class CppApiScenario:
-    """Run the C++ plugin API self-tests during plugin initialization."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Install and load the test_cppapi test plugin.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Install and load the test_cppapi test plugin."""
-
-        ats = ats_factory.create("ts")
-        ats.copy_custom_plugin("{AtsTestPluginsDir}/test_cppapi.so")
-        ats.plugin_config.add_line("test_cppapi.so")
-        return ats
-
-    def run(self) -> None:
-        """Start ATS and leave plugin diagnostics to fixture validation."""
-
-        self._ats.start()
-        assert self._ats.is_running
+    ats = ats_factory.create("ts")
+    ats.copy_custom_plugin("{AtsTestPluginsDir}/test_cppapi.so")
+    ats.plugin_config.add_line("test_cppapi.so")
+    return ats
 
 
 def test_cppapi(ats_factory: ATSFactory) -> None:
-    """The test_cppapi plugin initializes without a failed self-test."""
+    """The test_cppapi plugin initializes without a failed self-test.
 
-    CppApiScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    assert _ats.is_running

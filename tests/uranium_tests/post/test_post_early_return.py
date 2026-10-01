@@ -25,119 +25,136 @@ from tools.uranium.services import ATS, ATSFactory, Curl, ProcessService, Servic
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class PostEarlyReturnScenario:
-    """Exercise early origin responses while ATS is forwarding a POST body."""
+def configure_origins(services: ServiceFactory, *, _ports: list[int]) -> list[ProcessService]:
+    """Create one single-use early-response origin for each transaction.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        if curl.uses_uds:
-            pytest.skip("the raw delayed clients require a TCP listener")
-        if not Curl.supports("http2"):
-            pytest.skip("curl with HTTP/2 support is required")
-        if shutil.which("nc") is None:
-            pytest.skip("nc is required for the delayed POST clients")
-        self._services = services
-        self._curl = curl
-        self._ports = [services.allocate_port() for _ in range(6)]
-        self._origins = self.configure_origins(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param _ports: Test-local ports configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origins(self, services: ServiceFactory) -> list[ProcessService]:
-        """Create one single-use early-response origin for each transaction."""
-
-        mock_origin = TEST_DIRECTORY.parents[1] / "tools" / "mock_origin.py"
-        origins = []
-        for number, port in enumerate(self._ports, 1):
-            origins.append(
-                services.process(
-                    f"server{number}",
-                    (
-                        sys.executable,
-                        mock_origin,
-                        str(port),
-                        "--status",
-                        "420",
-                        "--reason",
-                        "Be Calm",
-                        "--output",
-                        f"outserver{number}",
-                    ),
-                    ready_port=port,
-                ))
-        return origins
-
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure TLS and route each case to its single-use origin."""
-
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 0,
-            "proxy.config.diags.debug.tags": "http",
-        })
-        for name, port in zip(("one", "two", "three", "four", "five", "six"), self._ports):
-            ats.remap_config.add_line(f"map /{name} http://127.0.0.1:{port}")
-        ats.ssl_multicert_config.add_lines(
-            (
-                "ssl_multicert:",
-                '  - dest_ip: "*"',
-                "    ssl_cert_name: server.pem",
-                "    ssl_key_name: server.key",
+    mock_origin = TEST_DIRECTORY.parents[1] / "tools" / "mock_origin.py"
+    origins = []
+    for number, port in enumerate(_ports, 1):
+        origins.append(
+            services.process(
+                f"server{number}",
+                (
+                    sys.executable,
+                    mock_origin,
+                    str(port),
+                    "--status",
+                    "420",
+                    "--reason",
+                    "Be Calm",
+                    "--output",
+                    f"outserver{number}",
+                ),
+                ready_port=port,
             ))
-        return ats
+    return origins
 
-    def run_curl_case(self, protocol: str, path: str, body: str) -> None:
-        """POST @a body with curl and require the early origin response."""
 
-        result = self._curl.run_for(
-            self._ats,
-            (
-                f"--verbose --output /dev/null '--{protocol}' --header Expect: --data '{body}' --insecure "
-                f"'https://127.0.0.1:{self._ats.https_port}/{path}'"),
-            timeout=30,
-        )
-        assert result.returncode == 0, result.output
-        expected = "HTTP/2 420" if protocol == "http2" else "HTTP/1.1 420 Be Calm"
-        assert expected in result.output
+def configure_ats(ats_factory: ATSFactory, *, _ports: list[int]) -> ATS:
+    """Configure TLS and route each case to its single-use origin.
 
-    def run_delayed_case(self, number: int, output_name: str) -> None:
-        """Run one raw client that pauses before completing its request body."""
+    :param _ports: Test-local ports configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-        output = self._ats.run_directory.parent / output_name
-        suffix = "" if number == 1 else str(number)
-        client = self._services.process(
-            f"client{number}",
-            (
-                "sh",
-                TEST_DIRECTORY / f"delay_client{suffix}.sh",
-                str(self._ats.http_port),
-                output,
-            ),
-        )
-        result = client.run(timeout=15)
-        assert result.returncode == 0, result.output
-        response = output.read_text(errors="replace")
-        assert "0123456789" not in response
-        assert "HTTP/1.1 420 Be Calm" in response
-        assert "Connection: close" in response
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 0,
+        "proxy.config.diags.debug.tags": "http",
+    })
+    for name, port in zip(("one", "two", "three", "four", "five", "six"), _ports):
+        ats.remap_config.add_line(f"map /{name} http://127.0.0.1:{port}")
+    ats.ssl_multicert_config.add_lines(
+        (
+            "ssl_multicert:",
+            '  - dest_ip: "*"',
+            "    ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ))
+    return ats
 
-    def run(self) -> None:
-        """Run ordinary and deliberately paused POST bodies against ATS."""
 
-        for origin in self._origins:
-            origin.start()
-        self._ats.start()
-        body = self._ats.run_directory.parent / "big_post_body"
-        body.write_text("0123456789" * 231070)
+def run_curl_case(protocol: str, path: str, body: str, *, _ats: ATS, _curl: Curl) -> None:
+    """POST @a body with curl and require the early origin response.
 
-        self.run_curl_case("http1.1", "one", "small body")
-        self.run_curl_case("http1.1", "two", f"@{body}")
-        self.run_curl_case("http2", "three", f"@{body}")
-        self.run_delayed_case(1, "clientout")
-        self.run_delayed_case(2, "clientout2")
-        self.run_delayed_case(3, "clientout3")
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param protocol: Protocol variant exercised by the test.
+    :param path: Resource or file path used by this operation.
+    :param body: HTTP message body.
+    """
+
+    result = _curl.run_for(
+        _ats,
+        (
+            f"--verbose --output /dev/null '--{protocol}' --header Expect: --data '{body}' --insecure "
+            f"'https://127.0.0.1:{_ats.https_port}/{path}'"),
+        timeout=30,
+    )
+    assert result.returncode == 0, result.output
+    expected = "HTTP/2 420" if protocol == "http2" else "HTTP/1.1 420 Be Calm"
+    assert expected in result.output
+
+
+def run_delayed_case(number: int, output_name: str, *, _ats: ATS, _services: ServiceFactory) -> None:
+    """Run one raw client that pauses before completing its request body.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param number: Number used by this test step.
+    :param output_name: Output name used by this test step.
+    """
+
+    output = _ats.run_directory.parent / output_name
+    suffix = "" if number == 1 else str(number)
+    client = _services.process(
+        f"client{number}",
+        (
+            "sh",
+            TEST_DIRECTORY / f"delay_client{suffix}.sh",
+            str(_ats.http_port),
+            output,
+        ),
+    )
+    result = client.run(timeout=15)
+    assert result.returncode == 0, result.output
+    response = output.read_text(errors="replace")
+    assert "0123456789" not in response
+    assert "HTTP/1.1 420 Be Calm" in response
+    assert "Connection: close" in response
 
 
 def test_post_early_return(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """ATS returns an early origin response without forwarding the remaining body."""
+    """ATS returns an early origin response without forwarding the remaining body.
 
-    PostEarlyReturnScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    if curl.uses_uds:
+        pytest.skip("the raw delayed clients require a TCP listener")
+    if not Curl.supports("http2"):
+        pytest.skip("curl with HTTP/2 support is required")
+    if shutil.which("nc") is None:
+        pytest.skip("nc is required for the delayed POST clients")
+    _ports = [services.allocate_port() for _ in range(6)]
+    _origins = configure_origins(services, _ports=_ports)
+    _ats = configure_ats(ats_factory, _ports=_ports)
+
+    for origin in _origins:
+        origin.start()
+    _ats.start()
+    body = _ats.run_directory.parent / "big_post_body"
+    body.write_text("0123456789" * 231070)
+
+    run_curl_case("http1.1", "one", "small body", _ats=_ats, _curl=curl)
+    run_curl_case("http1.1", "two", f"@{body}", _ats=_ats, _curl=curl)
+    run_curl_case("http2", "three", f"@{body}", _ats=_ats, _curl=curl)
+    run_delayed_case(1, "clientout", _ats=_ats, _services=services)
+    run_delayed_case(2, "clientout2", _ats=_ats, _services=services)
+    run_delayed_case(3, "clientout3", _ats=_ats, _services=services)

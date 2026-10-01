@@ -24,87 +24,97 @@ from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFacto
 
 TEST_DIRECTORY = Path(__file__).parent
 TEST_TOOLS = TEST_DIRECTORY.parents[2] / "tools"
+TRAFFIC_DUMP_IP_FILTER__server_replay = "replay/traffic_dump_ip_filter_server.yaml"
+
+TRAFFIC_DUMP_IP_FILTER__client_replay = "replay/traffic_dump.yaml"
 
 
-class TrafficDumpIpFilterScenario:
-    """Verify matching, non-matching, and invalid traffic_dump IPv4 filters."""
+def configure_server(services: ServiceFactory) -> VerifierServer:
+    """Create the common request origin.
 
-    _client_replay = "replay/traffic_dump.yaml"
-    _server_replay = "replay/traffic_dump_ip_filter_server.yaml"
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._services = services
-        self._server = self.configure_server(services)
-        self._cases = [
-            self.configure_case(ats_factory, "ts1", "127.0.0.1"),
-            self.configure_case(ats_factory, "ts2", "1.2.3.4"),
-            self.configure_case(ats_factory, "ts3", "this_is_not_a_valid_ip_string"),
-        ]
-        if not self._cases[0][0].plugin_exists("traffic_dump.so"):
-            pytest.skip("traffic_dump.so is required")
+    return services.verifier_server("server", TRAFFIC_DUMP_IP_FILTER__server_replay)
 
-    def configure_server(self, services: ServiceFactory) -> VerifierServer:
-        """Create the common request origin."""
 
-        return services.verifier_server("server", self._server_replay)
+def configure_case(ats_factory: ATSFactory, name: str, ip_filter: str, *, _server: VerifierServer) -> tuple[ATS, Path]:
+    """Configure one ATS instance with @a ip_filter.
 
-    def configure_case(self, ats_factory: ATSFactory, name: str, ip_filter: str) -> tuple[ATS, Path]:
-        """Configure one ATS instance with @a ip_filter."""
+    :param _server: Test-local server configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param name: Unique service or case name within this test.
+    :param ip_filter: Ip filter used by this test step.
+    """
 
-        ats = ats_factory.create(name)
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "traffic_dump",
-        })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}")
-        ats.plugin_config.add_line(f"traffic_dump.so --logdir {ats.log_directory} --sample 1 --limit 1000000000 -4 {ip_filter}")
-        return ats, ats.log_directory / "127" / "0000000000000000"
+    ats = ats_factory.create(name)
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "traffic_dump",
+    })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}")
+    ats.plugin_config.add_line(f"traffic_dump.so --logdir {ats.log_directory} --sample 1 --limit 1000000000 -4 {ip_filter}")
+    return ats, ats.log_directory / "127" / "0000000000000000"
 
-    def run_client(self, ats: ATS, number: int) -> ProcessService:
-        """Replay the filtered transaction through @a ats."""
 
-        client = self._services.verifier_client(f"client{number}", self._client_replay, http_ports=[ats.http_port], keys="1")
-        result = client.run()
-        assert result.returncode == 0, result.output
-        return client
+def run_client(ats: ATS, number: int, *, _services: ServiceFactory) -> ProcessService:
+    """Replay the filtered transaction through @a ats.
 
-    def run(self) -> None:
-        """Drive all filters and inspect the generated replay files and logs."""
+    :param _services: Test-local services configured by the test.
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param number: Number used by this test step.
+    """
 
-        self._server.start()
-        for ats, _ in self._cases:
-            ats.start()
-
-        matching, matching_dump = self._cases[0]
-        self.run_client(matching, 1)
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline and not matching_dump.is_file():
-            time.sleep(0.1)
-        assert matching_dump.is_file()
-        verify = matching.run(
-            sys.executable,
-            TEST_DIRECTORY / "verify_replay.py",
-            TEST_TOOLS / "lib" / "replay_schema.json",
-            matching_dump,
-        )
-        assert verify.returncode == 0, verify.output
-        assert "Filtering to only dump connections with ip: 127.0.0.1" in matching.traffic_out.read_text(errors="replace")
-
-        filtered, filtered_dump = self._cases[1]
-        self.run_client(filtered, 2)
-        time.sleep(0.5)
-        assert not filtered_dump.exists()
-        assert "Filtering to only dump connections with ip: 1.2.3.4" in filtered.traffic_out.read_text(errors="replace")
-
-        invalid, invalid_dump = self._cases[2]
-        self.run_client(invalid, 3)
-        time.sleep(0.5)
-        assert not invalid_dump.exists()
-        assert "Problems parsing IP filter address argument: this_is_not_a_valid_ip_string" in invalid.diags_log.read_text(
-            errors="replace")
+    client = _services.verifier_client(
+        f"client{number}", TRAFFIC_DUMP_IP_FILTER__client_replay, http_ports=[ats.http_port], keys="1")
+    result = client.run()
+    assert result.returncode == 0, result.output
+    return client
 
 
 def test_traffic_dump_ip_filter(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """traffic_dump filters IPv4 connections and rejects invalid filter text."""
+    """traffic_dump filters IPv4 connections and rejects invalid filter text.
 
-    TrafficDumpIpFilterScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _server = configure_server(services)
+    _cases = [
+        configure_case(ats_factory, "ts1", "127.0.0.1", _server=_server),
+        configure_case(ats_factory, "ts2", "1.2.3.4", _server=_server),
+        configure_case(ats_factory, "ts3", "this_is_not_a_valid_ip_string", _server=_server),
+    ]
+    if not _cases[0][0].plugin_exists("traffic_dump.so"):
+        pytest.skip("traffic_dump.so is required")
+
+    _server.start()
+    for ats, _ in _cases:
+        ats.start()
+
+    matching, matching_dump = _cases[0]
+    run_client(matching, 1, _services=services)
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline and not matching_dump.is_file():
+        time.sleep(0.1)
+    assert matching_dump.is_file()
+    verify = matching.run(
+        sys.executable,
+        TEST_DIRECTORY / "verify_replay.py",
+        TEST_TOOLS / "lib" / "replay_schema.json",
+        matching_dump,
+    )
+    assert verify.returncode == 0, verify.output
+    assert "Filtering to only dump connections with ip: 127.0.0.1" in matching.traffic_out.read_text(errors="replace")
+
+    filtered, filtered_dump = _cases[1]
+    run_client(filtered, 2, _services=services)
+    time.sleep(0.5)
+    assert not filtered_dump.exists()
+    assert "Filtering to only dump connections with ip: 1.2.3.4" in filtered.traffic_out.read_text(errors="replace")
+
+    invalid, invalid_dump = _cases[2]
+    run_client(invalid, 3, _services=services)
+    time.sleep(0.5)
+    assert not invalid_dump.exists()
+    assert "Problems parsing IP filter address argument: this_is_not_a_valid_ip_string" in invalid.diags_log.read_text(
+        errors="replace")

@@ -24,56 +24,63 @@ from tools.uranium.services import ATS, ATSFactory, HttpBinServer, ProcessServic
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class H2SpecScenario:
-    """Run the HTTP/2 conformance client against an ATS TLS listener."""
+def configure_origin(services: ServiceFactory) -> HttpBinServer:
+    """Serve the generic resources requested by h2spec.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> HttpBinServer:
-        """Serve the generic resources requested by h2spec."""
+    return services.httpbin("httpbin")
 
-        return services.httpbin("httpbin")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Expose an uncached TLS endpoint with Via headers enabled."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
+    """Expose an uncached TLS endpoint with Via headers enabled.
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        ats.records.update(
-            {
-                "proxy.config.http.insert_request_via_str": 1,
-                "proxy.config.http.insert_response_via_str": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-            })
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Select the generic, framing, stream, and HPACK conformance groups."""
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    ats.records.update(
+        {
+            "proxy.config.http.insert_request_via_str": 1,
+            "proxy.config.http.insert_response_via_str": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+        })
+    return ats
 
-        targets = ("generic", "http2/3", "http2/4", "http2/5", "http2/6", "http2/7", "http2/8", "hpack")
-        return services.process(
-            "h2spec",
-            ("h2spec", *targets, "-t", "-k", "--timeout", "10", "-p", str(self._ats.https_port)),
-        )
 
-    def run(self) -> None:
-        """Run the conformance suite and validate its summary and ATS diagnostics."""
+def configure_client(services: ServiceFactory, *, _ats: ATS) -> ProcessService:
+    """Select the generic, framing, stream, and HPACK conformance groups.
 
-        self._origin.start()
-        self._ats.start()
-        result = self._client.run(timeout=120)
-        assert_matches_gold(result.stdout, TEST_DIRECTORY / "gold" / "h2spec_stdout.gold")
-        assert "ERROR: HTTP/2" in self._ats.diags_log.read_text(errors="replace")
+    :param _ats: Test-local ats configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    targets = ("generic", "http2/3", "http2/4", "http2/5", "http2/6", "http2/7", "http2/8", "hpack")
+    return services.process(
+        "h2spec",
+        ("h2spec", *targets, "-t", "-k", "--timeout", "10", "-p", str(_ats.https_port)),
+    )
 
 
 def test_h2spec(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """ATS passes the selected h2spec conformance groups."""
+    """ATS passes the selected h2spec conformance groups.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
 
     if shutil.which("h2spec") is None:
         pytest.skip("h2spec is required")
-    H2SpecScenario(ats_factory, services).run()
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+    _client = configure_client(services, _ats=_ats)
+
+    _origin.start()
+    _ats.start()
+    result = _client.run(timeout=120)
+    assert_matches_gold(result.stdout, TEST_DIRECTORY / "gold" / "h2spec_stdout.gold")
+    assert "ERROR: HTTP/2" in _ats.diags_log.read_text(errors="replace")

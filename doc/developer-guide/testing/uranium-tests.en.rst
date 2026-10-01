@@ -55,9 +55,9 @@ The Uranium test runners use distinct filename conventions:
   etc.)
 - Replay-driven pytest files have a descriptive ``.test.yaml`` extension. The
   file is both the test registration and the Proxy Verifier replay.
-- Native scenarios use pytest's ``test_*.py`` convention. Prefer a scenario
-  class whose methods configure its server, ATS process, and client and whose
-  ``run()`` method names the ordered steps. Use this form only when a direct
+- Native scenarios use pytest's ``test_*.py`` convention. Prefer plain test
+  functions taking fixtures, with small helper functions for repeated setup.
+  Use this form only when a direct
   replay cannot express the required client, server, or runtime mutation.
 
 Running Uranium Tests
@@ -226,44 +226,37 @@ socket client, several ATS instances, or a configuration reload between
 requests. The fixtures in ``tests/tools/uranium`` own process cleanup, allocate
 ports, and isolate each item's files.
 
-Organize a procedural test around a scenario class. Give configuration and
-test phases descriptive method names, and make ``run()`` the obvious entry
-point:
+Write a plain ``test_*`` function whose signature lists its fixtures. Use
+small helper functions or fixtures for repeated setup; parametrization should
+express variations of the same behavior. A scenario class and a separate
+``run()`` entry point are not required. Classes remain useful for genuinely
+stateful protocol clients and services.
 
 .. code-block:: python
 
-   from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+   from tools.uranium.services import ATS, Curl, ServiceFactory
 
 
-   class ExampleScenario:
-       def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-           self._origin = self.configure_origin(services)
-           self._ats = self.configure_ats(ats_factory)
-           self._curl = curl
+   def test_example(ats: ATS, services: ServiceFactory, curl: Curl) -> None:
+       """Forward a request to the configured origin.
 
-       @staticmethod
-       def configure_origin(services: ServiceFactory) -> OriginServer:
-           origin = services.origin("origin")
-           origin.add_response(
-               {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
-               {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
-           )
-           return origin
+       :param ats: Isolated Traffic Server instance.
+       :param services: Factory owning the origin service.
+       :param curl: Transport-aware curl command runner.
+       """
+       origin = services.origin("origin")
+       origin.add_response(
+           {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+           {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+       )
+       ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
+       origin.start()
+       ats.start()
+       result = curl.get(ats, headers={"Host": "example.com"})
+       assert result.returncode == 0, result.output
 
-       def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-           ats = ats_factory.create("ats", enable_cache=False)
-           ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-           return ats
-
-       def run(self) -> None:
-           self._origin.start()
-           self._ats.start()
-           result = self._curl.get(self._ats, headers={"Host": "example.com"})
-           assert result.returncode == 0, result.output
-
-
-   def test_example(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-       ExampleScenario(ats_factory, services, curl).run()
+See :doc:`uranium-api.en` for fixture lifetimes, configuration methods,
+service APIs, assertions, and sandbox behavior.
 
 Use ``ServiceFactory.verifier_server()`` and
 ``ServiceFactory.verifier_client()`` when a procedural scenario still benefits

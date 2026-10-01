@@ -24,210 +24,240 @@ import pytest
 from tools.uranium.services import ProceduralContext
 
 
-class RunrootScenario:
-    """Exercise traffic_layout runroot creation, selection, verification, and removal."""
+def run(
+        *arguments: str | Path,
+        cwd: Path | None = None,
+        environment: dict[str, str] | None = None,
+        expected_return_codes: tuple[int, ...] = (0,),
+        _directory: Path,
+        _traffic_layout: Path) -> subprocess.CompletedProcess[str]:
+    """Run traffic_layout and return its captured output.
 
-    def __init__(self, context: ProceduralContext) -> None:
-        self._context = context
-        self._directory = context.run_directory
-        self._traffic_layout = context.runtime.ats_bin / "traffic_layout"
-        self._layout = context.runtime.layout
+    :param _directory: Test-local directory configured by the test.
+    :param _traffic_layout: Test-local traffic layout configured by the test.
+    :param cwd: Cwd used by this test step.
+    :param environment: Environment used by this test step.
+    :param expected_return_codes: Expected return codes for this case.
+    :param arguments: Arguments used by this test step.
+    """
 
-    def run(
-            self,
-            *arguments: str | Path,
-            cwd: Path | None = None,
-            environment: dict[str, str] | None = None,
-            expected_return_codes: tuple[int, ...] = (0,),
-    ) -> subprocess.CompletedProcess[str]:
-        """Run traffic_layout and return its captured output."""
+    result = subprocess.run(
+        [_traffic_layout, *(str(argument) for argument in arguments)],
+        cwd=cwd or _directory,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode in expected_return_codes, result.stdout + result.stderr
+    return result
 
-        result = subprocess.run(
-            [self._traffic_layout, *(str(argument) for argument in arguments)],
-            cwd=cwd or self._directory,
-            env=environment,
-            capture_output=True,
-            text=True,
-            timeout=60,
-            check=False,
-        )
-        assert result.returncode in expected_return_codes, result.stdout + result.stderr
-        return result
 
-    def init(self, path: Path, *, force: bool = False, cwd: Path | None = None) -> None:
-        """Create one runroot and verify its metadata file."""
+def init(path: Path, *, force: bool = False, cwd: Path | None = None, _directory: Path, _traffic_layout: Path) -> None:
+    """Create one runroot and verify its metadata file.
 
-        arguments = ["init"]
-        if force:
-            arguments.append("--force")
-        arguments.extend(["--path", path if path.is_absolute() else path.name])
-        self.run(*arguments, cwd=cwd)
-        resolved = path if path.is_absolute() else (cwd or self._directory) / path
-        assert (resolved / "runroot.yaml").is_file()
+    :param _directory: Test-local directory configured by the test.
+    :param _traffic_layout: Test-local traffic layout configured by the test.
+    :param path: Resource or file path used by this operation.
+    :param force: Force used by this test step.
+    :param cwd: Cwd used by this test step.
+    """
 
-    def require_prefix_layout(self) -> tuple[str, str]:
-        """Return prefix-relative bin and log directories or skip."""
+    arguments = ["init"]
+    if force:
+        arguments.append("--force")
+    arguments.extend(["--path", path if path.is_absolute() else path.name])
+    run(*arguments, cwd=cwd, _directory=_directory, _traffic_layout=_traffic_layout)
+    resolved = path if path.is_absolute() else (cwd or _directory) / path
+    assert (resolved / "runroot.yaml").is_file()
 
-        prefix = self._layout["PREFIX"]
-        bindir = self._layout["BINDIR"]
-        logdir = self._layout["LOGDIR"]
-        if not bindir.startswith(prefix):
-            pytest.skip("traffic_layout BINDIR must be below PREFIX")
-        bin_suffix = os.path.relpath(bindir, prefix)
-        log_suffix = os.path.relpath(logdir, prefix) if logdir.startswith(prefix) else logdir.lstrip("/")
-        return bin_suffix, log_suffix
 
-    def run_error_cases(self) -> None:
-        """Verify diagnostics for existing, nested, and invalid runroots."""
+def require_prefix_layout(*, _layout: dict[str, str]) -> tuple[str, str]:
+    """Return prefix-relative bin and log directories or skip.
 
-        path = self._directory / "runroot"
-        self.init(path)
-        result = self.run("init", "--path", path)
-        assert "Using existing runroot" in result.stdout + result.stderr
+    :param _layout: Test-local layout configured by the test.
+    """
 
-        nested = path / "runroot"
-        result = self.run("init", "--path", nested, expected_return_codes=(70,))
-        assert "Cannot create runroot inside another runroot" in result.stdout + result.stderr
-        assert not (nested / "runroot.yaml").exists()
-
-        invalid = self._directory / "missing"
-        result = self.run("remove", "--path", invalid, expected_return_codes=(0, 70))
-        assert "Unable to read" in result.stdout + result.stderr
-        result = self.run("verify", "--path", invalid, expected_return_codes=(0, 70))
-        assert "Unable to read" in result.stdout + result.stderr
-
-    def run_init_cases(self) -> None:
-        """Verify absolute, relative, current-directory, forced, and copied initialization."""
-
-        bin_suffix, _ = self.require_prefix_layout()
-        first = self._directory / "runroot1"
-        self.init(first)
-        self.init(Path("runroot2"), cwd=self._directory)
-
-        third = self._directory / "runroot3"
-        third.mkdir()
-        self.run("init", cwd=third)
-        assert (third / "runroot.yaml").is_file()
-
-        fourth = self._directory / "runroot4"
-        fourth.mkdir()
-        (fourth / "foo").touch()
-        self.init(fourth, force=True)
-
-        junk = first / bin_suffix / "junk"
-        junk.touch()
-        fifth = self._directory / "runroot5"
-        copied_layout = first / bin_suffix / "traffic_layout"
-        result = subprocess.run(
-            [copied_layout, "init", "--path", fifth],
-            capture_output=True,
-            text=True,
-            timeout=60,
-            check=False,
-        )
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert (fifth / "runroot.yaml").is_file()
-        assert junk.is_file()
-        assert not (fifth / bin_suffix / "junk").exists()
-
-    def run_remove_cases(self) -> None:
-        """Verify removal by absolute path, relative path, and current directory."""
-
-        paths = [self._directory / f"runroot{number}" for number in range(1, 4)]
-        for path in paths:
-            self.init(path)
-        self.run("remove", "--path", paths[0])
-        assert not paths[0].exists()
-        self.run("remove", "--path", paths[1].name, cwd=self._directory)
-        assert not paths[1].exists()
-        self.run("remove", cwd=paths[2])
-        assert paths[2].is_dir()
-        assert not (paths[2] / "runroot.yaml").exists()
-
-    def run_use_cases(self) -> None:
-        """Verify explicit, cwd, executable, and environment runroot discovery."""
-
-        bin_suffix, _ = self.require_prefix_layout()
-        first = self._directory / "runroot1"
-        second = self._directory / "runroot2"
-        self.init(first)
-        self.init(second)
-        assert f"PREFIX: {first}" in self.run("info", f"--run-root={first}").stdout
-        assert f"PREFIX: {first}" in self.run("info", cwd=first).stdout
-
-        copied_layout = first / bin_suffix / "traffic_layout"
-        result = subprocess.run([copied_layout, "info"], capture_output=True, text=True, timeout=60, check=False)
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert f"PREFIX: {first}" in result.stdout
-
-        environment = os.environ.copy()
-        environment["TS_RUNROOT"] = str(second)
-        assert f"PREFIX: {second}" in self.run("info", environment=environment).stdout
-
-    def run_verify_cases(self) -> None:
-        """Verify a runroot through both installed and copied executables."""
-
-        bin_suffix, log_suffix = self.require_prefix_layout()
-        path = self._directory / "runroot"
-        self.init(path)
-        runroot_yaml = path / "runroot.yaml"
-        runroot_yaml.write_text(
-            runroot_yaml.read_text().replace(
-                f"runtimedir: {self._layout['RUNTIMEDIR']}",
-                "runtimedir: ./var/trafficserver",
-            ))
-        # Initialization copies files as the invoking user, including any
-        # existing installed logs. Verify that user's permissions unchanged.
-        username = pwd.getpwuid(os.getuid()).pw_name
-        first = self.run("verify", "--path", path, "--with-user", username).stdout
-        for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
-            assert expected in first
-
-        copied_layout = path / bin_suffix / "traffic_layout"
-        result = subprocess.run(
-            [copied_layout, "verify", "--path", path, "--with-user", username],
-            cwd=path,
-            capture_output=True,
-            text=True,
-            timeout=60,
-            check=False,
-        )
-        assert result.returncode == 0, result.stdout + result.stderr
-        for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
-            assert expected in result.stdout
-
-        inaccessible = path / log_suffix / "unwritable.log"
-        inaccessible.touch(mode=0o400)
-        failed = self.run("verify", "--path", path, "--with-user", username, expected_return_codes=(70,))
-        assert "Write permission failed" in failed.stdout
-        assert str(inaccessible) in failed.stdout
+    prefix = _layout["PREFIX"]
+    bindir = _layout["BINDIR"]
+    logdir = _layout["LOGDIR"]
+    if not bindir.startswith(prefix):
+        pytest.skip("traffic_layout BINDIR must be below PREFIX")
+    bin_suffix = os.path.relpath(bindir, prefix)
+    log_suffix = os.path.relpath(logdir, prefix) if logdir.startswith(prefix) else logdir.lstrip("/")
+    return bin_suffix, log_suffix
 
 
 def test_runroot_errors(procedural_context: ProceduralContext) -> None:
-    """Invalid runroot operations report the expected diagnostics."""
+    """Invalid runroot operations report the expected diagnostics.
 
-    RunrootScenario(procedural_context).run_error_cases()
+    :param procedural_context: Procedural context used by this test step.
+    """
+    context = procedural_context
+    _directory = context.run_directory
+    _traffic_layout = context.runtime.ats_bin / "traffic_layout"
+    _layout = context.runtime.layout
+
+    path = _directory / "runroot"
+    init(path, _directory=_directory, _traffic_layout=_traffic_layout)
+    result = run("init", "--path", path, _directory=_directory, _traffic_layout=_traffic_layout)
+    assert "Using existing runroot" in result.stdout + result.stderr
+
+    nested = path / "runroot"
+    result = run("init", "--path", nested, expected_return_codes=(70,), _directory=_directory, _traffic_layout=_traffic_layout)
+    assert "Cannot create runroot inside another runroot" in result.stdout + result.stderr
+    assert not (nested / "runroot.yaml").exists()
+
+    invalid = _directory / "missing"
+    result = run("remove", "--path", invalid, expected_return_codes=(0, 70), _directory=_directory, _traffic_layout=_traffic_layout)
+    assert "Unable to read" in result.stdout + result.stderr
+    result = run("verify", "--path", invalid, expected_return_codes=(0, 70), _directory=_directory, _traffic_layout=_traffic_layout)
+    assert "Unable to read" in result.stdout + result.stderr
 
 
 def test_runroot_init(procedural_context: ProceduralContext) -> None:
-    """traffic_layout initializes runroots in all supported forms."""
+    """traffic_layout initializes runroots in all supported forms.
 
-    RunrootScenario(procedural_context).run_init_cases()
+    :param procedural_context: Procedural context used by this test step.
+    """
+    context = procedural_context
+    _directory = context.run_directory
+    _traffic_layout = context.runtime.ats_bin / "traffic_layout"
+    _layout = context.runtime.layout
+
+    bin_suffix, _ = require_prefix_layout(_layout=_layout)
+    first = _directory / "runroot1"
+    init(first, _directory=_directory, _traffic_layout=_traffic_layout)
+    init(Path("runroot2"), cwd=_directory, _directory=_directory, _traffic_layout=_traffic_layout)
+
+    third = _directory / "runroot3"
+    third.mkdir()
+    run("init", cwd=third, _directory=_directory, _traffic_layout=_traffic_layout)
+    assert (third / "runroot.yaml").is_file()
+
+    fourth = _directory / "runroot4"
+    fourth.mkdir()
+    (fourth / "foo").touch()
+    init(fourth, force=True, _directory=_directory, _traffic_layout=_traffic_layout)
+
+    junk = first / bin_suffix / "junk"
+    junk.touch()
+    fifth = _directory / "runroot5"
+    copied_layout = first / bin_suffix / "traffic_layout"
+    result = subprocess.run(
+        [copied_layout, "init", "--path", fifth],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (fifth / "runroot.yaml").is_file()
+    assert junk.is_file()
+    assert not (fifth / bin_suffix / "junk").exists()
 
 
 def test_runroot_remove(procedural_context: ProceduralContext) -> None:
-    """traffic_layout removes runroots selected in all supported forms."""
+    """traffic_layout removes runroots selected in all supported forms.
 
-    RunrootScenario(procedural_context).run_remove_cases()
+    :param procedural_context: Procedural context used by this test step.
+    """
+    context = procedural_context
+    _directory = context.run_directory
+    _traffic_layout = context.runtime.ats_bin / "traffic_layout"
+    _layout = context.runtime.layout
+
+    paths = [_directory / f"runroot{number}" for number in range(1, 4)]
+    for path in paths:
+        init(path, _directory=_directory, _traffic_layout=_traffic_layout)
+    run("remove", "--path", paths[0], _directory=_directory, _traffic_layout=_traffic_layout)
+    assert not paths[0].exists()
+    run("remove", "--path", paths[1].name, cwd=_directory, _directory=_directory, _traffic_layout=_traffic_layout)
+    assert not paths[1].exists()
+    run("remove", cwd=paths[2], _directory=_directory, _traffic_layout=_traffic_layout)
+    assert paths[2].is_dir()
+    assert not (paths[2] / "runroot.yaml").exists()
 
 
 def test_runroot_use(procedural_context: ProceduralContext) -> None:
-    """ATS discovers runroots from arguments, cwd, executables, and the environment."""
+    """ATS discovers runroots from arguments, cwd, executables, and the environment.
 
-    RunrootScenario(procedural_context).run_use_cases()
+    :param procedural_context: Procedural context used by this test step.
+    """
+    context = procedural_context
+    _directory = context.run_directory
+    _traffic_layout = context.runtime.ats_bin / "traffic_layout"
+    _layout = context.runtime.layout
+
+    bin_suffix, _ = require_prefix_layout(_layout=_layout)
+    first = _directory / "runroot1"
+    second = _directory / "runroot2"
+    init(first, _directory=_directory, _traffic_layout=_traffic_layout)
+    init(second, _directory=_directory, _traffic_layout=_traffic_layout)
+    assert f"PREFIX: {first}" in run("info", f"--run-root={first}", _directory=_directory, _traffic_layout=_traffic_layout).stdout
+    assert f"PREFIX: {first}" in run("info", cwd=first, _directory=_directory, _traffic_layout=_traffic_layout).stdout
+
+    copied_layout = first / bin_suffix / "traffic_layout"
+    result = subprocess.run([copied_layout, "info"], capture_output=True, text=True, timeout=60, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"PREFIX: {first}" in result.stdout
+
+    environment = os.environ.copy()
+    environment["TS_RUNROOT"] = str(second)
+    assert f"PREFIX: {second}" in run(
+        "info", environment=environment, _directory=_directory, _traffic_layout=_traffic_layout).stdout
 
 
 def test_runroot_verify(procedural_context: ProceduralContext) -> None:
-    """traffic_layout verifies a copied runroot successfully."""
+    """traffic_layout verifies a copied runroot successfully.
 
-    RunrootScenario(procedural_context).run_verify_cases()
+    :param procedural_context: Procedural context used by this test step.
+    """
+    context = procedural_context
+    _directory = context.run_directory
+    _traffic_layout = context.runtime.ats_bin / "traffic_layout"
+    _layout = context.runtime.layout
+
+    bin_suffix, log_suffix = require_prefix_layout(_layout=_layout)
+    path = _directory / "runroot"
+    init(path, _directory=_directory, _traffic_layout=_traffic_layout)
+    runroot_yaml = path / "runroot.yaml"
+    runroot_yaml.write_text(
+        runroot_yaml.read_text().replace(
+            f"runtimedir: {_layout['RUNTIMEDIR']}",
+            "runtimedir: ./var/trafficserver",
+        ))
+    # Initialization copies files as the invoking user, including any
+    # existing installed logs. Verify that user's permissions unchanged.
+    username = pwd.getpwuid(os.getuid()).pw_name
+    first = run("verify", "--path", path, "--with-user", username, _directory=_directory, _traffic_layout=_traffic_layout).stdout
+    for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
+        assert expected in first
+
+    copied_layout = path / bin_suffix / "traffic_layout"
+    result = subprocess.run(
+        [copied_layout, "verify", "--path", path, "--with-user", username],
+        cwd=path,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
+        assert expected in result.stdout
+
+    inaccessible = path / log_suffix / "unwritable.log"
+    inaccessible.touch(mode=0o400)
+    failed = run(
+        "verify",
+        "--path",
+        path,
+        "--with-user",
+        username,
+        expected_return_codes=(70,),
+        _directory=_directory,
+        _traffic_layout=_traffic_layout)
+    assert "Write permission failed" in failed.stdout
+    assert str(inaccessible) in failed.stdout

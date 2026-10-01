@@ -17,66 +17,79 @@
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
 
-class SplitDNSScenario:
-    """Verify a split DNS rule resolves its selected origin hostname."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve the hostname selected by splitdns.config.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._dns = self.configure_dns(services)
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_dns(self, services: ServiceFactory) -> DNSServer:
-        """Resolve the hostname selected by splitdns.config."""
+    dns = services.dns("dns")
+    dns.add_records({"foo.ts.a.o.": ["127.0.0.1"]})
+    return dns
 
-        dns = services.dns("dns")
-        dns.add_records({"foo.ts.a.o.": ["127.0.0.1"]})
-        return dns
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Configure the shared origin response."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Configure the shared origin response.
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"},
-        )
-        return origin
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure split and literal-address remap rules."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"},
+    )
+    return origin
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.dns.splitDNS.enabled": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "dns|splitdns",
-            })
-        ats.splitdns_config.add_line(f"dest_domain=foo.ts.a.o named=127.0.0.1:{self._dns.port}")
-        ats.remap_config.add_line(f"map /foo/ http://foo.ts.a.o:{self._origin.port}/")
-        ats.remap_config.add_line(f"map /bar/ http://127.0.0.1:{self._origin.port}/")
-        return ats
 
-    def request(self, path: str) -> None:
-        """Verify one remap path reaches the origin."""
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginServer) -> ATS:
+    """Configure split and literal-address remap rules.
 
-        result = self._curl.get(self._ats, path, options=f"--verbose")
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 200 OK" in result.output
-        assert "Server: ATS/" in result.output
+    :param _dns: Test-local dns configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run(self) -> None:
-        """Compare split-DNS and literal-address origin routing."""
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.dns.splitDNS.enabled": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "dns|splitdns",
+        })
+    ats.splitdns_config.add_line(f"dest_domain=foo.ts.a.o named=127.0.0.1:{_dns.port}")
+    ats.remap_config.add_line(f"map /foo/ http://foo.ts.a.o:{_origin.port}/")
+    ats.remap_config.add_line(f"map /bar/ http://127.0.0.1:{_origin.port}/")
+    return ats
 
-        self._dns.start()
-        self._origin.start()
-        self._ats.start()
-        self.request("/foo/")
-        self.request("/bar/")
+
+def request(path: str, *, _ats: ATS, _curl: Curl) -> None:
+    """Verify one remap path reaches the origin.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param path: Resource or file path used by this operation.
+    """
+
+    result = _curl.get(_ats, path, options=f"--verbose")
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 200 OK" in result.output
+    assert "Server: ATS/" in result.output
 
 
 def test_splitdns(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """splitdns.config selects its DNS server without affecting literal remaps."""
+    """splitdns.config selects its DNS server without affecting literal remaps.
 
-    SplitDNSScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _dns = configure_dns(services)
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _dns=_dns, _origin=_origin)
+
+    _dns.start()
+    _origin.start()
+    _ats.start()
+    request("/foo/", _ats=_ats, _curl=curl)
+    request("/bar/", _ats=_ats, _curl=curl)

@@ -22,72 +22,61 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory
 
 
-class ConfigDestroyThreadScenario:
-    """Wait for replaced configurations to be released on ET_TASK."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Enable configuration lifecycle diagnostics.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        """Configure the lifecycle scenario.
+    :param ats_factory: Factory that owns the ATS instance.
+    """
 
-        :param ats_factory: Factory that owns the ATS instance.
-        """
+    ats = ats_factory.create("ts")
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "config",
+    })
+    ats.remap_config.add_line("map / http://127.0.0.1:8080")
+    return ats
 
-        self._ats = self.configure_ats(ats_factory)
 
-    @staticmethod
-    def configure_ats(ats_factory: ATSFactory) -> ATS:
-        """Enable configuration lifecycle diagnostics.
+def replace_configurations(*, _ats: ATS) -> None:
+    """Replace parent and HTTP configurations through different threads.
 
-        :param ats_factory: Factory that owns the ATS instance.
-        """
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        ats = ats_factory.create("ts")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "config",
-        })
-        ats.remap_config.add_line("map / http://127.0.0.1:8080")
-        return ats
+    _ats.parent_config.path.touch()
+    reload_result = _ats.traffic_ctl(
+        "config",
+        "reload",
+        "-m",
+        "-t",
+        "config_destroy_thread",
+        "-w",
+        "1",
+        "-r",
+        "0.5",
+        "-T",
+        "30s",
+    )
+    assert reload_result.returncode == 0, reload_result.output
+    set_result = _ats.traffic_ctl(
+        "config",
+        "set",
+        "proxy.config.http.response_server_str",
+        "probe",
+    )
+    assert set_result.returncode == 0, set_result.output
 
-    def replace_configurations(self) -> None:
-        """Replace parent and HTTP configurations through different threads."""
 
-        self._ats.parent_config.path.touch()
-        reload_result = self._ats.traffic_ctl(
-            "config",
-            "reload",
-            "-m",
-            "-t",
-            "config_destroy_thread",
-            "-w",
-            "1",
-            "-r",
-            "0.5",
-            "-T",
-            "30s",
-        )
-        assert reload_result.returncode == 0, reload_result.output
-        set_result = self._ats.traffic_ctl(
-            "config",
-            "set",
-            "proxy.config.http.response_server_str",
-            "probe",
-        )
-        assert set_result.returncode == 0, set_result.output
+def verify_release_thread(*, _ats: ATS) -> None:
+    """Require ET_TASK destruction and reject ET_NET destruction.
 
-    def verify_release_thread(self) -> None:
-        """Require ET_TASK destruction and reject ET_NET destruction."""
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        time.sleep(80)
-        output = self._ats.traffic_out.read_text(errors="replace")
-        assert re.search(r"Destroyed config \d+ in \d+ ns on thread \[ET_TASK", output), output
-        assert re.search(r"Destroyed config \d+ in \d+ ns on thread \[ET_NET", output) is None, output
-
-    def run(self) -> None:
-        """Replace configurations and inspect their delayed destruction."""
-
-        self._ats.start()
-        self.replace_configurations()
-        self.verify_release_thread()
+    time.sleep(80)
+    output = _ats.traffic_out.read_text(errors="replace")
+    assert re.search(r"Destroyed config \d+ in \d+ ns on thread \[ET_TASK", output), output
+    assert re.search(r"Destroyed config \d+ in \d+ ns on thread \[ET_NET", output) is None, output
 
 
 @pytest.mark.manual(reason="takes over 60 seconds")
@@ -97,4 +86,8 @@ def test_config_destroy_thread(ats_factory: ATSFactory) -> None:
     :param ats_factory: Factory that owns the ATS instance.
     """
 
-    ConfigDestroyThreadScenario(ats_factory).run()
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    replace_configurations(_ats=_ats)
+    verify_release_thread(_ats=_ats)

@@ -30,99 +30,42 @@ ABORT_DETECTED = "proxy_closed_connection"
 ABORT_NOT_DETECTED = "proxy_kept_connection_open"
 
 
-class ClientAbortBeforeResponseScenario:
-    """Check whether ATS closes a delayed origin after its client leaves."""
+def configure_origin(services: ServiceFactory, port: int) -> ProcessService:
+    """Create the helper that observes whether ATS closes its connection.
 
-    def __init__(
-        self,
-        ats_factory: ATSFactory,
-        services: ServiceFactory,
-        curl: Curl,
-        *,
-        enable_tls: bool,
-        use_http2: bool,
-        allow_half_open: int,
-        expect_abort: bool,
-    ) -> None:
-        """Configure one client protocol and half-open policy.
+    :param services: Factory for bespoke support processes.
+    :param port: TCP port on which the origin listens.
+    """
 
-        :param ats_factory: Factory for isolated Traffic Server instances.
-        :param services: Factory for the delayed origin process.
-        :param curl: Transport-aware curl command runner.
-        :param enable_tls: Whether the client talks to ATS over TLS.
-        :param use_http2: Whether curl uses HTTP/2 rather than HTTP/1.1.
-        :param allow_half_open: Value for ``proxy.config.http.allow_half_open``.
-        :param expect_abort: Whether ATS should close the origin connection.
-        """
+    return services.process(
+        "origin",
+        (sys.executable, TEST_DIRECTORY / "abort_detecting_origin.py", str(port), "--delay", str(ORIGIN_DELAY_SECONDS)),
+        ready_port=port,
+    )
 
-        self._curl = curl
-        self._enable_tls = enable_tls
-        self._use_http2 = use_http2
-        origin_port = services.allocate_port()
-        self._origin = self.configure_origin(services, origin_port)
-        self._ats = self.configure_ats(ats_factory, origin_port, allow_half_open)
-        self._expect_abort = expect_abort
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory, port: int) -> ProcessService:
-        """Create the helper that observes whether ATS closes its connection.
+def configure_ats(ats_factory: ATSFactory, origin_port: int, allow_half_open: int, *, _enable_tls: bool) -> ATS:
+    """Configure ATS with the selected client and origin behavior.
 
-        :param services: Factory for bespoke support processes.
-        :param port: TCP port on which the origin listens.
-        """
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param origin_port: Port of the abort-detecting origin.
+    :param allow_half_open: Value for ``proxy.config.http.allow_half_open``.
 
-        return services.process(
-            "origin",
-            (sys.executable, TEST_DIRECTORY / "abort_detecting_origin.py", str(port), "--delay", str(ORIGIN_DELAY_SECONDS)),
-            ready_port=port,
-        )
+    :param _enable_tls: Test-local enable tls configured by the test.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory, origin_port: int, allow_half_open: int) -> ATS:
-        """Configure ATS with the selected client and origin behavior.
-
-        :param ats_factory: Factory for isolated Traffic Server instances.
-        :param origin_port: Port of the abort-detecting origin.
-        :param allow_half_open: Value for ``proxy.config.http.allow_half_open``.
-        """
-
-        ats = ats_factory.create("ts", enable_tls=self._enable_tls, enable_cache=True)
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.http.allow_half_open": allow_half_open,
-                "proxy.config.http.cache.required_headers": 0,
-            })
-        if self._enable_tls:
-            ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{origin_port}/")
-        return ats
-
-    def run(self) -> None:
-        """Abort curl, wait for the origin verdict, and validate it."""
-
-        if self._curl.uses_uds and self._enable_tls:
-            pytest.skip("TLS client-abort cases require a TCP listener")
-        if self._use_http2 and not self._curl.supports("http2"):
-            pytest.skip("curl HTTP/2 support is required")
-
-        self._origin.start()
-        self._ats.start()
-        scheme = "https" if self._enable_tls else "http"
-        port = self._ats.https_port if self._enable_tls else self._ats.http_port
-        version = "--http2" if self._use_http2 else ""
-        result = self._curl.run_script(
-            self._ats,
-            f"{{curl}} --silent --insecure --output /dev/null {version} --max-time {CLIENT_TIMEOUT_SECONDS} "
-            f"{scheme}://127.0.0.1:{port}/slow; sleep {ORIGIN_WAIT_SECONDS}",
-            timeout=ORIGIN_WAIT_SECONDS + 10,
-        )
-        assert result.returncode == 0, result.output
-        origin = self._origin.wait(timeout=5)
-        expected = ABORT_DETECTED if self._expect_abort else ABORT_NOT_DETECTED
-        unexpected = ABORT_NOT_DETECTED if self._expect_abort else ABORT_DETECTED
-        assert expected in origin.output, origin.output
-        assert unexpected not in origin.output, origin.output
+    ats = ats_factory.create("ts", enable_tls=_enable_tls, enable_cache=True)
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.http.allow_half_open": allow_half_open,
+            "proxy.config.http.cache.required_headers": 0,
+        })
+    if _enable_tls:
+        ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{origin_port}/")
+    return ats
 
 
 @pytest.mark.parametrize(
@@ -154,13 +97,29 @@ def test_client_abort_before_response(
     :param allow_half_open: Value for ``proxy.config.http.allow_half_open``.
     :param expect_abort: Whether ATS should close the origin connection.
     """
+    origin_port = services.allocate_port()
+    _origin = configure_origin(services, origin_port)
+    _ats = configure_ats(ats_factory, origin_port, allow_half_open, _enable_tls=enable_tls)
 
-    ClientAbortBeforeResponseScenario(
-        ats_factory,
-        services,
-        curl,
-        enable_tls=enable_tls,
-        use_http2=use_http2,
-        allow_half_open=allow_half_open,
-        expect_abort=expect_abort,
-    ).run()
+    if curl.uses_uds and enable_tls:
+        pytest.skip("TLS client-abort cases require a TCP listener")
+    if use_http2 and not curl.supports("http2"):
+        pytest.skip("curl HTTP/2 support is required")
+
+    _origin.start()
+    _ats.start()
+    scheme = "https" if enable_tls else "http"
+    port = _ats.https_port if enable_tls else _ats.http_port
+    version = "--http2" if use_http2 else ""
+    result = curl.run_script(
+        _ats,
+        f"{{curl}} --silent --insecure --output /dev/null {version} --max-time {CLIENT_TIMEOUT_SECONDS} "
+        f"{scheme}://127.0.0.1:{port}/slow; sleep {ORIGIN_WAIT_SECONDS}",
+        timeout=ORIGIN_WAIT_SECONDS + 10,
+    )
+    assert result.returncode == 0, result.output
+    origin = _origin.wait(timeout=5)
+    expected = ABORT_DETECTED if expect_abort else ABORT_NOT_DETECTED
+    unexpected = ABORT_NOT_DETECTED if expect_abort else ABORT_DETECTED
+    assert expected in origin.output, origin.output
+    assert unexpected not in origin.output, origin.output

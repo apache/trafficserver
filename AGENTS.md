@@ -128,10 +128,11 @@ DNS, server, client, and ATS setup, and pytest collects it without a companion
 `.test.py` wrapper. Run these with `cmake --build build -t urtest-replay`.
 
 If a direct replay test is not a good fit (say, the test needs a custom client), then
-organize the test around a test class with member functions that configure any
-servers, the ATS process, and the client. See
-`tests/uranium_tests/cache/test_host_down_range_recursion.py` for an example of a
-test organized around a scenario class and an explicit `run()` entry point.
+write a plain `test_*` function taking the fixtures it needs. Use small helper
+functions or fixtures for repeated setup, and parametrization for variations.
+Keep classes for genuinely stateful clients or services, not mandatory scenario
+wrappers. See `doc/developer-guide/testing/uranium-api.en.rst` for fixture and
+service APIs.
 
 In native tests, launch Python helpers with `sys.executable` rather than a
 hardcoded `python3`, so the helper uses the same interpreter as pytest.

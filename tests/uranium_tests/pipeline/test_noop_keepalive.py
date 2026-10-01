@@ -21,67 +21,78 @@ from tools.uranium.services import ATS, ATSFactory, CommandResult, ProcessServic
 
 TEST_DIRECTORY = Path(__file__).parent
 
+NOOP_KEEP_ALIVE__hostname = "www.example.com"
 
-class NoopKeepAliveScenario:
-    """Verify the NOOP body drain preserves the next request on the connection."""
 
-    _hostname = "www.example.com"
+def configure_origin(services: ServiceFactory, *, _origin_port: int) -> ProcessService:
+    """Start the purpose-built keep-alive origin.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin_port = services.allocate_port()
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param _origin_port: Test-local origin port configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> ProcessService:
-        """Start the purpose-built keep-alive origin."""
+    return services.process(
+        "origin",
+        (sys.executable, TEST_DIRECTORY / "desync_server.py", "127.0.0.1", str(_origin_port)),
+        ready_port=_origin_port,
+    )
 
-        return services.process(
-            "origin",
-            (sys.executable, TEST_DIRECTORY / "desync_server.py", "127.0.0.1", str(self._origin_port)),
-            ready_port=self._origin_port,
-        )
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable the cache path used by the DELETE self-response."""
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+    """Enable the cache path used by the DELETE self-response.
 
-        ats = ats_factory.create("ts", enable_cache=True)
-        ats.remap_config.add_line(f"map http://{self._hostname}/ http://127.0.0.1:{self._origin_port}/")
-        ats.records.update({"proxy.config.http.cache.http": 1})
-        return ats
+    :param _origin_port: Test-local origin port configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Send the DELETE and subsequent GET on one connection."""
+    ats = ats_factory.create("ts", enable_cache=True)
+    ats.remap_config.add_line(f"map http://{NOOP_KEEP_ALIVE__hostname}/ http://127.0.0.1:{_origin_port}/")
+    ats.records.update({"proxy.config.http.cache.http": 1})
+    return ats
 
-        return services.process(
-            "client",
-            (
-                sys.executable,
-                TEST_DIRECTORY / "noop_keepalive_client.py",
-                "127.0.0.1",
-                str(self._ats.http_port),
-                self._hostname,
-            ),
-        )
 
-    @staticmethod
-    def verify(result: CommandResult) -> None:
-        """Require the NOOP path and a successfully preserved next request."""
+def configure_client(services: ServiceFactory, *, _ats: ATS) -> ProcessService:
+    """Send the DELETE and subsequent GET on one connection.
 
-        assert result.returncode == 0, result.output
-        assert "DELETE_STATUS=404" in result.output
-        assert "SECOND_REQUEST_STATUS=200" in result.output
-        assert "KEEPALIVE_PRESERVED=yes" in result.output
+    :param _ats: Test-local ats configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def run(self) -> None:
-        """Start the topology and execute the custom client."""
+    return services.process(
+        "client",
+        (
+            sys.executable,
+            TEST_DIRECTORY / "noop_keepalive_client.py",
+            "127.0.0.1",
+            str(_ats.http_port),
+            NOOP_KEEP_ALIVE__hostname,
+        ),
+    )
 
-        self._origin.start()
-        self._ats.start()
-        self.verify(self._client.run(timeout=40))
+
+def verify(result: CommandResult) -> None:
+    """Require the NOOP path and a successfully preserved next request.
+
+    :param result: Completed command result to validate.
+    """
+
+    assert result.returncode == 0, result.output
+    assert "DELETE_STATUS=404" in result.output
+    assert "SECOND_REQUEST_STATUS=200" in result.output
+    assert "KEEPALIVE_PRESERVED=yes" in result.output
 
 
 def test_noop_keepalive(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A NOOP self-response drains exactly once and preserves keep-alive."""
+    """A NOOP self-response drains exactly once and preserves keep-alive.
 
-    NoopKeepAliveScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _origin_port = services.allocate_port()
+    _origin = configure_origin(services, _origin_port=_origin_port)
+    _ats = configure_ats(ats_factory, _origin_port=_origin_port)
+    _client = configure_client(services, _ats=_ats)
+
+    _origin.start()
+    _ats.start()
+    verify(_client.run(timeout=40))

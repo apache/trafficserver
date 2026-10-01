@@ -22,74 +22,89 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory, VerifierServer
 
 
-class H2OriginTrailersScenario:
-    """Verify HTTP/2 origin trailers are safe for both client protocols."""
+def configure_server(name: str, *, _replay: Path, _services: ServiceFactory) -> VerifierServer:
+    """Create an HTTP/2 TLS origin for one client-protocol case.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._ats_factory = ats_factory
-        self._services = services
-        self._directory = Path(__file__).parent
-        self._replay = self._directory / "h2_origin_trailers_h1.replay.yaml"
+    :param _replay: Test-local replay configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param name: Unique service or case name within this test.
+    """
 
-    def configure_server(self, name: str) -> VerifierServer:
-        """Create an HTTP/2 TLS origin for one client-protocol case."""
+    return _services.verifier_server(name, _replay)
 
-        return self._services.verifier_server(name, self._replay)
 
-    def configure_ats(self, name: str, server: VerifierServer) -> ATS:
-        """Configure ATS to negotiate HTTP/2 with the origin."""
+def configure_ats(name: str, server: VerifierServer, *, _ats_factory: ATSFactory) -> ATS:
+    """Configure ATS to negotiate HTTP/2 with the origin.
 
-        ats = self._ats_factory.create(name, enable_tls=True, enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http|http2",
-                "proxy.config.exec_thread.autoconfig.enabled": 0,
-                "proxy.config.exec_thread.limit": 1,
-                "proxy.config.http.server_session_sharing.pool": "thread",
-                "proxy.config.http.server_session_sharing.match": "ip,sni,cert",
-                "proxy.config.ssl.client.alpn_protocols": "h2,http/1.1",
-                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-            })
-        ats.remap_config.add_line(f"map / https://127.0.0.1:{server.https_port}")
-        return ats
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param name: Unique service or case name within this test.
+    :param server: Server used by this test.
+    """
 
-    def configure_h1_client(self, ats: ATS) -> ProcessService:
-        """Create the raw client that detects trailers after the terminal chunk."""
+    ats = _ats_factory.create(name, enable_tls=True, enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|http2",
+            "proxy.config.exec_thread.autoconfig.enabled": 0,
+            "proxy.config.exec_thread.limit": 1,
+            "proxy.config.http.server_session_sharing.pool": "thread",
+            "proxy.config.http.server_session_sharing.match": "ip,sni,cert",
+            "proxy.config.ssl.client.alpn_protocols": "h2,http/1.1",
+            "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+        })
+    ats.remap_config.add_line(f"map / https://127.0.0.1:{server.https_port}")
+    return ats
 
-        return self._services.process(
-            "h1-client",
-            [sys.executable, self._directory / "h1_trailer_client.py", "127.0.0.1",
-             str(ats.http_port)],
-        )
 
-    def configure_h2_client(self, ats: ATS) -> ProcessService:
-        """Create a verifier client that expects the HTTP/2 trailer."""
+def configure_h1_client(ats: ATS, *, _directory: Path, _services: ServiceFactory) -> ProcessService:
+    """Create the raw client that detects trailers after the terminal chunk.
 
-        return self._services.verifier_client("h2-client", self._replay, https_ports=[ats.https_port])
+    :param _directory: Test-local directory configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param ats: Traffic Server instance configured or queried by this step.
+    """
 
-    def run(self) -> None:
-        """Run the HTTP/1 and HTTP/2 client cases against separate ATS instances."""
+    return _services.process(
+        "h1-client",
+        [sys.executable, _directory / "h1_trailer_client.py", "127.0.0.1",
+         str(ats.http_port)],
+    )
 
-        if not self._services.proxy_verifier_at_least("2.8.0"):
-            pytest.skip("Proxy Verifier 2.8.0 or newer is required")
 
-        h1_server = self.configure_server("h2-origin-h1")
-        h1_ats = self.configure_ats("ts-h1", h1_server)
-        h1_server.start()
-        h1_ats.start()
-        h1_result = self.configure_h1_client(h1_ats).run()
-        assert "No H2 origin trailers were forwarded to the HTTP/1 client." in h1_result.stdout
+def configure_h2_client(ats: ATS, *, _replay: Path, _services: ServiceFactory) -> ProcessService:
+    """Create a verifier client that expects the HTTP/2 trailer.
 
-        h2_server = self.configure_server("h2-origin-h2")
-        h2_ats = self.configure_ats("ts-h2", h2_server)
-        h2_server.start()
-        h2_ats.start()
-        h2_result = self.configure_h2_client(h2_ats).run()
-        assert "x-ats-h2-trailer: smuggled" in h2_result.output
+    :param _replay: Test-local replay configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param ats: Traffic Server instance configured or queried by this step.
+    """
+
+    return _services.verifier_client("h2-client", _replay, https_ports=[ats.https_port])
 
 
 def test_h2_origin_trailers_h1(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """HTTP/2 origin trailers are protocol-correct for HTTP/1 and HTTP/2 clients."""
+    """HTTP/2 origin trailers are protocol-correct for HTTP/1 and HTTP/2 clients.
 
-    H2OriginTrailersScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _directory = Path(__file__).parent
+    _replay = _directory / "h2_origin_trailers_h1.replay.yaml"
+
+    if not services.proxy_verifier_at_least("2.8.0"):
+        pytest.skip("Proxy Verifier 2.8.0 or newer is required")
+
+    h1_server = configure_server("h2-origin-h1", _replay=_replay, _services=services)
+    h1_ats = configure_ats("ts-h1", h1_server, _ats_factory=ats_factory)
+    h1_server.start()
+    h1_ats.start()
+    h1_result = configure_h1_client(h1_ats, _directory=_directory, _services=services).run()
+    assert "No H2 origin trailers were forwarded to the HTTP/1 client." in h1_result.stdout
+
+    h2_server = configure_server("h2-origin-h2", _replay=_replay, _services=services)
+    h2_ats = configure_ats("ts-h2", h2_server, _ats_factory=ats_factory)
+    h2_server.start()
+    h2_ats.start()
+    h2_result = configure_h2_client(h2_ats, _replay=_replay, _services=services).run()
+    assert "x-ats-h2-trailer: smuggled" in h2_result.output

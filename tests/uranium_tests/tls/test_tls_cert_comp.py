@@ -23,97 +23,121 @@ from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFacto
 REPLAY_FILE = Path(__file__).parent / "replay" / "tls_cert_compression.replay.yaml"
 
 
-class CertificateCompressionScenario:
-    """Negotiate RFC 8879 compression between edge and mid-tier ATS."""
+def configure_server(algorithm: str, *, _services: ServiceFactory) -> VerifierServer:
+    """Create the clear-text verifier origin.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._ats_factory = ats_factory
-        self._services = services
-        if not ats_factory.has_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS"):
-            pytest.skip("ATS was built without certificate compression callbacks")
+    :param _services: Test-local services configured by the test.
+    :param algorithm: Algorithm used by this test step.
+    """
 
-    def configure_server(self, algorithm: str) -> VerifierServer:
-        """Create the clear-text verifier origin."""
+    return _services.verifier_server(f"server-{algorithm}", REPLAY_FILE)
 
-        return self._services.verifier_server(f"server-{algorithm}", REPLAY_FILE)
 
-    def configure_mid(self, algorithm: str, server: VerifierServer) -> ATS:
-        """Configure the TLS server that compresses its certificate."""
+def configure_mid(algorithm: str, server: VerifierServer, *, _ats_factory: ATSFactory) -> ATS:
+    """Configure the TLS server that compresses its certificate.
 
-        ats = self._ats_factory.create(f"mid-{algorithm}", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}/")
-        ats.records.update(
-            {
-                "proxy.config.ssl.server.cert_compression.algorithms": algorithm,
-                "proxy.config.ssl.server.cert_compression.cache": 0,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "ssl_cert_compress",
-            })
-        return ats
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param algorithm: Algorithm used by this test step.
+    :param server: Server used by this test.
+    """
 
-    def configure_edge(self, algorithm: str, mid: ATS) -> ATS:
-        """Configure the TLS client that decompresses the mid-tier certificate."""
+    ats = _ats_factory.create(f"mid-{algorithm}", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}/")
+    ats.records.update(
+        {
+            "proxy.config.ssl.server.cert_compression.algorithms": algorithm,
+            "proxy.config.ssl.server.cert_compression.cache": 0,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_cert_compress",
+        })
+    return ats
 
-        ats = self._ats_factory.create(f"edge-{algorithm}", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / https://127.0.0.1:{mid.https_port}/")
-        ats.records.update(
-            {
-                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-                "proxy.config.ssl.client.cert_compression.algorithms": algorithm,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "ssl_cert_compress",
-            })
-        return ats
 
-    def configure_client(self, algorithm: str, edge: ATS) -> ProcessService:
-        """Create the verifier client that drives one exchange."""
+def configure_edge(algorithm: str, mid: ATS, *, _ats_factory: ATSFactory) -> ATS:
+    """Configure the TLS client that decompresses the mid-tier certificate.
 
-        return self._services.verifier_client(
-            f"client-{algorithm}",
-            REPLAY_FILE,
-            http_ports=[edge.http_port],
-        )
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param algorithm: Algorithm used by this test step.
+    :param mid: Mid used by this test step.
+    """
 
-    @staticmethod
-    def metric(ats: ATS, name: str) -> int:
-        """Read one integer ATS metric."""
+    ats = _ats_factory.create(f"edge-{algorithm}", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / https://127.0.0.1:{mid.https_port}/")
+    ats.records.update(
+        {
+            "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            "proxy.config.ssl.client.cert_compression.algorithms": algorithm,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_cert_compress",
+        })
+    return ats
 
-        result = ats.traffic_ctl("metric", "get", name)
-        assert result.returncode == 0, result.output
-        return int(result.stdout.split()[-1])
 
-    def run_algorithm(self, algorithm: str) -> None:
-        """Run one compression algorithm and verify success metrics."""
+def configure_client(algorithm: str, edge: ATS, *, _services: ServiceFactory) -> ProcessService:
+    """Create the verifier client that drives one exchange.
 
-        server = self.configure_server(algorithm)
-        mid = self.configure_mid(algorithm, server)
-        edge = self.configure_edge(algorithm, mid)
-        client = self.configure_client(algorithm, edge)
-        server.start()
-        mid.start()
-        edge.start()
-        client.run()
+    :param _services: Test-local services configured by the test.
+    :param algorithm: Algorithm used by this test step.
+    :param edge: Edge used by this test step.
+    """
 
-        assert self.metric(mid, f"proxy.process.ssl.cert_compress.{algorithm}") == 1
-        assert self.metric(edge, f"proxy.process.ssl.cert_decompress.{algorithm}") == 1
-        assert self.metric(mid, f"proxy.process.ssl.cert_compress.{algorithm}_failure") == 0
-        assert self.metric(edge, f"proxy.process.ssl.cert_decompress.{algorithm}_failure") == 0
+    return _services.verifier_client(
+        f"client-{algorithm}",
+        REPLAY_FILE,
+        http_ports=[edge.http_port],
+    )
 
-    def run(self) -> None:
-        """Exercise every compression algorithm compiled into ATS."""
 
-        algorithms = ["zlib"]
-        if self._ats_factory.has_feature("TS_HAS_BROTLI"):
-            algorithms.append("brotli")
-        if self._ats_factory.has_feature("TS_HAS_ZSTD"):
-            algorithms.append("zstd")
-        for algorithm in algorithms:
-            self.run_algorithm(algorithm)
+def metric(ats: ATS, name: str) -> int:
+    """Read one integer ATS metric.
+
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param name: Unique service or case name within this test.
+    """
+
+    result = ats.traffic_ctl("metric", "get", name)
+    assert result.returncode == 0, result.output
+    return int(result.stdout.split()[-1])
+
+
+def run_algorithm(algorithm: str, *, _ats_factory: ATSFactory, _services: ServiceFactory) -> None:
+    """Run one compression algorithm and verify success metrics.
+
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param algorithm: Algorithm used by this test step.
+    """
+
+    server = configure_server(algorithm, _services=_services)
+    mid = configure_mid(algorithm, server, _ats_factory=_ats_factory)
+    edge = configure_edge(algorithm, mid, _ats_factory=_ats_factory)
+    client = configure_client(algorithm, edge, _services=_services)
+    server.start()
+    mid.start()
+    edge.start()
+    client.run()
+
+    assert metric(mid, f"proxy.process.ssl.cert_compress.{algorithm}") == 1
+    assert metric(edge, f"proxy.process.ssl.cert_decompress.{algorithm}") == 1
+    assert metric(mid, f"proxy.process.ssl.cert_compress.{algorithm}_failure") == 0
+    assert metric(edge, f"proxy.process.ssl.cert_decompress.{algorithm}_failure") == 0
 
 
 def test_tls_cert_comp(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Edge and mid-tier ATS negotiate every supported certificate compressor."""
+    """Edge and mid-tier ATS negotiate every supported certificate compressor.
 
-    CertificateCompressionScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    if not ats_factory.has_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS"):
+        pytest.skip("ATS was built without certificate compression callbacks")
+
+    algorithms = ["zlib"]
+    if ats_factory.has_feature("TS_HAS_BROTLI"):
+        algorithms.append("brotli")
+    if ats_factory.has_feature("TS_HAS_ZSTD"):
+        algorithms.append("zstd")
+    for algorithm in algorithms:
+        run_algorithm(algorithm, _ats_factory=ats_factory, _services=services)

@@ -23,110 +23,90 @@ from tools.uranium.services import ATS, ATSFactory, Curl
 OBJECT_BYTES = 102_400
 
 
-class BigObjectPushScenario:
-    """PUSH a large object and retrieve it across client protocols."""
+def write_push_file(run_directory: Path) -> Path:
+    """Write the embedded HTTP response consumed by the PUSH method.
 
-    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
-        """Configure the PUSH scenario.
+    :param run_directory: Scenario directory in which to create the body.
+    """
 
-        :param ats_factory: Factory that owns the two ATS instances.
-        :param curl: Curl client used for PUSH and retrieval requests.
-        """
+    header = f"HTTP/1.1 200 OK\r\nContent-length: {OBJECT_BYTES}\r\n\r\n"
+    path = run_directory / "objfile"
+    path.write_text(header + ("x" * OBJECT_BYTES))
+    return path
 
-        if not Curl.supports("http2"):
-            pytest.skip("curl HTTP/2 support is required")
-        self._curl = curl
-        self._push_file = self.write_push_file(ats_factory.run_directory)
-        self._enabled = self.configure_ats(ats_factory, "ts1", push_enabled=True)
-        self._disabled = self.configure_ats(ats_factory, "ts2", push_enabled=False)
 
-    def write_push_file(self, run_directory: Path) -> Path:
-        """Write the embedded HTTP response consumed by the PUSH method.
+def configure_ats(ats_factory: ATSFactory, name: str, *, push_enabled: bool, _curl: Curl) -> ATS:
+    """Configure one cache with PUSH either enabled or disabled.
 
-        :param run_directory: Scenario directory in which to create the body.
-        """
+    :param ats_factory: Factory that owns the new ATS instance.
+    :param name: Unique process name for the ATS instance.
+    :param push_enabled: Whether ATS accepts the PUSH method.
 
-        header = f"HTTP/1.1 200 OK\r\nContent-length: {OBJECT_BYTES}\r\n\r\n"
-        path = run_directory / "objfile"
-        path.write_text(header + ("x" * OBJECT_BYTES))
-        return path
+    :param _curl: Test-local curl configured by the test.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory, name: str, *, push_enabled: bool) -> ATS:
-        """Configure one cache with PUSH either enabled or disabled.
+    ats = ats_factory.create(name, enable_tls=True)
+    server_ports = (f"{ats.http_port} {ats.ipv6_port}:ipv6 "
+                    f"{ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6")
+    records: dict[str, object] = {
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "http|dns|cache",
+        "proxy.config.http.cache.required_headers": 0,
+        "proxy.config.proxy_name": "Poxy_Proxy",
+        "proxy.config.url_remap.remap_required": 0,
+    }
+    if not _curl.uses_uds:
+        records["proxy.config.http.server_ports"] = server_ports
+    if push_enabled:
+        records["proxy.config.http.push_method_enabled"] = 1
+    ats.records.update(records)
+    ats.remap_config.add_lines(
+        (
+            f"map https://localhost:{ats.https_port} http://localhost:{ats.http_port}",
+            f"map https://localhost:{ats.ipv6_https_port} http://localhost:{ats.http_port}",
+        ))
+    return ats
 
-        :param ats_factory: Factory that owns the new ATS instance.
-        :param name: Unique process name for the ATS instance.
-        :param push_enabled: Whether ATS accepts the PUSH method.
-        """
 
-        ats = ats_factory.create(name, enable_tls=True)
-        server_ports = (f"{ats.http_port} {ats.ipv6_port}:ipv6 "
-                        f"{ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6")
-        records: dict[str, object] = {
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|dns|cache",
-            "proxy.config.http.cache.required_headers": 0,
-            "proxy.config.proxy_name": "Poxy_Proxy",
-            "proxy.config.url_remap.remap_required": 0,
-        }
-        if not self._curl.uses_uds:
-            records["proxy.config.http.server_ports"] = server_ports
-        if push_enabled:
-            records["proxy.config.http.push_method_enabled"] = 1
-        ats.records.update(records)
-        ats.remap_config.add_lines(
-            (
-                f"map https://localhost:{ats.https_port} http://localhost:{ats.http_port}",
-                f"map https://localhost:{ats.ipv6_https_port} http://localhost:{ats.http_port}",
-            ))
-        return ats
+def push(ats: ATS, *, _curl: Curl, _push_file: Path) -> str:
+    """PUSH the object into ATS and return curl's diagnostics.
 
-    def push(self, ats: ATS) -> str:
-        """PUSH the object into ATS and return curl's diagnostics.
+    :param ats: ATS instance that receives the pushed object.
 
-        :param ats: ATS instance that receives the pushed object.
-        """
+    :param _curl: Test-local curl configured by the test.
+    :param _push_file: Test-local push file configured by the test.
+    """
 
-        result = self._curl.run_for(
-            ats,
-            (
-                "--verbose --header 'Content-Type: application/octet-stream' "
-                f"--data-binary '@{self._push_file}' --request PUSH "
-                f"http://localhost:{ats.http_port}/bigobj "
-                f"--header 'Content-Length: {self._push_file.stat().st_size}'"),
-            timeout=60,
-        )
-        assert result.returncode == 0, result.output
-        return result.output
+    result = _curl.run_for(
+        ats,
+        (
+            "--verbose --header 'Content-Type: application/octet-stream' "
+            f"--data-binary '@{_push_file}' --request PUSH "
+            f"http://localhost:{ats.http_port}/bigobj "
+            f"--header 'Content-Length: {_push_file.stat().st_size}'"),
+        timeout=60,
+    )
+    assert result.returncode == 0, result.output
+    return result.output
 
-    def get(self, arguments: str) -> str:
-        """Fetch the pushed object with the requested curl options.
 
-        :param arguments: Shell-style curl arguments for the retrieval.
-        """
+def get(arguments: str, *, _curl: Curl, _enabled: ATS) -> str:
+    """Fetch the pushed object with the requested curl options.
 
-        result = self._curl.run_for(
-            self._enabled,
-            f"--verbose --output /dev/null {arguments}",
-            timeout=60,
-        )
-        assert result.returncode == 0, result.output
-        assert f"content-length: {OBJECT_BYTES}" in result.output.lower()
-        return result.output
+    :param arguments: Shell-style curl arguments for the retrieval.
 
-    def run(self) -> None:
-        """Verify PUSH acceptance, retrieval variants, and default rejection."""
+    :param _curl: Test-local curl configured by the test.
+    :param _enabled: Test-local enabled configured by the test.
+    """
 
-        self._enabled.start()
-        assert "HTTP/1.1 201 Created" in self.push(self._enabled)
-        cleartext_options = "" if self._curl.uses_uds else "--ipv4"
-        assert "HTTP/1.1 200 OK" in self.get(f"{cleartext_options} --http1.1 http://localhost:{self._enabled.http_port}/bigobj")
-        if not self._curl.uses_uds:
-            assert "HTTP/1.1 200 OK" in self.get(f"--ipv4 --http1.1 --insecure https://localhost:{self._enabled.https_port}/bigobj")
-            assert "HTTP/2 200" in self.get(f"--ipv4 --http2 --insecure https://localhost:{self._enabled.https_port}/bigobj")
-            assert "HTTP/2 200" in self.get(f"--ipv6 --http2 --insecure https://localhost:{self._enabled.ipv6_https_port}/bigobj")
-        self._disabled.start()
-        assert "403 Access Denied" in self.push(self._disabled)
+    result = _curl.run_for(
+        _enabled,
+        f"--verbose --output /dev/null {arguments}",
+        timeout=60,
+    )
+    assert result.returncode == 0, result.output
+    assert f"content-length: {OBJECT_BYTES}" in result.output.lower()
+    return result.output
 
 
 def test_bigobj(ats_factory: ATSFactory, curl: Curl) -> None:
@@ -136,4 +116,23 @@ def test_bigobj(ats_factory: ATSFactory, curl: Curl) -> None:
     :param curl: Curl client used by the scenario.
     """
 
-    BigObjectPushScenario(ats_factory, curl).run()
+    if not Curl.supports("http2"):
+        pytest.skip("curl HTTP/2 support is required")
+    _push_file = write_push_file(ats_factory.run_directory)
+    _enabled = configure_ats(ats_factory, "ts1", push_enabled=True, _curl=curl)
+    _disabled = configure_ats(ats_factory, "ts2", push_enabled=False, _curl=curl)
+
+    _enabled.start()
+    assert "HTTP/1.1 201 Created" in push(_enabled, _curl=curl, _push_file=_push_file)
+    cleartext_options = "" if curl.uses_uds else "--ipv4"
+    assert "HTTP/1.1 200 OK" in get(
+        f"{cleartext_options} --http1.1 http://localhost:{_enabled.http_port}/bigobj", _curl=curl, _enabled=_enabled)
+    if not curl.uses_uds:
+        assert "HTTP/1.1 200 OK" in get(
+            f"--ipv4 --http1.1 --insecure https://localhost:{_enabled.https_port}/bigobj", _curl=curl, _enabled=_enabled)
+        assert "HTTP/2 200" in get(
+            f"--ipv4 --http2 --insecure https://localhost:{_enabled.https_port}/bigobj", _curl=curl, _enabled=_enabled)
+        assert "HTTP/2 200" in get(
+            f"--ipv6 --http2 --insecure https://localhost:{_enabled.ipv6_https_port}/bigobj", _curl=curl, _enabled=_enabled)
+    _disabled.start()
+    assert "403 Access Denied" in push(_disabled, _curl=curl, _push_file=_push_file)

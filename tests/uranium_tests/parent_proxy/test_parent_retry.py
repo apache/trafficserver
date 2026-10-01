@@ -17,32 +17,27 @@
 from tools.uranium.services import ATS, ATSFactory, Curl
 
 
-class ParentRetryScenario:
-    """Verify ATS accepts the parent retry configuration."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Configure a deliberately unavailable retryable parent.
 
-    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def configure_ats(ats_factory: ATSFactory) -> ATS:
-        """Configure a deliberately unavailable retryable parent."""
-
-        ats = ats_factory.create("ts-child")
-        ats.parent_config.add_line(
-            'dest_domain=. method=get parent="localhost:8081" '
-            'parent_retry=unavailable_server_retry unavailable_server_retry_responses="502,503"')
-        return ats
-
-    def run(self) -> None:
-        """Start ATS and exercise the parsed parent configuration."""
-
-        self._ats.start()
-        result = self._curl.get(self._ats, options=f"--verbose")
-        assert result.returncode == 0, result.output
+    ats = ats_factory.create("ts-child")
+    ats.parent_config.add_line(
+        'dest_domain=. method=get parent="localhost:8081" '
+        'parent_retry=unavailable_server_retry unavailable_server_retry_responses="502,503"')
+    return ats
 
 
 def test_parent_retry(ats_factory: ATSFactory, curl: Curl) -> None:
-    """The unavailable-server retry parent setting is accepted at runtime."""
+    """The unavailable-server retry parent setting is accepted at runtime.
 
-    ParentRetryScenario(ats_factory, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param curl: Transport-aware curl command runner.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    result = curl.get(_ats, options=f"--verbose")
+    assert result.returncode == 0, result.output

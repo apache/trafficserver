@@ -17,49 +17,51 @@
 from tools.uranium.services import ATS, ATSFactory, Curl, HttpBinServer, ServiceFactory, wait_for_file_lines
 
 
-class SimplePostBufferScenario:
-    """Exercise request buffering across a 100-continue exchange."""
+def configure_origin(services: ServiceFactory) -> HttpBinServer:
+    """Create the HTTPBin POST endpoint.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> HttpBinServer:
-        """Create the HTTPBin POST endpoint."""
+    return services.httpbin("origin")
 
-        return services.httpbin("origin")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable request buffering and HTTP debug diagnostics."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
+    """Enable request buffering and HTTP debug diagnostics.
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.http.request_buffer_enabled": 1,
-                "proxy.config.http.number_of_redirections": 1,
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run(self) -> None:
-        """POST through ATS and verify both response milestones were logged."""
-
-        self._origin.start()
-        self._ats.start()
-        result = self._curl.run_for(
-            self._ats,
-            f"--verbose --header 'Expect: 100-continue' --data abc 'http://127.0.0.1:{self._ats.http_port}/post'",
-        )
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 200 OK" in result.stderr, result.output
-        output = wait_for_file_lines(self._ats.traffic_out, r"HTTP/1\.1 100 Continue", 1)
-        assert "HTTP/1.1 200 OK" in output
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.http.request_buffer_enabled": 1,
+            "proxy.config.http.number_of_redirections": 1,
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    return ats
 
 
 def test_simple_post_valid_buffer_check(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A buffered 100-continue POST does not leave ATS without a write buffer."""
+    """A buffered 100-continue POST does not leave ATS without a write buffer.
 
-    SimplePostBufferScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    result = curl.run_for(
+        _ats,
+        f"--verbose --header 'Expect: 100-continue' --data abc 'http://127.0.0.1:{_ats.http_port}/post'",
+    )
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 200 OK" in result.stderr, result.output
+    output = wait_for_file_lines(_ats.traffic_out, r"HTTP/1\.1 100 Continue", 1)
+    assert "HTTP/1.1 200 OK" in output

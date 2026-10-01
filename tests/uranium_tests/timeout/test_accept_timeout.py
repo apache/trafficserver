@@ -44,58 +44,62 @@ CASES = (
 )
 
 
-class AcceptTimeoutScenario:
-    """Leave a connection idle before or after its request begins."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Configure distinct accept, transaction, and default timeouts.
 
-    def __init__(self, case: AcceptTimeoutCase, ats_factory: ATSFactory) -> None:
-        self._case = case
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def configure_ats(ats_factory: ATSFactory) -> ATS:
-        """Configure distinct accept, transaction, and default timeouts."""
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.records.update(
+        {
+            "proxy.config.http.transaction_no_activity_timeout_in": 6,
+            "proxy.config.http.accept_no_activity_timeout": 2,
+            "proxy.config.net.default_inactivity_timeout": 10,
+            "proxy.config.net.defer_accept": 0,
+        })
+    return ats
 
-        ats = ats_factory.create("ts", enable_tls=True)
-        ats.records.update(
-            {
-                "proxy.config.http.transaction_no_activity_timeout_in": 6,
-                "proxy.config.http.accept_no_activity_timeout": 2,
-                "proxy.config.net.default_inactivity_timeout": 10,
-                "proxy.config.net.defer_accept": 0,
-            })
-        return ats
 
-    def client_command(self) -> str:
-        """Build the original timing wrapper around the selected client."""
+def client_command(*, _ats: ATS, _case: AcceptTimeoutCase) -> str:
+    """Build the original timing wrapper around the selected client.
 
-        timer = shlex.quote(str(TEST_DIRECTORY / "time_client.sh"))
-        if self._case.tls:
-            client = f"openssl s_client -ign_eof -connect 127.0.0.1:{self._ats.https_port}"
-            command = f"bash {timer} {shlex.quote(client)}"
-            return f"printf 'GET /.html HTTP/1.1' | {command}" if self._case.incomplete_request else command
-        if self._case.incomplete_request:
-            request = shlex.quote(str(TEST_DIRECTORY / "create_request.sh"))
-            client = f"nc -c {request} 127.0.0.1 {self._ats.http_port}"
-        else:
-            client = f"telnet 127.0.0.1 {self._ats.http_port}"
-        return f"bash {timer} {shlex.quote(client)}"
+    :param _ats: Test-local ats configured by the test.
+    :param _case: Test-local case configured by the test.
+    """
 
-    def verify(self, result: CommandResult) -> None:
-        """Require the connection to expire in its expected timeout bucket."""
+    timer = shlex.quote(str(TEST_DIRECTORY / "time_client.sh"))
+    if _case.tls:
+        client = f"openssl s_client -ign_eof -connect 127.0.0.1:{_ats.https_port}"
+        command = f"bash {timer} {shlex.quote(client)}"
+        return f"printf 'GET /.html HTTP/1.1' | {command}" if _case.incomplete_request else command
+    if _case.incomplete_request:
+        request = shlex.quote(str(TEST_DIRECTORY / "create_request.sh"))
+        client = f"nc -c {request} 127.0.0.1 {_ats.http_port}"
+    else:
+        client = f"telnet 127.0.0.1 {_ats.http_port}"
+    return f"bash {timer} {shlex.quote(client)}"
 
-        assert result.returncode == 0, result.output
-        assert self._case.expected_message in result.stdout
 
-    def run(self) -> None:
-        """Start ATS and time the selected incomplete connection."""
+def verify(result: CommandResult, *, _case: AcceptTimeoutCase) -> None:
+    """Require the connection to expire in its expected timeout bucket.
 
-        self._ats.start()
-        self.verify(self._ats.run_shell(self.client_command(), timeout=20))
+    :param _case: Test-local case configured by the test.
+    :param result: Completed command result to validate.
+    """
+
+    assert result.returncode == 0, result.output
+    assert _case.expected_message in result.stdout
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.name)
 def test_accept_timeout(case: AcceptTimeoutCase, ats_factory: ATSFactory, curl: Curl) -> None:
-    """ATS applies accept and transaction inactivity timeouts at the right stage."""
+    """ATS applies accept and transaction inactivity timeouts at the right stage.
+
+    :param case: Case used by this test step.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param curl: Transport-aware curl command runner.
+    """
 
     if curl.uses_uds:
         pytest.skip("raw TCP connections require a TCP listener")
@@ -103,4 +107,7 @@ def test_accept_timeout(case: AcceptTimeoutCase, ats_factory: ATSFactory, curl: 
     missing = [program for program in required if shutil.which(program) is None]
     if missing:
         pytest.skip(f"required program is unavailable: {', '.join(missing)}")
-    AcceptTimeoutScenario(case, ats_factory).run()
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    verify(_ats.run_shell(client_command(_ats=_ats, _case=case), timeout=20), _case=case)
