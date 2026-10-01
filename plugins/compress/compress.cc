@@ -24,6 +24,7 @@
 #include <cstring>
 #include <cinttypes>
 #include <string>
+#include <string_view>
 
 #include "ts/apidefs.h"
 #include "tscore/ink_config.h"
@@ -809,6 +810,57 @@ add_vary_header_to_client_response(TSHttpTxn txnp)
   TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
 }
 
+// A 304 carries the origin's strong ETag, which the cache would merge over the weakened ETag of a
+// stored compressed copy. Keep it weak when both name the same entity.
+static void
+keep_cached_etag_weak(TSHttpTxn txnp)
+{
+  TSMBuffer srv_buf;
+  TSMLoc    srv_loc;
+
+  if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &srv_buf, &srv_loc)) {
+    return;
+  }
+  ts::PostScript srv_defer([&]() -> void { TSHandleMLocRelease(srv_buf, TS_NULL_MLOC, srv_loc); });
+
+  if (TSHttpHdrStatusGet(srv_buf, srv_loc) != TS_HTTP_STATUS_NOT_MODIFIED) {
+    return;
+  }
+
+  TSMBuffer cached_buf;
+  TSMLoc    cached_loc;
+
+  if (TS_SUCCESS != TSHttpTxnCachedRespGet(txnp, &cached_buf, &cached_loc)) {
+    return;
+  }
+  ts::PostScript cached_defer([&]() -> void { TSHandleMLocRelease(cached_buf, TS_NULL_MLOC, cached_loc); });
+
+  TSMLoc srv_etag = TSMimeHdrFieldFind(srv_buf, srv_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+
+  if (srv_etag == TS_NULL_MLOC) {
+    return;
+  }
+  ts::PostScript srv_etag_defer([&]() -> void { TSHandleMLocRelease(srv_buf, srv_loc, srv_etag); });
+
+  TSMLoc cached_etag = TSMimeHdrFieldFind(cached_buf, cached_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+
+  if (cached_etag == TS_NULL_MLOC) {
+    return;
+  }
+  ts::PostScript cached_etag_defer([&]() -> void { TSHandleMLocRelease(cached_buf, cached_loc, cached_etag); });
+
+  int              srv_len;
+  const char      *srv_str = TSMimeHdrFieldValueStringGet(srv_buf, srv_loc, srv_etag, -1, &srv_len);
+  int              cached_len;
+  const char      *cached_str = TSMimeHdrFieldValueStringGet(cached_buf, cached_loc, cached_etag, -1, &cached_len);
+  std::string_view srv_value{srv_str, static_cast<size_t>(srv_len)};
+  std::string_view cached_value{cached_str, static_cast<size_t>(cached_len)};
+
+  if (cached_value.starts_with("W/") && cached_value.substr(2) == srv_value) {
+    TSMimeHdrFieldValueStringSet(srv_buf, srv_loc, srv_etag, -1, cached_value.data(), cached_value.size());
+  }
+}
+
 static void
 compress_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type, int algorithms)
 {
@@ -897,6 +949,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
         }
       }
 
+      keep_cached_etag_weak(txnp);
       handle_compression_and_vary(contp, txnp, true, hc, &compress_type, &algorithms);
     }
     break;

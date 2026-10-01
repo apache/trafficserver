@@ -199,3 +199,91 @@ sessions:
         fields:
         - [ Content-Encoding, { value: gzip, as: equal } ]
         - [ ETag, { value: 'W/"weak1"', as: equal } ]
+
+  #############################################################################
+  # A stale compressed copy revalidates at the origin with the unweakened tag.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /revalidate
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, revalidate-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=1" ]
+        - [ ETag, '"rev1"' ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"rev1"', as: equal } ]
+
+  #############################################################################
+  # The origin's 304 carries its strong ETag; the compressed copy must stay weak.
+  #############################################################################
+  - client-request:
+      delay: 3s
+      method: "GET"
+      version: "1.1"
+      url: /revalidate
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, revalidate-stale ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: '"rev1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"rev1"' ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"rev1"', as: equal } ]
+
+  #############################################################################
+  # The refreshed cached copy keeps the weak ETag.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /revalidate
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, revalidate-after ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"rev1"', as: equal } ]
