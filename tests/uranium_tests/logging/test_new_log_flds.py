@@ -26,105 +26,114 @@ from tools.uranium.services import ATS, ATSFactory, Curl, HttpBinServer, Service
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class NewLogFieldsScenario:
-    """Validate process, connection, transaction, and SNI log fields."""
+def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
+    """Create the common `/ip` origin.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        if not Curl.supports("http2"):
-            pytest.skip("curl with HTTP/2 support is required")
-        self._curl = curl
-        self._httpbin = self.configure_httpbin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_httpbin(self, services: ServiceFactory) -> HttpBinServer:
-        """Create the common `/ip` origin."""
+    return services.httpbin("httpbin")
 
-        return services.httpbin("httpbin")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure HTTP/TLS routes and the four-field access log."""
+def configure_ats(ats_factory: ATSFactory, *, _httpbin: HttpBinServer) -> ATS:
+    """Configure HTTP/TLS routes and the four-field access log.
 
-        ats = ats_factory.create("ts", enable_tls=True)
-        ats.add_default_ssl_files()
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "snowflake|http",
+    :param _httpbin: Test-local httpbin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.add_default_ssl_files()
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "snowflake|http",
+    })
+    ats.remap_config.add_lines(
+        (
+            f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{_httpbin.port}/ip",
+            f"map https://127.0.0.1:{ats.https_port} http://127.0.0.1:{_httpbin.port}/ip",
+            f"map https://reallyreallyreallyreallylong.com http://127.0.0.1:{_httpbin.port}/ip",
+        ))
+    ats.ssl_multicert_config.add_lines(
+        (
+            "ssl_multicert:",
+            '  - dest_ip: "*"',
+            "    ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ))
+    ats.set_logging_yaml(
+        {
+            "logging":
+                {
+                    "formats": [{
+                        "name": "custom",
+                        "format": "%<psfid> %<ccid> %<ctid> %<cssn>"
+                    }],
+                    "logs": [{
+                        "filename": "test_new_log_flds",
+                        "format": "custom"
+                    }],
+                }
         })
-        ats.remap_config.add_lines(
-            (
-                f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{self._httpbin.port}/ip",
-                f"map https://127.0.0.1:{ats.https_port} http://127.0.0.1:{self._httpbin.port}/ip",
-                f"map https://reallyreallyreallyreallylong.com http://127.0.0.1:{self._httpbin.port}/ip",
-            ))
-        ats.ssl_multicert_config.add_lines(
-            (
-                "ssl_multicert:",
-                '  - dest_ip: "*"',
-                "    ssl_cert_name: server.pem",
-                "    ssl_key_name: server.key",
-            ))
-        ats.set_logging_yaml(
-            {
-                "logging":
-                    {
-                        "formats": [{
-                            "name": "custom",
-                            "format": "%<psfid> %<ccid> %<ctid> %<cssn>"
-                        }],
-                        "logs": [{
-                            "filename": "test_new_log_flds",
-                            "format": "custom"
-                        }],
-                    }
-            })
-        return ats
+    return ats
 
-    def request(self, *arguments: str) -> None:
-        """Run curl and require a successful transaction."""
 
-        result = self._curl.run_for(
-            self._ats,
-            shlex.join(arguments),
-        )
-        assert result.returncode == 0, result.output
+def request(*arguments: str, _ats: ATS, _curl: Curl) -> None:
+    """Run curl and require a successful transaction.
 
-    def run(self) -> None:
-        """Generate the expected connection patterns and run the observer."""
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param arguments: Arguments used by this test step.
+    """
 
-        self._httpbin.start()
-        self._ats.start()
-        http_url = f"http://127.0.0.1:{self._ats.http_port}"
-        self.request("--verbose", http_url)
-        self.request("--verbose", http_url)
-        self.request("--http1.1", "--verbose", http_url, http_url)
-        expected_lines = 4
-        if not self._curl.uses_uds:
-            https_url = f"https://127.0.0.1:{self._ats.https_port}"
-            self.request("--http2", "--insecure", "--verbose", https_url, https_url)
-            hostname = "reallyreallyreallyreallylong.com"
-            self.request(
-                "--http2",
-                "--insecure",
-                "--verbose",
-                "--resolve",
-                f"{hostname}:{self._ats.https_port}:127.0.0.1",
-                f"https://{hostname}:{self._ats.https_port}",
-            )
-            expected_lines = 7
-
-        log_path = self._ats.log_directory / "test_new_log_flds.log"
-        content = wait_for_file_lines(log_path, r"^\S+ \d+ \d+ \S+$", expected_lines, timeout=60)
-        observer = subprocess.run(
-            (sys.executable, TEST_DIRECTORY / "new_log_flds_observer.py"),
-            input=content,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        assert observer.returncode == 0, observer.stdout + observer.stderr
+    result = _curl.run_for(
+        _ats,
+        shlex.join(arguments),
+    )
+    assert result.returncode == 0, result.output
 
 
 def test_new_log_flds(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """The new log fields describe process, connection, transaction, and SNI state."""
+    """The new log fields describe process, connection, transaction, and SNI state.
 
-    NewLogFieldsScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    if not Curl.supports("http2"):
+        pytest.skip("curl with HTTP/2 support is required")
+    _httpbin = configure_httpbin(services)
+    _ats = configure_ats(ats_factory, _httpbin=_httpbin)
+
+    _httpbin.start()
+    _ats.start()
+    http_url = f"http://127.0.0.1:{_ats.http_port}"
+    request("--verbose", http_url, _ats=_ats, _curl=curl)
+    request("--verbose", http_url, _ats=_ats, _curl=curl)
+    request("--http1.1", "--verbose", http_url, http_url, _ats=_ats, _curl=curl)
+    expected_lines = 4
+    if not curl.uses_uds:
+        https_url = f"https://127.0.0.1:{_ats.https_port}"
+        request("--http2", "--insecure", "--verbose", https_url, https_url, _ats=_ats, _curl=curl)
+        hostname = "reallyreallyreallyreallylong.com"
+        request(
+            "--http2",
+            "--insecure",
+            "--verbose",
+            "--resolve",
+            f"{hostname}:{_ats.https_port}:127.0.0.1",
+            f"https://{hostname}:{_ats.https_port}",
+            _ats=_ats,
+            _curl=curl)
+        expected_lines = 7
+
+    log_path = _ats.log_directory / "test_new_log_flds.log"
+    content = wait_for_file_lines(log_path, r"^\S+ \d+ \d+ \S+$", expected_lines, timeout=60)
+    observer = subprocess.run(
+        (sys.executable, TEST_DIRECTORY / "new_log_flds_observer.py"),
+        input=content,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert observer.returncode == 0, observer.stdout + observer.stderr

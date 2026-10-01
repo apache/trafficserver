@@ -34,71 +34,78 @@ def overwide_webp() -> str:
     return body.decode("ascii")
 
 
-class WebpDecodeLimitScenario:
-    """Attempt to decode a tiny image whose declared width exceeds the resource limit."""
+def configure_origin(services: ServiceFactory, *, _body: str) -> OriginServer:
+    """Serve the over-wide VP8L body as image/webp.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._body = overwide_webp()
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param _body: Test-local body configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Serve the over-wide VP8L body as image/webp."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {
+            "headers": "GET /overwide.webp HTTP/1.1\r\nHost: *\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers":
+                ("HTTP/1.1 200 OK\r\nContent-Type: image/webp\r\n"
+                 f"Content-Length: {len(_body)}\r\nConnection: close\r\n\r\n"),
+            "body": _body,
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {
-                "headers": "GET /overwide.webp HTTP/1.1\r\nHost: *\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\nContent-Type: image/webp\r\n"
-                        f"Content-Length: {len(self._body)}\r\nConnection: close\r\n\r\n"),
-                "body": self._body,
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable the WebP-to-JPEG transform."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Enable the WebP-to-JPEG transform.
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        if not ats.plugin_exists("webp_transform.so"):
-            pytest.skip("webp_transform.so is required")
-        ats.plugin_config.add_line("webp_transform.so convert_to_jpeg")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "webp_transform",
-        })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def verify(self, result: CommandResult) -> None:
-        """Require the original bytes to pass through after decode rejection."""
+    ats = ats_factory.create("ts", enable_cache=False)
+    if not ats.plugin_exists("webp_transform.so"):
+        pytest.skip("webp_transform.so is required")
+    ats.plugin_config.add_line("webp_transform.so convert_to_jpeg")
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "webp_transform",
+    })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
+    return ats
 
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 200" in result.stdout
-        assert f"size_download={len(self._body)}" in result.stdout
 
-    def run(self) -> None:
-        """Request the image and require the ImageMagick limit diagnostic."""
+def verify(result: CommandResult, *, _body: str) -> None:
+    """Require the original bytes to pass through after decode rejection.
 
-        self._origin.start()
-        self._ats.start()
-        result = self._curl.get(
-            self._ats,
-            "/overwide.webp",
-            headers={"Accept": "image/jpeg"},
-            options=f"--silent --show-error --dump-header - --output /dev/null --write-out 'size_download=%{{size_download}}'",
-        )
-        self.verify(result)
-        wait_for_file_lines(self._ats.diags_log, r"ImageMagick.. error", 1)
+    :param _body: Test-local body configured by the test.
+    :param result: Completed command result to validate.
+    """
+
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 200" in result.stdout
+    assert f"size_download={len(_body)}" in result.stdout
 
 
 def test_webp_transform_decode_limit(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Over-dimension images are rejected before allocating a giant pixel buffer."""
+    """Over-dimension images are rejected before allocating a giant pixel buffer.
 
-    WebpDecodeLimitScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _body = overwide_webp()
+    _origin = configure_origin(services, _body=_body)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    result = curl.get(
+        _ats,
+        "/overwide.webp",
+        headers={"Accept": "image/jpeg"},
+        options=f"--silent --show-error --dump-header - --output /dev/null --write-out 'size_download=%{{size_download}}'",
+    )
+    verify(result, _body=_body)
+    wait_for_file_lines(_ats.diags_log, r"ImageMagick.. error", 1)

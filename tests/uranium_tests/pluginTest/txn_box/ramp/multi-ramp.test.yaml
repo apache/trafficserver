@@ -135,9 +135,10 @@ urtest:
       timeout: 120
       line_count_min: 6000
       matches:
-      - {expression: 'stage\.video\.ex.*v1/video/channels', min: 50, max: 150}
-      - {expression: 'stage\.video\.ex.*v1/video/search', min: 250, max: 350}
-      - {expression: 'stage\.video\.ex.*v1/video/alias', min: 250, max: 350}
+      # Five standard deviations of Binomial(1000, p), rounded outwards.
+      - {expression: 'stage\.video\.ex.*v1/video/channels', min: 52, max: 148}
+      - {expression: 'stage\.video\.ex.*v1/video/search', min: 227, max: 373}
+      - {expression: 'stage\.video\.ex.*v1/video/alias', min: 227, max: 373}
       - {expression: 'stage\.video\.ex.*v1/audio', max: 0}
       - {expression: 'stage\.video\.ex.*v2/video', max: 0}
       - {expression: 'stage\.video\.ex.*v1/video/sub', min: 1000, max: 1000}

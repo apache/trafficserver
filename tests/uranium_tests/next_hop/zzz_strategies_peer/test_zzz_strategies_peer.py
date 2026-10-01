@@ -17,16 +17,21 @@
 from pathlib import Path
 
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
-from uranium_tests.next_hop.peer_scenario import PeerStrategyScenario
+from uranium_tests.next_hop.peer_scenario import run_peer_strategy
 
 
 def test_zzz_strategies_peer(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Consistent-hash peers fall through to the upstream group and share cached objects."""
+    """Consistent-hash peers fall through to the upstream group and share cached objects.
 
-    PeerStrategyScenario(
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_peer_strategy(
         ats_factory,
         services,
         curl,
         Path(__file__).parent,
         has_upstream_group=True,
-    ).run()
+    )

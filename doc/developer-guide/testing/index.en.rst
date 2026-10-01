@@ -26,4 +26,5 @@ Testing Traffic Server
    :maxdepth: 2
 
    uranium-tests.en
+   uranium-api.en
    config-reload-ext.en

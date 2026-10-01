@@ -21,64 +21,72 @@ from tools.uranium.services import ATS, ATSFactory, DNSServer, ProcessService, S
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class ForwardNonHttpScenario:
-    """Terminate client TLS and forward its byte stream to a TCP service."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve the SNI forward route locally.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._forward_port = services.allocate_port()
-        self._dns = self.configure_dns(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_dns(services: ServiceFactory) -> DNSServer:
-        """Resolve the SNI forward route locally."""
+    return services.dns("dns", default="127.0.0.1")
 
-        return services.dns("dns", default="127.0.0.1")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Route the bar.com TLS stream to the raw TCP listener."""
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _forward_port: int) -> ATS:
+    """Route the bar.com TLS stream to the raw TCP listener.
 
-        ats = ats_factory.create("ts", enable_tls=True)
-        ats.records.update(
-            {
-                "proxy.config.http.connect_ports": f"{ats.https_port} {self._forward_port}",
-                "proxy.config.exec_thread.autoconfig.scale": 1.0,
-                "proxy.config.url_remap.pristine_host_hdr": 1,
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-            })
-        ats.allow_private_connect()
-        ats.write_config_file(
-            "sni.yaml",
-            f"sni:\n- fqdn: bar.com\n  forward_route: localhost:{self._forward_port}\n",
-        )
-        return ats
+    :param _dns: Test-local dns configured by the test.
+    :param _forward_port: Test-local forward port configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Run the paired netcat server and OpenSSL client."""
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.records.update(
+        {
+            "proxy.config.http.connect_ports": f"{ats.https_port} {_forward_port}",
+            "proxy.config.exec_thread.autoconfig.scale": 1.0,
+            "proxy.config.url_remap.pristine_host_hdr": 1,
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+        })
+    ats.allow_private_connect()
+    ats.write_config_file(
+        "sni.yaml",
+        f"sni:\n- fqdn: bar.com\n  forward_route: localhost:{_forward_port}\n",
+    )
+    return ats
 
-        return services.process(
-            "non-http-client",
-            (
-                "sh",
-                TEST_DIRECTORY / "test-nc-s_client.sh",
-                str(self._forward_port),
-                str(self._ats.https_port),
-            ),
-        )
 
-    def run(self) -> None:
-        """Execute the tunneled exchange and require the raw reply."""
+def configure_client(services: ServiceFactory, *, _ats: ATS, _forward_port: int) -> ProcessService:
+    """Run the paired netcat server and OpenSSL client.
 
-        self._dns.start()
-        self._ats.start()
-        result = self._client.run(timeout=30)
-        assert result.returncode == 0, result.output
-        assert "This is a reply" in result.output, result.output + self._ats.diags_log.read_text(errors="replace")
+    :param _ats: Test-local ats configured by the test.
+    :param _forward_port: Test-local forward port configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    return services.process(
+        "non-http-client",
+        (
+            "sh",
+            TEST_DIRECTORY / "test-nc-s_client.sh",
+            str(_forward_port),
+            str(_ats.https_port),
+        ),
+    )
 
 
 def test_tls_forward_nonhttp(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """SNI forward_route carries a non-HTTP protocol out of TLS."""
+    """SNI forward_route carries a non-HTTP protocol out of TLS.
 
-    ForwardNonHttpScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _forward_port = services.allocate_port()
+    _dns = configure_dns(services)
+    _ats = configure_ats(ats_factory, _dns=_dns, _forward_port=_forward_port)
+    _client = configure_client(services, _ats=_ats, _forward_port=_forward_port)
+
+    _dns.start()
+    _ats.start()
+    result = _client.run(timeout=30)
+    assert result.returncode == 0, result.output
+    assert "This is a reply" in result.output, result.output + _ats.diags_log.read_text(errors="replace")

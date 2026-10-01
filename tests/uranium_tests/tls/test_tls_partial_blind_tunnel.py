@@ -20,121 +20,125 @@ from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServe
 
 TEST_DIRECTORY = Path(__file__).parent
 
+PARTIAL_BLIND_TUNNEL__metrics = (
+    "proxy.process.http.total_incoming_connections",
+    "proxy.process.http.total_client_connections",
+    "proxy.process.http.total_client_connections_ipv4",
+    "proxy.process.http.total_client_connections_ipv6",
+    "proxy.process.http.total_server_connections",
+    "proxy.process.http2.total_client_connections",
+    "proxy.process.http.connect_requests",
+    "proxy.process.tunnel.total_client_connections_blind_tcp",
+    "proxy.process.tunnel.current_client_connections_blind_tcp",
+    "proxy.process.tunnel.total_server_connections_blind_tcp",
+    "proxy.process.tunnel.current_server_connections_blind_tcp",
+    "proxy.process.tunnel.total_client_connections_tls_tunnel",
+    "proxy.process.tunnel.current_client_connections_tls_tunnel",
+    "proxy.process.tunnel.total_client_connections_tls_forward",
+    "proxy.process.tunnel.current_client_connections_tls_forward",
+    "proxy.process.tunnel.total_client_connections_tls_partial_blind",
+    "proxy.process.tunnel.current_client_connections_tls_partial_blind",
+    "proxy.process.tunnel.total_client_connections_tls_http",
+    "proxy.process.tunnel.current_client_connections_tls_http",
+    "proxy.process.tunnel.total_server_connections_tls",
+    "proxy.process.tunnel.current_server_connections_tls",
+)
 
-class PartialBlindTunnelScenario:
-    """Terminate client TLS and partially blind-route bytes to a TLS origin."""
 
-    _metrics = (
-        "proxy.process.http.total_incoming_connections",
-        "proxy.process.http.total_client_connections",
-        "proxy.process.http.total_client_connections_ipv4",
-        "proxy.process.http.total_client_connections_ipv6",
-        "proxy.process.http.total_server_connections",
-        "proxy.process.http2.total_client_connections",
-        "proxy.process.http.connect_requests",
-        "proxy.process.tunnel.total_client_connections_blind_tcp",
-        "proxy.process.tunnel.current_client_connections_blind_tcp",
-        "proxy.process.tunnel.total_server_connections_blind_tcp",
-        "proxy.process.tunnel.current_server_connections_blind_tcp",
-        "proxy.process.tunnel.total_client_connections_tls_tunnel",
-        "proxy.process.tunnel.current_client_connections_tls_tunnel",
-        "proxy.process.tunnel.total_client_connections_tls_forward",
-        "proxy.process.tunnel.current_client_connections_tls_forward",
-        "proxy.process.tunnel.total_client_connections_tls_partial_blind",
-        "proxy.process.tunnel.current_client_connections_tls_partial_blind",
-        "proxy.process.tunnel.total_client_connections_tls_http",
-        "proxy.process.tunnel.current_client_connections_tls_http",
-        "proxy.process.tunnel.total_server_connections_tls",
-        "proxy.process.tunnel.current_server_connections_tls",
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create the TLS origin reached through the partial blind route.
+
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    origin = services.origin("origin", ssl=True)
+    origin.add_response(
+        {
+            "headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "body": "ok bar"
+        },
     )
+    return origin
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._dns = self.configure_dns(services)
-        self._ats = self.configure_ats(ats_factory)
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create the TLS origin reached through the partial blind route."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve partial-blind route names to loopback.
 
-        origin = services.origin("origin", ssl=True)
-        origin.add_response(
-            {
-                "headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": "ok bar"
-            },
-        )
-        return origin
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_dns(services: ServiceFactory) -> DNSServer:
-        """Resolve partial-blind route names to loopback."""
+    return services.dns("dns", default="127.0.0.1")
 
-        return services.dns("dns", default="127.0.0.1")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure `foo.com` as a partial blind route to the TLS origin."""
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginServer) -> ATS:
+    """Configure `foo.com` as a partial blind route to the TLS origin.
 
-        ats = ats_factory.create("ts", enable_tls=True)
-        ats.copy_to_ssl(
-            TEST_DIRECTORY / "ssl" / "signed-foo.pem",
-            TEST_DIRECTORY / "ssl" / "signed-foo.key",
-            TEST_DIRECTORY / "ssl" / "signed-bar.pem",
-            TEST_DIRECTORY / "ssl" / "signed-bar.key",
-            TEST_DIRECTORY / "ssl" / "signer.pem",
-        )
-        ats.ssl_multicert_config.add_lines(
-            (
-                "ssl_multicert:",
-                '  - dest_ip: "*"',
-                "    ssl_cert_name: signed-foo.pem",
-                "    ssl_key_name: signed-foo.key",
-            ))
-        ats.records.update(
-            {
-                "proxy.config.http.connect_ports": f"{ats.https_port} {self._origin.https_port}",
-                "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
-                "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
-                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-            })
-        ats.allow_private_connect()
-        ats.write_config_file(
-            "sni.yaml",
-            "sni:\n"
-            "  - fqdn: foo.com\n"
-            f"    partial_blind_route: localhost:{self._origin.https_port}\n",
-        )
-        return ats
+    :param _dns: Test-local dns configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run(self) -> None:
-        """Verify traffic and all tunnel classification metrics."""
-
-        self._origin.start()
-        self._dns.start()
-        self._ats.start()
-        response = self._curl.run_for(
-            self._ats,
-            (
-                f"--http1.1 --verbose --resolve 'foo.com:{self._ats.https_port}:127.0.0.1' --insecure "
-                f"'https://foo.com:{self._ats.https_port}'"),
-        )
-        assert response.returncode == 0, response.output
-        assert "HTTP/1.1 200 OK" in response.stderr
-        assert response.stdout == "ok bar"
-
-        metrics = self._ats.traffic_ctl("metric", "get", *self._metrics)
-        assert metrics.returncode == 0, metrics.output
-        assert_matches_gold(metrics.stdout, TEST_DIRECTORY / "gold" / "tls-partial-blind-tunnel-metrics.gold")
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.copy_to_ssl(
+        TEST_DIRECTORY / "ssl" / "signed-foo.pem",
+        TEST_DIRECTORY / "ssl" / "signed-foo.key",
+        TEST_DIRECTORY / "ssl" / "signed-bar.pem",
+        TEST_DIRECTORY / "ssl" / "signed-bar.key",
+        TEST_DIRECTORY / "ssl" / "signer.pem",
+    )
+    ats.ssl_multicert_config.add_lines(
+        (
+            "ssl_multicert:",
+            '  - dest_ip: "*"',
+            "    ssl_cert_name: signed-foo.pem",
+            "    ssl_key_name: signed-foo.key",
+        ))
+    ats.records.update(
+        {
+            "proxy.config.http.connect_ports": f"{ats.https_port} {_origin.https_port}",
+            "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
+            "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
+            "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+        })
+    ats.allow_private_connect()
+    ats.write_config_file(
+        "sni.yaml",
+        "sni:\n"
+        "  - fqdn: foo.com\n"
+        f"    partial_blind_route: localhost:{_origin.https_port}\n",
+    )
+    return ats
 
 
 def test_tls_partial_blind_tunnel(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Partial blind routing forwards TLS and updates only its metrics."""
+    """Partial blind routing forwards TLS and updates only its metrics.
 
-    PartialBlindTunnelScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin = configure_origin(services)
+    _dns = configure_dns(services)
+    _ats = configure_ats(ats_factory, _dns=_dns, _origin=_origin)
+
+    _origin.start()
+    _dns.start()
+    _ats.start()
+    response = curl.run_for(
+        _ats,
+        (f"--http1.1 --verbose --resolve 'foo.com:{_ats.https_port}:127.0.0.1' --insecure "
+         f"'https://foo.com:{_ats.https_port}'"),
+    )
+    assert response.returncode == 0, response.output
+    assert "HTTP/1.1 200 OK" in response.stderr
+    assert response.stdout == "ok bar"
+
+    metrics = _ats.traffic_ctl("metric", "get", *PARTIAL_BLIND_TUNNEL__metrics)
+    assert metrics.returncode == 0, metrics.output
+    assert_matches_gold(metrics.stdout, TEST_DIRECTORY / "gold" / "tls-partial-blind-tunnel-metrics.gold")

@@ -16,13 +16,17 @@
 
 from tools.uranium.services import ATSFactory, ServiceFactory
 
-from .sni_queue_scenario import RateLimitSniScenario
+from .sni_queue_scenario import run_rate_limit_sni
 
 
 def test_rate_limit_sni_reject(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Rejected SNI handshakes are freed without a stale-VC access."""
+    """Rejected SNI handshakes are freed without a stale-VC access.
 
-    RateLimitSniScenario(
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    run_rate_limit_sni(
         ats_factory,
         services,
         queue_lines=(),
@@ -30,4 +34,4 @@ def test_rate_limit_sni_reject(ats_factory: ATSFactory, services: ServiceFactory
         client_marker="rate_limit-reject-done",
         traffic_marker="Rejecting connection",
         failure_expression=r"use-after-free|attempting free|SEGV|received signal",
-    ).run()
+    )

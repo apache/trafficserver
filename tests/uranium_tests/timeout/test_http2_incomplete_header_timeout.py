@@ -57,80 +57,84 @@ CASES = (
 )
 
 
-class IncompleteHeaderScenario:
-    """Send a HEADERS frame with its END_HEADERS condition controlled by the case."""
+def configure_origin(services: ServiceFactory) -> VerifierServer:
+    """Serve the transactions that reach an origin after complete headers.
 
-    def __init__(self, case: IncompleteHeaderCase, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._case = case
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> VerifierServer:
-        """Serve the transactions that reach an origin after complete headers."""
+    return services.verifier_server(
+        "origin",
+        "replay/http2_incomplete_header_timeout.replay.yaml",
+        https_ports=[],
+    )
 
-        return services.verifier_server(
-            "origin",
-            "replay/http2_incomplete_header_timeout.replay.yaml",
-            https_ports=[],
-        )
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable HTTP/2 TLS and configure the incomplete-header timeout."""
+def configure_ats(ats_factory: ATSFactory, *, _case: IncompleteHeaderCase, _origin: VerifierServer) -> ATS:
+    """Enable HTTP/2 TLS and configure the incomplete-header timeout.
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http2",
-                "proxy.config.http2.incomplete_header_timeout_in": self._case.timeout,
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.http_port}")
-        return ats
+    :param _case: Test-local case configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Build the purpose-built frame-level HTTP/2 client command."""
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http2",
+            "proxy.config.http2.incomplete_header_timeout_in": _case.timeout,
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
+    return ats
 
-        command: list[str | Path] = [
-            sys.executable,
-            TEST_DIRECTORY / "http2_incomplete_header_client.py",
-            str(self._ats.https_port),
-            "--path",
-            self._case.path,
-            "--uuid",
-            self._case.uuid,
-        ]
-        if self._case.end_headers:
-            command.append("--end-headers")
-        if self._case.continuation_delay is not None:
-            command.extend(("--continuation-delay", str(self._case.continuation_delay)))
-        if self._case.min_elapsed is not None:
-            command.extend(("--min-elapsed", str(self._case.min_elapsed)))
-        if self._case.max_elapsed is not None:
-            command.extend(("--max-elapsed", str(self._case.max_elapsed)))
-        return services.process("client", command)
 
-    def verify(self, result: CommandResult) -> None:
-        """Require either the timeout teardown or a normally proxied response."""
+def configure_client(services: ServiceFactory, *, _ats: ATS, _case: IncompleteHeaderCase) -> ProcessService:
+    """Build the purpose-built frame-level HTTP/2 client command.
 
-        assert result.returncode == 0, result.output
-        timeout_error = "ERROR: HTTP/2 stream error timeout"
-        if self._case.expect_timeout:
-            assert f"GOAWAY error_code={HTTP2_ERROR_COMPRESSION_ERROR} last_stream_id=1" in result.stdout
-            wait_for_file_lines(self._ats.traffic_out, f"timeout event={VC_EVENT_ACTIVE_TIMEOUT}", 1)
-            wait_for_file_lines(self._ats.diags_log, timeout_error, 1)
-        else:
-            assert "stream 1: status=200" in result.stdout
-            assert "GOAWAY" not in result.stdout
-            assert timeout_error not in self._ats.diags_log.read_text(errors="replace")
+    :param _ats: Test-local ats configured by the test.
+    :param _case: Test-local case configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def run(self) -> None:
-        """Start the origin and ATS, then execute the frame-level client."""
+    command: list[str | Path] = [
+        sys.executable,
+        TEST_DIRECTORY / "http2_incomplete_header_client.py",
+        str(_ats.https_port),
+        "--path",
+        _case.path,
+        "--uuid",
+        _case.uuid,
+    ]
+    if _case.end_headers:
+        command.append("--end-headers")
+    if _case.continuation_delay is not None:
+        command.extend(("--continuation-delay", str(_case.continuation_delay)))
+    if _case.min_elapsed is not None:
+        command.extend(("--min-elapsed", str(_case.min_elapsed)))
+    if _case.max_elapsed is not None:
+        command.extend(("--max-elapsed", str(_case.max_elapsed)))
+    return services.process("client", command)
 
-        self._origin.start()
-        self._ats.start()
-        self.verify(self._client.run(timeout=15))
+
+def verify(result: CommandResult, *, _ats: ATS, _case: IncompleteHeaderCase) -> None:
+    """Require either the timeout teardown or a normally proxied response.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _case: Test-local case configured by the test.
+    :param result: Completed command result to validate.
+    """
+
+    assert result.returncode == 0, result.output
+    timeout_error = "ERROR: HTTP/2 stream error timeout"
+    if _case.expect_timeout:
+        assert f"GOAWAY error_code={HTTP2_ERROR_COMPRESSION_ERROR} last_stream_id=1" in result.stdout
+        wait_for_file_lines(_ats.traffic_out, f"timeout event={VC_EVENT_ACTIVE_TIMEOUT}", 1)
+        wait_for_file_lines(_ats.diags_log, timeout_error, 1)
+    else:
+        assert "stream 1: status=200" in result.stdout
+        assert "GOAWAY" not in result.stdout
+        assert timeout_error not in _ats.diags_log.read_text(errors="replace")
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.name)
@@ -139,6 +143,16 @@ def test_http2_incomplete_header_timeout(
     ats_factory: ATSFactory,
     services: ServiceFactory,
 ) -> None:
-    """ATS bounds the time spent waiting for an HTTP/2 CONTINUATION frame."""
+    """ATS bounds the time spent waiting for an HTTP/2 CONTINUATION frame.
 
-    IncompleteHeaderScenario(case, ats_factory, services).run()
+    :param case: Case used by this test step.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _case=case, _origin=_origin)
+    _client = configure_client(services, _ats=_ats, _case=case)
+
+    _origin.start()
+    _ats.start()
+    verify(_client.run(timeout=15), _ats=_ats, _case=case)

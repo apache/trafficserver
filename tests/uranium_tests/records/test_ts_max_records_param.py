@@ -19,26 +19,14 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory
 
 
-class MaxRecordsScenario:
-    """Verify traffic_server's maxRecords argument parsing and lower bound."""
+def configure_ats(*, _ats_factory: ATSFactory, _value: str) -> ATS:
+    """Pass the selected maxRecords value to traffic_server.
 
-    def __init__(self, ats_factory: ATSFactory, value: str, expected: str) -> None:
-        self._ats_factory = ats_factory
-        self._value = value
-        self._expected = expected
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _value: Test-local value configured by the test.
+    """
 
-    def configure_ats(self) -> ATS:
-        """Pass the selected maxRecords value to traffic_server."""
-
-        return self._ats_factory.create("ts", server_args=["--maxRecords", self._value])
-
-    def run(self) -> None:
-        """Start ATS and validate its parsing diagnostic."""
-
-        ats = self.configure_ats()
-        ats.start()
-        output = ats.process_output + ats.traffic_out.read_text(errors="replace")
-        assert self._expected in output
+    return _ats_factory.create("ts", server_args=["--maxRecords", _value])
 
 
 @pytest.mark.parametrize(
@@ -50,6 +38,14 @@ class MaxRecordsScenario:
     ],
 )
 def test_ts_max_records_param(ats_factory: ATSFactory, value: str, expected: str) -> None:
-    """maxRecords accepts large values and safely handles small or invalid ones."""
+    """maxRecords accepts large values and safely handles small or invalid ones.
 
-    MaxRecordsScenario(ats_factory, value, expected).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param value: Value used by this test step.
+    :param expected: Expected result for this case.
+    """
+
+    ats = configure_ats(_ats_factory=ats_factory, _value=value)
+    ats.start()
+    output = ats.process_output + ats.traffic_out.read_text(errors="replace")
+    assert expected in output

@@ -27,20 +27,21 @@ from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginS
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class CompressScenario:
-    """Exercise compress.so negotiation and Accept-Encoding normalization."""
+def test_compress(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """compress.so selects and normalizes supported content encodings.
 
-    _mixed_encodings = "gzip, deflate, sdch, br, zstd"
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._body = ("lets go surfin now everybodys learnin how\n" * 24 + "lets go surfin now everybodys learnin how").encode()
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._request_number = 0
+    __mixed_encodings = "gzip, deflate, sdch, br, zstd"
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create an observing microserver with one object per remap rule."""
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create an observing microserver with one object per remap rule.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         origin = services.origin(
             "origin",
@@ -52,7 +53,7 @@ class CompressScenario:
                     'HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "359670651"\r\n'
                     "Cache-Control: public, max-age=31536000\r\nAccept-Ranges: bytes\r\n"
                     "Content-Type: text/javascript\r\n\r\n"),
-            "body": self._body.decode(),
+            "body": _body.decode(),
         }
         for index in range(6):
             origin.add_response(
@@ -74,8 +75,11 @@ class CompressScenario:
         )
         return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Install six compress configurations with normalization modes 0-5."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Install six compress configurations with normalization modes 0-5.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ts", enable_cache=False)
         requirements = {
@@ -101,21 +105,27 @@ class CompressScenario:
             if index:
                 plugins += f" @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae={index}"
             plugins += f" @plugin=compress.so @pparam={ats.config_directory / config.name}"
-            ats.remap_config.add_line(f"map http://ae-{index}/ http://127.0.0.1:{self._origin.port}/{plugins}")
+            ats.remap_config.add_line(f"map http://ae-{index}/ http://127.0.0.1:{_origin.port}/{plugins}")
         return ats
 
-    def request(self, index: int, accept_encoding: str | None, *, post: bool = False) -> tuple[CommandResult, Path]:
-        """Issue one curl request and retain its encoded response body."""
+    def request(index: int, accept_encoding: str | None, *, post: bool = False) -> tuple[CommandResult, Path]:
+        """Issue one curl request and retain its encoded response body.
 
-        output = self._ats.run_directory / f"response-{self._request_number}"
-        self._request_number += 1
+        :param index: Index used by this test step.
+        :param accept_encoding: Accept encoding used by this test step.
+        :param post: Post used by this test step.
+        """
+        nonlocal _request_number
+
+        output = _ats.run_directory / f"response-{_request_number}"
+        _request_number += 1
         marker = f"{index}/{accept_encoding}" if accept_encoding is not None else "vary-no-accept-encoding"
         arguments = [
             "--output",
             str(output),
             "--verbose",
             "--proxy",
-            f"http://127.0.0.1:{self._ats.http_port}",
+            f"http://127.0.0.1:{_ats.http_port}",
             "--header",
             f"X-Ats-Compress-Test: {marker}",
         ]
@@ -124,15 +134,19 @@ class CompressScenario:
         if post:
             arguments.extend(("--data", "knock knock"))
         arguments.append(f"http://ae-{index}/obj{index}")
-        result = self._curl.run_for(
-            self._ats,
+        result = curl.run_for(
+            _ats,
             shlex.join(arguments),
         )
         assert result.returncode == 0, result.output
         return result, output
 
-    def verify_body(self, path: Path, encoding: str) -> None:
-        """Decode @a path according to the expected representation."""
+    def verify_body(path: Path, encoding: str) -> None:
+        """Decode @a path according to the expected representation.
+
+        :param path: Resource or file path used by this operation.
+        :param encoding: Encoding used by this test step.
+        """
 
         encoded = path.read_bytes()
         if encoding == "identity":
@@ -145,61 +159,62 @@ class CompressScenario:
                 pytest.skip(f"{program} is required")
             arguments = (program, "-d", "-c", str(path))
             decoded = subprocess.run(arguments, capture_output=True, check=True).stdout
-        assert decoded == self._body
+        assert decoded == _body
 
-    def verify_request(self, index: int, accept_encoding: str, expected_encoding: str) -> None:
-        """Require the negotiated representation and its decoded content."""
+    def verify_request(index: int, accept_encoding: str, expected_encoding: str) -> None:
+        """Require the negotiated representation and its decoded content.
 
-        result, path = self.request(index, accept_encoding)
+        :param index: Index used by this test step.
+        :param accept_encoding: Accept encoding used by this test step.
+        :param expected_encoding: Expected encoding for this case.
+        """
+
+        result, path = request(index, accept_encoding)
         expected_header = "" if expected_encoding == "identity" else f"< Content-Encoding: {expected_encoding}"
         if expected_header:
             assert expected_header.lower() in result.stderr.lower()
         else:
             assert "< content-encoding:" not in result.stderr.lower()
-        self.verify_body(path, expected_encoding)
+        verify_body(path, expected_encoding)
 
-    def run(self) -> None:
-        """Run algorithm selection, normalization, POST, and Vary checks."""
+    _body = ("lets go surfin now everybodys learnin how\n" * 24 + "lets go surfin now everybodys learnin how").encode()
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory)
+    _request_number = 0
 
-        self._origin.start()
-        self._ats.start()
-        mixed = ("br", "gzip", "br", "br", "zstd", "zstd")
-        for index in range(6):
-            for value, expected in (
-                (self._mixed_encodings, mixed[index]),
-                ("gzip", "gzip"),
-                ("br", "identity" if index == 1 else "br"),
-                ("deflate", "identity"),
-                ("zstd", "zstd" if index >= 4 else "identity"),
-            ):
-                self.verify_request(index, value, expected)
-
+    _origin.start()
+    _ats.start()
+    mixed = ("br", "gzip", "br", "br", "zstd", "zstd")
+    for index in range(6):
         for value, expected in (
-            ("gzip;q=0.666", "gzip"),
-            ("gzip;q=0.666x", "gzip"),
-            ("gzip;q=#0.666", "gzip"),
-            ("gzip; Q = 0.666", "gzip"),
-            ("gzip;q=0.0", "identity"),
-            ("gzip;q=-0.1", "gzip"),
-            ("aaa, gzip;q=0.666, bbb", "gzip"),
-            (" br ; q=0.666, bbb", "br"),
-            ("aaa, gzip;q=0.666 , ", "gzip"),
+            (__mixed_encodings, mixed[index]),
+            ("gzip", "gzip"),
+            ("br", "identity" if index == 1 else "br"),
+            ("deflate", "identity"),
+            ("zstd", "zstd" if index >= 4 else "identity"),
         ):
-            self.verify_request(0, value, expected)
+            verify_request(index, value, expected)
 
-        post_result, post_path = self.request(3, "gzip", post=True)
-        assert "< content-encoding: gzip" in post_result.stderr.lower()
-        self.verify_body(post_path, "gzip")
+    for value, expected in (
+        ("gzip;q=0.666", "gzip"),
+        ("gzip;q=0.666x", "gzip"),
+        ("gzip;q=#0.666", "gzip"),
+        ("gzip; Q = 0.666", "gzip"),
+        ("gzip;q=0.0", "identity"),
+        ("gzip;q=-0.1", "gzip"),
+        ("aaa, gzip;q=0.666, bbb", "gzip"),
+        (" br ; q=0.666, bbb", "br"),
+        ("aaa, gzip;q=0.666 , ", "gzip"),
+    ):
+        verify_request(0, value, expected)
 
-        for accept_encoding in (None, "compress, identity"):
-            result, _ = self.request(0, accept_encoding)
-            assert "< vary: accept-encoding" in result.stderr.lower()
+    post_result, post_path = request(3, "gzip", post=True)
+    assert "< content-encoding: gzip" in post_result.stderr.lower()
+    verify_body(post_path, "gzip")
 
-        observed = (self._origin.run_directory / "compress_userver.log").read_text()
-        assert observed == (TEST_DIRECTORY / "compress_userver.gold").read_text()
+    for accept_encoding in (None, "compress, identity"):
+        result, _ = request(0, accept_encoding)
+        assert "< vary: accept-encoding" in result.stderr.lower()
 
-
-def test_compress(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """compress.so selects and normalizes supported content encodings."""
-
-    CompressScenario(ats_factory, services, curl).run()
+    observed = (_origin.run_directory / "compress_userver.log").read_text()
+    assert observed == (TEST_DIRECTORY / "compress_userver.gold").read_text()

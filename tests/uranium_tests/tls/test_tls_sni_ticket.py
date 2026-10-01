@@ -25,45 +25,24 @@ TEST_DIRECTORY = Path(__file__).parent
 SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-class TlsSniTicketScenario:
-    """Override process-wide TLS session ticket policy for individual SNI names."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create the response endpoint used by every ticket handshake.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin = self.configure_origin(services)
-        self._enabled = self.configure_ats(
-            ats_factory,
-            "tickets-enabled",
-            "tickets-on.com",
-            global_enabled=0,
-            global_count=0,
-            sni_enabled=1,
-            sni_count=3,
-        )
-        self._disabled = self.configure_ats(
-            ats_factory,
-            "tickets-disabled",
-            "tickets-off.com",
-            global_enabled=1,
-            global_count=2,
-            sni_enabled=0,
-        )
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create the response endpoint used by every ticket handshake."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: tickets.example.com\r\n\r\n"},
+        {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "body": "ticket test",
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {"headers": "GET / HTTP/1.1\r\nHost: tickets.example.com\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": "ticket test",
-            },
-        )
-        return origin
 
-    def configure_ats(
-        self,
+def configure_ats(
         ats_factory: ATSFactory,
         name: str,
         sni: str,
@@ -72,92 +51,124 @@ class TlsSniTicketScenario:
         global_count: int,
         sni_enabled: int,
         sni_count: int | None = None,
-    ) -> ATS:
-        """Configure one process-wide policy and its per-SNI override."""
+        _origin: OriginServer) -> ATS:
+    """Configure one process-wide policy and its per-SNI override.
 
-        ats = ats_factory.create(name, enable_tls=True)
-        ats.copy_to_ssl(SSL_DIRECTORY / "server.pem", SSL_DIRECTORY / "server.key")
-        ats.copy_to_config(TEST_DIRECTORY / "file.ticket")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "ssl|http",
-                "proxy.config.exec_thread.autoconfig.scale": 1.0,
-                "proxy.config.ssl.server.session_ticket.enable": global_enabled,
-                "proxy.config.ssl.server.session_ticket.number": global_count,
-                "proxy.config.ssl.server.ticket_key.filename": str(ats.config_directory / "file.ticket"),
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        document = "sni:\n" f"  - fqdn: {sni}\n" f"    ssl_ticket_enabled: {sni_enabled}\n"
-        if sni_count is not None:
-            document += f"    ssl_ticket_number: {sni_count}\n"
-        ats.write_config_file("sni.yaml", document)
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param name: Unique service or case name within this test.
+    :param sni: Sni used by this test step.
+    :param global_enabled: Global enabled used by this test step.
+    :param global_count: Global count used by this test step.
+    :param sni_enabled: Sni enabled used by this test step.
+    :param sni_count: Sni count used by this test step.
+    """
 
-    @staticmethod
-    def tls12_reuse(ats: ATS, servername: str) -> str:
-        """Create one session and attempt to resume it five times."""
+    ats = ats_factory.create(name, enable_tls=True)
+    ats.copy_to_ssl(SSL_DIRECTORY / "server.pem", SSL_DIRECTORY / "server.key")
+    ats.copy_to_config(TEST_DIRECTORY / "file.ticket")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl|http",
+            "proxy.config.exec_thread.autoconfig.scale": 1.0,
+            "proxy.config.ssl.server.session_ticket.enable": global_enabled,
+            "proxy.config.ssl.server.session_ticket.number": global_count,
+            "proxy.config.ssl.server.ticket_key.filename": str(ats.config_directory / "file.ticket"),
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    document = "sni:\n" f"  - fqdn: {sni}\n" f"    ssl_ticket_enabled: {sni_enabled}\n"
+    if sni_count is not None:
+        document += f"    ssl_ticket_number: {sni_count}\n"
+    ats.write_config_file("sni.yaml", document)
+    return ats
 
-        session = ats.run_directory / "session.pem"
-        request = f"GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n"
-        first = (
-            f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
-            f"-servername {servername} -sess_out '{session}' -tls1_2")
-        reuse = (
-            f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
-            f"-servername {servername} -sess_in '{session}' -tls1_2")
-        result = ats.run_shell(" && ".join((first, reuse, reuse, reuse, reuse, reuse)), timeout=45)
-        assert result.returncode == 0, result.output
-        return result.output
 
-    @staticmethod
-    def tls13_messages(ats: ATS, servername: str) -> str:
-        """Return OpenSSL's TLSv1.3 protocol-message trace for one connection."""
+def tls12_reuse(ats: ATS, servername: str) -> str:
+    """Create one session and attempt to resume it five times.
 
-        request = f"GET / HTTP/1.1\\r\\nHost: {servername}\\r\\nConnection: close\\r\\n\\r\\n"
-        command = (
-            f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
-            f"-servername {servername} -tls1_3 -msg -ign_eof")
-        result = ats.run_shell(command, timeout=30)
-        assert result.returncode == 0, result.output
-        return result.output
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param servername: Servername used by this test step.
+    """
 
-    @staticmethod
-    def tls12_reconnect(ats: ATS, servername: str) -> str:
-        """Ask OpenSSL to reconnect repeatedly when no session tickets are issued."""
+    session = ats.run_directory / "session.pem"
+    request = f"GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n"
+    first = (
+        f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
+        f"-servername {servername} -sess_out '{session}' -tls1_2")
+    reuse = (
+        f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
+        f"-servername {servername} -sess_in '{session}' -tls1_2")
+    result = ats.run_shell(" && ".join((first, reuse, reuse, reuse, reuse, reuse)), timeout=45)
+    assert result.returncode == 0, result.output
+    return result.output
 
-        command = (
-            f"openssl s_client -connect 127.0.0.1:{ats.https_port} "
-            f"-servername {servername} -tls1_2 -reconnect </dev/null")
-        result = ats.run_shell(command, timeout=30)
-        assert result.returncode == 0, result.output
-        return result.output
 
-    def run(self) -> None:
-        """Verify TLSv1.2 resumption and TLSv1.3 ticket counts for both overrides."""
+def tls13_messages(ats: ATS, servername: str) -> str:
+    """Return OpenSSL's TLSv1.3 protocol-message trace for one connection.
 
-        version = subprocess.run(("openssl", "version"), capture_output=True, text=True, check=False).stdout
-        if "OpenSSL" not in version and "BoringSSL" not in version:
-            pytest.skip("OpenSSL-compatible s_client is required")
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param servername: Servername used by this test step.
+    """
 
-        self._origin.start()
-        self._enabled.start()
-        self._disabled.start()
+    request = f"GET / HTTP/1.1\\r\\nHost: {servername}\\r\\nConnection: close\\r\\n\\r\\n"
+    command = (
+        f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
+        f"-servername {servername} -tls1_3 -msg -ign_eof")
+    result = ats.run_shell(command, timeout=30)
+    assert result.returncode == 0, result.output
+    return result.output
 
-        enabled12 = self.tls12_reuse(self._enabled, "tickets-on.com")
-        assert enabled12.count("Reused, TLSv1.2") == 5
-        disabled12 = self.tls12_reconnect(self._disabled, "tickets-off.com")
-        assert "Reused" not in disabled12
-        assert "TLSv1.2" in disabled12
 
-        enabled13 = self.tls13_messages(self._enabled, "tickets-on.com")
-        expected_tickets = 0 if "BoringSSL" in version else 3
-        assert enabled13.count("NewSessionTicket") == expected_tickets
-        disabled13 = self.tls13_messages(self._disabled, "tickets-off.com")
-        assert "NewSessionTicket" not in disabled13
+def tls12_reconnect(ats: ATS, servername: str) -> str:
+    """Ask OpenSSL to reconnect repeatedly when no session tickets are issued.
+
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param servername: Servername used by this test step.
+    """
+
+    command = (f"openssl s_client -connect 127.0.0.1:{ats.https_port} "
+               f"-servername {servername} -tls1_2 -reconnect </dev/null")
+    result = ats.run_shell(command, timeout=30)
+    assert result.returncode == 0, result.output
+    return result.output
 
 
 def test_tls_sni_ticket(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Per-SNI ticket overrides take precedence over process-wide TLS ticket settings."""
+    """Per-SNI ticket overrides take precedence over process-wide TLS ticket settings.
 
-    TlsSniTicketScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _origin = configure_origin(services)
+    _enabled = configure_ats(
+        ats_factory,
+        "tickets-enabled",
+        "tickets-on.com",
+        global_enabled=0,
+        global_count=0,
+        sni_enabled=1,
+        sni_count=3,
+        _origin=_origin)
+    _disabled = configure_ats(
+        ats_factory, "tickets-disabled", "tickets-off.com", global_enabled=1, global_count=2, sni_enabled=0, _origin=_origin)
+
+    version = subprocess.run(("openssl", "version"), capture_output=True, text=True, check=False).stdout
+    if "OpenSSL" not in version and "BoringSSL" not in version:
+        pytest.skip("OpenSSL-compatible s_client is required")
+
+    _origin.start()
+    _enabled.start()
+    _disabled.start()
+
+    enabled12 = tls12_reuse(_enabled, "tickets-on.com")
+    assert enabled12.count("Reused, TLSv1.2") == 5
+    disabled12 = tls12_reconnect(_disabled, "tickets-off.com")
+    assert "Reused" not in disabled12
+    assert "TLSv1.2" in disabled12
+
+    enabled13 = tls13_messages(_enabled, "tickets-on.com")
+    expected_tickets = 0 if "BoringSSL" in version else 3
+    assert enabled13.count("NewSessionTicket") == expected_tickets
+    disabled13 = tls13_messages(_disabled, "tickets-off.com")
+    assert "NewSessionTicket" not in disabled13

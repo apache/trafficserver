@@ -24,125 +24,141 @@ TEST_DIRECTORY = Path(__file__).parent
 SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-class DefaultTlsSecretUpdateScenario:
-    """Refresh the default no-SNI SSL context through the secret update API."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create the clear-text origin reached after the inbound TLS handshake.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create the clear-text origin reached after the inbound TLS handshake."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {"headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure two wildcard certificates and the secret-loader plugin."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Configure two wildcard certificates and the secret-loader plugin.
 
-        ats = ats_factory.create("ts", enable_tls=True)
-        ats.copy_to_ssl(
-            SSL_DIRECTORY / "signed-bar.pem",
-            SSL_DIRECTORY / "signed2-bar.pem",
-            SSL_DIRECTORY / "signed-bar.key",
-            SSL_DIRECTORY / "signed-foo.pem",
-            SSL_DIRECTORY / "signed2-foo.pem",
-            SSL_DIRECTORY / "signed-foo.key",
-        )
-        ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_secret_load_test.so")
-        ats.plugin_config.add_line("ssl_secret_load_test.so")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "ssl_secret_load_test",
-                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory.parent),
-                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory.parent),
-                "proxy.config.ssl.server.multicert.concurrency": 1,
-                "proxy.config.exec_thread.autoconfig.scale": 1.0,
-                "proxy.config.url_remap.pristine_host_hdr": 1,
-            })
-        ats.set_ssl_multicert_yaml(
-            {
-                "ssl_multicert":
-                    [
-                        {
-                            "dest_ip": "*",
-                            "ssl_cert_name": "signed-bar.pem",
-                            "ssl_key_name": "signed-bar.key"
-                        },
-                        {
-                            "dest_ip": "*",
-                            "ssl_cert_name": "signed-foo.pem",
-                            "ssl_key_name": "signed-foo.key"
-                        },
-                    ]
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def certificate_output(self) -> str:
-        """Connect without SNI and return curl's certificate diagnostics."""
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.copy_to_ssl(
+        SSL_DIRECTORY / "signed-bar.pem",
+        SSL_DIRECTORY / "signed2-bar.pem",
+        SSL_DIRECTORY / "signed-bar.key",
+        SSL_DIRECTORY / "signed-foo.pem",
+        SSL_DIRECTORY / "signed2-foo.pem",
+        SSL_DIRECTORY / "signed-foo.key",
+    )
+    ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_secret_load_test.so")
+    ats.plugin_config.add_line("ssl_secret_load_test.so")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_secret_load_test",
+            "proxy.config.ssl.server.cert.path": str(ats.ssl_directory.parent),
+            "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory.parent),
+            "proxy.config.ssl.server.multicert.concurrency": 1,
+            "proxy.config.exec_thread.autoconfig.scale": 1.0,
+            "proxy.config.url_remap.pristine_host_hdr": 1,
+        })
+    ats.set_ssl_multicert_yaml(
+        {
+            "ssl_multicert":
+                [
+                    {
+                        "dest_ip": "*",
+                        "ssl_cert_name": "signed-bar.pem",
+                        "ssl_key_name": "signed-bar.key"
+                    },
+                    {
+                        "dest_ip": "*",
+                        "ssl_cert_name": "signed-foo.pem",
+                        "ssl_key_name": "signed-foo.key"
+                    },
+                ]
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    return ats
 
-        result = self._curl.run_for(
-            self._ats,
-            (f"--insecure --verbose --http1.1 --header 'Host: doesnotmatter' "
-             f"'https://127.0.0.1:{self._ats.https_port}/'"),
-        )
-        assert result.returncode == 0, result.output
-        return result.output
 
-    def await_secret_update(self, filename: str) -> None:
-        """Wait until the test plugin reports refreshing one certificate secret."""
+def certificate_output(*, _ats: ATS, _curl: Curl) -> str:
+    """Connect without SNI and return curl's certificate diagnostics.
 
-        for _ in range(120):
-            output = self._ats.traffic_out.read_text(errors="replace") if self._ats.traffic_out.exists() else ""
-            if any("updated cert for secret" in line and filename in line for line in output.splitlines()):
-                return
-            time.sleep(0.1)
-        raise AssertionError(f"The secret-loader did not refresh {filename}:\n{output}")
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
 
-    @staticmethod
-    def assert_certificate(output: str, common_name: str, issuer: str) -> None:
-        """Require the selected subject and issuer in curl's TLS diagnostics."""
+    result = _curl.run_for(
+        _ats,
+        (f"--insecure --verbose --http1.1 --header 'Host: doesnotmatter' "
+         f"'https://127.0.0.1:{_ats.https_port}/'"),
+    )
+    assert result.returncode == 0, result.output
+    return result.output
 
-        assert f"CN={common_name}" in output or f"CN = {common_name}" in output
-        assert f"CN={issuer}" in output or f"CN = {issuer}" in output
 
-    def run(self) -> None:
-        """Update a shadowed wildcard and then the active default certificate."""
+def await_secret_update(filename: str, *, _ats: ATS) -> None:
+    """Wait until the test plugin reports refreshing one certificate secret.
 
-        self._origin.start()
-        self._ats.start()
-        self._ats.ssl_multicert_config.path.touch()
-        reload_result = self._ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
-        assert reload_result.returncode == 0, reload_result.output
+    :param _ats: Test-local ats configured by the test.
+    :param filename: Filename used by this test step.
+    """
 
-        initial = self.certificate_output()
-        self.assert_certificate(initial, "bar.com", "signer.yahoo.com")
-        assert "signer2.yahoo.com" not in initial
+    for _ in range(120):
+        output = _ats.traffic_out.read_text(errors="replace") if _ats.traffic_out.exists() else ""
+        if any("updated cert for secret" in line and filename in line for line in output.splitlines()):
+            return
+        time.sleep(0.1)
+    raise AssertionError(f"The secret-loader did not refresh {filename}:\n{output}")
 
-        time.sleep(2)
-        shutil.copy2(SSL_DIRECTORY / "signed2-foo.pem", self._ats.ssl_directory / "signed-foo.pem")
-        (self._ats.ssl_directory / "signed-foo.pem").touch()
-        self.await_secret_update("signed-foo.pem")
-        unchanged = self.certificate_output()
-        self.assert_certificate(unchanged, "bar.com", "signer.yahoo.com")
-        assert "foo.com" not in unchanged
 
-        shutil.copy2(SSL_DIRECTORY / "signed2-bar.pem", self._ats.ssl_directory / "signed-bar.pem")
-        (self._ats.ssl_directory / "signed-bar.pem").touch()
-        self.await_secret_update("signed-bar.pem")
-        updated = self.certificate_output()
-        self.assert_certificate(updated, "bar.com", "signer2.yahoo.com")
+def assert_certificate(output: str, common_name: str, issuer: str) -> None:
+    """Require the selected subject and issuer in curl's TLS diagnostics.
+
+    :param output: Output used by this test step.
+    :param common_name: Common name used by this test step.
+    :param issuer: Issuer used by this test step.
+    """
+
+    assert f"CN={common_name}" in output or f"CN = {common_name}" in output
+    assert f"CN={issuer}" in output or f"CN = {issuer}" in output
 
 
 def test_tls_secret_update_default(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Updating a shadowed certificate cannot replace the default SSL context."""
+    """Updating a shadowed certificate cannot replace the default SSL context.
 
-    DefaultTlsSecretUpdateScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    _ats.ssl_multicert_config.path.touch()
+    reload_result = _ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
+    assert reload_result.returncode == 0, reload_result.output
+
+    initial = certificate_output(_ats=_ats, _curl=curl)
+    assert_certificate(initial, "bar.com", "signer.yahoo.com")
+    assert "signer2.yahoo.com" not in initial
+
+    time.sleep(2)
+    shutil.copy2(SSL_DIRECTORY / "signed2-foo.pem", _ats.ssl_directory / "signed-foo.pem")
+    (_ats.ssl_directory / "signed-foo.pem").touch()
+    await_secret_update("signed-foo.pem", _ats=_ats)
+    unchanged = certificate_output(_ats=_ats, _curl=curl)
+    assert_certificate(unchanged, "bar.com", "signer.yahoo.com")
+    assert "foo.com" not in unchanged
+
+    shutil.copy2(SSL_DIRECTORY / "signed2-bar.pem", _ats.ssl_directory / "signed-bar.pem")
+    (_ats.ssl_directory / "signed-bar.pem").touch()
+    await_secret_update("signed-bar.pem", _ats=_ats)
+    updated = certificate_output(_ats=_ats, _curl=curl)
+    assert_certificate(updated, "bar.com", "signer2.yahoo.com")

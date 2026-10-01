@@ -16,74 +16,78 @@
 
 from tools.uranium.services import ATS, ATSFactory
 
+RECORDS_RUNROOT_PRECEDENCE__PATH_RECORDS = (
+    "proxy.config.bin_path",
+    "proxy.config.local_state_dir",
+    "proxy.config.log.logfile_dir",
+    "proxy.config.plugin.plugin_dir",
+)
 
-class RecordsRunrootPrecedenceScenario:
-    """Verify environment and runroot path records override records.yaml."""
 
-    _PATH_RECORDS = (
-        "proxy.config.bin_path",
-        "proxy.config.local_state_dir",
-        "proxy.config.log.logfile_dir",
-        "proxy.config.plugin.plugin_dir",
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Configure deliberately wrong path values and one environment override.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.bin_path": "wrong_bin_path",
+            "proxy.config.local_state_dir": "wrong_runtime",
+            "proxy.config.log.logfile_dir": "wrong_log",
+            "proxy.config.plugin.plugin_dir": "wrong_plugin",
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "config_value",
+        })
+    ats.set_environment("PROXY_CONFIG_DIAGS_DEBUG_TAGS", "env_wins")
+    ats.unset_environment(
+        "PROXY_CONFIG_BIN_PATH",
+        "PROXY_CONFIG_LOCAL_STATE_DIR",
+        "PROXY_CONFIG_LOG_LOGFILE_DIR",
+        "PROXY_CONFIG_PLUGIN_PLUGIN_DIR",
     )
+    return ats
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure deliberately wrong path values and one environment override."""
+def verify_startup_diagnostics(*, _ats: ATS) -> None:
+    """Verify startup completed and reported each precedence override.
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
-            {
-                "proxy.config.bin_path": "wrong_bin_path",
-                "proxy.config.local_state_dir": "wrong_runtime",
-                "proxy.config.log.logfile_dir": "wrong_log",
-                "proxy.config.plugin.plugin_dir": "wrong_plugin",
-                "proxy.config.diags.debug.enabled": 0,
-                "proxy.config.diags.debug.tags": "config_value",
-            })
-        ats.set_environment("PROXY_CONFIG_DIAGS_DEBUG_TAGS", "env_wins")
-        ats.unset_environment(
-            "PROXY_CONFIG_BIN_PATH",
-            "PROXY_CONFIG_LOCAL_STATE_DIR",
-            "PROXY_CONFIG_LOG_LOGFILE_DIR",
-            "PROXY_CONFIG_PLUGIN_PLUGIN_DIR",
-        )
-        return ats
+    :param _ats: Test-local ats configured by the test.
+    """
 
-    def verify_startup_diagnostics(self) -> None:
-        """Verify startup completed and reported each precedence override."""
+    output = _ats.traffic_out.read_text(errors="replace")
+    assert "basic_string" not in output
+    assert "records parsing completed" in output
+    for record in RECORDS_RUNROOT_PRECEDENCE__PATH_RECORDS:
+        assert f"'{record}' overridden with" in output
+        assert "by runroot" in output
+    assert "'proxy.config.diags.debug.tags' overridden with 'env_wins' by environment variable" in output
 
-        output = self._ats.traffic_out.read_text(errors="replace")
-        assert "basic_string" not in output
-        assert "records parsing completed" in output
-        for record in self._PATH_RECORDS:
-            assert f"'{record}' overridden with" in output
-            assert "by runroot" in output
-        assert "'proxy.config.diags.debug.tags' overridden with 'env_wins' by environment variable" in output
 
-    def verify_runtime_values(self) -> None:
-        """Verify runroot beat records.yaml and the environment beat both."""
+def verify_runtime_values(*, _ats: ATS) -> None:
+    """Verify runroot beat records.yaml and the environment beat both.
 
-        result = self._ats.traffic_ctl("config", "get", *self._PATH_RECORDS)
-        assert result.returncode == 0, result.output
-        for wrong_value in ("wrong_bin_path", "wrong_runtime", "wrong_log", "wrong_plugin"):
-            assert wrong_value not in result.stdout
+    :param _ats: Test-local ats configured by the test.
+    """
 
-        result = self._ats.traffic_ctl("config", "get", "proxy.config.diags.debug.tags")
-        assert result.returncode == 0, result.output
-        assert "proxy.config.diags.debug.tags: env_wins" in result.stdout
+    result = _ats.traffic_ctl("config", "get", *RECORDS_RUNROOT_PRECEDENCE__PATH_RECORDS)
+    assert result.returncode == 0, result.output
+    for wrong_value in ("wrong_bin_path", "wrong_runtime", "wrong_log", "wrong_plugin"):
+        assert wrong_value not in result.stdout
 
-    def run(self) -> None:
-        """Start ATS with runroot active and validate record precedence."""
-
-        self._ats.start()
-        self.verify_startup_diagnostics()
-        self.verify_runtime_values()
+    result = _ats.traffic_ctl("config", "get", "proxy.config.diags.debug.tags")
+    assert result.returncode == 0, result.output
+    assert "proxy.config.diags.debug.tags: env_wins" in result.stdout
 
 
 def test_records_runroot_precedence(ats_factory: ATSFactory) -> None:
-    """Environment variables take precedence over runroot and records.yaml."""
+    """Environment variables take precedence over runroot and records.yaml.
 
-    RecordsRunrootPrecedenceScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    verify_startup_diagnostics(_ats=_ats)
+    verify_runtime_values(_ats=_ats)

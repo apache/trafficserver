@@ -22,78 +22,90 @@ from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceF
 SSL_DIRECTORY = Path(__file__).parent / "ssl"
 
 
-class ReloadableTlsVerifyScenario:
-    """Change outbound certificate verification policy at runtime."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create an HTTPS origin whose certificate is not trusted by ATS.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create an HTTPS origin whose certificate is not trusted by ATS."""
+    origin = services.origin("origin", ssl=True)
+    origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: random.example\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"},
+    )
+    return origin
 
-        origin = services.origin("origin", ssl=True)
-        origin.add_response(
-            {"headers": "GET / HTTP/1.1\r\nHost: random.example\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"},
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure enforced verification against an unrelated CA."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Configure enforced verification against an unrelated CA.
 
-        ats = ats_factory.create("ts", enable_tls=True)
-        ats.add_default_ssl_files()
-        ats.copy_to_ssl(SSL_DIRECTORY / "signer.pem")
-        ats.remap_config.add_line(f"map / https://127.0.0.1:{self._origin.https_port}")
-        ats.records.update(
-            {
-                "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
-                "proxy.config.ssl.client.verify.server.properties": "ALL",
-                "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
-                "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
-                "proxy.config.url_remap.pristine_host_hdr": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "ssl",
-            })
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def request(self, host: str) -> str:
-        """Send one request with @a host through the ATS TLS listener."""
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.add_default_ssl_files()
+    ats.copy_to_ssl(SSL_DIRECTORY / "signer.pem")
+    ats.remap_config.add_line(f"map / https://127.0.0.1:{_origin.https_port}")
+    ats.records.update(
+        {
+            "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
+            "proxy.config.ssl.client.verify.server.properties": "ALL",
+            "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
+            "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
+            "proxy.config.url_remap.pristine_host_hdr": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl",
+        })
+    return ats
 
-        result = self._curl.run_for(
-            self._ats,
-            f"--insecure --header 'Host: {host}' 'https://127.0.0.1:{self._ats.https_port}/'",
-        )
-        assert result.returncode == 0, result.output
-        return result.stdout
 
-    def set_policy(self, policy: str) -> None:
-        """Set the reloadable outbound verification policy."""
+def request(host: str, *, _ats: ATS, _curl: Curl) -> str:
+    """Send one request with @a host through the ATS TLS listener.
 
-        result = self._ats.traffic_ctl("config", "set", "proxy.config.ssl.client.verify.server.policy", policy)
-        assert result.returncode == 0, result.output
-        time.sleep(0.2)
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param host: HTTP host name used for the request.
+    """
 
-    def run(self) -> None:
-        """Verify enforced, permissive, and restored enforced behavior."""
+    result = _curl.run_for(
+        _ats,
+        f"--insecure --header 'Host: {host}' 'https://127.0.0.1:{_ats.https_port}/'",
+    )
+    assert result.returncode == 0, result.output
+    return result.stdout
 
-        self._origin.start()
-        self._ats.start()
-        assert "Could Not Connect" in self.request("random2.com")
-        self.set_policy("PERMISSIVE")
-        assert "Could Not Connect" not in self.request("random3.com")
-        self.set_policy("ENFORCED")
-        assert "Could Not Connect" in self.request("random4.com")
 
-        diagnostics = self._ats.diags_log.read_text(errors="replace")
-        assert "Core server certificate verification failed for (random3.com). Action=Continue" in diagnostics
-        assert "Core server certificate verification failed for (random2.com). Action=Terminate" in diagnostics
+def set_policy(policy: str, *, _ats: ATS) -> None:
+    """Set the reloadable outbound verification policy.
+
+    :param _ats: Test-local ats configured by the test.
+    :param policy: Policy used by this test step.
+    """
+
+    result = _ats.traffic_ctl("config", "set", "proxy.config.ssl.client.verify.server.policy", policy)
+    assert result.returncode == 0, result.output
+    time.sleep(0.2)
 
 
 def test_tls_verify4(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Outbound TLS verification policy changes take effect without restart."""
+    """Outbound TLS verification policy changes take effect without restart.
 
-    ReloadableTlsVerifyScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    assert "Could Not Connect" in request("random2.com", _ats=_ats, _curl=curl)
+    set_policy("PERMISSIVE", _ats=_ats)
+    assert "Could Not Connect" not in request("random3.com", _ats=_ats, _curl=curl)
+    set_policy("ENFORCED", _ats=_ats)
+    assert "Could Not Connect" in request("random4.com", _ats=_ats, _curl=curl)
+
+    diagnostics = _ats.diags_log.read_text(errors="replace")
+    assert "Core server certificate verification failed for (random3.com). Action=Continue" in diagnostics
+    assert "Core server certificate verification failed for (random2.com). Action=Terminate" in diagnostics

@@ -26,127 +26,79 @@ from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, HttpBin
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class HttpbinH2Scenario:
-    """Exercise HTTP/2 requests against a go-httpbin origin."""
+def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
+    """Create the HTTP behavior origin.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        """Configure an HTTP/2 scenario.
+    :param services: Factory used to create the httpbin origin.
+    """
 
-        :param ats_factory: Factory used to create the Traffic Server process.
-        :param services: Factory used to create the httpbin origin.
-        :param curl: Curl client used to send HTTP/2 requests.
-        """
+    return services.httpbin("httpbin")
 
-        self._curl = curl
-        self._httpbin = self.configure_httpbin(services)
-        self._ats = self.configure_ats(ats_factory)
 
-    @staticmethod
-    def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
-        """Create the HTTP behavior origin.
+def configure_ats(ats_factory: ATSFactory, *, _httpbin: HttpBinServer) -> ATS:
+    """Terminate HTTP/2, add Via headers, and configure access logging.
 
-        :param services: Factory used to create the httpbin origin.
-        """
+    :param ats_factory: Factory used to create the Traffic Server process.
 
-        return services.httpbin("httpbin")
+    :param _httpbin: Test-local httpbin configured by the test.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Terminate HTTP/2, add Via headers, and configure access logging.
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_httpbin.port}")
+    ats.ssl_multicert_config.add_lines(
+        (
+            "ssl_multicert:",
+            '  - dest_ip: "*"',
+            "    ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ))
+    ats.records.update(
+        {
+            "proxy.config.http.insert_request_via_str": 1,
+            "proxy.config.http.insert_response_via_str": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.log.max_secs_per_buffer": 1,
+        })
+    ats.set_logging_yaml(
+        {
+            "logging":
+                {
+                    "formats":
+                        [
+                            {
+                                "name": "access",
+                                "format": "[%<cqtn>] %<cqhm> %<pqu> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>",
+                            }
+                        ],
+                    "logs": [{
+                        "filename": "access",
+                        "format": "access"
+                    }],
+                }
+        })
+    return ats
 
-        :param ats_factory: Factory used to create the Traffic Server process.
-        """
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._httpbin.port}")
-        ats.ssl_multicert_config.add_lines(
-            (
-                "ssl_multicert:",
-                '  - dest_ip: "*"',
-                "    ssl_cert_name: server.pem",
-                "    ssl_key_name: server.key",
-            ))
-        ats.records.update(
-            {
-                "proxy.config.http.insert_request_via_str": 1,
-                "proxy.config.http.insert_response_via_str": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.log.max_secs_per_buffer": 1,
-            })
-        ats.set_logging_yaml(
-            {
-                "logging":
-                    {
-                        "formats":
-                            [
-                                {
-                                    "name": "access",
-                                    "format": "[%<cqtn>] %<cqhm> %<pqu> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>",
-                                }
-                            ],
-                        "logs": [{
-                            "filename": "access",
-                            "format": "access"
-                        }],
-                    }
-            })
-        return ats
+def request(path: str, *arguments: str, _ats: ATS, _curl: Curl) -> CommandResult:
+    """Send one verbose HTTP/2 request through ATS.
 
-    def request(self, path: str, *arguments: str) -> CommandResult:
-        """Send one verbose HTTP/2 request through ATS.
+    :param path: Request path appended to the Traffic Server URL.
+    :param arguments: Additional curl command-line arguments.
 
-        :param path: Request path appended to the Traffic Server URL.
-        :param arguments: Additional curl command-line arguments.
-        """
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
 
-        result = self._curl.run_for(
-            self._ats,
-            (f"--verbose --silent --insecure --http2 {shlex.join(arguments)} "
-             f"'https://127.0.0.1:{self._ats.https_port}{path}'"),
-        )
-        assert result.returncode == 0, result.output
-        assert "HTTP/2 200" in result.stderr
-        return result
-
-    def run(self) -> None:
-        """Verify JSON, empty, streamed, and 100-Continue responses."""
-
-        if not self._curl.supports("http2"):
-            pytest.skip("curl with HTTP/2 support is required")
-        if shutil.which("cksum") is None:
-            pytest.skip("cksum is required")
-        self._httpbin.start()
-        self._ats.start()
-
-        basic = self.request("/get")
-        assert json.loads(basic.stdout)["url"].endswith("/get")
-        assert "via:" in basic.stderr.lower()
-
-        empty = self.request("/bytes/0")
-        assert empty.stdout == ""
-        assert "content-length: 0" in empty.stderr.lower()
-
-        stream = self._ats.run_shell(
-            f"curl -sk --http2 https://127.0.0.1:{self._ats.https_port}/stream-bytes/102400?seed=0 | cksum")
-        assert stream.returncode == 0, stream.output
-        assert stream.stdout == "3197674613 102400\n"
-
-        post = self.request(
-            "/post",
-            "--data",
-            "key=value",
-            "--header",
-            "Expect: 100-continue",
-            "--max-time",
-            "5",
-        )
-        assert "HTTP/2 100" in post.stderr
-        assert json.loads(post.stdout)["form"] == {"key": ["value"]}
-
-        access = wait_for_file_lines(self._ats.log_directory / "access.log", r"POST .*?/post", 1)
-        for fragment in ("GET http://127.0.0.1:", "/bytes/0 http/2", "/stream-bytes/102400?seed=0 http/2"):
-            assert fragment in access
+    result = _curl.run_for(
+        _ats,
+        (f"--verbose --silent --insecure --http2 {shlex.join(arguments)} "
+         f"'https://127.0.0.1:{_ats.https_port}{path}'"),
+    )
+    assert result.returncode == 0, result.output
+    assert "HTTP/2 200" in result.stderr
+    return result
 
 
 def test_httpbin(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -156,5 +108,32 @@ def test_httpbin(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) 
     :param services: Factory used to create the httpbin origin.
     :param curl: Curl client used to send HTTP/2 requests.
     """
+    _httpbin = configure_httpbin(services)
+    _ats = configure_ats(ats_factory, _httpbin=_httpbin)
 
-    HttpbinH2Scenario(ats_factory, services, curl).run()
+    if not curl.supports("http2"):
+        pytest.skip("curl with HTTP/2 support is required")
+    if shutil.which("cksum") is None:
+        pytest.skip("cksum is required")
+    _httpbin.start()
+    _ats.start()
+
+    basic = request("/get", _ats=_ats, _curl=curl)
+    assert json.loads(basic.stdout)["url"].endswith("/get")
+    assert "via:" in basic.stderr.lower()
+
+    empty = request("/bytes/0", _ats=_ats, _curl=curl)
+    assert empty.stdout == ""
+    assert "content-length: 0" in empty.stderr.lower()
+
+    stream = _ats.run_shell(f"curl -sk --http2 https://127.0.0.1:{_ats.https_port}/stream-bytes/102400?seed=0 | cksum")
+    assert stream.returncode == 0, stream.output
+    assert stream.stdout == "3197674613 102400\n"
+
+    post = request("/post", "--data", "key=value", "--header", "Expect: 100-continue", "--max-time", "5", _ats=_ats, _curl=curl)
+    assert "HTTP/2 100" in post.stderr
+    assert json.loads(post.stdout)["form"] == {"key": ["value"]}
+
+    access = wait_for_file_lines(_ats.log_directory / "access.log", r"POST .*?/post", 1)
+    for fragment in ("GET http://127.0.0.1:", "/bytes/0 http/2", "/stream-bytes/102400?seed=0 http/2"):
+        assert fragment in access

@@ -26,107 +26,22 @@ from uranium_tests.cache.shm_helpers import assert_log, clean_shutdown, clear_sh
 REPLAY = "replay/cache-shm-dir-invalid.replay.yaml"
 
 
-class CacheShmDirectoryInvalidScenario:
+def test_cache_shm_dir_invalid(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """Out-of-range shm directory fields fall back to disk recovery.
 
     The test separately corrupts ``write_pos`` and ``freelist[0]`` in a clean
     stripe segment. Each restart may attach the segment itself, but must reject
     the unsafe directory contents before they can drive out-of-bounds disk I/O.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
     """
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self.ats_factory = ats_factory
-        self.services = services
-        self.prefix = shm_prefix("d")
-        self.stripe_file = Path("/dev/shm") / f"{self.prefix.lstrip('/')}s0"
-        self.poke_script = Path(__file__).parent / "shm_poke.py"
+    def _assert_rejected_directory(ats: ATS) -> None:
+        """assert rejected directory.
 
-    def _check_requirements(self) -> None:
-        if platform.system() != "Linux":
-            pytest.skip("shm byte-poke gates need Linux /dev/shm")
-
-    def _configure_storage(self) -> None:
-        self.disk = make_disk(self.ats_factory.run_directory, "disk.img")
-
-    def _configure_origin(self) -> None:
-        self.origin = self.services.verifier_server("shmd-origin", REPLAY)
-
-    def _configure_traffic_servers(self) -> None:
-        self.ts1 = configure_shm_ats(
-            self.ats_factory,
-            "shmd_ts1",
-            self.prefix,
-            [self.disk],
-            origin_port=self.origin.http_port,
-        )
-        self.ts2 = configure_shm_ats(
-            self.ats_factory,
-            "shmd_ts2",
-            self.prefix,
-            [self.disk],
-            origin_port=self.origin.http_port,
-        )
-        self.ts3 = configure_shm_ats(
-            self.ats_factory,
-            "shmd_ts3",
-            self.prefix,
-            [self.disk],
-            origin_port=self.origin.http_port,
-        )
-
-    def _start_origin(self) -> None:
-        self.origin.start()
-
-    def _fill_cache_and_cleanly_shutdown(self) -> None:
-        self.ts1.start()
-        result = self.services.verifier_client(
-            "shmd-fill-client",
-            REPLAY,
-            http_ports=[self.ts1.http_port],
-            keys="fill",
-            other_args="--thread-limit 1",
-        ).run()
-
-        assert result.returncode == 0, result.output
-        clean_shutdown(self.ts1)
-
-    def _corrupt_write_position(self) -> None:
-        result = self.ts1.run(sys.executable, self.poke_script, self.stripe_file, "16", "ffffffffffff0000")
-
-        assert result.returncode == 0, result.output
-
-    def _verify_write_position_falls_back_to_disk(self) -> None:
-        self.ts2.start()
-        result = self.services.verifier_client(
-            "shmd-write-pos-client",
-            REPLAY,
-            http_ports=[self.ts2.http_port],
-            keys="hit_write_pos",
-            other_args="--thread-limit 1",
-        ).run()
-
-        assert result.returncode == 0, result.output
-        clean_shutdown(self.ts2)
-
-    def _corrupt_freelist(self) -> None:
-        result = self.ts2.run(sys.executable, self.poke_script, self.stripe_file, "72", "ffff")
-
-        assert result.returncode == 0, result.output
-
-    def _verify_freelist_falls_back_to_disk(self) -> None:
-        self.ts3.start()
-        result = self.services.verifier_client(
-            "shmd-freelist-client",
-            REPLAY,
-            http_ports=[self.ts3.http_port],
-            keys="hit_freelist",
-            other_args="--thread-limit 1",
-        ).run()
-
-        assert result.returncode == 0, result.output
-        clean_shutdown(self.ts3)
-
-    def _assert_rejected_directory(self, ats: ATS) -> None:
+        :param ats: Traffic Server instance configured or queried by this step.
+        """
         assert_log(
             ats,
             contains=(
@@ -141,36 +56,83 @@ class CacheShmDirectoryInvalidScenario:
             ),
         )
 
-    def _verify_restart_logs(self) -> None:
-        assert_log(
-            self.ts1,
-            contains=(
-                r"cache shm: creating fresh control segment",
-                r"cache shm: created stripe \S+ \(\d+ bytes\) for key=",
-                r"cache shm: marking clean shutdown",
-            ),
-            excludes=(r"shm directory invalid for",),
-        )
-        self._assert_rejected_directory(self.ts2)
-        self._assert_rejected_directory(self.ts3)
+    prefix = shm_prefix("d")
+    stripe_file = Path("/dev/shm") / f"{prefix.lstrip('/')}s0"
+    poke_script = Path(__file__).parent / "shm_poke.py"
+    if platform.system() != "Linux":
+        pytest.skip("shm byte-poke gates need Linux /dev/shm")
+    disk = make_disk(ats_factory.run_directory, "disk.img")
+    origin = services.verifier_server("shmd-origin", REPLAY)
+    ts1 = configure_shm_ats(
+        ats_factory,
+        "shmd_ts1",
+        prefix,
+        [disk],
+        origin_port=origin.http_port,
+    )
+    ts2 = configure_shm_ats(
+        ats_factory,
+        "shmd_ts2",
+        prefix,
+        [disk],
+        origin_port=origin.http_port,
+    )
+    ts3 = configure_shm_ats(
+        ats_factory,
+        "shmd_ts3",
+        prefix,
+        [disk],
+        origin_port=origin.http_port,
+    )
+    origin.start()
+    ts1.start()
+    result = services.verifier_client(
+        "shmd-fill-client",
+        REPLAY,
+        http_ports=[ts1.http_port],
+        keys="fill",
+        other_args="--thread-limit 1",
+    ).run()
 
-    def _clear_shared_memory(self) -> None:
-        clear_shm(self.ts3, self.prefix)
+    assert result.returncode == 0, result.output
+    clean_shutdown(ts1)
+    result = ts1.run(sys.executable, poke_script, stripe_file, "16", "ffffffffffff0000")
 
-    def run(self) -> None:
-        self._check_requirements()
-        self._configure_storage()
-        self._configure_origin()
-        self._configure_traffic_servers()
-        self._start_origin()
-        self._fill_cache_and_cleanly_shutdown()
-        self._corrupt_write_position()
-        self._verify_write_position_falls_back_to_disk()
-        self._corrupt_freelist()
-        self._verify_freelist_falls_back_to_disk()
-        self._verify_restart_logs()
-        self._clear_shared_memory()
+    assert result.returncode == 0, result.output
+    ts2.start()
+    result = services.verifier_client(
+        "shmd-write-pos-client",
+        REPLAY,
+        http_ports=[ts2.http_port],
+        keys="hit_write_pos",
+        other_args="--thread-limit 1",
+    ).run()
 
+    assert result.returncode == 0, result.output
+    clean_shutdown(ts2)
+    result = ts2.run(sys.executable, poke_script, stripe_file, "72", "ffff")
 
-def test_cache_shm_dir_invalid(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    CacheShmDirectoryInvalidScenario(ats_factory, services).run()
+    assert result.returncode == 0, result.output
+    ts3.start()
+    result = services.verifier_client(
+        "shmd-freelist-client",
+        REPLAY,
+        http_ports=[ts3.http_port],
+        keys="hit_freelist",
+        other_args="--thread-limit 1",
+    ).run()
+
+    assert result.returncode == 0, result.output
+    clean_shutdown(ts3)
+    assert_log(
+        ts1,
+        contains=(
+            r"cache shm: creating fresh control segment",
+            r"cache shm: created stripe \S+ \(\d+ bytes\) for key=",
+            r"cache shm: marking clean shutdown",
+        ),
+        excludes=(r"shm directory invalid for",),
+    )
+    _assert_rejected_directory(ts2)
+    _assert_rejected_directory(ts3)
+    clear_shm(ts3, prefix)

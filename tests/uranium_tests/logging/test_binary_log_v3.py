@@ -32,116 +32,128 @@ from tools.uranium.services import (
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class BinaryLogV3Scenario:
-    """Write v2 and v3 binary logs and decode both formats."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create the HTTP/1.1 origin response used by every request.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        if curl.uses_uds:
-            pytest.skip("The client-address log field requires a TCP curl connection")
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create the HTTP/1.1 origin response used by every request."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET /get HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"},
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {"headers": "GET /get HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"},
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure matching ASCII, v2 binary, and v3 binary log objects."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Configure matching ASCII, v2 binary, and v3 binary log objects.
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.records.update({
-            "proxy.config.log.max_secs_per_buffer": 1,
-            "proxy.config.log.periodic_tasks_interval": 1,
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.records.update({
+        "proxy.config.log.max_secs_per_buffer": 1,
+        "proxy.config.log.periodic_tasks_interval": 1,
+    })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}/")
+    ats.set_logging_yaml(
+        {
+            "logging":
+                {
+                    "formats": [{
+                        "name": "custom_fmt",
+                        "format": "%<chi> %<cqu> %<pssc> %<sshv>"
+                    }],
+                    "logs":
+                        [
+                            {
+                                "filename": "v2",
+                                "format": "custom_fmt",
+                                "mode": "binary",
+                                "binary_log_version": 2
+                            },
+                            {
+                                "filename": "v3",
+                                "format": "custom_fmt",
+                                "mode": "binary",
+                                "binary_log_version": 3
+                            },
+                            {
+                                "filename": "ascii",
+                                "format": "custom_fmt",
+                                "mode": "ascii"
+                            },
+                        ],
+                }
         })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.http_port}/")
-        ats.set_logging_yaml(
-            {
-                "logging":
-                    {
-                        "formats": [{
-                            "name": "custom_fmt",
-                            "format": "%<chi> %<cqu> %<pssc> %<sshv>"
-                        }],
-                        "logs":
-                            [
-                                {
-                                    "filename": "v2",
-                                    "format": "custom_fmt",
-                                    "mode": "binary",
-                                    "binary_log_version": 2
-                                },
-                                {
-                                    "filename": "v3",
-                                    "format": "custom_fmt",
-                                    "mode": "binary",
-                                    "binary_log_version": 3
-                                },
-                                {
-                                    "filename": "ascii",
-                                    "format": "custom_fmt",
-                                    "mode": "ascii"
-                                },
-                            ],
-                    }
-            })
-        return ats
+    return ats
 
-    def generate_traffic(self) -> None:
-        """Generate three origin-backed log entries and await their flush."""
 
-        self._origin.start()
-        self._ats.start()
-        for _ in range(3):
-            result = self._curl.get(self._ats, "/get", options=f"--http1.1")
-            assert result.returncode == 0, result.output
-        wait_for_file_lines(self._ats.log_directory / "ascii.log", r"/get", 3)
+def generate_traffic(*, _ats: ATS, _curl: Curl, _origin: OriginServer) -> None:
+    """Generate three origin-backed log entries and await their flush.
 
-    def decode(self, *arguments: str) -> str:
-        """Decode one log with traffic_logcat."""
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    """
 
-        result = self._ats.run("traffic_logcat", *arguments)
+    _origin.start()
+    _ats.start()
+    for _ in range(3):
+        result = _curl.get(_ats, "/get", options=f"--http1.1")
         assert result.returncode == 0, result.output
-        return result.stdout
+    wait_for_file_lines(_ats.log_directory / "ascii.log", r"/get", 3)
 
-    def run(self) -> None:
-        """Verify data decoding and the version-specific segment schemas."""
 
-        self.generate_traffic()
-        v2_blog = self._ats.log_directory / "v2.blog"
-        v3_blog = self._ats.log_directory / "v3.blog"
-        gold = TEST_DIRECTORY / "gold"
-        assert_matches_gold(self.decode(str(v2_blog)), gold / "binary_log_v3_ascii.gold")
-        assert_matches_gold(self.decode(str(v3_blog)), gold / "binary_log_v3_ascii.gold")
-        assert_matches_gold(self.decode("-j", str(v3_blog)), gold / "binary_log_v3_json.gold")
+def decode(*arguments: str, _ats: ATS) -> str:
+    """Decode one log with traffic_logcat.
 
-        v3_header = self.decode("-H", str(v3_blog))
-        for expression in (
-                r"version:\s+3",
-                r"format_type:\s+4 \(CUSTOM\)",
-                r"fieldlist:\s+chi,cqu,pssc,sshv",
-                r"field_type_schema:\s+field_count=4",
-                r"chi\s+IP",
-                r"cqu\s+STRING",
-                r"pssc\s+sINT",
-                r"sshv\s+STRING",
-        ):
-            assert re.search(expression, v3_header), v3_header
+    :param _ats: Test-local ats configured by the test.
+    :param arguments: Arguments used by this test step.
+    """
 
-        v2_header = self.decode("-H", str(v2_blog))
-        assert re.search(r"version:\s+2", v2_header), v2_header
-        assert re.search(r"fieldlist:\s+chi,cqu,pssc,sshv", v2_header), v2_header
-        assert "field_type_schema" not in v2_header
+    result = _ats.run("traffic_logcat", *arguments)
+    assert result.returncode == 0, result.output
+    return result.stdout
 
 
 def test_binary_log_v3(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Traffic_logcat reads v2 and self-describing v3 binary logs."""
+    """Traffic_logcat reads v2 and self-describing v3 binary logs.
 
-    BinaryLogV3Scenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    if curl.uses_uds:
+        pytest.skip("The client-address log field requires a TCP curl connection")
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    generate_traffic(_ats=_ats, _curl=curl, _origin=_origin)
+    v2_blog = _ats.log_directory / "v2.blog"
+    v3_blog = _ats.log_directory / "v3.blog"
+    gold = TEST_DIRECTORY / "gold"
+    assert_matches_gold(decode(str(v2_blog), _ats=_ats), gold / "binary_log_v3_ascii.gold")
+    assert_matches_gold(decode(str(v3_blog), _ats=_ats), gold / "binary_log_v3_ascii.gold")
+    assert_matches_gold(decode("-j", str(v3_blog), _ats=_ats), gold / "binary_log_v3_json.gold")
+
+    v3_header = decode("-H", str(v3_blog), _ats=_ats)
+    for expression in (
+            r"version:\s+3",
+            r"format_type:\s+4 \(CUSTOM\)",
+            r"fieldlist:\s+chi,cqu,pssc,sshv",
+            r"field_type_schema:\s+field_count=4",
+            r"chi\s+IP",
+            r"cqu\s+STRING",
+            r"pssc\s+sINT",
+            r"sshv\s+STRING",
+    ):
+        assert re.search(expression, v3_header), v3_header
+
+    v2_header = decode("-H", str(v2_blog), _ats=_ats)
+    assert re.search(r"version:\s+2", v2_header), v2_header
+    assert re.search(r"fieldlist:\s+chi,cqu,pssc,sshv", v2_header), v2_header
+    assert "field_type_schema" not in v2_header

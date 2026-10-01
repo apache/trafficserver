@@ -24,27 +24,14 @@ TEST_DIRECTORY = Path(__file__).parent
 SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-class CertUpdateScenario:
-    """Update inbound and outbound TLS certificates through cert_update."""
+def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """cert_update replaces server and client certificates at runtime.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        """Configure the origin, ATS, and client used by the scenario.
+    :param ats_factory: Factory for isolated ATS processes.
+    :param services: Factory for supporting test services.
+    :param curl: Curl command helper.
+    """
 
-        :param ats_factory: Factory for isolated ATS processes.
-        :param services: Factory for supporting test services.
-        :param curl: Curl command helper.
-        """
-
-        self._services = services
-        self._curl = curl
-        self._update_count = 0
-        self._openssl_port = services.allocate_port()
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        if not self._ats.plugin_exists("cert_update.so") or not self._ats.plugin_exists("conf_remap.so"):
-            pytest.skip("cert_update.so and conf_remap.so are required")
-
-    @staticmethod
     def configure_origin(services: ServiceFactory) -> OriginServer:
         """Create the clear-text origin used by the inbound certificate case.
 
@@ -58,7 +45,7 @@ class CertUpdateScenario:
         )
         return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
         """Configure the plugin and certificate mappings.
 
         :param ats_factory: Factory for isolated ATS processes.
@@ -92,14 +79,14 @@ class CertUpdateScenario:
             ))
         ats.remap_config.add_lines(
             (
-                f"map https://bar.com http://127.0.0.1:{self._origin.http_port}",
-                f"map https://foo.com/override-ca https://127.0.0.1:{self._openssl_port} "
+                f"map https://bar.com http://127.0.0.1:{_origin.http_port}",
+                f"map https://foo.com/override-ca https://127.0.0.1:{_openssl_port} "
                 "@plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=client1.pem "
                 "@pparam=proxy.config.ssl.client.CA.cert.filename=server1.pem",
-                f"map https://foo.com/late-ca https://127.0.0.1:{self._openssl_port} "
+                f"map https://foo.com/late-ca https://127.0.0.1:{_openssl_port} "
                 "@plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=client1.pem "
                 "@pparam=proxy.config.ssl.client.CA.cert.filename=server2.pem",
-                f"map https://foo.com https://127.0.0.1:{self._openssl_port}",
+                f"map https://foo.com https://127.0.0.1:{_openssl_port}",
             ))
         ats.write_config_file(
             "sni.yaml",
@@ -110,39 +97,39 @@ class CertUpdateScenario:
         ats.plugin_config.add_line("cert_update.so")
         return ats
 
-    def inbound_request(self) -> str:
+    def inbound_request() -> str:
         """Return curl's TLS diagnostics for ATS's current server certificate."""
 
-        result = self._curl.run_for(
-            self._ats,
-            (
-                f"--verbose --insecure --resolve 'bar.com:{self._ats.https_port}:127.0.0.1' "
-                f"'https://bar.com:{self._ats.https_port}/'"),
+        result = curl.run_for(
+            _ats,
+            (f"--verbose --insecure --resolve 'bar.com:{_ats.https_port}:127.0.0.1' "
+             f"'https://bar.com:{_ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         return result.stderr
 
-    def update_certificate(self, target: str, path: Path) -> None:
+    def update_certificate(target: str, path: Path) -> None:
         """Send one cert_update plugin message.
 
         :param target: Certificate context name accepted by the plugin.
         :param path: Replacement certificate path.
         """
+        nonlocal _update_count
 
-        result = self._ats.traffic_ctl("plugin", "msg", f"cert_update.{target}", str(path))
+        result = _ats.traffic_ctl("plugin", "msg", f"cert_update.{target}", str(path))
         assert result.returncode == 0, result.output
-        self._update_count += 1
-        wait_for_file_lines(self._ats.traffic_out, "Successfully updated", self._update_count, timeout=10)
+        _update_count += 1
+        wait_for_file_lines(_ats.traffic_out, "Successfully updated", _update_count, timeout=10)
 
-    def openssl_server(self, name: str, trusted_client: Path) -> ProcessService:
+    def openssl_server(name: str, trusted_client: Path) -> ProcessService:
         """Create a one-shot TLS origin that requires an ATS client certificate.
 
         :param name: Unique support-process name.
         :param trusted_client: Client certificate trusted by the OpenSSL origin.
         """
 
-        certificate = self._ats.ssl_directory / "server1.pem"
-        return self._services.process(
+        certificate = _ats.ssl_directory / "server1.pem"
+        return _services.process(
             name,
             (
                 "openssl",
@@ -155,15 +142,15 @@ class CertUpdateScenario:
                 "-CAfile",
                 trusted_client,
                 "-accept",
-                str(self._openssl_port),
+                str(_openssl_port),
                 "-Verify",
                 "1",
                 "-msg",
             ),
-            ready_port=self._openssl_port,
+            ready_port=_openssl_port,
         )
 
-    def outbound_request(self, server: ProcessService, path: str = "/") -> str:
+    def outbound_request(server: ProcessService, path: str = "/") -> str:
         """Request the OpenSSL origin and return its handshake diagnostics.
 
         :param server: One-shot OpenSSL origin process.
@@ -171,42 +158,34 @@ class CertUpdateScenario:
         """
 
         server.start()
-        result = self._curl.run_for(
-            self._ats,
-            f"--verbose --insecure --header 'Host: foo.com' 'https://localhost:{self._ats.https_port}{path}'",
+        result = curl.run_for(
+            _ats,
+            f"--verbose --insecure --header 'Host: foo.com' 'https://localhost:{_ats.https_port}{path}'",
         )
         assert result.returncode == 0, result.output
         server.stop()
         return server.output
 
-    def run(self) -> None:
-        """Verify both certificate contexts change without restarting ATS."""
+    _services = services
+    _update_count = 0
+    _openssl_port = services.allocate_port()
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory)
+    if not _ats.plugin_exists("cert_update.so") or not _ats.plugin_exists("conf_remap.so"):
+        pytest.skip("cert_update.so and conf_remap.so are required")
 
-        self._origin.start()
-        self._ats.start()
-        assert "alice@bar.com" in self.inbound_request()
-        self.update_certificate("server", self._ats.ssl_directory / "server2.pem")
-        assert "bob@bar.com" in self.inbound_request()
+    _origin.start()
+    _ats.start()
+    assert "alice@bar.com" in inbound_request()
+    update_certificate("server", _ats.ssl_directory / "server2.pem")
+    assert "bob@bar.com" in inbound_request()
 
-        assert "alice.com" in self.outbound_request(self.openssl_server("s_server_before", SSL_DIRECTORY / "client1.pem"))
-        assert "alice.com" in self.outbound_request(
-            self.openssl_server("s_server_override_before", SSL_DIRECTORY / "client1.pem"), "/override-ca")
-        (self._ats.ssl_directory / "client2.pem").replace(self._ats.ssl_directory / "client1.pem")
-        self.update_certificate("client", self._ats.ssl_directory / "client1.pem")
-        assert "bob.com" in self.outbound_request(self.openssl_server("s_server_after", SSL_DIRECTORY / "client2.pem"))
-        assert "bob.com" in self.outbound_request(
-            self.openssl_server("s_server_override_after", SSL_DIRECTORY / "client2.pem"), "/override-ca")
-        assert "bob.com" in self.outbound_request(
-            self.openssl_server("s_server_late_ca", SSL_DIRECTORY / "client2.pem"), "/late-ca")
-        assert "Successfully updated" in self._ats.traffic_out.read_text(errors="replace")
-
-
-def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """cert_update replaces server and client certificates at runtime.
-
-    :param ats_factory: Factory for isolated ATS processes.
-    :param services: Factory for supporting test services.
-    :param curl: Curl command helper.
-    """
-
-    CertUpdateScenario(ats_factory, services, curl).run()
+    assert "alice.com" in outbound_request(openssl_server("s_server_before", SSL_DIRECTORY / "client1.pem"))
+    assert "alice.com" in outbound_request(
+        openssl_server("s_server_override_before", SSL_DIRECTORY / "client1.pem"), "/override-ca")
+    (_ats.ssl_directory / "client2.pem").replace(_ats.ssl_directory / "client1.pem")
+    update_certificate("client", _ats.ssl_directory / "client1.pem")
+    assert "bob.com" in outbound_request(openssl_server("s_server_after", SSL_DIRECTORY / "client2.pem"))
+    assert "bob.com" in outbound_request(openssl_server("s_server_override_after", SSL_DIRECTORY / "client2.pem"), "/override-ca")
+    assert "bob.com" in outbound_request(openssl_server("s_server_late_ca", SSL_DIRECTORY / "client2.pem"), "/late-ca")
+    assert "Successfully updated" in _ats.traffic_out.read_text(errors="replace")

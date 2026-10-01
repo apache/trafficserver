@@ -23,20 +23,24 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, assert_matches_gold, wait_for_file_lines
 
 
-class SliceCrrIdentScenario:
-    """Exercise stale slices whose validators identify one logical asset."""
+def test_slice_crr_ident(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Slice validation uses cache_range_requests identity metadata.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._services = services
-        self._origin = self.configure_server()
-        self._ats = self.configure_ats(ats_factory)
-        self._curl = Curl(ats_factory.run_directory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def add_asset(self, uid: str, etag: str, max_age: int, bodies: tuple[str, str]) -> None:
-        """Add the two three-byte slice responses for an asset generation."""
+    def add_asset(uid: str, etag: str, max_age: int, bodies: tuple[str, str]) -> None:
+        """Add the two three-byte slice responses for an asset generation.
+
+        :param uid: Uid used by this test step.
+        :param etag: ETag response header value.
+        :param max_age: Max age used by this test step.
+        :param bodies: Bodies used by this test step.
+        """
 
         for index, (byte_range, content_range, body) in enumerate((("0-2", "0-2/5", bodies[0]), ("3-5", "3-4/5", bodies[1]))):
-            self._origin.add_response(
+            _origin.add_response(
                 {
                     "headers":
                         (
@@ -53,13 +57,14 @@ class SliceCrrIdentScenario:
                 },
             )
 
-    def configure_server(self) -> OriginServer:
+    def configure_server() -> OriginServer:
         """Create UID-keyed old and replacement slice generations."""
+        nonlocal _origin
 
-        origin = self._services.origin("origin", lookup_key="{%UID}")
-        self._origin = origin
-        self.add_asset("plain", "plain", 1, ("aaa", "BB"))
-        self.add_asset("chg", "chg", 60, ("AAA", "bb"))
+        origin = services.origin("origin", lookup_key="{%UID}")
+        _origin = origin
+        add_asset("plain", "plain", 1, ("aaa", "BB"))
+        add_asset("chg", "chg", 60, ("AAA", "bb"))
         origin.add_response(
             {"headers": "GET /404.txt HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
             {
@@ -69,8 +74,11 @@ class SliceCrrIdentScenario:
         )
         return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Chain slice into cache_range_requests and add transaction logging."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Chain slice into cache_range_requests and add transaction logging.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ats")
         required = ("cache_range_requests.so", "header_rewrite.so", "slice.so", "xdebug.so")
@@ -90,9 +98,9 @@ class SliceCrrIdentScenario:
         )
         ats.remap_config.add_lines(
             (
-                f"map http://slice/ http://127.0.0.1:{self._origin.port}/ "
+                f"map http://slice/ http://127.0.0.1:{_origin.port}/ "
                 "@plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr",
-                f"map http://crr/ http://127.0.0.1:{self._origin.port}/ "
+                f"map http://crr/ http://127.0.0.1:{_origin.port}/ "
                 "@plugin=cache_range_requests.so @pparam=--consider-ims @pparam=--consider-ident "
                 "@plugin=header_rewrite.so @pparam=hdr_rw.conf",
             ))
@@ -126,46 +134,46 @@ class SliceCrrIdentScenario:
             })
         return ats
 
-    def request(self, host: str, path: str, *, uid: str | None = None) -> str:
-        """Request an object and return headers plus body."""
+    def request(host: str, path: str, *, uid: str | None = None) -> str:
+        """Request an object and return headers plus body.
+
+        :param host: HTTP host name used for the request.
+        :param path: Resource or file path used by this operation.
+        :param uid: Uid used by this test step.
+        """
 
         headers = {"x-debug": "x-cache"}
         if uid is not None:
             headers["UID"] = uid
-        arguments = ["--silent", "--dump-header", "-", "--proxy", f"http://127.0.0.1:{self._ats.http_port}"]
+        arguments = ["--silent", "--dump-header", "-", "--proxy", f"http://127.0.0.1:{_ats.http_port}"]
         for name, value in headers.items():
             arguments.extend(("--header", f"{name}: {value}"))
         arguments.append(f"http://{host}{path}")
-        result = self._curl.run_for(
-            self._ats,
+        result = _curl.run_for(
+            _ats,
             shlex.join(arguments),
         )
         assert result.returncode == 0, result.output
         return result.stdout
 
-    def run(self) -> None:
-        """Replace stale slices, verify hits, and compare the transaction log."""
+    _origin = configure_server()
+    _ats = configure_ats(ats_factory)
+    _curl = Curl(ats_factory.run_directory)
 
-        self._origin.start()
-        self._ats.start()
-        output = self.request("slice", "/plain", uid="plain")
-        assert "aaaBB" in output and 'Etag: "plain"' in output
-        time.sleep(2)
-        output = self.request("slice", "/plain", uid="plain")
-        assert "aaaBB" in output and 'Etag: "plain"' in output
-        time.sleep(2)
-        output = self.request("slice", "/plain", uid="chg")
-        assert "AAAbb" in output and 'Etag: "chg"' in output
-        time.sleep(2)
-        output = self.request("slice", "/plain", uid="chg")
-        assert "AAAbb" in output and 'Etag: "chg"' in output
-        assert "404" in self.request("crr", "/404.txt")
-        transaction_log = self._ats.log_directory / "transaction.log"
-        content = wait_for_file_lines(transaction_log, "404.txt", 1, timeout=15)
-        assert_matches_gold(content, self._services.resolve_path("gold/slice_crr_ident.gold"))
-
-
-def test_slice_crr_ident(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Slice validation uses cache_range_requests identity metadata."""
-
-    SliceCrrIdentScenario(ats_factory, services).run()
+    _origin.start()
+    _ats.start()
+    output = request("slice", "/plain", uid="plain")
+    assert "aaaBB" in output and 'Etag: "plain"' in output
+    time.sleep(2)
+    output = request("slice", "/plain", uid="plain")
+    assert "aaaBB" in output and 'Etag: "plain"' in output
+    time.sleep(2)
+    output = request("slice", "/plain", uid="chg")
+    assert "AAAbb" in output and 'Etag: "chg"' in output
+    time.sleep(2)
+    output = request("slice", "/plain", uid="chg")
+    assert "AAAbb" in output and 'Etag: "chg"' in output
+    assert "404" in request("crr", "/404.txt")
+    transaction_log = _ats.log_directory / "transaction.log"
+    content = wait_for_file_lines(transaction_log, "404.txt", 1, timeout=15)
+    assert_matches_gold(content, services.resolve_path("gold/slice_crr_ident.gold"))

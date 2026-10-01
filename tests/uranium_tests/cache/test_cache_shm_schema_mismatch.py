@@ -25,86 +25,55 @@ from tools.uranium.services import ATSFactory, Curl
 from uranium_tests.cache.shm_helpers import assert_log, clean_shutdown, clear_shm, configure_shm_ats, get_200, make_disk, shm_prefix
 
 
-class CacheShmSchemaMismatchScenario:
+def test_cache_shm_schema_mismatch(ats_factory: ATSFactory, curl: Curl) -> None:
     """A mismatched control schema is dropped and recreated.
 
     The first instance leaves a clean control segment. Changing its on-disk
     schema field then verifies that the next instance rejects only for the
     schema mismatch and rebuilds safely from disk.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param curl: Transport-aware curl command runner.
     """
+    prefix = shm_prefix("x")
+    path = f"/cache/40/{uuid.uuid4()}"
+    if platform.system() != "Linux":
+        pytest.skip("shm byte-poke gates need Linux /dev/shm")
+    disk = make_disk(ats_factory.run_directory, "disk.img")
+    ts1 = configure_shm_ats(ats_factory, "shmx_ts1", prefix, [disk])
+    ts2 = configure_shm_ats(ats_factory, "shmx_ts2", prefix, [disk])
+    ts1.start()
+    get_200(curl, ts1, path)
+    clean_shutdown(ts1)
+    control_file = Path("/dev/shm") / f"{prefix.lstrip('/')}control"
+    result = ts1.run(
+        sys.executable,
+        Path(__file__).parent / "shm_poke.py",
+        control_file,
+        "8",
+        "09000000",
+    )
 
-    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
-        self.ats_factory = ats_factory
-        self.curl = curl
-        self.prefix = shm_prefix("x")
-        self.path = f"/cache/40/{uuid.uuid4()}"
-
-    def _check_requirements(self) -> None:
-        if platform.system() != "Linux":
-            pytest.skip("shm byte-poke gates need Linux /dev/shm")
-
-    def _configure_storage(self) -> None:
-        self.disk = make_disk(self.ats_factory.run_directory, "disk.img")
-
-    def _configure_traffic_servers(self) -> None:
-        self.ts1 = configure_shm_ats(self.ats_factory, "shmx_ts1", self.prefix, [self.disk])
-        self.ts2 = configure_shm_ats(self.ats_factory, "shmx_ts2", self.prefix, [self.disk])
-
-    def _create_clean_shared_memory(self) -> None:
-        self.ts1.start()
-        get_200(self.curl, self.ts1, self.path)
-        clean_shutdown(self.ts1)
-
-    def _corrupt_control_schema(self) -> None:
-        control_file = Path("/dev/shm") / f"{self.prefix.lstrip('/')}control"
-        result = self.ts1.run(
-            sys.executable,
-            Path(__file__).parent / "shm_poke.py",
-            control_file,
-            "8",
-            "09000000",
-        )
-
-        assert result.returncode == 0, result.output
-
-    def _restart_with_mismatched_schema(self) -> None:
-        self.ts2.start()
-        get_200(self.curl, self.ts2, self.path)
-        clean_shutdown(self.ts2)
-
-    def _verify_restart_logs(self) -> None:
-        assert_log(
-            self.ts1,
-            contains=(
-                r"cache shm: creating fresh control segment",
-                r"cache shm: marking clean shutdown",
-            ),
-        )
-        assert_log(
-            self.ts2,
-            contains=(
-                r"cache shm: schema mismatch \(\d+ vs \d+\), dropping",
-                r"cache shm: creating fresh control segment",
-            ),
-            excludes=(
-                r"\(fast restart, recovery skipped\)",
-                r"cache shm: previous run did not shutdown cleanly",
-            ),
-        )
-
-    def _clear_shared_memory(self) -> None:
-        clear_shm(self.ts2, self.prefix)
-
-    def run(self) -> None:
-        self._check_requirements()
-        self._configure_storage()
-        self._configure_traffic_servers()
-        self._create_clean_shared_memory()
-        self._corrupt_control_schema()
-        self._restart_with_mismatched_schema()
-        self._verify_restart_logs()
-        self._clear_shared_memory()
-
-
-def test_cache_shm_schema_mismatch(ats_factory: ATSFactory, curl: Curl) -> None:
-    CacheShmSchemaMismatchScenario(ats_factory, curl).run()
+    assert result.returncode == 0, result.output
+    ts2.start()
+    get_200(curl, ts2, path)
+    clean_shutdown(ts2)
+    assert_log(
+        ts1,
+        contains=(
+            r"cache shm: creating fresh control segment",
+            r"cache shm: marking clean shutdown",
+        ),
+    )
+    assert_log(
+        ts2,
+        contains=(
+            r"cache shm: schema mismatch \(\d+ vs \d+\), dropping",
+            r"cache shm: creating fresh control segment",
+        ),
+        excludes=(
+            r"\(fast restart, recovery skipped\)",
+            r"cache shm: previous run did not shutdown cleanly",
+        ),
+    )
+    clear_shm(ts2, prefix)

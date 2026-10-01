@@ -98,10 +98,17 @@ def test_no_uranium_test_registers_an_uranium_replay() -> None:
 
 
 def test_all_bespoke_tests_are_available_to_pytest() -> None:
-    """Keep the native procedural-test inventory explicit."""
+    """Require discoverable test functions without freezing the suite size."""
 
     uranium_tests = Path(__file__).parents[3] / "uranium_tests"
-    assert len(list(uranium_tests.rglob("test_*.py"))) == 319
+    modules = list(uranium_tests.rglob("test_*.py"))
+    assert modules
+    missing = [
+        str(path.relative_to(uranium_tests)) for path in modules if not any(
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+            for node in ast.parse(path.read_text()).body)
+    ]
+    assert not missing, f"Native modules without pytest entry points: {missing}"
 
 
 def test_curl_call_sites_use_shell_style_strings() -> None:

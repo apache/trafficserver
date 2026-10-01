@@ -28,30 +28,20 @@ REPLAY_FILE = TEST_DIRECTORY / "slow_servers.replay.yaml"
 STAT_SYNC_INTERVAL_MS = 500
 
 
-class PerServerConnectionMaxScenario:
-    """Exercise origin limits and every per-server metric publication mode."""
+def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS enforces and reports per-origin connection limits.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        """Create the shared services and retain the scenario fixtures.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory for DNS, origin, and verifier services.
+    :param curl: Transport-aware curl command runner.
+    """
 
-        :param ats_factory: Factory for isolated Traffic Server instances.
-        :param services: Factory for DNS, origin, and verifier services.
-        :param curl: Transport-aware curl command runner.
-        """
-
-        if curl.uses_uds:
-            pytest.skip("Connection limit coverage requires TCP client connections")
-        self._ats_factory = ats_factory
-        self._services = services
-        self._curl = curl
-        self._dns = self.configure_dns()
-
-    def configure_dns(self) -> DNSServer:
+    def configure_dns() -> DNSServer:
         """Create the wildcard DNS server shared by all scenario steps."""
 
-        return self._services.dns("dns", default="127.0.0.1")
+        return services.dns("dns", default="127.0.0.1")
 
-    def configure_common_records(self, ats: ATS) -> None:
+    def configure_common_records(ats: ATS) -> None:
         """Configure DNS and a short derived-metric synchronization interval.
 
         :param ats: Traffic Server instance receiving the shared records.
@@ -60,11 +50,10 @@ class PerServerConnectionMaxScenario:
         ats.records.update(
             {
                 "proxy.config.raw_stat_sync_interval_ms": STAT_SYNC_INTERVAL_MS,
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
                 "proxy.config.dns.resolv_conf": "NULL",
             })
 
-    @staticmethod
     def read_metrics(ats: ATS, *, include_hidden: bool = False) -> str:
         """Read the per-server metric namespace.
 
@@ -81,7 +70,6 @@ class PerServerConnectionMaxScenario:
         return result.output
 
     def wait_for_metrics(
-        self,
         ats: ATS,
         required: tuple[str, ...],
         *,
@@ -100,25 +88,25 @@ class PerServerConnectionMaxScenario:
         deadline = time.monotonic() + timeout
         last_output = ""
         while time.monotonic() < deadline:
-            last_output = self.read_metrics(ats, include_hidden=include_hidden)
+            last_output = read_metrics(ats, include_hidden=include_hidden)
             if all(fragment in last_output for fragment in required):
                 return last_output
             time.sleep(0.1)
         pytest.fail(f"Timed out waiting for per-server metrics {required!r}:\n{last_output}")
 
-    def configure_replay_server(self) -> VerifierServer:
+    def configure_replay_server() -> VerifierServer:
         """Create the delayed verifier origin."""
 
-        return self._services.verifier_server("replay-server", REPLAY_FILE)
+        return services.verifier_server("replay-server", REPLAY_FILE)
 
-    def configure_replay_ats(self, server: VerifierServer) -> ATS:
+    def configure_replay_ats(server: VerifierServer) -> ATS:
         """Configure a three-connection per-port origin limit.
 
         :param server: Delayed verifier origin used by the replay.
         """
 
-        ats = self._ats_factory.create("replay-ts")
-        self.configure_common_records(ats)
+        ats = ats_factory.create("replay-ts")
+        configure_common_records(ats)
         ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}")
         ats.records.update(
             {
@@ -131,30 +119,7 @@ class PerServerConnectionMaxScenario:
             })
         return ats
 
-    def run_replay_case(self) -> None:
-        """Verify a fourth concurrent origin request is tracked as blocked."""
-
-        server = self.configure_replay_server()
-        ats = self.configure_replay_ats(server)
-        client = self._services.verifier_client("replay-client", REPLAY_FILE, http_ports=[ats.http_port])
-        server.start()
-        ats.start()
-        result = client.run()
-        assert result.returncode == 0, result.output
-
-        group = f"foo.127.0.0.1:{server.http_port}"
-        metrics = self.wait_for_metrics(
-            ats,
-            (
-                f"per_server.total_connection.{group} 4",
-                f"per_server.blocked_connection.{group} 1",
-            ),
-        )
-        assert "per_server.current_connection.max." not in metrics
-        assert re.search(r"WARNING:.*too many connections:.*limit=3", ats.diags_log.read_text(errors="replace"))
-
     def configure_connect_ats(
-        self,
         suffix: str,
         maximum: int,
         metric_aggregate: int,
@@ -168,8 +133,8 @@ class PerServerConnectionMaxScenario:
         :param origin: Delayed HTTP origin reached through CONNECT.
         """
 
-        ats = self._ats_factory.create(f"connect-ts-{suffix}")
-        self.configure_common_records(ats)
+        ats = ats_factory.create(f"connect-ts-{suffix}")
+        configure_common_records(ats)
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -183,19 +148,19 @@ class PerServerConnectionMaxScenario:
         ats.allow_private_connect()
         return ats
 
-    def connect_request(self, ats: ATS, path: str) -> CommandResult:
+    def connect_request(ats: ATS, path: str) -> CommandResult:
         """Send one proxied request using curl's CONNECT tunnel mode.
 
         :param ats: Traffic Server proxy that receives the request.
         :param path: Request path below ``http://foo.com/``.
         """
 
-        return self._curl.run_for(
+        return curl.run_for(
             ats,
             f"--verbose --fail --silent --proxytunnel --proxy '127.0.0.1:{ats.http_port}' 'http://foo.com/{path}'",
         )
 
-    def run_connect_case(self, maximum: int, blocked: int, metric_aggregate: int) -> None:
+    def run_connect_case(maximum: int, blocked: int, metric_aggregate: int) -> None:
         """Hold three connections while testing aggregate publication.
 
         :param maximum: Maximum simultaneous connections, or zero for no limit.
@@ -204,14 +169,14 @@ class PerServerConnectionMaxScenario:
         """
 
         suffix = f"max-{maximum}-aggregate-{metric_aggregate}"
-        origin = self._services.httpbin(f"httpbin-{suffix}")
-        ats = self.configure_connect_ats(suffix, maximum, metric_aggregate, origin)
+        origin = services.httpbin(f"httpbin-{suffix}")
+        ats = configure_connect_ats(suffix, maximum, metric_aggregate, origin)
         origin.start()
         ats.start()
         with ThreadPoolExecutor(max_workers=3) as executor:
-            slow = [executor.submit(self.connect_request, ats, "delay/2") for _ in range(3)]
+            slow = [executor.submit(connect_request, ats, "delay/2") for _ in range(3)]
             time.sleep(1)
-            quick = [self.connect_request(ats, "get") for _ in range(2)]
+            quick = [connect_request(ats, "get") for _ in range(2)]
             slow_results = [future.result(timeout=5) for future in slow]
 
         for result in slow_results:
@@ -224,7 +189,7 @@ class PerServerConnectionMaxScenario:
 
         host = "www.this.origin.com"
         group = f"{host}.127.0.0.1:{origin.port}"
-        metrics = self.wait_for_metrics(
+        metrics = wait_for_metrics(
             ats,
             (
                 f"per_server.total_connection.{host} 5",
@@ -237,22 +202,22 @@ class PerServerConnectionMaxScenario:
             for counter in ("current_connection", "total_connection", "blocked_connection"):
                 assert f"per_server.{counter}.{group} " not in metrics
 
-        hidden = self.wait_for_metrics(
+        hidden = wait_for_metrics(
             ats,
             (f"per_server.total_connection.{group} 5",),
             include_hidden=True,
         )
         assert "INVALID_INCOMING_DATA" not in hidden
 
-    def configure_multi_group_ats(self, origin_a: HttpBinServer, origin_b: HttpBinServer) -> ATS:
+    def configure_multi_group_ats(origin_a: HttpBinServer, origin_b: HttpBinServer) -> ATS:
         """Configure two origin groups under one hostname aggregate.
 
         :param origin_a: First HTTP origin and connection group.
         :param origin_b: Second HTTP origin and connection group.
         """
 
-        ats = self._ats_factory.create("multi-group-ts")
-        self.configure_common_records(ats)
+        ats = ats_factory.create("multi-group-ts")
+        configure_common_records(ats)
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -268,7 +233,7 @@ class PerServerConnectionMaxScenario:
             ))
         return ats
 
-    def multi_group_request(self, ats: ATS, path: str, hold_seconds: int) -> CommandResult:
+    def multi_group_request(ats: ATS, path: str, hold_seconds: int) -> CommandResult:
         """Hold one connection open through a selected aggregate group.
 
         :param ats: Traffic Server proxy that receives the request.
@@ -276,7 +241,7 @@ class PerServerConnectionMaxScenario:
         :param hold_seconds: Number of seconds the HTTPBin response is delayed.
         """
 
-        return self._curl.run_for(
+        return curl.run_for(
             ats,
             (
                 f"--verbose --fail --silent --proxy '127.0.0.1:{ats.http_port}' "
@@ -284,50 +249,15 @@ class PerServerConnectionMaxScenario:
             timeout=hold_seconds + 10,
         )
 
-    def run_multi_group_aggregate_case(self) -> None:
-        """Verify SUM and MAX aggregates span two live connection groups."""
-
-        origin_a = self._services.httpbin("multi-group-origin-a")
-        origin_b = self._services.httpbin("multi-group-origin-b")
-        ats = self.configure_multi_group_ats(origin_a, origin_b)
-        origin_a.start()
-        origin_b.start()
-        ats.start()
-
-        hold_seconds = 6
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            requests = [executor.submit(self.multi_group_request, ats, "a", hold_seconds) for _ in range(2)]
-            requests.extend(executor.submit(self.multi_group_request, ats, "b", hold_seconds) for _ in range(3))
-            metrics = self.wait_for_metrics(
-                ats,
-                (
-                    "per_server.total_connection.multi.origin.com 5",
-                    "per_server.current_connection.multi.origin.com 5",
-                    "per_server.current_connection.max.multi.origin.com 3",
-                ),
-            )
-            assert not re.search(r"per_server\.\w+_connection\.multi\.origin\.com\.\d", metrics), metrics
-            results = [future.result(timeout=hold_seconds + 5) for future in requests]
-
-        for result in results:
-            assert result.returncode == 0, result.output
-        self.wait_for_metrics(
-            ats,
-            (
-                "per_server.current_connection.multi.origin.com 0",
-                "per_server.current_connection.max.multi.origin.com 0",
-            ),
-        )
-
-    def configure_metric_override_ats(self, origin_on: HttpBinServer, origin_off: HttpBinServer) -> ATS:
+    def configure_metric_override_ats(origin_on: HttpBinServer, origin_off: HttpBinServer) -> ATS:
         """Enable metrics globally and disable them for one remap rule.
 
         :param origin_on: Origin whose remap keeps metrics enabled.
         :param origin_off: Origin whose remap overrides metrics to disabled.
         """
 
-        ats = self._ats_factory.create("metric-override-ts")
-        self.configure_common_records(ats)
+        ats = ats_factory.create("metric-override-ts")
+        configure_common_records(ats)
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -344,36 +274,14 @@ class PerServerConnectionMaxScenario:
             ))
         return ats
 
-    def run_metric_override_case(self) -> None:
-        """Verify a remap override suppresses both public and hidden metrics."""
-
-        origin_on = self._services.httpbin("metric-on-origin")
-        origin_off = self._services.httpbin("metric-off-origin")
-        ats = self.configure_metric_override_ats(origin_on, origin_off)
-        origin_on.start()
-        origin_off.start()
-        ats.start()
-        enabled = self._curl.get(ats, "/get", headers={"Host": "metric-on.com"}, options="--verbose --silent")
-        disabled = self._curl.get(ats, "/get", headers={"Host": "metric-off.com"}, options="--verbose --silent")
-        assert enabled.returncode == 0, enabled.output
-        assert disabled.returncode == 0, disabled.output
-
-        on_group = f"127.0.0.1:{origin_on.port}"
-        off_group = f"127.0.0.1:{origin_off.port}"
-        metrics = self.wait_for_metrics(ats, (f"per_server.total_connection.{on_group} 1",))
-        assert f"per_server.total_connection.{off_group}" not in metrics
-        hidden = self.read_metrics(ats, include_hidden=True)
-        assert f"per_server.total_connection.{on_group} 1" in hidden
-        assert f"per_server.total_connection.{off_group}" not in hidden
-
-    def configure_aggregate_only_without_host_ats(self, origin: HttpBinServer) -> ATS:
+    def configure_aggregate_only_without_host_ats(origin: HttpBinServer) -> ATS:
         """Configure aggregate-only publication for a match type without aggregates.
 
         :param origin: HTTP origin used for the single per-port group.
         """
 
-        ats = self._ats_factory.create("aggregate-only-without-host-ts")
-        self.configure_common_records(ats)
+        ats = ats_factory.create("aggregate-only-without-host-ts")
+        configure_common_records(ats)
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -385,28 +293,14 @@ class PerServerConnectionMaxScenario:
         ats.remap_config.add_line(f"map http://agg-only.com/ http://127.0.0.1:{origin.port}/")
         return ats
 
-    def run_aggregate_only_without_host_case(self) -> None:
-        """Verify aggregate-only mode publishes a group when no host aggregate exists."""
-
-        origin = self._services.httpbin("aggregate-only-without-host-origin")
-        ats = self.configure_aggregate_only_without_host_ats(origin)
-        origin.start()
-        ats.start()
-        result = self._curl.get(ats, "/get", headers={"Host": "agg-only.com"}, options="--verbose --silent")
-        assert result.returncode == 0, result.output
-
-        group = f"127.0.0.1:{origin.port}"
-        metrics = self.wait_for_metrics(ats, (f"per_server.total_connection.{group} 1",))
-        assert "per_server.total_connection.agg-only.com" not in metrics
-
-    def configure_aggregate_retraction_ats(self, origin: HttpBinServer) -> ATS:
+    def configure_aggregate_retraction_ats(origin: HttpBinServer) -> ATS:
         """Publish per-group metrics and force groups to close after requests.
 
         :param origin: HTTP origin whose metric publication changes at runtime.
         """
 
-        ats = self._ats_factory.create("aggregate-retraction-ts")
-        self.configure_common_records(ats)
+        ats = ats_factory.create("aggregate-retraction-ts")
+        configure_common_records(ats)
         ats.records.update(
             {
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
@@ -417,17 +311,17 @@ class PerServerConnectionMaxScenario:
         ats.remap_config.add_line(f"map http://retract.origin.com/ http://retract.origin.com:{origin.port}/")
         return ats
 
-    def run_aggregate_retraction_case(self) -> None:
+    def run_aggregate_retraction_case() -> None:
         """Withdraw previously published groups when switching to max-only mode."""
 
-        origin = self._services.httpbin("aggregate-retraction-origin")
-        ats = self.configure_aggregate_retraction_ats(origin)
+        origin = services.httpbin("aggregate-retraction-origin")
+        ats = configure_aggregate_retraction_ats(origin)
         origin.start()
         ats.start()
-        result = self._curl.get(ats, "/get", headers={"Host": "retract.origin.com"}, options="--fail --silent")
+        result = curl.get(ats, "/get", headers={"Host": "retract.origin.com"}, options="--fail --silent")
         assert result.returncode == 0, result.output
         group = f"retract.origin.com.127.0.0.1:{origin.port}"
-        self.wait_for_metrics(ats, (f"per_server.current_connection.{group} 0", f"per_server.total_connection.{group} 1"))
+        wait_for_metrics(ats, (f"per_server.current_connection.{group} 0", f"per_server.total_connection.{group} 1"))
 
         record = "proxy.config.http.per_server.connection.metric_aggregate"
         for arguments in (("config", "set", record, "2"), ("config", "reload")):
@@ -442,34 +336,101 @@ class PerServerConnectionMaxScenario:
         deadline = time.monotonic() + 10
         metrics = ""
         while time.monotonic() < deadline:
-            result = self._curl.get(ats, "/get", headers={"Host": "retract.origin.com"}, options="--fail --silent")
+            result = curl.get(ats, "/get", headers={"Host": "retract.origin.com"}, options="--fail --silent")
             assert result.returncode == 0, result.output
-            metrics = self.read_metrics(ats)
+            metrics = read_metrics(ats)
             if ("per_server.current_connection.max.retract.origin.com " in metrics and
                     not re.search(r"per_server\.\w+_connection\.retract\.origin\.com(?:\.\d| )", metrics)):
                 return
             time.sleep(0.1)
         pytest.fail(f"Per-group metrics and hostname sums were not withdrawn in max-only mode:\n{metrics}")
 
-    def run(self) -> None:
-        """Run connection limits, aggregates, overrides, and fallback coverage."""
+    if curl.uses_uds:
+        pytest.skip("Connection limit coverage requires TCP client connections")
+    _dns = configure_dns()
 
-        self._dns.start()
-        self.run_replay_case()
-        self.run_connect_case(maximum=3, blocked=2, metric_aggregate=3)
-        self.run_connect_case(maximum=0, blocked=0, metric_aggregate=1)
-        self.run_multi_group_aggregate_case()
-        self.run_metric_override_case()
-        self.run_aggregate_only_without_host_case()
-        self.run_aggregate_retraction_case()
+    _dns.start()
 
+    server = configure_replay_server()
+    ats = configure_replay_ats(server)
+    client = services.verifier_client("replay-client", REPLAY_FILE, http_ports=[ats.http_port])
+    server.start()
+    ats.start()
+    result = client.run()
+    assert result.returncode == 0, result.output
 
-def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """ATS enforces and reports per-origin connection limits.
+    group = f"foo.127.0.0.1:{server.http_port}"
+    metrics = wait_for_metrics(
+        ats,
+        (
+            f"per_server.total_connection.{group} 4",
+            f"per_server.blocked_connection.{group} 1",
+        ),
+    )
+    assert "per_server.current_connection.max." not in metrics
+    assert re.search(r"WARNING:.*too many connections:.*limit=3", ats.diags_log.read_text(errors="replace"))
+    run_connect_case(maximum=3, blocked=2, metric_aggregate=3)
+    run_connect_case(maximum=0, blocked=0, metric_aggregate=1)
 
-    :param ats_factory: Factory for isolated Traffic Server instances.
-    :param services: Factory for DNS, origin, and verifier services.
-    :param curl: Transport-aware curl command runner.
-    """
+    origin_a = services.httpbin("multi-group-origin-a")
+    origin_b = services.httpbin("multi-group-origin-b")
+    ats = configure_multi_group_ats(origin_a, origin_b)
+    origin_a.start()
+    origin_b.start()
+    ats.start()
 
-    PerServerConnectionMaxScenario(ats_factory, services, curl).run()
+    hold_seconds = 6
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        requests = [executor.submit(multi_group_request, ats, "a", hold_seconds) for _ in range(2)]
+        requests.extend(executor.submit(multi_group_request, ats, "b", hold_seconds) for _ in range(3))
+        metrics = wait_for_metrics(
+            ats,
+            (
+                "per_server.total_connection.multi.origin.com 5",
+                "per_server.current_connection.multi.origin.com 5",
+                "per_server.current_connection.max.multi.origin.com 3",
+            ),
+        )
+        assert not re.search(r"per_server\.\w+_connection\.multi\.origin\.com\.\d", metrics), metrics
+        results = [future.result(timeout=hold_seconds + 5) for future in requests]
+
+    for result in results:
+        assert result.returncode == 0, result.output
+    wait_for_metrics(
+        ats,
+        (
+            "per_server.current_connection.multi.origin.com 0",
+            "per_server.current_connection.max.multi.origin.com 0",
+        ),
+    )
+
+    origin_on = services.httpbin("metric-on-origin")
+    origin_off = services.httpbin("metric-off-origin")
+    ats = configure_metric_override_ats(origin_on, origin_off)
+    origin_on.start()
+    origin_off.start()
+    ats.start()
+    enabled = curl.get(ats, "/get", headers={"Host": "metric-on.com"}, options="--verbose --silent")
+    disabled = curl.get(ats, "/get", headers={"Host": "metric-off.com"}, options="--verbose --silent")
+    assert enabled.returncode == 0, enabled.output
+    assert disabled.returncode == 0, disabled.output
+
+    on_group = f"127.0.0.1:{origin_on.port}"
+    off_group = f"127.0.0.1:{origin_off.port}"
+    metrics = wait_for_metrics(ats, (f"per_server.total_connection.{on_group} 1",))
+    assert f"per_server.total_connection.{off_group}" not in metrics
+    hidden = read_metrics(ats, include_hidden=True)
+    assert f"per_server.total_connection.{on_group} 1" in hidden
+    assert f"per_server.total_connection.{off_group}" not in hidden
+
+    origin = services.httpbin("aggregate-only-without-host-origin")
+    ats = configure_aggregate_only_without_host_ats(origin)
+    origin.start()
+    ats.start()
+    result = curl.get(ats, "/get", headers={"Host": "agg-only.com"}, options="--verbose --silent")
+    assert result.returncode == 0, result.output
+
+    group = f"127.0.0.1:{origin.port}"
+    metrics = wait_for_metrics(ats, (f"per_server.total_connection.{group} 1",))
+    assert "per_server.total_connection.agg-only.com" not in metrics
+    run_aggregate_retraction_case()

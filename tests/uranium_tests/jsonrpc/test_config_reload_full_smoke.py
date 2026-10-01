@@ -19,102 +19,110 @@ import time
 from tools.uranium.services import ATS, ATSFactory
 
 
-class ConfigReloadFullSmokeScenario:
-    """Reload every file handler and representative record handlers."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Create valid content for handlers that reject empty files.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Create valid content for handlers that reject empty files."""
+    ats = ats_factory.create("ts", enable_cache=True)
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "rpc|config|reload",
+    })
+    ats.write_config_file(
+        "ip_allow.yaml",
+        "ip_allow:\n"
+        "  - apply: in\n"
+        "    ip_addrs: 0/0\n"
+        "    action: allow\n"
+        "    methods: ALL\n",
+    )
+    ats.set_logging_yaml({"logging": {
+        "formats": [{
+            "name": "smoke",
+            "format": "%<cqtq>",
+        }]
+    }})
+    ats.write_config_file(
+        "sni.yaml",
+        'sni:\n  - fqdn: "*.example.com"\n    verify_client: NONE\n',
+    )
+    return ats
 
-        ats = ats_factory.create("ts", enable_cache=True)
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "rpc|config|reload",
-        })
-        ats.write_config_file(
-            "ip_allow.yaml",
-            "ip_allow:\n"
-            "  - apply: in\n"
-            "    ip_addrs: 0/0\n"
-            "    action: allow\n"
-            "    methods: ALL\n",
-        )
-        ats.set_logging_yaml({"logging": {
-            "formats": [{
-                "name": "smoke",
-                "format": "%<cqtq>",
-            }]
-        }})
-        ats.write_config_file(
-            "sni.yaml",
-            'sni:\n  - fqdn: "*.example.com"\n    verify_client: NONE\n',
-        )
-        return ats
 
-    def touch_all_config_files(self) -> None:
-        """Bump every registered file handler's mtime."""
+def touch_all_config_files(*, _ats: ATS) -> None:
+    """Bump every registered file handler's mtime.
 
-        filenames = (
-            "ip_allow.yaml",
-            "parent.config",
-            "cache.config",
-            "hosting.config",
-            "splitdns.config",
-            "logging.yaml",
-            "sni.yaml",
-            "ssl_multicert.yaml",
-        )
-        for filename in filenames:
-            path = self._ats.config_directory / filename
-            path.touch(exist_ok=True)
+    :param _ats: Test-local ats configured by the test.
+    """
 
-    def file_reload(self) -> None:
-        """Reload records and every file handler under one named token."""
+    filenames = (
+        "ip_allow.yaml",
+        "parent.config",
+        "cache.config",
+        "hosting.config",
+        "splitdns.config",
+        "logging.yaml",
+        "sni.yaml",
+        "ssl_multicert.yaml",
+    )
+    for filename in filenames:
+        path = _ats.config_directory / filename
+        path.touch(exist_ok=True)
 
-        cold = self._ats.traffic_ctl(
-            "config",
-            "set",
-            "proxy.config.diags.debug.tags",
-            "rpc|config|reload|upd",
-            "--cold",
-        )
-        assert cold.returncode == 0, cold.output
-        self.touch_all_config_files()
-        reload_result = self._ats.traffic_ctl("config", "reload", "-t", "full_reload_smoke")
-        assert reload_result.returncode == 0, reload_result.output
-        time.sleep(15)
-        status = self._ats.traffic_ctl("config", "status", "-t", "full_reload_smoke")
-        assert status.returncode == 0, status.output
-        assert "in_progress" not in status.stdout
 
-    def record_reloads(self) -> None:
-        """Exercise one live trigger record from logging and SSL."""
+def file_reload(*, _ats: ATS) -> None:
+    """Reload records and every file handler under one named token.
 
-        for name, value in (
-            ("proxy.config.log.sampling_frequency", "2"),
-            ("proxy.config.ssl.server.session_ticket.enable", "0"),
-        ):
-            time.sleep(2)
-            result = self._ats.traffic_ctl("config", "set", name, value)
-            assert result.returncode == 0, result.output
-        time.sleep(10)
-        history = self._ats.traffic_ctl("config", "status", "-c", "all")
-        assert history.returncode == 0, history.output
+    :param _ats: Test-local ats configured by the test.
+    """
 
-    def run(self) -> None:
-        """Run full file and record reload smoke coverage."""
+    cold = _ats.traffic_ctl(
+        "config",
+        "set",
+        "proxy.config.diags.debug.tags",
+        "rpc|config|reload|upd",
+        "--cold",
+    )
+    assert cold.returncode == 0, cold.output
+    touch_all_config_files(_ats=_ats)
+    reload_result = _ats.traffic_ctl("config", "reload", "-t", "full_reload_smoke")
+    assert reload_result.returncode == 0, reload_result.output
+    time.sleep(15)
+    status = _ats.traffic_ctl("config", "status", "-t", "full_reload_smoke")
+    assert status.returncode == 0, status.output
+    assert "in_progress" not in status.stdout
 
-        self._ats.start()
-        time.sleep(3)
-        self.file_reload()
-        self.record_reloads()
-        diagnostics = self._ats.diags_log.read_text(errors="replace")
-        assert "ignoring transition from" not in diagnostics
+
+def record_reloads(*, _ats: ATS) -> None:
+    """Exercise one live trigger record from logging and SSL.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    for name, value in (
+        ("proxy.config.log.sampling_frequency", "2"),
+        ("proxy.config.ssl.server.session_ticket.enable", "0"),
+    ):
+        time.sleep(2)
+        result = _ats.traffic_ctl("config", "set", name, value)
+        assert result.returncode == 0, result.output
+    time.sleep(10)
+    history = _ats.traffic_ctl("config", "status", "-c", "all")
+    assert history.returncode == 0, history.output
 
 
 def test_config_reload_full_smoke(ats_factory: ATSFactory) -> None:
-    """All registered reload paths finish without terminal-state conflicts."""
+    """All registered reload paths finish without terminal-state conflicts.
 
-    ConfigReloadFullSmokeScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    time.sleep(3)
+    file_reload(_ats=_ats)
+    record_reloads(_ats=_ats)
+    diagnostics = _ats.diags_log.read_text(errors="replace")
+    assert "ignoring transition from" not in diagnostics

@@ -19,75 +19,78 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
 
 
-class ActiveTimeoutScenario:
-    """Delay the origin beyond ATS's outbound transaction active timeout."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Delay the origin response long enough for ATS to time out.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Delay the origin response long enough for ATS to time out."""
+    origin = services.origin("origin", delay=8)
+    origin.add_response(
+        {
+            "headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "body": ""
+        },
+    )
+    return origin
 
-        origin = services.origin("origin", delay=8)
-        origin.add_response(
-            {
-                "headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": ""
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable all available client protocols with a two-second timeout."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Enable all available client protocols with a two-second timeout.
 
-        enable_quic = ats_factory.has_feature("TS_USE_QUIC")
-        ats = ats_factory.create("ts", enable_tls=True, enable_quic=enable_quic)
-        ats.records.update({
-            "proxy.config.url_remap.remap_required": 1,
-            "proxy.config.http.transaction_active_timeout_out": 2,
-        })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def verify_timeout(result: CommandResult) -> None:
-        """Require the ATS active-timeout response body."""
+    enable_quic = ats_factory.has_feature("TS_USE_QUIC")
+    ats = ats_factory.create("ts", enable_tls=True, enable_quic=enable_quic)
+    ats.records.update({
+        "proxy.config.url_remap.remap_required": 1,
+        "proxy.config.http.transaction_active_timeout_out": 2,
+    })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
+    return ats
 
-        assert result.returncode == 0, result.output
-        assert "Activity Timeout" in result.stdout
 
-    def run(self) -> None:
-        """Exercise every client protocol supported by this build."""
+def verify_timeout(result: CommandResult) -> None:
+    """Require the ATS active-timeout response body.
 
-        self._origin.start()
-        self._ats.start()
-        self.verify_timeout(self._curl.get(self._ats, "/file", options=f"--include", timeout=20))
-        if self._curl.uses_uds:
-            return
-        for protocol in ("--http1.1", "--http2"):
-            self.verify_timeout(
-                self._curl.run(
-                    f"--insecure --include '{protocol}' 'https://127.0.0.1:{self._ats.https_port}/file'",
-                    timeout=20,
-                ))
-        if self._ats.has_feature("TS_USE_QUIC") and self._curl.supports("http3"):
-            self.verify_timeout(
-                self._curl.run(
-                    f"--insecure --include --http3 'https://localhost:{self._ats.https_port}/file'",
-                    timeout=20,
-                ))
+    :param result: Completed command result to validate.
+    """
+
+    assert result.returncode == 0, result.output
+    assert "Activity Timeout" in result.stdout
 
 
 def test_active_timeout(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """ATS returns an active timeout for stalled origin responses."""
+    """ATS returns an active timeout for stalled origin responses.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
 
     if not curl.supports("http2"):
         pytest.skip("curl with HTTP/2 support is required")
-    ActiveTimeoutScenario(ats_factory, services, curl).run()
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    verify_timeout(curl.get(_ats, "/file", options=f"--include", timeout=20))
+    if curl.uses_uds:
+        return
+    for protocol in ("--http1.1", "--http2"):
+        verify_timeout(curl.run(
+            f"--insecure --include '{protocol}' 'https://127.0.0.1:{_ats.https_port}/file'",
+            timeout=20,
+        ))
+    if _ats.has_feature("TS_USE_QUIC") and curl.supports("http3"):
+        verify_timeout(curl.run(
+            f"--insecure --include --http3 'https://localhost:{_ats.https_port}/file'",
+            timeout=20,
+        ))

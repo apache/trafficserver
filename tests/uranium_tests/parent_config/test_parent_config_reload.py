@@ -19,59 +19,67 @@ import time
 from tools.uranium.services import ATS, ATSFactory
 
 
-class ParentConfigReloadScenario:
-    """Reload parent.config after a file event and a dependent record update."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Create ATS with one observable parent-selection rule.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def configure_ats(ats_factory: ATSFactory) -> ATS:
-        """Create ATS with one observable parent-selection rule."""
+    ats = ats_factory.create("ts")
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "parent_select|config",
+    })
+    ats.parent_config.add_line('dest_domain=example.com parent="origin.example.com:80"')
+    return ats
 
-        ats = ats_factory.create("ts")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "parent_select|config",
-        })
-        ats.parent_config.add_line('dest_domain=example.com parent="origin.example.com:80"')
-        return ats
 
-    def wait_for_loads(self, expected: int) -> None:
-        """Wait for @a expected completed parent.config loads."""
+def wait_for_loads(expected: int, *, _ats: ATS) -> None:
+    """Wait for @a expected completed parent.config loads.
 
-        deadline = time.monotonic() + 20
-        while time.monotonic() < deadline:
-            if self._ats.diags_log.read_text(errors="replace").count("parent.config finished loading") >= expected:
-                return
-            time.sleep(0.1)
-        raise AssertionError(f"parent.config did not finish loading {expected} times")
+    :param _ats: Test-local ats configured by the test.
+    :param expected: Expected result for this case.
+    """
 
-    def reload_touched_file(self) -> None:
-        """Touch parent.config and request a normal configuration reload."""
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        if _ats.diags_log.read_text(errors="replace").count("parent.config finished loading") >= expected:
+            return
+        time.sleep(0.1)
+    raise AssertionError(f"parent.config did not finish loading {expected} times")
 
-        self._ats.parent_config.path.touch()
-        result = self._ats.traffic_ctl("config", "reload")
-        assert result.returncode == 0, result.output
-        self.wait_for_loads(2)
 
-    def reload_after_record_update(self) -> None:
-        """Verify the registered retry-time callback reloads parent.config."""
+def reload_touched_file(*, _ats: ATS) -> None:
+    """Touch parent.config and request a normal configuration reload.
 
-        result = self._ats.traffic_ctl("config", "set", "proxy.config.http.parent_proxy.retry_time", "60")
-        assert result.returncode == 0, result.output
-        self.wait_for_loads(3)
+    :param _ats: Test-local ats configured by the test.
+    """
 
-    def run(self) -> None:
-        """Exercise both ConfigRegistry reload triggers."""
+    _ats.parent_config.path.touch()
+    result = _ats.traffic_ctl("config", "reload")
+    assert result.returncode == 0, result.output
+    wait_for_loads(2, _ats=_ats)
 
-        self._ats.start()
-        self.wait_for_loads(1)
-        self.reload_touched_file()
-        self.reload_after_record_update()
+
+def reload_after_record_update(*, _ats: ATS) -> None:
+    """Verify the registered retry-time callback reloads parent.config.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    result = _ats.traffic_ctl("config", "set", "proxy.config.http.parent_proxy.retry_time", "60")
+    assert result.returncode == 0, result.output
+    wait_for_loads(3, _ats=_ats)
 
 
 def test_parent_config_reload(ats_factory: ATSFactory) -> None:
-    """parent.config reloads for file and record changes."""
+    """parent.config reloads for file and record changes.
 
-    ParentConfigReloadScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    wait_for_loads(1, _ats=_ats)
+    reload_touched_file(_ats=_ats)
+    reload_after_record_update(_ats=_ats)

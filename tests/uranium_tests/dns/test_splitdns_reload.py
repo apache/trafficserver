@@ -17,86 +17,102 @@
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
 
-class SplitDNSReloadScenario:
-    """Verify ConfigRegistry reloads splitdns.config after it changes."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve the split DNS test hostname.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._dns = self.configure_dns(services)
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_dns(self, services: ServiceFactory) -> DNSServer:
-        """Resolve the split DNS test hostname."""
+    dns = services.dns("dns")
+    dns.add_records({"foo.ts.a.o.": ["127.0.0.1"]})
+    return dns
 
-        dns = services.dns("dns")
-        dns.add_records({"foo.ts.a.o.": ["127.0.0.1"]})
-        return dns
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Configure the origin response used before reload."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Configure the origin response used before reload.
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"},
-        )
-        return origin
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable split DNS and its reload diagnostics."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"},
+    )
+    return origin
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.dns.splitDNS.enabled": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "splitdns|config",
-            })
-        ats.splitdns_config.add_line(f"dest_domain=foo.ts.a.o named=127.0.0.1:{self._dns.port}")
-        ats.remap_config.add_line(f"map /foo/ http://foo.ts.a.o:{self._origin.port}/")
-        return ats
 
-    def verify_startup_configuration(self) -> None:
-        """Verify split DNS routes a request before reload."""
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginServer) -> ATS:
+    """Enable split DNS and its reload diagnostics.
 
-        result = self._curl.get(self._ats, "/foo/", options=f"--verbose")
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 200 OK" in result.output
+    :param _dns: Test-local dns configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def reload(self) -> None:
-        """Touch splitdns.config and wait for its ConfigRegistry task."""
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.dns.splitDNS.enabled": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "splitdns|config",
+        })
+    ats.splitdns_config.add_line(f"dest_domain=foo.ts.a.o named=127.0.0.1:{_dns.port}")
+    ats.remap_config.add_line(f"map /foo/ http://foo.ts.a.o:{_origin.port}/")
+    return ats
 
-        (self._ats.config_directory / "splitdns.config").touch()
-        result = self._ats.traffic_ctl(
-            "config",
-            "reload",
-            "--monitor",
-            "--show-details",
-            "--token",
-            "splitdns-reload",
-            "--initial-wait",
-            "0.1",
-            "--refresh-int",
-            "0.1",
-            "--timeout",
-            "15s",
-        )
-        assert result.returncode == 0, result.output
-        assert "splitdns.config" in result.stdout
-        assert "success" in result.stdout
 
-    def run(self) -> None:
-        """Start services, verify routing, and reload splitdns.config."""
+def verify_startup_configuration(*, _ats: ATS, _curl: Curl) -> None:
+    """Verify split DNS routes a request before reload.
 
-        self._dns.start()
-        self._origin.start()
-        self._ats.start()
-        self.verify_startup_configuration()
-        self.reload()
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    result = _curl.get(_ats, "/foo/", options=f"--verbose")
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 200 OK" in result.output
+
+
+def reload(*, _ats: ATS) -> None:
+    """Touch splitdns.config and wait for its ConfigRegistry task.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    (_ats.config_directory / "splitdns.config").touch()
+    result = _ats.traffic_ctl(
+        "config",
+        "reload",
+        "--monitor",
+        "--show-details",
+        "--token",
+        "splitdns-reload",
+        "--initial-wait",
+        "0.1",
+        "--refresh-int",
+        "0.1",
+        "--timeout",
+        "15s",
+    )
+    assert result.returncode == 0, result.output
+    assert "splitdns.config" in result.stdout
+    assert "success" in result.stdout
 
 
 def test_splitdns_reload(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A changed splitdns.config participates in ConfigRegistry reload."""
+    """A changed splitdns.config participates in ConfigRegistry reload.
 
-    SplitDNSReloadScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _dns = configure_dns(services)
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _dns=_dns, _origin=_origin)
+
+    _dns.start()
+    _origin.start()
+    _ats.start()
+    verify_startup_configuration(_ats=_ats, _curl=curl)
+    reload(_ats=_ats)

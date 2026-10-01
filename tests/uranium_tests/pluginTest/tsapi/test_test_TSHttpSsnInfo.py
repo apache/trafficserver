@@ -25,80 +25,82 @@ from tools.uranium.services import ATS, ATSFactory, Curl, HttpBinServer, Service
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class HttpSessionInfoScenario:
-    """Drive HTTP/2 session APIs and frame counters from a test plugin."""
+def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
+    """Create the POST origin used by the protocol clients.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._enable_quic = ats_factory.has_feature("TS_USE_QUIC") and curl.supports("http3")
-        self._httpbin = self.configure_httpbin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._log = self._ats.log_directory / "test_TSHttpSsnInfo_plugin_log.txt"
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
-        """Create the POST origin used by the protocol clients."""
+    return services.httpbin("httpbin")
 
-        return services.httpbin("httpbin")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Load the session-info plugin and enable TLS plus optional QUIC."""
+def configure_ats(ats_factory: ATSFactory, *, _enable_quic: bool, _httpbin: HttpBinServer) -> ATS:
+    """Load the session-info plugin and enable TLS plus optional QUIC.
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_quic=self._enable_quic)
-        ats.add_default_ssl_files()
-        ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/pluginTest/tsapi/.libs/test_TSHttpSsnInfo.so")
-        ats.plugin_config.add_line("test_TSHttpSsnInfo.so")
-        ats.set_environment("OUTPUT_FILE", str(ats.log_directory / "test_TSHttpSsnInfo_plugin_log.txt"))
-        ats.remap_config.add_line(f"map /httpbin/ http://127.0.0.1:{self._httpbin.port}/")
-        ats.ssl_multicert_config.add_lines(
-            (
-                "ssl_multicert:",
-                '  - dest_ip: "*"',
-                "    ssl_cert_name: server.pem",
-                "    ssl_key_name: server.key",
-            ))
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http2|http3|quic|test_TSHttpSsnInfo",
-            })
-        return ats
+    :param _enable_quic: Test-local enable quic configured by the test.
+    :param _httpbin: Test-local httpbin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run(self) -> None:
-        """Send continuation-heavy h2 traffic and inspect plugin counters."""
-
-        if shutil.which("nghttp") is None:
-            pytest.skip("nghttp is required")
-        post_body = self._ats.run_directory / "post_body"
-        post_body.parent.mkdir(parents=True, exist_ok=True)
-        post_body.write_text("0123456789abcdef" * 8)
-        self._httpbin.start()
-        self._ats.start()
-
-        h2 = self._ats.run_shell(
-            f"nghttp -vn --continuation 'https://localhost:{self._ats.https_port}/httpbin/post' "
-            f"-d '{post_body.name}' | grep -v 'continuation-test'",
-            timeout=10,
-        )
-        assert h2.returncode == 0, h2.output
-        assert_matches_gold(h2.stdout, TEST_DIRECTORY / "test_TSHttpSsnInfo_nghttp0.gold")
-
-        if self._enable_quic:
-            h3 = self._curl.run_for(
-                self._ats,
-                f"--insecure --http3 --data post_body 'https://localhost:{self._ats.https_port}/httpbin/post'",
-            )
-            assert h3.returncode == 0, h3.output
-            assert_matches_gold(h3.stdout, TEST_DIRECTORY / "test_TSHttpSsnInfo_curl0.gold")
-
-        log = wait_for_file_lines(self._log, "H2 Frames Received:", 1)
-        expected_frames = r"H2 Frames Received:D1,H1,PR\d+,RS0,S2,PP0,P0,G1,WU0,C1,U0"
-        assert re.search(expected_frames, log), log
-        assert "H2 OOB(11)=0,OOB(1000)=0" in log
-        assert_matches_gold(log, TEST_DIRECTORY / "test_TSHttpSsnInfo_plugin_log.gold")
+    ats = ats_factory.create("ts", enable_tls=True, enable_quic=_enable_quic)
+    ats.add_default_ssl_files()
+    ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/pluginTest/tsapi/.libs/test_TSHttpSsnInfo.so")
+    ats.plugin_config.add_line("test_TSHttpSsnInfo.so")
+    ats.set_environment("OUTPUT_FILE", str(ats.log_directory / "test_TSHttpSsnInfo_plugin_log.txt"))
+    ats.remap_config.add_line(f"map /httpbin/ http://127.0.0.1:{_httpbin.port}/")
+    ats.ssl_multicert_config.add_lines(
+        (
+            "ssl_multicert:",
+            '  - dest_ip: "*"',
+            "    ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ))
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http2|http3|quic|test_TSHttpSsnInfo",
+        })
+    return ats
 
 
 def test_test_TSHttpSsnInfo(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """HTTP session APIs report the expected HTTP/2 frame metrics."""
+    """HTTP session APIs report the expected HTTP/2 frame metrics.
 
-    HttpSessionInfoScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _enable_quic = ats_factory.has_feature("TS_USE_QUIC") and curl.supports("http3")
+    _httpbin = configure_httpbin(services)
+    _ats = configure_ats(ats_factory, _enable_quic=_enable_quic, _httpbin=_httpbin)
+    _log = _ats.log_directory / "test_TSHttpSsnInfo_plugin_log.txt"
+
+    if shutil.which("nghttp") is None:
+        pytest.skip("nghttp is required")
+    post_body = _ats.run_directory / "post_body"
+    post_body.parent.mkdir(parents=True, exist_ok=True)
+    post_body.write_text("0123456789abcdef" * 8)
+    _httpbin.start()
+    _ats.start()
+
+    h2 = _ats.run_shell(
+        f"nghttp -vn --continuation 'https://localhost:{_ats.https_port}/httpbin/post' "
+        f"-d '{post_body.name}' | grep -v 'continuation-test'",
+        timeout=10,
+    )
+    assert h2.returncode == 0, h2.output
+    assert_matches_gold(h2.stdout, TEST_DIRECTORY / "test_TSHttpSsnInfo_nghttp0.gold")
+
+    if _enable_quic:
+        h3 = curl.run_for(
+            _ats,
+            f"--insecure --http3 --data post_body 'https://localhost:{_ats.https_port}/httpbin/post'",
+        )
+        assert h3.returncode == 0, h3.output
+        assert_matches_gold(h3.stdout, TEST_DIRECTORY / "test_TSHttpSsnInfo_curl0.gold")
+
+    log = wait_for_file_lines(_log, "H2 Frames Received:", 1)
+    expected_frames = r"H2 Frames Received:D1,H1,PR\d+,RS0,S2,PP0,P0,G1,WU0,C1,U0"
+    assert re.search(expected_frames, log), log
+    assert "H2 OOB(11)=0,OOB(1000)=0" in log
+    assert_matches_gold(log, TEST_DIRECTORY / "test_TSHttpSsnInfo_plugin_log.gold")

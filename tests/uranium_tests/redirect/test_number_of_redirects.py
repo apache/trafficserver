@@ -19,113 +19,96 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
 
-class NumberOfRedirectsScenario:
-    """Split a two-hop redirect chain between ATS and curl."""
+def configure_origins(services: ServiceFactory) -> tuple[OriginServer, OriginServer, OriginServer]:
+    """Create the two redirects and final 200 response.
 
-    def __init__(
-        self,
-        ats_factory: ATSFactory,
-        services: ServiceFactory,
-        curl: Curl,
-        redirect_limit: int,
-    ) -> None:
-        self._curl = curl
-        self._redirect_limit = redirect_limit
-        self._server1, self._server2, self._server3 = self.configure_origins(services)
-        self._dns = self.configure_dns(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origins(services: ServiceFactory) -> tuple[OriginServer, OriginServer, OriginServer]:
-        """Create the two redirects and final 200 response."""
+    server1 = services.origin("server1")
+    server2 = services.origin("server2")
+    server3 = services.origin("server3")
+    server1.add_response(
+        {
+            "headers": "GET /ping HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: a.test\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers":
+                (
+                    f"HTTP/1.1 302 Redirect\r\nLocation: http://b.test:{server2.port}/pong\r\n"
+                    "Content-Length: 0\r\nConnection: close\r\n\r\n"),
+            "body": "",
+        },
+    )
+    server2.add_response(
+        {
+            "headers": "GET /pong HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: b.test\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers":
+                (
+                    f"HTTP/1.1 302 Redirect\r\nLocation: http://c.test:{server3.port}/pang\r\n"
+                    "Content-Length: 0\r\nConnection: close\r\n\r\n"),
+            "body": "",
+        },
+    )
+    server3.add_response(
+        {
+            "headers": "GET /pang HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: c.test\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+            "body": ""
+        },
+    )
+    return server1, server2, server3
 
-        server1 = services.origin("server1")
-        server2 = services.origin("server2")
-        server3 = services.origin("server3")
-        server1.add_response(
-            {
-                "headers": "GET /ping HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: a.test\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers":
-                    (
-                        f"HTTP/1.1 302 Redirect\r\nLocation: http://b.test:{server2.port}/pong\r\n"
-                        "Content-Length: 0\r\nConnection: close\r\n\r\n"),
-                "body": "",
-            },
-        )
-        server2.add_response(
-            {
-                "headers": "GET /pong HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: b.test\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers":
-                    (
-                        f"HTTP/1.1 302 Redirect\r\nLocation: http://c.test:{server3.port}/pang\r\n"
-                        "Content-Length: 0\r\nConnection: close\r\n\r\n"),
-                "body": "",
-            },
-        )
-        server3.add_response(
-            {
-                "headers": "GET /pang HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: c.test\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
-                "body": ""
-            },
-        )
-        return server1, server2, server3
 
-    @staticmethod
-    def configure_dns(services: ServiceFactory) -> DNSServer:
-        """Resolve every redirect hostname inside the test sandbox."""
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve every redirect hostname inside the test sandbox.
 
-        dns = services.dns("dns")
-        dns.add_records({name: ["127.0.0.1"] for name in ("a.test", "b.test", "c.test")})
-        return dns
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure the requested internal redirect-following limit."""
+    dns = services.dns("dns")
+    dns.add_records({name: ["127.0.0.1"] for name in ("a.test", "b.test", "c.test")})
+    return dns
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http|dns|redirect|http_redirect",
-                "proxy.config.http.number_of_redirections": self._redirect_limit,
-                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-                "proxy.config.dns.resolv_conf": "NULL",
-                "proxy.config.url_remap.remap_required": 0,
-                "proxy.config.http.redirect.actions": "self:follow",
-            })
-        ats.remap_config.add_lines(
-            (
-                f"map http://a.test/ping http://a.test:{self._server1.port}/ping",
-                f"map http://b.test:{self._server2.port}/pong http://b.test:{self._server2.port}/pong",
-                f"map http://c.test:{self._server3.port}/pang http://c.test:{self._server3.port}/pang",
-            ))
-        return ats
 
-    def run(self) -> None:
-        """Require curl to observe only redirects ATS did not follow itself."""
+def configure_ats(
+        ats_factory: ATSFactory, *, _dns: DNSServer, _redirect_limit: int, _server1: OriginServer, _server2: OriginServer,
+        _server3: OriginServer) -> ATS:
+    """Configure the requested internal redirect-following limit.
 
-        for server in (self._server1, self._server2, self._server3):
-            server.start()
-        self._dns.start()
-        self._ats.start()
-        result = self._curl.run_for(
-            self._ats,
-            (
-                f"--location --verbose --proxy '127.0.0.1:{self._ats.http_port}' --header 'uuid: redirect_test_1' "
-                f"http://a.test/ping"),
-        )
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 200 OK" in result.stderr
-        assert result.stderr.count("HTTP/1.1 302") == 2 - self._redirect_limit
+    :param _dns: Test-local dns configured by the test.
+    :param _redirect_limit: Test-local redirect limit configured by the test.
+    :param _server1: Test-local server1 configured by the test.
+    :param _server2: Test-local server2 configured by the test.
+    :param _server3: Test-local server3 configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|dns|redirect|http_redirect",
+            "proxy.config.http.number_of_redirections": _redirect_limit,
+            "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+            "proxy.config.url_remap.remap_required": 0,
+            "proxy.config.http.redirect.actions": "self:follow",
+        })
+    ats.remap_config.add_lines(
+        (
+            f"map http://a.test/ping http://a.test:{_server1.port}/ping",
+            f"map http://b.test:{_server2.port}/pong http://b.test:{_server2.port}/pong",
+            f"map http://c.test:{_server3.port}/pang http://c.test:{_server3.port}/pang",
+        ))
+    return ats
 
 
 @pytest.mark.parametrize("redirect_limit", (0, 1, 2))
@@ -135,6 +118,27 @@ def test_number_of_redirects(
     curl: Curl,
     redirect_limit: int,
 ) -> None:
-    """`number_of_redirections` controls how much of a chain ATS follows."""
+    """`number_of_redirections` controls how much of a chain ATS follows.
 
-    NumberOfRedirectsScenario(ats_factory, services, curl, redirect_limit).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param redirect_limit: Redirect limit used by this test step.
+    """
+    _server1, _server2, _server3 = configure_origins(services)
+    _dns = configure_dns(services)
+    _ats = configure_ats(
+        ats_factory, _dns=_dns, _redirect_limit=redirect_limit, _server1=_server1, _server2=_server2, _server3=_server3)
+
+    for server in (_server1, _server2, _server3):
+        server.start()
+    _dns.start()
+    _ats.start()
+    result = curl.run_for(
+        _ats,
+        (f"--location --verbose --proxy '127.0.0.1:{_ats.http_port}' --header 'uuid: redirect_test_1' "
+         f"http://a.test/ping"),
+    )
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 200 OK" in result.stderr
+    assert result.stderr.count("HTTP/1.1 302") == 2 - redirect_limit

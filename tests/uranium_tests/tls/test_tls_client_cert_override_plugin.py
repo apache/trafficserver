@@ -15,10 +15,15 @@
 #  limitations under the License.
 
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
-from uranium_tests.tls.test_tls_client_cert_override import TlsClientCertOverrideScenario
+from uranium_tests.tls.test_tls_client_cert_override import run_tls_client_cert_override
 
 
 def test_tls_client_cert_override_plugin(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """conf_remap and the secret-loader plugin select and refresh outbound client certificates."""
+    """conf_remap and the secret-loader plugin select and refresh outbound client certificates.
 
-    TlsClientCertOverrideScenario(ats_factory, services, curl, use_secret_plugin=True).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_tls_client_cert_override(ats_factory, services, curl, use_secret_plugin=True)

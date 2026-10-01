@@ -22,64 +22,73 @@ from tools.uranium.services import ATS, ATSFactory, Curl, ProcessService, Servic
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class SlowOriginPostScenario:
-    """Exercise a POST while the origin stalls its TLS handshake."""
+def configure_origin(services: ServiceFactory, *, _origin_port: int, _ready_file: Path) -> ProcessService:
+    """Start the one-shot clear-text netcat server used as a TLS origin.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._origin_port = services.allocate_port()
-        self._ready_file = ats_factory.run_directory / "origin.ready"
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param _origin_port: Test-local origin port configured by the test.
+    :param _ready_file: Test-local ready file configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> ProcessService:
-        """Start the one-shot clear-text netcat server used as a TLS origin."""
+    return services.process(
+        "origin",
+        ("bash", TEST_DIRECTORY / "server.sh", str(_origin_port), _ready_file),
+    )
 
-        return services.process(
-            "origin",
-            ("bash", TEST_DIRECTORY / "server.sh", str(self._origin_port), self._ready_file),
-        )
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Set the outbound connect timeout and inbound request limit."""
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+    """Set the outbound connect timeout and inbound request limit.
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
-            {
-                "proxy.config.net.max_requests_in": 1000,
-                "proxy.config.http.connect_attempts_timeout": 1,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
-            })
-        ats.remap_config.add_line(f"map / https://127.0.0.1:{self._origin_port}/")
-        return ats
+    :param _origin_port: Test-local origin port configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def wait_for_origin(self) -> None:
-        """Wait for the server script to reach its netcat listener."""
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.net.max_requests_in": 1000,
+            "proxy.config.http.connect_attempts_timeout": 1,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
+        })
+    ats.remap_config.add_line(f"map / https://127.0.0.1:{_origin_port}/")
+    return ats
 
-        deadline = time.monotonic() + 10
-        while not self._ready_file.exists() and time.monotonic() < deadline:
-            time.sleep(0.05)
-        assert self._ready_file.exists(), self._origin.output
 
-    def run(self) -> None:
-        """Send the POST and compare the generated 502 response."""
+def wait_for_origin(*, _origin: ProcessService, _ready_file: Path) -> None:
+    """Wait for the server script to reach its netcat listener.
 
-        self._origin.start()
-        self.wait_for_origin()
-        self._ats.start()
-        result = self._curl.run_for(
-            self._ats,
-            (f"--request POST --http1.1 --verbose --silent 'http://127.0.0.1:{self._ats.http_port}/' --data "
-             f"key=value"),
-            timeout=10,
-        )
-        assert result.returncode == 0, result.output
-        assert_matches_gold(result.stdout, TEST_DIRECTORY / "gold" / "post_slow_server_max_requests_in_0_stdout.gold")
-        assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / "post_slow_server_max_requests_in_0_stderr.gold")
+    :param _origin: Test-local origin configured by the test.
+    :param _ready_file: Test-local ready file configured by the test.
+    """
+
+    deadline = time.monotonic() + 10
+    while not _ready_file.exists() and time.monotonic() < deadline:
+        time.sleep(0.05)
+    assert _ready_file.exists(), _origin.output
 
 
 def test_post_slow_server_max_requests_in(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A stalled origin handshake does not trigger the inbound request limit."""
+    """A stalled origin handshake does not trigger the inbound request limit.
 
-    SlowOriginPostScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _origin_port = services.allocate_port()
+    _ready_file = ats_factory.run_directory / "origin.ready"
+    _origin = configure_origin(services, _origin_port=_origin_port, _ready_file=_ready_file)
+    _ats = configure_ats(ats_factory, _origin_port=_origin_port)
+
+    _origin.start()
+    wait_for_origin(_origin=_origin, _ready_file=_ready_file)
+    _ats.start()
+    result = curl.run_for(
+        _ats,
+        (f"--request POST --http1.1 --verbose --silent 'http://127.0.0.1:{_ats.http_port}/' --data "
+         f"key=value"),
+        timeout=10,
+    )
+    assert result.returncode == 0, result.output
+    assert_matches_gold(result.stdout, TEST_DIRECTORY / "gold" / "post_slow_server_max_requests_in_0_stdout.gold")
+    assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / "post_slow_server_max_requests_in_0_stderr.gold")

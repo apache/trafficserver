@@ -33,6 +33,7 @@ class TimeoutCase:
 
     @property
     def path(self) -> str:
+        """Path."""
         delay = "connect" if self.handshake_delay else "ttfb"
         return f"/{self.method.lower()}_{delay}_blocked"
 
@@ -45,87 +46,88 @@ CASES = (
 )
 
 
-class TlsOriginTimeoutScenario:
-    """Delay either a TLS handshake or the first origin response byte."""
+def configure_origin(
+        context: ProceduralContext, services: ServiceFactory, *, _case: TimeoutCase, _origin_port: int) -> ProcessService:
+    """Start the compiled TLS server with the requested delay points.
 
-    def __init__(
-        self,
-        case: TimeoutCase,
-        context: ProceduralContext,
-        ats_factory: ATSFactory,
-        services: ServiceFactory,
-        curl: Curl,
-    ) -> None:
-        self._case = case
-        self._curl = curl
-        self._origin_port = services.allocate_port()
-        self._origin = self.configure_origin(context, services)
-        self._ats = self.configure_ats(ats_factory)
+    :param _case: Test-local case configured by the test.
+    :param _origin_port: Test-local origin port configured by the test.
+    :param context: Context used by this test step.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, context: ProceduralContext, services: ServiceFactory) -> ProcessService:
-        """Start the compiled TLS server with the requested delay points."""
+    binary = context.runtime.resolve_artifact(context.test_directory, "{AtsBuildUraniumTestsDir}/timeout/ssl-delay-server")
+    certificate = context.runtime.test_tools / "ssl" / "server.pem"
+    return services.process(
+        "origin",
+        (
+            binary,
+            str(_origin_port),
+            str(_case.handshake_delay),
+            str(_case.response_delay),
+            certificate,
+        ),
+        ready_port=_origin_port,
+    )
 
-        binary = context.runtime.resolve_artifact(context.test_directory, "{AtsBuildUraniumTestsDir}/timeout/ssl-delay-server")
-        certificate = context.runtime.test_tools / "ssl" / "server.pem"
-        return services.process(
-            "origin",
-            (
-                binary,
-                str(self._origin_port),
-                str(self._case.handshake_delay),
-                str(self._case.response_delay),
-                certificate,
-            ),
-            ready_port=self._origin_port,
-        )
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Apply distinct handshake and transaction timeout limits."""
+def configure_ats(ats_factory: ATSFactory, *, _case: TimeoutCase, _origin_port: int) -> ATS:
+    """Apply distinct handshake and transaction timeout limits.
 
-        ats = ats_factory.create("ts")
-        ats.records.update(
-            {
-                "proxy.config.url_remap.remap_required": 1,
-                "proxy.config.http.connect_attempts_timeout": 1,
-                "proxy.config.http.connect_attempts_max_retries": 1,
-                "proxy.config.http.transaction_no_activity_timeout_out": 4,
-                "proxy.config.diags.debug.enabled": 0,
-                "proxy.config.diags.debug.tags": "http|ssl",
-                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-            })
-        ats.remap_config.add_line(f"map {self._case.path} https://127.0.0.1:{self._origin_port}")
-        return ats
+    :param _case: Test-local case configured by the test.
+    :param _origin_port: Test-local origin port configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run_client(self) -> CommandResult:
-        """Issue the case's GET or POST request."""
+    ats = ats_factory.create("ts")
+    ats.records.update(
+        {
+            "proxy.config.url_remap.remap_required": 1,
+            "proxy.config.http.connect_attempts_timeout": 1,
+            "proxy.config.http.connect_attempts_max_retries": 1,
+            "proxy.config.http.transaction_no_activity_timeout_out": 4,
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http|ssl",
+            "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+        })
+    ats.remap_config.add_line(f"map {_case.path} https://127.0.0.1:{_origin_port}")
+    return ats
 
-        arguments = ["--header", "Connection: close", "--include", "--tlsv1.2"]
-        if self._case.method == "POST":
-            arguments.extend(("--data", "bob"))
-        arguments.append(f"http://127.0.0.1:{self._ats.http_port}{self._case.path}")
-        return self._curl.run_for(
-            self._ats,
-            shlex.join(arguments),
-            timeout=20,
-        )
 
-    def verify(self, result: CommandResult) -> None:
-        """Require the expected proxy status and origin delay path."""
+def run_client(*, _ats: ATS, _case: TimeoutCase, _curl: Curl) -> CommandResult:
+    """Issue the case's GET or POST request.
 
-        assert result.returncode == 0, result.output
-        assert self._case.expected_status in result.output
-        assert "Accept try" in self._origin.output
-        if self._case.response_delay:
-            assert "TTFB delay" in self._origin.output
-        else:
-            assert "TTFB delay" not in self._origin.output
+    :param _ats: Test-local ats configured by the test.
+    :param _case: Test-local case configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
 
-    def run(self) -> None:
-        """Start the delayed origin and ATS, then verify the request."""
+    arguments = ["--header", "Connection: close", "--include", "--tlsv1.2"]
+    if _case.method == "POST":
+        arguments.extend(("--data", "bob"))
+    arguments.append(f"http://127.0.0.1:{_ats.http_port}{_case.path}")
+    return _curl.run_for(
+        _ats,
+        shlex.join(arguments),
+        timeout=20,
+    )
 
-        self._origin.start()
-        self._ats.start()
-        self.verify(self.run_client())
+
+def verify(result: CommandResult, *, _case: TimeoutCase, _origin: ProcessService) -> None:
+    """Require the expected proxy status and origin delay path.
+
+    :param _case: Test-local case configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param result: Completed command result to validate.
+    """
+
+    assert result.returncode == 0, result.output
+    assert _case.expected_status in result.output
+    assert "Accept try" in _origin.output
+    if _case.response_delay:
+        assert "TTFB delay" in _origin.output
+    else:
+        assert "TTFB delay" not in _origin.output
 
 
 @pytest.mark.parametrize("case", CASES, ids=("post-handshake", "post-ttfb", "get-handshake", "get-ttfb"))
@@ -136,6 +138,19 @@ def test_tls_conn_timeout(
     services: ServiceFactory,
     curl: Curl,
 ) -> None:
-    """ATS distinguishes TLS handshake timeouts from response timeouts."""
+    """ATS distinguishes TLS handshake timeouts from response timeouts.
 
-    TlsOriginTimeoutScenario(case, procedural_context, ats_factory, services, curl).run()
+    :param case: Case used by this test step.
+    :param procedural_context: Procedural context used by this test step.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    context = procedural_context
+    _origin_port = services.allocate_port()
+    _origin = configure_origin(context, services, _case=case, _origin_port=_origin_port)
+    _ats = configure_ats(ats_factory, _case=case, _origin_port=_origin_port)
+
+    _origin.start()
+    _ats.start()
+    verify(run_client(_ats=_ats, _case=case, _curl=curl), _case=case, _origin=_origin)

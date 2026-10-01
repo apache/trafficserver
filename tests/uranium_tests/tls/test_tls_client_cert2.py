@@ -15,16 +15,21 @@
 #  limitations under the License.
 
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
-from uranium_tests.tls.tls_client_certificate_scenario import TlsClientCertificateScenario
+from uranium_tests.tls.tls_client_certificate_scenario import run_tls_client_certificate
 
 
 def test_tls_client_cert2(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Exact and wildcard SNI names select the expected outbound client certificate."""
+    """Exact and wildcard SNI names select the expected outbound client certificate.
 
-    TlsClientCertificateScenario(
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_tls_client_certificate(
         ats_factory,
         services,
         curl,
         use_secret_plugin=False,
         wildcard_matrix=True,
-    ).run()
+    )

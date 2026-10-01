@@ -16,10 +16,15 @@
 
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
 
-from uranium_tests.tls.tls_verify_override_scenario import TlsVerifyOverrideScenario
+from uranium_tests.tls.tls_verify_override_scenario import run_tls_verify_override
 
 
 def test_tls_verify_override_base(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Per-remap verification honors inbound server-name SNI policy."""
+    """Per-remap verification honors inbound server-name SNI policy.
 
-    TlsVerifyOverrideScenario(ats_factory, services, curl, include_server_name=True).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_tls_verify_override(ats_factory, services, curl, include_server_name=True)

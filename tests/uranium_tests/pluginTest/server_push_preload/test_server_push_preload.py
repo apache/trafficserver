@@ -25,90 +25,96 @@ from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class ServerPushPreloadScenario:
-    """Translate eligible Link preload headers into HTTP/2 server pushes."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Serve one document, one pushed script, and one nopush stylesheet.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Serve one document, one pushed script, and one nopush stylesheet."""
-
-        origin = services.origin("origin")
-        html = (
-            "<html>\r\n<head>\r\n<link rel='stylesheet' type='text/css' href='/app/style.css' />\r\n"
-            "<script src='/app/script.js'></script>\r\n</head>\r\n<body>\r\nServer Push Preload Test\r\n"
-            "</body>\r\n</html>\r\n")
+    origin = services.origin("origin")
+    html = (
+        "<html>\r\n<head>\r\n<link rel='stylesheet' type='text/css' href='/app/style.css' />\r\n"
+        "<script src='/app/script.js'></script>\r\n</head>\r\n<body>\r\nServer Push Preload Test\r\n"
+        "</body>\r\n</html>\r\n")
+    origin.add_response(
+        {
+            "headers": "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+            "body": ""
+        },
+        {
+            "headers":
+                (
+                    f"HTTP/1.1 200 OK\r\nContent-Length: {len(html)}\r\nConnection: close\r\n"
+                    "Link: </app/style.css>; rel=preload; as=style; nopush\r\n"
+                    "Link: </app/script.js>; rel=preload; as=script\r\n\r\n"),
+            "body": html,
+        },
+    )
+    for path, body in (
+        ("/app/style.css", "body { font-weight: bold; }\r\n"),
+        ("/app/script.js", "function do_nothing() { return; }\r\n"),
+    ):
         origin.add_response(
             {
-                "headers": "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                "headers": f"GET {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
                 "body": ""
             },
             {
-                "headers":
-                    (
-                        f"HTTP/1.1 200 OK\r\nContent-Length: {len(html)}\r\nConnection: close\r\n"
-                        "Link: </app/style.css>; rel=preload; as=style; nopush\r\n"
-                        "Link: </app/script.js>; rel=preload; as=script\r\n\r\n"),
-                "body": html,
+                "headers": f"HTTP/1.1 200 OK\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n",
+                "body": body,
             },
         )
-        for path, body in (
-            ("/app/style.css", "body { font-weight: bold; }\r\n"),
-            ("/app/script.js", "function do_nothing() { return; }\r\n"),
-        ):
-            origin.add_response(
-                {
-                    "headers": f"GET {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "body": ""
-                },
-                {
-                    "headers": f"HTTP/1.1 200 OK\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n",
-                    "body": body,
-                },
-            )
-        return origin
+    return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable TLS and the server_push_preload remap plugin."""
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        if not ats.plugin_exists("server_push_preload.so"):
-            pytest.skip("server_push_preload.so is required")
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http2|server_push_preload",
-                "proxy.config.http2.active_timeout_in": 3,
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/ @plugin=server_push_preload.so")
-        return ats
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Enable TLS and the server_push_preload remap plugin.
 
-    def run_client(self) -> str:
-        """Use nghttp because Proxy Verifier does not expose pushed streams."""
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-        if shutil.which("nghttp") is None:
-            pytest.skip("nghttp is required")
-        result = subprocess.run(
-            ("nghttp", "-vs", "--no-dep", f"https://127.0.0.1:{self._ats.https_port}/index.html"),
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-        assert result.returncode == 0, result.stdout + result.stderr
-        return result.stdout
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    if not ats.plugin_exists("server_push_preload.so"):
+        pytest.skip("server_push_preload.so is required")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http2|server_push_preload",
+            "proxy.config.http2.active_timeout_in": 3,
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/ @plugin=server_push_preload.so")
+    return ats
 
-    def run(self) -> None:
-        """Run the HTTP/2 client and compare the pushed stream trace."""
 
-        self._origin.start()
-        self._ats.start()
-        assert_matches_gold(self.run_client(), TEST_DIRECTORY / "gold/server_push_preload_0_stdout.gold")
+def run_client(*, _ats: ATS) -> str:
+    """Use nghttp because Proxy Verifier does not expose pushed streams.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    if shutil.which("nghttp") is None:
+        pytest.skip("nghttp is required")
+    result = subprocess.run(
+        ("nghttp", "-vs", "--no-dep", f"https://127.0.0.1:{_ats.https_port}/index.html"),
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    return result.stdout
 
 
 def test_server_push_preload(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Only the Link entry without nopush creates a pushed stream."""
+    """Only the Link entry without nopush creates a pushed stream.
 
-    ServerPushPreloadScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    assert_matches_gold(run_client(_ats=_ats), TEST_DIRECTORY / "gold/server_push_preload_0_stdout.gold")

@@ -19,10 +19,16 @@ from pathlib import Path
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, assert_matches_gold
 
 
-class RemapWebSocketScenario:
-    """Verify WebSocket upgrade remapping and tunnel metrics."""
+def run_remap_web_socket(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, *, use_yaml: bool) -> None:
+    """Verify WebSocket upgrade remapping and tunnel metrics.
 
-    _METRICS = (
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param use_yaml: Use yaml used by this test step.
+    """
+
+    __METRICS = (
         "proxy.process.http.total_incoming_connections",
         "proxy.process.http.total_client_connections",
         "proxy.process.http.total_client_connections_ipv4",
@@ -46,15 +52,11 @@ class RemapWebSocketScenario:
         "proxy.process.tunnel.current_server_connections_tls",
     )
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, *, use_yaml: bool) -> None:
-        self._curl = curl
-        self._use_yaml = use_yaml
-        self._test_directory = Path(__file__).parent
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create an origin that accepts one WebSocket upgrade.
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create an origin that accepts one WebSocket upgrade."""
+        :param services: Factory owning support services and their cleanup.
+        """
 
         origin = services.origin("origin")
         origin.add_response(
@@ -72,36 +74,42 @@ class RemapWebSocketScenario:
         )
         return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure equivalent classic or YAML ws and wss mappings."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Configure equivalent classic or YAML ws and wss mappings.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ts", enable_tls=True)
-        if self._use_yaml:
+        if use_yaml:
             ats.remap_yaml.add_lines(
                 [
                     "remap:",
                     "  - type: map",
                     f"    from: {{url: 'ws://www.example.com:{ats.http_port}'}}",
-                    f"    to: {{url: 'ws://127.0.0.1:{self._origin.port}'}}",
+                    f"    to: {{url: 'ws://127.0.0.1:{_origin.port}'}}",
                     "  - type: map",
                     f"    from: {{url: 'wss://www.example.com:{ats.https_port}'}}",
-                    f"    to: {{url: 'ws://127.0.0.1:{self._origin.port}'}}",
+                    f"    to: {{url: 'ws://127.0.0.1:{_origin.port}'}}",
                 ])
         else:
             ats.remap_config.add_lines(
                 [
-                    f"map ws://www.example.com:{ats.http_port} ws://127.0.0.1:{self._origin.port}",
-                    f"map wss://www.example.com:{ats.https_port} ws://127.0.0.1:{self._origin.port}",
+                    f"map ws://www.example.com:{ats.http_port} ws://127.0.0.1:{_origin.port}",
+                    f"map wss://www.example.com:{ats.https_port} ws://127.0.0.1:{_origin.port}",
                 ])
         return ats
 
-    def request_upgrade(self, *, tls: bool) -> None:
-        """Request an upgrade and verify the successful handshake."""
+    def request_upgrade(*, tls: bool) -> None:
+        """Request an upgrade and verify the successful handshake.
 
-        port = self._ats.https_port if tls else self._ats.http_port
+        :param tls: Tls used by this test step.
+        """
+
+        port = _ats.https_port if tls else _ats.http_port
         scheme = "https" if tls else "http"
-        result = self._curl.run_for(
-            self._ats,
+        result = curl.run_for(
+            _ats,
             (
                 f"--max-time 2 --verbose --silent --http1.1 --insecure --header 'Connection: Upgrade' --header "
                 f"'Upgrade: websocket' --header 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' --header "
@@ -113,35 +121,28 @@ class RemapWebSocketScenario:
         assert "HTTP/1.1 101 Switching Protocols" in result.stderr, result.output
         assert "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=" in result.stderr, result.output
 
-    def request_invalid_upgrade(self) -> None:
-        """Verify ATS rejects a handshake missing the WebSocket key."""
+    _test_directory = Path(__file__).parent
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory)
 
-        result = self._curl.run_for(
-            self._ats,
-            (
-                f"--max-time 2 --verbose --silent --http1.1 --header 'Connection: Upgrade' --header "
-                f"'Upgrade: websocket' --resolve 'www.example.com:{self._ats.http_port}:127.0.0.1' "
-                f"'http://www.example.com:{self._ats.http_port}/chat'"),
-            timeout=10,
-        )
-        assert result.returncode == 0, result.output
-        assert "HTTP/1.1 400 Invalid Upgrade Request" in result.stderr, result.output
+    _origin.start()
+    _ats.start()
+    if not curl.uses_uds:
+        request_upgrade(tls=True)
+    request_upgrade(tls=False)
 
-    def verify_metrics(self) -> None:
-        """Verify connection accounting after the upgrade requests."""
+    result = curl.run_for(
+        _ats,
+        (
+            f"--max-time 2 --verbose --silent --http1.1 --header 'Connection: Upgrade' --header "
+            f"'Upgrade: websocket' --resolve 'www.example.com:{_ats.http_port}:127.0.0.1' "
+            f"'http://www.example.com:{_ats.http_port}/chat'"),
+        timeout=10,
+    )
+    assert result.returncode == 0, result.output
+    assert "HTTP/1.1 400 Invalid Upgrade Request" in result.stderr, result.output
 
-        result = self._ats.traffic_ctl("metric", "get", *self._METRICS)
-        assert result.returncode == 0, result.output
-        filename = "remap-ws-metrics-uds.gold" if self._curl.uses_uds else "remap-ws-metrics.gold"
-        assert_matches_gold(result.stdout, self._test_directory / "gold" / filename)
-
-    def run(self) -> None:
-        """Run the complete WebSocket remapping scenario."""
-
-        self._origin.start()
-        self._ats.start()
-        if not self._curl.uses_uds:
-            self.request_upgrade(tls=True)
-        self.request_upgrade(tls=False)
-        self.request_invalid_upgrade()
-        self.verify_metrics()
+    result = _ats.traffic_ctl("metric", "get", *__METRICS)
+    assert result.returncode == 0, result.output
+    filename = "remap-ws-metrics-uds.gold" if curl.uses_uds else "remap-ws-metrics.gold"
+    assert_matches_gold(result.stdout, _test_directory / "gold" / filename)

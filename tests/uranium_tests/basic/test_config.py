@@ -17,29 +17,39 @@
 from tools.uranium.services import ATS, Curl
 
 
-class CustomListenerScenario:
-    """Verify that records.yaml can replace the default listener configuration."""
+def configure_traffic_server(*, _ats: ATS) -> None:
+    """Custom listener configure traffic server.
 
-    def __init__(self, ats: ATS, curl: Curl) -> None:
-        self.ats = ats
-        self.curl = curl
+    :param _ats: Test-local ats configured by the test.
+    """
+    _ats.records.update({"proxy.config.http.server_ports": f"{_ats.http_port} {_ats.uds_path}"})
 
-    def _configure_traffic_server(self) -> None:
-        self.ats.records.update({"proxy.config.http.server_ports": f"{self.ats.http_port} {self.ats.uds_path}"})
 
-    def _start_traffic_server(self) -> None:
-        self.ats.start()
+def start_traffic_server(*, _ats: ATS) -> None:
+    """Custom listener start traffic server.
 
-    def _verify_custom_listener_accepts_requests(self) -> None:
-        result = self.curl.get(self.ats)
+    :param _ats: Test-local ats configured by the test.
+    """
+    _ats.start()
 
-        assert result.returncode == 0, result.output
 
-    def run(self) -> None:
-        self._configure_traffic_server()
-        self._start_traffic_server()
-        self._verify_custom_listener_accepts_requests()
+def verify_custom_listener_accepts_requests(*, _ats: ATS, _curl: Curl) -> None:
+    """Custom listener verify custom listener accepts requests.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+    result = _curl.get(_ats)
+
+    assert result.returncode == 0, result.output
 
 
 def test_traffic_server_starts_with_custom_listener(ats: ATS, curl: Curl) -> None:
-    CustomListenerScenario(ats, curl).run()
+    """Verify that records.yaml can replace the default listener configuration.
+
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param curl: Transport-aware curl command runner.
+    """
+    configure_traffic_server(_ats=ats)
+    start_traffic_server(_ats=ats)
+    verify_custom_listener_accepts_requests(_ats=ats, _curl=curl)

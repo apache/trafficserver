@@ -22,92 +22,100 @@ from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFacto
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class TlsOriginPostAbortScenario:
-    """Reset a TLS origin connection while ATS is sending a POST body."""
+def configure_origin(services: ServiceFactory, *, _origin_port: int) -> ProcessService:
+    """Create the raw TLS origin that sends an RST mid-body.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin_port = services.allocate_port()
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(services)
+    :param _origin_port: Test-local origin port configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> ProcessService:
-        """Create the raw TLS origin that sends an RST mid-body."""
+    certificate = TEST_DIRECTORY.parents[1] / "tools" / "ssl" / "server.pem"
+    origin = services.process(
+        "origin",
+        (
+            sys.executable,
+            TEST_DIRECTORY / "tls_post_abort_origin.py",
+            "-p",
+            str(_origin_port),
+            "-c",
+            certificate,
+            "-d",
+            "1.0",
+        ),
+        ready_port=_origin_port,
+    )
+    origin.stdout.contains(
+        "request headers received",
+        "The origin should receive the POST headers before resetting the connection.",
+    )
+    origin.stdout.contains(
+        "connection reset sent",
+        "The origin should reset the connection while ATS sends the request body.",
+    )
+    return origin
 
-        certificate = TEST_DIRECTORY.parents[1] / "tools" / "ssl" / "server.pem"
-        origin = services.process(
-            "origin",
-            (
-                sys.executable,
-                TEST_DIRECTORY / "tls_post_abort_origin.py",
-                "-p",
-                str(self._origin_port),
-                "-c",
-                certificate,
-                "-d",
-                "1.0",
-            ),
-            ready_port=self._origin_port,
-        )
-        origin.stdout.contains(
-            "request headers received",
-            "The origin should receive the POST headers before resetting the connection.",
-        )
-        origin.stdout.contains(
-            "connection reset sent",
-            "The origin should reset the connection while ATS sends the request body.",
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure a TLS origin with timeouts much longer than the test limit."""
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+    """Configure a TLS origin with timeouts much longer than the test limit.
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.records.update(
-            {
-                "proxy.config.url_remap.remap_required": 1,
-                "proxy.config.http.connect_attempts_max_retries": 0,
-                "proxy.config.http.connect_attempts_timeout": 15,
-                "proxy.config.http.transaction_no_activity_timeout_out": 15,
-                "proxy.config.http.transaction_no_activity_timeout_in": 30,
-                "proxy.config.net.sock_send_buffer_size_out": 65536,
-                "proxy.config.ssl.client.verify.server.policy": "DISABLED",
-                "proxy.config.diags.debug.enabled": 0,
-                "proxy.config.diags.debug.tags": "http|ssl|ssl_io",
-            })
-        ats.remap_config.add_line(f"map /post https://127.0.0.1:{self._origin_port}")
-        return ats
+    :param _origin_port: Test-local origin port configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Create the timed streaming POST client."""
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.records.update(
+        {
+            "proxy.config.url_remap.remap_required": 1,
+            "proxy.config.http.connect_attempts_max_retries": 0,
+            "proxy.config.http.connect_attempts_timeout": 15,
+            "proxy.config.http.transaction_no_activity_timeout_out": 15,
+            "proxy.config.http.transaction_no_activity_timeout_in": 30,
+            "proxy.config.net.sock_send_buffer_size_out": 65536,
+            "proxy.config.ssl.client.verify.server.policy": "DISABLED",
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http|ssl|ssl_io",
+        })
+    ats.remap_config.add_line(f"map /post https://127.0.0.1:{_origin_port}")
+    return ats
 
-        return services.process(
-            "client",
-            (
-                sys.executable,
-                TEST_DIRECTORY / "tls_post_abort_client.py",
-                "-p",
-                str(self._ats.http_port),
-                "-t",
-                "8",
-            ),
-        )
 
-    def run(self) -> None:
-        """Require the reset path and a prompt client-visible 5xx."""
+def configure_client(services: ServiceFactory, *, _ats: ATS) -> ProcessService:
+    """Create the timed streaming POST client.
 
-        self._origin.start()
-        self._ats.start()
-        client = self._client.run(timeout=12)
-        assert client.returncode == 0, client.output
-        assert "PASS: transaction failed promptly" in client.output
-        assert "status-code: 5" in client.output
-        traffic_out = self._ats.traffic_out.read_text(errors="replace")
-        assert "received signal" not in traffic_out
-        assert "failed assertion" not in traffic_out
+    :param _ats: Test-local ats configured by the test.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    return services.process(
+        "client",
+        (
+            sys.executable,
+            TEST_DIRECTORY / "tls_post_abort_client.py",
+            "-p",
+            str(_ats.http_port),
+            "-t",
+            "8",
+        ),
+    )
 
 
 def test_tls_origin_post_abort(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A TLS origin RST fails an in-flight POST promptly without crashing ATS."""
+    """A TLS origin RST fails an in-flight POST promptly without crashing ATS.
 
-    TlsOriginPostAbortScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _origin_port = services.allocate_port()
+    _origin = configure_origin(services, _origin_port=_origin_port)
+    _ats = configure_ats(ats_factory, _origin_port=_origin_port)
+    _client = configure_client(services, _ats=_ats)
+
+    _origin.start()
+    _ats.start()
+    client = _client.run(timeout=12)
+    assert client.returncode == 0, client.output
+    assert "PASS: transaction failed promptly" in client.output
+    assert "status-code: 5" in client.output
+    traffic_out = _ats.traffic_out.read_text(errors="replace")
+    assert "received signal" not in traffic_out
+    assert "failed assertion" not in traffic_out

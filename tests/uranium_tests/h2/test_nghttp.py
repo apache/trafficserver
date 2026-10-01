@@ -24,81 +24,82 @@ from tools.uranium.services import ATS, ATSFactory, HttpBinServer, ServiceFactor
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class NghttpScenario:
-    """Exercise HTTP/2 trailers and graceful shutdown with nghttp."""
+def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
+    """Start the HTTP behavior origin used by both requests.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._httpbin = self.configure_httpbin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
-        """Start the HTTP behavior origin used by both requests."""
+    return services.httpbin("httpbin")
 
-        return services.httpbin("httpbin")
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Terminate h2 and trigger graceful shutdown on the drip request."""
+def configure_ats(ats_factory: ATSFactory, *, _httpbin: HttpBinServer) -> ATS:
+    """Terminate h2 and trigger graceful shutdown on the drip request.
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        rule = TEST_DIRECTORY / "rules" / "graceful_shutdown.conf"
-        ats.copy_to_config(rule)
-        ats.remap_config.add_line(
-            f"map /httpbin/ http://127.0.0.1:{self._httpbin.port}/ "
-            f"@plugin=header_rewrite.so @pparam={ats.config_directory / rule.name}")
-        ats.ssl_multicert_config.add_lines(
-            (
-                "ssl_multicert:",
-                '  - dest_ip: "*"',
-                "    ssl_cert_name: server.pem",
-                "    ssl_key_name: server.key",
-            ))
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http2_cs",
-        })
-        return ats
+    :param _httpbin: Test-local httpbin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def run(self) -> None:
-        """Send a trailer-bearing POST, then observe both GOAWAY frames."""
-
-        if shutil.which("nghttp") is None:
-            pytest.skip("nghttp is required")
-        post_body = self._ats.run_directory / "post_body"
-        post_body.parent.mkdir(parents=True, exist_ok=True)
-        post_body.write_text("0123456789abcdef" * 8192)
-        self._httpbin.start()
-        self._ats.start()
-
-        trailer = self._ats.run(
-            "nghttp",
-            "-vn",
-            "--no-dep",
-            f"https://127.0.0.1:{self._ats.https_port}/httpbin/post",
-            "--trailer",
-            "foo: bar",
-            "-d",
-            post_body.name,
-            timeout=10,
-        )
-        assert trailer.returncode == 0, trailer.output
-        assert_matches_gold(trailer.stdout, TEST_DIRECTORY / "gold" / "nghttp_0_stdout.gold")
-
-        shutdown = self._ats.run(
-            "nghttp",
-            "-vn",
-            "--no-dep",
-            f"https://127.0.0.1:{self._ats.https_port}/httpbin/drip?duration=3",
-            timeout=10,
-        )
-        assert shutdown.returncode == 0, shutdown.output
-        assert_matches_gold(shutdown.stdout, TEST_DIRECTORY / "gold" / "nghttp_1_stdout.gold")
-        traffic_out = wait_for_file_lines(self._ats.traffic_out, "session free", 2)
-        assert_matches_gold(traffic_out, TEST_DIRECTORY / "gold" / "nghttp_ts_stderr.gold")
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    rule = TEST_DIRECTORY / "rules" / "graceful_shutdown.conf"
+    ats.copy_to_config(rule)
+    ats.remap_config.add_line(
+        f"map /httpbin/ http://127.0.0.1:{_httpbin.port}/ "
+        f"@plugin=header_rewrite.so @pparam={ats.config_directory / rule.name}")
+    ats.ssl_multicert_config.add_lines(
+        (
+            "ssl_multicert:",
+            '  - dest_ip: "*"',
+            "    ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ))
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "http2_cs",
+    })
+    return ats
 
 
 def test_nghttp(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """ATS forwards h2 trailers and performs a two-stage graceful shutdown."""
+    """ATS forwards h2 trailers and performs a two-stage graceful shutdown.
 
-    NghttpScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    _httpbin = configure_httpbin(services)
+    _ats = configure_ats(ats_factory, _httpbin=_httpbin)
+
+    if shutil.which("nghttp") is None:
+        pytest.skip("nghttp is required")
+    post_body = _ats.run_directory / "post_body"
+    post_body.parent.mkdir(parents=True, exist_ok=True)
+    post_body.write_text("0123456789abcdef" * 8192)
+    _httpbin.start()
+    _ats.start()
+
+    trailer = _ats.run(
+        "nghttp",
+        "-vn",
+        "--no-dep",
+        f"https://127.0.0.1:{_ats.https_port}/httpbin/post",
+        "--trailer",
+        "foo: bar",
+        "-d",
+        post_body.name,
+        timeout=10,
+    )
+    assert trailer.returncode == 0, trailer.output
+    assert_matches_gold(trailer.stdout, TEST_DIRECTORY / "gold" / "nghttp_0_stdout.gold")
+
+    shutdown = _ats.run(
+        "nghttp",
+        "-vn",
+        "--no-dep",
+        f"https://127.0.0.1:{_ats.https_port}/httpbin/drip?duration=3",
+        timeout=10,
+    )
+    assert shutdown.returncode == 0, shutdown.output
+    assert_matches_gold(shutdown.stdout, TEST_DIRECTORY / "gold" / "nghttp_1_stdout.gold")
+    traffic_out = wait_for_file_lines(_ats.traffic_out, "session free", 2)
+    assert_matches_gold(traffic_out, TEST_DIRECTORY / "gold" / "nghttp_ts_stderr.gold")

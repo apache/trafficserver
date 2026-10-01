@@ -15,10 +15,15 @@
 #  limitations under the License.
 
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
-from uranium_tests.remap.remap_ws import RemapWebSocketScenario
+from uranium_tests.remap.remap_ws import run_remap_web_socket
 
 
 def test_remap_ws_yaml(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """YAML remap rules forward valid WebSocket upgrades."""
+    """YAML remap rules forward valid WebSocket upgrades.
 
-    RemapWebSocketScenario(ats_factory, services, curl, use_yaml=True).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_remap_web_socket(ats_factory, services, curl, use_yaml=True)

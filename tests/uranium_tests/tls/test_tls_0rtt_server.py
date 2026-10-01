@@ -28,229 +28,254 @@ from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginS
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class TlsEarlyDataScenario:
-    """Exercise safe, unsafe, multiplexed, global, and SNI early-data policy."""
+def require_openssl() -> None:
+    """Skip when the command-line client predates TLS 1.3 early data."""
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self.require_openssl()
-        self._curl = curl
-        self._origin = self.configure_origin(services)
-        self._enabled = self.configure_ats(ats_factory, "enabled", max_early_data=16384, sni_name="example-no.com", sni_value=0)
-        self._disabled = self.configure_ats(
-            ats_factory,
-            "disabled",
-            max_early_data=0,
-            sni_name="example-yes.com",
-            sni_value=16384,
-        )
-        self._client_directory = self.configure_client_files(ats_factory.run_directory)
+    output = subprocess.check_output(("openssl", "version"), text=True)
+    match = re.search(r"\d+(?:\.\d+)+", output)
+    version = tuple(int(part) for part in match.group().split(".")) if match else ()
+    if version < (1, 1, 1):
+        pytest.skip("OpenSSL 1.1.1 or newer is required")
 
-    @staticmethod
-    def require_openssl() -> None:
-        """Skip when the command-line client predates TLS 1.3 early data."""
 
-        output = subprocess.check_output(("openssl", "version"), text=True)
-        match = re.search(r"\d+(?:\.\d+)+", output)
-        version = tuple(int(part) for part in match.group().split(".")) if match else ()
-        if version < (1, 1, 1):
-            pytest.skip("OpenSSL 1.1.1 or newer is required")
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create ordinary, early GET, early POST, and multiplexed responses.
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create ordinary, early GET, early POST, and multiplexed responses."""
+    :param services: Factory owning support services and their cleanup.
+    """
 
-        origin = services.origin("origin")
-        for path, body in (
-            ("/", "curl test"),
-            ("/early_get", "early data accepted"),
-            ("/early_multi_1", "early data accepted multi_1"),
-            ("/early_multi_2", "early data accepted multi_2"),
-            ("/early_multi_3", "early data accepted multi_3"),
-        ):
-            origin.add_response(
-                {"headers": f"GET {path} HTTP/1.1\r\nHost: {{%Host}}\r\n\r\n"},
-                {
-                    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                    "body": body
-                },
-            )
+    origin = services.origin("origin")
+    for path, body in (
+        ("/", "curl test"),
+        ("/early_get", "early data accepted"),
+        ("/early_multi_1", "early data accepted multi_1"),
+        ("/early_multi_2", "early data accepted multi_2"),
+        ("/early_multi_3", "early data accepted multi_3"),
+    ):
         origin.add_response(
+            {"headers": f"GET {path} HTTP/1.1\r\nHost: {{%Host}}\r\n\r\n"},
             {
-                "headers": ("POST /early_post HTTP/1.1\r\nHost: {%Host}\r\nContent-Length: 11\r\n\r\n"),
-                "body": "knock knock",
-            },
-            {
-                "headers": ("HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\n"
-                            "Transfer-Encoding: chunked\r\n\r\n"),
-                "body": "",
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": body
             },
         )
-        return origin
+    origin.add_response(
+        {
+            "headers": ("POST /early_post HTTP/1.1\r\nHost: {%Host}\r\nContent-Length: 11\r\n\r\n"),
+            "body": "knock knock",
+        },
+        {
+            "headers": ("HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\n"
+                        "Transfer-Encoding: chunked\r\n\r\n"),
+            "body": "",
+        },
+    )
+    return origin
 
-    def configure_ats(
-        self,
-        ats_factory: ATSFactory,
-        name: str,
-        *,
-        max_early_data: int,
-        sni_name: str,
-        sni_value: int,
-    ) -> ATS:
-        """Configure one global policy with an opposing SNI override."""
 
-        ats = ats_factory.create(name, enable_tls=True)
-        ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
-        ats.set_ssl_multicert_yaml(
-            {"ssl_multicert": [{
-                "dest_ip": "*",
-                "ssl_cert_name": "server.pem",
-                "ssl_key_name": "server.key"
-            },]})
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http|ssl_early_data|ssl",
-                "proxy.config.exec_thread.autoconfig.enabled": 0,
-                "proxy.config.exec_thread.limit": 8,
-                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
-                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
-                "proxy.config.ssl.server.session_ticket.enable": 1,
-                "proxy.config.ssl.server.max_early_data": max_early_data,
-                "proxy.config.ssl.server.allow_early_data_params": 0,
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        ats.write_config_file(
-            "sni.yaml",
-            f"sni:\n- fqdn: {sni_name}\n  server_max_early_data: {sni_value}\n",
-        )
-        return ats
+def configure_ats(
+        ats_factory: ATSFactory, name: str, *, max_early_data: int, sni_name: str, sni_value: int, _origin: OriginServer) -> ATS:
+    """Configure one global policy with an opposing SNI override.
 
-    @staticmethod
-    def configure_client_files(run_directory: Path) -> Path:
-        """Copy mutable session and early-data inputs into the test sandbox."""
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param name: Unique service or case name within this test.
+    :param max_early_data: Max early data used by this test step.
+    :param sni_name: Sni name used by this test step.
+    :param sni_value: Sni value used by this test step.
+    """
 
-        directory = run_directory / "early-data-client"
-        directory.mkdir()
-        for filename in (
-                "early_h1_get.txt",
-                "early_h1_post.txt",
-                "early_h2_get.txt",
-                "early_h2_post.txt",
-                "early_h2_multi1.txt",
-                "early_h2_multi2.txt",
-        ):
-            shutil.copy2(TEST_DIRECTORY / filename, directory / filename)
-        return directory
+    ats = ats_factory.create(name, enable_tls=True)
+    ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+    ats.set_ssl_multicert_yaml({"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"},]})
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|ssl_early_data|ssl",
+            "proxy.config.exec_thread.autoconfig.enabled": 0,
+            "proxy.config.exec_thread.limit": 8,
+            "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+            "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+            "proxy.config.ssl.server.session_ticket.enable": 1,
+            "proxy.config.ssl.server.max_early_data": max_early_data,
+            "proxy.config.ssl.server.allow_early_data_params": 0,
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    ats.write_config_file(
+        "sni.yaml",
+        f"sni:\n- fqdn: {sni_name}\n  server_max_early_data: {sni_value}\n",
+    )
+    return ats
 
-    def run_client(self, ats: ATS, http_version: str, case: str, *, sni: str | None = None) -> CommandResult:
-        """Run the bespoke OpenSSL early-data driver."""
 
-        arguments: list[str | Path] = [
-            sys.executable,
-            TEST_DIRECTORY / "test-0rtt-s_client.py",
-            "--ats-port",
-            str(ats.https_port),
-            "--http-version",
-            http_version,
-            "--test-name",
-            case,
-            "--run-dir",
-            self._client_directory,
-        ]
-        if sni is not None:
-            arguments.extend(("--server-name", sni))
-        result = ats.run(*arguments, timeout=10)
-        assert result.returncode == 0, result.output
-        return result
+def configure_client_files(run_directory: Path) -> Path:
+    """Copy mutable session and early-data inputs into the test sandbox.
 
-    @staticmethod
-    def assert_output(result: CommandResult, *, contains: tuple[str, ...] = (), excludes: tuple[str, ...] = ()) -> None:
-        """Verify expected and prohibited early-data response fragments."""
+    :param run_directory: Run directory used by this test step.
+    """
 
-        for value in contains:
-            assert value in result.output, result.output
-        for value in excludes:
-            assert value not in result.output, result.output
+    directory = run_directory / "early-data-client"
+    directory.mkdir()
+    for filename in (
+            "early_h1_get.txt",
+            "early_h1_post.txt",
+            "early_h2_get.txt",
+            "early_h2_post.txt",
+            "early_h2_multi1.txt",
+            "early_h2_multi2.txt",
+    ):
+        shutil.copy2(TEST_DIRECTORY / filename, directory / filename)
+    return directory
 
-    def verify_basic_request(self) -> None:
-        """Confirm an ordinary full-handshake request reaches the origin."""
 
-        ats = self._enabled
-        result = self._curl.run_for(
-            ats,
-            (
-                f"--insecure --silent --show-error --resolve 'example.com:{ats.https_port}:127.0.0.1' "
-                f"'https://example.com:{ats.https_port}/'"),
-        )
-        assert result.returncode == 0, result.output
-        self.assert_output(result, contains=("curl test",), excludes=("early data accepted",))
+def run_client(ats: ATS, http_version: str, case: str, *, sni: str | None = None, _client_directory: Path) -> CommandResult:
+    """Run the bespoke OpenSSL early-data driver.
 
-    def verify_enabled_policy(self) -> None:
-        """Accept safe data, reject POST, and handle multiplexed HTTP/2 streams."""
+    :param _client_directory: Test-local client directory configured by the test.
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param http_version: Http version used by this test step.
+    :param case: Case used by this test step.
+    :param sni: Sni used by this test step.
+    """
 
-        forbidden = ("curl test",)
-        self.assert_output(self.run_client(self._enabled, "h1", "get"), contains=("early data accepted",), excludes=forbidden)
-        self.assert_output(
-            self.run_client(self._enabled, "h1", "post"),
-            contains=("HTTP/1.1 425 Too Early",),
+    arguments: list[str | Path] = [
+        sys.executable,
+        TEST_DIRECTORY / "test-0rtt-s_client.py",
+        "--ats-port",
+        str(ats.https_port),
+        "--http-version",
+        http_version,
+        "--test-name",
+        case,
+        "--run-dir",
+        _client_directory,
+    ]
+    if sni is not None:
+        arguments.extend(("--server-name", sni))
+    result = ats.run(*arguments, timeout=10)
+    assert result.returncode == 0, result.output
+    return result
+
+
+def assert_output(result: CommandResult, *, contains: tuple[str, ...] = (), excludes: tuple[str, ...] = ()) -> None:
+    """Verify expected and prohibited early-data response fragments.
+
+    :param result: Completed command result to validate.
+    :param contains: Required output fragments.
+    :param excludes: Forbidden output fragments.
+    """
+
+    for value in contains:
+        assert value in result.output, result.output
+    for value in excludes:
+        assert value not in result.output, result.output
+
+
+def verify_basic_request(*, _curl: Curl, _enabled: ATS) -> None:
+    """Confirm an ordinary full-handshake request reaches the origin.
+
+    :param _curl: Test-local curl configured by the test.
+    :param _enabled: Test-local enabled configured by the test.
+    """
+
+    ats = _enabled
+    result = _curl.run_for(
+        ats,
+        (
+            f"--insecure --silent --show-error --resolve 'example.com:{ats.https_port}:127.0.0.1' "
+            f"'https://example.com:{ats.https_port}/'"),
+    )
+    assert result.returncode == 0, result.output
+    assert_output(result, contains=("curl test",), excludes=("early data accepted",))
+
+
+def verify_enabled_policy(*, _client_directory: Path, _enabled: ATS) -> None:
+    """Accept safe data, reject POST, and handle multiplexed HTTP/2 streams.
+
+    :param _client_directory: Test-local client directory configured by the test.
+    :param _enabled: Test-local enabled configured by the test.
+    """
+
+    forbidden = ("curl test",)
+    assert_output(
+        run_client(_enabled, "h1", "get", _client_directory=_client_directory),
+        contains=("early data accepted",),
+        excludes=forbidden)
+    assert_output(
+        run_client(_enabled, "h1", "post", _client_directory=_client_directory),
+        contains=("HTTP/1.1 425 Too Early",),
+        excludes=("curl test", "early data accepted"),
+    )
+    assert_output(
+        run_client(_enabled, "h2", "get", _client_directory=_client_directory),
+        contains=("early data accepted",),
+        excludes=forbidden)
+    assert_output(
+        run_client(_enabled, "h2", "post", _client_directory=_client_directory),
+        contains=(":status 425",),
+        excludes=("curl test", "early data accepted"),
+    )
+    assert_output(
+        run_client(_enabled, "h2", "multi1", _client_directory=_client_directory),
+        contains=(
+            "early data accepted multi_1",
+            "early data accepted multi_2",
+            "early data accepted multi_3",
+        ),
+        excludes=forbidden,
+    )
+    assert_output(
+        run_client(_enabled, "h2", "multi2", _client_directory=_client_directory),
+        contains=("early data accepted multi_1", ":status 425", "early data accepted multi_3"),
+        excludes=forbidden,
+    )
+    assert_output(
+        run_client(_enabled, "h1", "get", sni="example.com", _client_directory=_client_directory),
+        contains=("early data accepted",),
+        excludes=forbidden,
+    )
+    assert_output(
+        run_client(_enabled, "h1", "get", sni="example-no.com", _client_directory=_client_directory),
+        excludes=("curl test", "early data accepted"),
+    )
+
+
+def verify_disabled_policy(*, _client_directory: Path, _disabled: ATS) -> None:
+    """Reject early data globally unless its SNI policy enables it.
+
+    :param _client_directory: Test-local client directory configured by the test.
+    :param _disabled: Test-local disabled configured by the test.
+    """
+
+    for sni in (None, "example.com"):
+        assert_output(
+            run_client(_disabled, "h1", "get", sni=sni, _client_directory=_client_directory),
             excludes=("curl test", "early data accepted"),
         )
-        self.assert_output(self.run_client(self._enabled, "h2", "get"), contains=("early data accepted",), excludes=forbidden)
-        self.assert_output(
-            self.run_client(self._enabled, "h2", "post"),
-            contains=(":status 425",),
-            excludes=("curl test", "early data accepted"),
-        )
-        self.assert_output(
-            self.run_client(self._enabled, "h2", "multi1"),
-            contains=(
-                "early data accepted multi_1",
-                "early data accepted multi_2",
-                "early data accepted multi_3",
-            ),
-            excludes=forbidden,
-        )
-        self.assert_output(
-            self.run_client(self._enabled, "h2", "multi2"),
-            contains=("early data accepted multi_1", ":status 425", "early data accepted multi_3"),
-            excludes=forbidden,
-        )
-        self.assert_output(
-            self.run_client(self._enabled, "h1", "get", sni="example.com"),
-            contains=("early data accepted",),
-            excludes=forbidden,
-        )
-        self.assert_output(
-            self.run_client(self._enabled, "h1", "get", sni="example-no.com"),
-            excludes=("curl test", "early data accepted"),
-        )
-
-    def verify_disabled_policy(self) -> None:
-        """Reject early data globally unless its SNI policy enables it."""
-
-        for sni in (None, "example.com"):
-            self.assert_output(
-                self.run_client(self._disabled, "h1", "get", sni=sni),
-                excludes=("curl test", "early data accepted"),
-            )
-        self.assert_output(
-            self.run_client(self._disabled, "h1", "get", sni="example-yes.com"),
-            contains=("early data accepted",),
-            excludes=("curl test",),
-        )
-
-    def run(self) -> None:
-        """Run the complete early-data matrix against both global policies."""
-
-        self._origin.start()
-        self._enabled.start()
-        self._disabled.start()
-        self.verify_basic_request()
-        self.verify_enabled_policy()
-        self.verify_disabled_policy()
+    assert_output(
+        run_client(_disabled, "h1", "get", sni="example-yes.com", _client_directory=_client_directory),
+        contains=("early data accepted",),
+        excludes=("curl test",),
+    )
 
 
 def test_tls_0rtt_server(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """ATS applies HTTP safety and SNI policy to TLS 1.3 early data."""
+    """ATS applies HTTP safety and SNI policy to TLS 1.3 early data.
 
-    TlsEarlyDataScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    require_openssl()
+    _origin = configure_origin(services)
+    _enabled = configure_ats(ats_factory, "enabled", max_early_data=16384, sni_name="example-no.com", sni_value=0, _origin=_origin)
+    _disabled = configure_ats(
+        ats_factory, "disabled", max_early_data=0, sni_name="example-yes.com", sni_value=16384, _origin=_origin)
+    _client_directory = configure_client_files(ats_factory.run_directory)
+
+    _origin.start()
+    _enabled.start()
+    _disabled.start()
+    verify_basic_request(_curl=curl, _enabled=_enabled)
+    verify_enabled_policy(_client_directory=_client_directory, _enabled=_enabled)
+    verify_disabled_policy(_client_directory=_client_directory, _disabled=_disabled)

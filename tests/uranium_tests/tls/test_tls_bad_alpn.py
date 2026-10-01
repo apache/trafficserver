@@ -21,64 +21,73 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl
 
 
-class AlpnScenario:
-    """Offer invalid, absent, HTTP/1.1, and HTTP/2 ALPN values."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Start ATS with its normal TLS protocol advertisement.
 
-    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
-        self._curl = curl
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    @staticmethod
-    def configure_ats(ats_factory: ATSFactory) -> ATS:
-        """Start ATS with its normal TLS protocol advertisement."""
+    return ats_factory.create("ts", enable_tls=True)
 
-        return ats_factory.create("ts", enable_tls=True)
 
-    @staticmethod
-    def require_output(result: CommandResult, *expressions: str) -> None:
-        """Require each observable handshake or response marker."""
+def require_output(result: CommandResult, *expressions: str) -> None:
+    """Require each observable handshake or response marker.
 
-        for expression in expressions:
-            assert expression in result.output, result.output
+    :param result: Completed command result to validate.
+    :param expressions: Expressions used by this test step.
+    """
 
-    def run_openssl_cases(self) -> None:
-        """Exercise invalid, HTTP/1.1, and absent ALPN offers."""
+    for expression in expressions:
+        assert expression in result.output, result.output
 
-        port = self._ats.https_port
-        invalid = self._ats.run_shell(f"timeout 5 openssl s_client -alpn banana -connect 127.0.0.1:{port} </dev/null")
-        assert invalid.returncode in (0, 1, 124), invalid.output
-        self.require_output(invalid, "No ALPN negotiated")
 
-        http1 = self._ats.run_shell(
-            f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -alpn http/1.1 -connect 127.0.0.1:{port}")
-        assert http1.returncode == 0, http1.output
-        self.require_output(http1, "ALPN protocol: http/1.1", "HTTP/1.1 400 Host Header Required")
+def run_openssl_cases(*, _ats: ATS) -> None:
+    """Exercise invalid, HTTP/1.1, and absent ALPN offers.
 
-        absent = self._ats.run_shell(f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -connect 127.0.0.1:{port}")
-        assert absent.returncode == 0, absent.output
-        self.require_output(absent, "No ALPN negotiated", "HTTP/1.1 400 Host Header Required")
+    :param _ats: Test-local ats configured by the test.
+    """
 
-    def run_http2_case(self) -> None:
-        """Verify curl negotiates h2 and receives an ordinary response."""
+    port = _ats.https_port
+    invalid = _ats.run_shell(f"timeout 5 openssl s_client -alpn banana -connect 127.0.0.1:{port} </dev/null")
+    assert invalid.returncode in (0, 1, 124), invalid.output
+    require_output(invalid, "No ALPN negotiated")
 
-        if not self._curl.supports("http2"):
-            pytest.skip("curl with HTTP/2 support is required")
-        result = self._curl.run(f"--insecure --http2 --verbose --output /dev/null 'https://127.0.0.1:{self._ats.https_port}/'",)
-        assert result.returncode == 0, result.output
-        assert "ALPN: server accepted h2" in result.output
-        assert "HTTP/2 404" in result.output
+    http1 = _ats.run_shell(
+        f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -alpn http/1.1 -connect 127.0.0.1:{port}")
+    assert http1.returncode == 0, http1.output
+    require_output(http1, "ALPN protocol: http/1.1", "HTTP/1.1 400 Host Header Required")
 
-    def run(self) -> None:
-        """Start ATS and run every ALPN case sequentially."""
+    absent = _ats.run_shell(f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -connect 127.0.0.1:{port}")
+    assert absent.returncode == 0, absent.output
+    require_output(absent, "No ALPN negotiated", "HTTP/1.1 400 Host Header Required")
 
-        self._ats.start()
-        self.run_openssl_cases()
-        self.run_http2_case()
+
+def run_http2_case(*, _ats: ATS, _curl: Curl) -> None:
+    """Verify curl negotiates h2 and receives an ordinary response.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    if not _curl.supports("http2"):
+        pytest.skip("curl with HTTP/2 support is required")
+    result = _curl.run(f"--insecure --http2 --verbose --output /dev/null 'https://127.0.0.1:{_ats.https_port}/'",)
+    assert result.returncode == 0, result.output
+    assert "ALPN: server accepted h2" in result.output
+    assert "HTTP/2 404" in result.output
 
 
 def test_tls_bad_alpn(ats_factory: ATSFactory, curl: Curl) -> None:
-    """Unsupported ALPN is declined while supported protocols still work."""
+    """Unsupported ALPN is declined while supported protocols still work.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param curl: Transport-aware curl command runner.
+    """
 
     if shutil.which("openssl") is None:
         pytest.skip("OpenSSL is required")
-    AlpnScenario(ats_factory, curl).run()
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    run_openssl_cases(_ats=_ats)
+    run_http2_case(_ats=_ats, _curl=curl)

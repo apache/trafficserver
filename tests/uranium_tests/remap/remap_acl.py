@@ -70,7 +70,10 @@ class OldActionCase:
 
 
 def _yaml_filter(expression: str) -> tuple[str, ...]:
-    """Translate a classic @-parameter ACL into YAML filter fields."""
+    """Translate a classic @-parameter ACL into YAML filter fields.
+
+    :param expression: Regular expression to match.
+    """
 
     values: dict[str, list[str]] = {}
     for token in expression.split():
@@ -89,11 +92,19 @@ def _yaml_filter(expression: str) -> tuple[str, ...]:
 
 
 def _filter(expression: str, use_yaml: bool) -> Filter:
+    """filter.
+
+    :param expression: Regular expression to match.
+    :param use_yaml: Use yaml used by this test step.
+    """
     return _yaml_filter(expression) if use_yaml else expression
 
 
 def standard_acl_cases(*, use_yaml: bool) -> list[AclCase]:
-    """Return the focused ACL cases that precede the combination tables."""
+    """Return the focused ACL cases that precede the combination tables.
+
+    :param use_yaml: Use yaml used by this test step.
+    """
 
     def case(
             name: str,
@@ -105,6 +116,16 @@ def standard_acl_cases(*, use_yaml: bool) -> list[AclCase]:
             deactivate: bool = False,
             proxy_protocol: bool = False,
     ) -> AclCase:
+        """Case.
+
+        :param name: Unique service or case name within this test.
+        :param replay: Replay used by this test step.
+        :param inline: Inline used by this test step.
+        :param expected: Expected result for this case.
+        :param named: Named used by this test step.
+        :param deactivate: Deactivate used by this test step.
+        :param proxy_protocol: Proxy protocol used by this test step.
+        """
         return AclCase(
             name,
             replay,
@@ -256,7 +277,11 @@ def standard_acl_cases(*, use_yaml: bool) -> list[AclCase]:
 
 
 def combination_acl_cases(records: Sequence[Mapping[str, object]], *, prefix: str) -> list[AclCase]:
-    """Convert one existing ACL expectation table into independent cases."""
+    """Convert one existing ACL expectation table into independent cases.
+
+    :param records: Records used by this test step.
+    :param prefix: Prefix used by this test step.
+    """
 
     cases = []
     for record in records:
@@ -278,7 +303,10 @@ def combination_acl_cases(records: Sequence[Mapping[str, object]], *, prefix: st
 
 
 def old_action_cases(*, use_yaml: bool) -> list[OldActionCase]:
-    """Return obsolete action configurations rejected by modern policy."""
+    """Return obsolete action configurations rejected by modern policy.
+
+    :param use_yaml: Use yaml used by this test step.
+    """
 
     return [
         OldActionCase(
@@ -298,6 +326,10 @@ def old_action_cases(*, use_yaml: bool) -> list[OldActionCase]:
 
 
 def _normalize_filter(value: object) -> Filter:
+    """normalize filter.
+
+    :param value: Value used by this test step.
+    """
     if isinstance(value, str):
         return value
     if isinstance(value, Sequence):
@@ -305,63 +337,61 @@ def _normalize_filter(value: object) -> Filter:
     raise TypeError(f"Unsupported ACL filter: {value!r}")
 
 
-class RemapAclScenario:
-    """Run one remap ACL case with independently owned processes."""
+def run_remap_acl(
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    case: AclCase,
+    *,
+    use_yaml: bool,
+    test_directory: Path,
+) -> None:
+    """Run one remap ACL case with independently owned processes.
 
-    def __init__(
-        self,
-        ats_factory: ATSFactory,
-        services: ServiceFactory,
-        case: AclCase,
-        *,
-        use_yaml: bool,
-        test_directory: Path,
-    ) -> None:
-        self._ats_factory = ats_factory
-        self._services = services
-        self._case = case
-        self._use_yaml = use_yaml
-        self._test_directory = test_directory
-        self._replay = self.configure_replay()
-        self._origin = self.configure_origin()
-        self._ats = self.configure_ats()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param case: Case used by this test step.
+    :param use_yaml: Use yaml used by this test step.
+    :param test_directory: Test directory used by this test step.
+    """
 
-    def configure_replay(self) -> Path:
+    def configure_replay() -> Path:
         """Render the expected statuses for a table-driven replay."""
 
-        source = self._test_directory / self._case.replay
-        if not self._case.generated_replay:
+        source = test_directory / case.replay
+        if not case.generated_replay:
             return source
         document = yaml.safe_load(source.read_text())
-        responses = iter(self._case.expected_responses)
+        responses = iter(case.expected_responses)
         for session in document["sessions"]:
             for transaction in session["transactions"]:
                 expected = next(responses)
                 transaction["proxy-response"]["status"] = 403 if expected is None else expected
-        destination = self._ats_factory.run_directory / f"{self._case.name}.replay.yaml"
+        destination = ats_factory.run_directory / f"{case.name}.replay.yaml"
         destination.write_text(yaml.safe_dump(document, sort_keys=False))
         return destination
 
-    def configure_origin(self) -> VerifierServer:
+    def configure_origin() -> VerifierServer:
         """Create the Proxy Verifier origin for this case."""
 
-        return self._services.verifier_server("origin", self._replay)
+        return services.verifier_server("origin", _replay)
 
-    def _classic_remap(self) -> list[str]:
+    def _classic_remap() -> list[str]:
+        """classic remap."""
         lines = []
-        if self._case.deactivate_ip_allow:
+        if case.deactivate_ip_allow:
             lines.append(".deactivatefilter ip_allow")
-        for name, definition in self._case.named_acls:
+        for name, definition in case.named_acls:
             lines.append(f".definefilter {name} {definition}")
             lines.append(f".activatefilter {name}")
-        lines.append(f"map / http://127.0.0.1:{self._origin.http_port} {self._case.inline}")
+        lines.append(f"map / http://127.0.0.1:{_origin.http_port} {case.inline}")
         return lines
 
-    def _yaml_remap(self) -> list[str]:
+    def _yaml_remap() -> list[str]:
+        """yaml remap."""
         lines = ["remap:"]
-        if self._case.deactivate_ip_allow:
+        if case.deactivate_ip_allow:
             lines.append("  - deactivate_filter: ip_allow")
-        for name, definition in self._case.named_acls:
+        for name, definition in case.named_acls:
             values = tuple(definition) if not isinstance(definition, str) else _yaml_filter(definition)
             if not values:
                 continue
@@ -371,67 +401,70 @@ class RemapAclScenario:
         lines.extend([
             "  - type: map",
             "    from: {url: '/'}",
-            f"    to: {{url: 'http://127.0.0.1:{self._origin.http_port}'}}",
+            f"    to: {{url: 'http://127.0.0.1:{_origin.http_port}'}}",
         ])
-        inline = tuple(self._case.inline) if not isinstance(self._case.inline, str) else _yaml_filter(self._case.inline)
+        inline = tuple(case.inline) if not isinstance(case.inline, str) else _yaml_filter(case.inline)
         if inline:
             lines.append("    acl_filter:")
             lines.extend(f"      {value}" for value in inline)
         return lines
 
-    def configure_ats(self) -> ATS:
+    def configure_ats() -> ATS:
         """Configure ATS with this case's policy and filters."""
 
-        ats = self._ats_factory.create("ts", enable_cache=False, enable_proxy_protocol=True)
+        ats = ats_factory.create("ts", enable_cache=False, enable_proxy_protocol=True)
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|url|remap|ip_allow|proxyprotocol",
                 "proxy.config.http.push_method_enabled": 1,
-                "proxy.config.http.connect_ports": self._origin.http_port,
-                "proxy.config.url_remap.acl_behavior_policy": self._case.policy,
+                "proxy.config.http.connect_ports": _origin.http_port,
+                "proxy.config.url_remap.acl_behavior_policy": case.policy,
                 "proxy.config.acl.subjects": "PROXY,PEER",
             })
-        ats.ip_allow_config.add_lines(self._case.ip_allow)
-        (ats.remap_yaml
-         if self._use_yaml else ats.remap_config).add_lines(self._yaml_remap() if self._use_yaml else self._classic_remap())
+        ats.ip_allow_config.add_lines(case.ip_allow)
+        (ats.remap_yaml if use_yaml else ats.remap_config).add_lines(_yaml_remap() if use_yaml else _classic_remap())
         return ats
 
-    def configure_client(self) -> ProcessService:
+    def configure_client() -> ProcessService:
         """Create a verifier client with rejection-aware expectations."""
 
-        was_rejected_at_accept = self._case.expected_responses == (None, None)
-        port = self._ats.proxy_protocol_port if self._case.proxy_protocol else self._ats.http_port
-        return self._services.verifier_client(
+        was_rejected_at_accept = case.expected_responses == (None, None)
+        port = _ats.proxy_protocol_port if case.proxy_protocol else _ats.http_port
+        return services.verifier_client(
             "client",
-            self._replay,
+            _replay,
             http_ports=[port],
             return_code=1 if was_rejected_at_accept else 0,
             allow_errors=was_rejected_at_accept,
         )
 
-    def run(self) -> None:
-        """Run the configured ACL request sequence."""
+    _replay = configure_replay()
+    _origin = configure_origin()
+    _ats = configure_ats()
 
-        self._origin.start()
-        self._ats.start()
-        result = self.configure_client().run()
-        if self._case.expected_responses == (None, None):
-            assert result.returncode == 1, result.output
-            diagnostic = self._ats.diags_log.read_text(errors="replace")
-            assert "client '127.0.0.1' prohibited by ip-allow policy" in diagnostic
+    _origin.start()
+    _ats.start()
+    result = configure_client().run()
+    if case.expected_responses == (None, None):
+        assert result.returncode == 1, result.output
+        diagnostic = _ats.diags_log.read_text(errors="replace")
+        assert "client '127.0.0.1' prohibited by ip-allow policy" in diagnostic
 
 
-class OldAclActionScenario:
-    """Verify obsolete ACL actions fail ATS startup under modern policy."""
+def run_old_acl_action(ats_factory: ATSFactory, case: OldActionCase, *, use_yaml: bool) -> None:
+    """Verify obsolete ACL actions fail ATS startup under modern policy.
 
-    def __init__(self, ats_factory: ATSFactory, case: OldActionCase, *, use_yaml: bool) -> None:
-        self._case = case
-        self._use_yaml = use_yaml
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param case: Case used by this test step.
+    :param use_yaml: Use yaml used by this test step.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure one obsolete remap or ip_allow action."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Configure one obsolete remap or ip_allow action.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ts")
         ats.records.update(
@@ -440,20 +473,19 @@ class OldAclActionScenario:
                 "proxy.config.diags.debug.tags": "http|url|remap|ip_allow",
                 "proxy.config.url_remap.acl_behavior_policy": 1,
             })
-        ats.ip_allow_config.add_lines(self._case.ip_allow)
-        if self._use_yaml:
+        ats.ip_allow_config.add_lines(case.ip_allow)
+        if use_yaml:
             lines = ["remap:", "  - type: map", "    from: {url: '/'}", "    to: {url: 'http://127.0.0.1:8080'}"]
-            acl_filter = tuple(self._case.acl_filter)
+            acl_filter = tuple(case.acl_filter)
             if acl_filter:
                 lines.append("    acl_filter:")
                 lines.extend(f"      {value}" for value in acl_filter)
             ats.remap_yaml.add_lines(lines)
         else:
-            ats.remap_config.add_line(f"map / http://127.0.0.1:8080 {self._case.acl_filter}")
-        ats.expect_start_failure(self._case.diagnostic, (33, 70))
+            ats.remap_config.add_line(f"map / http://127.0.0.1:8080 {case.acl_filter}")
+        ats.expect_start_failure(case.diagnostic, (33, 70))
         return ats
 
-    def run(self) -> None:
-        """Start ATS and observe the expected fatal validation error."""
+    _ats = configure_ats(ats_factory)
 
-        self._ats.start()
+    _ats.start()

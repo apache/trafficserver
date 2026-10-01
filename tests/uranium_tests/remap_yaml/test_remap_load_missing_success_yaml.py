@@ -14,11 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from remap_load import RemapLoadScenario
+from remap_load import run_remap_load
 from tools.uranium.services import ATSFactory
 
 
 def test_remap_load_missing_success_yaml(ats_factory: ATSFactory) -> None:
-    """A missing remap.yaml is accepted when no rule is required."""
+    """A missing remap.yaml is accepted when no rule is required.
 
-    RemapLoadScenario(ats_factory, use_yaml=True, file_exists=False, should_start=True).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    run_remap_load(ats_factory, use_yaml=True, file_exists=False, should_start=True)

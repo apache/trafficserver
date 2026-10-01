@@ -18,86 +18,90 @@ from pathlib import Path
 
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, assert_matches_gold, wait_for_file_lines
 
+JSON_LOG_FIELD_REQUESTS = (
+    ("/test-1", "test-1", "ab\td/ef"),
+    ("/test-2", "test-2", "ab\x1fd/ef"),
+    ("/test-3", "test-3", "abc\x7fde"),
+    ("/test-4", "test-2", "ab\x80d/ef"),
+)
 
-class JsonLogFieldScenario:
-    """Exercise JSON escaping and slicing with unusual request-header bytes."""
 
-    REQUESTS = (
-        ("/test-1", "test-1", "ab\td/ef"),
-        ("/test-2", "test-2", "ab\x1fd/ef"),
-        ("/test-3", "test-3", "abc\x7fde"),
-        ("/test-4", "test-2", "ab\x80d/ef"),
-    )
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create responses for the request paths used by the byte cases.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        self._services = services
-        self._curl = curl
-        self._gold = Path(__file__).parent / "gold" / "field-json-test.gold"
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def configure_origin(self, services: ServiceFactory) -> OriginServer:
-        """Create responses for the request paths used by the byte cases."""
-
-        origin = services.origin("origin")
-        for index in range(1, 5):
-            origin.add_response(
-                {
-                    "headers": f"GET /test-{index} HTTP/1.1\r\nHost: test-{index if index < 4 else 2}\r\n\r\n",
-                    "body": ""
-                },
-                {
-                    "headers": "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n",
-                    "body": f"Test {index}",
-                },
-            )
-        return origin
-
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure JSON log escaping and a sliced Foo header field."""
-
-        ats = ats_factory.create("ts", enable_cache=False)
-        ats.records.update({"proxy.config.net.connections_throttle": 100})
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
-        ats.set_logging_yaml(
+    origin = services.origin("origin")
+    for index in range(1, 5):
+        origin.add_response(
             {
-                "logging":
-                    {
-                        "formats":
-                            [
-                                {
-                                    "name": "custom",
-                                    "escape": "json",
-                                    "format": '{"foo":"%<{Foo}cqh>","foo-slice":"%<{Foo}cqh[2:-3]>"}',
-                                }
-                            ],
-                        "logs": [{
-                            "filename": "field-json-test",
-                            "format": "custom"
+                "headers": f"GET /test-{index} HTTP/1.1\r\nHost: test-{index if index < 4 else 2}\r\n\r\n",
+                "body": ""
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n",
+                "body": f"Test {index}",
+            },
+        )
+    return origin
+
+
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Configure JSON log escaping and a sliced Foo header field.
+
+    :param _origin: Test-local origin configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.records.update({"proxy.config.net.connections_throttle": 100})
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
+    ats.set_logging_yaml(
+        {
+            "logging":
+                {
+                    "formats":
+                        [{
+                            "name": "custom",
+                            "escape": "json",
+                            "format": '{"foo":"%<{Foo}cqh>","foo-slice":"%<{Foo}cqh[2:-3]>"}',
                         }],
-                    }
-            })
-        return ats
+                    "logs": [{
+                        "filename": "field-json-test",
+                        "format": "custom"
+                    }],
+                }
+        })
+    return ats
 
-    def send_requests(self) -> None:
-        """Send the four header-byte cases with curl's argument fidelity."""
 
-        for path, host, value in self.REQUESTS:
-            result = self._curl.get(self._ats, path, headers={"Host": host, "Foo": value}, options=f"--verbose")
-            assert result.returncode == 0, result.output
+def send_requests(*, _ats: ATS, _curl: Curl) -> None:
+    """Send the four header-byte cases with curl's argument fidelity.
 
-    def run(self) -> None:
-        """Generate the JSON log and compare its escaped representation."""
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
 
-        self._origin.start()
-        self._ats.start()
-        self.send_requests()
-        path = self._ats.log_directory / "field-json-test.log"
-        content = wait_for_file_lines(path, r'^\{"foo":', len(self.REQUESTS), timeout=30)
-        assert_matches_gold(content, self._gold)
+    for path, host, value in JSON_LOG_FIELD_REQUESTS:
+        result = _curl.get(_ats, path, headers={"Host": host, "Foo": value}, options=f"--verbose")
+        assert result.returncode == 0, result.output
 
 
 def test_log_field_json(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """JSON log fields escape and slice control and high-bit header bytes."""
+    """JSON log fields escape and slice control and high-bit header bytes.
 
-    JsonLogFieldScenario(ats_factory, services, curl).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    _gold = Path(__file__).parent / "gold" / "field-json-test.gold"
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin)
+
+    _origin.start()
+    _ats.start()
+    send_requests(_ats=_ats, _curl=curl)
+    path = _ats.log_directory / "field-json-test.log"
+    content = wait_for_file_lines(path, r'^\{"foo":', len(JSON_LOG_FIELD_REQUESTS), timeout=30)
+    assert_matches_gold(content, _gold)

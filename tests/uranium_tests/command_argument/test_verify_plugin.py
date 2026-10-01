@@ -19,76 +19,80 @@ import re
 
 from tools.uranium.services import ATS, ATSFactory, CommandResult
 
+VERIFY_PLUGIN__PLUGINS = (
+    "missing_ts_plugin_init.so",
+    "conf_remap_stripped.so",
+    "ssl_hook_test.so",
+    "missing_mangled_definition.so",
+)
 
-class VerifyPluginScenario:
-    """Exercise traffic_server's global and remap plugin verification commands."""
 
-    _PLUGINS = (
-        "missing_ts_plugin_init.so",
-        "conf_remap_stripped.so",
-        "ssl_hook_test.so",
-        "missing_mangled_definition.so",
-    )
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Create a runroot containing every plugin used by verification cases.
 
-    def __init__(self, ats_factory: ATSFactory, command: str) -> None:
-        self._command = command
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Create a runroot containing every plugin used by verification cases."""
+    ats = ats_factory.create("ts")
+    for plugin in VERIFY_PLUGIN__PLUGINS:
+        ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{plugin}")
+    return ats
 
-        ats = ats_factory.create("ts")
-        for plugin in self._PLUGINS:
-            ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{plugin}")
-        return ats
 
-    def verify(
-        self,
-        plugin: str | None,
-        *,
-        return_code: int,
-        diagnostic: str,
-    ) -> CommandResult:
-        """Run one verification command and check its result."""
+def verify(plugin: str | None, *, return_code: int, diagnostic: str, _ats: ATS, _command: str) -> CommandResult:
+    """Run one verification command and check its result.
 
-        argument = self._command
-        if plugin is not None:
-            path = Path(plugin) if plugin.startswith("/") else self._ats.run_directory / "plugin" / plugin
-            argument += f" {path}"
-        result = self._ats.run("traffic_server", "-C", argument)
-        assert result.returncode == return_code, result.output
-        assert re.search(diagnostic, result.stderr), result.output
-        return result
+    :param _ats: Test-local ats configured by the test.
+    :param _command: Test-local command configured by the test.
+    :param plugin: Plugin used by this test step.
+    :param return_code: Expected process exit status.
+    :param diagnostic: Diagnostic used by this test step.
+    """
 
-    def run_global(self) -> None:
-        """Verify argument, symbol, load, and success behavior for global plugins."""
-
-        self._ats.start()
-        self.verify(None, return_code=1, diagnostic=r"requires a plugin SO file path argument")
-        self.verify("/this/file/does/not/exist.so", return_code=1, diagnostic=r"No such file or directory")
-        self.verify("missing_ts_plugin_init.so", return_code=1, diagnostic=r"unable to find TSPluginInit function")
-        self.verify("conf_remap_stripped.so", return_code=1, diagnostic=r"unable to find TSPluginInit function")
-        self.verify("ssl_hook_test.so", return_code=0, diagnostic=r"verifying plugin .* Success")
-        self.verify("missing_mangled_definition.so", return_code=1, diagnostic=r"unable to load")
-
-    def run_remap(self) -> None:
-        """Verify argument, symbol, and success behavior for remap plugins."""
-
-        self._ats.start()
-        self.verify(None, return_code=1, diagnostic=r"requires a plugin SO file path argument")
-        self.verify("/this/file/does/not/exist.so", return_code=1, diagnostic=r"No such file or directory")
-        self.verify("missing_ts_plugin_init.so", return_code=1, diagnostic=r"missing required function TSRemapInit")
-        self.verify("ssl_hook_test.so", return_code=1, diagnostic=r"missing required function TSRemapInit")
-        self.verify("conf_remap_stripped.so", return_code=0, diagnostic=r"verifying plugin .* Success")
+    argument = _command
+    if plugin is not None:
+        path = Path(plugin) if plugin.startswith("/") else _ats.run_directory / "plugin" / plugin
+        argument += f" {path}"
+    result = _ats.run("traffic_server", "-C", argument)
+    assert result.returncode == return_code, result.output
+    assert re.search(diagnostic, result.stderr), result.output
+    return result
 
 
 def test_verify_global_plugin(ats_factory: ATSFactory) -> None:
-    """The global-plugin verifier accepts only loadable global plugins."""
+    """The global-plugin verifier accepts only loadable global plugins.
 
-    VerifyPluginScenario(ats_factory, "verify_global_plugin").run_global()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    command = "verify_global_plugin"
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    verify(None, return_code=1, diagnostic=r"requires a plugin SO file path argument", _ats=_ats, _command=command)
+    verify("/this/file/does/not/exist.so", return_code=1, diagnostic=r"No such file or directory", _ats=_ats, _command=command)
+    verify(
+        "missing_ts_plugin_init.so", return_code=1, diagnostic=r"unable to find TSPluginInit function", _ats=_ats, _command=command)
+    verify("conf_remap_stripped.so", return_code=1, diagnostic=r"unable to find TSPluginInit function", _ats=_ats, _command=command)
+    verify("ssl_hook_test.so", return_code=0, diagnostic=r"verifying plugin .* Success", _ats=_ats, _command=command)
+    verify("missing_mangled_definition.so", return_code=1, diagnostic=r"unable to load", _ats=_ats, _command=command)
 
 
 def test_verify_remap_plugin(ats_factory: ATSFactory) -> None:
-    """The remap-plugin verifier accepts only plugins with the remap API."""
+    """The remap-plugin verifier accepts only plugins with the remap API.
 
-    VerifyPluginScenario(ats_factory, "verify_remap_plugin").run_remap()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    command = "verify_remap_plugin"
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    verify(None, return_code=1, diagnostic=r"requires a plugin SO file path argument", _ats=_ats, _command=command)
+    verify("/this/file/does/not/exist.so", return_code=1, diagnostic=r"No such file or directory", _ats=_ats, _command=command)
+    verify(
+        "missing_ts_plugin_init.so",
+        return_code=1,
+        diagnostic=r"missing required function TSRemapInit",
+        _ats=_ats,
+        _command=command)
+    verify("ssl_hook_test.so", return_code=1, diagnostic=r"missing required function TSRemapInit", _ats=_ats, _command=command)
+    verify("conf_remap_stripped.so", return_code=0, diagnostic=r"verifying plugin .* Success", _ats=_ats, _command=command)

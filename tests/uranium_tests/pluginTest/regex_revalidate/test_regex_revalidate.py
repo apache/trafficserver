@@ -24,22 +24,18 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines, wait_for_metric
 
 
-class RegexRevalidateScenario:
-    """Drive cached objects through successive regex rule generations."""
+def test_regex_revalidate(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Rules stale matching objects once and retain their first expiry.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin = self.configure_server(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._curl = Curl(ats_factory.run_directory)
-        now = int(time.time())
-        self._path1_rule = f"path1 {now + 600}"
-        self._path2_rule = f"path2 {now + 700}"
-        self._mtime = now + 1
-        self._loaded_count = 0
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
     def configure_server(services: ServiceFactory) -> OriginServer:
-        """Create the three long-lived cacheable resources."""
+        """Create the three long-lived cacheable resources.
+
+        :param services: Factory owning support services and their cleanup.
+        """
 
         origin = services.origin("origin")
         for path, etag, max_age, body in (
@@ -59,15 +55,18 @@ class RegexRevalidateScenario:
             )
         return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Enable regex_revalidate and cache-state response headers."""
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Enable regex_revalidate and cache-state response headers.
+
+        :param ats_factory: Factory for isolated Traffic Server instances.
+        """
 
         ats = ats_factory.create("ats")
         if not ats.plugin_exists("regex_revalidate.so") or not ats.plugin_exists("xdebug.so"):
             pytest.skip("regex_revalidate.so and xdebug.so are required")
         ats.write_config_file("regex_revalidate.conf", "# Empty\n")
         ats.plugin_config.add_lines(("xdebug.so --enable=x-cache", "regex_revalidate.so -d -c regex_revalidate.conf"))
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -77,17 +76,20 @@ class RegexRevalidateScenario:
             })
         return ats
 
-    @property
-    def rules_path(self) -> Path:
+    def rules_path() -> Path:
         """Return the active regex rule file."""
 
-        return self._ats.config_directory / "regex_revalidate.conf"
+        return _ats.config_directory / "regex_revalidate.conf"
 
-    def request(self, path: str, expected_cache: str) -> None:
-        """Request a resource and verify its cache lookup state."""
+    def request(path: str, expected_cache: str) -> None:
+        """Request a resource and verify its cache lookup state.
 
-        result = self._curl.get(
-            self._ats,
+        :param path: Resource or file path used by this operation.
+        :param expected_cache: Expected cache for this case.
+        """
+
+        result = _curl.get(
+            _ats,
             path,
             headers={
                 "x-debug": "x-cache",
@@ -98,39 +100,43 @@ class RegexRevalidateScenario:
         assert result.returncode == 0, result.output
         assert f"X-Cache: {expected_cache}" in result.stdout, result.output
 
-    def reload_rules(self, *rules: str) -> None:
-        """Write a new generation and wait until the plugin lists it."""
+    def reload_rules(*rules: str) -> None:
+        """Write a new generation and wait until the plugin lists it.
 
-        self._mtime = max(self._mtime, int(self.rules_path.stat().st_mtime) + 2, int(time.time()) + 2)
-        self.rules_path.write_text("\n".join(rules) + "\n")
-        os.utime(self.rules_path, (self._mtime, self._mtime))
-        self._mtime += 1
-        result = self._ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
+        :param rules: Rules used by this test step.
+        """
+        nonlocal _loaded_count, _mtime
+
+        _mtime = max(_mtime, int(rules_path().stat().st_mtime) + 2, int(time.time()) + 2)
+        rules_path().write_text("\n".join(rules) + "\n")
+        os.utime(rules_path(), (_mtime, _mtime))
+        _mtime += 1
+        result = _ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
         assert result.returncode == 0, result.output
-        self._loaded_count += len(rules)
-        wait_for_file_lines(self._ats.traffic_out, "result: STALE", self._loaded_count, timeout=15)
+        _loaded_count += len(rules)
+        wait_for_file_lines(_ats.traffic_out, "result: STALE", _loaded_count, timeout=15)
 
-    def run(self) -> None:
-        """Load cache entries and verify each rule-generation transition."""
+    _origin = configure_server(services)
+    _ats = configure_ats(ats_factory)
+    _curl = Curl(ats_factory.run_directory)
+    now = int(time.time())
+    _path1_rule = f"path1 {now + 600}"
+    _path2_rule = f"path2 {now + 700}"
+    _mtime = now + 1
+    _loaded_count = 0
 
-        self._origin.start()
-        self._ats.start()
-        for path in ("/path1", "/path1a", "/path2a"):
-            self.request(path, "miss")
-        self.request("/path1", "hit-fresh")
-        self.reload_rules(self._path1_rule)
-        self.request("/path1", "hit-stale")
-        self.request("/path1", "hit-fresh")
-        self.reload_rules(self._path1_rule, self._path2_rule)
-        self.request("/path1", "hit-fresh")
-        self.request("/path1a", "hit-stale")
-        self.reload_rules(self._path1_rule, f"path2 {int(time.time()) - 100}")
-        self.request("/path2a", "hit-stale")
-        wait_for_metric(self._ats, "plugin.regex_revalidate.stale", 3, timeout=30)
-        wait_for_metric(self._ats, "plugin.regex_revalidate.miss", 0, timeout=30)
-
-
-def test_regex_revalidate(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Rules stale matching objects once and retain their first expiry."""
-
-    RegexRevalidateScenario(ats_factory, services).run()
+    _origin.start()
+    _ats.start()
+    for path in ("/path1", "/path1a", "/path2a"):
+        request(path, "miss")
+    request("/path1", "hit-fresh")
+    reload_rules(_path1_rule)
+    request("/path1", "hit-stale")
+    request("/path1", "hit-fresh")
+    reload_rules(_path1_rule, _path2_rule)
+    request("/path1", "hit-fresh")
+    request("/path1a", "hit-stale")
+    reload_rules(_path1_rule, f"path2 {int(time.time()) - 100}")
+    request("/path2a", "hit-stale")
+    wait_for_metric(_ats, "plugin.regex_revalidate.stale", 3, timeout=30)
+    wait_for_metric(_ats, "plugin.regex_revalidate.miss", 0, timeout=30)

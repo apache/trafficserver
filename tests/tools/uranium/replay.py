@@ -244,6 +244,8 @@ class ReplayTest:
                     "wait_for_cache": 1,
                 },
         }
+        if process_config.get("disable_log_rolling", True):
+            records["log"] = {"rolling_enabled": 0}
         if not enable_cache:
             records["http"]["cache"] = {"http": 0}
             records["http"].pop("wait_for_cache")
@@ -514,8 +516,8 @@ class ReplayTest:
                 "    ssl_key_name: server.key",
                 '    dest_ip: "*"',
             ]
-            records.setdefault("ssl", {}).setdefault("server", {})["cert"] = {"path": str(paths["ssl"])}
-            records["ssl"]["server"]["private_key"] = {"path": str(paths["ssl"])}
+        records.setdefault("ssl", {}).setdefault("server", {})["cert"] = {"path": str(paths["ssl"])}
+        records["ssl"]["server"]["private_key"] = {"path": str(paths["ssl"])}
         self._copy_ssl_files(config, paths)
         ssl_multicert_path = paths["config"] / "ssl_multicert.yaml"
         if isinstance(ssl_multicert, Mapping):

@@ -21,77 +21,115 @@ import sys
 from tools.uranium.services import ProceduralContext, assert_matches_gold
 
 
-class RecordsToYamlScenario:
-    """Verify conversion of legacy records.config files to records.yaml."""
-
-    def __init__(self, context: ProceduralContext) -> None:
-        self._directory = Path(__file__).parent
-        self._run_directory = context.run_directory
-        self._converter = context.runtime.repository_root / "tools/records/convert2yaml.py"
-
-    def convert(
-        self,
+def convert(
         source_name: str,
         output_name: str,
         *options: str,
         expected_return_code: int = 0,
-    ) -> subprocess.CompletedProcess[str]:
-        """Convert one source file into this scenario's sandbox."""
+        _converter: Path,
+        _directory: Path,
+        _run_directory: Path) -> subprocess.CompletedProcess[str]:
+    """Convert one source file into this scenario's sandbox.
 
-        result = subprocess.run(
-            [
-                sys.executable,
-                self._converter,
-                "-f",
-                self._directory / "legacy_config" / source_name,
-                "--output",
-                self._run_directory / output_name,
-                "--yaml",
-                *options,
-            ],
-            cwd=self._run_directory,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-        assert result.returncode == expected_return_code, result.stdout + result.stderr
-        return result
+    :param _converter: Test-local converter configured by the test.
+    :param _directory: Test-local directory configured by the test.
+    :param _run_directory: Test-local run directory configured by the test.
+    :param source_name: Source name used by this test step.
+    :param output_name: Output name used by this test step.
+    :param expected_return_code: Expected return code for this case.
+    :param options: Options used by this test step.
+    """
 
-    def assert_output(self, output_name: str, gold_name: str) -> None:
-        """Compare one generated YAML document with its gold file."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            _converter,
+            "-f",
+            _directory / "legacy_config" / source_name,
+            "--output",
+            _run_directory / output_name,
+            "--yaml",
+            *options,
+        ],
+        cwd=_run_directory,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == expected_return_code, result.stdout + result.stderr
+    return result
 
-        assert_matches_gold(
-            (self._run_directory / output_name).read_text(errors="replace"),
-            self._directory / "gold" / gold_name,
-        )
 
-    def run(self) -> None:
-        """Exercise full, renamed, invalid-override, and no-newline inputs."""
+def assert_output(output_name: str, gold_name: str, *, _directory: Path, _run_directory: Path) -> None:
+    """Compare one generated YAML document with its gold file.
 
-        self.convert("full_records.config", "generated1.yaml", "--mute")
-        self.assert_output("generated1.yaml", "full_records.yaml")
+    :param _directory: Test-local directory configured by the test.
+    :param _run_directory: Test-local run directory configured by the test.
+    :param output_name: Output name used by this test step.
+    :param gold_name: Gold name used by this test step.
+    """
 
-        renamed = self.convert("old_records.config", "generated2.yaml")
-        renamed_gold = (self._directory / "gold/renamed_records.gold").read_text(errors="replace").splitlines()
-        assert "\n".join(renamed_gold[1:-1]) in renamed.stdout + renamed.stderr
-        self.assert_output("generated2.yaml", "renamed_records.yaml")
-
-        override_value = self.convert("override_value.config", "override-value.yaml", "-m", expected_return_code=1)
-        assert (
-            "We cannot continue with 'proxy.config.ssl.client.verify.server.policy' at line '3' "
-            "as a value node will be overridden" in override_value.stdout)
-
-        override_map = self.convert("override_map.config", "override-map.yaml", "-m", expected_return_code=1)
-        assert (
-            "We cannot continue with 'proxy.config.ssl.client.verify.server' at line '3' "
-            "as an existing YAML map will be overridden." in override_map.stdout)
-
-        self.convert("no_newline.config", "generated3.yaml", "--mute")
-        self.assert_output("generated3.yaml", "no_newline.yaml")
+    assert_matches_gold(
+        (_run_directory / output_name).read_text(errors="replace"),
+        _directory / "gold" / gold_name,
+    )
 
 
 def test_records_config_to_yaml(procedural_context: ProceduralContext) -> None:
-    """The legacy converter produces the expected nested YAML records."""
+    """The legacy converter produces the expected nested YAML records.
 
-    RecordsToYamlScenario(procedural_context).run()
+    :param procedural_context: Procedural context used by this test step.
+    """
+    context = procedural_context
+    _directory = Path(__file__).parent
+    _run_directory = context.run_directory
+    _converter = context.runtime.repository_root / "tools/records/convert2yaml.py"
+
+    convert(
+        "full_records.config",
+        "generated1.yaml",
+        "--mute",
+        _converter=_converter,
+        _directory=_directory,
+        _run_directory=_run_directory)
+    assert_output("generated1.yaml", "full_records.yaml", _directory=_directory, _run_directory=_run_directory)
+
+    renamed = convert(
+        "old_records.config", "generated2.yaml", _converter=_converter, _directory=_directory, _run_directory=_run_directory)
+    renamed_gold = (_directory / "gold/renamed_records.gold").read_text(errors="replace").splitlines()
+    assert "\n".join(renamed_gold[1:-1]) in renamed.stdout + renamed.stderr
+    assert_output("generated2.yaml", "renamed_records.yaml", _directory=_directory, _run_directory=_run_directory)
+
+    override_value = convert(
+        "override_value.config",
+        "override-value.yaml",
+        "-m",
+        expected_return_code=1,
+        _converter=_converter,
+        _directory=_directory,
+        _run_directory=_run_directory)
+    assert (
+        "We cannot continue with 'proxy.config.ssl.client.verify.server.policy' at line '3' "
+        "as a value node will be overridden" in override_value.stdout)
+
+    override_map = convert(
+        "override_map.config",
+        "override-map.yaml",
+        "-m",
+        expected_return_code=1,
+        _converter=_converter,
+        _directory=_directory,
+        _run_directory=_run_directory)
+    assert (
+        "We cannot continue with 'proxy.config.ssl.client.verify.server' at line '3' "
+        "as an existing YAML map will be overridden." in override_map.stdout)
+
+    convert(
+        "no_newline.config",
+        "generated3.yaml",
+        "--mute",
+        _converter=_converter,
+        _directory=_directory,
+        _run_directory=_run_directory)
+    assert_output("generated3.yaml", "no_newline.yaml", _directory=_directory, _run_directory=_run_directory)

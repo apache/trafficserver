@@ -20,69 +20,68 @@ import pytest
 
 from tools.uranium.services import ATS, ATSFactory, DNSServer, ServiceFactory, VerifierServer
 
+DNS_TTL_ERROR_REPLAY = "replay/server_error.replay.yaml"
 
-class DnsTtlScenario:
-    """Verify expired DNS entries are rejected or served stale as configured."""
+DNS_TTL_SUCCESS_REPLAY = "replay/single_transaction.replay.yaml"
 
-    SUCCESS_REPLAY = "replay/single_transaction.replay.yaml"
-    ERROR_REPLAY = "replay/server_error.replay.yaml"
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, serve_stale_for: int | None) -> None:
-        self._services = services
-        self._serve_stale_for = serve_stale_for
-        self._dns = self.configure_dns(services)
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+def configure_dns(services: ServiceFactory) -> DNSServer:
+    """Resolve the origin while the DNS process is running.
 
-    def configure_dns(self, services: ServiceFactory) -> DNSServer:
-        """Resolve the origin while the DNS process is running."""
+    :param services: Factory owning support services and their cleanup.
+    """
 
-        dns = services.dns("dns")
-        dns.add_records({"resolve.this.com": ["127.0.0.1"]})
-        return dns
+    dns = services.dns("dns")
+    dns.add_records({"resolve.this.com": ["127.0.0.1"]})
+    return dns
 
-    def configure_origin(self, services: ServiceFactory) -> VerifierServer:
-        """Configure the reusable successful origin transaction."""
 
-        return services.verifier_server("origin", self.SUCCESS_REPLAY)
+def configure_origin(services: ServiceFactory) -> VerifierServer:
+    """Configure the reusable successful origin transaction.
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure a one-second DNS TTL and lookup timeout."""
+    :param services: Factory owning support services and their cleanup.
+    """
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        records: dict[str, object] = {
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "dns",
-            "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
-            "proxy.config.dns.resolv_conf": "NULL",
-            "proxy.config.hostdb.ttl_mode": 1,
-            "proxy.config.hostdb.timeout": 1,
-            "proxy.config.hostdb.lookup_timeout": 1,
-        }
-        if self._serve_stale_for is not None:
-            records["proxy.config.hostdb.serve_stale_for"] = self._serve_stale_for
-        ats.records.update(records)
-        ats.remap_config.add_line(f"map / http://resolve.this.com:{self._origin.http_port}/")
-        return ats
+    return services.verifier_server("origin", DNS_TTL_SUCCESS_REPLAY)
 
-    def run_client(self, name: str, replay: str) -> None:
-        """Run one Proxy Verifier client and require its expectations."""
 
-        result = self._services.verifier_client(name, replay, http_ports=[self._ats.http_port]).run()
-        assert result.returncode == 0, result.output
+def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: VerifierServer, _serve_stale_for: int | None) -> ATS:
+    """Configure a one-second DNS TTL and lookup timeout.
 
-    def run(self) -> None:
-        """Prime DNS, expire it with DNS down, and verify stale policy."""
+    :param _dns: Test-local dns configured by the test.
+    :param _origin: Test-local origin configured by the test.
+    :param _serve_stale_for: Test-local serve stale for configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-        self._origin.start()
-        self._dns.start()
-        self._ats.start()
-        self.run_client("prime-client", self.SUCCESS_REPLAY)
+    ats = ats_factory.create("ts", enable_cache=False)
+    records: dict[str, object] = {
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "dns",
+        "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
+        "proxy.config.dns.resolv_conf": "NULL",
+        "proxy.config.hostdb.ttl_mode": 1,
+        "proxy.config.hostdb.timeout": 1,
+        "proxy.config.hostdb.lookup_timeout": 1,
+    }
+    if _serve_stale_for is not None:
+        records["proxy.config.hostdb.serve_stale_for"] = _serve_stale_for
+    ats.records.update(records)
+    ats.remap_config.add_line(f"map / http://resolve.this.com:{_origin.http_port}/")
+    return ats
 
-        self._dns.stop()
-        time.sleep(3)
-        expected = self.SUCCESS_REPLAY if self._serve_stale_for == 300 else self.ERROR_REPLAY
-        self.run_client("expired-client", expected)
+
+def run_client(name: str, replay: str, *, _ats: ATS, _services: ServiceFactory) -> None:
+    """Run one Proxy Verifier client and require its expectations.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param name: Unique service or case name within this test.
+    :param replay: Replay used by this test step.
+    """
+
+    result = _services.verifier_client(name, replay, http_ports=[_ats.http_port]).run()
+    assert result.returncode == 0, result.output
 
 
 @pytest.mark.parametrize(
@@ -91,6 +90,22 @@ class DnsTtlScenario:
     ids=["stale-disabled", "within-stale-window", "beyond-stale-window"],
 )
 def test_dns_ttl(ats_factory: ATSFactory, services: ServiceFactory, serve_stale_for: int | None) -> None:
-    """DNS TTL expiry honors the configured serve-stale window."""
+    """DNS TTL expiry honors the configured serve-stale window.
 
-    DnsTtlScenario(ats_factory, services, serve_stale_for).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param serve_stale_for: Serve stale for used by this test step.
+    """
+    _dns = configure_dns(services)
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _dns=_dns, _origin=_origin, _serve_stale_for=serve_stale_for)
+
+    _origin.start()
+    _dns.start()
+    _ats.start()
+    run_client("prime-client", DNS_TTL_SUCCESS_REPLAY, _ats=_ats, _services=services)
+
+    _dns.stop()
+    time.sleep(3)
+    expected = DNS_TTL_SUCCESS_REPLAY if serve_stale_for == 300 else DNS_TTL_ERROR_REPLAY
+    run_client("expired-client", expected, _ats=_ats, _services=services)

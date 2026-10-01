@@ -19,45 +19,50 @@ from pathlib import Path
 from tools.uranium.services import ATS, ATSFactory, assert_matches_gold
 
 
-class PluginConfigConversionScenario:
-    """Verify traffic_ctl converts legacy plugin.config syntax to YAML."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Create the ATS environment used to invoke traffic_ctl.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._source = Path(__file__).parent
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Create the ATS environment used to invoke traffic_ctl."""
+    return ats_factory.create("ts", enable_cache=False)
 
-        return ats_factory.create("ts", enable_cache=False)
 
-    def convert(self, source: str, gold: str, *options: str, output: str = "-") -> None:
-        """Convert one input and compare it with its wildcard gold file."""
+def convert(source: str, gold: str, *options: str, output: str = "-", _ats: ATS, _source: Path) -> None:
+    """Convert one input and compare it with its wildcard gold file.
 
-        result = self._ats.traffic_ctl(
-            "config",
-            "convert",
-            "plugin_config",
-            *options,
-            str(self._source / "legacy_config" / source),
-            output,
-        )
-        assert result.returncode == 0, result.output
-        actual = result.stdout if output == "-" else (self._ats.run_directory / output).read_text()
-        assert_matches_gold(actual, self._source / "gold" / gold)
+    :param _ats: Test-local ats configured by the test.
+    :param _source: Test-local source configured by the test.
+    :param source: Source used by this test step.
+    :param gold: Gold used by this test step.
+    :param output: Output used by this test step.
+    :param options: Options used by this test step.
+    """
 
-    def run(self) -> None:
-        """Exercise ordinary, disabled, quoted, file, and filtered output."""
-
-        self._ats.start()
-        self.convert("basic.config", "basic.yaml")
-        self.convert("commented.config", "commented.yaml")
-        self.convert("quoted.config", "quoted.yaml")
-        self.convert("basic.config", "basic.yaml", output="generated.yaml")
-        self.convert("commented.config", "skip_disabled.yaml", "--skip-disabled")
+    result = _ats.traffic_ctl(
+        "config",
+        "convert",
+        "plugin_config",
+        *options,
+        str(_source / "legacy_config" / source),
+        output,
+    )
+    assert result.returncode == 0, result.output
+    actual = result.stdout if output == "-" else (_ats.run_directory / output).read_text()
+    assert_matches_gold(actual, _source / "gold" / gold)
 
 
 def test_convert_plugin_config(ats_factory: ATSFactory) -> None:
-    """traffic_ctl converts all supported plugin.config forms."""
+    """traffic_ctl converts all supported plugin.config forms.
 
-    PluginConfigConversionScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _source = Path(__file__).parent
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    convert("basic.config", "basic.yaml", _ats=_ats, _source=_source)
+    convert("commented.config", "commented.yaml", _ats=_ats, _source=_source)
+    convert("quoted.config", "quoted.yaml", _ats=_ats, _source=_source)
+    convert("basic.config", "basic.yaml", output="generated.yaml", _ats=_ats, _source=_source)
+    convert("commented.config", "skip_disabled.yaml", "--skip-disabled", _ats=_ats, _source=_source)

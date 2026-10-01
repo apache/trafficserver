@@ -38,69 +38,79 @@ def can_set_so_mark() -> bool:
         return False
 
 
-class PacketMarkScenario:
-    """Apply and read back client- or server-side socket marks."""
+def configure_origin(services: ServiceFactory) -> OriginServer:
+    """Create enough origin transactions for both server-side cases.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, side: str) -> None:
-        self._curl = curl
-        self._side = side
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_origin(services: ServiceFactory) -> OriginServer:
-        """Create enough origin transactions for both server-side cases."""
+    origin = services.origin("origin")
+    request = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "body": ""}
+    response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""}
+    origin.add_response(request, response)
+    origin.add_response(request, response)
+    return origin
 
-        origin = services.origin("origin")
-        request = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "body": ""}
-        response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""}
-        origin.add_response(request, response)
-        origin.add_response(request, response)
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Seed the relevant socket option and load its API test plugin."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _side: str) -> ATS:
+    """Seed the relevant socket option and load its API test plugin.
 
-        ats = ats_factory.create("ts", enable_cache=False)
-        record_suffix = "in" if self._side == "client" else "out"
-        ats.records.update(
-            {
-                "proxy.config.url_remap.remap_required": 0,
-                "proxy.config.admin.user_id": "#-1",
-                f"proxy.config.net.sock_packet_mark_{record_suffix}": SEED_MARK,
-                f"proxy.config.net.sock_option_flag_{record_suffix}": SOCK_OPT_FLAG_PACKET_MARK,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": f"http|{self._side}_packet_mark",
-            })
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
-        ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{self._side}_packet_mark.so")
-        ats.plugin_config.add_line(f"{self._side}_packet_mark.so")
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param _side: Test-local side configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def request(self, set_header: str) -> None:
-        """Set a mark and require the plugin to echo the observed value."""
+    ats = ats_factory.create("ts", enable_cache=False)
+    record_suffix = "in" if _side == "client" else "out"
+    ats.records.update(
+        {
+            "proxy.config.url_remap.remap_required": 0,
+            "proxy.config.admin.user_id": "#-1",
+            f"proxy.config.net.sock_packet_mark_{record_suffix}": SEED_MARK,
+            f"proxy.config.net.sock_option_flag_{record_suffix}": SOCK_OPT_FLAG_PACKET_MARK,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": f"http|{_side}_packet_mark",
+        })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
+    ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{_side}_packet_mark.so")
+    ats.plugin_config.add_line(f"{_side}_packet_mark.so")
+    return ats
 
-        result = self._curl.run_for(
-            self._ats,
-            f"--verbose --ipv4 --header '{set_header}: 0x{SET_MARK:08x}' 'http://localhost:{self._ats.http_port}/'",
-        )
-        assert result.returncode == 0, result.output
-        assert f"X-{self._side.title()}-Packet-Mark: 0x{SET_MARK:08x}".lower() in result.output.lower()
 
-    def run(self) -> None:
-        """Exercise the live socket and, for origins, the preconnect seed."""
+def _request(set_header: str, *, _ats: ATS, _curl: Curl, _side: str) -> None:
+    """Set a mark and require the plugin to echo the observed value.
 
-        self._origin.start()
-        self._ats.start()
-        self.request("X-Set-Mark")
-        if self._side == "server":
-            self.request("X-Set-Mark-Preconnect")
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param _side: Test-local side configured by the test.
+    :param set_header: Set header used by this test step.
+    """
+
+    result = _curl.run_for(
+        _ats,
+        f"--verbose --ipv4 --header '{set_header}: 0x{SET_MARK:08x}' 'http://localhost:{_ats.http_port}/'",
+    )
+    assert result.returncode == 0, result.output
+    assert f"X-{_side.title()}-Packet-Mark: 0x{SET_MARK:08x}".lower() in result.output.lower()
 
 
 @pytest.mark.parametrize("side", ("client", "server"))
 def test_packet_mark(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, side: str) -> None:
-    """The packet-mark APIs update the corresponding live socket."""
+    """The packet-mark APIs update the corresponding live socket.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param side: Side used by this test step.
+    """
 
     if not can_set_so_mark():
         pytest.skip("SO_MARK requires Linux with CAP_NET_ADMIN or CAP_NET_RAW")
-    PacketMarkScenario(ats_factory, services, curl, side).run()
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, _origin=_origin, _side=side)
+
+    _origin.start()
+    _ats.start()
+    _request("X-Set-Mark", _ats=_ats, _curl=curl, _side=side)
+    if side == "server":
+        _request("X-Set-Mark-Preconnect", _ats=_ats, _curl=curl, _side=side)

@@ -17,16 +17,21 @@
 from pathlib import Path
 
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory
-from uranium_tests.next_hop.peer_scenario import PeerStrategyScenario
+from uranium_tests.next_hop.peer_scenario import run_peer_strategy
 
 
 def test_zzz_strategies_peer2(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A peer-only ring can go direct to the remapped upstream after exhausting peers."""
+    """A peer-only ring can go direct to the remapped upstream after exhausting peers.
 
-    PeerStrategyScenario(
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    run_peer_strategy(
         ats_factory,
         services,
         curl,
         Path(__file__).parent,
         has_upstream_group=False,
-    ).run()
+    )

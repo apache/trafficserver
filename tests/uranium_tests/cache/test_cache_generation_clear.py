@@ -24,57 +24,88 @@ GOLD_DIRECTORY = Path(__file__).parent / "gold"
 XDEBUG_HEADER = "x-cache,x-cache-key,via,x-cache-generation"
 
 
-class CacheGenerationClearScenario:
-    """traffic_ctl cache clear advances the cache generation."""
+def configure_traffic_server(*, _ats: ATS) -> None:
+    """Cache generation clear configure traffic server.
 
-    def __init__(self, ats: ATS, curl: Curl) -> None:
-        self.ats = ats
-        self.curl = curl
-        self.object_id = uuid.uuid4()
+    :param _ats: Test-local ats configured by the test.
+    """
+    _ats.records.update({
+        "proxy.config.body_factory.enable_customizations": 3,
+        "proxy.config.http.cache.generation": -1,
+    })
+    _ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-cache-key,via,x-cache-generation")
+    _ats.remap_config.add_line("map /default/ http://127.0.0.1/ @plugin=generator.so")
 
-    def _configure_traffic_server(self) -> None:
-        self.ats.records.update({
-            "proxy.config.body_factory.enable_customizations": 3,
-            "proxy.config.http.cache.generation": -1,
-        })
-        self.ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-cache-key,via,x-cache-generation")
-        self.ats.remap_config.add_line("map /default/ http://127.0.0.1/ @plugin=generator.so")
 
-    def _start_traffic_server(self) -> None:
-        self.ats.start()
+def start_traffic_server(*, _ats: ATS) -> None:
+    """Cache generation clear start traffic server.
 
-    def _request_object(self, gold_name: str) -> None:
-        result = self.curl.run_for(
-            self.ats,
-            (
-                f"--verbose --output /dev/null --header 'x-debug: {XDEBUG_HEADER}' "
-                f"'http://127.0.0.1:{self.ats.http_port}/default/cache/10/{self.object_id}'"),
-        )
-        assert result.returncode == 0, result.output
-        assert_matches_gold(result.output, GOLD_DIRECTORY / gold_name)
+    :param _ats: Test-local ats configured by the test.
+    """
+    _ats.start()
 
-    def _verify_initial_generation(self) -> None:
-        self._request_object("miss_default-1.gold")
-        self._request_object("hit_default-1.gold")
 
-    def _clear_cache(self) -> None:
-        result = self.ats.traffic_ctl("cache", "clear")
+def request_object(gold_name: str, *, _ats: ATS, _curl: Curl, object_id: uuid.UUID) -> None:
+    """Cache generation clear request object.
 
-        assert result.returncode == 0, result.output
-        time.sleep(15)
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param object_id: Test-local object id configured by the test.
+    :param gold_name: Gold name used by this test step.
+    """
+    result = _curl.run_for(
+        _ats,
+        (
+            f"--verbose --output /dev/null --header 'x-debug: {XDEBUG_HEADER}' "
+            f"'http://127.0.0.1:{_ats.http_port}/default/cache/10/{object_id}'"),
+    )
+    assert result.returncode == 0, result.output
+    assert_matches_gold(result.output, GOLD_DIRECTORY / gold_name)
 
-    def _verify_new_generation(self) -> None:
-        self._request_object("miss_default0.gold")
-        self._request_object("hit_default0.gold")
-        self._request_object("hit_default0.gold")
 
-    def run(self) -> None:
-        self._configure_traffic_server()
-        self._start_traffic_server()
-        self._verify_initial_generation()
-        self._clear_cache()
-        self._verify_new_generation()
+def verify_initial_generation(*, _ats: ATS, _curl: Curl, object_id: uuid.UUID) -> None:
+    """Cache generation clear verify initial generation.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param object_id: Test-local object id configured by the test.
+    """
+    request_object("miss_default-1.gold", _ats=_ats, _curl=_curl, object_id=object_id)
+    request_object("hit_default-1.gold", _ats=_ats, _curl=_curl, object_id=object_id)
+
+
+def clear_cache(*, _ats: ATS) -> None:
+    """Cache generation clear clear cache.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+    result = _ats.traffic_ctl("cache", "clear")
+
+    assert result.returncode == 0, result.output
+    time.sleep(15)
+
+
+def verify_new_generation(*, _ats: ATS, _curl: Curl, object_id: uuid.UUID) -> None:
+    """Cache generation clear verify new generation.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param object_id: Test-local object id configured by the test.
+    """
+    request_object("miss_default0.gold", _ats=_ats, _curl=_curl, object_id=object_id)
+    request_object("hit_default0.gold", _ats=_ats, _curl=_curl, object_id=object_id)
+    request_object("hit_default0.gold", _ats=_ats, _curl=_curl, object_id=object_id)
 
 
 def test_cache_generation_clear(ats: ATS, curl: Curl) -> None:
-    CacheGenerationClearScenario(ats, curl).run()
+    """traffic_ctl cache clear advances the cache generation.
+
+    :param ats: Traffic Server instance configured or queried by this step.
+    :param curl: Transport-aware curl command runner.
+    """
+    object_id = uuid.uuid4()
+    configure_traffic_server(_ats=ats)
+    start_traffic_server(_ats=ats)
+    verify_initial_generation(_ats=ats, _curl=curl, object_id=object_id)
+    clear_cache(_ats=ats)
+    verify_new_generation(_ats=ats, _curl=curl, object_id=object_id)

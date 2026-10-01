@@ -26,38 +26,32 @@ TEST_DIRECTORY = Path(__file__).parent
 TCP_CLIENT = TEST_DIRECTORY.parents[1] / "tools" / "tcp_client.py"
 
 
-class ConnectionFailureScenario:
-    """Send a raw request to an origin whose reserved port is closed."""
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+    """Map the request to the unused origin port.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        self._origin_port = services.allocate_port()
-        self._ats = self.configure_ats(ats_factory)
-        self._client = self.configure_client(ats_factory, services)
+    :param _origin_port: Test-local origin port configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Map the request to the unused origin port."""
+    ats = ats_factory.create("ts")
+    ats.remap_config.add_line(f"map http://www.connectfail502.test http://127.0.0.1:{_origin_port}")
+    return ats
 
-        ats = ats_factory.create("ts")
-        ats.remap_config.add_line(f"map http://www.connectfail502.test http://127.0.0.1:{self._origin_port}")
-        return ats
 
-    def configure_client(self, ats_factory: ATSFactory, services: ServiceFactory) -> ProcessService:
-        """Create the raw client request used for stable response formatting."""
+def configure_client(ats_factory: ATSFactory, services: ServiceFactory, *, _ats: ATS) -> ProcessService:
+    """Create the raw client request used for stable response formatting.
 
-        request = ats_factory.run_directory / "connection-failure.request"
-        request.write_text("GET / HTTP/1.1\r\nHost: www.connectfail502.test\r\n\r\n")
-        return services.process(
-            "connection-failure-client",
-            (sys.executable, TCP_CLIENT, "127.0.0.1", str(self._ats.http_port), request),
-        )
+    :param _ats: Test-local ats configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    def run(self) -> None:
-        """Start ATS, issue the request, and compare the generated error page."""
-
-        self._ats.start()
-        result = self._client.run()
-        output = re.sub(r"^(?:Date: |Server: ATS/).*\n", "", result.stdout, flags=re.MULTILINE)
-        assert_matches_gold(output, TEST_DIRECTORY / "general-connection-failure-502.gold")
+    request = ats_factory.run_directory / "connection-failure.request"
+    request.write_text("GET / HTTP/1.1\r\nHost: www.connectfail502.test\r\n\r\n")
+    return services.process(
+        "connection-failure-client",
+        (sys.executable, TCP_CLIENT, "127.0.0.1", str(_ats.http_port), request),
+    )
 
 
 def test_general_connection_failure_502(
@@ -65,8 +59,20 @@ def test_general_connection_failure_502(
     services: ServiceFactory,
     curl: Curl,
 ) -> None:
-    """A refused origin connection produces ATS's standard 502 response."""
+    """A refused origin connection produces ATS's standard 502 response.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
 
     if curl.uses_uds:
         pytest.skip("the raw TCP client requires a TCP listener")
-    ConnectionFailureScenario(ats_factory, services).run()
+    _origin_port = services.allocate_port()
+    _ats = configure_ats(ats_factory, _origin_port=_origin_port)
+    _client = configure_client(ats_factory, services, _ats=_ats)
+
+    _ats.start()
+    result = _client.run()
+    output = re.sub(r"^(?:Date: |Server: ATS/).*\n", "", result.stdout, flags=re.MULTILINE)
+    assert_matches_gold(output, TEST_DIRECTORY / "general-connection-failure-502.gold")

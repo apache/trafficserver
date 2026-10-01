@@ -19,62 +19,67 @@ import json
 from tools.uranium.services import ATS, ATSFactory
 
 
-class ServerOutputScenario:
-    """Verify traffic_ctl server status and connection-tracker JSON output."""
+def configure_ats(ats_factory: ATSFactory) -> ATS:
+    """Use a small fixed event-thread pool.
 
-    def __init__(self, ats_factory: ATSFactory) -> None:
-        self._ats = self.configure_ats(ats_factory)
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Use a small fixed event-thread pool."""
+    ats = ats_factory.create("ts")
+    ats.records.update({
+        "proxy.config.exec_thread.autoconfig.enabled": 0,
+        "proxy.config.exec_thread.limit": 4,
+    })
+    return ats
 
-        ats = ats_factory.create("ts")
-        ats.records.update({
-            "proxy.config.exec_thread.autoconfig.enabled": 0,
-            "proxy.config.exec_thread.limit": 4,
-        })
-        return ats
 
-    def server_status(self) -> dict[str, object]:
-        """Read and parse traffic_ctl server status."""
+def server_status(*, _ats: ATS) -> dict[str, object]:
+    """Read and parse traffic_ctl server status.
 
-        result = self._ats.traffic_ctl("server", "status")
-        assert result.returncode == 0, result.output
-        return json.loads(result.stdout)
+    :param _ats: Test-local ats configured by the test.
+    """
 
-    def connection_tracker(self, table: str | None = None) -> dict[str, object]:
-        """Invoke the connection-tracker RPC for the selected table."""
+    result = _ats.traffic_ctl("server", "status")
+    assert result.returncode == 0, result.output
+    return json.loads(result.stdout)
 
-        arguments = ["rpc", "invoke", "get_connection_tracker_info"]
-        if table is not None:
-            arguments.extend(["--params", f"table: {table}"])
-        arguments.extend(["--format", "json"])
-        result = self._ats.traffic_ctl(*arguments)
-        assert result.returncode == 0, result.output
-        return json.loads(result.stdout)["result"]
 
-    def run(self) -> None:
-        """Verify status changes after drain and all tracker table selectors."""
+def connection_tracker(table: str | None = None, *, _ats: ATS) -> dict[str, object]:
+    """Invoke the connection-tracker RPC for the selected table.
 
-        self._ats.start()
-        status = self.server_status()
-        assert status["initialized_done"] == "true"
-        assert status["is_ssl_handshaking_stopped"] == "false"
-        assert status["is_draining"] == "false"
-        assert status["is_event_system_shut_down"] == "false"
+    :param _ats: Test-local ats configured by the test.
+    :param table: Table used by this test step.
+    """
 
-        result = self._ats.traffic_ctl("server", "drain")
-        assert result.returncode == 0, result.output
-        assert self.server_status()["is_draining"] == "true"
-
-        empty = {"count": "0", "list": []}
-        assert self.connection_tracker("both") == {"outbound": empty, "inbound": empty}
-        assert self.connection_tracker() == {"outbound": empty}
-        assert self.connection_tracker("inbound") == {"inbound": empty}
-        assert self.connection_tracker("outbound") == {"outbound": empty}
+    arguments = ["rpc", "invoke", "get_connection_tracker_info"]
+    if table is not None:
+        arguments.extend(["--params", f"table: {table}"])
+    arguments.extend(["--format", "json"])
+    result = _ats.traffic_ctl(*arguments)
+    assert result.returncode == 0, result.output
+    return json.loads(result.stdout)["result"]
 
 
 def test_traffic_ctl_server_output(ats_factory: ATSFactory) -> None:
-    """traffic_ctl reports server and connection-tracker state as JSON."""
+    """traffic_ctl reports server and connection-tracker state as JSON.
 
-    ServerOutputScenario(ats_factory).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    status = server_status(_ats=_ats)
+    assert status["initialized_done"] == "true"
+    assert status["is_ssl_handshaking_stopped"] == "false"
+    assert status["is_draining"] == "false"
+    assert status["is_event_system_shut_down"] == "false"
+
+    result = _ats.traffic_ctl("server", "drain")
+    assert result.returncode == 0, result.output
+    assert server_status(_ats=_ats)["is_draining"] == "true"
+
+    empty = {"count": "0", "list": []}
+    assert connection_tracker("both", _ats=_ats) == {"outbound": empty, "inbound": empty}
+    assert connection_tracker(_ats=_ats) == {"outbound": empty}
+    assert connection_tracker("inbound", _ats=_ats) == {"inbound": empty}
+    assert connection_tracker("outbound", _ats=_ats) == {"outbound": empty}

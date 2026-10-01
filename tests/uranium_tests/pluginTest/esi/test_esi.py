@@ -14,11 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Verify ESI transformation, gzip, cache-control, and size options."""
+from pathlib import Path
 
 from dataclasses import dataclass
 import shlex
 import gzip
-from pathlib import Path
 import re
 
 import pytest
@@ -63,145 +63,181 @@ VARIANTS = (
 )
 
 
-class EsiScenario:
-    """Configure one ESI option variant and run its client checks."""
+def configure_server(services: ServiceFactory) -> OriginServer:
+    """Create the document, include fragment, and empty response.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, variant: EsiVariant) -> None:
-        self._variant = variant
-        self._run_directory = ats_factory.run_directory
-        self._origin = self.configure_server(services)
-        self._ats = self.configure_ats(ats_factory)
-        self._curl = Curl(ats_factory.run_directory)
+    :param services: Factory owning support services and their cleanup.
+    """
 
-    @staticmethod
-    def configure_server(services: ServiceFactory) -> OriginServer:
-        """Create the document, include fragment, and empty response."""
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET /esi.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
+        {
+            "headers":
+                (
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nX-Esi: 1\r\nConnection: close\r\n"
+                    f"Content-Length: {len(ESI_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
+            "body": ESI_BODY,
+        },
+    )
+    origin.add_response(
+        {"headers": "GET /date.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
+        {
+            "headers":
+                (
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n"
+                    f"Content-Length: {len(DATE_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
+            "body": DATE_BODY,
+        },
+    )
+    origin.add_response(
+        {"headers": "GET /expect_empty_body HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
+        {
+            "headers":
+                (
+                    "HTTP/1.1 200 OK\r\nX-ESI: On\r\nContent-Length: 0\r\nConnection: close\r\n"
+                    "Content-Type: text/html; charset=UTF-8\r\n\r\n")
+        },
+    )
+    return origin
 
-        origin = services.origin("origin")
-        origin.add_response(
-            {"headers": "GET /esi.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nX-Esi: 1\r\nConnection: close\r\n"
-                        f"Content-Length: {len(ESI_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
-                "body": ESI_BODY,
-            },
-        )
-        origin.add_response(
-            {"headers": "GET /date.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n"
-                        f"Content-Length: {len(DATE_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
-                "body": DATE_BODY,
-            },
-        )
-        origin.add_response(
-            {"headers": "GET /expect_empty_body HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\nX-ESI: On\r\nContent-Length: 0\r\nConnection: close\r\n"
-                        "Content-Type: text/html; charset=UTF-8\r\n\r\n")
-            },
-        )
-        return origin
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Load the selected ESI configuration globally."""
+def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _variant: EsiVariant) -> ATS:
+    """Load the selected ESI configuration globally.
 
-        ats = ats_factory.create("ats")
-        if not ats.plugin_exists("esi.so"):
-            pytest.skip("esi.so is not installed")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|plugin_esi",
-        })
-        ats.remap_config.add_line(f"map http://www.example.com/ http://127.0.0.1:{self._origin.port}")
-        ats.plugin_config.add_line(self._variant.plugin_config)
-        return ats
+    :param _origin: Test-local origin configured by the test.
+    :param _variant: Test-local variant configured by the test.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
 
-    def request(self, path: str, *options: str) -> CommandResult:
-        """Issue a verbose ESI request with the required host headers."""
+    ats = ats_factory.create("ats")
+    if not ats.plugin_exists("esi.so"):
+        pytest.skip("esi.so is not installed")
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "http|plugin_esi",
+    })
+    ats.remap_config.add_line(f"map http://www.example.com/ http://127.0.0.1:{_origin.port}")
+    ats.plugin_config.add_line(_variant.plugin_config)
+    return ats
 
-        return self._curl.get(
-            self._ats,
-            path,
-            headers={
-                "Host": "www.example.com",
-                "Accept": "*/*"
-            },
-            options=f"--verbose {shlex.join(options)}",
-        )
 
-    def assert_transformed(self, result: CommandResult) -> None:
-        """Verify transformed content and cache-control behavior."""
+def request(path: str, *options: str, _ats: ATS, _curl: Curl) -> CommandResult:
+    """Issue a verbose ESI request with the required host headers.
 
-        assert result.returncode == 0, result.output
-        assert "< HTTP/1.1 200 OK" in result.stderr, result.output
-        assert "< Content-Type: text/html" in result.stderr, result.output
-        assert TRANSFORMED_BODY in result.stdout, result.output
-        headers = result.stderr.lower()
-        if self._variant.private_response:
-            assert re.search(r"cache-control:.*max-age=0, private", headers), result.output
-            assert "expires: -1" in headers, result.output
-        else:
-            assert "cache-control:" not in headers, result.output
-            assert "expires:" not in headers, result.output
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param path: Resource or file path used by this operation.
+    :param options: Options used by this test step.
+    """
 
-    def assert_gzip(self, path: str, output_name: str, *, empty: bool = False) -> None:
-        """Download and decompress a gzip response."""
+    return _curl.get(
+        _ats,
+        path,
+        headers={
+            "Host": "www.example.com",
+            "Accept": "*/*"
+        },
+        options=f"--verbose {shlex.join(options)}",
+    )
 
-        output_path = self._run_directory / output_name
-        result = self.request(path, "--header", "Accept-Encoding: gzip", "--output", str(output_path))
-        assert result.returncode == 0, result.output
-        assert "< Content-Encoding: gzip" in result.stderr, result.output
-        decompressed = gzip.decompress(output_path.read_bytes())
-        assert decompressed == (b"" if empty else TRANSFORMED_BODY.encode())
 
-    def run_gzip_cases(self) -> None:
-        """Verify uncached, cached, compressed, and compressed-empty output."""
+def assert_transformed(result: CommandResult, *, _variant: EsiVariant) -> None:
+    """Verify transformed content and cache-control behavior.
 
-        self.assert_transformed(self.request("/esi.php"))
-        self.assert_transformed(self.request("/esi.php"))
-        self.assert_gzip("/esi.php", "esi-body.gz")
-        self.assert_gzip("/expect_empty_body", "empty.gz", empty=True)
+    :param _variant: Test-local variant configured by the test.
+    :param result: Completed command result to validate.
+    """
 
-    def run_no_gzip_cases(self) -> None:
-        """Verify gzip output remains disabled when the client accepts it."""
+    assert result.returncode == 0, result.output
+    assert "< HTTP/1.1 200 OK" in result.stderr, result.output
+    assert "< Content-Type: text/html" in result.stderr, result.output
+    assert TRANSFORMED_BODY in result.stdout, result.output
+    headers = result.stderr.lower()
+    if _variant.private_response:
+        assert re.search(r"cache-control:.*max-age=0, private", headers), result.output
+        assert "expires: -1" in headers, result.output
+    else:
+        assert "cache-control:" not in headers, result.output
+        assert "expires:" not in headers, result.output
 
-        self.assert_transformed(self.request("/esi.php"))
-        result = self.request("/esi.php", "--header", "Accept-Encoding: gzip")
-        self.assert_transformed(result)
-        assert "Content-Encoding: gzip" not in result.stderr
 
-    def run(self) -> None:
-        """Dispatch the checks appropriate for this plugin configuration."""
+def assert_gzip(path: str, output_name: str, *, empty: bool = False, _ats: ATS, _curl: Curl, _run_directory: Path) -> None:
+    """Download and decompress a gzip response.
 
-        self._origin.start()
-        self._ats.start()
-        if self._variant.behavior == "gzip":
-            self.run_gzip_cases()
-        elif self._variant.behavior == "no-gzip":
-            self.run_no_gzip_cases()
-        elif self._variant.behavior == "too-small":
-            result = self.request("/esi.php")
-            assert result.returncode == 0, result.output
-            wait_for_file_lines(
-                self._ats.diags_log,
-                r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100 for URL \[.*esi\.php.*\]",
-                1,
-            )
-        else:
-            result = self.request("/esi.php")
-            assert result.returncode == 0, result.output
-            assert 'Hello, <esi:include src="http://www.example.com/date.php"/>' in result.stdout
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param _run_directory: Test-local run directory configured by the test.
+    :param path: Resource or file path used by this operation.
+    :param output_name: Output name used by this test step.
+    :param empty: Empty used by this test step.
+    """
+
+    output_path = _run_directory / output_name
+    result = request(path, "--header", "Accept-Encoding: gzip", "--output", str(output_path), _ats=_ats, _curl=_curl)
+    assert result.returncode == 0, result.output
+    assert "< Content-Encoding: gzip" in result.stderr, result.output
+    decompressed = gzip.decompress(output_path.read_bytes())
+    assert decompressed == (b"" if empty else TRANSFORMED_BODY.encode())
+
+
+def run_gzip_cases(*, _ats: ATS, _curl: Curl, _run_directory: Path, _variant: EsiVariant) -> None:
+    """Verify uncached, cached, compressed, and compressed-empty output.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param _run_directory: Test-local run directory configured by the test.
+    :param _variant: Test-local variant configured by the test.
+    """
+
+    assert_transformed(request("/esi.php", _ats=_ats, _curl=_curl), _variant=_variant)
+    assert_transformed(request("/esi.php", _ats=_ats, _curl=_curl), _variant=_variant)
+    assert_gzip("/esi.php", "esi-body.gz", _ats=_ats, _curl=_curl, _run_directory=_run_directory)
+    assert_gzip("/expect_empty_body", "empty.gz", empty=True, _ats=_ats, _curl=_curl, _run_directory=_run_directory)
+
+
+def run_no_gzip_cases(*, _ats: ATS, _curl: Curl, _variant: EsiVariant) -> None:
+    """Verify gzip output remains disabled when the client accepts it.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    :param _variant: Test-local variant configured by the test.
+    """
+
+    assert_transformed(request("/esi.php", _ats=_ats, _curl=_curl), _variant=_variant)
+    result = request("/esi.php", "--header", "Accept-Encoding: gzip", _ats=_ats, _curl=_curl)
+    assert_transformed(result, _variant=_variant)
+    assert "Content-Encoding: gzip" not in result.stderr
 
 
 @pytest.mark.parametrize("variant", VARIANTS, ids=lambda value: value.name)
 def test_esi(ats_factory: ATSFactory, services: ServiceFactory, variant: EsiVariant) -> None:
-    """ESI options preserve their documented transformation behavior."""
+    """ESI options preserve their documented transformation behavior.
 
-    EsiScenario(ats_factory, services, variant).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param variant: Variant used by this test step.
+    """
+    _run_directory = ats_factory.run_directory
+    _origin = configure_server(services)
+    _ats = configure_ats(ats_factory, _origin=_origin, _variant=variant)
+    _curl = Curl(ats_factory.run_directory)
+
+    _origin.start()
+    _ats.start()
+    if variant.behavior == "gzip":
+        run_gzip_cases(_ats=_ats, _curl=_curl, _run_directory=_run_directory, _variant=variant)
+    elif variant.behavior == "no-gzip":
+        run_no_gzip_cases(_ats=_ats, _curl=_curl, _variant=variant)
+    elif variant.behavior == "too-small":
+        result = request("/esi.php", _ats=_ats, _curl=_curl)
+        assert result.returncode == 0, result.output
+        wait_for_file_lines(
+            _ats.diags_log,
+            r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100 for URL \[.*esi\.php.*\]",
+            1,
+        )
+    else:
+        result = request("/esi.php", _ats=_ats, _curl=_curl)
+        assert result.returncode == 0, result.output
+        assert 'Hello, <esi:include src="http://www.example.com/date.php"/>' in result.stdout

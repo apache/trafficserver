@@ -23,82 +23,103 @@ from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFacto
 REPLAY_FILE = Path(__file__).parent / "replay" / "tls_cert_compression_cache.replay.yaml"
 
 
-class CertificateCompressionCacheScenario:
-    """Verify the server-side compressed certificate cache."""
+def configure_server(suffix: str, *, _services: ServiceFactory) -> VerifierServer:
+    """Create the clear-text origin for one cache mode.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
-        if not ats_factory.has_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS"):
-            pytest.skip("ATS was built without certificate compression callbacks")
-        self._ats_factory = ats_factory
-        self._services = services
+    :param _services: Test-local services configured by the test.
+    :param suffix: Suffix used by this test step.
+    """
 
-    def configure_server(self, suffix: str) -> VerifierServer:
-        """Create the clear-text origin for one cache mode."""
+    return _services.verifier_server(f"server-{suffix}", REPLAY_FILE)
 
-        return self._services.verifier_server(f"server-{suffix}", REPLAY_FILE)
 
-    def configure_mid(self, suffix: str, server: VerifierServer, cache_enabled: bool) -> ATS:
-        """Configure the TLS server that compresses its certificate."""
+def configure_mid(suffix: str, server: VerifierServer, cache_enabled: bool, *, _ats_factory: ATSFactory) -> ATS:
+    """Configure the TLS server that compresses its certificate.
 
-        ats = self._ats_factory.create(f"mid-{suffix}", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}/")
-        ats.records.update(
-            {
-                "proxy.config.ssl.server.cert_compression.algorithms": "zlib",
-                "proxy.config.ssl.server.cert_compression.cache": int(cache_enabled),
-                "proxy.config.ssl.server.session_ticket.enable": 0,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "ssl_cert_compress",
-            })
-        return ats
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param suffix: Suffix used by this test step.
+    :param server: Server used by this test.
+    :param cache_enabled: Cache enabled used by this test step.
+    """
 
-    def configure_edge(self, suffix: str, mid: ATS) -> ATS:
-        """Configure the TLS client that decompresses the mid-tier certificate."""
+    ats = _ats_factory.create(f"mid-{suffix}", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}/")
+    ats.records.update(
+        {
+            "proxy.config.ssl.server.cert_compression.algorithms": "zlib",
+            "proxy.config.ssl.server.cert_compression.cache": int(cache_enabled),
+            "proxy.config.ssl.server.session_ticket.enable": 0,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_cert_compress",
+        })
+    return ats
 
-        ats = self._ats_factory.create(f"edge-{suffix}", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        ats.remap_config.add_line(f"map / https://127.0.0.1:{mid.https_port}/")
-        ats.records.update(
-            {
-                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-                "proxy.config.ssl.client.cert_compression.algorithms": "zlib",
-                "proxy.config.http.keep_alive_enabled_out": 0,
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "ssl_cert_compress",
-            })
-        return ats
 
-    def configure_client(self, suffix: str, edge: ATS) -> ProcessService:
-        """Create a verifier client with two separate sessions."""
+def configure_edge(suffix: str, mid: ATS, *, _ats_factory: ATSFactory) -> ATS:
+    """Configure the TLS client that decompresses the mid-tier certificate.
 
-        return self._services.verifier_client(f"client-{suffix}", REPLAY_FILE, http_ports=[edge.http_port])
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param suffix: Suffix used by this test step.
+    :param mid: Mid used by this test step.
+    """
 
-    def run_case(self, cache_enabled: bool) -> None:
-        """Run two handshakes and verify compression and cache metrics."""
+    ats = _ats_factory.create(f"edge-{suffix}", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.remap_config.add_line(f"map / https://127.0.0.1:{mid.https_port}/")
+    ats.records.update(
+        {
+            "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            "proxy.config.ssl.client.cert_compression.algorithms": "zlib",
+            "proxy.config.http.keep_alive_enabled_out": 0,
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_cert_compress",
+        })
+    return ats
 
-        suffix = "enabled" if cache_enabled else "disabled"
-        server = self.configure_server(suffix)
-        mid = self.configure_mid(suffix, server, cache_enabled)
-        edge = self.configure_edge(suffix, mid)
-        client = self.configure_client(suffix, edge)
-        server.start()
-        mid.start()
-        edge.start()
-        client.run()
-        wait_for_metric(mid, "proxy.process.ssl.cert_compress.zlib", 2)
-        wait_for_metric(edge, "proxy.process.ssl.cert_decompress.zlib", 2)
-        wait_for_metric(mid, "proxy.process.ssl.cert_compress.zlib_failure", 0)
-        wait_for_metric(mid, "proxy.process.ssl.cert_compress.cache_hit", int(cache_enabled))
 
-    def run(self) -> None:
-        """Exercise enabled and disabled compression caches."""
+def configure_client(suffix: str, edge: ATS, *, _services: ServiceFactory) -> ProcessService:
+    """Create a verifier client with two separate sessions.
 
-        self.run_case(True)
-        self.run_case(False)
+    :param _services: Test-local services configured by the test.
+    :param suffix: Suffix used by this test step.
+    :param edge: Edge used by this test step.
+    """
+
+    return _services.verifier_client(f"client-{suffix}", REPLAY_FILE, http_ports=[edge.http_port])
+
+
+def run_case(cache_enabled: bool, *, _ats_factory: ATSFactory, _services: ServiceFactory) -> None:
+    """Run two handshakes and verify compression and cache metrics.
+
+    :param _ats_factory: Test-local ats factory configured by the test.
+    :param _services: Test-local services configured by the test.
+    :param cache_enabled: Cache enabled used by this test step.
+    """
+
+    suffix = "enabled" if cache_enabled else "disabled"
+    server = configure_server(suffix, _services=_services)
+    mid = configure_mid(suffix, server, cache_enabled, _ats_factory=_ats_factory)
+    edge = configure_edge(suffix, mid, _ats_factory=_ats_factory)
+    client = configure_client(suffix, edge, _services=_services)
+    server.start()
+    mid.start()
+    edge.start()
+    client.run()
+    wait_for_metric(mid, "proxy.process.ssl.cert_compress.zlib", 2)
+    wait_for_metric(edge, "proxy.process.ssl.cert_decompress.zlib", 2)
+    wait_for_metric(mid, "proxy.process.ssl.cert_compress.zlib_failure", 0)
+    wait_for_metric(mid, "proxy.process.ssl.cert_compress.cache_hit", int(cache_enabled))
 
 
 def test_tls_cert_comp_cache(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Certificate compression caches reuse exactly one of two results."""
+    """Certificate compression caches reuse exactly one of two results.
 
-    CertificateCompressionCacheScenario(ats_factory, services).run()
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    if not ats_factory.has_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS"):
+        pytest.skip("ATS was built without certificate compression callbacks")
+
+    run_case(True, _ats_factory=ats_factory, _services=services)
+    run_case(False, _ats_factory=ats_factory, _services=services)

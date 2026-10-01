@@ -155,6 +155,8 @@ class ProcessService:
         raise AssertionError(f"Expected {count} matches for {expression!r} in {self.name} output.\n{output}")
 
     def start(self) -> None:
+        """Launch the service and wait for its configured TCP listener, if any."""
+
         self._process.start()
         self._was_started = True
         if self._ready_port:
@@ -185,9 +187,13 @@ class ProcessService:
         return self.wait(timeout)
 
     def stop(self) -> None:
+        """Stop a running service and finish capturing its output."""
+
         self._process.stop()
 
     def close(self) -> None:
+        """Stop the service and validate expectations not already checked by wait."""
+
         self.stop()
         if self._was_started and not self._was_validated:
             self._validate_output()

@@ -25,89 +25,62 @@ from tools.uranium.services import ATS, ATSFactory, Curl, ProcessService, Servic
 TEST_DIRECTORY = Path(__file__).parent
 
 
-class PostSlowServerScenario:
-    """Keep an HTTP/2 POST alive across a two-minute origin delay."""
+def configure_origin(services: ServiceFactory, *, _origin_port: int, _ready_file: Path) -> ProcessService:
+    """Create the one-shot server that delays its 200 KB response.
 
-    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-        """Configure the delayed-origin scenario.
+    :param services: Factory that owns the delayed origin process.
 
-        :param ats_factory: Factory that owns the ATS instance.
-        :param services: Factory that owns the delayed origin process.
-        :param curl: Curl client used for the POST request.
-        """
+    :param _origin_port: Test-local origin port configured by the test.
+    :param _ready_file: Test-local ready file configured by the test.
+    """
 
-        if not Curl.supports("http2"):
-            pytest.skip("curl with HTTP/2 support is required")
-        if shutil.which("nc") is None:
-            pytest.skip("nc is required")
-        self._curl = curl
-        self._origin_port = services.allocate_port()
-        self._ready_file = ats_factory.run_directory / "origin.ready"
-        self._origin = self.configure_origin(services)
-        self._ats = self.configure_ats(ats_factory)
+    return services.process(
+        "origin",
+        ("bash", TEST_DIRECTORY / "server.sh", str(_origin_port), _ready_file),
+    )
 
-    def configure_origin(self, services: ServiceFactory) -> ProcessService:
-        """Create the one-shot server that delays its 200 KB response.
 
-        :param services: Factory that owns the delayed origin process.
-        """
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+    """Allow both sides of the transaction to remain inactive for 150 seconds.
 
-        return services.process(
-            "origin",
-            ("bash", TEST_DIRECTORY / "server.sh", str(self._origin_port), self._ready_file),
-        )
+    :param ats_factory: Factory that owns the ATS instance.
 
-    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Allow both sides of the transaction to remain inactive for 150 seconds.
+    :param _origin_port: Test-local origin port configured by the test.
+    """
 
-        :param ats_factory: Factory that owns the ATS instance.
-        """
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.ssl_multicert_config.add_lines(
+        (
+            "ssl_multicert:",
+            '  - dest_ip: "*"',
+            "    ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ))
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+            "proxy.config.proxy_name": "Poxy_Proxy",
+            "proxy.config.http.transaction_no_activity_timeout_out": 150,
+            "proxy.config.http2.no_activity_timeout_in": 150,
+        })
+    ats.remap_config.add_line(f"map https://localhost http://127.0.0.1:{_origin_port}")
+    return ats
 
-        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-        ats.add_default_ssl_files()
-        ats.ssl_multicert_config.add_lines(
-            (
-                "ssl_multicert:",
-                '  - dest_ip: "*"',
-                "    ssl_cert_name: server.pem",
-                "    ssl_key_name: server.key",
-            ))
-        ats.records.update(
-            {
-                "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "http",
-                "proxy.config.proxy_name": "Poxy_Proxy",
-                "proxy.config.http.transaction_no_activity_timeout_out": 150,
-                "proxy.config.http2.no_activity_timeout_in": 150,
-            })
-        ats.remap_config.add_line(f"map https://localhost http://127.0.0.1:{self._origin_port}")
-        return ats
 
-    def wait_for_origin(self) -> None:
-        """Wait until the server script is about to enter its listener."""
+def wait_for_origin(*, _origin: ProcessService, _ready_file: Path) -> None:
+    """Wait until the server script is about to enter its listener.
 
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline and not self._ready_file.exists():
-            time.sleep(0.05)
-        assert self._ready_file.exists(), self._origin.output
-        time.sleep(0.1)
+    :param _origin: Test-local origin configured by the test.
+    :param _ready_file: Test-local ready file configured by the test.
+    """
 
-    def run(self) -> None:
-        """Send the POST and require the complete delayed response body."""
-
-        self._origin.start()
-        self.wait_for_origin()
-        self._ats.start()
-        output = self._ats.run_directory.parent / "curl.log"
-        result = self._curl.run_for(
-            self._ats,
-            (
-                f"--request POST --verbose --ipv4 --http2 --insecure --header 'Content-Length: 0' --output "
-                f"'{str(output)}' 'https://localhost:{self._ats.https_port}/xyz'"),
-            timeout=150,
-        )
-        assert result.returncode == 0, result.output
-        assert output.stat().st_size == 200 * 1024
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline and not _ready_file.exists():
+        time.sleep(0.05)
+    assert _ready_file.exists(), _origin.output
+    time.sleep(0.1)
 
 
 @pytest.mark.manual(reason="takes about two minutes")
@@ -119,4 +92,25 @@ def test_post_slow_server(ats_factory: ATSFactory, services: ServiceFactory, cur
     :param curl: Curl client used for the POST request.
     """
 
-    PostSlowServerScenario(ats_factory, services, curl).run()
+    if not Curl.supports("http2"):
+        pytest.skip("curl with HTTP/2 support is required")
+    if shutil.which("nc") is None:
+        pytest.skip("nc is required")
+    _origin_port = services.allocate_port()
+    _ready_file = ats_factory.run_directory / "origin.ready"
+    _origin = configure_origin(services, _origin_port=_origin_port, _ready_file=_ready_file)
+    _ats = configure_ats(ats_factory, _origin_port=_origin_port)
+
+    _origin.start()
+    wait_for_origin(_origin=_origin, _ready_file=_ready_file)
+    _ats.start()
+    output = _ats.run_directory.parent / "curl.log"
+    result = curl.run_for(
+        _ats,
+        (
+            f"--request POST --verbose --ipv4 --http2 --insecure --header 'Content-Length: 0' --output "
+            f"'{str(output)}' 'https://localhost:{_ats.https_port}/xyz'"),
+        timeout=150,
+    )
+    assert result.returncode == 0, result.output
+    assert output.stat().st_size == 200 * 1024
