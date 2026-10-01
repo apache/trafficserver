@@ -18,9 +18,10 @@
 #include "url_query.h"
 
 #include <algorithm>
-#include <vector>
 
+#include "swoc/MemSpan.h"
 #include "swoc/TextView.h"
+#include "swoc/Vectray.h"
 
 namespace
 {
@@ -40,8 +41,8 @@ sort_query(std::string_view query)
     return {};
   }
 
-  std::vector<std::string_view> params;
-  swoc::TextView                view(query);
+  swoc::Vectray<std::string_view, 16> params;
+  swoc::TextView                      view(query);
 
   while (view) {
     if (std::string_view param = view.take_prefix_at('&'); !param.empty()) {
@@ -49,13 +50,17 @@ sort_query(std::string_view query)
     }
   }
 
-  std::stable_sort(params.begin(), params.end(),
+  // Vectray::end() spans all N inline slots, not just the filled ones, so bound ranges by size().
+  // Built after the last push_back: a later push can move the storage and leave this span dangling.
+  swoc::MemSpan<std::string_view> filled(params.begin(), params.size());
+
+  std::stable_sort(filled.begin(), filled.end(),
                    [](std::string_view a, std::string_view b) { return param_name(a) < param_name(b); });
 
   std::string result;
   result.reserve(query.size()); // same length as query, capped at 64KB by request_line_max_size
 
-  for (const auto &param : params) {
+  for (const auto &param : filled) {
     if (!result.empty()) {
       result += '&';
     }
