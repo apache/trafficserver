@@ -301,6 +301,9 @@ private:
    */
   void _close_connection(Http2ErrorCode error_code);
 
+  Http2FlowControlPolicy _flow_control_policy{
+    Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM}; ///< Policy at connection initialization.
+
   // Getters for stream control configurations that retrieve the inbound or
   // outbound values per the configured session.
   uint32_t               _get_configured_max_concurrent_streams() const;
