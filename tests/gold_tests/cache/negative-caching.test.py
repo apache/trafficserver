@@ -105,7 +105,7 @@ tr.AddVerifierClientProcess("client-no-timeout", replay_file, http_ports=[ts.Var
 tr.StillRunningAfter = ts
 
 #
-# Verify that negative_caching_lifetime is respected even when cache.config
+# Verify that negative_caching_lifetime is respected even when cache.yaml
 # has ttl-in-cache configured.
 #
 replay_file = "replay/negative-caching-ttl-in-cache.replay.yaml"
@@ -125,9 +125,16 @@ ts.Disk.records_config.update(
         'proxy.config.http.negative_caching_lifetime': 2
     })
 ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{server_port}')
-# Configure cache.config with a long ttl-in-cache that should NOT override
+# Configure cache.yaml with a long ttl_in_cache that should NOT override
 # negative_caching_lifetime for negative responses.
-ts.Disk.cache_config.AddLine('dest_domain=backend.example.com ttl-in-cache=30d')
+ts.Disk.cache_yaml.AddLines(
+    [
+        'cache:',
+        '  - match:',
+        '      dest_domain: backend.example.com',
+        '    action:',
+        '      ttl_in_cache: 30d',
+    ])
 p = tr.AddVerifierClientProcess("client-ttl-in-cache", replay_file, http_ports=[ts.Variables.port])
 p.StartBefore(dns)
 p.StartBefore(server)

@@ -103,6 +103,17 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     records_config = ats_config.get('records_config', {})
     ts.Disk.records_config.update(records_config)
 
+    # Configure cache.yaml if specified.
+    cache_yaml = ats_config.get('cache_yaml')
+    if cache_yaml is not None:
+        ts.Disk.cache_yaml.AddLines(yaml.dump(cache_yaml, sort_keys=False).split('\n'))
+
+    # Configure legacy cache.config if specified.
+    cache_config = ats_config.get('cache_config')
+    if cache_config is not None:
+        ts.Disk.records_config.update({'proxy.config.cache.control.filename': 'cache.config'})
+        ts.Disk.cache_config.AddLines(cache_config)
+
     # TLS configs
     enable_tls = process_config.get('enable_tls', False)
     if enable_tls:
