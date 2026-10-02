@@ -869,42 +869,11 @@ keep_cached_etag_weak(TSHttpTxn txnp)
   }
 }
 
-static bool
-client_accepts_compression(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
-{
-  TSMLoc ae = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-
-  if (ae == TS_NULL_MLOC) {
-    return false;
-  }
-  ts::PostScript ae_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, ae); });
-
-  int const algorithms = hc->compression_algorithms();
-  int const nvalues    = TSMimeHdrFieldValuesCount(req_buf, req_loc, ae);
-
-  for (int i = 0; i < nvalues; i++) {
-    int         len;
-    const char *value = TSMimeHdrFieldValueStringGet(req_buf, req_loc, ae, i, &len);
-
-    if (value == nullptr) {
-      continue;
-    }
-    if ((strncasecmp(value, "zstd", sizeof("zstd") - 1) == 0 && (algorithms & ALGORITHM_ZSTD)) ||
-        (strncasecmp(value, "br", sizeof("br") - 1) == 0 && (algorithms & ALGORITHM_BROTLI)) ||
-        (strncasecmp(value, "deflate", sizeof("deflate") - 1) == 0 && (algorithms & ALGORITHM_DEFLATE)) ||
-        (strncasecmp(value, "gzip", sizeof("gzip") - 1) == 0 && (algorithms & ALGORITHM_GZIP))) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// No transform runs on a bodyless 304, so it goes out with whatever ETag the origin or the cached
-// identity copy has. A 304 must carry the ETag its 200 would (RFC 9110 15.4.5), so when the client
-// validated with the weak form of a strong 304 ETag, it holds a compressed copy: answer in kind.
+// No transform runs on a bodyless 304, so it goes out with the origin's or the cached identity
+// copy's strong ETag. A 304 must carry the ETag its 200 would (RFC 9110 15.4.5), and this
+// request's 200 would have been compressed, so weaken it to match.
 static void
-weaken_client_not_modified_etag(TSHttpTxn txnp, HostConfiguration *hc)
+weaken_client_not_modified_etag(TSHttpTxn txnp)
 {
   TSMBuffer resp_buf;
   TSMLoc    resp_loc;
@@ -914,60 +883,8 @@ weaken_client_not_modified_etag(TSHttpTxn txnp, HostConfiguration *hc)
   }
   ts::PostScript resp_defer([&]() -> void { TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc); });
 
-  if (TSHttpHdrStatusGet(resp_buf, resp_loc) != TS_HTTP_STATUS_NOT_MODIFIED) {
-    return;
-  }
-
-  TSMLoc resp_etag = TSMimeHdrFieldFind(resp_buf, resp_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
-
-  if (resp_etag == TS_NULL_MLOC) {
-    return;
-  }
-  ts::PostScript resp_etag_defer([&]() -> void { TSHandleMLocRelease(resp_buf, resp_loc, resp_etag); });
-
-  int              resp_len;
-  const char      *resp_str = TSMimeHdrFieldValueStringGet(resp_buf, resp_loc, resp_etag, -1, &resp_len);
-  std::string_view resp_value{resp_str, static_cast<size_t>(resp_len)};
-
-  if (resp_value.starts_with("W/") || resp_value.starts_with("w/")) {
-    return;
-  }
-
-  TSMBuffer req_buf;
-  TSMLoc    req_loc;
-
-  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
-    return;
-  }
-  ts::PostScript req_defer([&]() -> void { TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc); });
-
-  if (!client_accepts_compression(req_buf, req_loc, hc)) {
-    return;
-  }
-
-  TSMLoc inm = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_IF_NONE_MATCH, TS_MIME_LEN_IF_NONE_MATCH);
-
-  if (inm == TS_NULL_MLOC) {
-    return;
-  }
-  ts::PostScript inm_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, inm); });
-
-  int const nvalues = TSMimeHdrFieldValuesCount(req_buf, req_loc, inm);
-
-  for (int i = 0; i < nvalues; i++) {
-    int         len;
-    const char *str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, inm, i, &len);
-
-    if (str == nullptr) {
-      continue;
-    }
-
-    std::string_view tag{str, static_cast<size_t>(len)};
-
-    if (tag.starts_with("W/") && tag.substr(2) == resp_value) {
-      TSMimeHdrFieldValueStringSet(resp_buf, resp_loc, resp_etag, -1, tag.data(), tag.size());
-      return;
-    }
+  if (TSHttpHdrStatusGet(resp_buf, resp_loc) == TS_HTTP_STATUS_NOT_MODIFIED) {
+    etag_header(resp_buf, resp_loc);
   }
 }
 
@@ -978,7 +895,7 @@ not_modified_etag_plugin(TSCont contp, TSEvent event, void *edata)
 
   switch (event) {
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    weaken_client_not_modified_etag(txnp, static_cast<HostConfiguration *>(TSContDataGet(contp)));
+    weaken_client_not_modified_etag(txnp);
     break;
 
   case TS_EVENT_HTTP_TXN_CLOSE:
@@ -992,6 +909,66 @@ not_modified_etag_plugin(TSCont contp, TSEvent event, void *edata)
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 
   return 0;
+}
+
+static void
+remove_field_with_dups(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len)
+{
+  TSMLoc field = TSMimeHdrFieldFind(bufp, hdr_loc, name, name_len);
+
+  while (field != TS_NULL_MLOC) {
+    TSMLoc next_dup = TSMimeHdrFieldNextDup(bufp, hdr_loc, field);
+
+    TSMimeHdrFieldDestroy(bufp, hdr_loc, field);
+    TSHandleMLocRelease(bufp, hdr_loc, field);
+    field = next_dup;
+  }
+}
+
+// With nothing stored, an origin 304 leaves no representation to tell whether this request's 200
+// would have been compressed. A weak validator likely came from a compressed copy, so fetch the 200
+// instead; ATS still answers the client's conditional from it, and the 304 is weakened if needed.
+static void
+unconditionalize_weak_validation(TSHttpTxn txnp)
+{
+  TSMBuffer cached_buf;
+  TSMLoc    cached_loc;
+
+  if (TS_SUCCESS == TSHttpTxnCachedRespGet(txnp, &cached_buf, &cached_loc)) {
+    TSHandleMLocRelease(cached_buf, TS_NULL_MLOC, cached_loc);
+    return;
+  }
+
+  TSMBuffer req_buf;
+  TSMLoc    req_loc;
+
+  if (TS_SUCCESS != TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc)) {
+    return;
+  }
+  ts::PostScript req_defer([&]() -> void { TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc); });
+
+  TSMLoc inm = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_IF_NONE_MATCH, TS_MIME_LEN_IF_NONE_MATCH);
+
+  if (inm == TS_NULL_MLOC) {
+    return;
+  }
+
+  bool      has_weak = false;
+  int const nvalues  = TSMimeHdrFieldValuesCount(req_buf, req_loc, inm);
+
+  for (int i = 0; i < nvalues && !has_weak; i++) {
+    int         len;
+    const char *str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, inm, i, &len);
+
+    has_weak = str != nullptr && std::string_view{str, static_cast<size_t>(len)}.starts_with("W/");
+  }
+  TSHandleMLocRelease(req_buf, req_loc, inm);
+
+  if (has_weak) {
+    debug("no stored response to judge a weak validator against, fetching unconditionally");
+    remove_field_with_dups(req_buf, req_loc, TS_MIME_FIELD_IF_NONE_MATCH, TS_MIME_LEN_IF_NONE_MATCH);
+    remove_field_with_dups(req_buf, req_loc, TS_MIME_FIELD_IF_MODIFIED_SINCE, TS_MIME_LEN_IF_MODIFIED_SINCE);
+  }
 }
 
 static void
@@ -1026,6 +1003,12 @@ handle_compression_and_vary(TSCont contp, TSHttpTxn txnp, bool server, HostConfi
   bool content_is_compressible;
   if (transformable(txnp, server, hc, compress_type, algorithms, &content_is_compressible)) {
     compress_transform_add(txnp, hc, *compress_type, *algorithms);
+
+    // The response may still go out as a bodyless 304 that the transform never sees.
+    TSCont etag_contp = TSContCreate(not_modified_etag_plugin, nullptr);
+
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, etag_contp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, etag_contp);
   }
 
   // Add Vary: Accept-Encoding for all compressible content to ensure proper HTTP caching
@@ -1099,6 +1082,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
           TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
         }
       }
+      unconditionalize_weak_validation(txnp);
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
     break;
@@ -1181,18 +1165,6 @@ handle_request(TSHttpTxn txnp, Configuration *config)
       handle_range_request(req_buf, req_loc, hc);
       TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
       TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, transform_contp); // To release the config
-
-      // Only a conditional request can draw a 304 whose ETag needs weakening.
-      if (TSMLoc inm = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_IF_NONE_MATCH, TS_MIME_LEN_IF_NONE_MATCH);
-          inm != TS_NULL_MLOC) {
-        TSHandleMLocRelease(req_buf, req_loc, inm);
-
-        TSCont etag_contp = TSContCreate(not_modified_etag_plugin, nullptr);
-
-        TSContDataSet(etag_contp, (void *)hc);
-        TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, etag_contp);
-        TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, etag_contp);
-      }
     }
     TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
   }

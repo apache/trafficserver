@@ -415,8 +415,9 @@ sessions:
         - [ ETag, { value: 'W/"p1"', as: equal } ]
 
   #############################################################################
-  # A request ATS won't cache keeps its conditional, so the origin's own 304
-  # (with its strong tag) must also go out weak.
+  # A request ATS won't cache would forward its conditional, but with nothing
+  # stored an origin 304 can't show whether the 200 would be compressed. The
+  # weak validator is dropped upstream and ATS answers from the 200 instead.
   #############################################################################
   - client-request:
       method: "GET"
@@ -428,20 +429,23 @@ sessions:
         - [ Accept-Encoding, gzip ]
         - [ Authorization, "Bearer token" ]
         - [ If-None-Match, 'W/"p1"' ]
-        - [ uuid, private-origin-304 ]
+        - [ uuid, private-forwarded-conditional ]
 
     proxy-request:
       headers:
         fields:
-        - [ If-None-Match, { value: 'W/"p1"', as: equal } ]
+        - [ If-None-Match, { as: absent } ]
 
     server-response:
-      status: 304
-      reason: Not Modified
+      status: 200
+      reason: OK
       headers:
         fields:
+        - [ Content-Type, text/plain ]
         - [ Cache-Control, "private, max-age=1" ]
         - [ ETag, '"p1"' ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
 
     proxy-response:
       status: 304
@@ -450,9 +454,41 @@ sessions:
         - [ ETag, { value: 'W/"p1"', as: equal } ]
 
   #############################################################################
-  # cache false stores the identity copy with the origin's strong tag. A
-  # compressed client's fresh conditional hit gets the weak tag; the stored
-  # copy and identity clients keep the strong one.
+  # A response the plugin wouldn't compress keeps the origin's strong tag on
+  # its 304, even when the client sends a weak validator.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private-image
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"i1"' ]
+        - [ uuid, private-image-conditional ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/png ]
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, '"i1"' ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"i1"', as: equal } ]
+
+  #############################################################################
+  # cache false stores the identity copy with the origin's strong tag. A fresh
+  # conditional hit from a client that would get the compressed 200 gets the
+  # weak tag, whichever form of the validator it sent.
   #############################################################################
   - client-request:
       method: "GET"
@@ -520,7 +556,7 @@ sessions:
       status: 304
       headers:
         fields:
-        - [ ETag, { value: '"c1"', as: equal } ]
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
 
   #############################################################################
   # A client that doesn't accept compression holds the identity copy, so its
