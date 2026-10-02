@@ -155,10 +155,6 @@ Related client-side tuning
 These settings can affect an HTTP/2 client workload during an origin rollout,
 but they are not requirements for negotiating HTTP/2 with origins:
 
-* :ts:cv:`proxy.config.http2.max_concurrent_streams_in` limits concurrent
-  streams from clients. Reducing it from 100 to 40 can help workloads with
-  many busy streams, at the cost of less concurrency per client connection.
-  It does not set the origin's limit on requests sent by |TS|.
 * :ts:cv:`proxy.config.http2.active_timeout_in` limits the lifetime of an
   incoming HTTP/2 connection even when it is active. Keep its default of
   ``0`` (disabled), or select a lifetime that accommodates long-lived active
