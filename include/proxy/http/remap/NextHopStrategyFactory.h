@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <sstream>
 #include <unordered_map>
@@ -50,6 +51,9 @@ public:
   // counted and attached to an HttpSM.
   NextHopSelectionStrategy *strategyInstance(const char *name) const;
 
+  // Pointer comparison only; safe to call with a dangling pointer.
+  bool contains(NextHopSelectionStrategy const *strategy) const;
+
   bool strategies_loaded;
 
 private:
@@ -57,4 +61,6 @@ private:
   void        loadConfigFile(const std::string &file, std::stringstream &doc, std::unordered_set<std::string> &include_once);
   void        createStrategy(const std::string &name, const NHPolicyType policy_type, ts::Yaml::Map &node);
   std::unordered_map<std::string, NextHopSelectionStrategy *> _strategies;
+  std::unordered_set<NextHopSelectionStrategy const *>        _strategy_ptrs;
+  mutable std::atomic<bool>                                   _not_loaded_logged{false};
 };

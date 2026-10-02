@@ -80,6 +80,23 @@ Matches with options now use the shared match configuration, including its
 ``Regex::exec(subject, matches, flags)`` must be recompiled, because the symbol
 that call resolved to is gone.
 
+The next hop strategy API added in 10.2 now uses the opaque
+:cpp:type:`TSStrategy` handle instead of ``void const *``, and two functions are
+renamed. Plugins built against 10.2 must be updated and rebuilt:
+
+* ``TSHttpTxnNextHopNamedStrategyGet`` is now :cpp:func:`TSHttpTxnNextHopStrategyFind`.
+* ``TSHttpNextHopStrategyNameGet`` is now :cpp:func:`TSNextHopStrategyNameGet`.
+* :cpp:func:`TSHttpTxnNextHopStrategySet` takes a :cpp:type:`TSStrategy`, and
+  :cpp:func:`TSHttpTxnNextHopStrategyGet` returns one.
+
+:cpp:func:`TSHttpTxnNextHopStrategySet` now normally rejects a handle that is
+not a strategy of the transaction's configuration, such as one cached across a
+configuration reload; the call is logged and has no effect. The check compares
+addresses, so plugins must still re-obtain handles after a reload. Remap plugins can
+resolve strategies once during ``TSRemapNewInstance`` with the new
+:cpp:func:`TSRemapNextHopStrategyFind`, :cpp:func:`TSRemapNextHopStrategyGet` and
+:cpp:func:`TSRemapNextHopStrategySet`.
+
 traffic_ctl Changes
 -------------------
 

@@ -38,6 +38,7 @@
 #include "tscore/List.h"
 
 class NextHopSelectionStrategy;
+class NextHopStrategyFactory;
 struct CacheHostRecord;
 
 /**
@@ -115,7 +116,13 @@ public:
   acl_filter_rule  *filter                   = nullptr; // acl filtering (linked list of rules)
   LINK(url_mapping, link);                              // For use with the main Queue linked list holding all the mapping
   NextHopSelectionStrategy      *strategy        = nullptr;
+  NextHopStrategyFactory        *strategyFactory = nullptr; // not owned, belongs to the UrlRewrite holding this rule
   std::atomic<CacheHostRecord *> volume_host_rec = nullptr;
+
+  // The rule whose plugins are loading on this thread. Accessors rather than a
+  // thread_local member so libtsapi never references TLS across the library boundary.
+  static url_mapping *loading_instance();
+  static void         set_loading_instance(url_mapping *um);
 
   CacheHostRecord *
   getVolumeHostRec() const
@@ -154,6 +161,23 @@ private:
   std::vector<RemapPluginInst *> _plugin_inst_list;
   int                            _rank = 0;
   std::string                    _volume_str;
+};
+
+/**
+ * Installs @a um as the thread's loading url_mapping, restoring the previous value on scope exit.
+ **/
+class UrlMappingInstanceScope
+{
+  url_mapping *_prev;
+
+public:
+  explicit UrlMappingInstanceScope(url_mapping *um) : _prev(url_mapping::loading_instance())
+  {
+    url_mapping::set_loading_instance(um);
+  }
+  ~UrlMappingInstanceScope() { url_mapping::set_loading_instance(_prev); }
+  UrlMappingInstanceScope(UrlMappingInstanceScope const &)            = delete;
+  UrlMappingInstanceScope &operator=(UrlMappingInstanceScope const &) = delete;
 };
 
 /**
