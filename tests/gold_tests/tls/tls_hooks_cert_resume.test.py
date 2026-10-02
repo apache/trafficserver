@@ -116,8 +116,9 @@ ssl_multicert:
         '''A pausing ClientHello hook, then a pausing cert hook that switches certificates.
 
         No servername hook is registered, so the cert hooks are the next ones after ClientHello.
-        The hook-selected certificate uses the default context so BoringSSL retains the
-        handshake callback and exercises the cert callback again after the pause.
+        An explicit nonmatching IP keeps foo from competing for the default context.
+        The hook-selected certificate is the only wildcard entry, retaining the handshake
+        callback so both TLS libraries retry the cert callback after the pause.
 
         :return: The Traffic Server Process.
         '''
@@ -129,7 +130,8 @@ ssl_multicert:
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
-  - ssl_cert_name: signed-foo.pem
+  - dest_ip: "192.0.2.1"
+    ssl_cert_name: signed-foo.pem
     ssl_key_name: signed-foo.key
   - dest_ip: "*"
     ssl_cert_name: signed-bar.pem
