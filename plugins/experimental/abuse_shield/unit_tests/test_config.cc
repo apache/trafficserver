@@ -78,7 +78,13 @@ private:
 std::string
 yaml_path(const std::filesystem::path &path)
 {
-  return "\"" + path.string() + "\"";
+  // Appending avoids a GCC 12 -Wrestrict false positive at -O3. operator+ triggers it even with a
+  // std::string on the left, as in std::string{"\""} + path.string() + "\"".
+  std::string quoted{"\""};
+
+  quoted += path.string();
+  quoted += '"';
+  return quoted;
 }
 
 } // namespace
