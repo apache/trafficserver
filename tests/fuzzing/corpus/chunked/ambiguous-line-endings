@@ -1,0 +1,7 @@
+77;x
+abcwxyz
+0
+
+GET /smuggled HTTP/1.1
+Host: example
+
