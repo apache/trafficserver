@@ -23,6 +23,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "swoc/TextView.h"
 
@@ -62,6 +63,16 @@ struct TransactionState {
   TSHttpSsn ssnp = nullptr;
 };
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+// Scratch URL that the cache-key operators edit within one handler invocation.
+//
+struct UrlKeyState {
+  TSMBuffer                bufp    = nullptr;
+  TSMLoc                   url_loc = nullptr;
+  std::vector<std::string> key_data;       // Segments appended to the path by finalize_key_ops()
+  bool                     active = false; // Set only by operators, so a read-only rule never commits
+};
 
 class Resources
 {
@@ -109,6 +120,16 @@ public:
     _extended_info.query_parsed = false;
   }
 
+  // Copy the base of the cache key into url_loc: the committed cache lookup URL if there is one,
+  // else the effective request URL.
+  bool copy_key_base(TSMBuffer bufp, TSMLoc url_loc) const;
+
+  // Copy-on-first-write: create the scratch cache URL from the key base. For operators only.
+  bool ensure_key_url() const;
+
+  // Append the key segments to the scratch URL's path, and commit it as the cache lookup URL.
+  void finalize_key_ops();
+
   TSCont              contp          = nullptr;
   TSRemapRequestInfo *_rri           = nullptr;
   TSMBuffer           bufp           = nullptr;
@@ -138,6 +159,7 @@ public:
   };
   bool                      changed_url = false;
   mutable LifetimeExtension _extended_info;
+  mutable UrlKeyState       cache_key;
 
 private:
   void

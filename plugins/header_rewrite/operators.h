@@ -160,6 +160,63 @@ private:
   UrlQualifiers _url_qual = URL_QUAL_NONE;
 };
 
+// The cache-key operators edit the scratch cache URL in Resources::cache_key, which
+// Resources::finalize_key_ops() commits after the rule loop.
+class OperatorSetKey : public Operator
+{
+public:
+  OperatorSetKey() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetKey"); }
+
+  // noncopyable
+  OperatorSetKey(const OperatorSetKey &) = delete;
+  void operator=(const OperatorSetKey &) = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+private:
+  UrlQualifiers _url_qual = URL_QUAL_NONE;
+  Value         _value;
+};
+
+class OperatorAddKey : public Operator
+{
+public:
+  OperatorAddKey() { Dbg(dbg_ctl, "Calling CTOR for OperatorAddKey"); }
+
+  // noncopyable
+  OperatorAddKey(const OperatorAddKey &) = delete;
+  void operator=(const OperatorAddKey &) = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+private:
+  Value _value;
+};
+
+class OperatorClearKey : public Operator
+{
+public:
+  OperatorClearKey() { Dbg(dbg_ctl, "Calling CTOR for OperatorClearKey"); }
+
+  // noncopyable
+  OperatorClearKey(const OperatorClearKey &) = delete;
+  void operator=(const OperatorClearKey &)   = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+};
+
 class OperatorSetRedirect : public Operator
 {
 public:

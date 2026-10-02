@@ -356,6 +356,29 @@ where the requested data was generated from. The cache values are:
   skipped     The cache lookup was skipped.
   ==========  ===========
 
+CACHE-URL
+~~~~~~~~~
+::
+
+    cond %{CACHE-URL:<part>} <operand>
+
+The URL that |TS| uses as the cache key, as it stands when the condition is
+evaluated. The ``<part>`` may be specified according to the options documented
+in `URL Parts`_. This condition is valid in every hook, and it never changes the
+cache key itself. It reads the first of these that exists:
+
+#. The cache URL that an earlier cache-key operator in the same hook edited.
+#. The cache key committed so far in the transaction, by this plugin or another.
+#. The request URL.
+
+From ``SEND_REQUEST_HDR_HOOK`` on, a cache key always exists, so the condition
+reads the final key. This is useful for logging or debugging a key::
+
+    cond %{SEND_RESPONSE_HDR_HOOK}
+        set-header X-Cache-Url "%{CACHE-URL:URL}"
+
+See `Cache Key`_ for the operators that modify it.
+
 CLIENT-HEADER
 ~~~~~~~~~~~~~
 ::
@@ -1058,6 +1081,18 @@ occurs first).
 
 The following operators are available:
 
+add-cache-key
+~~~~~~~~~~~~~
+::
+
+  add-cache-key <value>
+
+Appends ``<value>`` as a segment of the cache key. Segments are joined to the
+end of the cache URL's path when the hook's rules have all run, see
+`Key Format`_. The ``<value>`` may use `String concatenations`_, which are
+expanded when the rule runs. An empty value still adds a segment. Valid only in
+``REMAP_PSEUDO_HOOK`` and ``POST_REMAP_HOOK``; see `Cache Key`_.
+
 add-cookie
 ~~~~~~~~~~
 ::
@@ -1083,6 +1118,17 @@ only be specified once you may prefer to use `set-header`_ instead.
 The header's ``<value>`` may be specified as a literal string, or it may take
 advantage of `String concatenations`_ to calculate a dynamic value
 for the header.
+
+clear-cache-key
+~~~~~~~~~~~~~~~
+::
+
+  clear-cache-key
+
+Discards the segments that `add-cache-key`_ added earlier in the same hook.
+Changes made by `set-cache-key`_ remain, and so do segments that an earlier
+hook already committed. Valid only in ``REMAP_PSEUDO_HOOK`` and
+``POST_REMAP_HOOK``; see `Cache Key`_.
 
 counter
 ~~~~~~~
@@ -1252,6 +1298,24 @@ For example::
    cond %{REMAP_PSEUDO_HOOK}
       set-status 403
       set-body-from-file errors/forbidden.json "application/json"
+
+set-cache-key
+~~~~~~~~~~~~~
+::
+
+  set-cache-key <part> <value>
+
+Sets one component of the cache URL, the URL that |TS| uses as the cache key.
+The ``<part>`` is one of ``HOST``, ``PORT``, ``PATH``, ``QUERY``, or ``SCHEME``
+(see `URL Parts`_), and the ``<value>`` may use `String concatenations`_.
+Unlike `set-destination`_, an empty value is applied: it clears the component,
+and an empty ``PORT`` resets it to the scheme's default. This lets a rule
+build a key from scratch::
+
+  set-cache-key PATH ""
+  set-cache-key QUERY ""
+
+Valid only in ``REMAP_PSEUDO_HOOK`` and ``POST_REMAP_HOOK``; see `Cache Key`_.
 
 set-config
 ~~~~~~~~~~
@@ -1862,6 +1926,112 @@ evaluated and will adjust modifying request or response entities automatically:
 - `rm-header`_
 
 - `set-header`_
+
+Cache Key
+=========
+
+By default, |TS| looks up an object in the cache by its request URL after
+remapping. The `set-cache-key`_, `add-cache-key`_, and `clear-cache-key`_
+operators change that key, and the `CACHE-URL`_ condition reads it. They cover
+the common uses of the :ref:`admin-plugins-cachekey` plugin, and since they are
+ordinary operators, any condition can decide whether they run. For example, to
+cache a separate copy per language for one path only::
+
+  cond %{CLIENT-URL:PATH} /^docs\//
+    add-cache-key "%{CLIENT-HEADER:Accept-Language}"
+
+The cache-key operators are valid only in ``REMAP_PSEUDO_HOOK`` and
+``POST_REMAP_HOOK``, the hooks that run before the cache lookup. A
+configuration that uses them in any other hook fails to load.
+
+How Cache-Key Rules Run
+-----------------------
+
+The first cache-key operator to run in a hook copies the current key into a
+private cache URL. Each operator then edits that cache URL as it runs, so a
+later `CACHE-URL`_ condition sees the edits made before it. When every rule in
+the hook has run, the cache URL is committed as the transaction's cache key.
+
+- The key starts from the cache key committed so far, or from the request URL
+  if nothing has been committed yet. So rules in ``POST_REMAP_HOOK``, from the
+  same configuration or a global instance, build on the key that a remap rule
+  committed. By then the remap rule's segments are part of the path, so a
+  `clear-cache-key`_ in ``POST_REMAP_HOOK`` cannot remove them. A key that the
+  cachekey plugin committed is its path-only form, such as ``/host/80/path``.
+
+- Changes to the request URL reach the key only until the first cache-key
+  operator in the hook runs. A `set-destination`_ before it changes the key; one
+  after it changes only the request sent to the origin.
+
+- The key is committed only if a cache-key operator ran. A rule that only reads
+  `CACHE-URL`_ never changes the key.
+
+- The last commit wins. A plugin that later sets the key with
+  :func:`TSCacheUrlSet` fails, because that API refuses to replace an existing
+  key.
+
+Key Format
+----------
+
+Segments go at the end of the cache URL's path, before the query. Each segment
+is preceded by a ``/`` and is inserted as raw bytes, without any encoding:
+
+==================== ================= ==========================
+Cache URL            Segments          Cache key
+==================== ================= ==========================
+``http://h/p``       ``en``            ``http://h/p/en``
+``http://h/p?a=1``   ``en``, ``v2``    ``http://h/p/en/v2?a=1``
+``http://h/p/``      ``x``             ``http://h/p//x``
+``http://h/``        ``x``             ``http://h/x``
+``http://h/p``       (empty)           ``http://h/p/``
+==================== ================= ==========================
+
+Segments go before the query, rather than after the whole URL, because
+:ts:cv:`proxy.config.http.cache.ignore_query` drops the entire query from the
+cache key. A segment placed in the query would be dropped with it.
+
+Keep these consequences in mind when you design a key:
+
+- Segments can collide with real paths. ``/p`` with the segment ``en`` has the
+  same key as ``/p/en`` with no segment. The same goes for an empty path with an
+  empty segment, which has the same key as the unmodified URL ``http://h/``.
+
+- A segment that contains ``/``, such as a ``User-Agent`` of ``Mozilla/5.0``,
+  reads as two segments.
+
+- An empty value still adds a segment, so a segment's position always holds the
+  same input. A request without the header gets a different key from a request
+  that the rule did not apply to.
+
+Cache Key Interactions
+----------------------
+
+- When a plugin sets the cache key, |TS| does not apply
+  :ts:cv:`proxy.config.url_remap.pristine_host_hdr` to it. The key's host is the
+  cache URL's host, not the ``Host`` header. This applies to every cache-key
+  operator, including a `clear-cache-key`_ that changes nothing.
+
+- While following a redirect, |TS| looks up the redirect target's URL in the
+  cache, not this key, unless
+  :ts:cv:`proxy.config.http.redirect_use_orig_cache_key` is enabled.
+
+Compared to the cachekey Plugin
+-------------------------------
+
+Some cachekey plugin options have no equivalent here:
+
+- ``--separator``: segments are always separated by ``/``.
+- ``--ua-capture``, ``--ua-allowlist``, and ``--ua-denylist``.
+- ``--uri-type=pristine``: the key starts from the remapped URL. Use
+  `CLIENT-URL`_ to add parts of the pristine URL.
+- ``--remove-prefix``.
+- ``--include-match-params`` and ``--exclude-match-params``.
+
+The capture options, such as ``--capture-header`` and ``--capture-path``, are
+covered by a regular expression condition and `LAST-CAPTURE`_::
+
+  cond %{CLIENT-HEADER:User-Agent} /(Mobile|Tablet)/
+    add-cache-key "%{LAST-CAPTURE:1}"
 
 Caveats
 =======
