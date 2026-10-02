@@ -15,11 +15,22 @@
 #
 #######################
 
-add_atsplugin(stats_over_http stats_over_http.cc)
+add_atsplugin(stats_over_http stats_over_http.cc prometheus_render.cc prometheus_rules.cc)
 
-target_link_libraries(stats_over_http PRIVATE libswoc::libswoc)
+target_link_libraries(stats_over_http PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp)
 
 if(HAVE_BROTLI_ENCODE_H)
   target_link_libraries(stats_over_http PRIVATE brotli::brotlienc)
 endif()
 verify_global_plugin(stats_over_http)
+verify_remap_plugin(stats_over_http)
+
+if(BUILD_TESTING)
+  add_executable(
+    test_stats_over_http unit_tests/test_prometheus_render.cc unit_tests/test_prometheus_rules.cc prometheus_render.cc
+                         prometheus_rules.cc
+  )
+  target_include_directories(test_stats_over_http PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+  target_link_libraries(test_stats_over_http PRIVATE Catch2::Catch2WithMain ts::tsutil yaml-cpp::yaml-cpp)
+  add_catch2_test(NAME test_stats_over_http COMMAND test_stats_over_http)
+endif()
