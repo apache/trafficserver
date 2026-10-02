@@ -148,3 +148,6 @@ Stats over http also accepts returning data in gzip or br compressed format per 
 data in the specified encoding, for example:
 
 .. option:: Accept-encoding: gzip, br
+
+The plugin compresses gzip and deflate responses at zlib level 6, and br responses
+at brotli quality 6 with a 64 KiB window.
