@@ -25,4 +25,5 @@
 namespace rpc::handlers::hostdb
 {
 swoc::Rv<YAML::Node> get_hostdb_status(std::string_view const &id, YAML::Node const &);
+swoc::Rv<YAML::Node> clear_hostdb(std::string_view const &id, YAML::Node const &);
 } // namespace rpc::handlers::hostdb
