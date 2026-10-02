@@ -455,6 +455,7 @@ private:
   //     another CONTINUATION frame."
   Http2StreamId      continued_stream_id = 0;
   bool               fini_received       = false;
+  bool               _peer_goaway_drain  = false; ///< Outbound only: an origin's GOAWAY left streams to finish before close.
   bool               in_destroy          = false;
   int                recursion           = 0;
   int                _data_event_backoff = DATA_EVENT_BACKOFF_START;
