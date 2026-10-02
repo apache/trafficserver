@@ -116,6 +116,8 @@ ssl_multicert:
         '''A pausing ClientHello hook, then a pausing cert hook that switches certificates.
 
         No servername hook is registered, so the cert hooks are the next ones after ClientHello.
+        The hook-selected certificate uses the default context so BoringSSL retains the
+        handshake callback and exercises the cert callback again after the pause.
 
         :return: The Traffic Server Process.
         '''
@@ -129,11 +131,9 @@ ssl_multicert:
 ssl_multicert:
   - ssl_cert_name: signed-foo.pem
     ssl_key_name: signed-foo.key
-  - ssl_cert_name: signed-bar.pem
-    ssl_key_name: signed-bar.key
   - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
+    ssl_cert_name: signed-bar.pem
+    ssl_key_name: signed-bar.key
 """.split("\n"))
         ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             r"Client Hello callback 0 .* - event is good", "the ClientHello hook paused the handshake")
