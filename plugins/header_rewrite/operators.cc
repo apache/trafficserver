@@ -731,6 +731,112 @@ OperatorClearKey::exec(const Resources &res) const
   return true;
 }
 
+// OperatorRMKey
+void
+OperatorRMKey::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
+  if (_url_qual != URL_QUAL_QUERY && _url_qual != URL_QUAL_PATH) {
+    throw std::runtime_error("rm-cache-key accepts QUERY or PATH, got: " + p.get_arg());
+  }
+
+  _names = p.get_value();
+  if (!_names.empty()) {
+    if (_url_qual != URL_QUAL_QUERY) {
+      throw std::runtime_error("rm-cache-key accepts a list of names only for QUERY");
+    }
+    _keep      = get_oper_modifiers() & OPER_INV;
+    _name_list = _tokenize(_names, ',');
+  }
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorRMKey::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
+}
+
+bool
+OperatorRMKey::exec(const Resources &res) const
+{
+  if (!res.ensure_key_url()) {
+    Dbg(pi_dbg_ctl, "OperatorRMKey::exec() unable to create the cache URL");
+    return true;
+  }
+
+  UrlKeyState &key = res.cache_key;
+
+  if (_url_qual == URL_QUAL_PATH) {
+    TSUrlPathSet(key.bufp, key.url_loc, "", 0);
+    Dbg(pi_dbg_ctl, "OperatorRMKey::exec() deleting PATH");
+  } else {
+    std::string query;
+
+    if (!_name_list.empty()) {
+      int         q_len = 0;
+      const char *q_ptr = TSUrlHttpQueryGet(key.bufp, key.url_loc, &q_len);
+
+      if (q_len > 0) {
+        query = filter_query({q_ptr, static_cast<size_t>(q_len)}, _name_list, _keep);
+      }
+    }
+    TSUrlHttpQuerySet(key.bufp, key.url_loc, query.data(), query.size());
+    Dbg(pi_dbg_ctl, "OperatorRMKey::exec() rewrote QUERY to \"%s\"", query.c_str());
+  }
+
+  key.active = true;
+  return true;
+}
+
+// OperatorSortKey
+void
+OperatorSortKey::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  if (parse_url_qualifier(p.get_arg()) != URL_QUAL_QUERY) {
+    throw std::runtime_error("sort-cache-key accepts only QUERY, got: " + p.get_arg());
+  }
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorSortKey::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
+}
+
+bool
+OperatorSortKey::exec(const Resources &res) const
+{
+  if (!res.ensure_key_url()) {
+    Dbg(pi_dbg_ctl, "OperatorSortKey::exec() unable to create the cache URL");
+    return true;
+  }
+
+  UrlKeyState     &key   = res.cache_key;
+  int              q_len = 0;
+  const char      *q_ptr = TSUrlHttpQueryGet(key.bufp, key.url_loc, &q_len);
+  std::string_view query = q_len > 0 ? std::string_view(q_ptr, static_cast<size_t>(q_len)) : std::string_view();
+
+  if (!is_query_sorted(query)) {
+    std::string sorted = sort_query(query);
+
+    TSUrlHttpQuerySet(key.bufp, key.url_loc, sorted.data(), sorted.size());
+    Dbg(pi_dbg_ctl, "OperatorSortKey::exec() rewrote QUERY to \"%s\"", sorted.c_str());
+  }
+
+  key.active = true;
+  return true;
+}
+
 // OperatorSetRedirect
 void
 OperatorSetRedirect::initialize(Parser &p)

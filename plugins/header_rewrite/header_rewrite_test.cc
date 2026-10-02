@@ -534,6 +534,38 @@ test_parsing()
     END_TEST();
   }
 
+  {
+    ParserTest p("rm-cache-key QUERY");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "rm-cache-key");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(rm-cache-key QUERY "a,b" [I])");
+
+    CHECK_EQ(p.getTokens().size(), 4UL);
+    CHECK_EQ(p.getTokens()[0], "rm-cache-key");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+    CHECK_EQ(p.getTokens()[2], "a,b");
+    CHECK_EQ(p.getTokens()[3], "[I]");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p("sort-cache-key QUERY");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "sort-cache-key");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+
+    END_TEST();
+  }
+
   return errors;
 }
 

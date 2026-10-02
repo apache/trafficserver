@@ -57,6 +57,10 @@ operator_factory(const std::string &op)
     o = new OperatorAddKey();
   } else if (op == "clear-cache-key") {
     o = new OperatorClearKey();
+  } else if (op == "rm-cache-key") {
+    o = new OperatorRMKey();
+  } else if (op == "sort-cache-key") {
+    o = new OperatorSortKey();
   } else if (op == "set-redirect") {
     o = new OperatorSetRedirect();
   } else if (op == "timeout-out") {

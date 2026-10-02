@@ -1180,6 +1180,25 @@ no-op
 
 This operator does nothing, takes no arguments, and has no side effects.
 
+rm-cache-key
+~~~~~~~~~~~~
+::
+
+  rm-cache-key QUERY [<names>] [I]
+  rm-cache-key PATH
+
+Removes a component of the cache URL, the URL that |TS| uses as the cache key.
+The request sent to the origin is unchanged. ``rm-cache-key PATH`` clears the
+path. ``rm-cache-key QUERY`` clears the query, or with a comma-separated list
+of ``<names>``, removes only those parameters. With the ``[I]`` modifier, it
+keeps only those parameters instead. The remaining parameters keep their order,
+and empty parameters are dropped. For example, to cache tracking variants of a
+page as one object::
+
+  rm-cache-key QUERY "utm_source,utm_medium,utm_campaign"
+
+Valid only in ``REMAP_PSEUDO_HOOK`` and ``POST_REMAP_HOOK``; see `Cache Key`_.
+
 rm-destination
 ~~~~~~~~~~~~~~
 ::
@@ -1534,6 +1553,21 @@ the operator will effectively be a no-op.
 .. note::
     This operator is deprecated, use the `set-http-cntl`_ operator instead,
     with the ``SKIP_REMAP`` control.
+
+sort-cache-key
+~~~~~~~~~~~~~~
+::
+
+  sort-cache-key QUERY
+
+Sorts the query parameters of the cache URL by name, so that the same
+parameters in a different order share a cache key. The request sent to the
+origin is unchanged. As with `sort-destination`_, the sort is stable,
+parameters with the same name all remain in their original relative order,
+and empty parameters are dropped. Unlike the cachekey plugin, duplicate
+parameters are not merged, because an origin may treat ``a=1`` and
+``a=1&a=1`` differently. Valid only in ``REMAP_PSEUDO_HOOK`` and
+``POST_REMAP_HOOK``; see `Cache Key`_.
 
 sort-destination
 ~~~~~~~~~~~~~~~~
@@ -1935,8 +1969,9 @@ Cache Key
 =========
 
 By default, |TS| looks up an object in the cache by its request URL after
-remapping. The `set-cache-key`_, `add-cache-key`_, and `clear-cache-key`_
-operators change that key, and the `CACHE-URL`_ condition reads it. They cover
+remapping. The `set-cache-key`_, `rm-cache-key`_, `sort-cache-key`_,
+`add-cache-key`_, and `clear-cache-key`_ operators change that key, and the
+`CACHE-URL`_ condition reads it. They cover
 the common uses of the :ref:`admin-plugins-cachekey` plugin, and since they are
 ordinary operators, any condition can decide whether they run. For example, to
 cache a separate copy per language for one path only::

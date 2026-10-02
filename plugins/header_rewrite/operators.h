@@ -217,6 +217,44 @@ protected:
   bool exec(const Resources &res) const override;
 };
 
+class OperatorRMKey : public Operator
+{
+public:
+  OperatorRMKey() { Dbg(dbg_ctl, "Calling CTOR for OperatorRMKey"); }
+
+  // noncopyable
+  OperatorRMKey(const OperatorRMKey &)  = delete;
+  void operator=(const OperatorRMKey &) = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+private:
+  UrlQualifiers                 _url_qual = URL_QUAL_NONE;
+  bool                          _keep     = false;
+  std::string                   _names;
+  std::vector<std::string_view> _name_list; // Views into _names
+};
+
+class OperatorSortKey : public Operator
+{
+public:
+  OperatorSortKey() { Dbg(dbg_ctl, "Calling CTOR for OperatorSortKey"); }
+
+  // noncopyable
+  OperatorSortKey(const OperatorSortKey &) = delete;
+  void operator=(const OperatorSortKey &)  = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+};
+
 class OperatorSetRedirect : public Operator
 {
 public:

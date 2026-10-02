@@ -150,6 +150,27 @@ autest:
             args:
               - "rules/cache_key_ignore_query.conf"
 
+      - from: "http://rm.ex/"
+        to: "http://backend.ex/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/cache_key_rm.conf"
+
+      - from: "http://utm.ex/"
+        to: "http://backend.ex/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/cache_key_utm.conf"
+
+      - from: "http://sort.ex/"
+        to: "http://backend.ex/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/cache_key_sort.conf"
+
 sessions:
 - transactions:
 
@@ -1029,3 +1050,245 @@ sessions:
         fields:
         - [ X-Cache-Key, { value: "http://backend.ex/iq/fr?a=3", as: equal } ]
         - [ X-Cache, { value: "miss", as: equal } ]
+
+  ##############################################################################
+  # rm-cache-key QUERY removes the whole query from the key, not from the request.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/rm-all?a=1&b=2"
+      headers:
+        fields:
+        - [ Host, rm.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "rm.ex-/rm-all?a=1&b=2" ]
+        - [ X-Case, "all" ]
+
+    proxy-request:
+      url:
+      - [ query, { value: "a=1&b=2", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/rm-all", as: equal } ]
+
+  ##############################################################################
+  # rm-cache-key QUERY with names removes those params and drops empty ones.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/rm-names?a=1&utm_source=x&&b=2"
+      headers:
+        fields:
+        - [ Host, rm.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "rm.ex-/rm-names?a=1&utm_source=x&&b=2" ]
+        - [ X-Case, "names" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/rm-names?a=1&b=2", as: equal } ]
+
+  ##############################################################################
+  # rm-cache-key QUERY with [I] keeps only the named params.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/rm-keep?b=2&a=1&c=3"
+      headers:
+        fields:
+        - [ Host, rm.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "rm.ex-/rm-keep?b=2&a=1&c=3" ]
+        - [ X-Case, "keep" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/rm-keep?a=1", as: equal } ]
+
+  ##############################################################################
+  # rm-cache-key PATH clears the path; segments still follow it.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/rm-path/x?a=1"
+      headers:
+        fields:
+        - [ Host, rm.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "rm.ex-/rm-path/x?a=1" ]
+        - [ X-Case, "path" ]
+
+    proxy-request:
+      url:
+      - [ path, { value: "/rm-path/x", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/en?a=1", as: equal } ]
+
+  ##############################################################################
+  # Requests that differ only in tracking params share a key: the first misses...
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/utm?id=1&utm_source=a"
+      headers:
+        fields:
+        - [ Host, utm.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "utm-miss" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/utm?id=1", as: equal } ]
+        - [ X-Cache, { value: "miss", as: equal } ]
+
+  ##############################################################################
+  # ...and the second hits.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/utm?utm_campaign=z&id=1"
+      headers:
+        fields:
+        - [ Host, utm.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "utm-hit" ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/utm?id=1", as: equal } ]
+        - [ X-Cache, { value: "hit-fresh", as: equal } ]
+
+  ##############################################################################
+  # sort-cache-key QUERY sorts the key, not the request: the first misses...
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/sort?b=2&a=1"
+      headers:
+        fields:
+        - [ Host, sort.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "sort-miss" ]
+
+    proxy-request:
+      url:
+      - [ query, { value: "b=2&a=1", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/sort/en?a=1&b=2", as: equal } ]
+        - [ X-Cache, { value: "miss", as: equal } ]
+
+  ##############################################################################
+  # ...and the same params in another order hit.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/sort?a=1&b=2"
+      headers:
+        fields:
+        - [ Host, sort.ex ]
+        - [ X-Debug, "x-cache-key,x-cache" ]
+        - [ uuid, "sort-hit" ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, "max-age=300" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache-Key, { value: "http://backend.ex/sort/en?a=1&b=2", as: equal } ]
+        - [ X-Cache, { value: "hit-fresh", as: equal } ]

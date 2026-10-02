@@ -19,7 +19,7 @@ Verify header_rewrite rejects invalid cache-key configurations during startup.
 
 Test.Summary = '''
 header_rewrite must reject cache-key operators on hooks that run after the
-cache lookup, and set-cache-key components it can't set.
+cache lookup, and URL components that an operator can't change.
 '''
 
 Test.SkipUnless(Condition.PluginExists('header_rewrite.so'))
@@ -56,6 +56,8 @@ class TestBadCacheKey:
             ('set-key-send-response', 'SEND_RESPONSE_HDR_HOOK', 'set-cache-key HOST k.ex', r'set-cache-key\(HOST\)'),
             ('add-key-send-request', 'SEND_REQUEST_HDR_HOOK', 'add-cache-key x', r'add-cache-key\(x\)'),
             ('clear-key-read-response', 'READ_RESPONSE_HDR_HOOK', 'clear-cache-key', r'clear-cache-key\(\)'),
+            ('rm-key-send-response', 'SEND_RESPONSE_HDR_HOOK', 'rm-cache-key QUERY', r'rm-cache-key\(QUERY\)'),
+            ('sort-key-send-request', 'SEND_REQUEST_HDR_HOOK', 'sort-cache-key QUERY', r'sort-cache-key\(QUERY\)'),
         ]:
             self._configure_failure(
                 name,
@@ -67,6 +69,21 @@ class TestBadCacheKey:
             'set-key-url',
             ['set-cache-key URL http://k.ex/'],
             'set-cache-key accepts HOST, PORT, PATH, QUERY, or SCHEME, got: URL',
+        )
+        self._configure_failure(
+            'rm-key-host',
+            ['rm-cache-key HOST'],
+            'rm-cache-key accepts QUERY or PATH, got: HOST',
+        )
+        self._configure_failure(
+            'rm-key-path-names',
+            ['rm-cache-key PATH a,b'],
+            'rm-cache-key accepts a list of names only for QUERY',
+        )
+        self._configure_failure(
+            'sort-key-path',
+            ['sort-cache-key PATH'],
+            'sort-cache-key accepts only QUERY, got: PATH',
         )
 
 
