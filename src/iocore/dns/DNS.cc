@@ -647,8 +647,27 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
   this->validate_ip();
 
   SET_HANDLER(&DNSHandler::mainEvent);
-  open_cons(nullptr, false, 0);
-  n_con = 1;
+  if (dns_ns_rr) {
+    // Split DNS uses the same resolver state and nameserver semantics as the
+    // default DNS handler. Establish a connection for every configured server
+    // so round-robin failure handling can move requests to a healthy server.
+    int max_nscount = m_res->nscount;
+    if (max_nscount > MAX_NAMED) {
+      max_nscount = MAX_NAMED;
+    }
+    n_con = 0;
+    for (int i = 0; i < max_nscount; i++) {
+      sockaddr *sa = &m_res->nsaddr_list[i].sa;
+      if (ats_is_ip(sa)) {
+        open_cons(sa, false, n_con);
+        ++n_con;
+      }
+    }
+    dns_ns_rr_init_down = 0;
+  } else {
+    open_cons(nullptr, false, 0);
+    n_con = 1;
+  }
 
   return EVENT_CONT;
 }
