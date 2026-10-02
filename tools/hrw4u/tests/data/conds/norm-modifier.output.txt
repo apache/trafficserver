@@ -1,0 +1,7 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} /private-/ [NORM]
+    set-status 403
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} ="PRIVATE-" [NOCASE,MID,NORM]
+    set-header X-Private "yes"

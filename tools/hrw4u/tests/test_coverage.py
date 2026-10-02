@@ -278,6 +278,26 @@ class TestInverseSymbolResolver:
         r = self._resolver()
         assert r.negate_expression('foo != "bar"') == 'foo != "bar"'
 
+    def test_percent_mods_become_with_clause(self):
+        r = self._resolver()
+        assert r.percent_to_ident_or_func("%{CLIENT-URL:PATH [NORM]}", None) == ("inbound.url.path with NORM", False)
+
+    def test_percent_mods_kept_on_unmapped_block(self):
+        r = self._resolver()
+        assert r.percent_to_ident_or_func("%{READ_RESPONSE_HDR_HOOK [NORM]}", None) == ("%{READ_RESPONSE_HDR_HOOK [NORM]}", False)
+
+    def test_percent_mods_on_var_assignment_become_interpolation(self):
+        from hrw4u.states import OperatorState
+
+        r = self._resolver()
+        value = "%{CLIENT-URL:PATH [NORM]}"
+        state_stmt = r.op_to_hrw4u("set-state-int8", ["0", value], None, OperatorState())
+        session_stmt = r.op_to_hrw4u("set-session-int16", ["0", value], None, OperatorState())
+
+        assert state_stmt == 'int8_0 = "{inbound.url.path with NORM}"'
+        assert session_stmt == 'ssn_int16_0 = "{inbound.url.path with NORM}"'
+        assert r.op_to_hrw4u("set-state-int8", ["1", "%{STATE-INT8:0}"], None, OperatorState()) == "int8_1 = int8_0"
+
     def test_negate_regex(self):
         r = self._resolver()
         assert r.negate_expression("x ~ /pat/") == "x !~ /pat/"
