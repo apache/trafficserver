@@ -18,7 +18,7 @@
 
 .. default-domain:: cpp
 
-TSHttpNextHopStrategyNameGet
+TSHttpTxnNextHopStrategyFind
 ****************************
 
 Synopsis
@@ -28,13 +28,23 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: char const* TSHttpNextHopStrategyNameGet(void const* strategy)
+.. function:: TSStrategy TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name)
 
 Description
 ===========
 
-Gets the name associated with the provided strategy.
-This may be nullptr indicating that parent.config is in use.
+Gets a pointer to the specified :arg:`name` NextHopSelectionStrategy.
+This may be nullptr indicating that no strategy exists with the given
+name, or that no rewrite table or strategy factory existed when the
+transaction started.
+
+This function uses the transaction :arg:`txnp` to get access to the
+NextHopStrategyFactory associated with the current configuration.
+
+.. note::
+
+   :arg:`name` must not be ``nullptr``. Passing a null name is an API
+   violation and will abort the process in default builds.
 
 .. note::
 
@@ -46,4 +56,4 @@ This may be nullptr indicating that parent.config is in use.
 See Also
 ========
 
-:func:`TSHttpTxnNextHopStrategyGet`
+:func:`TSHttpTxnNextHopStrategySet`
