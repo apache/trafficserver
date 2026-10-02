@@ -92,6 +92,7 @@ public:
   void           update_write_request(bool send_update);
 
   void                  signal_read_event(int event);
+  void                  signal_final_read_event(int event);
   static constexpr auto CALL_UPDATE = true;
   void                  signal_write_event(int event, bool call_update = CALL_UPDATE);
 
@@ -246,7 +247,11 @@ private:
 #endif
   VIO  read_vio;
   VIO  write_vio;
-  bool _read_event_paused = false; ///< The read VIO is intentionally gated by a zero-byte read.
+  bool _read_event_paused   = false;         ///< The read VIO is intentionally gated by a zero-byte read.
+  int  _deferred_read_event = VC_EVENT_NONE; ///< A final read event that arrived while the consumer had the read VIO disabled.
+
+  bool        _is_read_gated() const;
+  static bool _is_final_read_event(int event);
 
   History<HISTORY_DEFAULT_SIZE>                                                           _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
@@ -524,10 +529,23 @@ Http2Stream::read_vio_writer() const
   return this->read_vio.get_writer();
 }
 
+/** Whether @a event ends the read side, so it must go through signal_final_read_event() rather than be dropped. */
+inline bool
+Http2Stream::_is_final_read_event(int event)
+{
+  return event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_EOS;
+}
+
+inline bool
+Http2Stream::_is_read_gated() const
+{
+  return this->_read_event_paused || this->read_vio.nbytes == 0;
+}
+
 inline bool
 Http2Stream::is_read_enabled() const
 {
-  return !this->_read_event_paused && this->read_vio.nbytes != 0 && !this->read_vio.is_disabled();
+  return !this->_is_read_gated() && !this->read_vio.is_disabled();
 }
 
 inline void
