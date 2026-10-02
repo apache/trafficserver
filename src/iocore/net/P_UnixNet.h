@@ -125,6 +125,16 @@ check_net_throttle(ThrottleType t)
   return false;
 }
 
+/// Whether to refuse an accepted connection. An exempt connection is still refused while memory use is over the limit.
+TS_INLINE bool
+check_net_accept_throttle(bool exempt)
+{
+  if (exempt) {
+    return net_memory_throttle.load(std::memory_order_relaxed);
+  }
+  return check_net_throttle(ACCEPT);
+}
+
 TS_INLINE void
 check_throttle_warning(ThrottleType type)
 {

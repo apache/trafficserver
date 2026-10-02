@@ -530,6 +530,9 @@ Network
    handled. This should be tuned according to your memory size, and expected
    work load.  If this is set to 0, the throttling logic is disabled.
 
+   See :ts:cv:`proxy.config.http.per_client.connection.exempt_list` for a way to
+   accept client connections from some addresses when |TS| is at this limit.
+
 .. ts:cv:: CONFIG proxy.config.net.max_connections_in INT 30000
 
    The total number of client requests that |TS| can handle simultaneously.
@@ -565,6 +568,20 @@ Network
    for example, to allow any number of incoming connections from within
    an organization's network without blocking them due to the per client
    connection max feature.
+
+   |TS| also accepts connections from these addresses when it is at
+   :ts:cv:`proxy.config.net.connections_throttle`. These connections still
+   count in :ts:stat:`proxy.process.net.connections_currently_open`, so they
+   take up room under that limit for other clients. A network in this list
+   that opens many connections can take |TS| past the limit and use up the
+   file descriptors that the limit protects.
+   :ts:stat:`proxy.process.net.per_client.connections_exempt_currently_open`
+   shows how many of the open connections are from addresses in this list.
+
+   While memory use is more than :ts:cv:`proxy.config.memory.max_usage`, |TS|
+   refuses new client connections from all addresses, including the addresses
+   in this list. |TS| compares the list with the peer address of the socket,
+   not with an address from a PROXY protocol header.
 
    This configuration is reloadable via :program:`traffic_ctl config reload`.
 

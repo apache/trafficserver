@@ -1062,6 +1062,9 @@ SSLNetVConnection::free_thread(EThread *t)
   if (con.sock.is_ok()) {
     release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
+    if (is_client_exempt()) {
+      Metrics::Gauge::decrement(net_rsb.per_client_connections_exempt_currently_open);
+    }
   }
   con.close();
 
@@ -2192,6 +2195,10 @@ SSLNetVConnection::_migrateFromSSL()
   // Create new VC:
   UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(unix_netProcessor.allocate_vc(t));
   ink_assert(newvc != nullptr);
+  if (newvc != nullptr) {
+    // Before populate() gives the socket to the new VC, which updates the exempt gauge when it is freed.
+    newvc->set_client_exempt(is_client_exempt());
+  }
   if (newvc != nullptr && newvc->populate(hold_con, this->read.vio.cont, nullptr) != EVENT_DONE) {
     newvc->do_io_close();
     Dbg(dbg_ctl_ssl, "Failed to populate unixvc for allow-plain");
