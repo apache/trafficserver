@@ -485,6 +485,72 @@ sessions:
         - [ ETag, { value: 'W/"w1"', as: equal } ]
 
   #############################################################################
+  # A client that can't be sent a compressed 200 (no Accept-Encoding, or only
+  # an encoding this remap doesn't use) holds an identity copy, so the origin's
+  # strong tag stands even if the client's validator is weak.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, identity-forwarded-conditional ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: 'W/"p1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, '"p1"' ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"p1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, br ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, unsupported-encoding-forwarded-conditional ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: 'W/"p1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, '"p1"' ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"p1"', as: equal } ]
+
+  #############################################################################
   # Preconditions on unsafe methods reach the origin untouched, so a matching
   # If-None-Match still prevents the operation.
   #############################################################################

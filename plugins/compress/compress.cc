@@ -911,11 +911,39 @@ not_modified_etag_plugin(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
+// handle_request() has already normalized Accept-Encoding to bare tokens.
+static bool
+accepts_configured_encoding(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
+{
+  TSMLoc ae = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+
+  if (ae == TS_NULL_MLOC) {
+    return false;
+  }
+  ts::PostScript ae_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, ae); });
+
+  int const algorithms = hc->compression_algorithms();
+  int const nvalues    = TSMimeHdrFieldValuesCount(req_buf, req_loc, ae);
+
+  for (int i = 0; i < nvalues; i++) {
+    int              len;
+    const char      *str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, ae, i, &len);
+    std::string_view token{str, str != nullptr ? static_cast<size_t>(len) : 0};
+
+    if ((token == "zstd" && (algorithms & ALGORITHM_ZSTD)) || (token == "br" && (algorithms & ALGORITHM_BROTLI)) ||
+        (token == "gzip" && (algorithms & ALGORITHM_GZIP)) || (token == "deflate" && (algorithms & ALGORITHM_DEFLATE))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // With nothing stored, an origin 304 leaves no representation to tell whether this request's 200
-// would have been compressed. A client validating with the weak form of the origin's strong ETag
-// can only hold a copy this plugin weakened, so answer with the tag it was given.
+// would have been compressed. A client that accepts compression and validates with the weak form of
+// the origin's strong ETag can only hold a copy this plugin weakened, so answer with the tag it has.
 static void
-weaken_unjudged_origin_not_modified(TSHttpTxn txnp)
+weaken_unjudged_origin_not_modified(TSHttpTxn txnp, HostConfiguration *hc)
 {
   TSMBuffer srv_buf;
   TSMLoc    srv_loc;
@@ -950,6 +978,10 @@ weaken_unjudged_origin_not_modified(TSHttpTxn txnp)
 
   if (!((method_len == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
         (method_len == TS_HTTP_LEN_HEAD && memcmp(method, TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD) == 0))) {
+    return;
+  }
+
+  if (!accepts_configured_encoding(req_buf, req_loc, hc)) {
     return;
   }
 
@@ -1089,7 +1121,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       }
 
       keep_cached_etag_weak(txnp);
-      weaken_unjudged_origin_not_modified(txnp);
+      weaken_unjudged_origin_not_modified(txnp, hc);
       handle_compression_and_vary(contp, txnp, true, hc, &compress_type, &algorithms);
     }
     break;
