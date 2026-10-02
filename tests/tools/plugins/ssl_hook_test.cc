@@ -31,12 +31,14 @@
 #include <openssl/ssl.h>
 #include <strings.h>
 #include <cstring>
+#include <string>
 
 #define PN  "ssl_hook_test"
 #define PCP "[" PN " Plugin] "
 
-static DbgCtl dbg_ctl{PN};
-static bool   was_conn_closed;
+static DbgCtl      dbg_ctl{PN};
+static bool        was_conn_closed;
+static std::string cert_switch_name;
 
 int
 ReenableSSL(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
@@ -48,6 +50,30 @@ ReenableSSL(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNU
 
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(TSContDataGet(cont));
   Dbg(dbg_ctl, "Callback reenable ssl_vc=%p", ssl_vc);
+  TSVConnReenable(ssl_vc);
+  TSContDestroy(cont);
+  return TS_SUCCESS;
+}
+
+// Like ReenableSSL, but first switch the connection to the certificate configured for
+// cert_switch_name, as a plugin selecting certificates asynchronously would.
+int
+SwitchCertAndReenableSSL(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  if (was_conn_closed) {
+    TSContDestroy(cont);
+    return TS_SUCCESS;
+  }
+
+  TSVConn      ssl_vc = reinterpret_cast<TSVConn>(TSContDataGet(cont));
+  TSSslContext ctx    = TSSslContextFindByName(cert_switch_name.c_str());
+  if (ctx != nullptr) {
+    SSL *ssl = reinterpret_cast<SSL *>(TSVConnSslConnectionGet(ssl_vc));
+    SSL_set_SSL_CTX(ssl, reinterpret_cast<SSL_CTX *>(ctx));
+    Dbg(dbg_ctl, "Switched ssl_vc=%p to the %s certificate", ssl_vc, cert_switch_name.c_str());
+  } else {
+    TSError(PCP "no certificate is configured for %s", cert_switch_name.c_str());
+  }
   TSVConnReenable(ssl_vc);
   TSContDestroy(cont);
   return TS_SUCCESS;
@@ -203,28 +229,28 @@ CB_SNI(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 }
 
 int
-CB_Cert_Immediate(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
+CB_Cert_Immediate(TSCont cont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  Dbg(dbg_ctl, "Cert callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Cert callback %d ssl_vc=%p - event is %s", count, ssl_vc, event == TS_EVENT_SSL_CERT ? "good" : "bad");
 
   TSVConnReenable(ssl_vc);
   return TS_SUCCESS;
 }
 
 int
-CB_Cert(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
+CB_Cert(TSCont cont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  Dbg(dbg_ctl, "Cert callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Cert callback %d ssl_vc=%p - event is %s", count, ssl_vc, event == TS_EVENT_SSL_CERT ? "good" : "bad");
 
-  TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
+  TSCont cb = TSContCreate(cert_switch_name.empty() ? &ReenableSSL : &SwitchCertAndReenableSSL, TSMutexCreate());
 
   TSContDataSet(cb, ssl_vc);
 
@@ -266,6 +292,8 @@ parse_callbacks(int argc, const char *argv[], int &preaccept_count, int &client_
             client_hello_count_immediate = atoi(ptr + 1);
           } else if (strncmp(argv[i] + 1, "client_hello", strlen("client_hello")) == 0) {
             client_hello_count = atoi(ptr + 1);
+          } else if (strncmp(argv[i] + 1, "cert_switch", strlen("cert_switch")) == 0) {
+            cert_switch_name = ptr + 1;
           } else {
             cert_count = atoi(ptr + 1);
           }

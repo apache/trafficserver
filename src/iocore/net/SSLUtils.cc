@@ -284,21 +284,27 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 
   if (tcss) {
     if (tes) {
-      // Do the common certificate lookup only once.  If we pause
-      // and restart processing, do not execute the common logic again
-      if (!tes->calledHooks(TS_EVENT_SSL_CERT)) {
-        retval = tcss->selectCertificate(ssl, ctxType);
-        if (retval != 1) {
-          return retval;
+      // The TLS library calls back again once a paused cert hook reenables, by which time
+      // certificate selection and the cert hooks have run. Selecting again would replace a
+      // context the hook chose, and dispatching from this state would hand the verify-client
+      // hooks TS_EVENT_SSL_CERT.
+      if (!tes->finished_cert_hooks()) {
+        // Do the common certificate lookup only once.  If we pause
+        // and restart processing, do not execute the common logic again
+        if (!tes->calledHooks(TS_EVENT_SSL_CERT)) {
+          retval = tcss->selectCertificate(ssl, ctxType);
+          if (retval != 1) {
+            return retval;
+          }
         }
-      }
 
-      // Call the plugin cert code
-      reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
-      // If it did not re-enable, return the code to
-      // stop the accept processing
-      if (!reenabled) {
-        retval = -1; // Pause
+        // Call the plugin cert code
+        reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
+        // If it did not re-enable, return the code to
+        // stop the accept processing
+        if (!reenabled) {
+          retval = -1; // Pause
+        }
       }
     } else {
       if (tcss->selectCertificate(ssl, ctxType) == 1) {

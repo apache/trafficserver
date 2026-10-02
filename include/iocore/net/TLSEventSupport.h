@@ -59,6 +59,7 @@ public:
 
   bool                    callHooks(TSEvent eventId);
   bool                    calledHooks(TSEvent eventId) const;
+  bool                    finished_cert_hooks() const;
   bool                    reached_cert_hooks() const;
   virtual Continuation   *getContinuationForTLSEvents() = 0;
   virtual EThread        *getThreadForTLSEvents()       = 0;
