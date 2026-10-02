@@ -26,8 +26,11 @@
 #include <catch2/matchers/catch_matchers.hpp>
 
 #include "proxy/http2/HTTP2.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
 #include "tsutil/PostScript.h"
+
+#include <string>
 
 TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 {
@@ -345,5 +348,145 @@ TEST_CASE("CONTINUATION header_blocks_length overflow guard", "[HTTP2]")
     constexpr uint32_t max_frame_payload = (1u << 24) - 1u;
     CHECK(http2_continuation_length_would_overflow(UINT32_MAX - max_frame_payload + 1u, max_frame_payload));
     CHECK_FALSE(http2_continuation_length_would_overflow(UINT32_MAX - max_frame_payload, max_frame_payload));
+  }
+}
+
+namespace
+{
+// Print a header into a buffer of 4 KB blocks the same way Http2Stream::send_headers
+// does, so that a header larger than one block is split across blocks.
+void
+print_into_blocks(HTTPHdr &hdr, MIOBuffer *buffer)
+{
+  int bufindex;
+  int dumpoffset = 0;
+  int done, tmp;
+
+  do {
+    bufindex             = 0;
+    tmp                  = dumpoffset;
+    IOBufferBlock *block = buffer->get_current_block();
+    if (!block) {
+      buffer->add_block();
+      block = buffer->get_current_block();
+    }
+    done        = hdr.print(block->end(), block->write_avail(), &bufindex, &tmp);
+    dumpoffset += bufindex;
+    buffer->fill(bufindex);
+    if (!done) {
+      buffer->add_block();
+    }
+  } while (!done);
+}
+} // namespace
+
+TEST_CASE("Parse a header split across IOBuffer blocks at EOF", "[HTTP2]")
+{
+  // A bodyless HTTP/2 response is handed to the HttpSM along with EOS, so it is
+  // parsed with eof set. Every field must still parse when the printed header
+  // spans several blocks and a field is cut at a block boundary.
+  std::string const large_value(6000, 'v');
+  std::string const pad_value(400, 'p');
+
+  HTTPParser     parser;
+  ts::PostScript parser_defer([&]() -> void { http_parser_clear(&parser); });
+  http_parser_init(&parser);
+
+  MIOBuffer      *buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+  ts::PostScript  buffer_defer([&]() -> void { free_MIOBuffer(buffer); });
+  IOBufferReader *reader = buffer->alloc_reader();
+
+  SECTION("response")
+  {
+    std::string text = "HTTP/1.1 302 Found\r\n"
+                       "Location: https://example.com/landing\r\n";
+    for (int i = 0; i < 3; ++i) {
+      text += "X-Pad-" + std::to_string(i) + ": " + pad_value + "\r\n";
+    }
+    text += "Content-Security-Policy: " + large_value + "\r\n";
+    for (int i = 3; i < 6; ++i) {
+      text += "X-Pad-" + std::to_string(i) + ": " + pad_value + "\r\n";
+    }
+    text += "Content-Length: 0\r\n\r\n";
+
+    HTTPHdr        origin;
+    ts::PostScript origin_defer([&]() -> void { origin.destroy(); });
+    origin.create(HTTPType::RESPONSE);
+    char const *start = text.data();
+    REQUIRE(origin.parse_resp(&parser, &start, text.data() + text.size(), true) == ParseResult::DONE);
+    http_parser_clear(&parser);
+    http_parser_init(&parser);
+
+    print_into_blocks(origin, buffer);
+    REQUIRE(reader->read_avail() == static_cast<int64_t>(text.size()));
+    REQUIRE(reader->block_read_avail() < reader->read_avail());
+
+    HTTPHdr        parsed;
+    ts::PostScript parsed_defer([&]() -> void { parsed.destroy(); });
+    parsed.create(HTTPType::RESPONSE);
+    int bytes_used = 0;
+    REQUIRE(parsed.parse_resp(&parser, reader, &bytes_used, true) == ParseResult::DONE);
+    CHECK(bytes_used == static_cast<int>(text.size()));
+    CHECK(parsed.status_get() == HTTPStatus::MOVED_TEMPORARILY);
+    CHECK(parsed.fields_count() == 9);
+    CHECK(parsed.value_get("Content-Security-Policy"sv) == large_value);
+    CHECK(parsed.value_get("X-Pad-5"sv) == pad_value);
+  }
+
+  SECTION("field ends at a block boundary")
+  {
+    std::string const prefix = "HTTP/1.1 204 No Content\r\nX-Pad: ";
+    std::string       text   = prefix + std::string(4096 - prefix.size() - 2, 'p') + "\r\n";
+    REQUIRE(text.size() == 4096);
+    text += "X-Next: next\r\n\r\n";
+
+    HTTPHdr        origin;
+    ts::PostScript origin_defer([&]() -> void { origin.destroy(); });
+    origin.create(HTTPType::RESPONSE);
+    char const *start = text.data();
+    REQUIRE(origin.parse_resp(&parser, &start, text.data() + text.size(), true) == ParseResult::DONE);
+    http_parser_clear(&parser);
+    http_parser_init(&parser);
+
+    print_into_blocks(origin, buffer);
+    REQUIRE(reader->read_avail() == static_cast<int64_t>(text.size()));
+    REQUIRE(reader->block_read_avail() == 4096);
+
+    HTTPHdr        parsed;
+    ts::PostScript parsed_defer([&]() -> void { parsed.destroy(); });
+    parsed.create(HTTPType::RESPONSE);
+    int bytes_used = 0;
+    REQUIRE(parsed.parse_resp(&parser, reader, &bytes_used, true) == ParseResult::DONE);
+    CHECK(bytes_used == static_cast<int>(text.size()));
+    CHECK(parsed.value_get("X-Next"sv) == "next");
+  }
+
+  SECTION("request")
+  {
+    std::string text  = "GET /index.html HTTP/1.1\r\n"
+                        "Host: example.com\r\n";
+    text             += "Cookie: " + large_value + "\r\n";
+    text             += "X-Pad: " + pad_value + "\r\n\r\n";
+
+    HTTPHdr        client;
+    ts::PostScript client_defer([&]() -> void { client.destroy(); });
+    client.create(HTTPType::REQUEST);
+    char const *start = text.data();
+    REQUIRE(client.parse_req(&parser, &start, text.data() + text.size(), true) == ParseResult::DONE);
+    http_parser_clear(&parser);
+    http_parser_init(&parser);
+
+    print_into_blocks(client, buffer);
+    REQUIRE(reader->read_avail() == static_cast<int64_t>(text.size()));
+    REQUIRE(reader->block_read_avail() < reader->read_avail());
+
+    HTTPHdr        parsed;
+    ts::PostScript parsed_defer([&]() -> void { parsed.destroy(); });
+    parsed.create(HTTPType::REQUEST);
+    int bytes_used = 0;
+    REQUIRE(parsed.parse_req(&parser, reader, &bytes_used, true) == ParseResult::DONE);
+    CHECK(bytes_used == static_cast<int>(text.size()));
+    CHECK(parsed.value_get("Cookie"sv) == large_value);
+    CHECK(parsed.value_get("X-Pad"sv) == pad_value);
   }
 }
