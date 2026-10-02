@@ -29,6 +29,7 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
 #include "tsutil/LocalBuffer.h"
+#include <cinttypes>
 #include <cstdint>
 
 namespace
@@ -328,11 +329,18 @@ XpackDynamicTable::lookup(const std::string_view name, const std::string_view va
 }
 
 const XpackLookupResult
-XpackDynamicTable::lookup_relative(uint32_t relative_index, const char **name, size_t *name_len, const char **value,
+XpackDynamicTable::lookup_relative(uint64_t relative_index, const char **name, size_t *name_len, const char **value,
                                    size_t *value_len) const
 {
-  XPACKDbg("Lookup entry: rel_index=%u", relative_index);
-  return this->lookup(this->_entries[this->_entries_head].index - relative_index, name, name_len, value, value_len);
+  XPACKDbg("Lookup entry: rel_index=%" PRIu64, relative_index);
+
+  // Also covers the empty table, where there is no head entry to count back
+  // from and largest_index() may not be called.
+  if (relative_index >= this->count()) {
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
+  return this->lookup(this->largest_index() - static_cast<uint32_t>(relative_index), name, name_len, value, value_len);
 }
 
 const XpackLookupResult
