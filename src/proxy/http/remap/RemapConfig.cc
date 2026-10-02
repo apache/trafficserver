@@ -120,7 +120,6 @@ clear_xstr_array(char *v[], size_t vsize)
 }
 
 BUILD_TABLE_INFO::BUILD_TABLE_INFO()
-
 {
   memset(this->paramv, 0, sizeof(this->paramv));
   memset(this->argv, 0, sizeof(this->argv));
@@ -1505,6 +1504,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ct
       }
     }
 
+    new_mapping->strategyFactory = bti->rewrite->strategyFactory;
+
     // Check "remap" plugin options and load .so object
     if ((bti->remap_optflg & REMAP_OPTFLG_PLUGIN) != 0 &&
         (maptype == mapping_type::FORWARD_MAP || maptype == mapping_type::FORWARD_MAP_REFERER ||
@@ -1513,6 +1514,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ct
         int plugin_found_at = 0;
         int jump_to_argc    = 0;
 
+        UrlMappingInstanceScope const instance_scope{new_mapping};
+
         // this loads the first plugin
         if (!remap_load_plugin(bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0, &plugin_found_at,
                                bti->rewrite)) {
@@ -1520,6 +1523,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ct
           errStr = errStrBuf;
           goto MAP_ERROR;
         }
+
         // this loads any subsequent plugins (if present)
         while (plugin_found_at) {
           jump_to_argc += plugin_found_at;
