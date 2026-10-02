@@ -553,7 +553,7 @@ OperatorSortDestination::exec(const Resources &res) const
     TSMLoc    url_m_loc;
 
     // Determine which TSMBuffer and TSMLoc to use
-    if (res._rri) {
+    if (res._rri && !res.changed_url) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
     } else {
