@@ -589,6 +589,42 @@ sessions:
         fields:
         - [ ETag, { value: '"c1"', as: equal } ]
 
+  ##############################################################################
+  # A 304 carries no Content-Type, so with nothing stored the fallback can't tell a
+  # non-compressible response from a compressible one. The client can only hold
+  # W/"p1" for a response this plugin never compresses if the origin itself issued
+  # W/"p1" and later switched to a strong "p1" (or the content type was dropped from
+  # compressible-content-type). The weak tag still matches the unchanged copy the
+  # client holds, so it can use the 304; keeping the strong tag would instead fail
+  # every compressed client on this path.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /image
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, fwd-image-304 ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"p1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"p1"', as: equal } ]
+
   - client-request:
       method: "GET"
       version: "1.1"
