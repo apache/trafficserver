@@ -415,9 +415,9 @@ sessions:
         - [ ETag, { value: 'W/"p1"', as: equal } ]
 
   #############################################################################
-  # A request ATS won't cache would forward its conditional, but with nothing
-  # stored an origin 304 can't show whether the 200 would be compressed. The
-  # weak validator is dropped upstream and ATS answers from the 200 instead.
+  # A request ATS won't cache forwards its conditional. With nothing stored to
+  # judge by, an origin 304 whose strong tag the client holds in weak form must
+  # go out weak.
   #############################################################################
   - client-request:
       method: "GET"
@@ -434,24 +434,86 @@ sessions:
     proxy-request:
       headers:
         fields:
-        - [ If-None-Match, { as: absent } ]
+        - [ If-None-Match, { value: 'W/"p1"', as: equal } ]
 
     server-response:
-      status: 200
-      reason: OK
+      status: 304
+      reason: Not Modified
       headers:
         fields:
-        - [ Content-Type, text/plain ]
         - [ Cache-Control, "private, max-age=1" ]
         - [ ETag, '"p1"' ]
-        - [ Content-Length, 1024 ]
-      <<: *compressible-body
 
     proxy-response:
       status: 304
       headers:
         fields:
         - [ ETag, { value: 'W/"p1"', as: equal } ]
+
+  #############################################################################
+  # An origin that issues weak tags itself gets its 304 passed through as is.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private-weak-origin
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"w1"' ]
+        - [ uuid, weak-origin-forwarded-conditional ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: 'W/"w1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=1" ]
+        - [ ETag, 'W/"w1"' ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"w1"', as: equal } ]
+
+  #############################################################################
+  # Preconditions on unsafe methods reach the origin untouched, so a matching
+  # If-None-Match still prevents the operation.
+  #############################################################################
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /private-post
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ Content-Length, 0 ]
+        - [ uuid, post-conditional ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: 'W/"p1"', as: equal } ]
+
+    server-response:
+      status: 412
+      reason: Precondition Failed
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 412
 
   #############################################################################
   # A response the plugin wouldn't compress keeps the origin's strong tag on

@@ -911,26 +911,24 @@ not_modified_etag_plugin(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-static void
-remove_field_with_dups(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len)
-{
-  TSMLoc field = TSMimeHdrFieldFind(bufp, hdr_loc, name, name_len);
-
-  while (field != TS_NULL_MLOC) {
-    TSMLoc next_dup = TSMimeHdrFieldNextDup(bufp, hdr_loc, field);
-
-    TSMimeHdrFieldDestroy(bufp, hdr_loc, field);
-    TSHandleMLocRelease(bufp, hdr_loc, field);
-    field = next_dup;
-  }
-}
-
 // With nothing stored, an origin 304 leaves no representation to tell whether this request's 200
-// would have been compressed. A weak validator likely came from a compressed copy, so fetch the 200
-// instead; ATS still answers the client's conditional from it, and the 304 is weakened if needed.
+// would have been compressed. A client validating with the weak form of the origin's strong ETag
+// can only hold a copy this plugin weakened, so answer with the tag it was given.
 static void
-unconditionalize_weak_validation(TSHttpTxn txnp)
+weaken_unjudged_origin_not_modified(TSHttpTxn txnp)
 {
+  TSMBuffer srv_buf;
+  TSMLoc    srv_loc;
+
+  if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &srv_buf, &srv_loc)) {
+    return;
+  }
+  ts::PostScript srv_defer([&]() -> void { TSHandleMLocRelease(srv_buf, TS_NULL_MLOC, srv_loc); });
+
+  if (TSHttpHdrStatusGet(srv_buf, srv_loc) != TS_HTTP_STATUS_NOT_MODIFIED) {
+    return;
+  }
+
   TSMBuffer cached_buf;
   TSMLoc    cached_loc;
 
@@ -942,32 +940,57 @@ unconditionalize_weak_validation(TSHttpTxn txnp)
   TSMBuffer req_buf;
   TSMLoc    req_loc;
 
-  if (TS_SUCCESS != TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc)) {
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
     return;
   }
   ts::PostScript req_defer([&]() -> void { TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc); });
+
+  int         method_len;
+  const char *method = TSHttpHdrMethodGet(req_buf, req_loc, &method_len);
+
+  if (!((method_len == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
+        (method_len == TS_HTTP_LEN_HEAD && memcmp(method, TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD) == 0))) {
+    return;
+  }
+
+  TSMLoc srv_etag = TSMimeHdrFieldFind(srv_buf, srv_loc, TS_MIME_FIELD_ETAG, TS_MIME_LEN_ETAG);
+
+  if (srv_etag == TS_NULL_MLOC) {
+    return;
+  }
+  ts::PostScript srv_etag_defer([&]() -> void { TSHandleMLocRelease(srv_buf, srv_loc, srv_etag); });
 
   TSMLoc inm = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_IF_NONE_MATCH, TS_MIME_LEN_IF_NONE_MATCH);
 
   if (inm == TS_NULL_MLOC) {
     return;
   }
+  ts::PostScript inm_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, inm); });
 
-  bool      has_weak = false;
-  int const nvalues  = TSMimeHdrFieldValuesCount(req_buf, req_loc, inm);
+  int              srv_len;
+  const char      *srv_str = TSMimeHdrFieldValueStringGet(srv_buf, srv_loc, srv_etag, -1, &srv_len);
+  std::string_view srv_value{srv_str, static_cast<size_t>(srv_len)};
 
-  for (int i = 0; i < nvalues && !has_weak; i++) {
+  if (srv_value.starts_with("W/") || srv_value.starts_with("w/")) {
+    return;
+  }
+
+  int const nvalues = TSMimeHdrFieldValuesCount(req_buf, req_loc, inm);
+
+  for (int i = 0; i < nvalues; i++) {
     int         len;
     const char *str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, inm, i, &len);
 
-    has_weak = str != nullptr && std::string_view{str, static_cast<size_t>(len)}.starts_with("W/");
-  }
-  TSHandleMLocRelease(req_buf, req_loc, inm);
+    if (str == nullptr) {
+      continue;
+    }
 
-  if (has_weak) {
-    debug("no stored response to judge a weak validator against, fetching unconditionally");
-    remove_field_with_dups(req_buf, req_loc, TS_MIME_FIELD_IF_NONE_MATCH, TS_MIME_LEN_IF_NONE_MATCH);
-    remove_field_with_dups(req_buf, req_loc, TS_MIME_FIELD_IF_MODIFIED_SINCE, TS_MIME_LEN_IF_MODIFIED_SINCE);
+    std::string_view tag{str, static_cast<size_t>(len)};
+
+    if (tag.starts_with("W/") && tag.substr(2) == srv_value) {
+      TSMimeHdrFieldValueStringSet(srv_buf, srv_loc, srv_etag, -1, tag.data(), tag.size());
+      return;
+    }
   }
 }
 
@@ -1066,6 +1089,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       }
 
       keep_cached_etag_weak(txnp);
+      weaken_unjudged_origin_not_modified(txnp);
       handle_compression_and_vary(contp, txnp, true, hc, &compress_type, &algorithms);
     }
     break;
@@ -1082,7 +1106,6 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
           TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
         }
       }
-      unconditionalize_weak_validation(txnp);
       TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
     break;
