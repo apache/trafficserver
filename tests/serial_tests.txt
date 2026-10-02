@@ -10,3 +10,6 @@ thread_config/thread_config.test.py
 # Each must run after tls_conn_timeout and starts 14 ATS instances at once.
 next_hop/zzz_strategies_peer/zzz_strategies_peer.test.py
 next_hop/zzz_strategies_peer2/zzz_strategies_peer2.test.py
+
+# Starts 15 ATS instances and TLS origins for retry admission scenarios.
+h2/h2_to_origin_safe_retry.test.py

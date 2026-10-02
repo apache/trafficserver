@@ -6924,6 +6924,10 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 bool
 HttpTransact::is_request_retryable(State *s)
 {
+  if (s->state_machine->origin_retry_body_unavailable) {
+    return false;
+  }
+
   // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
   // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry

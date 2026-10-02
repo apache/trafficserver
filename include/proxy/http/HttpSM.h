@@ -455,6 +455,8 @@ private:
   void                handle_server_setup_error(int event, void *data);
   void                handle_http_server_open();
   void                handle_post_failure();
+  bool                prepare_for_origin_retry();
+  bool                origin_retry_body_unavailable = false;
   void                mark_host_failure(ResolveInfo *info, ts_time time_down);
   void                release_server_session(bool serve_from_cache = false);
   void                set_ua_abort(HttpTransact::AbortState_t ua_abort, int event);
