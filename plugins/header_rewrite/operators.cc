@@ -1706,9 +1706,35 @@ void
 OperatorSetNextHopStrategy::initialize(Parser &p)
 {
   Operator::initialize(p);
-
   _value.set_value(p.get_arg(), this);
-  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::initialie: %s", _value.get_value().c_str());
+
+  if (_value.has_conds()) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() '%s' expanded per transaction", _value.get_value().c_str());
+    return;
+  }
+
+  _stratname = _value.get_value();
+  if ("null" == _stratname) {
+    _stratname.clear();
+  }
+
+  if (_stratname.empty()) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() 'clear'");
+    return;
+  }
+
+  // A global config (no from/to URLs) looks the name up per transaction.
+  if (p.from_url() != nullptr) {
+    _strategy = TSRemapNextHopStrategyFind(_stratname.c_str());
+    if (_strategy == nullptr) {
+      TSError("[%s] Failed to resolve strategy '%s' while loading the remap rule; operator disabled", PLUGIN_NAME,
+              _stratname.c_str());
+      _inert = true;
+      return;
+    }
+  }
+
+  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() '%s'", _stratname.c_str());
 }
 
 void
@@ -1721,29 +1747,49 @@ OperatorSetNextHopStrategy::initialize_hooks()
 bool
 OperatorSetNextHopStrategy::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
+  auto const txnp = res.state.txnp;
+  if (!txnp) {
     TSError("[%s] OperatorSetNextHopStrategy() failed. Transaction is null", PLUGIN_NAME);
+    return true;
   }
 
-  auto const txnp = res.state.txnp;
+  if (_inert) {
+    return true;
+  }
 
-  std::string value;
-  _value.append_value(value, res);
+  bool const  dynamic = _value.has_conds();
+  std::string expanded;
+  if (dynamic) {
+    _value.append_value(expanded, res);
+    if ("null" == expanded) {
+      expanded.clear();
+    }
+  }
+  std::string const &name = dynamic ? expanded : _stratname;
 
-  // Setting an empty strategy clears it for either parent.config or remap to
-  if ("null" == value || value.empty()) {
-    Dbg(pi_dbg_ctl, "Clearing strategy");
+  if (name.empty()) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Clearing strategy");
     TSHttpTxnNextHopStrategySet(txnp, nullptr);
     return true;
   }
 
-  void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, value.c_str());
-  if (nullptr == stratptr) {
-    TSWarning("[%s] Failed to get strategy '%s'", PLUGIN_NAME, value.c_str());
-  } else {
-    Dbg(pi_dbg_ctl, "   Setting strategy '%s'", value.c_str());
-    TSHttpTxnNextHopStrategySet(txnp, stratptr);
+  TSStrategy strategy = _strategy;
+  if (nullptr == strategy) {
+    // Global configuration or an expanded name: resolve per transaction.
+    strategy = TSHttpTxnNextHopStrategyFind(txnp, name.c_str());
+    if (nullptr == strategy) {
+      if (!_lookup_failed.exchange(true)) {
+        TSError("[%s] Failed to get strategy '%s' (further failures of this rule are logged at debug level only)", PLUGIN_NAME,
+                name.c_str());
+      } else {
+        Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Failed to get strategy '%s'", name.c_str());
+      }
+      return true;
+    }
   }
+
+  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Setting strategy to '%s'", name.c_str());
+  TSHttpTxnNextHopStrategySet(txnp, strategy);
 
   return true;
 }

@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void const* TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
+.. function:: TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
 
 Description
 ===========
