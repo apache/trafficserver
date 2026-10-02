@@ -1,0 +1,8 @@
+tls12-full TLSv1.2 1025 1025 0 0
+tls12-resumed TLSv1.2 1025 - 1 2
+tls13-full TLSv1.3 2052-1025 2052 0 0
+tls13-resumed TLSv1.3 2052-1025 - 1 2
+tls13-ecdsa TLSv1.3 1027 1027 0 0
+tls12-ecdsa-ticket-full TLSv1.2 1027 1027 0 0
+tls12-ecdsa-ticket-resumed TLSv1.2 1027 - 1 2
+tls13-rsa-disambiguation TLSv1.3 2052-2057 2052 0 0
