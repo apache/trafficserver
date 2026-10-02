@@ -181,13 +181,14 @@ CB_out_close(TSCont cont, TSEvent event, void *edata)
   return TS_SUCCESS;
 }
 int
-CB_Client_Hello_Immediate(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
+CB_Client_Hello_Immediate(TSCont cont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  Dbg(dbg_ctl, "Client Hello callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Client Hello callback %d ssl_vc=%p - event is %s", count, ssl_vc,
+      event == TS_EVENT_SSL_CLIENT_HELLO ? "good" : "bad");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);
@@ -195,13 +196,14 @@ CB_Client_Hello_Immediate(TSCont cont, TSEvent /* event ATS_UNUSED */, void *eda
 }
 
 int
-CB_Client_Hello(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
+CB_Client_Hello(TSCont cont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  Dbg(dbg_ctl, "Client Hello callback %d ssl_vc=%p", count, ssl_vc);
+  Dbg(dbg_ctl, "Client Hello callback %d ssl_vc=%p - event is %s", count, ssl_vc,
+      event == TS_EVENT_SSL_CLIENT_HELLO ? "good" : "bad");
 
   TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
 
@@ -215,13 +217,13 @@ CB_Client_Hello(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
 }
 
 int
-CB_SNI(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
+CB_SNI(TSCont cont, TSEvent event, void *edata)
 {
   TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
 
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
-  Dbg(dbg_ctl, "SNI callback %d %p", count, ssl_vc);
+  Dbg(dbg_ctl, "SNI callback %d %p - event is %s", count, ssl_vc, event == TS_EVENT_SSL_SERVERNAME ? "good" : "bad");
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);

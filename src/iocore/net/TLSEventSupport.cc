@@ -436,6 +436,22 @@ TLSEventSupport::set_handshake_hook_state(TLSEventSupport::SSLHandshakeHookState
 }
 
 bool
+TLSEventSupport::finished_client_hello_hooks() const
+{
+  switch (this->sslHandshakeHookState) {
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_SNI:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_DONE:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool
 TLSEventSupport::finished_cert_hooks() const
 {
   switch (this->sslHandshakeHookState) {

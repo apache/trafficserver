@@ -219,6 +219,14 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   TLSSNISupport::ClientHello ch = {client_hello};
 #endif
 
+  TLSEventSupport *es = TLSEventSupport::getInstance(s);
+  // The TLS library calls back again once a paused ClientHello hook reenables, by which time the
+  // ClientHello work and its hooks have run and the hook state has moved on. Dispatching from
+  // that state would hand the next stage's hooks TS_EVENT_SSL_CLIENT_HELLO.
+  if (es != nullptr && es->finished_client_hello_hooks()) {
+    return CLIENT_HELLO_SUCCESS;
+  }
+
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
   if (snis) {
     snis->on_client_hello(ch);
@@ -234,7 +242,6 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     return CLIENT_HELLO_ERROR;
   }
 
-  TLSEventSupport *es = TLSEventSupport::getInstance(s);
   if (es) {
     bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
     if (!reenabled) {
