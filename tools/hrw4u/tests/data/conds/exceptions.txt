@@ -12,3 +12,7 @@ no-hook.input: u4wrh
 cidr-single.input: u4wrh
 # Bare %{CIDR} (no payload) defaults to cidr(24, 48); forward emits %{CIDR:24,48}
 cidr-bare.input: u4wrh
+# Legacy raw HRW uses bare %{CLIENT-URL}; forward emits the canonical %{CLIENT-URL:URL} form
+bare-client-url.input: u4wrh
+# Multi-colon bare %{CLIENT-CERT:SAN:DNS} exercises longest-match FALLBACK_TAG_MAP path
+bare-client-cert-san-dns.input: u4wrh
