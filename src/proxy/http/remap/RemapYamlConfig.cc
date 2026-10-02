@@ -922,11 +922,14 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
     std::string strategy_name = node["strategy"].as<std::string>();
     new_mapping->strategy     = bti->rewrite->strategyFactory->strategyInstance(strategy_name.c_str());
     if (new_mapping->strategy == nullptr) {
-      errStr = "missing 'strategy' name argument, unable to add mapping rule";
+      swoc::bwprint(errStr, "no strategy named '{}' is defined in the config", strategy_name);
       goto MAP_ERROR;
     }
     Dbg(dbg_ctl_url_rewrite, "mapped the 'strategy' named %s", strategy_name.c_str());
   }
+
+  // Set up for ts API for strategies
+  new_mapping->strategyFactory = bti->rewrite->strategyFactory;
 
   // Check "remap" plugin options and load .so object
   if (node["plugins"] && (maptype == mapping_type::FORWARD_MAP || maptype == mapping_type::FORWARD_MAP_REFERER ||
@@ -936,6 +939,8 @@ parse_yaml_remap_rule(const YAML::Node &node, BUILD_TABLE_INFO *bti)
       goto MAP_ERROR;
     }
 
+    // Set up for ts API for strategies
+    UrlMappingInstanceScope const instance_scope{new_mapping.get()};
     for (const auto &plugin : node["plugins"]) {
       errata = parse_yaml_plugins(plugin, new_mapping.get(), bti);
       if (!errata.is_ok()) {

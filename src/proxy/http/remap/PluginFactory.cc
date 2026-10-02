@@ -27,6 +27,7 @@
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "records/RecCore.h"
 #include "proxy/http/remap/PluginFactory.h"
+#include "proxy/http/remap/UrlMapping.h"
 #include "tscore/TSSystemState.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
@@ -216,8 +217,18 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
 
     plugin = new RemapPluginInfo(configPath, effectivePath, runtimePath);
     if (nullptr != plugin) {
-      if (plugin->load(error, _compilerPath)) {
-        if (plugin->init(error)) {
+      bool loaded      = false;
+      bool initialized = false;
+      {
+        // TSRemapInit is plugin-global: hide the loading rule from the strategy APIs.
+        UrlMappingInstanceScope const no_rule{nullptr};
+
+        loaded      = plugin->load(error, _compilerPath);
+        initialized = loaded && plugin->init(error);
+      }
+
+      if (loaded) {
+        if (initialized) {
           PluginDso::loadedPlugins()->add(plugin);
           inst = RemapPluginInst::init(plugin, argc, argv, error);
           if (nullptr != inst) {
