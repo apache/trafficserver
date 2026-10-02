@@ -27,7 +27,6 @@
 #include "CacheVC.h"
 #include "P_CacheDoc.h"
 #include "P_CacheInternal.h"
-#include "P_CacheTest.h"
 #include "Stripe.h"
 #include "StripeSM.h"
 #include "iocore/cache/Cache.h"
@@ -121,14 +120,6 @@ DbgCtl dbg_ctl_cache_update{"cache_update"};
 Queue<CacheVol> cp_list;
 int             cp_list_len = 0;
 ConfigVolumes   config_volumes;
-
-#if TS_HAS_TESTS
-void
-force_link_CacheTestCaller()
-{
-  force_link_CacheTest();
-}
-#endif
 
 static int
 validate_rww(int new_value)
