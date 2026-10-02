@@ -73,6 +73,6 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    r"WARNING: Origin hostname \(bar.com\) not in certificate. Action=Terminate",
+ts.Disk.traffic_out.Content = Testers.ContainsExpression(
+    r"Origin hostname \(bar.com\) not in certificate for session reuse. Action=RejectReuse",
     "The pooled H2 origin session should be rejected for bar.com.")
