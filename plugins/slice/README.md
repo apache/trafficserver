@@ -14,6 +14,19 @@ of block requests and assembles those blocks into a client response.
 The plugin uses TSHttpConnect to delegate each block request to
 cache_range_requests.so which handles all cache and parent interaction.
 
+The plugin never half-closes the write side of a `TSHttpConnect`
+connection: with `proxy.config.http.allow_half_open` set to `0`, ATS
+treats the resulting EOS as a client abort and kills the internal
+transaction before the response is served. Slice also strips
+`Content-Length` and `Transfer-Encoding` from every internal block
+request, since a nonzero `Content-Length` or a chunked
+`Transfer-Encoding` would make ATS wait for body bytes slice never sends,
+stalling until `proxy.config.http.transaction_no_activity_timeout_in`.
+
+Client requests that carry a body are not supported: slice stops reading
+once the request header is complete, so such a request fails (a GET
+with a `Content-Length` body gets a 502).
+
 To enable the plugin, specify the plugin library via @plugin at the end
 of a remap line as follows (default 1MB slice in this example):
 
