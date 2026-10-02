@@ -497,18 +497,7 @@ OperatorRMDestination::exec(const Resources &res) const
         const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &q_len);
 
         if (q_len > 0) {
-          for (auto &q : _tokenize({query, static_cast<size_t>(q_len)}, '&')) {
-            auto eq_pos = q.find('=');
-            auto it = std::find(_stop_list.begin(), _stop_list.end(), (eq_pos != std::string_view::npos) ? q.substr(0, eq_pos) : q);
-
-            if (_keep == (it != _stop_list.end())) {
-              if (!value.empty()) {
-                value.append("&").append(q);
-              } else {
-                value = q;
-              }
-            }
-          }
+          value = filter_query({query, static_cast<size_t>(q_len)}, _stop_list, _keep);
         }
         Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() rewrote QUERY to \"%s\"", value.c_str());
       } else {

@@ -18,6 +18,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <string>
+#include <string_view>
+#include <vector>
 
 #include "url_query.h"
 
@@ -131,6 +133,86 @@ TEST_CASE("is_query_sorted detects queries sort_query would leave unchanged", "[
           "b&a=1", "x=1&a=2&x=3", "a=2&x=3&x=1", "a=1=2", "=x&a=1", "a=1&=x", "a1=x&a=x", "a=x&a1=x", "=x&=y",   "=x&&=y"}) {
       INFO("query: \"" << q << "\"");
       CHECK(is_query_sorted(q) == (sort_query(q) == q));
+    }
+  }
+}
+
+TEST_CASE("filter_query keeps or removes params by name", "[header_rewrite][url_query]")
+{
+  const std::vector<std::string_view> names{"a", "c"};
+
+  SECTION("remove drops the named params and keeps the order of the rest")
+  {
+    CHECK(filter_query("d=4&a=1&b=2&c=3", names, false) == "d=4&b=2");
+  }
+
+  SECTION("keep drops every param that isn't named, preserving order")
+  {
+    CHECK(filter_query("d=4&c=3&b=2&a=1", names, true) == "c=3&a=1");
+  }
+
+  SECTION("every instance of a duplicate name is matched")
+  {
+    CHECK(filter_query("a=1&b=2&a=3", names, false) == "b=2");
+    CHECK(filter_query("a=1&b=2&a=3", names, true) == "a=1&a=3");
+  }
+
+  SECTION("names match the whole param name, not a prefix")
+  {
+    CHECK(filter_query("ab=1&a=2&a", names, false) == "ab=1");
+  }
+
+  SECTION("valueless params match by their own name")
+  {
+    CHECK(filter_query("a&b", names, true) == "a");
+  }
+
+  SECTION("param value containing '=' is preserved and matches by its name only")
+  {
+    CHECK(filter_query("a=1=2&b=3", names, true) == "a=1=2");
+  }
+
+  SECTION("empty query stays empty")
+  {
+    CHECK(filter_query("", names, false) == "");
+    CHECK(filter_query("", names, true) == "");
+  }
+
+  SECTION("no names removes nothing, or keeps nothing")
+  {
+    CHECK(filter_query("a=1&b=2", {}, false) == "a=1&b=2");
+    CHECK(filter_query("a=1&b=2", {}, true) == "");
+  }
+
+  SECTION("empty params are dropped, like sort_query does")
+  {
+    CHECK(filter_query("&b=2&&d=4&", names, false) == "b=2&d=4");
+    CHECK(filter_query("&a=1&&c=3&", names, true) == "a=1&c=3");
+    CHECK(filter_query("a=1&&c=3", {"b"}, false) == "a=1&c=3");
+  }
+
+  SECTION("an empty name matches only params with an empty name, never empty params")
+  {
+    CHECK(filter_query("=x&&a=1", {""}, false) == "a=1");
+    CHECK(filter_query("=x&&a=1", {""}, true) == "=x");
+  }
+
+  SECTION("many params filter the same way as a few")
+  {
+    for (int n : {3, 16, 17, 40}) {
+      std::string query;
+      std::string expected;
+
+      for (int i = 0; i < n; ++i) {
+        std::string param = (i % 2 ? "a=" : "b=") + std::to_string(i);
+
+        query += (query.empty() ? "" : "&") + param;
+        if (i % 2) {
+          expected += (expected.empty() ? "" : "&") + param;
+        }
+      }
+      INFO("params: " << n);
+      CHECK(filter_query(query, names, true) == expected);
     }
   }
 }

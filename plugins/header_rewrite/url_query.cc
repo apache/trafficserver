@@ -88,3 +88,23 @@ is_query_sorted(std::string_view query)
   // take_prefix_at() swallows a trailing '&' without yielding an empty param.
   return query.empty() || query.back() != '&';
 }
+
+std::string
+filter_query(std::string_view query, const std::vector<std::string_view> &names, bool keep)
+{
+  std::string    result;
+  swoc::TextView view(query);
+
+  while (view) {
+    std::string_view param = view.take_prefix_at('&');
+
+    if (!param.empty() && keep == (std::find(names.begin(), names.end(), param_name(param)) != names.end())) {
+      if (!result.empty()) {
+        result += '&';
+      }
+      result.append(param);
+    }
+  }
+
+  return result;
+}

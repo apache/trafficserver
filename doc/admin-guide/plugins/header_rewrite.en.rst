@@ -1199,6 +1199,10 @@ which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
 
   rm-destination QUERY <comma separate list of query parameter>
 
+The remaining parameters keep their order. Empty parameters, from a leading,
+trailing, or repeated ``&``, are dropped, so removing ``b`` from
+``a=1&&b=2&c=3`` leaves ``a=1&c=3``.
+
 rm-header
 ~~~~~~~~~
 ::

@@ -19,6 +19,7 @@
 
 #include <string>
 #include <string_view>
+#include <vector>
 
 // Sort the '&'-separated parameters of a URL query string by parameter
 // name. Sorting is stable: parameters that share the same name keep their
@@ -30,3 +31,8 @@ std::string sort_query(std::string_view query);
 // already in name order and there are no empty parameters to drop. Callers
 // use this to skip the allocation and URL rewrite in the common case.
 bool is_query_sorted(std::string_view query);
+
+// Keep (keep == true) or remove (keep == false) the '&'-separated parameters
+// of a URL query string whose name is in names. Parameters keep their order.
+// Empty parameters are dropped, as in sort_query().
+std::string filter_query(std::string_view query, const std::vector<std::string_view> &names, bool keep);
