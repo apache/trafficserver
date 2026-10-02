@@ -225,6 +225,13 @@ autest:
             args:
               - "rules/rule_sort_destination.conf"
 
+      - from: "http://www.example.com/from_25/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_25/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_then_sort_destination.conf"
+
     metric_checks:
       - metric: "proxy.process.plugin.header_rewrite.operators"
         min: 1
@@ -2525,6 +2532,33 @@ sessions:
       url:
       - [ path, { value: /to_24/, as: equal } ]
       - [ query, { value: "a=1&b=2&c=3", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+
+# Test 96: sort-destination QUERY after set-destination URL sorts the
+# replacement URL, not the one the remap handle still points at.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_25/?x=1
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 96 ]
+
+    proxy-request:
+      url:
+      - [ path, { value: /to_25/, as: equal } ]
+      - [ query, { value: "y=2&z=3", as: equal } ]
 
     server-response:
       status: 200
