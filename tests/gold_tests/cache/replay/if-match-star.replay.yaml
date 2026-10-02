@@ -38,6 +38,10 @@ autest:
   ats:
     name: 'ts'
 
+    records_config:
+      proxy.config.http.negative_caching_enabled: 1
+      proxy.config.http.negative_caching_lifetime: 60
+
     remap_config:
       - from: "http://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
@@ -371,3 +375,80 @@ sessions:
         fields:
         - [ Content-Range, { as: present } ]
 
+  #############################################################################
+  # While a 404 is negatively cached, ATS answers for the URL itself. A
+  # precondition is ignored when the response would not be 2xx (RFC 9110
+  # 13.2.1), so If-Match: * gets the same cached 404 a plain GET gets, still
+  # without contacting the origin.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, negative-fill ]
+
+    server-response:
+      status: 404
+      reason: Not Found
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 404
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, negative-hit ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 404
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '*' ]
+        - [ uuid, negative-if-match-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 404
+
+  #############################################################################
+  # NOT RFC 9110 compliant, kept to detect behavior changes: RFC 9110 13.2.1
+  # says preconditions are ignored when the response would not be 2xx, so this
+  # should also be the cached 404. ATS evaluates If-Match against cached non-2xx
+  # responses too, and a specific tag can't match a response without an ETag.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '"other"' ]
+        - [ uuid, negative-if-match-tag ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
