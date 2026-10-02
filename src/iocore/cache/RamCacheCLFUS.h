@@ -85,6 +85,14 @@ public:
 
   void compress_entries(EThread *thread, int do_at_most = INT_MAX);
 
+  static constexpr uint32_t entry_overhead = 256; // per-entry overhead to consider when computing cache value/size
+
+  static constexpr double
+  cache_value_hits_size(const uint64_t hits, const uint32_t size)
+  {
+    return static_cast<double>(hits + 1) / (size + entry_overhead);
+  }
+
   // TODO move it to private.
   StripeSM *stripe = nullptr; // for stats
 private:

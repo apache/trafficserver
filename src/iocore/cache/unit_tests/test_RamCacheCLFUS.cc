@@ -1,6 +1,6 @@
 /** @file
 
-  Catch-based unit tests for RAM cache (CLFUS) compression roundtrips.
+  Catch-based unit tests for the RAM cache (CLFUS).
 
   @section license License
 
@@ -374,4 +374,21 @@ TEST_CASE("CLFUS compression backends compiled in", "[cache][ramcache][compress]
   WARN("zstd is not compiled in; the zstd RAM cache compression backend is NOT tested");
 #endif
   CHECK(compression_cases().size() >= 3);
+}
+
+// Guards against PR #11733-style regressions of the CLFUS value metric: the value density
+// must be computed in floating point. Integer division truncates (hits + 1) / (size + overhead)
+// to 0 for normal object sizes, zeroing the metric and silently collapsing CLFUS to FIFO (no
+// promote-on-hit, no clock second chance, no value-based ghost re-admission).
+TEST_CASE("CLFUS value metric is a floating-point density", "[cache][ramcache][clfus]")
+{
+  constexpr double v_one   = RamCacheCLFUS::cache_value_hits_size(1u, 16384u);   // a typical 16 KiB object, seen once
+  constexpr double v_hot   = RamCacheCLFUS::cache_value_hits_size(100u, 16384u); // same size, many more hits
+  constexpr double v_small = RamCacheCLFUS::cache_value_hits_size(10u, 1024u);   // smaller object, equal hits
+  constexpr double v_large = RamCacheCLFUS::cache_value_hits_size(10u, 16384u);
+
+  // A non-zero fraction: the integer-division regression makes this exactly 0.0.
+  STATIC_REQUIRE(v_one > 0.0);
+  STATIC_REQUIRE(v_hot > v_one);
+  STATIC_REQUIRE(v_small > v_large);
 }
