@@ -58,6 +58,25 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
       }
     }
 
+    WHEN("strategy distances are checked.")
+    {
+      THEN("each strategy has a unique, stable index and lookups do not mutate it")
+      {
+        NextHopSelectionStrategy *const s1 = nhf.strategyInstance("strategy-1");
+        NextHopSelectionStrategy *const s2 = nhf.strategyInstance("strategy-2");
+        REQUIRE(s1 != nullptr);
+        REQUIRE(s2 != nullptr);
+
+        CHECK(s1->distance != s2->distance);
+        CHECK(s1->distance < 2);
+        CHECK(s2->distance < 2);
+
+        const uint32_t d1 = s1->distance;
+        nhf.strategyInstance("strategy-1");
+        CHECK(s1->distance == d1);
+      }
+    }
+
     WHEN("'strategy-1' details are checked.")
     {
       THEN("Expect that these results for 'strategy-1'")

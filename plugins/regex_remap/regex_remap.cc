@@ -215,14 +215,14 @@ public:
     return _lowercase_substitutions;
   }
   inline bool
-  has_strategy() const
+  has_strategy_option() const
   {
     return _has_strategy;
   }
   inline std::string const &
-  strategy() const
+  strategy_name_option() const
   {
-    return _strategy;
+    return _strategy_name;
   }
 
   // Hold an overridable configurations
@@ -256,8 +256,8 @@ private:
   int _connect_timeout     = -1;
   int _dns_timeout         = -1;
 
-  bool        _has_strategy = false;
-  std::string _strategy     = {};
+  bool        _has_strategy  = false;
+  std::string _strategy_name = {};
 
   Override *_first_override = nullptr;
   int       _sub_pos[MAX_SUBS];
@@ -306,8 +306,8 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
     } else if (opt.compare(start, 23, "lowercase_substitutions") == 0) {
       _lowercase_substitutions = true;
     } else if (opt.compare(start, 8, "strategy") == 0) {
-      _has_strategy = true;
-      _strategy     = std::move(opt_val);
+      _has_strategy  = true;
+      _strategy_name = opt_val;
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
@@ -801,22 +801,30 @@ private:
   }
 };
 
+// A rule's resolved strategy. Kept per RemapInstance since the shared RuleSet
+// can outlive the remap config generation that owns the strategy.
+struct StrategyAction {
+  bool       apply    = false;
+  TSStrategy strategy = nullptr;
+};
+
 // Hold one remap instance
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  SharedRuleSet     rule_set;
-  std::vector<int>  rule_hits;
-  RegexMatchContext match_context = {};
-  bool              pristine_url  = false;
-  bool              profile       = false;
-  bool              method        = false;
-  bool              query_string  = true;
-  bool              host          = false;
-  int               hits          = 0;
-  int               misses        = 0;
-  int               failures      = 0;
-  std::string       filename;
+  SharedRuleSet               rule_set;
+  std::vector<int>            rule_hits;
+  std::vector<StrategyAction> strategy_actions;
+  RegexMatchContext           match_context = {};
+  bool                        pristine_url  = false;
+  bool                        profile       = false;
+  bool                        method        = false;
+  bool                        query_string  = true;
+  bool                        host          = false;
+  int                         hits          = 0;
+  int                         misses        = 0;
+  int                         failures      = 0;
+  std::string                 filename;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -918,6 +926,26 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   }
   if (ri->profile) {
     ri->rule_hits.resize(ri->rule_set->rules().size());
+  }
+
+  auto const &rules = ri->rule_set->rules();
+
+  ri->strategy_actions.resize(rules.size());
+  for (size_t ix = 0; ix < rules.size(); ++ix) {
+    if (!rules[ix]->has_strategy_option()) {
+      continue;
+    }
+
+    auto const &name   = rules[ix]->strategy_name_option();
+    auto       &action = ri->strategy_actions[ix];
+
+    if (name.empty() || "null" == name) {
+      action.apply = true;
+    } else if (action.strategy = TSRemapNextHopStrategyFind(name.c_str()); action.strategy != nullptr) {
+      action.apply = true;
+    } else {
+      TSError("[%s] Unable to resolve strategy: '%s'", PLUGIN_NAME, name.c_str());
+    }
   }
 
   return TS_SUCCESS;
@@ -1078,20 +1106,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         Dbg(dbg_ctl, "Setting DNS timeout to %d", re->dns_timeout_option());
         TSHttpTxnDNSTimeoutSet(txnp, re->dns_timeout_option());
       }
-      if (re->has_strategy()) {
-        auto const &strat = re->strategy();
-        if (strat.empty() || "null" == strat) {
+      if (auto const &action = ri->strategy_actions[rule_ix]; action.apply) {
+        if (nullptr == action.strategy) {
           Dbg(dbg_ctl, "Clearing strategy (use parent.config)");
-          TSHttpTxnNextHopStrategySet(txnp, nullptr);
         } else {
-          void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, strat.c_str());
-          if (nullptr == stratptr) {
-            Dbg(dbg_ctl, "No strategy found with name '%s'", strat.c_str());
-          } else {
-            Dbg(dbg_ctl, "Setting strategy to %s", strat.c_str());
-            TSHttpTxnNextHopStrategySet(txnp, stratptr);
-          }
+          Dbg(dbg_ctl, "Setting strategy to %s", re->strategy_name_option().c_str());
         }
+        TSHttpTxnNextHopStrategySet(txnp, action.strategy);
       }
       bool lowercase_substitutions = false;
       if (re->lowercase_substitutions_option() == true) {

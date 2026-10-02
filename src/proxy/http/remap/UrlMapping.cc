@@ -36,7 +36,21 @@ namespace
 {
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
+thread_local url_mapping *loading_mapping = nullptr;
+
 } // end anonymous namespace
+
+url_mapping *
+url_mapping::loading_instance()
+{
+  return loading_mapping;
+}
+
+void
+url_mapping::set_loading_instance(url_mapping *um)
+{
+  loading_mapping = um;
+}
 
 /**
  *

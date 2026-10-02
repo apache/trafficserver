@@ -5472,57 +5472,136 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
   s->internal_msg_buffer_fast_allocator_size = -1;
 }
 
-void const *
+TSStrategy
 TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  return static_cast<void *>(sm->t_state.next_hop_strategy);
+  return reinterpret_cast<TSStrategy>(sm->t_state.next_hop_strategy);
 }
 
-void
-TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *stratptr)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  // null strategy falls back to parent.config
-  // sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
-
-  auto sm       = reinterpret_cast<HttpSM *>(txnp);
-  auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
-
-  sm->t_state.next_hop_strategy = const_cast<NextHopSelectionStrategy *>(strategy);
-}
-
-char const *
-TSHttpNextHopStrategyNameGet(void const *stratptr)
-{
-  char const *name = nullptr;
-  if (nullptr != stratptr) {
-    auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
-    name          = strategy->strategy_name.c_str();
-  }
-
-  return name;
-}
-
-void const *
-TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+TSStrategy
+TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap.get()) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap->strategyFactory) == TS_SUCCESS);
+  // m_remap is null if no rewrite table existed when the transaction started.
+  if (sm->m_remap.get() == nullptr || sm->m_remap->strategyFactory == nullptr) {
+    return nullptr;
+  }
 
   // HttpSM has a reference count handle to UrlRewrite which has a
   // pointer to NextHopStrategyFactory
-  NextHopSelectionStrategy const *const strat = sm->m_remap->strategyFactory->strategyInstance(name);
+  NextHopSelectionStrategy *const strategy = sm->m_remap->strategyFactory->strategyInstance(name);
 
-  return static_cast<void const *>(strat);
+  return reinterpret_cast<TSStrategy>(strategy);
+}
+
+void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy stratptr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM *>(txnp);
+
+  // A null strategy falls back to parent.config.
+  if (stratptr == nullptr) {
+    sm->t_state.next_hop_strategy = nullptr;
+    return;
+  }
+
+  // The core dereferences this pointer during parent selection, so reject
+  // handles not owned by this transaction's factory (e.g. cached across a reload).
+  auto const candidate = reinterpret_cast<NextHopSelectionStrategy *>(stratptr);
+  if (sm->m_remap == nullptr || sm->m_remap->strategyFactory == nullptr || !sm->m_remap->strategyFactory->contains(candidate)) {
+    SiteThrottledError("%s: strategy %p is not present in the live strategy factory; ignoring", __func__, stratptr);
+    Dbg(dbg_ctl_parent_select, "%s: strategy %p is not present in the live strategy factory; ignoring", __func__, stratptr);
+    return;
+  }
+
+  sm->t_state.next_hop_strategy = candidate;
+}
+
+namespace
+{
+void
+log_outside_remap_init(char const *func, char const *outcome, std::atomic<bool> &logged)
+{
+  if (!logged.exchange(true, std::memory_order_relaxed)) {
+    TSError("%s: must be called during remap plugin initialization (no loading remap rule); %s", func, outcome);
+  }
+}
+} // namespace
+
+TSStrategy
+TSRemapNextHopStrategyFind(const char *name)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+
+  auto const um = url_mapping::loading_instance();
+  if (um == nullptr) {
+    static std::atomic<bool> logged{false};
+    log_outside_remap_init(__func__, "returning nullptr", logged);
+    return nullptr;
+  }
+
+  // No strategies.yaml is loaded.
+  if (um->strategyFactory == nullptr) {
+    return nullptr;
+  }
+
+  return reinterpret_cast<TSStrategy>(um->strategyFactory->strategyInstance(name));
+}
+
+void
+TSRemapNextHopStrategySet(TSStrategy strategy)
+{
+  auto const um = url_mapping::loading_instance();
+  if (um == nullptr) {
+    static std::atomic<bool> logged{false};
+    log_outside_remap_init(__func__, "ignoring", logged);
+    return;
+  }
+
+  if (strategy == nullptr) {
+    um->strategy = nullptr;
+    return;
+  }
+
+  auto const candidate = reinterpret_cast<NextHopSelectionStrategy *>(strategy);
+  if (um->strategyFactory == nullptr || !um->strategyFactory->contains(candidate)) {
+    TSError("%s: strategy %p is not present in the loading strategy factory; ignoring", __func__, strategy);
+    return;
+  }
+
+  um->strategy = candidate;
+}
+
+TSStrategy
+TSRemapNextHopStrategyGet()
+{
+  auto const um = url_mapping::loading_instance();
+  if (um == nullptr) {
+    static std::atomic<bool> logged{false};
+    log_outside_remap_init(__func__, "returning nullptr", logged);
+    return nullptr;
+  }
+  return reinterpret_cast<TSStrategy>(um->strategy);
+}
+
+char const *
+TSNextHopStrategyNameGet(TSStrategy stratptr)
+{
+  if (stratptr == nullptr) {
+    return nullptr;
+  }
+  auto const *const strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
+  return strategy->strategy_name.c_str();
 }
 
 TSReturnCode
