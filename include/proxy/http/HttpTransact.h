@@ -1048,6 +1048,7 @@ public:
   static void set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHdr *request, HTTPHdr *response);
   static void set_header_for_transform(State *s, HTTPHdr *base_header);
   static void merge_response_header_with_cached_header(HTTPHdr *cached_header, HTTPHdr *response_header);
+  static bool compact_cached_response_header(HTTPHdr *cached_header);
   static void merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_header);
   static void SetCacheFreshnessLimit(State *s);
   static void HandleApiErrorJump(State *);
