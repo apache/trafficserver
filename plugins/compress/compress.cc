@@ -532,6 +532,17 @@ compress_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   return 0;
 }
 
+// the only compressible method is currently GET or POST.
+static bool
+is_compressible_method(TSMBuffer cbuf, TSMLoc chdr)
+{
+  int         method_length;
+  const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
+
+  return (method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
+         (method_length == TS_HTTP_LEN_POST && memcmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST) == 0);
+}
+
 static int
 is_content_compressible(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration)
 {
@@ -584,12 +595,7 @@ is_content_compressible(TSHttpTxn txnp, bool server, HostConfiguration *host_con
     return 0;
   }
 
-  // the only compressible method is currently GET or POST.
-  int         method_length;
-  const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
-
-  if (!((method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
-        (method_length == TS_HTTP_LEN_POST && memcmp(method, TS_HTTP_METHOD_POST, TS_HTTP_LEN_POST) == 0))) {
+  if (!is_compressible_method(cbuf, chdr)) {
     debug("method is not GET or POST, not compressible");
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -911,37 +917,10 @@ not_modified_etag_plugin(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-// handle_request() has already normalized Accept-Encoding to bare tokens.
-static bool
-accepts_configured_encoding(TSMBuffer req_buf, TSMLoc req_loc, HostConfiguration *hc)
-{
-  TSMLoc ae = TSMimeHdrFieldFind(req_buf, req_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-
-  if (ae == TS_NULL_MLOC) {
-    return false;
-  }
-  ts::PostScript ae_defer([&]() -> void { TSHandleMLocRelease(req_buf, req_loc, ae); });
-
-  int const algorithms = hc->compression_algorithms();
-  int const nvalues    = TSMimeHdrFieldValuesCount(req_buf, req_loc, ae);
-
-  for (int i = 0; i < nvalues; i++) {
-    int              len;
-    const char      *str = TSMimeHdrFieldValueStringGet(req_buf, req_loc, ae, i, &len);
-    std::string_view token{str, str != nullptr ? static_cast<size_t>(len) : 0};
-
-    if ((token == "zstd" && (algorithms & ALGORITHM_ZSTD)) || (token == "br" && (algorithms & ALGORITHM_BROTLI)) ||
-        (token == "gzip" && (algorithms & ALGORITHM_GZIP)) || (token == "deflate" && (algorithms & ALGORITHM_DEFLATE))) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// With nothing stored, an origin 304 leaves no representation to tell whether this request's 200
-// would have been compressed. A client that accepts compression and validates with the weak form of
-// the origin's strong ETag can only hold a copy this plugin weakened, so answer with the tag it has.
+// With nothing stored, an origin 304 has no representation to judge it by. It does say the
+// representation is unchanged, so if this request qualifies for compression by the same rules a 200
+// would, and the client holds the weak form of the origin's strong ETag (a copy this plugin
+// compressed), answer with the tag the client holds.
 static void
 weaken_unjudged_origin_not_modified(TSHttpTxn txnp, HostConfiguration *hc)
 {
@@ -973,15 +952,10 @@ weaken_unjudged_origin_not_modified(TSHttpTxn txnp, HostConfiguration *hc)
   }
   ts::PostScript req_defer([&]() -> void { TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc); });
 
-  int         method_len;
-  const char *method = TSHttpHdrMethodGet(req_buf, req_loc, &method_len);
+  int compress_type = COMPRESSION_TYPE_DEFAULT;
+  int algorithms    = ALGORITHM_DEFAULT;
 
-  if (!((method_len == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0) ||
-        (method_len == TS_HTTP_LEN_HEAD && memcmp(method, TS_HTTP_METHOD_HEAD, TS_HTTP_LEN_HEAD) == 0))) {
-    return;
-  }
-
-  if (!accepts_configured_encoding(req_buf, req_loc, hc)) {
+  if (!is_compressible_method(req_buf, req_loc) || !client_accepts_compression(txnp, true, hc, &compress_type, &algorithms)) {
     return;
   }
 
