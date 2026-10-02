@@ -866,14 +866,16 @@ Http2Stream::update_write_request(bool call_update)
       this->parsing_header_done = true;
       Http2StreamDebug("update_write_request parsing done, read %d bytes", bytes_used);
 
-      // Schedule session shutdown if response header has "Connection: close"
-      MIMEField *field = this->_send_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
-      if (field) {
-        auto value{field->value_get()};
-        if (value == static_cast<std::string_view>(HTTP_VALUE_CLOSE)) {
-          SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
-          if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-            connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+      // A client request must not drain a shared origin session.
+      if (!this->is_outbound_connection()) {
+        MIMEField *field = this->_send_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
+        if (field) {
+          auto value{field->value_get()};
+          if (value == static_cast<std::string_view>(HTTP_VALUE_CLOSE)) {
+            SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
+            if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+              connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+            }
           }
         }
       }
@@ -889,6 +891,12 @@ Http2Stream::update_write_request(bool call_update)
         this->parsing_header_done = false;
       }
       if (this->is_outbound_connection() || this->_send_header.expect_final_response()) {
+        // The send-side request header is about to be torn down on outbound
+        // streams, so snapshot the request method and any conditional-header
+        // presence first. The snapshot is needed later by
+        // `payload_length_is_valid` to apply [RFC 9110] 8.6 payload preclusion
+        // for HEAD responses and 304 responses to conditional GETs.
+        this->cache_send_request_for_response_validation();
         _send_header.destroy();
         _send_header.create(this->is_outbound_connection() ? HTTPType::REQUEST : HTTPType::RESPONSE, HTTP_2_0);
         http_parser_clear(&http_parser);
@@ -1322,6 +1330,20 @@ Http2Stream::set_tx_error_code(ProxyError e)
       this->_sm->t_state.client_info.tx_error_code = e;
     }
   }
+}
+
+bool
+Http2Stream::is_safe_to_retry() const
+{
+  // Remember even informational, partial, or malformed response headers.
+  // A later peer assertion cannot undo evidence that it handled this request.
+  return _safe_to_retry && this->is_outbound_connection() && !_response_received && data_length == 0;
+}
+
+void
+Http2Stream::set_safe_to_retry()
+{
+  _safe_to_retry = true;
 }
 
 HTTPVersion
