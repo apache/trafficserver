@@ -1,7 +1,8 @@
 '''
 Verify ATS retries non-idempotent outbound HTTP/2 requests when the origin
 asserts that it did not process them, and rejects retries without a complete
-body copy or when response evidence contradicts that assertion.
+body copy or when response evidence contradicts that assertion. Also verify
+that a graceful GOAWAY lets the streams it covers finish.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -26,7 +27,8 @@ from ports import get_port
 
 Test.Summary = '''
 Verify POST retry admission and rejection for resets, GOAWAY boundaries,
-body availability, response evidence, and invalid origin frames.
+body availability, response evidence, and invalid origin frames, and verify
+that streams at or below a GOAWAY's last stream id are drained.
 '''
 
 Test.ContinueOnFail = True
@@ -41,6 +43,9 @@ class SafeRetryScenario:
 
     def __init__(self, mode: str, replay_key: str, *, buffering: int = 1, copy_size: int = 4096, retry: bool = True) -> None:
         name = f"{mode}-{buffering}-{copy_size}"
+        drain = mode in ("goaway-drain", "goaway-drain-max")
+        split = mode == "goaway-split"
+        expected_attempts = 5 if split else 2 if retry else 1
         tr = Test.AddTestRun(f"Safe POST retry after outbound HTTP/2 {mode}")
         tr.Setup.Copy("safe_retry_origin.py")
         tr.Setup.Copy("origin_lifecycle.py")
@@ -54,25 +59,45 @@ class SafeRetryScenario:
         server.Setup.Copy(server_key)
         server.Command = (
             f"{sys.executable} {tr.RunDirectory}/safe_retry_origin.py "
-            f"{mode} {server_port} server.pem server.key {stop_file} {2 if retry else 1}")
+            f"{mode} {server_port} server.pem server.key {stop_file} {expected_attempts}")
         server.Ready = When.PortOpen(server_port)
         server.ReturnCode = 0
 
         server.Streams.stdout += Testers.ContainsExpression(
             "request_received attempt=1", "The origin must receive the first request.")
-        if retry:
+        if split:
+            server.Streams.stdout += Testers.ContainsExpression(
+                "drain_succeeded attempts=3 method=POST", "The origin must answer the stream its GOAWAY covers.")
+            server.Streams.stdout += Testers.ContainsExpression(
+                r"retry_succeeded attempts=5 method=POST body=request-body",
+                "ATS must retry both streams above last_stream_id, on a new connection.")
+        elif retry:
             server.Streams.stdout += Testers.ContainsExpression(
                 r"retry_succeeded attempts=2 method=POST body=request-body",
                 "ATS must retry the POST once, including its request body.")
+        elif drain:
+            server.Streams.stdout += Testers.ContainsExpression(
+                "drain_succeeded attempts=1 method=POST", "The origin must answer the POST after its GOAWAY.")
+            server.Streams.stdout += Testers.ExcludesExpression("request_received attempt=2", "ATS must not replay this POST.")
         else:
             server.Streams.stdout += Testers.ExcludesExpression("request_received attempt=2", "ATS must not replay this POST.")
+        if drain or split or mode == "goaway-drain-above":
+            # The origin holds the connection open after its GOAWAY, so only ATS can end it.
+            server.Streams.stdout += Testers.ContainsExpression(
+                "drained_session_closed_by_peer", "ATS must close the drained session once its streams finish.")
 
         if mode in ("rst", "early-rst", "rst-internal", "rst-cancel", "response-rst"):
             error = {"rst-internal": "INTERNAL_ERROR", "rst-cancel": "CANCEL"}.get(mode, "REFUSED_STREAM")
             server.Streams.stdout += Testers.ContainsExpression(
                 f"action=RST_STREAM attempt=1 error={error}", "The origin must send the intended reset.")
         elif mode.startswith("goaway"):
-            last_id = "[1-9][0-9]*" if mode == "goaway-equal" else "0"
+            last_id = {
+                "goaway-equal": "[1-9][0-9]*",
+                "goaway-drain": "[1-9][0-9]*",
+                "goaway-split": "[1-9][0-9]*",
+                "goaway-drain-above": "0",
+                "goaway-drain-max": "2147483647"
+            }.get(mode, "0")
             server.Streams.stdout += Testers.ContainsExpression(
                 f"action=GOAWAY attempt=1 last_stream_id={last_id}", "The origin must use the intended GOAWAY boundary.")
 
@@ -122,7 +147,13 @@ class SafeRetryScenario:
 
         tr.Processes.Default.StartBefore(server)
         tr.Processes.Default.StartBefore(ts)
-        if retry:
+        if split:
+            tr.Setup.Copy("split_drain_client.py")
+            tr.Processes.Default.Command = f"{sys.executable} {tr.RunDirectory}/split_drain_client.py {ts.Variables.port}"
+            tr.Processes.Default.ReturnCode = 0
+            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+                "Covered stream drained and uncovered streams retried", "Each stream must end the way its GOAWAY side requires.")
+        elif retry or drain:
             tr.AddVerifierClientProcess(
                 f"safe-retry-client-{name}", self.replay_file, http_ports=[ts.Variables.port], keys=replay_key)
         else:
@@ -135,7 +166,7 @@ class SafeRetryScenario:
 
         # Verify admission independently of the eventual response.
         body_denied = not retry and mode in ("rst", "goaway", "early-rst")
-        outcome = "admitted" if retry else "body-denied" if body_denied else "not-admitted"
+        outcome = "admitted-twice" if split else "admitted" if retry else "body-denied" if body_denied else "not-admitted"
         metrics = Test.AddTestRun(f"Verify retry decision counters for {name}")
         metrics.Processes.Default.Command = (
             f"{Test.Variables.AtsTestToolsDir}/stdout_wait 10"
@@ -169,6 +200,11 @@ for mode in ("rst-internal", "rst-cancel", "goaway-equal", "response-rst"):
 
 for mode in ("unsolicited-continuation", "settings-flood"):
     SafeRetryScenario(mode, "no-retry", retry=False)
+
+for mode in ("goaway-drain", "goaway-drain-max"):
+    SafeRetryScenario(mode, "goaway-drain", retry=False)
+SafeRetryScenario("goaway-drain-above", "goaway-last-stream-zero")
+SafeRetryScenario("goaway-split", "goaway-split", retry=False)
 
 SafeRetryScenario("early-rst", "rst-refused")
 SafeRetryScenario("early-rst", "no-retry", buffering=0, retry=False)

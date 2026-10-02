@@ -986,27 +986,54 @@ Http2ConnectionState::rcv_goaway_frame(const Http2Frame &frame)
   Http2StreamDebug(this->session, stream_id, "GOAWAY: last stream id=%d, error code=%d", goaway.last_streamid,
                    static_cast<int>(goaway.error_code));
 
+  this->rx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(goaway.error_code)};
+
   // Per RFC 9113 6.8: streams whose id is greater than `last_streamid` were
   // not (and will not be) processed by the peer, and the requests they carry
   // may be safely retried on a fresh connection. On an outbound H/2 session
   // the streams in question are the ones we initiated toward the origin
-  // using odd-numbered client stream IDs. Tagging
-  // them here -- before do_io_close() tears the streams down -- lets HttpSM
-  // decide to retry non-idempotent requests (e.g. POST) that would otherwise
-  // surface to the client as ERR_CLIENT_ABORT. This is especially important
-  // for AWS-style origin load balancers that aggressively send
-  // GOAWAY(last_stream_id=0, NO_ERROR) when draining a connection.
+  // using odd-numbered client stream IDs. Tagging them before closing them
+  // lets HttpSM decide to retry non-idempotent requests (e.g. POST) that
+  // would otherwise surface to the client as ERR_CLIENT_ABORT. This is
+  // especially important for AWS-style origin load balancers that
+  // aggressively send GOAWAY(last_stream_id=0, NO_ERROR) when draining a
+  // connection.
+  //
+  // After a NO_ERROR GOAWAY the origin may still complete the streams at or
+  // below `last_streamid`, so those are left to finish. Half-closing the
+  // session takes it out of the pool and stops new streams, and
+  // release_stream() schedules the session close once every stream is gone.
+  // An error GOAWAY means the origin is tearing the connection down, so the
+  // session closes right away, as it does when no stream is left to finish.
   if (this->session->is_outbound()) {
-    for (Http2Stream *s = stream_list.head; s != nullptr; s = static_cast<Http2Stream *>(s->link.next)) {
+    bool const   drain     = goaway.error_code == Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+    uint32_t     survivors = 0;
+    Http2Stream *s         = stream_list.head;
+
+    // initiating_close() can unlink the stream, so advance before closing it.
+    while (s != nullptr) {
+      Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
       if (http2_is_client_streamid(s->get_id()) && s->get_id() > goaway.last_streamid) {
         Http2StreamDebug(this->session, s->get_id(), "Origin not-processed assertion: GOAWAY last_stream_id=%u",
                          goaway.last_streamid);
         s->set_safe_to_retry();
+        if (drain) {
+          s->initiating_close();
+        }
+      } else if (!s->is_closed()) {
+        ++survivors;
       }
+      s = next;
+    }
+
+    if (drain && survivors > 0) {
+      Http2ConDebug(session, "Draining %u streams after GOAWAY last_stream_id=%u", survivors, goaway.last_streamid);
+      this->_peer_goaway_drain = true;
+      this->session->set_half_close_local_flag(true);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
   }
 
-  this->rx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(goaway.error_code)};
   this->session->get_proxy_session()->do_io_close();
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -2300,6 +2327,12 @@ Http2ConnectionState::release_stream()
         // Can't do this because we just destroyed right here ^,
         // or we can use a local variable to do it.
         // session = nullptr;
+      } else if (_peer_goaway_drain) {
+        // Every stream left by the origin's GOAWAY is gone. The half-closed
+        // session cannot gain streams, so the count stays at zero.
+        if (fini_event == nullptr) {
+          fini_event = this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_FINI);
+        }
       } else if (session->get_proxy_session()->is_active()) {
         // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and session is active,
         // then mark the connection as inactive
@@ -3015,7 +3048,8 @@ Http2ConnectionState::_get_outstanding_settings_frame_limit() const
 void
 Http2ConnectionState::_close_connection(Http2ErrorCode error_code)
 {
-  if (!this->session->get_half_close_local_flag()) {
+  // A session draining the origin's GOAWAY is half-closed without having sent one.
+  if (!this->session->get_half_close_local_flag() || this->_peer_goaway_drain) {
     this->send_goaway_frame(this->latest_streamid_in, error_code);
     this->session->set_half_close_local_flag(true);
   }

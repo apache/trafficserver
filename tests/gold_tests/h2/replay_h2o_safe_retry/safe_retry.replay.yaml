@@ -65,3 +65,27 @@ sessions:
           content:
             encoding: plain
             data: retried
+
+      # The origin's GOAWAY covers this stream, so ATS must let it finish
+      # rather than fail it with the session.
+      - all: { headers: { fields: [[ uuid, goaway-drain ]]}}
+        client-request:
+          method: POST
+          version: '1.1'
+          scheme: http
+          url: /goaway-drain
+          headers:
+            fields:
+              - [ Host, safe-retry.example.com ]
+              - [ Content-Length, 12 ]
+          content:
+            encoding: plain
+            data: request-body
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [ Content-Length, 7 ]
+          content:
+            encoding: plain
+            data: drained
