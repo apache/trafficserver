@@ -1081,10 +1081,10 @@ S3Request::authorizeAwsV2(S3Config *s3)
 TSHttpStatus
 S3Request::authorizeGcp(S3Config *s3)
 {
-  char auth[2048];
-  int  auth_len = snprintf(auth, sizeof(auth), "Bearer %s", s3->token());
+  String auth{"Bearer "};
+  auth += s3->token();
 
-  if (!set_header(TS_MIME_FIELD_AUTHORIZATION, TS_MIME_LEN_AUTHORIZATION, auth, auth_len)) {
+  if (!set_header(TS_MIME_FIELD_AUTHORIZATION, TS_MIME_LEN_AUTHORIZATION, auth.c_str(), auth.length())) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
   return TS_HTTP_STATUS_OK;
