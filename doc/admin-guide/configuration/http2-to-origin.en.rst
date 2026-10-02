@@ -41,8 +41,9 @@ HTTP/2 with HTTP/1.1 as a fallback. To start with one remap rule, use
 
    map https://www.example.com/ https://origin.example.com/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.alpn_protocols=h2,http/1.1
 
-To advertise these protocols globally, merge this setting into
-:file:`records.yaml`:
+A remap rule takes effect when :file:`remap.config` is reloaded. To advertise
+these protocols globally, merge this setting into :file:`records.yaml` and
+restart |TS|; the global record is not reloadable:
 
 .. code-block:: yaml
 
@@ -102,39 +103,58 @@ connection with GOAWAY and ``ENHANCE_YOUR_CALM``. Policy ``1`` avoids these
 concurrency-driven stream-window updates. Increasing |TS|'s inbound SETTINGS
 limit does not change a limit imposed by the origin.
 
-Persist policy changes in :file:`records.yaml` and restart |TS| during a planned
-maintenance window. The policies are copied into HTTP/2 state at startup;
-seeing a new value in ``traffic_ctl config get`` after a reload alone does not
-verify that HTTP/2 is using it.
+The policies are reloadable. Each HTTP/2 connection reads the policy when it
+is established, so a reload applies to new connections, while existing
+connections keep the policy and windows they started with until they close.
+Older releases copy the policies only at startup and require a restart; there,
+seeing a new value in ``traffic_ctl config get`` after a reload does not verify
+that HTTP/2 is using it.
 
 Pooling and timeouts
 ====================
 
-Review :ts:cv:`proxy.config.http.server_session_sharing.pool` together with
-:ts:cv:`proxy.config.http.server_session_sharing.match`. HTTP/2 origin sessions
-are associated with their network thread. ``thread`` or ``hybrid`` pooling is
-a useful starting point; global HTTP/1 pooling behavior is not a guarantee
-that HTTP/2 connections will be reused across threads. For example:
+|TS| places every HTTP/2 origin session in the session pool of the network
+thread that drives its connection, whatever
+:ts:cv:`proxy.config.http.server_session_sharing.pool` is set to. The
+session's state is owned by that thread, so it cannot be shared with other
+threads. When a transaction needs an origin connection, |TS| first searches
+the current thread's pool and then the pool type configured by that record.
+With ``global`` pooling, HTTP/1.1 origin connections are still shared by all
+threads, while an HTTP/2 origin session serves only transactions on its own
+thread. :ts:cv:`proxy.config.http.server_session_sharing.match` applies to
+both protocols.
 
-.. code-block:: yaml
+Older releases search only the configured pool type. With ``global`` pooling
+they do not find HTTP/2 origin sessions in the thread pool, so they open a new
+origin connection for each transaction. Use ``thread`` or ``hybrid`` pooling
+with those releases.
 
-   records:
-     http:
-       server_session_sharing:
-         pool: hybrid
-       keep_alive_no_activity_timeout_out: 30
-     http2:
-       no_activity_timeout_out: 30
+Otherwise, enabling HTTP/2 to origin does not require a different pool type.
+Keep the setting that suits the origins that continue to negotiate HTTP/1.1.
+The pool type is not reloadable, so changing it requires a restart.
 
-A shorter idle timeout can reduce the number of idle connections retained
-across threads and origins. A longer timeout can improve reuse for intermittent
-traffic. The example uses 30 seconds; choose values appropriate for the
-origins and workload. The keep-alive setting
-:ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_out` concerns reuse
-after a transaction ends. Separately,
-:ts:cv:`proxy.config.http2.no_activity_timeout_out` controls inactivity when
-an HTTP/2 origin transaction stalls. Choose that timeout to allow expected
-pauses during active work; it need not match the keep-alive timeout.
+Because HTTP/2 origin sessions are kept per thread, reuse depends on how often
+each thread sends a request to the origin. Requests that arrive together on
+one client connection, such as the parallel requests of a page load, are
+handled on the same thread and can share one origin connection. An origin
+that receives only occasional requests can find no idle session on the
+current thread and open a new connection, even when another thread holds an
+idle session to it. HTTP/2 therefore improves reuse most for busy origins and
+for bursts of concurrent requests. For an origin with a low request rate, a
+longer HTTP/1.1 keep-alive timeout can give comparable reuse.
+
+:ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_out` controls how
+long an idle HTTP/1.1 origin connection remains available for reuse after a
+transaction ends. Lowering it globally during an HTTP/2 rollout reduces reuse
+for every origin that still negotiates HTTP/1.1, and makes changes harder to
+attribute to HTTP/2. Keep the existing value while evaluating HTTP/2, and
+adjust it for specific origins with :ref:`admin-plugins-conf-remap` if needed.
+An HTTP/2 origin session with no active streams is instead closed after
+:ts:cv:`proxy.config.http2.no_activity_timeout_out`. A longer value keeps idle
+sessions available for reuse longer, at the cost of more idle connections.
+A stalled transaction on either protocol is governed by
+:ts:cv:`proxy.config.http.transaction_no_activity_timeout_out`; choose it to
+allow expected pauses during active work.
 
 :ts:cv:`proxy.config.http.per_server.connection.max` limits upstream
 connections, not concurrent HTTP/2 streams. A deployment-specific value such
@@ -149,26 +169,25 @@ Increasing it retains resources longer, so a very large value should not be
 copied into every deployment. Preserve suitable transaction timeouts; see
 :ref:`admin-performance-timeouts`.
 
-Related client-side tuning
-==========================
+Related HTTP/2 tuning
+=====================
 
-These settings can affect an HTTP/2 client workload during an origin rollout,
-but they are not requirements for negotiating HTTP/2 with origins:
+These settings can affect HTTP/2 traffic during an origin rollout, but they
+are not requirements for negotiating HTTP/2 with origins:
 
-* :ts:cv:`proxy.config.http2.max_concurrent_streams_in` limits concurrent
-  streams from clients. Reducing it from 100 to 40 can help workloads with
-  many busy streams, at the cost of less concurrency per client connection.
-  It does not set the origin's limit on requests sent by |TS|.
 * :ts:cv:`proxy.config.http2.active_timeout_in` limits the lifetime of an
   incoming HTTP/2 connection even when it is active. Keep its default of
   ``0`` (disabled), or select a lifetime that accommodates long-lived active
   connections.
 * :ts:cv:`proxy.config.http2.min_avg_window_update` protects against peers
-  sending very small WINDOW_UPDATE increments. A value such as ``2.0`` relaxes
-  the default threshold substantially. Only lower it after confirming that
-  legitimate small updates trigger this protection, and first review window
-  sizing. This local threshold does not prevent an origin from rejecting
-  excessive SETTINGS frames.
+  sending very small WINDOW_UPDATE increments. It applies to origins as well as
+  clients. When a peer's recent increments average below the threshold, |TS|
+  responds with ``ENHANCE_YOUR_CALM``, resetting the stream or closing the
+  connection, so an origin that sends small increments can lose requests. A
+  value such as ``2.0`` relaxes the default threshold substantially. Only lower
+  it after confirming that legitimate small updates trigger this protection,
+  and first review window sizing. This local threshold does not prevent an
+  origin from rejecting excessive SETTINGS frames.
 
 Visibility
 ==========
@@ -190,12 +209,14 @@ Measure connection reuse and errors together. The gauges
 origin connections separately. A reduction in the former alone does not
 prove a reduction in the total number of origin connections.
 
-Compare a canary with a baseline using similar traffic and normalize errors
-by request volume. Separate client aborts, connection failures, proxy-generated
-errors, and origin HTTP errors. Break down changes by origin, method, status,
-and negotiated protocol; an aggregate error category can also include
-unrelated routing failures. Allow traffic and connection reuse to stabilize
-before drawing conclusions.
+Compare a canary with a baseline using similar traffic and normalize errors by
+request volume. Compare connection reuse per origin rather than only the
+overall share of HTTP/2 transactions; a high HTTP/2 share can come from a few
+busy origins while less busy origins see little change. Separate client aborts,
+connection failures, proxy-generated errors, and origin HTTP errors. Break down
+changes by origin, method, status, and negotiated protocol; an aggregate error
+category can also include unrelated routing failures. Allow traffic and
+connection reuse to stabilize before drawing conclusions.
 
 If failures increase, inspect GOAWAY error codes and stream resets with
 bounded diagnostic logging. A single HTTP/2 connection failure can affect
