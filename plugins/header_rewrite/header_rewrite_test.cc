@@ -471,6 +471,69 @@ test_parsing()
     END_TEST();
   }
 
+  {
+    ParserTest p(R"(set-cache-key HOST "%{CLIENT-HEADER:X-H}")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-cache-key");
+    CHECK_EQ(p.getTokens()[1], "HOST");
+    CHECK_EQ(p.getTokens()[2], "%{CLIENT-HEADER:X-H}");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(set-cache-key PATH "")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-cache-key");
+    CHECK_EQ(p.getTokens()[1], "PATH");
+    CHECK_EQ(p.getTokens()[2], "");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(add-cache-key "%{CLIENT-HEADER:Accept-Language}")");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "add-cache-key");
+    CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:Accept-Language}");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(add-cache-key "")");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "add-cache-key");
+    CHECK_EQ(p.getTokens()[1], "");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p("clear-cache-key");
+
+    CHECK_EQ(p.getTokens().size(), 1UL);
+    CHECK_EQ(p.getTokens()[0], "clear-cache-key");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p("cond %{CACHE-URL:HOST} =k.ex");
+
+    CHECK_EQ(p.getTokens().size(), 4UL);
+    CHECK_EQ(p.getTokens()[0], "cond");
+    CHECK_EQ(p.getTokens()[1], "%{CACHE-URL:HOST}");
+    CHECK_EQ(p.getTokens()[2], "=");
+    CHECK_EQ(p.getTokens()[3], "k.ex");
+
+    END_TEST();
+  }
+
   return errors;
 }
 
