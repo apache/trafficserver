@@ -21,6 +21,9 @@
     limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include <algorithm>
 #include <iostream>
 #include <list>
@@ -1369,7 +1372,7 @@ Scan_Cache(swoc::file::path const &regex_path)
 
 int
 main([[maybe_unused]] int argc, const char *argv[])
-{
+try {
   swoc::file::path input_url_file;
   std::string      inputFile;
 
@@ -1435,4 +1438,10 @@ main([[maybe_unused]] int argc, const char *argv[])
   }
 
   return 0;
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled exception: %s\n", ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled exception\n");
+  return 1;
 }
