@@ -48,8 +48,20 @@ DbgCtl dbg_ctl_http_ss{"http_ss"};
 bool
 validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
 {
-  return !session->is_multiplexing() ||
-         validate_server_certificate_hostname(session->get_netvc(), sm->get_outbound_sni_for_cert_verification());
+  if (!session->is_multiplexing()) {
+    return true;
+  }
+
+  NetVConnection *netvc = session->get_netvc();
+  if (origin_pinned_raw_public_key(netvc)) {
+    // A raw public key carries no SAN, so the next hop's pin set stood in for the name check. That
+    // set belongs to the sni.yaml entry the outbound SNI selected, so this session is only reusable
+    // for a request that would send the same SNI. Deliberately not gated on the SNI match mask or
+    // on NAME being in verify_server_properties: the pin set is the whole of what authenticated
+    // this origin.
+    return ServerSessionPool::validate_sni(sm, netvc);
+  }
+  return validate_server_certificate_hostname(netvc, sm->get_outbound_sni_for_cert_verification());
 }
 
 } // end anonymous namespace
@@ -133,16 +145,22 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
       std::string_view proposed_sni = sm->get_outbound_sni();
       Dbg(dbg_ctl_http_ss, "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
           session_sni);
-      if (!session_sni || session_sni[0] == '\0' || proposed_sni.length() == 0) {
-        retval = session_sni == nullptr && proposed_sni.length() == 0;
-      } else {
-        retval = proposed_sni.compare(session_sni) == 0;
-      }
+      retval = sni_matches(proposed_sni, session_sni);
     } else {
       retval = false;
     }
   }
   return retval;
+}
+
+bool
+ServerSessionPool::sni_matches(std::string_view proposed_sni, const char *session_sni)
+{
+  // A plain comparison, because get_sni_server_name() yields "" rather than nullptr when the
+  // connection sent no name. The nullptr test this replaces could never be true, so an empty name on
+  // either side refused reuse outright rather than letting a session that sent none be reused by a
+  // request that would send none.
+  return proposed_sni == std::string_view{session_sni != nullptr ? session_sni : ""};
 }
 
 bool
