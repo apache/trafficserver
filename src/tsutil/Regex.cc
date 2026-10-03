@@ -66,20 +66,6 @@ static_assert((RE_FULL_MATCH & PCRE2_NOTEMPTY) == 0, "RE_FULL_MATCH bit collides
 //----------------------------------------------------------------------------
 namespace
 {
-void *
-my_malloc(size_t size, void * /*caller*/)
-{
-  void *ptr = malloc(size);
-  return ptr;
-}
-
-void
-my_free(void *ptr, void * /*caller*/)
-{
-  free(ptr);
-}
-
-//----------------------------------------------------------------------------
 class RegexContext
 {
 public:
@@ -91,23 +77,18 @@ public:
   }
   ~RegexContext()
   {
-    if (_general_context != nullptr) {
-      pcre2_general_context_free(_general_context);
-    }
     if (_compile_context != nullptr) {
       pcre2_compile_context_free(_compile_context);
     }
     if (_match_context != nullptr) {
       pcre2_match_context_free(_match_context);
     }
+    if (_options_match_context != nullptr) {
+      pcre2_match_context_free(_options_match_context);
+    }
     if (_jit_stack != nullptr) {
       pcre2_jit_stack_free(_jit_stack);
     }
-  }
-  pcre2_general_context *
-  get_general_context()
-  {
-    return _general_context;
   }
   pcre2_compile_context *
   get_compile_context()
@@ -120,19 +101,35 @@ public:
     return _match_context;
   }
 
+  /** The shared match context with @a opts applied.
+   *
+   * Default @a opts get the shared context itself. Otherwise @a opts is applied to a copy of it, so everything the shared
+   * context configures, the JIT stack included, carries over and only what @a opts sets differs. Every field is reapplied
+   * on each call, so nothing from a previous caller's @a opts leaks into this one.
+   */
+  pcre2_match_context *
+  get_match_context(Regex::Options const &opts)
+  {
+    if (opts.match_limit == 0 || _options_match_context == nullptr) {
+      return _match_context;
+    }
+    pcre2_set_match_limit(_options_match_context, opts.match_limit);
+    return _options_match_context;
+  }
+
 private:
   RegexContext()
   {
-    _general_context = pcre2_general_context_create(my_malloc, my_free, nullptr);
-    _compile_context = pcre2_compile_context_create(_general_context);
-    _match_context   = pcre2_match_context_create(_general_context);
+    _compile_context = pcre2_compile_context_create(nullptr);
+    _match_context   = pcre2_match_context_create(nullptr);
     _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
     pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
+    _options_match_context = pcre2_match_context_copy(_match_context);
   }
-  pcre2_general_context *_general_context = nullptr;
-  pcre2_compile_context *_compile_context = nullptr;
-  pcre2_match_context   *_match_context   = nullptr;
-  pcre2_jit_stack       *_jit_stack       = nullptr;
+  pcre2_compile_context *_compile_context       = nullptr;
+  pcre2_match_context   *_match_context         = nullptr;
+  pcre2_match_context   *_options_match_context = nullptr;
+  pcre2_jit_stack       *_jit_stack             = nullptr;
 };
 
 } // namespace
@@ -238,75 +235,6 @@ RegexMatches::operator[](size_t index) const
   }
 
   return std::string_view(_subject.data() + ovector[2 * index], ovector[2 * index + 1] - ovector[2 * index]);
-}
-
-//----------------------------------------------------------------------------
-struct RegexMatchContext::_MatchContext {
-  static pcre2_match_context *
-  get(_MatchContextPtr const &p)
-  {
-    return static_cast<pcre2_match_context *>(p._ptr);
-  }
-  static void
-  set(_MatchContextPtr &p, pcre2_match_context *ptr)
-  {
-    p._ptr = ptr;
-  }
-};
-
-//----------------------------------------------------------------------------
-RegexMatchContext::RegexMatchContext()
-{
-  auto ctx = pcre2_match_context_create(nullptr);
-  debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
-  _MatchContext::set(_match_context, ctx);
-}
-
-//----------------------------------------------------------------------------
-RegexMatchContext::RegexMatchContext(RegexMatchContext const &other)
-{
-  auto ptr = _MatchContext::get(other._match_context);
-  if (nullptr != ptr) {
-    pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
-    _MatchContext::set(_match_context, ctx);
-  }
-}
-
-//----------------------------------------------------------------------------
-RegexMatchContext &
-RegexMatchContext::operator=(RegexMatchContext const &other)
-{
-  if (&other != this) {
-    auto ptr = _MatchContext::get(other._match_context);
-    if (nullptr != ptr) {
-      pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
-      _MatchContext::set(_match_context, ctx);
-    } else {
-      _MatchContext::set(_match_context, nullptr);
-    }
-  }
-  return *this;
-}
-
-//----------------------------------------------------------------------------
-RegexMatchContext::~RegexMatchContext()
-{
-  auto ptr = _MatchContext::get(_match_context);
-  debug_assert_message(ptr, "Failed to get the match context");
-  if (ptr != nullptr) {
-    pcre2_match_context_free(ptr);
-  }
-}
-
-//----------------------------------------------------------------------------
-void
-RegexMatchContext::set_match_limit(uint32_t limit)
-{
-  auto ptr = _MatchContext::get(_match_context);
-  debug_assert_message(ptr, "Failed to get the match context");
-  if (ptr != nullptr) {
-    pcre2_set_match_limit(ptr, limit);
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -492,7 +420,14 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
 
 //----------------------------------------------------------------------------
 int32_t
-Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, RegexMatchContext const *const matchContext) const
+Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const
+{
+  return this->exec(subject, matches, flags, Options{});
+}
+
+//----------------------------------------------------------------------------
+int32_t
+Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Options const &opts) const
 {
   auto code = _Code::get(_code);
 
@@ -501,13 +436,7 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
     return PCRE2_ERROR_NULL;
   }
 
-  // Use the provided or the thread global context?
-  pcre2_match_context *match_context;
-  if (nullptr == matchContext) {
-    match_context = RegexContext::get_instance()->get_match_context();
-  } else {
-    match_context = RegexMatchContext::_MatchContext::get(matchContext->_match_context);
-  }
+  pcre2_match_context *match_context = RegexContext::get_instance()->get_match_context(opts);
 
   bool const     full_match  = (flags & RE_FULL_MATCH) != 0;
   uint32_t const pcre2_flags = flags & ~RE_FULL_MATCH;
