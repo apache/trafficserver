@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#include <algorithm>
 #include <string_view>
 
 using namespace std::literals;
@@ -200,8 +201,27 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
   // :authority
   if (MIMEField *field = header.field_find(PSEUDO_HEADER_AUTHORITY);
       field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-    auto authority{field->value_get()};
-    header.m_http->u.req.m_url_impl->set_host(header.m_heap, authority, true);
+    auto value{field->value_get()};
+
+    // No host to parse, and url_parse_internet() reads *start before checking the length.
+    if (value.empty()) {
+      return ParseResult::ERROR;
+    }
+
+    // Copy out first: allocating from header.m_heap may coalesce it and free the field's storage.
+    ts::LocalBuffer<char> buf(value.length());
+    std::string_view      authority{buf.data(), value.length()};
+
+    std::copy(value.begin(), value.end(), buf.data());
+
+    // Require full consumption: url_parse_internet() stops at a '/', '?' or '#'.
+    const char *astart = authority.data();
+    const char *aend   = authority.data() + authority.length();
+
+    if (url_parse_internet(header.m_heap, header.m_http->u.req.m_url_impl, &astart, aend, true, true) != ParseResult::DONE ||
+        astart != aend) {
+      return ParseResult::ERROR;
+    }
 
     if (!is_connect_method) {
       MIMEField *host = header.field_find(static_cast<std::string_view>(MIME_FIELD_HOST));
@@ -220,6 +240,8 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
         host->value_set(header.m_heap, header.m_mime, authority);
         header.field_delete(field);
       }
+    } else {
+      header.field_delete(field);
     }
   } else {
     return ParseResult::ERROR;
@@ -229,14 +251,31 @@ VersionConverter::_convert_req_from_2_to_1(HTTPHdr &header) const
     // :path
     if (MIMEField *field = header.field_find(PSEUDO_HEADER_PATH);
         field != nullptr && field->value_is_valid(is_control_BIT | is_ws_BIT)) {
-      auto path{field->value_get()};
+      auto                  value{field->value_get()};
+      ts::LocalBuffer<char> buf(value.length());
+      std::string_view      path{buf.data(), value.length()};
+      auto                 *url = header.m_http->u.req.m_url_impl;
 
-      // cut first '/' if there, because `url_print()` add '/' before printing path
-      if (path.starts_with("/"sv)) {
+      // Copy out, as for :authority.
+      std::copy(value.begin(), value.end(), buf.data());
+
+      // Split as url_parse_http() would, so cache keys and remap see the same fields.
+      if (auto hpos = path.find('#'); hpos != std::string_view::npos) {
+        url->set_fragment(header.m_heap, path.substr(hpos + 1), true);
+        path = path.substr(0, hpos);
+      }
+
+      if (auto qpos = path.find('?'); qpos != std::string_view::npos) {
+        url->set_query(header.m_heap, path.substr(qpos + 1), true);
+        path = path.substr(0, qpos);
+      }
+
+      // url_parse_http() strips every leading '/'; url_print() re-adds exactly one.
+      while (path.starts_with("/"sv)) {
         path.remove_prefix(1);
       }
 
-      header.m_http->u.req.m_url_impl->set_path(header.m_heap, path, true);
+      url->set_path(header.m_heap, path, true);
 
       header.field_delete(field);
     } else {

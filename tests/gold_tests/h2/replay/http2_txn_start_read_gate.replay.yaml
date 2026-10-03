@@ -60,3 +60,35 @@ sessions:
         encoding: plain
         data: response-body
         verify: {as: equal}
+
+  # A bodyless GET arrives with END_STREAM on the HEADERS frame, so there are no
+  # DATA frames to fall back on if the read event is dropped while TXN_START is
+  # gated. Regression coverage for the direct-header-passing path.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [:method, GET]
+            - [:scheme, https]
+            - [:authority, delay-txn-start.test]
+            - [:path, /read-gate-no-body]
+            - [uuid, '2']
+
+    proxy-request:
+      url: "/read-gate-no-body"
+
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        encoding: plain
+        data: bodyless-response
+        size: 17
+
+    proxy-response:
+      status: 200
+      content:
+        encoding: plain
+        data: bodyless-response
+        verify: {as: equal}

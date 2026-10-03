@@ -24,6 +24,7 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_inet.h"
+#include <algorithm>
 #include <cassert>
 #include <charconv>
 #include <cstdio>
@@ -1301,6 +1302,36 @@ validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh)
   }
 
   return ParseResult::DONE;
+}
+
+bool
+HTTPHdr::parse_req_would_accept(int strict_uri_parsing, size_t max_request_line_size, size_t max_hdr_field_size)
+{
+  auto method{this->method_get()};
+
+  if (method.empty() || !std::all_of(method.begin(), method.end(), &ParseRules::is_token)) {
+    return false;
+  }
+  if (!url_is_uri_compliant(strict_uri_parsing, this->path_get()) || !url_is_uri_compliant(strict_uri_parsing, this->query_get()) ||
+      !url_is_uri_compliant(strict_uri_parsing, this->fragment_get())) {
+    return false;
+  }
+  // Upper bound of the serialized "METHOD URL HTTP/1.1\r\n", so parse_req() makes the exact call.
+  if (method.size() + static_cast<size_t>(this->url_get()->length_get()) + 12 > max_request_line_size) {
+    return false;
+  }
+  for (auto const &field : *this) {
+    auto name{field.name_get()};
+    auto value{field.value_get()};
+
+    // parse_req() drops or rejects a name with any non-field-name character, and trims values.
+    if (name.empty() || name.size() + value.size() > max_hdr_field_size ||
+        !std::all_of(name.begin(), name.end(), &ParseRules::is_http_field_name) ||
+        (!value.empty() && (ParseRules::is_ws(value.front()) || ParseRules::is_ws(value.back())))) {
+      return false;
+    }
+  }
+  return validate_hdr_host(m_http) == ParseResult::DONE && validate_hdr_content_length(m_heap, m_http) == ParseResult::DONE;
 }
 
 /*-------------------------------------------------------------------------

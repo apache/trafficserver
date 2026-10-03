@@ -31,6 +31,7 @@
 #include "tscore/Diags.h"
 #include "tscore/HTTPVersion.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ParseRules.h"
 #include "tsutil/DbgCtl.h"
 
 #include <numeric>
@@ -295,13 +296,53 @@ Http2Stream::main_event_handler(int event, void *edata)
 Http2ErrorCode
 Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size)
 {
-  Http2ErrorCode error = http2_decode_header_blocks(&_receive_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr,
-                                                    hpack_handle, _trailing_header_is_possible, maximum_table_size,
-                                                    header_field_max_size, this->is_outbound_connection());
+  return this->decode_header_blocks(hpack_handle, maximum_table_size, header_field_max_size, header_blocks, header_blocks_length);
+}
+
+Http2ErrorCode
+Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size,
+                                  const uint8_t *block, uint32_t block_len)
+{
+  Http2ErrorCode error =
+    http2_decode_header_blocks(&_receive_header, block, block_len, nullptr, hpack_handle, _trailing_header_is_possible,
+                               maximum_table_size, header_field_max_size, this->is_outbound_connection());
   if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Http2StreamDebug("Error decoding header blocks: %u", static_cast<uint32_t>(error));
   }
   return error;
+}
+
+bool
+Http2Stream::supports_direct_header_passing() const
+{
+  return true;
+}
+
+bool
+Http2Stream::is_parsed_receive_header_ready() const
+{
+  return this->_is_parsed_receive_header_ready;
+}
+
+const HTTPHdr *
+Http2Stream::parsed_receive_header() const
+{
+  return &this->_receive_header;
+}
+
+HTTPHdr *
+Http2Stream::_pending_send_header() const
+{
+  if (this->parsing_header_done || this->_sm == nullptr) {
+    return nullptr;
+  }
+  return this->is_outbound_connection() ? this->_sm->get_server_request_header() : this->_sm->get_client_response_header();
+}
+
+bool
+Http2Stream::has_pending_send_header() const
+{
+  return this->_pending_send_header() != nullptr;
 }
 
 void
@@ -314,10 +355,13 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
 
   // Convert header to HTTP/1.1 format. Trailing headers need no conversion
   // because they, by definition, do not contain pseudo headers.
+  bool conversion_ok = true;
+
   if (this->trailing_header_is_possible()) {
     Http2StreamDebug("trailing header: Skipping send_headers initialization.");
   } else {
     if (http2_convert_header_from_2_to_1_1(&_receive_header) == ParseResult::ERROR) {
+      conversion_ok = false;
       Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
       if (_receive_header.type_get() == HTTPType::REQUEST) {
         // There's no way to cause Bad Request directly at this time.
@@ -335,6 +379,23 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
     }
     ink_release_assert(this->_sm != nullptr);
     this->_http_sm_id = this->_sm->sm_id;
+  }
+
+  // A failed conversion leaves a \xffVOID method that only parse_req can turn into a 400.
+  // Bodyless only: a trailer would reset _receive_header before HttpSM copies it.
+  if (conversion_ok && this->receive_end_stream && !this->trailing_header_is_possible() && !this->is_outbound_connection() &&
+      _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0) {
+    auto const *config = this->_sm->t_state.http_config_param;
+
+    if (_receive_header.parse_req_would_accept(config->strict_uri_parsing, config->http_request_line_max_size,
+                                               config->http_hdr_field_max_size)) {
+      this->_is_parsed_receive_header_ready = true;
+      // nbytes == 0 reads as "paused" to the VIO layer, which swallows the signal.
+      this->read_vio.nbytes = _receive_header.length_get();
+      this->read_vio.ndone  = this->read_vio.nbytes;
+      this->signal_read_event(VC_EVENT_READ_COMPLETE);
+      return;
+    }
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
@@ -574,7 +635,7 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.op        = VIO::WRITE;
   _send_reader        = abuffer;
 
-  if (c != nullptr && nbytes > 0 && this->is_state_writeable()) {
+  if (c != nullptr && (nbytes > 0 || this->has_pending_send_header()) && this->is_state_writeable()) {
     update_write_request(false);
   } else if (!this->is_state_writeable()) {
     // Cannot start a write on a closed stream
@@ -854,7 +915,7 @@ Http2Stream::update_write_request(bool call_update)
 
   IOBufferReader *vio_reader = write_vio.get_reader();
 
-  if (write_vio.ntodo() > 0 && (!vio_reader->is_read_avail_more_than(0))) {
+  if (write_vio.ntodo() > 0 && !vio_reader->is_read_avail_more_than(0) && !this->has_pending_send_header()) {
     Http2StreamDebug("update_write_request give up without doing anything ntodo=%" PRId64 " is_read_avail=%d client_window=%zd"
                      " session_window=%zd",
                      write_vio.ntodo(), vio_reader->is_read_avail_more_than(0), _peer_rwnd,
@@ -864,15 +925,35 @@ Http2Stream::update_write_request(bool call_update)
 
   // Process the new data
   if (!this->parsing_header_done) {
-    // Still parsing the request or response header
     int         bytes_used = 0;
     ParseResult state;
-    if (this->is_outbound_connection()) {
+    HTTPHdr    *send_hdr = this->_pending_send_header();
+
+    if (send_hdr != nullptr) {
+      // Field by field: copy() would wipe the pseudo-headers create(HTTP_2_0) reserved.
+      if (this->is_outbound_connection()) {
+        this->_send_header.method_set(send_hdr->method_get());
+        this->_send_header.url_set(send_hdr->url_get());
+      } else {
+        this->_send_header.status_set(send_hdr->status_get());
+      }
+      for (auto const &field : *send_hdr) {
+        MIMEField     *f = this->_send_header.field_create(field.name_get());
+        swoc::TextView value{field.value_get()};
+
+        // HTTP/2 peers reject a value with surrounding whitespace (RFC 9113 8.2.1).
+        value.trim_if(&ParseRules::is_ws);
+        f->value_set(this->_send_header.m_heap, this->_send_header.m_mime, value);
+        this->_send_header.field_attach(f);
+      }
+      this->_sm->clear_pending_send_header(this->is_outbound_connection());
+      state = ParseResult::DONE;
+    } else if (this->is_outbound_connection()) {
       state = this->_send_header.parse_req(&http_parser, this->_send_reader, &bytes_used, false);
     } else {
+      // Interim 1xx responses (setup_100_continue_transfer()) are still serialized.
       state = this->_send_header.parse_resp(&http_parser, this->_send_reader, &bytes_used, false);
     }
-    // HTTPHdr::parse_resp() consumed the send_reader in above
     write_vio.ndone += bytes_used;
 
     switch (state) {
