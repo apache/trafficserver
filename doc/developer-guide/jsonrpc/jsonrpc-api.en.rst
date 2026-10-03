@@ -1597,7 +1597,8 @@ Response could be either:
 
 #. The response will contain the default `success_response`
 
-#. Response from a server that is already in drain mode.
+#. Response from a server that is already in drain mode. The annotation is a warning, see
+   :ref:`jsonrpc-node-errors-severity`.
 
 .. code-block:: json
    :linenos:
@@ -1612,6 +1613,7 @@ Response could be either:
          "data": [{
 
             "code": 3000,
+            "severity": 4,
             "message": "Server already draining."
             }]
 

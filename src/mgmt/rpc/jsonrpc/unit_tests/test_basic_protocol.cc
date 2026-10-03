@@ -21,10 +21,14 @@
 #include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
 
 #include <tsutil/ts_bw_format.h>
+#include <tsutil/ts_errata.h>
 
 #include "mgmt/rpc/jsonrpc/JsonRPCManager.h"
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
+
+// Defined in src/tsutil/ts_diags.cc; traffic_server calls it at startup.
+void Initialize_Errata_Settings();
 
 namespace
 {
@@ -78,6 +82,50 @@ test_callback_ok_or_error(std::string_view const & /* id ATS_UNUSED */, YAML::No
   }
   return resp;
 }
+
+inline swoc::Rv<YAML::Node>
+test_callback_with_severity(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  resp.errata()
+    .assign(ERR1)
+    .note(ERRATA_WARN, "this is a warning")
+    .note("this has no severity")
+    .note(ERRATA_FATAL, "this is fatal")
+    .note(ERRATA_DIAG, "this is a diag");
+  return resp;
+}
+
+inline swoc::Rv<YAML::Node>
+test_callback_note_only(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  resp.errata().assign(ERR1).note(ERRATA_NOTE, "just a note");
+  return resp;
+}
+
+inline swoc::Rv<YAML::Node>
+test_callback_warn_only(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  resp.errata().assign(ERR1).note(ERRATA_WARN, "already in that state");
+  return resp;
+}
+
+// traffic_server's errata settings, restored on scope exit. The unit tests run with libswoc's defaults otherwise, which treat
+// lower severities as failures.
+struct ProductionErrataSeverities {
+  swoc::Errata::Severity              saved_default{swoc::Errata::DEFAULT_SEVERITY};
+  swoc::Errata::Severity              saved_failure{swoc::Errata::FAILURE_SEVERITY};
+  swoc::MemSpan<swoc::TextView const> saved_names{swoc::Errata::SEVERITY_NAMES};
+  ProductionErrataSeverities() { Initialize_Errata_Settings(); }
+  ~ProductionErrataSeverities()
+  {
+    swoc::Errata::DEFAULT_SEVERITY = saved_default;
+    swoc::Errata::FAILURE_SEVERITY = saved_failure;
+    swoc::Errata::SEVERITY_NAMES   = saved_names;
+  }
+};
 
 static int notificationCallCount{0};
 inline void
@@ -606,5 +654,43 @@ TEST_CASE("Call method with invalid ID", "[invalid_id]")
       R"([{"jsonrpc": "2.0", "error": {"code": 11, "message": "Use of an empty string as id is discouraged"}}, )"
       R"({"jsonrpc": "2.0", "error": {"code": 7, "message": "Invalid id type"}}])";
     REQUIRE(*resp == expected);
+  }
+}
+
+TEST_CASE("Severity field in error data entries", "[severity]")
+{
+  JsonRpcUnitTest rpc;
+
+  SECTION("Only annotations with an explicit severity carry the field")
+  {
+    REQUIRE(rpc.add_method_handler("test_callback_with_severity", &test_callback_with_severity));
+
+    const auto json = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "test_callback_with_severity", "params": {}, "id": "50"})");
+    REQUIRE(json);
+    const std::string_view expected =
+      R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "severity": 4, "message": "this is a warning"}, {"code": 9999, "message": "this has no severity"}, {"code": 9999, "severity": 6, "message": "this is fatal"}, {"code": 9999, "severity": 0, "message": "this is a diag"}]}, "id": "50"})";
+    REQUIRE(*json == expected);
+  }
+
+  SECTION("A warning on its own is still sent as an error")
+  {
+    ProductionErrataSeverities production;
+    REQUIRE(rpc.add_method_handler("test_callback_warn_only", &test_callback_warn_only));
+
+    const auto json = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "test_callback_warn_only", "params": {}, "id": "51"})");
+    REQUIRE(json);
+    const std::string_view expected =
+      R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "severity": 4, "message": "already in that state"}]}, "id": "51"})";
+    REQUIRE(*json == expected);
+  }
+
+  SECTION("Below a warning traffic_server answers with success and drops the note")
+  {
+    ProductionErrataSeverities production;
+    REQUIRE(rpc.add_method_handler("test_callback_note_only", &test_callback_note_only));
+
+    const auto json = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "test_callback_note_only", "params": {}, "id": "52"})");
+    REQUIRE(json);
+    REQUIRE(*json == R"({"jsonrpc": "2.0", "result": "success", "id": "52"})");
   }
 }
