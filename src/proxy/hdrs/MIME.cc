@@ -2559,14 +2559,22 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       }
       field_name.rtrim_if(&ParseRules::is_ws);
       raw_print_field = false;
-    } else if (parsed.suffix(2) != "\r\n" || (parsed.size() > 2 && parsed[parsed.size() - 3] == '\r')) {
-      // Do not preserve malformed line endings when forwarding the field.
-      raw_print_field = false;
     }
 
     // find value first
     field_value.ltrim_if(&ParseRules::is_ws);
     field_value.rtrim_if(&ParseRules::is_wslfcr);
+
+    if (raw_print_field) {
+      // Raw printing copies the original input bytes instead of re-serializing, so it would
+      // replay this line ending verbatim. Everything between the end of the trimmed value and
+      // the end of the line must be optional whitespace followed by exactly one CRLF; a bare
+      // CR in there is malformed (RFC 9112 section 2.2) and must not be forwarded.
+      TextView tail{field_value.data() + field_value.size(), parsed.data() + parsed.size()};
+      if (tail.suffix(2) != "\r\n" || tail.remove_suffix(2).find_first_of("\r\n") != TextView::npos) {
+        raw_print_field = false;
+      }
+    }
 
     // Make sure the name + value is not longer than configured max_hdr_field_size
     if (field_name.size() + field_value.size() > max_hdr_field_size) {
