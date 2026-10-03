@@ -61,11 +61,28 @@ server2.Setup.Copy("ssl/signed2-bar.pem")
 server2.Setup.Copy("ssl/signed-bar.key")
 
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 server.addResponse("sessionlog.json", request_header, response_header)
+
+# Register a framed 404 for / on the second origin. The microserver's default
+# lookup key is {PATH}, so this response applies to every Host header.
+server2.addResponse(
+    "sessionlog.json", request_header, {
+        "headers": "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+        "timestamp": "1469733493.993",
+        "body": ""
+    })
 
 #
 # Certs and keys loaded into the ts/ssl directory, but the paths in the

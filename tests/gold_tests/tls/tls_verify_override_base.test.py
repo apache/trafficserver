@@ -44,11 +44,24 @@ request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "tim
 request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bad_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
 server_foo.addResponse("sessionlog.json", request_foo_header, response_header)
 server_foo.addResponse("sessionlog.json", request_bad_foo_header, response_header)
 server_bar.addResponse("sessionlog.json", request_bar_header, response_header)
 server_bar.addResponse("sessionlog.json", request_bad_bar_header, response_header)
+
+# Register a framed 404 for /. The microserver's default lookup key is {PATH},
+# so this response applies to every Host header, including random.com.
+fallback_response = {
+    "headers": "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+server.addResponse("sessionlog.json", request_foo_header, fallback_response)
 
 # add ssl materials like key, certificates for the server
 ts.addSSLfile("ssl/signed-foo.pem")
