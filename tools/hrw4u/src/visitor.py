@@ -230,6 +230,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
                     return replacement
                 raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
+            except SandboxDenialError as e:
+                # Report it as a denial so the sandbox message is set.
+                e.add_note(f"String interpolation context: {s[:50]}...")
+                with self.trap(ctx):
+                    raise
+                return f"{{ERROR: {e}}}"
             except Exception as e:
                 error = hrw4u_error(self.filename, ctx, f"symbol error in {{}}: {e}")
                 if hasattr(error, 'add_note'):

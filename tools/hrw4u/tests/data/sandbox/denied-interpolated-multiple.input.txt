@@ -1,0 +1,3 @@
+REMAP {
+    inbound.req.X-Info = "{txn-count()} {inbound.method}";
+}
