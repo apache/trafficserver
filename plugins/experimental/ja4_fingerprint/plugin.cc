@@ -323,7 +323,7 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 
   if (buflen > 0) {
     for (std::size_t i = 0; i + 1 < buflen; i += 2) {
-      summary.add_cipher(make_word(buf[i], buf[i + 1]));
+      summary.add_cipher(make_word(buf[i+1], buf[i]));
     }
   } else {
     Dbg(dbg_ctl, "Failed to get ciphers.");
