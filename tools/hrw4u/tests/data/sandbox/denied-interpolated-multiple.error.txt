@@ -1,0 +1,3 @@
+'txn-count' is denied by sandbox policy (function)
+'inbound.method' is denied by sandbox policy (condition)
+Feature denied by sandbox policy. Contact platform team.
