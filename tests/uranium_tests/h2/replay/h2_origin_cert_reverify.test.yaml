@@ -53,10 +53,13 @@ urtest:
       - from: "/"
         to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
     log_validation:
-      diags_log:
+      traffic_out:
         contains:
-          - expression: 'WARNING: Origin hostname \(bar.com\) not in certificate. Action=Terminate'
+          - expression: 'Origin hostname \(bar.com\) not in certificate for session reuse. Action=RejectReuse'
             description: "Reject mismatched pooled sessions"
+      diags_log:
+        excludes:
+          - {expression: "Origin hostname", description: "Rejected reuse candidates must not warn"}
 
 sessions:
   - protocol:
