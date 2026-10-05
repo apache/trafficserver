@@ -2520,17 +2520,13 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   if (resp_reader->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
-      if (session->is_outbound()) {
+      if (dbg_ctl_http2_con.on()) {
         ip_port_text_buffer ipb;
-        const char         *server_ip = ats_ip_ntop(session->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
-        // Warn the user to give them visibility that their server-side
-        // connection is being limited by their server's flow control. Maybe
-        // they can make adjustments.
-        Warning("No window server_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", server_ip, get_peer_rwnd(),
-                stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
+        const char         *peer_ip = ats_ip_ntop(session->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
+        Http2StreamDebug(this->session, stream->get_id(),
+                         "Waiting for peer WINDOW_UPDATE peer_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", peer_ip,
+                         get_peer_rwnd(), stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
       }
-      Http2StreamDebug(this->session, stream->get_id(), "No window session_wnd=%zd stream_wnd=%zd peer_initial_window=%u",
-                       get_peer_rwnd(), stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
       ATS_PROBE5(http2_send_window_blocked, this->session->get_connection_id(), stream->get_id(), this->get_peer_rwnd(),
                  stream->get_peer_rwnd(), resp_reader->read_avail());
       this->session->flush();

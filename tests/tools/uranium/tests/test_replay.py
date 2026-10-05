@@ -149,6 +149,7 @@ def test_audited_replay_expectations_have_explicit_verification_rules() -> None:
         "at_headers/at_headers.test.yaml",
         "cache/replay/cache-control-basic.test.yaml",
         "h2/replay/h2_origin_cert_reverify.test.yaml",
+        "h2/replay/h2_origin_cert_reverify_permissive.test.yaml",
         "logging/replay/pqsi_pqsp.test.yaml",
         "pluginTest/cache_range_requests/cache_range_requests_cachekey_global.test.yaml",
         "pluginTest/cookie_remap/cookie_remap.test.yaml",
