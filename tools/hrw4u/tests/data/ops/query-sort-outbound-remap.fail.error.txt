@@ -1,0 +1,3 @@
+tests/data/ops/query-sort-outbound-remap.fail.input.txt:2:4: error: outbound.url.query.sort is not available in the REMAP section
+   2 |     outbound.url.query.sort();
+     |     ^
