@@ -696,7 +696,21 @@ find_server_and_update_current_info(HttpTransact::State *s)
 {
   auto host{s->hdr_info.client_request.host_get()};
 
-  if (is_localhost(host)) {
+  // bypass_parent skips parent selection unless no_dns_just_forward_to_parent makes
+  // the parent responsible for reaching the origin.
+  bool bypass_parent = s->txn_conf->bypass_parent;
+  if (bypass_parent && s->txn_conf->no_dns_forward_to_parent) {
+    SiteThrottledWarning("proxy.config.http.bypass_parent is enabled, but "
+                         "proxy.config.http.no_dns_just_forward_to_parent prevents direct origin DNS; continuing with parent "
+                         "selection.");
+    bypass_parent = false;
+  }
+
+  if (bypass_parent) {
+    TxnDbg(dbg_ctl_http_trans, "bypassing parent selection due to proxy.config.http.bypass_parent (prior result %s)",
+           ParentResultStr[static_cast<int>(s->parent_result.result)]);
+    s->parent_result.result = ParentResultType::DIRECT;
+  } else if (is_localhost(host)) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.

@@ -555,6 +555,7 @@ struct OverridableHttpConfigParams {
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
+  MgmtByte bypass_parent                      = 0;
   MgmtByte attach_server_session_to_client    = 0;
   MgmtInt  max_proxy_cycles                   = 0;
   MgmtInt  tunnel_activity_check_period       = 0;

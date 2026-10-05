@@ -82,6 +82,7 @@ TSOverridableConfigKey Value                                               Confi
 :enumerator:`TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE`                 :ts:cv:`proxy.config.http.auth_server_session_private`
 :enumerator:`TS_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT`              :ts:cv:`proxy.config.http.background_fill_active_timeout`
 :enumerator:`TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD`         :ts:cv:`proxy.config.http.background_fill_completed_threshold`
+:enumerator:`TS_CONFIG_HTTP_BYPASS_PARENT`                               :ts:cv:`proxy.config.http.bypass_parent`
 :enumerator:`TS_CONFIG_HTTP_CACHE_CACHE_RESPONSES_TO_COOKIES`            :ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`
 :enumerator:`TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC`          :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`
 :enumerator:`TS_CONFIG_HTTP_CACHE_IGNORE_QUERY`                          :ts:cv:`proxy.config.http.cache.ignore_query`
