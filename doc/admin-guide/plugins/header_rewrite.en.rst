@@ -2057,6 +2057,16 @@ Cache Key Interactions
 Compared to the cachekey Plugin
 -------------------------------
 
+These operators never produce the same key as the cachekey plugin for the
+same request, so switching a remap rule from one to the other misses every
+cached object. The differences:
+
+- The key is a full URL, ``http://host/path?query``, not ``/host/80/path?query``.
+- Segments go after the path, not between the prefix and the path.
+- Segments keep the order the rules run in; the plugin sorts header and cookie
+  names.
+- `sort-cache-key`_ keeps duplicate parameters and drops empty ones.
+
 Some cachekey plugin options have no equivalent here:
 
 - ``--separator``: segments are always separated by ``/``.
