@@ -119,6 +119,8 @@ ssl_multicert:
         An explicit nonmatching IP keeps foo from competing for the default context.
         The hook-selected certificate is the only wildcard entry, retaining the handshake
         callback so both TLS libraries retry the cert callback after the pause.
+        Client authentication trusts signer.pem only through SNI, so a successful
+        request also requires the callback to restore that trust after switching.
 
         :return: The Traffic Server Process.
         '''
@@ -127,6 +129,14 @@ ssl_multicert:
         ts.addSSLfile("ssl/signed-foo.key")
         ts.addSSLfile("ssl/signed-bar.pem")
         ts.addSSLfile("ssl/signed-bar.key")
+        ts.addSSLfile("ssl/signer.pem")
+        ts.Disk.sni_yaml.AddLines(
+            [
+                'sni:',
+                '- fqdn: foo.com',
+                '  verify_client: STRICT',
+                f'  verify_client_ca_certs: {ts.Variables.SSLDir}/signer.pem',
+            ])
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
@@ -202,7 +212,10 @@ ssl_multicert:
         first = True
         for version, version_args in TLS_VERSIONS.items():
             tr = self._add_request(
-                f"{version}: the cert hook's certificate survives the resume", self._ts_switch, version_args, "foo.com")
+                f"{version}: the cert hook's certificate and SNI client trust survive the resume", self._ts_switch,
+                f"{version_args} --cert ./signed-foo.pem --key ./signed-foo.key", "foo.com")
+            tr.Setup.Copy("ssl/signed-foo.pem")
+            tr.Setup.Copy("ssl/signed-foo.key")
             if first:
                 tr.Processes.Default.StartBefore(self._ts_switch)
                 first = False

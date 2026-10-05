@@ -280,6 +280,12 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
     }
   }
 
+  // Reject renegotiation even when completed cert hooks let us skip certificate selection.
+  if (sslnetvc && sslnetvc->getSSLHandShakeComplete() && !SSLConfigParams::ssl_allow_client_renegotiation) {
+    Dbg(dbg_ctl_ssl_load, "ssl_cert_callback trying to renegotiate from the client");
+    return 0;
+  }
+
   SSLCertContextType ctxType = SSLCertContextType::GENERIC;
 #ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
   if (arg != nullptr) {
