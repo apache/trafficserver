@@ -785,6 +785,17 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
       read_reschedule(nh, this);
     }
 
+    // A POST half-close in the handler shut down the write side; nothing is left to write.
+    if (!buf.reader()) {
+      return;
+    }
+
+    // The handler replaced the write VIO while writes were enabled, so nothing else requeues this VC.
+    if (c != s->vio.cont) {
+      write_reschedule(nh, this);
+      return;
+    }
+
     if (!(buf.reader()->is_read_avail_more_than(0))) {
       write_disable(nh, this);
       return;
