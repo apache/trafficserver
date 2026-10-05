@@ -18,6 +18,7 @@
    the License.
  */
 
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -170,6 +171,68 @@ TEST_CASE("ParseRulesMostlyStrictURI", "[proxy][parseuri]")
   auto i = GENERATE(from_range(http_mostly_strict_uri_parsing_test_case));
   CAPTURE(i.uri, i.valid);
   CHECK(url_is_mostly_compliant(i.uri, i.uri + strlen(i.uri)) == i.valid);
+}
+
+namespace
+{
+// The isspace()/isprint() pair that url_is_mostly_compliant replaced, kept as
+// the reference so this compares old behavior against new instead of restating
+// the new range test. Bytes are passed as unsigned char; the original passed a
+// plain char, which is undefined for the negative values every byte >= 0x80
+// produces. In the C locale, which ATS never leaves (nothing in the tree calls
+// setlocale), this accepts exactly 0x21..0x7E.
+bool
+url_mostly_compliant_reference(const char *start, const char *end)
+{
+  for (const char *p = start; p < end; ++p) {
+    unsigned char const c = static_cast<unsigned char>(*p);
+    if (isspace(c) || !isprint(c)) {
+      return false;
+    }
+  }
+  return true;
+}
+} // namespace
+
+TEST_CASE("MostlyCompliantVsScalar", "[proxy][parseuri]")
+{
+  // The auto-vectorized url_is_mostly_compliant must agree with the libc pair
+  // it replaced for every input. Exhaustively inject each of the 256 byte values
+  // at each position across lengths 1..40, which span a sub-vector target, a
+  // whole vector, and the scalar remainder for both 128- and 256-bit builds.
+  char buf[64];
+  int  mismatches = 0, first_len = 0, first_pos = 0, first_byte = 0;
+
+  for (int len = 1; len <= 40; ++len) {
+    for (int pos = 0; pos < len; ++pos) {
+      for (int b = 0; b < 256; ++b) {
+        memset(buf, 'a', len); // 'a' (0x61) is compliant
+        buf[pos]        = static_cast<char>(b);
+        bool const got  = url_is_mostly_compliant(buf, buf + len);
+        bool const want = url_mostly_compliant_reference(buf, buf + len);
+        if (got != want) {
+          if (mismatches == 0) {
+            first_len  = len;
+            first_pos  = pos;
+            first_byte = b;
+          }
+          ++mismatches;
+        }
+      }
+    }
+  }
+  CAPTURE(mismatches, first_len, first_pos, first_byte);
+  CHECK(mismatches == 0);
+
+  // Boundary extremes at every length: all-0x7E accepts, all-0x7F rejects.
+  for (int len = 0; len <= 40; ++len) {
+    memset(buf, 0x7E, len);
+    CHECK(url_is_mostly_compliant(buf, buf + len) == true);
+    if (len > 0) {
+      memset(buf, 0x7F, len);
+      CHECK(url_is_mostly_compliant(buf, buf + len) == false);
+    }
+  }
 }
 
 struct url_parse_test_case {
