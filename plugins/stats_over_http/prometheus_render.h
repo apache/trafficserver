@@ -41,6 +41,9 @@ std::string_view prometheus_type_name(PrometheusType type);
 /// Appends @a value to @a out with the escapes of a label value.
 void prometheus_escape_label_value(std::string &out, std::string_view value);
 
+/// Appends @a text to @a out with the escapes of HELP text.
+void prometheus_escape_help_text(std::string &out, std::string_view text);
+
 /// The Prometheus form of a record name.  An empty family leaves the record out of the output.
 struct PrometheusName {
   std::string    family;

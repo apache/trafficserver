@@ -181,6 +181,24 @@ prometheus_escape_label_value(std::string &out, std::string_view value)
 }
 
 void
+prometheus_escape_help_text(std::string &out, std::string_view text)
+{
+  for (char c : text) {
+    switch (c) {
+    case '\\':
+      out += "\\\\";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    default:
+      out += c;
+      break;
+    }
+  }
+}
+
+void
 PrometheusRenderer::begin()
 {
   ++_renders;
@@ -255,7 +273,9 @@ PrometheusRenderer::add_family(const std::string &name, std::string_view record_
     _reorder    = true;
     family.type = type;
     if (_options.help) {
-      family.header.append("# HELP ").append(name).append(" ").append(record_name).append("\n");
+      family.header.append("# HELP ").append(name).append(" ");
+      prometheus_escape_help_text(family.header, record_name);
+      family.header.append("\n");
     }
     if (type != PrometheusType::UNTYPED) {
       family.header.append("# TYPE ").append(name).append(" ").append(prometheus_type_name(type)).append("\n");
