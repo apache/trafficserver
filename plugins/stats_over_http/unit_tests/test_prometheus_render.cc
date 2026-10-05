@@ -103,6 +103,13 @@ TEST_CASE("HELP lines are optional", "[prometheus_render]")
                                                                             "load 0.5\n");
 }
 
+TEST_CASE("HELP text escapes a backslash and a line feed", "[prometheus_render]")
+{
+  PrometheusRenderer renderer{options()};
+
+  CHECK(render(renderer, {counter("req.a\\b\nc", 1)}).starts_with("# HELP req req.a\\\\b\\nc\n"));
+}
+
 TEST_CASE("Values", "[prometheus_render]")
 {
   std::vector<Stat> const stats{counter("max", -1), gauge("min", std::numeric_limits<int64_t>::min()),
