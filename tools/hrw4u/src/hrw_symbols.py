@@ -488,9 +488,12 @@ class InverseSymbolResolver(SymbolResolverBase):
 
         if cmd == "rm-destination" and args and args[0].upper() == "QUERY":
             if len(args) > 1:
-                func = "keep_query" if op_state.invert else "remove_query"
+                func = "inbound.url.query.keep" if op_state.invert else "inbound.url.query.remove"
                 return f"{func}({self._rewrite_inline_percents(args[1], section)})"
             return 'inbound.url.query = ""'
+
+        if cmd == "sort-destination" and args and args[0].upper() == "QUERY":
+            return f"{self.get_prefix_for_context('destination_ops', section)}query.sort()"
 
         toks = [cmd] + args
         line = " ".join(toks)

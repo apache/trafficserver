@@ -342,8 +342,8 @@ rm-client-header X-Foo        inbound.req.X-Foo = ""            Remove a client 
 rm-cookie foo                 {in,out}bound.cookie.foo = ""     Remove the cookie named foo
 rm-destination <C>            inbound.url.<C> = ""              Remove an URL component, ``C`` is path, query etc.
 rm-header X-Foo               {in,out}bound.req.X-Foo = ""      Context sensitive header removal
-rm-destination QUERY ...      remove_query("foo,bar")           Remove specified query keys
-rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specified query keys
+rm-destination QUERY ...      inbound.url.query.remove("a,b")   Remove specified query keys
+rm-destination QUERY ... [I]  inbound.url.query.keep("a,b")     Keep only specified query keys
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
 set-body-from "\https://..."  set-body-from("\https://...")     Set the response body from a URL
@@ -358,6 +358,7 @@ set-redirect <Code> <URL>     set-redirect(302, "\https://...") Set a redirect r
 set-status 404                http.status = 404                 Set the response status code
 set-status-reason "No"        http.status.reason = "no"         Set the response status reason
 set-http-cntl                 http.cntl.<C> = bool              Turn on/off <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> controllers
+sort-destination QUERY        {in,out}bound.url.query.sort()    Sort query parameters by name
 ============================= ================================= ================================================
 
 Adding Headers with the += Operator
@@ -742,22 +743,26 @@ Functions
 The ``functions`` list accepts any of the statement-function names used in
 HRW4U source. The complete set of deniable functions is:
 
-====================== =============================================
-Function               Description
-====================== =============================================
-``add-header``         Add a header (``+=`` operator equivalent)
-``counter``            Increment an ATS statistics counter
-``keep_query``         Keep only specified query parameters
-``no-op``              Explicit no-op statement
-``remove_query``       Remove specified query parameters
-``run-plugin``         Invoke an external remap plugin
-``set-body-from``      Set response body from a URL
-``set-config``         Override an ATS configuration variable
-``set-debug``          Enable per-transaction ATS debug logging
-``set-plugin-cntl``    Set a plugin control flag
-``set-redirect``       Issue an HTTP redirect response
-``skip-remap``         Skip remap processing (open proxy)
-====================== =============================================
+============================== =============================================
+Function                       Description
+============================== =============================================
+``add-header``                 Add a header (``+=`` operator equivalent)
+``counter``                    Increment an ATS statistics counter
+``inbound.url.query.keep``     Keep only specified query parameters
+``inbound.url.query.remove``   Remove specified query parameters
+``inbound.url.query.sort``     Sort client request query parameters
+``keep_query``                 Deprecated alias of ``inbound.url.query.keep``
+``no-op``                      Explicit no-op statement
+``outbound.url.query.sort``    Sort origin request query parameters
+``remove_query``               Deprecated alias of ``inbound.url.query.remove``
+``run-plugin``                 Invoke an external remap plugin
+``set-body-from``              Set response body from a URL
+``set-config``                 Override an ATS configuration variable
+``set-debug``                  Enable per-transaction ATS debug logging
+``set-plugin-cntl``            Set a plugin control flag
+``set-redirect``               Issue an HTTP redirect response
+``skip-remap``                 Skip remap processing (open proxy)
+============================== =============================================
 
 Conditions and Operators
 ------------------------
@@ -1118,13 +1123,23 @@ The following ruleset removes any query parameters set by the client.::
 Remove only a few select query parameters::
 
    REMAP {
-       remove_query("foo,bar");
+       inbound.url.query.remove("foo,bar");
    }
 
 Keep only a few select query parameters -- removing the rest::
 
    REMAP {
-       keep_query("foo,bar");
+       inbound.url.query.keep("foo,bar");
+   }
+
+``remove_query()`` and ``keep_query()`` are deprecated aliases of these; they
+still compile, with a warning.
+
+Sort the query parameters by name, for example to normalize the URL before it
+reaches the origin::
+
+   SEND_REQUEST {
+       outbound.url.query.sort();
    }
 
 Mimic X-Debug Plugin's X-Cache Header

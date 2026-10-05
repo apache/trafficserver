@@ -1085,7 +1085,7 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
         FunctionDoc(
             name="Keep Query Parameters Function",
             category="Statement Function",
-            description="Preserves only the specified query parameters in the URL, removing all others. Used for URL cleanup and parameter filtering.",
+            description="Deprecated, use inbound.url.query.keep(). Preserves only the specified query parameters in the URL, removing all others.",
             syntax="keep_query(parameter_list)",
             maps_to="filter-query-parameters",
             usage_context="Used as a statement in code blocks for URL parameter management",
@@ -1095,12 +1095,52 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
         FunctionDoc(
             name="Remove Query Parameters Function",
             category="Statement Function",
-            description="Removes the specified query parameters from the URL, keeping all others. Used for URL cleanup and parameter filtering.",
+            description="Deprecated, use inbound.url.query.remove(). Removes the specified query parameters from the URL, keeping all others.",
             syntax="remove_query(parameter_list)",
             maps_to="remove-query-parameters",
             usage_context="Used as a statement in code blocks for URL parameter management",
             parameters=[ParameterDoc("parameter_list", "string", "Comma-separated list of query parameters to remove")],
-            examples=["remove_query(\"debug,trace\");", "remove_query(\"utm_source,utm_medium\");"])
+            examples=["remove_query(\"debug,trace\");", "remove_query(\"utm_source,utm_medium\");"]),
+    "inbound.url.query.remove":
+        FunctionDoc(
+            name="Remove Query Parameters Function",
+            category="Statement Function",
+            description="Removes the specified query parameters from the client request URL, keeping all others.",
+            syntax="inbound.url.query.remove(parameter_list)",
+            maps_to="rm-destination QUERY",
+            usage_context="Used as a statement in code blocks for URL parameter management",
+            parameters=[ParameterDoc("parameter_list", "string", "Comma-separated list of query parameters to remove")],
+            examples=["inbound.url.query.remove(\"debug,trace\");"]),
+    "inbound.url.query.keep":
+        FunctionDoc(
+            name="Keep Query Parameters Function",
+            category="Statement Function",
+            description="Preserves only the specified query parameters in the client request URL, removing all others.",
+            syntax="inbound.url.query.keep(parameter_list)",
+            maps_to="rm-destination QUERY [I]",
+            usage_context="Used as a statement in code blocks for URL parameter management",
+            parameters=[ParameterDoc("parameter_list", "string", "Comma-separated list of query parameters to keep")],
+            examples=["inbound.url.query.keep(\"id,utm_campaign\");"]),
+    "inbound.url.query.sort":
+        FunctionDoc(
+            name="Sort Query Parameters Function",
+            category="Statement Function",
+            description="Sorts the client request URL's query parameters by name.",
+            syntax="inbound.url.query.sort()",
+            maps_to="sort-destination QUERY",
+            usage_context="Used as a statement in code blocks for URL parameter management",
+            parameters=[],
+            examples=["inbound.url.query.sort();"]),
+    "outbound.url.query.sort":
+        FunctionDoc(
+            name="Sort Outbound Query Parameters Function",
+            category="Statement Function",
+            description="Sorts the origin request URL's query parameters by name. Only valid in SEND_REQUEST.",
+            syntax="outbound.url.query.sort()",
+            maps_to="sort-destination QUERY",
+            usage_context="Used as a statement in SEND_REQUEST blocks",
+            parameters=[],
+            examples=["outbound.url.query.sort();"])
 }
 
 LSP_STRING_LITERAL_INFO: Final[dict[str, str]] = {

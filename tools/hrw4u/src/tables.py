@@ -63,6 +63,10 @@ STATEMENT_FUNCTION_MAP: dict[str, MapParams] = {
     "no-op": MapParams(target="no-op", validate=Validator.arg_count(0)),
     "remove_query": MapParams(target="rm-destination QUERY", validate=Validator.arg_count(1).quoted_or_simple(), sections=HTTP_SECTIONS),
     "keep_query": MapParams(target="rm-destination QUERY", validate=Validator.arg_count(1).quoted_or_simple(), sections=HTTP_SECTIONS),
+    "inbound.url.query.remove": MapParams(target="rm-destination QUERY", validate=Validator.arg_count(1).quoted_or_simple(), sections=HTTP_SECTIONS),
+    "inbound.url.query.keep": MapParams(target="rm-destination QUERY", validate=Validator.arg_count(1).quoted_or_simple(), sections=HTTP_SECTIONS),
+    "inbound.url.query.sort": MapParams(target="sort-destination QUERY", validate=Validator.arg_count(0), sections=HTTP_SECTIONS),
+    "outbound.url.query.sort": MapParams(target="sort-destination QUERY", validate=Validator.arg_count(0), sections={SectionType.SEND_REQUEST}),
     "run-plugin": MapParams(target="run-plugin", validate=Validator.min_args(1).quoted_or_simple(), sections=HTTP_SECTIONS),
     "set-body": MapParams(target="set-body", validate=Validator.arg_count_range(1, 2).quoted_or_simple(), sections={SectionType.REMAP, SectionType.SEND_RESPONSE}),
     "set-body-from-file": MapParams(target="set-body-from-file", validate=Validator.arg_count_range(1, 2).quoted_or_simple(), sections={SectionType.REMAP, SectionType.SEND_RESPONSE}),
@@ -72,6 +76,14 @@ STATEMENT_FUNCTION_MAP: dict[str, MapParams] = {
     "skip-remap": MapParams(target="skip-remap", validate=Validator.arg_count(1).suffix_group(SuffixGroup.BOOL_FIELDS)._add(Validator.normalize_arg_at(0)), sections={SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "set-plugin-cntl": MapParams(target="set-plugin-cntl", validate=Validator.arg_count(2)._add(Validator.normalize_arg_at(0)).arg_at(0, Validator.suffix_group(SuffixGroup.PLUGIN_CNTL_FIELDS))._add(Validator.normalize_arg_at(1))._add(Validator.conditional_arg_validation(SuffixGroup.PLUGIN_CNTL_MAPPING.value)), sections=HTTP_SECTIONS),
 }
+
+# Deprecated statement function -> replacement
+DEPRECATED_STATEMENT_FUNCTIONS: dict[str, str] = {
+    "remove_query": "inbound.url.query.remove",
+    "keep_query": "inbound.url.query.keep",
+}
+
+INVERTED_STATEMENT_FUNCTIONS: frozenset[str] = frozenset({"keep_query", "inbound.url.query.keep"})
 
 FUNCTION_MAP: dict[str, MapParams] = {
     "access": MapParams(target="ACCESS", validate=Validator.arg_count(1).quoted_or_simple()),

@@ -19,6 +19,7 @@ from __future__ import annotations
 from typing import Callable
 from hrw4u.validation import Validator
 from hrw4u.errors import SymbolResolutionError
+import hrw4u.tables as tables
 import hrw4u.types as types
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
@@ -204,6 +205,8 @@ class SymbolResolver(SymbolResolverBase):
     def resolve_statement_func(self, func_name: str, args: list[str], section: SectionType | None = None) -> str:
         with self.debug_context("resolve_statement_func", func_name, args, section):
             self._collect_warning(self._sandbox.check_function(func_name))
+            if replacement := tables.DEPRECATED_STATEMENT_FUNCTIONS.get(func_name):
+                self._collect_warning(f"'{func_name}' is deprecated, use '{replacement}' instead")
 
             if params := self._lookup_statement_function_cached(func_name):
                 allowed_sections = params.sections if params else None
@@ -215,7 +218,7 @@ class SymbolResolver(SymbolResolverBase):
 
                 result = command if not args else f"{command} {' '.join(args)}"
                 # TODO: Move this special case to states.py module
-                if func_name == "keep_query":
+                if func_name in tables.INVERTED_STATEMENT_FUNCTIONS:
                     result += " [I]"
                 return result
 

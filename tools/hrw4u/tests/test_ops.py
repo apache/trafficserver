@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pytest
 import utils
+from hrw4u.errors import ErrorCollector
+from hrw4u.visitor import HRW4UVisitor
 
 
 @pytest.mark.ops
@@ -42,3 +44,22 @@ def test_ast_matches(input_file: Path, ast_file: Path) -> None:
 @pytest.mark.parametrize("input_file", utils.collect_failing_inputs("ops"))
 def test_invalid_inputs_fail(input_file):
     utils.run_failing_test(input_file)
+
+
+@pytest.mark.ops
+@pytest.mark.parametrize(
+    "old,new,expected", [
+        ('remove_query("a,b")', 'inbound.url.query.remove', 'rm-destination QUERY "a,b"'),
+        ('keep_query("a,b")', 'inbound.url.query.keep', 'rm-destination QUERY "a,b" [I]'),
+    ])
+def test_deprecated_query_functions_warn(old: str, new: str, expected: str) -> None:
+    """Deprecated query functions still compile, with a warning naming the replacement."""
+    _, tree = utils.parse_input_text(f"REMAP {{\n    {old};\n}}\n")
+    error_collector = ErrorCollector()
+    output = "\n".join(HRW4UVisitor(filename="test.hrw4u", error_collector=error_collector).visit(tree) or [])
+
+    assert not error_collector.has_errors(), error_collector.get_error_summary()
+    assert expected in output
+    summary = error_collector.get_error_summary()
+    assert "deprecated" in summary
+    assert new in summary

@@ -1,5 +1,5 @@
 REMAP {
     inbound.url.query = "";
-    remove_query("foo,bar");
-    keep_query("foo,bar");
+    inbound.url.query.remove("foo,bar");
+    inbound.url.query.keep("foo,bar");
 }
