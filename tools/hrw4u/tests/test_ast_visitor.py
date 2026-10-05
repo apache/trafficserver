@@ -127,7 +127,7 @@ class TestFunctionCalls:
         fc = ast.body[0].body[0]
         assert isinstance(fc, FunctionCall)
         assert fc.name == "skip-remap"
-        assert fc.args == (True,)
+        assert fc.args == (BoolValue(raw="true"),)
 
     def test_break(self):
         ast = _build('REMAP {\n    if true {\n        break;\n    }\n}')
