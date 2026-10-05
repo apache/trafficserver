@@ -42,7 +42,7 @@ def _top_level(node: TopLevelNode) -> str:
             return _braced(f"procedure {node.name}({params})", [_body_item(b, 1) for b in node.body])
         case VarSection():
             keyword = "SESSION_VARS" if node.scope == "session" else "VARS"
-            return _braced(keyword, [_var_item(d) for d in node.declarations])
+            return _braced(keyword, [_var_item(d) for d in node.items])
         case Section():
             return _braced(node.type, [_body_item(b, 1) for b in node.body])
     raise ValueError(f"unparse: unhandled top-level node {type(node).__name__}")
@@ -72,7 +72,7 @@ def _body_item(node: BodyNode, depth: int) -> str:
         case FunctionCall():
             return f"{_call(node)};"
         case Assignment():
-            return f"{_target(node.target)} {node.operator} {_value(node.value)};"
+            return f"{node.name} {node.operator} {_value(node.value)};"
         case IfBlock():
             return _if_block(node, depth)
     raise ValueError(f"unparse: unhandled body node {type(node).__name__}")
@@ -94,10 +94,6 @@ def _if_block(node: IfBlock, depth: int) -> str:
 
 def _nested(body: tuple[BodyNode, ...], depth: int) -> list[str]:
     return [line for item in body for line in _body_item(item, depth + 1).splitlines()]
-
-
-def _target(t: Target) -> str:
-    return t.field if t.namespace is None else f"{t.namespace}.{t.field}"
 
 
 def _call(node: FunctionCall) -> str:
