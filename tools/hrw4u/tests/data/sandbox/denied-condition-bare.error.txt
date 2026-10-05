@@ -1,0 +1,2 @@
+'now' is denied by sandbox policy (condition)
+Feature denied by sandbox policy. Contact platform team.
