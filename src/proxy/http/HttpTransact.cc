@@ -5128,16 +5128,19 @@ HttpTransact::compact_cached_response_header(HTTPHdr *cached_header)
   for (MIMEFieldBlockImpl const *fblock = &cached_header->m_mime->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
     ++blocks;
   }
-  int const live = cached_header->fields_count();
+  int const live   = cached_header->fields_count();
+  int const needed = std::max(1, (live + MIME_FIELD_BLOCK_SLOTS - 1) / MIME_FIELD_BLOCK_SLOTS);
 
-  if (blocks <= live / MIME_FIELD_BLOCK_SLOTS + 2) {
+  if (blocks <= needed + 2) {
     return false;
   }
 
   int const before = cached_header->m_heap->marshal_length();
   HTTPHdr   compact;
 
-  compact.create(HTTPType::RESPONSE, cached_header->version_get());
+  // create() records HTTP/1.0 regardless of its version argument, and for HTTP/2 or 3 adds pseudo-fields.
+  compact.create(HTTPType::RESPONSE);
+  compact.version_set(cached_header->version_get());
   compact.status_set(cached_header->status_get());
   compact.reason_set(cached_header->reason_get());
   for (auto &field : *cached_header) {

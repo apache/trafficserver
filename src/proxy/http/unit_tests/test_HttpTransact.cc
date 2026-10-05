@@ -1010,7 +1010,8 @@ add_field(HTTPHdr &h, std::string_view name, std::string_view value)
 void
 build_response(HTTPHdr &h)
 {
-  h.create(HTTPType::RESPONSE, HTTP_1_1);
+  h.create(HTTPType::RESPONSE);
+  h.version_set(HTTP_1_1);
   h.status_set(HTTPStatus::OK);
   h.reason_set("OK"sv);
   add_field(h, "Server"sv, "origin/3"sv);
@@ -1044,6 +1045,32 @@ TEST_CASE("HttpTransact compacts a bloated cached response header", "[http]")
 
     CHECK(HttpTransact::compact_cached_response_header(&cached) == false);
     CHECK(print_header(cached) == before);
+  }
+
+  // 17 live fields need two blocks; pad the chain with deleted slots to the given block count.
+  auto pad_to_blocks = [&](int blocks) {
+    for (int i = 0; i < 6; ++i) {
+      add_field(cached, "X-Live"sv, "v"sv);
+    }
+    for (int i = cached.fields_count(); i < blocks * MIME_FIELD_BLOCK_SLOTS; ++i) {
+      add_field(cached, "X-Churn"sv, "v"sv);
+    }
+    cached.field_delete("X-Churn"sv);
+    REQUIRE(field_block_count(cached) == blocks);
+    REQUIRE(cached.fields_count() == 17);
+  };
+
+  SECTION("two blocks beyond what the live fields need are tolerated")
+  {
+    pad_to_blocks(4);
+    CHECK(HttpTransact::compact_cached_response_header(&cached) == false);
+  }
+
+  SECTION("three blocks beyond what the live fields need are compacted")
+  {
+    pad_to_blocks(5);
+    CHECK(HttpTransact::compact_cached_response_header(&cached) == true);
+    CHECK(field_block_count(cached) == 2);
   }
 
   SECTION("a header with hundreds of dead field blocks is rebuilt unchanged and small")
@@ -1084,6 +1111,7 @@ TEST_CASE("HttpTransact compacts a bloated cached response header", "[http]")
     CHECK(print_header(stored) == before);
     CHECK(stored.status_get() == HTTPStatus::OK);
     CHECK(stored.reason_get() == "OK"sv);
+    CHECK(stored.version_get() == HTTP_1_1);
     CHECK(stored.fields_count() == 11);
     CHECK(field_block_count(stored) == 1);
     CHECK(stored.m_heap->marshal_length() < bloated_size / 20);
