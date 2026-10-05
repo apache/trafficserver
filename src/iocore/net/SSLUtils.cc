@@ -224,7 +224,11 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   // ClientHello work and its hooks have run and the hook state has moved on. Dispatching from
   // that state would hand the next stage's hooks TS_EVENT_SSL_CLIENT_HELLO.
   if (es != nullptr && es->finished_client_hello_hooks()) {
-    return CLIENT_HELLO_SUCCESS;
+    // Renegotiation carries a new ClientHello, whose SNI actions must still run.
+    auto *ssl_vc = SSLNetVCAccess(s);
+    if (ssl_vc == nullptr || !ssl_vc->getSSLHandShakeComplete()) {
+      return CLIENT_HELLO_SUCCESS;
+    }
   }
 
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
@@ -243,6 +247,9 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   }
 
   if (es) {
+    if (es->finished_client_hello_hooks()) {
+      return CLIENT_HELLO_SUCCESS;
+    }
     bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
     if (!reenabled) {
       return CLIENT_HELLO_RETRY;
@@ -262,9 +269,10 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 static int
 ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 {
-  TLSCertSwitchSupport *tcss     = TLSCertSwitchSupport::getInstance(ssl);
-  TLSEventSupport      *tes      = TLSEventSupport::getInstance(ssl);
-  SSLNetVConnection    *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
+  TLSCertSwitchSupport *tcss             = TLSCertSwitchSupport::getInstance(ssl);
+  TLSEventSupport      *tes              = TLSEventSupport::getInstance(ssl);
+  SSLNetVConnection    *sslnetvc         = dynamic_cast<SSLNetVConnection *>(tcss);
+  bool const            is_renegotiation = sslnetvc && sslnetvc->getSSLHandShakeComplete();
   bool                  reenabled;
   int                   retval = 1;
 
@@ -281,7 +289,7 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   }
 
   // Reject renegotiation even when completed cert hooks let us skip certificate selection.
-  if (sslnetvc && sslnetvc->getSSLHandShakeComplete() && !SSLConfigParams::ssl_allow_client_renegotiation) {
+  if (is_renegotiation && !SSLConfigParams::ssl_allow_client_renegotiation) {
     Dbg(dbg_ctl_ssl_load, "ssl_cert_callback trying to renegotiate from the client");
     return 0;
   }
@@ -297,20 +305,19 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 
   if (tcss) {
     if (tes) {
-      // The TLS library calls back again once a paused cert hook reenables, by which time
-      // certificate selection and the cert hooks have run. Selecting again would replace a
-      // context the hook chose, and dispatching from this state would hand the verify-client
-      // hooks TS_EVENT_SSL_CERT.
-      if (!tes->finished_cert_hooks()) {
-        // Do the common certificate lookup only once.  If we pause
-        // and restart processing, do not execute the common logic again
-        if (!tes->calledHooks(TS_EVENT_SSL_CERT)) {
-          retval = tcss->selectCertificate(ssl, ctxType);
-          if (retval != 1) {
-            return retval;
-          }
-        }
+      bool const hooks_finished = tes->finished_cert_hooks();
 
+      // On retry, keep a context selected by a completed cert hook. A new handshake
+      // must retain the existing certificate lookup behavior.
+      if ((!hooks_finished || is_renegotiation) && !tes->calledHooks(TS_EVENT_SSL_CERT)) {
+        retval = tcss->selectCertificate(ssl, ctxType);
+        if (retval != 1) {
+          return retval;
+        }
+      }
+
+      // Later phases must not receive the cert event when the library retries this callback.
+      if (!hooks_finished) {
         // Call the plugin cert code
         reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
         // If it did not re-enable, return the code to
