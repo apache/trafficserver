@@ -279,6 +279,15 @@ Plugins
   :file:`sni.yaml` already require a whole-subject match and are unaffected by
   the setting (CVE-2026-22068).
 
+Configuration Changes
+---------------------
+The following :file:`records.yaml` changes have been made:
+
+- The addresses in :ts:cv:`proxy.config.http.per_client.connection.exempt_list` are now also
+  exempt from :ts:cv:`proxy.config.net.connections_throttle`. If you already use this list for the
+  per-client limit, those addresses can now also connect when ATS is at the connection limit, and
+  they can take ATS past that limit. Review the list before you upgrade.
+
 Upgrading to ATS v10.x
 ======================
 
