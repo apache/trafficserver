@@ -186,7 +186,7 @@ url_mostly_compliant_reference(const char *start, const char *end)
 {
   for (const char *p = start; p < end; ++p) {
     unsigned char const c = static_cast<unsigned char>(*p);
-    if (isspace(c) || !isprint(c)) {
+    if (std::isspace(c) || !std::isprint(c)) {
       return false;
     }
   }
