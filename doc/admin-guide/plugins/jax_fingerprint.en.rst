@@ -149,6 +149,45 @@ Each fingerprint entry supports the following keys.
        register the log field.
 
 
+Reloading the Configuration
+---------------------------
+
+The configuration loaded from :file:`plugin.config` can be re-read without restarting |TS| by
+sending the plugin a message::
+
+    traffic_ctl plugin msg jax_fingerprint.reload
+
+The following keys take effect for new connections and transactions after a successful reload:
+
+* ``servernames``
+* ``header``
+* ``via_header``
+* ``mode``
+
+The other keys configure hooks, registries, log files, and log fields that are set up when |TS|
+starts, so they can only be changed with a restart. The list of fingerprints must contain the same
+entries, in the same order, with the same ``method``, ``standalone``, ``export``,
+``log_filename``, and ``log_field`` values as the configuration loaded at startup. A reload that
+changes any of these, or that fails to load, is rejected with an error in :file:`diags.log` and the
+current configuration stays in effect. A successful reload is noted in :file:`diags.log`.
+
+For example, to start fingerprinting connections for a new service, add its server name to the
+list and reload:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA4
+          servernames:
+            - abc.example
+            - xyz.example
+            - new-service.example
+
+Remap configurations are reloaded with :file:`remap.config` (for example, with
+``traffic_ctl config reload``) and accept changes to any key.
+
+
 Plugin Behavior
 ===============
 

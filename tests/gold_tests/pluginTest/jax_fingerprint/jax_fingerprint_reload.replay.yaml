@@ -14,24 +14,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Used by: global JA3 servernames test.
+# Used by: global JA4 configuration reload test.
 #
-# The plugin is loaded globally with servernames [jax.server.test].
-# In handle_client_hello, if the incoming SNI is not in the allowlist the
-# plugin calls TSVConnReenable and returns immediately.  No JAxContext is
-# ever created for that vconn, so handle_read_request_hdr returns early
-# ("No context. Skipping.") without touching any headers.
+# Each client run selects a pair of sessions by uuid key:
 #
-# Two TLS sessions reach the same backend through different remap rules:
-#   jax.server.test          – SNI is IN the allowlist  → headers added
-#   jax-filtered.server.test – SNI NOT in the allowlist → headers absent
+#   initial-*  : servernames [jax.server.test] as loaded at startup.
+#   reloaded-* : servernames [jax-filtered.server.test] after
+#                traffic_ctl plugin msg jax_fingerprint.reload.
+#
+# A session whose SNI is in the current allowlist must carry the
+# fingerprint headers; one whose SNI is not in it must not.
 
 meta:
   version: "1.0"
 
 sessions:
 
-# Session 1: SNI matches the allowlist – fingerprint headers must be added.
 - protocol:
   - name: tls
     sni: jax.server.test
@@ -48,9 +46,8 @@ sessions:
         fields:
         - [ Host, jax.server.test ]
         - [ Content-Length, 0 ]
-        - [ uuid, servernames-in-filter ]
+        - [ uuid, initial-allowed ]
 
-    # SNI is in the allowlist – plugin must have computed and set both headers.
     proxy-request:
       headers:
         fields:
@@ -62,17 +59,12 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 10 ]
-        - [ X-Response, in-filter-response ]
+        - [ Content-Length, 0 ]
         - [ Connection, close ]
 
     proxy-response:
       status: 200
-      headers:
-        fields:
-        - [ X-Response, { value: 'in-filter-response', as: equal } ]
 
-# Session 2: SNI does NOT match the allowlist – plugin skips the connection.
 - protocol:
   - name: tls
     sni: jax-filtered.server.test
@@ -89,9 +81,8 @@ sessions:
         fields:
         - [ Host, jax-filtered.server.test ]
         - [ Content-Length, 0 ]
-        - [ uuid, servernames-filtered ]
+        - [ uuid, initial-filtered ]
 
-    # SNI is not in the allowlist – plugin must not have touched either header.
     proxy-request:
       headers:
         fields:
@@ -103,12 +94,78 @@ sessions:
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 12 ]
-        - [ X-Response, filtered-response ]
+        - [ Content-Length, 0 ]
         - [ Connection, close ]
 
     proxy-response:
       status: 200
+
+- protocol:
+  - name: tls
+    sni: jax-filtered.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
       headers:
         fields:
-        - [ X-Response, { value: 'filtered-response', as: equal } ]
+        - [ Host, jax-filtered.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, reloaded-allowed ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, reloaded-filtered ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: absent } ]
+        - [ x-jax-via, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200

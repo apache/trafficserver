@@ -16,8 +16,8 @@
 
 # Used by: global JA3 overwrite test.
 #
-# The jax_fingerprint plugin is loaded globally with --method JA3
-# --standalone --mode overwrite.  TLS/HTTPS requests should have the
+# The jax_fingerprint plugin is loaded globally with method JA3,
+# standalone, and mode overwrite.  TLS/HTTPS requests should have the
 # JA3 fingerprint header (x-jax) and via header (x-jax-via) set by ATS.
 
 meta:

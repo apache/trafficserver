@@ -27,6 +27,8 @@
 #include "method.h"
 
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -55,23 +57,46 @@ struct StringHash {
   }
 };
 
+/** Settings that can be changed by reloading the configuration file at runtime. */
+struct RuntimeSettings {
+  Mode                                                         mode            = Mode::OVERWRITE;
+  std::string                                                  header_name     = "";
+  std::string                                                  via_header_name = "";
+  std::unordered_set<std::string, StringHash, std::equal_to<>> servernames;
+};
+
 struct PluginConfig {
   PluginConfig() { Dbg(dbg_ctl, "New config (%p) has been created", this); }
   ~PluginConfig() { Dbg(dbg_ctl, "Config for (%p) has been deleted", this); }
 
-  PluginType    plugin_type     = PluginType::GLOBAL;
-  Mode          mode            = Mode::OVERWRITE;
-  struct Method method          = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};
-  std::string   header_name     = "";
-  std::string   via_header_name = "";
-  std::string   log_filename    = "";
-  std::string   log_symbol      = "";
-  std::string   export_name     = "";
-  int           user_arg_index  = -1;
-  TSCont        handler         = nullptr; // For remap plugin
-  bool          standalone      = false;
-  std::unordered_set<std::string, StringHash, std::equal_to<>> servernames;
-  TSTextLogObject                                              log_handle = nullptr;
+  PluginType      plugin_type    = PluginType::GLOBAL;
+  struct Method   method         = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};
+  std::string     log_filename   = "";
+  std::string     log_symbol     = "";
+  std::string     export_name    = "";
+  int             user_arg_index = -1;
+  TSCont          handler        = nullptr; // For remap plugin
+  bool            standalone     = false;
+  TSTextLogObject log_handle     = nullptr;
+
+  /** Get a snapshot of the runtime settings that stays valid while it is held. */
+  std::shared_ptr<RuntimeSettings const>
+  get_settings() const
+  {
+    std::shared_lock lock(_settings_mutex);
+    return _settings;
+  }
+
+  void
+  set_settings(std::shared_ptr<RuntimeSettings const> settings)
+  {
+    std::unique_lock lock(_settings_mutex);
+    _settings = std::move(settings);
+  }
+
+private:
+  mutable std::shared_mutex              _settings_mutex;
+  std::shared_ptr<RuntimeSettings const> _settings = std::make_shared<RuntimeSettings const>();
 };
 
 using PluginConfigs = std::vector<std::unique_ptr<PluginConfig>>;
@@ -86,3 +111,15 @@ using PluginConfigs = std::vector<std::unique_ptr<PluginConfig>>;
  * @return true if the file was loaded and every entry is valid, false otherwise.
  */
 bool load_config_file(std::string_view filename, PluginType plugin_type, PluginConfigs &configs);
+
+/** Check whether a reloaded configuration can replace the current one at runtime.
+ *
+ * Only the settings in RuntimeSettings can change on reload. The fingerprint list must otherwise match
+ * the configuration loaded at startup.
+ *
+ * @param[in] current The configurations in use.
+ * @param[in] updated The configurations loaded from the reloaded file.
+ * @param[out] reason Why the reloaded configuration cannot be applied.
+ * @return true if @a updated can be applied, false otherwise.
+ */
+bool is_reload_compatible(std::vector<PluginConfig *> const &current, PluginConfigs const &updated, std::string &reason);
