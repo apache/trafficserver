@@ -26,8 +26,11 @@
 #include "plugin.h"
 #include "method.h"
 
+#include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_set>
+#include <vector>
 
 enum class Mode : int {
   OVERWRITE,
@@ -70,3 +73,16 @@ struct PluginConfig {
   std::unordered_set<std::string, StringHash, std::equal_to<>> servernames;
   TSTextLogObject                                              log_handle = nullptr;
 };
+
+using PluginConfigs = std::vector<std::unique_ptr<PluginConfig>>;
+
+/** Load the fingerprint configurations from a YAML file.
+ *
+ * A relative @a filename is resolved against the Traffic Server configuration directory.
+ *
+ * @param[in] filename The path of the YAML configuration file.
+ * @param[in] plugin_type Whether the configuration is for the global or the remap plugin.
+ * @param[out] configs One configuration per entry in the file's fingerprint list.
+ * @return true if the file was loaded and every entry is valid, false otherwise.
+ */
+bool load_config_file(std::string_view filename, PluginType plugin_type, PluginConfigs &configs);
