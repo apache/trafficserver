@@ -162,10 +162,15 @@ public:
   @c ACTION_RESULT_DONE / @c ACTION_IO_ERROR for a synchronous
   completion, or (b) every outstanding @c Action returned by that
   Processor for this Continuation has been cancelled or, for one-shot
-  operations, has fired its terminal callback and that callback has
-  returned. Recurring operations (e.g., periodic events) remain
-  outstanding after each callback return and are complete only upon
-  cancellation. Any in-flight callback MUST also have unwound.
+  operations, has delivered its terminal callback. Recurring operations
+  (e.g., periodic events) remain outstanding after each callback return
+  and are complete only upon cancellation. The Continuation may be
+  destroyed from within its own handler (e.g., via @c delete @c this)
+  once all those conditions hold, provided no frame anywhere in the
+  current call stack will access the Continuation after this
+  @c handleEvent call returns and no member of @c this is accessed
+  after destruction; an external owner must additionally wait for any
+  outstanding handler frame to return before destroying.
 
   @par Thread Safety
   Not instance-thread-safe. All reads and writes of a Continuation's
