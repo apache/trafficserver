@@ -1474,9 +1474,11 @@ sort-destination
   sort-destination QUERY
 
 Sorts the query parameters of the remapped destination's URL by parameter
-name. Sorting is stable, so parameters that share the same name keep their
-relative order. Currently ``QUERY`` is the only valid part for
-sort-destination; any other part is ignored, leaving the destination unchanged.
+name, in case-sensitive byte order. Sorting is stable, so parameters that
+share the same name keep their relative order. Empty parameters, such as the
+one in ``a=1&&b=2``, are dropped. Currently ``QUERY`` is the only valid part
+for sort-destination; any other part is ignored, leaving the destination
+unchanged.
 
 set-cookie
 ~~~~~~~~~~
