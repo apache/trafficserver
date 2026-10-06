@@ -147,9 +147,10 @@ public:
 
   A Continuation pairs a member-function handler with a @c ProxyMutex.
   When a Processor delivers an event to the Continuation (via
-  @c handleEvent), the dispatching thread first acquires
-  @c this->mutex; the handler then runs while that lock is held and can
-  manipulate the Continuation's state safely. Subclasses add state and
+  @c handleEvent), the dispatching thread acquires @c this->mutex when
+  it is non-null; the handler then runs while that lock is held and can
+  manipulate the Continuation's state safely. Continuations with a null
+  @c mutex run without serialization. Subclasses add state and
   additional handler methods, switching between them with
   @c SET_HANDLER.
 
@@ -160,18 +161,22 @@ public:
   call), it MUST remain alive until either (a) the Processor returns
   @c ACTION_RESULT_DONE / @c ACTION_IO_ERROR for a synchronous
   completion, or (b) every outstanding @c Action returned by that
-  Processor for this Continuation has been cancelled and any in-flight
-  callback has unwound.
+  Processor for this Continuation has either completed (its callback
+  has returned) or been cancelled, and any in-flight callback has
+  unwound.
 
   @par Thread Safety
   Not instance-thread-safe. All reads and writes of a Continuation's
   fields MUST be performed by a thread that holds @c this->mutex, except
-  where an individual field documents otherwise. When the Event System
-  dispatches a handler it holds @c this->mutex for the duration of the
-  call; the dispatcher acquires that lock with a try-lock and reschedules
-  the Event rather than blocking, so a handler runs only once the lock is
-  available. Code reached from outside a handler MUST acquire the mutex
-  explicitly before touching the Continuation.
+  where an individual field documents otherwise. When @c this->mutex is
+  non-null and the Event System dispatches a handler, it holds
+  @c this->mutex for the duration of the call; the dispatcher acquires
+  that lock with a try-lock and reschedules the Event rather than
+  blocking, so a handler runs only once the lock is available.
+  Continuations with a null @c mutex run without serialization; callers
+  are responsible for any required external coordination. Code reached
+  from outside a handler MUST acquire @c this->mutex explicitly before
+  touching the Continuation, when it is non-null.
 */
 class Continuation : private force_VFPT_to_top
 {
@@ -210,10 +215,12 @@ public:
 
     Initialized by the Continuation's constructor. The field MAY be
     reassigned after construction, but only while no other thread is
-    dispatching this Continuation; scheduling a Continuation that holds a
-    null mutex causes the Event System to adopt the dispatching thread's
-    mutex. A null value is otherwise permitted only when dispatching
-    through a Processor that documents the no-mutex case.
+    dispatching this Continuation. Some scheduling paths assign the
+    dispatching thread's mutex to this field when it is null; others
+    leave a null mutex unchanged, in which case the Continuation
+    dispatches without serialization. A null value is permitted only
+    when dispatching through a Processor that documents the no-mutex
+    case.
 
     @par Thread Safety
     The reference itself is not synchronized. Reads and writes of the
@@ -362,18 +369,21 @@ public:
                          Defaults to @c CONTINUATION_EVENT_NONE.
     @param[in,out] data  Auxiliary payload to forward. Lifetime, ownership, and
                          type are Processor-specific. Defaults to nullptr.
-    @return The handler's return value, by convention
-            @c CONTINUATION_DONE or @c CONTINUATION_CONT. The Event
-            System dispatcher discards it; only direct callers of
-            @c handleEvent can give it meaning.
+    @return The handler's return value. The Event System dispatcher
+            discards it; only direct callers of @c handleEvent define
+            its meaning. @c CONTINUATION_DONE and @c CONTINUATION_CONT
+            are the base-level conventions; Processor-specific protocols
+            may define additional return values.
 
     @pre  @c this->handler is non-null. Calling with a null handler is
           undefined behavior (invokes a null pointer-to-member).
 
     @par Thread Safety
-    Caller-synchronized via @c this->mutex. The Event System holds
-    the mutex around its calls; ad-hoc callers (e.g., re-entrant
-    inline dispatch) MUST also hold it.
+    Caller-synchronized via @c this->mutex when non-null. The Event
+    System holds the mutex around its calls when @c this->mutex is
+    non-null; Continuations with a null mutex run without
+    serialization. Ad-hoc callers MUST hold @c this->mutex before
+    calling when it is non-null.
   */
   TS_INLINE int
   handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr)
