@@ -261,26 +261,19 @@ public:
   LINK(Continuation, link);
 
   /**
-    Per-Continuation @c ContFlags snapshot used to propagate diagnostic
-    overrides across thread boundaries.
+    Flags that follow this Continuation to whichever thread dispatches it.
 
-    Initialized from @c get_cont_flags() at construction. When an Event is
-    scheduled through @c EThread::schedule or @c EThread::schedule_local,
-    the scheduler overwrites this field with the scheduling thread's
-    current @c get_cont_flags(), so the snapshot tracks the originating
-    thread's state. Just before invoking @c handleEvent, the dispatcher
-    copies the snapshot into the dispatching thread's TLS via
-    @c set_cont_flags, so debug-override state follows the Continuation
-    across handoffs. Subclasses MAY mutate the flags directly to influence
-    diagnostic behavior on subsequent dispatches.
+    Initialized from the constructing thread's current @c ContFlags.
+    Before each dispatch, the Event System makes these flags the
+    dispatching thread's current flags. Scheduling an event for this
+    Continuation MAY overwrite this field with the scheduling thread's
+    current flags, discarding earlier changes.
 
     @par Thread Safety
-    Plain @c ContFlags. The scheduling write occurs without holding
-    @c this->mutex; visibility on the dispatching thread is established
-    by the happens-before edge of the event-queue handoff. The dispatcher
-    reads the field after acquiring @c this->mutex, so any mutation by
-    application code MUST also hold @c this->mutex — an unsynchronized
-    concurrent write is a data race.
+      Not thread-safe. Scheduling may write this field without holding
+      @c mutex, so holding @c mutex does not make access safe; do not
+      access it concurrently with scheduling or dispatch of this
+      Continuation.
   */
   ContFlags control_flags;
 
