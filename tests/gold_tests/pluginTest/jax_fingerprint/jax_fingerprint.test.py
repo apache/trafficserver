@@ -549,10 +549,13 @@ class ReloadTest:
     The servernames allowlist is switched at runtime from jax.server.test to
     jax-filtered.server.test, and a reload that changes a startup-only
     setting is rejected while the current configuration stays in effect.
+    A second plugin.config line with its own configuration file verifies
+    that each line reloads its own file independently.
     '''
 
     _replay_file: str = 'jax_fingerprint_reload.replay.yaml'
     _config_name: str = 'jax_fingerprint.yaml'
+    _second_config_name: str = 'jax_fingerprint_ja4h.yaml'
     _client_counter: int = 0
 
     def __init__(self, name: str) -> None:
@@ -566,12 +569,14 @@ class ReloadTest:
 
         self._add_reload_run(f'{name}: reload new servernames', 'jax_fingerprint_reloaded.yaml')
         Test.AddAwaitFileContainsTestRun(
-            f'{name}: await the reload', self._ts.Disk.diags_log.AbsPath, 'Configuration reloaded successfully')
+            f'{name}: await the reload', self._ts.Disk.diags_log.AbsPath,
+            f'Configuration reloaded successfully from {self._config_name}')
         self._add_client_run(Test.AddTestRun(f'{name}: reloaded servernames'), 'reloaded-allowed reloaded-filtered')
 
         self._add_reload_run(f'{name}: reload a startup-only change', 'jax_fingerprint_incompatible.yaml')
         Test.AddAwaitFileContainsTestRun(
-            f'{name}: await the rejected reload', self._ts.Disk.diags_log.AbsPath, 'Configuration reload rejected')
+            f'{name}: await the rejected reload', self._ts.Disk.diags_log.AbsPath,
+            f'Configuration reload from {self._config_name} rejected')
         self._add_client_run(Test.AddTestRun(f'{name}: servernames kept after rejection'), 'reloaded-allowed reloaded-filtered')
 
     def _configure_trafficserver(self) -> None:
@@ -611,7 +616,17 @@ ssl_multicert:
             make_config([fingerprint('JA4', 'jax-filtered.server.test')]))
         self._ts.Disk.MakeConfigFile('jax_fingerprint_incompatible.yaml').update(
             make_config([fingerprint('JA3', 'jax.server.test')]))
-        self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {self._config_name}')
+        self._ts.Disk.MakeConfigFile(self._second_config_name).update(
+            make_config([{
+                'method': 'JA4H',
+                'standalone': True,
+                'header': 'x-ja4h'
+            }]))
+        self._ts.Disk.plugin_config.AddLines(
+            [
+                f'jax_fingerprint.so {self._config_name}',
+                f'jax_fingerprint.so {self._second_config_name}',
+            ])
 
         server_port = self._server.Variables.https_port
         for host in ('jax.server.test', 'jax-filtered.server.test'):
@@ -619,8 +634,11 @@ ssl_multicert:
 
         # Replace the default "no errors" check since the rejected reload is logged as an error.
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
-            r"Configuration reload rejected: 'method' of fingerprint entry 1 changed",
+            r"Configuration reload from jax_fingerprint\.yaml rejected: 'method' of fingerprint entry 1 changed",
             'Verify the reload that changes a startup-only setting is rejected.')
+        self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            r'Configuration reloaded successfully from jax_fingerprint_ja4h\.yaml',
+            'Verify the second plugin.config line reloads its own configuration.')
 
     def _add_reload_run(self, name: str, config_name: str) -> None:
         '''Install a configuration file and ask the plugin to reload it.'''

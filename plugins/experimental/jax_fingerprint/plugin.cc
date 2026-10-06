@@ -82,42 +82,43 @@ prepare_configs(PluginConfigs &configs)
 
 constexpr std::string_view RELOAD_TAG = "jax_fingerprint.reload";
 
+/** The configuration loaded by one plugin.config line, which can be reloaded at runtime. */
 struct GlobalState {
   std::string                 config_filename;
   std::vector<PluginConfig *> configs;
 };
 
-GlobalState g_global_state;
-
 void
-reload_global_config()
+reload_global_config(GlobalState &state)
 {
-  Dbg(dbg_ctl, "Reloading configuration from %s", g_global_state.config_filename.c_str());
+  char const *filename = state.config_filename.c_str();
+  Dbg(dbg_ctl, "Reloading configuration from %s", filename);
 
   PluginConfigs updated;
-  if (!load_config_file(g_global_state.config_filename, PluginType::GLOBAL, updated)) {
-    TSError("[%s] Configuration reload failed. Keeping current configuration.", PLUGIN_NAME);
+  if (!load_config_file(state.config_filename, PluginType::GLOBAL, updated)) {
+    TSError("[%s] Configuration reload from %s failed. Keeping current configuration.", PLUGIN_NAME, filename);
     return;
   }
 
   std::string reason;
-  if (!is_reload_compatible(g_global_state.configs, updated, reason)) {
-    TSError("[%s] Configuration reload rejected: %s. Keeping current configuration.", PLUGIN_NAME, reason.c_str());
+  if (!is_reload_compatible(state.configs, updated, reason)) {
+    TSError("[%s] Configuration reload from %s rejected: %s. Keeping current configuration.", PLUGIN_NAME, filename,
+            reason.c_str());
     return;
   }
 
   for (size_t i = 0; i < updated.size(); ++i) {
-    g_global_state.configs[i]->set_settings(updated[i]->get_settings());
+    state.configs[i]->set_settings(updated[i]->get_settings());
   }
-  TSNote("[%s] Configuration reloaded successfully", PLUGIN_NAME);
+  TSNote("[%s] Configuration reloaded successfully from %s", PLUGIN_NAME, filename);
 }
 
 int
-handle_lifecycle_msg(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
+handle_lifecycle_msg(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   auto const *msg = static_cast<TSPluginMsg const *>(edata);
   if (msg->tag != nullptr && msg->tag == RELOAD_TAG) {
-    reload_global_config();
+    reload_global_config(*static_cast<GlobalState *>(TSContDataGet(contp)));
   }
   return TS_SUCCESS;
 }
@@ -372,13 +373,14 @@ TSPluginInit(int argc, char const **argv)
     return;
   }
 
-  g_global_state.config_filename = argv[1];
-
   // Global configurations live for the life of the process: the log field callbacks and the
   // continuations below keep references to them, so release them from their unique_ptrs here.
+  // Each plugin.config line has its own state so that each reloads its own configuration file.
+  auto *state            = new GlobalState;
+  state->config_filename = argv[1];
   for (auto &owned_config : configs) {
     PluginConfig *config = owned_config.release();
-    g_global_state.configs.push_back(config);
+    state->configs.push_back(config);
 
     if (!config->log_symbol.empty()) {
       register_log_field(config);
@@ -399,7 +401,9 @@ TSPluginInit(int argc, char const **argv)
     }
   }
 
-  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(handle_lifecycle_msg, nullptr));
+  TSCont msg_cont = TSContCreate(handle_lifecycle_msg, nullptr);
+  TSContDataSet(msg_cont, state);
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, msg_cont);
 }
 
 TSReturnCode
