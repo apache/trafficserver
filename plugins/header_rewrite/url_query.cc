@@ -54,8 +54,14 @@ sort_query(std::string_view query)
   // Built after the last push_back: a later push can move the storage and leave this span dangling.
   swoc::MemSpan<std::string_view> filled(params.begin(), params.size());
 
-  std::stable_sort(filled.begin(), filled.end(),
-                   [](std::string_view a, std::string_view b) { return param_name(a) < param_name(b); });
+  // Used instead of std::stable_sort, which heap-allocates a buffer on every call in libstdc++.
+  std::sort(filled.begin(), filled.end(), [](std::string_view a, std::string_view b) {
+    auto an = param_name(a);
+    auto bn = param_name(b);
+
+    // On a name tie, data() is where each param starts in query, so the earlier param sorts first.
+    return an != bn ? an < bn : a.data() < b.data();
+  });
 
   std::string result;
   result.reserve(query.size()); // never longer than query
