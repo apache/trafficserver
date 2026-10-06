@@ -142,48 +142,32 @@ public:
 };
 
 /**
-  Base class for event-driven state machines dispatched by the IO Core
-  Event System.
+  Base class for event-driven state machines dispatched by the Event
+  System.
 
-  A Continuation pairs a member-function handler with a @c ProxyMutex.
-  When a Processor delivers an event to the Continuation (via
-  @c handleEvent), the calling thread MUST hold @c this->mutex when it
-  is non-null; the handler runs while that lock is held and can
-  manipulate the Continuation's state safely. Continuations with a null
-  @c mutex run without serialization. Subclasses add state and
-  additional handler methods, switching between them with
-  @c SET_HANDLER.
+  A Continuation pairs the @c handler that @c handleEvent invokes with
+  the @c mutex that serializes those invocations. Derive from it to add
+  state and handler methods; a derived class typically changes
+  @c handler as it moves between states.
 
-  @par Ownership
-  Caller-owned. Continuation does not allocate or free itself; the
-  derived state machine controls its own lifetime. Once a Continuation
-  has been registered with a Processor (e.g., via a @c schedule_*
-  call), it MUST remain alive until either (a) the Processor returns
-  @c ACTION_RESULT_DONE / @c ACTION_IO_ERROR for a synchronous
-  completion, or (b) every outstanding @c Action returned by that
-  Processor for this Continuation has been cancelled or, for one-shot
-  operations, has delivered its terminal callback. Recurring operations
-  (e.g., periodic events) remain outstanding after each callback return
-  and are complete only upon cancellation. The Continuation may be
-  destroyed from within its own handler (e.g., via @c delete @c this)
-  once all those conditions hold, provided no frame anywhere in the
-  current call stack will access the Continuation after this
-  @c handleEvent call returns and no member of @c this is accessed
-  after destruction; an external owner must additionally wait for any
-  outstanding handler frame to return before destroying.
+  @invariant @c handler is non-null whenever an event can be dispatched
+             to the Continuation.
+
+  @par Lifetime
+  Constructors are protected, so only derived classes are instantiated.
+  Once scheduled or passed to an asynchronous operation, a Continuation
+  must stay alive until no further event can be dispatched to it, i.e.,
+  until each such operation has completed or been cancelled. It may then be
+  destroyed through a @c Continuation pointer, including by
+  @c delete @c this from its own handler, provided nothing, including
+  callers further up the stack, accesses it afterward.
 
   @par Thread Safety
-  Not instance-thread-safe. All reads and writes of a Continuation's
-  fields MUST be performed by a thread that holds @c this->mutex, except
-  where an individual field documents otherwise. When @c this->mutex is
-  non-null and the Event System dispatches a handler, it holds
-  @c this->mutex for the duration of the call; the dispatcher acquires
-  that lock with a try-lock and reschedules the Event rather than
-  blocking, so a handler runs only once the lock is available.
-  Continuations with a null @c mutex run without serialization; callers
-  are responsible for any required external coordination. Code reached
-  from outside a handler MUST acquire @c this->mutex explicitly before
-  touching the Continuation, when it is non-null.
+  Not thread-safe. While @c mutex is non-null, every access to the
+  Continuation, including calls to @c handleEvent, must be made while
+  holding it, except where a member documents otherwise; the Event
+  System holds it for the duration of each dispatch. While @c mutex is
+  null, callers must serialize access themselves.
 */
 class Continuation : private force_VFPT_to_top
 {
