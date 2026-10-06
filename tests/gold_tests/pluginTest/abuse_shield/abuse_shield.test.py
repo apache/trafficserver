@@ -1288,11 +1288,17 @@ rules:
 
 enabled: true
 '''.strip().split('\n'))
-        self._ts.Disk.plugin_config.AddLines(
-            [
-                'jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints',
-                'abuse_shield.so abuse_shield.yaml',
-            ])
+        self._ts.Disk.MakeConfigFile('jax_fingerprint.yaml').update(
+            {'jax_fingerprint': {
+                'fingerprints': [{
+                    'method': 'JA3',
+                    'export': 'abuse_shield.fingerprints'
+                }]
+            }})
+        self._ts.Disk.plugin_config.AddLines([
+            'jax_fingerprint.so jax_fingerprint.yaml',
+            'abuse_shield.so abuse_shield.yaml',
+        ])
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r"abuse_shield.*Plugin initialized with 1000 slots per tracker, 1 rules",
             "Verify the fingerprint configuration loaded.")

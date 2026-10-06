@@ -34,6 +34,15 @@ Test.Summary = __doc__
 Test.SkipUnless(Condition.PluginExists('jax_fingerprint.so'))
 
 
+def make_config(fingerprints: list[dict[str, str | bool | list[str]]]) -> dict:
+    '''Build a jax_fingerprint YAML configuration.
+
+    :param fingerprints: One dict of fingerprint settings per list entry.
+    :return: The configuration content.
+    '''
+    return {'jax_fingerprint': {'fingerprints': fingerprints}}
+
+
 class JaxFingerprintTest:
     '''Verify the behavior of the jax_fingerprint plugin.'''
 
@@ -62,12 +71,12 @@ class JaxFingerprintTest:
             a fingerprint distinct from the HTTP/1.1 case.  For JA4H,
             get_version() detects HTTP/2 via the protocol stack.
         :param servernames: Comma-separated SNI allowlist passed as
-            --servernames to the plugin.  Connections whose SNI is not in
+            servernames to the plugin.  Connections whose SNI is not in
             the list are skipped entirely: handle_client_hello returns early,
             no context is created, and handle_read_request_hdr is a no-op.
             Only meaningful for CONNECTION_BASED methods (JA3/JA4) in global
             setup.
-        :param log_field: Symbol name for --log-field option.  When set,
+        :param log_field: Symbol name for the log_field setting.  When set,
             configures logging.yaml with a custom format using the symbol
             and verifies the fingerprint appears in the ATS access log.
             Only supported with global setup.
@@ -79,15 +88,16 @@ class JaxFingerprintTest:
             works over plain HTTP, HTTPS, and HTTP/2.
 
         Setup notes:
-          - global:  plugin.config entry with --standalone so ATS registers
-            the READ_REQUEST_HDR hook and modifies every request.
+          - global:  plugin.config entry whose configuration sets
+            standalone so ATS registers the READ_REQUEST_HDR hook and
+            modifies every request.
           - remap:   @plugin in remap.config.  For CONNECTION_BASED methods
-            --standalone must also be passed so the remap plugin registers
+            standalone must also be set so the remap plugin registers
             the SSL_CLIENT_HELLO_HOOK globally and can populate the vconn
             context that TSRemapDoRemap reads later.
-          - hybrid:  global plugin (no --standalone) captures the TLS client
-            hello and stores context on the vconn; a remap plugin (no
-            --standalone) reads that shared context and sets headers only
+          - hybrid:  global plugin (not standalone) captures the TLS client
+            hello and stores context on the vconn; a remap plugin (not
+            standalone) reads that shared context and sets headers only
             on matched routes.  Both instances share the same user-arg slot
             because TSUserArgIndexReserve is idempotent for identical names.
         '''
@@ -142,23 +152,26 @@ class JaxFingerprintTest:
         return mapping[key]
 
     def _build_remap_plugin_line(self, add_standalone: bool = False) -> str:
-        '''Build the @plugin / @pparam fragment for a remap.config line.'''
-        parts = [
-            '@plugin=jax_fingerprint.so',
-            '@pparam=--method',
-            f'@pparam={self._method}',
-            '@pparam=--header',
-            '@pparam=x-jax',
-            '@pparam=--via-header',
-            '@pparam=x-jax-via',
-            '@pparam=--log-filename',
-            '@pparam=jax_fingerprint',
-        ]
+        '''Write the remap plugin configuration and return the @plugin fragment for a remap.config line.'''
+        fingerprint: dict[str, str | bool | list[str]] = {
+            'method': self._method,
+            'header': 'x-jax',
+            'via_header': 'x-jax-via',
+            'log_filename': 'jax_fingerprint',
+        }
         if self._mode != 'overwrite':
-            parts.extend(['@pparam=--mode', f'@pparam={self._mode}'])
+            fingerprint['mode'] = self._mode
         if add_standalone:
-            parts.append('@pparam=--standalone')
-        return ' '.join(parts)
+            fingerprint['standalone'] = True
+        config_name = 'jax_fingerprint_remap.yaml'
+        self._ts.Disk.MakeConfigFile(config_name).update(make_config([fingerprint]))
+        return f'@plugin=jax_fingerprint.so @pparam={config_name}'
+
+    def _add_global_plugin(self, fingerprint: dict[str, str | bool | list[str]]) -> None:
+        '''Write the global plugin configuration and load it via plugin.config.'''
+        config_name = 'jax_fingerprint.yaml'
+        self._ts.Disk.MakeConfigFile(config_name).update(make_config([fingerprint]))
+        self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {config_name}')
 
     # ------------------------------------------------------------------
     # Test-process configuration
@@ -238,19 +251,20 @@ ssl_multicert:
         backend_no_plugin = f'{scheme}://jax.backend.test:{server_port}'
 
         if self._setup == 'global':
-            global_args = (
-                f'--method {self._method} '
-                f'--header x-jax '
-                f'--via-header x-jax-via '
-                f'--log-filename jax_fingerprint '
-                f'--standalone')
+            fingerprint: dict[str, str | bool | list[str]] = {
+                'method': self._method,
+                'standalone': True,
+                'header': 'x-jax',
+                'via_header': 'x-jax-via',
+                'log_filename': 'jax_fingerprint',
+            }
             if self._mode != 'overwrite':
-                global_args += f' --mode {self._mode}'
+                fingerprint['mode'] = self._mode
             if self._servernames:
-                global_args += f' --servernames {self._servernames}'
+                fingerprint['servernames'] = self._servernames.split(',')
             if self._log_field:
-                global_args += f' --log-field {self._log_field}'
-            self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {global_args}')
+                fingerprint['log_field'] = self._log_field
+            self._add_global_plugin(fingerprint)
             self._ts.Disk.remap_config.AddLine(f'map {scheme}://jax.server.test {backend}')
             if self._servernames:
                 # Second remap rule for the SNI that is NOT in the allowlist.
@@ -260,19 +274,19 @@ ssl_multicert:
             # Route without plugin (session 1 in replay file)
             self._ts.Disk.remap_config.AddLine(f'map {scheme}://jax-no-plugin.server.test {backend_no_plugin}')
             # Route with plugin (session 2 in replay file)
-            # CONNECTION_BASED methods need --standalone so the remap plugin
+            # CONNECTION_BASED methods need standalone so the remap plugin
             # registers the SSL_CLIENT_HELLO_HOOK to populate the vconn context.
             remap_line = self._build_remap_plugin_line(add_standalone=self._needs_tls)
             self._ts.Disk.remap_config.AddLine(f'map {scheme}://jax.server.test {backend} {remap_line}')
 
         elif self._setup == 'hybrid':
             # Global plugin: registers SSL_CLIENT_HELLO_HOOK to capture the
-            # TLS handshake and store context on the vconn.  No --standalone
-            # means no READ_REQUEST_HDR hook, so headers are never set here.
-            global_plugin_args = f'--method {self._method}'
+            # TLS handshake and store context on the vconn.  Without standalone
+            # there is no READ_REQUEST_HDR hook, so headers are never set here.
+            fingerprint: dict[str, str | bool | list[str]] = {'method': self._method}
             if self._servernames:
-                global_plugin_args += f' --servernames {self._servernames}'
-            self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {global_plugin_args}')
+                fingerprint['servernames'] = self._servernames.split(',')
+            self._add_global_plugin(fingerprint)
             remap_line = self._build_remap_plugin_line(add_standalone=False)
             if self._servernames:
                 # Both routes have the remap plugin.  Only the SNI-allowed
@@ -331,7 +345,7 @@ JaxFingerprintTest('Global JA3 overwrite', 'JA3', 'global')
 # Only requests matching the remap rule receive a JA4H header.
 JaxFingerprintTest('Remap JA4H', 'JA4H', 'remap')
 
-# Remap plugin with --standalone captures TLS client hellos globally and
+# Remap plugin with standalone captures TLS client hellos globally and
 # sets JA3 headers only on the matched route.
 JaxFingerprintTest('Remap JA3 standalone', 'JA3', 'remap')
 
@@ -357,9 +371,9 @@ JaxFingerprintTest('Global JA4H keep mode', 'JA4H', 'global', mode='keep')
 # append mode: fingerprint / proxy name are appended to existing header values.
 JaxFingerprintTest('Global JA4H append mode', 'JA4H', 'global', mode='append')
 
-# --- SNI allowlist (--servernames) --------------------------------------
+# --- SNI allowlist (servernames) ----------------------------------------
 
-# --servernames restricts fingerprinting to connections whose TLS SNI is in
+# servernames restricts fingerprinting to connections whose TLS SNI is in
 # the list.  Connections with a non-matching SNI are skipped at the client-
 # hello hook: no context is created and handle_read_request_hdr is a no-op,
 # so neither the fingerprint header nor the via header are set.
@@ -372,9 +386,9 @@ JaxFingerprintTest('Global JA4 servernames', 'JA4', 'global', servernames='jax.s
 # connection has a vconn context, so only that request gets headers.
 JaxFingerprintTest('Hybrid JA4 servernames', 'JA4', 'hybrid', servernames='jax.server.test')
 
-# --- Custom log field (--log-field) -----------------------------------------
+# --- Custom log field (log_field) -------------------------------------------
 
-# Register a custom log field via --log-field and verify the fingerprint
+# Register a custom log field via log_field and verify the fingerprint
 # appears in the ATS access log configured in logging.yaml.
 JaxFingerprintTest('Global JA4H log-field', 'JA4H', 'global', log_field='jaxja4h')
 JaxFingerprintTest('Global JA4 log-field', 'JA4', 'global', log_field='jaxja4')
@@ -387,7 +401,7 @@ JaxFingerprintTest('Global JA4 log-field', 'JA4', 'global', log_field='jaxja4')
 class AllMethodsTest:
     '''Test multiple fingerprint methods loaded simultaneously.
 
-    When multiple jax_fingerprint instances are loaded, they share user arg
+    When a configuration lists multiple fingerprints, they share user arg
     slots via a ContextMap. This test verifies that JA3/JA4 and JA4H can
     coexist and produce fingerprints while sharing that context machinery
     across their respective vconn and txn storage.
@@ -487,13 +501,22 @@ ssl_multicert:
             r'Using shared user_arg: type=txn, name=test.jax.registry, method=JA4H, index=\d+',
             'Verify JA4H uses the shared txn user arg slot.')
 
-        # Load multiple methods - all share the same user arg slot via ContextMap.
-        self._ts.Disk.plugin_config.AddLines(
-            [
-                'jax_fingerprint.so --method JA3 --header x-ja3 --standalone --export test.jax.registry',
-                'jax_fingerprint.so --method JA4 --header x-ja4 --standalone --export test.jax.registry',
-                'jax_fingerprint.so --method JA4H --header x-ja4h --standalone --export test.jax.registry',
-            ])
+        self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+            'multiple loading of plugin', 'Verify jax_fingerprint is loaded only once.')
+
+        # Configure multiple methods - all share the same user arg slot via ContextMap.
+        config_name = 'jax_fingerprint.yaml'
+        self._ts.Disk.MakeConfigFile(config_name).update(
+            make_config(
+                [
+                    {
+                        'method': method,
+                        'header': f'x-{method.lower()}',
+                        'standalone': True,
+                        'export': 'test.jax.registry'
+                    } for method in ('JA3', 'JA4', 'JA4H')
+                ]))
+        self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {config_name}')
 
         self._ts.Disk.remap_config.AddLine(f'map https://jax.server.test https://jax.backend.test:{server_port}')
 
@@ -514,3 +537,80 @@ ssl_multicert:
 
 # Multiple methods loaded simultaneously, verifying shared context map works.
 AllMethodsTest('Multiple methods loaded simultaneously')
+
+# ======================================================================
+# Invalid configuration
+# ======================================================================
+
+
+class InvalidConfigTest:
+    '''Verify that an invalid configuration is rejected.'''
+
+    _ts_counter: int = 0
+
+    def __init__(self, name: str, config: str, expected_error: str) -> None:
+        '''Configure Traffic Server with an invalid jax_fingerprint configuration.
+
+        :param name: Descriptive name for this test run.
+        :param config: The YAML configuration content.
+        :param expected_error: A regular expression matching the error logged for the configuration.
+        '''
+        self._ts = Test.MakeATSProcess(f'ts_invalid{InvalidConfigTest._ts_counter}', enable_cache=False)
+        InvalidConfigTest._ts_counter += 1
+
+        config_name = 'jax_fingerprint.yaml'
+        config_path = os.path.join(self._ts.Variables.CONFIGDIR, config_name)
+        self._ts.Disk.File(config_path, id='jax_config', typename='ats:config')
+        self._ts.Disk.jax_config.AddLines(config.strip().split('\n'))
+        self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {config_name}')
+
+        # Replace the default "no errors" check since this test expects configuration errors.
+        self._ts.Disk.diags_log.Content = Testers.ContainsExpression(expected_error, 'Verify the configuration error is reported.')
+        self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            r'Failed to load configuration from .*jax_fingerprint\.yaml', 'Verify the configuration is rejected.')
+
+        tr = Test.AddTestRun(name)
+        tr.Processes.Default.Command = 'echo "Traffic Server started"'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._ts
+        Test.AddAwaitFileContainsTestRun(
+            f'Await the configuration error for: {name}', self._ts.Disk.diags_log.AbsPath, 'Failed to load configuration')
+
+
+InvalidConfigTest(
+    'Reject unknown configuration keys', '''
+jax_fingerprint:
+  fingerprints:
+    - method: JA4H
+      standalone: true
+      via-header: x-jax-via
+''', r"Unknown key 'via-header' in fingerprint entry")
+
+InvalidConfigTest(
+    'Reject duplicate fingerprint settings', '''
+jax_fingerprint:
+  fingerprints:
+    - method: JA4H
+      standalone: false
+      standalone: true
+''', r"Duplicate key 'standalone' in fingerprint entry")
+
+InvalidConfigTest(
+    'Reject duplicate fingerprints lists', '''
+jax_fingerprint:
+  fingerprints:
+    - method: JA4H
+      standalone: true
+  fingerprints:
+    - method: JA3
+''', r"Duplicate key 'fingerprints' in jax_fingerprint")
+
+InvalidConfigTest(
+    'Reject empty server names', '''
+jax_fingerprint:
+  fingerprints:
+    - method: JA4
+      servernames:
+        - ""
+''', r"Each 'servernames' entry must be a non-empty server name")

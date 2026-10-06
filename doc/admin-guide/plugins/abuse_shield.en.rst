@@ -46,12 +46,23 @@ Add the plugin and its YAML configuration to plugin.config::
 A relative configuration path is resolved from the |TS| configuration
 directory.
 
-Fingerprint rules also require global JAx instances before Abuse Shield. Each
-method publishes to the registry named by ``global.fingerprint_registry``::
+Fingerprint rules also require the global JAx plugin to be loaded before
+Abuse Shield. Each JAx fingerprint publishes to the registry named by
+``global.fingerprint_registry``::
 
-   jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints
-   jax_fingerprint.so --method JA4 --export abuse_shield.fingerprints
+   jax_fingerprint.so jax_fingerprint.yaml
    abuse_shield.so abuse_shield.yaml
+
+with ``jax_fingerprint.yaml`` exporting to that registry:
+
+.. code-block:: yaml
+
+   jax_fingerprint:
+     fingerprints:
+       - method: JA3
+         export: abuse_shield.fingerprints
+       - method: JA4
+         export: abuse_shield.fingerprints
 
 Configuration
 =============
@@ -187,7 +198,7 @@ JAx owns all registry memory for the VConn lifetime.
 .. important::
 
    Since ``abuse_shield`` relies upon the JAx plugin for JA fingerprint
-   values, the JAx plugin lines must precede Abuse Shield in
+   values, the JAx plugin line must precede Abuse Shield in
    :file:`plugin.config`. This ensures their hooks publish values before Abuse
    Shield evaluates them. A missing or incompatible named registry is a
    startup error.
@@ -199,9 +210,14 @@ Adding Fingerprint Methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Downstream builds add private or site-specific methods to JAx, following its
-developer README, then load the method with the same export name::
+developer README, then configure the method with the same export name:
 
-   jax_fingerprint.so --method SITE_METHOD --export abuse_shield.fingerprints
+.. code-block:: yaml
+
+   jax_fingerprint:
+     fingerprints:
+       - method: SITE_METHOD
+         export: abuse_shield.fingerprints
 
 Configure ``SITE_METHOD`` as a key under ``fingerprints``. Abuse Shield does
 not need to know how the method is computed and compares the exported value
