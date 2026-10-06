@@ -80,3 +80,29 @@ TEST_CASE("Vectray Destructor", "[libswoc][Vectray]") {
   // But first object should be at least double deleted because of transfer.
   REQUIRE(count >= 4);
 }
+
+TEST_CASE("Vectray Partial Fixed", "[libswoc][Vectray]") {
+  Vectray<int, 4> v;
+  v.push_back(1);
+  v.push_back(2);
+
+  REQUIRE(v.end() - v.begin() == 2);
+  unsigned n = 0;
+  for (auto const &item : v) {
+    REQUIRE(item == int(++n));
+  }
+  REQUIRE(n == v.size());
+
+  int count = 0;
+  struct Q {
+    int &count_;
+    Q(int &count) : count_(count) {}
+    ~Q() { ++count_; }
+  };
+
+  {
+    Vectray<Q, 4> vq;
+    vq.emplace_back(count);
+  }
+  REQUIRE(count == 1);
+}
