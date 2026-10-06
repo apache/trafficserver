@@ -74,6 +74,9 @@ Our JSONRPC  protocol implementation uses lib yamlcpp for parsing incoming and o
 this allows the server to accept either JSON or YAML format messages which then will be parsed by the protocol implementation. This seems handy
 for user that want to feed |TS| with existing yaml configuration without the need to translate yaml into json.
 
+The server emits null values as the literal ``null``, not as YAML's ``~``. JSON parsers reject ``~``. YAML resolves ``~`` and
+``null`` to the same value. Clients that read the response as YAML see no change, and the server still accepts YAML input.
+
 .. note::
 
    :program:`traffic_ctl` have an option to read files from disc and push them into |TS| through the RPC server. Files should be a

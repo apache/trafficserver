@@ -29,10 +29,6 @@ meta:
 
         status: 200
         reason: OK
-        headers:
-          fields:
-          - [ Content-Length, 16 ]
-          - [ Connection, close ]
 
 sessions:
 
@@ -53,6 +49,7 @@ sessions:
       <<: *delayed_response
       headers:
         fields:
+        - [ Content-Length, 0 ]
         - [ X-Response, 1 ]
 
     proxy-response:
@@ -76,6 +73,7 @@ sessions:
       <<: *delayed_response
       headers:
         fields:
+        - [ Content-Length, 0 ]
         - [ X-Response, 2 ]
 
     proxy-response:

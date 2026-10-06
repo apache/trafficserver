@@ -144,6 +144,7 @@ auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_TSAN "Use thread sanitizer (default OFF)")
+option(ENABLE_UBSAN "Use undefined behavior sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
 option(ENABLE_FIPS "Enable fips compliance (default OFF)")
 option(ENABLE_EVENT_TRACKER "Enable event tracking (default OFF)")
@@ -452,6 +453,43 @@ elseif(ENABLE_TSAN)
   add_link_options(-g -fsanitize=thread)
 endif()
 
+# UndefinedBehaviorSanitizer. Deliberately not part of the either/or chain above:
+# UBSan instruments arithmetic, shifts, and type loads rather than replacing the
+# allocator or the thread runtime, so it composes with either of them as well as
+# standing on its own: asan gives -fsanitize=address,undefined and tsan gives
+# -fsanitize=thread,undefined. Only the asan pairing has a preset, since that is
+# the combination developers ask for, but the option itself does not restrict it.
+#
+# vptr is excluded. It needs a matching type_info at every polymorphic access, and
+# a plugin loaded with dlopen does not reliably share type identity with the main
+# image, so the check reports the plugin boundary rather than a real bug.
+#
+# Findings recover, so a single run reports every distinct site instead of stopping
+# at the first. That is the default for most checks, but which checks recover by
+# default varies between compilers, so ask for it explicitly rather than inherit it.
+# A few checks cannot recover by construction (unreachable, return) and still abort.
+# Set UBSAN_OPTIONS=halt_on_error=1 at runtime to stop on the first finding, which
+# is what a gating job would want.
+if(ENABLE_UBSAN)
+  # This can fail two ways: the toolchain does not know -fsanitize=undefined at all,
+  # or it knows the flag but cannot link the runtime library, which some distributions
+  # package separately from the compiler. Without the check the second case surfaces as
+  # a bare "cannot find libubsan.so" from the linker after compiling hundreds of
+  # objects, so establish it here and let the message cover both.
+  include(CheckLinkerFlag)
+  check_linker_flag(CXX -fsanitize=undefined HAS_UBSAN_SUPPORT)
+  if(NOT HAS_UBSAN_SUPPORT)
+    message(
+      FATAL_ERROR
+        "ENABLE_UBSAN was requested, but this toolchain cannot link -fsanitize=undefined. Either the compiler does not support the flag, or it does and the sanitizer runtime is missing. GCC ships that runtime in a package separate from the compiler on most distributions, under a name that varies by distribution."
+    )
+  endif()
+  add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fsanitize-recover=undefined -fno-omit-frame-pointer)
+  # Only -fsanitize=undefined matters at link time, to pull in the runtime. The vptr
+  # and recover flags are compile time instrumentation controls and do nothing here.
+  add_link_options(-g -fsanitize=undefined)
+endif()
+
 # Clang Thread Safety Analysis. The TS_* annotations (tsutil/ts_thread_safety.h)
 # compile to nothing on GCC, and the flag is Clang-only on purpose (GCC does not
 # know -Wthread-safety and would itself error if passed it), so this whole block
@@ -489,32 +527,40 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(zstd CONFIG QUIET)
-if(zstd_FOUND)
+# 1.4.0 stabilized the advanced one-shot API (ZSTD_compress2 et al.) used by
+# the RAM cache; plugins/compress already requires the same floor for
+# ZSTD_compressStream2, so this is not specific to the cache.
+find_package(ZSTD 1.4.0)
+set(HAVE_ZSTD_H ${ZSTD_FOUND})
 
-  # Provide a compatibility target name if the upstream package does not export it
-  # Our code links against `zstd::zstd`; upstream zstd usually exports
-  # `zstd::libzstd_shared`/`zstd::libzstd_static`. Create an alias if needed.
-  if(NOT TARGET zstd::zstd)
-    if(TARGET zstd::libzstd_shared)
-      set(_zstd_target zstd::libzstd_shared)
-    elseif(TARGET zstd::libzstd_static)
-      set(_zstd_target zstd::libzstd_static)
-    elseif(TARGET zstd::libzstd)
-      set(_zstd_target zstd::libzstd)
-    endif()
-    if(DEFINED _zstd_target)
+# cmake/FindZSTD.cmake creates the zstd::zstd target this tree links against,
+# but with CMAKE_FIND_PACKAGE_PREFER_CONFIG the lookup can resolve through
+# zstd's own config package instead: on a case-insensitive filesystem the
+# ZSTDConfig.cmake CMake searches for matches the zstdConfig.cmake that zstd
+# installs. That package exports zstd::libzstd_shared/_static, so alias
+# whichever it gave us or the four targets linking zstd::zstd fail at generate
+# time.
+if(ZSTD_FOUND AND NOT TARGET zstd::zstd)
+  foreach(_zstd_target zstd::libzstd_shared zstd::libzstd_static zstd::libzstd)
+    if(TARGET ${_zstd_target})
       add_library(zstd_zstd INTERFACE)
       target_link_libraries(zstd_zstd INTERFACE ${_zstd_target})
       add_library(zstd::zstd ALIAS zstd_zstd)
-      set(HAVE_ZSTD_H TRUE)
-    else()
-      set(HAVE_ZSTD_H FALSE)
+      break()
     endif()
+  endforeach()
+  unset(_zstd_target)
+  if(NOT TARGET zstd::zstd)
+    message(WARNING "zstd found but it exports no target this build can use; building without zstd")
+    set(HAVE_ZSTD_H FALSE)
   endif()
-else()
-  set(HAVE_ZSTD_H FALSE)
 endif()
+
+# 1.7.0 (r129) introduced the current compression API, including
+# LZ4_compress_default(), which the RAM cache uses; 1.7.5 is the floor for
+# LZ4_versionString(), which traffic_layout reports.
+find_package(LZ4 1.7.5)
+set(HAVE_LZ4_H ${LZ4_FOUND})
 
 # ncurses is used in traffic_top
 find_package(Curses)

@@ -662,27 +662,6 @@ MaskFor(std::initializer_list<ValueType> const &types)
 /// @tparam F ValueType enumeration value.
 template <ValueType F> using feature_type_for = Feature::type_for<F>;
 
-/** Compute a feature mask from a list of types.
- *
- * @tparam F List of feature types.
- * @return A mask for the feature types in @a F.
- *
- * @internal This can't be @c constexpr because the underlying type @c std::bitset doesn't have a
- * @c constexpr constructor.
- */
-template <typename... F>
-ValueMask
-MaskFor()
-{
-  ValueMask mask;
-  ((mask[index_for_type<F>] = true), ...);
-  return mask;
-}
-
-template <typename... F> struct ValueMaskFor {
-  static inline const ValueMask value{MaskFor<F...>()};
-};
-
 /// Check if @a feature is nil.
 inline bool
 is_nil(Feature const &feature)

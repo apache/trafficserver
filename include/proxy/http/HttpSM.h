@@ -35,8 +35,6 @@
 #include <optional>
 #include <memory>
 
-#include "tscore/ink_platform.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include "proxy/http/HttpCacheSM.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpUserAgent.h"
@@ -45,7 +43,7 @@
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/ProxyTransaction.h"
-#include "proxy/hdrs/HdrUtils.h"
+#include "proxy/VirtualHost.h"
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
@@ -182,6 +180,28 @@ enum class CompatibilityCacheLookup {
   COMPAT_CACHE_LAST,
 };
 
+/// Policy for an object found under the previous (9.2) cache key. Shared by the
+/// HTTP state machine, its cache sub-machine and HttpTransact, which is why it
+/// is not a member of any of them.
+namespace CompatCacheKey
+{
+/// Whether this lookup addresses the cache with the previous (9.2) key.
+inline bool
+is_legacy(CompatibilityCacheLookup lookup)
+{
+  return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+}
+
+/// The object info to hand to a cache write, which a compatibility read must not
+/// carry: it belongs to the legacy key and would turn the write into an update
+/// of a vector the canonical key does not have.
+inline CacheHTTPInfo *
+write_info(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+{
+  return is_legacy(lookup) ? nullptr : object_read_info;
+}
+} // namespace CompatCacheKey
+
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpTransact;
@@ -312,7 +332,8 @@ public:
 
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  std::shared_ptr<UrlRewrite> m_remap;
+  std::shared_ptr<UrlRewrite>   m_remap;
+  Ptr<VirtualHostConfig::Entry> m_virtualhost_entry;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *
@@ -370,6 +391,7 @@ private:
 
   // Y! ebalsa: remap handlers
   int  state_remap_request(int event, void *data);
+  void set_virtualhost_entry(std::string_view domain);
   void do_remap_request(bool);
 
   // Cache Handlers
@@ -406,6 +428,7 @@ private:
 
   void do_hostdb_lookup();
   void do_hostdb_reverse_lookup();
+  URL *cache_lookup_url();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false, bool only_direct = false);
   bool apply_ip_allow_filter();
@@ -421,6 +444,7 @@ private:
   void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
   void do_cache_delete_all_alts();
+  void do_cache_delete_compat_alts();
   void do_auth_callout();
   int  do_api_callout();
   int  do_api_callout_internal();
@@ -429,11 +453,15 @@ private:
   void do_drain_request_body(HTTPHdr &response);
 
   void wait_for_full_body();
+  void generate_cache_key(HttpCacheKey *key, URL *url);
+  void generate_cache_key92(HttpCacheKey *key, URL *url);
 
   virtual void        handle_api_return();
   void                handle_server_setup_error(int event, void *data);
   void                handle_http_server_open();
   void                handle_post_failure();
+  bool                prepare_for_origin_retry();
+  bool                origin_retry_body_unavailable = false;
   void                mark_host_failure(ResolveInfo *info, ts_time time_down);
   void                release_server_session(bool serve_from_cache = false);
   void                set_ua_abort(HttpTransact::AbortState_t ua_abort, int event);

@@ -58,12 +58,17 @@ wire_stripe(StripeSM &stripe, CacheVol &cache_vol)
 {
   stripe.cache_vol = &cache_vol;
 
-  cache_rsb.ram_cache_bytes          = ts::Metrics::Gauge::createPtr("unit_test.clfus.ram_cache.bytes");
-  cache_rsb.ram_cache_hits           = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.hits");
-  cache_rsb.ram_cache_misses         = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.misses");
-  cache_vol.vol_rsb.ram_cache_bytes  = ts::Metrics::Gauge::createPtr("unit_test.clfus.vol.ram_cache.bytes");
-  cache_vol.vol_rsb.ram_cache_hits   = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.hits");
-  cache_vol.vol_rsb.ram_cache_misses = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.misses");
+  cache_rsb.ram_cache_bytes                     = ts::Metrics::Gauge::createPtr("unit_test.clfus.ram_cache.bytes");
+  cache_rsb.ram_cache_hits                      = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.hits");
+  cache_rsb.ram_cache_misses                    = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.misses");
+  cache_rsb.ram_cache_compress_failures         = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.compress.failure");
+  cache_rsb.ram_cache_decompress_failures       = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.decompress.failure");
+  cache_vol.vol_rsb.ram_cache_bytes             = ts::Metrics::Gauge::createPtr("unit_test.clfus.vol.ram_cache.bytes");
+  cache_vol.vol_rsb.ram_cache_hits              = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.hits");
+  cache_vol.vol_rsb.ram_cache_misses            = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.misses");
+  cache_vol.vol_rsb.ram_cache_compress_failures = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.compress.failure");
+  cache_vol.vol_rsb.ram_cache_decompress_failures =
+    ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.decompress.failure");
 }
 
 RamCacheCLFUS *
@@ -72,8 +77,9 @@ make_cache(StripeSM &stripe)
   // Initialize with compression disabled so init() does not schedule the
   // background compressor continuation, which would retain a pointer to the
   // cache; compression is driven synchronously by the tests instead. The
-  // caches are kept reachable for the life of the process because the policy
-  // has no destructor (entries are pool-allocated).
+  // caches are intentionally leaked rather than destroyed: ~RamCacheCLFUS()
+  // is only safe for a cache that never scheduled that continuation, and
+  // leaking keeps these tests independent of that constraint.
   cache_config_ram_cache_compress         = CACHE_COMPRESSION_NONE;
   cache_config_ram_cache_compress_percent = 100;
   cache_config_ram_cache_use_seen_filter  = 0;

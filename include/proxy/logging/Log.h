@@ -158,6 +158,10 @@ public:
   static void init_fields();
   static void load_config();
 
+  // Register a field in both global_field_list and field_symbol_hash, keyed by
+  // its own symbol so the two can never drift apart.
+  static void register_field(LogField *field);
+
   static bool
   transaction_logging_enabled()
   {

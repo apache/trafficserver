@@ -368,6 +368,21 @@ plugins/my_plugin/
    separate functions for configuring the servers, ATS, client, etc.
 4. Test both success and error paths
 
+### AuTest Process Lifetime in Code Reviews
+
+- `StillRunningAfter` and `StillRunningBefore` are assertions about whether a
+  process is running at a test-run boundary. They do not keep processes alive,
+  extend their lifetime, or control teardown.
+- Omitting an origin, DNS server, or ATS process from `tr.StillRunningAfter`
+  does not cause AuTest to stop it. Do not request adding a process to this
+  assertion on every run as a way to preserve it for later runs.
+- A process created at `Test` scope and started with `StartBefore` can serve
+  multiple test runs without appearing in each run's `StillRunningAfter`.
+  Check the process scope, startup dependencies, and actual shutdown behavior
+  before reporting a lifetime bug; a missing assertion alone is not evidence.
+- Consult the [AuTest TestRun API](https://autestsuite.bitbucket.io/API/testrun.html)
+  for the assertion and process-ordering semantics.
+
 ## Configuration
 
 ### Adding New Configuration Records

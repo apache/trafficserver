@@ -31,6 +31,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <ts/ts.h>
+#include <tsutil/StringCompare.h>
 #include <cstring>
 #include <cstdlib>
 
@@ -63,8 +64,8 @@ handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
       } else {
         int         method_len;
         const char *method = TSHttpHdrMethodGet(req_bufp, req_loc, &method_len);
-        if ((return_code == TS_HTTP_STATUS_NONE || return_code == status) &&
-            ((strncasecmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0))) {
+        if ((return_code == TS_HTTP_STATUS_NONE || return_code == status) && method != nullptr &&
+            ts::iequals(std::string_view{method, static_cast<std::string_view::size_type>(method_len)}, TS_HTTP_METHOD_GET)) {
           redirect_url_loc = TSMimeHdrFieldFind(resp_bufp, resp_loc, redirect_url_header, redirect_url_header_len);
 
           if (redirect_url_loc) {

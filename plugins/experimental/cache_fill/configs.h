@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 
 #include "rules.h"
+#include "tsutil/StringCompare.h"
 
 ///////////////////////////////////////////////////////////////////////////
 // This holds one complete background fetch rule
@@ -73,7 +74,7 @@ public:
   static bool
   isTrue(const char *arg)
   {
-    return (nullptr == arg || 0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
+    return (nullptr == arg || ts::iequals("true", arg) || ts::iequals("1", arg) || ts::iequals("yes", arg));
   }
 
   // This parses and populates the BgFetchRule linked list (_rules).

@@ -58,6 +58,12 @@ target_include_directories(benchmark_HuffmanDecode PRIVATE ${CMAKE_SOURCE_DIR}/l
 add_executable(benchmark_ascii_tolower benchmark_ascii_tolower.cc)
 target_link_libraries(benchmark_ascii_tolower PRIVATE Catch2::Catch2WithMain ts::tscore)
 
+add_executable(benchmark_HdrParse benchmark_HdrParse.cc)
+target_link_libraries(
+  benchmark_HdrParse PRIVATE Catch2::Catch2 ts::hdrs ts::inkevent libswoc::libswoc lshpack configmanager
+)
+target_include_directories(benchmark_HdrParse PRIVATE ${CMAKE_SOURCE_DIR}/lib)
+
 # Timing. No allocator interposition is compiled in, so a timed case measures the regex
 # path alone; a wrapper call costs about 1.5 ns, which would be a fifth of an operation as
 # short as copying a compiled pattern.

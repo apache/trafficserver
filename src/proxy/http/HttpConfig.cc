@@ -336,24 +336,26 @@ register_stat_callbacks()
     Metrics::Counter::createPtr("proxy.process.http.client_request_at_headers_stripped");
   http_rsb.origin_response_at_headers_stripped =
     Metrics::Counter::createPtr("proxy.process.http.origin_response_at_headers_stripped");
-  http_rsb.invalid_client_requests      = Metrics::Counter::createPtr("proxy.process.http.invalid_client_requests");
-  http_rsb.misc_count                   = Metrics::Counter::createPtr("proxy.process.http.misc_count");
-  http_rsb.misc_origin_server_bytes     = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
-  http_rsb.misc_user_agent_bytes        = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
-  http_rsb.missing_host_hdr             = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
-  http_rsb.no_remap_matched             = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
-  http_rsb.options_requests             = Metrics::Counter::createPtr("proxy.process.http.options_requests");
-  http_rsb.origin_body                  = Metrics::Counter::createPtr("proxy.process.http.origin.body");
-  http_rsb.origin_close_private         = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
-  http_rsb.origin_connect_adjust_thread = Metrics::Counter::createPtr("proxy.process.http.origin.connect.adjust_thread");
-  http_rsb.origin_connections_throttled = Metrics::Counter::createPtr("proxy.process.http.origin_connections_throttled_out");
-  http_rsb.origin_make_new              = Metrics::Counter::createPtr("proxy.process.http.origin.make_new");
-  http_rsb.origin_no_sharing            = Metrics::Counter::createPtr("proxy.process.http.origin.no_sharing");
-  http_rsb.origin_not_found             = Metrics::Counter::createPtr("proxy.process.http.origin.not_found");
-  http_rsb.origin_private               = Metrics::Counter::createPtr("proxy.process.http.origin.private");
-  http_rsb.origin_raw                   = Metrics::Counter::createPtr("proxy.process.http.origin.raw");
-  http_rsb.origin_reuse                 = Metrics::Counter::createPtr("proxy.process.http.origin.reuse");
-  http_rsb.origin_reuse_fail            = Metrics::Counter::createPtr("proxy.process.http.origin.reuse_fail");
+  http_rsb.invalid_client_requests       = Metrics::Counter::createPtr("proxy.process.http.invalid_client_requests");
+  http_rsb.misc_count                    = Metrics::Counter::createPtr("proxy.process.http.misc_count");
+  http_rsb.misc_origin_server_bytes      = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
+  http_rsb.misc_user_agent_bytes         = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
+  http_rsb.missing_host_hdr              = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
+  http_rsb.no_remap_matched              = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
+  http_rsb.options_requests              = Metrics::Counter::createPtr("proxy.process.http.options_requests");
+  http_rsb.origin_body                   = Metrics::Counter::createPtr("proxy.process.http.origin.body");
+  http_rsb.origin_close_private          = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
+  http_rsb.origin_connect_adjust_thread  = Metrics::Counter::createPtr("proxy.process.http.origin.connect.adjust_thread");
+  http_rsb.origin_connections_throttled  = Metrics::Counter::createPtr("proxy.process.http.origin_connections_throttled_out");
+  http_rsb.origin_make_new               = Metrics::Counter::createPtr("proxy.process.http.origin.make_new");
+  http_rsb.origin_no_sharing             = Metrics::Counter::createPtr("proxy.process.http.origin.no_sharing");
+  http_rsb.origin_not_found              = Metrics::Counter::createPtr("proxy.process.http.origin.not_found");
+  http_rsb.origin_private                = Metrics::Counter::createPtr("proxy.process.http.origin.private");
+  http_rsb.origin_raw                    = Metrics::Counter::createPtr("proxy.process.http.origin.raw");
+  http_rsb.origin_reuse                  = Metrics::Counter::createPtr("proxy.process.http.origin.reuse");
+  http_rsb.origin_retry_admitted         = Metrics::Counter::createPtr("proxy.process.http.origin.retry_admitted");
+  http_rsb.origin_retry_body_unavailable = Metrics::Counter::createPtr("proxy.process.http.origin.retry_body_unavailable");
+  http_rsb.origin_reuse_fail             = Metrics::Counter::createPtr("proxy.process.http.origin.reuse_fail");
   http_rsb.origin_server_request_document_total_size =
     Metrics::Counter::createPtr("proxy.process.http.origin_server_request_document_total_size");
   http_rsb.origin_server_request_header_total_size =
@@ -694,7 +696,7 @@ parse_http_status_code_list(HttpStatusBitset &set, swoc::TextView status_list)
 const MgmtConverter HttpStatusCodeList::Conv{
   [](const void *data) -> std::string_view {
     const HttpStatusCodeList *list = static_cast<const HttpStatusCodeList *>(data);
-    return list->conf_value;
+    return list->conf_value ? list->conf_value : "";
   },
   [](void *data, std::string_view src) -> void {
     HttpStatusCodeList *list = static_cast<HttpStatusCodeList *>(data);
@@ -1569,6 +1571,9 @@ HttpConfig::reconfigure()
 
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
+  params->oride.ssl_client_sni_policy_len = params->oride.ssl_client_sni_policy ? strlen(params->oride.ssl_client_sni_policy) : 0;
+  params->oride.ssl_client_alpn_protocols_len =
+    params->oride.ssl_client_alpn_protocols ? strlen(params->oride.ssl_client_alpn_protocols) : 0;
 
   params->oride.negative_caching_list.set(m_master.oride.negative_caching_list.conf_value);
   params->oride.negative_revalidating_list.set(m_master.oride.negative_revalidating_list.conf_value);

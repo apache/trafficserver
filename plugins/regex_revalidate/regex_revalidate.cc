@@ -34,6 +34,7 @@
 #include <unistd.h>
 
 #include "tsutil/Regex.h"
+#include "tsutil/StringCompare.h"
 
 #define CONFIG_TMOUT      60000
 #define FREE_TMOUT        300000
@@ -110,16 +111,16 @@ strForResult(TSCacheLookupResult const result)
   }
 }
 
-typedef struct invalidate_t {
-  char                *regex_text;
-  Regex               *regex;
-  time_t               epoch;
-  time_t               expiry;
-  TSCacheLookupResult  new_result;
-  struct invalidate_t *next;
-} invalidate_t;
+struct invalidate_t {
+  char               *regex_text;
+  Regex              *regex;
+  time_t              epoch;
+  time_t              expiry;
+  TSCacheLookupResult new_result;
+  invalidate_t       *next;
+};
 
-typedef struct {
+struct plugin_state_t {
   invalidate_t   *invalidate_list;
   char           *config_path;
   char           *match_header;
@@ -127,7 +128,7 @@ typedef struct {
   TSTextLogObject log;
   char           *state_path;
   TSMutex         reload_mutex; ///< serializes do_config_reload between the timed path and the ConfigRegistry path
-} plugin_state_t;
+};
 
 static invalidate_t *
 init_invalidate_t(invalidate_t *i)
@@ -323,9 +324,9 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
       }
 
       auto const type = matches[4];
-      if (0 == strncasecmp(type.data(), RESULT_STALE, type.length())) {
+      if (ts::iequals(type, RESULT_STALE)) {
         Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_STALE, inv->regex_text);
-      } else if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
+      } else if (ts::iequals(type, RESULT_MISS)) {
         Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_MISS, inv->regex_text);
         inv->new_result = TS_CACHE_LOOKUP_MISS;
       } else {
@@ -439,10 +440,10 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
         if (5 == rc) {
           auto const type = matches[4];
-          if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
+          if (ts::iequals(type, RESULT_MISS)) {
             Dbg(dbg_ctl, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
             i->new_result = TS_CACHE_LOOKUP_MISS;
-          } else if (0 != strncasecmp(type.data(), RESULT_STALE, type.length())) {
+          } else if (!ts::iequals(type, RESULT_STALE)) {
             Dbg(dbg_ctl, "Unknown regex line result type '%.*s', using default '%s' '%s'", (int)type.length(), type.data(),
                 RESULT_STALE, i->regex_text);
           }

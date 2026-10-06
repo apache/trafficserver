@@ -114,7 +114,7 @@ Author: Jason Giedymin
   you will have to backup and/or optimize your configuration (see 3.2).
   To further setup ATS see the TrafficServer wiki @
 
-    http://cwiki.apache.org/confluence/display/TS/
+    https://github.com/apache/trafficserver/wiki
 
 4.2 What is EC2?
   See http://aws.amazon.com/

@@ -14,12 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import math
+
+
 class State:
     TxnCount = 6
     # transactions per repeat.
     LogCount = RepeatCount * TxnCount  # total number of log lines expected.
     Target = "stage.video.ex"  # indicates the request was redirected / ramped
     Description = "Checking count."
+
+    # Each transaction draws its own random number, so a bucket's count is
+    # binomial with standard deviation sqrt(RepeatCount * p * (1 - p)). The pass
+    # window is Sigmas standard deviations either side of the expected count,
+    # which a correct build misses less than once in a million runs per bucket.
+    # For targets 0 and 100 the deviation is zero and the window is exact.
+    Sigmas = 5
 
     # The paths in the replay file to check for ramping.
     ramps = {
@@ -46,17 +56,17 @@ class State:
             pass
 
         for r in self.ramps.items():
-            target = r[1][0]
-            if target == 0:
-                lower = upper = 0
-            elif target == 100:
-                lower = upper = RepeatCount
-            else:
-                lower = int((RepeatCount * (r[1][0] - 5)) / 100)
-                upper = int((RepeatCount * (r[1][0] + 5)) / 100)
+            p = r[1][0] / 100
+            expected = RepeatCount * p
+            sigma = math.sqrt(RepeatCount * p * (1 - p))
+            lower = max(0, math.floor(expected - self.Sigmas * sigma))
+            upper = min(RepeatCount, math.ceil(expected + self.Sigmas * sigma))
+            count = r[1][1]
 
-            if r[1][1] < lower or r[1][1] > upper:
-                result = "{}'{}' failed with {} not in {}..{}\n".format(result, r[0], r[1][1], lower, upper)
+            if count < lower or count > upper:
+                spread = "{:+.1f} sigma".format((count - expected) / sigma) if sigma > 0 else "deterministic"
+                result = "{}'{}' failed with {} not in {}..{} (expected {:.0f}, {})\n".format(
+                    result, r[0], count, lower, upper, expected, spread)
 
         if len(result) == 0:
             return (True, self.Description, "OK")

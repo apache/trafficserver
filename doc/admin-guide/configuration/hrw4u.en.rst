@@ -115,6 +115,27 @@ This is particularly useful for build systems or when processing many configurat
 files at once. All files are processed in a single invocation, improving performance
 for large batches of files.
 
+Exit Status
+^^^^^^^^^^^
+
+====== ==========================================================================
+Status Meaning
+====== ==========================================================================
+0      Every input compiled. Warnings may still have been reported.
+1      At least one input had an error, or the run aborted on a fatal problem:
+       a missing or unreadable input, an unwritable output, or ``input:output``
+       pairs mixed with plain file arguments.
+2      The command line was rejected before any input was read: an unknown
+       option, an invalid option value, or conflicting output modes. This comes
+       from ``argparse`` and follows Python's usage-error convention.
+====== ==========================================================================
+
+A compile error does not stop the run: every input is still processed before
+the status is decided, so one bad file in a multi-file or bulk run does not
+skip the files after it. The fatal problems above still abort immediately. A
+failing compile writes its partial output; the exit status is what marks that
+output untrustworthy.
+
 Reverse Tool (u4wrh)
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -326,6 +347,7 @@ rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specif
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
 set-body-from "\https://..."  set-body-from("\https://...")     Set the response body from a URL
+set-body-from-file "/tmp/b"   set-body-from-file("/tmp/b")      Set the response body from a local file
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
@@ -697,6 +719,7 @@ Schema for editor validation and autocomplete is provided at
        conditions:  [ ... ]   # condition keys, e.g. geo.
        operators:   [ ... ]   # operator keys, e.g. inbound.conn.dscp
        language:    [ ... ]   # break, variables, in, else, elif
+       modifiers:   [ ... ]   # condition modifiers, e.g. NOT, NOCASE
      warn:
        functions:   [ ... ]   # same categories as deny
        conditions:  [ ... ]
@@ -710,31 +733,42 @@ Denied Sections
 ---------------
 
 The ``sections`` list accepts any of the HRW4U section names listed in the
-`Sections`_ table, plus ``VARS`` to deny the variable declaration block.
-A denied section causes the entire block to be rejected; the body is not
-validated.
+`Sections`_ table, plus ``VARS`` and ``SESSION_VARS`` to deny the variable
+declaration blocks. A denied section causes the entire block to be rejected;
+the body is not validated.
 
 Functions
 ---------
 
-The ``functions`` list accepts any of the statement-function names used in
-HRW4U source. The complete set of deniable functions is:
+The ``functions`` list accepts any of the function names used in HRW4U source,
+both statement functions and the functions that produce a value in an
+expression, including a call written inside a string interpolation such as
+``"{txn-count()}"``. The complete set of deniable functions is:
 
 ====================== =============================================
 Function               Description
 ====================== =============================================
+``access``             File accessibility check
 ``add-header``         Add a header (``+=`` operator equivalent)
+``cache``              Cache lookup result status
+``cidr``               Masked client IP address match
 ``counter``            Increment an ATS statistics counter
+``internal``           Internally generated transaction check
 ``keep_query``         Keep only specified query parameters
 ``no-op``              Explicit no-op statement
+``random``             Random number in the given range
 ``remove_query``       Remove specified query parameters
 ``run-plugin``         Invoke an external remap plugin
+``set-body``           Set the response body
 ``set-body-from``      Set response body from a URL
+``set-body-from-file`` Set response body from a local file
 ``set-config``         Override an ATS configuration variable
 ``set-debug``          Enable per-transaction ATS debug logging
 ``set-plugin-cntl``    Set a plugin control flag
 ``set-redirect``       Issue an HTTP redirect response
 ``skip-remap``         Skip remap processing (open proxy)
+``ssn-txn-count``      Transaction count on server connection
+``txn-count``          Transaction count on client connection
 ====================== =============================================
 
 Conditions and Operators
@@ -742,7 +776,8 @@ Conditions and Operators
 
 The ``conditions`` and ``operators`` lists use the same dot-notation keys shown
 in the `Conditions`_ and `Operators`_ tables above (e.g. ``inbound.req.``,
-``geo.``, ``outbound.conn.``).
+``geo.``, ``outbound.conn.``). A condition read inside a string interpolation,
+such as ``"{inbound.method}"``, is checked the same way.
 
 Entries ending with ``.`` use **prefix matching** — ``geo.`` denies all
 ``geo.*`` lookups (``geo.city``, ``geo.ASN``, etc.). Entries without a trailing
@@ -775,11 +810,26 @@ The ``language`` list accepts a fixed set of constructs:
 Construct        What it controls
 ================ ===================================================
 ``break``        The ``break;`` statement (early section exit)
-``variables``    The entire ``VARS`` section and all variable usage
+``variables``    The entire ``VARS`` and ``SESSION_VARS`` section and all variable usage
 ``else``         The ``else { ... }`` branch of conditionals
 ``elif``         The ``elif ... { ... }`` branch of conditionals
-``in``           The ``in [...]`` and ``!in [...]`` set membership operators
+``in``           Set membership: the ``[...]`` value form and
+                 the ``{...}`` IP range form, negated or not
 ================ ===================================================
+
+Condition Modifiers
+-------------------
+
+The ``modifiers`` list accepts ``AND``, ``OR``, ``NOT``, ``NOCASE``, ``PRE``,
+``SUF``, ``EXT``, ``MID``, ``I``, ``L`` and ``QSA``. Entries match the modifier
+however it is written, not only the explicit ``with`` form: ``AND`` also covers
+``&&``, ``OR`` also covers ``||``, and ``NOT`` also covers ``!``, ``!=``,
+``!~`` and ``!in``.
+
+Negation that the compiler introduces on its own is not matched. A bare header
+test such as ``if inbound.req.X-Foo`` compiles to
+``cond %{CLIENT-HEADER:X-Foo} ="" [NOT]``, and denying ``NOT`` does not reject
+it — the policy governs what the source writes.
 
 Output
 ------

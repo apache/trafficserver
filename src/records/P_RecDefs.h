@@ -143,5 +143,3 @@ struct RecMessageItr {
 using RecMessage = RecMessageHdr;
 
 using RecDumpEntryCb = void (*)(RecT, void *, int, const char *, int, RecData *);
-
-using RecMessageRecvCb = RecErrT (*)(RecMessage *, RecMessageT, void *);

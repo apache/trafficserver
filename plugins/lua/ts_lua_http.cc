@@ -25,14 +25,14 @@
 #include "ts_lua_http_milestone.h"
 #include "ts_lua_http_txn_info.h"
 
-typedef enum {
+enum TSLuaCacheLookupResult {
   TS_LUA_CACHE_LOOKUP_MISS,
   TS_LUA_CACHE_LOOKUP_HIT_STALE,
   TS_LUA_CACHE_LOOKUP_HIT_FRESH,
   TS_LUA_CACHE_LOOKUP_SKIPPED,
-} TSLuaCacheLookupResult;
+};
 
-typedef enum {
+enum TSLuaServerState {
   TS_LUA_SRVSTATE_STATE_UNDEFINED,
   TS_LUA_SRVSTATE_ACTIVE_TIMEOUT,
   TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE,
@@ -44,7 +44,7 @@ typedef enum {
   TS_LUA_SRVSTATE_PARSE_ERROR,
   TS_LUA_SRVSTATE_TRANSACTION_COMPLETE,
   TS_LUA_SRVSTATE_PARENT_RETRY,
-} TSLuaServerState;
+};
 
 const char *ts_lua_cache_lookup_result_string[] = {
   "TS_LUA_CACHE_LOOKUP_MISS",

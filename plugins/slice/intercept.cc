@@ -59,11 +59,14 @@ intercept_hook(TSCont contp, TSEvent event, void *edata)
         TSVConnShutdown(data->m_dnstream.m_vc, 1, 0);
       }
     }
-    // server wants more data from us, should never happen
-    // every time TSHttpConnect is called this resets
+    // The complete request header is sufficient for GET, HEAD, and PURGE.
+    // Mark the write channel done without shutting down the VC write side,
+    // so the internal transaction does not receive an EOS and interpret it
+    // as a client abort.
     else if (data->m_upstream.m_write.isOpen() && edata == data->m_upstream.m_write.m_vio) {
-      // DEBUG_LOG("shutting down send to server pipe");
-      TSVConnShutdown(data->m_upstream.m_vc, 0, 1);
+      if (TS_EVENT_VCONN_WRITE_COMPLETE == event) {
+        data->m_upstream.m_write.close();
+      }
     }
     // server has data for us
     else if (data->m_upstream.m_read.isOpen() && edata == data->m_upstream.m_read.m_vio) {

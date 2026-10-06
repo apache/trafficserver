@@ -93,16 +93,34 @@ create_request_info(TSHttpTxn txnp)
   TSMBuffer hdr_url_buf;
   TSMLoc    hdr_url_loc;
 
-  TSHttpTxnClientReqGet(txnp, &hdr_url_buf, &hdr_url_loc);
+  if (TSHttpTxnClientReqGet(txnp, &hdr_url_buf, &hdr_url_loc) != TS_SUCCESS) {
+    SRDBG(TAG_BAD, "[%s] TSHttpTxnClientReqGet failed!", __FUNCTION__);
+    TSfree(req_info);
+    return nullptr;
+  }
 
   // this only seems to be correct/consistent if done in http read request header state
-  char *url               = TSHttpTxnEffectiveUrlStringGet(txnp, &req_info->effective_url_length);
+  char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &req_info->effective_url_length);
+  if (url == nullptr) {
+    SRDBG(TAG_BAD, "[%s] TSHttpTxnEffectiveUrlStringGet failed!", __FUNCTION__);
+    TSHandleMLocRelease(hdr_url_buf, TS_NULL_MLOC, hdr_url_loc);
+    TSfree(req_info);
+    return nullptr;
+  }
   req_info->effective_url = TSstrndup(url, req_info->effective_url_length);
   TSfree(url);
 
   // copy the headers
   req_info->http_hdr_buf = TSMBufferCreate();
-  TSHttpHdrClone(req_info->http_hdr_buf, hdr_url_buf, hdr_url_loc, &(req_info->http_hdr_loc));
+  req_info->http_hdr_loc = TS_NULL_MLOC;
+  if (TSHttpHdrClone(req_info->http_hdr_buf, hdr_url_buf, hdr_url_loc, &(req_info->http_hdr_loc)) != TS_SUCCESS) {
+    SRDBG(TAG_BAD, "[%s] TSHttpHdrClone failed!", __FUNCTION__);
+    TSHandleMLocRelease(hdr_url_buf, TS_NULL_MLOC, hdr_url_loc);
+    TSMBufferDestroy(req_info->http_hdr_buf);
+    TSfree(req_info->effective_url);
+    TSfree(req_info);
+    return nullptr;
+  }
   // release the client request
   TSHandleMLocRelease(hdr_url_buf, TS_NULL_MLOC, hdr_url_loc);
 
@@ -141,6 +159,10 @@ create_state_info(TSHttpTxn txnp, TSCont contp)
 {
   StateInfo *state = new StateInfo(txnp, contp);
   state->req_info  = create_request_info(txnp);
+  if (state->req_info == nullptr) {
+    delete state;
+    return nullptr;
+  }
   return state;
 }
 
@@ -345,11 +367,15 @@ void
 send_stale_response(StateInfo *state)
 {
   // force to use age header
-  TSHttpTxnConfigIntSet(state->txnp, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1);
+  if (TSHttpTxnConfigIntSet(state->txnp, TS_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE, 1) != TS_SUCCESS) {
+    SRDBG(TAG_BAD, "[%s] {%u} TSHttpTxnConfigIntSet(INSERT_AGE_IN_RESPONSE) failed", __FUNCTION__, state->req_info->key_hash);
+  }
   // add send response header hook for warning header
   TSHttpTxnHookAdd(state->txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, state->transaction_contp);
   // set cache as fresh
-  TSHttpTxnCacheLookupStatusSet(state->txnp, TS_CACHE_LOOKUP_HIT_FRESH);
+  if (TSHttpTxnCacheLookupStatusSet(state->txnp, TS_CACHE_LOOKUP_HIT_FRESH) != TS_SUCCESS) {
+    SRDBG(TAG_BAD, "[%s] {%u} TSHttpTxnCacheLookupStatusSet failed", __FUNCTION__, state->req_info->key_hash);
+  }
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -677,11 +703,15 @@ fetch_finish(StateInfo *state)
       // Add sie_server_intercept header.
       TSMBuffer buf;
       TSMLoc    hdr_loc;
-      TSHttpTxnClientReqGet(state->txnp, &buf, &hdr_loc);
-      if (!add_header(buf, hdr_loc, SIE_SERVER_INTERCEPT_HEADER, HTTP_VALUE_SERVER_INTERCEPT)) {
+      if (TSHttpTxnClientReqGet(state->txnp, &buf, &hdr_loc) != TS_SUCCESS) {
+        SRDBG(TAG_BAD, "[%s] {%u} TSHttpTxnClientReqGet failed", __FUNCTION__, state->req_info->key_hash);
         TSError("stale_response [%s] error inserting header %s", __FUNCTION__, SIE_SERVER_INTERCEPT_HEADER);
+      } else {
+        if (!add_header(buf, hdr_loc, SIE_SERVER_INTERCEPT_HEADER, HTTP_VALUE_SERVER_INTERCEPT)) {
+          TSError("stale_response [%s] error inserting header %s", __FUNCTION__, SIE_SERVER_INTERCEPT_HEADER);
+        }
+        TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
       }
-      TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
       serverInterceptSetup(state->txnp, pBody, state->plugin_config);
       // This was TSHttpTxnNewCacheLookupDo -- now we just use the copy we have
     }
@@ -958,11 +988,14 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
         if (plugin_config->intercept_reroute) {
           TSMBuffer buf;
           TSMLoc    hdr_loc;
-          TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc);
-          if (strip_trailing_parameter(buf, hdr_loc)) {
-            SRDBG(TAG_BAD, "[%s] {%u} missed fake internal cache lookup", __FUNCTION__, state->req_info->key_hash);
+          if (TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc) != TS_SUCCESS) {
+            SRDBG(TAG_BAD, "[%s] {%u} TSHttpTxnClientReqGet failed", __FUNCTION__, state->req_info->key_hash);
+          } else {
+            if (strip_trailing_parameter(buf, hdr_loc)) {
+              SRDBG(TAG_BAD, "[%s] {%u} missed fake internal cache lookup", __FUNCTION__, state->req_info->key_hash);
+            }
+            TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
           }
-          TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
         }
 
         // free state - reenable - had check
@@ -983,9 +1016,12 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_HTTP_SEND_REQUEST_HDR: {
     SRDBG(TAG, "[%s]: strip_trailing_parameter", __FUNCTION__);
-    TSHttpTxnServerReqGet(txnp, &buf, &loc);
-    strip_trailing_parameter(buf, loc);
-    TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
+    if (TSHttpTxnServerReqGet(txnp, &buf, &loc) != TS_SUCCESS) {
+      SRDBG(TAG_BAD, "[%s] TSHttpTxnServerReqGet failed", __FUNCTION__);
+    } else {
+      strip_trailing_parameter(buf, loc);
+      TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
+    }
 
     // reenable
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -995,24 +1031,31 @@ transaction_handler(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     // this should be internal request dont cache if valid sie error code -- no state variable
-    TSHttpTxnServerRespGet(txnp, &buf, &loc);
-    http_status = TSHttpHdrStatusGet(buf, loc);
-    if (valid_sie_status(http_status)) {
-      SRDBG(TAG, "[%s] Set non-cachable %d", __FUNCTION__, http_status);
-      TSHttpTxnServerRespNoStoreSet(txnp, 1);
+    if (TSHttpTxnServerRespGet(txnp, &buf, &loc) != TS_SUCCESS) {
+      SRDBG(TAG_BAD, "[%s] TSHttpTxnServerRespGet failed", __FUNCTION__);
+    } else {
+      http_status = TSHttpHdrStatusGet(buf, loc);
+      if (valid_sie_status(http_status)) {
+        TSHttpTxnServerRespNoStoreSet(txnp, 1);
+        SRDBG(TAG, "[%s] Set non-cachable %d", __FUNCTION__, http_status);
+      }
+      TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     }
-    TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     // add in the stale warning header -- no state variable
     SRDBG(TAG, "[%s] set warning header", __FUNCTION__);
-    TSHttpTxnClientRespGet(txnp, &buf, &loc);
-    if (!add_header(buf, loc, TS_MIME_FIELD_WARNING, HTTP_VALUE_STALE_WARNING)) {
+    if (TSHttpTxnClientRespGet(txnp, &buf, &loc) != TS_SUCCESS) {
+      SRDBG(TAG_BAD, "[%s] TSHttpTxnClientRespGet failed", __FUNCTION__);
       TSError("stale_response [%s] error inserting header %s", __FUNCTION__, TS_MIME_FIELD_WARNING);
+    } else {
+      if (!add_header(buf, loc, TS_MIME_FIELD_WARNING, HTTP_VALUE_STALE_WARNING)) {
+        TSError("stale_response [%s] error inserting header %s", __FUNCTION__, TS_MIME_FIELD_WARNING);
+      }
+      TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     }
-    TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     break;
 
@@ -1112,7 +1155,10 @@ parse_args(int argc, char const *argv[])
     char const *const log_filename =
       plugin_config->log_info.filename_override.empty() ? PLUGIN_TAG : plugin_config->log_info.filename_override.c_str();
     SRDBG(TAG, "[%s] Logging to %s", __FUNCTION__, log_filename);
-    TSTextLogObjectCreate(log_filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object));
+    if (TSTextLogObjectCreate(log_filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object)) != TS_SUCCESS) {
+      SRDBG(TAG_BAD, "[%s] TSTextLogObjectCreate failed for %s", __FUNCTION__, log_filename);
+      TSError("stale_response [%s] failed to create log object %s", __FUNCTION__, log_filename);
+    }
   }
 
   SRDBG(TAG, "[%s] global stale if error override = %" PRIdMAX, __FUNCTION__,
@@ -1137,6 +1183,11 @@ read_request_header_handler(TSHttpTxn const txnp, ConfigInfo *plugin_config)
   TSContDataSet(transaction_contp, plugin_config);
   // todo: move state create to not always happen -- issue: effective url string seems to change in dif states
   StateInfo *state = create_state_info(txnp, transaction_contp);
+  if (state == nullptr) {
+    SRDBG(TAG_BAD, "[%s] create_state_info failed, skipping this transaction", __FUNCTION__);
+    TSContDestroy(transaction_contp);
+    return;
+  }
   TSUserArgSet(txnp, plugin_config->txn_slot, state);
 
   if (TSHttpTxnIsInternal(txnp)) {
@@ -1162,10 +1213,13 @@ read_request_header_handler(TSHttpTxn const txnp, ConfigInfo *plugin_config)
         // add the async to the end so we use the fake cached response
         TSMBuffer buf;
         TSMLoc    hdr_loc;
-        TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc);
-        add_trailing_parameter(buf, hdr_loc);
-        TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
-        SRDBG(TAG, "[%s] {%u} add async parm to get fake cached item", __FUNCTION__, state->req_info->key_hash);
+        if (TSHttpTxnClientReqGet(txnp, &buf, &hdr_loc) != TS_SUCCESS) {
+          SRDBG(TAG_BAD, "[%s] {%u} TSHttpTxnClientReqGet failed", __FUNCTION__, state->req_info->key_hash);
+        } else {
+          add_trailing_parameter(buf, hdr_loc);
+          TSHandleMLocRelease(buf, TS_NULL_MLOC, hdr_loc);
+          SRDBG(TAG, "[%s] {%u} add async parm to get fake cached item", __FUNCTION__, state->req_info->key_hash);
+        }
       }
     }
   }
@@ -1216,7 +1270,8 @@ TSPluginInit(int argc, const char *argv[])
   SRDBG(TAG, "Plugin registration succeeded.");
 
   TSMgmtString value = nullptr;
-  TSMgmtStringGet("proxy.config.http.server_session_sharing.pool", &value);
+  // a failed get leaves value as nullptr, which the check below already treats as misconfigured
+  static_cast<void>(TSMgmtStringGet("proxy.config.http.server_session_sharing.pool", &value));
   if (nullptr == value || 0 != strcasecmp(value, "global")) {
     TSError("[stale-response] Server session pool must be set to 'global'");
     assert(false);

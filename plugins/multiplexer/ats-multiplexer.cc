@@ -21,6 +21,7 @@
   limitations under the License.
  */
 #include <algorithm>
+#include <iterator>
 #include <ts/ts.h>
 #include <ts/remap.h>
 

@@ -22,6 +22,7 @@ from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
 from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.sandbox import SandboxConfig, PolicySets
+from hrw4u.states import SectionType
 from hrw4u.symbols import SymbolResolver
 from hrw4u.interning import intern_keyword, intern_section, intern_lsp_string
 import pytest
@@ -99,6 +100,54 @@ class TestSandboxValidation:
 
         assert _is_matched("request_header.Host", frozenset(["request_header."]))
         assert not _is_matched("response_header.Host", frozenset(["request_header."]))
+
+
+class TestSandboxWarningOnFailure:
+    """A policy warning must not outlive a resolution that fails."""
+
+    @staticmethod
+    def _resolver(**warn: frozenset[str]) -> SymbolResolver:
+        return SymbolResolver(sandbox=SandboxConfig(message="", deny=PolicySets(), warn=PolicySets(**warn)))
+
+    def test_statement_function(self):
+        resolver = self._resolver(functions=frozenset(["set-debug"]))
+        with pytest.raises(SymbolResolutionError):
+            resolver.resolve_statement_func("set-debug", ['"extra"'], SectionType.REMAP)
+        assert resolver.drain_warnings() == []
+        resolver.resolve_statement_func("set-debug", [], SectionType.REMAP)
+        assert resolver.drain_warnings()
+
+    def test_function(self):
+        resolver = self._resolver(functions=frozenset(["random"]))
+        with pytest.raises(SymbolResolutionError):
+            resolver.resolve_function("random", [])
+        assert resolver.drain_warnings() == []
+        resolver.resolve_function("random", ["100"])
+        assert resolver.drain_warnings()
+
+    def test_assignment(self):
+        resolver = self._resolver(operators=frozenset(["inbound.resp."]))
+        with pytest.raises(SymbolResolutionError):
+            resolver.resolve_assignment("inbound.resp.X-A", '"1"', SectionType.REMAP)
+        assert resolver.drain_warnings() == []
+        resolver.resolve_assignment("inbound.resp.X-A", '"1"', SectionType.SEND_RESPONSE)
+        assert resolver.drain_warnings()
+
+    def test_add_assignment(self):
+        resolver = self._resolver(operators=frozenset(["inbound.resp."]))
+        with pytest.raises(SymbolResolutionError):
+            resolver.resolve_add_assignment("inbound.resp.X-A", '"1"', SectionType.REMAP)
+        assert resolver.drain_warnings() == []
+        resolver.resolve_add_assignment("inbound.resp.X-A", '"1"', SectionType.SEND_RESPONSE)
+        assert resolver.drain_warnings()
+
+    def test_condition(self):
+        resolver = self._resolver(conditions=frozenset(["inbound.resp."]))
+        with pytest.raises(SymbolResolutionError):
+            resolver.resolve_condition("inbound.resp.X-A", SectionType.REMAP)
+        assert resolver.drain_warnings() == []
+        resolver.resolve_condition("inbound.resp.X-A", SectionType.SEND_RESPONSE)
+        assert resolver.drain_warnings()
 
 
 class TestBaseHRWVisitorMethods:

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""Origin server that sends 100 Continue then a compressible 200 OK.
+"""Origin server that sends an interim 1xx response before the final response.
 
-Used to reproduce the crash in HttpTunnel::producer_run when compress.so
-with cache=true is combined with a 100 Continue response from the origin.
+Used to reproduce the crash in HttpTunnel::producer_run when a response
+transform is combined with an interim response from the origin:
+
+* continue: 100 Continue followed by a compressible 200 OK.
+* early-hints: 103 Early Hints followed by a small, cacheable 308, as in
+  https://github.com/apache/trafficserver/issues/12244.
 """
 
 #  Licensed to the Apache Software Foundation (ASF) under one
@@ -25,11 +29,13 @@ import argparse
 import signal
 import socket
 import sys
+import time
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, required=True, help='Port to listen on')
+    parser.add_argument('--mode', choices=['continue', 'early-hints'], default='continue', help='Which interim response to send')
     return parser.parse_args()
 
 
@@ -44,12 +50,41 @@ def read_request(conn):
     return data
 
 
-def handle_connection(conn, addr):
+def send_early_hints_and_redirect(conn):
+    """Send 103 Early Hints followed by a small, cacheable 308.
+
+    The body must be SMALLER than the forwarded 103 response headers so that
+    a stale skip_bytes exceeds read_avail() in producer_run.  The pause lets
+    ATS finish forwarding the 103 before it reads the 308.
+    """
+    conn.sendall(
+        b'HTTP/1.1 103 Early Hints\r\n'
+        b'Link: </assets/styles/main-stylesheet.css>; rel=preload; as=style\r\n'
+        b'Link: </assets/scripts/application-bundle.js>; rel=preload; as=script\r\n'
+        b'Link: </assets/fonts/body-font-regular.woff2>; rel=preload; as=font; crossorigin\r\n'
+        b'\r\n')
+    time.sleep(0.5)
+
+    body = b'Redirecting to https://example.com/new/location/for/the/resource\n'
+    conn.sendall(
+        b'HTTP/1.1 308 Permanent Redirect\r\n'
+        b'Location: https://example.com/new/location/for/the/resource\r\n'
+        b'Content-Type: text/plain\r\n'
+        b'Cache-Control: public, max-age=3600\r\n'
+        b'Content-Length: ' + str(len(body)).encode() + b'\r\n'
+        b'\r\n' + body)
+
+
+def handle_connection(conn, addr, mode):
     """Handle a single client connection."""
     try:
         conn.settimeout(10)
         request = read_request(conn)
         if request is None:
+            return
+
+        if mode == 'early-hints':
+            send_early_hints_and_redirect(conn)
             return
 
         # Send 100 Continue immediately.
@@ -114,7 +149,7 @@ def main():
     while True:
         try:
             conn, addr = sock.accept()
-            handle_connection(conn, addr)
+            handle_connection(conn, addr, args.mode)
         except socket.timeout:
             break
 

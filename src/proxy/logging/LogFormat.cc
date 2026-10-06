@@ -490,7 +490,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
           } else {
             LogField *new_f = new LogField(*f);
             new_f->set_aggregate_op(aggregate);
-            field_list->add(new_f, false);
+            field_list->add(new_f);
             field_count++;
             *contains_aggregates = true;
             Dbg(dbg_ctl_log_agg, "Aggregate field %s(%s) added", sym, name);
@@ -527,7 +527,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
         if (valid_fallback) {
           f = new LogField(original_symbol.c_str(), std::move(parsed->header_fields), std::move(fallback_field),
                            std::move(parsed->fallback_default));
-          field_list->add(f, false);
+          field_list->add(f);
           field_count++;
           Dbg(dbg_ctl_log_format, "Field fallback field %s added", original_symbol.c_str());
         }
@@ -559,7 +559,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
             f->m_slice = slice;
             Dbg(dbg_ctl_log_slice, "symbol = %s, [%d:%d]", sym, f->m_slice.m_start, f->m_slice.m_end);
           }
-          field_list->add(f, false);
+          field_list->add(f);
           field_count++;
           Dbg(dbg_ctl_log_format, "Container field {%s}%s added", name, sym);
         }
@@ -576,7 +576,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
       Dbg(dbg_ctl_log_format, "Regular field symbol: %s", symbol);
       f = make_regular_field_from_symbol(symbol);
       if (f != nullptr) {
-        field_list->add(f, false);
+        field_list->add(f);
         field_count++;
         Dbg(dbg_ctl_log_format, "Regular field %s added", symbol);
       } else {

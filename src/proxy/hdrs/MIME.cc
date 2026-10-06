@@ -542,6 +542,7 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
   MIMEField          *field, *next_dup;
   uint32_t            slot_index, index;
   uint64_t            masksum;
+  size_t              deleted_count = 0;
 
   ink_assert(mh != nullptr);
 
@@ -617,13 +618,15 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
           ink_release_assert(found);
         }
         // re-find the field --- should always find the head dup
-        MIMEField *mf = mime_hdr_field_find(mh, field->m_ptr_name, field->m_len_name);
+        MIMEField *mf = mime_hdr_field_find(mh, {field->m_ptr_name, field->m_len_name});
         ink_release_assert(mf != nullptr);
         if (mf == field) {
           ink_release_assert((field->m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD) != 0);
         } else {
           ink_release_assert((field->m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD) == 0);
         }
+      } else if (field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED) {
+        ++deleted_count;
       }
 
       ++slot_index;
@@ -633,6 +636,20 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
 
   ink_release_assert(last_fblock == mh->m_fblock_list_tail);
   ink_release_assert(masksum == mh->m_presence_bits);
+
+  if (mh->m_free_slot != MIME_FIELD_FREE_SLOT_UNINITIALIZED) {
+    size_t  free_count = 0;
+    int32_t free_slot  = mh->m_free_slot;
+
+    while (free_slot != MIME_FIELD_FREE_SLOT_NONE) {
+      field = mime_hdr_field_get_slotnum(mh, free_slot);
+      ink_release_assert(field != nullptr);
+      ink_release_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED);
+      ink_release_assert(++free_count <= deleted_count);
+      free_slot = field->m_free_next;
+    }
+    ink_release_assert(free_count == deleted_count);
+  }
 }
 #endif
 
@@ -918,6 +935,8 @@ mime_hdr_cooked_stuff_init(MIMEHdrImpl *mh, MIMEField *changing_field_or_null)
 void
 mime_hdr_init(MIMEHdrImpl *mh)
 {
+  mh->m_free_slot = MIME_FIELD_FREE_SLOT_NONE;
+
   mime_hdr_init_accelerators_and_presence_bits(mh);
 
   mime_hdr_cooked_stuff_init(mh, nullptr);
@@ -971,6 +990,26 @@ mime_hdr_destroy(HdrHeap *heap, MIMEHdrImpl *mh)
   // heap->deallocate_obj(mh);
 }
 
+static void
+mime_hdr_rebuild_field_free_list(MIMEHdrImpl *mh)
+{
+  int32_t slotnum = 0;
+
+  mh->m_free_slot = MIME_FIELD_FREE_SLOT_NONE;
+  for (MIMEFieldBlockImpl *fblock = &mh->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    for (uint32_t index = 0; index < fblock->m_freetop; ++index) {
+      MIMEField *field = &fblock->m_field_slots[index];
+
+      if (field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED || field->m_readiness == MIME_FIELD_SLOT_READINESS_EMPTY) {
+        field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
+        field->m_free_next = mh->m_free_slot;
+        mh->m_free_slot    = slotnum + static_cast<int32_t>(index);
+      }
+    }
+    slotnum += MIME_FIELD_BLOCK_SLOTS;
+  }
+}
+
 void
 mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHeap *d_heap, bool inherit_strs)
 {
@@ -1016,6 +1055,7 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
   }
 
   mime_hdr_field_block_list_adjust(block_count, &(s_mh->m_first_fblock), &(d_mh->m_first_fblock));
+  mime_hdr_rebuild_field_free_list(d_mh);
 
   MIME_HDR_SANITY_CHECK(s_mh);
   MIME_HDR_SANITY_CHECK(d_mh);
@@ -1314,13 +1354,19 @@ mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
   MIMEFieldBlockImpl *tail_fblock, *new_fblock;
 
   tail_fblock = mh->m_fblock_list_tail;
-  if (tail_fblock->m_freetop >= MIME_FIELD_BLOCK_SLOTS) {
-    new_fblock = (MIMEFieldBlockImpl *)heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HdrHeapObjType::FIELD_BLOCK);
-    _mime_hdr_field_block_init(new_fblock);
-    tail_fblock->m_next    = new_fblock;
-    tail_fblock            = new_fblock;
-    mh->m_fblock_list_tail = new_fblock;
+  if (tail_fblock->m_freetop < MIME_FIELD_BLOCK_SLOTS) {
+    field = &(tail_fblock->m_field_slots[tail_fblock->m_freetop]);
+    ++tail_fblock->m_freetop;
+
+    mime_field_init(field);
+    return field;
   }
+
+  new_fblock = (MIMEFieldBlockImpl *)heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HdrHeapObjType::FIELD_BLOCK);
+  _mime_hdr_field_block_init(new_fblock);
+  tail_fblock->m_next    = new_fblock;
+  tail_fblock            = new_fblock;
+  mh->m_fblock_list_tail = new_fblock;
 
   field = &(tail_fblock->m_field_slots[tail_fblock->m_freetop]);
   ++tail_fblock->m_freetop;
@@ -1331,9 +1377,62 @@ mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
 }
 
 MIMEField *
+mime_field_create_for_name(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
+{
+  if (mh->m_fblock_list_tail->m_freetop < MIME_FIELD_BLOCK_SLOTS) {
+    return mime_field_create(heap, mh);
+  }
+
+  if (mh->m_free_slot == MIME_FIELD_FREE_SLOT_UNINITIALIZED) {
+    mime_hdr_rebuild_field_free_list(mh);
+  }
+
+  if (mh->m_free_slot == MIME_FIELD_FREE_SLOT_NONE) {
+    return mime_field_create(heap, mh);
+  }
+
+  int last_dup_slot = -1;
+
+  if (MIMEField *last_dup = name.empty() ? nullptr : mime_hdr_field_find(mh, name); last_dup != nullptr) {
+    while (last_dup->m_next_dup != nullptr) {
+      last_dup = last_dup->m_next_dup;
+    }
+    last_dup_slot = mime_hdr_field_slotnum(mh, last_dup);
+    ink_release_assert(last_dup_slot >= 0);
+  }
+
+  int32_t previous_free_slot = MIME_FIELD_FREE_SLOT_NONE;
+  int32_t free_slot          = mh->m_free_slot;
+
+  while (free_slot != MIME_FIELD_FREE_SLOT_NONE) {
+    MIMEField *field = mime_hdr_field_get_slotnum(mh, free_slot);
+    ink_release_assert(field != nullptr);
+    ink_release_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED);
+
+    if (free_slot > last_dup_slot) {
+      if (previous_free_slot == MIME_FIELD_FREE_SLOT_NONE) {
+        mh->m_free_slot = field->m_free_next;
+      } else {
+        MIMEField *previous_free = mime_hdr_field_get_slotnum(mh, previous_free_slot);
+
+        ink_release_assert(previous_free != nullptr);
+        previous_free->m_free_next = field->m_free_next;
+      }
+      mime_field_init(field);
+      return field;
+    }
+
+    previous_free_slot = free_slot;
+    free_slot          = field->m_free_next;
+  }
+
+  return mime_field_create(heap, mh);
+}
+
+MIMEField *
 mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name)
 {
-  MIMEField *field              = mime_field_create(heap, mh);
+  MIMEField *field              = mime_field_create_for_name(heap, mh, name);
   int        field_name_wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()));
   if (!mime_field_name_set(heap, mh, field, field_name_wks_idx, name, true)) {
     // The name exceeds the uint16_t field-length limit and was rejected. Tear
@@ -1532,32 +1631,6 @@ mime_hdr_field_delete(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, bool del
 
     MIME_HDR_SANITY_CHECK(mh);
     mime_field_destroy(mh, field);
-
-    MIMEFieldBlockImpl *prev_block        = nullptr;
-    bool                can_destroy_block = true;
-    for (auto fblock = &(mh->m_first_fblock); fblock != nullptr; fblock = fblock->m_next) {
-      if (prev_block != nullptr) {
-        if (fblock->m_freetop == MIME_FIELD_BLOCK_SLOTS && fblock->contains(field)) {
-          // Check if fields in all slots are deleted
-          for (auto &m_field_slot : fblock->m_field_slots) {
-            if (m_field_slot.m_readiness != MIME_FIELD_SLOT_READINESS_DELETED) {
-              can_destroy_block = false;
-              break;
-            }
-          }
-          // Destroy a block and maintain the chain
-          if (can_destroy_block) {
-            prev_block->m_next = fblock->m_next;
-            _mime_field_block_destroy(heap, fblock);
-            if (prev_block->m_next == nullptr) {
-              mh->m_fblock_list_tail = prev_block;
-            }
-          }
-          break;
-        }
-      }
-      prev_block = fblock;
-    }
   }
 
   MIME_HDR_SANITY_CHECK(mh);
@@ -1615,7 +1688,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view 
   if (field == nullptr) // no fields of this name
   {
     wks_idx = hdrtoken_tokenize(name.data(), static_cast<int>(name.length()));
-    field   = mime_field_create(heap, mh);
+    field   = mime_field_create_for_name(heap, mh, name);
     mime_field_name_set(heap, mh, field, wks_idx, name, true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
 
@@ -1623,7 +1696,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view 
   {
     wks_idx = field->m_wks_idx;
     mime_hdr_field_delete(heap, mh, field, true);
-    field = mime_field_create(heap, mh);
+    field = mime_field_create_for_name(heap, mh, name);
     mime_field_name_set(heap, mh, field, wks_idx, name, true);
     mime_hdr_field_attach(mh, field, 0, nullptr);
   }
@@ -1631,10 +1704,18 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view 
 }
 
 void
-mime_field_destroy(MIMEHdrImpl * /* mh ATS_UNUSED */, MIMEField *field)
+mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field)
 {
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
+
+  if (mh->m_free_slot == MIME_FIELD_FREE_SLOT_UNINITIALIZED) {
+    mime_hdr_rebuild_field_free_list(mh);
+  } else {
+    field->m_free_next = mh->m_free_slot;
+    mh->m_free_slot    = mime_hdr_field_slotnum(mh, field);
+    ink_release_assert(mh->m_free_slot >= 0);
+  }
 }
 
 std::string_view
@@ -2455,12 +2536,30 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       continue; // toss away garbage line
     }
 
+    // A line so long its size cannot be represented as int cannot yield a
+    // storable field; reject it rather than let the narrowing below wrap.
+    if (parsed.size() > static_cast<size_t>(INT_MAX)) {
+      return ParseResult::ERROR;
+    }
+
     // find name last
-    auto field_value = parsed; // need parsed as is later on.
-    auto field_name  = field_value.split_prefix_at(':');
-    if (field_name.empty()) {
+    //
+    // Fuse the colon scan, FNV-1a name hash, and per-byte field-name validation
+    // into one pass over the name bytes. hdrtoken_field_name_scan returns the
+    // colon index (the name length) and, for those bytes, the hash reused below
+    // by the WKS lookup, plus whether every byte is a valid HTTP field-name
+    // char.
+    auto     field_value = parsed; // need parsed as is later on.
+    uint32_t field_name_hash;
+    bool     name_all_valid;
+    int colon_idx = hdrtoken_field_name_scan(parsed.data(), static_cast<int>(parsed.size()), &field_name_hash, &name_all_valid);
+    if (colon_idx <= 0) {
+      // colon_idx < 0: no colon; colon_idx == 0: empty name. Both are garbage,
+      // matching the old empty-field_name toss.
       continue; // toss away garbage line
     }
+    auto field_name = parsed.prefix(colon_idx);
+    field_value.remove_prefix(colon_idx + 1);
 
     // RFC7230 section 3.2.4:
     // No whitespace is allowed between the header field-name and colon.  In
@@ -2472,12 +2571,15 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // A proxy MUST remove any such whitespace from a response message before
     // forwarding the message downstream.
     bool raw_print_field = true;
+    bool name_scan_stale = false;
     if (is_ws(field_name.back())) {
       if (!remove_ws_from_field_name) {
         return ParseResult::ERROR;
       }
       field_name.rtrim_if(&ParseRules::is_ws);
       raw_print_field = false;
+      // The fused scan hashed and validated the untrimmed name; recompute below.
+      name_scan_stale = true;
     } else if (parsed.suffix(2) != "\r\n" || (parsed.size() > 2 && parsed[parsed.size() - 3] == '\r')) {
       // Do not preserve malformed line endings when forwarding the field.
       raw_print_field = false;
@@ -2516,13 +2618,22 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // tokenize the name //
     ///////////////////////
 
-    int field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size());
-
-    if (field_name_wks_idx < 0) {
-      for (auto i : field_name) {
-        if (!ParseRules::is_http_field_name(i)) {
-          return ParseResult::ERROR;
+    int field_name_wks_idx;
+    if (name_scan_stale) {
+      // BWS trimming shortened the name after the fused scan; redo the WKS
+      // lookup and byte validation over the trimmed name.
+      field_name_wks_idx = hdrtoken_tokenize(field_name.data(), static_cast<int>(field_name.size()));
+      if (field_name_wks_idx < 0) {
+        for (auto i : field_name) {
+          if (!ParseRules::is_http_field_name(i)) {
+            return ParseResult::ERROR;
+          }
         }
+      }
+    } else {
+      field_name_wks_idx = hdrtoken_tokenize_prehashed(field_name.data(), static_cast<int>(field_name.size()), field_name_hash);
+      if ((field_name_wks_idx < 0) && !name_all_valid) {
+        return ParseResult::ERROR;
       }
     }
 
@@ -2538,9 +2649,69 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // build and insert the new field object //
     ///////////////////////////////////////////
 
-    MIMEField *field = mime_field_create(heap, mh);
+    MIMEField *field = mime_field_create_for_name(heap, mh, field_name);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
-    mime_hdr_field_attach(mh, field, 1, nullptr);
+
+    // A clear presence bit guarantees no duplicate exists. Skip the lookup.
+    // Names without a presence bit still need the normal duplicate check.
+    //
+    // mime_hdr_field_attach() uses field->name_get(), which returns an interned
+    // string for well-known names. mime_hdr_field_find() would then check the
+    // same presence bit and return nullptr.
+    int check_for_dups = 1;
+    if (field_name_wks_idx >= 0) {
+      uint64_t const mask = hdrtoken_index_to_mask(field_name_wks_idx);
+      if (mask != 0 && (mh->m_presence_bits & mask) == 0) {
+        check_for_dups = 0;
+      }
+    }
+
+    // Append an adjacent duplicate in O(1), without searching its chain.
+    // The previous field must have the same name and be the chain's tail.
+    // Duplicate chains follow slot order, so the new field belongs after it.
+    //
+    // mime_field_create_for_name() can reuse an older slot. The pointer check
+    // below limits this shortcut to cases where the new field occupies
+    // the last allocated slot in the tail block and has a predecessor there.
+    // Otherwise, fall back to normal attachment.
+    //
+    // Get the previous field from the current header. Do not cache it in the
+    // parser: the parser can be reused after its previous header is destroyed.
+    bool                      fast_tail_append = false;
+    MIMEFieldBlockImpl *const tail_fblock      = mh->m_fblock_list_tail;
+
+    if (tail_fblock->m_freetop >= 2 && &tail_fblock->m_field_slots[tail_fblock->m_freetop - 1] == field) {
+      MIMEField *const last = &tail_fblock->m_field_slots[tail_fblock->m_freetop - 2];
+
+      if (last->is_live() && last->m_next_dup == nullptr) {
+        bool name_matches;
+
+        if (field_name_wks_idx >= 0) {
+          name_matches = (last->m_wks_idx == field_name_wks_idx);
+        } else {
+          name_matches =
+            (last->m_wks_idx < 0) &&
+            ts::iequals(std::string_view{last->m_ptr_name, static_cast<std::string_view::size_type>(last->m_len_name)}, field_name);
+        }
+
+        if (name_matches) {
+          field->m_readiness = MIME_FIELD_SLOT_READINESS_LIVE;
+          field->m_flags     = (field->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
+          field->m_next_dup  = nullptr;
+          last->m_next_dup   = field;
+          // Presence bit and slot accelerator were set by the chain head; a tail
+          // dup leaves them untouched, matching attach's patch-after-prev branch.
+          if (field->m_ptr_value && field->is_cooked()) {
+            mh->recompute_cooked_stuff(field);
+          }
+          fast_tail_append = true;
+        }
+      }
+    }
+
+    if (!fast_tail_append) {
+      mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+    }
   }
 }
 
@@ -3514,6 +3685,8 @@ MIMEFieldBlockImpl::marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *
         if (field->m_next_dup) {
           HDR_MARSHAL_PTR_1(field->m_next_dup, MIMEField, ptr_xlate);
         }
+      } else {
+        field->m_next_dup = nullptr;
       }
     }
   } else {
@@ -3526,6 +3699,8 @@ MIMEFieldBlockImpl::marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *
         if (field->m_next_dup) {
           HDR_MARSHAL_PTR(field->m_next_dup, MIMEField, ptr_xlate, num_ptr);
         }
+      } else {
+        field->m_next_dup = nullptr;
       }
     }
   }
@@ -3612,6 +3787,7 @@ int
 MIMEHdrImpl::marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xlate, int num_str)
 {
   // printf("MIMEHdrImpl:marshal  num_ptr = %d  num_str = %d\n", num_ptr, num_str);
+  m_free_slot = MIME_FIELD_FREE_SLOT_UNINITIALIZED;
   HDR_MARSHAL_PTR(m_fblock_list_tail, MIMEFieldBlockImpl, ptr_xlate, num_ptr);
   return m_first_fblock.marshal(ptr_xlate, num_ptr, str_xlate, num_str);
 }
@@ -3621,6 +3797,7 @@ MIMEHdrImpl::unmarshal(intptr_t offset)
 {
   HDR_UNMARSHAL_PTR(m_fblock_list_tail, MIMEFieldBlockImpl, offset);
   m_first_fblock.unmarshal(offset);
+  m_free_slot = MIME_FIELD_FREE_SLOT_UNINITIALIZED;
 }
 
 void

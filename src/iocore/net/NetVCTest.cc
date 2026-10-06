@@ -38,6 +38,7 @@
 #include "iocore/net/NetVConnection.h"
 #include "P_NetVCTest.h"
 #include "tscore/ink_atomic.h"
+#include "tscore/ink_error.h"
 
 // Each test requires two definition entries.  One for the passive
 //   side of the connection and one for the active side
@@ -88,18 +89,24 @@ NetVCTest::~NetVCTest()
 {
   mutex = nullptr;
 
-  if (read_buffer) {
-    Dbg(dbg_ctl, "Freeing read MIOBuffer with %d blocks on %s", read_buffer->max_block_count(),
-        (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
-    free_MIOBuffer(read_buffer);
-    read_buffer = nullptr;
-  }
+  // A destructor is implicitly noexcept, so anything escaping the buffer
+  // teardown would terminate the process without saying where it came from.
+  try {
+    if (read_buffer) {
+      Dbg(dbg_ctl, "Freeing read MIOBuffer with %d blocks on %s", read_buffer->max_block_count(),
+          (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+      free_MIOBuffer(read_buffer);
+      read_buffer = nullptr;
+    }
 
-  if (write_buffer) {
-    Dbg(dbg_ctl, "Freeing write MIOBuffer with %d blocks on %s", write_buffer->max_block_count(),
-        (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
-    free_MIOBuffer(write_buffer);
-    write_buffer = nullptr;
+    if (write_buffer) {
+      Dbg(dbg_ctl, "Freeing write MIOBuffer with %d blocks on %s", write_buffer->max_block_count(),
+          (test_cont_type == NET_VC_TEST_ACTIVE) ? "Active" : "Passive");
+      free_MIOBuffer(write_buffer);
+      write_buffer = nullptr;
+    }
+  } catch (...) {
+    ink_abort("NetVCTest teardown threw an exception");
   }
 }
 

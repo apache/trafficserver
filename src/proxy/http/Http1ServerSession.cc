@@ -159,6 +159,15 @@ Http1ServerSession::release(ProxyTransaction * /* trans ATS_UNUSED */)
     state = PooledState::SSN_TO_RELEASE;
     return;
   }
+  if (state == PooledState::KA_RESERVED) {
+    // The client session is giving up its attached session. If no transaction
+    // is in flight, nothing else will hand the session off, so do it now.
+    state = PooledState::SSN_TO_RELEASE;
+    if (transact_count == released_transactions) {
+      pool_or_close();
+    }
+    return;
+  }
   ink_release_assert(state == PooledState::SSN_TO_RELEASE);
 }
 
@@ -211,6 +220,17 @@ Http1ServerSession ::release_transaction()
   // pool case
   released_transactions++;
 
+  // A session attached to the client session is kept open for the client's
+  // next transaction. The client session releases it when done with it.
+  if (state == PooledState::KA_RESERVED) {
+    return;
+  }
+  pool_or_close();
+}
+
+void
+Http1ServerSession::pool_or_close()
+{
   // Private sessions are never released back to the shared pool
   if (this->is_private() || sharing_match == 0) {
     if (this->is_private()) {

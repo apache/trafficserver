@@ -55,7 +55,7 @@ Key options:
 * `--build-root` - Path to the build directory (for test plugins)
 * `--sandbox` - Directory for test sandboxes (default: `/tmp/autest-parallel`)
 * `-v` - Verbose output with real-time test progress per worker
-* `--collect-timings` - Run tests individually to collect per-test timing data
+* `--collect-timings` - Collect per-test timing data from each worker batch
 * `--list` - List all tests and exit (useful for checking test discovery)
 
 The parallel runner uses port offsets to ensure each worker gets a unique port

@@ -18,6 +18,9 @@
   the License.
  */
 
+#include <cstdio>
+#include <cstdlib>
+#include <exception>
 #include <vector>
 #include <string>
 #include "tscore/ink_resolver.h"
@@ -34,17 +37,28 @@ extern void ts_session_protocol_well_known_name_indices_init();
 int
 main(int argc, char *argv[])
 {
-  // Set the global diags variable
-  Layout::create(); // RecProcess will fail if Layout is not created.
-  DiagsPtr::set(new CatchDiags);
-  RecProcessInit();
-  // Global data initialization needed for the unit tests.
-  ts_session_protocol_well_known_name_indices_init();
-  // Cheat for ts_host_res_global_init as there's no records.config to check for non-default.
-  host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
-  int result                        = Catch::Session().run(argc, argv);
+  // The global initialization below runs outside of any Catch2 assertion, so an exception thrown
+  // there would otherwise escape main and abort without a diagnostic.
+  try {
+    // Set the global diags variable
+    Layout::create(); // RecProcess will fail if Layout is not created.
+    DiagsPtr::set(new CatchDiags);
+    RecProcessInit();
+    // Global data initialization needed for the unit tests.
+    ts_session_protocol_well_known_name_indices_init();
+    // Cheat for ts_host_res_global_init as there's no records.config to check for non-default.
+    host_res_default_preference_order = HOST_RES_DEFAULT_PREFERENCE_ORDER;
 
-  // global clean-up...
+    int result = Catch::Session().run(argc, argv);
 
-  return result;
+    // global clean-up...
+
+    return result;
+  } catch (std::exception const &ex) {
+    std::fprintf(stderr, "test_records aborted: %s\n", ex.what());
+  } catch (...) {
+    std::fprintf(stderr, "test_records aborted: unknown exception\n");
+  }
+
+  return EXIT_FAILURE;
 }

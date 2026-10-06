@@ -210,8 +210,10 @@ public:
 
 private:
   static inline const std::string STATUS_STR{"status"};
+  static inline const std::string CLEAR_STR{"clear"};
 
   void status_get();
+  void clear();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class PluginCommand : public CtrlCommand

@@ -1,0 +1,5 @@
+# The emitter echoes a bool's spelling, so the AST cannot normalize one anywhere:
+# an assignment RHS is not the only value context that reaches header_rewrite.
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Debug} =TRUE
+    set-config "proxy.config.http.cache.http" FALSE

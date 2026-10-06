@@ -1,6 +1,6 @@
 /** @file
 
-  Pseudorandom Number Generator
+  Cache inspection tool version compatibility tests.
 
   @section license License
 
@@ -21,9 +21,23 @@
   limitations under the License.
  */
 
-#include "tscore/Random.h"
+#include "CacheDefs.h"
+#include <catch2/catch_test_macros.hpp>
 
-namespace ts
+TEST_CASE("cache inspection accepts supported stripe versions", "[cache_tool]")
 {
-thread_local Random::State Random::_state;
-}; // namespace ts
+  ts::StripeMeta meta{};
+
+  meta.magic = ts::StripeMeta::MAGIC;
+  for (unsigned short minor : {1, 2, 3}) {
+    meta.version = ts::VersionNumber{24, minor};
+    CHECK(ct::StripeSM::validateMeta(&meta));
+  }
+  meta.version = ts::VersionNumber{CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION + 1};
+  CHECK_FALSE(ct::StripeSM::validateMeta(&meta));
+  meta.version = ts::VersionNumber{CACHE_DB_MAJOR_VERSION + 1, 0};
+  CHECK_FALSE(ct::StripeSM::validateMeta(&meta));
+  meta.version = CACHE_DB_VERSION;
+  meta.magic   = 0;
+  CHECK_FALSE(ct::StripeSM::validateMeta(&meta));
+}

@@ -257,6 +257,8 @@ struct ReRegressionSM : public RegressionSM {
     } else {
       done(REGRESSION_TEST_PASSED);
     }
+    // A leaf SM owns itself once it is done; composites self-delete in run().
+    delete this;
   }
   ReRegressionSM(RegressionTest *at) : RegressionSM(at) {}
   RegressionSM *

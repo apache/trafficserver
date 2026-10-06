@@ -146,6 +146,7 @@ def AddConfigReload(
     expect_absent_tasks=None,
     delay_start=None,
     description=None,
+    directives=None,
 ):
     """Trigger a config reload, block until completion, and validate the result.
 
@@ -174,6 +175,8 @@ def AddConfigReload(
             Useful when the previous step writes a config file and CI may
             run fast enough that the filesystem timestamp hasn't changed.
         description: Custom TestRun description.
+        directives: Dict of reload directives passed with --directive, e.g.
+            {"virtualhost.id": "foo"}. Scopes the reload to the named handlers.
 
     Returns:
         The reload TestRun object (first test run).
@@ -204,6 +207,10 @@ def AddConfigReload(
         cmd += " --force"
     if data is not None:
         cmd += f" --data {_shell_quote(data)}"
+    # --directive= keeps each pair attached to its own option, so a following
+    # option is never swallowed as a directive value.
+    for key, value in (directives or {}).items():
+        cmd += f" --directive={_shell_quote(f'{key}={value}')}"
 
     tr.Processes.Default.Command = cmd
 

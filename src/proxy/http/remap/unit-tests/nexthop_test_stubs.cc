@@ -105,7 +105,7 @@ build_request(int64_t sm_id, HttpSM *sm, sockaddr_in *ip, const char *os_hostnam
   }
   sm->t_state.request_data.api_info = new HttpApiInfo();
   if (ip != nullptr) {
-    memcpy(&sm->t_state.request_data.src_ip.sa, ip, sizeof(sm->t_state.request_data.src_ip.sa));
+    memcpy(&sm->t_state.request_data.src_ip.sin, ip, sizeof(*ip));
   }
   sm->t_state.request_data.xact_start = time(0);
 

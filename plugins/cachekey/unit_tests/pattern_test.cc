@@ -202,13 +202,47 @@ TEST_CASE("Pattern compile and match behavior", "[cachekey][pattern]")
     CHECK(res == "num=123;");
   }
 
-  SECTION("Replacement with invalid group reference")
+  SECTION("Replacement with invalid group reference fails at initialization")
   {
     Pattern p;
-    REQUIRE(p.init("(\\w+)", "$5", true)); // only 2 groups (0 and 1)
+
+    CHECK_FALSE(p.init("(\\w+)", "$5", true));
+    CHECK_FALSE(p.init("(a)(b)?", "$3", true));
+    CHECK_FALSE(p.init("literal", "$1", true));
+  }
+
+  SECTION("Replacement with optional capture groups")
+  {
+    Pattern p;
+
+    REQUIRE(p.init("^(a)(b)?(c)?$", "$1-$2-$3", true));
+    for (const auto &[subject, expected] : {
+           std::pair{"a",   "a--"  },
+           {"ab",  "a-b-" },
+           {"ac",  "a--c" },
+           {"abc", "a-b-c"}
+    }) {
+      String res;
+
+      REQUIRE(p.replace(subject, res));
+      CHECK(res == expected);
+    }
+  }
+
+  SECTION("Capture and replacement beyond the inline match buffer")
+  {
+    Pattern      p;
+    StringVector result;
+
+    REQUIRE(p.init("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)"));
+    REQUIRE(p.process("abcdefghijkl", result));
+    CHECK(result == StringVector{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"});
+
+    REQUIRE(p.init("(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)", "$9$1", true));
     String res;
-    // Should fail because $5 doesn't exist
-    CHECK(p.replace("test", res) == false);
+
+    REQUIRE(p.replace("abcdefghijkl", res));
+    CHECK(res == "ia");
   }
 
   SECTION("process() method - capture mode (no replacement)")

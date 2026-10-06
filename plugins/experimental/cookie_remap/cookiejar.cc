@@ -18,6 +18,7 @@
 
 #include "cookiejar.h"
 #include "strip.h"
+#include <cstdlib>
 #include <cstring>
 
 /* allowed cookie-name definition from RFC

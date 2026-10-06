@@ -1,4 +1,8 @@
-"""Verify ATS handles a server that replies before receiving a full request."""
+"""Verify ATS handles a server that replies before receiving a full request.
+
+Also verifies ATS does not leak the TransformVConnection when abort_tunnel()
+is called with a request transform plugin active (use_request_transform=True).
+"""
 
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -27,24 +31,27 @@ class QuickServerTest:
     """Verify that ATS doesn't delay responses behind slow posts."""
 
     _init_file = '__init__.py'
-    _http_utils = 'http_utils.py'
     _slow_post_client = 'slow_post_client.py'
+    _partial_post_client = 'partial_post_client.py'
     _quick_server = 'quick_server.py'
 
     _dns_counter = 0
     _server_counter = 0
     _ts_counter = 0
 
-    def __init__(self, abort_request: bool, drain_request: bool, abort_response_headers: bool):
+    def __init__(self, abort_request: bool, drain_request: bool, abort_response_headers: bool, use_request_transform: bool = False):
         """Initialize the test.
 
         :param drain_request: Whether the server should drain the request body.
         :param abort_request: Whether the client should abort the request body.
-        before disconnecting.
+        :param abort_response_headers: Whether the server should abort response headers.
+        :param use_request_transform: Whether to install a request transform plugin
+            hooked at TS_HTTP_READ_REQUEST_HDR_HOOK and use a partial POST client.
         """
         self._should_drain_request = drain_request
         self._should_abort_request = abort_request
         self._should_abort_response_headers = abort_response_headers
+        self._use_request_transform = use_request_transform
 
     def _configure_dns(self, tr: 'TestRun') -> None:
         """Configure the DNS.
@@ -89,13 +96,17 @@ class QuickServerTest:
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
             })
+        if self._use_request_transform:
+            Test.PrepareTestPlugin(
+                os.path.join(Test.Variables.AtsTestPluginsDir, 'tunnel_transform.so'), self._ts, plugin_args='request_hdr')
 
     def run(self):
         """Run the test."""
         tr = Test.AddTestRun(
             f'Aborting request: {self._should_abort_request}, '
             f'Draining request: {self._should_drain_request}, '
-            f'Aborting response headers: {self._should_abort_response_headers}')
+            f'Aborting response headers: {self._should_abort_response_headers}, '
+            f'Request transform: {self._use_request_transform}')
 
         self._configure_dns(tr)
         self._configure_server(tr)
@@ -105,22 +116,30 @@ class QuickServerTest:
         http_utils = os.path.join(tools_dir, 'http_utils.py')
         tr.Setup.CopyAs(self._init_file, Test.RunDirectory)
         tr.Setup.CopyAs(http_utils, Test.RunDirectory)
-        tr.Setup.CopyAs(self._slow_post_client, Test.RunDirectory)
         tr.Setup.CopyAs(self._quick_server, Test.RunDirectory)
 
-        client_command = (f'{sys.executable} {self._slow_post_client} '
-                          '127.0.0.1 '
-                          f'{self._ts.Variables.port} ')
-        if not self._should_abort_request:
-            client_command += '--finish-request '
-        p = tr.Processes.Default
-        p.Command = client_command
-        if self._should_abort_request or self._should_abort_response_headers:
-            p.Streams.All += Testers.ExcludesExpression('HTTP/1.1 200 OK', 'Verify response was received')
+        if self._use_request_transform:
+            tr.Setup.CopyAs(self._partial_post_client, Test.RunDirectory)
+            p = tr.Processes.Default
+            p.Command = (f'{sys.executable} {self._partial_post_client} '
+                         f'127.0.0.1 {self._ts.Variables.port}')
+            p.ReturnCode = 0
+            p.Streams.All += Testers.ContainsExpression('HTTP/1.1 200 OK', 'Verify client received the server response')
         else:
-            p.Streams.All += Testers.ContainsExpression('HTTP/1.1 200 OK', 'Verify response was received')
+            tr.Setup.CopyAs(self._slow_post_client, Test.RunDirectory)
+            client_command = (f'{sys.executable} {self._slow_post_client} '
+                              '127.0.0.1 '
+                              f'{self._ts.Variables.port} ')
+            if not self._should_abort_request:
+                client_command += '--finish-request '
+            p = tr.Processes.Default
+            p.Command = client_command
+            if self._should_abort_request or self._should_abort_response_headers:
+                p.Streams.All += Testers.ExcludesExpression('HTTP/1.1 200 OK', 'Verify response was received')
+            else:
+                p.Streams.All += Testers.ContainsExpression('HTTP/1.1 200 OK', 'Verify response was received')
+            p.ReturnCode = 0
 
-        p.ReturnCode = 0
         self._ts.StartBefore(self._dns)
         self._ts.StartBefore(self._server)
         p.StartBefore(self._ts)
@@ -132,3 +151,10 @@ for abort_request in [True, False]:
         for abort_response_headers in [True, False]:
             test = QuickServerTest(abort_request, drain_request, abort_response_headers)
             test.run()
+
+# Partial POST with a request transform plugin: exercises the abort_tunnel()
+# cleanup path for TransformVConnection entries in the vc_table.
+# Note: this is a resource leak (not a memory leak) — the VC pointer remains
+# reachable via post_transform_info so ASAN/LSAN cannot detect a regression.
+# This run is a "doesn't crash" smoke test; the fix itself is the guard.
+QuickServerTest(abort_request=False, drain_request=False, abort_response_headers=False, use_request_transform=True).run()

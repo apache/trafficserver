@@ -1,0 +1,3 @@
+Found 4 errors:
+'NOT' is denied by sandbox policy (modifier)
+Modifier denied by sandbox policy. Contact platform team.

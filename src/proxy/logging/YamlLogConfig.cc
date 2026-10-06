@@ -27,6 +27,7 @@
 #include "proxy/logging/LogObject.h"
 
 #include "tscore/EnumDescriptor.h"
+#include "tsutil/StringCompare.h"
 
 #include <yaml-cpp/yaml.h>
 #include <algorithm>
@@ -176,9 +177,9 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
   LogFileFormat file_type = LOG_FILE_ASCII; // default value
   if (node["mode"]) {
     std::string mode = node["mode"].as<std::string>();
-    file_type        = (0 == strncasecmp(mode.c_str(), "bin", 3) || (1 == mode.size() && mode[0] == 'b') ?
+    file_type        = (ts::iequals(mode, "binary") || ts::iequals(mode, "bin") || ts::iequals(mode, "b") ?
                           LOG_FILE_BINARY :
-                          (0 == strcasecmp(mode.c_str(), "ascii_pipe") ? LOG_FILE_PIPE : LOG_FILE_ASCII));
+                          (ts::iequals(mode, "ascii_pipe") ? LOG_FILE_PIPE : LOG_FILE_ASCII));
   }
 
   int obj_rolling_enabled      = cfg->rolling_enabled;

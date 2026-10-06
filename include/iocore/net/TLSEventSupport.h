@@ -59,6 +59,7 @@ public:
 
   bool                    callHooks(TSEvent eventId);
   bool                    calledHooks(TSEvent eventId) const;
+  bool                    reached_cert_hooks() const;
   virtual Continuation   *getContinuationForTLSEvents() = 0;
   virtual EThread        *getThreadForTLSEvents()       = 0;
   virtual Ptr<ProxyMutex> getMutexForTLSEvents()        = 0;

@@ -58,7 +58,7 @@ class ParserTest : public Parser
 public:
   ParserTest(const std::string &line) : res(true)
   {
-    Parser::parse_line(line);
+    parse_succeeded = Parser::parse_line(line);
     std::cout << "Finished parser test: " << line << std::endl;
   }
 
@@ -79,6 +79,7 @@ public:
   }
 
   bool res;
+  bool parse_succeeded = false;
 };
 
 class SimpleTokenizerTest : public HRWSimpleTokenizer
@@ -436,6 +437,30 @@ test_parsing()
     END_TEST();
   }
 
+  { /* modifiers with no condition or operator to attach them to */
+    ParserTest p("[L]");
+
+    CHECK_EQ(p.parse_succeeded, false);
+
+    END_TEST();
+  }
+
+  { /* same, but long enough that the token is heap allocated rather than SSO */
+    ParserTest p("[AND,NOCASE,NOT,L,QSA,I,EXT,PRE]");
+
+    CHECK_EQ(p.parse_succeeded, false);
+
+    END_TEST();
+  }
+
+  for (const auto *line : {"cond", "cond [L]", "cond [AND,NOCASE,NOT,L,QSA,I,EXT,PRE]"}) {
+    ParserTest p(line);
+
+    CHECK_EQ(p.parse_succeeded, false);
+
+    END_TEST();
+  }
+
   return errors;
 }
 
@@ -553,6 +578,24 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens()[1], "%{IP:SERVER}");
     CHECK_EQ(p.get_tokens()[2], ":");
     CHECK_EQ(p.get_tokens()[3], "%{INBOUND:LOCAL-PORT}");
+
+    END_TEST();
+  }
+
+  {
+    SimpleTokenizerTest p("{a}%{PATH}");
+    CHECK_EQ(p.get_tokens().size(), 2UL);
+    CHECK_EQ(p.get_tokens()[0], "{a}");
+    CHECK_EQ(p.get_tokens()[1], "%{PATH}");
+
+    END_TEST();
+  }
+
+  {
+    SimpleTokenizerTest p("<a>%{PATH}");
+    CHECK_EQ(p.get_tokens().size(), 2UL);
+    CHECK_EQ(p.get_tokens()[0], "<a>");
+    CHECK_EQ(p.get_tokens()[1], "%{PATH}");
 
     END_TEST();
   }
@@ -772,6 +815,33 @@ int
 test_cidr()
 {
   int errors = 0;
+
+  auto check_qualifier = [&errors](std::string_view qualifier, CidrQualifierError expected_error, int expected_v4,
+                                   int expected_v6) {
+    int v4 = 24;
+    int v6 = 48;
+
+    auto const error = cidr_parse_qualifier(qualifier, v4, v6);
+    if (error != expected_error || v4 != expected_v4 || v6 != expected_v6) {
+      std::cerr << "FAIL: CIDR qualifier '" << qualifier << "' parsed as error=" << static_cast<int>(error) << ", v4=" << v4
+                << ", v6=" << v6 << "; expected error=" << static_cast<int>(expected_error) << ", v4=" << expected_v4
+                << ", v6=" << expected_v6 << std::endl;
+      ++errors;
+    }
+  };
+
+  check_qualifier("16", CidrQualifierError::NONE, 16, 48);
+  check_qualifier("18,42", CidrQualifierError::NONE, 18, 42);
+  check_qualifier("18/42", CidrQualifierError::NONE, 18, 42);
+  check_qualifier("18:42", CidrQualifierError::NONE, 18, 42);
+  check_qualifier(",8", CidrQualifierError::NONE, 24, 8);
+  check_qualifier("24,", CidrQualifierError::NONE, 24, 48);
+  check_qualifier("0,0", CidrQualifierError::NONE, 0, 0);
+  check_qualifier("abc", CidrQualifierError::IPV4, 24, 48);
+  check_qualifier("33", CidrQualifierError::IPV4, 24, 48);
+  check_qualifier("24,abc", CidrQualifierError::IPV6, 24, 48);
+  check_qualifier("24,129", CidrQualifierError::IPV6, 24, 48);
+  check_qualifier("24,8,7", CidrQualifierError::IPV6, 24, 48);
 
   // IPv4 masks, in network byte order. /0 must be 0 (and must not shift by 32).
   // Out-of-range prefixes clamp to [0, 32].
