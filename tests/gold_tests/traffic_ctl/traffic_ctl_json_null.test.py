@@ -72,14 +72,13 @@ traffic_ctl.rpc().invoke(handler="get_hostdb_status", params='"hostname: \\"\\""
 ######
 # plugin list -- `plugins` is empty when plugin.config loads nothing.
 #
-# plugin list ignores the format flag today and prints a human table, so only
-# the RPC path is assertable. Once plugin list honours -f json, add:
-#   traffic_ctl.plugin().list().as_json().validate_is_valid_json()
+# This is the RPC path. The traffic_ctl -f json path is asserted in
+# traffic_ctl_plugin_empty.test.py, which needs its own ATS because TrafficCtl
+# hardcodes the process name.
 #
 # Assert the shape rather than mere parseability: `plugins` has to be `[]`,
-# matching what the hostdb case above asserts for `partitions`. The field sits
-# at result.data.plugins, which validate_json_contains cannot reach, so this
-# compares the whole result, as the connection tracker cases in
+# matching what the hostdb case above asserts for `partitions`. This compares
+# the whole result, as the connection tracker cases in
 # traffic_ctl_server_output.test.py do. Before the fix the field emitted `~`,
 # which fails this comparison as surely as it fails a JSON parser. Nothing
 # forces plugin.config to be empty here, and nothing needs to: should a

@@ -333,6 +333,14 @@ public:
   ServerStatusPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+class PluginListPrinter : public BasePrinter
+{
+  void write_output(YAML::Node const &result) override;
+
+public:
+  PluginListPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 
 /// In case a derived class needs to call derived class functions. Ugly but works.
 /// Note: CRTP may worth a try.
