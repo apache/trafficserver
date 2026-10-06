@@ -81,7 +81,7 @@ TEST_CASE("Vectray Destructor", "[libswoc][Vectray]") {
   REQUIRE(count >= 4);
 }
 
-TEST_CASE("Vectray Partial Fixed", "[libswoc][Vectray]") {
+TEST_CASE("Vectray partially filled fixed store", "[libswoc][Vectray]") {
   Vectray<int, 4> v;
   v.push_back(1);
   v.push_back(2);
@@ -92,7 +92,9 @@ TEST_CASE("Vectray Partial Fixed", "[libswoc][Vectray]") {
     REQUIRE(item == int(++n));
   }
   REQUIRE(n == v.size());
+}
 
+TEST_CASE("Vectray partially filled fixed store destructor", "[libswoc][Vectray]") {
   int count = 0;
   struct Q {
     int &count_;
