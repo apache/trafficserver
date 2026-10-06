@@ -91,6 +91,22 @@ TEST_CASE("sort_query orders params by name", "[header_rewrite][url_query]")
       CHECK(sort_query(query) == expected);
     }
   }
+
+  SECTION("many interleaved duplicate names keep their relative order")
+  {
+    std::string query;
+    std::string expected;
+
+    for (int i = 0; i < 100; ++i) {
+      query += (query.empty() ? "" : "&") + std::string(1, "dcba"[i % 4]) + "=" + std::to_string(i);
+    }
+    for (char name : {'a', 'b', 'c', 'd'}) {
+      for (int i = 3 - (name - 'a'); i < 100; i += 4) {
+        expected += (expected.empty() ? "" : "&") + std::string(1, name) + "=" + std::to_string(i);
+      }
+    }
+    CHECK(sort_query(query) == expected);
+  }
 }
 
 TEST_CASE("is_query_sorted detects queries sort_query would leave unchanged", "[header_rewrite][url_query]")
