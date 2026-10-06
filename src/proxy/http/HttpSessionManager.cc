@@ -30,6 +30,7 @@
 
  ****************************************************************************/
 
+#include "../../iocore/net/P_UnixNet.h"
 #include "../../iocore/net/P_UnixNetVConnection.h"
 #include "../../iocore/net/P_SSLClientUtils.h"
 #include "proxy/http/HttpSessionManager.h"
@@ -40,6 +41,7 @@
 #include "iocore/net/TLSSNISupport.h"
 #include "ts/ats_probe.h"
 #include <iterator>
+#include <optional>
 
 namespace
 {
@@ -71,13 +73,39 @@ ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_po
 }
 
 void
-ServerSessionPool::purge()
+ServerSessionPool::requestPurge(EThread *thread)
 {
-  // @c do_io_close can free the instance which clears the intrusive links and breaks the iterator.
-  // Therefore @c do_io_close is called on a post-incremented iterator.
-  m_ip_pool.apply([](PoolableSession *ssn) -> void { ssn->do_io_close(); });
-  m_ip_pool.clear();
-  m_fqdn_pool.clear();
+  // This is called for every request once the connection limit is reached, so only schedule one event.
+  if (!m_purge_requested.load(std::memory_order_relaxed) && !m_purge_requested.exchange(true)) {
+    thread->schedule_imm(this);
+  }
+}
+
+void
+ServerSessionPool::removeSessionsOf(EThread *thread, std::vector<PoolableSession *> &sessions)
+{
+  for (PoolableSession &ssn : m_ip_pool) {
+    if (NetVConnection *vc = ssn.get_netvc(); vc != nullptr && vc->thread == thread) {
+      sessions.push_back(&ssn);
+    }
+  }
+  for (PoolableSession *ssn : sessions) {
+    this->removeSession(ssn);
+  }
+}
+
+void
+ServerSessionPool::closeSessions(std::vector<PoolableSession *> const &sessions)
+{
+  EThread *ethread = this_ethread();
+
+  // With the net handler locked the VCs are freed right away, otherwise that waits for the
+  // inactivity cop.
+  MUTEX_TRY_LOCK(lock, get_NetHandler(ethread)->mutex, ethread);
+
+  for (PoolableSession *ssn : sessions) {
+    ssn->do_io_close();
+  }
 }
 
 bool
@@ -285,6 +313,17 @@ ServerSessionPool::eventHandler(int event, void *data)
   PoolableSession *s      = nullptr;
 
   switch (event) {
+  case EVENT_IMMEDIATE:
+  case EVENT_INTERVAL:
+    if (m_purge_requested.exchange(false) && !httpSessionManager.purge_thread_keepalives()) {
+      // The shared pool is busy, try again shortly.
+      if (!m_purge_requested.exchange(true)) {
+        this_ethread()->schedule_in_local(this, HRTIME_MSECONDS(10));
+      }
+    }
+    this->closeDeferred();
+    return 0;
+
   case VC_EVENT_READ_READY:
   // The server sent us data.  This is unexpected so
   //   close the connection
@@ -333,8 +372,13 @@ ServerSessionPool::eventHandler(int event, void *data)
       ink_assert(s->state == PoolableSession::PooledState::KA_POOLED);
       // Out of the pool! Now!
       this->removeSession(s);
-      // Drop connection on this end.
-      s->do_io_close();
+      // Drop connection on this end. The caller holds the pool lock, which the close does not need,
+      // so for a shared pool leave the close until the lock is released.
+      if (ServerSessionPool *thread_pool = this_ethread()->server_session_pool; thread_pool != nullptr && thread_pool != this) {
+        thread_pool->deferClose(s);
+      } else {
+        s->do_io_close();
+      }
       found = true;
       break;
     }
@@ -357,23 +401,71 @@ ServerSessionPool::eventHandler(int event, void *data)
 }
 
 void
+ServerSessionPool::deferClose(PoolableSession *ssn)
+{
+  // The session is not tracked by a pool anymore, so nothing can be allowed to fire on it before
+  // it is closed.
+  ssn->do_io_read(nullptr, 0, nullptr);
+  ssn->do_io_write(nullptr, 0, nullptr);
+  ssn->cancel_inactivity_timeout();
+  ssn->cancel_active_timeout();
+
+  if (m_deferred_close.empty()) {
+    this_ethread()->schedule_imm_local(this);
+  }
+  m_deferred_close.push_back(ssn);
+}
+
+void
+ServerSessionPool::closeDeferred()
+{
+  // Closing a session can run plugin hooks, so take the list in case that ends up adding to it.
+  std::vector<PoolableSession *> sessions;
+
+  sessions.swap(m_deferred_close);
+  closeSessions(sessions);
+}
+
+void
 HttpSessionManager::init()
 {
   m_g_pool = new ServerSessionPool;
   eventProcessor.schedule_spawn(&initialize_thread_for_http_sessions, ET_NET);
 }
 
-// TODO: Should this really purge all keep-alive sessions?
-// Does this make any sense, since we always do the global pool and not the per thread?
+// Only the shared pool is purged, not the per thread pools.
+//
+// A session is closed by the thread that owns its connection, so this asks every thread to close
+// its own. That keeps the closes out of the pool lock and away from other threads' connections.
 void
 HttpSessionManager::purge_keepalives()
 {
-  EThread *ethread = this_ethread();
+  auto const &group = eventProcessor.thread_group[ET_NET];
 
-  MUTEX_TRY_LOCK(lock, m_g_pool->mutex, ethread);
-  if (lock.is_locked()) {
-    m_g_pool->purge();
-  } // should we do something clever if we don't get the lock?
+  for (int i = 0; i < group._count; ++i) {
+    if (EThread *thread = group._thread[i]; thread != nullptr && thread->server_session_pool != nullptr) {
+      thread->server_session_pool->requestPurge(thread);
+    }
+  }
+}
+
+bool
+HttpSessionManager::purge_thread_keepalives()
+{
+  EThread                       *ethread = this_ethread();
+  std::vector<PoolableSession *> sessions;
+
+  {
+    MUTEX_TRY_LOCK(lock, m_g_pool->mutex, ethread);
+    if (!lock.is_locked()) {
+      return false;
+    }
+    m_g_pool->removeSessionsOf(ethread, sessions);
+  }
+
+  Dbg(dbg_ctl_http_ss, "[purge keepalives] closing %zu sessions owned by this thread", sessions.size());
+  ServerSessionPool::closeSessions(sessions);
+  return true;
 }
 
 HSMresult_t
@@ -480,80 +572,84 @@ HSMresult_t
 HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostname_hash, HttpSM *sm,
                                      TSServerSessionSharingMatchMask match_style, TSServerSessionSharingPoolType pool_type)
 {
-  PoolableSession *to_return = nullptr;
-  HSMresult_t      retval    = HSMresult_t::NOT_FOUND;
+  PoolableSession                                  *to_return = nullptr;
+  HSMresult_t                                       retval    = HSMresult_t::NOT_FOUND;
+  EThread                                          *ethread   = this_ethread();
+  std::optional<UnixNetVConnection::MigrationState> migration;
 
-  // Extend the mutex window until the acquired Server session is attached
-  // to the SM. Releasing the mutex before that results in race conditions
-  // due to a potential parallel network read on the VC with no mutex guarding
+  // Only the pool search and the hand off of the session's VC need the pool
+  // mutex. A pooled VC uses the pool mutex for its VIOs, so holding it keeps
+  // the VC's thread from processing the VC. Once the session is out of the
+  // pool and its VC is closed or owned by this thread nothing else can reach
+  // either of them.
   {
     // Now check to see if we have a connection in our shared connection pool
-    EThread        *ethread = this_ethread();
     Ptr<ProxyMutex> pool_mutex =
       (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) ? ethread->server_session_pool->mutex : m_g_pool->mutex;
 
     MutexLock    mlock;
     MutexTryLock tlock;
-    bool const   locked = lockSessionPool(pool_mutex, ethread, pool_type, &mlock, &tlock);
 
-    if (locked) {
-      if (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) {
-        retval = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
-        Dbg(dbg_ctl_http_ss, "[acquire session] thread pool search %s", to_return ? "successful" : "failed");
-      } else {
-        retval = m_g_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
-        Dbg(dbg_ctl_http_ss, "[acquire session] global pool search %s", to_return ? "successful" : "failed");
-        // At this point to_return has been removed from the pool. Do we need to move it
-        // to the same thread?
-        if (to_return) {
-          UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc());
-          if (server_vc) {
-            // Disable i/o on this vc now, but, hold onto the g_pool cont
-            // and the mutex to stop any stray events from getting in
-            server_vc->do_io_read(m_g_pool, 0, nullptr);
-            server_vc->do_io_write(m_g_pool, 0, nullptr);
-            UnixNetVConnection *new_vc = server_vc->migrateToCurrentThread(sm, ethread);
-            // The VC moved, free up the original one
-            if (new_vc != server_vc) {
-              ink_assert(new_vc == nullptr || new_vc->nh != nullptr);
-              if (!new_vc) {
-                // Close out to_return, we were't able to get a connection
-                Metrics::Counter::increment(http_rsb.origin_shutdown_migration_failure);
-                to_return->do_io_close();
-                to_return = nullptr;
-                retval    = HSMresult_t::NOT_FOUND;
-              } else {
-                // Keep things from timing out on us
-                new_vc->set_inactivity_timeout(new_vc->get_inactivity_timeout());
-                to_return->set_netvc(new_vc);
-              }
-            } else {
-              // Keep things from timing out on us
-              server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
-            }
+    if (!lockSessionPool(pool_mutex, ethread, pool_type, &mlock, &tlock)) {
+      return HSMresult_t::RETRY;
+    }
+
+    if (TS_SERVER_SESSION_SHARING_POOL_THREAD == pool_type) {
+      retval = ethread->server_session_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
+      Dbg(dbg_ctl_http_ss, "[acquire session] thread pool search %s", to_return ? "successful" : "failed");
+    } else {
+      retval = m_g_pool->acquireSession(ip, hostname_hash, match_style, sm, to_return);
+      Dbg(dbg_ctl_http_ss, "[acquire session] global pool search %s", to_return ? "successful" : "failed");
+      // At this point to_return has been removed from the pool. Do we need to move it
+      // to the same thread?
+      if (to_return) {
+        if (auto *server_vc = dynamic_cast<UnixNetVConnection *>(to_return->get_netvc()); server_vc != nullptr) {
+          // Disable i/o on this vc now, but, hold onto the g_pool cont
+          // and the mutex to stop any stray events from getting in
+          server_vc->do_io_read(m_g_pool, 0, nullptr);
+          server_vc->do_io_write(m_g_pool, 0, nullptr);
+          if (server_vc->get_thread() == ethread) {
+            // Keep things from timing out on us
+            server_vc->set_inactivity_timeout(server_vc->get_inactivity_timeout());
+          } else {
+            // The original VC must be marked closed while the pool mutex is held, its
+            // thread depends on the closed flag being stable under the VIO mutex.
+            server_vc->detachForMigration(migration.emplace());
           }
         }
       }
-    } else { // Didn't get the lock.  to_return is still NULL
-      retval = HSMresult_t::RETRY;
     }
+  }
 
-    if (to_return) {
-      if (sm->create_server_txn(to_return)) {
-        Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
-        ATS_PROBE2(http_ss_acquire_session, to_return->connection_id(), to_return->get_netvc()->get_socket());
-        to_return->state = PoolableSession::PooledState::SSN_IN_USE;
-        retval           = HSMresult_t::DONE;
-      } else {
-        Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
-            to_return->connection_id());
-        ATS_PROBE2(http_ss_acquire_session_failed, to_return->connection_id(), to_return->get_netvc()->get_socket());
-        // Don't close the H2 origin.  Otherwise you get use-after free with the activity timeout cop
-        if (!to_return->is_multiplexing()) {
-          to_return->do_io_close();
-        }
-        retval = HSMresult_t::RETRY;
+  if (migration) {
+    UnixNetVConnection *new_vc = UnixNetVConnection::attachMigrated(*migration, sm, ethread);
+
+    // The original VC was closed by the detach and may already be freed.
+    to_return->set_netvc(new_vc);
+    if (!new_vc) {
+      // Close out to_return, we weren't able to get a connection
+      Metrics::Counter::increment(http_rsb.origin_shutdown_migration_failure);
+      to_return->do_io_close();
+      to_return = nullptr;
+      retval    = HSMresult_t::NOT_FOUND;
+    }
+  }
+
+  if (to_return) {
+    if (sm->create_server_txn(to_return)) {
+      Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] return session from shared pool", to_return->connection_id());
+      ATS_PROBE2(http_ss_acquire_session, to_return->connection_id(), to_return->get_netvc()->get_socket());
+      to_return->state = PoolableSession::PooledState::SSN_IN_USE;
+      retval           = HSMresult_t::DONE;
+    } else {
+      Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] failed to get transaction on session from shared pool",
+          to_return->connection_id());
+      ATS_PROBE2(http_ss_acquire_session_failed, to_return->connection_id(), to_return->get_netvc()->get_socket());
+      // Don't close the H2 origin.  Otherwise you get use-after free with the activity timeout cop
+      if (!to_return->is_multiplexing()) {
+        to_return->do_io_close();
       }
+      retval = HSMresult_t::RETRY;
     }
   }
 
@@ -567,6 +663,7 @@ HttpSessionManager::release_session(PoolableSession *to_release)
   ServerSessionPool *pool =
     TS_SERVER_SESSION_SHARING_POOL_THREAD == to_release->sharing_pool ? ethread->server_session_pool : m_g_pool;
   bool released_p = true;
+  bool pooled     = true;
 
   // The per thread lock looks like it should not be needed but if it's not locked the close checking I/O op will crash.
 
@@ -576,12 +673,8 @@ HttpSessionManager::release_session(PoolableSession *to_release)
     bool const   locked = lockSessionPool(pool->mutex, ethread, this->get_pool_type(), &mlock, &tlock);
 
     if (locked) {
-      bool const pooled = pool->releaseSession(to_release);
+      pooled = pool->releaseSession(to_release);
       ATS_PROBE3(http_ss_release_session_global, to_release->connection_id(), to_release->get_netvc()->get_socket(), pooled);
-      if (!pooled) {
-        // close & free session
-        to_release->do_io_close();
-      }
     } else if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
       // Try again with the thread pool
       to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;
@@ -593,6 +686,12 @@ HttpSessionManager::release_session(PoolableSession *to_release)
       ATS_PROBE2(http_ss_release_lock_contended, to_release->connection_id(), to_release->get_netvc()->get_socket());
       released_p = false;
     }
+  }
+
+  // A session that was not pooled was never visible to the pool, so it does not need the pool lock to close.
+  if (!pooled) {
+    // close & free session
+    to_release->do_io_close();
   }
 
   return released_p ? HSMresult_t::DONE : HSMresult_t::RETRY;
