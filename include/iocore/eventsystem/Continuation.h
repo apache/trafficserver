@@ -147,8 +147,8 @@ public:
 
   A Continuation pairs a member-function handler with a @c ProxyMutex.
   When a Processor delivers an event to the Continuation (via
-  @c handleEvent), the dispatching thread acquires @c this->mutex when
-  it is non-null; the handler then runs while that lock is held and can
+  @c handleEvent), the calling thread MUST hold @c this->mutex when it
+  is non-null; the handler runs while that lock is held and can
   manipulate the Continuation's state safely. Continuations with a null
   @c mutex run without serialization. Subclasses add state and
   additional handler methods, switching between them with
@@ -161,9 +161,11 @@ public:
   call), it MUST remain alive until either (a) the Processor returns
   @c ACTION_RESULT_DONE / @c ACTION_IO_ERROR for a synchronous
   completion, or (b) every outstanding @c Action returned by that
-  Processor for this Continuation has either completed (its callback
-  has returned) or been cancelled, and any in-flight callback has
-  unwound.
+  Processor for this Continuation has been cancelled or, for one-shot
+  operations, has fired its terminal callback and that callback has
+  returned. Recurring operations (e.g., periodic events) remain
+  outstanding after each callback return and are complete only upon
+  cancellation. Any in-flight callback MUST also have unwound.
 
   @par Thread Safety
   Not instance-thread-safe. All reads and writes of a Continuation's
