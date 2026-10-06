@@ -120,22 +120,24 @@ parse_fingerprint(const YAML::Node &node, PluginType plugin_type, PluginConfig &
     config.standalone = standalone.as<bool>();
   }
 
+  auto settings = std::make_shared<RuntimeSettings>();
+
   std::string mode;
   if (!read_string(node, "mode", mode)) {
     return false;
   }
   if (mode.empty() || mode == "overwrite") {
-    config.mode = Mode::OVERWRITE;
+    settings->mode = Mode::OVERWRITE;
   } else if (mode == "keep") {
-    config.mode = Mode::KEEP;
+    settings->mode = Mode::KEEP;
   } else if (mode == "append") {
-    config.mode = Mode::APPEND;
+    settings->mode = Mode::APPEND;
   } else {
     TSError("[%s] Unknown mode: %s", PLUGIN_NAME, mode.c_str());
     return false;
   }
 
-  if (!read_string(node, "header", config.header_name) || !read_string(node, "via_header", config.via_header_name) ||
+  if (!read_string(node, "header", settings->header_name) || !read_string(node, "via_header", settings->via_header_name) ||
       !read_string(node, "log_filename", config.log_filename) || !read_string(node, "log_field", config.log_symbol) ||
       !read_string(node, "export", config.export_name)) {
     return false;
@@ -156,24 +158,60 @@ parse_fingerprint(const YAML::Node &node, PluginType plugin_type, PluginConfig &
         TSError("[%s] Each 'servernames' entry must be a non-empty server name", PLUGIN_NAME);
         return false;
       }
-      config.servernames.emplace(servername.Scalar());
+      settings->servernames.emplace(servername.Scalar());
     }
   }
 
   Dbg(dbg_ctl, "JAx method is %s", config.method.name.data());
-  Dbg(dbg_ctl, "JAx mode is %d", static_cast<int>(config.mode));
-  Dbg(dbg_ctl, "JAx header is %s", !config.header_name.empty() ? config.header_name.c_str() : "DISABLED");
-  Dbg(dbg_ctl, "JAx via-header is %s", !config.via_header_name.empty() ? config.via_header_name.c_str() : "DISABLED");
+  Dbg(dbg_ctl, "JAx mode is %d", static_cast<int>(settings->mode));
+  Dbg(dbg_ctl, "JAx header is %s", !settings->header_name.empty() ? settings->header_name.c_str() : "DISABLED");
+  Dbg(dbg_ctl, "JAx via-header is %s", !settings->via_header_name.empty() ? settings->via_header_name.c_str() : "DISABLED");
   Dbg(dbg_ctl, "JAx log file is %s", !config.log_filename.empty() ? config.log_filename.c_str() : "DISABLED");
   Dbg(dbg_ctl, "JAx export registry is %s", !config.export_name.empty() ? config.export_name.c_str() : PLUGIN_NAME);
   Dbg(dbg_ctl, "JAx standalone mode is %s", config.standalone ? "ENABLED" : "DISABLED");
-  for (auto const &servername : config.servernames) {
+  for (auto const &servername : settings->servernames) {
     Dbg(dbg_ctl, "JAx servername: %s", servername.c_str());
+  }
+
+  config.set_settings(std::move(settings));
+  return true;
+}
+} // namespace
+
+bool
+is_reload_compatible(std::vector<PluginConfig *> const &current, PluginConfigs const &updated, std::string &reason)
+{
+  if (current.size() != updated.size()) {
+    reason =
+      "the number of fingerprint entries changed from " + std::to_string(current.size()) + " to " + std::to_string(updated.size());
+    return false;
+  }
+
+  for (size_t i = 0; i < current.size(); ++i) {
+    PluginConfig const &before = *current[i];
+    PluginConfig const &after  = *updated[i];
+    std::string_view    changed;
+    if (before.method.name != after.method.name) {
+      changed = "method";
+    } else if (before.standalone != after.standalone) {
+      changed = "standalone";
+    } else if (before.export_name != after.export_name) {
+      changed = "export";
+    } else if (before.log_filename != after.log_filename) {
+      changed = "log_filename";
+    } else if (before.log_symbol != after.log_symbol) {
+      changed = "log_field";
+    }
+    if (!changed.empty()) {
+      reason  = "'";
+      reason += changed;
+      reason += "' of fingerprint entry " + std::to_string(i + 1) + " changed, but it can only be set at startup";
+      return false;
+    }
   }
 
   return true;
 }
-} // namespace
 
 bool
 load_config_file(std::string_view filename, PluginType plugin_type, PluginConfigs &configs)

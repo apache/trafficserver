@@ -539,6 +539,120 @@ ssl_multicert:
 AllMethodsTest('Multiple methods loaded simultaneously')
 
 # ======================================================================
+# Configuration reload
+# ======================================================================
+
+
+class ReloadTest:
+    '''Verify that traffic_ctl plugin msg jax_fingerprint.reload re-reads the configuration.
+
+    The servernames allowlist is switched at runtime from jax.server.test to
+    jax-filtered.server.test, and a reload that changes a startup-only
+    setting is rejected while the current configuration stays in effect.
+    '''
+
+    _replay_file: str = 'jax_fingerprint_reload.replay.yaml'
+    _config_name: str = 'jax_fingerprint.yaml'
+    _client_counter: int = 0
+
+    def __init__(self, name: str) -> None:
+        '''Configure the reload test runs.'''
+        self._name = name
+        tr = Test.AddTestRun(f'{name}: initial servernames')
+        self._dns = Test.MakeDNServer('dns_reload', default='127.0.0.1')
+        self._server = Test.MakeVerifierServerProcess('server_reload', self._replay_file)
+        self._configure_trafficserver()
+        self._add_client_run(tr, 'initial-allowed initial-filtered', start_processes=True)
+
+        self._add_reload_run(f'{name}: reload new servernames', 'jax_fingerprint_reloaded.yaml')
+        Test.AddAwaitFileContainsTestRun(
+            f'{name}: await the reload', self._ts.Disk.diags_log.AbsPath, 'Configuration reloaded successfully')
+        self._add_client_run(Test.AddTestRun(f'{name}: reloaded servernames'), 'reloaded-allowed reloaded-filtered')
+
+        self._add_reload_run(f'{name}: reload a startup-only change', 'jax_fingerprint_incompatible.yaml')
+        Test.AddAwaitFileContainsTestRun(
+            f'{name}: await the rejected reload', self._ts.Disk.diags_log.AbsPath, 'Configuration reload rejected')
+        self._add_client_run(Test.AddTestRun(f'{name}: servernames kept after rejection'), 'reloaded-allowed reloaded-filtered')
+
+    def _configure_trafficserver(self) -> None:
+        '''Configure Traffic Server with the initial and the reloaded configurations.'''
+        self._ts = Test.MakeATSProcess('ts_reload', enable_cache=False, enable_tls=True)
+        self._ts.addDefaultSSLFiles()
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
+                'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
+                'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.proxy_name': 'test.proxy.test',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'jax_fingerprint',
+            })
+
+        def fingerprint(method: str, servername: str) -> dict[str, str | bool | list[str]]:
+            return {
+                'method': method,
+                'standalone': True,
+                'header': 'x-jax',
+                'via_header': 'x-jax-via',
+                'servernames': [servername],
+            }
+
+        self._ts.Disk.MakeConfigFile(self._config_name).update(make_config([fingerprint('JA4', 'jax.server.test')]))
+        self._ts.Disk.MakeConfigFile('jax_fingerprint_reloaded.yaml').update(
+            make_config([fingerprint('JA4', 'jax-filtered.server.test')]))
+        self._ts.Disk.MakeConfigFile('jax_fingerprint_incompatible.yaml').update(
+            make_config([fingerprint('JA3', 'jax.server.test')]))
+        self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {self._config_name}')
+
+        server_port = self._server.Variables.https_port
+        for host in ('jax.server.test', 'jax-filtered.server.test'):
+            self._ts.Disk.remap_config.AddLine(f'map https://{host} https://jax.backend.test:{server_port}')
+
+        # Replace the default "no errors" check since the rejected reload is logged as an error.
+        self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
+            r"Configuration reload rejected: 'method' of fingerprint entry 1 changed",
+            'Verify the reload that changes a startup-only setting is rejected.')
+
+    def _add_reload_run(self, name: str, config_name: str) -> None:
+        '''Install a configuration file and ask the plugin to reload it.'''
+        config_dir = self._ts.Variables.CONFIGDIR
+        tr = Test.AddTestRun(name)
+        tr.Processes.Default.Command = (
+            f'cp {config_dir}/{config_name} {config_dir}/{self._config_name} && '
+            'traffic_ctl plugin msg jax_fingerprint.reload')
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._ts
+
+    def _add_client_run(self, tr: 'TestRun', keys: str, start_processes: bool = False) -> None:
+        '''Run the replay sessions selected by keys.'''
+        p = tr.AddVerifierClientProcess(
+            f'client_reload{ReloadTest._client_counter}',
+            self._replay_file,
+            http_ports=[self._ts.Variables.port],
+            https_ports=[self._ts.Variables.ssl_port],
+            keys=keys)
+        if start_processes:
+            p.StartBefore(self._dns)
+            p.StartBefore(self._server)
+            p.StartBefore(self._ts)
+        ReloadTest._client_counter += 1
+        tr.StillRunningAfter = self._ts
+        tr.StillRunningAfter = self._server
+
+
+ReloadTest('Reload servernames')
+
+# ======================================================================
 # Invalid configuration
 # ======================================================================
 

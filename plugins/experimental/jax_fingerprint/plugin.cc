@@ -36,6 +36,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <version>
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
@@ -79,6 +80,48 @@ prepare_configs(PluginConfigs &configs)
   return true;
 }
 
+constexpr std::string_view RELOAD_TAG = "jax_fingerprint.reload";
+
+struct GlobalState {
+  std::string                 config_filename;
+  std::vector<PluginConfig *> configs;
+};
+
+GlobalState g_global_state;
+
+void
+reload_global_config()
+{
+  Dbg(dbg_ctl, "Reloading configuration from %s", g_global_state.config_filename.c_str());
+
+  PluginConfigs updated;
+  if (!load_config_file(g_global_state.config_filename, PluginType::GLOBAL, updated)) {
+    TSError("[%s] Configuration reload failed. Keeping current configuration.", PLUGIN_NAME);
+    return;
+  }
+
+  std::string reason;
+  if (!is_reload_compatible(g_global_state.configs, updated, reason)) {
+    TSError("[%s] Configuration reload rejected: %s. Keeping current configuration.", PLUGIN_NAME, reason.c_str());
+    return;
+  }
+
+  for (size_t i = 0; i < updated.size(); ++i) {
+    g_global_state.configs[i]->set_settings(updated[i]->get_settings());
+  }
+  TSNote("[%s] Configuration reloaded successfully", PLUGIN_NAME);
+}
+
+int
+handle_lifecycle_msg(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
+{
+  auto const *msg = static_cast<TSPluginMsg const *>(edata);
+  if (msg->tag != nullptr && msg->tag == RELOAD_TAG) {
+    reload_global_config();
+  }
+  return TS_SUCCESS;
+}
+
 void
 register_log_field(PluginConfig *config)
 {
@@ -107,30 +150,32 @@ register_log_field(PluginConfig *config)
 void
 modify_headers(JAxContext *ctx, TSHttpTxn txnp, PluginConfig &config)
 {
+  auto const settings = config.get_settings();
+
   if (!ctx->get_fingerprint().empty()) {
-    switch (config.mode) {
+    switch (settings->mode) {
     case Mode::KEEP:
-      if (!config.header_name.empty() && !has_header(txnp, config.header_name)) {
-        set_header(txnp, config.header_name, ctx->get_fingerprint());
+      if (!settings->header_name.empty() && !has_header(txnp, settings->header_name)) {
+        set_header(txnp, settings->header_name, ctx->get_fingerprint());
       }
-      if (!config.via_header_name.empty() && !has_header(txnp, config.via_header_name)) {
-        set_via_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty() && !has_header(txnp, settings->via_header_name)) {
+        set_via_header(txnp, settings->via_header_name);
       }
       break;
     case Mode::OVERWRITE:
-      if (!config.header_name.empty()) {
-        set_header(txnp, config.header_name, ctx->get_fingerprint());
+      if (!settings->header_name.empty()) {
+        set_header(txnp, settings->header_name, ctx->get_fingerprint());
       }
-      if (!config.via_header_name.empty()) {
-        set_via_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty()) {
+        set_via_header(txnp, settings->via_header_name);
       }
       break;
     case Mode::APPEND:
-      if (!config.header_name.empty()) {
-        append_header(txnp, config.header_name, ctx->get_fingerprint());
+      if (!settings->header_name.empty()) {
+        append_header(txnp, settings->header_name, ctx->get_fingerprint());
       }
-      if (!config.via_header_name.empty()) {
-        append_via_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty()) {
+        append_via_header(txnp, settings->via_header_name);
       }
       break;
     default:
@@ -138,12 +183,12 @@ modify_headers(JAxContext *ctx, TSHttpTxn txnp, PluginConfig &config)
     }
   } else {
     Dbg(dbg_ctl, "No fingerprint attached to vconn!");
-    if (config.mode == Mode::OVERWRITE) {
-      if (!config.header_name.empty()) {
-        remove_header(txnp, config.header_name);
+    if (settings->mode == Mode::OVERWRITE) {
+      if (!settings->header_name.empty()) {
+        remove_header(txnp, settings->header_name);
       }
-      if (!config.via_header_name.empty()) {
-        remove_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty()) {
+        remove_header(txnp, settings->via_header_name);
       }
     }
   }
@@ -155,15 +200,15 @@ handle_client_hello(void *edata, PluginConfig &config)
   TSVConn     vconn = static_cast<TSVConn>(edata);
   JAxContext *ctx   = get_user_arg(vconn, config);
 
-  if (!config.servernames.empty()) {
+  if (auto const settings = config.get_settings(); !settings->servernames.empty()) {
     const char *servername;
     int         servername_len;
     servername = TSVConnSslSniGet(vconn, &servername_len);
     if (servername != nullptr && servername_len > 0) {
 #ifdef __cpp_lib_generic_unordered_lookup
-      if (!config.servernames.contains(std::string_view(servername, servername_len))) {
+      if (!settings->servernames.contains(std::string_view(servername, servername_len))) {
 #else
-      if (!config.servernames.contains({servername, static_cast<size_t>(servername_len)})) {
+      if (!settings->servernames.contains({servername, static_cast<size_t>(servername_len)})) {
 #endif
         Dbg(dbg_ctl, "Server name %.*s is not in the server name set", servername_len, servername);
         TSVConnReenable(vconn);
@@ -327,10 +372,13 @@ TSPluginInit(int argc, char const **argv)
     return;
   }
 
+  g_global_state.config_filename = argv[1];
+
   // Global configurations live for the life of the process: the log field callbacks and the
   // continuations below keep references to them, so release them from their unique_ptrs here.
   for (auto &owned_config : configs) {
     PluginConfig *config = owned_config.release();
+    g_global_state.configs.push_back(config);
 
     if (!config->log_symbol.empty()) {
       register_log_field(config);
@@ -350,6 +398,8 @@ TSPluginInit(int argc, char const **argv)
       TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
     }
   }
+
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(handle_lifecycle_msg, nullptr));
 }
 
 TSReturnCode
