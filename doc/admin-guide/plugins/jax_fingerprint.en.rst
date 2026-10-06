@@ -169,7 +169,9 @@ starts, so they can only be changed with a restart. The list of fingerprints mus
 entries, in the same order, with the same ``method``, ``standalone``, ``export``,
 ``log_filename``, and ``log_field`` values as the configuration loaded at startup. A reload that
 changes any of these, or that fails to load, is rejected with an error in :file:`diags.log` and the
-current configuration stays in effect. A successful reload is noted in :file:`diags.log`.
+current configuration stays in effect. A successful reload is noted in :file:`diags.log`. If the
+plugin is listed more than once in :file:`plugin.config`, each line reloads its own configuration
+file.
 
 For example, to start fingerprinting connections for a new service, add its server name to the
 list and reload:
