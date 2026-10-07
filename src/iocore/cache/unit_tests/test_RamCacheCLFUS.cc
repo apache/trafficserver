@@ -51,6 +51,12 @@ struct RamCacheCLFUSTestAccess {
     }
     return nullptr;
   }
+
+  static constexpr double
+  cache_value_hits_size(const uint64_t hits, const uint32_t size)
+  {
+    return RamCacheCLFUS::cache_value_hits_size(hits, size);
+  }
 };
 
 namespace
@@ -382,13 +388,13 @@ TEST_CASE("CLFUS compression backends compiled in", "[cache][ramcache][compress]
 // promote-on-hit, no clock second chance, no value-based ghost re-admission).
 TEST_CASE("CLFUS value metric is a floating-point density", "[cache][ramcache][clfus]")
 {
-  constexpr double v_one   = RamCacheCLFUS::cache_value_hits_size(1u, 16384u);   // a typical 16 KiB object, seen once
-  constexpr double v_hot   = RamCacheCLFUS::cache_value_hits_size(100u, 16384u); // same size, many more hits
-  constexpr double v_small = RamCacheCLFUS::cache_value_hits_size(10u, 1024u);   // smaller object, equal hits
-  constexpr double v_large = RamCacheCLFUS::cache_value_hits_size(10u, 16384u);
+  constexpr double v_one   = RamCacheCLFUSTestAccess::cache_value_hits_size(1u, 16384u);   // a typical 16 KiB object, seen once
+  constexpr double v_hot   = RamCacheCLFUSTestAccess::cache_value_hits_size(100u, 16384u); // same size, many more hits
+  constexpr double v_small = RamCacheCLFUSTestAccess::cache_value_hits_size(10u, 1024u);   // smaller object, equal hits
+  constexpr double v_large = RamCacheCLFUSTestAccess::cache_value_hits_size(10u, 16384u);
 
   // A non-zero fraction: the integer-division regression makes this exactly 0.0.
-  STATIC_REQUIRE(v_one > 0.0);
-  STATIC_REQUIRE(v_hot > v_one);
-  STATIC_REQUIRE(v_small > v_large);
+  static_assert(v_one > 0.0, "CLFUS value metric truncated to zero (integer division)");
+  static_assert(v_hot > v_one, "CLFUS value metric does not increase with hits");
+  static_assert(v_small > v_large, "CLFUS value metric does not decrease with size");
 }

@@ -120,12 +120,6 @@ requeue_hits(const uint64_t hits)
   return hits ? (hits - 1) : 0;
 }
 
-constexpr double
-cache_value(const RamCacheCLFUSEntry *const e)
-{
-  return RamCacheCLFUS::cache_value_hits_size(e->hits, e->size);
-}
-
 int64_t
 RamCacheCLFUS::size() const
 {

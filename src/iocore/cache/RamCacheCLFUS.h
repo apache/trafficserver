@@ -85,14 +85,6 @@ public:
 
   void compress_entries(EThread *thread, int do_at_most = INT_MAX);
 
-  static constexpr uint32_t entry_overhead = 256; // per-entry overhead to consider when computing cache value/size
-
-  static constexpr double
-  cache_value_hits_size(const uint64_t hits, const uint32_t size)
-  {
-    return static_cast<double>(hits + 1) / (size + entry_overhead);
-  }
-
   // TODO move it to private.
   StripeSM *stripe = nullptr; // for stats
 private:
@@ -110,9 +102,24 @@ private:
   int                 _ncompressed = 0;
   RamCacheCLFUSEntry *_compressed  = nullptr; // first uncompressed lru[0] entry
 
+  static constexpr uint32_t entry_overhead = 256; // per-entry overhead to consider when computing cache value/size
+
+  static constexpr double
+  cache_value_hits_size(const uint64_t hits, const uint32_t size)
+  {
+    return static_cast<double>(hits + 1) / (size + entry_overhead);
+  }
+
+  static constexpr double
+  cache_value(const RamCacheCLFUSEntry *const e)
+  {
+    return cache_value_hits_size(e->hits, e->size);
+  }
+
   // Lets the unit tests reach a stored entry so the decompression failure
-  // paths in get() can be exercised; see unit_tests/test_RamCacheCLFUS.cc.
-  // Nothing in the product uses this.
+  // paths in get() can be exercised, and the value metric so it can be
+  // checked; see unit_tests/test_RamCacheCLFUS.cc. Nothing in the product
+  // uses this.
   friend struct RamCacheCLFUSTestAccess;
 
   void                _resize_hashtable();
