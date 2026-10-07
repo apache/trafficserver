@@ -73,7 +73,8 @@ Configuration File
 
 The configuration file contains a single ``jax_fingerprint`` map with a ``fingerprints`` list.
 Each entry in the list configures one fingerprinting method. A single configuration file can list
-as many methods as needed, and every method listed is generated independently. For example, the
+as many methods as needed, and every method listed is generated independently. Each method can be
+listed only once per ``export`` registry, and each ``log_field`` symbol can be used only once. For example, the
 following global configuration adds JA3, JA4, and JA4H fingerprints to every request:
 
 .. code-block:: yaml
@@ -119,7 +120,8 @@ Each fingerprint entry supports the following keys.
 
 ``servernames``
     A list of server names for which the plugin generates fingerprints. If not specified, the plugin
-    generates fingerprints for any server name. For example:
+    generates fingerprints for any server name. This key is supported only for the methods that
+    fingerprint the TLS handshake, JA3 and JA4. For example:
 
     .. code-block:: yaml
 
@@ -186,8 +188,9 @@ list and reload:
             - xyz.example
             - new-service.example
 
-Remap configurations are reloaded with :file:`remap.config` (for example, with
-``traffic_ctl config reload``) and accept changes to any key.
+Remap configurations are reloaded along with :file:`remap.config` and accept changes to any key.
+Editing a remap configuration file and running ``traffic_ctl config reload`` reloads it, even if
+:file:`remap.config` itself is unchanged.
 
 
 Plugin Behavior

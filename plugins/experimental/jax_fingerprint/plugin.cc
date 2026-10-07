@@ -82,6 +82,21 @@ prepare_configs(PluginConfigs &configs)
 
 constexpr std::string_view RELOAD_TAG = "jax_fingerprint.reload";
 
+/** Register a remap configuration file as a child of the remap configuration so that editing it triggers a remap reload. */
+void
+register_remap_config_file(std::string_view filename)
+{
+  std::string const path   = resolve_config_path(filename);
+  TSMgmtString      parent = nullptr;
+  if (TSMgmtStringGet("proxy.config.url_remap.filename", &parent) != TS_SUCCESS) {
+    TSWarning("[%s] Could not retrieve the remap configuration filename; %s changes require a remap.config change to reload",
+              PLUGIN_NAME, path.c_str());
+    return;
+  }
+  TSMgmtConfigFileAdd(parent, path.c_str());
+  TSfree(parent);
+}
+
 /** The configuration loaded by one plugin.config line, which can be reloaded at runtime. */
 struct GlobalState {
   std::string                 config_filename;
@@ -126,9 +141,9 @@ handle_lifecycle_msg(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 void
 register_log_field(PluginConfig *config)
 {
-  std::string name  = "jax_fingerprint-";
-  name             += config->method.name;
-  TSLogFieldRegister(
+  std::string name           = "jax_fingerprint-";
+  name                      += config->method.name;
+  TSReturnCode const result  = TSLogFieldRegister(
     name.c_str(), config->log_symbol, TS_LOG_TYPE_STRING,
     [config](TSHttpTxn txnp, char *buf) -> int {
       void *container;
@@ -145,6 +160,9 @@ register_log_field(PluginConfig *config)
       }
     },
     TSLogIntUnmarshal);
+  if (result != TS_SUCCESS) {
+    TSError("[%s] Failed to register log field '%s'", PLUGIN_NAME, config->log_symbol.c_str());
+  }
 }
 } // namespace
 
@@ -433,6 +451,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   if (!prepare_configs(*configs)) {
     return TS_ERROR;
   }
+
+  register_remap_config_file(argv[2]);
 
   for (auto const &config : *configs) {
     if (config->standalone) {

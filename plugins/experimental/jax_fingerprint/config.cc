@@ -149,6 +149,11 @@ parse_fingerprint(const YAML::Node &node, PluginType plugin_type, PluginConfig &
   }
 
   if (YAML::Node servernames = node["servernames"]; servernames) {
+    if (config.method.type != Method::Type::CONNECTION_BASED) {
+      TSError("[%s] 'servernames' is not supported for %s, which does not fingerprint the TLS handshake", PLUGIN_NAME,
+              config.method.name.data());
+      return false;
+    }
     if (!servernames.IsSequence()) {
       TSError("[%s] 'servernames' must be a list of server names", PLUGIN_NAME);
       return false;
@@ -174,6 +179,29 @@ parse_fingerprint(const YAML::Node &node, PluginType plugin_type, PluginConfig &
   }
 
   config.set_settings(std::move(settings));
+  return true;
+}
+bool
+check_unique_entries(std::string const &path, PluginConfigs const &configs)
+{
+  std::unordered_set<std::string> registries;
+  std::unordered_set<std::string> log_symbols;
+  for (auto const &config : configs) {
+    // Fingerprints in a registry are keyed by method, so each method can be published to a registry only once.
+    std::string_view export_name = config->export_name.empty() ? PLUGIN_NAME : config->export_name;
+    std::string      registry{config->method.name};
+    registry += '\0';
+    registry += export_name;
+    if (!registries.insert(registry).second) {
+      TSError("[%s] %s: method %s is listed more than once for registry '%.*s'", PLUGIN_NAME, path.c_str(),
+              config->method.name.data(), static_cast<int>(export_name.size()), export_name.data());
+      return false;
+    }
+    if (!config->log_symbol.empty() && !log_symbols.insert(config->log_symbol).second) {
+      TSError("[%s] %s: log_field '%s' is listed more than once", PLUGIN_NAME, path.c_str(), config->log_symbol.c_str());
+      return false;
+    }
+  }
   return true;
 }
 } // namespace
@@ -213,13 +241,20 @@ is_reload_compatible(std::vector<PluginConfig *> const &current, PluginConfigs c
   return true;
 }
 
-bool
-load_config_file(std::string_view filename, PluginType plugin_type, PluginConfigs &configs)
+std::string
+resolve_config_path(std::string_view filename)
 {
   std::string path{filename};
   if (!path.empty() && path.front() != '/') {
     path = std::string{TSConfigDirGet()} + "/" + path;
   }
+  return path;
+}
+
+bool
+load_config_file(std::string_view filename, PluginType plugin_type, PluginConfigs &configs)
+{
+  std::string const path = resolve_config_path(filename);
   Dbg(dbg_ctl, "Loading configuration from %s", path.c_str());
 
   try {
@@ -257,5 +292,5 @@ load_config_file(std::string_view filename, PluginType plugin_type, PluginConfig
     return false;
   }
 
-  return true;
+  return check_unique_entries(path, configs);
 }

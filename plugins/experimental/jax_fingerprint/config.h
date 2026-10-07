@@ -101,6 +101,9 @@ private:
 
 using PluginConfigs = std::vector<std::unique_ptr<PluginConfig>>;
 
+/** Resolve a configuration file name, relative to the Traffic Server configuration directory if not absolute. */
+std::string resolve_config_path(std::string_view filename);
+
 /** Load the fingerprint configurations from a YAML file.
  *
  * A relative @a filename is resolved against the Traffic Server configuration directory.
