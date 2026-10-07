@@ -1,6 +1,6 @@
 /** @file
 
-  Unit tests for the Doc sanity checks in CacheVC::handleReadDone.
+  Unit tests for the Doc sanity checks in CacheVC::handleReadDone and the callers that honor them.
 
   @section license License
 
@@ -204,4 +204,71 @@ TEST_CASE("handleReadDone leaves an unfit Doc that is not ours as a collision", 
   doc->doc_type = CACHE_FRAG_TYPE_HTTP;
   run_read_done(vc, 4096);
   CHECK(doc->magic == (c.corrupt ? DOC_CORRUPT : DOC_MAGIC));
+}
+
+namespace
+{
+
+struct OpenWriteCallback : Continuation {
+  int event = 0;
+
+  OpenWriteCallback() : Continuation(nullptr) { SET_HANDLER(&OpenWriteCallback::handle); }
+
+  int
+  handle(int e, void * /* data ATS_UNUSED */)
+  {
+    event = e;
+    return EVENT_DONE;
+  }
+};
+
+struct OverwriteCase {
+  uint32_t len;
+  bool     exposed;
+};
+
+// get_header and get_single_data trust the lengths of whatever doc sits in first_buf.
+constexpr std::array<OverwriteCase, 2> overwrite_cases = {
+  {
+   {4096, true},
+   {4097, false},
+   }
+};
+
+} // namespace
+
+TEST_CASE("openWriteOverwrite keeps a corrupt Doc out of first_buf", "[cache][write]")
+{
+  OverwriteCase c = GENERATE(from_range(overwrite_cases));
+  INFO("len " << c.len);
+
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM           stripe{&disk, 10, 0};
+  StripeHeaderFooter header{};
+  init_stripe_for_reading(stripe, header);
+
+  Dir      dir = dir_at_stripe_start();
+  CacheKey key;
+  key.b[0] = 0x1234;
+  key.b[1] = 0x5678;
+  REQUIRE(stripe.dir_valid(&dir));
+
+  FakeVC vc;
+  init_vc_for_reading(vc, stripe, dir, key);
+  vc.first_key = key;
+
+  OpenDirEntry od{};
+  vc.od = &od;
+  OpenWriteCallback callback;
+  vc._action      = &callback;
+  CacheVC *writer = &vc;
+  SET_CONTINUATION_HANDLER(writer, &CacheVC::openWriteOverwrite);
+
+  make_doc(vc, key, c.len, 0);
+  run_read_done(vc, 4096);
+
+  CHECK(callback.event == CACHE_EVENT_OPEN_WRITE);
+  CHECK(static_cast<bool>(vc.first_buf) == c.exposed);
+  CHECK(dir_offset(&od.first_dir) == dir_offset(&dir));
 }
