@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -462,8 +462,9 @@ CacheProcessor::remove(Continuation *cont, const HttpCacheKey *key, CacheFragTyp
 /** Set the state of a disk programmatically.
  */
 bool
-CacheProcessor::mark_storage_offline(CacheDisk *d, ///< Target disk
-                                     bool       admin)
+CacheProcessor::mark_storage_offline(CacheDisk *d,    ///< Target disk
+                                     bool       admin ///< Whether the disk is being disabled administratively.
+)
 {
   bool     zret; // indicates whether there's any online storage left.
   int      p;

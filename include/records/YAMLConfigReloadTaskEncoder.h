@@ -3,7 +3,7 @@
   YAML encoder for ConfigReloadTask::Info - serializes reload task snapshots to YAML nodes
   for JSONRPC responses.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

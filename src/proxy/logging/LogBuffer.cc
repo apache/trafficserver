@@ -2,7 +2,7 @@
 
   This file implements the LogBuffer class, a thread-safe buffer for
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section description
+  @par Description
   This file implements the LogBuffer class, a thread-safe buffer for
   recording log entries. See the header file LogBuffer.h for more
   information on the structure of a LogBuffer.

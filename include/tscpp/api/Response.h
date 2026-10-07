@@ -50,14 +50,14 @@ public:
   /** @return Status code of the response */
   HttpStatus getStatusCode() const;
 
-  /** @param New status code to set */
-  void setStatusCode(HttpStatus);
+  /** @param[in] code New status code to set */
+  void setStatusCode(HttpStatus code);
 
   /** @return Reason phrase of the response */
   std::string getReasonPhrase() const;
 
-  /** @param New reason phrase to set */
-  void setReasonPhrase(const std::string &);
+  /** @param[in] phrase New reason phrase to set */
+  void setReasonPhrase(const std::string &phrase);
 
   /** @return Headers of the response */
   Headers &getHeaders() const;
