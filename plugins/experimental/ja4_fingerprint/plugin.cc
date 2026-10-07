@@ -323,7 +323,7 @@ add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 
   if (buflen > 0) {
     for (std::size_t i = 0; i + 1 < buflen; i += 2) {
-      summary.add_cipher(make_word(buf[i+1], buf[i]));
+      summary.add_cipher(make_word(buf[i + 1], buf[i]));
     }
   } else {
     Dbg(dbg_ctl, "Failed to get ciphers.");
@@ -418,7 +418,7 @@ append_JA4_headers(TSCont /* cont ATS_UNUSED */, TSHttpTxn txnp, std::string con
   // traverse multiple proxies.
   bool const ja4_header_exists = header_exists(bufp, hdr_loc, "ja4", 3) ||
                                  header_exists(bufp, hdr_loc, JA4_VIA_HEADER.data(), static_cast<int>(JA4_VIA_HEADER.length()));
-  bool const skip_ja4_headers = global_preserve_enabled && ja4_header_exists;
+  bool const skip_ja4_headers  = global_preserve_enabled && ja4_header_exists;
 
   if (!skip_ja4_headers) {
     append_to_field(bufp, hdr_loc, "ja4", 3, fingerprint->data(), fingerprint->size());
