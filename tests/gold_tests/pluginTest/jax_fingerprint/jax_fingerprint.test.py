@@ -670,6 +670,69 @@ ssl_multicert:
 
 ReloadTest('Reload servernames')
 
+
+class RemapReloadTest:
+    '''Verify that editing only a remap configuration file and running traffic_ctl config reload reloads it.'''
+
+    _replay_file: str = 'jax_fingerprint_remap_reload.replay.yaml'
+    _config_name: str = 'jax_fingerprint_remap.yaml'
+
+    def __init__(self, name: str) -> None:
+        '''Configure the remap reload test runs.'''
+        self._dns = Test.MakeDNServer('dns_remap_reload', default='127.0.0.1')
+        self._server = Test.MakeVerifierServerProcess('server_remap_reload', self._replay_file)
+        self._configure_trafficserver()
+
+        tr = Test.AddTestRun(f'{name}: initial header')
+        client = self._add_client(tr, 'client_remap_reload0', 'remap-initial')
+        client.StartBefore(self._dns)
+        client.StartBefore(self._server)
+        client.StartBefore(self._ts)
+
+        config_dir = self._ts.Variables.CONFIGDIR
+        traffic_out = self._ts.Disk.traffic_out.AbsPath
+        loading = f'Loading configuration from {config_dir}/{self._config_name}'
+        tr = Test.AddTestRun(f'{name}: change only the remap configuration and reload')
+        tr.Processes.Default.Command = (
+            f'cp {config_dir}/jax_fingerprint_remap_reloaded.yaml {config_dir}/{self._config_name} && '
+            'traffic_ctl config reload && '
+            f'for i in $$(seq 60); do [ "$$(grep -c "{loading}" {traffic_out})" -ge 2 ] && exit 0; sleep 1; done; exit 1')
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._ts
+
+        self._add_client(Test.AddTestRun(f'{name}: reloaded header'), 'client_remap_reload1', 'remap-reloaded')
+
+    def _configure_trafficserver(self) -> None:
+        '''Configure Traffic Server with a remap rule that uses the plugin.'''
+        self._ts = Test.MakeATSProcess('ts_remap_reload', enable_cache=False)
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'jax_fingerprint',
+            })
+
+        def fingerprint(header: str) -> dict[str, str | bool | list[str]]:
+            return {'method': 'JA4H', 'header': header}
+
+        self._ts.Disk.MakeConfigFile(self._config_name).update(make_config([fingerprint('x-jax-initial')]))
+        self._ts.Disk.MakeConfigFile('jax_fingerprint_remap_reloaded.yaml').update(make_config([fingerprint('x-jax-reloaded')]))
+        self._ts.Disk.remap_config.AddLine(
+            f'map http://jax.server.test http://jax.backend.test:{self._server.Variables.http_port} '
+            f'@plugin=jax_fingerprint.so @pparam={self._config_name}')
+
+    def _add_client(self, tr: 'TestRun', name: str, keys: str) -> 'Process':
+        '''Run the replay session selected by keys.'''
+        client = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[self._ts.Variables.port], keys=keys)
+        tr.StillRunningAfter = self._ts
+        tr.StillRunningAfter = self._server
+        return client
+
+
+RemapReloadTest('Reload a remap configuration')
+
 # ======================================================================
 # Invalid configuration
 # ======================================================================
@@ -746,3 +809,36 @@ jax_fingerprint:
       servernames:
         - ""
 ''', r"Each 'servernames' entry must be a non-empty server name")
+
+InvalidConfigTest(
+    'Reject servernames for request-based methods', '''
+jax_fingerprint:
+  fingerprints:
+    - method: JA4H
+      standalone: true
+      servernames:
+        - abc.example
+''', r"'servernames' is not supported for JA4H")
+
+InvalidConfigTest(
+    'Reject a method listed twice for one registry', '''
+jax_fingerprint:
+  fingerprints:
+    - method: JA4
+      standalone: true
+      header: x-ja4-a
+    - method: JA4
+      standalone: true
+      header: x-ja4-b
+      export: jax_fingerprint
+''', r"method JA4 is listed more than once for registry 'jax_fingerprint'")
+
+InvalidConfigTest(
+    'Reject a log_field listed twice', '''
+jax_fingerprint:
+  fingerprints:
+    - method: JA3
+      log_field: jaxfp
+    - method: JA4
+      log_field: jaxfp
+''', r"log_field 'jaxfp' is listed more than once")
