@@ -363,6 +363,17 @@ The plugin creates metrics of its own, such as
 ``plugin.stats_over_http.requests`` and ``plugin.stats_over_http.renders``, so
 its output has more metrics than before, in each format.
 
+ClientHello Extension Types
+---------------------------
+
+On OpenSSL builds, ``TSClientHello::get_extension_types()`` now lists every
+extension type in the ClientHello, including GREASE values and types OpenSSL
+does not recognize, matching its behavior on BoringSSL. Previously it omitted
+those extensions on OpenSSL. As a result, ClientHello fingerprints computed
+from this list on OpenSSL, such as the JA3 and JA4 values from
+``jax_fingerprint`` and ``ja4_fingerprint``, change for clients that send
+such extensions, for example Chrome's ALPS extension.
+
 Upgrading to ATS v10.x
 ======================
 
