@@ -360,6 +360,7 @@ void
 write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s       = &vc->write;
+  Continuation *c   = s->vio.cont;
   ProxyMutex *mutex = thread->mutex.get();
 
   MUTEX_TRY_LOCK(lock, s->vio.mutex, thread);
@@ -542,6 +543,17 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
     if ((needs & EVENTIO_READ) == EVENTIO_READ) {
       read_reschedule(nh, vc);
+    }
+
+    // A POST half-close in the handler shut down the write side; nothing is left to write.
+    if (!buf.reader()) {
+      return;
+    }
+
+    // The handler replaced the write VIO while writes were enabled, so nothing else requeues this VC.
+    if (c != s->vio.cont) {
+      write_reschedule(nh, vc);
+      return;
     }
 
     if (!(buf.reader()->is_read_avail_more_than(0))) {
