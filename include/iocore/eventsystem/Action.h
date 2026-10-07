@@ -27,114 +27,89 @@
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/Continuation.h"
 
-/**
-  Represents an operation initiated on a Processor.
+/** Handle for cancelling a pending asynchronous operation.
 
-  The Action class is an abstract representation of an operation
-  being executed by some Processor. A reference to an Action object
-  allows you to cancel an ongoing asynchronous operation before it
-  completes. This means that the Continuation specified for the
-  operation will not be called back.
+  A function that starts an asynchronous operation on behalf of a
+  Continuation returns an @c Action* for that operation. Calling cancel()
+  before the operation completes guarantees that @c continuation receives
+  no further callbacks for it.
 
-  Actions or classes derived from Action are the typical return
-  type of methods exposed by Processors in the Event System and
-  throughout the IO Core libraries.
+  A function returning @c Action* may instead return nullptr or a sentinel
+  value it documents; neither may be dereferenced.
 
-  The canceller of an action must be the state machine that will
-  be called back by the task and that state machine's lock must be
-  held while calling cancel.
+  @par Lifetime
+  The Action is owned by the object performing the operation, which
+  releases it after the operation completes or is cancelled. Callers must
+  not delete an Action. Except for the owning object, nothing may access
+  an Action after calling cancel() or after the operation completes.
 
-  Processor implementers:
-
-  You must ensure that no events are sent to the state machine after
-  the operation has been cancelled appropriately.
-
-  Returning an Action:
-
-  Processor functions that are asynchronous must return actions to
-  allow the calling state machine to cancel the task before completion.
-  Because some processor functions are reentrant, they can call
-  back the state machine before the returning from the call that
-  creates the actions. To handle this case, special values are
-  returned in place of an action to indicate to the state machine
-  that the action is already completed.
-
-    - @b ACTION_RESULT_DONE The processor has completed the task
-      and called the state machine back inline.
-    - @b ACTION_RESULT_INLINE Not currently used.
-    - @b ACTION_RESULT_IO_ERROR Not currently used.
-
-  To make matters more complicated, it's possible if the result is
-  ACTION_RESULT_DONE that state machine deallocated itself on the
-  reentrant callback. Thus, state machine implementers MUST either
-  use a scheme to never deallocate their machines on reentrant
-  callbacks OR immediately check the returned action when creating
-  an asynchronous task and if it is ACTION_RESULT_DONE neither read
-  nor write any state variables. With either method, it's imperative
-  that the returned action always be checked for special values and
-  the value handled accordingly.
-
-  Allocation policy:
-
-  Actions are allocated by the Processor performing the actions.
-  It is the processor's responsibility to handle deallocation once
-  the action is complete or cancelled. A state machine MUST NOT
-  access an action once the operation that returned the Action has
-  completed or it has cancelled the Action.
-
-  Action pointer sanity checks must also check whether the lowest
-  bit of the pointer is 1. If it is 1, then the value must not be
-  treated as a pointer, and should be used as one of the values
-  defined below (e.g. ACTION_RESULT_DONE).
-
+  @par Thread Safety
+  Not thread-safe. Callers of cancel() must hold @c mutex.
 */
 class Action
 {
 public:
   /**
-    Continuation that initiated this action.
+    The Continuation called back for this operation, or nullptr if none.
 
-    The reference to the initiating continuation is only used to
-    verify that the action is being cancelled by the correct
-    continuation.  This field should not be accessed or modified
-    directly by the state machine.
+    The Action does not keep this Continuation alive; it must remain valid
+    until the operation completes or is cancelled. Only the owning
+    Processor may modify this field.
 
+    @par Thread Safety
+    Not thread-safe.
   */
   Continuation *continuation = nullptr;
 
   /**
-    Reference to the Continuation's lock.
+    The mutex that guards @c cancelled.
 
-    Keeps a reference to the Continuation's lock to preserve the
-    access to the cancelled field valid even when the state machine
-    has been deallocated. This field should not be accessed or
-    modified directly by the state machine.
+    Lock this mutex, not @c continuation->mutex, to cancel the Action.
+    The two usually refer to the same @c ProxyMutex, but a Processor may
+    bind a different one. Because the reference is retained, the mutex
+    stays valid after the initiating Continuation is deallocated.
 
+    @par Thread Safety
+    Only the owning Processor may modify this field. It binds the field
+    before publishing the Action and MUST serialize any rebinding against
+    cancel().
   */
   Ptr<ProxyMutex> mutex;
 
   /**
-    Internal flag used to indicate whether the action has been
-    cancelled.
+    Whether the operation has been cancelled.
 
-    This flag is set after a call to cancel or cancel_action and
-    it should not be accessed or modified directly by the state
-    machine.
+    Becomes true when cancel() or cancel_action() is called. Once it is
+    true, the owning Processor MUST NOT call back @c continuation for
+    this operation.
 
+    Only the owning Processor may write this field directly, and it may
+    reset it to false only when reusing the Action for a new operation.
+    Everyone else MUST cancel through cancel().
+
+    @par Thread Safety
+    Not thread-safe. Concurrent accessors must hold @c mutex.
   */
   bool cancelled = false;
 
   /**
-    Cancels the asynchronous operation represented by this action.
+    Cancels the asynchronous operation represented by this Action.
 
-    This method is called by state machines willing to cancel an
-    ongoing asynchronous operation. Classes derived from Action may
-    perform additional steps before flagging this action as cancelled.
-    There are certain rules that must be followed in order to cancel
-    an action (see the Remarks section).
+    Derived Processors may override this to release resources held by
+    the operation.
 
-    @param c Continuation associated with this Action.
+    @param[in] c nullptr, or the Continuation that initiated this Action.
 
+    @pre  This Action has not already been cancelled.
+    @pre  @p c is nullptr or equal to @c continuation.
+
+    @post The Processor does not call back @c continuation for this
+          operation. The Action may be deallocated at any time; the caller
+          must not access it again.
+
+    @par Thread Safety
+    Not thread-safe. The caller must hold @c mutex; otherwise a callback
+    already in progress on another thread may still be delivered.
   */
   virtual void
   cancel(Continuation *c = nullptr)
@@ -145,15 +120,20 @@ public:
   }
 
   /**
-    Cancels the asynchronous operation represented by this action.
+    Cancels the operation without running derived-class cancellation logic.
 
-    This method is called by state machines willing to cancel an
-    ongoing asynchronous operation. There are certain rules that
-    must be followed in order to cancel an action (see the Remarks
-    section).
+    Any cleanup that a derived class performs when cancelled is skipped.
 
-    @param c Continuation associated with this Action.
+    @param[in] c Either nullptr or @c continuation.
 
+    @pre  @c cancelled is false.
+
+    @post The Processor does not call back @c continuation for this
+          operation. The Action may be deallocated at any time; the caller
+          must not access it again.
+
+    @par Thread Safety
+    Not thread-safe. Callers must hold @c mutex.
   */
   void
   cancel_action(Continuation *c = nullptr)
@@ -163,6 +143,26 @@ public:
     cancelled = true;
   }
 
+  /**
+    Binds this Action to a Continuation and retains a reference to that
+    Continuation's mutex.
+
+    @param[in] acont The Continuation that will cancel and be called back
+                     on this Action, or nullptr to detach.
+
+    @return Returns @p acont.
+
+    @pre  If @p acont is non-null, it points to a live Continuation.
+
+    @post @c this->continuation == @p acont. If @p acont is non-null,
+          @c this->mutex refers to the same @c ProxyMutex as
+          @c acont->mutex; otherwise @c this->mutex is null.
+          @c this->cancelled is unchanged.
+
+    @par Thread Safety
+    Not thread-safe. The call MUST NOT overlap any other access to this
+    Action.
+  */
   Continuation *
   operator=(Continuation *acont)
   {
@@ -176,20 +176,79 @@ public:
   }
 
   /**
-    Constructor of the Action object. Processor implementers are
-    responsible for associating this action with the proper
-    Continuation.
+    Constructs an uncancelled Action bound to no Continuation and holding
+    no mutex.
 
+    @par Thread Safety
+    Thread-safe.
   */
   Action() {}
+
+  /**
+    Releases this Action's reference to @c mutex.
+
+    @par Thread Safety
+    Not thread-safe. Destruction MUST NOT overlap any other access to this
+    Action.
+  */
   virtual ~Action() {}
 };
 
+/**
+  Sentinel @c Action* meaning the request left nothing to cancel.
+
+  A Processor returns this instead of a real Action when it settled the
+  request, successfully or not, before returning. Whether and how the
+  Continuation was notified is Processor-specific; typically its handler
+  has already run inline, during the call that returned this value.
+
+  Compare against this value with @c ==. It MUST NOT be dereferenced or
+  cancelled.
+
+  @note If the Continuation's handler ran inline, it may have destroyed
+        the Continuation before this value was returned.
+*/
 #define ACTION_RESULT_DONE MAKE_ACTION_RESULT(1)
-#define ACTION_IO_ERROR    MAKE_ACTION_RESULT(2)
 
-// Use these classes by
-// #define ACTION_RESULT_HOST_DB_OFFLINE
-//   MAKE_ACTION_RESULT(ACTION_RESULT_HOST_DB_BASE + 0)
+/**
+  Sentinel @c Action* returned when the Processor fails a request with an
+  I/O error before returning, leaving no operation pending.
 
+  It is not a real Action and MUST NOT be dereferenced. Whether the
+  Processor invoked the Continuation with an error event before returning
+  is Processor-specific; if it did, the Continuation may have been
+  deallocated during that call.
+*/
+#define ACTION_IO_ERROR MAKE_ACTION_RESULT(2)
+
+// Processors that need additional sentinels define them with
+// MAKE_ACTION_RESULT, e.g.
+//   #define MY_PROCESSOR_BASE         3
+//   #define ACTION_RESULT_MY_FAILURE  MAKE_ACTION_RESULT(MY_PROCESSOR_BASE + 0)
+
+/**
+  Encodes a small integer as a sentinel @c Action* that a Processor may
+  return in place of a real Action.
+
+  Distinct values of @p _x yield distinct sentinels. Every sentinel has
+  bit 0 of its integer representation set, so it never equals the
+  address of a real Action. A sentinel MUST NOT be dereferenced.
+
+  @param[in] _x A non-negative integer expression identifying the sentinel.
+
+  @return The sentinel @c Action* for @p _x.
+
+  @pre  2 * @p _x + 1 is representable in the type of @p _x.
+
+  @note Values 1 and 2 are already used by this header for inline
+        completion and inline I/O error. A Processor that defines its own
+        sentinels MUST use other values.
+
+  @note @p _x is substituted without parentheses. Parenthesize an argument
+        that contains an operator binding more loosely than @c <<, for
+        example @c MAKE_ACTION_RESULT((c ? 3 : 4)).
+
+  @par Thread Safety
+  Thread-safe.
+*/
 #define MAKE_ACTION_RESULT(_x) (Action *)(((uintptr_t)((_x << 1) + 1)))
