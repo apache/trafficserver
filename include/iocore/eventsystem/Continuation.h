@@ -205,9 +205,8 @@ public:
     the Continuation's state needs no serialization and every
     asynchronous operation it is passed to accepts a null mutex.
 
-    Reassign the field only while no event or asynchronous operation
-    targeting this Continuation is pending. Otherwise, a pending dispatch
-    may hold the previous mutex instead, or may not be delivered.
+    Reassigning the field while an event or asynchronous operation
+    targeting this Continuation is pending is undefined behavior.
 
     @par Thread Safety
     Not thread-safe. Holding the referenced mutex does not protect the
