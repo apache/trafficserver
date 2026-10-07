@@ -146,28 +146,23 @@ public:
   System.
 
   A Continuation pairs the @c handler that @c handleEvent invokes with
-  the @c mutex that serializes those invocations. Derive from it to add
-  state and handler methods; a derived class typically changes
-  @c handler as it moves between states.
-
-  @invariant @c handler is non-null whenever an event can be dispatched
-             to the Continuation.
+  the @c mutex that serializes those invocations. Derived classes add
+  state and handler methods, and typically replace @c handler as they
+  move between states.
 
   @par Lifetime
-  Constructors are protected, so only derived classes are instantiated.
-  Once scheduled or passed to an asynchronous operation, a Continuation
+  A handler must be installed before the Continuation is scheduled or
+  passed to an asynchronous operation. From then on, the Continuation
   must stay alive until no further event can be dispatched to it, i.e.,
-  until each such operation has completed or been cancelled. It may then be
-  destroyed through a @c Continuation pointer, including by
+  until each such operation has completed or been cancelled. It may then
+  be destroyed through a @c Continuation pointer, including by
   @c delete @c this from its own handler, provided nothing, including
   callers further up the stack, accesses it afterward.
 
   @par Thread Safety
-  Not thread-safe. While @c mutex is non-null, every access to the
-  Continuation, including calls to @c handleEvent, must be made while
-  holding it, except where a member documents otherwise; the Event
-  System holds it for the duration of each dispatch. While @c mutex is
-  null, callers must serialize access themselves.
+  Not thread-safe. While @c mutex is non-null, concurrent accesses must
+  hold it, except where a member documents otherwise; the Event System
+  holds it for the duration of each dispatch.
 */
 class Continuation : private force_VFPT_to_top
 {
@@ -201,25 +196,23 @@ public:
 #endif
 
   /**
-    Reference-counted pointer to the @c ProxyMutex protecting this
-    Continuation's state.
+    The mutex held while events are dispatched to this Continuation, or
+    null.
 
-    Initialized by the Continuation's constructor. The field MAY be
-    reassigned after construction, but only while no other thread is
-    dispatching this Continuation. Some scheduling paths assign the
-    dispatching thread's mutex to this field when it is null; others
-    leave a null mutex unchanged, in which case the Continuation
-    dispatches without serialization. A null value is permitted only
-    when dispatching through a Processor that documents the no-mutex
-    case.
+    The Continuation shares ownership of the referenced @c ProxyMutex.
+    If the field is null when an event is scheduled, the scheduler may
+    choose a mutex to hold for that dispatch and may store it here, or
+    may dispatch without holding any mutex. Leave the field null only if
+    the Continuation's state needs no serialization and every
+    asynchronous operation it is passed to accepts a null mutex.
+
+    Reassign the field only while no event or asynchronous operation
+    targeting this Continuation is pending. Otherwise, a pending dispatch
+    may hold the previous mutex instead, or may not be delivered.
 
     @par Thread Safety
-    The reference itself is not synchronized. Reads and writes of the
-    field MUST be ordered by an external happens-before edge (typically
-    the publication of the Continuation to a Processor); concurrent
-    unsynchronized access is a data race. The lock macros
-    (@c MUTEX_TRY_LOCK, @c SCOPED_MUTEX_LOCK, etc.) accept the
-    @c Ptr<ProxyMutex> directly.
+    Not thread-safe. Holding the referenced mutex does not protect the
+    field itself, and scheduling this Continuation may write it.
   */
   Ptr<ProxyMutex> mutex;
 
@@ -261,19 +254,17 @@ public:
   LINK(Continuation, link);
 
   /**
-    Flags that follow this Continuation to whichever thread dispatches it.
+    Control flags that may be installed as the current thread's control
+    flags before an event is dispatched to this Continuation.
 
-    Initialized from the constructing thread's current @c ContFlags.
-    Before each dispatch, the Event System makes these flags the
-    dispatching thread's current flags. Scheduling an event for this
-    Continuation MAY overwrite this field with the scheduling thread's
-    current flags, discarding earlier changes.
+    Initialized from the constructing thread's current control flags.
+    Scheduling an event for this Continuation may overwrite this field
+    with the scheduling thread's current control flags.
 
     @par Thread Safety
-      Not thread-safe. Scheduling may write this field without holding
-      @c mutex, so holding @c mutex does not make access safe; do not
-      access it concurrently with scheduling or dispatch of this
-      Continuation.
+    Not thread-safe. Scheduling and some dispatch paths access this
+    field without holding @c mutex, so holding @c mutex is not enough
+    to avoid a data race.
   */
   ContFlags control_flags;
 
@@ -379,29 +370,54 @@ public:
 
 protected:
   /**
-    Constructs a Continuation that holds a (possibly null) reference to
-    a @c ProxyMutex and snapshots the calling thread's @c ContFlags
-    into @c control_flags.
+    Constructs a Continuation protected by @p amutex.
 
-    @param[in] amutex Raw @c ProxyMutex pointer to retain. nullptr is
-                      permitted; a Continuation with a null mutex MAY only
-                      be dispatched by a Processor that documents the
-                      no-mutex case.
-    @post @c mutex retains @p amutex, incrementing its refcount when
-          non-null; @c control_flags is set from @c get_cont_flags() on
-          the calling thread.
+    The Continuation shares ownership of @p amutex with every other
+    reference to it, so passing a freshly created mutex makes the
+    Continuation its sole owner, and the mutex is destroyed with the
+    Continuation unless another reference is taken first.
+
+    @param[in] amutex The mutex to protect this Continuation, or nullptr.
+                      See @c mutex for the restrictions on dispatching a
+                      Continuation whose mutex is null.
+
+    @pre  @p amutex is null or points to a live @c ProxyMutex.
+
+    @post @c mutex refers to @p amutex.
+    @post @c control_flags equals the calling thread's current control
+          flags. Later changes to the calling thread's flags do not
+          affect it.
+    @post @c handler is null. The derived class must install a handler
+          before any event is dispatched to this Continuation.
+
+    @par Thread Safety
+      Safe to call concurrently with other code that takes or releases
+      references to @p amutex.
   */
   explicit Continuation(ProxyMutex *amutex = nullptr);
 
   /**
-    Constructs a Continuation that retains a reference to an existing
-    @c Ptr<ProxyMutex>.
+    Constructs a Continuation protected by the mutex that @p amutex
+    refers to.
 
-    @param[in] amutex Smart pointer whose target becomes @c this->mutex.
-                      May refer to a null @c ProxyMutex; same caveats as
-                      the raw-pointer constructor apply.
-    @post @c mutex shares ownership with @p amutex; @c control_flags is
-          set from @c get_cont_flags() on the calling thread.
+    The Continuation shares ownership of that mutex with @p amutex; it
+    does not modify @p amutex.
+
+    @param[in] amutex The mutex to protect this Continuation. May be
+                      null; see @c mutex for the restrictions on
+                      dispatching a Continuation whose mutex is null.
+
+    @post @c mutex refers to the same @c ProxyMutex as @p amutex.
+    @post @c control_flags equals the calling thread's current control
+          flags. Later changes to the calling thread's flags do not
+          affect it.
+    @post @c handler is null. The derived class must install a handler
+          before any event is dispatched to this Continuation.
+
+    @par Thread Safety
+      Safe to call concurrently with other code that takes or releases
+      references to the same @c ProxyMutex. @p amutex itself must not
+      be written concurrently with this call.
   */
   explicit Continuation(Ptr<ProxyMutex> &amutex);
 };
