@@ -38,10 +38,10 @@
   value it documents; neither may be dereferenced.
 
   @par Lifetime
-  The Action is owned by the object performing the operation, which
-  releases it after the operation completes or is cancelled. Callers must
-  not delete an Action. Except for the owning object, nothing may access
-  an Action after calling cancel() or after the operation completes.
+  The object performing the operation owns the Action and controls its
+  lifetime; callers must not delete it. Unless the owner documents
+  otherwise, callers must not access an Action after calling cancel() or
+  after the operation completes.
 
   @par Thread Safety
   Not thread-safe. Callers of cancel() must hold @c mutex.
@@ -52,9 +52,9 @@ public:
   /**
     The Continuation called back for this operation, or nullptr if none.
 
-    The Action does not keep this Continuation alive; it must remain valid
-    until the operation completes or is cancelled. Only the owning
-    Processor may modify this field.
+    The Action does not own this Continuation; it must remain valid until
+    the operation completes or is cancelled. Only the object performing
+    the operation may modify this field.
 
     @par Thread Safety
     Not thread-safe.
@@ -62,16 +62,19 @@ public:
   Continuation *continuation = nullptr;
 
   /**
-    The mutex that guards @c cancelled.
+    The mutex that serializes cancel() against callbacks for this
+    operation.
 
     Lock this mutex, not @c continuation->mutex, to cancel the Action.
-    The two usually refer to the same @c ProxyMutex, but a Processor may
-    bind a different one. Because the reference is retained, the mutex
-    stays valid after the initiating Continuation is deallocated.
+    The two usually refer to the same @c ProxyMutex, but they may differ.
+    It may be null, in which case cancel() is not serialized against
+    callbacks.
+
+    Only the owning Processor may modify this field.
 
     @par Thread Safety
-    Only the owning Processor may modify this field. It binds the field
-    before publishing the Action and MUST serialize any rebinding against
+    Not thread-safe. The owning Processor binds this field before
+    publishing the Action and MUST serialize any rebinding against
     cancel().
   */
   Ptr<ProxyMutex> mutex;
@@ -79,13 +82,12 @@ public:
   /**
     Whether the operation has been cancelled.
 
-    Becomes true when cancel() or cancel_action() is called. Once it is
-    true, the owning Processor MUST NOT call back @c continuation for
-    this operation.
+    cancel() and cancel_action() set it to true. Once it is true, the
+    owning Processor MUST NOT call back @c continuation for this
+    operation.
 
-    Only the owning Processor may write this field directly, and it may
+    Only the owning Processor may assign this field directly, and it may
     reset it to false only when reusing the Action for a new operation.
-    Everyone else MUST cancel through cancel().
 
     @par Thread Safety
     Not thread-safe. Concurrent accessors must hold @c mutex.
@@ -95,21 +97,21 @@ public:
   /**
     Cancels the asynchronous operation represented by this Action.
 
-    Derived Processors may override this to release resources held by
-    the operation.
+    Derived classes may override this to release resources held by the
+    operation.
 
-    @param[in] c nullptr, or the Continuation that initiated this Action.
+    @param[in] c The cancelling Continuation, or nullptr.
 
     @pre  This Action has not already been cancelled.
     @pre  @p c is nullptr or equal to @c continuation.
 
-    @post The Processor does not call back @c continuation for this
-          operation. The Action may be deallocated at any time; the caller
-          must not access it again.
+    @post @c continuation receives no further callbacks for this
+          operation. Unless the owning object documents otherwise, this
+          Action may be deallocated at any time and must not be accessed
+          again.
 
     @par Thread Safety
-    Not thread-safe. The caller must hold @c mutex; otherwise a callback
-    already in progress on another thread may still be delivered.
+    Not thread-safe. The caller must hold @c mutex.
   */
   virtual void
   cancel(Continuation *c = nullptr)
@@ -120,20 +122,21 @@ public:
   }
 
   /**
-    Cancels the operation without running derived-class cancellation logic.
+    Cancels the operation without invoking any override of cancel().
 
-    Any cleanup that a derived class performs when cancelled is skipped.
+    Use it only when the operation does not depend on the work an override
+    of cancel() performs.
 
-    @param[in] c Either nullptr or @c continuation.
+    @param[in] c nullptr, or the Continuation that initiated this Action.
 
-    @pre  @c cancelled is false.
+    @pre  This Action has not already been cancelled.
+    @pre  @p c is nullptr or equal to @c continuation.
 
     @post The Processor does not call back @c continuation for this
-          operation. The Action may be deallocated at any time; the caller
-          must not access it again.
+          operation.
 
     @par Thread Safety
-    Not thread-safe. Callers must hold @c mutex.
+    Not thread-safe. The caller must hold @c mutex.
   */
   void
   cancel_action(Continuation *c = nullptr)
