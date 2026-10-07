@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from hrw4u.validation import Validator
 from hrw4u.errors import SymbolResolutionError
 import hrw4u.types as types
@@ -25,6 +26,29 @@ from hrw4u.debugging import Dbg
 from hrw4u.symbols_base import SymbolResolverBase
 from hrw4u.suggestions import SuggestionEngine
 from hrw4u.sandbox import SandboxConfig
+
+
+def _sections_of(params: types.MapParams | None) -> set[SectionType] | None:
+    if params:
+        return params.sections
+    return None
+
+
+@dataclass(frozen=True, slots=True)
+class CondLookup:
+    key: str | None
+    entry: types.MapParams | None
+    arg: str | None
+    symbol: types.Symbol | None
+    existence: bool
+
+
+@dataclass(frozen=True, slots=True)
+class OpLookup:
+    key: str
+    entry: types.MapParams | None
+    qualifier: str | None
+    symbol: types.Symbol | None
 
 
 class SymbolResolver(SymbolResolverBase):
@@ -237,3 +261,114 @@ class SymbolResolver(SymbolResolverBase):
                 valid_sections = [s.value for s in SectionType]
                 error.add_symbol_suggestion(valid_sections)
                 raise error
+
+    def lookup_condition(self, name: str, section: SectionType | None = None) -> CondLookup:
+        with self.debug_context("lookup_condition", name, section), self._warnings_on_success():
+            if symbol := self.symbol_for(name):
+                self._collect_warning(self._sandbox.check_language("variables"))
+                return CondLookup(key=None, entry=None, arg=None, symbol=symbol, existence=False)
+
+            self._collect_warning(self._sandbox.check_condition(name))
+
+            if params := self._lookup_condition_cached(name):
+                self.validate_section_access(name, section, params.sections)
+                return CondLookup(key=name, entry=params, arg=None, symbol=None, existence=False)
+
+            for prefix, params in self.find_prefix_matches(name, self._condition_map):
+                self.validate_section_access(name, section, _sections_of(params))
+                suffix_norm = name[len(prefix):]
+                if params and params.upper:
+                    suffix_norm = suffix_norm.upper()
+                if params and params.validate:
+                    params.validate(suffix_norm)
+                return CondLookup(key=prefix, entry=params, arg=suffix_norm, symbol=None, existence=bool(params and params.prefix))
+
+            error = SymbolResolutionError(name, "Unknown condition symbol")
+            suggestions = self._suggestion_engine.get_suggestions(name, 'condition', section, list(self._symbols.keys()))
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
+            raise error
+
+    def lookup_operator(self, name: str, value_text: str, section: SectionType | None = None, *, add: bool = False) -> OpLookup:
+        with self.debug_context("lookup_operator", name, value_text, section, add), self._warnings_on_success():
+            self._collect_warning(self._sandbox.check_operator(name))
+
+            for op_key, params in self._operator_map.items():
+                if op_key.endswith("."):
+                    if not name.startswith(op_key):
+                        continue
+                    if add and not (params and params.add):
+                        continue
+                    self.validate_section_access(name, section, _sections_of(params))
+                    qualifier = name[len(op_key):]
+                    # resolve_add_assignment does not case-normalize, so += must not either.
+                    if params and params.upper and not add:
+                        qualifier = qualifier.upper()
+                    if params and params.validate:
+                        params.validate(qualifier)
+                    if op_key == "http.cntl.":
+                        types.SuffixGroup.BOOL_FIELDS.validate(value_text)
+                    return OpLookup(key=op_key, entry=params, qualifier=qualifier, symbol=None)
+
+                if not add and name == op_key:
+                    self.validate_section_access(name, section, _sections_of(params))
+                    if params and params.validate:
+                        params.validate(value_text)
+                    return OpLookup(key=op_key, entry=params, qualifier=None, symbol=None)
+
+            if add:
+                error = SymbolResolutionError(name, "+= operator is not supported for this assignment")
+                error.add_note("Only operators with 'add' flag support +=")
+                raise error
+
+            if resolved_lhs := self.symbol_for(name):
+                self._collect_warning(self._sandbox.check_language("variables"))
+                if resolved_rhs := self.symbol_for(value_text):
+                    if resolved_rhs.var_type != resolved_lhs.var_type:
+                        raise SymbolResolutionError(
+                            value_text, f"Type mismatch: {resolved_lhs.var_type} vs {resolved_rhs.var_type}")
+                else:
+                    Validator.validate_assignment(resolved_lhs.var_type, value_text, name)
+                return OpLookup(key=name, entry=None, qualifier=None, symbol=resolved_lhs)
+
+            error = SymbolResolutionError(name, "Unknown assignment symbol")
+            suggestions = self._suggestion_engine.get_suggestions(name, 'assignment', section)
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
+            raise error
+
+    def lookup_function(self, func_name: str, args: list[str]) -> tuple[str, types.MapParams]:
+        with self.debug_context("lookup_function", func_name, args), self._warnings_on_success():
+            self._collect_warning(self._sandbox.check_function(func_name))
+
+            if params := self._lookup_function_cached(func_name):
+                if params.validate:
+                    params.validate(args)
+                return func_name, params
+
+            error = SymbolResolutionError(func_name, f"Unknown function: '{func_name}'")
+            error.add_note(f"Arguments provided: {len(args)}")
+            suggestions = self._suggestion_engine.get_suggestions(func_name, 'function')
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
+            raise error
+
+    def lookup_statement_function(self,
+                                  func_name: str,
+                                  args: list[str],
+                                  section: SectionType | None = None) -> tuple[str, types.MapParams]:
+        with self.debug_context("lookup_statement_function", func_name, args, section), self._warnings_on_success():
+            self._collect_warning(self._sandbox.check_function(func_name))
+
+            if params := self._lookup_statement_function_cached(func_name):
+                self.validate_section_access(func_name, section, params.sections)
+                if params.validate:
+                    params.validate(args)
+                return func_name, params
+
+            error = SymbolResolutionError(func_name, f"Unknown statement function: '{func_name}'")
+            error.add_note(f"Arguments provided: {len(args)}")
+            suggestions = self._suggestion_engine.get_suggestions(func_name, 'statement_function')
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
+            raise error

@@ -22,7 +22,8 @@ import argparse
 import io
 import re
 import sys
-from typing import Final, NoReturn, Protocol, TextIO, Any, Callable
+from pathlib import Path
+from typing import Final, NoReturn, Protocol, TextIO, Any, Callable, TYPE_CHECKING
 
 from antlr4.error.ErrorStrategy import BailErrorStrategy, DefaultErrorStrategy
 from antlr4 import InputStream, CommonTokenStream
@@ -30,6 +31,9 @@ from antlr4 import InputStream, CommonTokenStream
 from hrw4u.errors import Hrw4uSyntaxError, ThrowingErrorListener, ErrorCollector, CollectingErrorListener
 from hrw4u.formatters import FORMATTERS, ErrorFormatter
 from hrw4u.types import MagicStrings
+
+if TYPE_CHECKING:
+    from hrw4u.sandbox import SandboxConfig
 
 
 class RegexPatterns:
@@ -267,6 +271,41 @@ def create_parse_tree(
             return None, parser_obj, error_collector
         else:
             emit_fatal_message(error_format, f"{error_prefix} error: {e}", filename=filename)
+
+
+def compile_to_conf(
+        tree: Any,
+        filename: str,
+        source_text: str,
+        *,
+        debug: bool = False,
+        error_collector: ErrorCollector | None = None,
+        preserve_comments: bool = True,
+        proc_search_paths: list[Path] | None = None,
+        sandbox: SandboxConfig | None = None) -> list[str]:
+    """Run the hrw4u front end: CST -> AST -> resolved tree -> header_rewrite lines.
+
+    Not reachable from the CLI yet -- generate_output still routes through the CST
+    emitter. This is the single wiring both the switchover and the parity test use, so
+    the two cannot drift. A run that reported an error returns no lines: what the emitter
+    renders around an unresolved node is not a configuration anyone asked for.
+    """
+    from hrw4u.ast_visitor import ASTVisitor
+    from hrw4u.emit_conf import ConfEmitter
+    from hrw4u.sema import Sema
+
+    ast = ASTVisitor(filename=filename).visit(tree)
+    sema = Sema(
+        debug=debug,
+        error_collector=error_collector,
+        preserve_comments=preserve_comments,
+        proc_search_paths=proc_search_paths,
+        sandbox=sandbox)
+    sema.source_map.add(filename, source_text)
+    program = sema.analyze(ast)
+    if error_collector is not None and error_collector.has_errors():
+        return []
+    return ConfEmitter().emit(program)
 
 
 def generate_output(
