@@ -83,17 +83,21 @@ extern EThread *this_event_thread();
 #define CONTINUATION_CONT 1
 
 /**
-  Pointer-to-member type for a Continuation event handler.
+  Pointer-to-member type of an event handler, as stored in
+  @c Continuation::handler.
 
-  Handler methods have signature @c int(int event, void *data). This
-  typedef is the form stored in @c Continuation::handler: the
-  pointer-to-member is rebound to @c Continuation regardless of which
-  subclass declared the method. Install handlers with @c SET_HANDLER or
-  @c SET_CONTINUATION_HANDLER, which perform the conversion safely. A
-  direct @c reinterpret_cast to this type is not equivalent — under
-  multiple inheritance, where @c Continuation is not the first base of
-  the subclass, it skips the offset adjustment that @c static_cast
-  applies and yields a handler that dispatches into the wrong subobject.
+  The handler receives the event code and payload of each event
+  dispatched to the Continuation, and returns a Processor-specific
+  status.
+
+  @note A handler declared in a class derived from @c Continuation must be
+        converted to this type with @c static_cast, which applies the
+        base-class offset. Invoking the result of a @c reinterpret_cast
+        to this type is undefined behavior.
+
+  @note Invoking a converted handler is undefined behavior unless the
+        Continuation's dynamic type is, or derives from, the class that
+        declared the handler.
 */
 using ContinuationHandler = int (Continuation::*)(int, void *);
 
@@ -168,20 +172,15 @@ class Continuation : private force_VFPT_to_top
 {
 public:
   /**
-    The current handler invoked by @c handleEvent.
+    The member function that @c handleEvent invokes.
 
-    Initial value is null; dispatching an event before a handler is
-    installed is undefined behavior. Install a handler with
-    @c SET_HANDLER (on @c this) or @c SET_CONTINUATION_HANDLER (on
-    another Continuation) rather than assigning directly; the macros
-    perform a type-checked conversion that a bare assignment skips,
-    catching offset bugs that would otherwise arise under multiple
-    inheritance.
+    Install a handler with @c SET_HANDLER or @c SET_CONTINUATION_HANDLER
+    rather than by direct assignment; see @c ContinuationHandler for why
+    a @c reinterpret_cast is unsafe. A handler may replace this field
+    while it runs; the new handler receives the next dispatch.
 
     @par Thread Safety
-    Unsynchronized pointer-to-member. Once the Continuation has been
-    published to any other thread, readers and writers MUST hold
-    @c this->mutex.
+    Not thread-safe.
   */
   ContinuationHandler handler = nullptr;
 
