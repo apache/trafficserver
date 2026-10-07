@@ -154,3 +154,54 @@ TEST_CASE("handleReadDone checks Doc lengths at the 4K boundary", "[cache][read]
   run_read_done(vc, c.nbytes);
   CHECK(doc->magic == (c.corrupt ? DOC_CORRUPT : DOC_MAGIC));
 }
+
+namespace
+{
+
+struct CollisionCase {
+  uint32_t len;
+  bool     ours;
+  bool     corrupt;
+};
+
+// The header block is too short to hold an alternate, so a doc that reaches unmarshal_http_info turns corrupt. The fitting
+// foreign row proves STORE_COLLISION takes a foreign doc that far, so the unfit foreign row staying intact means it stopped
+// before the overrun and was left for the caller's key check.
+constexpr std::array<CollisionCase, 3> collision_cases = {
+  {
+   {4096, false, true},
+   {4097, false, false},
+   {4097, true, true},
+   }
+};
+
+} // namespace
+
+TEST_CASE("handleReadDone leaves an unfit Doc that is not ours as a collision", "[cache][read]")
+{
+  CollisionCase c = GENERATE(from_range(collision_cases));
+  INFO("len " << c.len << (c.ours ? " ours" : " not ours"));
+
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM           stripe{&disk, 10, 0};
+  StripeHeaderFooter header{};
+  init_stripe_for_reading(stripe, header);
+
+  Dir      dir = dir_at_stripe_start();
+  CacheKey key;
+  key.b[0] = 0x1234;
+  key.b[1] = 0x5678;
+  REQUIRE(stripe.dir_valid(&dir));
+
+  CacheKey other = key;
+  other.b[0]     = 0x4321;
+
+  FakeVC vc;
+  init_vc_for_reading(vc, stripe, dir, key);
+
+  Doc *doc      = make_doc(vc, c.ours ? key : other, c.len, 8);
+  doc->doc_type = CACHE_FRAG_TYPE_HTTP;
+  run_read_done(vc, 4096);
+  CHECK(doc->magic == (c.corrupt ? DOC_CORRUPT : DOC_MAGIC));
+}
