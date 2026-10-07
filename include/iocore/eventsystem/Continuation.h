@@ -371,27 +371,27 @@ protected:
   /**
     Constructs a Continuation protected by @p amutex.
 
-    The Continuation shares ownership of @p amutex with every other
-    reference to it, so passing a freshly created mutex makes the
-    Continuation its sole owner, and the mutex is destroyed with the
-    Continuation unless another reference is taken first.
+    The Continuation takes a shared reference to @p amutex. If no other
+    reference exists, the mutex is destroyed when the Continuation
+    releases its reference, so a raw pointer kept by the caller dangles
+    after that.
 
     @param[in] amutex The mutex to protect this Continuation, or nullptr.
                       See @c mutex for the restrictions on dispatching a
                       Continuation whose mutex is null.
 
-    @pre  @p amutex is null or points to a live @c ProxyMutex.
+    @pre  @p amutex is null, or points to a live @c ProxyMutex created
+          as its documentation requires.
 
     @post @c mutex refers to @p amutex.
     @post @c control_flags equals the calling thread's current control
-          flags. Later changes to the calling thread's flags do not
-          affect it.
-    @post @c handler is null. The derived class must install a handler
-          before any event is dispatched to this Continuation.
+          flags.
+    @post @c handler is null.
 
     @par Thread Safety
-      Safe to call concurrently with other code that takes or releases
-      references to @p amutex.
+      Safe to call concurrently with code that takes or releases other
+      references to @p amutex, provided @p amutex cannot be destroyed
+      before this call returns.
   */
   explicit Continuation(ProxyMutex *amutex = nullptr);
 
@@ -408,10 +408,8 @@ protected:
 
     @post @c mutex refers to the same @c ProxyMutex as @p amutex.
     @post @c control_flags equals the calling thread's current control
-          flags. Later changes to the calling thread's flags do not
-          affect it.
-    @post @c handler is null. The derived class must install a handler
-          before any event is dispatched to this Continuation.
+          flags.
+    @post @c handler is null.
 
     @par Thread Safety
       Safe to call concurrently with other code that takes or releases
