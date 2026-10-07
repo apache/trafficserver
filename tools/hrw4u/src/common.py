@@ -250,7 +250,7 @@ def generate_output(
     if args.ast:
         if tree is not None:
             print(tree.toStringTree(recog=parser_obj), file=out)
-        elif error_collector and error_collector.has_errors():
+        elif error_collector and error_collector.has_errors() and getattr(args, 'error_format', 'plain') == 'plain':
             print("Parse tree not available due to syntax errors.", file=sys.stderr)
     else:
         if tree is not None:

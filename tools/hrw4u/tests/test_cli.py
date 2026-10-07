@@ -426,6 +426,18 @@ def test_cli_ast_without_a_tree_leaves_the_target_alone(tmp_path: Path) -> None:
     assert out.read_text() == previous
 
 
+def test_cli_ast_without_a_tree_keeps_json_stderr_parseable(tmp_path: Path) -> None:
+    """The no-tree notice is plain text, so it must not land in the NDJSON stream."""
+    junk = tmp_path / "junk.hrw4u"
+    junk.write_text("REMAP {{{{ broken\n")
+
+    result = run_hrw4u(["--ast", "--max-errors", "1", "--error-format", "json", str(junk)])
+
+    assert result.returncode != 0
+    for line in result.stderr.strip().splitlines():
+        json.loads(line)
+
+
 def test_cli_bulk_still_accepts_dev_null(tmp_path: Path) -> None:
     """`:/dev/null` is the build-script idiom for "just tell me it compiles"."""
     src = tmp_path / "src.hrw4u"
