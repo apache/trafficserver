@@ -52,6 +52,11 @@ autest:
     log_validation:
       error_log:
         gold_file: "gold/connect_attempts_rr_max_retries_error_log.gold"
+        excludes:
+          - expression: "connection_result=EIO"
+            description: "connect() errno must be reported, not the EIO placeholder"
+          - expression: "error=SUCCESS"
+            description: "connect() errno must be reported as the cause of death"
 
 sessions:
 - transactions:
