@@ -32,7 +32,6 @@
 #include "iocore/eventsystem/Tasks.h"
 #include "fastlz/fastlz.h"
 #include "tscore/CryptoHash.h"
-#include "tscore/Regression.h"
 
 #include <zlib.h>
 #ifdef HAVE_LZMA_H
@@ -95,7 +94,6 @@ zstd_dctx()
 constexpr double   required_compression = 0.9;
 constexpr double   required_shrink      = 0.8;
 constexpr uint32_t history_hysteria     = 10;
-constexpr uint32_t entry_overhead       = 256; // per-entry overhead to consider when computing cache value/size
 
 #ifdef HAVE_LZMA_H
 constexpr uint32_t lzma_base_memlimit = 64 * 1024 * 1024;
@@ -120,18 +118,6 @@ constexpr uint64_t
 requeue_hits(const uint64_t hits)
 {
   return hits ? (hits - 1) : 0;
-}
-
-constexpr double
-cache_value_hits_size(const uint64_t hits, const uint32_t size)
-{
-  return static_cast<double>(hits + 1) / (size + entry_overhead);
-}
-
-constexpr double
-cache_value(const RamCacheCLFUSEntry *const e)
-{
-  return cache_value_hits_size(e->hits, e->size);
 }
 
 int64_t
@@ -265,7 +251,7 @@ check_accounting(RamCacheCLFUS *c)
   RamCacheCLFUSEntry *y = c->lru[0].head;
   while (y) {
     x++;
-    xsize += y->size + entry_overhead;
+    xsize += y->size + RamCacheCLFUS::entry_overhead;
     y      = y->lru_link.next;
   }
   y = c->lru[1].head;
@@ -991,25 +977,4 @@ new_RamCacheCLFUS()
 {
   RamCacheCLFUS *r = new RamCacheCLFUS;
   return r;
-}
-
-// Guards against PR #11733-style regressions of the CLFUS value metric: the value density
-// must be computed in floating point. Integer division truncates (hits + 1) / (size + overhead)
-// to 0 for normal object sizes, zeroing the metric and silently collapsing CLFUS to FIFO (no
-// promote-on-hit, no clock second chance, no value-based ghost re-admission).
-REGRESSION_TEST(ram_cache_clfus_value)([[maybe_unused]] RegressionTest *t, [[maybe_unused]] int level, int *pstatus)
-{
-  *pstatus = REGRESSION_TEST_FAILED;
-
-  constexpr float v_one   = cache_value_hits_size(1u, 16384u);   // a typical 16 KiB object, seen once
-  constexpr float v_hot   = cache_value_hits_size(100u, 16384u); // same size, many more hits
-  constexpr float v_small = cache_value_hits_size(10u, 1024u);   // smaller object, equal hits
-  constexpr float v_large = cache_value_hits_size(10u, 16384u);
-
-  // A non-zero fraction: the integer-division regression makes this exactly 0.0f.
-  static_assert(v_one > 0.0f, "CLFUS value metric truncated to zero (integer division)");
-  static_assert(v_hot > v_one, "CLFUS value metric does not increase with hits");
-  static_assert(v_small > v_large, "CLFUS value metric does not decrease with size");
-
-  *pstatus = REGRESSION_TEST_PASSED;
 }
