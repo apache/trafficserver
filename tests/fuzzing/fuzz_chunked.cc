@@ -31,7 +31,7 @@
 
 #define kMinInputLength 2
 #define kMaxInputLength (64 * 1024)
-#define TEST_THREADS 1
+#define TEST_THREADS    1
 
 extern int cmd_disable_pfreelist;
 
@@ -86,7 +86,7 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
     return 0;
   }
 
-  cmd_disable_pfreelist = true;
+  cmd_disable_pfreelist                    = true;
   [[maybe_unused]] static bool initialized = DoInitialization();
 
   size_t fragment_size = static_cast<size_t>(1) << (input_data[0] & 7);
