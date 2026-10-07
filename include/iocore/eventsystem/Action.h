@@ -63,19 +63,14 @@ public:
 
   /**
     The mutex that serializes cancel() against callbacks for this
-    operation.
+    operation, or null if nothing serializes them.
 
-    Lock this mutex, not @c continuation->mutex, to cancel the Action.
-    The two usually refer to the same @c ProxyMutex, but they may differ.
-    It may be null, in which case cancel() is not serialized against
-    callbacks.
-
-    Only the owning Processor may modify this field.
+    Only the object performing the operation may modify this field.
 
     @par Thread Safety
-    Not thread-safe. The owning Processor binds this field before
-    publishing the Action and MUST serialize any rebinding against
-    cancel().
+    Concurrent reads are thread-safe. The object performing the
+    operation does not modify this field concurrently with a caller's
+    access to the Action.
   */
   Ptr<ProxyMutex> mutex;
 
