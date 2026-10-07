@@ -6,7 +6,7 @@
   fine here, both consumers link it.
   purge_segments() does no logging; it returns a report each caller formats itself.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -107,7 +107,7 @@ stripe_segment_name(const std::string &prefix, uint32_t stripe_index)
 /// Everything but Purged/TooSmall means nothing was unlinked.
 enum class PurgeOutcome {
   BadPrefix,   ///< Prefix is empty or does not start with '/'. Nothing attempted.
-  NotPresent,  ///< No <prefix>control segment exists (shm_open ENOENT). Nothing to do.
+  NotPresent,  ///< No &lt;prefix&gt;control segment exists (shm_open ENOENT). Nothing to do.
   OpenFailed,  ///< shm_open failed for a reason other than ENOENT; cannot read safely.
   MapFailed,   ///< The control segment exists but could not be mmap'd.
   StatFailed,  ///< fstat on the control fd failed; size/validity unknown, nothing unlinked.
@@ -119,14 +119,14 @@ enum class PurgeOutcome {
 /// One shm_unlink attempt, so callers can log each name in their own format.
 struct PurgeUnlink {
   std::string name;
-  bool        is_control; ///< true for the <prefix>control object, false for a stripe.
+  bool        is_control; ///< true for the &lt;prefix&gt;control object, false for a stripe.
   int         error;      ///< 0 on success; otherwise the errno from shm_unlink (ENOENT == already gone).
 };
 
 /// `unlinked` lists every shm_unlink attempted, stripes first, then the control object.
 struct PurgeReport {
   PurgeOutcome             outcome = PurgeOutcome::NotPresent;
-  std::string              control_name;            ///< the <prefix>control name (set whenever the prefix was valid).
+  std::string              control_name;            ///< the &lt;prefix&gt;control name (set whenever the prefix was valid).
   int                      sys_errno       = 0;     ///< errno behind OpenFailed / MapFailed.
   long long                segment_size    = -1;    ///< control segment size in bytes; set whenever fstat succeeded.
   int32_t                  owner_pid       = 0;     ///< the recorded owner pid, for OwnedByLive.

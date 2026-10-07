@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -103,6 +103,7 @@ protected:
      is pulled from the class, but there is one option that lets
      the file descriptor be expressed directly.
      @param l the event loop
+     @param[in] fd The file descriptor to monitor.
      @param events a mask of flags (for details `man epoll_ctl`)
      @return int the number of events created, -1 is error
    */

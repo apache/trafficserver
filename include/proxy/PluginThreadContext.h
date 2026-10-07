@@ -2,7 +2,7 @@
 
   Per-plugin identity carried on the continuations a plugin creates.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -30,7 +30,7 @@
 #include "tsutil/Metrics.h"
 
 /** Carries a plugin's identity on the continuations it creates so that
- *  proxy.process.plugin.<name>.* workload counters can be attributed back to the originating
+ *  proxy.process.plugin.&lt;name&gt;.* workload counters can be attributed back to the originating
  *  plugin DSO.
  *
  *  This lives in ts::proxy rather than ts::http_remap because it is shared by both remap plugins
@@ -42,8 +42,8 @@ public:
   virtual void acquire() = 0;
   virtual void release() = 0;
 
-  /** Register this plugin's proxy.process.plugin.<name>.* metrics. @a plugin_name is the DSO path;
-   *  only its basename stem (extension removed) is used as <name>. */
+  /** Register this plugin's proxy.process.plugin.&lt;name&gt;.* metrics. @a plugin_name is the DSO path;
+   *  only its basename stem (extension removed) is used as &lt;name&gt;. */
   void registerPluginMetrics(std::string_view plugin_name);
 
   void countInvocation();

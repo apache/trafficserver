@@ -66,11 +66,11 @@ public:
    *  see HookType and Plugin for the correspond HookTypes and callback methods. If you fail to implement the
    *  callback, a default implementation will be used that will only resume the Transaction.
    *
-   * @param HookType the type of hook you wish to register
+   * @param[in] hook_type the type of hook you wish to register
    * @see HookType
    * @see Plugin
    */
-  void registerHook(Plugin::HookType);
+  void registerHook(Plugin::HookType hook_type);
   ~GlobalPlugin() override;
 
 protected:

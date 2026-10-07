@@ -2,7 +2,7 @@
 
   P_SSLClientCoordinator.h - coordinate the loading of SSL related configs
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

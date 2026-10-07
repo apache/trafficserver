@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -42,7 +42,7 @@ class Http3Session;
 
 /**
  * @brief A HTTP/3 application
- * @detail
+ * @details
  */
 class Http3App : public QUICApplication
 {

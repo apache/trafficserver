@@ -2,7 +2,7 @@
 
   Internal SDK stuff
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -70,7 +70,7 @@ public:
   /// @return @c true if any hooks of type @a id are present.
   bool has_hooks_for(ID id) const;
 
-  /// Get a pointer to the set of hooks for a specific hook @id
+  /// Get a pointer to the set of hooks for a specific hook @a id
   APIHooks const *operator[](ID id) const;
 
 private:

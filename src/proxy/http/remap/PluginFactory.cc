@@ -2,7 +2,7 @@
 
   Functionality allowing to load all plugins from a single config reload.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -149,7 +149,7 @@ PluginFactory::getUuid()
  * @param configPath plugin path as specified in the plugin
  * @param argc number of parameters passed to the plugin during instance initialization
  * @param argv parameters passed to the plugin during instance initialization
- * @param context Plugin context is used from continuations to guarantee correct reference counting against the plugin.
+ * @param[in] dynamicReloadEnabled Whether to load a dynamically reloadable copy of the plugin.
  * @param error human readable message if something goes wrong, empty otherwise
  * @return pointer to a plugin instance, nullptr if failure
  */
@@ -306,6 +306,7 @@ PluginFactory::cleanup()
  * @brief Find a plugin by path from our linked plugin list by using plugin effective (canonical) path
  *
  * @param path effective (canonical) path
+ * @param[in] dynamicReloadEnabled Whether to find a dynamically reloadable copy of the plugin.
  * @return plugin found or nullptr if not found
  */
 PluginDso *

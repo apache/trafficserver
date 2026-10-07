@@ -12,7 +12,7 @@
   the monitor).  The monitor never touches event-system locks, keeping the
   runtime overhead in the hot loop confined to a handful of atomic updates.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

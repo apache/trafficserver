@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -68,7 +68,7 @@ static constexpr size_t FIELD_VALUE_LOCAL_BUFFER_SIZE = 8192;
   global_field_list to get the log field, but this is an unnecessary dependency
   between the classes and I think should be removed.     ltavera
   -------------------------------------------------------------------------*/
-LogFilter::LogFilter(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper)
+LogFilter::LogFilter(const char *name, LogField *field, Action action, Operator oper)
   : m_name(ats_strdup(name)), m_field(nullptr), m_action(action), m_operator(oper), m_type(INT_FILTER), m_num_values(0)
 {
   m_field = new LogField(*field);
@@ -394,8 +394,7 @@ LogFilterString::_checkConditionAndWipe(OperatorFunction f, char *field_value, s
   return retVal;
 }
 
-LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper,
-                                 char *values)
+LogFilterString::LogFilterString(const char *name, LogField *field, Action action, Operator oper, char *values)
   : LogFilter(name, field, action, oper)
 {
   // parse the comma-separated list of values and construct array
@@ -420,8 +419,7 @@ LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::A
   delete[] val_array;
 }
 
-LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper,
-                                 size_t num_values, char **value)
+LogFilterString::LogFilterString(const char *name, LogField *field, Action action, Operator oper, size_t num_values, char **value)
   : LogFilter(name, field, action, oper)
 {
   _setValues(num_values, value);
@@ -596,7 +594,7 @@ LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap *
   return 0; // all OK
 }
 
-LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, int64_t value)
+LogFilterInt::LogFilterInt(const char *name, LogField *field, Action action, Operator oper, int64_t value)
   : LogFilter(name, field, action, oper)
 {
   int64_t v[1];
@@ -604,14 +602,13 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
   _setValues(1, v);
 }
 
-LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, size_t num_values,
-                           int64_t *value)
+LogFilterInt::LogFilterInt(const char *name, LogField *field, Action action, Operator oper, size_t num_values, int64_t *value)
   : LogFilter(name, field, action, oper)
 {
   _setValues(num_values, value);
 }
 
-LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, char *values)
+LogFilterInt::LogFilterInt(const char *name, LogField *field, Action action, Operator oper, char *values)
   : LogFilter(name, field, action, oper)
 {
   // parse the comma-separated list of values and construct array
@@ -774,15 +771,14 @@ LogFilterInt::display(FILE *fd)
 /*-------------------------------------------------------------------------
   LogFilterIP::LogFilterIP
   -------------------------------------------------------------------------*/
-LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, swoc::IPAddr value)
+LogFilterIP::LogFilterIP(const char *name, LogField *field, Action action, Operator oper, swoc::IPAddr value)
   : LogFilter(name, field, action, oper)
 {
   m_addrs.mark(value);
   this->init();
 }
 
-LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, size_t num_values,
-                         IpAddr *value)
+LogFilterIP::LogFilterIP(const char *name, LogField *field, Action action, Operator oper, size_t num_values, IpAddr *value)
   : LogFilter(name, field, action, oper)
 {
   for (IpAddr *limit = value + num_values; value != limit; ++value) {
@@ -791,7 +787,7 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
   this->init();
 }
 
-LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper, char *values)
+LogFilterIP::LogFilterIP(const char *name, LogField *field, Action action, Operator oper, char *values)
   : LogFilter(name, field, action, oper)
 {
   swoc::TextView text(swoc::TextView(values).ltrim_if(&isspace));

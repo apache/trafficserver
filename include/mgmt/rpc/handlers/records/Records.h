@@ -1,5 +1,5 @@
 /**
-   @section license License
+   @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -47,7 +47,7 @@ swoc::Rv<YAML::Node> lookup_records(std::string_view const &id, YAML::Node const
 /// @param params Nothing, this will be ignored.
 /// @return swoc::Rv<YAML::Node> An empty YAML::Node or the proper Errata with the tracked error.
 ///
-swoc::Rv<YAML::Node> clear_all_metrics_records(std::string_view const &id, YAML::Node const &);
+swoc::Rv<YAML::Node> clear_all_metrics_records(std::string_view const &id, YAML::Node const &params);
 
 ///
 /// @brief A RPC  function  handler that clear a specific set of metrics.

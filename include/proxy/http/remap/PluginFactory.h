@@ -2,7 +2,7 @@
 
   Functionality allowing to load all plugins from a single config reload (header).
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

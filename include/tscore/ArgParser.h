@@ -2,7 +2,7 @@
 
   Powerful and easy-to-use command line parsing for ATS
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -117,8 +117,7 @@ public:
   // Print all we have in the parsed data to the console
   void show_all_configuration() const;
   /** Invoke the function associated with the parsed command.
-      @return The return value of the executed command (int).
-  */
+   */
   void invoke();
   // return true if there is any function to invoke
   bool has_action() const;
@@ -183,12 +182,21 @@ public:
 
     /** Create a mutually exclusive group of options
         @param group_name Identifier for the group
+        @param[in] required Whether exactly one option in the group must be supplied.
+        @param[in] description Description displayed in help output.
         @return The Command object for chaining.
     */
     Command &add_mutex_group(std::string const &group_name, bool required = false, std::string const &description = "");
 
     /** Add an option to a mutually exclusive group
         @param group_name The group to add the option to
+        @param[in] long_option Long option name.
+        @param[in] short_option Short option name.
+        @param[in] description Description displayed in help output.
+        @param[in] envvar Environment variable supplying the option value.
+        @param[in] arg_num Number of arguments accepted by the option.
+        @param[in] default_value Value used when the option is absent.
+        @param[in] key Key used to retrieve the parsed option value.
         @return The Command object for chaining.
     */
     Command &add_option_to_group(std::string const &group_name, std::string const &long_option, std::string const &short_option,
@@ -307,12 +315,21 @@ public:
 
   /** Create a mutually exclusive group of options
       @param group_name Identifier for the group
+      @param[in] required Whether exactly one option in the group must be supplied.
+      @param[in] description Description displayed in help output.
       @return The Command object for chaining.
   */
   Command &add_mutex_group(std::string const &group_name, bool required = false, std::string const &description = "");
 
   /** Add an option to a mutually exclusive group
       @param group_name The group to add the option to
+      @param[in] long_option Long option name.
+      @param[in] short_option Short option name.
+      @param[in] description Description displayed in help output.
+      @param[in] envvar Environment variable supplying the option value.
+      @param[in] arg_num Number of arguments accepted by the option.
+      @param[in] default_value Value used when the option is absent.
+      @param[in] key Key used to retrieve the parsed option value.
       @return The Command object for chaining.
   */
   Command &add_option_to_group(std::string const &group_name, std::string const &long_option, std::string const &short_option,

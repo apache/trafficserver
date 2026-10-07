@@ -2,7 +2,7 @@
 
   FIFO queue
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section details Details
+  @par Details
 
   ProtectedQueue implements a FIFO queue with the following functionality:
     -# Multiple threads could be simultaneously trying to enqueue and

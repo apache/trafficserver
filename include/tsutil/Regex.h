@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -186,7 +186,7 @@ public:
    *
    * On failure any previously compiled pattern is left in place and remains usable.
    */
-  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, uint32_t flags = 0);
 
   /** Execute the regular expression.
    *
@@ -225,7 +225,7 @@ public:
    * @param subject String to match against.
    * @param matches Place to store the capture groups.
    * @param flags Match flags (e.g., RE_NOTEMPTY).
-   * @param optional context Match context (set matching limits).
+   * @param[in] matchContext Optional match context used to set matching limits.
    * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
@@ -238,7 +238,7 @@ public:
 
   /** Error string for exec failure.
    *
-   * @param int return code from exec call.
+   * @param[in] rc Return code from exec call.
    */
   static std::string get_error_string(int rc);
 

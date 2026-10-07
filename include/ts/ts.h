@@ -2,7 +2,7 @@
 
   Traffic Server SDK API header file
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section developers Developers
+  @par Developers
 
   Developers, when adding a new element to an enum, append it. DO NOT
   insert it.  Otherwise, binary compatibility of plugins will be broken!
@@ -761,7 +761,7 @@ TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char *dst, size_t
    @param str the string to decode (and possibly write to).
    @param str_len length of the input string (or 0).
    @param dst output buffer (can be the same as src).
-   @param dst_len size of the output buffer.
+   @param[in] dst_size size of the output buffer.
    @param length amount of data written to the destination buffer.
 
 */
@@ -1537,9 +1537,10 @@ int TSHttpTxnServerSsnTransactionCount(TSHttpTxn txnp);
 
     @note The returned string is allocated and must be freed by the caller
     after use with @c TSfree.
-*/
-char *TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length /**< String length return, may be @c nullptr. */
-);
+    @param[in] txnp Transaction whose effective URL to retrieve.
+    @param[out] length String length, or @c nullptr if not needed.
+ */
+char *TSHttpTxnEffectiveUrlStringGet(TSHttpTxn txnp, int *length);
 
 /** Get the effective URL for in the header (if any), with the scheme and host normalized to lower case letter.
     The effective URL is the URL taking in to account both the explicit
@@ -1634,9 +1635,10 @@ struct sockaddr const *TSHttpTxnServerAddrGet(TSHttpTxn txnp);
     If called no lookup is done, the address @a addr is used instead.
 
     @return @c TS_SUCCESS if the origin server address is set, @c TS_ERROR otherwise.
-*/
-TSReturnCode TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr /**< Address for origin server. */
-);
+    @param[in] txnp Transaction whose origin address to set.
+    @param[in] addr Address for the origin server.
+ */
+TSReturnCode TSHttpTxnServerAddrSet(TSHttpTxn txnp, struct sockaddr const *addr);
 
 /** Get the next hop address.
  *
@@ -1763,7 +1765,7 @@ char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
     You can get this strategy pointer by calling TSHttpTxnParentStrategyGet().
 
     @param txnp HTTP transaction whose parent strategy to set.
-    @param pointer to the given strategy.
+    @param[in] strategy Pointer to the given strategy.
 
  */
 void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
@@ -1787,7 +1789,7 @@ void const *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
       - parent proxying not enabled
       - no parent selection strategy (using parent.config)
 
-    @param txnp HTTP transaction whose next hop strategy to get.
+    @param[in] strategy Next hop strategy whose name to get.
 
  */
 char const *TSHttpNextHopStrategyNameGet(void const *strategy);
@@ -1946,7 +1948,8 @@ void TSHttpSsnDebugSet(TSHttpSsn ssnp, int on);
 /**
        Returns the transaction specific debugging flag for this client session.
 
-    @param txnp Client session to check.
+    @param[in] ssnp Client session to check.
+    @param[out] on Set to 1 if debugging is enabled, 0 otherwise.
     @return 1 if enabled, 0 otherwise.
 */
 int TSHttpSsnDebugGet(TSHttpSsn ssnp, int *on);
@@ -2069,7 +2072,7 @@ TSIOBufferWaterMark TSPluginVCIOBufferWaterMarkGet(TSHttpTxn txnp);
       coming from
     @param server_addr the address that the resulting connection will be seen as
       attempting to connect to when intercepted
-    @param vc will be set to point to the new TSVConn on success.
+    @return The new TSVConn on success.
 
  */
 TSVConn TSHttpConnectTransparent(struct sockaddr const *client_addr, struct sockaddr const *server_addr);
@@ -2459,7 +2462,7 @@ TSIOBuffer TSIOBufferCreate(void);
     improve performance.
 
     @param index size of the new TSIOBuffer to be created.
-    @param new TSIOBuffer of the specified size.
+    @return A new TSIOBuffer of the specified size.
 
  */
 TSIOBuffer TSIOBufferSizedCreate(TSIOBufferSizeIndex index);
@@ -2723,8 +2726,8 @@ void TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char *header);
     Enable/disable rolling.
 
     @param rolling_enabled a valid proxy.config.log.rolling_enabled value.
-
- */
+    @param[in] the_object Text log object to configure.
+  */
 TSReturnCode TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled);
 
 /**
@@ -2836,7 +2839,7 @@ const char *TSVConnSslProtocolGet(TSVConn sslp);
    Return the current (if set) SSL Curve. This is still owned by the
    core, and must not be free'd.
 
-   @param txnp the transaction pointer
+   @param[in] sslp The TLS connection.
 
    @return the SSL Curve
 */
@@ -3144,6 +3147,7 @@ void TSHttpTxnServerSentErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t
  *
  * @param url the URL string to preload.
  * @param url_len the length of the URL string.
+ * @param[in] txnp Transaction on whose session to initiate the push.
  */
 TSReturnCode TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len);
 
@@ -3362,7 +3366,7 @@ TSReturnCode TSHttpTxnVerifiedAddrGet(TSHttpTxn txnp, const struct sockaddr **ad
 
    @param txnp the transaction pointer
    @param key the requested txn info.
-   @param TSMgmtInt a pointer to a integer where the return value is stored
+   @param[out] value a pointer to a integer where the return value is stored
 
    @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
 
@@ -3373,9 +3377,10 @@ TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt
 /**
    Return the particular ssn info requested.
 
-   @param ssnp the transaction pointer
+   @param[in] ssnp the session pointer
    @param key the requested ssn info.
-   @param TSMgmtInt a pointer to a integer where the return value is stored
+   @param[in] sub_key The protocol-specific selector, or zero for aggregate information.
+   @param[out] value a pointer to a integer where the return value is stored
 
    @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
 

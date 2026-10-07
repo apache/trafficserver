@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -154,7 +154,7 @@ int ats_tcp_somaxconn();
 /** Parse a string for pieces of an IP address.
 
     This doesn't parse the actual IP address, but picks it out from @a
-    src. It is intended to deal with the brackets that can optionally
+    str. It is intended to deal with the brackets that can optionally
     surround an IP address (usually IPv6) which in turn are used to
     differentiate between an address and an attached port. E.g.
     @code
@@ -164,7 +164,7 @@ int ats_tcp_somaxconn();
 
     @return 0 if an address was found, non-zero otherwise.
 */
-int ats_ip_parse(std::string_view  src,           ///< [in] String to search.
+int ats_ip_parse(std::string_view  str,           ///< [in] String to search.
                  std::string_view *addr,          ///< [out] Range containing IP address.
                  std::string_view *port,          ///< [out] Range containing port.
                  std::string_view *rest = nullptr ///< [out] Remnant past the addr/port if any.
@@ -727,7 +727,7 @@ ats_is_ip_loopback(IpEndpoint const *ip)
 }
 
 /// Check for multicast.
-/// @return @true if @a ip is multicast.
+/// @return @c true if @a ip is multicast.
 inline bool
 ats_is_ip_multicast(sockaddr const *ip)
 {
@@ -735,7 +735,7 @@ ats_is_ip_multicast(sockaddr const *ip)
                 (AF_INET6 == ip->sa_family && IN6_IS_ADDR_MULTICAST(&ats_ip6_addr_cast(ip))));
 }
 /// Check for multicast.
-/// @return @true if @a ip is multicast.
+/// @return @c true if @a ip is multicast.
 inline bool
 ats_is_ip_multicast(IpEndpoint const *ip)
 {
@@ -743,7 +743,7 @@ ats_is_ip_multicast(IpEndpoint const *ip)
 }
 
 /// Check for Private.
-/// @return @true if @a ip is private.
+/// @return @c true if @a ip is private.
 inline bool
 ats_is_ip_private(sockaddr const *ip)
 {
@@ -764,7 +764,7 @@ ats_is_ip_private(sockaddr const *ip)
 }
 
 /// Check for Private.
-/// @return @true if @a ip is private.
+/// @return @c true if @a ip is private.
 inline bool
 ats_is_ip_private(IpEndpoint const *ip)
 {
@@ -772,7 +772,7 @@ ats_is_ip_private(IpEndpoint const *ip)
 }
 
 /// Check for Link Local.
-/// @return @true if @a ip is link local.
+/// @return @c true if @a ip is link local.
 inline bool
 ats_is_ip_linklocal(sockaddr const *ip)
 {
@@ -790,7 +790,7 @@ ats_is_ip_linklocal(sockaddr const *ip)
 }
 
 /// Check for Link Local.
-/// @return @true if @a ip is link local.
+/// @return @c true if @a ip is link local.
 inline bool
 ats_is_ip_linklocal(IpEndpoint const *ip)
 {
@@ -1169,9 +1169,9 @@ ats_ip_nptop(IpEndpoint const *addr, ///< Address.
   return ats_ip_nptop(&addr->sa, dst, size);
 }
 
-/** Convert @a text to an IP address and write it to @a addr.
+/** Convert @a src to an IP address and write it to @a ip.
 
-    @a text is expected to be an explicit address, not a hostname.  No
+    @a src is expected to be an explicit address, not a hostname.  No
     hostname resolution is done. The call must provide an @a ip large
     enough to hold the address value.
 
@@ -1185,8 +1185,8 @@ ats_ip_nptop(IpEndpoint const *addr, ///< Address.
 
     @return 0 on success, non-zero on failure.
 */
-int ats_ip_pton(const std::string_view &text, ///< [in] text.
-                sockaddr               *addr  ///< [out] address
+int ats_ip_pton(const std::string_view &src, ///< [in] text.
+                sockaddr               *ip   ///< [out] address
 );
 
 /** Convert @a text to an IP address and write it to @a addr.
@@ -1273,9 +1273,9 @@ uint64_t ats_ip_port_hash(sockaddr const *addr);
     if @a dst is insufficient.
     @return The length of the resulting string (not including nul).
 */
-int ats_ip_to_hex(sockaddr const *addr, ///< Address to convert. Must be IP.
-                  char           *dst,  ///< Destination buffer.
-                  size_t          len   ///< Length of @a dst.
+int ats_ip_to_hex(sockaddr const *src, ///< Address to convert. Must be IP.
+                  char           *dst, ///< Destination buffer.
+                  size_t          len  ///< Length of @a dst.
 );
 
 /** Storage for an IP address.
@@ -1668,7 +1668,7 @@ UnAddr::assign(sockaddr const *addr)
 }
 
 /// Write IP @a addr to storage @a dst.
-/// @return @s dst.
+/// @return @a dst.
 sockaddr *ats_ip_set(sockaddr     *dst,     ///< Destination storage.
                      IpAddr const &addr,    ///< source address.
                      in_port_t     port = 0 ///< port, network byte order.
