@@ -49,6 +49,14 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+On OpenSSL builds, ``TSClientHello::get_extension_types()`` now lists every
+extension type in the ClientHello, including GREASE values and types OpenSSL
+does not recognize, matching its behavior on BoringSSL. Previously it omitted
+those extensions on OpenSSL. As a result, ClientHello fingerprints computed
+from this list on OpenSSL, such as the JA3 and JA4 values from
+``jax_fingerprint`` and ``ja4_fingerprint``, change for clients that send
+such extensions, for example Chrome's ALPS extension.
+
 Upgrading to ATS v10.x
 ======================
 

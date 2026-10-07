@@ -248,6 +248,24 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   return CLIENT_HELLO_SUCCESS;
 }
 
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+// OpenSSL's ClientHello API drops extensions it doesn't recognize, including
+// GREASE. Record the extension types from the raw ClientHello message, which
+// this callback receives before ssl_client_hello_callback runs.
+static void
+ssl_msg_callback(int write_p, int /* version ATS_UNUSED */, int content_type, const void *buf, size_t len, SSL *ssl,
+                 void * /* arg ATS_UNUSED */)
+{
+  auto const *msg = static_cast<const uint8_t *>(buf);
+  if (write_p || content_type != SSL3_RT_HANDSHAKE || len == 0 || msg[0] != SSL3_MT_CLIENT_HELLO) {
+    return;
+  }
+  if (TLSSNISupport *snis = TLSSNISupport::getInstance(ssl); snis != nullptr) {
+    snis->on_client_hello_message(msg, len);
+  }
+}
+#endif
+
 /**
  * Called before either the server or the client certificate is used
  * Return 1 on success, 0 on error, or -1 to pause, -2 to retry
@@ -1025,6 +1043,10 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
   }
   if (where & SSL_CB_HANDSHAKE_DONE) {
     // handshake is complete
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+    // The raw ClientHello has been recorded. Stop the per record message callbacks.
+    SSL_set_msg_callback(const_cast<SSL *>(ssl), nullptr);
+#endif
     const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
     if (cipher) {
       const char *cipherName = SSL_CIPHER_get_name(cipher);
@@ -1060,6 +1082,7 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
   SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
+  SSL_CTX_set_msg_callback(ctx, ssl_msg_callback);
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
   SSL_CTX_set_select_certificate_cb(ctx, [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
     ssl_select_cert_result_t res;
