@@ -61,6 +61,9 @@ void
 TLSSNISupport::bind(SSL *ssl, TLSSNISupport *snis)
 {
   SSL_set_ex_data(ssl, _ex_data_index, snis);
+  snis->_raw_extension_types.clear();
+  snis->_has_raw_extension_types = false;
+
   char const *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername) {
     snis->_set_sni_server_name_buffer(servername);
@@ -139,6 +142,83 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
 }
 
 void
+TLSSNISupport::on_client_hello_message(const uint8_t *msg, size_t len)
+{
+  _has_raw_extension_types = parse_client_hello_extension_types(msg, len, _raw_extension_types);
+  if (!_has_raw_extension_types) {
+    Dbg(dbg_ctl_ssl_sni, "Could not parse the extensions of the raw ClientHello");
+  }
+}
+
+bool
+TLSSNISupport::parse_client_hello_extension_types(const uint8_t *msg, size_t msg_len, std::vector<int> &types)
+{
+  types.clear();
+
+  size_t offset = 0;
+  size_t end    = 0;
+
+  auto read_u8 = [&](size_t &value) {
+    if (offset + 1 > end) {
+      return false;
+    }
+    value   = msg[offset];
+    offset += 1;
+    return true;
+  };
+  auto read_u16 = [&](size_t &value) {
+    if (offset + 2 > end) {
+      return false;
+    }
+    value   = (msg[offset] << 8) | msg[offset + 1];
+    offset += 2;
+    return true;
+  };
+  auto skip = [&](size_t n) {
+    if (offset + n > end) {
+      return false;
+    }
+    offset += n;
+    return true;
+  };
+
+  // Handshake header: msg_type(1) length(3).
+  if (msg_len < 4 || msg[0] != SSL3_MT_CLIENT_HELLO) {
+    return false;
+  }
+  size_t const body_len = (msg[1] << 16) | (msg[2] << 8) | msg[3];
+  if (4 + body_len > msg_len) {
+    return false;
+  }
+  offset = 4;
+  end    = 4 + body_len;
+
+  // legacy_version(2) random(32) session_id<0..32> cipher_suites<2..2^16-2> compression_methods<1..2^8-1>
+  size_t len = 0;
+  if (!skip(2 + 32) || !read_u8(len) || !skip(len) || !read_u16(len) || !skip(len) || !read_u8(len) || !skip(len)) {
+    return false;
+  }
+
+  // The extensions block is optional.
+  if (offset == end) {
+    return true;
+  }
+  if (!read_u16(len) || offset + len != end) {
+    return false;
+  }
+
+  while (offset < end) {
+    size_t type = 0;
+    if (!read_u16(type) || !read_u16(len) || !skip(len)) {
+      types.clear();
+      return false;
+    }
+    types.push_back(static_cast<int>(type));
+  }
+  return true;
+}
+
+void
 TLSSNISupport::on_servername(SSL *ssl, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
 {
   const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
@@ -177,6 +257,9 @@ TLSSNISupport::_clear()
 {
   hints_from_sni = {};
   _sni_server_name.reset();
+  // Release the buffer: SSLNetVConnection is recycled without running its destructor.
+  _raw_extension_types     = {};
+  _has_raw_extension_types = false;
 }
 
 const char *
@@ -253,6 +336,9 @@ TLSSNISupport::ClientHello::begin()
 {
   ink_assert(_chc);
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  if (auto snis = TLSSNISupport::getInstance(_chc); snis && snis->_has_raw_extension_types) {
+    return ExtensionIdIterator(snis->_raw_extension_types.data(), snis->_raw_extension_types.size(), 0);
+  }
   if (_ext_ids == nullptr) {
     SSL_client_hello_get1_extensions_present(_chc, &_ext_ids, &_ext_len);
   }
@@ -267,6 +353,10 @@ TLSSNISupport::ClientHello::end()
 {
   ink_assert(_chc);
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  if (auto snis = TLSSNISupport::getInstance(_chc); snis && snis->_has_raw_extension_types) {
+    auto const n = snis->_raw_extension_types.size();
+    return ExtensionIdIterator(snis->_raw_extension_types.data(), n, n);
+  }
   if (_ext_ids == nullptr) {
     SSL_client_hello_get1_extensions_present(_chc, &_ext_ids, &_ext_len);
   }
