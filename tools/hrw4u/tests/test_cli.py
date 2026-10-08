@@ -293,15 +293,19 @@ def test_cli_collects_all_errors_and_still_exits_nonzero(tmp_path: Path) -> None
 
 
 def test_cli_multi_file_exits_nonzero_if_any_fails(sample_hrw4u_files: tuple[Path, Path, Path], tmp_path: Path) -> None:
-    """One bad file among good ones fails the run, but the good ones are still processed."""
+    """Two inputs fail with different symbols, so both diagnostics prove the loop ran on."""
     good, _, _ = sample_hrw4u_files
-    bad = tmp_path / "bad.hrw4u"
-    bad.write_text("REMAP {\n    test::nope(\"x\");\n}\n")
+    first = tmp_path / "first.hrw4u"
+    first.write_text("REMAP {\n    test::nope_one(\"x\");\n}\n")
+    second = tmp_path / "second.hrw4u"
+    second.write_text("REMAP {\n    test::nope_two(\"x\");\n}\n")
 
-    result = run_hrw4u([str(bad), str(good)])
+    result = run_hrw4u([str(first), str(second), str(good)])
 
     assert result.returncode != 0
-    assert "no-op" in result.stdout, "processing must continue past the failing file"
+    assert "nope_one" in result.stderr
+    assert "nope_two" in result.stderr, "the run must not stop at the first failing input"
+    assert result.stdout == "", "a partial config is the thing this is meant to prevent"
 
 
 def test_cli_u4wrh_exits_nonzero_on_error(tmp_path: Path) -> None:
@@ -335,3 +339,152 @@ def test_cli_mixed_file_formats_exits_one(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "Mixed formats not allowed" in result.stderr
+
+
+#
+# A run that reported an error contributes no configuration.
+#
+
+
+def test_cli_writes_no_config_when_it_reported_an_error(tmp_path: Path) -> None:
+    """Diagnostics and a config are alternatives, not companions."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  bogus.one = \"a\";\n  inbound.req.X-Ok = \"b\";\n}\n")
+
+    result = run_hrw4u([str(bad)])
+
+    assert result.returncode != 0
+    assert result.stdout == "", f"emitted a config it complained about: {result.stdout!r}"
+
+
+def test_cli_bulk_withholds_only_the_failing_pair(tmp_path: Path) -> None:
+    """Each input:output target stands alone, so one bad input must not withhold the rest."""
+    good = tmp_path / "good.hrw4u"
+    good.write_text("REMAP {\n    inbound.req.X-Ok = \"b\";\n}\n")
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  bogus.one = \"a\";\n}\n")
+    good_out, bad_out = tmp_path / "good.conf", tmp_path / "bad.conf"
+
+    result = run_hrw4u([f"{good}:{good_out}", f"{bad}:{bad_out}"])
+
+    assert result.returncode != 0
+    assert "set-header X-Ok" in good_out.read_text()
+    assert not bad_out.exists()
+
+
+def test_cli_bulk_leaves_a_previous_config_intact_on_error(tmp_path: Path) -> None:
+    """A failed rebuild must leave the previous config, not an empty file ATS accepts."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  bogus.one = \"a\";\n}\n")
+    out = tmp_path / "out.conf"
+    previous = 'cond %{REMAP_PSEUDO_HOOK} [AND]\n    set-header X-Old "1"\n'
+    out.write_text(previous)
+
+    result = run_hrw4u([f"{bad}:{out}"])
+
+    assert result.returncode != 0
+    assert out.read_text() == previous
+
+
+def test_cli_stdin_withholds_a_partial_config(tmp_path: Path) -> None:
+    """`hrw4u < in > out.conf` is the common redirect, so it cannot be the one that leaks."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  bogus.one = \"a\";\n  inbound.req.X-Ok = \"b\";\n}\n")
+
+    result = run_hrw4u([], stdin=bad.read_text())
+
+    assert result.returncode != 0
+    assert result.stdout == ""
+
+
+def test_cli_ast_is_never_withheld(tmp_path: Path) -> None:
+    """One rule for every destination: an AST dump is not a configuration."""
+    syntax_error = tmp_path / "syn.hrw4u"
+    syntax_error.write_text("REMAP {\n  inbound.req.X-Foo = \n}\n")
+    out = tmp_path / "ast.out"
+
+    to_stdout = run_hrw4u(["--ast", str(syntax_error)])
+    to_stdin = run_hrw4u(["--ast"], stdin=syntax_error.read_text())
+    to_file = run_hrw4u(["--ast", f"{syntax_error}:{out}"])
+
+    assert to_stdout.returncode != 0 and "(program" in to_stdout.stdout
+    assert to_stdout.stdout == to_stdin.stdout
+    assert to_file.returncode != 0 and "(program" in out.read_text()
+
+
+def test_cli_ast_without_a_tree_leaves_the_target_alone(tmp_path: Path) -> None:
+    """Exempting --ast from withholding must not mean writing an empty file over a config."""
+    junk = tmp_path / "junk.hrw4u"
+    junk.write_text("REMAP {{{{ broken\n")
+    out = tmp_path / "out.conf"
+    previous = "cond OLD\n"
+    out.write_text(previous)
+
+    result = run_hrw4u(["--ast", "--max-errors", "1", f"{junk}:{out}"])
+
+    assert result.returncode != 0
+    assert out.read_text() == previous
+
+
+def test_cli_ast_without_a_tree_keeps_json_stderr_parseable(tmp_path: Path) -> None:
+    """The no-tree notice is plain text, so it must not land in the NDJSON stream."""
+    junk = tmp_path / "junk.hrw4u"
+    junk.write_text("REMAP {{{{ broken\n")
+
+    result = run_hrw4u(["--ast", "--max-errors", "1", "--error-format", "json", str(junk)])
+
+    assert result.returncode != 0
+    for line in result.stderr.strip().splitlines():
+        json.loads(line)
+
+
+def test_cli_bulk_still_accepts_dev_null(tmp_path: Path) -> None:
+    """`:/dev/null` is the build-script idiom for "just tell me it compiles"."""
+    src = tmp_path / "src.hrw4u"
+    src.write_text("REMAP {\n    inbound.req.X-Ok = \"b\";\n}\n")
+
+    assert run_hrw4u([f"{src}:/dev/null"]).returncode == 0
+
+
+def test_cli_separator_layout_is_unchanged_by_an_empty_input(tmp_path: Path) -> None:
+    """An input compiling to nothing keeps its slot without adding a blank line."""
+    rules = tmp_path / "rules.hrw4u"
+    rules.write_text("REMAP {\n    inbound.req.X-Ok = \"b\";\n}\n")
+    empty = tmp_path / "empty.hrw4u"
+    empty.write_text("REMAP {\n  # only a comment\n}\n")
+
+    result = run_hrw4u(["--no-comments", str(rules), str(empty), str(rules)])
+
+    assert result.returncode == 0
+    assert "# ---\n# ---\n" in result.stdout
+
+
+def test_cli_stop_on_error_writes_nothing_for_the_inputs_before_it(tmp_path: Path) -> None:
+    """Ending early still means no config: a prefix of one is the hole this prevents."""
+    good = tmp_path / "good.hrw4u"
+    good.write_text("REMAP {\n    inbound.req.X-Ok = \"b\";\n}\n")
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  bogus.one = \"a\";\n}\n")
+
+    result = run_hrw4u(["--stop-on-error", str(good), str(bad)])
+
+    assert result.returncode != 0
+    assert result.stdout == ""
+
+
+def test_cli_bulk_stop_on_error_keeps_the_pairs_before_it(tmp_path: Path) -> None:
+    """Each target stands alone, so ending early keeps what already compiled."""
+    good = tmp_path / "good.hrw4u"
+    good.write_text("REMAP {\n    inbound.req.X-Ok = \"b\";\n}\n")
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  bogus.one = \"a\";\n}\n")
+    good_out = tmp_path / "good.conf"
+    bad_out = tmp_path / "bad.conf"
+    previous = "cond OLD\n"
+    bad_out.write_text(previous)
+
+    result = run_hrw4u(["--stop-on-error", f"{good}:{good_out}", f"{bad}:{bad_out}"])
+
+    assert result.returncode != 0
+    assert "X-Ok" in good_out.read_text()
+    assert bad_out.read_text() == previous
