@@ -114,6 +114,14 @@ NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
   }
 
 done:
+  if (strategies_loaded) {
+    // Precomputed so that strategyInstance() stays read-only.
+    uint32_t idx = 0;
+    for (auto &[name, strat] : _strategies) {
+      strat->distance = idx++;
+      _strategy_ptrs.insert(strat);
+    }
+  }
   if (!error_loading) {
     NH_Note("%s finished loading", basename);
   } else {
@@ -166,23 +174,26 @@ NextHopStrategyFactory::createStrategy(const std::string &name, const NHPolicyTy
 NextHopSelectionStrategy *
 NextHopStrategyFactory::strategyInstance(const char *name) const
 {
-  NextHopSelectionStrategy *ps_strategy = nullptr;
-
+  // Called from transaction threads, must not mutate strategy state.
   if (!strategies_loaded) {
-    NH_Error("no strategy configurations were defined, see definitions in '%s' file", fn.c_str());
-    return nullptr;
-  } else {
-    auto it = _strategies.find(name);
-    if (it == _strategies.end()) {
-      // NH_Error("no strategy found for name: %s", name);
-      return nullptr;
-    } else {
-      ps_strategy           = it->second;
-      ps_strategy->distance = std::distance(_strategies.begin(), it);
+    if (!_not_loaded_logged.exchange(true, std::memory_order_relaxed)) {
+      NH_Error("no strategy configurations were defined, see definitions in '%s' file", fn.c_str());
     }
+    return nullptr;
   }
 
-  return ps_strategy;
+  if (name == nullptr) {
+    return nullptr;
+  }
+
+  auto it = _strategies.find(name);
+  return (it == _strategies.end()) ? nullptr : it->second;
+}
+
+bool
+NextHopStrategyFactory::contains(NextHopSelectionStrategy const *strategy) const
+{
+  return _strategy_ptrs.contains(strategy);
 }
 
 /*

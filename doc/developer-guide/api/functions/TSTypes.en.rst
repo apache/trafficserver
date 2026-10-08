@@ -335,6 +335,11 @@ more widely. Those are described on this page.
 .. type:: TSFetchSM
 .. type:: TSFetchEvent
 
+.. type:: TSStrategy
+
+   Opaque handle to a next hop selection strategy. See
+   :func:`TSRemapNextHopStrategyFind` and :func:`TSHttpTxnNextHopStrategyFind`.
+
 .. type:: TSHttpPriority
 
    The abstract type of the various HTTP priority implementations.
