@@ -47,50 +47,71 @@ namespace
   {
     return static_cast<int32_t>(static_cast<uint32_t>(state) ^ 0x80000000U);
   }
+
+  /// Scaled balance of a non-sentinel @a state after replenishing up to @a now.
+  int64_t
+  replenished_tokens(uint64_t state, uint32_t now, int rate_per_sec, int64_t capacity)
+  {
+    uint32_t elapsed_ms = now - state_update_ms(state);
+    uint64_t replenish  = static_cast<uint64_t>(elapsed_ms) * static_cast<uint64_t>(std::max(rate_per_sec, 0));
+    int64_t  current    = state_tokens(state);
+
+    if (replenish >= static_cast<uint64_t>(std::max<int64_t>(0, capacity - current))) {
+      return capacity;
+    }
+    return current + static_cast<int64_t>(replenish);
+  }
+
+  /// Convert scaled tokens to whole tokens, rounding negative fractions down.
+  int32_t
+  whole_tokens(int64_t scaled)
+  {
+    return static_cast<int32_t>(scaled / TokenBucket::TOKEN_SCALE - (scaled < 0 && scaled % TokenBucket::TOKEN_SCALE != 0));
+  }
 } // namespace
 
 int32_t
 TokenBucket::consume(int rate_per_sec, int burst_limit, std::optional<uint32_t> timestamp)
 {
+  // Publish the limits for tokens(). These are not updated atomically with
+  // the state, so after a reload a reader may briefly pair the state with the
+  // previous rate. That can over- or under-replenish by a bounded amount, and
+  // the next consume corrects it.
+  rate_per_sec_.store(rate_per_sec, std::memory_order_relaxed);
+  burst_limit_.store(burst_limit, std::memory_order_relaxed);
+
   uint64_t old      = state_.load(std::memory_order_relaxed);
   int64_t  capacity = static_cast<int64_t>(burst_limit) * TOKEN_SCALE;
 
   while (true) {
     // Refresh after every failed CAS so this thread never computes from a
     // timestamp older than the state returned by compare_exchange_weak.
-    uint32_t now = timestamp.value_or(static_cast<uint32_t>(now_ms()));
-    int64_t  current;
-
-    if (old == 0) {
-      current = capacity;
-    } else {
-      uint32_t elapsed_ms = now - state_update_ms(old);
-      uint64_t replenish  = static_cast<uint64_t>(elapsed_ms) * static_cast<uint64_t>(rate_per_sec);
-
-      current = state_tokens(old);
-      if (replenish >= static_cast<uint64_t>(std::max<int64_t>(0, capacity - current))) {
-        current = capacity;
-      } else {
-        current += static_cast<int64_t>(replenish);
-      }
-    }
+    uint32_t now     = timestamp.value_or(static_cast<uint32_t>(now_ms()));
+    int64_t  current = old == 0 ? capacity : replenished_tokens(old, now, rate_per_sec, capacity);
 
     current          = std::max<int64_t>(std::numeric_limits<int32_t>::min() + 1, current - TOKEN_SCALE);
     uint64_t desired = pack_state(now, static_cast<int32_t>(current));
     if (state_.compare_exchange_weak(old, desired, std::memory_order_relaxed)) {
-      return static_cast<int32_t>(current / TOKEN_SCALE - (current < 0 && current % TOKEN_SCALE != 0));
+      return whole_tokens(current);
     }
   }
 }
 
 int32_t
-TokenBucket::tokens() const
+TokenBucket::tokens(std::optional<uint32_t> timestamp) const
 {
   uint64_t state = state_.load(std::memory_order_relaxed);
+  if (state == 0) {
+    return 0;
+  }
 
-  int32_t balance = state == 0 ? 0 : state_tokens(state);
+  // Read the clock only after loading the state. An earlier reading could
+  // predate a concurrent consume's timestamp, wrapping the elapsed time and
+  // reporting a bucket deep in debt as full.
+  int64_t  capacity = static_cast<int64_t>(burst_limit_.load(std::memory_order_relaxed)) * TOKEN_SCALE;
+  uint32_t now      = timestamp.value_or(static_cast<uint32_t>(now_ms()));
 
-  return balance / TOKEN_SCALE - (balance < 0 && balance % TOKEN_SCALE != 0);
+  return whole_tokens(replenished_tokens(state, now, rate_per_sec_.load(std::memory_order_relaxed), capacity));
 }
 
 RuleBuckets::BucketPtr
@@ -113,30 +134,31 @@ RuleBuckets::find(const std::string &rule_name) const
 }
 
 int32_t
-RuleBuckets::consume(const std::string &rule_name, int rate_per_sec, int burst_limit)
+RuleBuckets::consume(const std::string &rule_name, int rate_per_sec, int burst_limit, std::optional<uint32_t> timestamp)
 {
-  return find_or_create(rule_name)->consume(rate_per_sec, burst_limit);
+  return find_or_create(rule_name)->consume(rate_per_sec, burst_limit, timestamp);
 }
 
 bool
-RuleBuckets::exceeded(const std::string &rule_name) const
+RuleBuckets::exceeded(const std::string &rule_name, std::optional<uint32_t> timestamp) const
 {
   auto bucket = find(rule_name);
-  return bucket && bucket->tokens() < 0;
+  return bucket && bucket->tokens(timestamp) < 0;
 }
 
 int32_t
-RuleBuckets::tokens(const std::string &rule_name) const
+RuleBuckets::tokens(const std::string &rule_name, std::optional<uint32_t> timestamp) const
 {
   auto bucket = find(rule_name);
-  return bucket ? bucket->tokens() : 0;
+  return bucket ? bucket->tokens(timestamp) : 0;
 }
 
 bool
-RuleBuckets::has_debt() const
+RuleBuckets::has_debt(std::optional<uint32_t> timestamp) const
 {
   std::lock_guard lock(mutex_);
-  return std::any_of(buckets_.begin(), buckets_.end(), [](auto const &item) { return item.second->tokens() < 0; });
+  return std::any_of(buckets_.begin(), buckets_.end(),
+                     [timestamp](auto const &item) { return item.second->tokens(timestamp) < 0; });
 }
 
 void
