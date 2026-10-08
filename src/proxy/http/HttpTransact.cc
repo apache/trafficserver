@@ -5112,6 +5112,52 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   return;
 }
 
+// Revalidation merges in older builds deleted and re-added caching headers on every 304, and a cache
+// round trip left each dead slot unreclaimable, so a long-lived object's cached response could grow
+// to hundreds of field blocks. Deleted slots are now reused, but a header's blocks are never
+// released and every copy and marshal keeps them, so such a header stays bloated for as long as it
+// is cached and each revalidation rewrites all of it. When it holds well over the blocks its live
+// fields need, replace it with a copy of just its live fields, in slot order so field and duplicate
+// order are unchanged. The copy has to land in a fresh heap: copying onto the existing one frees the
+// dead blocks but leaves their space inside the region that marshal writes to disk.
+bool
+HttpTransact::compact_cached_response_header(HTTPHdr *cached_header)
+{
+  int blocks = 0;
+
+  for (MIMEFieldBlockImpl const *fblock = &cached_header->m_mime->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    ++blocks;
+  }
+  int const live   = cached_header->fields_count();
+  int const needed = std::max(1, (live + MIME_FIELD_BLOCK_SLOTS - 1) / MIME_FIELD_BLOCK_SLOTS);
+
+  if (blocks <= needed + 2) {
+    return false;
+  }
+
+  int const before = cached_header->m_heap->marshal_length();
+  HTTPHdr   compact;
+
+  // create() records HTTP/1.0 regardless of its version argument, and for HTTP/2 or 3 adds pseudo-fields.
+  compact.create(HTTPType::RESPONSE);
+  compact.version_set(cached_header->version_get());
+  compact.status_set(cached_header->status_get());
+  compact.reason_set(cached_header->reason_get());
+  for (auto &field : *cached_header) {
+    // name_get() gives a well-known name its canonical spelling; keep the one the header carries.
+    MIMEField *copy = compact.field_create(std::string_view{field.m_ptr_name, field.m_len_name});
+    compact.field_value_set(copy, field.value_get());
+    compact.field_attach(copy);
+  }
+  cached_header->destroy();
+  cached_header->copy(&compact);
+  compact.destroy();
+
+  Dbg(dbg_ctl_http_hdr_space, "Compacted cached response header: %d live fields in %d field blocks, marshal length %d -> %d", live,
+      blocks, before, cached_header->m_heap->marshal_length());
+  return true;
+}
+
 void
 HttpTransact::merge_and_update_headers_for_cache_update(State *s)
 {
@@ -5198,6 +5244,9 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
 
     delete_warning_value(cached_hdr, HTTPWarningCode::REVALIDATION_FAILED);
   }
+
+  // Heal a header bloated by earlier revalidations now that it is final and about to be written.
+  compact_cached_response_header(cached_hdr);
 
   s->cache_info.object_store.request_get()->field_delete(static_cast<std::string_view>(MIME_FIELD_VIA));
 }
