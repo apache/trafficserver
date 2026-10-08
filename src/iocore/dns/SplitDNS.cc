@@ -320,6 +320,7 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
      set of servers specified
      ------------------------------------------------ */
   for (int i = 0; i < numTok; i++) {
+    port                = 0;
     const char *current = pTok[i];
     char       *tmp     = const_cast<char *>(strchr(current, ':'));
     // coverity[secure_coding]
