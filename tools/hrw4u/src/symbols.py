@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-from typing import Callable
 from hrw4u.validation import Validator
 from hrw4u.errors import SymbolResolutionError
 import hrw4u.types as types
@@ -39,12 +38,6 @@ class SymbolResolver(SymbolResolverBase):
 
     def symbol_for(self, name: str) -> types.Symbol | None:
         return self._symbols.get(name)
-
-    def get_statement_spec(self, name: str) -> tuple[str, Callable[[str], None] | None]:
-        # Use cached lookup from base class
-        if params := self._lookup_statement_function_cached(name):
-            return params.target, params.validate
-        raise SymbolResolutionError(name, "Unknown operator or invalid standalone use")
 
     def declare_variable(
             self, name: str, type_name: str, explicit_slot: int | None = None, scope: types.VarScope = types.VarScope.TXN) -> str:
