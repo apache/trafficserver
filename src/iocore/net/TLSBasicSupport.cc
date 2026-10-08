@@ -75,6 +75,8 @@ TLSBasicSupport::clear()
   this->_tls_handshake_bytes_measured = false;
   this->_tls_handshake_bytes_in       = 0;
   this->_tls_handshake_bytes_out      = 0;
+  this->_tls_offered_signature_algorithms.reset();
+  this->_tls_negotiated_signature_algorithm.reset();
 }
 
 // Returns true only on the first call that reads from the BIOs, so callers
@@ -168,6 +170,51 @@ TLSBasicSupport::get_tls_group() const
   }
 
   return this->_get_tls_group();
+}
+
+std::string_view
+TLSBasicSupport::get_tls_offered_signature_algorithms() const
+{
+  if (!this->_tls_offered_signature_algorithms.has_value()) {
+    this->_tls_offered_signature_algorithms =
+      this->_get_ssl_object() == nullptr ? "" : this->_get_tls_offered_signature_algorithms();
+  }
+
+  return *this->_tls_offered_signature_algorithms;
+}
+
+std::string_view
+TLSBasicSupport::get_tls_negotiated_signature_algorithm() const
+{
+  if (!this->_tls_negotiated_signature_algorithm.has_value()) {
+    this->_tls_negotiated_signature_algorithm =
+      this->_get_ssl_object() == nullptr ? "" : this->_get_tls_negotiated_signature_algorithm();
+  }
+
+  return *this->_tls_negotiated_signature_algorithm;
+}
+
+void
+TLSBasicSupport::capture_tls_offered_signature_algorithms()
+{
+  std::string offered = this->_get_ssl_object() == nullptr ? "" : this->_get_tls_offered_signature_algorithms();
+
+  if (!offered.empty() || !this->_tls_offered_signature_algorithms.has_value()) {
+    this->_tls_offered_signature_algorithms = std::move(offered);
+  }
+}
+
+void
+TLSBasicSupport::capture_tls_offered_signature_algorithms(std::string offered)
+{
+  this->_tls_offered_signature_algorithms = std::move(offered);
+}
+
+void
+TLSBasicSupport::capture_tls_negotiated_signature_algorithm()
+{
+  this->_tls_negotiated_signature_algorithm =
+    this->_get_ssl_object() == nullptr ? "" : this->_get_tls_negotiated_signature_algorithm();
 }
 
 ink_hrtime

@@ -509,6 +509,12 @@ Log::init_fields()
   register_field(new LogField("client_group", "cqssg", LogField::Type::STRING, &LogAccess::marshal_client_security_group,
                               &LogAccess::unmarshal_str));
 
+  register_field(new LogField("client_offered_signature_algorithms", "cqssig", LogField::Type::STRING,
+                              &LogAccess::marshal_client_offered_signature_algorithms, &LogAccess::unmarshal_str));
+
+  register_field(new LogField("client_negotiated_signature_algorithm", "cqssin", LogField::Type::STRING,
+                              &LogAccess::marshal_client_negotiated_signature_algorithm, &LogAccess::unmarshal_str));
+
   register_field(new LogField("client_sec_alpn", "cqssa", LogField::Type::STRING, &LogAccess::marshal_client_security_alpn,
                               &LogAccess::unmarshal_str));
 
