@@ -376,14 +376,11 @@ TSPluginInit(int argc, char const **argv)
     return;
   }
 
-  if (argc != 2) {
-    TSError("[%s] Usage: %s <config.yaml>", PLUGIN_NAME, argv[0]);
-    return;
-  }
-
   PluginConfigs configs;
-  if (!load_config_file(argv[1], PluginType::GLOBAL, configs)) {
-    TSError("[%s] Failed to load configuration from %s.", PLUGIN_NAME, argv[1]);
+  std::string   config_filename;
+  if (!load_config(argc, argv, PluginType::GLOBAL, configs, config_filename)) {
+    TSError("[%s] Failed to load configuration from %s.", PLUGIN_NAME,
+            config_filename.empty() ? "the plugin.config arguments" : config_filename.c_str());
     return;
   }
 
@@ -393,12 +390,13 @@ TSPluginInit(int argc, char const **argv)
 
   // Global configurations live for the life of the process: the log field callbacks and the
   // continuations below keep references to them, so release them from their unique_ptrs here.
-  // Each plugin.config line has its own state so that each reloads its own configuration file.
-  auto *state            = new GlobalState;
-  state->config_filename = argv[1];
+  // Each plugin.config line configured with a file has its own state so that each reloads its own file.
+  GlobalState *state = config_filename.empty() ? nullptr : new GlobalState{config_filename, {}};
   for (auto &owned_config : configs) {
     PluginConfig *config = owned_config.release();
-    state->configs.push_back(config);
+    if (state != nullptr) {
+      state->configs.push_back(config);
+    }
 
     if (!config->log_symbol.empty()) {
       register_log_field(config);
@@ -419,6 +417,9 @@ TSPluginInit(int argc, char const **argv)
     }
   }
 
+  if (state == nullptr) {
+    return;
+  }
   TSCont msg_cont = TSContCreate(handle_lifecycle_msg, nullptr);
   TSContDataSet(msg_cont, state);
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, msg_cont);
@@ -436,15 +437,14 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
-  if (argc != 3) {
-    snprintf(errbuf, errbuf_size, "[%s] Usage: @plugin=%s.so @pparam=<config.yaml>", PLUGIN_NAME, PLUGIN_NAME);
-    return TS_ERROR;
-  }
   Dbg(dbg_ctl, "New instance for client matching %s to %s", argv[0], argv[1]);
 
-  auto configs = std::make_unique<PluginConfigs>();
-  if (!load_config_file(argv[2], PluginType::REMAP, *configs)) {
-    snprintf(errbuf, errbuf_size, "[%s] Failed to load configuration from %s", PLUGIN_NAME, argv[2]);
+  // Skip the "from" URL so that the arguments begin with the "to" URL in place of a program name.
+  auto        configs = std::make_unique<PluginConfigs>();
+  std::string config_filename;
+  if (!load_config(argc - 1, const_cast<char const **>(argv + 1), PluginType::REMAP, *configs, config_filename)) {
+    snprintf(errbuf, errbuf_size, "[%s] Failed to load configuration from %s", PLUGIN_NAME,
+             config_filename.empty() ? "the @pparam arguments" : config_filename.c_str());
     return TS_ERROR;
   }
 
@@ -452,7 +452,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
     return TS_ERROR;
   }
 
-  register_remap_config_file(argv[2]);
+  if (!config_filename.empty()) {
+    register_remap_config_file(config_filename);
+  }
 
   for (auto const &config : *configs) {
     if (config->standalone) {

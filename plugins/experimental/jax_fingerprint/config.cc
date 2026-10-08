@@ -33,6 +33,8 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <getopt.h>
+
 #include <algorithm>
 #include <initializer_list>
 #include <string>
@@ -88,83 +90,48 @@ read_string(const YAML::Node &node, const char *key, std::string &value)
 }
 
 bool
-parse_fingerprint(const YAML::Node &node, PluginType plugin_type, PluginConfig &config)
+set_method(std::string_view name, PluginConfig &config)
 {
-  if (!node.IsMap()) {
-    TSError("[%s] Each '%.*s' entry must be a map", PLUGIN_NAME, static_cast<int>(FINGERPRINTS_KEY.size()),
-            FINGERPRINTS_KEY.data());
-    return false;
-  }
-
-  if (!check_keys(node,
-                  {"method", "standalone", "mode", "header", "via_header", "log_filename", "log_field", "servernames", "export"},
-                  "fingerprint entry")) {
-    return false;
-  }
-
-  config.plugin_type = plugin_type;
-
-  std::string method_name;
-  if (!read_string(node, "method", method_name) || method_name.empty()) {
-    TSError("[%s] Each fingerprint entry requires a 'method'", PLUGIN_NAME);
-    return false;
-  }
-  auto method = std::find_if(std::begin(METHODS), std::end(METHODS), [&](Method const *m) { return m->name == method_name; });
+  auto method = std::find_if(std::begin(METHODS), std::end(METHODS), [&](Method const *m) { return m->name == name; });
   if (method == std::end(METHODS)) {
-    TSError("[%s] Unknown method: %s", PLUGIN_NAME, method_name.c_str());
+    TSError("[%s] Unknown method: %.*s", PLUGIN_NAME, static_cast<int>(name.size()), name.data());
     return false;
   }
   config.method = **method;
+  return true;
+}
 
-  if (YAML::Node standalone = node["standalone"]; standalone) {
-    config.standalone = standalone.as<bool>();
-  }
-
-  auto settings = std::make_shared<RuntimeSettings>();
-
-  std::string mode;
-  if (!read_string(node, "mode", mode)) {
-    return false;
-  }
-  if (mode.empty() || mode == "overwrite") {
-    settings->mode = Mode::OVERWRITE;
-  } else if (mode == "keep") {
-    settings->mode = Mode::KEEP;
-  } else if (mode == "append") {
-    settings->mode = Mode::APPEND;
+bool
+parse_mode(std::string_view name, Mode &mode)
+{
+  if (name.empty() || name == "overwrite") {
+    mode = Mode::OVERWRITE;
+  } else if (name == "keep") {
+    mode = Mode::KEEP;
+  } else if (name == "append") {
+    mode = Mode::APPEND;
   } else {
-    TSError("[%s] Unknown mode: %s", PLUGIN_NAME, mode.c_str());
+    TSError("[%s] Unknown mode: %.*s", PLUGIN_NAME, static_cast<int>(name.size()), name.data());
     return false;
   }
+  return true;
+}
 
-  if (!read_string(node, "header", settings->header_name) || !read_string(node, "via_header", settings->via_header_name) ||
-      !read_string(node, "log_filename", config.log_filename) || !read_string(node, "log_field", config.log_symbol) ||
-      !read_string(node, "export", config.export_name)) {
-    return false;
-  }
+/** Validate a parsed fingerprint configuration and install its runtime settings. */
+bool
+finish_fingerprint(PluginType plugin_type, std::shared_ptr<RuntimeSettings> settings, PluginConfig &config)
+{
+  config.plugin_type = plugin_type;
 
   if (!config.log_symbol.empty() && plugin_type == PluginType::REMAP) {
     TSError("[%s] 'log_field' is only supported for the plugin loaded via plugin.config", PLUGIN_NAME);
     return false;
   }
 
-  if (YAML::Node servernames = node["servernames"]; servernames) {
-    if (config.method.type != Method::Type::CONNECTION_BASED) {
-      TSError("[%s] 'servernames' is not supported for %s, which does not fingerprint the TLS handshake", PLUGIN_NAME,
-              config.method.name.data());
-      return false;
-    }
-    if (!servernames.IsSequence()) {
-      TSError("[%s] 'servernames' must be a list of server names", PLUGIN_NAME);
-      return false;
-    }
-    for (auto const &servername : servernames) {
-      if (!servername.IsScalar() || servername.Scalar().empty()) {
-        TSError("[%s] Each 'servernames' entry must be a non-empty server name", PLUGIN_NAME);
-        return false;
-      }
-      settings->servernames.emplace(servername.Scalar());
-    }
+  if (!settings->servernames.empty() && config.method.type != Method::Type::CONNECTION_BASED) {
+    TSError("[%s] 'servernames' is not supported for %s, which does not fingerprint the TLS handshake", PLUGIN_NAME,
+            config.method.name.data());
+    return false;
   }
 
   Dbg(dbg_ctl, "JAx method is %s", config.method.name.data());
@@ -181,6 +148,154 @@ parse_fingerprint(const YAML::Node &node, PluginType plugin_type, PluginConfig &
   config.set_settings(std::move(settings));
   return true;
 }
+
+bool
+parse_fingerprint(const YAML::Node &node, PluginType plugin_type, PluginConfig &config)
+{
+  if (!node.IsMap()) {
+    TSError("[%s] Each '%.*s' entry must be a map", PLUGIN_NAME, static_cast<int>(FINGERPRINTS_KEY.size()),
+            FINGERPRINTS_KEY.data());
+    return false;
+  }
+
+  if (!check_keys(node,
+                  {"method", "standalone", "mode", "header", "via_header", "log_filename", "log_field", "servernames", "export"},
+                  "fingerprint entry")) {
+    return false;
+  }
+
+  std::string method_name;
+  if (!read_string(node, "method", method_name) || method_name.empty()) {
+    TSError("[%s] Each fingerprint entry requires a 'method'", PLUGIN_NAME);
+    return false;
+  }
+  if (!set_method(method_name, config)) {
+    return false;
+  }
+
+  if (YAML::Node standalone = node["standalone"]; standalone) {
+    config.standalone = standalone.as<bool>();
+  }
+
+  auto settings = std::make_shared<RuntimeSettings>();
+
+  std::string mode;
+  if (!read_string(node, "mode", mode) || !parse_mode(mode, settings->mode)) {
+    return false;
+  }
+
+  if (!read_string(node, "header", settings->header_name) || !read_string(node, "via_header", settings->via_header_name) ||
+      !read_string(node, "log_filename", config.log_filename) || !read_string(node, "log_field", config.log_symbol) ||
+      !read_string(node, "export", config.export_name)) {
+    return false;
+  }
+
+  if (YAML::Node servernames = node["servernames"]; servernames) {
+    if (!servernames.IsSequence()) {
+      TSError("[%s] 'servernames' must be a list of server names", PLUGIN_NAME);
+      return false;
+    }
+    for (auto const &servername : servernames) {
+      if (!servername.IsScalar() || servername.Scalar().empty()) {
+        TSError("[%s] Each 'servernames' entry must be a non-empty server name", PLUGIN_NAME);
+        return false;
+      }
+      settings->servernames.emplace(servername.Scalar());
+    }
+  }
+
+  return finish_fingerprint(plugin_type, std::move(settings), config);
+}
+
+/** Parse the command-line options that configure a single fingerprint. */
+bool
+parse_command_line(int argc, char const *argv[], PluginType plugin_type, PluginConfig &config)
+{
+  const struct option longopts[] = {
+    {"standalone",   no_argument,       nullptr, 's'},
+    {"method",       required_argument, nullptr, 'M'}, // JA4, JA4H, or JA3
+    {"mode",         required_argument, nullptr, 'm'}, // overwrite, keep, or append
+    {"header",       required_argument, nullptr, 'h'},
+    {"via-header",   required_argument, nullptr, 'v'},
+    {"log-filename", required_argument, nullptr, 'f'},
+    {"log-field",    required_argument, nullptr, 'l'},
+    {"servernames",  required_argument, nullptr, 'S'},
+    {"export",       required_argument, nullptr, 'e'},
+    {nullptr,        0,                 nullptr, 0  }
+  };
+
+  auto settings    = std::make_shared<RuntimeSettings>();
+  bool have_method = false;
+
+  optind = 0;
+  int opt{0};
+  while ((opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopts, nullptr)) >= 0) {
+    switch (opt) {
+    case '?':
+      Dbg(dbg_ctl, "Unrecognized command argument.");
+      break;
+    case 'M':
+      if (!set_method(optarg, config)) {
+        return false;
+      }
+      have_method = true;
+      break;
+    case 'm':
+      if (!parse_mode(optarg, settings->mode)) {
+        return false;
+      }
+      break;
+    case 'h':
+      settings->header_name = optarg;
+      break;
+    case 'v':
+      settings->via_header_name = optarg;
+      break;
+    case 'f':
+      config.log_filename = optarg;
+      break;
+    case 's':
+      config.standalone = true;
+      break;
+    case 'S':
+      for (std::string_view input(optarg); !input.empty();) {
+        auto pos        = input.find(',');
+        auto servername = input.substr(0, pos);
+        if (servername.empty()) {
+          TSError("[%s] --servernames must not contain an empty server name", PLUGIN_NAME);
+          return false;
+        }
+        settings->servernames.emplace(servername);
+        input.remove_prefix(pos == std::string_view::npos ? input.size() : pos + 1);
+      }
+      break;
+    case 'l':
+      config.log_symbol = optarg;
+      break;
+    case 'e':
+      config.export_name = optarg;
+      if (config.export_name.empty()) {
+        TSError("[%s] --export requires a non-empty user arg name", PLUGIN_NAME);
+        return false;
+      }
+      break;
+    case 0:
+    case -1:
+      break;
+    default:
+      Dbg(dbg_ctl, "Unexpected options error.");
+      return false;
+    }
+  }
+
+  if (!have_method) {
+    TSError("[%s] Method must be specified", PLUGIN_NAME);
+    return false;
+  }
+
+  return finish_fingerprint(plugin_type, std::move(settings), config);
+}
+
 bool
 check_unique_entries(std::string const &path, PluginConfigs const &configs)
 {
@@ -188,7 +303,7 @@ check_unique_entries(std::string const &path, PluginConfigs const &configs)
   std::unordered_set<std::string> log_symbols;
   for (auto const &config : configs) {
     // Fingerprints in a registry are keyed by method, so each method can be published to a registry only once.
-    std::string_view export_name = config->export_name.empty() ? PLUGIN_NAME : config->export_name;
+    std::string_view export_name = config->export_name.empty() ? std::string_view{PLUGIN_NAME} : config->export_name;
     std::string      registry{config->method.name};
     registry += '\0';
     registry += export_name;
@@ -293,4 +408,21 @@ load_config_file(std::string_view filename, PluginType plugin_type, PluginConfig
   }
 
   return check_unique_entries(path, configs);
+}
+
+bool
+load_config(int argc, char const *argv[], PluginType plugin_type, PluginConfigs &configs, std::string &config_filename)
+{
+  if (argc == 2 && argv[1][0] != '-') {
+    config_filename = argv[1];
+    return load_config_file(config_filename, plugin_type, configs);
+  }
+
+  config_filename.clear();
+  auto config = std::make_unique<PluginConfig>();
+  if (!parse_command_line(argc, argv, plugin_type, *config)) {
+    return false;
+  }
+  configs.push_back(std::move(config));
+  return true;
 }
