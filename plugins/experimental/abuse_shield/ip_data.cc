@@ -161,11 +161,11 @@ RuleBuckets::has_debt(std::optional<uint32_t> timestamp) const
                      [timestamp](auto const &item) { return item.second->tokens(timestamp) < 0; });
 }
 
-void
+size_t
 RuleBuckets::prune(const std::unordered_set<std::string> &active_rules)
 {
   std::lock_guard lock(mutex_);
-  std::erase_if(buckets_, [&active_rules](auto const &item) { return !active_rules.contains(item.first); });
+  return std::erase_if(buckets_, [&active_rules](auto const &item) { return !active_rules.contains(item.first); });
 }
 
 } // namespace abuse_shield
