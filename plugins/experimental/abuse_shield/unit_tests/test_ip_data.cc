@@ -41,9 +41,9 @@ TEST_CASE("TokenBucket consumes atomically", "[abuse_shield][token_bucket]")
 {
   TokenBucket bucket;
 
-  CHECK(bucket.consume(100, 100) == 99);
-  CHECK(bucket.consume(100, 100) <= 98);
-  CHECK(bucket.tokens() <= 98);
+  CHECK(bucket.consume(100, 100, 0) == 99);
+  CHECK(bucket.consume(100, 100, 0) == 98);
+  CHECK(bucket.tokens(0) == 98);
 }
 
 TEST_CASE("TokenBucket preserves every concurrent consume", "[abuse_shield][token_bucket][threaded]")
@@ -65,7 +65,7 @@ TEST_CASE("TokenBucket preserves every concurrent consume", "[abuse_shield][toke
     thread.join();
   }
 
-  CHECK(bucket.tokens() == 1 - THREADS * EVENTS_PER_THREAD);
+  CHECK(bucket.tokens(100) == 1 - THREADS * EVENTS_PER_THREAD);
 }
 
 TEST_CASE("RuleBuckets keep thresholds independent of rule order", "[abuse_shield][token_bucket][rules]")
@@ -73,15 +73,15 @@ TEST_CASE("RuleBuckets keep thresholds independent of rule order", "[abuse_shiel
   RuleBuckets buckets;
 
   for (int i = 0; i < 6; ++i) {
-    buckets.consume("lenient", 100, 100);
-    buckets.consume("strict", 5, 5);
+    buckets.consume("lenient", 100, 100, 0);
+    buckets.consume("strict", 5, 5, 0);
   }
 
-  CHECK_FALSE(buckets.exceeded("lenient"));
-  CHECK(buckets.exceeded("strict"));
-  CHECK(buckets.tokens("lenient") > 0);
-  CHECK(buckets.tokens("strict") < 0);
-  CHECK(buckets.has_debt());
+  CHECK_FALSE(buckets.exceeded("lenient", 0));
+  CHECK(buckets.exceeded("strict", 0));
+  CHECK(buckets.tokens("lenient", 0) > 0);
+  CHECK(buckets.tokens("strict", 0) < 0);
+  CHECK(buckets.has_debt(0));
 }
 
 TEST_CASE("Rate debt protects a table entry from eviction", "[abuse_shield][table]")
@@ -93,8 +93,10 @@ TEST_CASE("Rate debt protects a table entry from eviction", "[abuse_shield][tabl
 
   auto data = table.process_event(debtor);
   REQUIRE(data);
-  data->consume("strict", 1, 1);
-  data->consume("strict", 1, 1);
+  // Enough debt at 1 token per second that a stalled host cannot repay it.
+  for (int i = 0; i < 1'000; ++i) {
+    data->consume("strict", 1, 1);
+  }
   REQUIRE(data->buckets.has_debt());
 
   CHECK_FALSE(table.process_event(challenger, 100, &status));
@@ -122,7 +124,9 @@ TEST_CASE("Tracker data records per-rule events", "[abuse_shield][tracker]")
   TxnData txn;
   CHECK(txn.consume("request_rule", 10, 10) == 9);
   CHECK(txn.count.load() == 1);
-  CHECK(txn.buckets.tokens("request_rule") == 9);
+  // A read may include replenishment since the consume, up to the burst.
+  CHECK(txn.buckets.tokens("request_rule") >= 9);
+  CHECK(txn.buckets.tokens("request_rule") <= 10);
 
   ConnData conn;
   CHECK(conn.consume("connection_rule", 10, 10) == 9);
@@ -187,7 +191,7 @@ TEST_CASE("TokenBucket preserves fractional replenishment", "[abuse_shield][toke
   TokenBucket bucket;
   CHECK(bucket.consume(30, 1, 0) == 0);
   CHECK(bucket.consume(30, 1, 33) == -1);
-  CHECK(bucket.tokens() == -1);
+  CHECK(bucket.tokens(33) == -1);
   CHECK(bucket.consume(30, 1, 67) == 0);
   CHECK(bucket.consume(30, 1, 1000) == 0);
 }
@@ -248,4 +252,92 @@ TEST_CASE("Variable arrival times preserve earned credit", "[abuse_shield][token
     REQUIRE(bucket.consume(100, 100, now) >= 0);
     now += i % 2 == 0 ? 3 : 17;
   }
+}
+
+TEST_CASE("TokenBucket debt decays without further consumes", "[abuse_shield][token_bucket]")
+{
+  TokenBucket bucket;
+  CHECK(bucket.consume(10, 1, 1'000) == 0);
+  CHECK(bucket.consume(10, 1, 1'000) == -1);
+
+  // A read neither replenishes the stored state nor consumes a token.
+  CHECK(bucket.tokens(1'000) == -1);
+  CHECK(bucket.tokens(1'099) == -1);
+  CHECK(bucket.tokens(1'100) == 0);
+  CHECK(bucket.tokens(1'000) == -1);
+
+  // Replenishment stops at the burst limit.
+  CHECK(bucket.tokens(100'000) == 1);
+  CHECK(bucket.consume(10, 1, 100'000) == 0);
+}
+
+TEST_CASE("Expired rate debt makes a tracker entry evictable", "[abuse_shield][table]")
+{
+  TxnData  data;
+  uint32_t start = 5'000;
+  for (int i = 0; i < 6; ++i) {
+    data.buckets.consume("strict", 5, 5, start);
+  }
+  data.buckets.consume("lenient", 100, 100, start);
+
+  // Genuine, current debt still protects an actively abusive IP.
+  CHECK(data.buckets.has_debt(start));
+  CHECK_FALSE(data.is_evictable(start));
+  CHECK(data.buckets.exceeded("strict", start + 199));
+  CHECK_FALSE(data.is_evictable(start + 199));
+
+  // An IP that stops sending earns its way out of debt.
+  CHECK_FALSE(data.buckets.exceeded("strict", start + 200));
+  CHECK_FALSE(data.buckets.has_debt(start + 200));
+  CHECK(data.is_evictable(start + 200));
+
+  // Continued abuse keeps the entry in debt.
+  for (int i = 0; i < 2; ++i) {
+    data.buckets.consume("strict", 5, 5, start + 200);
+  }
+  CHECK_FALSE(data.is_evictable(start + 200));
+}
+
+TEST_CASE("Obsolete rule debt does not pin a table slot", "[abuse_shield][table]")
+{
+  TxnTable     table(1);
+  swoc::IPAddr debtor{"192.0.2.1"};
+  auto         data = table.process_event(debtor);
+  REQUIRE(data);
+
+  // Drive a bucket for a rule that is never consumed again into debt that
+  // repays itself within 2ms, without pruning the bucket.
+  data->consume("removed", 1'000, 1);
+  data->consume("removed", 1'000, 1);
+  data->consume("removed", 1'000, 1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+  CHECK(data->is_evictable());
+  CHECK(table.process_event(swoc::IPAddr{"192.0.2.2"}, 100));
+  CHECK_FALSE(table.find(debtor));
+}
+
+TEST_CASE("Concurrent consumes cannot hide debt from eviction checks", "[abuse_shield][table][threaded]")
+{
+  TxnData data;
+  // At 1 token per second, this debt cannot be repaid during the test.
+  for (int i = 0; i < 1'000; ++i) {
+    data.consume("strict", 1, 1);
+  }
+
+  std::atomic<bool> done{false};
+  std::thread       consumer([&data, &done]() {
+    while (!done.load(std::memory_order_relaxed)) {
+      data.consume("strict", 1, 1);
+    }
+  });
+
+  int evictable = 0;
+  for (int i = 0; i < 2'000'000; ++i) {
+    evictable += data.is_evictable();
+  }
+  done.store(true, std::memory_order_relaxed);
+  consumer.join();
+
+  CHECK(evictable == 0);
 }
