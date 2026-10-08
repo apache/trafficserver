@@ -408,7 +408,7 @@ scope, and vulnerability reporting process.
 ## Resources
 
 - Official docs: https://trafficserver.apache.org/
-- Developer wiki: https://cwiki.apache.org/confluence/display/TS/
+- Developer wiki: https://github.com/apache/trafficserver/wiki
 - CI dashboard: https://ci.trafficserver.apache.org/
 - AuTest framework: https://autestsuite.bitbucket.io/
 - Proxy Verifier: https://github.com/yahoo/proxy-verifier

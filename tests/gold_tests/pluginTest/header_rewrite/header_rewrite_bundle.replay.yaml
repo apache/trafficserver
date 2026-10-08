@@ -2335,7 +2335,7 @@ sessions:
 # Test 89: CIDR condition - IPv4 masking of the 127.0.0.1 client address.
 # /32 keeps the full address, /24 masks the last octet, /0 collapses to
 # 0.0.0.0 (also guards the former shift-by-32 UB). The two-mask form exercises
-# the IPv6 field parsing; ',40' (empty IPv4 field) parses as a /0 IPv4 mask.
+# the IPv6 field parsing; ',40' keeps the documented default /24 IPv4 mask.
 - transactions:
   - client-request:
       method: "GET"
@@ -2363,7 +2363,7 @@ sessions:
         - [ X-Cidr-24, { value: "127.0.0.0", as: equal } ]
         - [ X-Cidr-0, { value: "0.0.0.0", as: equal } ]
         - [ X-Cidr-Two-Mask, { value: "127.0.0.0", as: equal } ]
-        - [ X-Cidr-Empty-V4, { value: "0.0.0.0", as: equal } ]
+        - [ X-Cidr-Empty-V4, { value: "127.0.0.0", as: equal } ]
 
 # Test 90: set-body emits formatted JSON with its configured MIME type.
 - transactions:

@@ -23,6 +23,9 @@
 #include "config.h"
 #include "userarg.h"
 #include "context_map.h"
+#include "fingerprint_registry.h"
+
+#include <cstring>
 
 namespace
 {
@@ -40,46 +43,29 @@ user_arg_type_name(TSUserArgType type)
   }
 }
 
-// Shared user arg indices for all jax_fingerprint instances. ATS has limited
-// slots (~4 per type), so we share one slot per type and use a ContextMap.
-int  vconn_user_arg_index = -1;
-int  txn_user_arg_index   = -1;
-bool vconn_slot_reserved  = false;
-bool txn_slot_reserved    = false;
-
 } // anonymous namespace
 
 int
 reserve_user_arg(PluginConfig &config)
 {
-  TSUserArgType type;
-  int          *shared_index;
-  bool         *reserved_flag;
+  TSUserArgType type = config.method.type == Method::Type::CONNECTION_BASED ? TS_USER_ARGS_VCONN : TS_USER_ARGS_TXN;
+  const char   *name = config.export_name.empty() ? PLUGIN_NAME : config.export_name.c_str();
 
-  if (config.method.type == Method::Type::CONNECTION_BASED) {
-    type          = TS_USER_ARGS_VCONN;
-    shared_index  = &vconn_user_arg_index;
-    reserved_flag = &vconn_slot_reserved;
-  } else {
-    type          = TS_USER_ARGS_TXN;
-    shared_index  = &txn_user_arg_index;
-    reserved_flag = &txn_slot_reserved;
-  }
-
-  // Only reserve the slot once per type; subsequent calls reuse it.
-  if (!*reserved_flag) {
-    int ret = TSUserArgIndexReserve(type, PLUGIN_NAME, "shared JAx context map", shared_index);
-    if (ret == TS_SUCCESS) {
-      *reserved_flag = true;
-      Dbg(dbg_ctl, "Reserved shared user_arg slot: type=%s, index=%d", user_arg_type_name(type), *shared_index);
-    } else {
-      Dbg(dbg_ctl, "Failed to reserve shared user_arg slot: type=%s", user_arg_type_name(type));
-      return ret;
+  const char *description = nullptr;
+  if (TSUserArgIndexNameLookup(type, name, &config.user_arg_index, &description) == TS_SUCCESS) {
+    if (description == nullptr || std::strcmp(description, jax_fingerprint::REGISTRY_DESCRIPTION) != 0) {
+      TSError("[%s] User arg '%s' is already reserved with an incompatible data contract", PLUGIN_NAME, name);
+      return TS_ERROR;
     }
+  } else if (TSUserArgIndexReserve(type, name, jax_fingerprint::REGISTRY_DESCRIPTION, &config.user_arg_index) == TS_SUCCESS) {
+    Dbg(dbg_ctl, "Reserved shared user_arg slot: type=%s, name=%s, index=%d", user_arg_type_name(type), name,
+        config.user_arg_index);
+  } else {
+    Dbg(dbg_ctl, "Failed to reserve shared user_arg slot: type=%s, name=%s", user_arg_type_name(type), name);
+    return TS_ERROR;
   }
 
-  config.user_arg_index = *shared_index;
-  Dbg(dbg_ctl, "Using shared user_arg: type=%s, method=%.*s, index=%d", user_arg_type_name(type),
+  Dbg(dbg_ctl, "Using shared user_arg: type=%s, name=%s, method=%.*s, index=%d", user_arg_type_name(type), name,
       static_cast<int>(config.method.name.size()), config.method.name.data(), config.user_arg_index);
   return TS_SUCCESS;
 }
@@ -87,10 +73,11 @@ reserve_user_arg(PluginConfig &config)
 void
 set_user_arg(void *container, PluginConfig &config, JAxContext *ctx)
 {
-  ContextMap *map = static_cast<ContextMap *>(TSUserArgGet(container, config.user_arg_index));
+  auto       *registry = static_cast<jax_fingerprint::RegistryV1 *>(TSUserArgGet(container, config.user_arg_index));
+  ContextMap *map      = registry == nullptr ? nullptr : static_cast<ContextMap *>(registry);
   if (map == nullptr) {
     map = new ContextMap();
-    TSUserArgSet(container, config.user_arg_index, static_cast<void *>(map));
+    TSUserArgSet(container, config.user_arg_index, static_cast<jax_fingerprint::RegistryV1 *>(map));
   }
   map->set(config.method.name, ctx);
 }
@@ -98,7 +85,8 @@ set_user_arg(void *container, PluginConfig &config, JAxContext *ctx)
 JAxContext *
 get_user_arg(void *container, PluginConfig &config)
 {
-  ContextMap *map = static_cast<ContextMap *>(TSUserArgGet(container, config.user_arg_index));
+  auto       *registry = static_cast<jax_fingerprint::RegistryV1 *>(TSUserArgGet(container, config.user_arg_index));
+  ContextMap *map      = registry == nullptr ? nullptr : static_cast<ContextMap *>(registry);
   if (map == nullptr) {
     return nullptr;
   }
@@ -106,9 +94,19 @@ get_user_arg(void *container, PluginConfig &config)
 }
 
 void
+refresh_user_arg(void *container, PluginConfig &config)
+{
+  auto *registry = static_cast<jax_fingerprint::RegistryV1 *>(TSUserArgGet(container, config.user_arg_index));
+  if (registry != nullptr) {
+    static_cast<ContextMap *>(registry)->refresh(config.method.name);
+  }
+}
+
+void
 cleanup_user_arg(void *container, PluginConfig &config)
 {
-  ContextMap *map = static_cast<ContextMap *>(TSUserArgGet(container, config.user_arg_index));
+  auto       *registry = static_cast<jax_fingerprint::RegistryV1 *>(TSUserArgGet(container, config.user_arg_index));
+  ContextMap *map      = registry == nullptr ? nullptr : static_cast<ContextMap *>(registry);
   if (map != nullptr) {
     // Remove this plugin's context from the map.
     map->remove(config.method.name);

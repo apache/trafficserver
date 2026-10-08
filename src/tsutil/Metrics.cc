@@ -77,6 +77,10 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
   auto            it = _lookups.find(name);
 
   if (it != _lookups.end()) {
+    // Re-creating a name relists it: same slot, same atomic, and whatever value it accumulated
+    // while it was out of the listing. A name in _lookups always names an allocated slot.
+    set_listed(it->second, true);
+
     return it->second;
   }
 
@@ -137,8 +141,8 @@ Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name, Metrics
   }
 
   if (out_type) {
-    // don't trust the passed in id to get the type as it might have been manufactured (i.e. from iterators)
-    // so get the type from the storage tuple.
+    // don't trust the passed in id to get the type as it might have been manufactured, so get the
+    // type from the storage tuple.
     *out_type = _extractType(std::get<1>(std::get<0>(*blob)[offset]));
   }
 
@@ -190,18 +194,37 @@ Metrics::Storage::type(IdType id) const
   return _extractType(id);
 }
 
-// Iterator implementation
-void
-Metrics::iterator::next()
+bool
+Metrics::Storage::set_listed(Metrics::IdType id, bool listed)
 {
-  auto [blob, offset] = _metrics._splitID(_it);
-
-  if (++offset == MAX_SIZE) {
-    ++blob;
-    offset = 0;
+  if (!_is_allocated(id)) {
+    return false;
   }
 
-  _it = _makeId(blob, offset, MetricType::COUNTER);
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  // Only this bit, so a flag added later is not clobbered by unlisting or relisting.
+  if (listed) {
+    std::get<2>(*blob)[offset].fetch_and(static_cast<uint8_t>(~UNLISTED), MEMORY_ORDER);
+  } else {
+    std::get<2>(*blob)[offset].fetch_or(UNLISTED, MEMORY_ORDER);
+  }
+
+  return true;
+}
+
+bool
+Metrics::Storage::listed(Metrics::IdType id) const
+{
+  if (!_is_allocated(id)) {
+    return false;
+  }
+
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  return (std::get<2>(*blob)[offset].load(MEMORY_ORDER) & UNLISTED) == 0;
 }
 
 namespace details
@@ -269,11 +292,43 @@ namespace details
 
       if (it == metrics.end()) {
         metrics.push_back(DerivedMetric{id, {source}, op});
+      } else if (std::find(it->derived_from.begin(), it->derived_from.end(), source) == it->derived_from.end()) {
+        // Already registered sources are skipped so repeated registration is harmless.
+        it->derived_from.push_back(source);
+      }
+
+      // Under the lock, and after the source is registered. create() has already relisted, but a
+      // remove_source that emptied the list concurrently would otherwise be free to unlist after
+      // this source was added, leaving a metric that is recomputed but never enumerated.
+      Metrics::instance().relist(id);
+    }
+
+    void
+    remove_source(Metrics::IdType id, Metrics::AtomicType *source)
+    {
+      if (!source) {
         return;
       }
-      // Already registered sources are skipped so repeated registration is harmless.
-      if (std::find(it->derived_from.begin(), it->derived_from.end(), source) == it->derived_from.end()) {
-        it->derived_from.push_back(source);
+
+      std::lock_guard l(metrics_lock);
+      auto            it = std::find_if(metrics.begin(), metrics.end(), [id](DerivedMetric const &m) { return m.metric == id; });
+
+      if (it == metrics.end()) {
+        return;
+      }
+
+      auto src = std::find(it->derived_from.begin(), it->derived_from.end(), source);
+
+      if (src == it->derived_from.end()) {
+        return; // Not a source of this metric, so nothing about it changes.
+      }
+
+      it->derived_from.erase(src);
+
+      // Under the lock with the erase, for the reason given in add_source. The entry stays, holding
+      // no sources: update() skips those, and add_source finds it again if a contributor returns.
+      if (it->derived_from.empty()) {
+        Metrics::instance().unlist(id);
       }
     }
 
@@ -333,6 +388,19 @@ Metrics::Derived::add_source(std::string_view derived_name, Metrics::MetricType 
   auto id = Metrics::instance()._create(derived_name, type);
 
   details::DerivativeMetrics::instance().add_source(id, source, op);
+}
+
+void
+Metrics::Derived::remove_source(std::string_view derived_name, Metrics::AtomicType *source)
+{
+  auto &instance = Metrics::instance();
+  auto  id       = instance.lookup(derived_name);
+
+  if (id == Metrics::NOT_FOUND) {
+    return;
+  }
+
+  details::DerivativeMetrics::instance().remove_source(id, source);
 }
 
 Metrics::StaticString &

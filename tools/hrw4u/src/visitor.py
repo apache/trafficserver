@@ -114,14 +114,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         for warning in self.symbol_resolver.drain_warnings():
             self._add_sandbox_warning(ctx, warning)
 
-    @lru_cache(maxsize=256)
-    def _cached_symbol_resolution(self, symbol_text: str, section_name: str) -> tuple[str, bool]:
-        try:
-            section = SectionType(section_name)
-            return self.symbol_resolver.resolve_condition(symbol_text, section)
-        except (ValueError, SymbolResolutionError):
-            return symbol_text, False
-
     @lru_cache(maxsize=128)
     def _cached_hook_mapping(self, section_name: str) -> str:
         return self.symbol_resolver.map_hook(section_name)
@@ -230,6 +222,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
                     return replacement
                 raise SymbolResolutionError(m.group(0), "Unrecognized substitution format")
+            except SandboxDenialError as e:
+                # Report it as a denial so the sandbox message is set.
+                e.add_note(f"String interpolation context: {s[:50]}...")
+                with self.trap(ctx):
+                    raise
+                return f"{{ERROR: {e}}}"
             except Exception as e:
                 error = hrw4u_error(self.filename, ctx, f"symbol error in {{}}: {e}")
                 if hasattr(error, 'add_note'):
@@ -249,26 +247,19 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if not name:
             raise SymbolResolutionError("identifier", "Missing or empty identifier text")
 
-        if entry := self.symbol_resolver.symbol_for(name):
-            return entry.as_cond(), False
-
-        symbol, default_expr = self._cached_symbol_resolution(name, self.current_section.value)
-
-        if symbol == name:
-            if '.' not in name and ':' not in name:
-                error = SymbolResolutionError(
-                    "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section.")
-                suggestions = self.symbol_resolver.get_variable_suggestions(name, self.current_section)
-                if suggestions:
-                    error.add_symbol_suggestion(suggestions)
-                raise error
-            else:
-                try:
-                    return self.symbol_resolver.resolve_condition(name, self.current_section)
-                except SymbolResolutionError:
-                    raise
-
-        return symbol, default_expr
+        try:
+            return self.symbol_resolver.resolve_condition(name, self.current_section)
+        except SandboxDenialError:
+            raise
+        except SymbolResolutionError:
+            if '.' in name or ':' in name:
+                raise
+            error = SymbolResolutionError(
+                "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section.")
+            suggestions = self.symbol_resolver.get_variable_suggestions(name, self.current_section)
+            if suggestions:
+                error.add_symbol_suggestion(suggestions)
+            raise error from None
 
     def _get_value_text(self, val_ctx) -> str:
         if val_ctx.paramRef():
@@ -1029,6 +1020,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             else:
                 negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
 
+            if negate and not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("NOT")):
+                return
+
             match ctx:
                 case _ if ctx.value():
                     rhs = self._get_value_text(ctx.value())
@@ -1051,6 +1045,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     cond_txt = f"{lhs} {regex_expr}"
 
                 case _ if ctx.iprange():
+                    if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("in")):
+                        return
                     cond_txt = f"{lhs} {ctx.iprange().getText()}"
 
                 case _ if ctx.set_():
@@ -1148,6 +1144,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             match ctx:
                 case _ if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
                     self._dbg("`NOT' detected")
+                    if not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("NOT")):
+                        return
                     child = ctx.getChild(1)
                     if child.LPAREN():
                         self._dbg("GROUP-START (negated)")

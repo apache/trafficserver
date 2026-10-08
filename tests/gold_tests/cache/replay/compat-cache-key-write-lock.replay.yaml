@@ -1,0 +1,146 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A stale compatibility hit is revalidated unconditionally but stays a hit, so
+# the stale-serving fallbacks keep working for it. Here the transaction that
+# would migrate the object loses the cache write lock, and with
+# proxy.config.http.cache.open_write_fail_action 2 (STALE_ON_REVALIDATE) it
+# must serve the legacy object rather than go to the origin.
+#
+# As in compat-cache-key.replay.yaml, "/stale;" addresses the same key ATS 9.2
+# produced for "/stale", which is how a legacy object gets into the cache. The
+# write lock loss is injected the same way as in
+# cache-write-lock-stale-serve.replay.yaml.
+#
+
+meta:
+  version: "1.0"
+
+  blocks:
+  # The stale object has to be served out of the cache, so this response should
+  # never be seen. Negative revalidating is disabled below so that a 500 from
+  # the origin is passed through rather than masked by the cached object.
+  - origin_not_expected: &origin_not_expected
+      server-response:
+        status: 500
+        reason: "Internal Server Error"
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ X-Response, origin ]
+
+autest:
+  description: 'Verify a lost write lock on a stale compatibility hit serves the legacy object'
+
+  dns:
+    name: 'dns-compat-cache-key-write-lock'
+
+  server:
+    name: 'origin-compat-cache-key-write-lock'
+
+  client:
+    name: 'client-compat-cache-key-write-lock'
+
+  ats:
+    name: 'ts-compat-cache-key-write-lock'
+    process_config:
+      enable_cache: true
+
+    copy_to_config_dir:
+      - 'cache-write-lock-fail-write.conf'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_cache|http_trans|http_match'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.cache.try_compat_key_read: 1
+      # STALE_ON_REVALIDATE: serve stale when the write lock is lost.
+      proxy.config.http.cache.open_write_fail_action: 2
+      proxy.config.http.cache.max_open_write_retry_timeout: 0
+      proxy.config.http.negative_revalidating_enabled: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: header_rewrite.so
+            args: ['cache-write-lock-fail-write.conf']
+
+    metric_checks:
+      - metric: proxy.process.http.cache.compat_key_reads
+        value: 1
+
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: "[Ff]atal|failed assertion"
+            description: 'Verify ATS does not abort when the write lock is lost'
+        contains:
+          - expression: "object under the compatibility key, revalidating unconditionally"
+            description: 'Verify the legacy object was revalidated rather than treated as a miss'
+          - expression: "cache_serve_stale_on_write_lock_fail"
+            description: 'Verify the legacy object was served because the write lock was lost'
+
+sessions:
+- transactions:
+
+  # Populate the legacy key with an object that is stale one second later.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /stale;
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, prime-legacy-key ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, "max-age=1" ]
+        - [ X-Response, cached ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: cached, as: equal } ]
+
+  # The compatibility lookup finds the stale object and ATS prepares to
+  # revalidate it, but the header below denies the write lock.
+  - client-request:
+      delay: 2s
+
+      method: GET
+      version: '1.1'
+      url: /stale
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, revalidate-without-write-lock ]
+        - [ X-Fail-Cache-Write, '1' ]
+
+    <<: *origin_not_expected
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: cached, as: equal } ]

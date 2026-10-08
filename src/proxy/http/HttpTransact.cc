@@ -2582,6 +2582,23 @@ HttpTransact::issue_revalidate(State *s)
     return;
   }
 
+  // An object found under the 9.2 key cannot take a 304: the write that would
+  // apply it is a create on the current key, not an update of the legacy
+  // vector, and the cache aborts a header-only create. Ask for the full
+  // response instead, without our validators or the client's, so the 200
+  // replaces it under the current key and the legacy copy ages out. The
+  // client's conditionals are still matched against that 200. HEAD and Range
+  // requests are left alone: neither response is stored, and an unconditional
+  // range request would draw a 206 that deletes the object rather than
+  // migrating it. The next full GET migrates it instead.
+  if (s->cache_info.action == CacheAction_t::PREPARE_TO_UPDATE && s->method == HTTP_WKSIDX_GET &&
+      !s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && s->state_machine != nullptr &&
+      CompatCacheKey::is_legacy(s->state_machine->compatibility_cache_lookup)) {
+    TxnDbg(dbg_ctl_http_trans, "object under the compatibility key, revalidating unconditionally");
+    HttpTransactHeaders::remove_conditional_headers(&s->hdr_info.server_request);
+    return;
+  }
+
   // if the document is cached, just send a conditional request to the server
 
   // So the request does not have preconditions. It can, however
@@ -6924,6 +6941,10 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 bool
 HttpTransact::is_request_retryable(State *s)
 {
+  if (s->state_machine->origin_retry_body_unavailable) {
+    return false;
+  }
+
   // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
   // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry

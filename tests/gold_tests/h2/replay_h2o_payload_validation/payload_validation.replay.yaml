@@ -1,0 +1,146 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+#
+# These transactions exercise the payload-length validation code path on
+# outbound (origin-side) HTTP/2 streams. They cover the [RFC 9110] 8.6 cases
+# where a non-zero Content-Length is permitted with no message body:
+#
+#   * Test 1: A HEAD request with a Content-Length response from the origin.
+#   * Test 2: A conditional GET (If-None-Match) that the origin satisfies
+#             with a 304 (Not Modified) response carrying Content-Length.
+#
+# Without the Http2Stream send-side request snapshot, ATS would tear down
+# these streams with a STREAM PROTOCOL_ERROR ("recv data bad payload length")
+# because `_send_header` is destroyed before the response is validated.
+
+sessions:
+  - protocol:
+      - name: http
+        version: '2'
+      - name: tls
+        version: TLSv1.3
+        sni: payload.h2o.example.com
+        proxy-verify-mode: 0
+        proxy-provided-cert: true
+      - name: tcp
+      - name: ip
+        version: '4'
+
+    transactions:
+      #
+      # Test 1: HEAD request with a non-zero Content-Length response.
+      #
+      - all: { headers: { fields: [[ uuid, head-with-content-length ]]}}
+
+        client-request:
+          version: '2'
+          scheme: https
+          method: HEAD
+          url: /payload/head
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, payload.h2o.example.com ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-request:
+          version: '2'
+          scheme: https
+          method: HEAD
+          url:
+            - [ path, { value: /payload/head, as: equal } ]
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, payload.h2o.example.com ]
+
+        server-response:
+          version: '2'
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 7 ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-response:
+          version: '2'
+          status: 200
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 7 ]
+
+      #
+      # Test 2: Conditional GET satisfied with a 304 carrying Content-Length.
+      #
+      - all: { headers: { fields: [[ uuid, conditional-get-304 ]]}}
+
+        client-request:
+          version: '2'
+          scheme: https
+          method: GET
+          url: /payload/conditional
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, payload.h2o.example.com ]
+              - [ If-None-Match, '"abc"' ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-request:
+          version: '2'
+          scheme: https
+          method: GET
+          url:
+            - [ path, { value: /payload/conditional, as: equal } ]
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, payload.h2o.example.com ]
+              - [ If-None-Match, { value: '"abc"', as: equal } ]
+
+        server-response:
+          version: '2'
+          status: 304
+          reason: Not Modified
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 42 ]
+              - [ ETag, '"abc"' ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-response:
+          version: '2'
+          status: 304
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 42 ]

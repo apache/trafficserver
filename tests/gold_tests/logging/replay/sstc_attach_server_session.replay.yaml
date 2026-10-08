@@ -1,0 +1,160 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Verify that %<sstc> counts the transactions carried by an origin session
+# that is reused via proxy.config.http.attach_server_session_to_client.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify sstc when the origin session is attached to the client session'
+
+  server:
+    name: 'server-sstc-attach'
+
+  client:
+    name: 'client-sstc-attach'
+
+  ats:
+    name: 'ts-sstc-attach'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_ss|http_cs'
+      proxy.config.http.attach_server_session_to_client: 1
+      proxy.config.log.max_secs_per_buffer: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+    logging_yaml:
+      logging:
+        formats:
+          - name: sstc
+            format: '%<{uuid}cqh> %<sstc>'
+        logs:
+          - filename: sstc
+            format: sstc
+            mode: ascii
+
+    log_validation:
+      access_log:
+        filename: sstc.log
+        gold_file: gold/sstc_attach_server_session.gold
+
+sessions:
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/3
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 3 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/4
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 4 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+
+    proxy-response:
+      status: 200
+
+# Give the logging subsystem time to flush the above transactions.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /path/5
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 5 ]
+      delay: 3s
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+
+    proxy-response:
+      status: 200

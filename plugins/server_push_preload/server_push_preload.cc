@@ -41,9 +41,6 @@ static regex linkRegexp("<([^>]+)>;(.+)");
 
 namespace
 {
-GlobalPlugin *globalPlugin;
-RemapPlugin  *remapPlugin;
-
 DbgCtl dbg_ctl{PLUGIN_NAME};
 } // namespace
 
@@ -170,7 +167,7 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   if (!RegisterGlobalPlugin("ServerPushPreloadPlugin", PLUGIN_NAME, "dev@trafficserver.apache.org")) {
     return;
   }
-  globalPlugin = new ServerPushGlobal();
+  new ServerPushGlobal();
 }
 
 TSReturnCode
@@ -178,6 +175,6 @@ TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, voi
                    int errbuf_size ATSCPPAPI_UNUSED)
 {
   Dbg(dbg_ctl, "New Instance");
-  remapPlugin = new ServerPushRemap(instance_handle);
+  *instance_handle = new ServerPushRemap(instance_handle);
   return TS_SUCCESS;
 }

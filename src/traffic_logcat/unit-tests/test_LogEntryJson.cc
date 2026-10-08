@@ -112,7 +112,9 @@ TEST_CASE("v3 generic decode round-trip with IPv4, STRING, INT", "[logcat][v3]")
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"chi":"192.0.2.10","cqu":"GET /index.html","pssc":200})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"chi":"192.0.2.10","cqu":"GET /index.html","pssc":200})");
 }
 
 TEST_CASE("v3 generic decode handles IPv6 and unspecified IP", "[logcat][v3]")
@@ -129,7 +131,9 @@ TEST_CASE("v3 generic decode handles IPv6 and unspecified IP", "[logcat][v3]")
     char out[256];
     int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
     REQUIRE(n > 0);
-    return std::string(out, n);
+    const size_t len = static_cast<size_t>(n);
+
+    return std::string(out, len);
   };
 
   SECTION("IPv6")
@@ -181,7 +185,9 @@ TEST_CASE("v3 generic decode escapes JSON structural characters in strings", "[l
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"msg":"he\"llo\\x"})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"msg":"he\"llo\\x"})");
 }
 
 TEST_CASE("v3 generic decode escapes control characters in strings", "[logcat][v3]")
@@ -205,7 +211,9 @@ TEST_CASE("v3 generic decode escapes control characters in strings", "[logcat][v
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"msg":"a\nb\tc\u0001d"})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"msg":"a\nb\tc\u0001d"})");
 }
 
 TEST_CASE("v3 generic decode escapes JSON structural characters in symbol keys", "[logcat][v3]")
@@ -226,7 +234,9 @@ TEST_CASE("v3 generic decode escapes JSON structural characters in symbol keys",
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"a\"b\\c":7})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"a\"b\\c":7})");
 }
 
 TEST_CASE("v3 generic decode rejects an unknown type code", "[logcat][v3]")
@@ -309,7 +319,9 @@ TEST_CASE("v3 generic decode reads a dINT field (16 bytes)", "[logcat][v3]")
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"pair":[1,1]})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"pair":[1,1]})");
 }
 
 TEST_CASE("v3 generic decode rejects a truncated dINT field", "[logcat][v3]")
@@ -361,5 +373,7 @@ TEST_CASE("v3 generic decode emits raw values, never field semantics", "[logcat]
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"crc":2,"cqts":1700000000})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"crc":2,"cqts":1700000000})");
 }

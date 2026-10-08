@@ -54,6 +54,10 @@
 #include <zstd.h>
 #endif
 
+#if HAVE_LZ4_H
+#include <lz4.h>
+#endif
+
 #if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
 static constexpr int ts_has_cert_compression_callbacks = 1;
 #else
@@ -134,6 +138,11 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_ZSTD", 0, json);
 #endif
+#ifdef HAVE_LZ4_H
+  print_feature("TS_HAS_LZ4", 1, json);
+#else
+  print_feature("TS_HAS_LZ4", 0, json);
+#endif
   print_feature("TS_HAS_CERT_COMPRESSION", ts_has_cert_compression, json);
   print_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS", ts_has_cert_compression_callbacks, json);
   print_feature("TS_HAS_CERT_COMPRESSION_ZLIB", ts_has_cert_compression_zlib, json);
@@ -169,6 +178,7 @@ produce_features(bool json)
   print_feature("SIZEOF_VOIDP", SIZEOF_VOIDP, json);
   print_feature("TS_IP_TRANSPARENT", TS_IP_TRANSPARENT, json);
   print_feature("TS_HAS_128BIT_CAS", TS_HAS_128BIT_CAS, json);
+  print_feature("TS_HAS_128BIT_CAS_LIBATOMIC", TS_HAS_128BIT_CAS_LIBATOMIC, json);
   print_feature("TS_HAS_TESTS", TS_HAS_TESTS, json);
   print_feature("TS_MAX_THREADS_IN_EACH_THREAD_TYPE", TS_MAX_THREADS_IN_EACH_THREAD_TYPE, json);
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
@@ -258,6 +268,12 @@ produce_versions(bool json)
   print_var("zstd", LBW().print("{}", ZSTD_versionString()).view(), json);
 #else
   print_var("zstd", undef, json);
+#endif
+#ifdef HAVE_LZ4_H
+  // Runtime version, matching what the zstd line above reports.
+  print_var("lz4", LBW().print("{}", LZ4_versionString()).view(), json);
+#else
+  print_var("lz4", undef, json);
 #endif
 
   // This should always be last

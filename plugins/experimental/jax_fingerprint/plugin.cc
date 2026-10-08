@@ -82,6 +82,7 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
     {"log-filename", required_argument, nullptr, 'f'},
     {"log-field",    required_argument, nullptr, 'l'},
     {"servernames",  required_argument, nullptr, 'S'},
+    {"export",       required_argument, nullptr, 'e'},
     {nullptr,        0,                 nullptr, 0  }
   };
 
@@ -140,6 +141,13 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
     case 'l':
       config.log_symbol = {optarg, strlen(optarg)};
       break;
+    case 'e':
+      config.export_name = {optarg, strlen(optarg)};
+      if (config.export_name.empty()) {
+        TSError("[%s] --export requires a non-empty user arg name", PLUGIN_NAME);
+        return false;
+      }
+      break;
     case 0:
     case -1:
       break;
@@ -159,6 +167,7 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
   Dbg(dbg_ctl, "JAx header is %s", !config.header_name.empty() ? config.header_name.c_str() : "DISABLED");
   Dbg(dbg_ctl, "JAx via-header is %s", !config.via_header_name.empty() ? config.via_header_name.c_str() : "DISABLED");
   Dbg(dbg_ctl, "JAx log file is %s", !config.log_filename.empty() ? config.log_filename.c_str() : "DISABLED");
+  Dbg(dbg_ctl, "JAx export registry is %s", !config.export_name.empty() ? config.export_name.c_str() : PLUGIN_NAME);
   Dbg(dbg_ctl, "JAx standalone mode  is %s", config.standalone ? "ENABLED" : "DISABLED");
   for (auto &&servername : config.servernames) {
     Dbg(dbg_ctl, "%s", servername.c_str());
@@ -246,6 +255,7 @@ handle_client_hello(void *edata, PluginConfig &config)
 
   if (config.method.on_client_hello) {
     config.method.on_client_hello(ctx, vconn);
+    refresh_user_arg(vconn, config);
   }
 
   TSVConnReenable(vconn);
@@ -288,6 +298,7 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
 
   if (config.method.on_request) {
     config.method.on_request(ctx, txnp);
+    refresh_user_arg(container, config);
   }
 
   if (!config.log_filename.empty()) {

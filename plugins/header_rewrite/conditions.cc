@@ -1066,34 +1066,22 @@ ConditionCidr::initialize(Parser &p)
 void
 ConditionCidr::set_qualifier(const std::string &q)
 {
-  bool  ok = true;
-  int   cidr;
-  char *endp;
-
   Condition::set_qualifier(q);
 
   Dbg(pi_dbg_ctl, "\tParsing %%{CIDR:%s} qualifier", q.c_str());
-  cidr = strtol(q.c_str(), &endp, 10);
-  if (cidr >= 0 && cidr <= 32) {
-    _v4_cidr = cidr;
-    if (endp && (*endp == ',' || *endp == '/' || *endp == ':')) {
-      cidr = strtol(endp + 1, nullptr, 10);
-      if (cidr >= 0 && cidr <= 128) {
-        _v6_cidr = cidr;
-      } else {
-        TSError("[%s] Bad CIDR mask for IPv6: %s", PLUGIN_NAME, q.c_str());
-        ok = false;
-      }
-    }
-  } else {
+
+  switch (cidr_parse_qualifier(q, _v4_cidr, _v6_cidr)) {
+  case CidrQualifierError::IPV4:
     TSError("[%s] Bad CIDR mask for IPv4: %s", PLUGIN_NAME, q.c_str());
-    ok = false;
+    return;
+  case CidrQualifierError::IPV6:
+    TSError("[%s] Bad CIDR mask for IPv6: %s", PLUGIN_NAME, q.c_str());
+    return;
+  case CidrQualifierError::NONE:
+    break;
   }
 
-  // Update the bit-masks
-  if (ok) {
-    _create_masks();
-  }
+  _create_masks();
 }
 
 bool

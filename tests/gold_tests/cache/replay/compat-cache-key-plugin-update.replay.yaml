@@ -1,0 +1,227 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A plugin update of a cached object (TSHttpTxnUpdateCachedObject) cannot be
+# stored for an object found under the 9.2 key: the write would be a create on
+# the current key, which the cache aborts on a header-only close. ATS takes the
+# failed-update path for it instead, so the client receives the updated headers
+# but the object is left as it was.
+#
+# The update_cached_object test plugin copies X-Update-Cached-Object from the
+# request into the cached response as X-Cached-Update, on a fresh hit only.
+#
+# As in compat-cache-key.replay.yaml, "/legacy;" addresses the same key ATS 9.2
+# produced for "/legacy", which is how a legacy object gets into the cache.
+#
+
+meta:
+  version: "1.0"
+
+  blocks:
+  # Every request after the priming ones is answered from the cache.
+  - origin_not_expected: &origin_not_expected
+      proxy-request:
+        expect: absent
+
+      server-response:
+        status: 400
+        reason: "Bad Request"
+        headers:
+          fields:
+          - [ Content-Length, 0 ]
+
+autest:
+  description: 'Verify a plugin update of a compatibility-key object is served but not stored'
+
+  dns:
+    name: 'dns-compat-cache-key-plugin-update'
+
+  server:
+    name: 'origin-compat-cache-key-plugin-update'
+
+  client:
+    name: 'client-compat-cache-key-plugin-update'
+
+  ats:
+    name: 'ts-compat-cache-key-plugin-update'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - name: "update_cached_object.so"
+
+    copy_custom_plugin:
+      - "plugins/.libs/update_cached_object.so"
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|update_cached_object'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.cache.try_compat_key_read: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    metric_checks:
+      # The update request and the check after it in tests 5 and 6.
+      - metric: proxy.process.http.cache.compat_key_reads
+        value: 2
+
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: "[Ff]atal|failed assertion"
+            description: 'Verify ATS does not abort on the refused update'
+        contains:
+          - expression: "requested cached object update with current-key-update"
+            description: 'Verify the plugin updated the object under the current key'
+          - expression: "requested cached object update with legacy-key-update"
+            description: 'Verify the plugin updated the object under the legacy key'
+
+sessions:
+- transactions:
+
+  #
+  # Tests 1-3: control. Under the current key the update is stored.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /current
+      headers:
+        fields:
+        - [ uuid, 1-prime-current-key ]
+        - [ Host, example.com ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /current
+      headers:
+        fields:
+        - [ uuid, 2-update-current-key ]
+        - [ Host, example.com ]
+        - [ X-Update-Cached-Object, current-key-update ]
+      delay: 100ms
+
+    <<: *origin_not_expected
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cached-Update, { value: current-key-update, as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /current
+      headers:
+        fields:
+        - [ uuid, 3-current-key-update-stored ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *origin_not_expected
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cached-Update, { value: current-key-update, as: equal } ]
+
+  #
+  # Tests 4-6: under the legacy key the update is served but not stored.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /legacy;
+      headers:
+        fields:
+        - [ uuid, 4-prime-legacy-key ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200
+
+  # Answered with the updated headers rather than the error an invalid update
+  # gets.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /legacy
+      headers:
+        fields:
+        - [ uuid, 5-update-legacy-key ]
+        - [ Host, example.com ]
+        - [ X-Update-Cached-Object, legacy-key-update ]
+      delay: 100ms
+
+    <<: *origin_not_expected
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cached-Update, { value: legacy-key-update, as: equal } ]
+
+  # Still the unmodified legacy object.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /legacy
+      headers:
+        fields:
+        - [ uuid, 6-legacy-key-update-not-stored ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *origin_not_expected
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cached-Update, { as: absent } ]

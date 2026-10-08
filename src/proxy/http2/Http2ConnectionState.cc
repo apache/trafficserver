@@ -184,9 +184,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
       }
 
-      if (stream->is_read_enabled()) {
-        stream->signal_read_event(VC_EVENT_READ_COMPLETE);
-      }
+      stream->signal_final_read_event(VC_EVENT_READ_COMPLETE);
 
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
@@ -263,22 +261,19 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   myreader->writer()->dealloc_reader(myreader);
 
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
-    // TODO: set total written size to read_vio.nbytes
     stream->set_read_done();
   }
 
-  if (stream->is_read_enabled()) {
-    if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
-      if (this->get_peer_stream_count() > 1 && this->get_local_rwnd() == 0) {
-        // This final DATA frame for this stream consumed all the bytes for the
-        // session window. Send a WINDOW_UPDATE frame in order to open up the
-        // session window for other streams.
-        restart_receiving(nullptr);
-      }
-      stream->signal_read_event(VC_EVENT_READ_COMPLETE);
-    } else {
-      stream->signal_read_event(VC_EVENT_READ_READY);
+  if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
+    if (stream->is_read_enabled() && this->get_peer_stream_count() > 1 && this->get_local_rwnd() == 0) {
+      // This final DATA frame for this stream consumed all the bytes for the
+      // session window. Send a WINDOW_UPDATE frame in order to open up the
+      // session window for other streams.
+      restart_receiving(nullptr);
     }
+    stream->signal_final_read_event(VC_EVENT_READ_COMPLETE);
+  } else if (stream->is_read_enabled()) {
+    stream->signal_read_event(VC_EVENT_READ_READY);
   }
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -293,6 +288,42 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
  *   2. A HEADERS frame without the END_HEADERS flag set MUST be followed by a
  *      CONTINUATION frame
  */
+namespace
+{
+// An interim (1xx) response received on an outbound
+// (origin) HTTP/2 connection is not the final response. Detect it after the
+// header block is decoded so the caller can discard it and wait for the final
+// response, instead of merging it with the final response headers (which would
+// produce a duplicate :status pseudo-header that fails validation).
+bool
+is_outbound_interim_response(Http2Stream *stream)
+{
+  if (!stream->is_outbound_connection() || stream->trailing_header_is_possible()) {
+    return false;
+  }
+  const MIMEField *status_field = stream->get_receive_header()->field_find(PSEUDO_HEADER_STATUS);
+  if (status_field == nullptr) {
+    return false;
+  }
+  // :status is origin-controlled and HeaderValidator only checks that it is present, so
+  // bound the length before indexing. RFC 9110 15 requires exactly three digits.
+  auto value{status_field->value_get()};
+  return value.length() == 3 && value[0] == '1';
+}
+
+// Discard a decoded interim (1xx) response along with its encoded header block so the
+// following final response is decoded into a clean buffer. Freeing header_blocks here
+// avoids leaking it when the next HEADERS frame allocates a new buffer.
+void
+discard_interim_response(Http2Stream *stream)
+{
+  stream->reset_receive_headers();
+  ats_free(stream->header_blocks);
+  stream->header_blocks        = nullptr;
+  stream->header_blocks_length = 0;
+}
+} // namespace
+
 Http2Error
 Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
 {
@@ -360,6 +391,9 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
       }
     }
   }
+
+  // Record evidence on the registered stream before a decoding-only replacement.
+  stream->mark_response_received();
 
   // HEADERS frame on a closed stream.  The HdrHeap has gone away and it will core.
   if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
@@ -512,6 +546,22 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     if (stream->receive_end_stream && !stream->payload_length_is_valid()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
+    }
+
+    // Discard an interim (1xx) response from the
+    // origin and wait for the final response on this stream.
+    if (is_outbound_interim_response(stream)) {
+      // RFC 9113 8.1: a HEADERS frame with END_STREAM carrying an informational (1xx)
+      // status code is malformed. change_state() has already moved the stream toward
+      // closed, so the final response would have nowhere to go; reject as a stream error.
+      if (stream->receive_end_stream) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "1xx interim response must not set END_STREAM");
+      }
+      Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
+      discard_interim_response(stream);
+      this->session->interrupt_reading_frames();
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
 
     // Hard-enforce the global active-streams cap on inbound client streams.
@@ -710,6 +760,17 @@ Http2ConnectionState::rcv_rst_stream_frame(const Http2Frame &frame)
     Http2StreamDebug(this->session, stream_id, "Parsed RST_STREAM frame: Error Code: %u", rst_stream.error_code);
     ATS_PROBE3(http2_rst_stream_rcvd, this->session->get_connection_id(), stream_id, rst_stream.error_code);
     stream->set_rx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(rst_stream.error_code)});
+    // Per RFC 9113 8.7: REFUSED_STREAM is the one stream-level error code with
+    // an explicit guarantee that the request was not processed by the peer,
+    // and so the request is safe to retry on a fresh connection -- including
+    // for non-idempotent methods. Tag the stream so HttpSM converts the
+    // resulting EOS into a connection-level retry rather than surfacing it as
+    // ERR_CLIENT_ABORT to the client.
+    if (this->session->is_outbound() &&
+        static_cast<Http2ErrorCode>(rst_stream.error_code) == Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM) {
+      Http2StreamDebug(this->session, stream_id, "Origin not-processed assertion: REFUSED_STREAM");
+      stream->set_safe_to_retry();
+    }
     stream->initiating_close();
   }
 
@@ -730,18 +791,6 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
     Warning("Setting frame for zombied session %" PRId64, this->session->get_connection_id());
   }
 
-  // Update SETTINGS frame count per minute
-  this->increment_received_settings_frame_count();
-  // Close this connection if its SETTINGS frame count exceeds a limit
-  if (configured_max_settings_frames_per_minute >= 0 &&
-      this->get_received_settings_frame_count() > static_cast<uint32_t>(configured_max_settings_frames_per_minute)) {
-    Metrics::Counter::increment(http2_rsb.max_settings_frames_per_minute_exceeded);
-    Http2StreamDebug(this->session, stream_id, "Observed too frequent SETTINGS frames: %u frames within a last minute",
-                     this->get_received_settings_frame_count());
-    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
-                      "recv settings too frequent SETTINGS frames");
-  }
-
   // [RFC 7540] 6.5. The stream identifier for a SETTINGS frame MUST be zero.
   // If an endpoint receives a SETTINGS frame whose stream identifier field is
   // anything other than 0x0, the endpoint MUST respond with a connection
@@ -754,13 +803,27 @@ Http2ConnectionState::rcv_settings_frame(const Http2Frame &frame)
   // [RFC 7540] 6.5. Receipt of a SETTINGS frame with the ACK flag set and a
   // length field value other than 0 MUST be treated as a connection
   // error of type FRAME_SIZE_ERROR.
-  if (frame.header().flags & HTTP2_FLAGS_SETTINGS_ACK) {
-    if (frame.header().length == 0) {
-      return this->_process_incoming_settings_ack_frame();
-    } else {
+  //
+  // Exempt solicited ACKs in both directions. Dynamic flow control (policy=2)
+  // can elicit many legitimate ACKs from clients as well as origins. _process_incoming_settings_ack_frame()
+  // rejects unsolicited ACKs when the outstanding SETTINGS queue is empty,
+  // so this exemption remains bounded by our own SETTINGS send rate.
+  bool const is_ack = frame.header().flags & HTTP2_FLAGS_SETTINGS_ACK;
+  if (!is_ack) {
+    this->increment_received_settings_frame_count();
+    if (configured_max_settings_frames_per_minute >= 0 &&
+        this->get_received_settings_frame_count() > static_cast<uint32_t>(configured_max_settings_frames_per_minute)) {
+      Metrics::Counter::increment(http2_rsb.max_settings_frames_per_minute_exceeded);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
+                        "recv settings too frequent SETTINGS frames");
+    }
+  }
+  if (is_ack) {
+    if (frame.header().length != 0) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_FRAME_SIZE_ERROR,
                         "recv settings ACK header length not 0");
     }
+    return this->_process_incoming_settings_ack_frame();
   }
 
   // A SETTINGS frame with a length other than a multiple of 6 octets MUST
@@ -919,6 +982,53 @@ Http2ConnectionState::rcv_goaway_frame(const Http2Frame &frame)
                    static_cast<int>(goaway.error_code));
 
   this->rx_error_code = {ProxyErrorClass::SSN, static_cast<uint32_t>(goaway.error_code)};
+
+  // Per RFC 9113 6.8: streams whose id is greater than `last_streamid` were
+  // not (and will not be) processed by the peer, and the requests they carry
+  // may be safely retried on a fresh connection. On an outbound H/2 session
+  // the streams in question are the ones we initiated toward the origin
+  // using odd-numbered client stream IDs. Tagging them before closing them
+  // lets HttpSM decide to retry non-idempotent requests (e.g. POST) that
+  // would otherwise surface to the client as ERR_CLIENT_ABORT. This is
+  // especially important for AWS-style origin load balancers that
+  // aggressively send GOAWAY(last_stream_id=0, NO_ERROR) when draining a
+  // connection.
+  //
+  // After a NO_ERROR GOAWAY the origin may still complete the streams at or
+  // below `last_streamid`, so those are left to finish. Half-closing the
+  // session takes it out of the pool and stops new streams, and
+  // release_stream() schedules the session close once every stream is gone.
+  // An error GOAWAY means the origin is tearing the connection down, so the
+  // session closes right away, as it does when no stream is left to finish.
+  if (this->session->is_outbound()) {
+    bool const   drain     = goaway.error_code == Http2ErrorCode::HTTP2_ERROR_NO_ERROR;
+    uint32_t     survivors = 0;
+    Http2Stream *s         = stream_list.head;
+
+    // initiating_close() can unlink the stream, so advance before closing it.
+    while (s != nullptr) {
+      Http2Stream *next = static_cast<Http2Stream *>(s->link.next);
+      if (http2_is_client_streamid(s->get_id()) && s->get_id() > goaway.last_streamid) {
+        Http2StreamDebug(this->session, s->get_id(), "Origin not-processed assertion: GOAWAY last_stream_id=%u",
+                         goaway.last_streamid);
+        s->set_safe_to_retry();
+        if (drain) {
+          s->initiating_close();
+        }
+      } else if (!s->is_closed()) {
+        ++survivors;
+      }
+      s = next;
+    }
+
+    if (drain && survivors > 0) {
+      Http2ConDebug(session, "Draining %u streams after GOAWAY last_stream_id=%u", survivors, goaway.last_streamid);
+      this->_peer_goaway_drain = true;
+      this->session->set_half_close_local_flag(true);
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    }
+  }
+
   this->session->get_proxy_session()->do_io_close();
 
   return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -1054,11 +1164,13 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     }
   }
 
-  // Find opened stream
-  // CONTINUATION frames MUST be associated with a stream.  If a
-  // CONTINUATION frame is received whose stream identifier field is 0x0,
-  // the recipient MUST respond with a connection error ([RFC 7540] Section
-  // 5.4.1) of type PROTOCOL_ERROR.
+  if (this->get_continued_stream_id() != stream_id) {
+    return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                      "unsolicited CONTINUATION frame");
+  }
+
+  // Find the stream for the outstanding header block (RFC 9113 section 6.10).
+  // The client-stream-id check above already rejects stream zero.
   Http2Stream *stream = this->find_stream(stream_id);
   if (stream == nullptr) {
     if (this->is_valid_streamid(stream_id)) {
@@ -1069,11 +1181,25 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                         "continuation stream freed with invalid id");
     }
   } else {
+    bool const is_outbound = this->session->is_outbound();
     switch (stream->get_state()) {
     case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE:
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
                         "continuation half close remote");
     case Http2StreamState::HTTP2_STREAM_STATE_IDLE:
+      break;
+    case Http2StreamState::HTTP2_STREAM_STATE_OPEN:
+    case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
+      // On outbound (origin-side) connections, response HEADERS may be split
+      // across CONTINUATION frames. The associated stream is OPEN if our
+      // request body is still in flight, or HALF_CLOSED_LOCAL once we have
+      // sent the request with END_STREAM (e.g. for GET or HEAD). [RFC 9113]
+      // 6.10 only forbids interleaving CONTINUATION with frames of other
+      // types or other streams, not these stream states.
+      if (!is_outbound) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "continuation bad state");
+      }
       break;
     default:
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
@@ -1122,6 +1248,13 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                         "continuation no state change");
     }
 
+    if (stream->trailing_header_is_possible()) {
+      if (!stream->receive_end_stream) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "continuation trailing header without endstream");
+      }
+      stream->reset_receive_headers();
+    }
     Http2ErrorCode result = stream->decode_header_blocks(
       *this->local_hpack_handle, this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE), _header_field_max_size);
 
@@ -1147,6 +1280,22 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                         "recv data bad payload length");
     }
 
+    // Discard an interim (1xx) response from the
+    // origin and wait for the final response on this stream.
+    if (is_outbound_interim_response(stream)) {
+      // RFC 9113 8.1: a HEADERS frame with END_STREAM carrying an informational (1xx)
+      // status code is malformed. change_state() has already moved the stream toward
+      // closed, so the final response would have nowhere to go; reject as a stream error.
+      if (stream->receive_end_stream) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "1xx interim response must not set END_STREAM");
+      }
+      Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
+      discard_interim_response(stream);
+      this->session->interrupt_reading_frames();
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    }
+
     // Hard-enforce the global active-streams cap on inbound client streams.
     if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible() && Http2::max_active_streams_policy_in == 1 &&
         Http2::max_active_streams_in > 0) {
@@ -1158,14 +1307,28 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
       }
     }
 
+    // Match the HEADERS path: cancel the initial header timeout before
+    // creating an inbound transaction. Inbound OPEN streams are rejected
+    // above, so the trailer branch below currently serves outbound streams.
     // Set up the State Machine
-    SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
-    stream->mark_milestone(Http2StreamMilestone::START_TXN);
-    // This should be fine, need to verify whether we need to replace this with the
-    // "from_early_data" flag from the associated HEADERS frame.
-    stream->new_transaction(frame.is_from_early_data());
-    // Send request header to SM
-    stream->send_headers(*this);
+    if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible()) {
+      SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
+      stream->mark_milestone(Http2StreamMilestone::START_TXN);
+      stream->cancel_active_timeout();
+      stream->new_transaction(frame.is_from_early_data());
+      // Send request header to SM
+      stream->send_headers(*this);
+    } else {
+      // If this is a trailer, first signal to the SM that the body is done
+      if (stream->trailing_header_is_possible()) {
+        stream->set_expect_receive_trailer();
+        // Propagate the trailer header
+        stream->send_headers(*this);
+      } else {
+        // Propagate the response
+        stream->send_headers(*this);
+      }
+    }
     // Give a chance to send response before reading next frame.
     this->session->interrupt_reading_frames();
   } else {
@@ -1234,12 +1397,7 @@ Http2ConnectionState::_get_configured_initial_window_size() const
 Http2FlowControlPolicy
 Http2ConnectionState::_get_configured_flow_control_policy() const
 {
-  ink_assert(this->session != nullptr);
-  if (this->session->is_outbound()) {
-    return Http2::flow_control_policy_out;
-  } else {
-    return Http2::flow_control_policy_in;
-  }
+  return _flow_control_policy;
 }
 
 ////////
@@ -1316,7 +1474,9 @@ Http2ConnectionState::Http2ConnectionState() : stream_list()
 void
 Http2ConnectionState::init(Http2CommonSession *ssn)
 {
-  session                                  = ssn;
+  session = ssn;
+  _flow_control_policy =
+    (session->is_outbound() ? Http2::flow_control_policy_out : Http2::flow_control_policy_in).load(std::memory_order_relaxed);
   uint32_t const configured_session_window = this->_get_configured_receive_session_window_size();
 
   if (configured_session_window < HTTP2_INITIAL_WINDOW_SIZE) {
@@ -1413,10 +1573,11 @@ Http2ConnectionState::send_connection_preface()
 
   configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
 
-  uint32_t const configured_initial_window_size = this->_get_configured_receive_session_window_size();
-  if (configured_initial_window_size > HTTP2_INITIAL_WINDOW_SIZE) {
-    configured_settings.set(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, configured_initial_window_size);
-  }
+  // SETTINGS_INITIAL_WINDOW_SIZE controls each stream, not the connection.
+  // Large-session policies must not give every stream the entire session window.
+  uint32_t const configured_stream_window  = this->_get_configured_initial_window_size();
+  uint32_t const configured_session_window = this->_get_configured_receive_session_window_size();
+  configured_settings.set(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, configured_stream_window);
 
   Http2Error error = send_settings_frame(configured_settings, SEND_EMPTY);
   if (error.cls != Http2ErrorClass::HTTP2_ERROR_CLASS_NONE) {
@@ -1427,8 +1588,8 @@ Http2ConnectionState::send_connection_preface()
   // If the session window size is non-default, send a WINDOW_UPDATE right
   // away. Note that there is no session window size setting in HTTP/2. The
   // session window size is controlled entirely by WINDOW_UPDATE frames.
-  if (configured_initial_window_size > HTTP2_INITIAL_WINDOW_SIZE) {
-    auto const diff = configured_initial_window_size - HTTP2_INITIAL_WINDOW_SIZE;
+  if (configured_session_window > HTTP2_INITIAL_WINDOW_SIZE) {
+    auto const diff = configured_session_window - HTTP2_INITIAL_WINDOW_SIZE;
     Http2ConDebug(session, "Updating the session window with a WINDOW_UPDATE frame: %u", diff);
     send_window_update_frame(HTTP2_CONNECTION_CONTROL_STREAM, diff);
   }
@@ -2117,7 +2278,15 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
   if (http2_is_client_streamid(stream->get_id())) {
     ink_release_assert(peer_streams_count_in > 0);
     --peer_streams_count_in;
-    if (!fini_received && is_peer_concurrent_stream_lb()) {
+    // Do not put a session that has already entered local half-close back in
+    // the pool. Once `set_half_close_local_flag(true)` has been called (for
+    // example because we have started a graceful GOAWAY) every subsequent
+    // `create_initiating_stream` on this session will fast-fail with
+    // REFUSED_STREAM, so handing it back out via `acquire_session` only
+    // causes spurious aborts. The session will be torn down once its
+    // remaining in-flight streams finish; until then it must stay out of
+    // the pool.
+    if (!fini_received && !session->get_half_close_local_flag() && is_peer_concurrent_stream_lb()) {
       session->add_session();
     }
   } else {
@@ -2153,6 +2322,12 @@ Http2ConnectionState::release_stream()
         // Can't do this because we just destroyed right here ^,
         // or we can use a local variable to do it.
         // session = nullptr;
+      } else if (_peer_goaway_drain) {
+        // Every stream left by the origin's GOAWAY is gone. The half-closed
+        // session cannot gain streams, so the count stays at zero.
+        if (fini_event == nullptr) {
+          fini_event = this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_FINI);
+        }
       } else if (session->get_proxy_session()->is_active()) {
         // If the number of clients is 0, HTTP2_SESSION_EVENT_FINI is not received or sent, and session is active,
         // then mark the connection as inactive
@@ -2345,17 +2520,13 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   if (resp_reader->is_read_avail_more_than(0)) {
     // We only need to check for window size when there is a payload
     if (window_size <= 0) {
-      if (session->is_outbound()) {
+      if (dbg_ctl_http2_con.on()) {
         ip_port_text_buffer ipb;
-        const char         *server_ip = ats_ip_ntop(session->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
-        // Warn the user to give them visibility that their server-side
-        // connection is being limited by their server's flow control. Maybe
-        // they can make adjustments.
-        Warning("No window server_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", server_ip, get_peer_rwnd(),
-                stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
+        const char         *peer_ip = ats_ip_ntop(session->get_proxy_session()->get_remote_addr(), ipb, sizeof(ipb));
+        Http2StreamDebug(this->session, stream->get_id(),
+                         "Waiting for peer WINDOW_UPDATE peer_ip=%s session_wnd=%zd stream_wnd=%zd peer_initial_window=%u", peer_ip,
+                         get_peer_rwnd(), stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
       }
-      Http2StreamDebug(this->session, stream->get_id(), "No window session_wnd=%zd stream_wnd=%zd peer_initial_window=%u",
-                       get_peer_rwnd(), stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
       ATS_PROBE5(http2_send_window_blocked, this->session->get_connection_id(), stream->get_id(), this->get_peer_rwnd(),
                  stream->get_peer_rwnd(), resp_reader->read_avail());
       this->session->flush();
@@ -2868,7 +3039,8 @@ Http2ConnectionState::_get_outstanding_settings_frame_limit() const
 void
 Http2ConnectionState::_close_connection(Http2ErrorCode error_code)
 {
-  if (!this->session->get_half_close_local_flag()) {
+  // A session draining the origin's GOAWAY is half-closed without having sent one.
+  if (!this->session->get_half_close_local_flag() || this->_peer_goaway_drain) {
     this->send_goaway_frame(this->latest_streamid_in, error_code);
     this->session->set_half_close_local_flag(true);
   }

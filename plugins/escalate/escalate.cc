@@ -35,6 +35,7 @@
 
 #include "swoc/IPEndpoint.h"
 #include "swoc/TextView.h"
+#include "tsutil/StringCompare.h"
 
 // Constants and some declarations
 
@@ -258,11 +259,11 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
     char *sep, *token, *save;
 
     // Ugly, but we set the precedence before with non-command line parsing of args
-    if (0 == strncasecmp(argv[i], "--pristine", 10)) {
+    if (ts::iequals(argv[i], "--pristine")) {
       es->use_pristine = true;
-    } else if (0 == strncasecmp(argv[i], "--no-redirect-header", 20)) {
+    } else if (ts::iequals(argv[i], "--no-redirect-header")) {
       es->add_redirect_header = false;
-    } else if (0 == strncasecmp(argv[i], "--escalate-non-get-methods", 26)) {
+    } else if (ts::iequals(argv[i], "--escalate-non-get-methods")) {
       es->escalate_non_get_methods = true;
     } else {
       // Each token should be a status code then a URL, separated by ':'.

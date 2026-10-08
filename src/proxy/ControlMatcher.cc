@@ -424,9 +424,9 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
   ink_assert(pattern != nullptr);
 
-  // Create the compiled regular expression
-  regex_array[num_el].compile(pattern, error_msg, erroffset);
-  if (regex_array[num_el].empty()) {
+  // Create the compiled regular expression. This slot can still hold a previous line's
+  // pattern, so ask compile() rather than empty().
+  if (!regex_array[num_el].compile(pattern, error_msg, erroffset)) {
     return Result::failure("%s regular expression error at line %d position %d : %s", matcher_name, line_info->line_num, erroffset,
                            error_msg.c_str());
   }

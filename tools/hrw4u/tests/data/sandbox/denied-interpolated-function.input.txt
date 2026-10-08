@@ -1,0 +1,3 @@
+REMAP {
+    inbound.req.X-Txn-Count = "{txn-count()}";
+}

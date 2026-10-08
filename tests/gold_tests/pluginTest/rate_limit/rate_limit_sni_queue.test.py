@@ -1,9 +1,16 @@
 '''
-Regression test for a queue-accounting balance bug in the rate_limit SNI limiter: a
-queued connection never reserves a slot, but its VCONN_CLOSE unconditionally releases
-one, so a queued connection that closes underflows the active-slot counter and the next
-reserve() trips a release assertion, aborting the server. ATS must survive the queue
-churn.
+Regression test for the rate_limit SNI limiter's queue accounting. A queued connection never
+reserves a slot, so the sweep must reserve one before resuming it and a close must release
+only a slot the connection owns. When the sweep resumes a queued connection while the limiter
+is still full, the holder's close lands the active-slot counter on zero, the resumed
+connection's close releases a slot it never held and wraps the counter below zero, and the
+next reserve() trips a release assertion that aborts the server. ATS must survive the queue
+churn without the counter wrapping.
+
+The client drives resume-then-close rather than closing a connection while it is parked,
+because ATS does not read the socket while the ClientHello hook is invoked: a FIN from a
+parked client is invisible until the sweep reenables the VC. The close-while-queued branch
+is out of scope for this test and cannot be reached from a client.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -69,17 +76,32 @@ class RateLimitSniQueueTest:
                 'proxy.config.diags.debug.tags': 'rate_limit',
             })
 
-        # The queue path is reached...
+        # The queue path is reached and the sweep resumes the queued connection once the
+        # holder has released its slot...
         ts.Disk.traffic_out.Content = Testers.ContainsExpression('Queueing the VC', 'a connection was queued')
-        # ...and the active-slot counter never underflows into the release assertion. Match
-        # both the specific assertion (pins the failure to this bug) and the generic abort.
+        ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            'Enabling queued VC', 'the sweep resumed the queued connection into a reserved slot')
+        # ...nothing is turned away: with one holder and a queue of one, a rejection means the
+        # holder never released and the probe hit a full queue, so the release path went
+        # unexercised...
+        ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            'Rejecting connection', 'no connection is rejected; the holder must release its slot')
+        # ...and the active-slot counter never underflows. free() logs the counter after
+        # dropping the lock, so a concurrent reserve() can legitimately make a release read back
+        # as 1; only a wrapped counter is a defect, and an unmatched decrement of a uint32 at
+        # limit 1 is unmistakable -- it reads 4294967295, never a small number.
+        ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            r'Releasing a slot, active entities == [0-9]{4,}', 'a release must never wrap the counter')
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             '_active <= _limit|received signal', 'the active-slot counter must not underflow and abort ATS')
 
     def _configure_client(self, tr: 'TestRun') -> None:
         ts = self._ts
         client = os.path.join(Test.TestDirectory, 'rate_limit_sni_queue_client.sh')
-        tr.Processes.Default.Command = f'bash {client} 127.0.0.1 {ts.Variables.ssl_port} rate.limited.com'
+        # The client paces itself on the plugin's debug lines in traffic.out, so it needs the
+        # path rather than a guess at how long each step takes.
+        tr.Processes.Default.Command = (
+            f'bash {client} 127.0.0.1 {ts.Variables.ssl_port} rate.limited.com {ts.Disk.traffic_out.AbsPath}')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(ts)
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(

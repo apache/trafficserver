@@ -96,6 +96,8 @@ public:
   MIOBuffer *read_buffer = nullptr;
 
 private:
+  void pool_or_close();
+
   Http1ServerSessionMagic magic = Http1ServerSessionMagic::DEAD;
 
   IOBufferReader *_reader = nullptr;

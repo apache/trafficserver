@@ -1,9 +1,14 @@
 '''
-Regression test for the max_age expiry branch of the rate_limit SNI queue accounting. A
-queued connection never reserves a slot, so when the sweep expires it the plugin must
-detach it rather than release a slot it never held; otherwise the expiry underflows the
-active-slot counter and the next reserve() trips a release assertion, aborting the server.
-ATS must survive the expiry.
+Check that the rate_limit SNI connection limit still works after a queued connection expires.
+
+Configure the plugin to allow one active connection and keep that connection open.
+A second connection waits in a queue. Once it has waited longer than max_age, the plugin
+must remove it from the queue. Close the first connection, then check that the plugin
+accepts a third connection without crashing ATS.
+
+The expired connection's VCONN_CLOSE is outside this test's coverage: the current TLS core
+parks it after the error reenable and does not observe the client's close. Consequently,
+this test does not detect a missing detachment in the expiry branch.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -29,7 +34,7 @@ Test.SkipUnless(Condition.PluginExists('rate_limit.so'))
 
 
 class RateLimitSniExpiryTest:
-    """Age a queued connection out via max_age and assert the active-slot counter stays balanced."""
+    """Check that expiring a queued connection preserves capacity for later connections."""
 
     def __init__(self) -> None:
         tr = Test.AddTestRun('rate_limit SNI queue max_age expiry')
@@ -43,9 +48,9 @@ class RateLimitSniExpiryTest:
         for line in ['ssl_multicert:', '  - dest_ip: "*"', '    ssl_cert_name: server.pem', '    ssl_key_name: server.key']:
             ts.Disk.ssl_multicert_yaml.AddLine(line)
 
-        # One concurrent handshake for this SNI, a one-deep queue, and a 1s max age so the
-        # sweep expires the queued connection. Named .config (not .yaml) so autest treats it
-        # as a plain config file; the plugin parses it as YAML regardless.
+        # Allow one active connection and one queued connection for this SNI. Remove the
+        # queued connection after it waits for 1s. Named .config (not .yaml) so autest treats
+        # it as a plain config file; the plugin parses it as YAML regardless.
         ts.Disk.MakeConfigFile('rate_limit.config').AddLines(
             [
                 'selector:',
@@ -70,15 +75,21 @@ class RateLimitSniExpiryTest:
             })
 
         # The expiry branch is actually reached...
-        ts.Disk.traffic_out.Content = Testers.ContainsExpression('too old', 'a queued connection was expired')
+        ts.Disk.traffic_out.Content = Testers.ContainsExpression('Queueing the VC', 'a connection was queued')
+        ts.Disk.traffic_out.Content += Testers.ContainsExpression('Queued VC is too old', 'a queued connection was expired')
+        ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            'Enabling queued VC|Rejecting connection', 'the queued connection expires without being resumed or rejected')
         # ...and expiring it does not underflow the active-slot counter into the release assertion.
+        ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            r'Releasing a slot, active entities == [0-9]{4,}', 'a release must never wrap the counter')
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             '_active <= _limit|received signal', 'expiring a queued connection must not underflow and abort ATS')
 
     def _configure_client(self, tr: 'TestRun') -> None:
         ts = self._ts
         client = os.path.join(Test.TestDirectory, 'rate_limit_sni_expiry_client.sh')
-        tr.Processes.Default.Command = f'bash {client} 127.0.0.1 {ts.Variables.ssl_port} rate.limited.com'
+        tr.Processes.Default.Command = (
+            f'bash {client} 127.0.0.1 {ts.Variables.ssl_port} rate.limited.com {ts.Disk.traffic_out.AbsPath}')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(ts)
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('rate_limit-expiry-done', 'the client ran to completion')

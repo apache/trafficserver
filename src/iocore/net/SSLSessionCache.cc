@@ -54,15 +54,20 @@ SSLOriginSessionCache::~SSLOriginSessionCache() TS_NO_THREAD_SAFETY_ANALYSIS // 
 void
 SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION *sess, SSL *ssl)
 {
-  size_t len = i2d_SSL_SESSION(sess, nullptr); // make sure we're not going to need more than SSL_MAX_ORIG_SESSION_SIZE bytes
+  // i2d_SSL_SESSION() returns an int and reports failure as a non-positive value, so
+  // check it before widening: assigning straight to size_t turns a failure into a huge
+  // length that then misreports itself as an oversized session.
+  int serialized_len = i2d_SSL_SESSION(sess, nullptr);
+  if (serialized_len <= 0) {
+    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because it could not be serialized");
+    return;
+  }
 
   /* do not cache a session that's too big. */
-  if (len > static_cast<size_t>(SSL_MAX_ORIG_SESSION_SIZE)) {
-    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because size of %zd exceeds the max of %d", len,
-        SSL_MAX_ORIG_SESSION_SIZE);
-    return;
-  } else if (len == 0) {
-    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because size is 0");
+  size_t len = static_cast<size_t>(serialized_len);
+  if (len > SSLConfigParams::origin_session_max_size) {
+    Dbg(dbg_ctl_ssl_origin_session_cache, "Unable to save SSL session because size of %zu exceeds the max of %zu", len,
+        SSLConfigParams::origin_session_max_size);
     return;
   }
 

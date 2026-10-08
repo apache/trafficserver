@@ -34,6 +34,7 @@
 #include "swoc/swoc_file.h"
 #include "swoc/TextView.h"
 #include "tsutil/ts_diag_levels.h"
+#include "tsutil/YamlCfg.h"
 
 namespace
 {
@@ -360,7 +361,7 @@ std::string
 SSLMultiCertMarshaller::to_json(SSLMultiCertConfig const &config)
 {
   YAML::Emitter json;
-  json << YAML::DoubleQuoted << YAML::Flow;
+  ts::Yaml::configure_json_emitter(json);
   json << YAML::BeginMap;
   json << YAML::Key << KEY_SSL_MULTICERT << YAML::Value << YAML::BeginSeq;
 
