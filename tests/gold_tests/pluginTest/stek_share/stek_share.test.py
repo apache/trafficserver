@@ -289,8 +289,8 @@ def check_session(ev, test):
     return (retval, "Check that session ids match", err)
 
 
-tr1 = Test.AddTestRun('Basic Curl test, and give it enough time for all ATS to start up and sync STEK')
-tr1.Processes.Default.Command = 'sleep 10 && curl https://127.0.0.1:{0} -k'.format(ts1.Variables.ssl_port)
+tr1 = Test.AddTestRun('Basic Curl test')
+tr1.Processes.Default.Command = 'curl https://127.0.0.1:{0} -k'.format(ts1.Variables.ssl_port)
 tr1.Processes.Default.ReturnCode = 0
 tr1.Processes.Default.StartBefore(server)
 tr1.Processes.Default.StartBefore(ts1)
@@ -310,6 +310,15 @@ tr1.StillRunningAfter += ts2
 tr1.StillRunningAfter += ts3
 tr1.StillRunningAfter += ts4
 tr1.StillRunningAfter += ts5
+
+# Each node checks for the leader's STEK when it joins the Raft cluster and then
+# only every 10 seconds. A node whose first check comes before the key arrives
+# installs it about 10 seconds later, and a leader elected after its own first
+# check sends its key only on the next one. Wait until every node is using the
+# shared key rather than sleeping a fixed time.
+for i, ts in enumerate((ts1, ts2, ts3, ts4, ts5), 1):
+    Test.AddAwaitFileContainsTestRun(
+        f'Await ts{i} using the shared STEK', ts.Disk.traffic_out.Name, '(Received new|Using initial|Using new) STEK')
 
 tr2 = Test.AddTestRun("TLSv1.2 Session Ticket")
 tr2.Command = \
