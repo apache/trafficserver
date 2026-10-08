@@ -389,7 +389,7 @@ QUICStreamVCAdapter::mark_stream_closed()
 bool
 QUICStreamVCAdapter::is_stream_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&QUICStreamVCAdapter::state_stream_closed);
+  return this->handler == &QUICStreamVCAdapter::state_stream_closed;
 }
 
 int

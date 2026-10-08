@@ -36,6 +36,8 @@
 #include "iocore/eventsystem/Lock.h"
 #include "tscore/ContFlags.h"
 
+#include <cstddef>
+
 class Continuation;
 class ContinuationQueue;
 class Processor;
@@ -82,71 +84,191 @@ extern EThread *this_event_thread();
 */
 #define CONTINUATION_CONT 1
 
-/**
-  Pointer-to-member type of an event handler, as stored in
-  @c Continuation::handler.
-
-  The handler receives the event code and payload of each event
-  dispatched to the Continuation, and returns a Processor-specific
-  status.
-
-  @note A handler declared in a class derived from @c Continuation MUST be
-        converted to this type with @c static_cast, which applies the
-        base-class offset.
-
-  @note Invoking a converted handler is undefined behavior unless the
-        Continuation's dynamic type is, or derives from, the class that
-        declared the handler.
-*/
-using ContinuationHandler = int (Continuation::*)(int, void *);
-
-template <class C, typename T>
-constexpr ContinuationHandler
-continuation_handler_void_ptr(int (C::*fp)(int, T *))
-{
-  auto fp2 = reinterpret_cast<int (C::*)(int, void *)>(fp);
-
-  // We keep this a static_cast for added static type analysis from the
-  // compiler. If a compiler warning is generated for the following line of
-  // code of the type "-Werror=shift-negative-value", then this may be an issue
-  // with multiple inheritance of the C templated type. Make sure that for type
-  // C the Continuation parent is listed first (either directly or indirectly
-  // via the inheritance tree) before any other parent in the multiple class
-  // hierarchy of C.
-  return static_cast<ContinuationHandler>(fp2);
-}
-
-/**
-  Overload for a literal @c nullptr, from which the converting overload
-  cannot deduce a handler type.
-
-  @return A null @c ContinuationHandler.
-
-  @par Thread Safety
-    Thread-safe.
-*/
-constexpr ContinuationHandler
-continuation_handler_void_ptr(std::nullptr_t)
-{
-#undef X
-#if !defined(__GNUC__)
-#define X 1
-#else
-#define X (__GNUC__ > 7)
-#endif
-#if X
-  static_assert(!static_cast<ContinuationHandler>(nullptr));
-#endif
-#undef X
-
-  return static_cast<ContinuationHandler>(nullptr);
-}
-
 class force_VFPT_to_top
 {
 public:
   virtual ~force_VFPT_to_top() {}
 };
+
+/**
+  A copyable, type-erased binding to an event-handler member function of
+  @p Base or a class derived from it.
+
+  Bind a handler of type @c int(DerivedType::*)(int event, DataType *data),
+  then invoke it on a @p Base object with an untyped @c void* payload,
+  which is converted back to @c DataType* before the call. This lets one
+  object hold handlers whose classes and data parameter types differ.
+
+  A default-constructed EventCallback holds no handler.
+
+  @tparam Base The class whose objects handlers are invoked on.
+
+  @par Thread Safety
+  Not thread-safe. An assignment MUST NOT run concurrently with any other
+  access to the same object.
+*/
+template <typename Base> class EventCallback
+{
+public:
+  /** Assigns @p m as the member function to invoke.
+   *
+   * @tparam DerivedType @p Base, or a class unambiguously and non-virtually
+   *                     derived from it.
+   *
+   * @param[in] m The member function to invoke.
+   *
+   * @return @c *this.
+   *
+   * @post Invoking @c *this on object @c b with event @c e and data @c d
+   *       calls @c (static_cast<DerivedType*>(b)->*m)(e, static_cast<DataType*>(d)).
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
+  template <typename DerivedType, typename DataType>
+  EventCallback &
+  operator=(int (DerivedType::*m)(int event, DataType *data))
+  {
+    this->handler = make_continuation_handler(m);
+    this->thunk   = &call_handler_with_type<DataType>;
+    return *this;
+  }
+
+  /** Clears the callback.
+   *
+   * @post @c *this holds no handler. Invoking it is undefined until a
+   *       handler is assigned.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
+  EventCallback &
+  operator=(std::nullptr_t)
+  {
+    this->handler = nullptr;
+    this->thunk   = nullptr;
+    return *this;
+  }
+
+  /**
+    Invokes the bound handler on @p b with @p event and @p data.
+
+    @param[in] b     The object to invoke the handler on.
+    @param[in] event The handler's event argument.
+    @param[in] data  The handler's data argument.
+
+    @return The handler's return value.
+
+    @pre  This EventCallback is not null.
+    @pre  @p b points to a live object of the handler's class or a class
+          derived from it.
+    @pre  @p data is null, or was obtained by converting a pointer of the
+          handler's data parameter type to @c void*.
+
+    @note This call does not access this EventCallback after invoking the
+          handler, so the handler may destroy it.
+  */
+  int
+  operator()(Base *b, int event, void *data)
+  {
+    return this->thunk(b, this->handler, event, data);
+  }
+
+  /**
+    Tests whether @p m is the assigned member function, e.g. to check
+    which state a state machine is in.
+
+    @param[in] m The member function to compare against.
+
+    @return true if @p m is the assigned member function, or if @p m is
+            null and nothing is assigned; false otherwise. The result is
+            unspecified if @p m or the assigned member function is
+            virtual.
+
+    @note The program is ill-formed unless @c DerivedType is @p Base, or
+          derives from it unambiguously, accessibly, and non-virtually.
+  */
+  template <typename DerivedType, typename DataType>
+  bool
+  operator==(int (DerivedType::*m)(int event, DataType *data)) const
+  {
+    // The only guarantee we have about the stored void* handler is that we
+    // can safely cast it back to its original type. Therefore, we must do
+    // exactly that to compare the function pointers in a well-defined way.
+    if (this->thunk != &call_handler_with_type<DataType>) {
+      return this->thunk == nullptr && m == nullptr;
+    }
+
+    auto const stored{reinterpret_cast<int (Base::*)(int, DataType *)>(this->handler)};
+
+    return stored == static_cast<int (Base::*)(int, DataType *)>(m);
+  }
+
+  /** Tests whether no handler is installed.
+   *
+   * An EventCallback has no handler when default-constructed or after
+   * @c nullptr is assigned to it.
+   *
+   * @return true if no handler is installed; false otherwise.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
+  bool
+  operator==(std::nullptr_t) const
+  {
+    return this->handler == nullptr;
+  }
+
+private:
+  using handler_t = int (Base::*)(int, void *);
+  using thunk_t   = int (*)(Base *, handler_t, int, void *);
+
+  handler_t handler{nullptr};
+
+  // This is the deferred invocation of the handler. By building the
+  // expression when we set the handler, we can build the expression
+  // with the correct data type.
+  thunk_t thunk{nullptr};
+
+  template <typename DerivedType, typename DataType>
+  static handler_t
+  make_continuation_handler(int (DerivedType::*m)(int event, DataType *data))
+  {
+    auto const base_handler{static_cast<int (Base::*)(int event, DataType *data)>(m)};
+    return reinterpret_cast<handler_t>(base_handler);
+  }
+
+  template <typename DataType>
+  static int
+  call_handler_with_type(Base *b, handler_t handler, int event, void *data)
+  {
+    auto const restored_cb{reinterpret_cast<int (Base::*)(int, DataType *)>(handler)};
+    return (b->*restored_cb)(event, static_cast<DataType *>(data));
+  }
+};
+
+/** The type of @c Continuation::handler.
+ *
+ * Aliases @c EventCallback<Continuation>, which holds a member function
+ * of a Continuation-derived class @c D with signature @c int(int, @c T*)
+ * for any @c T, and passes it the @c void* event payload converted to
+ * @c T*. Handlers can thus declare the payload type they expect instead
+ * of casting from @c void* themselves.
+ *
+ * A default-constructed value is null. Assigning @c &D::method installs
+ * a handler; assigning @c nullptr clears it. @c == compares against
+ * either form.
+ *
+ * @pre  Invoking @c h(c, event, data) requires that @c h is non-null,
+ *       that @c c points to a @c D or an object of a class derived from
+ *       @c D, and that @c data is null or was converted to @c void* from
+ *       a @c T* (not from a pointer to a class derived from @c T).
+ *
+ * @par Thread Safety
+ *   Not thread-safe.
+ */
+using ContinuationHandler = EventCallback<Continuation>;
 
 /**
   Base class for event-driven state machines dispatched by the Event
@@ -157,11 +279,9 @@ public:
   state and handler methods, and typically replace @c handler as they
   move between states.
 
-  @note Under multiple inheritance, a derived class MUST list
-        Continuation, directly or through an intermediate base, as its
-        first base class. This works around a known defect: otherwise,
-        installing its handlers may fail to compile with
-        @c -Werror=shift-negative-value.
+  @note A copy shares the original's @c mutex, and its @c link refers
+        to the original's list neighbors even though the copy is in no
+        list.
 
   @par Lifetime
   A handler MUST be installed before the Continuation is scheduled or
@@ -173,25 +293,31 @@ public:
   callers further up the stack, accesses it afterward.
 
   @par Thread Safety
-  Not thread-safe. While @c mutex is non-null, concurrent accesses must
-  hold it, except where a member documents otherwise; the Event System
-  holds it for the duration of each dispatch.
+  Not thread-safe. While @c mutex is non-null, every invocation of
+  @c handleEvent holds it, and other concurrent accesses MUST hold it
+  too, except where a member documents otherwise. While @c mutex is
+  null, handler invocations may run concurrently on different threads.
 */
 class Continuation : private force_VFPT_to_top
 {
 public:
   /**
-    The member function that @c handleEvent invokes.
+    The member function that @c handleEvent invokes for each event
+    dispatched to this Continuation, or null.
 
-    Install a handler with @c SET_HANDLER or @c SET_CONTINUATION_HANDLER
-    rather than by direct assignment; see @c ContinuationHandler for why
-    a @c reinterpret_cast is unsafe. A handler may replace this field
-    while it runs; the new handler receives the next dispatch.
+    The installed function MUST be a member of this object's class or of
+    one of its bases, and its data parameter type MUST be exactly the
+    pointer type that senders of events to this Continuation convert to
+    @c void*. Otherwise, dispatching an event is undefined behavior.
+
+    A handler may assign this field to move to its next state; the new
+    handler receives the next event, not the current one.
 
     @par Thread Safety
-    Not thread-safe.
+    Not thread-safe. The Event System accesses this field only while
+    dispatching an event, holding @c mutex if it is non-null.
   */
-  ContinuationHandler handler = nullptr;
+  EventCallback<Continuation> handler;
 
 #ifdef DEBUG
   /**
@@ -372,7 +498,7 @@ public:
   {
     // If there is a lock, we must be holding it on entry
     ink_release_assert(!mutex || mutex->thread_holding == this_ethread());
-    return (this->*handler)(event, data);
+    return this->handler(this, event, data);
   }
 
 protected:
@@ -427,69 +553,66 @@ protected:
 };
 
 /**
-  Installs @p _h as the handler invoked by the enclosing Continuation's
-  @c handleEvent.
+  Assigns @p _h to @c this->handler.
 
-  Expands to an assignment to @c handler (and @c handler_name in DEBUG
-  builds) using @c continuation_handler_void_ptr to enforce that the
-  handler's class derives from @c Continuation. Intended for use from
-  within a member function of a Continuation-derived class, where
-  @c handler refers to @c this->handler.
+  Use where @c this points to the object to update, e.g. in its
+  constructor or in one of its handlers. When a handler calls this, the
+  current event is unaffected; @p _h receives the next one.
 
-  @param[in] _h Pointer-to-member function with signature
-               @c int(C::*)(int, T*) for some Continuation-derived @c C
-               and some pointer type @c T*. May also be @c nullptr to
-               detach the handler.
+  Dispatching an event is undefined unless @c *this is a @c D or derives
+  from @c D, and the event's data is null or was converted to @c void*
+  from a @c T*.
 
-  @pre  Invocation context MUST refer to a Continuation instance
-        (@c handler is the member of that instance).
-  @post @c handler points to the type-cast form of @p _h. In DEBUG
-        builds, @c handler_name holds the stringified token of @p _h.
+  @param[in] _h @c nullptr, or a pointer to a member function of type
+                @c int(D::*)(int, T*).
 
-  @par Errors
-  A @c C that does not derive from @c Continuation is a compile-time
-  error from @c continuation_handler_void_ptr. The data parameter type
-  @c T* is @b not checked — it is reinterpret-cast, so the handler and
-  the Processor delivering the event MUST agree on it by convention.
+  @post @c handler holds @p _h.
+  @post In DEBUG builds, @c handler_name points to the spelling of @p _h.
+
+  @note Expands to an expression whose value is unspecified. @p _h may be
+        evaluated more than once.
 
   @par Thread Safety
-  Caller-synchronized via the enclosing Continuation's mutex. Concurrent
-  installation racing against a dispatching handler is undefined.
+    Not thread-safe; see @c handler.
 */
 #ifdef DEBUG
-#define SET_HANDLER(_h) (handler = continuation_handler_void_ptr(_h), handler_name = #_h)
+#define SET_HANDLER(_h) (this->handler = _h, this->handler_name = #_h, _h)
 #else
-#define SET_HANDLER(_h) (handler = continuation_handler_void_ptr(_h))
+#define SET_HANDLER(_h) (this->handler = _h, _h)
 #endif
 
 /**
-  Installs @p _h as the handler of the Continuation pointed to by
-  @p _c.
+  Assigns @p _h to @c _c->handler.
 
-  Same semantics as @c SET_HANDLER, but operates on an explicit
-  Continuation pointer rather than the implicit @c this. Use when a
-  Continuation needs to install a handler on another Continuation it
-  owns (e.g., a parent state machine arming a child's handler before
-  dispatch).
+  Use to update a Continuation other than @c *this. When a handler of
+  @c *_c calls this, the current event is unaffected; @p _h receives the
+  next one.
 
-  @param[in] _c Non-null pointer to the target Continuation.
-  @param[in] _h Pointer-to-member function as for @c SET_HANDLER.
+  Dispatching an event to @c *_c is undefined unless @c *_c is a @c D or
+  derives from @c D, and the event's data is null or was converted to
+  @c void* from a @c T*.
 
-  @pre  @p _c is non-null and refers to a live Continuation.
-  @post @c _c->handler points to the type-cast form of @p _h. In DEBUG
-        builds, @c _c->handler_name holds the stringified token of
-        @p _h.
+  @param[in] _c The Continuation to update.
+  @param[in] _h @c nullptr, or a pointer to a member function of type
+                @c int(D::*)(int, T*).
 
-  @par Errors
-  Same compile-time checking as @c SET_HANDLER.
+  @pre  @p _c points to a live Continuation.
+
+  @post @c _c->handler holds @p _h.
+  @post In DEBUG builds, @c _c->handler_name points to the spelling of @p _h.
+
+  @note Expands to an expression whose value is unspecified. @p _c and
+        @p _h may be evaluated more than once, and @p _c may be expanded
+        without enclosing parentheses, so pass a side-effect-free name or
+        member access for @p _c.
 
   @par Thread Safety
-  Caller-synchronized via @c _c->mutex.
+    Not thread-safe; see @c handler.
 */
 #ifdef DEBUG
-#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = continuation_handler_void_ptr(_h), _c->handler_name = #_h)
+#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = _h, _c->handler_name = #_h, _h)
 #else
-#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = continuation_handler_void_ptr(_h))
+#define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = _h, _h)
 #endif
 
 inline Continuation::Continuation(Ptr<ProxyMutex> &amutex) : mutex(amutex)
