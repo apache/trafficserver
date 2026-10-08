@@ -352,9 +352,6 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                 case _ if ctx.EQUAL():
                     stmt_id = self._process_assignment_statement(ctx, stmt_properties)
 
-                case _ if ctx.op:
-                    stmt_id = self._add_node("Statement", {**stmt_properties, "type": "operator", "operator": ctx.op.text})
-
                 case _:
                     stmt_id = self._add_node("Statement", {**stmt_properties, "type": "unknown"})
 
