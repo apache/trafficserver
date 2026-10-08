@@ -126,3 +126,18 @@ bool load_config_file(std::string_view filename, PluginType plugin_type, PluginC
  * @return true if @a updated can be applied, false otherwise.
  */
 bool is_reload_compatible(std::vector<PluginConfig *> const &current, PluginConfigs const &updated, std::string &reason);
+
+/** Load the fingerprint configurations from the plugin's arguments.
+ *
+ * A single argument that does not start with '-' names a YAML configuration file, which is loaded
+ * with load_config_file(). Otherwise the arguments are command-line options that configure a single
+ * fingerprint.
+ *
+ * @param[in] argc The number of arguments, including @a argv[0].
+ * @param[in] argv The arguments. @a argv[0] is not examined.
+ * @param[in] plugin_type Whether the configuration is for the global or the remap plugin.
+ * @param[out] configs The loaded configurations.
+ * @param[out] config_filename The YAML configuration file, or empty if the arguments are command-line options.
+ * @return true if the configuration was loaded and is valid, false otherwise.
+ */
+bool load_config(int argc, char const *argv[], PluginType plugin_type, PluginConfigs &configs, std::string &config_filename);
