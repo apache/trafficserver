@@ -1,5 +1,5 @@
 '''
-Verify Split DNS fails over to a healthy configured nameserver.
+Verify Split DNS fails over from a dead nameserver to a live one and recovers.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -17,42 +17,59 @@ Verify Split DNS fails over to a healthy configured nameserver.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Test.Summary = 'Verify Split DNS fails over to a healthy nameserver.'
+Test.Summary = 'Verify Split DNS fails over from a dead nameserver to a live one.'
+
+HOSTS = ['a', 'b', 'c', 'd']
+records = {f'{host}.ts.a.o.': ['127.0.0.1'] for host in HOSTS}
+
+dead_dns = Test.MakeDNServer('dead_dns')
+dead_dns.addRecords(records=records)
+live_dns = Test.MakeDNServer('live_dns')
+live_dns.addRecords(records=records)
+
+origin = Test.MakeOriginServer('origin')
+origin.addResponse(
+    'sessionlog.json', {'headers': 'GET / HTTP/1.1\r\nHost: x\r\n\r\n'},
+    {'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'})
+
+ts = Test.MakeATSProcess('ts', enable_cache=False)
+ts.Disk.records_config.update(
+    {
+        'proxy.config.dns.splitDNS.enabled': 1,
+        'proxy.config.dns.round_robin_nameservers': 1,
+        'proxy.config.dns.resolv_conf': 'NULL',
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'dns|splitdns',
+    })
+ts.Disk.splitdns_config.AddLine(
+    f'dest_domain=ts.a.o named="127.0.0.1:{dead_dns.Variables.Port} '
+    f'127.0.0.1:{live_dns.Variables.Port}"')
+for host in HOSTS:
+    ts.Disk.remap_config.AddLine(f'map /{host}/ http://{host}.ts.a.o:{origin.Variables.Port}/')
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    'connection to DNS server .* lost, marking as down', 'the dead nameserver was queried and marked down')
 
 
-class SplitDNSFailoverTest:
-
-    def __init__(self):
-        self.primary_dns = Test.MakeDNServer('primary_dns')
-        self.secondary_dns = Test.MakeDNServer('secondary_dns')
-        self.secondary_dns.addRecords(records={'foo.ts.a.o.': ['127.0.0.1']})
-
-        self.origin = Test.MakeOriginServer('origin')
-        self.origin.addResponse(
-            'sessionlog.json', {'headers': 'GET / HTTP/1.1\r\nHost: foo.ts.a.o\r\n\r\n'},
-            {'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n'})
-
-        self.ts = Test.MakeATSProcess('ts', enable_cache=False)
-        self.ts.Disk.records_config.update(
-            {
-                'proxy.config.dns.splitDNS.enabled': 1,
-                'proxy.config.dns.round_robin_nameservers': 1,
-                'proxy.config.dns.resolv_conf': 'NULL',
-            })
-        self.ts.Disk.splitdns_config.AddLine(
-            f'dest_domain=foo.ts.a.o named="127.0.0.1:{self.primary_dns.Variables.Port} '
-            f'127.0.0.1:{self.secondary_dns.Variables.Port}"')
-        self.ts.Disk.remap_config.AddLine(f'map /foo/ http://foo.ts.a.o:{self.origin.Variables.Port}/')
-
-    def run(self):
-        tr = Test.AddTestRun()
-        tr.MakeCurlCommand(f'-sS -i http://localhost:{self.ts.Variables.port}/foo/', ts=self.ts)
-        tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            'HTTP/1.1 200 OK', 'Split DNS should fail over to the second configured nameserver')
-        tr.Processes.Default.StartBefore(self.secondary_dns)
-        tr.Processes.Default.StartBefore(self.origin)
-        tr.Processes.Default.StartBefore(self.ts)
+def request(host, title):
+    tr = Test.AddTestRun(title)
+    tr.MakeCurlCommand(f'-sS -i -m 60 http://localhost:{ts.Variables.port}/{host}/', ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('HTTP/1.1 200 OK', f'{host}.ts.a.o resolved')
+    tr.StillRunningAfter = ts
+    return tr
 
 
-SplitDNSFailoverTest().run()
+# Round robin advances before sending, so three lookups ensure one uses the dead server.
+tr = request('a', 'first lookup')
+tr.Processes.Default.StartBefore(live_dns)
+tr.Processes.Default.StartBefore(origin)
+tr.Processes.Default.StartBefore(ts)
+request('b', 'second lookup')
+request('c', 'third lookup')
+
+# Bring the dead nameserver up and wait past DNS_PRIMARY_RETRY_PERIOD.
+tr = Test.AddTestRun('start the dead nameserver')
+tr.Processes.Default.Command = 'sleep 12'
+tr.Processes.Default.StartBefore(dead_dns)
+tr.StillRunningAfter = ts
+request('d', 'lookup after recovery')

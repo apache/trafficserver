@@ -475,6 +475,25 @@ DNSHandler::open_cons(sockaddr const *target, bool failed, int icon)
   }
 }
 
+void
+DNSHandler::open_all_rr_cons()
+{
+  int max_nscount = m_res->nscount;
+  if (max_nscount > MAX_NAMED) {
+    max_nscount = MAX_NAMED;
+  }
+  n_con = 0;
+  for (int i = 0; i < max_nscount; i++) {
+    ip_port_text_buffer buff;
+    sockaddr           *sa = &m_res->nsaddr_list[i].sa;
+    if (ats_is_ip(sa)) {
+      open_cons(sa, false, n_con);
+      ++n_con;
+      Dbg(dbg_ctl_dns_pas, "opened connection to %s, n_con = %d", ats_ip_nptop(sa, buff, sizeof(buff)), n_con);
+    }
+  }
+}
+
 /**
  Close the old TCP connection and open a new one
  */
@@ -518,7 +537,7 @@ DNSHandler::open_con(sockaddr const *target, bool failed, int icon, bool over_tc
 
   Dbg(dbg_ctl_dns, "open_con: opening connection %s", ats_ip_nptop(target, ip_text, sizeof ip_text));
 
-  if (!cur_con.sock.is_ok()) { // Remove old FD from epoll fd
+  if (cur_con.sock.is_ok()) { // Remove old FD from epoll fd
     cur_con.close();
   }
 
@@ -592,20 +611,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
        *
        *   The first DNS server is assigned to DNSHandler::ip within open_con() function.
        */
-      int max_nscount = m_res->nscount;
-      if (max_nscount > MAX_NAMED) {
-        max_nscount = MAX_NAMED;
-      }
-      n_con = 0;
-      for (int i = 0; i < max_nscount; i++) {
-        ip_port_text_buffer buff;
-        sockaddr           *sa = &m_res->nsaddr_list[i].sa;
-        if (ats_is_ip(sa)) {
-          open_cons(sa, false, n_con);
-          ++n_con;
-          Dbg(dbg_ctl_dns_pas, "opened connection to %s, n_con = %d", ats_ip_nptop(sa, buff, sizeof(buff)), n_con);
-        }
-      }
+      open_all_rr_cons();
       dns_ns_rr_init_down = 0;
     } else {
       /* Primary - Secondary mode:
@@ -648,22 +654,9 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 
   SET_HANDLER(&DNSHandler::mainEvent);
   if (dns_ns_rr) {
-    // Split DNS uses the same resolver state and nameserver semantics as the
-    // default DNS handler. Establish a connection for every configured server
-    // so round-robin failure handling can move requests to a healthy server.
-    int max_nscount = m_res->nscount;
-    if (max_nscount > MAX_NAMED) {
-      max_nscount = MAX_NAMED;
-    }
-    n_con = 0;
-    for (int i = 0; i < max_nscount; i++) {
-      sockaddr *sa = &m_res->nsaddr_list[i].sa;
-      if (ats_is_ip(sa)) {
-        open_cons(sa, false, n_con);
-        ++n_con;
-      }
-    }
-    dns_ns_rr_init_down = 0;
+    // Split DNS uses the same round-robin connection pool as the default
+    // resolver, but does not schedule the default resolver's periodic retry.
+    open_all_rr_cons();
   } else {
     open_cons(nullptr, false, 0);
     n_con = 1;
