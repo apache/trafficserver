@@ -247,6 +247,7 @@ struct DNSHandler : public Continuation {
   int  mainEvent(int event, Event *e);
 
   void     open_cons(sockaddr const *addr, bool failed = false, int icon = 0);
+  void     open_all_rr_cons();
   bool     open_con(sockaddr const *addr, bool failed = false, int icon = 0, bool over_tcp = false);
   void     failover();
   void     rr_failure(int ndx);
