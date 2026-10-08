@@ -43,6 +43,25 @@ def make_config(fingerprints: list[dict[str, str | bool | list[str]]]) -> dict:
     return {'jax_fingerprint': {'fingerprints': fingerprints}}
 
 
+def make_command_line(fingerprint: dict[str, str | bool | list[str]]) -> list[str]:
+    '''Build the command-line options equivalent to a fingerprint configuration entry.
+
+    :param fingerprint: The fingerprint settings, keyed as in the configuration file.
+    :return: One --option=value string per setting.
+    '''
+    options = []
+    for key, value in fingerprint.items():
+        option = '--' + key.replace('_', '-')
+        if isinstance(value, bool):
+            if value:
+                options.append(option)
+        elif isinstance(value, list):
+            options.append(f'{option}={",".join(value)}')
+        else:
+            options.append(f'{option}={value}')
+    return options
+
+
 class JaxFingerprintTest:
     '''Verify the behavior of the jax_fingerprint plugin.'''
 
@@ -59,7 +78,8 @@ class JaxFingerprintTest:
             mode: str = 'overwrite',
             http2: bool = False,
             servernames: str = '',
-            log_field: str = '') -> None:
+            log_field: str = '',
+            cli: bool = False) -> None:
         '''Configure test processes for the jax_fingerprint plugin.
 
         :param name: Descriptive name for this test run.
@@ -80,6 +100,8 @@ class JaxFingerprintTest:
             configures logging.yaml with a custom format using the symbol
             and verifies the fingerprint appears in the ATS access log.
             Only supported with global setup.
+        :param cli: If True, configure the plugin with command-line options
+            instead of a configuration file.
 
         Method notes:
           - JA3 / JA4 are CONNECTION_BASED (triggered on TLS client hello)
@@ -108,6 +130,7 @@ class JaxFingerprintTest:
         self._http2 = http2
         self._servernames = servernames
         self._log_field = log_field
+        self._cli = cli
         # HTTP/2 always runs over TLS (h2 requires TLS).
         self._needs_tls = method in ('JA3', 'JA4') or http2
         self._replay_file = self._choose_replay_file()
@@ -163,12 +186,17 @@ class JaxFingerprintTest:
             fingerprint['mode'] = self._mode
         if add_standalone:
             fingerprint['standalone'] = True
+        if self._cli:
+            return ' '.join(['@plugin=jax_fingerprint.so'] + [f'@pparam={option}' for option in make_command_line(fingerprint)])
         config_name = 'jax_fingerprint_remap.yaml'
         self._ts.Disk.MakeConfigFile(config_name).update(make_config([fingerprint]))
         return f'@plugin=jax_fingerprint.so @pparam={config_name}'
 
     def _add_global_plugin(self, fingerprint: dict[str, str | bool | list[str]]) -> None:
         '''Write the global plugin configuration and load it via plugin.config.'''
+        if self._cli:
+            self._ts.Disk.plugin_config.AddLine(' '.join(['jax_fingerprint.so'] + make_command_line(fingerprint)))
+            return
         config_name = 'jax_fingerprint.yaml'
         self._ts.Disk.MakeConfigFile(config_name).update(make_config([fingerprint]))
         self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {config_name}')
@@ -393,6 +421,14 @@ JaxFingerprintTest('Hybrid JA4 servernames', 'JA4', 'hybrid', servernames='jax.s
 JaxFingerprintTest('Global JA4H log-field', 'JA4H', 'global', log_field='jaxja4h')
 JaxFingerprintTest('Global JA4 log-field', 'JA4', 'global', log_field='jaxja4')
 
+# --- Command-line options -----------------------------------------------------
+
+# The same setups configured with command-line options instead of a file.
+JaxFingerprintTest('Global JA4H overwrite command line', 'JA4H', 'global', cli=True)
+JaxFingerprintTest('Remap JA3 standalone command line', 'JA3', 'remap', cli=True)
+JaxFingerprintTest('Hybrid JA4 servernames command line', 'JA4', 'hybrid', servernames='jax.server.test', cli=True)
+JaxFingerprintTest('Global JA4H log-field command line', 'JA4H', 'global', log_field='jaxja4hcli', cli=True)
+
 # ======================================================================
 # All Methods Test - Verify shared context map works with multiple methods
 # ======================================================================
@@ -412,9 +448,15 @@ class AllMethodsTest:
     _ts_counter: int = 0
     _client_counter: int = 0
 
-    def __init__(self, name: str) -> None:
-        '''Configure test with multiple methods loaded.'''
+    def __init__(self, name: str, cli: bool = False) -> None:
+        '''Configure test with multiple methods loaded.
+
+        :param name: Descriptive name for this test run.
+        :param cli: If True, load the plugin once per method with command-line
+            options instead of once with a configuration file.
+        '''
         self._name = name
+        self._cli = cli
         self._replay_file = 'jax_fingerprint_all_methods.replay.yaml'
 
         tr = Test.AddTestRun(name)
@@ -501,22 +543,24 @@ ssl_multicert:
             r'Using shared user_arg: type=txn, name=test.jax.registry, method=JA4H, index=\d+',
             'Verify JA4H uses the shared txn user arg slot.')
 
-        self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-            'multiple loading of plugin', 'Verify jax_fingerprint is loaded only once.')
-
         # Configure multiple methods - all share the same user arg slot via ContextMap.
-        config_name = 'jax_fingerprint.yaml'
-        self._ts.Disk.MakeConfigFile(config_name).update(
-            make_config(
-                [
-                    {
-                        'method': method,
-                        'header': f'x-{method.lower()}',
-                        'standalone': True,
-                        'export': 'test.jax.registry'
-                    } for method in ('JA3', 'JA4', 'JA4H')
-                ]))
-        self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {config_name}')
+        fingerprints: list[dict[str, str | bool | list[str]]] = [
+            {
+                'method': method,
+                'header': f'x-{method.lower()}',
+                'standalone': True,
+                'export': 'test.jax.registry'
+            } for method in ('JA3', 'JA4', 'JA4H')
+        ]
+        if self._cli:
+            self._ts.Disk.plugin_config.AddLines(
+                [' '.join(['jax_fingerprint.so'] + make_command_line(fingerprint)) for fingerprint in fingerprints])
+        else:
+            self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+                'multiple loading of plugin', 'Verify jax_fingerprint is loaded only once.')
+            config_name = 'jax_fingerprint.yaml'
+            self._ts.Disk.MakeConfigFile(config_name).update(make_config(fingerprints))
+            self._ts.Disk.plugin_config.AddLine(f'jax_fingerprint.so {config_name}')
 
         self._ts.Disk.remap_config.AddLine(f'map https://jax.server.test https://jax.backend.test:{server_port}')
 
@@ -537,6 +581,9 @@ ssl_multicert:
 
 # Multiple methods loaded simultaneously, verifying shared context map works.
 AllMethodsTest('Multiple methods loaded simultaneously')
+
+# The same methods, each loaded by its own plugin.config line with command-line options.
+AllMethodsTest('Multiple methods loaded by command-line options', cli=True)
 
 # ======================================================================
 # Configuration reload

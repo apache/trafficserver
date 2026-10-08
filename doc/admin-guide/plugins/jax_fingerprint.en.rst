@@ -38,8 +38,9 @@ Fingerprints can be used for:
 Plugin Configuration
 ====================
 
-The plugin is configured with a YAML file that is passed as the plugin's only argument. A relative
-path is resolved from the |TS| configuration directory. You can use the plugin as a global plugin,
+The plugin is configured either with a YAML file that is passed as the plugin's only argument, or
+with command-line options (see `Command-Line Configuration`_). A relative path to a configuration
+file is resolved from the |TS| configuration directory. You can use the plugin as a global plugin,
 a remap plugin, or both.
 
 To use the plugin as a global plugin, add the following line to :file:`plugin.config`::
@@ -151,10 +152,50 @@ Each fingerprint entry supports the following keys.
        register the log field.
 
 
+Command-Line Configuration
+--------------------------
+
+Instead of a configuration file, the plugin accepts command-line options that configure a single
+fingerprint. To generate more than one fingerprint this way, list the plugin once per method in
+:file:`plugin.config`, or once per method on a remap rule. |TS| logs a warning when the same plugin
+is loaded more than once from :file:`plugin.config`; a configuration file configures any number of
+methods from a single line instead.
+
+Each option corresponds to the configuration file key of the same name, with dashes in place of
+underscores:
+
+====================================  ===================================================
+Option                                Configuration file key
+====================================  ===================================================
+``--method <JA4|JA4H|JA3>``           ``method``
+``--standalone``                      ``standalone: true``
+``--mode <overwrite|keep|append>``    ``mode``
+``--header <name>``                   ``header``
+``--via-header <name>``               ``via_header``
+``--servernames <name1,name2>``       ``servernames``, given as one comma-separated value
+``--export <name>``                   ``export``
+``--log-filename <filename>``         ``log_filename``
+``--log-field <symbol>``              ``log_field``
+====================================  ===================================================
+
+For example, the following :file:`plugin.config` lines add JA3 and JA4 fingerprints to every
+request::
+
+    jax_fingerprint.so --method JA3 --standalone --header x-ja3
+    jax_fingerprint.so --method JA4 --standalone --header x-ja4
+
+and the following remap rule adds a JA4H fingerprint to the requests that match it::
+
+    map / http://origin.example/ @plugin=jax_fingerprint.so @pparam=--method=JA4H @pparam=--standalone @pparam=--header=x-ja4h
+
+A plugin configured with command-line options has no configuration file to reload, so changing its
+settings requires a restart for :file:`plugin.config`, or a :file:`remap.config` reload for a remap
+rule.
+
 Reloading the Configuration
 ---------------------------
 
-The configuration loaded from :file:`plugin.config` can be re-read without restarting |TS| by
+A configuration file loaded from :file:`plugin.config` can be re-read without restarting |TS| by
 sending the plugin a message::
 
     traffic_ctl plugin msg jax_fingerprint.reload
