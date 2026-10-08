@@ -21,12 +21,12 @@
 #   jax.server.test            – jax_fingerprint plugin active for this route
 #
 # For the remap+standalone test: the remap plugin registers the
-# SSL_CLIENT_HELLO_HOOK globally (--standalone) so it can populate the
+# SSL_CLIENT_HELLO_HOOK globally (standalone) so it can populate the
 # vconn context that TSRemapDoRemap later reads.
 #
-# For the hybrid test: a global plugin (no --standalone) captures the TLS
-# client hello and stores context on the vconn; a remap plugin (no
-# --standalone) reads that shared context and writes headers only for the
+# For the hybrid test: a global plugin (not standalone) captures the TLS
+# client hello and stores context on the vconn; a remap plugin (not
+# standalone) reads that shared context and writes headers only for the
 # matched route.
 #
 # In both cases the first session must have no fingerprint headers and the

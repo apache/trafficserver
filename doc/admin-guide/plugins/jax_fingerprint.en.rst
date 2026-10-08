@@ -38,77 +38,200 @@ Fingerprints can be used for:
 Plugin Configuration
 ====================
 
-You can use the plugin as a global plugin, a remap plugin, or both.
+The plugin is configured either with a YAML file that is passed as the plugin's only argument, or
+with command-line options (see `Command-Line Configuration`_). A relative path to a configuration
+file is resolved from the |TS| configuration directory. You can use the plugin as a global plugin,
+a remap plugin, or both.
 
 To use the plugin as a global plugin, add the following line to :file:`plugin.config`::
 
-    jax_fingerprint.so --standalone
+    jax_fingerprint.so jax_fingerprint.yaml
 
-To use the plugin as a remap plugin, append the following line to a remap rule on :file:`remap.config`::
+To use the plugin as a remap plugin, append the following to a remap rule in :file:`remap.config`::
 
-    @plugin=jax_fingerprint.so @pparam=--standalone
+    @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml
 
-To use the plugin in a hybrid setup (both global and remap plugin), configure it in both :file:`plugin.config` and
-:file:`remap.config` without ``--standalone`` option.
+To use the plugin in a hybrid setup, load it both in :file:`plugin.config` and in
+:file:`remap.config`, without setting ``standalone`` in either configuration. See
+`Plugin Behavior`_ for how to choose between these setups.
+
+When loaded through :file:`plugin.yaml`, the configuration can also be provided inline through the
+``config`` field:
+
+.. code-block:: yaml
+
+    plugins:
+      - path: jax_fingerprint.so
+        config: |
+          jax_fingerprint:
+            fingerprints:
+              - method: JA4
+                standalone: true
+                header: x-ja4
+
+Configuration File
+------------------
+
+The configuration file contains a single ``jax_fingerprint`` map with a ``fingerprints`` list.
+Each entry in the list configures one fingerprinting method. A single configuration file can list
+as many methods as needed, and every method listed is generated independently. Each method can be
+listed only once per ``export`` registry, and each ``log_field`` symbol can be used only once. For example, the
+following global configuration adds JA3, JA4, and JA4H fingerprints to every request:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA3
+          standalone: true
+          header: x-ja3
+        - method: JA4
+          standalone: true
+          header: x-ja4
+          log_filename: jax_ja4
+        - method: JA4H
+          standalone: true
+          header: x-ja4h
+
+Unrecognized keys, duplicate keys, and invalid values are reported in :file:`diags.log` and cause the configuration
+to be rejected. A rejected remap configuration fails the :file:`remap.config` load.
+
+Each fingerprint entry supports the following keys.
+
+``method``
+    The fingerprinting method to use: ``JA4``, ``JA4H``, or ``JA3``. This key is required.
+
+``standalone``
+    ``true`` or ``false``. The default is ``false``. Set this to ``true`` when you use either the
+    global setup or the remap setup. Leave it unset in both configurations when you use the
+    hybrid setup.
+
+``mode``
+    What to do when a client request already contains the headers named by ``header`` and/or
+    ``via_header``. Available values are ``overwrite``, ``keep``, and ``append``. The default is
+    ``overwrite``.
+
+``header``
+    The name of the header field where the plugin stores the generated fingerprint value. If not
+    specified, the fingerprint header is not added.
+
+``via_header``
+    The name of the header field where the plugin stores the generated fingerprint-via value. If
+    not specified, the fingerprint-via header is not added.
+
+``servernames``
+    A list of server names for which the plugin generates fingerprints. If not specified, the plugin
+    generates fingerprints for any server name. This key is supported only for the methods that
+    fingerprint the TLS handshake, JA3 and JA4. For example:
+
+    .. code-block:: yaml
+
+        servernames:
+          - abc.example
+          - xyz.example
+
+``export``
+    The name of the registry in which generated fingerprints are published for other plugins. See
+    `Fingerprint Registry Export`_. The default registry name is ``jax_fingerprint``.
+
+``log_filename``
+    The filename for the plugin log file. If not specified, log output is suppressed. See
+    `Log Output`_.
+
+``log_field``
+    Registers a custom log field with the given symbol name that can be used in
+    :file:`logging.yaml` log formats. The log field outputs the generated fingerprint value for each
+    transaction. If not specified, no custom log field is registered.
+
+    For example, with ``log_field: jaxja4`` you can use ``%<jaxja4>`` in a log format string in
+    :file:`logging.yaml`.
+
+    .. note:: This key is only supported in the configuration loaded from :file:`plugin.config`.
+       Log fields are global and must be registered before log formats are parsed at startup. If
+       you use a remap-only setup, you must also load the plugin globally with ``log_field`` to
+       register the log field.
 
 
-.. option:: --standalone
+Command-Line Configuration
+--------------------------
 
-This option enables you to use the plugin as either a global plugin, or a remap plugin. In other
-words, the option needs to be specified if you do not use the hybrid setup.
+Instead of a configuration file, the plugin accepts command-line options that configure a single
+fingerprint. To generate more than one fingerprint this way, list the plugin once per method in
+:file:`plugin.config`, or once per method on a remap rule. |TS| logs a warning when the same plugin
+is loaded more than once from :file:`plugin.config`; a configuration file configures any number of
+methods from a single line instead.
 
-.. option:: --method <JA4|JA4H|JA3>
+Each option corresponds to the configuration file key of the same name, with dashes in place of
+underscores:
 
-Fingerprinting method (e.g. JA4, JA3, etc.) to use. This option must be specified.
+====================================  ===================================================
+Option                                Configuration file key
+====================================  ===================================================
+``--method <JA4|JA4H|JA3>``           ``method``
+``--standalone``                      ``standalone: true``
+``--mode <overwrite|keep|append>``    ``mode``
+``--header <name>``                   ``header``
+``--via-header <name>``               ``via_header``
+``--servernames <name1,name2>``       ``servernames``, given as one comma-separated value
+``--export <name>``                   ``export``
+``--log-filename <filename>``         ``log_filename``
+``--log-field <symbol>``              ``log_field``
+====================================  ===================================================
 
-.. option:: --mode <overwrite|keep|append>
+For example, the following :file:`plugin.config` lines add JA3 and JA4 fingerprints to every
+request::
 
-This option specifies what to do if requests from clients have the header names that are specified
-by `--header` and/or `--via-header`. Available setting values are "overwrite", "keep" and "append".
-The default mode is "overwrite".
+    jax_fingerprint.so --method JA3 --standalone --header x-ja3
+    jax_fingerprint.so --method JA4 --standalone --header x-ja4
 
-.. option:: --servernames <servername1,servername2,...>
+and the following remap rule adds a JA4H fingerprint to the requests that match it::
 
-This option specifies server name(s) for which the plugin generates fingerprints.
-The value must be provided as a single comma separated value (no space) of server names.
-If the option is not specified, the plugin generates fingerprints for any server names.
+    map / http://origin.example/ @plugin=jax_fingerprint.so @pparam=--method=JA4H @pparam=--standalone @pparam=--header=x-ja4h
 
-.. option:: --export <user_arg_name>
+A plugin configured with command-line options has no configuration file to reload, so changing its
+settings requires a restart for :file:`plugin.config`, or a :file:`remap.config` reload for a remap
+rule.
 
-Publish generated fingerprints in a named, versioned registry for other
-plugins. Instances with the same storage type and export name contribute to
-one registry, so a ClientHello fingerprint is computed once even when more
-than one plugin uses it. For example::
+Reloading the Configuration
+---------------------------
 
-    jax_fingerprint.so --method JA3 --export security.fingerprints
-    jax_fingerprint.so --method JA4 --export security.fingerprints
+A configuration file loaded from :file:`plugin.config` can be re-read without restarting |TS| by
+sending the plugin a message::
 
-The default registry name is ``jax_fingerprint``. Consumers should use an
-explicit name to make the relationship clear and must be loaded after all JAx
-instances that publish to it.
+    traffic_ctl plugin msg jax_fingerprint.reload
 
-.. option:: --header <header_name>
+The following keys take effect for new connections and transactions after a successful reload:
 
-This option specifies the name of the header field where the plugin stores the generated fingerprint value. If not specified, header generation will be suppressed.
+* ``servernames``
+* ``header``
+* ``via_header``
+* ``mode``
 
-.. option:: --via-header <via_header_name>
+The other keys configure hooks, registries, log files, and log fields that are set up when |TS|
+starts, so they can only be changed with a restart. The list of fingerprints must contain the same
+entries, in the same order, with the same ``method``, ``standalone``, ``export``,
+``log_filename``, and ``log_field`` values as the configuration loaded at startup. A reload that
+changes any of these, or that fails to load, is rejected with an error in :file:`diags.log` and the
+current configuration stays in effect. A successful reload is noted in :file:`diags.log`. If the
+plugin is listed more than once in :file:`plugin.config`, each line reloads its own configuration
+file.
 
-This option specifies the name of the header field where the plugin stores the generated fingerprint-via value. If not specified, header generation will be suppressed.
+For example, to start fingerprinting connections for a new service, add its server name to the
+list and reload:
 
-.. option:: --log-filename <filename>
+.. code-block:: yaml
 
-This option specifies the filename for the plugin log file. If not specified, log output will be suppressed.
+    jax_fingerprint:
+      fingerprints:
+        - method: JA4
+          servernames:
+            - abc.example
+            - xyz.example
+            - new-service.example
 
-.. option:: --log-field <symbol>
-
-This option registers a custom log field with the given symbol name that can be used in
-:file:`logging.yaml` log formats. The log field outputs the generated fingerprint value for each
-transaction. If not specified, no custom log field is registered.
-
-For example, if you specify ``--log-field jaxja4``, you can use ``%<jaxja4>`` in your log format
-string in :file:`logging.yaml`.
-
-.. note:: This option is only supported when the plugin is loaded as a global plugin in :file:`plugin.config`. Log fields are global and must be registered before log formats are parsed at startup. If you use a remap-only setup, you must also load the plugin globally with ``--log-field`` to register the log field.
+Remap configurations are reloaded along with :file:`remap.config` and accept changes to any key.
+Editing a remap configuration file and running ``traffic_ctl config reload`` reloads it, even if
+:file:`remap.config` itself is unchanged.
 
 
 Plugin Behavior
@@ -139,6 +262,21 @@ Hybrid setup is the best if you:
 Fingerprint Registry Export
 ---------------------------
 
+Fingerprints with the same storage type and ``export`` name contribute to one registry, so a
+ClientHello fingerprint is computed once even when more than one plugin uses it. For example:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA3
+          export: security.fingerprints
+        - method: JA4
+          export: security.fingerprints
+
+Consumers should use an explicit registry name to make the relationship clear, and must be loaded
+after the JAx plugin in :file:`plugin.config`.
+
 The export registry is an in-process, read-only view stored in a named |TS|
 user-argument slot. The registry contains length-delimited method/value
 entries plus a magic value, ABI version, and structure sizes, allowing
@@ -157,7 +295,7 @@ Log Output
 ==========
 
 The plugin outputs a log file in the Traffic Server log directory (typically ``/var/log/trafficserver/``) if a log filename is
-specified by ``--log-filename`` option.
+specified by the ``log_filename`` key.
 
 **Log Format**::
 
@@ -206,18 +344,117 @@ See Also
 * JA4+ Technical Specification: https://github.com/FoxIO-LLC/ja4
 
 
-Example Configuration
-=====================
+Example Configurations
+======================
+
+Enable JA4 fingerprinting for every request
+-------------------------------------------
+
+This configuration adds an x-ja4 header to every request and logs each fingerprint to the
+``jax_ja4`` log file.
+
+**plugin.config**::
+
+    jax_fingerprint.so jax_fingerprint.yaml
+
+**jax_fingerprint.yaml**:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA4
+          standalone: true
+          header: x-ja4
+          via_header: x-ja4-via
+          log_filename: jax_ja4
+
+Enable JA4H fingerprinting on a single remap rule
+-------------------------------------------------
+
+This configuration adds an x-ja4h header only to requests that match the remap rule.
+
+**remap.config**::
+
+    map https://www.example.com/ https://origin.example.com/ @plugin=jax_fingerprint.so @pparam=jax_ja4h.yaml
+
+**jax_ja4h.yaml**:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA4H
+          standalone: true
+          header: x-ja4h
 
 Enable JA4 fingerprinting by hybrid (global + remap) setup
 ----------------------------------------------------------
 
-This configuration adds x-my-ja4 header if a connection is established for either abc.example or xyz.example.
+This configuration adds an x-my-ja4 header to requests that match the remap rule if the connection
+was established for either abc.example or xyz.example. The global plugin generates the fingerprint
+when the TLS connection is established, and the remap plugin adds the header.
 
 **plugin.config**::
 
-    jax_fingerprint.so --method JA4 --servernames abc.example,xyz.example
+    jax_fingerprint.so jax_fingerprint.yaml
+
+**jax_fingerprint.yaml**:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA4
+          servernames:
+            - abc.example
+            - xyz.example
 
 **remap.config**::
 
-    map / http://origin.example/ @plugin=jax_fingerprint.so @pparam=--method=JA4 @pparam=--header=x-my-ja4
+    map / http://origin.example/ @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml
+
+**jax_fingerprint_remap.yaml**:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA4
+          header: x-my-ja4
+
+Log multiple fingerprints in the access log
+-------------------------------------------
+
+This configuration registers custom log fields for JA3, JA4, and JA4H fingerprints and records
+them in the access log.
+
+**plugin.config**::
+
+    jax_fingerprint.so jax_fingerprint.yaml
+
+**jax_fingerprint.yaml**:
+
+.. code-block:: yaml
+
+    jax_fingerprint:
+      fingerprints:
+        - method: JA3
+          log_field: jaxja3
+        - method: JA4
+          log_field: jaxja4
+        - method: JA4H
+          standalone: true
+          log_field: jaxja4h
+
+**logging.yaml**:
+
+.. code-block:: yaml
+
+    logging:
+      formats:
+        - name: fingerprints
+          format: '%<chi> %<cqu> JA3=%<jaxja3> JA4=%<jaxja4> JA4H=%<jaxja4h>'
+      logs:
+        - filename: fingerprints
+          format: fingerprints

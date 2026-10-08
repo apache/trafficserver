@@ -14,21 +14,20 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Used by: global JA4H keep mode test.
+# Used by: remap JA4H configuration reload test.
 #
-# The jax_fingerprint plugin is loaded globally with method JA4H,
-# standalone, and mode keep.
+# Each client run selects one session by uuid key:
 #
-# keep mode: if the fingerprint header (x-jax) or via header (x-jax-via)
-# is already present on the incoming request, the plugin must leave them
-# unchanged.  If they are absent the plugin sets them as usual.
+#   remap-initial  : the remap configuration sets header x-jax-initial.
+#   remap-reloaded : after only the remap YAML file is changed to set
+#                    header x-jax-reloaded and traffic_ctl config reload
+#                    is run.
 
 meta:
   version: "1.0"
 
 sessions:
 
-# Session 1: no pre-existing headers – plugin adds them (same as overwrite).
 - protocol:
   - name: http
     version: 1
@@ -39,36 +38,31 @@ sessions:
 
   - client-request:
       method: GET
-      url: /resource-no-header
+      url: /resource
       version: '1.1'
       headers:
         fields:
         - [ Host, jax.server.test ]
         - [ Content-Length, 0 ]
-        - [ uuid, keep-no-existing-header ]
+        - [ uuid, remap-initial ]
 
-    # Headers were absent – plugin must set them.
     proxy-request:
       headers:
         fields:
-        - [ x-jax, { as: present } ]
-        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+        - [ x-jax-initial, { as: present } ]
+        - [ x-jax-reloaded, { as: absent } ]
 
     server-response:
       status: 200
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 2 ]
+        - [ Content-Length, 0 ]
         - [ Connection, close ]
-      content:
-        encoding: plain
-        data: "OK"
 
     proxy-response:
       status: 200
 
-# Session 2: pre-existing headers present – keep mode must preserve them.
 - protocol:
   - name: http
     version: 1
@@ -79,33 +73,27 @@ sessions:
 
   - client-request:
       method: GET
-      url: /resource-with-header
+      url: /resource
       version: '1.1'
       headers:
         fields:
         - [ Host, jax.server.test ]
         - [ Content-Length, 0 ]
-        - [ uuid, keep-existing-header ]
-        - [ x-jax, upstream-fingerprint ]
-        - [ x-jax-via, upstream-via ]
+        - [ uuid, remap-reloaded ]
 
-    # keep mode: original upstream values must be forwarded unchanged.
     proxy-request:
       headers:
         fields:
-        - [ x-jax, { value: 'upstream-fingerprint', as: equal } ]
-        - [ x-jax-via, { value: 'upstream-via', as: equal } ]
+        - [ x-jax-reloaded, { as: present } ]
+        - [ x-jax-initial, { as: absent } ]
 
     server-response:
       status: 200
       reason: OK
       headers:
         fields:
-        - [ Content-Length, 2 ]
+        - [ Content-Length, 0 ]
         - [ Connection, close ]
-      content:
-        encoding: plain
-        data: "OK"
 
     proxy-response:
       status: 200
