@@ -70,7 +70,7 @@ Round-trip test: `hrw4u example.hrw4u | u4wrh` should produce equivalent output.
 
 Provides readable DSL syntax that compiles to header_rewrite configuration.
 
-**Requirements:** Python 3.11+, ANTLR4
+**Requirements:** Python 3.12+, ANTLR4
 
 ### Project Structure
 
@@ -149,7 +149,7 @@ tools/hrw4u/
 
 ### Code Style
 
-**Python (3.11+):**
+**Python (3.12+):**
 - 4-space indentation (never tabs)
 - Type hints on all functions
 - Dataclasses for structured data
