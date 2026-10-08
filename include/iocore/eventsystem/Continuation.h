@@ -302,6 +302,12 @@ public:
     @return true if @p ethread was non-null and the affinity was set;
             false if @p ethread was null and no change was made.
 
+    @note Treating null as "no change" lets a caller pass a thread that
+          may be unknown, such as the current EThread or another
+          Continuation's affinity, without erasing a preference set
+          earlier. Clearing the affinity takes an explicit call to
+          @c clearThreadAffinity.
+
     @par Thread Safety
     Caller-synchronized; see @c thread_affinity.
   */
