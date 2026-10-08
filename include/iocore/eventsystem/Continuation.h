@@ -90,10 +90,9 @@ extern EThread *this_event_thread();
   dispatched to the Continuation, and returns a Processor-specific
   status.
 
-  @note A handler declared in a class derived from @c Continuation must be
+  @note A handler declared in a class derived from @c Continuation MUST be
         converted to this type with @c static_cast, which applies the
-        base-class offset. Invoking the result of a @c reinterpret_cast
-        to this type is undefined behavior.
+        base-class offset.
 
   @note Invoking a converted handler is undefined behavior unless the
         Continuation's dynamic type is, or derives from, the class that
@@ -101,9 +100,6 @@ extern EThread *this_event_thread();
 */
 using ContinuationHandler = int (Continuation::*)(int, void *);
 
-// Convert event handler pointer fp to type ContinuationHandler, but with a compiler error if class C is not
-// derived from the class Continuation.
-//
 template <class C, typename T>
 constexpr ContinuationHandler
 continuation_handler_void_ptr(int (C::*fp)(int, T *))
@@ -120,8 +116,15 @@ continuation_handler_void_ptr(int (C::*fp)(int, T *))
   return static_cast<ContinuationHandler>(fp2);
 }
 
-// Overload for nullptr.
-//
+/**
+  Overload for a literal @c nullptr, from which the converting overload
+  cannot deduce a handler type.
+
+  @return A null @c ContinuationHandler.
+
+  @par Thread Safety
+    Thread-safe.
+*/
 constexpr ContinuationHandler
 continuation_handler_void_ptr(std::nullptr_t)
 {
@@ -154,10 +157,16 @@ public:
   state and handler methods, and typically replace @c handler as they
   move between states.
 
+  @note Under multiple inheritance, a derived class MUST list
+        Continuation, directly or through an intermediate base, as its
+        first base class. This works around a known defect: otherwise,
+        installing its handlers may fail to compile with
+        @c -Werror=shift-negative-value.
+
   @par Lifetime
-  A handler must be installed before the Continuation is scheduled or
+  A handler MUST be installed before the Continuation is scheduled or
   passed to an asynchronous operation. From then on, the Continuation
-  must stay alive until no further event can be dispatched to it, i.e.,
+  MUST stay alive until no further event can be dispatched to it, i.e.,
   until each such operation has completed or been cancelled. It may then
   be destroyed through a @c Continuation pointer, including by
   @c delete @c this from its own handler, provided nothing, including
@@ -226,7 +235,7 @@ public:
             own @c Ptr<ProxyMutex> rather than store the raw pointer.
 
     @par Thread Safety
-    Caller-synchronized. Callers must order this read against any
+    Caller-synchronized. Callers MUST order this read against any
     concurrent writers via an external happens-before edge.
   */
   ProxyMutex *
@@ -267,21 +276,20 @@ public:
   ContFlags control_flags;
 
   /**
-    The EThread on which this Continuation prefers to run, or nullptr
-    if no preference has been set.
+    The EThread on which events for this Continuation should preferably
+    be dispatched, or null for no preference.
 
-    Read by @c EventProcessor::schedule when choosing the thread to
-    service a Continuation, and by subsystems that pin work to a thread
-    (e.g., UDP, HostDB, and the plugin API). The field is advisory —
-    Processors are not required to honor it.
+    The preference is advisory: a Processor may dispatch on another
+    thread, for example when the preferred thread does not service the
+    requested event type. Scheduling an event for this Continuation may
+    set a null field to the thread chosen for that event.
+
+    A non-null value MUST point to an EThread that is alive whenever
+    this Continuation is scheduled.
 
     @par Thread Safety
-    Plain pointer; the @c setThreadAffinity, @c getThreadAffinity, and
-    @c clearThreadAffinity helpers do not synchronize. Reads and writes
-    must be ordered by an external happens-before edge (typically the
-    publication of the Continuation to a Processor, after which only one
-    party at a time updates the field). Concurrent unsynchronized access
-    from multiple threads is a data race.
+    Not thread-safe. Scheduling accesses this field without holding
+    @c mutex, so holding @c mutex is not enough to avoid a data race.
   */
   EThread *thread_affinity = nullptr;
 
@@ -334,29 +342,24 @@ public:
   }
 
   /**
-    Dispatches an event to this Continuation's currently installed
-    handler.
+    Invokes the installed @c handler with @p event and @p data.
 
-    @param[in]     event Event code to forward. Meaning is Processor-specific
-                         (e.g., @c VC_EVENT_READ_READY, @c EVENT_IMMEDIATE).
-                         Defaults to @c CONTINUATION_EVENT_NONE.
-    @param[in,out] data  Auxiliary payload to forward. Lifetime, ownership, and
-                         type are Processor-specific. Defaults to nullptr.
-    @return The handler's return value. The Event System dispatcher
-            discards it; only direct callers of @c handleEvent define
-            its meaning. @c CONTINUATION_DONE and @c CONTINUATION_CONT
-            are the base-level conventions; Processor-specific protocols
-            may define additional return values.
+    @param[in] event Event code. Its meaning is defined by the sender.
+    @param[in] data  Event payload. Its type, lifetime, and ownership are
+                     defined by the sender.
 
-    @pre  @c this->handler is non-null. Calling with a null handler is
-          undefined behavior (invokes a null pointer-to-member).
+    @return The handler's return value. Its meaning is defined by the
+            protocol between the caller and the handler.
+
+    @pre  @c handler is non-null.
+    @pre  If @c mutex is non-null, the calling thread holds it.
+
+    @note The handler may destroy this Continuation. Unless the protocol
+          guarantees otherwise, do not access the Continuation after
+          this call returns.
 
     @par Thread Safety
-    Caller-synchronized via @c this->mutex when non-null. The Event
-    System holds the mutex around its calls when @c this->mutex is
-    non-null; Continuations with a null mutex run without
-    serialization. Ad-hoc callers MUST hold @c this->mutex before
-    calling when it is non-null.
+    Not thread-safe.
   */
   TS_INLINE int
   handleEvent(int event = CONTINUATION_EVENT_NONE, void *data = nullptr)
@@ -379,8 +382,7 @@ protected:
                       See @c mutex for the restrictions on dispatching a
                       Continuation whose mutex is null.
 
-    @pre  @p amutex is null, or points to a live @c ProxyMutex created
-          as its documentation requires.
+    @pre  @p amutex is null, or was allocated with @c new_ProxyMutex().
 
     @post @c mutex refers to @p amutex.
     @post @c control_flags equals the calling thread's current control
@@ -411,9 +413,9 @@ protected:
     @post @c handler is null.
 
     @par Thread Safety
-      Safe to call concurrently with other code that takes or releases
-      references to the same @c ProxyMutex. @p amutex itself must not
-      be written concurrently with this call.
+    Safe to call concurrently with other code that takes or releases
+    references to the same @c ProxyMutex. @p amutex itself MUST NOT
+    be written concurrently with this call.
   */
   explicit Continuation(Ptr<ProxyMutex> &amutex);
 };
@@ -442,7 +444,7 @@ protected:
   A @c C that does not derive from @c Continuation is a compile-time
   error from @c continuation_handler_void_ptr. The data parameter type
   @c T* is @b not checked — it is reinterpret-cast, so the handler and
-  the Processor delivering the event must agree on it by convention.
+  the Processor delivering the event MUST agree on it by convention.
 
   @par Thread Safety
   Caller-synchronized via the enclosing Continuation's mutex. Concurrent
