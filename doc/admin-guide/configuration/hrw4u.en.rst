@@ -53,7 +53,7 @@ Building
 --------
 
 Currently, the HRW4U compiler is not built as part of the ATS build process. You need to
-build it separately using Python 3.10+ and pyenv environments. There's a ``bootstrap.sh``
+build it separately using Python 3.12+ and uv. There's a ``bootstrap.sh``
 script in the ``tools/hrw4u`` directory that helps with the setup process.
 
 Once set up, simply run:
