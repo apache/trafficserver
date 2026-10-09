@@ -365,10 +365,14 @@ build_corpus(const std::vector<std::filesystem::path> &files, const std::vector<
   }
   for (const auto &d : dirs) {
     std::error_code ec;
-    for (auto it = std::filesystem::directory_iterator(d, ec); !ec && it != std::filesystem::directory_iterator(); ++it) {
-      if (it->is_regular_file()) {
+    for (std::filesystem::directory_iterator it(d, ec); !ec && it != std::filesystem::directory_iterator(); it.increment(ec)) {
+      std::error_code type_ec;
+      if (it->is_regular_file(type_ec)) {
         load_file(it->path(), corp.cases);
       }
+    }
+    if (ec) {
+      std::fprintf(stderr, "warning: cannot read corpus directory %s: %s\n", d.string().c_str(), ec.message().c_str());
     }
   }
 
@@ -677,8 +681,9 @@ find_case(std::string_view label)
 }
 } // namespace
 
-// Built-in cases must fully parse (DONE + all bytes consumed); file-loaded cases
-// (label carries a '#') only must not ERROR.
+// Built-in cases must fully parse (DONE + all bytes consumed). In the request
+// and response tests, file-loaded cases (label carries a '#') only must not
+// ERROR; the mime test requires a full parse for them too.
 bool
 is_file_case(const HeaderCase &c)
 {
