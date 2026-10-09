@@ -1,0 +1,78 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# CONNECT requests remapped to the verifier server. The connect-direct.test rule
+# sets proxy.config.http.bypass_parent, so ATS tunnels straight to the
+# server and the follow-up GET travels through the tunnel. The
+# connect-parent.test rule does not, so ATS sends the CONNECT to the dead parent
+# and returns a 502.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  - client-request:
+      method: CONNECT
+      version: "1.1"
+      url: connect-direct.test:80
+      headers:
+        fields:
+        - [ Host, connect-direct.test:80 ]
+        - [ uuid, connect-direct ]
+    # The CONNECT itself never reaches the server; ATS answers it once the
+    # tunnel is open.
+    server-response:
+      status: 200
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /tunneled
+      headers:
+        fields:
+        - [ Host, connect-direct.test ]
+        - [ uuid, tunneled ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ X-Tunneled, "yes" ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Tunneled, { value: "yes", as: equal } ]
+
+- transactions:
+  - client-request:
+      method: CONNECT
+      version: "1.1"
+      url: connect-parent.test:80
+      headers:
+        fields:
+        - [ Host, connect-parent.test:80 ]
+        - [ uuid, connect-parent ]
+    server-response:
+      status: 200
+    proxy-response:
+      status: 502

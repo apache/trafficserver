@@ -1,0 +1,191 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# proxy.config.http.bypass_parent with the cache enabled, where
+# uncacheable_requests_bypass_parent does not apply. The parent is dead with
+# go_direct=false, so a request routed to it fails with a 502. With the
+# override, a cache miss goes straight to the origin and is cached, a repeat is
+# served from cache, and a stale object is revalidated directly with the origin.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'bypass_parent bypasses parent.config on cache misses and revalidations'
+
+  dns:
+    name: 'dns-bypass-parent-cache'
+
+  server:
+    name: 'server-bypass-parent-cache'
+
+  client:
+    name: 'client-bypass-parent-cache'
+
+  ats:
+    name: 'ts-bypass-parent-cache'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|parent_select'
+      proxy.config.http.parent_proxy.self_detect: 0
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.parent_proxy.per_parent_connect_attempts: 1
+
+    parent_config:
+      - 'dest_domain=. parent="127.0.0.1:1|1" go_direct=false parent_is_proxy=true'
+
+    remap_config:
+      - from: 'http://parent.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+      - from: 'http://direct.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'conf_remap.so'
+            args:
+              - 'proxy.config.http.bypass_parent=1'
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'bypassing parent selection due to proxy\.config\.http\.bypass_parent'
+            description: 'Parent selection is bypassed for the bypass_parent rule'
+
+sessions:
+- transactions:
+  # A cacheable miss without the override: the dead parent is selected.
+  - all: { headers: { fields: [[ uuid, parent-miss ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /parent-miss
+      headers:
+        fields:
+        - [ Host, parent.test ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ Cache-Control, max-age=300 ]
+    proxy-response:
+      status: 502
+
+  # A cache miss with the override: the origin is reached directly.
+  - all: { headers: { fields: [[ uuid, direct-miss ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /cached
+      headers:
+        fields:
+        - [ Host, direct.test ]
+        - [ Content-Length, "0" ]
+    proxy-request:
+      url:
+      - [ path, { value: /cached, as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "4" ]
+        - [ Cache-Control, max-age=300 ]
+        - [ X-Response, origin ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: origin, as: equal } ]
+
+  # A repeat of the same GET is a fresh hit served from cache.
+  - all: { headers: { fields: [[ uuid, direct-hit ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /cached
+      headers:
+        fields:
+        - [ Host, direct.test ]
+        - [ Content-Length, "0" ]
+      delay: 100ms
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ X-Response, should-not-be-used ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: origin, as: equal } ]
+
+  # Populate the cache with an object that will go stale.
+  - all: { headers: { fields: [[ uuid, direct-stale-fill ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /stale
+      headers:
+        fields:
+        - [ Host, direct.test ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "4" ]
+        - [ Cache-Control, max-age=1 ]
+        - [ Last-Modified, "Thu, 01 Jan 2026 00:00:00 GMT" ]
+        - [ X-Response, origin ]
+    proxy-response:
+      status: 200
+
+  # Once stale, the object is revalidated directly with the origin.
+  - all: { headers: { fields: [[ uuid, direct-revalidate ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /stale
+      headers:
+        fields:
+        - [ Host, direct.test ]
+        - [ Content-Length, "0" ]
+      delay: 2s
+    proxy-request:
+      headers:
+        fields:
+        - [ If-Modified-Since, { as: present } ]
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, max-age=1 ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: origin, as: equal } ]

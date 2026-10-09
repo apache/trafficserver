@@ -1,0 +1,89 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A globally enabled proxy.config.http.bypass_parent yields to
+# proxy.config.http.no_dns_just_forward_to_parent: ATS warns and keeps routing
+# through the parent, which owns origin DNS in that configuration. The parent is
+# dead, so the request fails with a 502 instead of reaching the origin.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'bypass_parent yields to no_dns_just_forward_to_parent with a warning'
+
+  dns:
+    name: 'dns-no-dns'
+
+  server:
+    name: 'server-no-dns'
+
+  client:
+    name: 'client-no-dns'
+
+  ats:
+    name: 'ts-no-dns'
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|parent_select'
+      proxy.config.http.bypass_parent: 1
+      proxy.config.http.no_dns_just_forward_to_parent: 1
+      proxy.config.http.uncacheable_requests_bypass_parent: 0
+      proxy.config.http.parent_proxy.self_detect: 0
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.parent_proxy.per_parent_connect_attempts: 1
+
+    parent_config:
+      - 'dest_domain=. parent="127.0.0.1:1|1" go_direct=false parent_is_proxy=true'
+
+    remap_config:
+      - from: 'http://request.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+
+    log_validation:
+      diags_log:
+        contains:
+          - expression: 'WARNING: .*proxy\.config\.http\.bypass_parent.*proxy\.config\.http\.no_dns_just_forward_to_parent'
+            description: 'The conflicting settings produce a warning'
+      traffic_out:
+        excludes:
+          - expression: 'bypassing parent selection due to proxy\.config\.http\.bypass_parent'
+            description: 'Parent selection is not bypassed'
+
+sessions:
+- transactions:
+  - all: { headers: { fields: [[ uuid, no-dns ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /no-dns
+      headers:
+        fields:
+        - [ Host, request.test ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
