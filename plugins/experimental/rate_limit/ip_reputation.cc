@@ -81,6 +81,10 @@ SieveLru::hasher(const std::string &ip, u_short family) // Mostly a convenience 
 bool
 SieveLru::parseYaml(const YAML::Node &node)
 {
+  if (!validate_yaml_keys(node, "ip-rep", {"name", "buckets", "size", "percentage", "max_age", "perma-block"})) {
+    return false;
+  }
+
   if (node["buckets"]) {
     _num_buckets = node["buckets"].as<uint32_t>();
   }
@@ -100,21 +104,20 @@ SieveLru::parseYaml(const YAML::Node &node)
   if (node["perma-block"]) {
     const YAML::Node &perma = node["perma-block"];
 
-    if (perma.IsMap()) {
-      if (perma["limit"]) {
-        _permablock_limit = perma["limit"].as<uint32_t>();
-      }
-
-      if (perma["threshold"]) {
-        _permablock_threshold = perma["threshold"].as<uint32_t>();
-      }
-
-      if (perma["max_age"]) {
-        _permablock_max_age = std::chrono::seconds(perma["max_age"].as<uint32_t>());
-      }
-    } else {
-      TSError("[%s] The perma-block node must be a map", PLUGIN_NAME);
+    if (!validate_yaml_keys(perma, "perma-block", {"limit", "threshold", "max_age"})) {
       return false;
+    }
+
+    if (perma["limit"]) {
+      _permablock_limit = perma["limit"].as<uint32_t>();
+    }
+
+    if (perma["threshold"]) {
+      _permablock_threshold = perma["threshold"].as<uint32_t>();
+    }
+
+    if (perma["max_age"]) {
+      _permablock_max_age = std::chrono::seconds(perma["max_age"].as<uint32_t>());
     }
   }
 
