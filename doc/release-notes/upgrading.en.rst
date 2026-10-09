@@ -45,6 +45,21 @@ Handing out a position let a caller name a slot the store was free to change
 underneath them, which is what the iterator could not be made safe against.
 Reaching a single metric by name is ``lookup()``.
 
+``RegexMatchContext``, in the installed ``tsutil/Regex.h``, is removed. A match
+limit is now passed to ``Regex::exec`` as a ``Regex::Options`` value, in which a
+zero field means the shared default:
+
+.. code-block:: cpp
+
+    Regex::Options opts;
+    opts.match_limit = 1750;
+    int rc = regex.exec(subject, matches, flags, opts);
+
+Matches with options now use the shared match configuration, including its
+1 MiB JIT stack, rather than PCRE2's defaults. Plugins that call
+``Regex::exec`` with a flags argument must be recompiled, because the symbol
+that call resolved to is gone.
+
 ``Metrics::Storage::createSpan()`` and ``Metrics::rename()`` are also removed.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
