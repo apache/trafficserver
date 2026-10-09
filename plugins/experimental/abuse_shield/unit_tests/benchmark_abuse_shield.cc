@@ -155,6 +155,36 @@ make_rules(int rules_per_metric)
   return rules;
 }
 
+/** make_rules with request rates far above anything one entry sees in a
+ * benchmark loop, so no request bucket drains and no rule is exceeded. The
+ * burst stays within TokenBucket::MAX_BURST.
+ */
+std::vector<Rule>
+unexceeded_rules()
+{
+  auto rules = make_rules(RULES_PER_METRIC);
+  for (auto &rule : rules) {
+    if (rule.filter.max_req_rate > 0) {
+      rule.filter.max_req_rate         = TokenBucket::MAX_BURST / 2;
+      rule.filter.req_burst_multiplier = 2.0;
+    }
+  }
+  return rules;
+}
+
+/** make_rules with a first request rule of one request a second and no burst.
+ * Once in debt, an entry stays there as long as it sees more than one request
+ * a second, which every table size here exceeds by orders of magnitude.
+ */
+std::vector<Rule>
+first_rule_exceeded_rules()
+{
+  auto rules                                = make_rules(RULES_PER_METRIC);
+  rules.front().filter.max_req_rate         = 1;
+  rules.front().filter.req_burst_multiplier = 1.0;
+  return rules;
+}
+
 // Mirrors metric_rate in abuse_shield.cc.
 int
 metric_rate(const RuleFilter &filter, RateMetric metric)
@@ -287,6 +317,26 @@ evaluate_rate_rules(const Trackers &trackers, const swoc::IPAddr &ip, const Benc
   return nullptr;
 }
 
+// What handle_txn_event_impl does for TS_EVENT_HTTP_TXN_START once it has the
+// client address: the trusted check, the bucket update, then rule evaluation.
+const Rule *
+txn_start_hook(const Trackers &trackers, const swoc::IPAddr &ip, const BenchConfig &config, BenchStats &stats)
+{
+  if (config.is_trusted(ip)) {
+    return nullptr;
+  }
+  consume_rule_buckets(trackers.txn.get(), ip, config, RateMetric::REQUEST, stats);
+  return evaluate_rate_rules(trackers, ip, config);
+}
+
+// How many of @a ips evaluate_rate_rules matches to @a expected, nullptr for no match.
+size_t
+count_matches(const Trackers &trackers, const std::vector<swoc::IPAddr> &ips, const BenchConfig &config, const Rule *expected)
+{
+  return std::count_if(ips.begin(), ips.end(),
+                       [&](const swoc::IPAddr &ip) { return evaluate_rate_rules(trackers, ip, config) == expected; });
+}
+
 // Mirrors prune_rule_buckets in abuse_shield.cc as it runs on every
 // handle_maintenance pass.
 void
@@ -342,12 +392,14 @@ nth_ip(uint32_t n)
   uint32_t mixed = n * 2654435761U;
   if (n % IP6_EVERY == 0) {
     in6_addr addr{};
-    addr.s6_addr[0] = 0x20;
-    addr.s6_addr[1] = 0x01;
-    addr.s6_addr[2] = 0x0d;
-    addr.s6_addr[3] = 0xb8;
-    std::memcpy(&addr.s6_addr[12], &mixed, sizeof(mixed));
-    std::memcpy(&addr.s6_addr[8], &n, sizeof(n));
+    addr.s6_addr[0]         = 0x20;
+    addr.s6_addr[1]         = 0x01;
+    addr.s6_addr[2]         = 0x0d;
+    addr.s6_addr[3]         = 0xb8;
+    uint32_t const mixed_be = htonl(mixed);
+    uint32_t const n_be     = htonl(n);
+    std::memcpy(&addr.s6_addr[12], &mixed_be, sizeof(mixed_be));
+    std::memcpy(&addr.s6_addr[8], &n_be, sizeof(n_be));
     return swoc::IPAddr{swoc::IP6Addr{addr}};
   }
   return swoc::IPAddr{swoc::IP4Addr{htonl(mixed)}};
@@ -397,6 +449,37 @@ put_in_debt(Table &table, const std::vector<swoc::IPAddr> &ips, const std::strin
   }
 }
 
+/** Give every entry of @a table a bucket for each rule in @a rules that sets a
+ * rate for @a metric, at the rate and burst that rule configures.
+ */
+template <typename Table>
+void
+add_rule_buckets(Table &table, const std::vector<swoc::IPAddr> &ips, const std::vector<Rule> &rules, RateMetric metric)
+{
+  for (const auto &rule : rules) {
+    int rate = metric_rate(rule.filter, metric);
+    if (rate <= 0) {
+      continue;
+    }
+    int burst = static_cast<int>(static_cast<double>(rate) * metric_burst_multiplier(rule.filter, metric));
+    for (const auto &ip : ips) {
+      table.find(ip)->buckets.consume(rule.name, rate, burst);
+    }
+  }
+}
+
+/** How many entries of @a table have no bucket for @a rule_name. Every bucket
+ * in these benchmarks either holds most of its burst or is in debt, so a token
+ * count of zero means the bucket is missing.
+ */
+template <typename Table>
+size_t
+entries_without_bucket(Table &table, const std::string &rule_name)
+{
+  auto const snapshot = table.data_snapshot();
+  return std::count_if(snapshot.begin(), snapshot.end(), [&](const auto &data) { return data->buckets.tokens(rule_name) == 0; });
+}
+
 std::vector<swoc::IPAddr>
 shuffled(std::vector<swoc::IPAddr> ips)
 {
@@ -444,37 +527,61 @@ run_threads(int threads, int ops_per_thread, Fn fn)
 
 TEST_CASE("abuse_shield request hook path", "[abuse_shield][bench][hot_path]")
 {
-  size_t const      slots = BENCH_TABLE_SIZES;
-  BenchConfig const config{make_rules(RULES_PER_METRIC)};
-  Trackers          trackers(slots);
-  auto const        ips = make_ips(slots);
-  populate(*trackers.txn, ips, config, RateMetric::REQUEST);
-
+  size_t const slots = BENCH_TABLE_SIZES;
+  auto const   ips   = make_ips(slots);
   // Visit tracked IPs in random order so the table is not walked in cache order.
   auto const order = shuffled(ips);
   BenchStats stats;
   size_t     next = 0;
 
-  // The per-request bucket update alone: one process_event and one consume per
-  // request rule.
-  BENCHMARK("consume_rule_buckets, " + std::to_string(slots) + " slots")
+  SECTION("bucket update")
   {
-    auto const &ip = order[next++ % order.size()];
-    consume_rule_buckets(trackers.txn.get(), ip, config, RateMetric::REQUEST, stats);
-    return stats.events.load(std::memory_order_relaxed);
-  };
+    BenchConfig const config{make_rules(RULES_PER_METRIC)};
+    Trackers          trackers(slots);
+    populate(*trackers.txn, ips, config, RateMetric::REQUEST);
 
-  // What handle_txn_event_impl does for TS_EVENT_HTTP_TXN_START once it has the
-  // client address: the trusted check, the bucket update, then rule evaluation.
-  BENCHMARK("TXN_START hook, " + std::to_string(slots) + " slots")
+    // The per-request bucket update alone: one process_event and one consume
+    // per request rule.
+    BENCHMARK("consume_rule_buckets, " + std::to_string(slots) + " slots")
+    {
+      auto const &ip = order[next++ % order.size()];
+      consume_rule_buckets(trackers.txn.get(), ip, config, RateMetric::REQUEST, stats);
+      return stats.events.load(std::memory_order_relaxed);
+    };
+  }
+
+  // Token balances carry over from call to call, so with ordinary rates the
+  // branch evaluate_rate_rules takes would depend on how fast the loop runs and
+  // how many entries share it. Each case below fixes the outcome instead, and
+  // checks afterwards that it held for every entry.
+  SECTION("no rule exceeded")
   {
-    auto const &ip = order[next++ % order.size()];
-    if (config.is_trusted(ip)) {
-      return static_cast<Rule const *>(nullptr);
-    }
-    consume_rule_buckets(trackers.txn.get(), ip, config, RateMetric::REQUEST, stats);
-    return evaluate_rate_rules(trackers, ip, config);
-  };
+    BenchConfig const config{unexceeded_rules()};
+    Trackers          trackers(slots);
+    populate(*trackers.txn, ips, config, RateMetric::REQUEST);
+
+    // Evaluation checks every rule and matches none.
+    BENCHMARK("TXN_START hook, " + std::to_string(slots) + " slots, no rule exceeded")
+    {
+      return txn_start_hook(trackers, order[next++ % order.size()], config, stats);
+    };
+    CHECK(count_matches(trackers, ips, config, nullptr) == ips.size());
+  }
+
+  SECTION("first rule exceeded")
+  {
+    BenchConfig const config{first_rule_exceeded_rules()};
+    Trackers          trackers(slots);
+    populate(*trackers.txn, ips, config, RateMetric::REQUEST);
+    put_in_debt(*trackers.txn, ips, config.rules.front().name, [](size_t) { return true; });
+
+    // Evaluation stops at the first rule.
+    BENCHMARK("TXN_START hook, " + std::to_string(slots) + " slots, first rule exceeded")
+    {
+      return txn_start_hook(trackers, order[next++ % order.size()], config, stats);
+    };
+    CHECK(count_matches(trackers, ips, config, &config.rules.front()) == ips.size());
+  }
 }
 
 TEST_CASE("abuse_shield request hook path under thread contention", "[abuse_shield][bench][hot_path][threaded]")
@@ -579,26 +686,22 @@ TEST_CASE("abuse_shield maintenance prune pass", "[abuse_shield][bench][maintena
     BENCHMARK_ADVANCED("prune pass, 3 trackers x " + std::to_string(slots) + " entries, one bucket removed per entry")
     (Catch::Benchmark::Chronometer meter)
     {
-      int const                runs = meter.runs();
+      int const                      runs = meter.runs();
+      std::vector<std::vector<Rule>> removed(runs);
+      for (int run = 0; run < runs; ++run) {
+        for (auto rule : make_rules(1)) {
+          rule.name += "_removed_" + std::to_string(run);
+          removed[run].push_back(rule);
+        }
+        add_rule_buckets(*trackers.txn, ips, removed[run], RateMetric::REQUEST);
+        add_rule_buckets(*trackers.conn, ips, removed[run], RateMetric::CONNECTION);
+        add_rule_buckets(*trackers.h2, ips, removed[run], RateMetric::H2_ERROR);
+      }
       std::vector<BenchConfig> run_configs(runs);
       for (int run = 0; run < runs; ++run) {
         run_configs[run].rules = kept.rules;
         for (int later = run + 1; later < runs; ++later) {
-          for (auto rule : make_rules(1)) {
-            rule.name += "_removed_" + std::to_string(later);
-            run_configs[run].rules.push_back(rule);
-          }
-        }
-      }
-      for (int run = 0; run < runs; ++run) {
-        std::string const suffix = "_removed_" + std::to_string(run);
-        std::string const req    = "excessive_requests_0" + suffix;
-        std::string const conn   = "excessive_connections_0" + suffix;
-        std::string const h2     = "excessive_h2_errors_0" + suffix;
-        for (const auto &ip : ips) {
-          trackers.txn->find(ip)->buckets.consume(req, 100, 200);
-          trackers.conn->find(ip)->buckets.consume(conn, 20, 30);
-          trackers.h2->find(ip)->buckets.consume(h2, 10, 10);
+          run_configs[run].rules.insert(run_configs[run].rules.end(), removed[later].begin(), removed[later].end());
         }
       }
       meter.measure([&](int run) { prune_rule_buckets(trackers, run_configs[run]); });
@@ -643,15 +746,22 @@ TEST_CASE("abuse_shield eviction from a full table", "[abuse_shield][bench][evic
     populate(table, ips, config, RateMetric::REQUEST);
     put_in_debt(table, ips, config.rules.front().name, in_debt);
 
-    uint32_t                next_fresh = first_fresh;
-    TxnTable::ProcessStatus status;
-    // The table call consume_rule_buckets makes for an IP that is not tracked.
-    BENCHMARK("process_event on a new IP, " + std::to_string(slots) + " slots, " + label)
+    uint32_t   next_fresh = first_fresh;
+    BenchStats stats;
+    // The whole call for an IP that is not tracked: the contest, then a bucket
+    // per request rule in the new entry. Timing process_event alone would leave
+    // each winner with no buckets, and within a few warmup rounds the samples
+    // would run against a table of empty entries that are cheaper to scan and
+    // to evict than the ones they replaced.
+    BENCHMARK("consume_rule_buckets on a new IP, " + std::to_string(slots) + " slots, " + label)
     {
-      return table.process_event(nth_ip(next_fresh++), 1, &status);
+      consume_rule_buckets(&table, nth_ip(next_fresh++), config, RateMetric::REQUEST, stats);
+      return stats.events.load(std::memory_order_relaxed);
     };
     INFO("contests " << table.contests() << ", won " << table.contests_won() << ", evictions " << table.evictions());
     CHECK(table.contests() > 0);
+    // Every entry, original or new, still carries its buckets.
+    CHECK(entries_without_bucket(table, config.rules.front().name) == 0);
   };
 
   SECTION("no entry in debt")
