@@ -1,0 +1,135 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify QUERY requests are proxied with their content'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    metric_checks:
+      - metric: 'proxy.process.http.query_requests'
+        value: 3
+
+sessions:
+- transactions:
+
+  # A QUERY with content is forwarded to the origin, content and all.
+  - client-request:
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "23"]
+        - [uuid, query-first]
+      content:
+        data: "SELECT * FROM t WHERE a"
+
+    proxy-request:
+      method: QUERY
+      headers:
+        fields:
+        - [Content-Length, {value: "23", as: equal}]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "result-1"
+
+    proxy-response:
+      status: 200
+
+  # Caching of QUERY is off by default, so the identical request goes to the
+  # origin again rather than being served from cache.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "23"]
+        - [uuid, query-second]
+      content:
+        data: "SELECT * FROM t WHERE a"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "result-2"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "result-2", as: equal}
+
+  # A QUERY without a Content-Length and without chunked framing has no content,
+  # which ATS rejects the same way it rejects a length-less POST.
+  - client-request:
+      method: QUERY
+      url: /no-content
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, query-no-content]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 411

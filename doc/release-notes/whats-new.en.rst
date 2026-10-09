@@ -35,6 +35,7 @@ Metrics
 * Added ``proxy.process.ssl.group.user_agent.P-224``
 * Added ``proxy.process.ssl.group.user_agent.X448``
 * Added ``proxy.process.ssl.group.user_agent.X25519MLKEM768``
+* Added ``proxy.process.http.query_requests``
 
 Plugins
 -------
@@ -107,6 +108,11 @@ Features
 * Add an optional ``avg_obj_size`` to ``storage.yaml`` to control the directory
   entry sizing.
 * The ``proxy.config.http.cache.post_method`` is now an overridable config.
+* The HTTP ``QUERY`` method (draft-ietf-httpbis-safe-method-w-body) is now a
+  well-known method. It can be named in :file:`ip_allow.yaml` and
+  :file:`remap.config` ACLs, it is reported by
+  ``proxy.process.http.query_requests``, and like the other content-carrying
+  methods it requires a ``Content-Length`` or chunked framing.
 * Defer deleting the copied plugin shared object file to startup to make it
   easier to debug crashes in plugins.
 

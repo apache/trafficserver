@@ -248,6 +248,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *proxy_loop_detected;
   Metrics::Counter::AtomicType *proxy_mh_loop_detected;
   Metrics::Counter::AtomicType *purge_requests;
+  Metrics::Counter::AtomicType *query_requests;
   Metrics::Counter::AtomicType *push_requests;
   Metrics::Counter::AtomicType *pushed_document_total_size;
   Metrics::Counter::AtomicType *pushed_response_header_total_size;

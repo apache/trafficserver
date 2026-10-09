@@ -100,8 +100,9 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
 bool
 HttpTransactHeaders::is_method_safe(int method)
 {
-  // See RFC 7231, section 4.2.1.
-  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_TRACE);
+  // See RFC 9110, section 9.2.1, and draft-ietf-httpbis-safe-method-w-body for QUERY.
+  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_QUERY ||
+          method == HTTP_WKSIDX_TRACE);
 }
 
 bool
@@ -115,7 +116,8 @@ bool
 HttpTransactHeaders::is_method_idempotent(int method)
 {
   return (method == HTTP_WKSIDX_CONNECT || method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_GET ||
-          method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_TRACE);
+          method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_OPTIONS || method == HTTP_WKSIDX_QUERY ||
+          method == HTTP_WKSIDX_TRACE);
 }
 
 void
@@ -125,7 +127,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   const char *methods[] = {
     HTTP_METHOD_CONNECT.c_str(), HTTP_METHOD_DELETE.c_str(), HTTP_METHOD_GET.c_str(),   HTTP_METHOD_HEAD.c_str(),
     HTTP_METHOD_OPTIONS.c_str(), HTTP_METHOD_POST.c_str(),   HTTP_METHOD_PURGE.c_str(), HTTP_METHOD_PUT.c_str(),
-    HTTP_METHOD_PUSH.c_str(),    HTTP_METHOD_TRACE.c_str(),
+    HTTP_METHOD_PUSH.c_str(),    HTTP_METHOD_QUERY.c_str(),  HTTP_METHOD_TRACE.c_str(),
   };
   char  inline_buffer[64];
   char *alloced_buffer, *value_buffer;

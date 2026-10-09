@@ -5819,9 +5819,9 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       return RequestError_t::UNACCEPTABLE_TE_REQUIRED;
     }
 
-    // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
+    // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT/QUERY
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
-        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
+        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_QUERY) &&
         s->client_info.transfer_encoding != TransferEncoding_t::CHUNKED) {
       // In normal operation there will always be a get_ua_txn() at this point, but in one of the -R1  regression tests a request is
       // createdindependent of a transaction and this method is called, so we must null check
@@ -6204,6 +6204,8 @@ HttpTransact::update_method_stat(int method)
     Metrics::Counter::increment(http_rsb.delete_requests);
   } else if (method == HTTP_WKSIDX_PURGE) {
     Metrics::Counter::increment(http_rsb.purge_requests);
+  } else if (method == HTTP_WKSIDX_QUERY) {
+    Metrics::Counter::increment(http_rsb.query_requests);
   } else if (method == HTTP_WKSIDX_TRACE) {
     Metrics::Counter::increment(http_rsb.trace_requests);
   } else if (method == HTTP_WKSIDX_PUSH) {
@@ -6945,10 +6947,15 @@ HttpTransact::is_request_retryable(State *s)
     return false;
   }
 
+  // A QUERY is safe, but unlike the other safe methods it carries content. Once
+  // the request has gone out we can only replay it if that content was
+  // buffered.
+  bool const content_is_replayable = s->method != HTTP_WKSIDX_QUERY || s->state_machine->is_buffering_request_body;
+
   // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
   // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (!HttpTransactHeaders::is_method_safe(s->method) && s->current.state != CONNECTION_ERROR &&
+  if ((!HttpTransactHeaders::is_method_safe(s->method) || !content_is_replayable) && s->current.state != CONNECTION_ERROR &&
       s->state_machine->server_request_hdr_bytes > 0) {
     return false;
   }
