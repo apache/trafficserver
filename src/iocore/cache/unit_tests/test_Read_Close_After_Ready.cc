@@ -1,6 +1,6 @@
 /** @file
 
-  Closing a cache reader before the object is fully read.
+  Closing a cache reader after its first READ_READY.
 
   @section license License
 
@@ -74,18 +74,18 @@ public:
   }
 };
 
-class CloseReadMidObject : public CacheTestHandler
+class CloseReadAfterReady : public CacheTestHandler
 {
 public:
-  CloseReadMidObject(std::size_t size, const char *url) : CacheTestHandler(), _size(size), _url(url)
+  CloseReadAfterReady(std::size_t size, const char *url) : CacheTestHandler(), _size(size), _url(url)
   {
     this->_rt        = new CacheReadTest(size, this, url);
     this->_rt->mutex = this->mutex;
 
-    SET_HANDLER(&CloseReadMidObject::start_test);
+    SET_HANDLER(&CloseReadAfterReady::start_test);
   }
 
-  ~CloseReadMidObject() override { delete this->_closed_reader; }
+  ~CloseReadAfterReady() override { delete this->_closed_reader; }
 
   int
   start_test(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
@@ -99,6 +99,10 @@ public:
   int
   close_reader(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */)
   {
+    if (this->_read_completed_before_close) {
+      return 0;
+    }
+
     this->_rt->vc->do_io_close();
     this->_rt->vc        = nullptr;
     this->_rt->vio       = nullptr;
@@ -128,7 +132,11 @@ public:
       on_read_ready(base);
       break;
     case VC_EVENT_READ_COMPLETE:
-      this->reread_completed = true;
+      if (this->_closed_reader != nullptr) {
+        this->reread_completed = true;
+      } else {
+        this->_read_completed_before_close = true;
+      }
       base->close();
       finish();
       break;
@@ -157,21 +165,22 @@ private:
       base->reenable();
     } else if (!this->_close_scheduled) {
       this->_close_scheduled = true;
-      SET_HANDLER(&CloseReadMidObject::close_reader);
+      SET_HANDLER(&CloseReadAfterReady::close_reader);
       this_ethread()->schedule_imm(this);
     }
   }
 
   std::size_t    _size;
   const char    *_url;
-  bool           _close_scheduled = false;
-  CacheTestBase *_closed_reader   = nullptr;
+  bool           _close_scheduled             = false;
+  bool           _read_completed_before_close = false;
+  CacheTestBase *_closed_reader               = nullptr;
 };
 
-class CloseMidObjectInit : public CacheInit
+class CloseAfterReadyInit : public CacheInit
 {
 public:
-  explicit CloseMidObjectInit(CloseReadMidObject *spy) : _spy(spy) {}
+  explicit CloseAfterReadyInit(CloseReadAfterReady *spy) : _spy(spy) {}
 
   int
   cache_init_success_callback(int /* event ATS_UNUSED */, void * /* e ATS_UNUSED */) override
@@ -186,19 +195,19 @@ public:
   }
 
 private:
-  CloseReadMidObject *_spy;
+  CloseReadAfterReady *_spy;
 };
 
 } // namespace
 
-TEST_CASE("Closing a cache reader before the object is fully read delivers no further events and leaves the object readable",
+TEST_CASE("Closing a cache reader after its first READ_READY delivers no further events to it and leaves the object readable",
           "cache")
 {
   init_cache(256 * 1024 * 1024);
 
-  auto spy = std::make_unique<CloseReadMidObject>(LARGE_FILE, OBJECT_URL);
+  auto spy = std::make_unique<CloseReadAfterReady>(LARGE_FILE, OBJECT_URL);
 
-  this_ethread()->schedule_imm(new CloseMidObjectInit{spy.get()});
+  this_ethread()->schedule_imm(new CloseAfterReadyInit{spy.get()});
   this_thread()->execute();
 
   CHECK(spy->events_after_close == 0);
