@@ -709,6 +709,8 @@ find_server_and_update_current_info(HttpTransact::State *s)
   if (bypass_parent) {
     TxnDbg(dbg_ctl_http_trans, "bypassing parent selection due to proxy.config.http.bypass_parent (prior result %s)",
            ParentResultStr[static_cast<int>(s->parent_result.result)]);
+    // Drop any earlier selection so its hostname, retry, and caching flags are not applied to the direct connection.
+    s->parent_result.reset();
     s->parent_result.result = ParentResultType::DIRECT;
   } else if (is_localhost(host)) {
     // Do not forward requests to local_host onto a parent.

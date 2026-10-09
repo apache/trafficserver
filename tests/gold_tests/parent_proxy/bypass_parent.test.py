@@ -49,6 +49,7 @@ class BypassParentConnectTest:
                 'proxy.config.diags.debug.tags': 'http_trans|parent_select',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
+                # Checked after remap, so this is the remapped origin port rather than the client's :80.
                 'proxy.config.http.connect_ports': f'{self._server.Variables.http_port}',
                 'proxy.config.http.parent_proxy.self_detect': 0,
                 'proxy.config.http.uncacheable_requests_bypass_parent': 0,
@@ -72,9 +73,7 @@ class BypassParentConnectTest:
         tr.Processes.Default.StartBefore(self._dns)
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
-        tr.StillRunningAfter = self._dns
-        tr.StillRunningAfter = self._server
-        tr.StillRunningAfter = self._ts
+        tr.StillRunningAfter = [self._dns, self._server, self._ts]
 
 
 BypassParentConnectTest().run()
