@@ -806,6 +806,7 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
   char    *value;
   uint64_t value_len;
   if ((ret = xpack_decode_string(this->_arena, &value, value_len, buf + read_len, buf + buf_len, _header_field_max_size, 7)) < 0) {
+    this->_arena.str_free(name);
     return -1;
   }
   read_len += ret;
@@ -817,8 +818,9 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
   QPACKDebug("Decoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s", static_cast<uint16_t>(name_len), name,
              static_cast<uint16_t>(value_len), value);
 
-  this->_arena.str_free(name);
+  // Free in reverse allocation order so Arena can rewind both entries.
   this->_arena.str_free(value);
+  this->_arena.str_free(name);
 
   return read_len;
 }
@@ -1175,6 +1177,8 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
       QPACKDebug("Received Insert Without Name Ref: name=%.*s, value=%.*s", static_cast<int>(name_len), name,
                  static_cast<int>(value_len), value);
       this->_dynamic_table.insert_entry(name, name_len, value, value_len);
+      // Free in reverse allocation order so Arena can rewind both entries.
+      this->_arena.str_free(value);
       this->_arena.str_free(name);
     } else if (buf & 0x20) { // Dynamic Table Size Update
       uint16_t max_size;
