@@ -531,6 +531,7 @@ namespace Method
   extern const cripts::Header::Method TRACE;
   // This is a special feature of ATS
   extern const cripts::Header::Method PURGE;
+  extern const cripts::Header::Method QUERY;
 } // namespace Method
 
 // Lookup status constants, these are used in the Cache::Response::lookupstatus

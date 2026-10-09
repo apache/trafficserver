@@ -128,6 +128,8 @@ Request::getMethod() const
         state_->method_ = HTTP_METHOD_OPTIONS;
       } else if (method_str == TS_HTTP_METHOD_PURGE) {
         state_->method_ = HTTP_METHOD_PURGE;
+      } else if (method_str == TS_HTTP_METHOD_QUERY) {
+        state_->method_ = HTTP_METHOD_QUERY;
       } else if (method_str == TS_HTTP_METHOD_PUT) {
         state_->method_ = HTTP_METHOD_PUT;
       } else if (method_str == TS_HTTP_METHOD_TRACE) {
