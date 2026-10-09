@@ -1,0 +1,83 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# A POST whose HEADERS already went to an HTTP/2 origin must not be retried when
+# the origin then stalls: retrying could repeat its side effects. The retry
+# decision keys off the server request header size, so it must count the header
+# even though it bypasses the write buffer.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'HTTP/2 outbound: a sent POST is not retried'
+
+  server:
+    name: 'server-no-retry'
+
+  client:
+    name: 'client-no-retry'
+
+  ats:
+    name: 'ts-no-retry'
+
+    process_config:
+      enable_tls: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.ssl.client.alpn_protocols: 'h2,http/1.1'
+      proxy.config.ssl.client.verify.server.policy: 'PERMISSIVE'
+      proxy.config.http.transaction_no_activity_timeout_out: 2
+      proxy.config.http.connect_attempts_max_retries: 2
+
+    remap_config:
+      - from: "https://example.com/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'No more retries\. 0/2'
+            description: 'The POST must not be retried after its header was sent'
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", POST]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /outbound/no-retry]
+            - [content-length, "0"]
+            - [uuid, ob-post-no-retry]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 504
