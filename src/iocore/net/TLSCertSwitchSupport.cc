@@ -94,6 +94,10 @@ TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
   // context may not support this client, so select from the stored '*' contexts.
   if (ctx == nullptr && ctxType != SSLCertContextType::GENERIC) {
     ctx = this->_lookupContextByName("*", ctxType);
+    if (ctx != nullptr) {
+      Dbg(dbg_ctl_ssl_load, "ssl_cert_callback using the '*' %s context for requested name '%s'",
+          ctxType == SSLCertContextType::EC ? "EC" : "RSA", servername);
+    }
   }
 
   if (ctx != nullptr) {

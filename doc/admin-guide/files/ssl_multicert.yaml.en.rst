@@ -133,6 +133,12 @@ action: tunnel (optional)
   If set to ``tunnel``, Traffic Server will not participate in the
   TLS handshake and will blind tunnel the connection instead.
 
+  With BoringSSL, a ``dest_ip: "*"`` entry that sets ``tunnel`` also
+  applies on a transparent port to clients whose server name and
+  destination address match no other entry, so Traffic Server tunnels
+  those connections. With OpenSSL, the TLS handshake for those clients
+  fails.
+
 Certificate Selection
 =====================
 
