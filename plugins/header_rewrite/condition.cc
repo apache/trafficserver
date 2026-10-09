@@ -19,6 +19,7 @@
 // condition.cc: Implementation of the condition base class
 //
 //
+#include <charconv>
 #include <string>
 
 #include "ts/ts.h"
@@ -76,6 +77,36 @@ parse_matcher_op(std::string &arg)
 }
 
 void
+Condition::normalize(std::string &s, size_t start)
+{
+  auto in = s.find('%', start);
+
+  if (in == std::string::npos) {
+    return;
+  }
+
+  auto out = in;
+
+  while (in < s.size()) {
+    if (s[in] == '%' && s.size() - in > 2) {
+      const char   *hex = s.data() + in + 1;
+      unsigned char c   = 0;
+      auto [end, ec]    = std::from_chars(hex, hex + 2, c, 16);
+
+      // Escaped controls stay encoded, since a decoded CR/LF in an expansion would inject a header field.
+      if (ec == std::errc{} && end == hex + 2 && c >= 0x20 && c != 0x7f) {
+        s[out++]  = static_cast<char>(c);
+        in       += 3;
+        continue;
+      }
+    }
+    s[out++] = s[in++];
+  }
+
+  s.resize(out);
+}
+
+void
 Condition::initialize(Parser &p)
 {
   Statement::initialize(p);
@@ -123,6 +154,10 @@ Condition::initialize(Parser &p)
 
   if (_substr_seen > 1) {
     throw std::runtime_error("Only one substring modifier (EXT, SUF, PRE, MID) may be used.");
+  }
+
+  if (p.consume_mod("NORM")) {
+    _mods |= CondModifiers::MOD_NORM;
   }
 
   if (p.consume_mod("L")) {
