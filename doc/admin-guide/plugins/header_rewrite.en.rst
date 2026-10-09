@@ -1143,7 +1143,8 @@ rm-destination
 Removes individual components of the remapped destination's address. When
 changing the remapped destination, ``<part>`` should be used to indicate the
 component that is being modified (see `URL Parts`_). Currently the only valid
-parts for rm-destination are QUERY, PATH, and PORT.
+parts for rm-destination are QUERY, PATH, and PORT; any other part is ignored,
+leaving the destination unchanged.
 
 For the query parameter, this operator takes an optional second argument,
 which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
@@ -1465,6 +1466,19 @@ the operator will effectively be a no-op.
 .. note::
     This operator is deprecated, use the `set-http-cntl`_ operator instead,
     with the ``SKIP_REMAP`` control.
+
+sort-destination
+~~~~~~~~~~~~~~~~
+::
+
+  sort-destination QUERY
+
+Sorts the query parameters of the remapped destination's URL by parameter
+name, in case-sensitive byte order. Sorting is stable, so parameters that
+share the same name keep their relative order. Empty parameters, such as the
+one in ``a=1&&b=2``, are dropped. Currently ``QUERY`` is the only valid part
+for sort-destination; any other part is ignored, leaving the destination
+unchanged.
 
 set-cookie
 ~~~~~~~~~~
