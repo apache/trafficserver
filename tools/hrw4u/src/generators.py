@@ -66,8 +66,8 @@ class TableGenerator:
         return {
             "HEADER_CONTEXT_MAP":
                 {
-                    SectionType.REMAP: "inbound.req.",
-                    frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}): "outbound.req.",
+                    frozenset({SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}): "inbound.req.",
+                    SectionType.SEND_REQUEST: "outbound.req.",
                     SectionType.READ_RESPONSE: "outbound.resp."
                 },
             "URL_CONTEXT_MAP":
