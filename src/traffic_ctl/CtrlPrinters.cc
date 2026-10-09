@@ -63,6 +63,11 @@ print_record_error_list(std::vector<shared::rpc::RecordLookUpResponse::RecordErr
 void
 BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 {
+  // A response never clears an exit status an earlier step already set.
+  if (auto const code = appExitCodeFromResponse(response); code != CTRL_EX_OK) {
+    App_Exit_Status_Code = code;
+  }
+
   // If json, then we print the full message, either ok or error.
   if (this->is_json_format()) {
     write_output_json(response.fullMsg);
@@ -70,8 +75,6 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
   }
 
   if (response.is_error()) {
-    App_Exit_Status_Code = CTRL_EX_ERROR; // Set the exit code to error, so we can return it later.
-
     // If an error is present, then as per the specs we can ignore the jsonrpc.result field,
     // so we print the error and we are done here!
     std::cout << response.error.as<shared::rpc::JSONRPCError>(); // Already formatted.

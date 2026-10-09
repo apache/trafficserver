@@ -19,9 +19,13 @@
 */
 #pragma once
 
+#include <limits>
+#include <optional>
 #include <string>
 #include <variant>
+#include <vector>
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/ts_errata.h"
 #include <yaml-cpp/yaml.h>
 #include <tscore/ink_uuid.h>
 
@@ -68,9 +72,16 @@ struct JSONRPCResponse {
 struct JSONRPCError {
   int32_t     code;    //!< High level error code.
   std::string message; //!< High level message
-  // the following data is defined by TS, it will be a key/value pair.
-  std::vector<std::pair<int32_t, std::string>> data;
-  friend std::ostream                         &operator<<(std::ostream &os, const JSONRPCError &err);
+  struct DataEntry {
+    /// Stored when the server sent a severity that is not an integer, or an entry that is not a map.
+    static constexpr int32_t INVALID_SEVERITY{std::numeric_limits<int32_t>::min()};
+
+    int32_t                code;
+    std::optional<int32_t> severity; //!< As sent by the server, see @c DiagsLevel. Empty when the server sent none.
+    std::string            message;
+  };
+  std::vector<DataEntry> data;
+  friend std::ostream   &operator<<(std::ostream &os, const JSONRPCError &err);
 };
 
 /**
@@ -209,8 +220,18 @@ operator<<(std::ostream &os, const JSONRPCError &err)
 {
   os << "Server Error found:\n";
   os << "[" << err.code << "] " << err.message << '\n';
-  for (auto &&[code, message] : err.data) {
-    os << "- [" << code << "] " << message << '\n';
+  for (auto const &entry : err.data) {
+    os << "- [" << entry.code << "] ";
+    if (entry.severity) {
+      if (auto const sev = *entry.severity; sev >= 0 && static_cast<size_t>(sev) < Severity_Names.size()) {
+        os << Severity_Names[sev] << ": ";
+      } else if (sev == JSONRPCError::DataEntry::INVALID_SEVERITY) {
+        os << "Severity(invalid): ";
+      } else {
+        os << "Severity(" << sev << "): ";
+      }
+    }
+    os << entry.message << '\n';
   }
 
   return os;

@@ -368,6 +368,9 @@ ConfigCommand::fetch_config_reload(std::string const &token, std::string const &
   auto response = invoke_rpc(request); // server will handle if token is empty or not.
 
   _printer->write_output(response); // in case of errors.
+  if (response.is_error()) {
+    throw ServerErrorReported{};
+  }
   return response.result.as<ConfigReloadResponse>();
 }
 
@@ -375,13 +378,22 @@ void
 ConfigCommand::track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval,
                                             std::chrono::milliseconds timeout, std::string const &timeout_str)
 {
+  // A status error stops the monitor before it sees how the reload ended. At or above --error-level it fails the command,
+  // below it the outcome is unknown.
+  auto stop_on_error = [this](shared::rpc::JSONRPCResponse const &response) {
+    _printer->write_output(response);
+    if (App_Exit_Status_Code == CTRL_EX_OK) {
+      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+    }
+  };
+
   FetchConfigReloadStatusRequest request{
     FetchConfigReloadStatusRequest::Params{token, "1" /* last reload if any*/}
   };
   auto resp = invoke_rpc(request);
 
   if (resp.is_error()) {
-    _printer->write_output(resp);
+    stop_on_error(resp);
     return;
   }
 
@@ -431,8 +443,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     };
     resp = invoke_rpc(request);
     if (resp.is_error()) {
-      _printer->write_output(resp);
-      App_Exit_Status_Code = CTRL_EX_ERROR;
+      stop_on_error(resp);
       return;
     }
   }
@@ -481,6 +492,9 @@ ConfigCommand::config_reload(std::string const &token, bool force, YAML::Node co
   });
   // base class method will handle error and json output if needed.
   _printer->write_output(resp);
+  if (resp.is_error()) {
+    throw ServerErrorReported{};
+  }
   return resp.result.as<ConfigReloadResponse>();
 }
 
@@ -693,7 +707,16 @@ ConfigCommand::config_reload()
     }
   } else if (monitor) {
     _printer->disable_json_format(); // monitor output is not json.
-    ConfigReloadResponse resp = config_reload(token, force, configs);
+    ConfigReloadResponse resp;
+    try {
+      resp = config_reload(token, force, configs);
+    } catch (ServerErrorReported const &) {
+      // Nothing was scheduled, so there is nothing to monitor: below --error-level the outcome is still not a success.
+      if (App_Exit_Status_Code == CTRL_EX_OK) {
+        App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+      }
+      throw;
+    }
 
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
       in_progress = true;
@@ -1223,14 +1246,22 @@ ServerCommand::server_debug()
     lookup_request.emplace_rec("proxy.config.diags.debug.tags", shared::rpc::NOT_REGEX, shared::rpc::CONFIG_REC_TYPES);
     auto lookup_response = invoke_rpc(lookup_request);
 
-    if (!lookup_response.is_error()) {
-      auto const &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
-      if (!records.recordList.empty()) {
-        std::string current_tags = records.recordList[0].currentValue;
-        if (!current_tags.empty()) {
-          // Combine: current|new
-          tags = current_tags + "|" + tags;
-        }
+    if (lookup_response.is_error()) {
+      // Without the current tags the append cannot be done: report it and set nothing. Below --error-level that is still not a
+      // success.
+      _printer->write_output(lookup_response);
+      if (App_Exit_Status_Code == CTRL_EX_OK) {
+        App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+      }
+      return;
+    }
+
+    auto const &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
+    if (!records.recordList.empty()) {
+      std::string current_tags = records.recordList[0].currentValue;
+      if (!current_tags.empty()) {
+        // Combine: current|new
+        tags = current_tags + "|" + tags;
       }
     }
   }
