@@ -629,9 +629,44 @@ Network
 
 .. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
 
-   How frequent (in seconds) to check for inactive connections. If you deal
-   with a lot of concurrent connections, increasing this setting can reduce
-   pressure on the system.
+   How frequent (in seconds) to check for inactive connections. This is the
+   resolution of the inactivity and active timeouts: a timeout fires on the
+   first check at or after its deadline, so raising this value makes timeouts
+   correspondingly coarser.
+
+   Raising it does not reduce load at high connection counts. The cost of a
+   check is proportional to the number of connections whose deadline has come
+   due, not to the number of connections open, so there is little to gain here
+   and timeout accuracy to lose.
+
+.. ts:cv:: CONFIG proxy.config.net.inactivity_cop_budget INT 4096
+   :reloadable:
+
+   The maximum number of connections one inactivity check may time out before
+   yielding. Anything still due is retired a millisecond later rather than
+   waiting for the next check, so this bounds the length of a single check and
+   not how much work a check may eventually retire.
+
+   This is a latency control, not a throughput one. The check runs on an event
+   thread, so a check that closes N connections delays that thread's poll loop
+   for as long as those N closes take, and unrelated connections on that thread
+   wait. Because reaping idle connections is low priority work, trading a longer
+   total reap for smaller slices is usually worthwhile on a busy system: lowering
+   this value smooths the spikes a correlated wave of timeouts would otherwise
+   put on the event loop.
+
+   To choose a value, watch :ts:stat:`proxy.process.net.inactivity_cop_pass_max_us`,
+   which reports the longest check observed. Divide
+   :ts:stat:`proxy.process.net.inactivity_cop_pass_time_us` by
+   :ts:stat:`proxy.process.net.inactivity_cop_fired` for the average cost of one
+   close, and multiply by this setting to estimate the worst case a full budget
+   permits. A steadily climbing
+   :ts:stat:`proxy.process.net.inactivity_cop_budget_exhausted` means checks are
+   consistently hitting the limit, which is expected and harmless when the value
+   is deliberately low, but indicates timeouts firing late if it is not.
+
+   The value must be at least 1. A budget of zero would stop the check from
+   examining anything at all, and connections would never time out.
 
 .. ts:cv:: CONFIG proxy.config.incoming_ip_to_bind STRING 0.0.0.0 [::]
 

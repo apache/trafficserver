@@ -95,6 +95,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null read.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -129,6 +130,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null write.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -283,6 +285,12 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
     closed = 1;
   } else {
     closed = -1;
+  }
+
+  // Only rearm on this NetEvent's own thread; a cross-thread close defers to
+  // whichever path eventually runs do_io_close (or free_netevent) there.
+  if (t == this->thread) {
+    this->rearm_timer();
   }
 
   if (close_inline) {
@@ -455,6 +463,15 @@ UnixNetVConnection::set_enabled(VIO *vio)
   STATE_FROM_VIO(vio)->enabled = 1;
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
+    rearm_timer();
+  } else if (!next_inactivity_timeout_at && !inactivity_timeout_in &&
+             default_inactivity_timeout_in.load(std::memory_order_relaxed) > 0) {
+    // No explicit timeout is set: the wheel only revisits scheduled elements, so
+    // arm the default here rather than relying on the cop's sweep to notice.
+    use_default_inactivity_timeout = true;
+    next_inactivity_timeout_at     = ink_get_hrtime() + default_inactivity_timeout_in;
+    Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
+    rearm_timer();
   }
 }
 
@@ -940,8 +957,25 @@ void
 UnixNetVConnection::netActivity()
 {
   Dbg(dbg_ctl_socket, "net_activity updating inactivity %" PRId64 ", NetVC=%p", this->inactivity_timeout_in, this);
+  ink_hrtime const default_timeout_in = this->default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
   if (this->inactivity_timeout_in) {
     this->next_inactivity_timeout_at = ink_get_hrtime() + this->inactivity_timeout_in;
+    // Deliberately no rearm_timer(): this only pushes the deadline later, and the
+    // wheel re-reads the real deadline when the bucket comes due. Hot I/O path.
+  } else if (default_timeout_in > 0) {
+    // Arming from the default is an extension too, except on the 0 -> armed
+    // transition: a vc whose default was 0 when set_enabled() ran was never
+    // scheduled, so extending a deadline it does not have would leave it out of
+    // the wheel forever. Re-arm only on that transition, which happens at most
+    // once per connection, so the steady-state path stays free of wheel work.
+    bool const was_unarmed = this->next_inactivity_timeout_at == 0;
+
+    this->use_default_inactivity_timeout = true;
+    this->next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
+    if (was_unarmed) {
+      this->rearm_timer();
+    }
   } else {
     this->next_inactivity_timeout_at = 0;
   }
@@ -1054,7 +1088,8 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   }
 
   *signal_timeout_at = 0;
-  writer_cont        = write.vio.cont;
+  rearm_timer();
+  writer_cont = write.vio.cont;
 
   if (closed) {
     nh->free_netevent(this);
@@ -1205,6 +1240,11 @@ UnixNetVConnection::clear()
   next_activity_timeout_at   = 0;
   inactivity_timeout_in      = 0;
   active_timeout_in          = 0;
+  // stopCop() is the authoritative cancel, called while nh is still valid. A
+  // still-scheduled element here means some teardown path bypassed stopCop,
+  // leaving a dangling wheel entry into freed memory -- fail loudly in debug
+  // rather than paper over it with a redundant cancel.
+  ink_assert(!get_NetHandler(this_ethread())->timer_wheel.is_scheduled(this));
 
   // clear variables for reuse
   this->mutex.clear();
@@ -1294,6 +1334,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
   Dbg(dbg_ctl_socket, "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
   next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + inactivity_timeout_in : 0;
+  rearm_timer();
 }
 
 TS_INLINE void
