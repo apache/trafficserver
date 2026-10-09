@@ -312,8 +312,10 @@ Http2CommonSession::state_complete_frame_read(int event, void *edata)
     if (this->_should_do_something_else()) {
       if (this->_reenable_event == nullptr) {
         vio->disable();
-        this->_reenable_event = this->get_mutex()->thread_holding->schedule_in(this->get_proxy_session(), HRTIME_MSECONDS(1),
-                                                                               HTTP2_SESSION_EVENT_REENABLE, vio);
+        auto *netvc = this->get_netvc();
+        ink_assert(netvc != nullptr);
+        this->_reenable_event =
+          netvc->thread->schedule_in(this->get_proxy_session(), HRTIME_MSECONDS(1), HTTP2_SESSION_EVENT_REENABLE, vio);
       } else {
         vio->reenable();
       }
@@ -403,8 +405,10 @@ Http2CommonSession::do_process_frame_read(int /* event ATS_UNUSED */, VIO *vio, 
       if (this->_reenable_event == nullptr) {
         this->connection_state.restart_receiving(nullptr);
         vio->disable();
-        this->_reenable_event = this->get_mutex()->thread_holding->schedule_in(this->get_proxy_session(), HRTIME_MSECONDS(1),
-                                                                               HTTP2_SESSION_EVENT_REENABLE, vio);
+        auto *netvc = this->get_netvc();
+        ink_assert(netvc != nullptr);
+        this->_reenable_event =
+          netvc->thread->schedule_in(this->get_proxy_session(), HRTIME_MSECONDS(1), HTTP2_SESSION_EVENT_REENABLE, vio);
         return 0;
       }
     }
