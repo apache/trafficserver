@@ -533,6 +533,8 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
       }
       rule = rule->next.get();
     }
+
+    res.finalize_key_ops();
   }
 
   if (reenable) {
@@ -811,6 +813,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       }
 
     } while ((rule = rule->next.get()));
+
+    res.finalize_key_ops();
   }
 
   Dbg(dbg_ctl, "Returning from TSRemapDoRemap with status: %d", rval);

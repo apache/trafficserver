@@ -20,6 +20,7 @@
 //
 //
 #include <arpa/inet.h>
+#include <charconv>
 #include <cstring>
 #include <algorithm>
 #include <iomanip>
@@ -32,6 +33,7 @@
 #include "swoc/swoc_file.h"
 
 #include "operators.h"
+#include "url_query.h"
 #include "ts/apidefs.h"
 #include "conditions.h"
 #include "factory.h"
@@ -495,18 +497,7 @@ OperatorRMDestination::exec(const Resources &res) const
         const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &q_len);
 
         if (q_len > 0) {
-          for (auto &q : _tokenize({query, static_cast<size_t>(q_len)}, '&')) {
-            auto eq_pos = q.find('=');
-            auto it = std::find(_stop_list.begin(), _stop_list.end(), (eq_pos != std::string_view::npos) ? q.substr(0, eq_pos) : q);
-
-            if (_keep == (it != _stop_list.end())) {
-              if (!value.empty()) {
-                value.append("&").append(q);
-              } else {
-                value = q;
-              }
-            }
-          }
+          value = filter_query({query, static_cast<size_t>(q_len)}, _stop_list, _keep);
         }
         Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() rewrote QUERY to \"%s\"", value.c_str());
       } else {
@@ -529,6 +520,320 @@ OperatorRMDestination::exec(const Resources &res) const
     Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
         res.hdr_loc, res._rri);
   }
+  return true;
+}
+
+// OperatorSortDestination
+void
+OperatorSortDestination::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+}
+
+bool
+OperatorSortDestination::exec(const Resources &res) const
+{
+  if (res._rri || (res.bufp && res.hdr_loc)) {
+    TSMBuffer bufp;
+    TSMLoc    url_m_loc;
+
+    // Determine which TSMBuffer and TSMLoc to use
+    if (res._rri && !res.changed_url) {
+      bufp      = res._rri->requestBufp;
+      url_m_loc = res._rri->requestUrl;
+    } else {
+      bufp = res.bufp;
+      if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
+        Dbg(pi_dbg_ctl, "TSHttpHdrUrlGet was unable to return the url m_loc");
+        return true;
+      }
+    }
+
+    switch (_url_qual) {
+    case URL_QUAL_QUERY: {
+      int              q_len = 0;
+      const char      *q_ptr = TSUrlHttpQueryGet(bufp, url_m_loc, &q_len);
+      std::string_view query = q_len > 0 ? std::string_view(q_ptr, static_cast<size_t>(q_len)) : std::string_view();
+
+      if (is_query_sorted(query)) {
+        Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() QUERY already sorted, leaving it unchanged");
+        break;
+      }
+
+      std::string sorted = sort_query(query);
+
+      if (TSUrlHttpQuerySet(bufp, url_m_loc, sorted.c_str(), sorted.size()) != TS_SUCCESS) {
+        Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() unable to set QUERY");
+        break;
+      }
+      const_cast<Resources &>(res).changed_url = true;
+      res.reset_query_cache();
+      Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() rewrote QUERY to \"%s\"", sorted.c_str());
+      break;
+    }
+    default:
+      Dbg(pi_dbg_ctl, "Sort destination %i has no handler", _url_qual);
+      break;
+    }
+  } else {
+    Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
+        res.hdr_loc, res._rri);
+  }
+  return true;
+}
+
+// OperatorSetKey
+void
+OperatorSetKey::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
+  switch (_url_qual) {
+  case URL_QUAL_HOST:
+  case URL_QUAL_PORT:
+  case URL_QUAL_PATH:
+  case URL_QUAL_QUERY:
+  case URL_QUAL_SCHEME:
+    break;
+  default:
+    throw std::runtime_error("set-cache-key accepts HOST, PORT, PATH, QUERY, or SCHEME, got: " + p.get_arg());
+  }
+
+  _value.set_value(p.get_value(), this);
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorSetKey::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
+}
+
+bool
+OperatorSetKey::exec(const Resources &res) const
+{
+  if (!res.ensure_key_url()) {
+    Dbg(pi_dbg_ctl, "OperatorSetKey::exec() unable to create the cache URL");
+    return true;
+  }
+
+  UrlKeyState &key = res.cache_key;
+  std::string  value;
+
+  _value.append_value(value, res);
+
+  // Unlike set-destination, an empty value is applied: it clears the component.
+  switch (_url_qual) {
+  case URL_QUAL_HOST:
+    TSUrlHostSet(key.bufp, key.url_loc, value.data(), value.size());
+    break;
+  case URL_QUAL_PATH:
+    TSUrlPathSet(key.bufp, key.url_loc, value.data(), value.size());
+    break;
+  case URL_QUAL_QUERY:
+    TSUrlHttpQuerySet(key.bufp, key.url_loc, value.data(), value.size());
+    break;
+  case URL_QUAL_SCHEME:
+    TSUrlSchemeSet(key.bufp, key.url_loc, value.data(), value.size());
+    break;
+  case URL_QUAL_PORT: {
+    int port = 0;
+
+    if (!value.empty()) {
+      auto [end, ec] = std::from_chars(value.data(), value.data() + value.size(), port);
+
+      if (ec != std::errc() || end != value.data() + value.size() || port < 0 || port > 0xFFFF) {
+        Dbg(pi_dbg_ctl, "OperatorSetKey::exec() invalid PORT \"%s\", skipping", value.c_str());
+        return true;
+      }
+    }
+    TSUrlPortSet(key.bufp, key.url_loc, port);
+    break;
+  }
+  default:
+    return true;
+  }
+
+  key.active = true;
+  Dbg(pi_dbg_ctl, "OperatorSetKey::exec() set component %d to \"%s\"", _url_qual, value.c_str());
+  return true;
+}
+
+// OperatorAddKey
+void
+OperatorAddKey::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _value.set_value(p.get_arg(), this);
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorAddKey::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
+}
+
+bool
+OperatorAddKey::exec(const Resources &res) const
+{
+  if (!res.ensure_key_url()) {
+    Dbg(pi_dbg_ctl, "OperatorAddKey::exec() unable to create the cache URL");
+    return true;
+  }
+
+  std::string value;
+
+  // An empty value still adds a segment, so segment i always holds the same input.
+  _value.append_value(value, res);
+  Dbg(pi_dbg_ctl, "OperatorAddKey::exec() adding segment \"%s\"", value.c_str());
+  res.cache_key.key_data.push_back(std::move(value));
+  res.cache_key.active = true;
+  return true;
+}
+
+// OperatorClearKey
+void
+OperatorClearKey::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorClearKey::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
+}
+
+bool
+OperatorClearKey::exec(const Resources &res) const
+{
+  if (!res.ensure_key_url()) {
+    Dbg(pi_dbg_ctl, "OperatorClearKey::exec() unable to create the cache URL");
+    return true;
+  }
+
+  Dbg(pi_dbg_ctl, "OperatorClearKey::exec() clearing %zu segments", res.cache_key.key_data.size());
+  res.cache_key.key_data.clear();
+  res.cache_key.active = true;
+  return true;
+}
+
+// OperatorRMKey
+void
+OperatorRMKey::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
+  if (_url_qual != URL_QUAL_QUERY && _url_qual != URL_QUAL_PATH) {
+    throw std::runtime_error("rm-cache-key accepts QUERY or PATH, got: " + p.get_arg());
+  }
+
+  _names = p.get_value();
+  if (!_names.empty()) {
+    if (_url_qual != URL_QUAL_QUERY) {
+      throw std::runtime_error("rm-cache-key accepts a list of names only for QUERY");
+    }
+    _keep      = get_oper_modifiers() & OPER_INV;
+    _name_list = _tokenize(_names, ',');
+  }
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorRMKey::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
+}
+
+bool
+OperatorRMKey::exec(const Resources &res) const
+{
+  if (!res.ensure_key_url()) {
+    Dbg(pi_dbg_ctl, "OperatorRMKey::exec() unable to create the cache URL");
+    return true;
+  }
+
+  UrlKeyState &key = res.cache_key;
+
+  if (_url_qual == URL_QUAL_PATH) {
+    TSUrlPathSet(key.bufp, key.url_loc, "", 0);
+    Dbg(pi_dbg_ctl, "OperatorRMKey::exec() deleting PATH");
+  } else {
+    std::string query;
+
+    if (!_name_list.empty()) {
+      int         q_len = 0;
+      const char *q_ptr = TSUrlHttpQueryGet(key.bufp, key.url_loc, &q_len);
+
+      if (q_len > 0) {
+        query = filter_query({q_ptr, static_cast<size_t>(q_len)}, _name_list, _keep);
+      }
+    }
+    TSUrlHttpQuerySet(key.bufp, key.url_loc, query.data(), query.size());
+    Dbg(pi_dbg_ctl, "OperatorRMKey::exec() rewrote QUERY to \"%s\"", query.c_str());
+  }
+
+  key.active = true;
+  return true;
+}
+
+// OperatorSortKey
+void
+OperatorSortKey::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  if (parse_url_qualifier(p.get_arg()) != URL_QUAL_QUERY) {
+    throw std::runtime_error("sort-cache-key accepts only QUERY, got: " + p.get_arg());
+  }
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}
+
+void
+OperatorSortKey::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
+}
+
+bool
+OperatorSortKey::exec(const Resources &res) const
+{
+  if (!res.ensure_key_url()) {
+    Dbg(pi_dbg_ctl, "OperatorSortKey::exec() unable to create the cache URL");
+    return true;
+  }
+
+  UrlKeyState     &key   = res.cache_key;
+  int              q_len = 0;
+  const char      *q_ptr = TSUrlHttpQueryGet(key.bufp, key.url_loc, &q_len);
+  std::string_view query = q_len > 0 ? std::string_view(q_ptr, static_cast<size_t>(q_len)) : std::string_view();
+
+  if (!is_query_sorted(query)) {
+    std::string sorted = sort_query(query);
+
+    TSUrlHttpQuerySet(key.bufp, key.url_loc, sorted.data(), sorted.size());
+    Dbg(pi_dbg_ctl, "OperatorSortKey::exec() rewrote QUERY to \"%s\"", sorted.c_str());
+  }
+
+  key.active = true;
   return true;
 }
 

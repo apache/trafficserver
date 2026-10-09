@@ -284,7 +284,7 @@ class ConditionUrl : public Condition
   using SelfType    = ConditionUrl;
 
 public:
-  enum UrlType { CLIENT, URL, FROM, TO, SERVER };
+  enum UrlType { CLIENT, URL, FROM, TO, SERVER, CACHE };
 
   explicit ConditionUrl(const UrlType type) : _type(type) { Dbg(dbg_ctl, "Calling CTOR for ConditionUrl"); }
 

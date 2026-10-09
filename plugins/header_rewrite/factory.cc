@@ -49,6 +49,18 @@ operator_factory(const std::string &op)
     o = new OperatorSetDestination();
   } else if (op == "rm-destination") {
     o = new OperatorRMDestination();
+  } else if (op == "sort-destination") {
+    o = new OperatorSortDestination();
+  } else if (op == "set-cache-key") {
+    o = new OperatorSetKey();
+  } else if (op == "add-cache-key") {
+    o = new OperatorAddKey();
+  } else if (op == "clear-cache-key") {
+    o = new OperatorClearKey();
+  } else if (op == "rm-cache-key") {
+    o = new OperatorRMKey();
+  } else if (op == "sort-cache-key") {
+    o = new OperatorSortKey();
   } else if (op == "set-redirect") {
     o = new OperatorSetRedirect();
   } else if (op == "timeout-out") {
@@ -149,6 +161,8 @@ condition_factory(const std::string &cond)
     c = new ConditionUrl(ConditionUrl::SERVER);
   } else if (c_name == "URL") {
     c = new ConditionUrl(ConditionUrl::URL);
+  } else if (c_name == "CACHE-URL") {
+    c = new ConditionUrl(ConditionUrl::CACHE);
   } else if (c_name == "FROM-URL") {
     c = new ConditionUrl(ConditionUrl::FROM);
   } else if (c_name == "TO-URL") {
