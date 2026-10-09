@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -113,7 +113,8 @@ public:
     @param cont continuation that the spawn thread will call back
       immediately.
     @return event object representing the start of the thread.
-
+    @param[in] thr_name Name assigned to the new thread.
+    @param[in] stacksize Stack size in bytes, or zero to use the configured default.
   */
   Event *spawn_thread(Continuation *cont, const char *thr_name, size_t stacksize = 0);
 
@@ -132,14 +133,10 @@ public:
 
   /**
     Schedules the continuation on a specific EThread to receive an event
-    at the given timeout.  Requests the EventProcessor to schedule
-    the callback to the continuation 'c' at the time specified in
-    'atimeout_at'. The event is assigned to the specified EThread.
+    immediately. The event is assigned to a thread of @a event_type.
 
-    @param c Continuation to be called back at the time specified in
-      'atimeout_at'.
-    @param atimeout_at time value at which to callback.
-    @param ethread EThread on which to schedule the event.
+    @param[in] c Continuation to be called back immediately.
+    @param[in] event_type Thread pool on which to schedule the event.
     @param callback_event code to be passed back to the continuation's
       handler. See the Remarks section.
     @param cookie user-defined value or pointer to be passed back in
@@ -241,11 +238,6 @@ public:
 
   /// Schedule the function @a f to be called in a thread of type @a ev_type when it is spawned.
   Event *schedule_spawn(void (*f)(EThread *), EventType ev_type);
-
-  /// Schedule an @a event on continuation @a c to be called when a thread is spawned by this processor.
-  /// The @a cookie is attached to the event instance passed to the continuation.
-  /// @return The scheduled event.
-  //  Event *schedule_spawn(Continuation *c, int event, void *cookie = NULL);
 
   EventProcessor();
   ~EventProcessor() override;

@@ -3,7 +3,7 @@
   TLSEventSupport implements common methods and members to
   support TLS related events
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -85,7 +85,7 @@ private:
   bool _first_handshake_hooks_outbound_pre = true;
 
   /// The current hook.
-  /// @note For @C SSL_HOOKS_INVOKE, this is the hook to invoke.
+  /// @note For @c SSL_HOOKS_INVOKE, this is the hook to invoke.
   class APIHook        *curHook               = nullptr;
   SSLHandshakeHookState sslHandshakeHookState = SSLHandshakeHookState::HANDSHAKE_HOOKS_PRE;
 };

@@ -5,7 +5,7 @@
   v1: periodical pre-warming only
   v2: periodical pre-warming + event based pre-warming
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -55,12 +55,14 @@ algorithm_version(int i)
 /**
    Periodical pre-warming for algorithm v1
 
-   Expand the pool size to @requested_size
+   Expand the pool size to @c requested_size
 
-   @params min : min connections (configured)
-   @params max : max connections (configured), -1 : unlimited
+   @param[in] min : min connections (configured)
+   @param[in] max : max connections (configured), -1 : unlimited
 
    @return how many connections needs to be pre-warmed for next period
+   @param[in] requested_size Desired pool size for the next interval.
+   @param[in] current_size Current number of connections in the pool.
  */
 inline uint32_t
 prewarm_size_v1_on_event_interval(uint32_t requested_size, uint32_t current_size, uint32_t min, int32_t max)
@@ -87,12 +89,16 @@ prewarm_size_v1_on_event_interval(uint32_t requested_size, uint32_t current_size
 /**
    Periodical pre-warming for algorithm v2
 
-   Expand the pool size to @current_size + @miss * @rate. The event based pre-warming handles the hit cases.
+   Expand the pool size to @a current_size + @a miss * @a rate. The event based pre-warming handles the hit cases.
 
-   @params min : min connections (configured)
-   @params max : max connections (configured), -1 : unlimited
+   @param[in] min : min connections (configured)
+   @param[in] max : max connections (configured), -1 : unlimited
 
    @return how many connections needs to be pre-warmed for next period
+   @param[in] current_size Current number of connections in the pool.
+   @param[in] hit Number of pool hits in the current interval.
+   @param[in] miss Number of pool misses in the current interval.
+   @param[in] rate Multiplier applied to misses when growing the pool.
  */
 inline uint32_t
 prewarm_size_v2_on_event_interval(uint32_t hit, uint32_t miss, uint32_t current_size, uint32_t min, int32_t max, double rate)

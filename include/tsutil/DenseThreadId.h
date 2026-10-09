@@ -4,7 +4,7 @@
   Cache contention between CPU cores is avoided except when a write lock is taken.
   Assumes no thread will exit while holding mutex.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

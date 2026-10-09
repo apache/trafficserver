@@ -2,7 +2,7 @@
 
   Config reload error codes — shared between server (Configuration.cc) and client (CtrlCommands.cc).
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

@@ -3,7 +3,7 @@
   A drop-in replacement for std::shared_mutex with guarantees against writer
   starvation.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

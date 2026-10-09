@@ -2,7 +2,7 @@
 
   Net subsystem
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section details Details
+  @par Details
 
   Net subsystem is a layer on top the operations system network apis. It
   provides an interface for accepting/creating new connection oriented

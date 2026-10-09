@@ -2,7 +2,7 @@
 
   Milestones
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -45,7 +45,6 @@ public:
   /**
    * Mark given milestone with timestamp if it's not marked yet
    * @param ms The milestone to mark
-   * @return N/A
    */
   void
   mark(T ms)
@@ -57,8 +56,9 @@ public:
 
   /**
    * Takes two milestones and returns the difference.
-   * @param start The start time
-   * @param end The end time
+   * @param[in] ms_start The start time
+   * @param[in] ms_end The end time
+   * @param[in] missing The value to return when either milestone has not been marked.
    * @return The difference time in milliseconds
    */
   int64_t
@@ -72,8 +72,8 @@ public:
 
   /**
    * Takes two milestones and returns the difference.
-   * @param start The start time
-   * @param end The end time
+   * @param[in] ms_start The start time
+   * @param[in] ms_end The end time
    * @return A double that is the difference time in seconds
    */
   double
@@ -84,8 +84,8 @@ public:
 
   /**
    * Takes two milestones and returns the difference.
-   * @param start The start time
-   * @param end The end time
+   * @param[in] ms_start The start time
+   * @param[in] ms_end The end time
    * @return The difference time in high-resolution time
    */
   ink_hrtime

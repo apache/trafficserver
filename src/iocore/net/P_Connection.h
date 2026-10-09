@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -40,7 +40,7 @@
 
   The accept call is a blocking call while connect is non-blocking. They
   returns a new Connection instance which is an handle to the newly created
-  connection. The connection `q instance can be used later for read/writes
+  connection. The connection instance can be used later for read/writes
   using an instance of IOProcessor class.
 
 

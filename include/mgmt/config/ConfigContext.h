@@ -6,7 +6,7 @@
    - Status tracking (in_progress, complete, fail, log)
    - Inline content support for YAML configs (via -d flag or RPC API)
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

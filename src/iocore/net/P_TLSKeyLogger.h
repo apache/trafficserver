@@ -1,6 +1,6 @@
 /**
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -49,7 +49,7 @@ public:
    * about this callback, see OpenSSL's documentation of
    * SSL_CTX_set_keylog_callback.
    *
-   * @param[in] ssl The SSL object associated with the connection.
+   * @note The unused SSL object argument is ignored.
    * @param[in] line The line to place in the keylog file.
    */
   static void

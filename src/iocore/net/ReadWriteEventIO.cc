@@ -2,7 +2,7 @@
 
    A brief file description
 
- @section license License
+ @par License
 
    Licensed to the Apache Software
    Foundation(ASF) under one

@@ -8,7 +8,7 @@
  *  - RPC reload support (YAML content supplied via RPC)
  *  - Runtime lookup for RPC handlers
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -130,6 +130,7 @@ public:
   /// @param filename_record  Record that holds the filename (e.g., "proxy.config.cache.ip_allow.filename")
   ///                         If empty, default_filename is always used.
   /// @param handler          Handler that receives ConfigContext
+  /// @param[in] source           Source of configuration updates.
   /// @param trigger_records  Records that trigger reload (optional)
   /// @param is_required      Whether the file must exist on disk (default false)
   ///

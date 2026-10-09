@@ -1,6 +1,6 @@
 /** @file
   Virtual Host configuration
-  @section license License
+  @par License
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
@@ -65,7 +65,9 @@ public:
 
   /** Load every entry from the configuration file into this (empty) config.
 
-      @param initial_load Set only for the load performed by @c VirtualHost::startup(). An absent
+      @param[in] ctx Context for configuration reload status tracking.
+      @param[in,out] plugin_reload Optional coordinator for remap plugin reload notifications.
+      @param[in] initial_load Set only for the load performed by @c VirtualHost::startup(). An absent
       or empty file is a supported "no virtualhosts configured" state there, but on a reload it is
       an error: reporting success would publish an empty config over a live routing table, silently
       dropping every per-domain remap table.

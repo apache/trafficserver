@@ -3,7 +3,7 @@
   Atomic wrapper around std::shared_ptr with the C++20
   std::atomic<std::shared_ptr<T>> API.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

@@ -2,7 +2,7 @@
 
   Basic locks for threads
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -233,10 +233,7 @@ public:
     Initializes the underlying mutex object.
 
     After constructing your ProxyMutex object, use this function
-    to initialize the underlying mutex object with an optional name.
-
-    @param name Name to identify this ProxyMutex. Its use depends
-      on the given platform.
+    to initialize the underlying mutex object.
 
   */
   void

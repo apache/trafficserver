@@ -2,7 +2,7 @@
 
   Information about remap plugin libraries.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -45,7 +45,6 @@
  * but when it comes to functions we can assume that
  * if not defined we can return nullptr and a valid address if the are defined.
  * @param symbol function symbol name
- * @param error error messages in case of symbol is not found
  * @return function address or nullptr if not found.
  */
 template <class T>
