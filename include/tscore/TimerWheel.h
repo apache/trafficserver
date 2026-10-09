@@ -25,8 +25,8 @@
 #pragma once
 
 #include <algorithm>
-#include <concepts>
 #include <cstdint>
+#include <type_traits>
 
 #include "tscore/List.h"
 #include "tscore/ink_assert.h"
@@ -64,9 +64,12 @@ struct TimerWheelHook {
 //
 // Both are invoked through a non-const F &, so a delegate may carry mutable
 // state shared across one pass - a visit count, for instance.
+//
+// Spelled with std::is_convertible_v rather than std::convertible_to so that
+// toolchains whose standard library predates <concepts> can still build it.
 template <class F, class C>
 concept TimerWheelDelegate = requires(F &f, C *e) {
-  { f.deadline_of(e) } -> std::convertible_to<ink_hrtime>;
+  requires std::is_convertible_v<decltype(f.deadline_of(e)), ink_hrtime>;
   f(e);
 };
 
