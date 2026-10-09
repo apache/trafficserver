@@ -37,16 +37,18 @@ namespace config
  * Represents a single certificate entry in ssl_multicert configuration.
  */
 struct SSLMultiCertEntry {
-  std::string        ssl_cert_name;      ///< Certificate file name (required unless action is tunnel).
-  std::string        dest_ip{"*"};       ///< IP address to match (default "*").
-  std::string        ssl_key_name;       ///< Private key file name (optional).
-  std::string        ssl_ca_name;        ///< CA certificate file name (optional).
-  std::string        ssl_ocsp_name;      ///< OCSP response file name (optional).
-  std::string        ssl_key_dialog;     ///< Passphrase dialog method (optional).
-  std::string        dest_fqdn;          ///< Destination FQDN (optional).
-  std::string        action;             ///< Action (e.g., "tunnel").
-  std::optional<int> ssl_ticket_enabled; ///< Session ticket enabled (optional).
-  std::optional<int> ssl_ticket_number;  ///< Number of session tickets (optional).
+  std::string        ssl_cert_name;          ///< Certificate file name (required unless action is tunnel).
+  std::string        dest_ip{"*"};           ///< IP address to match (default "*").
+  std::string        ssl_key_name;           ///< Private key file name (optional).
+  std::string        ssl_ca_name;            ///< CA certificate file name (optional).
+  std::string        ssl_ocsp_name;          ///< OCSP response file name (optional).
+  std::string        ssl_key_dialog;         ///< Passphrase dialog method (optional).
+  std::string        dest_fqdn;              ///< Destination FQDN (optional).
+  std::string        action;                 ///< Action (e.g., "tunnel").
+  std::optional<int> ssl_ticket_enabled;     ///< Session ticket enabled (optional).
+  std::optional<int> ssl_ticket_number;      ///< Number of session tickets (optional).
+  std::optional<int> ssl_rpk_enabled;        ///< Offer a RFC 7250 raw public key alongside X.509 (optional).
+  std::string        ssl_client_rpk_ca_name; ///< Trusted client raw public keys file name (optional).
 };
 
 /// A configuration is a vector of certificate entries.
