@@ -41,12 +41,14 @@ constexpr std::string_view OVERRIDE_HEADER = "X-Parent-Override";
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
-std::string_view
+enum class OverrideMode { NONE, PROXY_SET, RESPONSE_ACTION };
+
+OverrideMode
 override_mode(TSHttpTxn txnp)
 {
-  TSMBuffer        bufp    = nullptr;
-  TSMLoc           hdr_loc = TS_NULL_MLOC;
-  std::string_view mode;
+  TSMBuffer    bufp    = nullptr;
+  TSMLoc       hdr_loc = TS_NULL_MLOC;
+  OverrideMode mode    = OverrideMode::NONE;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     return mode;
@@ -58,7 +60,13 @@ override_mode(TSHttpTxn txnp)
     char const *value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
 
     if (value != nullptr) {
-      mode = {value, static_cast<size_t>(len)};
+      std::string_view const header_value{value, static_cast<size_t>(len)};
+
+      if (header_value == "proxy-set") {
+        mode = OverrideMode::PROXY_SET;
+      } else if (header_value == "response-action") {
+        mode = OverrideMode::RESPONSE_ACTION;
+      }
     }
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   }
@@ -69,13 +77,13 @@ override_mode(TSHttpTxn txnp)
 int
 handle_read_request(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
 {
-  TSHttpTxn        txnp = static_cast<TSHttpTxn>(edata);
-  std::string_view mode = override_mode(txnp);
+  TSHttpTxn    txnp = static_cast<TSHttpTxn>(edata);
+  OverrideMode mode = override_mode(txnp);
 
-  if (mode == "proxy-set") {
+  if (mode == OverrideMode::PROXY_SET) {
     Dbg(dbg_ctl, "setting parent %s:%d with TSHttpTxnParentProxySet", DEAD_PARENT, DEAD_PORT);
     TSHttpTxnParentProxySet(txnp, DEAD_PARENT, DEAD_PORT);
-  } else if (mode == "response-action") {
+  } else if (mode == OverrideMode::RESPONSE_ACTION) {
     TSResponseAction action{};
 
     action.hostname      = DEAD_PARENT;
