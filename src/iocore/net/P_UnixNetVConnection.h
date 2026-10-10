@@ -170,12 +170,36 @@ public:
   void            readReschedule(NetHandler *nh);
   void            writeReschedule(NetHandler *nh);
   void            netActivity();
+  /// The connection state carried from one thread's NetVC to another by a migration.
+  struct MigrationState {
+    Connection              con;
+    void                   *arg = nullptr;
+    NetVCOptions            options;
+    NetVConnectionContext_t context               = NET_VCONNECTION_UNSET;
+    ink_hrtime              inactivity_timeout_in = 0;
+    NetProcessor           *processor             = nullptr;
+  };
+
   /**
-   * If the current object's thread does not match the t argument, create a new
-   * NetVC in the thread t context based on the socket and ssl information in the
-   * current NetVC and mark the current NetVC to be closed.
+   * First half of a migration to another thread. Move the socket and ssl
+   * information out of the current NetVC into ms and mark the current NetVC to
+   * be closed. The owning thread is free to release the NetVC once this
+   * returns, so the caller must not use it again.
+   *
+   * This can be called from any thread, but the caller must hold the mutex of
+   * the read and write VIOs to keep the owning thread from processing the
+   * NetVC.
    */
-  UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
+  void detachForMigration(MigrationState &ms);
+
+  /**
+   * Second half of a migration to another thread. Create a new NetVC in the
+   * thread t context based on the socket and ssl information in ms. The
+   * connection is closed if this fails.
+   *
+   * @return The new NetVC, or nullptr on failure.
+   */
+  static UnixNetVConnection *attachMigrated(MigrationState &ms, Continuation *c, EThread *t);
 
   Action action_;
 

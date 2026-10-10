@@ -1311,43 +1311,55 @@ UnixNetVConnection::is_default_inactivity_timeout()
 
 /*
  * Close down the current netVC.  Save aside the socket and SSL information
- * and create new netVC in the current thread/netVC
+ * so a new netVC can be created from them in another thread.
  */
-UnixNetVConnection *
-UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
+void
+UnixNetVConnection::detachForMigration(MigrationState &ms)
 {
-  NetHandler *client_nh = get_NetHandler(t);
-  ink_assert(client_nh);
-  if (this->nh == client_nh) {
-    // We're already there!
-    return this;
-  }
-
-  Connection hold_con;
-  hold_con.move(this->con);
-
-  void *arg = this->_prepareForMigration();
+  ms.con.move(this->con);
+  ms.arg                   = this->_prepareForMigration();
+  ms.options               = this->options;
+  ms.context               = this->get_context();
+  ms.inactivity_timeout_in = this->inactivity_timeout_in;
+  ms.processor             = this->_getNetProcessor();
 
   // Do_io_close will signal the VC to be freed on the original thread
   // Since we moved the con context, the fd will not be closed
-  // Go ahead and remove the fd from the original thread's epoll structure, so it is not
+  // Go ahead and remove the fd from the original thread's poller, so it is not
   // processed on two threads simultaneously
-  this->ep.stop();
-
-  // Create new VC:
-  UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(this->_getNetProcessor()->allocate_vc(t));
-  ink_assert(newvc != nullptr);
-  if (newvc->populate(hold_con, cont, arg) != EVENT_DONE) {
-    newvc->do_io_close();
-    newvc = nullptr;
-  }
-  if (newvc) {
-    newvc->set_context(get_context());
-    newvc->options = this->options;
-  }
+  //
+  // This stop is not synchronized with the original thread. That thread may have already seen
+  // this VC as open and enabled in NetHandler::process_ready_list, in which case it goes on to
+  // net_read_io, fails the try lock on the VIO mutex held by the caller, and reschedules the VC.
+  // The reschedule calls ep.refresh on the EventIO stopped here, so EventIO::modify and
+  // EventIO::refresh do nothing on a stopped EventIO. A delay before the try lock in net_read_io
+  // makes the original thread hit this reliably.
+  //
+  // Unlike an ordinary close, migration keeps the fd open, so kqueue registrations must
+  // also be removed here before the old VC can be freed.
+  ink_release_assert(this->ep.stop_for_migration() == 0);
 
   // Do not mark this closed until the end so it does not get freed by the other thread too soon
   this->do_io_close();
+}
+
+/*
+ * Create a new netVC in the current thread from the socket and SSL
+ * information saved aside by detachForMigration.
+ */
+UnixNetVConnection *
+UnixNetVConnection::attachMigrated(MigrationState &ms, Continuation *cont, EThread *t)
+{
+  UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(ms.processor->allocate_vc(t));
+
+  ink_assert(newvc != nullptr);
+  if (newvc->populate(ms.con, cont, ms.arg) != EVENT_DONE) {
+    newvc->do_io_close();
+    return nullptr;
+  }
+  newvc->set_context(ms.context);
+  newvc->options = ms.options;
+  newvc->set_inactivity_timeout(ms.inactivity_timeout_in);
   return newvc;
 }
 
