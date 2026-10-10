@@ -157,7 +157,9 @@ public:
   bool    exceeded(const std::string &rule_name, std::optional<uint32_t> timestamp = std::nullopt) const;
   int32_t tokens(const std::string &rule_name, std::optional<uint32_t> timestamp = std::nullopt) const;
   bool    has_debt(std::optional<uint32_t> timestamp = std::nullopt) const;
-  void    prune(const std::unordered_set<std::string> &active_rules);
+  /// Remove buckets for rules not in @a active_rules.
+  /// @return The number of buckets removed.
+  size_t prune(const std::unordered_set<std::string> &active_rules);
 
 private:
   using BucketPtr = std::shared_ptr<TokenBucket>;
