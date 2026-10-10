@@ -1010,23 +1010,21 @@ UnixNetVConnection::acceptEvent(int /* event ATS_UNUSED */, Event *e)
 // and for active and inactivity timeouts.
 //
 int
-UnixNetVConnection::mainEvent(int event, Event *e)
+UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
 {
   ink_assert(event == VC_EVENT_ACTIVE_TIMEOUT || event == VC_EVENT_INACTIVITY_TIMEOUT);
   ink_assert(thread == this_ethread());
 
-  MUTEX_TRY_LOCK(hlock, get_NetHandler(thread)->mutex, e->ethread);
-  MUTEX_TRY_LOCK(rlock, read.vio.mutex ? read.vio.mutex : e->ethread->mutex, e->ethread);
-  MUTEX_TRY_LOCK(wlock, write.vio.mutex ? write.vio.mutex : e->ethread->mutex, e->ethread);
+  EThread *t = this_ethread();
+
+  MUTEX_TRY_LOCK(hlock, get_NetHandler(thread)->mutex, t);
+  MUTEX_TRY_LOCK(rlock, read.vio.mutex ? read.vio.mutex : t->mutex, t);
+  MUTEX_TRY_LOCK(wlock, write.vio.mutex ? write.vio.mutex : t->mutex, t);
 
   if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
       (read.vio.mutex && rlock.get_mutex() != read.vio.mutex.get()) ||
       (write.vio.mutex && wlock.get_mutex() != write.vio.mutex.get())) {
     return EVENT_CONT;
-  }
-
-  if (e->cancelled) {
-    return EVENT_DONE;
   }
 
   int           signal_event;

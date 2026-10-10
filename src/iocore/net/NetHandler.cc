@@ -505,15 +505,12 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
     ++closed;
   } else {
     ne->next_inactivity_timeout_at = now;
-    // create a dummy event
-    Event event;
-    event.ethread = this_ethread();
     if (ne->inactivity_timeout_in && ne->next_inactivity_timeout_at <= now) {
-      if (ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, &event) == EVENT_DONE) {
+      if (ne->callback(VC_EVENT_INACTIVITY_TIMEOUT) == EVENT_DONE) {
         ++handle_event;
       }
     } else if (ne->active_timeout_in && ne->next_activity_timeout_at <= now) {
-      if (ne->callback(VC_EVENT_ACTIVE_TIMEOUT, &event) == EVENT_DONE) {
+      if (ne->callback(VC_EVENT_ACTIVE_TIMEOUT) == EVENT_DONE) {
         ++handle_event;
       }
     }
