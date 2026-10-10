@@ -117,14 +117,25 @@ const char *accessTokenStatusToString(const AccessTokenStatus &state);
 /**
  * Validates whether a request path falls within the scope claim of an access token.
  * Matching is performed on normalized path segments. An empty or absent scope is
- * treated as unrestricted (returns true).
+ * treated as unrestricted (returns @c ScopeValidationResult::IN_SCOPE).
  *
- * @param[in] requestPath The incoming HTTP requestPath.
+ * @param[in] requestPath The incoming HTTP request path.
  * @param[in] scope The scope string extracted from the token.
- * @return True if the path is permitted by the scope, false otherwise.
+ * @return ScopeValidationResult indicating whether the path is in scope, out of scope,
+ *         or invalid.
  */
-ScopeValidationResult validateScopeDetailed(StringView requestPath, StringView Scope);
-bool                  validateScope(StringView requestPath, StringView scope);
+ScopeValidationResult validateScopeDetailed(StringView requestPath, StringView scope);
+
+/**
+ * Validates whether a request path falls within the scope claim of an access token.
+ * Matching is performed on normalized path segments. An empty or absent scope is
+ * treated as unrestricted (returns @c true).
+ *
+ * @param[in] requestPath The incoming HTTP request path.
+ * @param[in] scope The scope string extracted from the token.
+ * @return @c true if the path is permitted by the scope, @c false otherwise.
+ */
+bool validateScope(StringView requestPath, StringView scope);
 
 /**
  *  Base Access Token class / interface + some basic implementations.

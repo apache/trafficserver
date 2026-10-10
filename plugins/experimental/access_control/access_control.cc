@@ -577,36 +577,6 @@ accessTokenStatusToString(const AccessTokenStatus &state)
   return s;
 }
 
-/**
- * Validates the request path against the token scope using normalized segment boundaries.
- */
-bool
-validateScope(StringView requestPath, StringView scope)
-{
-  if (scope.empty()) {
-    return true;
-  }
-  String normScope;
-  if (!normalizePath(scope, normScope, /* isScope = */ true)) {
-    return false;
-  }
-  String normRequestPath;
-  if (!normalizePath(requestPath, normRequestPath, /* isScope = */ false)) {
-    return false;
-  }
-
-  if (normScope == "/") {
-    return true;
-  }
-  if (normRequestPath == normScope) {
-    return true;
-  }
-  if (normRequestPath.compare(0, normScope.size(), normScope) == 0 && normRequestPath[normScope.length()] == '/') {
-    return true;
-  }
-  return false;
-}
-
 /* Debug dump of the token */
 std::ostream &
 operator<<(std::ostream &os, const AccessToken &token)
