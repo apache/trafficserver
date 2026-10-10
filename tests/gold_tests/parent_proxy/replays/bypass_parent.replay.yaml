@@ -1,0 +1,170 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# proxy.config.http.bypass_parent, set per remap rule via conf_remap,
+# bypasses both parent.config and an @strategy= next-hop strategy. The parent
+# and the next hop are both dead with go_direct=false, so any request that is
+# routed to them fails with a 502, while a request that goes direct reaches the
+# verifier server and gets its 200.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'bypass_parent bypasses parent.config and next-hop strategies per remap rule'
+
+  dns:
+    name: 'dns-bypass-parent'
+
+  server:
+    name: 'server-bypass-parent'
+
+  client:
+    name: 'client-bypass-parent'
+
+  ats:
+    name: 'ts-bypass-parent'
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|parent_select|next_hop'
+      # With the cache disabled every request is non-lookupable, and this
+      # setting (default 1) would bypass the parent regardless of bypass_parent.
+      proxy.config.http.uncacheable_requests_bypass_parent: 0
+      proxy.config.http.parent_proxy.self_detect: 0
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.parent_proxy.per_parent_connect_attempts: 1
+      proxy.config.url_remap.strategies.filename: bypass_parent_strategies.yaml
+
+    copy_to_config_dir:
+      - 'replays/bypass_parent_strategies.yaml'
+
+    parent_config:
+      - 'dest_domain=. parent="127.0.0.1:1|1" go_direct=false parent_is_proxy=true'
+
+    remap_config:
+      - from: 'http://parent.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+      - from: 'http://direct.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'conf_remap.so'
+            args:
+              - 'proxy.config.http.bypass_parent=1'
+      - from: 'http://strat.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+        options:
+          - '@strategy=dead-strat'
+      # @strategy= must precede @plugin=, so this rule uses the string form.
+      - 'map http://strat-direct.test/ http://origin.test:{SERVER_HTTP_PORT}/ @strategy=dead-strat @plugin=conf_remap.so @pparam=proxy.config.http.bypass_parent=1'
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'bypassing parent selection due to proxy\.config\.http\.bypass_parent'
+            description: 'Parent selection is bypassed for the bypass_parent rules'
+      diags_log:
+        excludes:
+          - expression: 'WARNING: .*proxy\.config\.http\.bypass_parent'
+            description: 'bypass_parent does not warn when origin DNS is allowed'
+
+sessions:
+- transactions:
+  # parent.config without the override: the dead parent is selected.
+  - all: { headers: { fields: [[ uuid, parent ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /parent
+      headers:
+        fields:
+        - [ Host, parent.test ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
+
+  # parent.config with the override: the request goes straight to the origin.
+  - all: { headers: { fields: [[ uuid, direct ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /direct
+      headers:
+        fields:
+        - [ Host, direct.test ]
+        - [ Content-Length, "0" ]
+    proxy-request:
+      url:
+      - [ path, { value: /direct, as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 200
+
+  # @strategy= without the override: the dead next hop is selected.
+  - all: { headers: { fields: [[ uuid, strat ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /strat
+      headers:
+        fields:
+        - [ Host, strat.test ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
+
+  # @strategy= with the override: the request goes straight to the origin.
+  - all: { headers: { fields: [[ uuid, strat-direct ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /strat-direct
+      headers:
+        fields:
+        - [ Host, strat-direct.test ]
+        - [ Content-Length, "0" ]
+    proxy-request:
+      url:
+      - [ path, { value: /strat-direct, as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 200

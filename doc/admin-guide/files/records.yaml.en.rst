@@ -1585,6 +1585,22 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+.. ts:cv:: CONFIG proxy.config.http.bypass_parent INT 0
+   :reloadable:
+   :overridable:
+
+   When enabled (1), |TS| bypasses parent selection and connects directly to the origin server named by the
+   remapped request. Unlike the ``go_direct`` option in :file:`parent.config` and :file:`strategies.yaml`, which
+   only permits falling back to the origin after the parents fail, this setting skips parents entirely. It can be
+   enabled globally, or per transaction as an overridable configuration (for example with
+   :ref:`admin-plugins-conf-remap` or :func:`TSHttpTxnConfigIntSet`). It takes precedence over parents configured
+   in :file:`parent.config`, next-hop strategies in :file:`strategies.yaml` (including ``@strategy=`` remap
+   arguments), parents set by plugins with :func:`TSHttpTxnParentProxySet`, and next hops chosen with
+   :func:`TSHttpTxnResponseActionSet`: those selections are discarded and the request goes direct. This setting
+   does not change cache lookup behavior. If :ts:cv:`proxy.config.http.no_dns_just_forward_to_parent` is also
+   enabled, |TS| logs a warning and continues through parent selection so that origin DNS resolution remains the
+   responsibility of the parent.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.disable_connect_tunneling INT 0
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.self_detect INT 2

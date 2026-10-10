@@ -1,0 +1,187 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# proxy.config.http.bypass_parent also discards parents chosen by
+# plugins. The parent_override_test plugin sets a dead parent with either
+# TSHttpTxnParentProxySet() or TSHttpTxnResponseActionSet(), selected by the
+# X-Parent-Override request header. There is no parent.config, so without the
+# plugin every request goes direct; a 502 can only come from the plugin's dead
+# parent, while a bypass_parent rule still reaches the verifier server.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'bypass_parent bypasses parents set by TSHttpTxnParentProxySet and TSHttpTxnResponseActionSet'
+
+  dns:
+    name: 'dns-plugin-parent'
+
+  server:
+    name: 'server-plugin-parent'
+
+  client:
+    name: 'client-plugin-parent'
+
+  ats:
+    name: 'ts-plugin-parent'
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|parent_select|parent_override_test'
+      # With the cache disabled every request is non-lookupable, and this
+      # setting (default 1) would send plugin-chosen parents direct as well.
+      proxy.config.http.uncacheable_requests_bypass_parent: 0
+      proxy.config.http.parent_proxy.self_detect: 0
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.parent_proxy.per_parent_connect_attempts: 1
+
+    plugin_config:
+      - 'parent_override_test.so'
+
+    copy_custom_plugin:
+      - 'plugins/.libs/parent_override_test.so'
+
+    remap_config:
+      - from: 'http://plugin.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+      - from: 'http://plugin-direct.test/'
+        to: 'http://origin.test:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'conf_remap.so'
+            args:
+              - 'proxy.config.http.bypass_parent=1'
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'setting parent 127\.0\.0\.1:1 with TSHttpTxnParentProxySet'
+            description: 'The plugin sets a parent with TSHttpTxnParentProxySet'
+          - expression: 'setting parent 127\.0\.0\.1:1 with TSHttpTxnResponseActionSet'
+            description: 'The plugin sets a parent with TSHttpTxnResponseActionSet'
+          - expression: 'bypassing parent selection due to proxy\.config\.http\.bypass_parent'
+            description: 'Parent selection is bypassed for the bypass_parent rule'
+
+sessions:
+- transactions:
+  # No plugin override and no parent.config: the request goes direct.
+  - all: { headers: { fields: [[ uuid, no-override ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /no-override
+      headers:
+        fields:
+        - [ Host, plugin.test ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 200
+
+  # TSHttpTxnParentProxySet without bypass_parent: the dead parent is used.
+  - all: { headers: { fields: [[ uuid, proxy-set ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /proxy-set
+      headers:
+        fields:
+        - [ Host, plugin.test ]
+        - [ X-Parent-Override, proxy-set ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
+
+  # TSHttpTxnParentProxySet with bypass_parent: the plugin's parent is discarded.
+  - all: { headers: { fields: [[ uuid, proxy-set-direct ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /proxy-set-direct
+      headers:
+        fields:
+        - [ Host, plugin-direct.test ]
+        - [ X-Parent-Override, proxy-set ]
+        - [ Content-Length, "0" ]
+    proxy-request:
+      url:
+      - [ path, { value: /proxy-set-direct, as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 200
+
+  # TSHttpTxnResponseActionSet without bypass_parent: the dead parent is used.
+  - all: { headers: { fields: [[ uuid, response-action ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /response-action
+      headers:
+        fields:
+        - [ Host, plugin.test ]
+        - [ X-Parent-Override, response-action ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
+
+  # TSHttpTxnResponseActionSet with bypass_parent: the plugin's next hop is discarded.
+  - all: { headers: { fields: [[ uuid, response-action-direct ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      url: /response-action-direct
+      headers:
+        fields:
+        - [ Host, plugin-direct.test ]
+        - [ X-Parent-Override, response-action ]
+        - [ Content-Length, "0" ]
+    proxy-request:
+      url:
+      - [ path, { value: /response-action-direct, as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 200
