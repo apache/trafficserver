@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include "traffic_crashlog.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_cap.h"
@@ -201,7 +204,7 @@ crashlog_exec_pgm(FILE *fp, pid_t pid)
 
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
-{
+try {
   FILE           *fp;
   char           *logname;
   crashlog_target target;
@@ -351,4 +354,10 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   fflush(fp);
   fclose(fp);
   return 0;
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_crashlog: terminating on an unhandled exception: %s\n", ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "traffic_crashlog: terminating on an unhandled exception\n");
+  return 1;
 }
