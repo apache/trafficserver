@@ -44,4 +44,13 @@ if(BUILD_TESTING)
     test_abuse_shield_config PRIVATE Catch2::Catch2WithMain libswoc::libswoc ts::tsutil yaml-cpp::yaml-cpp
   )
   add_catch2_test(NAME test_abuse_shield_config COMMAND test_abuse_shield_config)
+
+  # Micro-benchmarks for the hook path, the maintenance pass, and eviction.
+  # Built but not registered with ctest, so they add nothing to CI time. Catch2
+  # is only available when BUILD_TESTING is on, hence the nesting.
+  if(ENABLE_BENCHMARKS)
+    add_executable(benchmark_abuse_shield unit_tests/benchmark_abuse_shield.cc ip_data.cc)
+    target_include_directories(benchmark_abuse_shield PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(benchmark_abuse_shield PRIVATE Catch2::Catch2WithMain libswoc::libswoc)
+  endif()
 endif()
