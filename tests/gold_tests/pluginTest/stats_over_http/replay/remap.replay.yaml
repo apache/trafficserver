@@ -1,0 +1,225 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Serve each format from a remap rule, answer HEAD without a body and reject other methods'
+  server:
+    name: 'server'
+  client:
+    name: 'client'
+  ats:
+    name: 'ts'
+    copy_custom_plugin:
+      - '{AtsTestPluginsDir}/test_metrics.so'
+    plugin_config:
+      - 'test_metrics.so plugin.test_metrics.negative=-42'
+    remap_config:
+      - from: 'http://prometheus.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--format=prometheus']
+        options: ['@action=deny', '@src_ip=~127.0.0.1']
+      - from: 'http://prometheus-v2.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--format=prometheus_v2']
+      - from: 'http://json.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: []
+      - from: 'http://json-integer.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--format=json', '--integer-counters']
+      - from: 'http://csv.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--format=csv']
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, prometheus.example.com ]
+        - [ uuid, prometheus ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=0.0.4; charset=utf-8', as: equal } ]
+        - [ Content-Length, { as: present } ]
+        - [ Cache-Control, { value: no-store, as: equal } ]
+        - [ X-Stats-Format, { value: prometheus, as: equal } ]
+      content:
+        encoding: plain
+        data: "# TYPE plugin_test_metrics_negative gauge\nplugin_test_metrics_negative -42\n"
+        verify: { as: contains }
+
+  # Neither the path nor the Accept header selects the format of a remap rule.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics/csv
+      headers:
+        fields:
+        - [ Host, prometheus.example.com ]
+        - [ Accept, text/csv ]
+        - [ uuid, prometheus-fixed-format ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=0.0.4; charset=utf-8', as: equal } ]
+        - [ X-Stats-Format, { value: prometheus, as: equal } ]
+
+  - client-request:
+      method: HEAD
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, prometheus.example.com ]
+        - [ uuid, head ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=0.0.4; charset=utf-8', as: equal } ]
+        - [ Content-Length, { as: absent } ]
+        - [ X-Stats-Format, { value: prometheus, as: equal } ]
+
+  - client-request:
+      method: POST
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, prometheus.example.com ]
+        - [ Content-Length, 4 ]
+        - [ uuid, post ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 405
+      headers:
+        fields:
+        - [ Allow, { value: 'GET, HEAD', as: equal } ]
+        - [ X-Stats-Format, { as: absent } ]
+
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, prometheus-v2.example.com ]
+        - [ uuid, prometheus-v2 ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=2.0.0; charset=utf-8', as: equal } ]
+        - [ Content-Length, { as: present } ]
+        - [ X-Stats-Format, { value: prometheus_v2, as: equal } ]
+      content:
+        encoding: plain
+        data: "# TYPE plugin_test_metrics_negative gauge\nplugin_test_metrics_negative -42\n"
+        verify: { as: contains }
+
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /stats
+      headers:
+        fields:
+        - [ Host, json.example.com ]
+        - [ uuid, json ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: text/json, as: equal } ]
+        - [ Content-Length, { as: present } ]
+        - [ X-Stats-Format, { value: json, as: equal } ]
+      content:
+        encoding: plain
+        data: '"plugin.test_metrics.negative": "-42",'
+        verify: { as: contains }
+
+  # Each rule has its own options.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /stats
+      headers:
+        fields:
+        - [ Host, json-integer.example.com ]
+        - [ uuid, json-integer ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Stats-Format, { value: json, as: equal } ]
+      content:
+        encoding: plain
+        data: '"plugin.test_metrics.negative": -42,'
+        verify: { as: contains }
+
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /stats
+      headers:
+        fields:
+        - [ Host, csv.example.com ]
+        - [ uuid, csv ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: text/csv, as: equal } ]
+        - [ Content-Length, { as: present } ]
+        - [ X-Stats-Format, { value: csv, as: equal } ]
+      content:
+        encoding: plain
+        data: "plugin.test_metrics.negative,-42\n"
+        verify: { as: contains }

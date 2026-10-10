@@ -49,6 +49,35 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+Plugins
+-------
+
+The :ref:`admin-plugins-stats-over-http` plugin prints gauge values as signed
+integers in its JSON, CSV and Prometheus output. Earlier versions printed a
+negative gauge as an unsigned value, for example ``18446744073709551574`` for
+``-42``, or ``9223372036854775767`` with ``--wrap-counters``. The
+``--wrap-counters`` option now applies only to counters.
+
+Two changes affect the Prometheus version 0.0.4 output of the plugin:
+
+* When two metric names map to the same Prometheus name, the plugin writes
+  them as one family: one ``# HELP`` and ``# TYPE`` block, then all of their
+  samples. Earlier versions wrote a separate block for each metric.
+* The plugin writes sample lines that are longer than 255 bytes. Earlier
+  versions left out such a sample, but wrote its ``# HELP`` and ``# TYPE``
+  lines.
+
+The plugin renders the statistics on a task thread. Each request waits for a
+render that starts after the request arrives. The ``--max-age-ms`` option lets
+a render also answer the requests that arrive up to that many milliseconds
+after it starts; the default is ``0``. When requests wait and no render
+finishes for ten seconds, the requests get a ``503`` response. The
+``--wait-timeout-ms`` option sets this time.
+
+The plugin creates metrics of its own, such as
+``plugin.stats_over_http.requests`` and ``plugin.stats_over_http.renders``, so
+its output has more metrics than before, in each format.
+
 Upgrading to ATS v10.x
 ======================
 
