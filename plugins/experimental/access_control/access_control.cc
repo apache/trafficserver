@@ -57,6 +57,9 @@ normalizePath(StringView path, String &normalized, bool isScope = false)
     while (i < path.size() && path[i] != '/' && path[i] != '\\') {
       if (path[i] == '%') {
         unsigned int val = 0;
+        if (i + 2 >= path.size()) {
+          return false;
+        }
         auto [end, ec] = std::from_chars(path.data() + i + 1, path.data() + i + 3, val, 16);
         if (end == path.data() + i + 3 && ec == std::errc{} && val <= 0xFF) {
           if (val == '/' || val == '\\' || val < 0x20 || val == 0x7F) {
