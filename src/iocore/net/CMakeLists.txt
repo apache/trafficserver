@@ -64,7 +64,6 @@ add_library(
   TLSTunnelSupport.cc
   TLSCertCompression.cc
   UDPEventIO.cc
-  UDPIOEvent.cc
   UnixConnection.cc
   UnixNet.cc
   UnixNetAccept.cc
