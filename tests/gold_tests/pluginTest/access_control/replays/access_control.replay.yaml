@@ -76,3 +76,52 @@ sessions:
       headers:
         fields:
           - [ set-cookie, { value: Expires=, not: contains } ]
+
+  # 3: In-scope request with signed scoped token
+  # ```
+  # payload='sub=user1&exp=4073587200&nbf=1514764800&iat=1514160000&tid=1234567890&scope=/scoped/in-scope/&kid=key1&st=HMAC-SHA-256&md='
+  # signature=$(echo -n ${payload} | openssl dgst -sha256 -hmac "PEIFtmunx9" | sed -e 's/^.* //')
+  # token="${payload}${signature}"
+  # cookie=$(echo -n "${token}" | base64 -w0 | tr '+/' '-_' | tr -d '=')
+  # ```
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /scoped/in-scope/resource
+      headers:
+        fields:
+          - [ uuid, 3 ]
+          - [ Host, example.com ]
+          - [ Cookie, "TokenCookie=c3ViPXVzZXIxJmV4cD00MDczNTg3MjAwJm5iZj0xNTE0NzY0ODAwJmlhdD0xNTE0MTYwMDAwJnRpZD0xMjM0NTY3ODkwJnNjb3BlPS9zY29wZWQvaW4tc2NvcGUvJmtpZD1rZXkxJnN0PUhNQUMtU0hBLTI1NiZtZD0xOWViZDdkZGVjNzM3N2FjMDNkY2FmYmMwMDRhN2Q0ZDZkZjdjMTEwZDE0ZTQxMWQ5OGNjYWNkZGVlYTAyMjQ3" ]
+
+    proxy-request:
+      headers:
+        fields:
+          - [ @TokenSubject, { value: user1, as: equal } ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Length, 10 ]
+
+    proxy-response:
+      status: 200
+
+  # 4: Out-of-scope request with signed scoped token
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /scoped/out-of-scope/resource
+      headers:
+        fields:
+          - [ uuid, 4 ]
+          - [ Host, example.com ]
+          - [ Cookie, "TokenCookie=c3ViPXVzZXIxJmV4cD00MDczNTg3MjAwJm5iZj0xNTE0NzY0ODAwJmlhdD0xNTE0MTYwMDAwJnRpZD0xMjM0NTY3ODkwJnNjb3BlPS9zY29wZWQvaW4tc2NvcGUvJmtpZD1rZXkxJnN0PUhNQUMtU0hBLTI1NiZtZD0xOWViZDdkZGVjNzM3N2FjMDNkY2FmYmMwMDRhN2Q0ZDZkZjdjMTEwZDE0ZTQxMWQ5OGNjYWNkZGVlYTAyMjQ3" ]
+
+    proxy-response:
+      status: 403
+      headers:
+        fields:
+          - [ @TokenSubject, { as: absent } ]
+

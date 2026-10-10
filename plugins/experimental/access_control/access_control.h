@@ -105,7 +105,37 @@ enum AccessTokenStatus {
   MAX,
 };
 
+enum class ScopeValidationResult {
+  IN_SCOPE,
+  OUT_OF_SCOPE,
+  INVALID_SCOPE,
+  INVALID_REQUEST_PATH,
+};
+
 const char *accessTokenStatusToString(const AccessTokenStatus &state);
+
+/**
+ * Validates whether a request path falls within the scope claim of an access token.
+ * Matching is performed on normalized path segments. An empty or absent scope is
+ * treated as unrestricted (returns @c ScopeValidationResult::IN_SCOPE).
+ *
+ * @param[in] requestPath The incoming HTTP request path.
+ * @param[in] scope The scope string extracted from the token.
+ * @return ScopeValidationResult indicating whether the path is in scope, out of scope,
+ *         or invalid.
+ */
+ScopeValidationResult validateScopeDetailed(StringView requestPath, StringView scope);
+
+/**
+ * Validates whether a request path falls within the scope claim of an access token.
+ * Matching is performed on normalized path segments. An empty or absent scope is
+ * treated as unrestricted (returns @c true).
+ *
+ * @param[in] requestPath The incoming HTTP request path.
+ * @param[in] scope The scope string extracted from the token.
+ * @return @c true if the path is permitted by the scope, @c false otherwise.
+ */
+bool validateScope(StringView requestPath, StringView scope);
 
 /**
  *  Base Access Token class / interface + some basic implementations.
@@ -202,7 +232,7 @@ protected:
   StringView _issuedAt   = ""; /** @brief time-stamp when token was issued, not required */
   StringView _tokenId    = ""; /** @brief unique token id for debugging and tracking, not required */
   StringView _version    = ""; /** @brief version, not required, still @todo */
-  StringView _scope      = ""; /** @brief scope of subject, not required, still @todo */
+  StringView _scope      = ""; /** @brief scope of subject, not required */
 
   /** Signature, extracted from the token string */
   StringView _keyId         = ""; /** @brief the key in the secrets map to be used to calculate the digest */

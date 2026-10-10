@@ -529,12 +529,28 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
           remapStatus =
             handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);
         } else {
-          /* Valid token, if configured extract the token subject to a header,
-           * only if we can trust it - token is valid to prevent using it by mistake */
-          if (!config->_extrSubHdrName.empty()) {
-            String sub(token->getSubject());
-            setHeader(rri->requestBufp, rri->requestHdrp, config->_extrSubHdrName.c_str(), config->_extrSubHdrName.size(),
-                      sub.c_str(), sub.size());
+          int                   pathLen = 0;
+          const char           *path    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathLen);
+          StringView            reqPath(path ? path : "", pathLen);
+          ScopeValidationResult scopeResult = validateScopeDetailed(reqPath, token->getScope());
+          if (scopeResult != ScopeValidationResult::IN_SCOPE) {
+            if (scopeResult == ScopeValidationResult::INVALID_SCOPE) {
+              data->_vaState = INVALID_SCOPE;
+            } else if (scopeResult == ScopeValidationResult::INVALID_REQUEST_PATH) {
+              data->_vaState = INVALID_SYNTAX;
+            } else {
+              data->_vaState = OUT_OF_SCOPE;
+            }
+            remapStatus =
+              handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);
+          } else {
+            /* Valid token and in-scope, if configured extract the token subject to a header,
+             * only if we can trust it - token is valid to prevent using it by mistake */
+            if (!config->_extrSubHdrName.empty()) {
+              String sub(token->getSubject());
+              setHeader(rri->requestBufp, rri->requestHdrp, config->_extrSubHdrName.c_str(), config->_extrSubHdrName.size(),
+                        sub.c_str(), sub.size());
+            }
           }
         }
         /* If configure extract the UA token id into a header likely for debugging,
