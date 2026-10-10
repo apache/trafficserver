@@ -44,7 +44,7 @@ normalizePath(StringView path, String &normalized, bool isScope = false)
   size_t              i = 0;
 
   while (i < path.size()) {
-    while (i < path.size() && (path[i] == '/' || path[i] == '\\')) {
+    while (i < path.size() && path[i] == '/') {
       ++i;
     }
     if (i >= path.size()) {
@@ -54,7 +54,10 @@ normalizePath(StringView path, String &normalized, bool isScope = false)
     size_t seg_start = normalized.size();
     normalized.push_back('/');
 
-    while (i < path.size() && path[i] != '/' && path[i] != '\\') {
+    while (i < path.size() && path[i] != '/') {
+      if (path[i] == '\\') {
+        return false;
+      }
       if (path[i] == '%') {
         unsigned int val = 0;
         if (i + 2 >= path.size()) {
