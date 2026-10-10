@@ -71,10 +71,19 @@ The following methods are available to access ClientHello data:
 
 .. function:: TSClientHello::TSExtensionTypeList get_extension_types() const
 
-   Returns an iterable container of extension type IDs present in the ClientHello.
-   This method abstracts the differences between BoringSSL (which uses an extensions
-   buffer) and OpenSSL (which uses an extension_ids array), providing a consistent
-   interface regardless of the SSL library in use.
+   Returns an iterable container of every extension type ID in the ClientHello,
+   in the order the client sent them. The list includes GREASE values and
+   extension types the SSL library does not recognize, on both BoringSSL and
+   OpenSSL. On OpenSSL, the list is read from the raw ClientHello message
+   because OpenSSL's own ClientHello API omits extensions it does not
+   recognize.
+
+   .. note::
+
+      On OpenSSL, :func:`TSClientHelloExtensionGet` can still only return the
+      contents of extensions that OpenSSL recognizes. An extension type such as
+      ALPS (``0x4469``) can appear in this list while
+      :func:`TSClientHelloExtensionGet` returns ``TS_ERROR`` for it.
 
 .. function:: void* _get_internal() const
 
