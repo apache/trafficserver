@@ -241,8 +241,13 @@ public:
     void version_message() const;
     // Helper method for parse()
     void append_option_data(Arguments &ret, AP_StrVec &args, int index);
-    // Helper method to collect the values of an option or command into @a ret
-    std::string handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index) const;
+    /** Helper method to collect the values of an option or command into @a ret.
+        @param env_value The value of the option's declared environment variable, or empty if
+        none is declared or it is unset. Used to fill a value the command line omitted, per the
+        precedence typed value > environment variable > declared default.
+    */
+    std::string handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index,
+                            std::string const &env_value = "") const;
     // Whether @a token names an option registered on this command
     bool is_registered_option(std::string const &token) const;
     // Helper method to validate mutually exclusive groups

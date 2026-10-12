@@ -146,6 +146,22 @@ This function call returns the new :class:`Option` instance. (0 is also number o
    ``--option=value`` form instead when options still have to follow a value that begins with
    ``-``.
 
+.. Note::
+
+   When a command or option is written on the command line but its value is left out, a
+   declared environment variable fills it in, so a caller reading the value through
+   :func:`ArgumentData::value` or :func:`ArgumentData::at` needs no special handling. This
+   applies whether the value is missing because the option takes a fixed number of arguments,
+   ``AT_MOST_ONE_ARG_N``, or ``MORE_THAN_ONE_ARG_N`` collected none. The resolution order is:
+
+   #. the value typed on the command line, if any;
+   #. the declared environment variable, if set;
+   #. the declared default value.
+
+   The variable is consulted only when the command or option is actually written; it never
+   activates one that was never typed. :func:`ArgumentData::env` keeps returning the variable's
+   raw value regardless.
+
 We can also use the following chained way to add subcommand or option:
 
 .. code-block:: cpp

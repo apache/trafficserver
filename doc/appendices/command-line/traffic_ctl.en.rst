@@ -618,6 +618,16 @@ Display the current value of a configuration record.
    ``-c`` is also given at most once, so repeating it is a usage error rather than the last
    file name silently winning.
 
+   When ``-c`` is written with no file name and the ``TS_RECORD_YAML`` environment variable
+   is set, its value is used as the file name instead of the sysconfig
+   :file:`records.yaml`:
+
+   .. code-block:: bash
+
+      $ TS_RECORD_YAML=/tmp/records.yaml traffic_ctl config get proxy.config.diags.debug.enabled -c
+
+   A file name typed on the command line always takes precedence over the variable.
+
    If the file exists and is empty a new document will be created. If a file does not exist, an attempt to create a new file will be done.
 
    This option(only for the config file changes) lets you use the prefix `proxy.config.` or `ts.` for variable names, either would work.
@@ -1168,6 +1178,15 @@ traffic_ctl server
 
    This string should contain an anchored regular expression that filters the messages based on the debug tag tag.
    Please refer to :ts:cv:`proxy.config.diags.debug.tags` for more information
+
+   When ``--tags`` is written with no value and the ``TS_DEBUG_TAGS`` environment variable is
+   set, its value is used instead:
+
+   .. code-block:: bash
+
+      $ TS_DEBUG_TAGS="http|cache" traffic_ctl server debug enable --tags
+
+   A value typed on the command line always takes precedence over the variable.
 
    .. option:: --append, -a
 

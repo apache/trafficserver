@@ -24,6 +24,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include "tscore/ArgParser.h"
 
+class TestArgParser : public ts::ArgParser
+{
+public:
+  TestArgParser() { ts::ArgParser::set_test_mode(true); }
+};
+
 int           global;
 ts::ArgParser parser;
 ts::ArgParser parser2;
@@ -484,4 +490,83 @@ TEST_CASE("A repeated option taking a fixed number of arguments keeps the last v
   ts::Arguments parsed  = parser.parse(argv1);
   REQUIRE(parsed.get("tags").size() == 1);
   REQUIRE(parsed.get("tags").value() == "cache");
+}
+
+TEST_CASE("A declared environment variable fills a value the command line omitted", "[parse][env]")
+{
+  setenv("TS_ARGPARSER_TEST_FIXED", "from_env", 1);
+  setenv("TS_ARGPARSER_TEST_ATMOST", "from_env", 1);
+  setenv("TS_ARGPARSER_TEST_ATLEAST", "from_env", 1);
+  unsetenv("TS_ARGPARSER_TEST_UNSET");
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl server debug enable [--tags TAGS]" with TS_DEBUG_TAGS.
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_FIXED", 1);
+  // Mirrors "traffic_ctl config get [--cold [FILE]]" with TS_RECORD_YAML.
+  cmd.add_option("--cold", "-c", "read from a file", "TS_ARGPARSER_TEST_ATMOST", AT_MOST_ONE_ARG_N);
+  cmd.add_option("--params", "-p", "parameters", "TS_ARGPARSER_TEST_ATLEAST", MORE_THAN_ONE_ARG_N);
+  cmd.add_option("--undeclared", "-u", "no variable declared", "", 1);
+  cmd.add_option("--declared-unset", "-U", "variable declared but unset", "TS_ARGPARSER_TEST_UNSET", 1);
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // Fixed arity: the flag is typed with no value, so the variable supplies it instead of a
+  // usage error.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "from_env");
+    REQUIRE(parsed.get("monitor") == true);
+  }
+
+  // AT_MOST_ONE_ARG_N: the flag is typed with no value, so the variable supplies it instead of
+  // the empty string FileConfigCommand previously saw.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-c", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("cold").value() == "from_env");
+  }
+
+  // MORE_THAN_ONE_ARG_N: no value collected, so the variable supplies a single one instead of
+  // "at least one argument expected".
+  {
+    const char   *argv[] = {"test_prog", "enable", "-p", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("params").size() == 1);
+    REQUIRE(parsed.get("params")[0] == "from_env");
+    REQUIRE(parsed.get("monitor") == true);
+  }
+
+  // A typed value always wins over the environment variable.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "cache", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "cache");
+  }
+
+  // The environment variable wins over the declared default.
+  {
+    TestArgParser default_parser;
+    default_parser.add_global_usage("test_prog [OPTIONS]");
+    ts::ArgParser::Command &dcmd = default_parser.add_command("enable", "enable debug");
+    dcmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_FIXED", 1, "default_tags");
+
+    const char   *argv[] = {"test_prog", "enable", "-t", nullptr};
+    ts::Arguments parsed = default_parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "from_env");
+  }
+
+  // Usage errors are unchanged when no variable is declared.
+  {
+    const char *argv[] = {"test_prog", "enable", "-u", "-m", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+
+  // Usage errors are unchanged when the variable is declared but unset.
+  {
+    const char *argv[] = {"test_prog", "enable", "-U", "-m", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
 }
