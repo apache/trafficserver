@@ -1,0 +1,82 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'A remap ACL filter denies a client before the plugin renders the stats'
+  server:
+    name: 'server-deny'
+  client:
+    name: 'client-deny'
+  ats:
+    name: 'ts-deny'
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'stats_over_http'
+    remap_config:
+      - from: 'http://denied.example.com/'
+        to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+        plugins:
+          - name: 'stats_over_http.so'
+            args: ['--format=prometheus']
+        options: ['@action=deny', '@src_ip=~192.0.2.1']
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'Intercepting GET request'
+          - expression: 'Intercept finished on TS_EVENT_NET_ACCEPT_FAILED'
+            description: 'The denied request should release its intercept'
+        excludes:
+          - expression: 'Rendered'
+            description: 'The plugin must not render the stats for a denied client'
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, denied.example.com ]
+        - [ uuid, denied-get ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 403
+      headers:
+        fields:
+        - [ X-Stats-Format, { as: absent } ]
+
+  # The 403 from the ACL filter replaces the 405 from the plugin, so the response has no Allow header.
+  - client-request:
+      method: POST
+      version: '1.1'
+      url: /metrics
+      headers:
+        fields:
+        - [ Host, denied.example.com ]
+        - [ Content-Length, 4 ]
+        - [ uuid, denied-post ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 403
+      headers:
+        fields:
+        - [ Allow, { as: absent } ]

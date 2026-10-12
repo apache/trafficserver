@@ -24,6 +24,7 @@
 /* stats.c:  expose traffic server stats over http
  */
 
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cctype>
 #include <chrono>
@@ -34,20 +35,26 @@
 #include <ctime>
 #include <fstream>
 #include <getopt.h>
+#include <memory>
+#include <mutex>
 #include <netinet/in.h>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <sys/stat.h>
 #include <ts/ts.h>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include <unistd.h>
 #include <zlib.h>
 
 #include <ts/remap.h>
+#include <yaml-cpp/yaml.h>
+#include "prometheus_render.h"
+#include "prometheus_rules.h"
 #include "swoc/TextView.h"
 #include "tscore/ink_config.h"
+#include <tsutil/Metrics.h>
 #include <tsutil/ts_ip.h>
 #include <tsutil/StringCompare.h>
 
@@ -80,7 +87,7 @@ const int   ZLIB_COMPRESSION_LEVEL = 6;
 const char *dictionary             = nullptr;
 
 // zlib stuff, see [deflateInit2] at http://www.zlib.net/manual.html
-static const int ZLIB_MEMLEVEL = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
+static const int ZLIB_MEMLEVEL = 8; // zlib's default
 
 static const int WINDOW_BITS_DEFLATE = 15;
 static const int WINDOW_BITS_GZIP    = 16;
@@ -93,9 +100,6 @@ const int BROTLI_COMPRESSION_LEVEL = 6;
 const int BROTLI_LGW               = 16;
 #endif
 
-static bool integer_counters = false;
-static bool wrap_counters    = false;
-
 #if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L && (!defined(__clang__) || __clang_major__ > 16)
 #define STATS_OVER_HTTP_HAS_CONSTEXPR_STRING 1
 #else
@@ -106,14 +110,6 @@ struct prometheus_v2_metric {
   std::string name;
   std::string labels;
 };
-
-struct prometheus_v2_metric_family {
-  TSRecordDataType         data_type = TS_RECORDDATATYPE_NULL;
-  std::string              help;
-  std::vector<std::string> samples;
-};
-
-using prometheus_v2_metric_family_map = std::unordered_map<std::string, prometheus_v2_metric_family>;
 
 struct config_t {
   unsigned int     recordTypes;
@@ -129,6 +125,93 @@ struct config_holder_t {
 enum class output_format_t { JSON_OUTPUT, CSV_OUTPUT, PROMETHEUS_OUTPUT, PROMETHEUS_V2_OUTPUT };
 enum class encoding_format_t { NONE, DEFLATE, GZIP, BR };
 
+constexpr size_t FORMAT_COUNT   = 4;
+constexpr size_t ENCODING_COUNT = 4;
+
+// The options of one remap rule, or of the global plugin.
+struct stats_options {
+  output_format_t format           = output_format_t::JSON_OUTPUT;
+  bool            integer_counters = false;
+  bool            wrap_counters    = false;
+  bool            prometheus_help  = true;
+  int64_t         max_age_ms       = 1000;
+  int64_t         wait_timeout_ms  = 10000;
+  // The prometheus section of the configuration file of a remap rule, or null.
+  std::shared_ptr<const PrometheusRules> rules;
+  // The configuration file of the remap rule has an error, so each request gets a 503.
+  bool config_error = false;
+  // The Prometheus output ends with a current_time_epoch_ms sample.
+  bool prometheus_epoch = true;
+};
+
+// The metrics of the plugin itself.
+struct stats_metrics {
+  using counter = ts::Metrics::Counter::AtomicType;
+
+  counter *requests              = create("requests");
+  counter *renders               = create("renders");
+  counter *render_us             = create("render_us");
+  counter *intercept_us          = create("intercept_us");
+  counter *series                = create("series");
+  counter *series_dropped        = create("series_dropped");
+  counter *series_relabeled      = create("series_relabeled");
+  counter *series_duplicates     = create("series_duplicates");
+  counter *series_type_conflicts = create("series_type_conflicts");
+  counter *waiter_timeouts       = create("waiter_timeouts");
+  counter *config_errors         = create("config_errors");
+  counter *bytes_out             = create("bytes_out");
+
+  static counter *
+  create(std::string_view name)
+  {
+    return ts::Metrics::Counter::createPtr("plugin.stats_over_http.", name);
+  }
+};
+
+// createPtr returns the existing metric for a name, so each copy of the plugin that a remap reload loads uses the same metrics.
+static const stats_metrics &
+metrics()
+{
+  static const stats_metrics instance;
+
+  return instance;
+}
+
+static void
+count(ts::Metrics::Counter::AtomicType *metric, uint64_t value = 1)
+{
+  ts::Metrics::Counter::increment(metric, value);
+}
+
+static int64_t
+thread_cpu_ns()
+{
+  timespec now;
+
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
+  return static_cast<int64_t>(now.tv_sec) * 1000000000 + now.tv_nsec;
+}
+
+// @a rest carries the nanoseconds that do not make a whole microsecond to the next call on this thread.
+static void
+count_cpu_time(ts::Metrics::Counter::AtomicType *metric, int64_t start, int64_t &rest)
+{
+  rest += thread_cpu_ns() - start;
+  if (rest >= 1000) {
+    count(metric, rest / 1000);
+    rest %= 1000;
+  }
+}
+
+struct stats_instance;
+
+// The instance of the global plugin, which lives as long as the process.
+static std::shared_ptr<stats_instance> *global_instance = nullptr;
+
+static std::shared_ptr<stats_instance> make_stats_instance(const stats_options &options);
+static void                            serve_global_scrape(TSHttpTxn txnp, output_format_t format, encoding_format_t encoding);
+static bool                            parse_format(std::string_view name, output_format_t &format);
+
 int    configReloadRequests = 0;
 int    configReloads        = 0;
 time_t lastReloadRequest    = 0;
@@ -141,53 +224,9 @@ static config_t        *get_config(TSCont cont);
 static config_holder_t *new_config_holder(const char *path);
 static bool             is_ipmap_allowed(const config_t *config, const struct sockaddr *addr);
 
-#if HAVE_BROTLI_ENCODE_H
-struct b_stream {
-  BrotliEncoderState *br        = nullptr;
-  uint8_t            *next_in   = nullptr;
-  size_t              avail_in  = 0;
-  uint8_t            *next_out  = nullptr;
-  size_t              avail_out = 0;
-  size_t              total_in  = 0;
-  size_t              total_out = 0;
-
-  ~b_stream()
-  {
-    if (br) {
-      BrotliEncoderDestroyInstance(br);
-      br = nullptr;
-    }
-  }
-};
-#endif
-
-struct stats_state {
-  TSVConn net_vc    = nullptr;
-  TSVIO   read_vio  = nullptr;
-  TSVIO   write_vio = nullptr;
-
-  TSIOBuffer       req_buffer  = nullptr;
-  TSIOBuffer       resp_buffer = nullptr;
-  TSIOBufferReader resp_reader = nullptr;
-
-  int64_t                         output_bytes  = 0;
-  int                             body_written  = 0;
-  output_format_t                 output_format = output_format_t::JSON_OUTPUT;
-  encoding_format_t               encoding      = encoding_format_t::NONE;
-  z_stream                        zstrm;
-  prometheus_v2_metric_family_map prometheus_v2_families;
-  std::vector<std::string>        prometheus_v2_family_order;
-#if HAVE_BROTLI_ENCODE_H
-  b_stream bstrm;
-#endif
-  stats_state()
-  {
-    memset(&zstrm, 0, sizeof(z_stream));
-    zstrm.zalloc    = Z_NULL;
-    zstrm.zfree     = Z_NULL;
-    zstrm.opaque    = Z_NULL;
-    zstrm.data_type = Z_ASCII;
-  }
+struct render_state {
+  TSIOBuffer           resp_buffer = nullptr;
+  const stats_options *options     = nullptr;
 };
 
 static char *
@@ -201,28 +240,22 @@ nstr(const char *s)
   return mys;
 }
 
-#if HAVE_BROTLI_ENCODE_H
-encoding_format_t
-init_br(stats_state *my_state)
-{
-  my_state->bstrm.br = nullptr;
+// The bound keeps the conversion of an option to nanoseconds from overflowing.
+constexpr int64_t MAX_MILLISECONDS = 24 * 60 * 60 * 1000;
 
-  my_state->bstrm.br = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
-  if (!my_state->bstrm.br) {
-    Dbg(dbg_ctl, "Brotli Encoder Instance Failed");
-    return encoding_format_t::NONE;
+// Parses a decimal integer from @a min to @a max.
+static bool
+parse_integer(std::string_view arg, int64_t min, int64_t max, int64_t &value)
+{
+  swoc::TextView parsed;
+  auto const     number = swoc::svtoi(arg, &parsed, 10);
+
+  if (arg.empty() || parsed.size() != arg.size() || number < min || number > max) {
+    return false;
   }
-  BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
-  BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_LGWIN, BROTLI_LGW);
-  my_state->bstrm.next_in   = nullptr;
-  my_state->bstrm.avail_in  = 0;
-  my_state->bstrm.total_in  = 0;
-  my_state->bstrm.next_out  = nullptr;
-  my_state->bstrm.avail_out = 0;
-  my_state->bstrm.total_out = 0;
-  return encoding_format_t::BR;
+  value = number;
+  return true;
 }
-#endif
 
 namespace
 {
@@ -233,187 +266,17 @@ ms_since_epoch()
 }
 } // namespace
 
-encoding_format_t
-init_gzip(stats_state *my_state, int mode)
-{
-  my_state->zstrm.next_in   = Z_NULL;
-  my_state->zstrm.avail_in  = 0;
-  my_state->zstrm.total_in  = 0;
-  my_state->zstrm.next_out  = Z_NULL;
-  my_state->zstrm.avail_out = 0;
-  my_state->zstrm.total_out = 0;
-  my_state->zstrm.zalloc    = Z_NULL;
-  my_state->zstrm.zfree     = Z_NULL;
-  my_state->zstrm.opaque    = Z_NULL;
-  my_state->zstrm.data_type = Z_ASCII;
-  int err = deflateInit2(&my_state->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
-  if (err != Z_OK) {
-    Dbg(dbg_ctl, "gzip initialization failed");
-    return encoding_format_t::NONE;
-  } else {
-    Dbg(dbg_ctl, "gzip initialized successfully");
-    if (mode == GZIP_MODE) {
-      return encoding_format_t::GZIP;
-    } else if (mode == DEFLATE_MODE) {
-      return encoding_format_t::DEFLATE;
-    }
-  }
-  return encoding_format_t::NONE;
-}
-
 static void
-stats_cleanup(TSCont contp, stats_state *my_state)
+stats_add_data_to_resp_buffer(const char *s, render_state *my_state)
 {
-  if (my_state->req_buffer) {
-    TSIOBufferDestroy(my_state->req_buffer);
-    my_state->req_buffer = nullptr;
-  }
-
-  if (my_state->resp_buffer) {
-    TSIOBufferDestroy(my_state->resp_buffer);
-    my_state->resp_buffer = nullptr;
-  }
-
-  if (my_state->net_vc != nullptr) {
-    TSVConnClose(my_state->net_vc);
-  }
-  delete my_state;
-  TSContDestroy(contp);
-}
-
-static void
-stats_process_accept(TSCont contp, stats_state *my_state)
-{
-  my_state->req_buffer  = TSIOBufferCreate();
-  my_state->resp_buffer = TSIOBufferCreate();
-  my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
-  my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
-}
-
-static int64_t
-stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
-{
-  if (s == nullptr) {
-    return 0;
-  }
-  int64_t s_len = strlen(s);
-
-  int64_t bytes_written = TSIOBufferWrite(my_state->resp_buffer, s, s_len);
-  if (bytes_written == TS_ERROR) {
-    return 0;
-  }
-
-  return bytes_written;
-}
-
-static const char RESP_HEADER_JSON[] = "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_JSON_GZIP[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_JSON_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_JSON_BR[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV[] = "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV_GZIP[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV_BR[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; charset=utf-8\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_GZIP[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; "
-                                                  "charset=utf-8\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; charset=utf-8\r\nContent-Encoding: deflate\r\nCache-Control: "
-  "no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_BR[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; "
-                                                "charset=utf-8\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; charset=utf-8\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2_GZIP[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; "
-                                                     "charset=utf-8\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; charset=utf-8\r\nContent-Encoding: deflate\r\nCache-Control: "
-  "no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2_BR[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; "
-                                                   "charset=utf-8\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-
-static int64_t
-stats_add_resp_header(stats_state *my_state)
-{
-  switch (my_state->output_format) {
-  case output_format_t::JSON_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
-    }
-    break;
-  case output_format_t::CSV_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV, my_state);
-    }
-    break;
-  case output_format_t::PROMETHEUS_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS, my_state);
-    }
-    break;
-  case output_format_t::PROMETHEUS_V2_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2, my_state);
-    }
-    break;
-  }
-  // Not reached.
-  return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
-}
-
-static void
-stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
-{
-  Dbg(dbg_ctl, "stats_process_read(%d)", event);
-  if (event == TS_EVENT_VCONN_READ_READY) {
-    my_state->output_bytes = stats_add_resp_header(my_state);
-    TSVConnShutdown(my_state->net_vc, 1, 0);
-    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
-  } else if (event == TS_EVENT_ERROR) {
-    TSError("[%s] stats_process_read: Received TS_EVENT_ERROR", PLUGIN_NAME);
-  } else if (event == TS_EVENT_VCONN_EOS) {
-    /* client may end the connection, simply return */
-    return;
-  } else if (event == TS_EVENT_NET_ACCEPT_FAILED) {
-    TSError("[%s] stats_process_read: Received TS_EVENT_NET_ACCEPT_FAILED", PLUGIN_NAME);
-  } else {
-    printf("Unexpected Event %d\n", event);
-    TSReleaseAssert(!"Unexpected Event");
+  if (s != nullptr) {
+    TSIOBufferWrite(my_state->resp_buffer, s, strlen(s));
   }
 }
 
-#define APPEND(a) my_state->output_bytes += stats_add_data_to_resp_buffer(a, my_state)
+static const char RESP_HEADER_UNAVAILABLE[] = "HTTP/1.0 503 Service Unavailable\r\nCache-Control: no-cache\r\n\r\n";
+
+#define APPEND(a) stats_add_data_to_resp_buffer(a, my_state)
 
 //-----------------------------------------------------------------------------
 // JSON Formatters
@@ -427,7 +290,7 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 #define APPEND_STAT_JSON_NUMERIC(a, fmt, v)                                          \
   do {                                                                               \
     char b[256];                                                                     \
-    if (integer_counters) {                                                          \
+    if (my_state->options->integer_counters) {                                       \
       if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < (int)sizeof(b)) {     \
         APPEND(b);                                                                   \
       }                                                                              \
@@ -455,24 +318,12 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
     }                                                                    \
   } while (0)
 
-//-----------------------------------------------------------------------------
-// Prometheus Formatters
-//-----------------------------------------------------------------------------
-// Note that Prometheus only supports numeric types.
-#define APPEND_STAT_PROMETHEUS_NUMERIC(a, fmt, v)                        \
-  do {                                                                   \
-    char b[256];                                                         \
-    if (snprintf(b, sizeof(b), "%s " fmt "\n", a, v) < (int)sizeof(b)) { \
-      APPEND(b);                                                         \
-    }                                                                    \
-  } while (0)
-
 // This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
 // can interoperate with a full uint64_t, but it's unlikely that much of the ecosystem supports that yet.
 static uint64_t
-wrap_unsigned_counter(uint64_t value)
+wrap_unsigned_counter(const render_state *my_state, uint64_t value)
 {
-  if (wrap_counters) {
+  if (my_state->options->wrap_counters) {
     return (value > INT64_MAX) ? value % INT64_MAX : value;
   } else {
     return value;
@@ -483,14 +334,14 @@ static void
 json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
               TSRecordDataType data_type, TSRecordData *datum)
 {
-  stats_state *my_state = static_cast<stats_state *>(edata);
+  render_state *my_state = static_cast<render_state *>(edata);
 
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(my_state, datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT_JSON_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    APPEND_STAT_JSON_NUMERIC(name, "%" PRId64, datum->rec_int);
     break;
   case TS_RECORDDATATYPE_FLOAT:
     APPEND_STAT_JSON_NUMERIC(name, "%f", datum->rec_float);
@@ -508,13 +359,13 @@ static void
 csv_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
              TSRecordDataType data_type, TSRecordData *datum)
 {
-  stats_state *my_state = static_cast<stats_state *>(edata);
+  render_state *my_state = static_cast<render_state *>(edata);
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(my_state, datum->rec_counter));
     break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT_CSV_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    APPEND_STAT_CSV_NUMERIC(name, "%" PRId64, datum->rec_int);
     break;
   case TS_RECORDDATATYPE_FLOAT:
     APPEND_STAT_CSV_NUMERIC(name, "%f", datum->rec_float);
@@ -561,35 +412,6 @@ sanitize_metric_name_for_prometheus(std::string_view name)
   return sanitized_name;
 }
 
-static std::string
-escape_prometheus_v2_label_value(std::string_view val)
-{
-  size_t escaped_len = 0;
-  for (char c : val) {
-    if (c == '"' || c == '\\' || c == '\n') {
-      escaped_len += 2;
-    } else {
-      escaped_len += 1;
-    }
-  }
-
-  std::string escaped;
-  if (escaped_len > 0) {
-    escaped.reserve(escaped_len);
-    for (char c : val) {
-      if (c == '"' || c == '\\') {
-        escaped += '\\';
-        escaped += c;
-      } else if (c == '\n') {
-        escaped += "\\n";
-      } else {
-        escaped += c;
-      }
-    }
-  }
-  return escaped;
-}
-
 static void
 append_prometheus_v2_label(std::string &labels, std::string_view key, std::string_view val)
 {
@@ -598,7 +420,7 @@ append_prometheus_v2_label(std::string &labels, std::string_view key, std::strin
   }
   labels += key;
   labels += "=\"";
-  labels += escape_prometheus_v2_label_value(val);
+  prometheus_escape_label_value(labels, val);
   labels += "\"";
 }
 
@@ -749,134 +571,63 @@ parse_metric_v2(std::string_view name)
   return {std::move(base_name), std::move(labels)};
 }
 
-static bool
-format_prometheus_v2_sample(std::string &sample, const std::string &name, const std::string &labels, TSRecordDataType data_type,
-                            TSRecordData *datum)
+static PrometheusName
+prometheus_v1_name(std::string_view name, TSRecordDataType data_type)
 {
-  char val_buffer[128];
-  int  len = 0;
-
-  if (data_type == TS_RECORDDATATYPE_COUNTER) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(datum->rec_counter));
-  } else if (data_type == TS_RECORDDATATYPE_INT) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%" PRIu64 "\n", wrap_unsigned_counter(datum->rec_int));
-  } else if (data_type == TS_RECORDDATATYPE_FLOAT) {
-    len = snprintf(val_buffer, sizeof(val_buffer), "%g\n", datum->rec_float);
-  }
-
-  if (len <= 0 || len >= static_cast<int>(sizeof(val_buffer))) {
-    return false;
-  }
-
-  sample.reserve(name.size() + labels.size() + static_cast<size_t>(len) + 3);
-  sample += name;
-  if (!labels.empty()) {
-    sample += "{";
-    sample += labels;
-    sample += "}";
-  }
-  sample += " ";
-  sample += val_buffer;
-
-  return true;
-}
-
-static void
-prometheus_v2_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
-                       TSRecordDataType data_type, TSRecordData *datum)
-{
-  stats_state *my_state = static_cast<stats_state *>(edata);
-
-  if (data_type == TS_RECORDDATATYPE_STRING) {
-    return; // Prometheus does not support string values.
-  }
-
-  auto        v2             = parse_metric_v2(name);
-  std::string sanitized_name = sanitize_metric_name_for_prometheus(v2.name);
-
-  if (sanitized_name.empty()) {
-    return;
-  }
-
-  std::string sample;
-  if (!format_prometheus_v2_sample(sample, sanitized_name, v2.labels, data_type, datum)) {
-    return;
-  }
-
-  // Note: Prometheus requires all metrics with the same name to have the same type.
-  // If Traffic Server metrics with different types (e.g., COUNTER and INT) are collapsed
-  // into the same base name, the first one encountered will determine the reported TYPE.
-  auto [it, inserted] = my_state->prometheus_v2_families.try_emplace(sanitized_name);
-  if (inserted) {
-    it->second.data_type = data_type;
-    it->second.help      = name;
-    my_state->prometheus_v2_family_order.emplace_back(sanitized_name);
-  } else {
-    // Validate type consistency (at least between counter and gauge).
-    bool prev_is_counter = (it->second.data_type == TS_RECORDDATATYPE_COUNTER);
-    bool curr_is_counter = (data_type == TS_RECORDDATATYPE_COUNTER);
-    if (prev_is_counter != curr_is_counter) {
-      Dbg(dbg_ctl, "Inconsistent types for base metric %s: previously %s, now %s. Labels: %s", sanitized_name.c_str(),
-          prev_is_counter ? "counter" : "gauge", curr_is_counter ? "counter" : "gauge", v2.labels.c_str());
-    }
-  }
-
-  it->second.samples.emplace_back(std::move(sample));
-}
-
-static void
-prometheus_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
-                    TSRecordDataType data_type, TSRecordData *datum)
-{
-  stats_state *my_state       = static_cast<stats_state *>(edata);
-  std::string  sanitized_name = sanitize_metric_name_for_prometheus(name);
-
-  if (sanitized_name.empty()) {
-    return;
-  }
-
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(name);
-    APPEND("\n");
-    APPEND("# TYPE ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" counter\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
-    break;
+    return {sanitize_metric_name_for_prometheus(name), {}, PrometheusType::COUNTER};
   case TS_RECORDDATATYPE_INT:
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(name);
-    APPEND("\n");
-    APPEND("# TYPE ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" gauge\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
-    break;
-  case TS_RECORDDATATYPE_FLOAT:
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(name);
-    APPEND("\n");
-    APPEND_STAT_PROMETHEUS_NUMERIC(sanitized_name.c_str(), "%g", datum->rec_float);
-    break;
-  case TS_RECORDDATATYPE_STRING:
-    Dbg(dbg_ctl, "Prometheus does not support string values, skipping: %s", sanitized_name.c_str());
-    break;
+    return {sanitize_metric_name_for_prometheus(name), {}, PrometheusType::GAUGE};
   default:
-    Dbg(dbg_ctl, "unknown type for %s: %d", sanitized_name.c_str(), data_type);
-    break;
+    // Floats have no TYPE line in this format, for compatibility.
+    return {sanitize_metric_name_for_prometheus(name), {}, PrometheusType::UNTYPED};
   }
 }
 
+static PrometheusName
+prometheus_v2_name(std::string_view name, TSRecordDataType data_type)
+{
+  auto v2 = parse_metric_v2(name);
+
+  return {sanitize_metric_name_for_prometheus(v2.name), std::move(v2.labels),
+          data_type == TS_RECORDDATATYPE_COUNTER ? PrometheusType::COUNTER : PrometheusType::GAUGE};
+}
+
 static void
-json_out_stats(stats_state *my_state)
+warn_prometheus(const std::string &message)
+{
+  TSWarning("[%s] %s", PLUGIN_NAME, message.c_str());
+}
+
+static std::unique_ptr<PrometheusRenderer>
+make_prometheus_renderer(output_format_t format, const stats_options &stats)
+{
+  PrometheusOptions options;
+
+  options.help          = stats.prometheus_help;
+  options.wrap_counters = stats.wrap_counters;
+  if (format == output_format_t::PROMETHEUS_OUTPUT) {
+    options.namer = prometheus_v1_name;
+    options.rules = stats.rules;
+    options.warn  = warn_prometheus;
+  } else if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
+    options.namer = prometheus_v2_name;
+  } else {
+    return nullptr;
+  }
+  return std::make_unique<PrometheusRenderer>(options);
+}
+
+static void
+prometheus_add_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char *name,
+                    TSRecordDataType data_type, TSRecordData *datum)
+{
+  static_cast<PrometheusRenderer *>(edata)->add(name, data_type, *datum);
+}
+
+static void
+json_out_stats(render_state *my_state)
 {
   const char *version;
   APPEND("{ \"global\": {\n");
@@ -891,74 +642,139 @@ json_out_stats(stats_state *my_state)
 }
 
 #if HAVE_BROTLI_ENCODE_H
-// Takes an input stats state struct holding the uncompressed
-// stats values. Compresses and copies it back into the state struct
-static void
-br_out_stats(stats_state *my_state)
+static bool
+br_encode(BrotliEncoderState *br, const char *data, int64_t len, bool finish, TSIOBuffer out)
 {
-  size_t  outputsize = BrotliEncoderMaxCompressedSize(my_state->output_bytes);
-  uint8_t inputbuf[my_state->output_bytes];
-  uint8_t outputbuf[outputsize];
+  BrotliEncoderOperation const op       = finish ? BROTLI_OPERATION_FINISH : BROTLI_OPERATION_PROCESS;
+  const uint8_t               *next_in  = reinterpret_cast<const uint8_t *>(data);
+  size_t                       avail_in = static_cast<size_t>(len);
 
-  memset(&inputbuf, 0, sizeof(inputbuf));
-  memset(&outputbuf, 0, sizeof(outputbuf));
+  do {
+    int64_t  avail     = 0;
+    uint8_t *next_out  = reinterpret_cast<uint8_t *>(TSIOBufferBlockWriteStart(TSIOBufferStart(out), &avail));
+    size_t   avail_out = static_cast<size_t>(avail);
 
-  int64_t inputbytes = TSIOBufferReaderCopy(my_state->resp_reader, &inputbuf, my_state->output_bytes);
+    if (!BrotliEncoderCompressStream(br, op, &avail_in, &next_in, &avail_out, &next_out, nullptr)) {
+      return false;
+    }
+    TSIOBufferProduce(out, avail - avail_out);
+  } while (avail_in > 0 || BrotliEncoderHasMoreOutput(br) || (finish && !BrotliEncoderIsFinished(br)));
 
-  // Consume existing uncompressed buffer now that it has been stored to
-  // free up the buffer to contain the compressed data
-  int64_t toconsume = TSIOBufferReaderAvail(my_state->resp_reader);
-  TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
-  my_state->output_bytes -= toconsume;
-  BROTLI_BOOL err = BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, inputbytes, inputbuf,
-                                          &outputsize, outputbuf);
-
-  if (err == BROTLI_FALSE) {
-    Dbg(dbg_ctl, "brotli compress error");
-  }
-  my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, outputsize);
-  BrotliEncoderDestroyInstance(my_state->bstrm.br);
-  my_state->bstrm.br = nullptr;
+  return true;
 }
 #endif
 
-// Takes an input stats state struct holding the uncompressed
-// stats values. Compresses and copies it back into the state struct
-static void
-gzip_out_stats(stats_state *my_state)
+static bool
+gzip_encode(z_stream &zstrm, const char *data, int64_t len, bool finish, TSIOBuffer out)
 {
-  char inputbuf[my_state->output_bytes];
-  char outputbuf[deflateBound(&my_state->zstrm, my_state->output_bytes)];
-  memset(&inputbuf, 0, sizeof(inputbuf));
-  memset(&outputbuf, 0, sizeof(outputbuf));
+  int const flush = finish ? Z_FINISH : Z_NO_FLUSH;
+  int       err   = Z_OK;
 
-  int64_t inputbytes = TSIOBufferReaderCopy(my_state->resp_reader, &inputbuf, my_state->output_bytes);
+  zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+  zstrm.avail_in = static_cast<uInt>(len);
+  do {
+    int64_t avail   = 0;
+    zstrm.next_out  = reinterpret_cast<Bytef *>(TSIOBufferBlockWriteStart(TSIOBufferStart(out), &avail));
+    zstrm.avail_out = static_cast<uInt>(avail);
+    err             = deflate(&zstrm, flush);
+    TSIOBufferProduce(out, avail - zstrm.avail_out);
+  } while (err == Z_OK && (finish || zstrm.avail_out == 0));
 
-  // Consume existing uncompressed buffer now that it has been stored to
-  // free up the buffer to contain the compressed data
-  int64_t toconsume = TSIOBufferReaderAvail(my_state->resp_reader);
-  TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
+  return finish ? err == Z_STREAM_END : (err == Z_OK || err == Z_BUF_ERROR);
+}
 
-  my_state->output_bytes    -= toconsume;
-  my_state->zstrm.avail_in   = inputbytes;
-  my_state->zstrm.avail_out  = sizeof(outputbuf);
-  my_state->zstrm.next_in    = (Bytef *)inputbuf;
-  my_state->zstrm.next_out   = (Bytef *)outputbuf;
-  int err                    = deflate(&my_state->zstrm, Z_FINISH);
-  if (err != Z_STREAM_END) {
-    Dbg(dbg_ctl, "deflate error: %d", err);
+// A deflate stream that the renders of one instance reuse, one render at a time.  deflateReset costs much less than
+// deflateInit2, which allocates and clears the zlib tables.
+struct zlib_stream {
+  explicit zlib_stream(int wrapper_mode) : mode(wrapper_mode) {}
+  ~zlib_stream()
+  {
+    if (ready) {
+      deflateEnd(&strm);
+    }
+  }
+  zlib_stream(const zlib_stream &)            = delete;
+  zlib_stream &operator=(const zlib_stream &) = delete;
+
+  // Returns the stream, ready for a new body, or nullptr when zlib cannot set it up.
+  z_stream *
+  start()
+  {
+    if (ready && deflateReset(&strm) == Z_OK) {
+      return &strm;
+    }
+    if (ready) {
+      deflateEnd(&strm);
+      ready = false;
+    }
+    strm = z_stream{};
+    if (deflateInit2(&strm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
+      return nullptr;
+    }
+    ready = true;
+    return &strm;
   }
 
-  err = deflateEnd(&my_state->zstrm);
-  if (err != Z_OK) {
-    Dbg(dbg_ctl, "deflate end err: %d", err);
-  }
+  int      mode;
+  z_stream strm{};
+  bool     ready = false;
+};
 
-  my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, my_state->zstrm.total_out);
+struct zlib_streams {
+  zlib_stream gzip{GZIP_MODE};
+  zlib_stream deflate{DEFLATE_MODE};
+};
+
+#if HAVE_BROTLI_ENCODE_H
+static bool
+br_compress(TSIOBufferReader reader, TSIOBuffer out)
+{
+  std::unique_ptr<BrotliEncoderState, decltype(&BrotliEncoderDestroyInstance)> br{
+    BrotliEncoderCreateInstance(nullptr, nullptr, nullptr), BrotliEncoderDestroyInstance};
+  bool ok = br != nullptr;
+
+  if (ok) {
+    BrotliEncoderSetParameter(br.get(), BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
+    BrotliEncoderSetParameter(br.get(), BROTLI_PARAM_LGWIN, BROTLI_LGW);
+  }
+  for (TSIOBufferBlock blk = TSIOBufferReaderStart(reader); ok && blk != nullptr; blk = TSIOBufferBlockNext(blk)) {
+    int64_t     len  = 0;
+    const char *data = TSIOBufferBlockReadStart(blk, reader, &len);
+
+    ok = br_encode(br.get(), data, len, false, out);
+  }
+  return ok && br_encode(br.get(), nullptr, 0, true, out);
+}
+#endif
+
+static bool
+gzip_compress(zlib_stream &stream, TSIOBufferReader reader, TSIOBuffer out)
+{
+  z_stream *zstrm = stream.start();
+  bool      ok    = zstrm != nullptr;
+
+  for (TSIOBufferBlock blk = TSIOBufferReaderStart(reader); ok && blk != nullptr; blk = TSIOBufferBlockNext(blk)) {
+    int64_t     len  = 0;
+    const char *data = TSIOBufferBlockReadStart(blk, reader, &len);
+
+    ok = gzip_encode(*zstrm, data, len, false, out);
+  }
+  return ok && gzip_encode(*zstrm, nullptr, 0, true, out);
+}
+
+static bool
+compress_body(encoding_format_t encoding, zlib_streams &zlib, TSIOBufferReader reader, TSIOBuffer out)
+{
+#if HAVE_BROTLI_ENCODE_H
+  if (encoding == encoding_format_t::BR) {
+    return br_compress(reader, out);
+  }
+#endif
+  return gzip_compress(encoding == encoding_format_t::DEFLATE ? zlib.deflate : zlib.gzip, reader, out);
 }
 
 static void
-csv_out_stats(stats_state *my_state)
+csv_out_stats(render_state *my_state)
 {
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), csv_out_stat, my_state);
   const char *version = TSTrafficServerVersionGet();
@@ -967,118 +783,67 @@ csv_out_stats(stats_state *my_state)
 }
 
 static void
-prometheus_out_stats(stats_state *my_state)
+prometheus_out_stats(output_format_t format, PrometheusRenderer &renderer, render_state *my_state)
 {
-  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_out_stat, my_state);
-  APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
-  // No version printed, since string stats are not supported by Prometheus.
+  renderer.begin();
+  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_add_stat, &renderer);
+
+  std::string &body = renderer.render();
+
+  if (my_state->options->prometheus_epoch) {
+    if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
+      if (renderer.options().help) {
+        body.append("# HELP current_time_epoch_ms Current time in milliseconds since epoch.\n");
+      }
+      body.append("# TYPE current_time_epoch_ms gauge\n");
+    }
+    body.append("current_time_epoch_ms ").append(std::to_string(ms_since_epoch())).append("\n");
+  }
+  TSIOBufferWrite(my_state->resp_buffer, body.data(), body.size());
+
+  auto const &stats = renderer.stats();
+
+  count(metrics().series, stats.series);
+  count(metrics().series_dropped, stats.dropped);
+  count(metrics().series_relabeled, stats.relabeled);
+  count(metrics().series_duplicates, stats.duplicates);
+  count(metrics().series_type_conflicts, stats.type_conflicts);
 }
 
 static void
-prometheus_v2_out_stats(stats_state *my_state)
+render_stats(output_format_t format, render_state *my_state, PrometheusRenderer *prometheus)
 {
-  TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_v2_out_stat, my_state);
-
-  for (const auto &sanitized_name : my_state->prometheus_v2_family_order) {
-    const auto &family = my_state->prometheus_v2_families.at(sanitized_name);
-
-    APPEND("# HELP ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(family.help.c_str());
-    APPEND("\n");
-
-    const char *type_str = (family.data_type == TS_RECORDDATATYPE_COUNTER) ? "counter" : "gauge";
-    APPEND("# TYPE ");
-    APPEND(sanitized_name.c_str());
-    APPEND(" ");
-    APPEND(type_str);
-    APPEND("\n");
-
-    for (const auto &sample : family.samples) {
-      APPEND(sample.c_str());
-    }
+  switch (format) {
+  case output_format_t::JSON_OUTPUT:
+    json_out_stats(my_state);
+    break;
+  case output_format_t::CSV_OUTPUT:
+    csv_out_stats(my_state);
+    break;
+  case output_format_t::PROMETHEUS_OUTPUT:
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    prometheus_out_stats(format, *prometheus, my_state);
+    break;
   }
-
-  APPEND("# HELP current_time_epoch_ms Current time in milliseconds since epoch.\n");
-  APPEND("# TYPE current_time_epoch_ms gauge\n");
-  APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
-}
-
-static void
-stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
-{
-  if (event == TS_EVENT_VCONN_WRITE_READY) {
-    if (my_state->body_written == 0) {
-      my_state->body_written = 1;
-      switch (my_state->output_format) {
-      case output_format_t::JSON_OUTPUT:
-        json_out_stats(my_state);
-        break;
-      case output_format_t::CSV_OUTPUT:
-        csv_out_stats(my_state);
-        break;
-      case output_format_t::PROMETHEUS_OUTPUT:
-        prometheus_out_stats(my_state);
-        break;
-      case output_format_t::PROMETHEUS_V2_OUTPUT:
-        prometheus_v2_out_stats(my_state);
-        break;
-      }
-
-      if ((my_state->encoding == encoding_format_t::GZIP) || (my_state->encoding == encoding_format_t::DEFLATE)) {
-        gzip_out_stats(my_state);
-      }
-#if HAVE_BROTLI_ENCODE_H
-      else if (my_state->encoding == encoding_format_t::BR) {
-        br_out_stats(my_state);
-      }
-#endif
-      TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
-    }
-    TSVIOReenable(my_state->write_vio);
-  } else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
-    stats_cleanup(contp, my_state);
-  } else if (event == TS_EVENT_ERROR) {
-    TSError("[%s] stats_process_write: Received TS_EVENT_ERROR", PLUGIN_NAME);
-  } else {
-    TSReleaseAssert(!"Unexpected Event");
-  }
-}
-
-static int
-stats_dostuff(TSCont contp, TSEvent event, void *edata)
-{
-  stats_state *my_state = static_cast<stats_state *>(TSContDataGet(contp));
-  if (event == TS_EVENT_NET_ACCEPT) {
-    my_state->net_vc = (TSVConn)edata;
-    stats_process_accept(contp, my_state);
-  } else if (edata == my_state->read_vio) {
-    stats_process_read(contp, event, my_state);
-  } else if (edata == my_state->write_vio) {
-    stats_process_write(contp, event, my_state);
-  } else {
-    TSReleaseAssert(!"Unexpected Event");
-  }
-  return 0;
 }
 
 static int
 stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
-  TSCont          icontp;
-  stats_state    *my_state;
-  config_t       *config;
-  TSHttpTxn       txnp = (TSHttpTxn)edata;
-  TSMBuffer       reqp;
-  TSMLoc          hdr_loc = nullptr, url_loc = nullptr, accept_field = nullptr, accept_encoding_field = nullptr;
-  TSEvent         reenable = TS_EVENT_HTTP_CONTINUE;
-  int             path_len = 0;
-  const char     *path     = nullptr;
-  swoc::TextView  request_path;
-  swoc::TextView  request_path_suffix;
-  output_format_t format_per_path          = output_format_t::JSON_OUTPUT;
-  bool            path_had_explicit_format = false;
+  config_t         *config;
+  TSHttpTxn         txnp = (TSHttpTxn)edata;
+  TSMBuffer         reqp;
+  TSMLoc            hdr_loc = nullptr, url_loc = nullptr, accept_field = nullptr, accept_encoding_field = nullptr;
+  TSEvent           reenable = TS_EVENT_HTTP_CONTINUE;
+  int               path_len = 0;
+  const char       *path     = nullptr;
+  swoc::TextView    request_path;
+  swoc::TextView    request_path_suffix;
+  output_format_t   format_per_path          = output_format_t::JSON_OUTPUT;
+  bool              path_had_explicit_format = false;
+  bool              intercept                = false;
+  output_format_t   output_format            = output_format_t::JSON_OUTPUT;
+  encoding_format_t encoding                 = encoding_format_t::NONE;
 
   Dbg(dbg_ctl, "in the read stuff");
   config = get_config(contp);
@@ -1111,15 +876,7 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     path_had_explicit_format = false;
   } else {
     request_path_suffix = request_path.remove_prefix(config->stats_path.length());
-    if (request_path_suffix == "/json") {
-      format_per_path = output_format_t::JSON_OUTPUT;
-    } else if (request_path_suffix == "/csv") {
-      format_per_path = output_format_t::CSV_OUTPUT;
-    } else if (request_path_suffix == "/prometheus") {
-      format_per_path = output_format_t::PROMETHEUS_OUTPUT;
-    } else if (request_path_suffix == "/prometheus_v2") {
-      format_per_path = output_format_t::PROMETHEUS_V2_OUTPUT;
-    } else {
+    if (!request_path_suffix.starts_with('/') || !parse_format(request_path_suffix.substr(1), format_per_path)) {
       Dbg(dbg_ctl, "Unknown suffix for stats path: %.*s", static_cast<int>(request_path_suffix.length()),
           request_path_suffix.data());
       goto notforme;
@@ -1138,18 +895,16 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 
   /* This is us -- register our intercept */
   Dbg(dbg_ctl, "Intercepting request");
-
-  my_state = new stats_state;
-  icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
+  intercept = true;
 
   if (path_had_explicit_format) {
     Dbg(dbg_ctl, "Path had explicit format, ignoring any Accept header: %.*s", static_cast<int>(request_path_suffix.size()),
         request_path_suffix.data());
-    my_state->output_format = format_per_path;
+    output_format = format_per_path;
   } else {
     // Check for an Accept header to determine response type.
-    accept_field            = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
-    my_state->output_format = output_format_t::JSON_OUTPUT; // default to json output
+    accept_field  = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT, TS_MIME_LEN_ACCEPT);
+    output_format = output_format_t::JSON_OUTPUT; // default to json output
     // accept header exists, use it to determine response type
     if (accept_field != TS_NULL_MLOC) {
       int              len = -1;
@@ -1163,24 +918,23 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
       // Parse the Accept header, default to JSON output unless its another supported format
       if (ts::iequals(accept, "text/csv")) {
         Dbg(dbg_ctl, "Saw text/csv in accept header, sending CSV output.");
-        my_state->output_format = output_format_t::CSV_OUTPUT;
+        output_format = output_format_t::CSV_OUTPUT;
       } else if (ts::iequals(accept, "text/plain; version=0.0.4")) {
         Dbg(dbg_ctl, "Saw text/plain; version=0.0.4 in accept header, sending Prometheus output.");
-        my_state->output_format = output_format_t::PROMETHEUS_OUTPUT;
+        output_format = output_format_t::PROMETHEUS_OUTPUT;
       } else if (ts::iequals(accept, "text/plain; version=2.0.0")) {
         Dbg(dbg_ctl, "Saw text/plain; version=2.0.0 in accept header, sending Prometheus v2 output.");
-        my_state->output_format = output_format_t::PROMETHEUS_V2_OUTPUT;
+        output_format = output_format_t::PROMETHEUS_V2_OUTPUT;
       } else {
         Dbg(dbg_ctl, "Saw %.*s in accept header, defaulting to JSON output.", static_cast<int>(accept.size()),
             accept.empty() ? "" : accept.data());
-        my_state->output_format = output_format_t::JSON_OUTPUT;
+        output_format = output_format_t::JSON_OUTPUT;
       }
     }
   }
 
-  // Check for Accept Encoding and init
+  // Check for Accept Encoding
   accept_encoding_field = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
-  my_state->encoding    = encoding_format_t::NONE;
   if (accept_encoding_field != TS_NULL_MLOC) {
     int              len = -1;
     const char      *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_encoding_field, -1, &len);
@@ -1188,25 +942,22 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
       (str != nullptr && len > 0) ? std::string_view{str, static_cast<size_t>(len)} : std::string_view{};
     if (len >= TS_HTTP_LEN_DEFLATE && accept_encoding.find(TS_HTTP_VALUE_DEFLATE) != std::string_view::npos) {
       Dbg(dbg_ctl, "Saw deflate in accept encoding");
-      my_state->encoding = init_gzip(my_state, DEFLATE_MODE);
+      encoding = encoding_format_t::DEFLATE;
     } else if (len >= TS_HTTP_LEN_GZIP && accept_encoding.find(TS_HTTP_VALUE_GZIP) != std::string_view::npos) {
       Dbg(dbg_ctl, "Saw gzip in accept encoding");
-      my_state->encoding = init_gzip(my_state, GZIP_MODE);
+      encoding = encoding_format_t::GZIP;
     }
 #if HAVE_BROTLI_ENCODE_H
     else if (len >= TS_HTTP_LEN_BROTLI && accept_encoding.find(TS_HTTP_VALUE_BROTLI) != std::string_view::npos) {
       Dbg(dbg_ctl, "Saw br in accept encoding");
-      my_state->encoding = init_br(my_state);
+      encoding = encoding_format_t::BR;
     }
 #endif
     else {
-      my_state->encoding = encoding_format_t::NONE;
+      encoding = encoding_format_t::NONE;
     }
   }
   Dbg(dbg_ctl, "Finished AE check");
-
-  TSContDataSet(icontp, my_state);
-  TSHttpTxnIntercept(icontp, txnp);
   goto cleanup;
 
 notforme:
@@ -1224,7 +975,11 @@ cleanup:
   if (accept_encoding_field) {
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, accept_encoding_field);
   }
-  TSHttpTxnReenable(txnp, reenable);
+  if (intercept) {
+    serve_global_scrape(txnp, output_format, encoding);
+  } else {
+    TSHttpTxnReenable(txnp, reenable);
+  }
   return 0;
 }
 
@@ -1233,14 +988,22 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  static const char          usage[]    = PLUGIN_NAME ".so [--integer-counters] [PATH]";
+  static const char usage[] = PLUGIN_NAME ".so [--integer-counters] [--wrap-counters] [--no-prometheus-help] [--max-age-ms=N] "
+                                          "[--wait-timeout-ms=N] [PATH]";
   static const struct option longopts[] = {
-    {(char *)("integer-counters"), no_argument, nullptr, 'i'},
-    {(char *)("wrap-counters"),    no_argument, nullptr, 'w'},
-    {nullptr,                      0,           nullptr, 0  }
+    {(char *)("integer-counters"),   no_argument,       nullptr, 'i'},
+    {(char *)("wrap-counters"),      no_argument,       nullptr, 'w'},
+    {(char *)("no-prometheus-help"), no_argument,       nullptr, 'n'},
+    {(char *)("max-age-ms"),         required_argument, nullptr, 'a'},
+    {(char *)("wait-timeout-ms"),    required_argument, nullptr, 't'},
+    {nullptr,                        0,                 nullptr, 0  }
   };
   TSCont           main_cont, config_cont;
   config_holder_t *config_holder;
+  stats_options    options;
+
+  // Each request to the global plugin waits for a new render, unless --max-age-ms is set.
+  options.max_age_ms = 0;
 
   info.plugin_name   = PLUGIN_NAME;
   info.vendor_name   = "Apache Software Foundation";
@@ -1250,14 +1013,30 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] registration failed", PLUGIN_NAME);
     goto done;
   }
+  metrics();
 
   for (;;) {
     switch (getopt_long(argc, (char *const *)argv, "iw", longopts, nullptr)) {
     case 'i':
-      integer_counters = true;
+      options.integer_counters = true;
       break;
     case 'w':
-      wrap_counters = true;
+      options.wrap_counters = true;
+      break;
+    case 'n':
+      options.prometheus_help = false;
+      break;
+    case 'a':
+      if (!parse_integer(optarg, 0, MAX_MILLISECONDS, options.max_age_ms)) {
+        TSError("[%s] --max-age-ms must be an integer from 0 to %" PRId64 ", not '%s', usage: %s", PLUGIN_NAME, MAX_MILLISECONDS,
+                optarg, usage);
+      }
+      break;
+    case 't':
+      if (!parse_integer(optarg, 1, MAX_MILLISECONDS, options.wait_timeout_ms)) {
+        TSError("[%s] --wait-timeout-ms must be an integer from 1 to %" PRId64 ", not '%s', usage: %s", PLUGIN_NAME,
+                MAX_MILLISECONDS, optarg, usage);
+      }
       break;
     case -1:
       goto init;
@@ -1269,6 +1048,8 @@ TSPluginInit(int argc, const char *argv[])
 init:
   argc -= optind;
   argv += optind;
+
+  global_instance = new std::shared_ptr<stats_instance>(make_stats_instance(options));
 
   config_holder = new_config_holder(argc > 0 ? argv[0] : nullptr);
 
@@ -1506,6 +1287,911 @@ config_handler(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
     config_holder->config->stats_path = DEFAULT_URL_PATH;
   }
   return 0;
+}
+
+//
+// Requests for the stats.  A render on a task thread answers the requests to the global plugin and to remap rules.
+//
+
+static constexpr std::string_view STATS_FORMAT_FIELD = "X-Stats-Format";
+static constexpr std::string_view ALLOWED_METHODS    = "GET, HEAD";
+
+static const char REMAP_USAGE[] = "[--format=json|csv|prometheus|prometheus_v2] [--integer-counters] [--wrap-counters] "
+                                  "[--no-prometheus-help] [--max-age-ms=N] [--wait-timeout-ms=N] [--config=FILE] "
+                                  "[--on-config-error=fail|503]";
+
+static std::string_view
+format_name(output_format_t format)
+{
+  switch (format) {
+  case output_format_t::JSON_OUTPUT:
+    return "json";
+  case output_format_t::CSV_OUTPUT:
+    return "csv";
+  case output_format_t::PROMETHEUS_OUTPUT:
+    return "prometheus";
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    return "prometheus_v2";
+  }
+  return "json";
+}
+
+static std::string_view
+format_content_type(output_format_t format)
+{
+  switch (format) {
+  case output_format_t::JSON_OUTPUT:
+    return "text/json";
+  case output_format_t::CSV_OUTPUT:
+    return "text/csv";
+  case output_format_t::PROMETHEUS_OUTPUT:
+    return "text/plain; version=0.0.4; charset=utf-8";
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    return "text/plain; version=2.0.0; charset=utf-8";
+  }
+  return "text/json";
+}
+
+static std::string_view
+encoding_name(encoding_format_t encoding)
+{
+  switch (encoding) {
+  case encoding_format_t::DEFLATE:
+    return "deflate";
+  case encoding_format_t::GZIP:
+    return "gzip";
+  case encoding_format_t::BR:
+    return "br";
+  case encoding_format_t::NONE:
+    break;
+  }
+  return {};
+}
+
+static bool
+parse_format(std::string_view name, output_format_t &format)
+{
+  for (auto candidate : {output_format_t::JSON_OUTPUT, output_format_t::CSV_OUTPUT, output_format_t::PROMETHEUS_OUTPUT,
+                         output_format_t::PROMETHEUS_V2_OUTPUT}) {
+    if (name == format_name(candidate)) {
+      format = candidate;
+      return true;
+    }
+  }
+  return false;
+}
+
+// A rendered body in one encoding.  It does not change after the render publishes it, so requests on any thread share its
+// blocks.
+struct stats_snapshot {
+  stats_snapshot() : body(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(body)) {}
+  ~stats_snapshot() { TSIOBufferDestroy(body); }
+  stats_snapshot(const stats_snapshot &)            = delete;
+  stats_snapshot &operator=(const stats_snapshot &) = delete;
+
+  TSIOBuffer                            body;
+  TSIOBufferReader                      reader;
+  int64_t                               bytes    = 0;
+  encoding_format_t                     encoding = encoding_format_t::NONE;
+  std::chrono::steady_clock::time_point rendered;
+};
+
+using snapshot_ptr   = std::shared_ptr<const stats_snapshot>;
+using snapshot_table = snapshot_ptr[FORMAT_COUNT][ENCODING_COUNT];
+
+// One request for the stats.  The waiter list, the transaction hooks and the intercept share it.
+struct stats_scrape {
+  stats_scrape(TSHttpTxn txn, output_format_t fmt, encoding_format_t enc, bool rule)
+    : txnp(txn), format(fmt), encoding(enc), remap(rule)
+  {
+  }
+
+  TSHttpTxn         txnp;
+  output_format_t   format;
+  encoding_format_t encoding;
+  bool              remap; // A remap rule serves the request, rather than the global plugin.
+  // When the request started to wait for a render.
+  std::chrono::steady_clock::time_point arrived;
+
+  // TSRemapDoRemap, scrape_wait, the render or the watchdog sets these before the transaction continues, and the intercept
+  // reads them only after that.  The snapshot is null for a HEAD request to a remap rule and for a 503.
+  snapshot_ptr snapshot;
+  TSHttpStatus status = TS_HTTP_STATUS_OK;
+};
+
+struct stats_watchdog;
+
+// The stats of one remap rule, or of the global plugin.  The remap rule and each continuation that works for the instance
+// hold a reference, so that a render or a watchdog can outlive the rule.
+struct stats_instance {
+  explicit stats_instance(const stats_options &opts) : options(opts) {}
+  ~stats_instance() { Dbg(dbg_ctl, "Freeing stats instance %p", this); }
+  stats_instance(const stats_instance &)            = delete;
+  stats_instance &operator=(const stats_instance &) = delete;
+
+  PrometheusRenderer *
+  prometheus(output_format_t format)
+  {
+    std::unique_ptr<PrometheusRenderer> *renderer = nullptr;
+
+    if (format == output_format_t::PROMETHEUS_OUTPUT) {
+      renderer = &prometheus_v1;
+    } else if (format == output_format_t::PROMETHEUS_V2_OUTPUT) {
+      renderer = &prometheus_v2;
+    } else {
+      return nullptr;
+    }
+    if (*renderer == nullptr) {
+      *renderer = make_prometheus_renderer(format, options);
+    }
+    return renderer->get();
+  }
+
+  const stats_options options;
+  // Only the render in flight uses these, so the mutex does not guard them.
+  std::unique_ptr<PrometheusRenderer> prometheus_v1;
+  std::unique_ptr<PrometheusRenderer> prometheus_v2;
+  zlib_streams                        zlib;
+
+  // The mutex guards the members below it.  No thread holds it while it calls an API that can run a continuation.
+  std::mutex                                 mutex;
+  snapshot_table                             snapshots;
+  std::vector<std::shared_ptr<stats_scrape>> waiters;
+  bool                                       rendering = false;
+  stats_watchdog                            *watchdog  = nullptr; // Set while a request waits.
+};
+
+static std::shared_ptr<stats_instance>
+make_stats_instance(const stats_options &options)
+{
+  return std::make_shared<stats_instance>(options);
+}
+
+// Renders each wanted format once and compresses it for each wanted encoding.
+static void
+render_snapshots(stats_instance &instance, const bool (&wanted)[FORMAT_COUNT][ENCODING_COUNT], snapshot_table &fresh)
+{
+  auto const now = std::chrono::steady_clock::now();
+
+  for (size_t f = 0; f < FORMAT_COUNT; ++f) {
+    if (std::find(std::begin(wanted[f]), std::end(wanted[f]), true) == std::end(wanted[f])) {
+      continue;
+    }
+
+    auto const   format = static_cast<output_format_t>(f);
+    auto         body   = std::make_shared<stats_snapshot>();
+    render_state render{body->body, &instance.options};
+
+    render_stats(format, &render, instance.prometheus(format));
+    body->bytes    = TSIOBufferReaderAvail(body->reader);
+    body->rendered = now;
+
+    for (size_t e = 1; e < ENCODING_COUNT; ++e) {
+      if (!wanted[f][e]) {
+        continue;
+      }
+
+      auto const encoding   = static_cast<encoding_format_t>(e);
+      auto       compressed = std::make_shared<stats_snapshot>();
+
+      if (compress_body(encoding, instance.zlib, body->reader, compressed->body)) {
+        compressed->bytes    = TSIOBufferReaderAvail(compressed->reader);
+        compressed->encoding = encoding;
+        compressed->rendered = now;
+        fresh[f][e]          = std::move(compressed);
+      } else {
+        TSError("[%s] Cannot compress the stats, sending them uncompressed", PLUGIN_NAME);
+        fresh[f][e] = body;
+      }
+    }
+    fresh[f][static_cast<size_t>(encoding_format_t::NONE)] = std::move(body);
+  }
+}
+
+static int watchdog_handler(TSCont contp, TSEvent event, void *edata);
+
+// Answers the waiting requests with a 503 when the render takes longer than wait_timeout_ms.
+struct stats_watchdog {
+  explicit stats_watchdog(std::shared_ptr<stats_instance> inst)
+    : instance(std::move(inst)), cont(TSContCreate(watchdog_handler, TSMutexCreate()))
+  {
+    TSContDataSet(cont, this);
+  }
+
+  std::shared_ptr<stats_instance> instance;
+  TSCont                          cont;
+
+  // The mutex of the continuation guards these.
+  TSAction action = nullptr;
+  bool     fired  = false;
+};
+
+static int
+watchdog_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  auto                                      *watchdog = static_cast<stats_watchdog *>(TSContDataGet(contp));
+  stats_instance                            &instance = *watchdog->instance;
+  std::vector<std::shared_ptr<stats_scrape>> expired;
+
+  watchdog->fired = true;
+  {
+    std::lock_guard lock{instance.mutex};
+
+    // A render took this watchdog or replaced it, and that render destroys it.
+    if (instance.watchdog != watchdog) {
+      return 0;
+    }
+    instance.watchdog = nullptr;
+    expired.swap(instance.waiters);
+  }
+
+  Dbg(dbg_ctl, "Answering %zu requests with a 503 after %" PRId64 " ms without a render of stats instance %p", expired.size(),
+      instance.options.wait_timeout_ms, &instance);
+  count(metrics().waiter_timeouts, expired.size());
+  for (auto const &scrape : expired) {
+    scrape->status = TS_HTTP_STATUS_SERVICE_UNAVAILABLE;
+    TSHttpTxnReenable(scrape->txnp, TS_EVENT_HTTP_CONTINUE);
+  }
+  TSContDestroy(contp);
+  delete watchdog;
+  return 0;
+}
+
+// Stops and destroys a watchdog that a render took from its instance.
+static void
+stop_watchdog(stats_watchdog *watchdog)
+{
+  TSMutex mutex = TSContMutexGet(watchdog->cont);
+
+  // Only the holder of its continuation's mutex can cancel an action.
+  TSMutexLock(mutex);
+  if (!watchdog->fired) {
+    TSActionCancel(watchdog->action);
+  }
+  TSMutexUnlock(mutex);
+  TSContDestroy(watchdog->cont);
+  delete watchdog;
+}
+
+// Creates a watchdog for the caller to publish under the instance mutex.  The calling thread holds the mutex of the watchdog
+// until arm_watchdog sets its action, so that a render that finishes first can cancel that action.
+static stats_watchdog *
+new_watchdog(std::shared_ptr<stats_instance> instance)
+{
+  auto *watchdog = new stats_watchdog(std::move(instance));
+
+  TSMutexLock(TSContMutexGet(watchdog->cont));
+  return watchdog;
+}
+
+static void
+arm_watchdog(stats_watchdog *watchdog)
+{
+  TSMutex mutex = TSContMutexGet(watchdog->cont);
+
+  watchdog->action = TSContScheduleOnPool(watchdog->cont, watchdog->instance->options.wait_timeout_ms, TS_THREAD_POOL_NET);
+  TSMutexUnlock(mutex);
+}
+
+static int render_handler(TSCont contp, TSEvent event, void *edata);
+
+// Each render gets a new continuation, because TSContScheduleOnPool locks the mutex of the continuation on the calling
+// thread, and render_handler holds that mutex until it returns.  A shared continuation could block the ET_NET thread that
+// schedules the next render.
+static void
+schedule_render(std::shared_ptr<stats_instance> instance)
+{
+  TSCont contp = TSContCreate(render_handler, TSMutexCreate());
+
+  TSContDataSet(contp, new std::shared_ptr<stats_instance>(std::move(instance)));
+  TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_TASK);
+}
+
+static int
+render_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  auto           *ref                                  = static_cast<std::shared_ptr<stats_instance> *>(TSContDataGet(contp));
+  stats_instance &instance                             = **ref;
+  bool            wanted[FORMAT_COUNT][ENCODING_COUNT] = {};
+  bool            waiting                              = false;
+  snapshot_table  fresh;
+
+  {
+    std::lock_guard lock{instance.mutex};
+
+    for (auto const &scrape : instance.waiters) {
+      wanted[static_cast<size_t>(scrape->format)][static_cast<size_t>(scrape->encoding)] = true;
+      waiting                                                                            = true;
+    }
+  }
+  // The watchdog can answer every waiting request before the render starts.
+  if (waiting) {
+    static thread_local int64_t rest  = 0;
+    int64_t const               start = thread_cpu_ns();
+
+    render_snapshots(instance, wanted, fresh);
+    count(metrics().renders);
+    count_cpu_time(metrics().render_us, start, rest);
+  }
+
+  std::vector<std::shared_ptr<stats_scrape>> ready;
+  stats_watchdog                            *watchdog    = nullptr;
+  stats_watchdog                            *replacement = nullptr;
+  bool                                       again       = false;
+
+  {
+    std::lock_guard lock{instance.mutex};
+
+    for (size_t f = 0; f < FORMAT_COUNT; ++f) {
+      for (size_t e = 0; e < ENCODING_COUNT; ++e) {
+        if (fresh[f][e] != nullptr) {
+          instance.snapshots[f][e] = fresh[f][e];
+        }
+      }
+    }
+
+    // As in scrape_wait, a request takes a render only if the render is younger than max_age_ms when the request arrives.
+    auto const max_age  = std::chrono::milliseconds{instance.options.max_age_ms};
+    auto       rendered = [&fresh, max_age](const std::shared_ptr<stats_scrape> &scrape) -> snapshot_ptr {
+      auto const &snapshot = fresh[static_cast<size_t>(scrape->format)][static_cast<size_t>(scrape->encoding)];
+
+      return snapshot != nullptr && scrape->arrived - snapshot->rendered < max_age ? snapshot : nullptr;
+    };
+    auto answered = std::stable_partition(instance.waiters.begin(), instance.waiters.end(),
+                                          [&rendered](const auto &scrape) { return rendered(scrape) == nullptr; });
+
+    for (auto it = answered; it != instance.waiters.end(); ++it) {
+      (*it)->snapshot = rendered(*it);
+      ready.push_back(std::move(*it));
+    }
+    instance.waiters.erase(answered, instance.waiters.end());
+
+    // Requests for another format or encoding, and requests that arrived too late for this render, wait for the next one.  They
+    // get a new watchdog, because the current one can have started long before they arrived.
+    again = !instance.waiters.empty();
+    if (again) {
+      replacement = new_watchdog(*ref);
+    } else {
+      instance.rendering = false;
+    }
+    watchdog = std::exchange(instance.watchdog, replacement);
+  }
+
+  if (waiting) {
+    Dbg(dbg_ctl, "Rendered stats instance %p for %zu waiting requests", &instance, ready.size());
+  }
+  if (watchdog != nullptr) {
+    stop_watchdog(watchdog);
+  }
+  if (replacement != nullptr) {
+    arm_watchdog(replacement);
+  }
+  for (auto const &scrape : ready) {
+    TSHttpTxnReenable(scrape->txnp, TS_EVENT_HTTP_CONTINUE);
+  }
+  if (again) {
+    schedule_render(*ref);
+  }
+  delete ref;
+  TSContDestroy(contp);
+  return 0;
+}
+
+// Answers a request from a snapshot younger than max_age_ms.  Otherwise the request waits for a render, which starts unless
+// one is in flight.  Either way, the transaction continues once it has its answer.
+static void
+scrape_wait(const std::shared_ptr<stats_instance> &instance, std::shared_ptr<stats_scrape> scrape)
+{
+  auto const      now      = std::chrono::steady_clock::now();
+  bool            waits    = false;
+  bool            render   = false;
+  stats_watchdog *watchdog = nullptr;
+
+  {
+    std::lock_guard lock{instance->mutex};
+    auto const     &snapshot = instance->snapshots[static_cast<size_t>(scrape->format)][static_cast<size_t>(scrape->encoding)];
+
+    if (snapshot != nullptr && now - snapshot->rendered < std::chrono::milliseconds{instance->options.max_age_ms}) {
+      scrape->snapshot = snapshot;
+    } else {
+      scrape->arrived = now;
+      instance->waiters.push_back(scrape);
+      waits  = true;
+      render = !std::exchange(instance->rendering, true);
+      if (instance->watchdog == nullptr) {
+        watchdog = instance->watchdog = new_watchdog(instance);
+      }
+    }
+  }
+
+  if (!waits) {
+    TSHttpTxnReenable(scrape->txnp, TS_EVENT_HTTP_CONTINUE);
+    return;
+  }
+
+  Dbg(dbg_ctl, "Waiting for a render of stats instance %p", instance.get());
+  if (watchdog != nullptr) {
+    arm_watchdog(watchdog);
+  }
+  if (render) {
+    schedule_render(instance);
+  }
+}
+
+// The intercept holds only its scrape, because intercept events can arrive after the transaction and its remap rule are gone.
+struct scrape_intercept {
+  explicit scrape_intercept(std::shared_ptr<stats_scrape> s) : scrape(std::move(s)) {}
+  ~scrape_intercept()
+  {
+    if (net_vc != nullptr) {
+      TSVConnClose(net_vc);
+    }
+    if (req_buffer != nullptr) {
+      TSIOBufferDestroy(req_buffer);
+    }
+    if (resp_buffer != nullptr) {
+      TSIOBufferDestroy(resp_buffer);
+    }
+  }
+  scrape_intercept(const scrape_intercept &)            = delete;
+  scrape_intercept &operator=(const scrape_intercept &) = delete;
+
+  std::shared_ptr<stats_scrape> scrape;
+  TSVConn                       net_vc      = nullptr;
+  TSVIO                         write_vio   = nullptr;
+  TSIOBuffer                    req_buffer  = nullptr;
+  TSIOBuffer                    resp_buffer = nullptr;
+  TSIOBufferReader              resp_reader = nullptr;
+};
+
+static std::string
+scrape_response_header(const stats_scrape &scrape)
+{
+  if (!scrape.remap) {
+    if (scrape.status != TS_HTTP_STATUS_OK) {
+      return RESP_HEADER_UNAVAILABLE;
+    }
+
+    std::string header{"HTTP/1.0 200 OK\r\nContent-Type: "};
+
+    header.append(format_content_type(scrape.format)).append("\r\n");
+    if (auto const name = encoding_name(scrape.snapshot->encoding); !name.empty()) {
+      header.append("Content-Encoding: ").append(name).append("\r\n");
+    }
+    header.append("Cache-Control: no-cache\r\n\r\n");
+    return header;
+  }
+
+  std::string header{"HTTP/1.1 "};
+
+  header.append(std::to_string(scrape.status)).append(" ").append(TSHttpHdrReasonLookup(scrape.status)).append("\r\n");
+  if (scrape.status == TS_HTTP_STATUS_OK) {
+    header.append("Content-Type: ").append(format_content_type(scrape.format)).append("\r\n");
+  }
+  header.append("Cache-Control: no-store\r\n");
+  header.append(STATS_FORMAT_FIELD).append(": ").append(format_name(scrape.format)).append("\r\n");
+  if (scrape.snapshot != nullptr || scrape.status != TS_HTTP_STATUS_OK) {
+    header.append("Content-Length: ")
+      .append(std::to_string(scrape.snapshot != nullptr ? scrape.snapshot->bytes : 0))
+      .append("\r\n");
+  }
+  header.append("\r\n");
+  return header;
+}
+
+static void
+scrape_send_response(TSCont contp, scrape_intercept *intercept)
+{
+  const stats_scrape &scrape = *intercept->scrape;
+  std::string const   header = scrape_response_header(scrape);
+
+  intercept->resp_buffer = TSIOBufferCreate();
+  intercept->resp_reader = TSIOBufferReaderAlloc(intercept->resp_buffer);
+
+  int64_t bytes = TSIOBufferWrite(intercept->resp_buffer, header.data(), header.size());
+
+  if (scrape.snapshot != nullptr) {
+    // This shares the blocks of the snapshot rather than copying its data.
+    bytes += TSIOBufferCopy(intercept->resp_buffer, scrape.snapshot->reader, scrape.snapshot->bytes, 0);
+  }
+  TSVConnShutdown(intercept->net_vc, 1, 0);
+  intercept->write_vio = TSVConnWrite(intercept->net_vc, contp, intercept->resp_reader, bytes);
+  count(metrics().requests);
+  count(metrics().bytes_out, bytes);
+}
+
+static int
+scrape_intercept_handler(TSCont contp, TSEvent event, void *edata)
+{
+  static thread_local int64_t rest      = 0;
+  int64_t const               start     = thread_cpu_ns();
+  auto                       *intercept = static_cast<scrape_intercept *>(TSContDataGet(contp));
+
+  switch (event) {
+  case TS_EVENT_NET_ACCEPT:
+    intercept->net_vc     = static_cast<TSVConn>(edata);
+    intercept->req_buffer = TSIOBufferCreate();
+    TSVConnRead(intercept->net_vc, contp, intercept->req_buffer, INT64_MAX);
+    break;
+  case TS_EVENT_VCONN_READ_READY:
+    scrape_send_response(contp, intercept);
+    break;
+  case TS_EVENT_VCONN_WRITE_READY:
+    TSVIOReenable(intercept->write_vio);
+    break;
+  case TS_EVENT_NET_ACCEPT_FAILED:
+  case TS_EVENT_VCONN_EOS:
+  case TS_EVENT_ERROR:
+  case TS_EVENT_VCONN_INACTIVITY_TIMEOUT:
+  case TS_EVENT_VCONN_ACTIVE_TIMEOUT:
+  case TS_EVENT_VCONN_WRITE_COMPLETE:
+    Dbg(dbg_ctl, "Intercept finished on %s", TSHttpEventNameLookup(event));
+    delete intercept;
+    TSContDestroy(contp);
+    break;
+  default:
+    TSReleaseAssert(!"Unexpected Event");
+  }
+  count_cpu_time(metrics().intercept_us, start, rest);
+  return 0;
+}
+
+// The global plugin intercepts the request in its read request header hook, then waits there for the stats.
+static void
+serve_global_scrape(TSHttpTxn txnp, output_format_t format, encoding_format_t encoding)
+{
+  auto   scrape         = std::make_shared<stats_scrape>(txnp, format, encoding, false);
+  TSCont intercept_cont = TSContCreate(scrape_intercept_handler, TSMutexCreate());
+
+  TSContDataSet(intercept_cont, new scrape_intercept(scrape));
+  TSHttpTxnIntercept(intercept_cont, txnp);
+  scrape_wait(*global_instance, std::move(scrape));
+}
+
+//
+// Remap plugin.
+//
+
+// The transaction hooks of a GET request to a remap rule.
+struct scrape_txn {
+  std::shared_ptr<stats_instance> instance;
+  std::shared_ptr<stats_scrape>   scrape;
+};
+
+static int
+scrape_txn_handler(TSCont contp, TSEvent event, void *edata)
+{
+  auto *txn = static_cast<scrape_txn *>(TSContDataGet(contp));
+
+  if (event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE) {
+    scrape_wait(txn->instance, txn->scrape);
+    return 0;
+  }
+  if (event == TS_EVENT_HTTP_TXN_CLOSE) {
+    delete txn;
+    TSContDestroy(contp);
+  }
+  TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+static void
+add_allow_field(TSHttpTxn txnp)
+{
+  TSMBuffer bufp;
+  TSMLoc    hdr_loc;
+
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
+    TSMLoc field_loc;
+
+    // A remap ACL filter that denies the request replaces the 405 with a 403.
+    if (TSHttpHdrStatusGet(bufp, hdr_loc) == TS_HTTP_STATUS_METHOD_NOT_ALLOWED &&
+        TSMimeHdrFieldCreateNamed(bufp, hdr_loc, TS_MIME_FIELD_ALLOW, TS_MIME_LEN_ALLOW, &field_loc) == TS_SUCCESS) {
+      TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, ALLOWED_METHODS.data(), ALLOWED_METHODS.size());
+      TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+    }
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  }
+}
+
+static int
+allow_handler(TSCont contp, TSEvent event, void *edata)
+{
+  auto txnp = static_cast<TSHttpTxn>(edata);
+
+  if (event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
+    add_allow_field(txnp);
+  } else if (event == TS_EVENT_HTTP_TXN_CLOSE) {
+    TSContDestroy(contp);
+  }
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  return 0;
+}
+
+// The settings that a remap rule or its configuration file can set.
+struct stats_settings {
+  std::optional<output_format_t>         format;
+  std::optional<int64_t>                 max_age_ms;
+  std::optional<int64_t>                 wait_timeout_ms;
+  std::optional<bool>                    prometheus_help;
+  std::shared_ptr<const PrometheusRules> rules;
+};
+
+static std::string
+yaml_line(const YAML::Node &node)
+{
+  auto const mark = node.Mark();
+
+  return mark.is_null() ? std::string{} : "line " + std::to_string(mark.line + 1) + ": ";
+}
+
+// Reads the configuration file of a remap rule.  Returns an empty string, or a description of the first error.
+static std::string
+load_settings_file(const std::string &path, stats_settings &settings)
+{
+  std::ifstream file{path};
+
+  if (!file) {
+    return std::string{"cannot open the file: "} + strerror(errno);
+  }
+  try {
+    YAML::Node const root = YAML::Load(file);
+
+    if (!root.IsMap()) {
+      return yaml_line(root) + "the file must be a map";
+    }
+    for (auto const &item : root) {
+      std::string const key   = item.first.as<std::string>();
+      YAML::Node const  value = item.second;
+
+      if (key == "format") {
+        output_format_t format;
+
+        if (!value.IsScalar() || !parse_format(value.Scalar(), format)) {
+          return yaml_line(value) + "format must be json, csv, prometheus or prometheus_v2";
+        }
+        settings.format = format;
+      } else if (key == "render") {
+        if (!value.IsMap()) {
+          return yaml_line(value) + "render must be a map";
+        }
+        for (auto const &setting : value) {
+          std::string const name   = setting.first.as<std::string>();
+          std::string const text   = setting.second.IsScalar() ? setting.second.Scalar() : std::string{};
+          int64_t           number = 0;
+          int64_t           min    = 0;
+          bool              valid  = false;
+
+          if (name == "max_age_ms") {
+            valid               = parse_integer(text, min, MAX_MILLISECONDS, number);
+            settings.max_age_ms = number;
+          } else if (name == "wait_timeout_ms") {
+            min                      = 1;
+            valid                    = parse_integer(text, min, MAX_MILLISECONDS, number);
+            settings.wait_timeout_ms = number;
+          } else {
+            return yaml_line(setting.first) + "unknown key render." + name;
+          }
+          if (!valid) {
+            return yaml_line(setting.second) + "render." + name + " must be an integer from " + std::to_string(min) + " to " +
+                   std::to_string(MAX_MILLISECONDS) + ", not '" + text + "'";
+          }
+        }
+      } else if (key == "prometheus") {
+        auto rules = std::make_shared<PrometheusRules>();
+
+        if (std::string error = rules->load(value); !error.empty()) {
+          return error;
+        }
+        settings.prometheus_help = rules->help();
+        settings.rules           = std::move(rules);
+      } else {
+        return yaml_line(item.first) + "unknown key " + key;
+      }
+    }
+  } catch (const YAML::Exception &e) {
+    return e.what();
+  }
+  return {};
+}
+
+// Registers the configuration file of a remap rule as a child of the remap configuration.  After a change to the file, a
+// configuration reload loads the remap configuration again, and with it the file.
+static void
+watch_config_file(const std::string &path)
+{
+  TSMgmtString parent = nullptr;
+
+  if (TSMgmtStringGet("proxy.config.url_remap.filename", &parent) == TS_SUCCESS) {
+    TSMgmtConfigFileAdd(parent, path.c_str());
+  } else {
+    TSWarning("[%s] Cannot read proxy.config.url_remap.filename, so a configuration reload does not detect a change to %s",
+              PLUGIN_NAME, path.c_str());
+  }
+  TSfree(parent);
+}
+
+TSReturnCode
+TSRemapInit(TSRemapInterface * /* api_info ATS_UNUSED */, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+{
+  metrics();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
+{
+  static const struct option longopts[] = {
+    {"format",             required_argument, nullptr, 'f'},
+    {"integer-counters",   no_argument,       nullptr, 'i'},
+    {"wrap-counters",      no_argument,       nullptr, 'w'},
+    {"no-prometheus-help", no_argument,       nullptr, 'n'},
+    {"max-age-ms",         required_argument, nullptr, 'a'},
+    {"wait-timeout-ms",    required_argument, nullptr, 't'},
+    {"config",             required_argument, nullptr, 'c'},
+    {"on-config-error",    required_argument, nullptr, 'e'},
+    {nullptr,              0,                 nullptr, 0  }
+  };
+  stats_options  options;
+  stats_settings rule;
+  std::string    config_path;
+  bool           answer_errors = false;
+  int64_t        number        = 0;
+
+  options.prometheus_epoch = false;
+
+  // argv[0] is the "from" URL.  Skip it so that the "to" URL poses as the program name.
+  --argc;
+  ++argv;
+  for (int opt, option_index = 0; (opt = getopt_long(argc, argv, "", longopts, &option_index)) != -1;) {
+    bool    valid = true;
+    int64_t min   = 0;
+    int64_t max   = 0;
+
+    switch (opt) {
+    case 'f':
+      if (output_format_t format; parse_format(optarg, format)) {
+        rule.format = format;
+      } else {
+        valid = false;
+      }
+      break;
+    case 'i':
+      options.integer_counters = true;
+      break;
+    case 'w':
+      options.wrap_counters = true;
+      break;
+    case 'n':
+      rule.prometheus_help = false;
+      break;
+    case 'a':
+      max             = MAX_MILLISECONDS;
+      valid           = parse_integer(optarg, min, max, number);
+      rule.max_age_ms = number;
+      break;
+    case 't':
+      min                  = 1;
+      max                  = MAX_MILLISECONDS;
+      valid                = parse_integer(optarg, min, max, number);
+      rule.wait_timeout_ms = number;
+      break;
+    case 'c':
+      config_path = optarg;
+      break;
+    case 'e':
+      if (std::string_view{optarg} == "503") {
+        answer_errors = true;
+      } else if (std::string_view{optarg} != "fail") {
+        valid = false;
+      }
+      break;
+    default:
+      snprintf(errbuf, errbuf_size, "[%s] Invalid option '%s', usage: %s", PLUGIN_NAME, argv[optind - 1], REMAP_USAGE);
+      return TS_ERROR;
+    }
+    if (!valid) {
+      if (max > 0) {
+        snprintf(errbuf, errbuf_size, "[%s] --%s must be an integer from %" PRId64 " to %" PRId64 ", not '%s', usage: %s",
+                 PLUGIN_NAME, longopts[option_index].name, min, max, optarg, REMAP_USAGE);
+      } else {
+        snprintf(errbuf, errbuf_size, "[%s] Invalid --%s '%s', usage: %s", PLUGIN_NAME, longopts[option_index].name, optarg,
+                 REMAP_USAGE);
+      }
+      return TS_ERROR;
+    }
+  }
+  if (optind < argc) {
+    snprintf(errbuf, errbuf_size, "[%s] Unexpected argument '%s', usage: %s", PLUGIN_NAME, argv[optind], REMAP_USAGE);
+    return TS_ERROR;
+  }
+
+  stats_settings file;
+
+  if (!config_path.empty()) {
+    if (config_path.front() != '/') {
+      config_path = std::string{TSConfigDirGet()} + "/" + config_path;
+    }
+    // Watch the file even when it has an error, so that a reload after a fix loads it.
+    watch_config_file(config_path);
+
+    std::string error  = load_settings_file(config_path, file);
+    auto const  format = rule.format.value_or(file.format.value_or(options.format));
+
+    if (error.empty() && file.rules != nullptr && format != output_format_t::PROMETHEUS_OUTPUT) {
+      error = "the prometheus settings need the prometheus format, not " + std::string{format_name(format)};
+    }
+    if (!error.empty()) {
+      count(metrics().config_errors);
+      if (!answer_errors) {
+        snprintf(errbuf, errbuf_size, "[%s] %s: %s", PLUGIN_NAME, config_path.c_str(), error.c_str());
+        return TS_ERROR;
+      }
+      TSError("[%s] %s: %s.  The remap rule answers each request with a 503", PLUGIN_NAME, config_path.c_str(), error.c_str());
+      file                 = {};
+      options.config_error = true;
+    }
+  }
+
+  // The options of the remap rule take precedence over the file.
+  options.format          = rule.format.value_or(file.format.value_or(options.format));
+  options.max_age_ms      = rule.max_age_ms.value_or(file.max_age_ms.value_or(options.max_age_ms));
+  options.wait_timeout_ms = rule.wait_timeout_ms.value_or(file.wait_timeout_ms.value_or(options.wait_timeout_ms));
+  options.prometheus_help = rule.prometheus_help.value_or(file.prometheus_help.value_or(options.prometheus_help));
+  options.rules           = std::move(file.rules);
+
+  *ih = new std::shared_ptr<stats_instance>(make_stats_instance(options));
+  return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void *ih)
+{
+  auto *instance = static_cast<std::shared_ptr<stats_instance> *>(ih);
+
+  Dbg(dbg_ctl, "Releasing remap instance %p", instance->get());
+  delete instance;
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+{
+  int         method_len = 0;
+  const char *method     = TSHttpHdrMethodGet(rri->requestBufp, rri->requestHdrp, &method_len);
+
+  if (method != TS_HTTP_METHOD_GET && method != TS_HTTP_METHOD_HEAD) {
+    TSCont allow_cont = TSContCreate(allow_handler, nullptr);
+
+    TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_METHOD_NOT_ALLOWED, PLUGIN_NAME);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, allow_cont);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, allow_cont);
+    return TSREMAP_NO_REMAP;
+  }
+
+  TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
+
+  auto const &instance = *static_cast<std::shared_ptr<stats_instance> *>(ih);
+  auto        scrape   = std::make_shared<stats_scrape>(txnp, instance->options.format, encoding_format_t::NONE, true);
+
+  if (instance->options.config_error) {
+    scrape->status = TS_HTTP_STATUS_SERVICE_UNAVAILABLE;
+  } else if (method == TS_HTTP_METHOD_GET) {
+    // Wait for the stats in the cache lookup hook, which runs after the remap ACL filters, so that a request they deny starts
+    // no render.
+    TSCont txn_cont = TSContCreate(scrape_txn_handler, nullptr);
+
+    TSContDataSet(txn_cont, new scrape_txn{instance, scrape});
+    TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, txn_cont);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, txn_cont);
+  }
+
+  TSCont intercept_cont = TSContCreate(scrape_intercept_handler, TSMutexCreate());
+
+  TSContDataSet(intercept_cont, new scrape_intercept(std::move(scrape)));
+  TSHttpTxnServerIntercept(intercept_cont, txnp);
+  Dbg(dbg_ctl, "Intercepting %.*s request", method_len, method);
+  return TSREMAP_NO_REMAP;
 }
 
 //
