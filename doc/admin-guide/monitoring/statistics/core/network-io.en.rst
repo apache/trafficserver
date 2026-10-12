@@ -92,7 +92,9 @@ Network I/O
    denominator: divide the two metrics below by this for per-pass averages.
    :type: counter
 .. ts:stat:: global proxy.process.net.inactivity_cop_fired integer
-   The total number of connections the inactivity cop has timed out. Compare
+   The total number of connections the inactivity cop has timed out, counting
+   only delivered timeout events. Freeing a connection that was already closed,
+   or re-arming one whose lock was busy, does not count. Compare
    against :ts:stat:`proxy.process.net.inactivity_cop_visited`: the cop examines
    a connection whose deadline came due but re-arms it without firing when the
    deadline has since moved out, so ``visited`` is always at least ``fired``, and

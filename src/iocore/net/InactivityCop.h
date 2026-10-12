@@ -84,6 +84,10 @@ public:
     /// The wheel calls deadline_of() exactly once per element it pops, so this
     /// is an exact count of what the cop examined this run.
     int visited = 0;
+    /// Timeout callbacks actually delivered. The wheel's own count also includes
+    /// lock failures, reaps of already-closed NetEvents and deadlines exactly
+    /// equal to now, none of which time anything out.
+    int timeouts = 0;
 
     ink_hrtime
     deadline_of(NetEvent *ne)
@@ -95,7 +99,7 @@ public:
     }
 
     void
-    operator()(NetEvent *ne) const
+    operator()(NetEvent *ne)
     {
       // If we cannot get the lock don't stop just keep cleaning. The element
       // has already been popped from the wheel, so it must be rescheduled or
@@ -141,10 +145,12 @@ public:
             ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at, ne->inactivity_timeout_in);
         ATS_PROBE6(net_inactivity_timeout, ne->get_fd(), now, ne->next_inactivity_timeout_at, ne->inactivity_timeout_in,
                    ne->is_default_inactivity_timeout() ? 1 : 0, ne->default_inactivity_timeout_in.load());
+        ++timeouts;
         ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, e);
       } else if (ne->next_activity_timeout_at && ne->next_activity_timeout_at < now) {
         Dbg(dbg_ctl_inactivity_cop_verbose, "active ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
             ink_hrtime_to_sec(now), ne->next_activity_timeout_at, ne->active_timeout_in);
+        ++timeouts;
         ne->callback(VC_EVENT_ACTIVE_TIMEOUT, e);
       } else {
         // Examined but not due. The wheel hands over an element once its
@@ -210,9 +216,11 @@ public:
    * deadline comparison in a pass uses this one timestamp.
    *
    * Scheduling policy stays in the handler, so driving this directly does not
-   * queue events. Returns the number of timeouts fired. A pass that stopped at
-   * either its timeout or its visit budget left work due, and is_behind()
-   * reports that until the next pass.
+   * queue events. Returns the number of due NetEvents handed to Fire, which is
+   * what the timeout budget counts; the inactivity_cop_fired metric counts only
+   * the timeout callbacks among them. A pass that stopped at either its timeout
+   * or its visit budget left work due, and is_behind() reports that until the
+   * next pass.
    */
   int
   run(ink_hrtime now, Event *e)
@@ -235,11 +243,11 @@ public:
     //
     // The timing covers expire() only - the wheel walk plus the inline closes it
     // dispatches - and deliberately not the keep-alive sweep below, so that
-    // pass_time_us divided by fired is a per-close figure and nothing else. Two
+    // pass_time_us divided by the timeouts fired is a per-close figure. Two
     // clock reads per pass per thread is not worth gating behind a debug tag.
     Metrics::Counter::increment(net_rsb.inactivity_cop_visited, fire.visited);
     Metrics::Counter::increment(net_rsb.inactivity_cop_passes);
-    Metrics::Counter::increment(net_rsb.inactivity_cop_fired, fired);
+    Metrics::Counter::increment(net_rsb.inactivity_cop_fired, fire.timeouts);
     Metrics::Counter::increment(net_rsb.inactivity_cop_pass_time_us, elapsed_us);
     if (_behind) {
       Metrics::Counter::increment(net_rsb.inactivity_cop_budget_exhausted);

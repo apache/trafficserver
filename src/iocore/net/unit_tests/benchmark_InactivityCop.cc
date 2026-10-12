@@ -1448,6 +1448,51 @@ TEST_CASE("InactivityCop caps the connections one pass examines", "[net][inactiv
   CHECK(fx.counters.callbacks == 0);
 }
 
+// The wheel hands Fire every due element, but only some of them time out: a lock
+// failure is re-armed and an already-closed NetEvent is just freed. Counting those
+// as fired timeouts inflated the metric and skewed pass_time_us / fired.
+TEST_CASE("InactivityCop counts only delivered timeouts as fired", "[net][inactivity_cop]")
+{
+  Fixture fx(4);
+  auto   *closed = fx.mocks[0].get();
+
+  ink_hrtime const base = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(1);
+      m->next_inactivity_timeout_at = base + HRTIME_SECONDS(1);
+      fx.nh.rearm_timer(m.get());
+    }
+    closed->closed = 1;
+    fx.nh.rearm_timer(closed);
+  }
+
+  // Holds the last mock's mutex, so its pass is a lock failure.
+  ContentionHolder holder(fx.mocks, 25);
+  REQUIRE(holder.held_count() == 1);
+
+  int64_t const fired_before    = Metrics::Counter::load(net_rsb.inactivity_cop_fired);
+  int64_t const lockfail_before = Metrics::Counter::load(net_rsb.inactivity_cop_lock_acquire_failure);
+  int           handed          = 0;
+  {
+    ContentionHolder::ScopedRun run(holder);
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    handed        = fx.cop.run(base + HRTIME_SECONDS(5), &event);
+  }
+
+  // A lock failure is re-armed into the next tick, and this pass spans several,
+  // so the held mock can be handed over more than once.
+  REQUIRE(handed >= 4);
+  REQUIRE(fx.counters.frees == 1);
+  REQUIRE(Metrics::Counter::load(net_rsb.inactivity_cop_lock_acquire_failure) - lockfail_before >= 1);
+  INFO("only the two connections that actually timed out may count as fired");
+  CHECK(fx.counters.callbacks == 2);
+  CHECK(Metrics::Counter::load(net_rsb.inactivity_cop_fired) - fired_before == 2);
+}
+
 // --- Cross-thread close ---------------------------------------------------
 //
 // Only the owning thread may touch the timer wheel, so a NetEvent closed from
