@@ -682,8 +682,8 @@ Network
    consistently hitting the limit, which is expected and harmless when the value
    is deliberately low, but indicates timeouts firing late if it is not.
 
-   The value must be at least 1. A budget of zero would stop the check from
-   examining anything at all, and connections would never time out.
+   The value must be between 1 and 1048576. A budget of zero would stop the
+   check from examining anything at all, and connections would never time out.
 
 .. ts:cv:: CONFIG proxy.config.incoming_ip_to_bind STRING 0.0.0.0 [::]
 

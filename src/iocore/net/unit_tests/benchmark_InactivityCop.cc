@@ -1378,6 +1378,36 @@ TEST_CASE("InactivityCop falls back to the default when the configured budget is
   CHECK(fx.counters.callbacks == 4);
 }
 
+// A value above INT_MAX narrows to a negative int, which expire() also treats as
+// "do nothing" while the cop keeps rescheduling itself every millisecond.
+TEST_CASE("InactivityCop clamps an oversized configured budget", "[net][inactivity_cop]")
+{
+  Fixture fx(4);
+
+  fx.nh.config.inactivity_cop_budget = 0x80000000u;
+  REQUIRE(fx.cop.budget() == InactivityCop::MAX_TIMEOUT_BUDGET);
+
+  ink_hrtime const base = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(1);
+      m->next_inactivity_timeout_at = base + HRTIME_SECONDS(1);
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(base + HRTIME_SECONDS(5), &event);
+  }
+
+  INFO("an oversized budget must not disable timeouts");
+  CHECK(fx.counters.callbacks == 4);
+}
+
 // --- Cross-thread close ---------------------------------------------------
 //
 // Only the owning thread may touch the timer wheel, so a NetEvent closed from
