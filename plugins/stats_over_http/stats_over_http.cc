@@ -175,6 +175,7 @@ struct stats_state {
   output_format_t                 output_format = output_format_t::JSON_OUTPUT;
   encoding_format_t               encoding      = encoding_format_t::NONE;
   z_stream                        zstrm;
+  bool                            zstrm_active = false;
   prometheus_v2_metric_family_map prometheus_v2_families;
   std::vector<std::string>        prometheus_v2_family_order;
 #if HAVE_BROTLI_ENCODE_H
@@ -187,6 +188,12 @@ struct stats_state {
     zstrm.zfree     = Z_NULL;
     zstrm.opaque    = Z_NULL;
     zstrm.data_type = Z_ASCII;
+  }
+  ~stats_state()
+  {
+    if (zstrm_active) {
+      deflateEnd(&zstrm);
+    }
   }
 };
 
@@ -252,6 +259,7 @@ init_gzip(stats_state *my_state, int mode)
     return encoding_format_t::NONE;
   } else {
     Dbg(dbg_ctl, "gzip initialized successfully");
+    my_state->zstrm_active = true;
     if (mode == GZIP_MODE) {
       return encoding_format_t::GZIP;
     } else if (mode == DEFLATE_MODE) {
@@ -402,11 +410,12 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
     my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[%s] stats_process_read: Received TS_EVENT_ERROR", PLUGIN_NAME);
+    stats_cleanup(contp, my_state);
   } else if (event == TS_EVENT_VCONN_EOS) {
-    /* client may end the connection, simply return */
-    return;
+    stats_cleanup(contp, my_state);
   } else if (event == TS_EVENT_NET_ACCEPT_FAILED) {
     TSError("[%s] stats_process_read: Received TS_EVENT_NET_ACCEPT_FAILED", PLUGIN_NAME);
+    stats_cleanup(contp, my_state);
   } else {
     printf("Unexpected Event %d\n", event);
     TSReleaseAssert(!"Unexpected Event");
@@ -891,70 +900,95 @@ json_out_stats(stats_state *my_state)
 }
 
 #if HAVE_BROTLI_ENCODE_H
-// Takes an input stats state struct holding the uncompressed
-// stats values. Compresses and copies it back into the state struct
-static void
-br_out_stats(stats_state *my_state)
+static bool
+br_encode(stats_state *my_state, const char *data, int64_t len, bool finish, TSIOBuffer out)
 {
-  size_t  outputsize = BrotliEncoderMaxCompressedSize(my_state->output_bytes);
-  uint8_t inputbuf[my_state->output_bytes];
-  uint8_t outputbuf[outputsize];
+  BrotliEncoderOperation const op       = finish ? BROTLI_OPERATION_FINISH : BROTLI_OPERATION_PROCESS;
+  const uint8_t               *next_in  = reinterpret_cast<const uint8_t *>(data);
+  size_t                       avail_in = static_cast<size_t>(len);
 
-  memset(&inputbuf, 0, sizeof(inputbuf));
-  memset(&outputbuf, 0, sizeof(outputbuf));
+  do {
+    int64_t  avail     = 0;
+    uint8_t *next_out  = reinterpret_cast<uint8_t *>(TSIOBufferBlockWriteStart(TSIOBufferStart(out), &avail));
+    size_t   avail_out = static_cast<size_t>(avail);
 
-  int64_t inputbytes = TSIOBufferReaderCopy(my_state->resp_reader, &inputbuf, my_state->output_bytes);
+    if (!BrotliEncoderCompressStream(my_state->bstrm.br, op, &avail_in, &next_in, &avail_out, &next_out, nullptr)) {
+      return false;
+    }
+    TSIOBufferProduce(out, avail - avail_out);
+  } while (avail_in > 0 || BrotliEncoderHasMoreOutput(my_state->bstrm.br) ||
+           (finish && !BrotliEncoderIsFinished(my_state->bstrm.br)));
 
-  // Consume existing uncompressed buffer now that it has been stored to
-  // free up the buffer to contain the compressed data
-  int64_t toconsume = TSIOBufferReaderAvail(my_state->resp_reader);
-  TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
-  my_state->output_bytes -= toconsume;
-  BROTLI_BOOL err = BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, inputbytes, inputbuf,
-                                          &outputsize, outputbuf);
-
-  if (err == BROTLI_FALSE) {
-    Dbg(dbg_ctl, "brotli compress error");
-  }
-  my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, outputsize);
-  BrotliEncoderDestroyInstance(my_state->bstrm.br);
-  my_state->bstrm.br = nullptr;
+  return true;
 }
 #endif
 
-// Takes an input stats state struct holding the uncompressed
-// stats values. Compresses and copies it back into the state struct
-static void
-gzip_out_stats(stats_state *my_state)
+static bool
+gzip_encode(stats_state *my_state, const char *data, int64_t len, bool finish, TSIOBuffer out)
 {
-  char inputbuf[my_state->output_bytes];
-  char outputbuf[deflateBound(&my_state->zstrm, my_state->output_bytes)];
-  memset(&inputbuf, 0, sizeof(inputbuf));
-  memset(&outputbuf, 0, sizeof(outputbuf));
+  z_stream &zstrm = my_state->zstrm;
+  int const flush = finish ? Z_FINISH : Z_NO_FLUSH;
+  int       err   = Z_OK;
 
-  int64_t inputbytes = TSIOBufferReaderCopy(my_state->resp_reader, &inputbuf, my_state->output_bytes);
+  zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+  zstrm.avail_in = static_cast<uInt>(len);
+  do {
+    int64_t avail   = 0;
+    zstrm.next_out  = reinterpret_cast<Bytef *>(TSIOBufferBlockWriteStart(TSIOBufferStart(out), &avail));
+    zstrm.avail_out = static_cast<uInt>(avail);
+    err             = deflate(&zstrm, flush);
+    TSIOBufferProduce(out, avail - zstrm.avail_out);
+  } while (err == Z_OK && (finish || zstrm.avail_out == 0));
 
-  // Consume existing uncompressed buffer now that it has been stored to
-  // free up the buffer to contain the compressed data
-  int64_t toconsume = TSIOBufferReaderAvail(my_state->resp_reader);
-  TSIOBufferReaderConsume(my_state->resp_reader, toconsume);
+  return finish ? err == Z_STREAM_END : (err == Z_OK || err == Z_BUF_ERROR);
+}
 
-  my_state->output_bytes    -= toconsume;
-  my_state->zstrm.avail_in   = inputbytes;
-  my_state->zstrm.avail_out  = sizeof(outputbuf);
-  my_state->zstrm.next_in    = (Bytef *)inputbuf;
-  my_state->zstrm.next_out   = (Bytef *)outputbuf;
-  int err                    = deflate(&my_state->zstrm, Z_FINISH);
-  if (err != Z_STREAM_END) {
-    Dbg(dbg_ctl, "deflate error: %d", err);
+static bool
+encode_chunk(stats_state *my_state, const char *data, int64_t len, bool finish, TSIOBuffer out)
+{
+#if HAVE_BROTLI_ENCODE_H
+  if (my_state->encoding == encoding_format_t::BR) {
+    return br_encode(my_state, data, len, finish, out);
+  }
+#endif
+  return gzip_encode(my_state, data, len, finish, out);
+}
+
+// Replaces the uncompressed body in the response buffer with its compressed form.  The write VIO
+// has already sent the response header, so the body is all that remains in resp_reader.
+static void
+compress_out_stats(stats_state *my_state)
+{
+  TSIOBuffer       out        = TSIOBufferCreate();
+  TSIOBufferReader out_reader = TSIOBufferReaderAlloc(out);
+  int64_t const    body_bytes = TSIOBufferReaderAvail(my_state->resp_reader);
+  bool             ok         = true;
+
+  for (TSIOBufferBlock blk = TSIOBufferReaderStart(my_state->resp_reader); ok && blk != nullptr; blk = TSIOBufferBlockNext(blk)) {
+    int64_t     len  = 0;
+    const char *data = TSIOBufferBlockReadStart(blk, my_state->resp_reader, &len);
+
+    ok = encode_chunk(my_state, data, len, false, out);
+  }
+  if (!ok || !encode_chunk(my_state, nullptr, 0, true, out)) {
+    Dbg(dbg_ctl, "compression error");
   }
 
-  err = deflateEnd(&my_state->zstrm);
-  if (err != Z_OK) {
-    Dbg(dbg_ctl, "deflate end err: %d", err);
+  if (my_state->zstrm_active) {
+    deflateEnd(&my_state->zstrm);
+    my_state->zstrm_active = false;
   }
+#if HAVE_BROTLI_ENCODE_H
+  if (my_state->bstrm.br) {
+    BrotliEncoderDestroyInstance(my_state->bstrm.br);
+    my_state->bstrm.br = nullptr;
+  }
+#endif
 
-  my_state->output_bytes += TSIOBufferWrite(my_state->resp_buffer, outputbuf, my_state->zstrm.total_out);
+  TSIOBufferReaderConsume(my_state->resp_reader, body_bytes);
+  my_state->output_bytes -= body_bytes;
+  my_state->output_bytes += TSIOBufferCopy(my_state->resp_buffer, out_reader, TSIOBufferReaderAvail(out_reader), 0);
+  TSIOBufferDestroy(out);
 }
 
 static void
@@ -1026,14 +1060,9 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
         break;
       }
 
-      if ((my_state->encoding == encoding_format_t::GZIP) || (my_state->encoding == encoding_format_t::DEFLATE)) {
-        gzip_out_stats(my_state);
+      if (my_state->encoding != encoding_format_t::NONE) {
+        compress_out_stats(my_state);
       }
-#if HAVE_BROTLI_ENCODE_H
-      else if (my_state->encoding == encoding_format_t::BR) {
-        br_out_stats(my_state);
-      }
-#endif
       TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
     }
     TSVIOReenable(my_state->write_vio);
@@ -1041,6 +1070,7 @@ stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
     stats_cleanup(contp, my_state);
   } else if (event == TS_EVENT_ERROR) {
     TSError("[%s] stats_process_write: Received TS_EVENT_ERROR", PLUGIN_NAME);
+    stats_cleanup(contp, my_state);
   } else {
     TSReleaseAssert(!"Unexpected Event");
   }
@@ -1053,7 +1083,7 @@ stats_dostuff(TSCont contp, TSEvent event, void *edata)
   if (event == TS_EVENT_NET_ACCEPT) {
     my_state->net_vc = (TSVConn)edata;
     stats_process_accept(contp, my_state);
-  } else if (edata == my_state->read_vio) {
+  } else if (event == TS_EVENT_NET_ACCEPT_FAILED || edata == my_state->read_vio) {
     stats_process_read(contp, event, my_state);
   } else if (edata == my_state->write_vio) {
     stats_process_write(contp, event, my_state);
