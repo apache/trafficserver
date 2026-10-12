@@ -461,6 +461,111 @@ test_parsing()
     END_TEST();
   }
 
+  {
+    ParserTest p("sort-destination QUERY");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "sort-destination");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(set-cache-key HOST "%{CLIENT-HEADER:X-H}")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-cache-key");
+    CHECK_EQ(p.getTokens()[1], "HOST");
+    CHECK_EQ(p.getTokens()[2], "%{CLIENT-HEADER:X-H}");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(set-cache-key PATH "")");
+
+    CHECK_EQ(p.getTokens().size(), 3UL);
+    CHECK_EQ(p.getTokens()[0], "set-cache-key");
+    CHECK_EQ(p.getTokens()[1], "PATH");
+    CHECK_EQ(p.getTokens()[2], "");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(add-cache-key "%{CLIENT-HEADER:Accept-Language}")");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "add-cache-key");
+    CHECK_EQ(p.getTokens()[1], "%{CLIENT-HEADER:Accept-Language}");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(add-cache-key "")");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "add-cache-key");
+    CHECK_EQ(p.getTokens()[1], "");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p("clear-cache-key");
+
+    CHECK_EQ(p.getTokens().size(), 1UL);
+    CHECK_EQ(p.getTokens()[0], "clear-cache-key");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p("cond %{CACHE-URL:HOST} =k.ex");
+
+    CHECK_EQ(p.getTokens().size(), 4UL);
+    CHECK_EQ(p.getTokens()[0], "cond");
+    CHECK_EQ(p.getTokens()[1], "%{CACHE-URL:HOST}");
+    CHECK_EQ(p.getTokens()[2], "=");
+    CHECK_EQ(p.getTokens()[3], "k.ex");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p("rm-cache-key QUERY");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "rm-cache-key");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p(R"(rm-cache-key QUERY "a,b" [I])");
+
+    CHECK_EQ(p.getTokens().size(), 4UL);
+    CHECK_EQ(p.getTokens()[0], "rm-cache-key");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+    CHECK_EQ(p.getTokens()[2], "a,b");
+    CHECK_EQ(p.getTokens()[3], "[I]");
+
+    END_TEST();
+  }
+
+  {
+    ParserTest p("sort-cache-key QUERY");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "sort-cache-key");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+
+    END_TEST();
+  }
+
   return errors;
 }
 

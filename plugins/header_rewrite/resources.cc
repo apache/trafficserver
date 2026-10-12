@@ -198,7 +198,97 @@ Resources::destroy()
   delete server_cert;
 #endif
 
+  if (cache_key.bufp) {
+    if (cache_key.url_loc) {
+      TSHandleMLocRelease(cache_key.bufp, TS_NULL_MLOC, cache_key.url_loc);
+    }
+    TSMBufferDestroy(cache_key.bufp);
+    cache_key = {};
+  }
+
   _ready = false;
+}
+
+bool
+Resources::copy_key_base(TSMBuffer dst_bufp, TSMLoc dst_url) const
+{
+  // TS_ERROR here only means nothing is committed yet; ATS sets the lookup URL after POST_REMAP.
+  if (TSHttpTxnCacheLookupUrlGet(state.txnp, dst_bufp, dst_url) == TS_SUCCESS) {
+    return true;
+  }
+
+  // Read the URL through the request header, not _rri->requestUrl: set-destination URL replaces the
+  // header's URL object, which leaves _rri->requestUrl pointing at the old one.
+  TSMBuffer req_bufp = _rri ? _rri->requestBufp : client_bufp;
+  TSMLoc    req_hdr  = _rri ? _rri->requestHdrp : client_hdr_loc;
+  TSMLoc    req_url  = nullptr;
+
+  if (!req_bufp || !req_hdr || TSHttpHdrUrlGet(req_bufp, req_hdr, &req_url) != TS_SUCCESS) {
+    Dbg(pi_dbg_ctl, "Unable to get the request URL for the cache key");
+    return false;
+  }
+
+  const bool copied = TSUrlCopy(dst_bufp, dst_url, req_bufp, req_url) == TS_SUCCESS;
+
+  TSHandleMLocRelease(req_bufp, req_hdr, req_url);
+  return copied;
+}
+
+bool
+Resources::ensure_key_url() const
+{
+  if (cache_key.url_loc) {
+    return true;
+  }
+
+  TSMBuffer key_bufp = TSMBufferCreate();
+  TSMLoc    key_url  = nullptr;
+
+  if (TSUrlCreate(key_bufp, &key_url) != TS_SUCCESS || !copy_key_base(key_bufp, key_url)) {
+    if (key_url) {
+      TSHandleMLocRelease(key_bufp, TS_NULL_MLOC, key_url);
+    }
+    TSMBufferDestroy(key_bufp);
+    return false;
+  }
+
+  cache_key.bufp    = key_bufp;
+  cache_key.url_loc = key_url;
+  return true;
+}
+
+void
+Resources::finalize_key_ops()
+{
+  if (!cache_key.active) {
+    return;
+  }
+
+  if (!cache_key.key_data.empty()) {
+    int         len  = 0;
+    const char *ptr  = TSUrlPathGet(cache_key.bufp, cache_key.url_loc, &len);
+    std::string path = len > 0 ? std::string(ptr, len) : std::string();
+
+    // ATS stores the path without its leading '/', so the first segment on an empty path needs no separator.
+    for (size_t i = 0; i < cache_key.key_data.size(); ++i) {
+      if (i > 0 || !path.empty()) {
+        path += '/';
+      }
+      path += cache_key.key_data[i];
+    }
+    TSUrlPathSet(cache_key.bufp, cache_key.url_loc, path.data(), path.size());
+  }
+
+  // Not TSCacheUrlSet(), which is first-writer-wins: a POST_REMAP commit must overwrite a REMAP one.
+  if (TSHttpTxnCacheLookupUrlSet(state.txnp, cache_key.bufp, cache_key.url_loc) != TS_SUCCESS) {
+    TSError("[%s] Unable to set the cache lookup URL", PLUGIN_NAME);
+  } else if (pi_dbg_ctl.on()) {
+    int   len = 0;
+    char *url = TSUrlStringGet(cache_key.bufp, cache_key.url_loc, &len);
+
+    Dbg(pi_dbg_ctl, "Set the cache lookup URL to %.*s", len, url);
+    TSfree(url);
+  }
 }
 
 swoc::TextView

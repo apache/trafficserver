@@ -218,6 +218,34 @@ autest:
             args:
               - "rules/last_capture.conf"
 
+      - from: "http://www.example.com/from_24/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_24/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_sort_destination.conf"
+
+      - from: "http://www.example.com/from_25/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_25/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_set_then_sort_destination.conf"
+
+      - from: "http://www.example.com/from_26/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_26/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_rm_destination.conf"
+
+      - from: "http://www.example.com/from_27/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_27/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_rm_destination_keep.conf"
+
     metric_checks:
       - metric: "proxy.process.plugin.header_rewrite.operators"
         min: 1
@@ -2501,3 +2529,111 @@ sessions:
         - [ X-Capture-In-Set, { as: absent } ]
         - [ X-Capture-No-Prior, { as: absent } ]
         - [ X-Capture-Empty, { value: "yes", as: equal } ]
+
+# Test 95: sort-destination QUERY sorts the request-URL query before the
+# request reaches the origin.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_24/?b=2&a=1&c=3
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 95 ]
+
+    proxy-request:
+      url:
+      - [ path, { value: /to_24/, as: equal } ]
+      - [ query, { value: "a=1&b=2&c=3", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+
+# Test 96: sort-destination QUERY after set-destination URL sorts the
+# replacement URL, not the one the remap handle still points at.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_25/?x=1
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 96 ]
+
+    proxy-request:
+      url:
+      - [ path, { value: /to_25/, as: equal } ]
+      - [ query, { value: "y=2&z=3", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+
+# Test 97: rm-destination QUERY removes the named params and drops the empty
+# params around them.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_26/?a=1&&b=2&c=3&
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 97 ]
+
+    proxy-request:
+      url:
+      - [ path, { value: /to_26/, as: equal } ]
+      - [ query, { value: "a=1&c=3", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+
+# Test 98: rm-destination QUERY [I] keeps only the named params and drops the
+# empty params around them.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_27/?&a=1&b=2&&c=3
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 98 ]
+
+    proxy-request:
+      url:
+      - [ path, { value: /to_27/, as: equal } ]
+      - [ query, { value: "a=1&c=3", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200

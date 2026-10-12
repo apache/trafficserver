@@ -70,6 +70,8 @@ get_url_type_name(ConditionUrl::UrlType type)
     return "FROM-URL";
   case ConditionUrl::TO:
     return "TO-URL";
+  case ConditionUrl::CACHE:
+    return "CACHE-URL";
   case ConditionUrl::URL:
   default:
     return "URL";
@@ -323,6 +325,8 @@ ConditionUrl::initialize(Parser &p)
 
   if (_type == SERVER) {
     require_resources(RSRC_SERVER_REQUEST_HEADERS);
+  } else if (_type == CACHE) {
+    require_resources(RSRC_CLIENT_REQUEST_HEADERS); // The request URL is the last fallback of the read chain
   }
 }
 
@@ -367,13 +371,44 @@ ConditionUrl::log_error(const Resources &res, const char *message) const
   }
 }
 
+// Unlike Resources::get_query_param(), this doesn't cache: the cache URL's query changes between reads.
+static swoc::TextView
+find_query_param(swoc::TextView query, swoc::TextView name)
+{
+  while (!query.empty()) {
+    swoc::TextView param = query.take_prefix_at('&');
+
+    if (param.take_prefix_at('=') == name) {
+      return param;
+    }
+  }
+
+  return {};
+}
+
 void
 ConditionUrl::append_value(std::string &s, const Resources &res)
 {
-  TSMLoc    url  = nullptr;
-  TSMBuffer bufp = nullptr;
+  TSMLoc    url      = nullptr;
+  TSMBuffer bufp     = nullptr;
+  TSMBuffer tmp_bufp = nullptr; // Owned copy of the cache URL base, destroyed below
 
-  if (_type == CLIENT) {
+  if (_type == CACHE) {
+    // Read the scratch URL if a cache-key operator created one. Otherwise read the base it would be
+    // created from, without creating it: reading must never change the key.
+    if (res.cache_key.url_loc) {
+      bufp = res.cache_key.bufp;
+      url  = res.cache_key.url_loc;
+    } else {
+      tmp_bufp = TSMBufferCreate();
+      if (TSUrlCreate(tmp_bufp, &url) != TS_SUCCESS || !res.copy_key_base(tmp_bufp, url)) {
+        log_error(res, "Error getting the cache URL");
+        TSMBufferDestroy(tmp_bufp);
+        return;
+      }
+      bufp = tmp_bufp;
+    }
+  } else if (_type == CLIENT) {
     // CLIENT always uses the pristine URL
     Dbg(pi_dbg_ctl, "   Using the pristine url");
     if (TSHttpTxnPristineUrlGet(res.state.txnp, &bufp, &url) != TS_SUCCESS) {
@@ -447,7 +482,8 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
       s.append(q_str, i);
       Dbg(pi_dbg_ctl, "   Query parameters to match is: %.*s", i, q_str);
     } else {
-      swoc::TextView value = res.get_query_param(_query_param, q_str, i);
+      swoc::TextView value = _type == CACHE ? find_query_param({q_str, static_cast<size_t>(i)}, _query_param) :
+                                              res.get_query_param(_query_param, q_str, i);
 
       if (value.data() != nullptr && value.size() > 0) {
         s.append(value.data(), value.size());
@@ -471,6 +507,11 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     TSfree(non_const_q_str);
     break;
   }
+  }
+
+  if (tmp_bufp) {
+    TSHandleMLocRelease(tmp_bufp, TS_NULL_MLOC, url);
+    TSMBufferDestroy(tmp_bufp);
   }
 }
 
