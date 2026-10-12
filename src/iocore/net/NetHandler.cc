@@ -25,6 +25,7 @@
 #include "P_UnixNet.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/PollCont.h"
+#include "tscore/ink_atomic.h"
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"
 #endif
@@ -158,6 +159,22 @@ NetHandler::rearm_timer(NetEvent *ne)
   }
 }
 
+void
+NetHandler::signal_closed(NetEvent *ne)
+{
+  // The read enable list is the existing cross-thread handoff: the owning
+  // thread drains it in process_enabled_list(), which routes closed NetEvents
+  // to the ready list, where process_ready_list() frees them.
+  if (!ink_atomic_swap(&ne->read.in_enabled_list, 1)) {
+    read_enable_list.push(ne);
+  }
+  if (likely(thread)) {
+    thread->tail_cb->signalActivity();
+  } else if (trigger_event) {
+    trigger_event->ethread->tail_cb->signalActivity();
+  }
+}
+
 int
 NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, void *)
 {
@@ -273,8 +290,12 @@ NetHandler::process_enabled_list()
 
   SListM(NetEvent, NetState, read, enable_link) rq(read_enable_list.popall());
   while ((ne = rq.pop())) {
-    ne->ep.modify(EVENTIO_READ);
-    ne->ep.refresh(EVENTIO_READ);
+    // A closed NetEvent is only passing through to be freed, and a migrated one
+    // has already had ep.stop() clear its event loop.
+    if (!ne->closed) {
+      ne->ep.modify(EVENTIO_READ);
+      ne->ep.refresh(EVENTIO_READ);
+    }
     ne->read.in_enabled_list = 0;
     if ((ne->read.enabled && ne->read.triggered) || ne->closed) {
       read_ready_list.in_or_enqueue(ne);
@@ -283,8 +304,10 @@ NetHandler::process_enabled_list()
 
   SListM(NetEvent, NetState, write, enable_link) wq(write_enable_list.popall());
   while ((ne = wq.pop())) {
-    ne->ep.modify(EVENTIO_WRITE);
-    ne->ep.refresh(EVENTIO_WRITE);
+    if (!ne->closed) {
+      ne->ep.modify(EVENTIO_WRITE);
+      ne->ep.refresh(EVENTIO_WRITE);
+    }
     ne->write.in_enabled_list = 0;
     if ((ne->write.enabled && ne->write.triggered) || ne->closed) {
       write_ready_list.in_or_enqueue(ne);

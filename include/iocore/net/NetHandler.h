@@ -258,6 +258,15 @@ public:
    */
   void rearm_timer(NetEvent *ne);
 
+  /** Hand @a ne, closed on another thread, back to this handler's thread.
+   *
+   * Only the owning thread may touch the timer wheel, so a foreign close can
+   * neither unschedule nor free @a ne. Without this it would sit at its old
+   * deadline, or forever if it had none. Safe to call from any thread; @a ne
+   * must already be marked closed, and the caller must not touch it afterwards.
+   */
+  void signal_closed(NetEvent *ne);
+
   /// The single source of truth for @a ne's next deadline: the non-zero minimum
   /// of its inactivity and activity deadlines, or 0 if neither is set. Also used
   /// by InactivityCop's wheel fire functor to agree with what armed the element.

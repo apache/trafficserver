@@ -271,8 +271,10 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
 
-  EThread *t            = this_ethread();
-  bool     close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
+  EThread    *t            = this_ethread();
+  bool        close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
+  bool const  on_owner     = (t == this->thread);
+  NetHandler *owner_nh     = nh;
 
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
@@ -280,17 +282,20 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   }
 
   // Must mark for closed last in case this is a
-  // cross thread migration scenario.
+  // cross thread migration scenario. Once it is set, a foreign close must not
+  // touch this NetEvent again, since its owning thread may free it at any time.
   if (alerrno == -1) {
     closed = 1;
   } else {
     closed = -1;
   }
 
-  // Only rearm on this NetEvent's own thread; a cross-thread close defers to
-  // whichever path eventually runs do_io_close (or free_netevent) there.
-  if (t == this->thread) {
+  // Only the owning thread may touch the timer wheel. A foreign close that is
+  // not freeing inline hands the NetEvent back so the owner can free it.
+  if (on_owner) {
     this->rearm_timer();
+  } else if (owner_nh && !close_inline) {
+    owner_nh->signal_closed(this);
   }
 
   if (close_inline) {

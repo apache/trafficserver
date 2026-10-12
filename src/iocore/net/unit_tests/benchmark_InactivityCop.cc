@@ -148,6 +148,7 @@ struct Counters {
   uint64_t get_mutex_touches  = 0;
   uint64_t get_thread_touches = 0;
   uint64_t callbacks          = 0;
+  uint64_t frees              = 0;
 };
 
 // Trap 4: get_thread() must return the same EThread the cop is driven from,
@@ -169,6 +170,7 @@ public:
   void
   free_thread(EThread *) override
   {
+    ++_counters->frees;
   }
 
   int
@@ -392,12 +394,15 @@ struct Fixture {
   // by hand here so no mock is destroyed while still linked into
   // nh.timer_wheel -- a dangling wheel entry into freed memory is a real
   // use-after-free under ASan even if nothing in this binary ever walks the
-  // bucket again.
+  // bucket again. A mock the NetHandler already freed has been detached
+  // (stopIO() clears nh), so it is no longer the NetHandler's to stop.
   ~Fixture()
   {
     SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
     for (auto &m : mocks) {
-      nh.stopCop(m.get());
+      if (m->nh == &nh) {
+        nh.stopCop(m.get());
+      }
     }
   }
 
@@ -1371,6 +1376,50 @@ TEST_CASE("InactivityCop falls back to the default when the configured budget is
 
   INFO("a zero budget must not disable timeouts");
   CHECK(fx.counters.callbacks == 4);
+}
+
+// --- Cross-thread close ---------------------------------------------------
+//
+// Only the owning thread may touch the timer wheel, so a NetEvent closed from
+// another thread (session pool migration, for one) stays scheduled at its old
+// deadline unless it is handed back. The pre-wheel sweep reaped these within a
+// second; one with no deadline at all would otherwise never be freed.
+TEST_CASE("NetHandler frees a NetEvent closed on another thread", "[net][nethandler][signal_closed]")
+{
+  Fixture fx(2);
+  auto   *timed   = fx.mocks[0].get();
+  auto   *untimed = fx.mocks[1].get();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    timed->next_inactivity_timeout_at = fx._now + HRTIME_SECONDS(300);
+    fx.nh.rearm_timer(timed);
+    untimed->next_inactivity_timeout_at = 0;
+    untimed->next_activity_timeout_at   = 0;
+    fx.nh.rearm_timer(untimed);
+  }
+  REQUIRE(fx.nh.timer_wheel.is_scheduled(timed));
+  REQUIRE_FALSE(fx.nh.timer_wheel.is_scheduled(untimed));
+
+  std::thread closer([&] {
+    for (auto *m : {timed, untimed}) {
+      m->closed = 1;
+      fx.nh.signal_closed(m);
+    }
+  });
+  closer.join();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    fx.nh.process_enabled_list();
+    fx.nh.process_ready_list();
+  }
+
+  INFO("the owning thread must free both on its next loop, not at their old deadlines");
+  CHECK(fx.counters.frees == 2);
+  CHECK(timed->nh == nullptr);
+  CHECK(untimed->nh == nullptr);
+  CHECK_FALSE(fx.nh.timer_wheel.is_scheduled(timed));
 }
 
 // --- The audit scan -------------------------------------------------------
