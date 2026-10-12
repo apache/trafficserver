@@ -1,0 +1,2 @@
+cond %{METHOD} =HEAD [AND]
+    set-header "X-Blobstore-Authproxy-Head-Request" "true"
