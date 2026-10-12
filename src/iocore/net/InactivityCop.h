@@ -37,6 +37,7 @@
 #include "tsutil/Metrics.h"
 #include "ts/ats_probe.h"
 
+#include <algorithm>
 #include <cinttypes>
 
 // INKqa10496
@@ -50,6 +51,10 @@ public:
   // one correlated wave monopolizing the thread. Anything deferred past it is
   // picked up TIMEOUT_CONTINUE_DELAY later, not on the next tick.
   static constexpr int TIMEOUT_BUDGET = 4096;
+
+  // Largest budget the records schema accepts. budget() clamps to it as well, so
+  // a value that bypassed the schema cannot wrap negative when narrowed to int.
+  static constexpr int MAX_TIMEOUT_BUDGET = 1048576;
 
   // Deliberately not schedule_imm(): an immediate event is dispatched inline by
   // EThread::process_queue()'s own dequeue loop, so it would re-enter this pass
@@ -152,15 +157,19 @@ public:
   ///
   /// expire() treats a budget of 0 as "do nothing and leave the wheel alone", so
   /// a misconfigured 0 here would silently stop every timeout in the process --
-  /// connections would accumulate with no error and no metric moving. The records
-  /// schema rejects 0, and this is the second line of defence for a value that
-  /// arrived some other way.
+  /// connections would accumulate with no error and no metric moving. A value
+  /// above INT_MAX would be just as bad, since it narrows to a negative int. The
+  /// records schema rejects both, and this is the second line of defence for a
+  /// value that arrived some other way.
   int
   budget() const
   {
     uint32_t const configured = _nh.config.inactivity_cop_budget;
 
-    return configured > 0 ? static_cast<int>(configured) : TIMEOUT_BUDGET;
+    if (configured == 0) {
+      return TIMEOUT_BUDGET;
+    }
+    return static_cast<int>(std::min<uint32_t>(configured, MAX_TIMEOUT_BUDGET));
   }
 
   int
