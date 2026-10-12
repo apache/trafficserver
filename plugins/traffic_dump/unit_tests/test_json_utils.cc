@@ -57,3 +57,64 @@ TEST_CASE("JsonUtilsArray", "[json_entry_array]")
 {
   CHECK(std::string(R"(["name","value"])") == json_entry_array("name", "value"));
 }
+
+TEST_CASE("JsonUtilsUtf8", "[escape_json]")
+{
+  // UTF-8 bytes must remain intact, rather than being treated as signed control characters.
+  std::string_view const samples[] = {
+    "caf\xc3\xa9",      // Two-byte character.
+    "\xe4\xb8\xad",     // Three-byte character.
+    "\xf0\x9f\x98\x80", // Four-byte character.
+    "\xc2\x80",         // U+0080, the first non-ASCII code point.
+    "\xdf\xbf",         // U+07FF, the last two-byte code point.
+    "\xe0\xa0\x80",     // U+0800, the first three-byte code point.
+    "\xef\xbf\xbf",     // U+FFFF, the last three-byte code point.
+    "\xf0\x90\x80\x80", // U+10000, the first four-byte code point.
+    "\xf4\x8f\xbf\xbf", // U+10FFFF, the last Unicode code point.
+  };
+
+  for (auto const text : samples) {
+    CHECK(escape_json(text) == text);
+    CHECK(escape_json(text.data(), text.size()) == text);
+  }
+}
+
+TEST_CASE("JsonUtilsUtf8Escapes", "[escape_json]")
+{
+  SECTION("UTF-8 next to characters requiring escapes")
+  {
+    std::string_view const text     = "\xc3\xa9\"\xe4\xb8\xad\\\xf0\x9f\x98\x80\n\x01";
+    std::string_view const expected = "\xc3\xa9\\\"\xe4\xb8\xad\\\\\xf0\x9f\x98\x80\\n\\u0001";
+
+    CHECK(escape_json(text) == expected);
+    CHECK(escape_json(text.data(), text.size()) == expected);
+  }
+
+  SECTION("Explicit length preserves embedded NUL and excludes trailing bytes")
+  {
+    char const text[] = "\xc3\xa9\0\xe4\xb8\xad";
+
+    CHECK(escape_json(std::string_view{text, sizeof(text) - 1}) == "\xc3\xa9\\u0000\xe4\xb8\xad");
+    CHECK(escape_json(text, sizeof(text) - 1) == "\xc3\xa9\\u0000\xe4\xb8\xad");
+    CHECK(escape_json(text, 2) == "\xc3\xa9");
+    CHECK(escape_json(text, 0).empty());
+  }
+
+  SECTION("ASCII controls and the adjacent printable boundary")
+  {
+    std::string_view const text{"\0\x01\b\f\n\r\t\x1f \x7f", 10};
+
+    CHECK(escape_json(text) == "\\u0000\\u0001\\b\\f\\n\\r\\t\\u001f \x7f");
+    CHECK(escape_json("").empty());
+  }
+}
+
+TEST_CASE("JsonUtilsUtf8Entries", "[json_entry][json_entry_array]")
+{
+  std::string_view const name  = "caf\xc3\xa9";
+  std::string_view const value = "\xe4\xb8\xad\xf0\x9f\x98\x80";
+
+  CHECK(json_entry(name, value) == "\"caf\xc3\xa9\":\"\xe4\xb8\xad\xf0\x9f\x98\x80\"");
+  CHECK(json_entry(name, value.data(), value.size()) == "\"caf\xc3\xa9\":\"\xe4\xb8\xad\xf0\x9f\x98\x80\"");
+  CHECK(json_entry_array(name, value) == "[\"caf\xc3\xa9\",\"\xe4\xb8\xad\xf0\x9f\x98\x80\"]");
+}

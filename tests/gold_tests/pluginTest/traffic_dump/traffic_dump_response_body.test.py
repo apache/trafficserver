@@ -18,6 +18,7 @@ Verify traffic_dump response body functionality.
 #  limitations under the License.
 
 import os
+import shlex
 import sys
 
 Test.Summary = '''
@@ -78,6 +79,11 @@ ts.Disk.File(ts_dump_2, exists=True)
 
 ts_dump_3 = os.path.join(replay_dir, "127", "0000000000000003")
 ts.Disk.File(ts_dump_3, exists=True)
+
+utf8_bodies = ['café 中文 😀', '中文 "café" \\ 😀\n']
+utf8_dumps = [os.path.join(replay_dir, "127", f'{index:016x}') for index in (4, 5)]
+for dump_file in utf8_dumps:
+    ts.Disk.File(dump_file, exists=True)
 
 ts.Disk.traffic_out.Content = Testers.ContainsExpression("Dumping body bytes: true", "Verify that dumping body bytes is enabled.")
 
@@ -142,3 +148,11 @@ tr.Processes.Default.Command = \
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
+
+for dump_file, body in zip(utf8_dumps, utf8_bodies):
+    tr = Test.AddTestRun("Verify UTF-8 response bytes survive JSON serialization.")
+    tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
+    tr.Processes.Default.Command = f'{verify_command_prefix} {dump_file} --response_body {shlex.quote(body)}'
+    tr.Processes.Default.ReturnCode = 0
+    tr.StillRunningAfter = server
+    tr.StillRunningAfter = ts

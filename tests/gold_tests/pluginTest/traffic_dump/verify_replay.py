@@ -338,10 +338,10 @@ def verify_proxy_response_body_bytes(replay_json, expected_body_bytes):
         print("The replay file did not have a server-response content size element in the first transaction.")
         return False
 
-    if int(server_response_body_size) != len(expected_body_bytes):
+    expected_size = len(expected_body_bytes.encode('utf-8'))
+    if int(server_response_body_size) != expected_size:
         print(
-            "Expected the server-response content size to be '{0}' but got '{1}'".format(
-                len(expected_body_bytes), server_response_body_size))
+            "Expected the server-response content size to be '{0}' but got '{1}'".format(expected_size, server_response_body_size))
         return False
 
     return True
