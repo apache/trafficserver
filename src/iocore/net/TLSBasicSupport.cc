@@ -182,6 +182,12 @@ TLSBasicSupport::get_tls_handshake_end_time() const
   return this->_tls_handshake_end_time;
 }
 
+bool
+TLSBasicSupport::is_tls_handshake_complete() const
+{
+  return this->_is_tls_handshake_complete();
+}
+
 void
 TLSBasicSupport::set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
 {

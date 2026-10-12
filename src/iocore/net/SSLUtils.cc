@@ -225,8 +225,8 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   // that state would hand the next stage's hooks TS_EVENT_SSL_CLIENT_HELLO.
   if (es != nullptr && es->finished_client_hello_hooks()) {
     // Renegotiation carries a new ClientHello, whose SNI actions must still run.
-    auto *ssl_vc = SSLNetVCAccess(s);
-    if (ssl_vc == nullptr || !ssl_vc->getSSLHandShakeComplete()) {
+    TLSBasicSupport *tbs = TLSBasicSupport::getInstance(s);
+    if (tbs == nullptr || !tbs->is_tls_handshake_complete()) {
       return CLIENT_HELLO_SUCCESS;
     }
   }
@@ -271,8 +271,9 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 {
   TLSCertSwitchSupport *tcss             = TLSCertSwitchSupport::getInstance(ssl);
   TLSEventSupport      *tes              = TLSEventSupport::getInstance(ssl);
+  TLSBasicSupport      *tbs              = TLSBasicSupport::getInstance(ssl);
   SSLNetVConnection    *sslnetvc         = dynamic_cast<SSLNetVConnection *>(tcss);
-  bool const            is_renegotiation = sslnetvc && sslnetvc->getSSLHandShakeComplete();
+  bool const            is_renegotiation = tbs != nullptr && tbs->is_tls_handshake_complete();
   bool                  reenabled;
   int                   retval = 1;
 
