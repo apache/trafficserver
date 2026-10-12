@@ -225,6 +225,54 @@ TEST_CASE("TimerWheel budget defers the remainder to the next call", "[libts][Ti
   CHECK(w.expire(now, 4, rec) == 0);
 }
 
+// A lazy rearm fires nothing, so the timeout budget alone would let a bucket of
+// extended deadlines drain in one unbounded pass. The visit cap must bound it.
+TEST_CASE("TimerWheel visit cap bounds a pass that only rearms", "[libts][TimerWheel]")
+{
+  ink_hrtime const t0 = HRTIME_SECONDS(1000);
+  Wheel            w;
+  w.init(t0);
+
+  std::vector<Conn> conns;
+  conns.reserve(10);
+  for (int i = 0; i < 10; ++i) {
+    conns.emplace_back(i, t0 + HRTIME_SECONDS(5));
+  }
+  for (auto &c : conns) {
+    w.schedule(&c, c.deadline);
+    c.deadline = t0 + HRTIME_SECONDS(100); // extended after scheduling
+  }
+
+  struct Counting : Recorder {
+    int visits = 0;
+
+    ink_hrtime
+    deadline_of(Conn *c)
+    {
+      ++visits;
+      return Recorder::deadline_of(c);
+    }
+  } rec;
+  ink_hrtime const now = t0 + HRTIME_SECONDS(6);
+
+  CHECK(w.expire(now, 1000, rec, 4) == 0);
+  CHECK(rec.visits == 4);
+  CHECK(w.expire(now, 1000, rec, 4) == 0);
+  CHECK(rec.visits == 8);
+  CHECK(w.expire(now, 1000, rec, 4) == 0);
+  CHECK(rec.visits == 10);
+  CHECK(rec.fired.empty());
+
+  // Every element was re-armed, not lost, and the drained bucket is behind us.
+  for (auto &c : conns) {
+    CHECK(w.is_scheduled(&c));
+  }
+  CHECK(w.expire(now, 1000, rec, 4) == 0);
+  CHECK(rec.visits == 10);
+
+  CHECK(w.expire(t0 + HRTIME_SECONDS(101), 1000, rec) == 10);
+}
+
 // Many connections sharing one timeout value is the real traffic pattern:
 // deadlines cluster on a handful of config values. std::deque (not
 // std::vector) so the intrusive links stay valid regardless of insertion

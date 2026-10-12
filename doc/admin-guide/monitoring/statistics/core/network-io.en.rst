@@ -97,7 +97,8 @@ Network I/O
    means something is re-arming every tick.
    :type: counter
 .. ts:stat:: global proxy.process.net.inactivity_cop_budget_exhausted integer
-   The number of inactivity cop runs that hit their per-run work limit. Such a
+   The number of inactivity cop runs that hit their per-run work limit, either
+   the number of connections timed out or the number examined. Such a
    run reschedules itself a millisecond out rather than waiting for the next
    periodic check, so an occasional nonzero value just means a burst of
    connections came due together. A value that climbs steadily means the thread is retiring

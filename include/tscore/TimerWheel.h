@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <type_traits>
 
 #include "tscore/List.h"
@@ -82,8 +83,14 @@ concept TimerWheelDelegate = requires(F &f, C *e) {
 // deadline (it will simply be rearmed in place, lazily, at expire time)
 // but must never be later, or the timeout fires late.
 //
-// expire()'s return value equal to budget means the caller is behind and
-// should call again promptly. If the driving thread lags by more than
+// expire() stops early once it has fired @c budget elements or examined
+// @c max_visits of them, whichever comes first; either means the caller is
+// behind and should call again promptly. The visit cap matters because a
+// lazy rearm fires nothing, so a bucket of elements whose deadlines were all
+// extended would otherwise be drained in one unbounded pass. The return value
+// is the fired count, so a caller that sets a visit cap must count visits
+// itself (via deadline_of(), which runs once per element examined) to tell
+// whether that cap was the one hit. If the driving thread lags by more than
 // N_BUCKETS ticks (e.g. init() was never called, or a long stall), the
 // cursor is fast-forwarded rather than replaying every intervening empty
 // tick; elements that would have been visited during that lag lose strict
@@ -148,9 +155,9 @@ public:
 
   template <TimerWheelDelegate<C> F>
   int
-  expire(ink_hrtime now, int budget, F &f)
+  expire(ink_hrtime now, int budget, F &f, int max_visits = std::numeric_limits<int>::max())
   {
-    if (budget <= 0) {
+    if (budget <= 0 || max_visits <= 0) {
       return 0; // nothing to do; wheel state is left untouched
     }
 
@@ -164,7 +171,8 @@ public:
       _cursor = now_tick - N_BUCKETS;
     }
 
-    int fired = 0;
+    int fired  = 0;
+    int visits = 0;
 
     while (_cursor < now_tick) {
       int64_t const tick   = _cursor + 1;
@@ -175,21 +183,20 @@ public:
 
         while (C *e = bucket.pop()) {
           e->timer_hook.slot = -1;
+          ++visits;
 
           ink_hrtime const deadline = f.deadline_of(e);
 
           if (deadline == 0) {
-            continue; // no timeout: drop out of the wheel
-          }
-          if (deadline > now) {
+            // no timeout: drop out of the wheel
+          } else if (deadline > now) {
             e->timer_hook.deadline = deadline;
             _insert(e, tick + 1); // lazy rearm; floor tick+1 avoids re-entering `tick`
-            continue;
+          } else {
+            f(e);
+            ++fired;
           }
-
-          f(e);
-          ++fired;
-          if (fired >= budget) {
+          if (fired >= budget || visits >= max_visits) {
             return fired; // guard resets _draining_tick; bucket keeps the rest; _cursor not advanced
           }
         }

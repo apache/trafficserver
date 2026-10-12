@@ -1408,6 +1408,46 @@ TEST_CASE("InactivityCop clamps an oversized configured budget", "[net][inactivi
   CHECK(fx.counters.callbacks == 4);
 }
 
+// Connections opened in the same second share a bucket. If their deadlines have
+// all since moved out, a pass only re-arms them and fires nothing, so the timeout
+// budget never trips and the whole bucket would be walked at once.
+TEST_CASE("InactivityCop caps the connections one pass examines", "[net][inactivity_cop]")
+{
+  constexpr size_t n      = 200;
+  constexpr int    budget = 4;
+  constexpr int    limit  = budget * InactivityCop::VISIT_BUDGET_FACTOR;
+  static_assert(limit < static_cast<int>(n));
+  Fixture fx(n);
+
+  fx.nh.config.inactivity_cop_budget = budget;
+
+  ink_hrtime const base = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(1);
+      m->next_inactivity_timeout_at = base + HRTIME_SECONDS(1);
+      fx.nh.rearm_timer(m.get());
+      m->next_inactivity_timeout_at = base + HRTIME_SECONDS(100); // extended, wheel untouched
+    }
+  }
+
+  int64_t const visited_before   = Metrics::Counter::load(net_rsb.inactivity_cop_visited);
+  int64_t const exhausted_before = Metrics::Counter::load(net_rsb.inactivity_cop_budget_exhausted);
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    CHECK(fx.cop.run(base + HRTIME_SECONDS(5), &event) == 0);
+  }
+
+  INFO("a pass that only re-arms must still stop at its visit cap");
+  CHECK(Metrics::Counter::load(net_rsb.inactivity_cop_visited) - visited_before == limit);
+  CHECK(fx.cop.is_behind());
+  CHECK(Metrics::Counter::load(net_rsb.inactivity_cop_budget_exhausted) == exhausted_before + 1);
+  CHECK(fx.counters.callbacks == 0);
+}
+
 // --- Cross-thread close ---------------------------------------------------
 //
 // Only the owning thread may touch the timer wheel, so a NetEvent closed from
