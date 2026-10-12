@@ -146,3 +146,38 @@ TEST_CASE("State to string conversion", "[config][reload][state]")
   static_assert(ConfigReloadTask::state_to_string(ConfigReloadTask::State::SUCCESS) == "success");
   static_assert(ConfigReloadTask::state_to_string(ConfigReloadTask::State::FAIL) == "fail");
 }
+
+TEST_CASE("ConfigReloadTask tree is freed with its owner", "[config][reload][lifetime]")
+{
+  auto          main_task   = std::make_shared<ConfigReloadTask>("test-token-tree", "main task", true, nullptr);
+  ConfigContext child       = main_task->add_child("child task");
+  ConfigContext other_child = main_task->add_child("other child task");
+  ConfigContext grandchild  = other_child.add_dependent_ctx("grandchild task");
+
+  std::weak_ptr<ConfigReloadTask> weak_main = main_task;
+
+  // Completing the leaves must still propagate up to the main task.
+  child.complete();
+  grandchild.complete();
+  REQUIRE(main_task->get_state() == ConfigReloadTask::State::SUCCESS);
+
+  main_task.reset();
+  REQUIRE(weak_main.expired());
+  REQUIRE_FALSE(child);
+  REQUIRE_FALSE(other_child);
+  REQUIRE_FALSE(grandchild);
+}
+
+TEST_CASE("ConfigReloadTask whose parent is gone can still complete", "[config][reload][lifetime]")
+{
+  auto main_task = std::make_shared<ConfigReloadTask>("test-token-orphan", "main task", true, nullptr);
+  auto child     = std::make_shared<ConfigReloadTask>("test-token-orphan", "child task", false, main_task);
+
+  std::weak_ptr<ConfigReloadTask> weak_main = main_task;
+
+  main_task.reset();
+  REQUIRE(weak_main.expired());
+
+  child->set_completed();
+  REQUIRE(child->get_state() == ConfigReloadTask::State::SUCCESS);
+}
