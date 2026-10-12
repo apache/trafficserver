@@ -138,6 +138,14 @@ origin outage, a load balancer draining — can make it large, and the callbacks
 run inline on the poll thread. ``InactivityCop::TIMEOUT_BUDGET`` caps how many
 timeouts one pass will fire.
 
+Firing is not the only work, though. A connection whose deadline was extended
+after it was scheduled is examined and re-armed without firing, so a bucket of
+connections that were all scheduled in the same second and have all stayed busy
+would never trip the timeout budget. A pass therefore also stops after examining
+``VISIT_BUDGET_FACTOR`` (16) times its timeout budget. A re-arm is far cheaper
+than a close, hence the generous multiple. Hitting either limit counts as
+hitting the budget.
+
 The budget bounds how long a single pass can hold the thread; it is **not** a cap
 on how much work a tick may retire. A pass that hits the budget reschedules
 itself a millisecond out rather than waiting out the rest of the tick, so a large

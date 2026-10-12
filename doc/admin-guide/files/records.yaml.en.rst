@@ -643,9 +643,11 @@ Network
    :reloadable:
 
    The maximum number of connections one inactivity check may time out before
-   yielding. Anything still due is retired a millisecond later rather than
-   waiting for the next check, so this bounds the length of a single check and
-   not how much work a check may eventually retire.
+   yielding. A check also yields after examining 16 times this many
+   connections, since a connection whose deadline has moved out is re-armed
+   without being timed out. Anything still due is retired a millisecond later
+   rather than waiting for the next check, so this bounds the length of a single
+   check and not how much work a check may eventually retire.
 
    This is a latency control, not a throughput one. The check runs on an event
    thread, so a check that closes N connections delays that thread's poll loop

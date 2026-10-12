@@ -56,6 +56,13 @@ public:
   // a value that bypassed the schema cannot wrap negative when narrowed to int.
   static constexpr int MAX_TIMEOUT_BUDGET = 1048576;
 
+  // A pass examines at most this many times its timeout budget. Re-arming a
+  // connection whose deadline moved out fires nothing, so without a cap of its
+  // own a bucket of connections opened in the same second would be walked in
+  // one pass however large it is. A re-arm is far cheaper than a close, hence
+  // the generous multiple.
+  static constexpr int VISIT_BUDGET_FACTOR = 16;
+
   // Deliberately not schedule_imm(): an immediate event is dispatched inline by
   // EThread::process_queue()'s own dequeue loop, so it would re-enter this pass
   // before the poll events run and bound nothing. A timed event lands in
@@ -172,10 +179,18 @@ public:
     return static_cast<int>(std::min<uint32_t>(configured, MAX_TIMEOUT_BUDGET));
   }
 
+  /// Whether the last pass stopped at a budget with work still due.
+  bool
+  is_behind() const
+  {
+    return _behind;
+  }
+
   int
   check_inactivity(int /* event */, Event *e)
   {
-    if (run(ink_get_hrtime(), e) >= budget()) {
+    run(ink_get_hrtime(), e);
+    if (_behind) {
       // Deadlines are still due, so come back shortly instead of waiting out
       // the rest of the tick. The budget bounds how long one pass can hold the
       // poll thread; it is not a cap on how much work a tick may retire.
@@ -195,8 +210,9 @@ public:
    * deadline comparison in a pass uses this one timestamp.
    *
    * Scheduling policy stays in the handler, so driving this directly does not
-   * queue events. Returns the number of timeouts fired; reaching the budget
-   * means more are already due.
+   * queue events. Returns the number of timeouts fired. A pass that stopped at
+   * either its timeout or its visit budget left work due, and is_behind()
+   * reports that until the next pass.
    */
   int
   run(ink_hrtime now, Event *e)
@@ -207,9 +223,12 @@ public:
 
     Fire             fire{nh, now, e};
     int const        pass_budget = budget();
+    int const        visit_limit = pass_budget * VISIT_BUDGET_FACTOR;
     ink_hrtime const started     = ink_get_hrtime();
-    int const        fired       = nh.timer_wheel.expire(now, pass_budget, fire);
+    int const        fired       = nh.timer_wheel.expire(now, pass_budget, fire, visit_limit);
     int64_t const    elapsed_us  = ink_hrtime_to_usec(ink_get_hrtime() - started);
+
+    _behind = fired >= pass_budget || fire.visited >= visit_limit;
 
     // The cop's own cost had no telemetry before the wheel, which is how an
     // O(N)-per-second sweep regressed unnoticed.
@@ -222,7 +241,7 @@ public:
     Metrics::Counter::increment(net_rsb.inactivity_cop_passes);
     Metrics::Counter::increment(net_rsb.inactivity_cop_fired, fired);
     Metrics::Counter::increment(net_rsb.inactivity_cop_pass_time_us, elapsed_us);
-    if (fired >= pass_budget) {
+    if (_behind) {
       Metrics::Counter::increment(net_rsb.inactivity_cop_budget_exhausted);
     }
 
@@ -328,7 +347,8 @@ private:
   static constexpr int        AUDIT_INTERVAL = 60;
   static constexpr ink_hrtime AUDIT_SLACK    = 2 * TimerWheel<NetEvent>::TICK;
 
-  int _passes_since_audit = 0;
+  int  _passes_since_audit = 0;
+  bool _behind             = false;
 
   static inline DbgCtl dbg_ctl_inactivity_cop{"inactivity_cop"};
   static inline DbgCtl dbg_ctl_inactivity_cop_check{"inactivity_cop_check"};
