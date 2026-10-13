@@ -31,10 +31,12 @@ Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'), Condition.HasProxyVerifier
 # its TLS handshake with the origin first. In that case the origin answers, the response
 # has nowhere to go, and ATS resets the origin stream with NO_ERROR after the origin has
 # already closed it. That is fine. The client's abort must never reset an origin stream
-# that is still open, which the origin logs as an RST_STREAM followed by the stream closing.
+# that is still open, which the origin logs as an RST_STREAM followed by that same stream closing.
 def origin_stream_not_reset():
     return Testers.ExcludesExpression(
-        'Received RST_STREAM frame.*HTTP/2 stream is closed', 'Server is not affected.', reflags=re.DOTALL | re.MULTILINE)
+        r'Received RST_STREAM frame with stream id (\d+),.*HTTP/2 stream is closed with id: \1\b',
+        'Server is not affected.',
+        reflags=re.DOTALL | re.MULTILINE)
 
 
 #
