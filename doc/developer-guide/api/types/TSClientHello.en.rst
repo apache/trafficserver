@@ -76,7 +76,9 @@ The following methods are available to access ClientHello data:
    extension types the SSL library does not recognize, on both BoringSSL and
    OpenSSL. On OpenSSL, the list is read from the raw ClientHello message
    because OpenSSL's own ClientHello API omits extensions it does not
-   recognize.
+   recognize. If the raw message cannot be parsed, the list falls back to the
+   extensions OpenSSL recognizes, and
+   :ts:stat:`proxy.process.ssl.client_hello_raw_parse_failure` is incremented.
 
    .. note::
 

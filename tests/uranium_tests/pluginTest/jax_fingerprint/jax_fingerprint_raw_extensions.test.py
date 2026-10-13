@@ -21,6 +21,7 @@ count and hash ALPS.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import re
 import sys
 
 sys.path.insert(0, Test.TestDirectory)
@@ -64,3 +65,11 @@ tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = ts
 
 Test.AddAwaitFileContainsTestRun('Await the JA4 fingerprint', ts.Disk.traffic_out.AbsPath, 'Fingerprint: ')
+
+tr = Test.AddTestRun('Verify the raw ClientHello parsed')
+tr.Processes.Default.Command = 'traffic_ctl metric get proxy.process.ssl.client_hello_raw_parse_failure'
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    r'^proxy\.process\.ssl\.client_hello_raw_parse_failure\s+0$', 'The Chrome ClientHello should parse.', reflags=re.MULTILINE)
+tr.StillRunningAfter = ts

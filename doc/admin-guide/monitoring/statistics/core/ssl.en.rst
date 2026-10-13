@@ -74,6 +74,15 @@ SSL/TLS
    The number of SSL connections to origin servers which were terminated due to
    unsupported SSL/TLS protocol versions, since statistics collection began.
 
+.. ts:stat:: global proxy.process.ssl.client_hello_raw_parse_failure integer
+   :type: counter
+
+   The number of inbound TLS handshakes whose raw ClientHello extensions could
+   not be parsed, since statistics collection began. Only OpenSSL builds parse
+   the raw ClientHello. For these handshakes,
+   ``TSClientHello::get_extension_types()`` falls back to the extensions OpenSSL
+   recognizes.
+
 .. ts:stat:: global proxy.process.ssl.ssl_error_ssl integer
    :type: counter
 

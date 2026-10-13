@@ -37,6 +37,7 @@ using ts::Metrics;
 // for ssl_rsb.total_ticket_keys_renewed needs this initialization, but lets be
 // consistent at least.
 struct SSLStatsBlock {
+  Metrics::Counter::AtomicType *client_hello_raw_parse_failure                 = nullptr;
   Metrics::Counter::AtomicType *cert_compress_zlib                             = nullptr;
   Metrics::Counter::AtomicType *cert_compress_zlib_failure                     = nullptr;
   Metrics::Counter::AtomicType *cert_compress_cache_hit                        = nullptr;
