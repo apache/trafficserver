@@ -1491,6 +1491,7 @@ extern const char *TS_HTTP_METHOD_PURGE;
 extern const char *TS_HTTP_METHOD_PUT;
 extern const char *TS_HTTP_METHOD_TRACE;
 extern const char *TS_HTTP_METHOD_PUSH;
+extern const char *TS_HTTP_METHOD_QUERY;
 
 /* --------------------------------------------------------------------------
    HTTP methods string lengths */
@@ -1504,6 +1505,7 @@ extern int TS_HTTP_LEN_PURGE;
 extern int TS_HTTP_LEN_PUT;
 extern int TS_HTTP_LEN_TRACE;
 extern int TS_HTTP_LEN_PUSH;
+extern int TS_HTTP_LEN_QUERY;
 
 /* --------------------------------------------------------------------------
    TLS Next Protocol well-known protocol names. */
