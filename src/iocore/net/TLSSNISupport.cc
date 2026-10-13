@@ -258,7 +258,7 @@ TLSSNISupport::_clear()
   hints_from_sni = {};
   _sni_server_name.reset();
   // Release the buffer: SSLNetVConnection is recycled without running its destructor.
-  _raw_extension_types     = {};
+  std::vector<int>().swap(_raw_extension_types);
   _has_raw_extension_types = false;
 }
 
