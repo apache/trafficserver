@@ -1499,7 +1499,7 @@ TEST_CASE("InactivityCop counts only delivered timeouts as fired", "[net][inacti
 // another thread (session pool migration, for one) stays scheduled at its old
 // deadline unless it is handed back. The pre-wheel sweep reaped these within a
 // second; one with no deadline at all would otherwise never be freed.
-TEST_CASE("NetHandler frees a NetEvent closed on another thread", "[net][nethandler][signal_closed]")
+TEST_CASE("NetHandler frees a NetEvent closed on another thread", "[net][nethandler][handoff]")
 {
   Fixture fx(2);
   auto   *timed   = fx.mocks[0].get();
@@ -1518,8 +1518,7 @@ TEST_CASE("NetHandler frees a NetEvent closed on another thread", "[net][nethand
 
   std::thread closer([&] {
     for (auto *m : {timed, untimed}) {
-      m->closed = 1;
-      fx.nh.signal_closed(m);
+      fx.nh.close_from_foreign_thread(m, 1);
     }
   });
   closer.join();
@@ -1527,7 +1526,6 @@ TEST_CASE("NetHandler frees a NetEvent closed on another thread", "[net][nethand
   {
     SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
     fx.nh.process_enabled_list();
-    fx.nh.process_ready_list();
   }
 
   INFO("the owning thread must free both on its next loop, not at their old deadlines");
@@ -1535,6 +1533,49 @@ TEST_CASE("NetHandler frees a NetEvent closed on another thread", "[net][nethand
   CHECK(timed->nh == nullptr);
   CHECK(untimed->nh == nullptr);
   CHECK_FALSE(fx.nh.timer_wheel.is_scheduled(timed));
+}
+
+// Once closed is visible, the owner may reach the NetEvent through its ready
+// list and try to free it while the closing thread is still queueing it. The
+// claim taken before closed is published must hold that free off.
+TEST_CASE("A foreign close keeps the NetEvent alive until the owner takes it", "[net][nethandler][handoff]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  std::thread closer([&] { fx.nh.close_from_foreign_thread(m, 1); });
+  closer.join();
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  fx.nh.free_netevent(m); // what process_ready_list() would do on seeing closed
+  INFO("a claimed NetEvent must not be freed outside the handoff");
+  CHECK(fx.counters.frees == 0);
+  CHECK(m->nh == &fx.nh);
+
+  fx.nh.process_handoffs();
+  CHECK(fx.counters.frees == 1);
+}
+
+// The owner can pop a NetEvent that was already queued for a re-arm in the
+// window between a closing thread claiming it and marking it closed. It must
+// keep the claim rather than treat it as a plain re-arm and drop it.
+TEST_CASE("The owner keeps a claimed NetEvent that is not yet marked closed", "[net][nethandler][handoff]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  m->handoff.store(NetEvent::HANDOFF_QUEUED | NetEvent::HANDOFF_CLOSING);
+  fx.nh.handoff_list.push(m);
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  fx.nh.process_handoffs();
+  CHECK(fx.counters.frees == 0);
+  CHECK(m->handoff.load() == (NetEvent::HANDOFF_QUEUED | NetEvent::HANDOFF_CLOSING));
+
+  m->closed = 1;
+  fx.nh.process_handoffs();
+  INFO("once the close is visible the next loop must free it");
+  CHECK(fx.counters.frees == 1);
 }
 
 // The owning thread touches its wheel without the NetHandler mutex, so a re-arm

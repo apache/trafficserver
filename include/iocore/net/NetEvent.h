@@ -140,7 +140,8 @@ public:
   /// Bits of @a handoff. Only the owning thread may touch its timer wheel, so
   /// other threads queue the NetEvent on NetHandler::handoff_list instead;
   /// NetHandler::process_handoffs() consumes it there.
-  static constexpr uint8_t HANDOFF_QUEUED = 1; ///< On handoff_list.
+  static constexpr uint8_t HANDOFF_QUEUED  = 1; ///< On handoff_list.
+  static constexpr uint8_t HANDOFF_CLOSING = 2; ///< Closed by another thread; the owner must not free it yet.
   std::atomic<uint8_t>     handoff{0};
   SLINK(NetEvent, handoff_link);
 

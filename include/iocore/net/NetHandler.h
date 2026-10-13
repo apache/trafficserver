@@ -270,14 +270,18 @@ public:
    */
   void defer_rearm(NetEvent *ne);
 
-  /** Hand @a ne, closed on another thread, back to this handler's thread.
+  /** Mark @a ne closed from a thread other than this handler's, and hand it to
+   * this thread to free.
    *
    * Only the owning thread may touch the timer wheel, so a foreign close can
    * neither unschedule nor free @a ne. Without this it would sit at its old
-   * deadline, or forever if it had none. Safe to call from any thread; @a ne
-   * must already be marked closed, and the caller must not touch it afterwards.
+   * deadline, or forever if it had none. @a ne is claimed before it is marked
+   * closed, so the owner cannot free it while this is still using it; the caller
+   * must not touch @a ne once this returns.
+   *
+   * @param closed_value The value to store in NetEvent::closed.
    */
-  void signal_closed(NetEvent *ne);
+  void close_from_foreign_thread(NetEvent *ne, int closed_value);
 
   /// The single source of truth for @a ne's next deadline: the non-zero minimum
   /// of its inactivity and activity deadlines, or 0 if neither is set. Also used
