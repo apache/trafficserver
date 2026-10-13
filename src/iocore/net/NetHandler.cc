@@ -25,7 +25,6 @@
 #include "P_UnixNet.h"
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/PollCont.h"
-#include "tscore/ink_atomic.h"
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"
 #endif
@@ -177,19 +176,36 @@ NetHandler::process_handoffs()
   SList(NetEvent, handoff_link) q(handoff_list.popall());
 
   while (NetEvent *ne = q.pop()) {
-    ne->handoff.store(0);
+    uint8_t const state = ne->handoff.exchange(0);
+
+    if (state & NetEvent::HANDOFF_CLOSING) {
+      if (!ne->closed) {
+        // Claimed by a closing thread that has not marked it closed yet. Keep
+        // the claim, so nothing frees it under that thread, and look again on
+        // the next loop.
+        ne->handoff.store(state);
+        handoff_list.push(ne);
+        continue;
+      }
+      free_netevent(ne);
+      continue;
+    }
     rearm_timer(ne);
   }
 }
 
 void
-NetHandler::signal_closed(NetEvent *ne)
+NetHandler::close_from_foreign_thread(NetEvent *ne, int closed_value)
 {
-  // The read enable list is the existing cross-thread handoff: the owning
-  // thread drains it in process_enabled_list(), which routes closed NetEvents
-  // to the ready list, where process_ready_list() frees them.
-  if (!ink_atomic_swap(&ne->read.in_enabled_list, 1)) {
-    read_enable_list.push(ne);
+  // Claim first: once closed is visible the owner may try to free ne, and the
+  // claim makes free_netevent() leave it for process_handoffs(). The claim is
+  // only released after the owner pops ne, which needs the push below, so ne
+  // stays valid until this function is done with it.
+  uint8_t const prev = ne->handoff.fetch_or(NetEvent::HANDOFF_QUEUED | NetEvent::HANDOFF_CLOSING);
+
+  ne->closed = closed_value;
+  if (!(prev & NetEvent::HANDOFF_QUEUED)) {
+    handoff_list.push(ne);
   }
   if (likely(thread)) {
     thread->tail_cb->signalActivity();
@@ -292,6 +308,11 @@ NetHandler::free_netevent(NetEvent *ne)
   EThread *t = this->thread;
 
   ink_assert(t == this_ethread());
+
+  // A foreign close is still handing ne over; process_handoffs() frees it.
+  if (ne->handoff.load() & NetEvent::HANDOFF_CLOSING) {
+    return;
+  }
   ink_release_assert(ne->get_thread() == t);
   ink_release_assert(ne->nh == this);
 

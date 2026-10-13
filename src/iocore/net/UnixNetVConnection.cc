@@ -282,20 +282,20 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   }
 
   // Must mark for closed last in case this is a
-  // cross thread migration scenario. Once it is set, a foreign close must not
-  // touch this NetEvent again, since its owning thread may free it at any time.
-  if (alerrno == -1) {
-    closed = 1;
-  } else {
-    closed = -1;
+  // cross thread migration scenario.
+  int const closed_value = (alerrno == -1) ? 1 : -1;
+
+  // Only the owning thread may touch the timer wheel, so a foreign close hands
+  // the NetEvent back for the owner to free, even when it holds the owner's
+  // NetHandler mutex. It must not touch this NetEvent afterwards.
+  if (owner_nh && !on_owner) {
+    owner_nh->close_from_foreign_thread(this, closed_value);
+    return;
   }
 
-  // Only the owning thread may touch the timer wheel. A foreign close that is
-  // not freeing inline hands the NetEvent back so the owner can free it.
+  closed = closed_value;
   if (on_owner) {
     this->rearm_timer();
-  } else if (owner_nh && !close_inline) {
-    owner_nh->signal_closed(this);
   }
 
   if (close_inline) {
