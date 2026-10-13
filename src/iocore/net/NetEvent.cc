@@ -27,8 +27,16 @@
 void
 NetEvent::rearm_timer()
 {
-  if (nh == nullptr) {
+  NetHandler *const h = nh;
+
+  if (h == nullptr) {
     return;
   }
-  nh->rearm_timer(this);
+  // The owning thread touches its wheel without holding the NetHandler mutex,
+  // so the mutex does not protect it and a foreign thread must not take it.
+  if (h->thread == this_ethread()) {
+    h->rearm_timer(this);
+  } else {
+    h->defer_rearm(this);
+  }
 }
