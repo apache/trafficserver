@@ -188,6 +188,7 @@ SSLInitializeStatistics()
   ssl_rsb.cert_compress_zstd_failure         = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zstd_failure");
   ssl_rsb.cert_decompress_zstd               = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zstd");
   ssl_rsb.cert_decompress_zstd_failure       = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zstd_failure");
+  ssl_rsb.client_hello_raw_parse_failure     = Metrics::Counter::createPtr("proxy.process.ssl.client_hello_raw_parse_failure");
   ssl_rsb.early_data_received_count          = Metrics::Counter::createPtr("proxy.process.ssl.early_data_received");
   ssl_rsb.error_async                        = Metrics::Counter::createPtr("proxy.process.ssl.ssl_error_async");
   ssl_rsb.error_ssl                          = Metrics::Counter::createPtr("proxy.process.ssl.ssl_error_ssl");
