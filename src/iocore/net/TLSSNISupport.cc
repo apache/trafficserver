@@ -22,6 +22,7 @@
  */
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/TLSSNISupport.h"
+#include "SSLStats.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_config.h"
 #include "tscore/ink_inet.h"
@@ -146,6 +147,7 @@ TLSSNISupport::on_client_hello_message(const uint8_t *msg, size_t len)
 {
   _has_raw_extension_types = parse_client_hello_extension_types(msg, len, _raw_extension_types);
   if (!_has_raw_extension_types) {
+    Metrics::Counter::increment(ssl_rsb.client_hello_raw_parse_failure);
     Dbg(dbg_ctl_ssl_sni, "Could not parse the extensions of the raw ClientHello");
   }
 }
