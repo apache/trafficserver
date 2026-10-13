@@ -120,9 +120,9 @@ Options
 
    Lowest severity that makes a server error exit with ``2``. When a method handler fails, each
    entry in the ``data`` array of the error can carry a ``severity`` (see
-   :ref:`jsonrpc-node-errors`). :program:`traffic_ctl` takes the most severe entry: at or above
-   ``<level>`` the command exits ``2``, below it the command exits ``0``. The error is printed
-   either way.
+   :ref:`jsonrpc-node-errors-severity`). :program:`traffic_ctl` takes the most severe entry: at
+   or above ``<level>`` the command exits ``2``, below it the command exits ``0``. The error is
+   printed either way.
 
    An entry without a ``severity`` counts as ``error``. That is how |TS| itself treats it, and it
    is how every entry from an older |TS| arrives, so with the default level every failure still
