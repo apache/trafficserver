@@ -197,7 +197,13 @@ TLSSNISupport::parse_client_hello_extension_types(const uint8_t *msg, size_t msg
 
   // legacy_version(2) random(32) session_id<0..32> cipher_suites<2..2^16-2> compression_methods<1..2^8-1>
   size_t len = 0;
-  if (!skip(2 + 32) || !read_u8(len) || !skip(len) || !read_u16(len) || !skip(len) || !read_u8(len) || !skip(len)) {
+  if (!skip(2 + 32) || !read_u8(len) || len > 32 || !skip(len)) {
+    return false;
+  }
+  if (!read_u16(len) || len < 2 || len % 2 != 0 || !skip(len)) {
+    return false;
+  }
+  if (!read_u8(len) || len < 1 || !skip(len)) {
     return false;
   }
 

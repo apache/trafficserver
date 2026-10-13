@@ -91,14 +91,20 @@ def extensions() -> list[tuple[int, bytes]]:
     ]
 
 
-def client_hello_record() -> bytes:
-    '''Return a TLS record holding the ClientHello.'''
+def client_hello_records(fragment_size: int = 0) -> bytes:
+    '''Return TLS records holding the ClientHello.
+
+    :param fragment_size: When non-zero, split the ClientHello across records
+        of at most this many bytes.
+    '''
     body = struct.pack('!H', 0x0303) + os.urandom(32) + u8_prefixed(os.urandom(32))
     body += u16_prefixed(u16_list(CIPHERS))
     body += u8_prefixed(b'\x00')
     body += u16_prefixed(b''.join(struct.pack('!HH', t, len(d)) + d for t, d in extensions()))
     handshake = b'\x01' + struct.pack('!I', len(body))[1:] + body
-    return struct.pack('!BHH', 0x16, 0x0301, len(handshake)) + handshake
+    size = fragment_size or len(handshake)
+    fragments = [handshake[i:i + size] for i in range(0, len(handshake), size)]
+    return b''.join(struct.pack('!BHH', 0x16, 0x0301, len(f)) + f for f in fragments)
 
 
 def truncated_sha256(values: list[str]) -> str:
@@ -124,10 +130,12 @@ def expected_ja4() -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('port', type=int, help='The TLS port to send the ClientHello to.')
+    parser.add_argument(
+        '--fragment-size', type=int, default=0, help='Split the ClientHello across records of at most this many bytes.')
     args = parser.parse_args()
 
     with socket.create_connection(('127.0.0.1', args.port), timeout=5) as sock:
-        sock.sendall(client_hello_record())
+        sock.sendall(client_hello_records(args.fragment_size))
         # Wait for the ServerHello so that the ClientHello has been processed.
         response = sock.recv(5)
     if len(response) < 1 or response[0] != 0x16:
