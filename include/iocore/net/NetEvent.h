@@ -149,6 +149,15 @@ public:
    */
   void rearm_timer();
 
+  /** Follow a change to default_inactivity_timeout_in, which was @a previous_in.
+   *
+   * A deadline the default produced must move with it. Otherwise a shorter
+   * override, such as a per-remap default installed after the global one armed
+   * the connection, would be ignored until the old deadline: netActivity() only
+   * extends deadlines and never re-arms. Keeps the idle time already accrued.
+   */
+  void rebase_default_inactivity_deadline(ink_hrtime previous_in);
+
   /// Values for @a f.shutdown
   static constexpr unsigned SHUTDOWN_READ  = 1;
   static constexpr unsigned SHUTDOWN_WRITE = 2;

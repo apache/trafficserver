@@ -40,3 +40,22 @@ NetEvent::rearm_timer()
     h->defer_rearm(this);
   }
 }
+
+void
+NetEvent::rebase_default_inactivity_deadline(ink_hrtime previous_in)
+{
+  if (!use_default_inactivity_timeout || inactivity_timeout_in != 0 || next_inactivity_timeout_at == 0) {
+    return; // the deadline did not come from the default
+  }
+
+  ink_hrtime const current_in = default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
+  if (current_in <= 0) {
+    next_inactivity_timeout_at = 0;
+  } else if (previous_in > 0) {
+    next_inactivity_timeout_at += current_in - previous_in;
+  } else {
+    next_inactivity_timeout_at = ink_get_hrtime() + current_in;
+  }
+  rearm_timer();
+}

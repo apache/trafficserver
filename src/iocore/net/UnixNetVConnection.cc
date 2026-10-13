@@ -1344,7 +1344,7 @@ TS_INLINE void
 UnixNetVConnection::set_default_inactivity_timeout(ink_hrtime timeout_in)
 {
   Dbg(dbg_ctl_socket, "Set default inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
-  default_inactivity_timeout_in = timeout_in;
+  rebase_default_inactivity_deadline(default_inactivity_timeout_in.exchange(timeout_in));
 }
 
 TS_INLINE bool
