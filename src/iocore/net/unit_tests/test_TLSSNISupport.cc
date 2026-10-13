@@ -44,26 +44,33 @@ put_u16(std::vector<uint8_t> &out, size_t value)
   out.push_back(static_cast<uint8_t>(value));
 }
 
+// The lengths of the variable length fields that precede the extensions.
+struct Lengths {
+  size_t session_id          = 32;
+  size_t cipher_suites       = 4;
+  size_t compression_methods = 1;
+};
+
 std::vector<uint8_t>
-make_client_hello_body(std::vector<Extension> const &extensions, bool with_extensions_block = true)
+make_client_hello_body(std::vector<Extension> const &extensions, bool with_extensions_block = true, Lengths lengths = {})
 {
   std::vector<uint8_t> body;
 
   put_u16(body, 0x0303);
   body.insert(body.end(), 32, 0xAB);
 
-  // A 32 byte legacy session id.
-  body.push_back(32);
-  body.insert(body.end(), 32, 0xCD);
+  body.push_back(static_cast<uint8_t>(lengths.session_id));
+  body.insert(body.end(), lengths.session_id, 0xCD);
 
-  // Cipher suites: GREASE and TLS_AES_128_GCM_SHA256.
-  put_u16(body, 4);
-  put_u16(body, 0x0A0A);
-  put_u16(body, 0x1301);
+  // By default, GREASE and TLS_AES_128_GCM_SHA256.
+  put_u16(body, lengths.cipher_suites);
+  for (size_t i = 0; i < lengths.cipher_suites; ++i) {
+    body.push_back(i < 2 ? 0x0A : (i % 2 == 0 ? 0x13 : 0x01));
+  }
 
-  // The null compression method.
-  body.push_back(1);
-  body.push_back(0);
+  // By default, the null compression method.
+  body.push_back(static_cast<uint8_t>(lengths.compression_methods));
+  body.insert(body.end(), lengths.compression_methods, 0);
 
   if (with_extensions_block) {
     std::vector<uint8_t> block;
@@ -167,6 +174,26 @@ TEST_CASE("Malformed raw ClientHellos are rejected", "[TLSSNISupport]")
     auto body = make_client_hello_body({}, false);
     body.resize(30);
     CHECK(parse(make_handshake_message(body), false).empty());
+  }
+
+  SECTION("legacy session id longer than 32 bytes")
+  {
+    CHECK(parse(make_handshake_message(make_client_hello_body(extensions, true, {.session_id = 33})), false).empty());
+  }
+
+  SECTION("no cipher suites")
+  {
+    CHECK(parse(make_handshake_message(make_client_hello_body(extensions, true, {.cipher_suites = 0})), false).empty());
+  }
+
+  SECTION("odd cipher suites length")
+  {
+    CHECK(parse(make_handshake_message(make_client_hello_body(extensions, true, {.cipher_suites = 3})), false).empty());
+  }
+
+  SECTION("no compression methods")
+  {
+    CHECK(parse(make_handshake_message(make_client_hello_body(extensions, true, {.compression_methods = 0})), false).empty());
   }
 
   SECTION("extension data longer than the extensions block")
