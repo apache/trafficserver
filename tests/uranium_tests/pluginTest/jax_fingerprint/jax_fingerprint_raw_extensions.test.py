@@ -64,7 +64,18 @@ tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
 tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = ts
 
-Test.AddAwaitFileContainsTestRun('Await the JA4 fingerprint', ts.Disk.traffic_out.AbsPath, 'Fingerprint: ')
+# OpenSSL reassembles a ClientHello split across records before handing it to
+# the message callback, so the fragmented ClientHello must fingerprint the same.
+tr = Test.AddTestRun('Send a Chrome ClientHello split across records')
+tr.Setup.Copy('chrome_client_hello.py')
+tr.Processes.Default.Command = f'{sys.executable} chrome_client_hello.py --fragment-size 100 {ts.Variables.ssl_port}'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    f'Expected JA4: {CHROME_JA4}', 'The client should get a ServerHello.')
+tr.StillRunningAfter = ts
+
+Test.AddAwaitFileContainsTestRun(
+    'Await both JA4 fingerprints', ts.Disk.traffic_out.AbsPath, f'Fingerprint: {CHROME_JA4}', desired_count=2)
 
 tr = Test.AddTestRun('Verify the raw ClientHello parsed')
 tr.Processes.Default.Command = 'traffic_ctl metric get proxy.process.ssl.client_hello_raw_parse_failure'
