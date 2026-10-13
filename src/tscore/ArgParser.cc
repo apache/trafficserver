@@ -624,7 +624,14 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
   unsigned collected{0};
 
   while (collected < arg_num) {
-    bool missing_value = j >= args.size() || args[j].empty();
+    // An empty token is a value the caller actually typed, not an absent one, so it must not
+    // be filled from env_value: doing that would leave it in args (nothing below advances j
+    // past it), and the enclosing command would then read it as a positional argument. This
+    // mirrors the check append_option_data() already makes for AT_MOST_ONE_ARG_N.
+    if (j < args.size() && args[j].empty()) {
+      return std::to_string(arg_num) + " argument(s) expected by " + name;
+    }
+    bool missing_value = j >= args.size();
     if (!missing_value && recognize_options) {
       if (args[j] == "--") {
         recognize_options = false;

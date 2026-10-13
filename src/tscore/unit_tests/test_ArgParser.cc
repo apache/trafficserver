@@ -512,6 +512,11 @@ TEST_CASE("A declared environment variable fills a value the command line omitte
   cmd.add_option("--declared-unset", "-U", "variable declared but unset", "TS_ARGPARSER_TEST_UNSET", 1);
   cmd.add_option("--monitor", "-m", "monitor progress");
 
+  // Mirrors "traffic_ctl config get RECORD [RECORD ...]", whose positionals would absorb a
+  // stray empty token and hide the bug an option without positionals cannot expose.
+  ts::ArgParser::Command &get_cmd = parser.add_command("get", "get records", "", MORE_THAN_ONE_ARG_N, nullptr);
+  get_cmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_FIXED", 1);
+
   // Fixed arity: the flag is typed with no value, so the variable supplies it instead of a
   // usage error.
   {
@@ -546,6 +551,30 @@ TEST_CASE("A declared environment variable fills a value the command line omitte
     REQUIRE(parsed.get("tags").value() == "cache");
   }
 
+  // A typed value wins by itself, not just by count: a single typed value is not joined by the
+  // variable too, for a fixed-arity option (-c, taking one value) or a repeated one (-p).
+  {
+    const char   *argv[] = {"test_prog", "enable", "-c", "file", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("cold").value() == "file");
+    REQUIRE(parsed.get("cold").size() == 1);
+  }
+  {
+    const char   *argv[] = {"test_prog", "enable", "-p", "a", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("params").size() == 1);
+    REQUIRE(parsed.get("params")[0] == "a");
+  }
+
+  // An option is never activated by its declared variable alone: the variable only fills a
+  // value for an option the caller already typed.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("cold") == false);
+    REQUIRE(parsed.get("tags") == false);
+  }
+
   // The environment variable wins over the declared default.
   {
     TestArgParser default_parser;
@@ -558,6 +587,17 @@ TEST_CASE("A declared environment variable fills a value the command line omitte
     REQUIRE(parsed.get("tags").value() == "from_env");
   }
 
+  // A command itself can declare a variable, resolved the same way an option's is.
+  {
+    TestArgParser command_parser;
+    command_parser.add_global_usage("test_prog [OPTIONS]");
+    command_parser.add_command("init", "init", "TS_ARGPARSER_TEST_FIXED", 1, nullptr);
+
+    const char   *argv[] = {"test_prog", "init", nullptr};
+    ts::Arguments parsed = command_parser.parse(argv);
+    REQUIRE(parsed.get("init").value() == "from_env");
+  }
+
   // Usage errors are unchanged when no variable is declared.
   {
     const char *argv[] = {"test_prog", "enable", "-u", "-m", nullptr};
@@ -567,6 +607,20 @@ TEST_CASE("A declared environment variable fills a value the command line omitte
   // Usage errors are unchanged when the variable is declared but unset.
   {
     const char *argv[] = {"test_prog", "enable", "-U", "-m", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+
+  // An empty token typed on the command line is a value, not an absent one: it must not be
+  // filled from the declared variable, or it is left in the positional arguments.
+  {
+    const char *argv[] = {"test_prog", "get", "-t", "", "rec", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+
+  // Same, after "--" ends option recognition: the empty token is still a value, never a
+  // variable fallback.
+  {
+    const char *argv[] = {"test_prog", "get", "-t", "--", "", "rec", nullptr};
     REQUIRE_THROWS(parser.parse(argv));
   }
 }
