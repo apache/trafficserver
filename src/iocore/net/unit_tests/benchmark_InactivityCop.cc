@@ -204,7 +204,7 @@ public:
   void
   set_default_inactivity_timeout(ink_hrtime timeout_in) override
   {
-    default_inactivity_timeout_in = timeout_in;
+    rebase_default_inactivity_deadline(default_inactivity_timeout_in.exchange(timeout_in));
   }
 
   bool
@@ -1614,6 +1614,66 @@ TEST_CASE("A re-arm from another thread is applied by the owning thread", "[net]
   INFO("the owning thread must apply the earlier deadline on its next loop");
   CHECK(m->timer_hook.deadline == sooner);
   CHECK(m->handoff.load() == 0);
+}
+
+// --- Default inactivity timeout overrides ---------------------------------
+//
+// The global default arms a connection when it is enabled, and a per-remap
+// override arrives later, from HttpTransact::EndRemapRequest. A shorter override
+// must take effect then: netActivity() only extends deadlines and never re-arms,
+// so the wheel would otherwise hold the global deadline, typically a day out.
+TEST_CASE("A shorter default inactivity timeout re-arms a default-derived deadline", "[net][inactivity_cop]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  ink_hrtime const start = fx._now;
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    m->inactivity_timeout_in          = 0;
+    m->default_inactivity_timeout_in  = HRTIME_SECONDS(86400);
+    m->use_default_inactivity_timeout = true;
+    m->next_inactivity_timeout_at     = start + HRTIME_SECONDS(86400);
+    m->read.enabled                   = 1;
+    fx.nh.rearm_timer(m);
+
+    m->set_default_inactivity_timeout(HRTIME_SECONDS(30));
+  }
+
+  INFO("the override keeps the idle time accrued and only changes the duration");
+  CHECK(m->next_inactivity_timeout_at == start + HRTIME_SECONDS(30));
+  CHECK(m->timer_hook.deadline == start + HRTIME_SECONDS(30));
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(start + HRTIME_SECONDS(32), &event);
+  }
+  INFO("the connection must time out at the override, not the global default");
+  CHECK(fx.counters.callbacks == 1);
+}
+
+// An explicit inactivity timeout is not derived from the default, so changing the
+// default must leave it alone.
+TEST_CASE("Changing the default leaves an explicit inactivity deadline alone", "[net][inactivity_cop]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  ink_hrtime const deadline = fx._now + HRTIME_SECONDS(600);
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    m->inactivity_timeout_in         = HRTIME_SECONDS(600);
+    m->default_inactivity_timeout_in = HRTIME_SECONDS(86400);
+    m->next_inactivity_timeout_at    = deadline;
+    fx.nh.rearm_timer(m);
+
+    m->set_default_inactivity_timeout(HRTIME_SECONDS(30));
+  }
+
+  CHECK(m->next_inactivity_timeout_at == deadline);
+  CHECK(m->timer_hook.deadline == deadline);
 }
 
 // --- The audit scan -------------------------------------------------------
