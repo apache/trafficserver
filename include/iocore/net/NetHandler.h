@@ -114,6 +114,8 @@ public:
   TimerWheel<NetEvent> timer_wheel;
   ASLLM(NetEvent, NetState, read, enable_link) read_enable_list;
   ASLLM(NetEvent, NetState, write, enable_link) write_enable_list;
+  /// NetEvents other threads need this thread to act on; see process_handoffs().
+  ASLL(NetEvent, handoff_link) handoff_list;
   Que(NetEvent, keep_alive_queue_link) keep_alive_queue;
   uint32_t keep_alive_queue_size = 0;
   Que(NetEvent, active_queue_link) active_queue;
@@ -196,6 +198,7 @@ public:
   int        mainNetEvent(int event, Event *data);
   int        waitForActivity(ink_hrtime timeout) override;
   void       process_enabled_list();
+  void       process_handoffs();
   void       process_ready_list();
   void       manage_keep_alive_queue();
   bool       manage_active_queue(NetEvent *ne, bool ignore_queue_size);
@@ -254,9 +257,18 @@ public:
 
   /** Re-arm @a ne's slot in the timer wheel from its current deadline fields.
    *
-   * Must be called after any change that makes @a ne's deadline earlier.
+   * Must be called after any change that makes @a ne's deadline earlier. Owning
+   * thread only; other threads go through NetEvent::rearm_timer(), which hands
+   * the re-arm over with defer_rearm().
    */
   void rearm_timer(NetEvent *ne);
+
+  /** Ask this handler's thread to re-arm @a ne on its next loop.
+   *
+   * Safe from any thread. The deadline is re-read when the owner gets to it, so
+   * any number of changes before then cost one re-arm.
+   */
+  void defer_rearm(NetEvent *ne);
 
   /** Hand @a ne, closed on another thread, back to this handler's thread.
    *

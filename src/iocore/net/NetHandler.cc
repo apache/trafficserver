@@ -95,6 +95,10 @@ NetHandler::stopIO(NetEvent *ne)
     write_enable_list.remove(ne);
     ne->write.in_enabled_list = 0;
   }
+  if (ne->handoff.load() & NetEvent::HANDOFF_QUEUED) {
+    handoff_list.remove(ne);
+    ne->handoff.store(0);
+  }
 
   ne->nh = nullptr;
 }
@@ -146,7 +150,7 @@ NetHandler::_earliest_deadline(NetEvent *ne) const
 void
 NetHandler::rearm_timer(NetEvent *ne)
 {
-  ink_assert(ne->get_thread() == this_ethread());
+  ink_assert(thread == this_ethread());
 
   // A closed NetEvent must be reaped on the next tick rather than at its
   // original deadline, or the fd lingers.
@@ -156,6 +160,25 @@ NetHandler::rearm_timer(NetEvent *ne)
     timer_wheel.cancel(ne);
   } else {
     timer_wheel.schedule(ne, deadline);
+  }
+}
+
+void
+NetHandler::defer_rearm(NetEvent *ne)
+{
+  if (!(ne->handoff.fetch_or(NetEvent::HANDOFF_QUEUED) & NetEvent::HANDOFF_QUEUED)) {
+    handoff_list.push(ne);
+  }
+}
+
+void
+NetHandler::process_handoffs()
+{
+  SList(NetEvent, handoff_link) q(handoff_list.popall());
+
+  while (NetEvent *ne = q.pop()) {
+    ne->handoff.store(0);
+    rearm_timer(ne);
   }
 }
 
@@ -287,6 +310,8 @@ void
 NetHandler::process_enabled_list()
 {
   NetEvent *ne = nullptr;
+
+  process_handoffs();
 
   SListM(NetEvent, NetState, read, enable_link) rq(read_enable_list.popall());
   while ((ne = rq.pop())) {

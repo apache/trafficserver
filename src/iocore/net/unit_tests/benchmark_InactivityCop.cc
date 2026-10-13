@@ -1537,6 +1537,44 @@ TEST_CASE("NetHandler frees a NetEvent closed on another thread", "[net][nethand
   CHECK_FALSE(fx.nh.timer_wheel.is_scheduled(timed));
 }
 
+// The owning thread touches its wheel without the NetHandler mutex, so a re-arm
+// from any other thread - a reenable(), or a timeout set while holding only the
+// connection's mutex - must be handed over rather than applied in place.
+TEST_CASE("A re-arm from another thread is applied by the owning thread", "[net][nethandler][handoff]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  ink_hrtime const later  = fx._now + HRTIME_SECONDS(300);
+  ink_hrtime const sooner = fx._now + HRTIME_SECONDS(10);
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    m->next_inactivity_timeout_at = later;
+    fx.nh.rearm_timer(m);
+  }
+  REQUIRE(m->timer_hook.deadline == later);
+
+  std::thread other([&] {
+    m->next_inactivity_timeout_at = sooner;
+    m->rearm_timer();
+    m->rearm_timer(); // a second change before the owner runs costs nothing extra
+  });
+  other.join();
+
+  INFO("the foreign thread must not have touched the wheel");
+  CHECK(m->timer_hook.deadline == later);
+  CHECK(m->handoff.load() == NetEvent::HANDOFF_QUEUED);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    fx.nh.process_handoffs();
+  }
+
+  INFO("the owning thread must apply the earlier deadline on its next loop");
+  CHECK(m->timer_hook.deadline == sooner);
+  CHECK(m->handoff.load() == 0);
+}
+
 // --- The audit scan -------------------------------------------------------
 //
 // An audit that always reports clean is worse than none, so each anomaly class

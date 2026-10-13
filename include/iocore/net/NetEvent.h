@@ -137,11 +137,20 @@ public:
   LINK(NetEvent, timer_link);
   TimerWheelHook timer_hook;
 
+  /// Bits of @a handoff. Only the owning thread may touch its timer wheel, so
+  /// other threads queue the NetEvent on NetHandler::handoff_list instead;
+  /// NetHandler::process_handoffs() consumes it there.
+  static constexpr uint8_t HANDOFF_QUEUED = 1; ///< On handoff_list.
+  std::atomic<uint8_t>     handoff{0};
+  SLINK(NetEvent, handoff_link);
+
   /** Re-arm this NetEvent's slot in its NetHandler's timer wheel.
    *
    * Required after any change that makes a deadline earlier - setting a
    * timeout, shortening one, or closing. Extending needs no call: the wheel
-   * re-reads the real deadline when the bucket comes due.
+   * re-reads the real deadline when the bucket comes due. Safe from any thread:
+   * off the owning thread it is handed to the owner and applied on its next
+   * loop.
    */
   void rearm_timer();
 
