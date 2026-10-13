@@ -112,6 +112,22 @@ test_callback_warn_only(std::string_view const & /* id ATS_UNUSED */, YAML::Node
   return resp;
 }
 
+inline swoc::Rv<YAML::Node>
+test_callback_note_next_to_failure(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  resp.errata().assign(ERR1).note(ERRATA_NOTE, "just a note").note("the real failure");
+  return resp;
+}
+
+inline swoc::Rv<YAML::Node>
+test_callback_errata_severity_apart(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  resp.errata().assign(ERR1).assign(ERRATA_ERROR).note(ERRATA_NOTE, "just a note");
+  return resp;
+}
+
 // traffic_server's errata settings, restored on scope exit. The unit tests run with libswoc's defaults otherwise, which treat
 // lower severities as failures.
 struct ProductionErrataSeverities {
@@ -692,5 +708,29 @@ TEST_CASE("Severity field in error data entries", "[severity]")
     const auto json = rpc.handle_call(R"({"jsonrpc": "2.0", "method": "test_callback_note_only", "params": {}, "id": "52"})");
     REQUIRE(json);
     REQUIRE(*json == R"({"jsonrpc": "2.0", "result": "success", "id": "52"})");
+  }
+
+  SECTION("A note next to a failure without a severity sets the severity, and the failure is dropped")
+  {
+    ProductionErrataSeverities production;
+    REQUIRE(rpc.add_method_handler("test_callback_note_next_to_failure", &test_callback_note_next_to_failure));
+
+    const auto json =
+      rpc.handle_call(R"({"jsonrpc": "2.0", "method": "test_callback_note_next_to_failure", "params": {}, "id": "53"})");
+    REQUIRE(json);
+    REQUIRE(*json == R"({"jsonrpc": "2.0", "result": "success", "id": "53"})");
+  }
+
+  SECTION("Entries below a warning are sent only when the errata severity is set apart from them")
+  {
+    ProductionErrataSeverities production;
+    REQUIRE(rpc.add_method_handler("test_callback_errata_severity_apart", &test_callback_errata_severity_apart));
+
+    const auto json =
+      rpc.handle_call(R"({"jsonrpc": "2.0", "method": "test_callback_errata_severity_apart", "params": {}, "id": "54"})");
+    REQUIRE(json);
+    const std::string_view expected =
+      R"({"jsonrpc": "2.0", "error": {"code": 9, "message": "Error during execution", "data": [{"code": 9999, "severity": 3, "message": "just a note"}]}, "id": "54"})";
+    REQUIRE(*json == expected);
   }
 }

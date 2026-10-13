@@ -93,6 +93,16 @@ display_errors(BasePrinter *printer, std::vector<ConfigReloadResponse::Error> co
   }
 }
 
+/// A request the command depends on failed, and its error is already printed and graded. Below --error-level that grade is 0,
+/// but what was asked was not done, so the command exits CTRL_EX_TEMPFAIL instead.
+void
+mark_not_done()
+{
+  if (App_Exit_Status_Code == CTRL_EX_OK) {
+    App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+  }
+}
+
 /// Parse a single --directive (-D) argument "config_key.directive_key=value"
 /// and inject into configs[config_key]["_reload"][directive_key].
 /// Returns true on success, sets error_out on parse failure.
@@ -383,9 +393,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
   // below it the outcome is unknown.
   auto stop_on_error = [this](shared::rpc::JSONRPCResponse const &response) {
     _printer->write_output(response);
-    if (App_Exit_Status_Code == CTRL_EX_OK) {
-      App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
-    }
+    mark_not_done();
   };
 
   FetchConfigReloadStatusRequest request{
@@ -520,7 +528,9 @@ ConfigCommand::config_reset()
   // Lookup matching records
   auto lookup_response = invoke_rpc(lookup_request);
   if (lookup_response.is_error()) {
+    // Without the records nothing can be reset.
     _printer->write_output(lookup_response);
+    mark_not_done();
     return;
   }
 
@@ -669,7 +679,15 @@ ConfigCommand::config_reload()
   if (show_details) {
     bool include_logs = get_parsed_arguments()->get("include-logs") ? true : false;
 
-    ConfigReloadResponse resp = config_reload(token, force, configs);
+    ConfigReloadResponse resp;
+    try {
+      resp = config_reload(token, force, configs);
+    } catch (ServerErrorReported const &) {
+      // Nothing was scheduled, so there are no details to show.
+      mark_not_done();
+      throw;
+    }
+
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
       App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       if (resp.tasks.size() > 0) {
@@ -694,7 +712,14 @@ ConfigCommand::config_reload()
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000)));
     }
 
-    resp = fetch_config_reload(token);
+    try {
+      resp = fetch_config_reload(token);
+    } catch (ServerErrorReported const &) {
+      // The details asked for could not be read.
+      mark_not_done();
+      throw;
+    }
+
     if (resp.error.size()) {
       display_errors(_printer.get(), resp.error);
       App_Exit_Status_Code = CTRL_EX_ERROR;
@@ -712,10 +737,8 @@ ConfigCommand::config_reload()
     try {
       resp = config_reload(token, force, configs);
     } catch (ServerErrorReported const &) {
-      // Nothing was scheduled, so there is nothing to monitor: below --error-level the outcome is still not a success.
-      if (App_Exit_Status_Code == CTRL_EX_OK) {
-        App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
-      }
+      // Nothing was scheduled, so there is nothing to monitor.
+      mark_not_done();
       throw;
     }
 
@@ -900,6 +923,7 @@ MetricCommand::metric_monitor()
 
     if (resp.is_error()) { // something went wrong in the server, report it.
       _printer->write_output(resp);
+      mark_not_done();
       return;
     }
 
@@ -1267,12 +1291,9 @@ ServerCommand::server_debug()
     auto lookup_response = invoke_rpc(lookup_request);
 
     if (lookup_response.is_error()) {
-      // Without the current tags the append cannot be done: report it and set nothing. Below --error-level that is still not a
-      // success.
+      // Without the current tags the append cannot be done: report it and set nothing.
       _printer->write_output(lookup_response);
-      if (App_Exit_Status_Code == CTRL_EX_OK) {
-        App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
-      }
+      mark_not_done();
       return;
     }
 

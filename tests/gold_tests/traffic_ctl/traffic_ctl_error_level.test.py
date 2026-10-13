@@ -71,6 +71,9 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     r'- \[\d+\] Warn: Server already draining\.', 'the annotation is printed with its severity')
 
 on_ts('drain again, --error-level warn', 'traffic_ctl --error-level warn server drain', 2)
+tr = on_ts('drain again, --error-level note acts like warn', 'traffic_ctl --error-level note server drain', 2)
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('Warn: Server already draining', 'the server was asked')
+tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Unknown error level', 'the level was accepted')
 tr = on_ts('drain again, level given after the command, alias and case', 'traffic_ctl server drain --error-level WARNING', 2)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('Warn: Server already draining', 'the server was asked')
 tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Unknown error level', 'the level was accepted')
@@ -282,6 +285,33 @@ for what, process, command, code, why in DEBUG_LOOKUP_FAILURES:
     tr = on_stub(f'server debug --append, {what}', command, code, process)
     tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(why, 'the lookup error is shown')
     tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('TS Runtime debug set', 'nothing was set')
+    tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Error found', 'the command stopped at the lookup')
+
+# config reset also reads the records first, and metric monitor stops at a failed poll: the same rule applies.
+METRIC_OK = {'result': {'recordList': [{'record': {'record_name': 'proxy.process.stub', 'current_value': '5'}}], 'errorList': []}}
+
+# The node has no reply for the set request: if one were sent, it would come back as "Method not found".
+reset_node, reset_ctl = stub('stub_reset', {'admin_lookup_records': LOOKUP_WARNING})
+RESET_STOPS = [
+    ('the lookup warns: not done', f'{reset_ctl} config reset proxy.config.diags', 75),
+    ('the lookup warns, --error-level warn', f'{reset_ctl} --error-level warn config reset proxy.config.diags', 2),
+]
+for what, command, code in RESET_STOPS:
+    tr = on_stub(f'config reset, {what}', command, code, reset_node)
+    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('lookup warning', 'the lookup error is shown')
+    tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('Method not found', 'no set request was sent')
+    tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Error found', 'the command stopped at the lookup')
+
+# Each run polls twice: a sample, then the error.
+metric_node, metric_ctl = stub('stub_metric', {'admin_lookup_records': [METRIC_OK, LOOKUP_WARNING]})
+tr = on_stub(
+    'metric monitor, the second poll warns: not done', f'{metric_ctl} metric monitor proxy.process.stub -c 3 -i 1', 75, metric_node)
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('proxy.process.stub: 5', 'the first poll was shown')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('lookup warning', 'the second poll failed')
+tr = on_stub(
+    'metric monitor, the second poll warns, --error-level warn',
+    f'{metric_ctl} --error-level warn metric monitor proxy.process.stub -c 3 -i 1', 2, metric_node)
+tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Error found', 'the command stopped at the poll')
 
 # config reload --monitor stops when a status request fails, before it sees how the reload ended. An error at or above the
 # level fails the command; below it the outcome is unknown (75).
@@ -329,3 +359,31 @@ refused_node, refused_ctl = stub(
 tr = on_stub('monitor, the reload request warns: not a success', f'{refused_ctl} {MONITOR}', 75, refused_node)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('Warn: reload warning', 'the request failed')
 on_stub('monitor, the reload request warns, --error-level warn', f'{refused_ctl} --error-level warn {MONITOR}', 2, refused_node)
+
+# --show-details schedules the reload and then reads its details, like --monitor: a request that fails below the level
+# leaves the command not done (75).
+details_node, details_ctl = stub(
+    'stub_details', {
+        'admin_config_reload': RELOAD_SCHEDULED,
+        'get_reload_config_status': execution_error({
+            'code': 1,
+            'severity': 4,
+            'message': 'status warning'
+        }),
+    })
+SHOW_DETAILS = 'config reload -t m1 -s --initial-wait 0'
+tr = on_stub('show details, the details fetch warns: not done', f'{details_ctl} {SHOW_DETAILS}', 75, details_node)
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'Reload scheduled \[m1\]', 'the reload was scheduled')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('Warn: status warning', 'the details fetch failed')
+tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Error found', 'the command stopped at the fetch')
+tr = on_stub(
+    'show details, the details fetch warns, --error-level warn', f'{details_ctl} --error-level warn {SHOW_DETAILS}', 2,
+    details_node)
+tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Error found', 'the command stopped at the fetch')
+tr = on_stub('show details, the reload request warns: not done', f'{refused_ctl} {SHOW_DETAILS}', 75, refused_node)
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('Warn: reload warning', 'the request failed')
+tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('Reload scheduled', 'nothing was scheduled')
+tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression('Error found', 'the command stopped at the request')
+on_stub(
+    'show details, the reload request warns, --error-level warn', f'{refused_ctl} --error-level warn {SHOW_DETAILS}', 2,
+    refused_node)

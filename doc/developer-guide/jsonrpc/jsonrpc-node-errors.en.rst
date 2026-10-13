@@ -120,8 +120,10 @@ above as the highest level.
 A handler that reports a condition which is not a failure, such as a state that is already in
 place, marks it ``Warn``. It cannot go lower: the server only answers with an error when the
 severity of the handler's errata is ``Warn`` or above, and otherwise returns a result and drops the
-annotations. That severity is the highest one set explicitly, or ``Error`` when none is, so a
-handler that adds a ``Warn`` next to a real failure must mark the failure ``Error`` explicitly.
+annotations. That severity is the highest one set explicitly, or ``Error`` when none is, and
+``assign(severity)`` replaces it, lower or higher. So a handler that adds an annotation below
+``Warn`` next to a real failure must mark the failure ``Error`` explicitly, or the server answers
+with a success and the failure is lost.
 
 :program:`traffic_ctl` uses the ``severity`` to pick its exit status, see
 :option:`traffic_ctl --error-level`.

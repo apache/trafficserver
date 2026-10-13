@@ -129,8 +129,10 @@ TEST_CASE("The most severe annotation decides", "[exit_code]")
 
 TEST_CASE("Severities the server should never send always fail", "[exit_code]")
 {
-  // Not one of the levels: graded as the highest one, so no --error-level lets them through.
-  for (auto const *severity : {"9", "256", "2147483647", "-1", "\"warn\"", "\"0\"", "\"4\"", "4.5", "true", "null", "[4]", "{}"}) {
+  // Not one of the levels: graded as the highest one, so no --error-level lets them through. Without the range check, -252 and
+  // -256 would narrow to Warn and Diag.
+  for (auto const *severity :
+       {"9", "256", "2147483647", "-1", "-252", "-256", "\"warn\"", "\"0\"", "\"4\"", "4.5", "true", "null", "[4]", "{}"}) {
     INFO("severity: " << severity);
     auto const resp = execution_error(std::string{R"({"code": 1, "severity": )"} + severity + R"(, "message": "m"})");
 
@@ -174,12 +176,25 @@ TEST_CASE("Data entries that are not maps always fail", "[exit_code]")
     INFO("data entry: " << data);
     CHECK(exit_code_at(ERRATA_EMERGENCY, execution_error(data)) == CTRL_EX_ERROR);
   }
+}
 
-  // "data" given as a map: each member is read as an entry, none of them a map.
-  auto const map_data =
-    make_error_response(R"({"code": 9, "message": "Error during execution", "data": {"code": 1, "severity": 8, "message": "m"}})");
+TEST_CASE("Data that is not a list is one unreadable entry", "[decoder]")
+{
+  // So the error is still printed as a server error, and always fails.
+  for (auto const *data : {R"({"code": 1, "severity": 4, "message": "m"})", R"("text")", "null"}) {
+    INFO("data: " << data);
+    auto const resp = make_error_response(std::string{R"({"code": 9, "message": "Error during execution", "data": )"} + data + "}");
 
-  CHECK(exit_code_at(ERRATA_EMERGENCY, map_data) == CTRL_EX_ERROR);
+    shared::rpc::JSONRPCError err;
+    REQUIRE_NOTHROW(err = resp.error.as<shared::rpc::JSONRPCError>());
+    REQUIRE(err.data.size() == 1);
+    CHECK(err.data[0].severity == shared::rpc::JSONRPCError::DataEntry::INVALID_SEVERITY);
+
+    std::ostringstream os;
+    os << err;
+    CHECK(os.str() == "Server Error found:\n[9] Error during execution\n- [0] Severity(invalid): \n");
+    CHECK(exit_code_at(ERRATA_EMERGENCY, resp) == CTRL_EX_ERROR);
+  }
 }
 
 TEST_CASE("Decoding the severity of a data entry", "[decoder]")

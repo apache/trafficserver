@@ -133,13 +133,21 @@ Options
    ``warning``), ``error``, ``fatal``, ``alert`` and ``emergency``. Default: ``error``. The option
    is refused when it is given more than once, or without a value.
 
+   |TS| answers a handler result below ``warn`` with a success, so a handler failure reaches
+   :program:`traffic_ctl` only at ``warn`` or above. Against |TS|, ``diag``, ``debug``, ``status``
+   and ``note`` therefore act like ``warn``. They differ only for a failure whose entries are all
+   marked below ``warn``, which takes a handler that sets the severity of its errata apart from the
+   entries (see :ref:`jsonrpc-node-errors-severity`).
+
    The level applies to every command that decodes the server response, in every output format,
    ``--format json`` included. ``traffic_ctl rpc file`` and ``traffic_ctl rpc input`` are the
    exception: they print the raw response and their exit status does not look at errors in it.
 
    A command that cannot finish because a request it depends on failed below the level exits
    ``75`` rather than ``0``, since what was asked was not done: ``traffic_ctl config reload
-   --monitor`` when it cannot see how the reload ended, and ``traffic_ctl server debug enable
+   --monitor`` when it cannot see how the reload ended, ``traffic_ctl config reload --show-details``
+   when it cannot show the reload's details, ``traffic_ctl config reset`` when it cannot read the
+   records, ``traffic_ctl metric monitor`` when a poll fails, and ``traffic_ctl server debug enable
    --append`` when it cannot read the current tags.
 
    .. note::
@@ -585,8 +593,8 @@ Display the current value of a configuration record.
 
    ``0``
       Success. The reload was scheduled (without ``--monitor``) or completed successfully
-      (with ``--monitor``). Without ``--monitor``, also when the server reported an error
-      below :option:`traffic_ctl --error-level`.
+      (with ``--monitor``). Without ``--monitor`` or ``--show-details``, also when the server
+      reported an error below :option:`traffic_ctl --error-level`.
 
    ``2``
       Error. The reload reached a terminal failure state (``fail`` or ``timeout``), an
@@ -597,9 +605,9 @@ Display the current value of a configuration record.
       Temporary failure (``EX_TEMPFAIL`` from ``sysexits.h``). A reload is already in
       progress and the command could not start a new one, monitoring was interrupted
       (e.g. Ctrl+C) before the reload reached a terminal state, the ``--timeout``
-      duration was exceeded, or a status request failed with an error below
-      :option:`traffic_ctl --error-level`, so the outcome is unknown. The caller is invited to
-      retry or monitor the operation later.
+      duration was exceeded, or, with ``--monitor`` or ``--show-details``, a request failed with
+      an error below :option:`traffic_ctl --error-level`. The caller is invited to retry or
+      monitor the operation later.
 
    Example usage in scripts:
 
@@ -1233,7 +1241,7 @@ traffic_ctl server
 
    Append the specified tags to the existing debug tags instead of replacing them. This option requires
    ``--tags`` to be specified. The new tags will be combined with existing tags using the ``|`` separator.
-   If the existing tags cannot be read, nothing is set and the command fails.
+   If the request that reads the existing tags fails, nothing is set and the command fails.
 
    .. option:: --client_ip, -c ip
 
