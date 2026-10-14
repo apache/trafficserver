@@ -35,6 +35,10 @@ Metrics
 * Added ``proxy.process.ssl.group.user_agent.P-224``
 * Added ``proxy.process.ssl.group.user_agent.X448``
 * Added ``proxy.process.ssl.group.user_agent.X25519MLKEM768``
+* Added :ts:stat:`proxy.process.net.per_client.connections_exempt_currently_open`
+* :ts:stat:`proxy.process.net.per_client.connections_exempt_in` now counts
+  connections from exempt addresses when
+  :ts:cv:`proxy.config.net.per_client.max_connections_in` is 0.
 
 Plugins
 -------
@@ -121,6 +125,8 @@ Configuration
   control.
 * The ``ssl_multicert.config`` file has been replaced with :file:`ssl_multicert.yaml`.
   Use ``traffic_ctl config convert ssl_multicert`` to convert existing configuration files.
+* :ts:cv:`proxy.config.http.per_client.connection.exempt_list` now also
+  exempts client connections from :ts:cv:`proxy.config.net.connections_throttle`.
 
 
 

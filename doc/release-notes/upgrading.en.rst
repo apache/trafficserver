@@ -49,6 +49,15 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+Configuration Changes
+---------------------
+The following :file:`records.yaml` changes have been made:
+
+- The addresses in :ts:cv:`proxy.config.http.per_client.connection.exempt_list` are now also
+  exempt from :ts:cv:`proxy.config.net.connections_throttle`. If you already use this list for the
+  per-client limit, those addresses can now also connect when ATS is at the connection limit, and
+  they can take ATS past that limit. Review the list before you upgrade.
+
 Upgrading to ATS v10.x
 ======================
 

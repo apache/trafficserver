@@ -217,6 +217,20 @@ public:
     return _is_tunnel_endpoint;
   }
 
+  /// Whether this client connection is from an address in proxy.config.http.per_client.connection.exempt_list, and so
+  /// counted in proxy.process.net.per_client.connections_exempt_currently_open.
+  bool
+  is_client_exempt() const
+  {
+    return _client_exempt;
+  }
+
+  void
+  set_client_exempt(bool exempt)
+  {
+    _client_exempt = exempt;
+  }
+
 protected:
   virtual bool
   _isReadyToTransferData() const
@@ -236,6 +250,7 @@ private:
   virtual NetProcessor *_getNetProcessor();
 
   bool _is_tunnel_endpoint{false};
+  bool _client_exempt{false};
 
   // Called by make_tunnel_endpiont() when the far end of the TCP connection is the active/client end.
   virtual void _in_context_tunnel();
