@@ -195,3 +195,30 @@ tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     r'2 argument\(s\) expected by set', 'set must report what it was left without, as the docs show')
+
+# --cold declares TS_RECORD_YAML. A bare -c with no file name on the command line is filled
+# from it instead of falling back to the sysconfig records.yaml.
+
+# 17
+tr = Test.AddTestRun("A bare -c with no file name reads the file named by TS_RECORD_YAML")
+tr.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.tags -c'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=records_file)
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'TS_RECORD_YAML must supply the file name -c left out')
+
+# 18
+tr = Test.AddTestRun("A file name typed on the command line wins over TS_RECORD_YAML")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=os.path.join(ts.Variables.CONFIGDIR, "does_not_exist.yaml"))
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The typed file name must be used, not the nonexistent one from the variable')
+
+# 19
+tr = Test.AddTestRun("Repeating -c still refuses a second file name even when TS_RECORD_YAML is set")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} -c proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=records_file)
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'A second, bare -c must not be filled from the variable instead')

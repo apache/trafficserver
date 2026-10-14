@@ -626,7 +626,10 @@ Display the current value of a configuration record.
 
       $ TS_RECORD_YAML=/tmp/records.yaml traffic_ctl config get proxy.config.diags.debug.enabled -c
 
-   A file name typed on the command line always takes precedence over the variable.
+   A file name typed on the command line always takes precedence over the variable, which is
+   used only when ``-c`` is given no file name at all. ``-c`` is already refused outright when
+   written more than once, so there is no case where one occurrence has a file name and another
+   does not.
 
    If the file exists and is empty a new document will be created. If a file does not exist, an attempt to create a new file will be done.
 
@@ -1186,7 +1189,15 @@ traffic_ctl server
 
       $ TS_DEBUG_TAGS="http|cache" traffic_ctl server debug enable --tags
 
-   A value typed on the command line always takes precedence over the variable.
+   A value typed on the command line always takes precedence over the variable, which is used
+   only when ``--tags`` is given no value at all. If ``--tags`` is written more than once, the
+   variable applies only when every occurrence is bare; a bare occurrence next to one that was
+   given a value, in either spelling, is the same usage error it would be without a variable:
+
+   .. code-block:: bash
+
+      $ TS_DEBUG_TAGS="http|cache" traffic_ctl server debug enable --tags dns --tags
+      Error: 1 argument(s) expected by tags
 
    .. option:: --append, -a
 

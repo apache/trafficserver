@@ -242,12 +242,29 @@ public:
     // Helper method for parse()
     void append_option_data(Arguments &ret, AP_StrVec &args, int index);
     /** Helper method to collect the values of an option or command into @a ret.
-        @param env_value The value of the option's declared environment variable, or empty if
-        none is declared or it is unset. Used to fill a value the command line omitted, per the
-        precedence typed value > environment variable > declared default.
+        @param has_envvar Whether this option or command declares an environment variable.
+        When a value is missing from the command line, this decides whether that is reported
+        immediately (no variable declared, matching behaviour with no variable support at all)
+        or deferred to @a was_bare (variable declared), since a later or earlier occurrence of
+        the same option may still supply one.
+        @param was_bare Set to @c true when @a has_envvar and the occurrence just parsed had no
+        value at all; left @c false otherwise. The caller resolves the variable once every
+        occurrence has been seen.
     */
     std::string handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index,
-                            std::string const &env_value = "") const;
+                            bool has_envvar, bool &was_bare) const;
+
+    /** Resolve a declared environment variable for an option or command left bare by every
+        occurrence that set @a was_bare, once all occurrences have been parsed.
+
+        @param any_valued Whether some other occurrence of the same option supplied a value, in
+        either spelling. That occurrence's bare sibling is then the same usage error it would
+        have been without the variable, since the variable applies only when every occurrence
+        is bare. Not meaningful for @c AT_MOST_ONE_ARG_N, which refuses repetition outright
+        before this is reached.
+    */
+    void apply_env_fallback(Arguments &ret, std::string const &key, unsigned arg_num, std::string const &envvar,
+                            bool any_valued) const;
     // Whether @a token names an option registered on this command
     bool is_registered_option(std::string const &token) const;
     // Helper method to validate mutually exclusive groups

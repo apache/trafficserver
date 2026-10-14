@@ -624,3 +624,81 @@ TEST_CASE("A declared environment variable fills a value the command line omitte
     REQUIRE_THROWS(parser.parse(argv));
   }
 }
+
+TEST_CASE("The variable only applies when every occurrence of a repeated option is bare", "[parse][env]")
+{
+  setenv("TS_ARGPARSER_TEST_REPEAT", "from_env", 1);
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_REPEAT", 1);
+  cmd.add_option("--params", "-p", "parameters", "TS_ARGPARSER_TEST_REPEAT", MORE_THAN_ONE_ARG_N);
+  cmd.add_option("--pair", "-P", "a pair of values", "TS_ARGPARSER_TEST_REPEAT", 2);
+
+  // Two bare occurrences are no different from one: the variable still fills a single value.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "-t", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "from_env");
+    REQUIRE(parsed.get("tags").size() == 1);
+  }
+
+  // A bare occurrence next to a valued one, in every order and spelling, is the same usage
+  // error the bare occurrence alone would have been without a variable at all. The existing
+  // last-one-wins behaviour for an all-typed repeat (covered elsewhere) must not apply here.
+  {
+    const char *argv[] = {"test_prog", "enable", "-t", "dns", "-t", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "--tags=dns", "-t", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "-t", "--tags=dns", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "-t", "-t", "dns", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+
+  // A line with no bare occurrence at all is untouched, including the existing last-one-wins
+  // behaviour for a fixed-arity repeat, even though a variable is declared and set.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "a", "-t", "b", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "b");
+  }
+
+  // MORE_THAN_ONE_ARG_N: a bare occurrence next to one that collected values is the same
+  // mixed-usage error, not a silent single-value fill.
+  {
+    const char *argv[] = {"test_prog", "enable", "-p", "a", "-p", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+  // Two bare occurrences of it still resolve to a single value from the variable.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-p", "-p", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("params").size() == 1);
+    REQUIRE(parsed.get("params")[0] == "from_env");
+  }
+
+  // A fixed arity above one: entirely bare fills every slot from the variable, but a partial
+  // set is always a usage error, since the variable fills an option only when it has no
+  // values at all.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-P", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("pair").size() == 2);
+    REQUIRE(parsed.get("pair")[0] == "from_env");
+    REQUIRE(parsed.get("pair")[1] == "from_env");
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "-P", "only_one", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+}
