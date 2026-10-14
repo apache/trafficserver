@@ -22,6 +22,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include "tscore/ArgParser.h"
 
 class TestArgParser : public ts::ArgParser
@@ -636,6 +637,9 @@ TEST_CASE("The variable only applies when every occurrence of a repeated option 
   cmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_REPEAT", 1);
   cmd.add_option("--params", "-p", "parameters", "TS_ARGPARSER_TEST_REPEAT", MORE_THAN_ONE_ARG_N);
   cmd.add_option("--pair", "-P", "a pair of values", "TS_ARGPARSER_TEST_REPEAT", 2);
+  // No option in the tree combines this arity with a variable, so there is nothing to pin
+  // against existing callers; this is here only to prove the exclusion itself.
+  cmd.add_option("--directive", "-D", "directives", "TS_ARGPARSER_TEST_REPEAT", MORE_THAN_ZERO_ARG_N);
 
   // Two bare occurrences are no different from one: the variable still fills a single value.
   {
@@ -646,38 +650,42 @@ TEST_CASE("The variable only applies when every occurrence of a repeated option 
   }
 
   // A bare occurrence next to a valued one, in every order and spelling, is the same usage
-  // error the bare occurrence alone would have been without a variable at all. The existing
-  // last-one-wins behaviour for an all-typed repeat (covered elsewhere) must not apply here.
+  // error the bare occurrence alone would have been without a variable at all (exit code 64,
+  // not merely some exception, which a help or version exit would also throw in test mode).
+  // The existing last-one-wins behaviour for an all-typed repeat (covered elsewhere) must not
+  // apply here.
   {
     const char *argv[] = {"test_prog", "enable", "-t", "dns", "-t", nullptr};
-    REQUIRE_THROWS(parser.parse(argv));
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
   }
   {
     const char *argv[] = {"test_prog", "enable", "--tags=dns", "-t", nullptr};
-    REQUIRE_THROWS(parser.parse(argv));
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
   }
   {
     const char *argv[] = {"test_prog", "enable", "-t", "--tags=dns", nullptr};
-    REQUIRE_THROWS(parser.parse(argv));
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
   }
   {
     const char *argv[] = {"test_prog", "enable", "-t", "-t", "dns", nullptr};
-    REQUIRE_THROWS(parser.parse(argv));
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
   }
 
   // A line with no bare occurrence at all is untouched, including the existing last-one-wins
-  // behaviour for a fixed-arity repeat, even though a variable is declared and set.
+  // behaviour for a fixed-arity repeat, even though a variable is declared and set: the
+  // variable must not also append itself after the typed value.
   {
     const char   *argv[] = {"test_prog", "enable", "-t", "a", "-t", "b", nullptr};
     ts::Arguments parsed = parser.parse(argv);
     REQUIRE(parsed.get("tags").value() == "b");
+    REQUIRE(parsed.get("tags").size() == 1);
   }
 
   // MORE_THAN_ONE_ARG_N: a bare occurrence next to one that collected values is the same
   // mixed-usage error, not a silent single-value fill.
   {
     const char *argv[] = {"test_prog", "enable", "-p", "a", "-p", nullptr};
-    REQUIRE_THROWS(parser.parse(argv));
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
   }
   // Two bare occurrences of it still resolve to a single value from the variable.
   {
@@ -699,6 +707,15 @@ TEST_CASE("The variable only applies when every occurrence of a repeated option 
   }
   {
     const char *argv[] = {"test_prog", "enable", "-P", "only_one", nullptr};
-    REQUIRE_THROWS(parser.parse(argv));
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+
+  // MORE_THAN_ZERO_ARG_N does not support the fallback at all: zero values is already valid
+  // input for it, so a bare occurrence stays empty rather than being filled from the variable.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-D", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("directive") == true);
+    REQUIRE(parsed.get("directive").size() == 0);
   }
 }
