@@ -18,11 +18,26 @@ Abort HTTP/2 connection using RST_STREAM frame.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import re
+
 Test.Summary = '''
 Abort HTTP/2 connection using RST_STREAM frame.
 '''
 
 Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'), Condition.HasProxyVerifierVersion('2.8.0'))
+
+
+# When the client resets its stream, the origin sees the request only if ATS finished
+# its TLS handshake with the origin first. In that case the origin answers, the response
+# has nowhere to go, and ATS resets the origin stream with NO_ERROR after the origin has
+# already closed it. That is fine. The client's abort must never reset an origin stream
+# that is still open, which the origin logs as an RST_STREAM followed by that same stream closing.
+def origin_stream_not_reset():
+    return Testers.ExcludesExpression(
+        r'Received RST_STREAM frame with stream id (\d+),.*HTTP/2 stream is closed with id: \1\b',
+        'Server is not affected.',
+        reflags=re.DOTALL | re.MULTILINE)
+
 
 #
 # Client sends RST_STREAM after DATA frame
@@ -64,7 +79,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     'Submitted RST_STREAM frame for key 1 on stream 1.', 'Send RST_STREAM frame.')
 
-server.Streams.All += Testers.ExcludesExpression('RST_STREAM', 'Server is not affected.')
+server.Streams.All += origin_stream_not_reset()
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression('Received HEADERS frame', 'Received HEADERS frame.')
 
@@ -114,7 +129,7 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     'Submitted RST_STREAM frame for key 1 on stream 1', 'Send RST_STREAM frame.')
 
-server.Streams.All += Testers.ExcludesExpression('RST_STREAM', 'Server is not affected.')
+server.Streams.All += origin_stream_not_reset()
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression('Received HEADERS frame', 'Received HEADERS frame.')
 
