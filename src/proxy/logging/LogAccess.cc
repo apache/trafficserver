@@ -837,17 +837,23 @@ nibble(int nib)
   return nib >= 0xa ? 'a' + (nib - 0xa) : '0' + nib;
 }
 
+// Read `buf_len` source bytes and JSON-escape them into `dest`, writing at most
+// `dest_len` bytes. `buf_len` (how many source bytes to read) and `dest_len`
+// (how much room the destination has) are separate on purpose: the escaped form
+// is up to six times larger than the source, so conflating the two let a caller
+// walk the source pointer past its real length. With dest == nullptr the escaped
+// length is just measured and `dest_len` is ignored.
 int
-escape_json(char *dest, const char *buf, int len)
+escape_json(char *dest, const char *buf, int buf_len, int dest_len)
 {
   int escaped_len = 0;
 
-  for (int i = 0; i < len; i++) {
+  for (int i = 0; i < buf_len; i++) {
     char c  = buf[i];
     char ec = EscLookup::result(c);
     if (__builtin_expect(EscLookup::NO_ESCAPE == ec, 1)) {
       if (dest) {
-        if (escaped_len + 1 > len) {
+        if (escaped_len + 1 > dest_len) {
           break;
         }
         *dest++ = c;
@@ -856,7 +862,7 @@ escape_json(char *dest, const char *buf, int len)
 
     } else if (EscLookup::LONG_ESCAPE == ec) {
       if (dest) {
-        if (escaped_len + 6 > len) {
+        if (escaped_len + 6 > dest_len) {
           break;
         }
         *dest++ = '\\';
@@ -870,7 +876,7 @@ escape_json(char *dest, const char *buf, int len)
 
     } else { // Short escape.
       if (dest) {
-        if (escaped_len + 2 > len) {
+        if (escaped_len + 2 > dest_len) {
           break;
         }
         *dest++ = '\\';
@@ -889,14 +895,17 @@ unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
 
   char *val_buf     = *buf;
   int   val_len     = static_cast<int>(::strlen(val_buf));
-  int   escaped_len = escape_json(nullptr, val_buf, val_len);
+  int   escaped_len = escape_json(nullptr, val_buf, val_len, 0);
 
   *buf += LogAccess::padded_strlen(val_buf); // this is how it was stored
 
   if (slice && slice->m_enable) {
     int offset, n;
 
-    n = slice->toStrOffset(escaped_len, &offset);
+    // Slice against the raw value length, like unmarshal_str does. Using the
+    // escaped length here let the returned offset run up to ~6x val_len, which
+    // then indexed val_buf well past its end.
+    n = slice->toStrOffset(val_len, &offset);
     Dbg(dbg_ctl_log_escape, "unmarshal_str_json start, n=%d, offset=%d", n, offset);
     if (n <= 0) {
       return 0;
@@ -907,11 +916,11 @@ unmarshal_str_json(char **buf, char *dest, int len, LogSlice *slice)
       return -1;
     }
 
-    return escape_json(dest, (val_buf + offset), n);
+    return escape_json(dest, (val_buf + offset), n, len);
   }
 
   if (escaped_len < len) {
-    escape_json(dest, val_buf, escaped_len);
+    escape_json(dest, val_buf, val_len, len);
     return escaped_len;
   }
   DBG_UNMARSHAL_DEST_OVERRUN
