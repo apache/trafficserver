@@ -97,7 +97,7 @@ sessions:
     proxy-request:
       headers:
         fields:
-          - [ @TokenSubject, { value: user1, as: equal } ]
+          - [ TokenSubject, { value: user1, as: equal } ]
 
     server-response:
       status: 200
@@ -121,7 +121,28 @@ sessions:
 
     proxy-response:
       status: 403
+
+  # 5: Out-of-scope request on non-rejecting remap (verifies subject header suppression on proxy-request)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /out-of-scope/resource
       headers:
         fields:
-          - [ @TokenSubject, { as: absent } ]
+          - [ uuid, 5 ]
+          - [ Host, example.com ]
+          - [ Cookie, "TokenCookie=c3ViPXVzZXIxJmV4cD00MDczNTg3MjAwJm5iZj0xNTE0NzY0ODAwJmlhdD0xNTE0MTYwMDAwJnRpZD0xMjM0NTY3ODkwJnNjb3BlPS9zY29wZWQvaW4tc2NvcGUvJmtpZD1rZXkxJnN0PUhNQUMtU0hBLTI1NiZtZD0xOWViZDdkZGVjNzM3N2FjMDNkY2FmYmMwMDRhN2Q0ZDZkZjdjMTEwZDE0ZTQxMWQ5OGNjYWNkZGVlYTAyMjQ3" ]
 
+    proxy-request:
+      headers:
+        fields:
+          - [ TokenSubject, { as: absent } ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Length, 10 ]
+
+    proxy-response:
+      status: 200

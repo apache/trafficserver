@@ -65,8 +65,9 @@ ssl_multicert:
     @pparam=--symmetric-keys-map={Test.RunDirectory}/hmac_keys.txt \
     @pparam=--check-cookie=TokenCookie \
     @pparam=--reject-invalid-token-requests=true \
+    @pparam=--enforce-scope=true \
     @pparam=--invalid-scope-status-code=403 \
-    @pparam=--extract-subject-to-header=@TokenSubject \
+    @pparam=--extract-subject-to-header=TokenSubject \
     @pparam=--extract-tokenid-to-header=@TokenId \
     @pparam=--extract-status-to-header=@TokenStatus \
     @pparam=--token-response-header=TokenRespHdr''',
@@ -74,7 +75,8 @@ ssl_multicert:
     @plugin=access_control.so \
     @pparam=--symmetric-keys-map={Test.RunDirectory}/hmac_keys.txt \
     @pparam=--check-cookie=TokenCookie \
-    @pparam=--extract-subject-to-header=@TokenSubject \
+    @pparam=--enforce-scope=true \
+    @pparam=--extract-subject-to-header=TokenSubject \
     @pparam=--extract-tokenid-to-header=@TokenId \
     @pparam=--extract-status-to-header=@TokenStatus \
     @pparam=--token-response-header=TokenRespHdr''',

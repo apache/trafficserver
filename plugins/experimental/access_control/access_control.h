@@ -127,17 +127,6 @@ const char *accessTokenStatusToString(const AccessTokenStatus &state);
 ScopeValidationResult validateScopeDetailed(StringView requestPath, StringView scope);
 
 /**
- * Validates whether a request path falls within the scope claim of an access token.
- * Matching is performed on normalized path segments. An empty or absent scope is
- * treated as unrestricted (returns @c true).
- *
- * @param[in] requestPath The incoming HTTP request path.
- * @param[in] scope The scope string extracted from the token.
- * @return @c true if the path is permitted by the scope, @c false otherwise.
- */
-bool validateScope(StringView requestPath, StringView scope);
-
-/**
  *  Base Access Token class / interface + some basic implementations.
  */
 class AccessToken

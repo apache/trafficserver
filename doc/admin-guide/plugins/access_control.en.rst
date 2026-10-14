@@ -239,7 +239,7 @@ Query-Param-Style Named Claim format
    * ``ver`` for `version`_, `optional`, defaults to ``ver=1`` if not specified.
    * ``scope`` for `scope`_, `optional`
       * An absent or empty scope is unrestricted.
-      * Otherwise, it is a path-prefix restriction matched against normalized
+      * Otherwise, when ``--enforce-scope`` is enabled, it is a path-prefix restriction matched against normalized
         path segments, including the segment boundary.
       * For example, ``/reports`` matches ``/reports/2026`` but not
         ``/reports2``.
@@ -338,6 +338,7 @@ Plugin configuration
 
 * Behavior modifiers to support various use-cases
    * ``--reject-invalid-token-requests`` (`optional`, default:``false``) - reject invalid token requests instead of forwarding them to origin_.
+   * ``--enforce-scope`` (`optional`, default:``false``) - enforce the access token `scope`_ claim as a path-prefix restriction against the request path. When disabled, the scope claim is ignored for backward compatibility.
    * ``--use-redirects`` (`optional`, default:``false``) - used to configure `use case 2`_, not implemented yet.
 
 

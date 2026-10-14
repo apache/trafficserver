@@ -175,52 +175,58 @@ TEST_CASE("AccessToken: scope validation", "[AccessToken][access_control][scope]
 {
   SECTION("empty scope allows any request path")
   {
-    CHECK(validateScope("/reports/2026/", "") == true);
-    CHECK(validateScope("/any/path/", "") == true);
-    CHECK(validateScope("/", "") == true);
+    CHECK(validateScopeDetailed("/reports/2026/", "") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/any/path/", "") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/", "") == ScopeValidationResult::IN_SCOPE);
   }
 
   SECTION("exact match and trailing slashes")
   {
-    CHECK(validateScope("/reports", "/reports") == true);
-    CHECK(validateScope("/reports/", "/reports") == true);
-    CHECK(validateScope("/reports", "/reports/") == true);
+    CHECK(validateScopeDetailed("/reports", "/reports") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/reports/", "/reports") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/reports", "/reports/") == ScopeValidationResult::IN_SCOPE);
   }
 
   SECTION("valid subpath matching")
   {
-    CHECK(validateScope("/reports/2026/", "/reports/") == true);
-    CHECK(validateScope("/reports/2026/annual.pdf", "/reports") == true);
-    CHECK(validateScope("/api/v1/users/123", "/api/v1/users") == true);
+    CHECK(validateScopeDetailed("/reports/2026/", "/reports/") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/reports/2026/annual.pdf", "/reports") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/api/v1/users/123", "/api/v1/users") == ScopeValidationResult::IN_SCOPE);
   }
 
   SECTION("segment boundary enforcement")
   {
-    CHECK(validateScope("/reports2/", "/reports/") == false);
-    CHECK(validateScope("/api/v1/users_admin", "/api/v1/users") == false);
+    CHECK(validateScopeDetailed("/reports2/", "/reports/") == ScopeValidationResult::OUT_OF_SCOPE);
+    CHECK(validateScopeDetailed("/api/v1/users_admin", "/api/v1/users") == ScopeValidationResult::OUT_OF_SCOPE);
   }
 
   SECTION("mismatched paths")
   {
-    CHECK(validateScope("/other/", "/reports/") == false);
-    CHECK(validateScope("/reports", "/reports/2026") == false);
+    CHECK(validateScopeDetailed("/other/", "/reports/") == ScopeValidationResult::OUT_OF_SCOPE);
+    CHECK(validateScopeDetailed("/reports", "/reports/2026") == ScopeValidationResult::OUT_OF_SCOPE);
   }
 
   SECTION("normalization and edge cases")
   {
-    CHECK(validateScope("/anything", "/") == true);
-    CHECK(validateScope("reports/2026/", "/reports/") == true);
-    CHECK(validateScope("//reports///2026//", "/reports") == true);
+    CHECK(validateScopeDetailed("/anything", "/") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/files/a%2Fb", "/") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("/discount/100%", "/") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("reports/2026/", "/reports/") == ScopeValidationResult::IN_SCOPE);
+    CHECK(validateScopeDetailed("//reports///2026//", "/reports") == ScopeValidationResult::IN_SCOPE);
   }
 
   SECTION("path traversal security")
   {
-    CHECK(validateScope("/reports/../hr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/%2e%2e%2fhr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/..\\hr/payroll", "/reports/") == false);
-    CHECK(validateScope("/hr/payroll", "/reports/..") == false);
-    CHECK(validateScope("/reports/%", "/reports/") == false);
-    CHECK(validateScope("/reports+archive", "/reports+archive") == true);
+    CHECK(validateScopeDetailed("/reports/./2026", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/%2e/2026", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/../hr/payroll", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/../hr", "/hr") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/%2e%2e/hr", "/reports") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/%2e%2e%2fhr/payroll", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/..\\hr/payroll", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/hr/payroll", "/reports/..") == ScopeValidationResult::INVALID_SCOPE);
+    CHECK(validateScopeDetailed("/reports/%", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports+archive", "/reports+archive") == ScopeValidationResult::IN_SCOPE);
   }
 }
 
@@ -242,6 +248,6 @@ TEST_CASE("AccessToken: token scope claim integration", "[AccessToken][access_co
   CHECK(VALID == token.parse(atb.get()));
   CHECK(token.getScope() == "/finance/");
 
-  CHECK(validateScope("/finance/q4_report.pdf", token.getScope()) == true);
-  CHECK(validateScope("/hr/payroll", token.getScope()) == false);
+  CHECK(validateScopeDetailed("/finance/q4_report.pdf", token.getScope()) == ScopeValidationResult::IN_SCOPE);
+  CHECK(validateScopeDetailed("/hr/payroll", token.getScope()) == ScopeValidationResult::OUT_OF_SCOPE);
 }

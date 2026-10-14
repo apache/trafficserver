@@ -24,6 +24,7 @@
 #include <iostream>
 #include <string>
 #include <charconv>
+#include <system_error>
 
 #include "access_control.h"
 
@@ -31,7 +32,7 @@ size_t calcMessageDigest(const StringView hf, const char *secret, const char *me
 const char *getSecretMap(const StringMap &map, const StringView &key, size_t &secretSize);
 
 static bool
-normalizePath(StringView path, String &normalized, bool isScope = false)
+normalizePath(StringView path, String &normalized)
 {
   normalized.clear();
   if (path.empty()) {
@@ -40,8 +41,7 @@ normalizePath(StringView path, String &normalized, bool isScope = false)
   }
 
   normalized.reserve(path.size() + 1);
-  std::vector<size_t> segment_starts;
-  size_t              i = 0;
+  size_t i = 0;
 
   while (i < path.size()) {
     while (i < path.size() && path[i] == '/') {
@@ -81,21 +81,8 @@ normalizePath(StringView path, String &normalized, bool isScope = false)
 
     StringView seg(normalized.data() + seg_start + 1, normalized.size() - seg_start - 1);
 
-    if (seg == ".") {
-      normalized.resize(seg_start);
-    } else if (seg == "..") {
-      if (isScope) {
-        return false;
-      }
-
-      normalized.resize(seg_start);
-
-      if (!segment_starts.empty()) {
-        normalized.resize(segment_starts.back());
-        segment_starts.pop_back();
-      }
-    } else {
-      segment_starts.push_back(seg_start);
+    if (seg == "." || seg == "..") {
+      return false;
     }
   }
   if (normalized.empty()) {
@@ -112,18 +99,19 @@ validateScopeDetailed(StringView requestPath, StringView scope)
   }
 
   String normScope;
-  if (!normalizePath(scope, normScope, /* isScope = */ true)) {
+  if (!normalizePath(scope, normScope)) {
     return ScopeValidationResult::INVALID_SCOPE;
-  }
-
-  String normRequestPath;
-  if (!normalizePath(requestPath, normRequestPath, /* isScope = */ false)) {
-    return ScopeValidationResult::INVALID_REQUEST_PATH;
   }
 
   if (normScope == "/") {
     return ScopeValidationResult::IN_SCOPE;
   }
+
+  String normRequestPath;
+  if (!normalizePath(requestPath, normRequestPath)) {
+    return ScopeValidationResult::INVALID_REQUEST_PATH;
+  }
+
   if (normRequestPath == normScope) {
     return ScopeValidationResult::IN_SCOPE;
   }
@@ -132,12 +120,6 @@ validateScopeDetailed(StringView requestPath, StringView scope)
   }
 
   return ScopeValidationResult::OUT_OF_SCOPE;
-}
-
-bool
-validateScope(StringView requestPath, StringView scope)
-{
-  return validateScopeDetailed(requestPath, scope) == ScopeValidationResult::IN_SCOPE;
 }
 
 /* AccessToken ***************************************************************************************************** */
