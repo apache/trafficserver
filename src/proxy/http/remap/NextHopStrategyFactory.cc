@@ -23,14 +23,59 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <filesystem>
 #include <fstream>
 #include <cstring>
 #include <string_view>
+#include <utility>
 
+#include "records/RecCore.h"
+#include "tscore/Layout.h"
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
 #include "proxy/http/remap/NextHopRoundRobin.h"
 #include <tsutil/YamlCfg.h>
+
+namespace
+{
+std::string
+legacy_config_dir_include_path(std::string_view include_path)
+{
+  std::filesystem::path const target{include_path};
+  if (target.is_absolute()) {
+    return {};
+  }
+
+  std::filesystem::path const config_dir{RecConfigReadConfigDir()};
+  std::filesystem::path const install_prefix{Layout::get()->prefix};
+  std::filesystem::path const config_dir_prefix = config_dir.lexically_relative(install_prefix);
+  if (config_dir_prefix.empty() || config_dir_prefix == "." || config_dir_prefix.is_absolute()) {
+    return {};
+  }
+  for (const auto &part : config_dir_prefix) {
+    if (part == "..") {
+      return {};
+    }
+  }
+
+  auto target_part = target.begin();
+  for (const auto &prefix_part : config_dir_prefix) {
+    if (target_part == target.end() || *target_part != prefix_part) {
+      return {};
+    }
+    ++target_part;
+  }
+  if (target_part == target.end()) {
+    return {};
+  }
+
+  std::filesystem::path stripped_path;
+  for (; target_part != target.end(); ++target_part) {
+    stripped_path /= *target_part;
+  }
+  return RecConfigReadConfigPath(nullptr, stripped_path.string().c_str());
+}
+} // namespace
 
 NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
 {
@@ -191,6 +236,7 @@ NextHopStrategyFactory::strategyInstance(const char *name) const
  * directive, that 'file' is read into the document beginning at the point where the
  * '#include' was found. This allows the 'strategy' and 'hosts' yaml files to be separate.  The
  * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's beginning.
+ * Relative included paths are resolved against the configuration directory.
  */
 void
 NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::stringstream &doc,
@@ -261,7 +307,22 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
             }
             const auto        include_line = line_view.substr(include_start);
             const auto        include_end  = include_line.find_first_of(separators);
-            const std::string f{include_line.substr(0, include_end)};
+            const std::string include_target{include_line.substr(0, include_end)};
+            std::string       f                = RecConfigReadConfigPath(nullptr, include_target.c_str());
+            bool              used_legacy_path = false;
+
+            // Retry a missing include when it starts with the configuration directory's old
+            // install-prefix-relative spelling, e.g. etc/trafficserver/hosts.yaml.
+            struct stat include_stat;
+            if (stat(f.c_str(), &include_stat) == -1 && errno == ENOENT) {
+              std::string legacy_path = legacy_config_dir_include_path(include_target);
+              struct stat legacy_stat;
+              if (!legacy_path.empty() && stat(legacy_path.c_str(), &legacy_stat) == 0) {
+                f                = std::move(legacy_path);
+                used_legacy_path = true;
+              }
+            }
+
             if (include_once.find(f) == include_once.end()) {
               include_once.insert(f);
               // try to load included file.
@@ -270,6 +331,10 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
               } catch (const std::exception &ex) {
                 throw std::invalid_argument("Unable to load included file '" + f + "' from '" + fileName + "': " + ex.what());
               }
+            }
+            if (used_legacy_path) {
+              const auto recommended_include = std::filesystem::path(f).lexically_relative(RecConfigReadConfigDir()).string();
+              NH_Warn("Deprecated '#include %s'; use '#include %s' instead.", include_target.c_str(), recommended_include.c_str());
             }
           }
         } else {
