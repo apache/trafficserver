@@ -255,9 +255,6 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
         if (line_view.starts_with('#')) {
           const auto directive_end = line_view.find_first_of(separators);
           if (line_view.substr(0, directive_end) == "#include") {
-            if (directive_end == std::string_view::npos) {
-              throw std::invalid_argument("'#include' without a file name in '" + fileName + "'");
-            }
             const auto include_start = line_view.find_first_not_of(separators, directive_end);
             if (include_start == std::string_view::npos) {
               throw std::invalid_argument("'#include' without a file name in '" + fileName + "'");
