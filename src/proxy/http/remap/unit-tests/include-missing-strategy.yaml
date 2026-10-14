@@ -27,6 +27,11 @@
 #
 #include
 #
+hosts: &g1
+  - host: 'p1.foo.com'
+    protocol:
+      - scheme: http
+        port: 80
 strategies:
   - strategy: 'strategy-1'
     policy: consistent_hash

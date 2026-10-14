@@ -42,9 +42,10 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 {
   GIVEN("Loading a strategy.yaml with a bare '#include' directive.")
   {
+    REQUIRE_NOTHROW(YAML::LoadFile(TS_SRC_DIR "/include-missing-strategy.yaml"));
     NextHopStrategyFactory nhf(TS_SRC_DIR "/include-missing-strategy.yaml");
 
-    THEN("no strategies are loaded")
+    THEN("the bare directive is rejected and no strategies load")
     {
       REQUIRE(nhf.strategies_loaded == false);
       REQUIRE(nhf.strategyInstance("strategy-1") == nullptr);
