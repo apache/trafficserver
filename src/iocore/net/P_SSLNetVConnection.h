@@ -331,7 +331,12 @@ protected:
   }
   ssl_curve_id     _get_tls_curve() const override;
   std::string_view _get_tls_group() const override;
-  int              _verify_certificate(X509_STORE_CTX *ctx) override;
+  bool
+  _is_tls_handshake_complete() const override
+  {
+    return this->getSSLHandShakeComplete();
+  }
+  int _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSessionResumptionSupport
   const IpEndpoint &
