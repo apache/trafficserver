@@ -267,6 +267,11 @@ TEST_CASE("Printing a server error", "[printer]")
   }
 }
 
+TEST_CASE("Listing the --error-level values", "[error_level]")
+{
+  CHECK(error_level_names() == "diag, debug, status, note, warn (or warning), error, fatal, alert, emergency");
+}
+
 TEST_CASE("Parsing --error-level", "[error_level]")
 {
   CHECK(parse_error_level("diag") == swoc::Errata::severity_type(ERRATA_DIAG));

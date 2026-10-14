@@ -21,14 +21,16 @@ limitations under the License.
 #pragma once
 
 #include <algorithm>
+#include <cctype>
 #include <exception>
 #include <optional>
+#include <string>
 #include <string_view>
 
 #include "mgmt/rpc/jsonrpc/error/RPCError.h"
 #include "shared/rpc/RPCRequests.h"
 #include "shared/rpc/yaml_codecs.h"
-#include "swoc/string_view_util.h"
+#include "tsutil/StringCompare.h"
 #include "tsutil/ts_errata.h"
 
 constexpr int CTRL_EX_OK = 0;
@@ -54,15 +56,35 @@ struct ServerErrorReported : std::exception {
 inline std::optional<swoc::Errata::severity_type>
 parse_error_level(std::string_view name)
 {
-  if (strcasecmp(name, std::string_view{"warning"}) == 0) {
+  if (ts::iequals(name, "warning")) {
     return swoc::Errata::severity_type(ERRATA_WARN);
   }
   for (size_t i = 0; i < Severity_Names.size(); ++i) {
-    if (strcasecmp(name, Severity_Names[i]) == 0) {
+    if (ts::iequals(name, Severity_Names[i])) {
       return swoc::Errata::severity_type(i);
     }
   }
   return std::nullopt;
+}
+
+/// The values @c parse_error_level accepts, for messages: the severity names in lower case, and the "warning" alias.
+inline std::string
+error_level_names()
+{
+  std::string names;
+
+  for (size_t i = 0; i < Severity_Names.size(); ++i) {
+    if (i > 0) {
+      names += ", ";
+    }
+    for (char c : Severity_Names[i]) {
+      names += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+    if (i == swoc::Errata::severity_type(ERRATA_WARN)) {
+      names += " (or warning)";
+    }
+  }
+  return names;
 }
 
 /// Severity an error data entry is graded with. A missing severity counts as an error, which is how the server classifies an
