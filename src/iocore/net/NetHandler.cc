@@ -29,6 +29,7 @@
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
+#include <algorithm>
 #include <atomic>
 #include <optional>
 
@@ -93,6 +94,10 @@ NetHandler::stopIO(NetEvent *ne)
     write_enable_list.remove(ne);
     ne->write.in_enabled_list = 0;
   }
+  if (ne->handoff.load() & NetEvent::HANDOFF_QUEUED) {
+    handoff_list.remove(ne);
+    ne->handoff.store(0);
+  }
 
   ne->nh = nullptr;
 }
@@ -104,7 +109,15 @@ NetHandler::startCop(NetEvent *ne)
   ink_release_assert(ne->nh == this);
   ink_assert(!open_list.in(ne));
 
+  // Apply the global default here, not lazily in the cop: lazy application forced
+  // the cop to visit every open connection regardless of deadlines, and left the
+  // connection with no usable deadline at registration time.
+  if (ne->default_inactivity_timeout_in.load(std::memory_order_relaxed) == -1) {
+    ne->set_default_inactivity_timeout(HRTIME_SECONDS(config.default_inactivity_timeout));
+  }
+
   open_list.enqueue(ne);
+  rearm_timer(ne);
 }
 
 void
@@ -113,9 +126,92 @@ NetHandler::stopCop(NetEvent *ne)
   ink_release_assert(ne->nh == this);
 
   open_list.remove(ne);
-  cop_list.remove(ne);
   remove_from_keep_alive_queue(ne);
   remove_from_active_queue(ne);
+  timer_wheel.cancel(ne);
+}
+
+ink_hrtime
+NetHandler::_earliest_deadline(NetEvent *ne) const
+{
+  ink_hrtime const inactivity = ne->next_inactivity_timeout_at;
+  ink_hrtime const activity   = ne->next_activity_timeout_at;
+
+  if (inactivity == 0) {
+    return activity;
+  }
+  if (activity == 0) {
+    return inactivity;
+  }
+  return std::min(inactivity, activity);
+}
+
+void
+NetHandler::rearm_timer(NetEvent *ne)
+{
+  ink_assert(thread == this_ethread());
+
+  // A closed NetEvent must be reaped on the next tick rather than at its
+  // original deadline, or the fd lingers.
+  ink_hrtime const deadline = ne->closed ? ink_get_hrtime() : _earliest_deadline(ne);
+
+  if (deadline == 0) {
+    timer_wheel.cancel(ne);
+  } else {
+    timer_wheel.schedule(ne, deadline);
+  }
+}
+
+void
+NetHandler::defer_rearm(NetEvent *ne)
+{
+  if (!(ne->handoff.fetch_or(NetEvent::HANDOFF_QUEUED) & NetEvent::HANDOFF_QUEUED)) {
+    handoff_list.push(ne);
+  }
+}
+
+void
+NetHandler::process_handoffs()
+{
+  SList(NetEvent, handoff_link) q(handoff_list.popall());
+
+  while (NetEvent *ne = q.pop()) {
+    uint8_t const state = ne->handoff.exchange(0);
+
+    if (state & NetEvent::HANDOFF_CLOSING) {
+      if (!ne->closed) {
+        // Claimed by a closing thread that has not marked it closed yet. Keep
+        // the claim, so nothing frees it under that thread, and look again on
+        // the next loop.
+        ne->handoff.store(state);
+        handoff_list.push(ne);
+        continue;
+      }
+      free_netevent(ne);
+      continue;
+    }
+    rearm_timer(ne);
+  }
+}
+
+void
+NetHandler::close_from_foreign_thread(NetEvent *ne, int closed_value)
+{
+  // Claim first: once closed is visible the owner may try to free ne, and the
+  // claim makes free_netevent() leave it for process_handoffs(). The claim is
+  // only released after the owner pops ne, which needs the push below, so ne
+  // stays valid until this function is done with it.
+  uint8_t const prev = ne->handoff.fetch_or(NetEvent::HANDOFF_QUEUED | NetEvent::HANDOFF_CLOSING);
+
+  ne->closed = closed_value;
+  if (!(prev & NetEvent::HANDOFF_QUEUED)) {
+    handoff_list.push(ne);
+  }
+  if (likely(thread)) {
+    thread->tail_cb->signalActivity();
+  } else if (trigger_event) {
+    trigger_event->ethread->tail_cb->signalActivity();
+  }
 }
 
 int
@@ -133,6 +229,9 @@ NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, vo
   } else if (name == "proxy.config.net.default_inactivity_timeout"sv) {
     updated_index = Config::Index::DEFAULT_INACTIVITY_TIMEOUT;
     Dbg(dbg_ctl_net_queue, "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.inactivity_cop_budget"sv) {
+    updated_index = Config::Index::INACTIVITY_COP_BUDGET;
+    Dbg(dbg_ctl_net_queue, "proxy.config.net.inactivity_cop_budget updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.additional_accepts"sv) {
     NetHandler::additional_accepts.store(data.rec_int, std::memory_order_relaxed);
     Dbg(dbg_ctl_net_queue, "proxy.config.net.additional_accepts updated to %" PRId64, data.rec_int);
@@ -171,6 +270,7 @@ NetHandler::init_for_process()
   global_config.max_connections_in         = RecGetRecordInt("proxy.config.net.max_connections_in").value_or(0);
   global_config.max_requests_in            = RecGetRecordInt("proxy.config.net.max_requests_in").value_or(0);
   global_config.default_inactivity_timeout = RecGetRecordInt("proxy.config.net.default_inactivity_timeout").value_or(0);
+  global_config.inactivity_cop_budget      = RecGetRecordInt("proxy.config.net.inactivity_cop_budget").value_or(4096);
 
   // Atomic configurations.
   {
@@ -187,6 +287,7 @@ NetHandler::init_for_process()
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.max_requests_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.inactivity_cop_budget", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.additional_accepts", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.per_client.max_connections_in", update_nethandler_config, nullptr);
 
@@ -207,6 +308,11 @@ NetHandler::free_netevent(NetEvent *ne)
   EThread *t = this->thread;
 
   ink_assert(t == this_ethread());
+
+  // A foreign close is still handing ne over; process_handoffs() frees it.
+  if (ne->handoff.load() & NetEvent::HANDOFF_CLOSING) {
+    return;
+  }
   ink_release_assert(ne->get_thread() == t);
   ink_release_assert(ne->nh == this);
 
@@ -226,10 +332,16 @@ NetHandler::process_enabled_list()
 {
   NetEvent *ne = nullptr;
 
+  process_handoffs();
+
   SListM(NetEvent, NetState, read, enable_link) rq(read_enable_list.popall());
   while ((ne = rq.pop())) {
-    ne->ep.modify(EVENTIO_READ);
-    ne->ep.refresh(EVENTIO_READ);
+    // A closed NetEvent is only passing through to be freed, and a migrated one
+    // has already had ep.stop() clear its event loop.
+    if (!ne->closed) {
+      ne->ep.modify(EVENTIO_READ);
+      ne->ep.refresh(EVENTIO_READ);
+    }
     ne->read.in_enabled_list = 0;
     if ((ne->read.enabled && ne->read.triggered) || ne->closed) {
       read_ready_list.in_or_enqueue(ne);
@@ -238,8 +350,10 @@ NetHandler::process_enabled_list()
 
   SListM(NetEvent, NetState, write, enable_link) wq(write_enable_list.popall());
   while ((ne = wq.pop())) {
-    ne->ep.modify(EVENTIO_WRITE);
-    ne->ep.refresh(EVENTIO_WRITE);
+    if (!ne->closed) {
+      ne->ep.modify(EVENTIO_WRITE);
+      ne->ep.refresh(EVENTIO_WRITE);
+    }
     ne->write.in_enabled_list = 0;
     if ((ne->write.enabled && ne->write.triggered) || ne->closed) {
       write_ready_list.in_or_enqueue(ne);
@@ -504,15 +618,20 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
     free_netevent(ne);
     ++closed;
   } else {
+    // Decide which timeout to report before clobbering the deadline below,
+    // since that assignment destroys the evidence. Inactivity wins when both
+    // have expired, matching InactivityCop's precedence. Neither expired means
+    // this is a capacity eviction rather than a timeout, and inactivity is the
+    // honest label for reclaiming an idle connection - reporting nothing at all
+    // left the caller's queue over capacity with nothing closed.
+    bool const inactivity_expired = ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at <= now;
+    bool const active_expired     = ne->next_activity_timeout_at && ne->next_activity_timeout_at <= now;
+    int const  timeout_event      = (active_expired && !inactivity_expired) ? VC_EVENT_ACTIVE_TIMEOUT : VC_EVENT_INACTIVITY_TIMEOUT;
+
     ne->next_inactivity_timeout_at = now;
-    if (ne->inactivity_timeout_in && ne->next_inactivity_timeout_at <= now) {
-      if (ne->callback(VC_EVENT_INACTIVITY_TIMEOUT) == EVENT_DONE) {
-        ++handle_event;
-      }
-    } else if (ne->active_timeout_in && ne->next_activity_timeout_at <= now) {
-      if (ne->callback(VC_EVENT_ACTIVE_TIMEOUT) == EVENT_DONE) {
-        ++handle_event;
-      }
+    ne->rearm_timer();
+    if (ne->callback(timeout_event) == EVENT_DONE) {
+      ++handle_event;
     }
   }
 }

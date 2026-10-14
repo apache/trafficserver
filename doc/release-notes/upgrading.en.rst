@@ -49,6 +49,25 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+Configuration Changes
+---------------------
+
+:ts:cv:`proxy.config.net.inactivity_check_frequency` no longer trades load for
+timeout accuracy, and if you raised it you are now paying the accuracy for
+nothing.
+
+Connection timeouts used to be found by walking every open connection on a
+thread once per check, so the cost of a check grew with the number of
+connections open and checking less often genuinely reduced it — which is what
+the documentation for this setting previously advised. Timeouts are now held in
+a per-thread timer wheel, so a check costs what the deadlines that have come
+due cost, independent of how many connections are open.
+
+The setting still controls timeout resolution: a timeout fires on the first
+check at or after its deadline. So a value raised to relieve load now only
+delays timeouts by up to that interval. If you tuned it for that reason,
+returning it to the default of 1 costs nothing and restores accuracy.
+
 Upgrading to ATS v10.x
 ======================
 

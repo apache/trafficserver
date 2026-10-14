@@ -322,14 +322,27 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
   Dbg(_dbg_ctl_socket, "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
   active_timeout_in        = timeout_in;
   next_activity_timeout_at = (active_timeout_in > 0) ? ink_get_hrtime() + timeout_in : 0;
+  rearm_timer();
 }
 
 inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   Dbg(_dbg_ctl_socket, "Cancel inactive timeout for NetVC=%p", this);
-  inactivity_timeout_in      = 0;
-  next_inactivity_timeout_at = 0;
+  inactivity_timeout_in = 0;
+
+  // Documented contract: the default inactivity timeout, if any, still
+  // applies after cancel. The wheel only revisits scheduled elements, so
+  // arm it here rather than relying on the cop's sweep to notice.
+  ink_hrtime const default_timeout_in = default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
+  if (default_timeout_in > 0) {
+    use_default_inactivity_timeout = true;
+    next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
+  } else {
+    next_inactivity_timeout_at = 0;
+  }
+  rearm_timer();
 }
 
 inline void
@@ -338,6 +351,7 @@ UnixNetVConnection::cancel_active_timeout()
   Dbg(_dbg_ctl_socket, "Cancel active timeout for NetVC=%p", this);
   active_timeout_in        = 0;
   next_activity_timeout_at = 0;
+  rearm_timer();
 }
 
 inline UnixNetVConnection::~UnixNetVConnection()

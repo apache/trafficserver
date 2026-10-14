@@ -26,6 +26,7 @@
 #include <atomic>
 
 #include "tscore/List.h"
+#include "tscore/TimerWheel.h"
 #include "iocore/eventsystem/VIO.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/EventIO.h"
@@ -121,13 +122,41 @@ public:
   bool use_default_inactivity_timeout = false;
 
   LINK(NetEvent, open_link);
-  LINK(NetEvent, cop_link);
   LINKM(NetEvent, read, ready_link)
   SLINKM(NetEvent, read, enable_link)
   LINKM(NetEvent, write, ready_link)
   SLINKM(NetEvent, write, enable_link)
   LINK(NetEvent, keep_alive_queue_link);
   LINK(NetEvent, active_queue_link);
+  LINK(NetEvent, timer_link);
+  TimerWheelHook timer_hook;
+
+  /// Bits of @a handoff. Only the owning thread may touch its timer wheel, so
+  /// other threads queue the NetEvent on NetHandler::handoff_list instead;
+  /// NetHandler::process_handoffs() consumes it there.
+  static constexpr uint8_t HANDOFF_QUEUED  = 1; ///< On handoff_list.
+  static constexpr uint8_t HANDOFF_CLOSING = 2; ///< Closed by another thread; the owner must not free it yet.
+  std::atomic<uint8_t>     handoff{0};
+  SLINK(NetEvent, handoff_link);
+
+  /** Re-arm this NetEvent's slot in its NetHandler's timer wheel.
+   *
+   * Required after any change that makes a deadline earlier - setting a
+   * timeout, shortening one, or closing. Extending needs no call: the wheel
+   * re-reads the real deadline when the bucket comes due. Safe from any thread:
+   * off the owning thread it is handed to the owner and applied on its next
+   * loop.
+   */
+  void rearm_timer();
+
+  /** Follow a change to default_inactivity_timeout_in, which was @a previous_in.
+   *
+   * A deadline the default produced must move with it. Otherwise a shorter
+   * override, such as a per-remap default installed after the global one armed
+   * the connection, would be ignored until the old deadline: netActivity() only
+   * extends deadlines and never re-arms. Keeps the idle time already accrued.
+   */
+  void rebase_default_inactivity_deadline(ink_hrtime previous_in);
 
   /// Values for @a f.shutdown
   static constexpr unsigned SHUTDOWN_READ  = 1;
