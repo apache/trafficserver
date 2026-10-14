@@ -117,7 +117,7 @@ done:
   if (!error_loading) {
     NH_Note("%s finished loading", basename);
   } else {
-    Error("%s failed to load", basename);
+    NH_Error("%s failed to load", basename);
   }
 }
 
@@ -254,14 +254,18 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
         if (line[0] == '#') {
           tok = strtok_r(const_cast<char *>(line.c_str()), sep, &last);
           if (tok != nullptr && strcmp(tok, "#include") == 0) {
-            std::string f = strtok_r(nullptr, sep, &last);
+            const char *include = strtok_r(nullptr, sep, &last);
+            if (include == nullptr) {
+              throw std::invalid_argument("'#include' without a file name in '" + fileName + "'");
+            }
+            std::string f = include;
             if (include_once.find(f) == include_once.end()) {
               include_once.insert(f);
               // try to load included file.
               try {
                 loadConfigFile(f, doc, include_once);
               } catch (std::exception &ex) {
-                throw std::invalid_argument("Unable to open included file '" + f + "' from '" + fileName + "'");
+                throw std::invalid_argument("Unable to load included file '" + f + "' from '" + fileName + "': " + ex.what());
               }
             }
           }

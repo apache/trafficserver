@@ -40,6 +40,17 @@
 
 SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 {
+  GIVEN("Loading a strategy.yaml with a bare '#include' directive.")
+  {
+    NextHopStrategyFactory nhf(TS_SRC_DIR "/include-missing-strategy.yaml");
+
+    THEN("no strategies are loaded")
+    {
+      REQUIRE(nhf.strategies_loaded == false);
+      REQUIRE(nhf.strategyInstance("strategy-1") == nullptr);
+    }
+  }
+
   GIVEN("Loading the strategy.yaml with included 'hosts.yaml'.")
   {
 #ifdef TS_SRC_DIR
