@@ -311,10 +311,80 @@ handle_read_request_hdr(void *edata, PluginConfig &config)
 }
 
 int
+handle_ssn_start(void *edata, PluginConfig &config)
+{
+  TSHttpSsn ssnp = static_cast<TSHttpSsn>(edata);
+
+  if (TSVConn vconn = TSHttpSsnClientVConnGet(ssnp); vconn != nullptr) {
+    if (JAxContext *ctx = get_user_arg(vconn, config); ctx != nullptr) {
+      copy_to_session_user_arg(ssnp, config, *ctx);
+    }
+  }
+
+  TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
+  return TS_SUCCESS;
+}
+
+int
+handle_ssn_close(void *edata, PluginConfig &config)
+{
+  TSHttpSsn ssnp = static_cast<TSHttpSsn>(edata);
+
+  cleanup_session_user_arg(ssnp, config);
+
+  TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
+  return TS_SUCCESS;
+}
+
+/** Find the context whose fingerprint the --log-field callback logs for a transaction.
+ *
+ * @param[in] txnp The transaction being logged.
+ * @param[in] config The plugin configuration.
+ * @return The context, or nullptr if no fingerprint was generated for the transaction.
+ */
+JAxContext *
+get_log_context(TSHttpTxn txnp, PluginConfig &config)
+{
+  TSHttpSsn ssnp = TSHttpTxnSsnGet(txnp);
+
+  if (config.method.type != Method::Type::CONNECTION_BASED) {
+    if (JAxContext *ctx = get_user_arg(txnp, config); ctx != nullptr) {
+      return ctx;
+    }
+    if (ssnp == nullptr) {
+      return nullptr;
+    }
+    // A later transaction on the session may have replaced the copy made at TXN_CLOSE.
+    JAxContext *ctx = get_session_user_arg(ssnp, config);
+    return ctx != nullptr && ctx->get_txn_id() == TSHttpTxnIdGet(txnp) ? ctx : nullptr;
+  }
+
+  if (ssnp == nullptr) {
+    return nullptr;
+  }
+  // The client vconn is gone if ATS closed the client connection before logging the transaction, as it does
+  // for Connection: close requests and client timeouts.
+  if (TSVConn vconn = TSHttpSsnClientVConnGet(ssnp); vconn != nullptr) {
+    if (JAxContext *ctx = get_user_arg(vconn, config); ctx != nullptr) {
+      return ctx;
+    }
+  }
+  return get_session_user_arg(ssnp, config);
+}
+
+int
 handle_http_txn_close(void *edata, PluginConfig &config)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
+  // ATS logs the transaction after its TXN_CLOSE hooks, so keep a copy for the --log-field callback.
+  if (config.session_user_arg_index != -1) {
+    JAxContext *ctx  = get_user_arg(txnp, config);
+    TSHttpSsn   ssnp = TSHttpTxnSsnGet(txnp);
+    if (ctx != nullptr && ssnp != nullptr) {
+      copy_to_session_user_arg(ssnp, config, *ctx, TSHttpTxnIdGet(txnp));
+    }
+  }
   cleanup_user_arg(txnp, config);
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -342,6 +412,8 @@ main_handler(TSCont cont, TSEvent event, void *edata)
     // Null config means this continuation is no longer needed.
     if (event == TS_EVENT_SSL_CLIENT_HELLO || event == TS_EVENT_VCONN_CLOSE) {
       TSVConnReenable(static_cast<TSVConn>(edata));
+    } else if (event == TS_EVENT_HTTP_SSN_START || event == TS_EVENT_HTTP_SSN_CLOSE) {
+      TSHttpSsnReenable(static_cast<TSHttpSsn>(edata), TS_EVENT_HTTP_CONTINUE);
     } else {
       TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
     }
@@ -355,6 +427,12 @@ main_handler(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
     ret = handle_read_request_hdr(edata, *config);
     TSHttpTxnReenable(static_cast<TSHttpTxn>(edata), TS_EVENT_HTTP_CONTINUE);
+    break;
+  case TS_EVENT_HTTP_SSN_START:
+    ret = handle_ssn_start(edata, *config);
+    break;
+  case TS_EVENT_HTTP_SSN_CLOSE:
+    ret = handle_ssn_close(edata, *config);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
     ret = handle_http_txn_close(edata, *config);
@@ -408,6 +486,11 @@ TSPluginInit(int argc, char const **argv)
     return;
   }
 
+  if (!owned_config->log_symbol.empty() && reserve_session_user_arg(*owned_config) == TS_ERROR) {
+    TSError("[%s] Failed to reserve session user arg index.", PLUGIN_NAME);
+    return;
+  }
+
   // A global plugin's configuration lives for the life of the process: the log field callback and the
   // continuation below both keep a reference to it, so release it from the unique_ptr here.
   PluginConfig *config = owned_config.release();
@@ -418,20 +501,13 @@ TSPluginInit(int argc, char const **argv)
     TSLogFieldRegister(
       name.c_str(), config->log_symbol, TS_LOG_TYPE_STRING,
       [config](TSHttpTxn txnp, char *buf) -> int {
-        void *container;
-        if (config->method.type == Method::Type::CONNECTION_BASED) {
-          container = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp));
-        } else {
-          container = txnp;
-        }
-        JAxContext *ctx = get_user_arg(container, *config);
-        if (ctx) {
+        if (JAxContext const *ctx = get_log_context(txnp, *config); ctx != nullptr) {
           return TSLogStringMarshal(buf, ctx->get_fingerprint());
         } else {
           return TSLogStringMarshal(buf, "-");
         }
       },
-      TSLogIntUnmarshal);
+      TSLogStringUnmarshal);
   }
 
   TSCont cont = TSContCreate(main_handler, nullptr);
@@ -446,6 +522,12 @@ TSPluginInit(int argc, char const **argv)
     TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, cont);
   } else {
     TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
+  }
+  if (config->session_user_arg_index != -1) {
+    if (config->method.type == Method::Type::CONNECTION_BASED) {
+      TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, cont);
+    }
+    TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, cont);
   }
 }
 
