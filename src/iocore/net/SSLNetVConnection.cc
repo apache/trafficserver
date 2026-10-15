@@ -2016,6 +2016,11 @@ SSLNetVConnection::_isTryingRenegotiation() const
 shared_SSL_CTX
 SSLNetVConnection::_lookupContextByName(const std::string &servername, SSLCertContextType ctxType)
 {
+  // Return null if this vc is already configured as a tunnel
+  if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL) {
+    return nullptr;
+  }
+
   shared_SSL_CTX                      ctx = nullptr;
   SSLCertificateConfig::scoped_config lookup;
   SSLCertContext                     *cc = lookup->find(servername, ctxType);
