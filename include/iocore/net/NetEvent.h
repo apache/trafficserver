@@ -87,9 +87,15 @@ public:
   NetState         read{};
   NetState         write{};
 
-  int         closed = 0;
-  int         error  = 0;
-  NetHandler *nh     = nullptr;
+  /** Set when the connection is closed and the owning thread should free this object.
+
+      The owning thread reads this without a lock in NetHandler::process_ready_list, and a
+      migration sets it from another thread after moving the socket out, so stores release and
+      loads acquire to order the move before the reclamation.
+   */
+  std::atomic<int> closed{0};
+  int              error = 0;
+  NetHandler      *nh    = nullptr;
 
   /** The explicitly set inactivity timeout duration in seconds.
    *

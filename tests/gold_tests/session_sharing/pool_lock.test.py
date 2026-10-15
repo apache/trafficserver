@@ -21,3 +21,4 @@ Test.Summary = __doc__
 
 Test.ATSReplayTest(replay_file='pool_lock_global.replay.yaml')
 Test.ATSReplayTest(replay_file='pool_lock_hybrid.replay.yaml')
+Test.ATSReplayTest(replay_file='pool_lock_single_thread.replay.yaml')

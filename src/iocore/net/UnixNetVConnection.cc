@@ -1324,8 +1324,7 @@ UnixNetVConnection::detachForMigration(MigrationState &ms)
   // this VC as open and enabled in NetHandler::process_ready_list, in which case it goes on to
   // net_read_io, fails the try lock on the VIO mutex held by the caller, and reschedules the VC.
   // The reschedule calls ep.refresh on the EventIO stopped here, so EventIO::modify and
-  // EventIO::refresh do nothing on a stopped EventIO. A delay before the try lock in net_read_io
-  // makes the original thread hit this reliably.
+  // EventIO::refresh do nothing on a stopped EventIO.
   //
   // Unlike an ordinary close, migration keeps the fd open, so kqueue registrations must
   // also be removed here before the old VC can be freed.
@@ -1346,7 +1345,9 @@ UnixNetVConnection::detachForMigration(MigrationState &ms)
 
   // Do_io_close will signal the VC to be freed on the original thread
   // Since we moved the con context, the fd will not be closed
-  // Do not mark this closed until the end so it does not get freed by the other thread too soon
+  // Do not mark this closed until the end so it does not get freed by the other thread too soon.
+  // The original thread reads closed without the VIO mutex before it frees the VC, so the atomic
+  // store of closed is what orders the moves and copies above before that free.
   this->do_io_close();
   return true;
 }

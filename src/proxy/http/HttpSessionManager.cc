@@ -397,7 +397,7 @@ ServerSessionPool::eventHandler(int event, void *data)
       ats_ip_nptop(unix_net_vc->get_remote_addr(), peer_ip, sizeof(peer_ip));
 
       Warning("Connection leak from http keep-alive system fd=%d closed=%d peer_ip_port=%s", unix_net_vc->get_fd(),
-              unix_net_vc->closed, peer_ip);
+              unix_net_vc->closed.load(), peer_ip);
     }
     ink_assert(0);
   }
@@ -442,7 +442,8 @@ HttpSessionManager::init()
 // A session is closed by the thread that owns its connection, so this asks every thread to close
 // its own. That keeps the closes out of the pool lock and away from other threads' connections.
 // This thread's sessions are closed right away so that a retry of the request that hit the
-// connection limit can find room without waiting on an event.
+// connection limit can find room without waiting on an event. If another thread holds the pool
+// lock this thread is asked to purge from an event like the others.
 void
 HttpSessionManager::purge_keepalives()
 {

@@ -205,10 +205,7 @@ EventIO::stop()
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    // A level triggered build removes the fd from the set once no events are enabled.
-    if (epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev) < 0 && errno != ENOENT) {
-      retval = -1;
-    }
+    retval    = epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
 #else
     (void)loop;
 #endif

@@ -152,8 +152,8 @@ public:
   HSMresult_t release_session(PoolableSession *to_release);
   /** Close the keep-alive sessions in the shared pool.
 
-      Each thread closes its own sessions. The current thread's are closed before this returns, the
-      others when their thread next runs.
+      Each thread closes its own sessions. The current thread's are closed before this returns if
+      the shared pool lock is free, the others when their thread next runs.
    */
   void purge_keepalives();
   /** Close the shared pool sessions whose connections belong to the current thread.
