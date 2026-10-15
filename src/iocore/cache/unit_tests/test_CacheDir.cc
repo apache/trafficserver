@@ -389,6 +389,53 @@ public:
     }
     stripe->clear_dir();
 
+    Dbg(dbg_ctl_cache_dir_test, "stale and live entries sharing an offset test");
+    {
+      rand_CacheKey(&key);
+      s1 = key.slice32(0) % stripe->directory.segments;
+      b1 = key.slice32(1) % stripe->directory.buckets;
+
+      Dir stale;
+      dir_clear(&stale);
+      dir_set_offset(&stale, 1);
+      dir_set_phase(&stale, !stripe->directory.header->phase);
+
+      Dir live;
+      dir_clear(&live);
+      dir_set_offset(&live, 1);
+      dir_set_phase(&live, stripe->directory.header->phase);
+
+      auto insert_stale_then_live = [&]() {
+        stripe->clear_dir();
+        stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+        REQUIRE(!stripe->dir_valid(&stale));
+        REQUIRE(stripe->dir_valid(&live));
+        REQUIRE(stripe->directory.insert(&key, stripe, &stale));
+        REQUIRE(stripe->directory.insert(&key, stripe, &live));
+      };
+
+      Dir  probed;
+      Dir *collision = nullptr;
+
+      insert_stale_then_live();
+      CHECK(stripe->directory.remove(&key, stripe, &live) == 1);
+      Dir *bucket = dir_bucket(b1, stripe->directory.get_segment(s1));
+      CHECK(dir_phase(bucket) == dir_phase(&stale));
+      CHECK(stripe->directory.probe(&key, stripe, &probed, &collision) == 0);
+
+      insert_stale_then_live();
+      Dir moved = live;
+      dir_set_offset(&moved, 2);
+      CHECK(stripe->directory.overwrite(&key, stripe, &moved, &live, true) == 1);
+      bucket = dir_bucket(b1, stripe->directory.get_segment(s1));
+      CHECK(dir_phase(bucket) == dir_phase(&stale));
+      CHECK(dir_offset(bucket) == 1);
+      collision = nullptr;
+      CHECK(stripe->directory.probe(&key, stripe, &probed, &collision) == 1);
+      CHECK(dir_offset(&probed) == 2);
+    }
+    stripe->clear_dir();
+
     // Teardown
     test_done();
     delete this;

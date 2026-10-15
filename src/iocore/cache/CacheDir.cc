@@ -624,7 +624,8 @@ Lagain:
         }
         goto Lagain;
       }
-      if (dir_tag(e) == t && dir_offset(e) == dir_offset(overwrite)) {
+      // The phase tells a live entry from a stale one left at the same offset by the previous cycle.
+      if (dir_tag(e) == t && dir_offset(e) == dir_offset(overwrite) && dir_phase(e) == dir_phase(overwrite)) {
         goto Lfill;
       }
       e = next_dir(e, seg);
@@ -700,7 +701,8 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
         return 0;
       }
       int64_t offset = dir_offset(e);
-      if (dir_compare_tag(e, key) && offset == dir_offset(del)) {
+      // The phase tells a live entry from a stale one left at the same offset by the previous cycle.
+      if (dir_compare_tag(e, key) && offset == dir_offset(del) && dir_phase(e) == dir_phase(del)) {
         ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
         ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
         ATS_PROBE7(cache_dir_remove, stripe->fd, s, dir_to_offset(e, seg), offset, dir_approx_size(e), key->slice64(0),
