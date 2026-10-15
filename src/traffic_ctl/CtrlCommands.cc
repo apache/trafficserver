@@ -102,6 +102,21 @@ mark_not_done()
   }
 }
 
+/// Grade a reload into the exit status and return the grade, see appExitCodeFromReload(). A failure overrides an earlier status,
+/// and a reload that never finished only replaces a success, the same as the grade of any other response.
+int
+grade_reload(ConfigReloadResponse::ReloadInfo const &task)
+{
+  auto const code = appExitCodeFromReload(task);
+
+  if (code == CTRL_EX_ERROR) {
+    App_Exit_Status_Code = CTRL_EX_ERROR;
+  } else if (code == CTRL_EX_TEMPFAIL && App_Exit_Status_Code == CTRL_EX_OK) {
+    App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
+  }
+  return code;
+}
+
 /// Parse a single --directive (-D) argument "config_key.directive_key=value"
 /// and inject into configs[config_key]["_reload"][directive_key].
 /// Returns true on success, sets error_out on parse failure.
@@ -351,6 +366,8 @@ ConfigCommand::config_status()
     for (const auto &task : resp.tasks) {
       _printer->as<ConfigReloadPrinter>()->print_reload_report(task, true);
     }
+    // The server lists the newest reload last. Older ones shown with --count are history and are not graded.
+    grade_reload(resp.tasks.back());
   }
 }
 
@@ -384,7 +401,7 @@ ConfigCommand::fetch_config_reload(std::string const &token, std::string const &
   return response.result.as<ConfigReloadResponse>();
 }
 
-void
+ConfigCommand::ReloadOutcome
 ConfigCommand::track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval,
                                             std::chrono::milliseconds timeout, std::string const &timeout_str)
 {
@@ -402,7 +419,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
 
   if (resp.is_error()) {
     stop_on_error(resp);
-    return;
+    return ReloadOutcome::UNKNOWN;
   }
 
   auto start_time = std::chrono::steady_clock::now();
@@ -414,7 +431,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     if (decoded_response.tasks.empty()) {
       _printer->write_output(resp);
       App_Exit_Status_Code = CTRL_EX_ERROR;
-      return;
+      return ReloadOutcome::UNKNOWN;
     }
 
     ConfigReloadResponse::ReloadInfo current_task = decoded_response.tasks[0];
@@ -423,12 +440,11 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     // Check if reload has reached a terminal state
     if (current_task.status == "success" || current_task.status == "fail" || current_task.status == "timeout") {
       std::cout << "\n";
-      if (current_task.status != "success") {
-        App_Exit_Status_Code = CTRL_EX_ERROR;
+      if (grade_reload(current_task) != CTRL_EX_OK || current_task.status != "success") {
         std::string hint;
         _printer->write_output(swoc::bwprint(hint, "\n  Details : traffic_ctl config status -t {}", current_task.config_token));
       }
-      return;
+      return current_task.status == "success" ? ReloadOutcome::SUCCESS : ReloadOutcome::FAILED;
     }
 
     // Check timeout (0 means no timeout)
@@ -440,7 +456,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
         _printer->write_output(swoc::bwprint(text, "Monitor timed out after {} waiting for reload completion.", timeout_str));
         _printer->write_output(swoc::bwprint(text, "  Details : traffic_ctl config status -t {}", token));
         App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
-        return;
+        return ReloadOutcome::UNFINISHED;
       }
     }
 
@@ -452,7 +468,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     resp = invoke_rpc(request);
     if (resp.is_error()) {
       stop_on_error(resp);
-      return;
+      return ReloadOutcome::UNKNOWN;
     }
   }
 
@@ -460,6 +476,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
   if (Signal_Flagged.load()) {
     App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
   }
+  return ReloadOutcome::UNFINISHED;
 }
 
 std::string
@@ -671,9 +688,10 @@ ConfigCommand::config_reload()
     return false;
   };
 
-  std::string text;
-  bool        token_exist{false};
-  bool        in_progress{false};
+  std::string   text;
+  bool          token_exist{false};
+  bool          in_progress{false};
+  ReloadOutcome monitored{ReloadOutcome::UNKNOWN};
 
   if (show_details) {
     bool include_logs = get_parsed_arguments()->get("include-logs") ? true : false;
@@ -764,11 +782,12 @@ ConfigCommand::config_reload()
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000))); // wait before first poll
     } // else no need to wait, we can start fetching right away.
 
-    track_config_reload_progress(resp.config_token, std::chrono::milliseconds(static_cast<int>(refresh_secs * 1000)), timeout_ms,
-                                 timeout_str);
+    monitored = track_config_reload_progress(resp.config_token, std::chrono::milliseconds(static_cast<int>(refresh_secs * 1000)),
+                                             timeout_ms, timeout_str);
   } else {
     ConfigReloadResponse resp = config_reload(token, force, configs);
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
+      in_progress          = true;
       App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       if (!resp.tasks.empty()) {
         std::string tk = resp.tasks[0].config_token;
@@ -798,8 +817,13 @@ ConfigCommand::config_reload()
     }
   }
 
-  // Show warning for inline config (not persisted to disk)
-  if (configs.size() > 0 && App_Exit_Status_Code != CTRL_EX_ERROR) {
+  // Show warning for inline config (not persisted to disk), when the reload that carries it may have applied it. A monitored reload
+  // is judged by how it ended, not by its grade. A reload already in progress refused the request, so it carries none of it.
+  bool applied = App_Exit_Status_Code != CTRL_EX_ERROR;
+  if (monitor && monitored != ReloadOutcome::UNKNOWN) {
+    applied = monitored != ReloadOutcome::FAILED;
+  }
+  if (configs.size() > 0 && !in_progress && applied) {
     _printer->write_output("");
     _printer->write_output("Note: Inline configuration is NOT persisted to disk.");
     _printer->write_output("      Server restart will revert to file-based configuration.");

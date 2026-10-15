@@ -68,9 +68,10 @@ Spans handed out unnamed slots that only ``rename()`` could name, and
 traffic_ctl Changes
 -------------------
 
-:program:`traffic_ctl` grades a server error by the severity of its annotations, see
-:option:`traffic_ctl --error-level`. An annotation without a severity counts as an error, so with
-the default level, ``error``, the exit status only changes in these cases:
+:program:`traffic_ctl` grades a server error by the severity of its annotations, and the outcome of
+a configuration reload by its state and log entries, see :option:`traffic_ctl --error-level`. An
+annotation without a severity counts as an error, and so does a reload that ended ``fail`` or
+``timeout``, so with the default level, ``error``, the exit status only changes in these cases:
 
 * ``traffic_ctl server drain`` on a server that is already draining, and ``traffic_ctl server drain
   --undo`` on one that is not, report a warning and exit ``0``. They used to exit ``2``. Pass
@@ -80,6 +81,10 @@ the default level, ``error``, the exit status only changes in these cases:
 * ``traffic_ctl server debug enable --append`` sets nothing when the request that reads the current
   tags fails, and exits ``2``, or ``75`` when the error is below the level. It used to set the new
   tags on their own, replacing the current ones.
+* ``traffic_ctl config status`` exits ``2`` when the newest reload it shows ended ``fail`` or
+  ``timeout``. It used to exit ``0`` for every reload it showed. It and ``traffic_ctl config reload
+  --monitor`` also exit ``2`` for a reload that reports ``success`` while one of its sub-tasks
+  ended ``fail`` or ``timeout``, which |TS| itself does not report.
 
 Annotations that carry a severity are printed with it, for example ``- [3000] Warn: Server already
 draining.``, and a JSONRPC error ``data`` entry carries a ``severity`` field when its handler sets

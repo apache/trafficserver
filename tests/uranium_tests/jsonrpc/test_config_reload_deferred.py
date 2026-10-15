@@ -96,6 +96,7 @@ def test_config_reload_deferred(ats_factory: ATSFactory) -> None:
         "deferred fail after heavy work",
         "heavy work failed",
         "ip_allow",
+        return_code=2,
     )
     diagnostics = wait_for_file_lines(_ats.diags_log, r"Config reload \[full-deferred-fail\]", 1)
     assert "Config reload [full-deferred-ok] completed" in diagnostics

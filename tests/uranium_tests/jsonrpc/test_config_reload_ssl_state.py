@@ -97,11 +97,13 @@ def test_config_reload_ssl_state(ats_factory: ATSFactory) -> None:
         "[Err]",
         "SSLConfig reloaded",
         "sni.yaml failed to load",
+        return_code=2,
     )
     require_command(
         _ats.traffic_ctl("config", "status", "-t", "ssl-sni-fail", "--min-level", "warning"),
         "[Err]",
         excludes=("[Note]",),
+        return_code=2,
     )
 
     valid_sni = 'sni:\n- fqdn: "*.example.com"\n  verify_client: NONE\n'
