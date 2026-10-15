@@ -273,6 +273,16 @@ def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: Service
     wait_for_file_lines(ats.diags_log, r'Rule "conn_rate_flood" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
+    output = harness.helper(
+        "blocked-client", "tls_client_hello.py", "--host", "127.0.0.1", "--port", str(ats.https_port), "--expect", "reject")
+    assert "ATS rejected the ClientHello" in output
+    harness.metric(ats, "proxy.process.net.connections_currently_open", r"connections_currently_open\s+0\b")
+    ats.stop()
+    diagnostics = ats.diags_log.read_text(errors="replace")
+    # The log action deliberately emits an ERROR for this rule match.
+    assert not re.search(
+        r'ERROR:(?! \[abuse_shield\] Rule "conn_rate_flood" matched for IP=127\.0\.0\.1 actions=\[log,block\] )'
+        r"|FATAL:|Unrecognized configuration value", diagnostics), diagnostics
 
 
 def test_abuse_shield_rate_limited_ips(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:

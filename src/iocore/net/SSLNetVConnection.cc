@@ -516,6 +516,18 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
     Dbg(dbg_ctl_ssl, "client renegotiation setting read signal error");
     return;
   }
+  // A plugin rejected an inbound connection by reenabling a TLS hook with
+  // TS_EVENT_ERROR. getSSLHandShakeComplete() is true in this state, so without
+  // this check a rejection before or between SSL_accept calls would skip the
+  // handshake and leave the connection open with nothing left to close it.
+  // Outbound connections are excluded: a TS_SSL_VERIFY_SERVER_HOOK error under
+  // a PERMISSIVE policy must let the origin handshake continue.
+  if (get_context() == NET_VCONNECTION_IN && getSSLHandShakeRejected()) {
+    this->read.triggered = 0;
+    this->_readSignalError(nh, -ENET_SSL_FAILED);
+    Dbg(dbg_ctl_ssl, "plugin rejected the TLS handshake, setting read signal error");
+    return;
+  }
 
   // If it is not enabled, lower its priority.  This allows
   // a fast connection to speed match a slower connection by
