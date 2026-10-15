@@ -25,6 +25,7 @@
 
 #include "P_SSLConfig.h"
 
+#include <mutex>
 #include <utility>
 #include <openssl/evp.h>
 
@@ -33,6 +34,12 @@ namespace
 
 DbgCtl dbg_ctl_ssl_secret{"ssl_secret"};
 DbgCtl dbg_ctl_ssl_secret_err{"ssl_secret_err"};
+
+// Parallel ssl_multicert loading reaches loadSecret() from several std::threads
+// at once. Those are not EThreads, so a hook continuation's mutex does not
+// exclude them, and plugins written for one call at a time corrupt their own
+// state. This lock keeps the SSL_SECRET hooks to one caller at a time.
+std::mutex secret_hook_mutex;
 
 } // end anonymous namespace
 
@@ -66,9 +73,12 @@ SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::s
   secret_name.cert_name_len = name1.size();
   secret_name.key_name      = name2.data();
   secret_name.key_name_len  = name2.size();
-  while (curHook) {
-    curHook->blocking_invoke(TS_EVENT_SSL_SECRET, &secret_name);
-    curHook = curHook->next();
+  {
+    std::scoped_lock lock(secret_hook_mutex);
+    while (curHook) {
+      curHook->blocking_invoke(TS_EVENT_SSL_SECRET, &secret_name);
+      curHook = curHook->next();
+    }
   }
 
   data1 = this->getSecret(name1);
