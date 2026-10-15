@@ -22,6 +22,10 @@
 bool
 List::IP::parseYaml(const YAML::Node &node)
 {
+  if (!validate_yaml_keys(node, "lists", {"name", "cidr"})) {
+    return false;
+  }
+
   const YAML::Node &cidr = node["cidr"];
 
   if (cidr && cidr.IsSequence()) {

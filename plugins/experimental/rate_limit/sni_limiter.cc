@@ -30,7 +30,9 @@ int gVCIdx = -1;
 bool
 SniRateLimiter::parseYaml(const YAML::Node &node)
 {
-  super_type::parseYaml(node);
+  if (!super_type::parseYaml(node)) {
+    return false;
+  }
 
   if (node["ip-rep"]) {
     auto ipr_name = node["ip-rep"].as<std::string>();

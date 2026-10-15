@@ -49,6 +49,24 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+Plugins
+-------
+
+Changes to Features
+~~~~~~~~~~~~~~~~~~~
+The following plugins have been changed in this version of ATS.
+
+* rate_limit - The YAML configuration is now validated strictly:
+
+  * An unknown key at any level makes the configuration fail to load. Correct any
+    misspelled key, such as ``max-age`` in place of ``max_age``.
+  * An invalid value, such as a non-numeric ``limit``, also fails the load.
+  * An empty configuration file is an error. Write ``selector: []`` to load the
+    plugin with no rules.
+
+  A failed reload keeps the previous configuration active. For more details, please
+  check :ref:`admin-plugins-rate-limit`.
+
 Upgrading to ATS v10.x
 ======================
 
