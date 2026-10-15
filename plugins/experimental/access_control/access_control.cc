@@ -55,7 +55,7 @@ normalizePath(StringView path, String &normalized)
     normalized.push_back('/');
 
     while (i < path.size() && path[i] != '/') {
-      if (path[i] == '\\') {
+      if (path[i] == '\\' || static_cast<unsigned char>(path[i]) < 0x20 || static_cast<unsigned char>(path[i]) == 0x7F) {
         return false;
       }
       if (path[i] == '%') {
@@ -65,7 +65,7 @@ normalizePath(StringView path, String &normalized)
         }
         auto [end, ec] = std::from_chars(path.data() + i + 1, path.data() + i + 3, val, 16);
         if (end == path.data() + i + 3 && ec == std::errc{} && val <= 0xFF) {
-          if (val == '/' || val == '\\' || val < 0x20 || val == 0x7F) {
+          if (val == '/' || val == '\\' || val == '%' || val < 0x20 || val == 0x7F) {
             return false;
           }
           normalized.push_back(static_cast<char>(val));
@@ -80,8 +80,10 @@ normalizePath(StringView path, String &normalized)
     }
 
     StringView seg(normalized.data() + seg_start + 1, normalized.size() - seg_start - 1);
+    size_t     semi     = seg.find(';');
+    StringView base_seg = (semi == StringView::npos) ? seg : seg.substr(0, semi);
 
-    if (seg == "." || seg == "..") {
+    if (base_seg == "." || base_seg == "..") {
       return false;
     }
   }

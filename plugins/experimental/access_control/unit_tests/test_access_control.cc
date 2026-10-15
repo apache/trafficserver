@@ -220,6 +220,10 @@ TEST_CASE("AccessToken: scope validation", "[AccessToken][access_control][scope]
     CHECK(validateScopeDetailed("/reports/./2026", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
     CHECK(validateScopeDetailed("/reports/%2e/2026", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
     CHECK(validateScopeDetailed("/reports/../hr/payroll", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/..;/hr/payroll", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/.;/x", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/%2e%2e%3b/hr", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
+    CHECK(validateScopeDetailed("/reports/%252e%252e/hr", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);
     CHECK(validateScopeDetailed("/reports/../hr", "/hr") == ScopeValidationResult::INVALID_REQUEST_PATH);
     CHECK(validateScopeDetailed("/reports/%2e%2e/hr", "/reports") == ScopeValidationResult::INVALID_REQUEST_PATH);
     CHECK(validateScopeDetailed("/reports/%2e%2e%2fhr/payroll", "/reports/") == ScopeValidationResult::INVALID_REQUEST_PATH);

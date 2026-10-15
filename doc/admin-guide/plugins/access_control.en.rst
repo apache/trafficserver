@@ -243,8 +243,13 @@ Query-Param-Style Named Claim format
         path segments, including the segment boundary.
       * For example, ``/reports`` matches ``/reports/2026`` but not
         ``/reports2``.
-      * Out-of-scope requests use the configured
-        ``--invalid-scope-status-code``.
+      * Request paths containing dot segments (such as ``.``, ``..``, or matrix parameters
+        like ``.;``, ``..;``, whether raw or percent-encoded), backslashes (``\``),
+        percent-encoded slashes (``%2F``), double-encoded percent signs (``%25``), or control
+        characters are rejected outright.
+      * When ``--reject-invalid-token-requests=true`` is configured, out-of-scope and rejected
+        request paths return the configured ``--invalid-scope-status-code``; otherwise, the
+        request is forwarded to the origin without extracting the subject header.
    * ``kid`` for `key id`_, `required` (tokens to be always signed)
    * ``st`` for `signature type`_, `optional` (default would be ``SHA-256`` if not specified)
    * ``md`` for `message digest`_ - this claim is `required` and expected to be always the last claim.
@@ -321,7 +326,9 @@ Plugin configuration
    * ``--invalid-syntax-status-code=<http_status_code>`` (`optional`, default:``400``) - access token bad syntax error
    * ``--invalid-signature-status-code=<http_status_code>`` (`optional`, default:``401``) - invalid access token signature
    * ``--invalid-timing-status-code=<http_status_code>`` (`optional`, default:``403``) - bad timing when validating the access token (expired, or too early)
-   * ``--invalid-scope-status-code=<http_status_code>`` (`optional`, default:``403``) - access token scope validation failed
+   * ``--invalid-scope-status-code=<http_status_code>`` (`optional`, default:``403``) - access
+     token scope validation failed (used when ``--reject-invalid-token-requests`` is enabled for
+     out-of-scope or rejected request paths)
    * ``--invalid-origin-response=<http_status_code>`` (`optional`, default:``520``) - origin_ response did not look right, i.e. the access token provided by origin_ is not valid.
    * ``--internal-error-status-code=<http_status_code>`` (`optional`, default:``500``) - unexpected internal error (should not happened ideally)
 
