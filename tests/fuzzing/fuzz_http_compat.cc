@@ -1,3 +1,26 @@
+/** @file
+
+  Fuzzing HTTP compatibility parsing and Vary header matching.
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HttpCompat.h"
 #include "tscore/Diags.h"
@@ -13,14 +36,22 @@ extern int cmd_disable_pfreelist;
 
 namespace
 {
-constexpr size_t MAX_INPUT_LENGTH = 16 * 1024;
+constexpr size_t  MAX_INPUT_LENGTH          = 16 * 1024;
+constexpr uint8_t FLAG_COPY_COMMA_LIST      = 1u << 0;
+constexpr uint8_t FLAG_COPY_SEMICOLON_LIST  = 1u << 1;
+constexpr uint8_t FLAG_COPY_TOKEN_LIST      = 1u << 2;
+constexpr uint8_t FLAG_SEMICOLON_SEPARATOR  = 1u << 3;
+constexpr uint8_t FLAG_IGNORE_WILDCARDS     = 1u << 4;
+constexpr uint8_t FLAG_TRIM_TOKEN_QUOTES    = 1u << 5;
+constexpr uint8_t FLAG_FIRST_FIELD_MISSING  = 1u << 6;
+constexpr uint8_t FLAG_SECOND_FIELD_MISSING = 1u << 7;
 
 void
 exercise_lists(const std::string &value, const std::string &candidate, uint8_t flags, int output_length)
 {
-  StrList               comma_list((flags & 1) != 0);
-  StrList               semicolon_list((flags & 2) != 0);
-  StrList               token_list((flags & 4) != 0);
+  StrList               comma_list((flags & FLAG_COPY_COMMA_LIST) != 0);
+  StrList               semicolon_list((flags & FLAG_COPY_SEMICOLON_LIST) != 0);
+  StrList               token_list((flags & FLAG_COPY_TOKEN_LIST) != 0);
   std::array<char, 256> output{};
   std::array<char, 256> type{};
   std::array<char, 256> subtype{};
@@ -28,12 +59,12 @@ exercise_lists(const std::string &value, const std::string &candidate, uint8_t f
   int                   matching_index   = 0;
   int                   value_length     = static_cast<int>(value.size());
   int                   candidate_length = static_cast<int>(candidate.size());
-  char                  separator        = (flags & 8) != 0 ? ';' : ',';
-  bool                  ignore_wildcards = (flags & 16) != 0;
+  char                  separator        = (flags & FLAG_SEMICOLON_SEPARATOR) != 0 ? ';' : ',';
+  bool                  ignore_wildcards = (flags & FLAG_IGNORE_WILDCARDS) != 0;
 
   HttpCompat::parse_comma_list(&comma_list, value.c_str(), value_length);
   HttpCompat::parse_semicolon_list(&semicolon_list, value.c_str(), value_length);
-  HttpCompat::parse_tok_list(&token_list, (flags & 32) != 0, value.c_str(), value_length, separator);
+  HttpCompat::parse_tok_list(&token_list, (flags & FLAG_TRIM_TOKEN_QUOTES) != 0, value.c_str(), value_length, separator);
   HttpCompat::lookup_param_in_strlist(&semicolon_list, "q", output.data(), output_length);
   HttpCompat::lookup_param_in_strlist(&semicolon_list, "charset", output.data(), output_length);
   HttpCompat::lookup_param_in_semicolon_string(value.c_str(), value_length, candidate.c_str(), output.data(), output_length);
@@ -67,9 +98,10 @@ exercise_vary(const std::string &first, const std::string &second, uint8_t flags
 
   first_header.create(HTTPType::REQUEST);
   second_header.create(HTTPType::REQUEST);
-  MIMEField *first_field  = (flags & 64) != 0 ? nullptr : add_field(first_header, first);
-  MIMEField *second_field = (flags & 128) != 0 ? nullptr : add_field(second_header, second);
+  MIMEField *first_field  = (flags & FLAG_FIRST_FIELD_MISSING) != 0 ? nullptr : add_field(first_header, first);
+  MIMEField *second_field = (flags & FLAG_SECOND_FIELD_MISSING) != 0 ? nullptr : add_field(second_header, second);
 
+  // Missing selecting headers are supported: both absent match, only one absent does not.
   HttpCompat::do_vary_header_values_match(first_field, second_field);
   if (first_field && second_field) {
     HttpCompat::do_vary_header_values_match(first_field, first_field);
