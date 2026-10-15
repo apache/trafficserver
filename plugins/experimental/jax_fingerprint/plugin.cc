@@ -27,182 +27,174 @@
 #include "header.h"
 #include "log.h"
 
-#ifdef ENABLE_JAX_METHOD_JA4
-#include "ja4/method.h"
-#endif
-#ifdef ENABLE_JAX_METHOD_JA4H
-#include "ja4h/method.h"
-#endif
-#ifdef ENABLE_JAX_METHOD_JA3
-#include "ja3/method.h"
-#endif
-
 #include <ts/apidefs.h>
 #include <ts/ts.h>
 #include <ts/remap.h>
 #include <ts/remap_version.h>
 
-#include <getopt.h>
-
-#include <cstddef>
-#include <cstdint>
 #include <cstdio>
-#include <cstring>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <version>
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
 namespace
 {
-constexpr Method const *METHODS[] = {
-#ifdef ENABLE_JAX_METHOD_JA4
-  &ja4::method,
-#endif
-#ifdef ENABLE_JAX_METHOD_JA4H
-  &ja4h::method,
-#endif
-#ifdef ENABLE_JAX_METHOD_JA3
-  &ja3::method,
-#endif
-};
-} // namespace
-
-static bool
-read_config_option(int argc, char const *argv[], PluginConfig &config)
+bool
+prepare_config(PluginConfig &config)
 {
-  const struct option longopts[] = {
-    {"standalone",   no_argument,       nullptr, 's'},
-    {"method",       required_argument, nullptr, 'M'}, // JA4, JA4H, or JA3
-    {"mode",         required_argument, nullptr, 'm'}, // overwrite, keep, or append
-    {"header",       required_argument, nullptr, 'h'},
-    {"via-header",   required_argument, nullptr, 'v'},
-    {"log-filename", required_argument, nullptr, 'f'},
-    {"log-field",    required_argument, nullptr, 'l'},
-    {"servernames",  required_argument, nullptr, 'S'},
-    {"export",       required_argument, nullptr, 'e'},
-    {nullptr,        0,                 nullptr, 0  }
-  };
-
-  optind = 0;
-  int opt{0};
-  while ((opt = getopt_long(argc, const_cast<char *const *>(argv), "", longopts, nullptr)) >= 0) {
-    switch (opt) {
-    case '?':
-      Dbg(dbg_ctl, "Unrecognized command argument.");
-      break;
-    case 'M': {
-      bool found = false;
-      for (auto const *m : METHODS) {
-        if (m->name == optarg) {
-          config.method = *m;
-          found         = true;
-          break;
-        }
-      }
-      if (!found) {
-        Dbg(dbg_ctl, "Unexpected method: %s", optarg);
-        return false;
-      }
-    } break;
-    case 'm':
-      if (strcmp("overwrite", optarg) == 0) {
-        config.mode = Mode::OVERWRITE;
-      } else if (strcmp("keep", optarg) == 0) {
-        config.mode = Mode::KEEP;
-      } else if (strcmp("append", optarg) == 0) {
-        config.mode = Mode::APPEND;
-      } else {
-        Dbg(dbg_ctl, "Unexpected mode: %s", optarg);
-        return false;
-      }
-      break;
-    case 'h':
-      config.header_name = {optarg, strlen(optarg)};
-      break;
-    case 'v':
-      config.via_header_name = {optarg, strlen(optarg)};
-      break;
-    case 'f':
-      config.log_filename = {optarg, strlen(optarg)};
-      break;
-    case 's':
-      config.standalone = true;
-      break;
-    case 'S':
-      for (std::string_view input(optarg, strlen(optarg)); !input.empty();) {
-        auto pos = input.find(',');
-        config.servernames.emplace(input.substr(0, pos));
-        input.remove_prefix(pos == std::string_view::npos ? input.size() : pos + 1);
-      }
-      break;
-    case 'l':
-      config.log_symbol = {optarg, strlen(optarg)};
-      break;
-    case 'e':
-      config.export_name = {optarg, strlen(optarg)};
-      if (config.export_name.empty()) {
-        TSError("[%s] --export requires a non-empty user arg name", PLUGIN_NAME);
-        return false;
-      }
-      break;
-    case 0:
-    case -1:
-      break;
-    default:
-      Dbg(dbg_ctl, "Unexpected options error.");
+  if (!config.log_filename.empty()) {
+    if (!create_log_file(config.log_filename, config.log_handle)) {
+      TSError("[%s] Failed to create log.", PLUGIN_NAME);
       return false;
     }
+    Dbg(dbg_ctl, "Created log file.");
   }
 
-  if (config.method.name == "uninitialized") {
-    TSError("[%s] Method must be specified", PLUGIN_NAME);
+  if (reserve_user_arg(config) == TS_ERROR) {
+    TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
     return false;
-  }
-
-  Dbg(dbg_ctl, "JAx method is %s", config.method.name.data());
-  Dbg(dbg_ctl, "JAx mode is %d", static_cast<int>(config.mode));
-  Dbg(dbg_ctl, "JAx header is %s", !config.header_name.empty() ? config.header_name.c_str() : "DISABLED");
-  Dbg(dbg_ctl, "JAx via-header is %s", !config.via_header_name.empty() ? config.via_header_name.c_str() : "DISABLED");
-  Dbg(dbg_ctl, "JAx log file is %s", !config.log_filename.empty() ? config.log_filename.c_str() : "DISABLED");
-  Dbg(dbg_ctl, "JAx export registry is %s", !config.export_name.empty() ? config.export_name.c_str() : PLUGIN_NAME);
-  Dbg(dbg_ctl, "JAx standalone mode  is %s", config.standalone ? "ENABLED" : "DISABLED");
-  for (auto &&servername : config.servernames) {
-    Dbg(dbg_ctl, "%s", servername.c_str());
   }
 
   return true;
 }
 
+/** Prepare every configuration, releasing any log file already created if one of them fails. */
+bool
+prepare_configs(PluginConfigs &configs)
+{
+  for (auto const &config : configs) {
+    if (!prepare_config(*config)) {
+      for (auto const &created : configs) {
+        if (created->log_handle != nullptr) {
+          flush_log_file(created->log_handle);
+          created->log_handle = nullptr;
+        }
+      }
+      return false;
+    }
+  }
+  return true;
+}
+
+constexpr std::string_view RELOAD_TAG = "jax_fingerprint.reload";
+
+/** Register a remap configuration file as a child of the remap configuration so that editing it triggers a remap reload. */
+void
+register_remap_config_file(std::string_view filename)
+{
+  std::string const path   = resolve_config_path(filename);
+  TSMgmtString      parent = nullptr;
+  if (TSMgmtStringGet("proxy.config.url_remap.filename", &parent) != TS_SUCCESS) {
+    TSWarning("[%s] Could not retrieve the remap configuration filename; %s changes require a remap.config change to reload",
+              PLUGIN_NAME, path.c_str());
+    return;
+  }
+  TSMgmtConfigFileAdd(parent, path.c_str());
+  TSfree(parent);
+}
+
+/** The configuration loaded by one plugin.config line, which can be reloaded at runtime. */
+struct GlobalState {
+  std::string                 config_filename;
+  std::vector<PluginConfig *> configs;
+};
+
+void
+reload_global_config(GlobalState &state)
+{
+  char const *filename = state.config_filename.c_str();
+  Dbg(dbg_ctl, "Reloading configuration from %s", filename);
+
+  PluginConfigs updated;
+  if (!load_config_file(state.config_filename, PluginType::GLOBAL, updated)) {
+    TSError("[%s] Configuration reload from %s failed. Keeping current configuration.", PLUGIN_NAME, filename);
+    return;
+  }
+
+  std::string reason;
+  if (!is_reload_compatible(state.configs, updated, reason)) {
+    TSError("[%s] Configuration reload from %s rejected: %s. Keeping current configuration.", PLUGIN_NAME, filename,
+            reason.c_str());
+    return;
+  }
+
+  for (size_t i = 0; i < updated.size(); ++i) {
+    state.configs[i]->set_settings(updated[i]->get_settings());
+  }
+  TSNote("[%s] Configuration reloaded successfully from %s", PLUGIN_NAME, filename);
+}
+
+int
+handle_lifecycle_msg(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
+{
+  auto const *msg = static_cast<TSPluginMsg const *>(edata);
+  if (msg->tag != nullptr && msg->tag == RELOAD_TAG) {
+    reload_global_config(*static_cast<GlobalState *>(TSContDataGet(contp)));
+  }
+  return TS_SUCCESS;
+}
+
+void
+register_log_field(PluginConfig *config)
+{
+  std::string name           = "jax_fingerprint-";
+  name                      += config->method.name;
+  TSReturnCode const result  = TSLogFieldRegister(
+    name.c_str(), config->log_symbol, TS_LOG_TYPE_STRING,
+    [config](TSHttpTxn txnp, char *buf) -> int {
+      void *container;
+      if (config->method.type == Method::Type::CONNECTION_BASED) {
+        container = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp));
+      } else {
+        container = txnp;
+      }
+      JAxContext *ctx = get_user_arg(container, *config);
+      if (ctx) {
+        return TSLogStringMarshal(buf, ctx->get_fingerprint());
+      } else {
+        return TSLogStringMarshal(buf, "-");
+      }
+    },
+    TSLogIntUnmarshal);
+  if (result != TS_SUCCESS) {
+    TSError("[%s] Failed to register log field '%s'", PLUGIN_NAME, config->log_symbol.c_str());
+  }
+}
+} // namespace
+
 void
 modify_headers(JAxContext *ctx, TSHttpTxn txnp, PluginConfig &config)
 {
+  auto const settings = config.get_settings();
+
   if (!ctx->get_fingerprint().empty()) {
-    switch (config.mode) {
+    switch (settings->mode) {
     case Mode::KEEP:
-      if (!config.header_name.empty() && !has_header(txnp, config.header_name)) {
-        set_header(txnp, config.header_name, ctx->get_fingerprint());
+      if (!settings->header_name.empty() && !has_header(txnp, settings->header_name)) {
+        set_header(txnp, settings->header_name, ctx->get_fingerprint());
       }
-      if (!config.via_header_name.empty() && !has_header(txnp, config.via_header_name)) {
-        set_via_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty() && !has_header(txnp, settings->via_header_name)) {
+        set_via_header(txnp, settings->via_header_name);
       }
       break;
     case Mode::OVERWRITE:
-      if (!config.header_name.empty()) {
-        set_header(txnp, config.header_name, ctx->get_fingerprint());
+      if (!settings->header_name.empty()) {
+        set_header(txnp, settings->header_name, ctx->get_fingerprint());
       }
-      if (!config.via_header_name.empty()) {
-        set_via_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty()) {
+        set_via_header(txnp, settings->via_header_name);
       }
       break;
     case Mode::APPEND:
-      if (!config.header_name.empty()) {
-        append_header(txnp, config.header_name, ctx->get_fingerprint());
+      if (!settings->header_name.empty()) {
+        append_header(txnp, settings->header_name, ctx->get_fingerprint());
       }
-      if (!config.via_header_name.empty()) {
-        append_via_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty()) {
+        append_via_header(txnp, settings->via_header_name);
       }
       break;
     default:
@@ -210,12 +202,12 @@ modify_headers(JAxContext *ctx, TSHttpTxn txnp, PluginConfig &config)
     }
   } else {
     Dbg(dbg_ctl, "No fingerprint attached to vconn!");
-    if (config.mode == Mode::OVERWRITE) {
-      if (!config.header_name.empty()) {
-        remove_header(txnp, config.header_name);
+    if (settings->mode == Mode::OVERWRITE) {
+      if (!settings->header_name.empty()) {
+        remove_header(txnp, settings->header_name);
       }
-      if (!config.via_header_name.empty()) {
-        remove_header(txnp, config.via_header_name);
+      if (!settings->via_header_name.empty()) {
+        remove_header(txnp, settings->via_header_name);
       }
     }
   }
@@ -227,15 +219,15 @@ handle_client_hello(void *edata, PluginConfig &config)
   TSVConn     vconn = static_cast<TSVConn>(edata);
   JAxContext *ctx   = get_user_arg(vconn, config);
 
-  if (!config.servernames.empty()) {
+  if (auto const settings = config.get_settings(); !settings->servernames.empty()) {
     const char *servername;
     int         servername_len;
     servername = TSVConnSslSniGet(vconn, &servername_len);
     if (servername != nullptr && servername_len > 0) {
 #ifdef __cpp_lib_generic_unordered_lookup
-      if (!config.servernames.contains(std::string_view(servername, servername_len))) {
+      if (!settings->servernames.contains(std::string_view(servername, servername_len))) {
 #else
-      if (!config.servernames.contains({servername, static_cast<size_t>(servername_len)})) {
+      if (!settings->servernames.contains({servername, static_cast<size_t>(servername_len)})) {
 #endif
         Dbg(dbg_ctl, "Server name %.*s is not in the server name set", servername_len, servername);
         TSVConnReenable(vconn);
@@ -384,69 +376,53 @@ TSPluginInit(int argc, char const **argv)
     return;
   }
 
-  auto owned_config         = std::make_unique<PluginConfig>();
-  owned_config->plugin_type = PluginType::GLOBAL;
-
-  if (!read_config_option(argc, argv, *owned_config)) {
-    TSError("[%s] Failed to parse options.", PLUGIN_NAME);
+  PluginConfigs configs;
+  std::string   config_filename;
+  if (!load_config(argc, argv, PluginType::GLOBAL, configs, config_filename)) {
+    TSError("[%s] Failed to load configuration from %s.", PLUGIN_NAME,
+            config_filename.empty() ? "the plugin.config arguments" : config_filename.c_str());
     return;
   }
 
-  if (!owned_config->log_filename.empty()) {
-    if (!create_log_file(owned_config->log_filename, owned_config->log_handle)) {
-      TSError("[%s] Failed to create log.", PLUGIN_NAME);
-      return;
+  if (!prepare_configs(configs)) {
+    return;
+  }
+
+  // Global configurations live for the life of the process: the log field callbacks and the
+  // continuations below keep references to them, so release them from their unique_ptrs here.
+  // Each plugin.config line configured with a file has its own state so that each reloads its own file.
+  GlobalState *state = config_filename.empty() ? nullptr : new GlobalState{config_filename, {}};
+  for (auto &owned_config : configs) {
+    PluginConfig *config = owned_config.release();
+    if (state != nullptr) {
+      state->configs.push_back(config);
+    }
+
+    if (!config->log_symbol.empty()) {
+      register_log_field(config);
+    }
+
+    TSCont cont = TSContCreate(main_handler, nullptr);
+    TSContDataSet(cont, config);
+    if (config->method.on_client_hello) {
+      TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, cont);
+    }
+    if (config->standalone) {
+      TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
+    }
+    if (config->method.type == Method::Type::CONNECTION_BASED) {
+      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, cont);
     } else {
-      Dbg(dbg_ctl, "Created log file.");
+      TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
     }
   }
 
-  // Reserve the index before registering the log field, so that every failure exit happens while the
-  // configuration is still owned here and nothing has taken a reference to it yet.
-  if (reserve_user_arg(*owned_config) == TS_ERROR) {
-    TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
+  if (state == nullptr) {
     return;
   }
-
-  // A global plugin's configuration lives for the life of the process: the log field callback and the
-  // continuation below both keep a reference to it, so release it from the unique_ptr here.
-  PluginConfig *config = owned_config.release();
-
-  if (!config->log_symbol.empty()) {
-    std::string name  = "jax_fingerprint-";
-    name             += config->method.name;
-    TSLogFieldRegister(
-      name.c_str(), config->log_symbol, TS_LOG_TYPE_STRING,
-      [config](TSHttpTxn txnp, char *buf) -> int {
-        void *container;
-        if (config->method.type == Method::Type::CONNECTION_BASED) {
-          container = TSHttpSsnClientVConnGet(TSHttpTxnSsnGet(txnp));
-        } else {
-          container = txnp;
-        }
-        JAxContext *ctx = get_user_arg(container, *config);
-        if (ctx) {
-          return TSLogStringMarshal(buf, ctx->get_fingerprint());
-        } else {
-          return TSLogStringMarshal(buf, "-");
-        }
-      },
-      TSLogIntUnmarshal);
-  }
-
-  TSCont cont = TSContCreate(main_handler, nullptr);
-  TSContDataSet(cont, config);
-  if (config->method.on_client_hello) {
-    TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, cont);
-  }
-  if (config->standalone) {
-    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
-  }
-  if (config->method.type == Method::Type::CONNECTION_BASED) {
-    TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, cont);
-  } else {
-    TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
-  }
+  TSCont msg_cont = TSContCreate(handle_lifecycle_msg, nullptr);
+  TSContDataSet(msg_cont, state);
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, msg_cont);
 }
 
 TSReturnCode
@@ -459,57 +435,45 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 }
 
 TSReturnCode
-TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
+TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {
   Dbg(dbg_ctl, "New instance for client matching %s to %s", argv[0], argv[1]);
-  auto owned_config         = std::make_unique<PluginConfig>();
-  owned_config->plugin_type = PluginType::REMAP;
 
-  // Parse parameters
-  if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), *owned_config)) {
-    Dbg(dbg_ctl, "Bad arguments");
+  // Skip the "from" URL so that the arguments begin with the "to" URL in place of a program name.
+  auto        configs = std::make_unique<PluginConfigs>();
+  std::string config_filename;
+  if (!load_config(argc - 1, const_cast<char const **>(argv + 1), PluginType::REMAP, *configs, config_filename)) {
+    snprintf(errbuf, errbuf_size, "[%s] Failed to load configuration from %s", PLUGIN_NAME,
+             config_filename.empty() ? "the @pparam arguments" : config_filename.c_str());
     return TS_ERROR;
   }
 
-  if (!owned_config->log_symbol.empty()) {
-    TSError("[%s] --log-field is not supported in remap.config. Use it in plugin.config instead.", PLUGIN_NAME);
+  if (!prepare_configs(*configs)) {
     return TS_ERROR;
   }
 
-  // Create a log file
-  if (!owned_config->log_filename.empty()) {
-    if (!create_log_file(owned_config->log_filename, owned_config->log_handle)) {
-      TSError("[%s] Failed to create log.", PLUGIN_NAME);
-      return TS_ERROR;
-    } else {
-      Dbg(dbg_ctl, "Created log file.");
+  if (!config_filename.empty()) {
+    register_remap_config_file(config_filename);
+  }
+
+  for (auto const &config : *configs) {
+    if (config->standalone) {
+      Dbg(dbg_ctl, "Standalone mode. Adding hooks for %s.", config->method.name.data());
+      config->handler = TSContCreate(main_handler, nullptr);
+      if (config->method.on_client_hello) {
+        TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, config->handler);
+      }
+      if (config->method.type == Method::Type::CONNECTION_BASED) {
+        TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, config->handler);
+      } else {
+        TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, config->handler);
+      }
+      TSContDataSet(config->handler, config.get());
     }
   }
 
-  if (reserve_user_arg(*owned_config) == TS_ERROR) {
-    TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
-    return TS_ERROR;
-  }
-
-  // Past here the instance handle owns the configuration and TSRemapDeleteInstance releases it.
-  PluginConfig *config = owned_config.release();
-
-  // Create continuation
-  if (config->standalone) {
-    Dbg(dbg_ctl, "Standalone mode. Adding hooks.");
-    config->handler = TSContCreate(main_handler, nullptr);
-    if (config->method.on_client_hello) {
-      TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, config->handler);
-    }
-    if (config->method.type == Method::Type::CONNECTION_BASED) {
-      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, config->handler);
-    } else {
-      TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, config->handler);
-    }
-    TSContDataSet(config->handler, config);
-  }
-
-  *ih = static_cast<void *>(config);
+  // Past here the instance handle owns the configurations and TSRemapDeleteInstance releases them.
+  *ih = static_cast<void *>(configs.release());
 
   return TS_SUCCESS;
 }
@@ -517,14 +481,16 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
-  auto config = static_cast<PluginConfig *>(ih);
+  auto configs = static_cast<PluginConfigs *>(ih);
 
-  if (!config || !rri) {
+  if (!configs || !rri) {
     TSError("[%s] Invalid private data or RRI or handler.", PLUGIN_NAME);
     return TSREMAP_NO_REMAP;
   }
 
-  handle_read_request_hdr(rh, *config);
+  for (auto const &config : *configs) {
+    handle_read_request_hdr(rh, *config);
+  }
 
   return TSREMAP_NO_REMAP;
 }
@@ -532,15 +498,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 void
 TSRemapDeleteInstance(void *ih)
 {
-  auto config = static_cast<PluginConfig *>(ih);
-  if (config->handler) {
-    // Destroying the continuation here causes a crash after remap.config reload
-    // Instead of destroying, make it NOP.
-    // TSContDestroy(config->handler);
-    TSContDataSet(config->handler, nullptr);
+  auto configs = static_cast<PluginConfigs *>(ih);
+  for (auto const &config : *configs) {
+    if (config->handler) {
+      // Destroying the continuation here causes a crash after remap.config reload
+      // Instead of destroying, make it NOP.
+      // TSContDestroy(config->handler);
+      TSContDataSet(config->handler, nullptr);
+    }
+    if (config->log_handle) {
+      flush_log_file(config->log_handle);
+    }
   }
-  if (config->log_handle) {
-    flush_log_file(config->log_handle);
-  }
-  delete config;
+  delete configs;
 }
