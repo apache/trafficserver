@@ -52,7 +52,7 @@ struct ActionStats {
   int actions_close_failed{-1};             ///< Close actions that could not shut down a connection
   int actions_logged{-1};                   ///< Successful log writes or fallback submissions
   int connections_rejected{-1};             ///< Blocked connections rejected at TLS or HTTP session start
-  int connections_reject_failed{-1};        ///< Plain HTTP blocked connections that could not be rejected
+  int connections_reject_failed{-1};        ///< Blocked connections that could not be rejected
   int fingerprint_matches{-1};              ///< ClientHello fingerprint rule matches
   int fingerprint_connections_rejected{-1}; ///< Connections rejected at ClientHello
   int fingerprint_unavailable{-1};          ///< ClientHellos with absent or invalid registries

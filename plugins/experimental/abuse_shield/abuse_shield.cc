@@ -466,11 +466,35 @@ execute_log_action(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip,
   }
 }
 
+// REENABLE_ERROR is only safe from TS_SSL_CLIENT_HELLO_HOOK, where the core
+// fails the in-progress SSL_accept. At TS_VCONN_START_HOOK the core marks the
+// handshake as finished without signaling anyone, so the connection is never
+// closed and its inactivity timeout is cancelled.
 enum class CloseHandling {
   SOCKET_SHUTDOWN,
   REENABLE_ERROR,
   ALREADY_CLOSED,
 };
+
+/** Reject a blocked connection by shutting down its socket.
+ *
+ * The caller still reenables the hook normally. The core then sees EOF, or a
+ * write error, and closes the connection through its usual error path.
+ *
+ * @param[in] vconn The client connection.
+ * @param[in] ip The client IP address.
+ */
+void
+reject_blocked_connection(TSVConn vconn, const swoc::IPAddr &ip)
+{
+  int fd = TSVConnFdGet(vconn);
+  if (fd >= 0 && shutdown(fd, SHUT_RDWR) == 0) {
+    TSStatIntIncrement(g_action_stats.connections_rejected, 1);
+  } else if (fd < 0 || errno != ENOTCONN) {
+    TSStatIntIncrement(g_action_stats.connections_reject_failed, 1);
+    Dbg(dbg_ctl, "[%s] Could not reject blocked connection from %s", PLUGIN_NAME, ip_to_string(ip).c_str());
+  }
+}
 
 /** Execute actions for a matched rule.
  *
@@ -729,16 +753,15 @@ handle_vconn_start_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
 
   if (g_blocked_ips && g_blocked_ips->is_blocked(ip)) {
     Dbg(dbg_ctl, "Blocking connection from %s (blocked IP)", ip_to_string(ip).c_str());
-    TSStatIntIncrement(g_action_stats.connections_rejected, 1);
-    TSVConnReenableEx(vconn, TS_EVENT_ERROR);
+    reject_blocked_connection(vconn, ip);
+    TSVConnReenable(vconn);
     return TS_SUCCESS;
   }
 
   consume_rule_buckets(g_conn_tracker.get(), ip, *config, abuse_shield::RateMetric::CONNECTION, g_conn_stats);
   abuse_shield::RuleMatch match = evaluate_rate_rules(ip, *config);
-  if (match.actions != 0 && execute_actions(match, ip, vconn, *config, CloseHandling::REENABLE_ERROR)) {
-    TSVConnReenableEx(vconn, TS_EVENT_ERROR);
-    return TS_SUCCESS;
+  if (match.actions != 0) {
+    execute_actions(match, ip, vconn, *config);
   }
 
   TSVConnReenable(vconn);
@@ -808,13 +831,7 @@ handle_ssn_start_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
   }
 
   if (g_blocked_ips && g_blocked_ips->is_blocked(ip)) {
-    int fd = TSVConnFdGet(vconn);
-    if (fd >= 0 && shutdown(fd, SHUT_RDWR) == 0) {
-      TSStatIntIncrement(g_action_stats.connections_rejected, 1);
-    } else if (fd < 0 || errno != ENOTCONN) {
-      TSStatIntIncrement(g_action_stats.connections_reject_failed, 1);
-      Dbg(dbg_ctl, "[%s] Could not reject blocked plain HTTP connection from %s", PLUGIN_NAME, ip_to_string(ip).c_str());
-    }
+    reject_blocked_connection(vconn, ip);
     TSHttpSsnReenable(ssn, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
   }

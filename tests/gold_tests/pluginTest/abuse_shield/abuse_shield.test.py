@@ -493,6 +493,29 @@ enabled: true
             r"abuse_shield\.connections\.rejected [1-9][0-9]*", "A blocked connection was rejected.")
         tr.StillRunningAfter = self._ts
 
+        tr = Test.AddTestRun("Verify ATS closes a blocked TLS connection that sends a ClientHello")
+        tr.Processes.Default.Command = (
+            f'{sys.executable} {Test.TestDirectory}/tls_client_hello.py '
+            f'--host 127.0.0.1 --port {self._ts.Variables.ssl_port} --expect reject')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+            "ATS rejected the ClientHello", "ATS should close the blocked connection rather than leave it open.")
+        tr.StillRunningAfter = self._ts
+
+        tr = Test.AddTestRun("Verify ATS released every rejected connection")
+        tr.Processes.Default.Command = (
+            'for i in $$(seq 1 20); do '
+            'open=$$(traffic_ctl metric get proxy.process.net.connections_currently_open | awk "{print \\$$2}"); '
+            'if [ "$$open" = "0" ]; then echo "all connections released"; exit 0; fi; '
+            'sleep 0.5; '
+            'done; '
+            'echo "connections still open: $$open"; exit 1')
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+            "all connections released", "Rejected connections should not linger in CLOSE-WAIT.")
+        tr.StillRunningAfter = self._ts
+
 
 class AbuseShieldRateLimitedIpRateLimitTest:
     """Verify rate-limited IP rules replace ordinary rules for the rate-limited metric."""

@@ -311,8 +311,9 @@ abuse_shield.<tracker>.evictions                  Evicted IPs
 
 The tracker name is txn, conn, or h2. Table gauges and counters synchronize
 once per second and on ``stats`` or ``dump``. ``scan_exhausted`` is a subset of
-``events_untracked``; do not sum them. ``connections.reject_failed`` applies
-only to plain HTTP. Already-disconnected peers do not count as close failures.
+``events_untracked``; do not sum them. ``connections.reject_failed`` counts
+blocked TLS or plain HTTP connections whose socket could not be shut down.
+Already-disconnected peers do not count as close failures.
 
 Memory Bound
 ============
