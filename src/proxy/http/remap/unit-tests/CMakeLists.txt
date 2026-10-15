@@ -324,3 +324,25 @@ target_link_libraries(
 )
 
 add_catch2_test(NAME test_RemapRulesYaml COMMAND $<TARGET_FILE:test_RemapRulesYaml>)
+
+### test_StrategyApi ########################################################################
+add_executable(test_StrategyApi test_StrategyApi.cc)
+
+target_compile_definitions(test_StrategyApi PRIVATE TS_SRC_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
+
+# tsapi_objects rather than the shared tsapi, which fails to load on macOS (ET_UDP).
+target_link_libraries(
+  test_StrategyApi
+  PRIVATE Catch2::Catch2WithMain
+          tsapi_objects
+          ts::http
+          ts::hdrs # transitive
+          logging # transitive
+          ts::http_remap # transitive
+          ts::proxy
+          inkdns # transitive
+          ts::inknet
+          ts::jsonrpc_protocol
+)
+
+add_catch2_test(NAME test_StrategyApi COMMAND $<TARGET_FILE:test_StrategyApi>)

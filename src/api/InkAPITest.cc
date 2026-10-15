@@ -3192,23 +3192,21 @@ checkHttpTxnClientProtocolStackContains(SocketTest *test, void *data)
   return TS_EVENT_CONTINUE;
 }
 
-// This func is called by us from mytest_handler to check for TSHttpTxnNextStrategyGet
+// This func is called by us from mytest_handler to check TSHttpTxnNextHopStrategySet/Get.
+// No strategies are loaded here, so only rejection of an invalid handle is exercised.
 static int
-checkHttpTxnNextHopStrategyGet(SocketTest *test, void *data)
+checkHttpTxnNextHopStrategySetGet(SocketTest *test, void *data)
 {
   TSHttpTxn txnp = static_cast<TSHttpTxn>(data);
 
-  // this is an invalid pointer but the contents don't matter for this test.
-  void const *const exp = reinterpret_cast<void *>(0x01);
+  test->test_next_hop_strategy_get = true;
 
-  void const *const strategy = TSHttpTxnNextHopStrategyGet(txnp);
-  if (strategy == exp) {
-    test->test_next_hop_strategy_get = true;
-    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategyGet", "TestCase1", TC_PASS, "ok");
+  TSHttpTxnNextHopStrategySet(txnp, reinterpret_cast<TSStrategy>(0x01));
+  if (TSStrategy const strategy = TSHttpTxnNextHopStrategyGet(txnp); strategy == nullptr) {
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategySet", "TestCase1", TC_PASS, "ok");
   } else {
     test->test_next_hop_strategy_get = false;
-    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategyGet", "TestCase1", TC_FAIL, "Value's Mismatch [expected '%jx', got '%jx'",
-               exp, strategy);
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategySet", "TestCase1", TC_FAIL, "Invalid handle accepted [got '%p']", strategy);
   }
 
   return TS_EVENT_CONTINUE;
@@ -3544,10 +3542,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     }
     TSHttpTxnCntlSet(static_cast<TSHttpTxn>(data), TS_HTTP_CNTL_SKIP_REMAPPING, true);
 
-    // Set the strategy pointer here
-    // this is an invalid pointer but the contents don't matter for this test.
-    TSHttpTxnNextHopStrategySet(static_cast<TSHttpTxn>(data), (void *)0x01);
-
+    checkHttpTxnNextHopStrategySetGet(test, data);
     checkHttpTxnClientReqGet(test, data);
 
     TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
@@ -3564,7 +3559,6 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
 
     checkHttpTxnClientIPGet(test, data);
     checkHttpTxnServerIPGet(test, data);
-    checkHttpTxnNextHopStrategyGet(test, data);
 
     TSHttpTxnReenable(static_cast<TSHttpTxn>(data), TS_EVENT_HTTP_CONTINUE);
     test->reenable_mask |= 8;
