@@ -315,18 +315,18 @@ def verify_client_request_body_bytes(replay_json, expected_body_bytes):
     return True
 
 
-def verify_proxy_response_body_bytes(replay_json, expected_body_bytes):
+def verify_proxy_response_body_bytes(replay_json: dict, expected_body_text: str) -> bool:
     """
-    Verify that the replay file has the specified proxy response body bytes in it.
+    Verify the proxy response text and its UTF-8 byte length in the replay file.
     """
     try:
-        received_body_bytes = replay_json['sessions'][0]['transactions'][0]['proxy-response']['content']['data']
+        received_body_text = replay_json['sessions'][0]['transactions'][0]['proxy-response']['content']['data']
     except KeyError:
         print("The replay file did not have a proxy-response content data element in the first transaction.")
         return False
 
-    if received_body_bytes != expected_body_bytes:
-        print("Expected body bytes of '{0}' but got '{1}'".format(expected_body_bytes, received_body_bytes))
+    if received_body_text != expected_body_text:
+        print("Expected body text of '{0}' but got '{1}'".format(expected_body_text, received_body_text))
         return False
 
     # If the proxy response had that many bytes, verify that the server-response
@@ -338,10 +338,10 @@ def verify_proxy_response_body_bytes(replay_json, expected_body_bytes):
         print("The replay file did not have a server-response content size element in the first transaction.")
         return False
 
-    if int(server_response_body_size) != len(expected_body_bytes):
+    expected_size = len(expected_body_text.encode('utf-8'))
+    if int(server_response_body_size) != expected_size:
         print(
-            "Expected the server-response content size to be '{0}' but got '{1}'".format(
-                len(expected_body_bytes), server_response_body_size))
+            "Expected the server-response content size to be '{0}' but got '{1}'".format(expected_size, server_response_body_size))
         return False
 
     return True
