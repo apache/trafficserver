@@ -88,7 +88,7 @@ def test_config_reload_plugin_api(ats_factory: ATSFactory) -> None:
     wait_for_status(_ats, "rpc-greet", "[plugin: ", "greet=world", "success", "handler entered")
 
     reload("rpc-fail", {"fail_on_purpose": True}, force=True, _ats=_ats)
-    wait_for_status(_ats, "rpc-fail", "[plugin: ", "fail", "fail requested")
+    wait_for_status(_ats, "rpc-fail", "[plugin: ", "fail", "fail requested", return_code=2)
 
     reload("rpc-subtask", {"with_subtask": True}, force=True, _ats=_ats)
     wait_for_status(
@@ -106,6 +106,7 @@ def test_config_reload_plugin_api(ats_factory: ATSFactory) -> None:
         "rpc-subtask-fail",
         "cfg_plugin_test_failing_subtask",
         "subtask failed on purpose",
+        return_code=2,
     )
 
     trigger = "RecordTriggeredReloadContinuation: executing reload for config 'cfg_plugin_test'"
@@ -115,7 +116,8 @@ def test_config_reload_plugin_api(ats_factory: ATSFactory) -> None:
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
         status = _ats.traffic_ctl("config", "status", "-c", "all")
-        if status.returncode == 0 and "cfg_plugin_test" in status.output and "in_progress" not in status.output:
+        # The newest reload listed is rpc-subtask-fail above, which failed, so config status exits 2.
+        if status.returncode == 2 and "cfg_plugin_test" in status.output and "in_progress" not in status.output:
             break
         time.sleep(0.2)
     else:

@@ -296,3 +296,271 @@ TEST_CASE("Parsing --error-level", "[error_level]")
   CHECK_FALSE(parse_error_level("5"));
   CHECK_FALSE(parse_error_level("err"));
 }
+
+namespace
+{
+using ReloadInfo = ConfigReloadResponse::ReloadInfo;
+using LogEntry   = ConfigReloadResponse::LogEntry;
+
+ReloadInfo
+reload_task(std::string status, std::vector<DiagsLevel> const &levels = {}, std::vector<ReloadInfo> sub_tasks = {})
+{
+  ReloadInfo task;
+  task.status = std::move(status);
+  for (auto level : levels) {
+    task.logs.push_back({level, "entry"});
+  }
+  task.sub_tasks = std::move(sub_tasks);
+  return task;
+}
+
+/// @a task with one more entry whose level the server sent malformed.
+ReloadInfo
+with_unknown_level(ReloadInfo task)
+{
+  task.logs.push_back({DL_Undefined, "entry", true});
+  return task;
+}
+
+int
+reload_exit_code_at(swoc::Errata::Severity level, ReloadInfo const &task)
+{
+  App_Exit_Level_Error = level;
+  int const code       = appExitCodeFromReload(task);
+  App_Exit_Level_Error = ERRATA_ERROR;
+  return code;
+}
+
+ConfigReloadResponse
+decode_reload(std::string const &json)
+{
+  return YAML::Load(json).as<ConfigReloadResponse>();
+}
+
+LogEntry
+decoded_entry(std::string const &level_json)
+{
+  auto const resp = decode_reload(R"({"tasks": [{"status": "success", "logs": [{"level": )" + level_json + R"(, "text": "t"}]}]})");
+  REQUIRE(resp.tasks.size() == 1);
+  REQUIRE(resp.tasks[0].logs.size() == 1);
+  return resp.tasks[0].logs[0];
+}
+
+bool
+decodes_as(std::string const &level_json, DiagsLevel level)
+{
+  auto const entry = decoded_entry(level_json);
+  return entry.level == level && !entry.unknown_level;
+}
+
+/// Marked unknown for the grade, and printed as @a shown.
+bool
+decodes_as_unknown(std::string const &level_json, DiagsLevel shown = DL_Undefined)
+{
+  auto const entry = decoded_entry(level_json);
+  return entry.level == shown && entry.unknown_level;
+}
+} // namespace
+
+TEST_CASE("A finished reload is graded by its most severe entry, inclusive", "[reload]")
+{
+  auto const task = reload_task("success", {DL_Note, DL_Warning, DL_Note});
+
+  CHECK(reload_exit_code_at(ERRATA_ERROR, task) == CTRL_EX_OK);
+  CHECK(reload_exit_code_at(ERRATA_WARN, task) == CTRL_EX_ERROR);
+  CHECK(reload_exit_code_at(ERRATA_NOTE, task) == CTRL_EX_ERROR);
+}
+
+TEST_CASE("A success without graded entries passes at any level", "[reload]")
+{
+  CHECK(reload_exit_code_at(ERRATA_DIAG, reload_task("success")) == CTRL_EX_OK);
+  CHECK(reload_exit_code_at(ERRATA_DIAG, reload_task("success", {DL_Undefined, DL_Undefined})) == CTRL_EX_OK);
+}
+
+TEST_CASE("Severity 0 is still a severity", "[reload]")
+{
+  CHECK(reload_exit_code_at(ERRATA_DIAG, reload_task("success", {DL_Diag})) == CTRL_EX_ERROR);
+  CHECK(reload_exit_code_at(ERRATA_DEBUG, reload_task("success", {DL_Diag})) == CTRL_EX_OK);
+}
+
+TEST_CASE("Entries of sub-tasks count, at any depth", "[reload]")
+{
+  auto const deep = reload_task("success", {DL_Note}, {reload_task("success", {DL_Note}, {reload_task("success", {DL_Warning})})});
+
+  CHECK(reload_exit_code_at(ERRATA_WARN, deep) == CTRL_EX_ERROR);
+  CHECK(reload_exit_code_at(ERRATA_ERROR, deep) == CTRL_EX_OK);
+
+  SECTION("A later sibling does not hide an earlier one")
+  {
+    auto const siblings = reload_task("success", {}, {reload_task("success", {DL_Warning}), reload_task("success", {DL_Note})});
+    CHECK(reload_exit_code_at(ERRATA_WARN, siblings) == CTRL_EX_ERROR);
+  }
+
+  SECTION("A failed sub-task deep down")
+  {
+    auto const failed =
+      reload_task("fail", {}, {reload_task("success"), reload_task("fail", {}, {reload_task("fail", {DL_Fatal})})});
+    CHECK(reload_exit_code_at(ERRATA_FATAL, failed) == CTRL_EX_ERROR);
+    CHECK(reload_exit_code_at(ERRATA_ALERT, failed) == CTRL_EX_OK);
+  }
+}
+
+TEST_CASE("Entries of a task that did not fail count as at most a warning", "[reload]")
+{
+  for (auto level : {DL_Error, DL_Fatal, DL_Emergency}) {
+    CAPTURE(level);
+    auto const task = reload_task("success", {DL_Note, level});
+
+    CHECK(reload_exit_code_at(ERRATA_ERROR, task) == CTRL_EX_OK);
+    CHECK(reload_exit_code_at(ERRATA_WARN, task) == CTRL_EX_ERROR);
+  }
+
+  SECTION("Under a parent that failed, too")
+  {
+    auto const task = reload_task("fail", {DL_Error}, {reload_task("success", {DL_Fatal})});
+    CHECK(reload_exit_code_at(ERRATA_ERROR, task) == CTRL_EX_ERROR);
+    CHECK(reload_exit_code_at(ERRATA_FATAL, task) == CTRL_EX_OK);
+  }
+
+  SECTION("And of a sub-task still running, or in a state the client does not know, under a finished parent")
+  {
+    for (auto const *status : {"in_progress", "created", "skipped", ""}) {
+      CAPTURE(status);
+      auto const task = reload_task("success", {}, {reload_task(status, {DL_Error})});
+      CHECK(reload_exit_code_at(ERRATA_ERROR, task) == CTRL_EX_OK);
+      CHECK(reload_exit_code_at(ERRATA_WARN, task) == CTRL_EX_ERROR);
+      CHECK(reload_exit_code_at(ERRATA_DIAG, reload_task("success", {}, {reload_task(status)})) == CTRL_EX_OK);
+    }
+  }
+}
+
+TEST_CASE("A failed reload counts as at least an error", "[reload]")
+{
+  CHECK(reload_exit_code_at(ERRATA_ERROR, reload_task("fail")) == CTRL_EX_ERROR);
+  CHECK(reload_exit_code_at(ERRATA_ERROR, reload_task("fail", {DL_Note, DL_Undefined})) == CTRL_EX_ERROR);
+  CHECK(reload_exit_code_at(ERRATA_FATAL, reload_task("fail", {DL_Error})) == CTRL_EX_OK);
+  CHECK(reload_exit_code_at(ERRATA_FATAL, reload_task("fail", {DL_Error}, {reload_task("fail", {DL_Fatal})})) == CTRL_EX_ERROR);
+  CHECK(reload_exit_code_at(ERRATA_ALERT, reload_task("fail", {DL_Fatal})) == CTRL_EX_OK);
+}
+
+TEST_CASE("A reload that timed out never finished", "[reload]")
+{
+  SECTION("At or above the level it fails, like a failed reload")
+  {
+    CHECK(reload_exit_code_at(ERRATA_ERROR, reload_task("timeout")) == CTRL_EX_ERROR);
+    CHECK(reload_exit_code_at(ERRATA_ERROR, reload_task("timeout", {DL_Note, DL_Undefined})) == CTRL_EX_ERROR);
+    CHECK(reload_exit_code_at(ERRATA_FATAL, reload_task("timeout", {DL_Error}, {reload_task("fail", {DL_Fatal})})) ==
+          CTRL_EX_ERROR);
+  }
+
+  SECTION("Below the level it is not done, not a success")
+  {
+    CHECK(reload_exit_code_at(ERRATA_FATAL, reload_task("timeout")) == CTRL_EX_TEMPFAIL);
+    CHECK(reload_exit_code_at(ERRATA_FATAL, reload_task("timeout", {DL_Error})) == CTRL_EX_TEMPFAIL);
+    CHECK(reload_exit_code_at(ERRATA_ALERT, reload_task("timeout", {DL_Fatal})) == CTRL_EX_TEMPFAIL);
+  }
+
+  SECTION("So is a reload with a sub-task that timed out")
+  {
+    auto const under_success = reload_task("success", {}, {reload_task("success"), reload_task("timeout")});
+    CHECK(reload_exit_code_at(ERRATA_ERROR, under_success) == CTRL_EX_ERROR);
+    CHECK(reload_exit_code_at(ERRATA_FATAL, under_success) == CTRL_EX_TEMPFAIL);
+
+    auto const under_fail = reload_task("fail", {}, {reload_task("timeout")});
+    CHECK(reload_exit_code_at(ERRATA_FATAL, under_fail) == CTRL_EX_TEMPFAIL);
+  }
+
+  SECTION("A failure without a timeout below the level is not")
+  {
+    CHECK(reload_exit_code_at(ERRATA_FATAL, reload_task("fail", {}, {reload_task("fail")})) == CTRL_EX_OK);
+  }
+}
+
+TEST_CASE("A sub-task that failed counts as at least an error, whatever its parent says", "[reload]")
+{
+  auto const task = reload_task("success", {}, {reload_task("success"), reload_task("fail")});
+
+  CHECK(reload_exit_code_at(ERRATA_ERROR, task) == CTRL_EX_ERROR);
+  CHECK(reload_exit_code_at(ERRATA_FATAL, task) == CTRL_EX_OK);
+}
+
+TEST_CASE("A reload that has not finished, or is in a state the client does not know, is not graded", "[reload]")
+{
+  for (auto const *status : {"created", "in_progress", "invalid", "", "SUCCESS", "FAIL", "skipped"}) {
+    CAPTURE(status);
+    CHECK(reload_exit_code_at(ERRATA_DIAG, reload_task(status, {DL_Emergency}, {reload_task("fail", {DL_Emergency})})) ==
+          CTRL_EX_OK);
+    CHECK(reload_exit_code_at(ERRATA_DIAG, reload_task(status, {}, {reload_task("timeout")})) == CTRL_EX_OK);
+  }
+}
+
+TEST_CASE("An entry whose level the server sent malformed counts as the highest", "[reload]")
+{
+  SECTION("In a task that failed")
+  {
+    auto const task = with_unknown_level(reload_task("fail"));
+    CHECK(reload_exit_code_at(ERRATA_EMERGENCY, task) == CTRL_EX_ERROR);
+  }
+
+  SECTION("In a task that did not fail, as at most a warning")
+  {
+    auto const task = reload_task("success", {}, {with_unknown_level(reload_task("success"))});
+    CHECK(reload_exit_code_at(ERRATA_WARN, task) == CTRL_EX_ERROR);
+    CHECK(reload_exit_code_at(ERRATA_ERROR, task) == CTRL_EX_OK);
+  }
+
+  SECTION("Next to lower entries, before or after them")
+  {
+    auto first = with_unknown_level(reload_task("fail"));
+    first.logs.push_back({DL_Note, "entry"});
+    CHECK(reload_exit_code_at(ERRATA_EMERGENCY, first) == CTRL_EX_ERROR);
+    CHECK(reload_exit_code_at(ERRATA_EMERGENCY, with_unknown_level(reload_task("fail", {DL_Note}))) == CTRL_EX_ERROR);
+  }
+}
+
+TEST_CASE("Decoding the level of a reload log entry", "[reload][decoder]")
+{
+  CHECK(decodes_as("0", DL_Diag));
+  CHECK(decodes_as("4", DL_Warning));
+  CHECK(decodes_as("8", DL_Emergency));
+  CHECK(decodes_as("9", DL_Undefined));
+  // The server sends every scalar quoted.
+  CHECK(decodes_as(R"("4")", DL_Warning));
+  CHECK(decodes_as(R"("9")", DL_Undefined));
+
+  SECTION("A level the server should never send is marked unknown, and printed as it always was")
+  {
+    // An integer out of range prints clamped, the way the printer always showed it.
+    CHECK(decodes_as_unknown("10", DL_Emergency));
+    CHECK(decodes_as_unknown("42", DL_Emergency));
+    CHECK(decodes_as_unknown(R"("10")", DL_Emergency));
+    CHECK(decodes_as_unknown("-1", DL_Diag));
+    CHECK(decodes_as_unknown("-2147483648", DL_Diag));
+    // Anything else prints without a tag.
+    CHECK(decodes_as_unknown("2147483648"));
+    CHECK(decodes_as_unknown(R"("")"));
+    CHECK(decodes_as_unknown(R"("warn")"));
+    CHECK(decodes_as_unknown("4.5"));
+    CHECK(decodes_as_unknown("null"));
+    CHECK(decodes_as_unknown("[4]"));
+    CHECK(decodes_as_unknown(R"({"v": 4})"));
+  }
+
+  SECTION("No level, or an entry that is not a map, is unleveled")
+  {
+    auto const resp = decode_reload(R"({"tasks": [{"status": "success", "logs": [{"text": "a"}, "b"]}]})");
+    REQUIRE(resp.tasks[0].logs.size() == 2);
+    CHECK(resp.tasks[0].logs[0].level == DL_Undefined);
+    CHECK_FALSE(resp.tasks[0].logs[0].unknown_level);
+    CHECK(resp.tasks[0].logs[1].level == DL_Undefined);
+    CHECK_FALSE(resp.tasks[0].logs[1].unknown_level);
+  }
+}
+
+TEST_CASE("A decoded failed reload with a malformed level fails at any level", "[reload][decoder]")
+{
+  auto const resp = decode_reload(
+    R"({"tasks": [{"status": "fail", "logs": [], "sub_tasks": [{"status": "fail", "logs": [{"level": "x", "text": "t"}]}]}]})");
+  REQUIRE(resp.tasks.size() == 1);
+  CHECK(reload_exit_code_at(ERRATA_EMERGENCY, resp.tasks[0]) == CTRL_EX_ERROR);
+}

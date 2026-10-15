@@ -151,7 +151,16 @@ class ConfigCommand : public RecordCommand
 
   // Helper functions for config reload
   ConfigReloadResponse fetch_config_reload(std::string const &token, std::string const &count = "1");
-  void                 track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval,
+  /// How a monitored reload ended, as far as the monitor could tell.
+  enum class ReloadOutcome {
+    SUCCESS,    ///< It ended success.
+    FAILED,     ///< It ended fail or timeout.
+    UNFINISHED, ///< The monitor stopped first, on --timeout or a signal.
+    UNKNOWN,    ///< Its state could not be read.
+  };
+
+  /// Polls the reload until it ends and grades it.
+  ReloadOutcome        track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval,
                                                     std::chrono::milliseconds timeout, std::string const &timeout_str);
   ConfigReloadResponse config_reload(std::string const &token, bool force, YAML::Node const &configs);
 
