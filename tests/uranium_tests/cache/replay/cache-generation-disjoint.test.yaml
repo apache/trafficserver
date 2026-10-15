@@ -1,0 +1,160 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+  blocks:
+    - origin-not-expected: &origin-not-expected
+        proxy-request:
+          expect: absent
+        server-response:
+          status: 500
+          reason: "Generator remap should handle this request"
+
+urtest:
+  description: "Verify identical URLs in different cache generations create disjoint objects"
+
+  server:
+    name: "cache-generation-disjoint-unused-origin"
+
+  client:
+    name: "cache-generation-disjoint-client"
+
+  ats:
+    name: "cache-generation-disjoint-ts"
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.body_factory.enable_customizations: 3
+      proxy.config.http.cache.generation: -1
+
+    plugin_config:
+      - "xdebug.so --enable=x-cache,x-cache-key,via,x-cache-generation"
+
+    remap_config:
+      - "map /default/ http://127.0.0.1/ @plugin=generator.so"
+      - "map /generation1/ http://127.0.0.1/ @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=1 @plugin=generator.so"
+      - "map /generation2/ http://127.0.0.1/ @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=2 @plugin=generator.so"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /default/cache/10/generation-object
+          headers:
+            fields:
+              - [Host, generation.example.com]
+              - [x-debug, "x-cache,x-cache-key,via,x-cache-generation"]
+              - [uuid, default-miss]
+        <<: *origin-not-expected
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Cache, {value: miss, as: equal}]
+              - [X-Cache-Generation, {value: "-1", as: equal}]
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          version: "1.1"
+          url: /generation1/cache/10/generation-object
+          headers:
+            fields:
+              - [Host, generation.example.com]
+              - [x-debug, "x-cache,x-cache-key,via,x-cache-generation"]
+              - [uuid, generation-1-miss]
+        <<: *origin-not-expected
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Cache, {value: miss, as: equal}]
+              - [X-Cache-Generation, {value: "1", as: equal}]
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          version: "1.1"
+          url: /generation2/cache/10/generation-object
+          headers:
+            fields:
+              - [Host, generation.example.com]
+              - [x-debug, "x-cache,x-cache-key,via,x-cache-generation"]
+              - [uuid, generation-2-miss]
+        <<: *origin-not-expected
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Cache, {value: miss, as: equal}]
+              - [X-Cache-Generation, {value: "2", as: equal}]
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          version: "1.1"
+          url: /default/cache/10/generation-object
+          headers:
+            fields:
+              - [Host, generation.example.com]
+              - [x-debug, "x-cache,x-cache-key,via,x-cache-generation"]
+              - [uuid, default-hit]
+        <<: *origin-not-expected
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Cache, {value: hit-fresh, as: equal}]
+              - [X-Cache-Generation, {value: "-1", as: equal}]
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          version: "1.1"
+          url: /generation1/cache/10/generation-object
+          headers:
+            fields:
+              - [Host, generation.example.com]
+              - [x-debug, "x-cache,x-cache-key,via,x-cache-generation"]
+              - [uuid, generation-1-hit]
+        <<: *origin-not-expected
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Cache, {value: hit-fresh, as: equal}]
+              - [X-Cache-Generation, {value: "1", as: equal}]
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          version: "1.1"
+          url: /generation2/cache/10/generation-object
+          headers:
+            fields:
+              - [Host, generation.example.com]
+              - [x-debug, "x-cache,x-cache-key,via,x-cache-generation"]
+              - [uuid, generation-2-hit]
+        <<: *origin-not-expected
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Cache, {value: hit-fresh, as: equal}]
+              - [X-Cache-Generation, {value: "2", as: equal}]
