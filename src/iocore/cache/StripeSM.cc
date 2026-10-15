@@ -758,8 +758,10 @@ StripeSM::aggWriteDone(int event, Event *e)
     dir_clear(&del_dir);
     for (int done = 0; done < this->_write_buffer.get_buffer_pos();) {
       Doc *doc = reinterpret_cast<Doc *>(this->_write_buffer.get_buffer() + done);
-      dir_set_offset(&del_dir, directory.header->write_pos + done);
+      dir_set_offset(&del_dir, this->offset_to_vol_offset(directory.header->write_pos + done));
+      // A head's entry is under first_key rather than the doc's key, and the doc doesn't say which it is, so try both.
       this->directory.remove(&doc->key, this, &del_dir);
+      this->directory.remove(&doc->first_key, this, &del_dir);
       done += round_to_approx_size(doc->len);
     }
     this->_write_buffer.reset_buffer_pos();
