@@ -147,7 +147,8 @@ tr = Test.AddTestRun("Verify full reload reached fail after deferred failure")
 tr.DelayStart = 12
 tr.Processes.Default.Command = "traffic_ctl config status -t full-deferred-fail"
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The reload failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout = All(
     Testers.IncludesExpression('fail', 'Overall reload should show fail'),
     Testers.IncludesExpression('deferred fail after heavy work', 'Plugin deferred Fail message should appear'),

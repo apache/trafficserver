@@ -162,7 +162,8 @@ tr = Test.AddTestRun("Verify fail reload status")
 tr.DelayStart = 5
 tr.Processes.Default.Command = "traffic_ctl config status -t rpc-fail"
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The reload failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout = All(
     Testers.IncludesExpression(r'\[plugin: ', 'Failed task should have [plugin: <name>] tag'),
     Testers.IncludesExpression('fail', 'Should show fail state'),
@@ -225,7 +226,8 @@ tr = Test.AddTestRun("Verify failing subtask in status tree")
 tr.DelayStart = 5
 tr.Processes.Default.Command = "traffic_ctl config status -t rpc-subtask-fail"
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The reload failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout = All(
     Testers.IncludesExpression('cfg_plugin_test_failing_subtask', 'Failing subtask should appear'),
     Testers.IncludesExpression('subtask failed on purpose', 'Subtask fail message should appear'),
@@ -247,7 +249,8 @@ tr = Test.AddTestRun("Wait for record-triggered reload to complete")
 tr.DelayStart = 8
 tr.Processes.Default.Command = "traffic_ctl config status -c all"
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The newest reload listed is rpc-subtask-fail above, which failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 # The record-triggered reload should show our plugin task
 tr.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     'cfg_plugin_test', 'Plugin handler should have been called by record trigger')

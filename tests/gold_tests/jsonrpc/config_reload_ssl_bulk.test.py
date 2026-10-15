@@ -142,7 +142,8 @@ tr = Test.AddTestRun("Verify partial failure — multiple bad certs")
 tr.DelayStart = 10
 tr.Processes.Default.Command = "traffic_ctl config status -t ssl-bulk-partial"
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The reload failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("FAIL", "Should show failure from bad certs")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("\\[Err\\]", "Error entries should carry [Err] tag")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("cert-05", "Garbage cert-05 should appear in error")
@@ -156,7 +157,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("--min-level warning filters bulk Note entries")
 tr.Processes.Default.Command = "traffic_ctl config status -t ssl-bulk-partial --min-level warning"
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The reload failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("\\[Err\\]", "Error entries should pass filter")
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("\\[Note\\]", "Note entries should be filtered out")
 tr.StillRunningAfter = ts
