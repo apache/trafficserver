@@ -122,6 +122,26 @@ class RetryOrigin:
                 print("drained_session_closed_by_peer", flush=True)
                 return
 
+    def finish_connection(self, tls_socket: ssl.SSLSocket) -> None:
+        """Half-close and read until ATS closes, so that closing cannot reset the connection.
+
+        Closing a socket that still holds unread input, such as a SETTINGS ACK
+        that ATS sent after the last read, makes the kernel reset the connection,
+        which can discard what this origin just wrote, such as the retried response.
+        """
+        try:
+            tls_socket.shutdown(socket.SHUT_WR)
+        except OSError:
+            return
+        while not self.lifecycle.stopped:
+            try:
+                if not tls_socket.recv(65535):
+                    return
+            except TimeoutError:
+                continue
+            except OSError:
+                return
+
     def serve_connection(self, tls_socket: ssl.SSLSocket, listener: socket.socket | None) -> bool:
         """Serve one HTTP/2 connection and report whether the retry succeeded."""
         connection = H2Connection(config=H2Configuration(client_side=False, header_encoding="utf-8"))
@@ -244,6 +264,11 @@ def run_server(mode: str, port: int, certificate: str, private_key: str, stop_fi
     lifecycle = OriginLifecycle(stop_file)
     origin = RetryOrigin(mode, lifecycle)
     errors: list[BaseException] = []
+    threads: list[threading.Thread] = []
+
+    def finish_socket(tls_socket: ssl.SSLSocket) -> None:
+        with tls_socket:
+            origin.finish_connection(tls_socket)
 
     def serve_socket(plain_socket: socket.socket, listener: socket.socket | None) -> None:
         plain_socket.settimeout(5)
@@ -253,11 +278,18 @@ def run_server(mode: str, port: int, certificate: str, private_key: str, stop_fi
             # Ignore readiness probes and peers that never finish TLS.
             plain_socket.close()
             return
-        with tls_socket:
+        try:
             if tls_socket.selected_alpn_protocol() != "h2":
                 raise RuntimeError("ATS did not negotiate HTTP/2 with the origin")
             tls_socket.settimeout(0.2)
             origin.serve_connection(tls_socket, listener)
+        except BaseException:
+            tls_socket.close()
+            raise
+        # Finish in the background: ATS can keep a finished connection open
+        # while it opens the next one, which this origin must accept.
+        threads.append(threading.Thread(target=finish_socket, args=(tls_socket,)))
+        threads[-1].start()
 
     def serve_socket_in_thread(plain_socket: socket.socket) -> None:
         try:
@@ -265,7 +297,6 @@ def run_server(mode: str, port: int, certificate: str, private_key: str, stop_fi
         except BaseException as error:
             errors.append(error)
 
-    threads: list[threading.Thread] = []
     with socket.create_server(("127.0.0.1", port)) as listener:
         listener.settimeout(0.2)
         while not lifecycle.stopped:

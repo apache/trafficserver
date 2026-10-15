@@ -128,8 +128,11 @@ class SafeRetryScenario:
                 # The RST_STREAM retry may reuse the healthy H2 connection.
                 # Match only on the loopback IP because an IP-literal remap
                 # does not send SNI, while ATS proposes the literal as the
-                # lookup SNI when it searches the session pool.
-                'proxy.config.http.server_session_sharing.match': 'ip',
+                # lookup SNI when it searches the session pool. The early-rst
+                # origin closes its connection right after the reset, and ATS
+                # can take that session back from the pool for the retry before
+                # it reads the close, so that retry must open a new connection.
+                'proxy.config.http.server_session_sharing.match': 'none' if mode == 'early-rst' else 'ip',
                 'proxy.config.http.connect_attempts_max_retries': 3,
                 # Retrying a request with a body requires ATS's existing
                 # request buffer so the second origin attempt can replay it.
