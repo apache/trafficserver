@@ -105,14 +105,14 @@ tr.StillRunningAfter = ts
 # Common verification variables.
 verify_replay = "verify_replay.py"
 schema = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
-verify_command_prefix = f'{sys.executable} {verify_replay} {schema}'
+verify_command_prefix = shlex.join([sys.executable, verify_replay, schema])
 
 #
 # Verify a response without a body is dumped correctly.
 #
 tr = Test.AddTestRun("Verify the json content of the transaction with no response body.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = f'{verify_command_prefix} {ts_dump_0}'
+tr.Processes.Default.Command = f'{verify_command_prefix} {shlex.quote(ts_dump_0)}'
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -123,7 +123,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the json content of the transaction with a response body.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = \
-    f'{verify_command_prefix} {ts_dump_1} --response_body "0000000 0000001 "'
+    f'{verify_command_prefix} {shlex.quote(ts_dump_1)} --response_body "0000000 0000001 "'
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -134,7 +134,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the json content of the response body with a character to be escaped.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = \
-    rf'{verify_command_prefix} {ts_dump_2} --response_body 12\"34'
+    rf'{verify_command_prefix} {shlex.quote(ts_dump_2)} --response_body 12\"34'
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -144,15 +144,15 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the json content of the response body of an HTTP/2 transaction.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 tr.Processes.Default.Command = \
-    f'{verify_command_prefix} {ts_dump_3} --response_body "0000000 0000001 0000002 "'
+    f'{verify_command_prefix} {shlex.quote(ts_dump_3)} --response_body "0000000 0000001 0000002 "'
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
-for dump_file, body in zip(utf8_dumps, utf8_bodies):
-    tr = Test.AddTestRun("Verify UTF-8 response bytes survive JSON serialization.")
+for case_number, (dump_file, body) in enumerate(zip(utf8_dumps, utf8_bodies), start=1):
+    tr = Test.AddTestRun(f"Verify UTF-8 response bytes survive JSON serialization (case {case_number}).")
     tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-    tr.Processes.Default.Command = f'{verify_command_prefix} {dump_file} --response_body {shlex.quote(body)}'
+    tr.Processes.Default.Command = f'{verify_command_prefix} {shlex.quote(dump_file)} --response_body {shlex.quote(body)}'
     tr.Processes.Default.ReturnCode = 0
     tr.StillRunningAfter = server
     tr.StillRunningAfter = ts
