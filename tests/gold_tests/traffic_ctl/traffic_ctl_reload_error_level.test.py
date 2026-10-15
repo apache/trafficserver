@@ -85,8 +85,7 @@ on_ts('json output is graded too', 'traffic_ctl -f json --error-level warn confi
 
 # Put the line right: the next reload of cache.config is clean, apart from its notes.
 tr = on_ts(
-    'a clean reload passes at the default level',
-    f"echo 'dest_domain=example.com ttl-in-cache=30d' > {cache_config} && sleep 2 && "
+    'a clean reload passes at the default level', f"echo 'dest_domain=example.com ttl-in-cache=30d' > {cache_config} && sleep 2 && "
     f"traffic_ctl config reload -t clean {MONITOR_TS}", 0)
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression('Details :', 'no details hint for a clean reload')
 on_ts('the clean reload passes at --error-level warn', 'traffic_ctl --error-level warn config status -t clean', 0)
@@ -102,7 +101,9 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'\d+/\d+ +fail
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     'Details : traffic_ctl config status -t unreadable', 'the details hint is printed')
 on_ts('config status grades the failed reload', 'traffic_ctl config status -t unreadable', 2)
-on_ts('config status, --error-level fatal relaxes the failed reload', 'traffic_ctl --error-level fatal config status -t unreadable', 0)
+on_ts(
+    'config status, --error-level fatal relaxes the failed reload', 'traffic_ctl --error-level fatal config status -t unreadable',
+    0)
 on_ts(
     'put cache.config back; the default level, given explicitly, still fails the reload',
     f"rmdir {cache_config} && echo 'dest_domain=example.com ttl-in-cache=30d' > {cache_config} && "
@@ -192,14 +193,18 @@ for name, level in (('range', 42), ('neg', -1), ('qrange', '42'), ('text', 'warn
     bad = task('fail')
     bad['logs'] = [{'level': level, 'text': 'bad level'}]
     node, ctl = status_stub(f'st_lvl_{name}', bad)
-    on_stub(f'a failed reload with a level that is {name}, --error-level emergency', node, ctl, '--error-level emergency config status', 2)
+    on_stub(
+        f'a failed reload with a level that is {name}, --error-level emergency', node, ctl, '--error-level emergency config status',
+        2)
 
 # On a task that did not fail, a malformed level counts as at most a warning, like any other entry there. It prints without a
 # tag, since the server sent no level traffic_ctl knows.
 bad_sub = task('success')
 bad_sub['logs'] = [{'level': 'warn', 'text': 'level sent as text'}]
 bad_ok_node, bad_ok_ctl = status_stub('st_lvl_ok', task('success', [], [bad_sub]))
-tr = on_stub('a success with a malformed level, --error-level emergency', bad_ok_node, bad_ok_ctl, '--error-level emergency config status', 0)
+tr = on_stub(
+    'a success with a malformed level, --error-level emergency', bad_ok_node, bad_ok_ctl, '--error-level emergency config status',
+    0)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     r'(?m)^[^\[\n]*level sent as text', 'the entry is printed without a tag')
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(r'\[Emrg\]', 'no severity is made up for it')
@@ -226,7 +231,8 @@ running_node, running_ctl = status_stub('st_running', task('in_progress', [DL_FA
 on_stub('a running reload is not graded', running_node, running_ctl, '--error-level diag config status', 0)
 
 # --count: the server lists the oldest reload first. Only the newest one is graded; the others are history.
-history_node, history_ctl = status_stub('st_hist_old', task('fail', [DL_ERROR], token='old'), task('success', [DL_NOTE], token='new'))
+history_node, history_ctl = status_stub(
+    'st_hist_old', task('fail', [DL_ERROR], token='old'), task('success', [DL_NOTE], token='new'))
 tr = on_stub('with --count, an older failed reload is history', history_node, history_ctl, 'config status -c 2', 0)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(r'Reload \[fail\] — old', 'the older reload is shown')
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(r'Reload \[success\] — new', 'the newest reload is shown')
@@ -249,7 +255,11 @@ MONITOR = 'config reload -t r1 -m --initial-wait 0 --refresh-int 0.1'
 
 
 def monitor_stub(name: str, final: dict):
-    return stub(name, {'admin_config_reload': RELOAD_SCHEDULED, 'get_reload_config_status': [status_reply(task('in_progress')), final]})
+    return stub(
+        name, {
+            'admin_config_reload': RELOAD_SCHEDULED,
+            'get_reload_config_status': [status_reply(task('in_progress')), final]
+        })
 
 
 mon_warn_node, mon_warn_ctl = monitor_stub('mon_warn', status_reply(task('success', [], [task('success', [DL_WARNING])])))
@@ -271,7 +281,8 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
 mon_timeout_node, mon_timeout_ctl = monitor_stub('mon_timeout', status_reply(task('timeout')))
 tr = on_stub('monitor, timeout', mon_timeout_node, mon_timeout_ctl, MONITOR, 2)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'\d+/\d+ +timeout', 'the reload ended timeout')
-tr = on_stub('monitor, timeout, --error-level fatal: not done', mon_timeout_node, mon_timeout_ctl, f'--error-level fatal {MONITOR}', 75)
+tr = on_stub(
+    'monitor, timeout, --error-level fatal: not done', mon_timeout_node, mon_timeout_ctl, f'--error-level fatal {MONITOR}', 75)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     'Details : traffic_ctl config status -t r1', 'a reload that never finished points at its details')
 
@@ -283,36 +294,43 @@ tr = on_stub('inline reload with a warning, --error-level warn', inline_node, in
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('Inline configuration is NOT persisted', 'the note is printed')
 inline_fail_node, inline_fail_ctl = monitor_stub('mon_inline_f', status_reply(task('fail', [], [task('fail', [DL_ERROR])])))
 tr = on_stub('inline reload that failed', inline_fail_node, inline_fail_ctl, INLINE, 2)
-tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression('Inline configuration is NOT persisted', 'no note: nothing was applied')
-tr = on_stub('inline reload that failed, --error-level fatal', inline_fail_node, inline_fail_ctl, f'--error-level fatal {INLINE}', 0)
+tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(
+    'Inline configuration is NOT persisted', 'no note: nothing was applied')
+tr = on_stub(
+    'inline reload that failed, --error-level fatal', inline_fail_node, inline_fail_ctl, f'--error-level fatal {INLINE}', 0)
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(
     'Inline configuration is NOT persisted', 'no note: a relaxed failure applied nothing either')
 
 # A reload already in progress refuses the inline request; the monitor follows that other reload, which does not carry it.
 IN_PROGRESS_REFUSAL = {
-    'result': {
-        'token': 'other',
-        'errors': [{
-            'code': 6004,
-            'message': 'Reload in progress'
-        }],
-        'tasks': [task('in_progress', token='other')]
-    }
+    'result':
+        {
+            'token': 'other',
+            'errors': [{
+                'code': 6004,
+                'message': 'Reload in progress'
+            }],
+            'tasks': [task('in_progress', token='other')]
+        }
 }
 busy_node, busy_ctl = stub(
     'mon_busy', {
         'admin_config_reload': IN_PROGRESS_REFUSAL,
         'get_reload_config_status':
-            [status_reply(task('in_progress', token='other')),
-             status_reply(task('success', [], [task('success', [DL_WARNING])], token='other'))]
+            [
+                status_reply(task('in_progress', token='other')),
+                status_reply(task('success', [], [task('success', [DL_WARNING])], token='other'))
+            ]
     })
 tr = on_stub('inline reload refused by one in progress, --error-level warn', busy_node, busy_ctl, f'--error-level warn {INLINE}', 2)
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'Reload in progress \[other\]', 'the monitor follows the other reload')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+    r'Reload in progress \[other\]', 'the monitor follows the other reload')
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
     'Inline configuration is NOT persisted', 'no note: the inline config was refused')
 
 # Without --monitor, a reload already in progress refuses the inline request too: no note there either.
-tr = on_stub('inline reload refused by one in progress, without --monitor', busy_node, busy_ctl, "config reload -t r1 -d 'ip_allow: {}'", 75)
+tr = on_stub(
+    'inline reload refused by one in progress, without --monitor', busy_node, busy_ctl, "config reload -t r1 -d 'ip_allow: {}'", 75)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'Reload in progress \[other\]', 'the refusal is reported')
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
     'Inline configuration is NOT persisted', 'no note: the inline config was refused')
@@ -320,7 +338,11 @@ tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
 # The note follows how the monitored reload ended, not its grade: a reload the monitor stopped watching may still apply it, one
 # that ended fail or timeout did not, and one whose state could not be read keeps the rule of the other commands.
 NOTE = 'Inline configuration is NOT persisted'
-spin_node, spin_ctl = stub('mon_spin', {'admin_config_reload': RELOAD_SCHEDULED, 'get_reload_config_status': status_reply(task('in_progress'))})
+spin_node, spin_ctl = stub(
+    'mon_spin', {
+        'admin_config_reload': RELOAD_SCHEDULED,
+        'get_reload_config_status': status_reply(task('in_progress'))
+    })
 tr = on_stub('inline, the monitor --timeout expires', spin_node, spin_ctl, f'{INLINE} --timeout 300ms', 75)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('Monitor timed out', 'the monitor timed out')
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(NOTE, 'the note: the reload may still apply it')
@@ -328,19 +350,31 @@ tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(NOTE, 'the not
 srv_to_node, srv_to_ctl = monitor_stub('mon_inline_to', status_reply(task('timeout')))
 tr = on_stub('inline, the server times the reload out', srv_to_node, srv_to_ctl, INLINE, 2)
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(NOTE, 'no note for a reload that ended timeout')
-tr = on_stub('inline, the server times the reload out, --error-level fatal', srv_to_node, srv_to_ctl, f'--error-level fatal {INLINE}', 75)
+tr = on_stub(
+    'inline, the server times the reload out, --error-level fatal', srv_to_node, srv_to_ctl, f'--error-level fatal {INLINE}', 75)
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(NOTE, 'no note at any level')
 
-odd_inline_node, odd_inline_ctl = monitor_stub('mon_inline_odd', status_reply(task('success', [], [task('success'), task('timeout')])))
+odd_inline_node, odd_inline_ctl = monitor_stub(
+    'mon_inline_odd', status_reply(task('success', [], [task('success'), task('timeout')])))
 tr = on_stub(
-    'inline, success with a sub-task that timed out, --error-level fatal', odd_inline_node, odd_inline_ctl, f'--error-level fatal {INLINE}',
-    75)
+    'inline, success with a sub-task that timed out, --error-level fatal', odd_inline_node, odd_inline_ctl,
+    f'--error-level fatal {INLINE}', 75)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('Details : traffic_ctl config status -t r1', 'the details hint')
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(NOTE, 'the note: the reload reported success')
 
 
 def poll_error(severity: int) -> dict:
-    return {'error': {'code': 9, 'message': 'Error during execution', 'data': [{'code': 1, 'message': 'boom', 'severity': severity}]}}
+    return {
+        'error': {
+            'code': 9,
+            'message': 'Error during execution',
+            'data': [{
+                'code': 1,
+                'message': 'boom',
+                'severity': severity
+            }]
+        }
+    }
 
 
 perr_node, perr_ctl = stub(
@@ -351,9 +385,18 @@ perr_node, perr_ctl = stub(
 tr = on_stub('inline, a status poll fails at the level', perr_node, perr_ctl, INLINE, 2)
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(NOTE, 'no note when the poll failed')
 tr = on_stub('inline, a status poll fails below the level', perr_node, perr_ctl, f'--error-level fatal {INLINE}', 75)
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(NOTE, 'the note: the outcome is unknown, as for the other commands')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+    NOTE, 'the note: the outcome is unknown, as for the other commands')
 
-empty_node, empty_ctl = stub('mon_empty', {'admin_config_reload': RELOAD_SCHEDULED, 'get_reload_config_status': {'result': {'tasks': []}}})
+empty_node, empty_ctl = stub(
+    'mon_empty', {
+        'admin_config_reload': RELOAD_SCHEDULED,
+        'get_reload_config_status': {
+            'result': {
+                'tasks': []
+            }
+        }
+    })
 tr = on_stub('inline, a status reply without tasks', empty_node, empty_ctl, INLINE, 2)
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(NOTE, 'no note when no task was reported')
 
@@ -376,8 +419,10 @@ out_sub = task('success')
 out_sub['logs'] = [{'level': 42, 'text': 'level forty-two'}, {'level': -1, 'text': 'level minus one'}]
 out_node, out_ctl = status_stub('st_lvl_out', task('success', [], [out_sub]))
 tr = on_stub('levels out of range print clamped', out_node, out_ctl, 'config status', 0)
-tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(r'\[Emrg\] +level forty-two', 'above the range prints as the highest')
-tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(r'\[Diag\] +level minus one', 'below the range prints as the lowest')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    r'\[Emrg\] +level forty-two', 'above the range prints as the highest')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    r'\[Diag\] +level minus one', 'below the range prints as the lowest')
 tr = on_stub('levels out of range, --min-level note', out_node, out_ctl, 'config status --min-level note', 0)
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('level minus one', 'the lowest level is filtered as before')
 on_stub('levels out of range, --error-level warn', out_node, out_ctl, '--error-level warn config status', 2)
@@ -413,14 +458,17 @@ def on_ts_to(description: str, command: str, return_code: int, delay: int = 0):
     return tr
 
 
-tr = on_ts_to('a reload traffic_server times out fails at the default level', f'traffic_ctl config reload -t to_def {TS_TO_INLINE}', 2)
+tr = on_ts_to(
+    'a reload traffic_server times out fails at the default level', f'traffic_ctl config reload -t to_def {TS_TO_INLINE}', 2)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'\d+/\d+ +timeout', 'the reload ended timeout')
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(NOTE, 'no note for a reload that ended timeout')
 on_ts_to('config status grades the reload that timed out', 'traffic_ctl config status -t to_def', 2)
 # Let the deferred handler finish before the next reload.
 tr = on_ts_to(
     'a reload traffic_server times out, --error-level fatal: not done',
-    f'traffic_ctl --error-level fatal config reload -t to_fat {TS_TO_INLINE}', 75, delay=8)
+    f'traffic_ctl --error-level fatal config reload -t to_fat {TS_TO_INLINE}',
+    75,
+    delay=8)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(r'\d+/\d+ +timeout', 'the reload ended timeout')
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     'Details : traffic_ctl config status -t to_fat', 'a reload that never finished points at its details')
