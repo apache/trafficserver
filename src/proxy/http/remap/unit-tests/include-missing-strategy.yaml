@@ -1,6 +1,6 @@
 # @file
 #
-#  Unit test data strategy.yaml file for testing the NextHopStrategyFactory
+#  Unit test data strategies.yaml file for testing the NextHopStrategyFactory
 #
 #  @section license License
 #
@@ -23,7 +23,7 @@
 #  @section details Details
 #
 #
-# unit test strategy.yaml with a '#include' directive missing its file name
+# unit test strategies.yaml with a '#include' directive missing its file name
 #
 #include
 #
