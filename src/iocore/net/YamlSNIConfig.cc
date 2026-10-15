@@ -236,6 +236,8 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_verify_server_properties,
                                                TS_client_cert,
                                                TS_client_key,
+                                               TS_client_rpk_enabled,
+                                               TS_server_rpk_ca,
                                                TS_client_sni_policy,
                                                TS_server_cipher_suite,
 #if TS_USE_TLS_SET_CIPHERSUITES
@@ -467,6 +469,19 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (node[TS_client_key]) {
       item.client_key = node[TS_client_key].as<std::string>();
     }
+    if (node[TS_client_rpk_enabled]) {
+      item.client_rpk_enabled = node[TS_client_rpk_enabled].as<bool>();
+    }
+    if (node[TS_server_rpk_ca]) {
+      item.server_rpk_ca = node[TS_server_rpk_ca].as<std::string>();
+    }
+#if !TS_USE_RPK
+    if (item.client_rpk_enabled || !item.server_rpk_ca.empty()) {
+      Warning("sni.yaml: this build has no RFC 7250 raw public key support, so client_rpk_enabled and server_rpk_ca do not apply "
+              "for fqdn '%s'",
+              item.fqdn.empty() ? "*" : item.fqdn.c_str());
+    }
+#endif
     if (node[TS_client_sni_policy]) {
       item.client_sni_policy = node[TS_client_sni_policy].as<std::string>();
     }

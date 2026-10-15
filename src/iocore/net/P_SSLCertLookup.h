@@ -57,17 +57,20 @@ struct SSLMultiCertConfigParams {
     session_ticket_number  = RecGetRecordInt("proxy.config.ssl.server.session_ticket.number").value_or(0);
   }
 
-  int                  session_ticket_enabled; ///< session ticket enabled
-  int                  session_ticket_number;  ///< amount of session tickets to issue for new TLSv1.3 connections
-  ats_scoped_str       addr;                   ///< IPv[64] address to match
-  ats_scoped_str       cert;                   ///< certificate
-  ats_scoped_str       first_cert;             ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
-  ats_scoped_str       ca;                     ///< CA public certificate
-  ats_scoped_str       key;                    ///< Private key
-  ats_scoped_str       ocsp_response;          ///< prefetched OCSP response
-  ats_scoped_str       dialog;                 ///< Private key dialog
-  ats_scoped_str       servername;             ///< Destination server
-  SSLCertContextOption opt;                    ///< SSLCertContext special handling option
+  int            session_ticket_enabled; ///< session ticket enabled
+  int            session_ticket_number;  ///< amount of session tickets to issue for new TLSv1.3 connections
+  ats_scoped_str addr;                   ///< IPv[64] address to match
+  ats_scoped_str cert;                   ///< certificate
+  ats_scoped_str first_cert;             ///< the first certificate name when multiple cert files are in 'ssl_cert_name'
+  ats_scoped_str ca;                     ///< CA public certificate
+  ats_scoped_str key;                    ///< Private key
+  ats_scoped_str ocsp_response;          ///< prefetched OCSP response
+  ats_scoped_str dialog;                 ///< Private key dialog
+  ats_scoped_str servername;             ///< Destination server
+  bool           rpk_enabled = false;    ///< Offer RFC 7250 raw public keys (using this entry's existing cert/key as the
+                                         ///< identity) alongside X.509, negotiated per connection
+  ats_scoped_str       client_rpk_ca; ///< Trusted client raw public keys (PEM, may contain more than one) for inbound mTLS pinning
+  SSLCertContextOption opt;           ///< SSLCertContext special handling option
 };
 
 struct ssl_ticket_key_t {

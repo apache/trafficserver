@@ -26,6 +26,7 @@ add_executable(
   test_HttpTransactHeaders.cc
   test_HttpUserAgent.cc
   test_PreWarm.cc
+  test_ServerSessionPool.cc
 )
 
 target_link_libraries(
