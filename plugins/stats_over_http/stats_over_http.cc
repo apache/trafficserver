@@ -35,6 +35,7 @@
 #include <ctime>
 #include <fstream>
 #include <getopt.h>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <netinet/in.h>
@@ -289,11 +290,12 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
   if (event == TS_EVENT_VCONN_READ_READY) {
     auto        entry  = get_body(my_state);
     std::string header = build_resp_header(my_state->output_format, *entry);
-    int64_t     nbytes = TSIOBufferWrite(my_state->resp_buffer, header.data(), header.size());
 
-    nbytes += TSIOBufferWrite(my_state->resp_buffer, entry->body.data(), entry->body.size());
+    TSIOBufferWrite(my_state->resp_buffer, header.data(), header.size());
+    TSIOBufferWrite(my_state->resp_buffer, entry->body.data(), entry->body.size());
     TSVConnShutdown(my_state->net_vc, 1, 0);
-    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, nbytes);
+    my_state->write_vio =
+      TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, TSIOBufferReaderAvail(my_state->resp_reader));
   } else if (event == TS_EVENT_ERROR) {
     TSError("[%s] stats_process_read: Received TS_EVENT_ERROR", PLUGIN_NAME);
     stats_cleanup(contp, my_state);
@@ -818,7 +820,15 @@ gzip_compress(const std::string &in, std::string &out, int mode)
     return false;
   }
 
-  out.resize(deflateBound(&zstrm, in.size()));
+  // avail_in and avail_out are uInt, so a single deflate() call cannot take a larger body.
+  uLong bound = deflateBound(&zstrm, in.size());
+
+  if (bound > std::numeric_limits<uInt>::max()) {
+    Dbg(dbg_ctl, "body too large to compress: %zu", in.size());
+    deflateEnd(&zstrm);
+    return false;
+  }
+  out.resize(bound);
   zstrm.next_in   = reinterpret_cast<Bytef *>(const_cast<char *>(in.data()));
   zstrm.avail_in  = in.size();
   zstrm.next_out  = reinterpret_cast<Bytef *>(out.data());
