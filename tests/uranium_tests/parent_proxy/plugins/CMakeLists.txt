@@ -15,4 +15,4 @@
 #
 #######################
 
-add_autest_plugin(parent_override_test parent_override_test.cc)
+add_urtest_plugin(parent_override_test parent_override_test.cc)

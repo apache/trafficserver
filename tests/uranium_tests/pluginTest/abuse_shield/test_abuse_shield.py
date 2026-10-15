@@ -384,9 +384,16 @@ def test_abuse_shield_block_expiration(ats_factory: ATSFactory, services: Servic
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
     time.sleep(7)
-    recovered = curl.run(f'--insecure --silent --output /dev/null --write-out "%{{http_code}}" https://127.0.0.1:{ats.https_port}/')
-    assert recovered.returncode == 0, recovered.output
-    assert recovered.stdout == "200", recovered.output
+    before = ats.traffic_ctl("metric", "get", "abuse_shield.actions.blocked")
+    assert before.returncode == 0, before.output
+    for _ in range(2):
+        recovered = curl.run(
+            f'--insecure --silent --output /dev/null --write-out "%{{http_code}}" https://127.0.0.1:{ats.https_port}/')
+        assert recovered.returncode == 0, recovered.output
+        assert recovered.stdout == "200", recovered.output
+    after = ats.traffic_ctl("metric", "get", "abuse_shield.actions.blocked")
+    assert after.returncode == 0, after.output
+    assert before.stdout == after.stdout, (before.output, after.output)
 
 
 def test_abuse_shield_combined_rule(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:

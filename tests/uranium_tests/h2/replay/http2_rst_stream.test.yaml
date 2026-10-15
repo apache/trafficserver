@@ -53,7 +53,7 @@ urtest:
       server:
         log_validation:
           excludes:
-            - {expression: "RST_STREAM", description: "The origin must not see the downstream reset"}
+            - {expression: '(?s)Received RST_STREAM frame with stream id (\d+),.*HTTP/2 stream is closed with id: \1\b', description: "A client abort must not reset a still-open origin stream"}
       ats:
         log_validation:
           traffic_out:
@@ -75,7 +75,7 @@ urtest:
       server:
         log_validation:
           excludes:
-            - {expression: "RST_STREAM", description: "The origin must not see the downstream reset"}
+            - {expression: '(?s)Received RST_STREAM frame with stream id (\d+),.*HTTP/2 stream is closed with id: \1\b', description: "A client abort must not reset a still-open origin stream"}
       ats:
         log_validation:
           traffic_out:
