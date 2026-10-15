@@ -662,7 +662,7 @@ Http3Transaction::do_io_close(int lerrno)
 bool
 Http3Transaction::_is_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&Http3Transaction::state_stream_closed);
+  return this->handler == &Http3Transaction::state_stream_closed;
 }
 
 void
@@ -863,7 +863,7 @@ Http09Transaction::do_io_close(int lerrno)
 bool
 Http09Transaction::_is_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&Http09Transaction::state_stream_closed);
+  return this->handler == &Http09Transaction::state_stream_closed;
 }
 
 int

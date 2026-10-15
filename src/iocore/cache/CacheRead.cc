@@ -842,7 +842,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
       dir = earliest_dir;
       if ((call_result = do_read_call(&key)) == EVENT_RETURN) {
-        if (this->handler == reinterpret_cast<ContinuationHandler>(&CacheVC::openReadStartEarliest)) {
+        if (this->handler == &CacheVC::openReadStartEarliest) {
           is_recursive_call = true;
           if (t_read_recursive > MAX_READ_RECURSION_DEPTH) {
             char tmpstring[CRYPTO_HEX_SIZE];
