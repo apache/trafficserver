@@ -318,8 +318,8 @@ IncludeUrlValidator::setHostAllowRegex(const std::string &pattern)
   // Cap backtracking so a pathological pattern/host can't burn unbounded CPU
   // on this hot path; an exceeded limit surfaces from exec() as a negative
   // return and is treated as "not allowlisted" (fail closed).
-  _match_context.set_match_limit(ALLOW_REGEX_MATCH_LIMIT);
-  _has_allow_regex = true;
+  _match_options.match_limit = ALLOW_REGEX_MATCH_LIMIT;
+  _has_allow_regex           = true;
   return true;
 }
 
@@ -412,7 +412,7 @@ IncludeUrlValidator::validate(string_view url) const
     // match limit. We only care whether the host matched, not the captures, so
     // any non-negative return is a match; only a negative return fails closed.
     RegexMatches matches;
-    if (_allow_regex.exec(h, matches, RE_FULL_MATCH, &_match_context) < 0) {
+    if (_allow_regex.exec(h, matches, RE_FULL_MATCH, _match_options) < 0) {
       return NOT_ALLOWLISTED;
     }
   }
