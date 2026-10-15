@@ -1,3 +1,26 @@
+/** @file
+
+  Fuzzing HTTP header validation and version conversion.
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HeaderValidator.h"
 #include "proxy/hdrs/VersionConverter.h"
@@ -17,16 +40,31 @@ extern int cmd_disable_pfreelist;
 
 namespace
 {
-constexpr size_t MAX_INPUT_LENGTH = 64 * 1024;
-constexpr std::array<std::string_view, 17> FIELD_NAMES = {
-  ":method",    ":scheme",    ":authority",       ":path",             ":status", "host",
-  "cookie",     "connection", "keep-alive",       "proxy-connection",  "upgrade", "transfer-encoding",
-  "te",         "content-length", "content-type", "x-test",            "",
+constexpr size_t                           MAX_INPUT_LENGTH = 64 * 1024;
+constexpr std::array<std::string_view, 17> FIELD_NAMES      = {
+  ":method",
+  ":scheme",
+  ":authority",
+  ":path",
+  ":status",
+  "host",
+  "cookie",
+  "connection",
+  "keep-alive",
+  "proxy-connection",
+  "upgrade",
+  "transfer-encoding",
+  "te",
+  "content-length",
+  "content-type",
+  "x-test",
+  "",
 };
 
 void
 add_field(HTTPHdr &header, std::string_view name, std::string_view value)
 {
+  // An empty name allocates an unnamed field for validator rejection coverage.
   MIMEField *field = header.field_create(name);
 
   field->value_set(header.m_heap, header.m_mime, value);
@@ -37,9 +75,9 @@ void
 print_header(const HTTPHdr &header)
 {
   std::array<char, 32> small_buffer{};
-  int                 buffer_index = 0;
-  int                 dump_offset  = 0;
-  int                 length       = header.length_get();
+  int                  buffer_index = 0;
+  int                  dump_offset  = 0;
+  int                  length       = header.length_get();
 
   header.print(small_buffer.data(), small_buffer.size(), &buffer_index, &dump_offset);
   if (length >= 0 && length <= 2 * static_cast<int>(MAX_INPUT_LENGTH)) {
@@ -53,7 +91,12 @@ print_header(const HTTPHdr &header)
 void
 convert_decoded_header(const HTTPHdr &header, int version, bool is_response, bool is_trailer)
 {
-  if (!HeaderValidator::is_h2_h3_header_valid(header, is_response, is_trailer) || is_trailer) {
+  if (!HeaderValidator::is_h2_h3_header_valid(header, is_response, is_trailer)) {
+    return;
+  }
+
+  // Trailers lack the request/status pseudo headers required by full-header conversion.
+  if (is_trailer) {
     return;
   }
 
@@ -101,6 +144,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     const char    *start = input.data();
     const char    *end   = start + input.size();
 
+    // Reserve pseudo-header slots required by HTTP/1-to-HTTP/2 or HTTP/3 conversion.
     header.create(type, version == 2 ? HTTP_2_0 : HTTP_3_0);
     http_parser_init(&parser);
     ParseResult result = is_response ? header.parse_resp(&parser, &start, end, true) : header.parse_req(&parser, &start, end, true);
@@ -145,6 +189,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     }
 
     convert_decoded_header(header, version, is_response, (flags & 32) != 0);
+    // Same-version conversion still validates names and values, even after semantic rejection.
     converter.convert(header, version, version);
   }
 
