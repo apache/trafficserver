@@ -415,3 +415,84 @@ logging:
 
 
 StatsOverHttpPluginTest().run()
+
+
+class StatsOverHttpCacheTtlTest:
+    """Verify that --cache-ttl serves a cached response until it goes stale."""
+
+    CACHE_TTL = 3
+
+    def __init__(self):
+        self.ts = Test.MakeATSProcess("ts_cache_ttl")
+        self.ts.Disk.plugin_config.AddLine(f'stats_over_http.so --cache-ttl={self.CACHE_TTL} _stats')
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "stats_over_http",
+            })
+        self.url = f'http://127.0.0.1:{self.ts.Variables.port}/_stats'
+
+    def __epoch(self, curl_args: str = '') -> str:
+        return f"curl -s --http1.1 {curl_args} {self.url} | grep current_time_epoch_ms"
+
+    def __testCacheHeaders(self):
+        tr = Test.AddTestRun('A cached stats response advertises its max-age and age')
+        tr.Processes.Default.StartBefore(self.ts)
+        # Use CSV so this cache entry is not shared with the JSON entry the fresh/stale runs depend on.
+        csv = "-H 'Accept: text/csv'"
+        tr.Processes.Default.Command = (
+            f'curl -s -o /dev/null --http1.1 {csv} {self.url} && sleep 2 && '
+            f'curl -vs -o /dev/null --http1.1 {csv} {self.url}')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
+            r'< Age: [1-9]', 'A cache hit should report the age of the cached body.')
+        tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
+            f'Cache-Control: max-age={self.CACHE_TTL}', 'Cache-Control should carry the configured max-age.')
+        tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
+            '< Vary: Accept, Accept-Encoding', 'Cacheable responses should vary on the negotiated format and encoding.')
+        tr.Processes.Default.Streams.stderr += Testers.ExcludesExpression(
+            'no-cache', 'Cached responses should not be marked no-cache.')
+        tr.StillRunningAfter = self.ts
+
+    def __testFreshThenStale(self, description: str, curl_args: str):
+        tr = Test.AddTestRun(description)
+        command = (
+            f'first=$({self.__epoch(curl_args)}); '
+            f'second=$({self.__epoch(curl_args)}); '
+            f'sleep {self.CACHE_TTL + 1}; '
+            f'third=$({self.__epoch(curl_args)}); '
+            'echo "first=$first second=$second third=$third"; '
+            'test -n "$first" && test "$first" = "$second" && echo "FRESH_HIT"; '
+            'test -n "$third" && test "$first" != "$third" && echo "STALE_REGENERATED"')
+        # Escape '$' so AuTest's command templating passes it through to the shell.
+        tr.Processes.Default.Command = command.replace('$', '$$')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'FRESH_HIT', 'A request within the cache TTL should get the cached body.')
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'STALE_REGENERATED', 'A request after the cache TTL should get a regenerated body.')
+        tr.StillRunningBefore = self.ts
+        tr.StillRunningAfter = self.ts
+
+    def __testInvalidTtl(self):
+        ts = Test.MakeATSProcess("ts_invalid_cache_ttl")
+        ts.Disk.plugin_config.AddLine('stats_over_http.so --cache-ttl=99999 _stats')
+        ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            r"invalid --cache-ttl value '99999'", 'An out of range TTL should log a warning.')
+
+        tr = Test.AddTestRun('An invalid cache TTL disables caching')
+        tr.Processes.Default.StartBefore(ts)
+        tr.Processes.Default.Command = f'curl -vs -o /dev/null --http1.1 http://127.0.0.1:{ts.Variables.port}/_stats'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
+            'Cache-Control: no-cache', 'Caching should be disabled when the TTL is invalid.')
+        tr.StillRunningAfter = ts
+
+    def run(self):
+        self.__testCacheHeaders()
+        self.__testFreshThenStale('Uncompressed stats are cached for the cache TTL', '')
+        self.__testFreshThenStale('Gzip stats are cached for the cache TTL', "--compressed -H 'Accept-Encoding: gzip'")
+        self.__testInvalidTtl()
+
+
+StatsOverHttpCacheTtlTest().run()
