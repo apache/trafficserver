@@ -718,6 +718,17 @@ public:
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = UINT16_MAX);
   ParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
 
+  /** Whether parse_req() would accept this request, unchanged, once serialized.
+   *
+   * Lets a caller holding a request built without parse_req() (e.g. decoded from HTTP/2) skip
+   * the serialize and reparse. The check is conservative: on @c false, serialize the header and
+   * let parse_req() decide. The limits are parse_req()'s. Like parse_req(), it may remove
+   * redundant Content-Length fields.
+   *
+   * @pre The header must be initialized with @c HTTPType::REQUEST polarity.
+   */
+  bool parse_req_would_accept(int strict_uri_parsing, size_t max_request_line_size, size_t max_hdr_field_size);
+
   bool check_hdr_implements();
 
 public:
