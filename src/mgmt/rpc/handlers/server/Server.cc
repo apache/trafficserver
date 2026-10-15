@@ -153,7 +153,8 @@ server_start_drain(std::string_view const & /* id ATS_UNUSED */, YAML::Node cons
     if (!is_server_draining()) {
       set_server_drain(true);
     } else {
-      resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Server already draining.");
+      // Already in the requested state: report it, as a warning so clients can tell it apart from a failure.
+      resp.errata().assign(std::error_code{errors::Codes::SERVER}).note(ERRATA_WARN, "Server already draining.");
     }
   } catch (std::exception const &ex) {
     Dbg(dbg_ctl_rpc_handler_server, "Got an error DrainInfo decoding: %s", ex.what());
@@ -169,7 +170,7 @@ server_stop_drain(std::string_view const & /* id ATS_UNUSED */, YAML::Node const
   if (is_server_draining()) {
     set_server_drain(false);
   } else {
-    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("Server is not draining.");
+    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note(ERRATA_WARN, "Server is not draining.");
   }
 
   return resp;

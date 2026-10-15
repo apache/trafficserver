@@ -397,6 +397,14 @@ Examples:
 
         ``make_errata`` hides some internal details when creating an errata.
 
+* Respond with a condition that is not a failure, for example a state that is already in place. Give the annotation the ``Warn``
+  severity: it reaches the client with ``"severity": 4``, and :program:`traffic_ctl` exits ``0`` for it unless asked otherwise.
+  Annotations without a severity are failures. See :ref:`jsonrpc-node-errors-severity`.
+
+    .. code-block::
+
+        resp.errata().assign(std::error_code{errors::Codes::SERVER}).note(ERRATA_WARN, "Server already draining.");
+
 * Response with custom handler error. In this case, make sure that the API definition and documentation reflects this as so far we do not
   have json schemas to enforce any of this on the client side.
 
