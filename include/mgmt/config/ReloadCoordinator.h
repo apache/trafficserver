@@ -41,7 +41,7 @@ public:
   /// and creates the main tracking task. Use --force to bypass the in-progress guard.
   [[nodiscard]] swoc::Errata prepare_reload(std::string &token_name, const char *token_prefix = "rldtk-", bool force = false);
 
-  /// Return snapshots of the last N reload tasks (0 = all). Most recent first.
+  /// Return snapshots of the last N reload tasks (0 = all), oldest first.
   [[nodiscard]] std::vector<ConfigReloadTask::Info> get_all(std::size_t N = 0) const;
 
   /// Look up a reload task by its token. Returns {found, info_snapshot}.
