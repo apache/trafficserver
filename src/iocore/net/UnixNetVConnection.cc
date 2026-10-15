@@ -1313,20 +1313,12 @@ UnixNetVConnection::is_default_inactivity_timeout()
  * Close down the current netVC.  Save aside the socket and SSL information
  * so a new netVC can be created from them in another thread.
  */
-void
+bool
 UnixNetVConnection::detachForMigration(MigrationState &ms)
 {
-  ms.con.move(this->con);
-  ms.arg                   = this->_prepareForMigration();
-  ms.options               = this->options;
-  ms.context               = this->get_context();
-  ms.inactivity_timeout_in = this->inactivity_timeout_in;
-  ms.processor             = this->_getNetProcessor();
-
-  // Do_io_close will signal the VC to be freed on the original thread
-  // Since we moved the con context, the fd will not be closed
-  // Go ahead and remove the fd from the original thread's poller, so it is not
-  // processed on two threads simultaneously
+  // Remove the fd from the original thread's poller first, so it is not processed on two threads
+  // simultaneously. While this VC still owns the socket and SSL information a failure only needs
+  // an ordinary close.
   //
   // This stop is not synchronized with the original thread. That thread may have already seen
   // this VC as open and enabled in NetHandler::process_ready_list, in which case it goes on to
@@ -1337,10 +1329,26 @@ UnixNetVConnection::detachForMigration(MigrationState &ms)
   //
   // Unlike an ordinary close, migration keeps the fd open, so kqueue registrations must
   // also be removed here before the old VC can be freed.
-  ink_release_assert(this->ep.stop_for_migration() == 0);
+  if (this->ep.stop_for_migration() != 0) {
+    Error("Failed to remove migrating socket %d from its event loop, errno=%d (%s)", this->con.sock.get_fd(), errno,
+          strerror(errno));
+    ink_assert(!"stop_for_migration failed");
+    this->do_io_close();
+    return false;
+  }
 
+  ms.con.move(this->con);
+  ms.arg                   = this->_prepareForMigration();
+  ms.options               = this->options;
+  ms.context               = this->get_context();
+  ms.inactivity_timeout_in = this->inactivity_timeout_in;
+  ms.processor             = this->_getNetProcessor();
+
+  // Do_io_close will signal the VC to be freed on the original thread
+  // Since we moved the con context, the fd will not be closed
   // Do not mark this closed until the end so it does not get freed by the other thread too soon
   this->do_io_close();
+  return true;
 }
 
 /*

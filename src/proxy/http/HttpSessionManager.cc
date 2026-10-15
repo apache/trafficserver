@@ -60,12 +60,13 @@ validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
 void
 initialize_thread_for_http_sessions(EThread *thread)
 {
-  thread->server_session_pool = new ServerSessionPool;
+  thread->server_session_pool = new ServerSessionPool(thread);
 }
 
 HttpSessionManager httpSessionManager;
 
-ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_pool(1023), m_fqdn_pool(1023)
+ServerSessionPool::ServerSessionPool(EThread *thread)
+  : Continuation(new_ProxyMutex()), m_ip_pool(1023), m_fqdn_pool(1023), m_thread(thread)
 {
   SET_HANDLER(&ServerSessionPool::eventHandler);
   m_ip_pool.set_expansion_policy(IPTable::MANUAL);
@@ -73,11 +74,12 @@ ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_po
 }
 
 void
-ServerSessionPool::requestPurge(EThread *thread)
+ServerSessionPool::requestPurge()
 {
+  ink_assert(m_thread != nullptr);
   // This is called for every request once the connection limit is reached, so only schedule one event.
   if (!m_purge_requested.load(std::memory_order_relaxed) && !m_purge_requested.exchange(true)) {
-    thread->schedule_imm(this);
+    m_thread->schedule_imm(this);
   }
 }
 
@@ -315,6 +317,8 @@ ServerSessionPool::eventHandler(int event, void *data)
   switch (event) {
   case EVENT_IMMEDIATE:
   case EVENT_INTERVAL:
+    // Both requestPurge and deferClose schedule this pool, and an event from either does whatever
+    // work is pending. An event finding nothing to do is harmless.
     if (m_purge_requested.exchange(false) && !httpSessionManager.purge_thread_keepalives()) {
       // The shared pool is busy, try again shortly.
       if (!m_purge_requested.exchange(true)) {
@@ -437,14 +441,20 @@ HttpSessionManager::init()
 //
 // A session is closed by the thread that owns its connection, so this asks every thread to close
 // its own. That keeps the closes out of the pool lock and away from other threads' connections.
+// This thread's sessions are closed right away so that a retry of the request that hit the
+// connection limit can find room without waiting on an event.
 void
 HttpSessionManager::purge_keepalives()
 {
-  auto const &group = eventProcessor.thread_group[ET_NET];
+  EThread    *ethread     = this_ethread();
+  auto const &group       = eventProcessor.thread_group[ET_NET];
+  bool        purged_here = ethread->server_session_pool != nullptr && this->purge_thread_keepalives();
 
   for (int i = 0; i < group._count; ++i) {
     if (EThread *thread = group._thread[i]; thread != nullptr && thread->server_session_pool != nullptr) {
-      thread->server_session_pool->requestPurge(thread);
+      if (thread != ethread || !purged_here) {
+        thread->server_session_pool->requestPurge();
+      }
     }
   }
 }
@@ -576,6 +586,7 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
   HSMresult_t                                       retval    = HSMresult_t::NOT_FOUND;
   EThread                                          *ethread   = this_ethread();
   std::optional<UnixNetVConnection::MigrationState> migration;
+  bool                                              migration_failed = false;
 
   // Only the pool search and the hand off of the session's VC need the pool
   // mutex. A pooled VC uses the pool mutex for its VIOs, so holding it keeps
@@ -614,15 +625,20 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
           } else {
             // The original VC must be marked closed while the pool mutex is held, its
             // thread depends on the closed flag being stable under the VIO mutex.
-            server_vc->detachForMigration(migration.emplace());
+            Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] migrating session from another thread",
+                to_return->connection_id());
+            if (!server_vc->detachForMigration(migration.emplace())) {
+              migration.reset();
+              migration_failed = true;
+            }
           }
         }
       }
     }
   }
 
-  if (migration) {
-    UnixNetVConnection *new_vc = UnixNetVConnection::attachMigrated(*migration, sm, ethread);
+  if (migration || migration_failed) {
+    UnixNetVConnection *new_vc = migration ? UnixNetVConnection::attachMigrated(*migration, sm, ethread) : nullptr;
 
     // The original VC was closed by the detach and may already be freed.
     to_return->set_netvc(new_vc);

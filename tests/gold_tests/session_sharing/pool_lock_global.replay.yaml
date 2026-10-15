@@ -1,0 +1,235 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Exercise the shared origin session pool across net threads.
+#
+# Each client session is a new connection, which the accept thread hands to
+# the four net threads in turn. The second session to each origin host
+# therefore finds the pooled connection owned by another thread and migrates
+# it. The session to the fourth host needs a new connection once the three
+# allowed by server_max_connections exist, so it purges the pool and succeeds
+# on retry. It runs four sessions after the one that migrated the second
+# host's connection, so that connection is on its own thread and the purge
+# makes room without waiting on the other threads.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Reuse pooled origin connections across threads with the global pool'
+
+  # Every origin name resolves to the server. Pooled connections match on the
+  # origin name, so each name gets its own connection.
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts_global'
+    process_config:
+      enable_tls: false
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_ss'
+      proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.exec_thread.limit: 4
+      proxy.config.http.server_max_connections: 3
+      proxy.config.http.server_session_sharing.pool: 'global'
+      proxy.config.http.server_session_sharing.match: 'both'
+
+    remap_config:
+      - from: "http://a.pool.test/"
+        to: "http://a.origin.test:{SERVER_HTTP_PORT}/"
+      - from: "http://b.pool.test/"
+        to: "http://b.origin.test:{SERVER_HTTP_PORT}/"
+      - from: "http://c.pool.test/"
+        to: "http://c.origin.test:{SERVER_HTTP_PORT}/"
+      - from: "http://d.pool.test/"
+        to: "http://d.origin.test:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'global pool search successful'
+            description: 'Verify a pooled origin connection was reused'
+          - expression: '\[acquire session\] migrating session from another thread'
+            description: 'Verify a pooled origin connection was migrated between threads'
+          - expression: '\[purge keepalives\] closing [1-9]'
+            description: 'Verify reaching server_max_connections purged pooled connections'
+
+    # The purge closes three connections and the origin closes the fourth when
+    # the server stops, so both gauges must be back at zero.
+    metric_checks:
+      - metric: 'proxy.process.http.origin_shutdown.migration_failure'
+        value: 0
+      - metric: 'proxy.process.http.pooled_server_connections'
+        value: 0
+      - metric: 'proxy.process.http.current_server_connections'
+        value: 0
+
+sessions:
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /a/first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, a.pool.test ]
+        - [ uuid, a-first ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /a/second
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, a.pool.test ]
+        - [ uuid, a-second ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /b/first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, b.pool.test ]
+        - [ uuid, b-first ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /b/second
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, b.pool.test ]
+        - [ uuid, b-second ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /c/first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, c.pool.test ]
+        - [ uuid, c-first ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /c/second
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, c.pool.test ]
+        - [ uuid, c-second ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /a/third
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, a.pool.test ]
+        - [ uuid, a-third ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+# Three origin connections are pooled, so a fourth host has to purge them.
+- transactions:
+  - client-request:
+      method: GET
+      url: /d/first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, d.pool.test ]
+        - [ uuid, d-first ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200

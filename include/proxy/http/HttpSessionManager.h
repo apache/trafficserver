@@ -64,7 +64,8 @@ class ServerSessionPool : public Continuation
 public:
   /// Default constructor.
   /// Constructs an empty pool.
-  ServerSessionPool();
+  /// @param thread The thread that owns this pool, or @c nullptr for the shared pool.
+  explicit ServerSessionPool(EThread *thread = nullptr);
   /// Handle events from server sessions.
   int         eventHandler(int event, void *data);
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
@@ -107,10 +108,8 @@ public:
   /** Ask the thread that owns this pool to close its sessions in the shared pool.
 
       This can be called from any thread.
-
-      @param thread The thread that owns this pool.
    */
-  void requestPurge(EThread *thread);
+  void requestPurge();
 
   /** Remove the sessions whose connections belong to @a thread.
 
@@ -136,6 +135,8 @@ public:
 private:
   void closeDeferred();
 
+  /// The thread that owns this pool, @c nullptr for the shared pool.
+  EThread *m_thread = nullptr;
   /// Sessions waiting to be closed by this pool's thread.
   std::vector<PoolableSession *> m_deferred_close;
   /// Set while this pool's thread has been asked to purge and has not yet done so.
@@ -149,7 +150,11 @@ public:
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(HttpSM *sm, sockaddr const *addr, const char *hostname, ProxyTransaction *ua_txn);
   HSMresult_t release_session(PoolableSession *to_release);
-  /// Close the keep-alive sessions in the shared pool. Each thread closes its own, so this returns before they are closed.
+  /** Close the keep-alive sessions in the shared pool.
+
+      Each thread closes its own sessions. The current thread's are closed before this returns, the
+      others when their thread next runs.
+   */
   void purge_keepalives();
   /** Close the shared pool sessions whose connections belong to the current thread.
 

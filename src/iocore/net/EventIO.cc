@@ -123,6 +123,8 @@ EventIO::modify(int e)
     return epoll_ctl(loop->epoll_fd, EPOLL_CTL_MOD, fd, &ev);
 #endif
 #if TS_USE_KQUEUE && !defined(USE_EDGE_TRIGGER)
+  // Unlike refresh, this does not undo an add that raced with stop_for_migration. kqueue is always
+  // built edge triggered so this path is not compiled; it would need the same handling before use.
   int           n = 0;
   struct kevent ev[2];
   int           ee = events;
@@ -203,7 +205,10 @@ EventIO::stop()
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    retval    = epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
+    // A level triggered build removes the fd from the set once no events are enabled.
+    if (epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev) < 0 && errno != ENOENT) {
+      retval = -1;
+    }
 #else
     (void)loop;
 #endif

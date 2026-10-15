@@ -189,8 +189,12 @@ public:
    * This can be called from any thread, but the caller must hold the mutex of
    * the read and write VIOs to keep the owning thread from processing the
    * NetVC.
+   *
+   * @return @c false if the socket could not be removed from the owning
+   * thread's event loop. The NetVC is then closed along with its connection
+   * and ms is left untouched.
    */
-  void detachForMigration(MigrationState &ms);
+  bool detachForMigration(MigrationState &ms);
 
   /**
    * Second half of a migration to another thread. Create a new NetVC in the
