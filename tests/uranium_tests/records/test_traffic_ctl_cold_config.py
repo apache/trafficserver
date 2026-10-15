@@ -161,3 +161,18 @@ def test_traffic_ctl_cold_config(ats_factory: ATSFactory) -> None:
     )
     assert result.returncode == 64, result.output
     assert "2 argument(s) expected by set" in result.output
+
+    _ats.environment["TS_RECORD_YAML"] = str(_ats.config_directory / "new_records.yaml")
+    result = traffic_ctl("config", "get", "proxy.config.cache.limits.http.max_alts", "-c", _ats=_ats)
+    assert "proxy.config.cache.limits.http.max_alts: 3" in result.stdout
+    _ats.environment["TS_RECORD_YAML"] = str(_ats.config_directory / "does_not_exist.yaml")
+    result = traffic_ctl("config", "get", "-c", str(records_file), "proxy.config.diags.debug.tags", _ats=_ats)
+    assert "proxy.config.diags.debug.tags: http" in result.stdout
+    _ats.environment["TS_RECORD_YAML"] = str(records_file)
+    result = _ats.traffic_ctl("config", "get", "-c", str(records_file), "proxy.config.diags.debug.tags", "-c")
+    assert result.returncode == 64, result.output
+    assert "at most one argument expected by --cold" in result.output
+    destination = _ats.config_directory / "new_records4.yaml"
+    _ats.environment["TS_RECORD_YAML"] = str(destination)
+    traffic_ctl("config", "set", "proxy.config.cache.limits.http.max_alts", "3", "-c", _ats=_ats)
+    assert yaml.safe_load(destination.read_text()) == {"records": {"cache": {"limits": {"http": {"max_alts": 3}}}}}

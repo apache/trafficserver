@@ -29,6 +29,7 @@ urtest:
     name: "slice-purge-ts"
     records_config:
       proxy.config.diags.debug.enabled: 1
+      proxy.config.http.allow_half_open: 0
       proxy.config.diags.debug.tags: "http|slice|cache_range_requests"
   variants:
     - name: "absolute-basic"

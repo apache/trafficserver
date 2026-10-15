@@ -54,7 +54,7 @@ def tls_client_cert_override_configure_origin(
     )
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
-        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"},
     )
     return origin
 

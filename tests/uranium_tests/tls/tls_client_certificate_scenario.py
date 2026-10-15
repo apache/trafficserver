@@ -73,9 +73,14 @@ def run_tls_client_certificate(
                 origin.add_response(
                     {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
                     {
-                        "headers": "HTTP/1.1 200 OK\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n",
+                        "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n",
                     },
                 )
+        else:
+            origin.add_response(
+                {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n"},
+                {"headers": "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"},
+            )
         return origin
 
     def certificate_reference(ats: ATS, filename: str) -> str:

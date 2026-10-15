@@ -54,7 +54,7 @@ def run_tls_verify_override(
         )
         origin.add_response(
             {"headers": "GET / HTTP/1.1\r\nHost: ignored\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"},
         )
         return origin
 
@@ -207,6 +207,10 @@ def run_tls_verify_override(
     _foo = configure_origin(services, "foo-origin", "signed-foo")
     _bar = configure_origin(services, "bar-origin", "signed-bar")
     _untrusted = services.origin("untrusted-origin", ssl=True)
+    _untrusted.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: random.com\r\n\r\n"},
+        {"headers": "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"},
+    )
     _dns = configure_dns(services)
     _ats = configure_ats(ats_factory)
 
