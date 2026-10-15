@@ -76,3 +76,15 @@ JAxContext::get_method_name() const
 {
   return this->_method_name;
 }
+
+uint64_t
+JAxContext::get_txn_id() const
+{
+  return this->_txn_id;
+}
+
+void
+JAxContext::set_txn_id(uint64_t txn_id)
+{
+  this->_txn_id = txn_id;
+}

@@ -56,17 +56,18 @@ struct PluginConfig {
   PluginConfig() { Dbg(dbg_ctl, "New config (%p) has been created", this); }
   ~PluginConfig() { Dbg(dbg_ctl, "Config for (%p) has been deleted", this); }
 
-  PluginType    plugin_type     = PluginType::GLOBAL;
-  Mode          mode            = Mode::OVERWRITE;
-  struct Method method          = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};
-  std::string   header_name     = "";
-  std::string   via_header_name = "";
-  std::string   log_filename    = "";
-  std::string   log_symbol      = "";
-  std::string   export_name     = "";
-  int           user_arg_index  = -1;
-  TSCont        handler         = nullptr; // For remap plugin
-  bool          standalone      = false;
+  PluginType    plugin_type            = PluginType::GLOBAL;
+  Mode          mode                   = Mode::OVERWRITE;
+  struct Method method                 = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};
+  std::string   header_name            = "";
+  std::string   via_header_name        = "";
+  std::string   log_filename           = "";
+  std::string   log_symbol             = "";
+  std::string   export_name            = "";
+  int           user_arg_index         = -1;
+  int           session_user_arg_index = -1;      // Only reserved for --log-field
+  TSCont        handler                = nullptr; // For remap plugin
+  bool          standalone             = false;
   std::unordered_set<std::string, StringHash, std::equal_to<>> servernames;
   TSTextLogObject                                              log_handle = nullptr;
 };

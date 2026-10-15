@@ -113,9 +113,10 @@ class JaxFingerprintTest:
 
         if self._log_field:
             log_field_path = os.path.join(self._ts.Variables.LOGDIR, 'jax_log_field.log')
-            # Verify the log contains a fingerprint (not just a dash placeholder).
+            # Verify the log contains a fingerprint, not a dash placeholder or
+            # the fingerprint's bytes decoded as an integer.
             Test.AddAwaitFileContainsTestRun(
-                f'Await jax_log_field.log for: {self._name}', log_field_path, f'{self._method}: [a-z0-9]')
+                f'Await jax_log_field.log for: {self._name}', log_field_path, f'{self._method}: [a-z][0-9a-z_]{{9,}}')
 
     # ------------------------------------------------------------------
     # Helpers

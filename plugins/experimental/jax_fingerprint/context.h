@@ -27,6 +27,7 @@
 #include <sys/un.h>
 #include <limits.h>
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -42,8 +43,13 @@ public:
   const char *get_addr() const;
   const char *get_method_name() const;
 
+  /** The id of the transaction this context was copied from, or 0 if it is not transaction-scoped. */
+  uint64_t get_txn_id() const;
+  void     set_txn_id(uint64_t txn_id);
+
 private:
   std::string _fingerprint;
   char        _addr[PATH_MAX + 1];
   const char *_method_name;
+  uint64_t    _txn_id = 0;
 };

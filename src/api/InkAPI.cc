@@ -9688,7 +9688,8 @@ TSLogStringUnmarshal(char **buf, char *dest, int len)
   // of the alignment.
   if (int l = strlen(*buf); l < len) {
     memcpy(dest, *buf, l);
-    return {l, l};
+    // TSLogStringMarshal also wrote the terminating NUL, so the field occupies one more byte than was written to dest.
+    return {l + 1, l};
   } else {
     return {-1, -1};
   }
