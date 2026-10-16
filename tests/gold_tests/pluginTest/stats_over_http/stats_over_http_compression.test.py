@@ -18,6 +18,7 @@ Verify that stats_over_http compresses responses with many metrics and releases 
 #  limitations under the License.
 
 import os
+import re
 import shutil
 import sys
 
@@ -28,7 +29,7 @@ Test.ContinueOnFail = True
 
 
 class TestStatsOverHttpCompression:
-    '''Verify compressed stats responses and cleanup of aborted intercepts.'''
+    '''Verify compressed stats responses, uncompressed records[] responses and cleanup of aborted intercepts.'''
 
     # With this many metrics, the Prometheus output is larger than the default 1 MiB thread stack.
     METRIC_COUNT: int = 10000
@@ -37,6 +38,7 @@ class TestStatsOverHttpCompression:
         self._configure_traffic_server()
         self._configure_client()
         self._test_compression()
+        self._test_records()
         self._test_aborted_requests()
         self._test_stats_after_aborted_requests()
 
@@ -89,6 +91,19 @@ class TestStatsOverHttpCompression:
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
                 f'Verified {self.METRIC_COUNT} test metrics', f'The decoded {stats_format} body should hold every test metric.')
             tr.StillRunningAfter = ts
+
+    def _test_records(self) -> None:
+        ts = self._ts
+        last = self.METRIC_COUNT - 1
+        tr = Test.AddTestRun('Fetch two records by name, with gzip accepted')
+        tr.Processes.Default.Command = (
+            f'{sys.executable} {self._client} {ts.Variables.port} prometheus --encoding=gzip'
+            f' --record=plugin.test_metrics.gauge_0 --record=plugin.test_metrics.gauge_{last} --record=no.such.record')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            re.escape(f"Families: ['plugin_test_metrics_gauge_0', 'plugin_test_metrics_gauge_{last}']"),
+            'The response should hold only the samples of the named records that exist.')
+        tr.StillRunningAfter = ts
 
     def _test_aborted_requests(self) -> None:
         ts = self._ts

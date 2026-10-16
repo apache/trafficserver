@@ -24,6 +24,7 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -79,4 +80,23 @@ render(PrometheusRenderer &renderer, const std::vector<Stat> &stats)
     renderer.add(stat.name, stat.data_type, stat.datum);
   }
   return renderer.render();
+}
+
+// The samples of the named records as a request with records[] gets them, with the values of @a stats.  The result has no
+// value if a named record is not in @a stats.
+inline std::optional<std::string>
+render_records(PrometheusRenderer &renderer, const std::vector<std::string> &names, const std::vector<Stat> &stats)
+{
+  std::string const *body =
+    renderer.render_records(names, [&stats](const std::string &name, TSRecordDataType data_type, TSRecordData &datum) {
+      for (const Stat &stat : stats) {
+        if (name == stat.name && data_type == stat.data_type) {
+          datum = stat.datum;
+          return true;
+        }
+      }
+      return false;
+    });
+
+  return body != nullptr ? std::optional<std::string>{*body} : std::nullopt;
 }

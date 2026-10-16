@@ -22,6 +22,7 @@
  */
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -126,6 +127,15 @@ public:
   render(const std::vector<Stat> &stats)
   {
     return {::render(_renderer, stats), _renderer.stats()};
+  }
+
+  Rendered
+  records(const std::vector<std::string> &names, const std::vector<Stat> &stats)
+  {
+    std::optional<std::string> const body = ::render_records(_renderer, names, stats);
+
+    REQUIRE(body.has_value());
+    return {*body, _renderer.stats()};
   }
 
 private:
@@ -705,5 +715,85 @@ TEST_CASE("Rendered rules", "[prometheus_rules]")
                            "c 3\n");
     CHECK(rendered.stats.dropped == 2);
     CHECK(warnings.size() == 1);
+  }
+}
+
+TEST_CASE("A records render with rules", "[prometheus_rules]")
+{
+  SECTION("The samples appear in the order of a full render, with the values of the reader")
+  {
+    Renderer                renderer{"rules: [{match: '^(req)\\.(.+)$', labels: {method: 2}}]"};
+    std::vector<Stat> const stats = {counter("req.put", 1), gauge("b", 2), counter("req.get", 3), gauge("a", 5)};
+    auto const              full  = renderer.render(stats);
+
+    CHECK(renderer.records({"a", "b", "req.get", "req.put"}, stats).body == full.body);
+    CHECK(renderer.records({"req.put", "a"}, {counter("req.put", 9), gauge("a", 6)}).body == "# TYPE a gauge\n"
+                                                                                             "a 6\n"
+                                                                                             "# TYPE req counter\n"
+                                                                                             "req{method=\"put\"} 9\n");
+  }
+
+  SECTION("A record whose series an earlier record has writes nothing")
+  {
+    Renderer                renderer{"rules: [{match: '^[xy]\\.(a)$'}]"};
+    std::vector<Stat> const stats = {gauge("x.a", 1), gauge("y.a", 2)};
+
+    CHECK(renderer.render(stats).body == "# TYPE a gauge\n"
+                                         "a 1\n");
+
+    auto const rendered = renderer.records({"y.a"}, stats);
+
+    CHECK(rendered.body.empty());
+    CHECK(rendered.stats.duplicates == 1);
+    CHECK(renderer.records({"x.a", "y.a"}, stats).body == "# TYPE a gauge\n"
+                                                          "a 1\n");
+  }
+
+  SECTION("A record that a full render drops writes nothing")
+  {
+    // The record without a rule sets the label names of the family, so the record with a label is dropped.
+    Renderer                renderer{"rules: [{match: '^(req)\\.(.+)$', labels: {method: 2}}]"};
+    std::vector<Stat> const stats = {counter("req.get", 3), counter("req", 1)};
+    auto const              full  = renderer.render(stats);
+
+    REQUIRE(full.stats.dropped == 1);
+
+    auto const rendered = renderer.records({"req.get"}, stats);
+
+    CHECK(rendered.body.empty());
+    CHECK(rendered.stats.dropped == 1);
+    CHECK(renderer.records({"req", "req.get"}, stats).body == full.body);
+  }
+
+  SECTION("The series limit does not apply")
+  {
+    Renderer                renderer{"limits: {max_series: 1}"};
+    std::vector<Stat> const stats = {gauge("a", 1), gauge("b", 2)};
+
+    CHECK(renderer.render(stats).body == "# TYPE a gauge\n"
+                                         "a 1\n");
+    CHECK(renderer.records({"b"}, stats).body == "# TYPE b gauge\n"
+                                                 "b 2\n");
+  }
+
+  SECTION("String records")
+  {
+    Renderer                renderer{"strings: {names: [v.short]}"};
+    std::vector<Stat> const stats = {string("v.short", "10.2.1"), string("v.number", "42"), string("v.word", "x")};
+    auto const              full  = renderer.render(stats);
+
+    CHECK(renderer.records({"v.number", "v.short", "v.word"}, stats).body == full.body);
+    CHECK(renderer.records({"v.short"}, {string("v.short", "10.2.2")}).body == "# TYPE v_short gauge\n"
+                                                                               "v_short{value=\"10.2.2\"} 1\n");
+  }
+
+  SECTION("A record that the rules leave out writes nothing")
+  {
+    Renderer                renderer{"exclude: {names: [b]}"};
+    std::vector<Stat> const stats = {gauge("a", 1), gauge("b", 2), gauge("1c", 3)};
+    auto const              full  = renderer.render(stats);
+
+    CHECK(renderer.records({"1c", "a", "b"}, stats).body == full.body);
+    CHECK(renderer.records({"1c", "b"}, stats).body.empty());
   }
 }

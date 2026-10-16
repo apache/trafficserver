@@ -44,6 +44,7 @@ class TestStatsOverHttpPrometheusCache:
         self._test_first_metrics()
         self._test_new_and_changed_metrics()
         self._test_concurrent_scrapes()
+        self._test_records_skip_reuse()
 
     def _configure_traffic_server(self) -> None:
         ts = Test.MakeATSProcess('ts')
@@ -123,6 +124,19 @@ class TestStatsOverHttpPrometheusCache:
                 expect = ['plugin_test_metrics_requests_post 2', 'plugin_test_metrics_late 7']
                 families = ['plugin_test_metrics_requests_post=1']
             self._scrape('Scrape concurrently', path, help_lines, expect, families, concurrency=16)
+
+    def _test_records_skip_reuse(self) -> None:
+        # The remap rules reuse a render for 1 s, but a request with records[] gets its own render.  The plugin's count of
+        # renders changes with each render, so two responses in a row differ.
+        ts = self._ts
+        path = '/metrics/nohelp/v1?records%5B%5D=plugin.stats_over_http.renders'
+        tr = Test.AddTestRun('Two requests with records[] get two renders')
+        tr.Processes.Default.Command = (
+            f"{sys.executable} {self._check} {ts.Variables.port} '{path}' --fresh --family=plugin_stats_over_http_renders=1")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'Verified 1 families and 1 samples', 'The response should hold only the sample of the named record.')
+        tr.StillRunningAfter = ts
 
     def _scrape(
             self,
