@@ -632,6 +632,12 @@ Log::init_fields()
   register_field(new LogField("cache_hit_miss", "chm", LogField::Type::sINT, &LogAccess::marshal_cache_hit_miss,
                               &LogAccess::unmarshal_cache_hit_miss, make_alias_map(cache_hit_miss_map)));
 
+  register_field(new LogField("cache_freshness_limit", "cfl", LogField::Type::sINT, &LogAccess::marshal_cache_freshness_limit,
+                              &LogAccess::unmarshal_int_to_str));
+
+  register_field(new LogField("cache_current_age", "cca", LogField::Type::sINT, &LogAccess::marshal_cache_current_age,
+                              &LogAccess::unmarshal_int_to_str));
+
   register_field(new LogField("proxy_response_all_header_fields", "psah", LogField::Type::STRING,
                               &LogAccess::marshal_proxy_resp_all_header_fields, &LogUtils::unmarshalMimeHdr));
 
