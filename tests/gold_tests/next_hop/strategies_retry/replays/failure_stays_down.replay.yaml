@@ -1,0 +1,209 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A next hop that accepts the connection but never sends a response ("up but
+# not serving") must stay marked down when a retry probe also fails.
+#
+# NextHopHealthStatus::markNextHop only restores a next hop on MARK_UP, which
+# HttpTransact::handle_response_from_parent sends from its CONNECTION_ALIVE
+# branch, so a failed probe must leave the next hop unavailable.
+#
+# The verifier server plays the next hop: server-response.delay (4s) exceeds
+# the child's transaction_no_activity_timeout_out (2s), so ATS reads zero bytes
+# and times out (INACTIVE_TIMEOUT), which enable_parent_timeout_markdowns=1
+# admits as a markdown-eligible failure.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'A failed retry probe must not restore a degraded next hop'
+
+  server:
+    name: 'server-degraded'
+    # ATS abandons the delayed transactions mid-flight, so the server may report
+    # an incomplete transaction cycle. The assertions live in the client
+    # statuses and the ATS diags log.
+    return_code: [0, 1]
+
+  client:
+    name: 'client-degraded'
+    process_config:
+      # Each request waits out a 2s ATS timeout, and one waits a further 3s for
+      # retry_time; the default 5s poll timeout would abandon a transaction.
+      other_args: '--poll-timeout 30000'
+
+  # Resolve every hostname to loopback: ATS may run an origin DNS lookup on the
+  # way to next hop selection, and an unresolvable name would fail the request.
+  dns:
+    name: 'dns-degraded'
+
+  ats:
+    name: 'ts-degraded'
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'next_hop|http_trans'
+      # no_dns_just_forward_to_parent must stay unset: it routes the request
+      # through NextHopSelectionStrategy::nextHopExists, which tests
+      # HostRecord::available directly and short-circuits before the retry
+      # window logic in findNextHop runs.
+      #
+      # With the cache disabled every request is uncacheable, and this would
+      # otherwise send each one direct to the origin instead of the next hop.
+      proxy.config.http.uncacheable_requests_bypass_parent: 0
+      # A read timeout only counts toward markdown when this is enabled.
+      proxy.config.http.parent_proxy.enable_parent_timeout_markdowns: 1
+      # One timeout demotes the next hop, keeping the test to four requests.
+      proxy.config.http.parent_proxy.fail_threshold: 1
+      # Short enough that a single in-replay delay outlasts the down window.
+      proxy.config.http.parent_proxy.retry_time: 2
+      # One attempt per request keeps the failure accounting one-to-one with
+      # the transactions below.
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.parent_proxy.per_parent_connect_attempts: 1
+      # Bound the wait on the silent next hop.
+      proxy.config.http.transaction_no_activity_timeout_out: 2
+
+    strategies_yaml:
+      strategies:
+        - strategy: degraded-parent
+          policy: first_live
+          scheme: http
+          go_direct: false
+          parent_is_proxy: true
+          # A loopback next hop is marked down at load as this host unless this
+          # is set; proxy.config.http.parent_proxy.self_detect does not apply.
+          ignore_self_detect: true
+          groups:
+            - - host: 127.0.0.1
+                protocol:
+                  - scheme: http
+                    port: '{SERVER_HTTP_PORT}'
+                weight: 1.0
+
+    # The origin is never contacted: go_direct=false keeps every request on the
+    # next hop.
+    remap_config:
+      - from: 'http://example.com/'
+        to: 'http://origin.test/'
+        options:
+          - '@strategy=degraded-parent'
+
+    log_validation:
+      diags_log:
+        contains:
+          - expression: 'NextHop retry marked as down origin\.test'
+            description: 'The failed retry probe re-marks the next hop down'
+        excludes:
+          # Note() emitted only by the MARK_UP branch of NextHopHealthStatus::markNextHop.
+          - expression: 'http parent proxy 127\.0\.0\.1 restored'
+            description: 'A failed retry probe must not restore the next hop'
+
+sessions:
+- transactions:
+  # 1: the next hop accepts but never responds. ATS times out (504) and marks it
+  # down, since fail_threshold is 1.
+  - client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /degrade1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+        - [ uuid, degrade1 ]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 504
+
+  # 2: still inside retry_time. The next hop is skipped at selection and, with no
+  # other next hop and go_direct=false, ATS returns 502 without touching the leg.
+  - client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /downcheck
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+        - [ uuid, downcheck ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
+
+  # 3: the retry probe. The client delay pushes this request past retry_time, so
+  # findNextHop selects the next hop for retry. The probe reaches the still-silent
+  # next hop and times out (504).
+  - client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /retryprobe
+      delay: 3s
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+        - [ uuid, retryprobe ]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 504
+
+  # 4: the probe failed, so the next hop must still be down. A 504 here would
+  # mean the failed probe had restored it and it was attempted again.
+  - client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /aftercheck
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+        - [ uuid, aftercheck ]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
