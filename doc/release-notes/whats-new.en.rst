@@ -67,6 +67,10 @@ Metrics
   zero.
 * Added :ts:stat:`proxy.process.net.inactivity_cop_visited`.
 * Added :ts:stat:`proxy.process.net.inactivity_cop_budget_exhausted`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_passes`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_fired`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_pass_time_us`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_pass_max_us`.
 
 Performance
 -----------

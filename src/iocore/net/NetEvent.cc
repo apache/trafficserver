@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  NetEvent timer helpers: owner-thread-safe timer rearm and default inactivity deadline rebasing.
 
   @section license License
 

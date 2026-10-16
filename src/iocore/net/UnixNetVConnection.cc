@@ -469,15 +469,17 @@ UnixNetVConnection::set_enabled(VIO *vio)
   ink_assert(vio->mutex->thread_holding == this_ethread() && thread);
   ink_release_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
+
+  ink_hrtime const default_timeout_in = default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
     rearm_timer();
-  } else if (!next_inactivity_timeout_at && !inactivity_timeout_in &&
-             default_inactivity_timeout_in.load(std::memory_order_relaxed) > 0) {
+  } else if (!next_inactivity_timeout_at && !inactivity_timeout_in && default_timeout_in > 0) {
     // No explicit timeout is set: the wheel only revisits scheduled elements, so
     // arm the default here rather than relying on the cop's sweep to notice.
     use_default_inactivity_timeout = true;
-    next_inactivity_timeout_at     = ink_get_hrtime() + default_inactivity_timeout_in;
+    next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
     Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
     rearm_timer();
   }
