@@ -27,6 +27,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "TrafficCtlStatus.h"
+#include "jsonrpc/ctrl_yaml_codecs.h"
 
 int                         App_Exit_Status_Code = CTRL_EX_OK;
 swoc::Errata::severity_type App_Exit_Level_Error = ERRATA_ERROR;
