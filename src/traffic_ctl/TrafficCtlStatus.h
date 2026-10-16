@@ -27,7 +27,7 @@ limitations under the License.
 #include <string>
 #include <string_view>
 
-#include "jsonrpc/ctrl_yaml_codecs.h"
+#include "jsonrpc/CtrlRPCRequests.h"
 #include "mgmt/rpc/jsonrpc/error/RPCError.h"
 #include "shared/rpc/RPCRequests.h"
 #include "shared/rpc/yaml_codecs.h"
