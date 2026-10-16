@@ -336,24 +336,26 @@ register_stat_callbacks()
     Metrics::Counter::createPtr("proxy.process.http.client_request_at_headers_stripped");
   http_rsb.origin_response_at_headers_stripped =
     Metrics::Counter::createPtr("proxy.process.http.origin_response_at_headers_stripped");
-  http_rsb.invalid_client_requests      = Metrics::Counter::createPtr("proxy.process.http.invalid_client_requests");
-  http_rsb.misc_count                   = Metrics::Counter::createPtr("proxy.process.http.misc_count");
-  http_rsb.misc_origin_server_bytes     = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
-  http_rsb.misc_user_agent_bytes        = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
-  http_rsb.missing_host_hdr             = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
-  http_rsb.no_remap_matched             = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
-  http_rsb.options_requests             = Metrics::Counter::createPtr("proxy.process.http.options_requests");
-  http_rsb.origin_body                  = Metrics::Counter::createPtr("proxy.process.http.origin.body");
-  http_rsb.origin_close_private         = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
-  http_rsb.origin_connect_adjust_thread = Metrics::Counter::createPtr("proxy.process.http.origin.connect.adjust_thread");
-  http_rsb.origin_connections_throttled = Metrics::Counter::createPtr("proxy.process.http.origin_connections_throttled_out");
-  http_rsb.origin_make_new              = Metrics::Counter::createPtr("proxy.process.http.origin.make_new");
-  http_rsb.origin_no_sharing            = Metrics::Counter::createPtr("proxy.process.http.origin.no_sharing");
-  http_rsb.origin_not_found             = Metrics::Counter::createPtr("proxy.process.http.origin.not_found");
-  http_rsb.origin_private               = Metrics::Counter::createPtr("proxy.process.http.origin.private");
-  http_rsb.origin_raw                   = Metrics::Counter::createPtr("proxy.process.http.origin.raw");
-  http_rsb.origin_reuse                 = Metrics::Counter::createPtr("proxy.process.http.origin.reuse");
-  http_rsb.origin_reuse_fail            = Metrics::Counter::createPtr("proxy.process.http.origin.reuse_fail");
+  http_rsb.invalid_client_requests       = Metrics::Counter::createPtr("proxy.process.http.invalid_client_requests");
+  http_rsb.misc_count                    = Metrics::Counter::createPtr("proxy.process.http.misc_count");
+  http_rsb.misc_origin_server_bytes      = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
+  http_rsb.misc_user_agent_bytes         = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
+  http_rsb.missing_host_hdr              = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
+  http_rsb.no_remap_matched              = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
+  http_rsb.options_requests              = Metrics::Counter::createPtr("proxy.process.http.options_requests");
+  http_rsb.origin_body                   = Metrics::Counter::createPtr("proxy.process.http.origin.body");
+  http_rsb.origin_close_private          = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
+  http_rsb.origin_connect_adjust_thread  = Metrics::Counter::createPtr("proxy.process.http.origin.connect.adjust_thread");
+  http_rsb.origin_connections_throttled  = Metrics::Counter::createPtr("proxy.process.http.origin_connections_throttled_out");
+  http_rsb.origin_make_new               = Metrics::Counter::createPtr("proxy.process.http.origin.make_new");
+  http_rsb.origin_no_sharing             = Metrics::Counter::createPtr("proxy.process.http.origin.no_sharing");
+  http_rsb.origin_not_found              = Metrics::Counter::createPtr("proxy.process.http.origin.not_found");
+  http_rsb.origin_private                = Metrics::Counter::createPtr("proxy.process.http.origin.private");
+  http_rsb.origin_raw                    = Metrics::Counter::createPtr("proxy.process.http.origin.raw");
+  http_rsb.origin_reuse                  = Metrics::Counter::createPtr("proxy.process.http.origin.reuse");
+  http_rsb.origin_retry_admitted         = Metrics::Counter::createPtr("proxy.process.http.origin.retry_admitted");
+  http_rsb.origin_retry_body_unavailable = Metrics::Counter::createPtr("proxy.process.http.origin.retry_body_unavailable");
+  http_rsb.origin_reuse_fail             = Metrics::Counter::createPtr("proxy.process.http.origin.reuse_fail");
   http_rsb.origin_server_request_document_total_size =
     Metrics::Counter::createPtr("proxy.process.http.origin_server_request_document_total_size");
   http_rsb.origin_server_request_header_total_size =
@@ -973,6 +975,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.no_dns_forward_to_parent, "proxy.config.http.no_dns_just_forward_to_parent");
   HttpEstablishStaticConfigByte(c.oride.uncacheable_requests_bypass_parent, "proxy.config.http.uncacheable_requests_bypass_parent");
+  HttpEstablishStaticConfigByte(c.oride.bypass_parent, "proxy.config.http.bypass_parent");
   HttpEstablishStaticConfigByte(c.oride.doc_in_cache_skip_dns, "proxy.config.http.doc_in_cache_skip_dns");
 
   HttpEstablishStaticConfigByte(c.no_origin_server_dns, "proxy.config.http.no_origin_server_dns");
@@ -1260,6 +1263,7 @@ HttpConfig::reconfigure()
   params->proxy_hostname_len                       = (params->proxy_hostname) ? strlen(params->proxy_hostname) : 0;
   params->oride.no_dns_forward_to_parent           = INT_TO_BOOL(m_master.oride.no_dns_forward_to_parent);
   params->oride.uncacheable_requests_bypass_parent = INT_TO_BOOL(m_master.oride.uncacheable_requests_bypass_parent);
+  params->oride.bypass_parent                      = INT_TO_BOOL(m_master.oride.bypass_parent);
   params->no_origin_server_dns                     = INT_TO_BOOL(m_master.no_origin_server_dns);
   params->use_client_target_addr                   = m_master.use_client_target_addr;
   params->use_client_source_port                   = INT_TO_BOOL(m_master.use_client_source_port);

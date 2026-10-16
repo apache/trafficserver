@@ -1,0 +1,712 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - compressible-body: &compressible-body
+      content:
+        encoding: plain
+        size: 1024
+
+  # Served if a request that should be answered by ATS reaches the origin.
+  - unexpected-origin-response: &unexpected-origin-response
+      status: 500
+      reason: Unexpected
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+autest:
+  description: 'Verify compress ETags and conditional requests with compressed copies cached'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    copy_to_config_dir:
+      - 'compress-etag.config'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|compress'
+
+    remap_config:
+      - from: "http://compress.example/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: 'compress.so'
+            args: ['compress-etag.config']
+
+sessions:
+- transactions:
+
+  ##############################################################################
+  # A strong origin ETag becomes weak on a compressed response.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"a1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  ##############################################################################
+  # If-None-Match compares weakly; a 304 carries the ETag the compressed 200 would.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"a1"' ]
+        - [ uuid, cached-inm-weak ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, '"a1"' ]
+        - [ uuid, cached-inm-strong ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, '*' ]
+        - [ uuid, cached-inm-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"other"' ]
+        - [ uuid, cached-inm-other ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  ##############################################################################
+  # If-Modified-Since alone also yields a 304, which needs the same weak ETag.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Modified-Since, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ uuid, cached-ims ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  ##############################################################################
+  # If-Match and If-Unmodified-Since are unaffected; If-Match compares strongly.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Match, 'W/"a1"' ]
+        - [ uuid, cached-if-match-weak ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Match, '"a1"' ]
+        - [ uuid, cached-if-match-strong ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Match, '*' ]
+        - [ uuid, cached-if-match-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Unmodified-Since, "Thu, 01 Jan 2026 00:00:00 GMT" ]
+        - [ uuid, cached-ius-after ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Unmodified-Since, "Mon, 01 Jan 2024 00:00:00 GMT" ]
+        - [ uuid, cached-ius-before ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
+
+  ##############################################################################
+  # Ranges follow the range-request policy (default: no compression of ranged requests).
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Range, bytes=0-9 ]
+        - [ uuid, cached-range ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+        - [ Content-Range, { as: present } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Range, bytes=0-9 ]
+        - [ If-Range, 'W/"a1"' ]
+        - [ uuid, cached-range-if-range-weak ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+        - [ Content-Range, { as: absent } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Range, bytes=0-9 ]
+        - [ If-Range, '"a1"' ]
+        - [ uuid, cached-range-if-range-strong ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+        - [ Content-Range, { as: absent } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Range, bytes=0-9 ]
+        - [ If-None-Match, 'W/"a1"' ]
+        - [ uuid, cached-range-inm ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  ##############################################################################
+  # HEAD responses are never compressed, so a HEAD 304 keeps whatever a HEAD 200 would carry.
+  ##############################################################################
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"a1"' ]
+        - [ uuid, cached-head-inm ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"a1"', as: equal } ]
+
+  ##############################################################################
+  # Uncompressed responses keep the origin's strong ETag, including their 304s.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /identity
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ uuid, identity-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"i1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { as: absent } ]
+        - [ ETag, { value: '"i1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /identity
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ If-None-Match, 'W/"i1"' ]
+        - [ uuid, identity-inm-weak ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"i1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /identity
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ If-None-Match, '"i1"' ]
+        - [ uuid, identity-inm-strong ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"i1"', as: equal } ]
+
+  ##############################################################################
+  # An origin ETag that is already weak passes through unchanged.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /weak-origin
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, weak-origin ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, 'W/"w1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"w1"', as: equal } ]
+
+  ##############################################################################
+  # A response the plugin won't compress keeps its strong ETag.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /image
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, non-compressible ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/png ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"p1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { as: absent } ]
+        - [ ETag, { value: '"p1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /image
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, non-compressible-inm ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"p1"', as: equal } ]
+
+  ##############################################################################
+  # A stale compressed copy revalidates with the origin's own tag, and the
+  # origin's strong 304 ETag must not be merged over the weakened one.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /stale
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, stale-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=1" ]
+        - [ ETag, '"s1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"s1"', as: equal } ]
+
+  - client-request:
+      delay: 3s
+      method: "GET"
+      version: "1.1"
+      url: /stale
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"s1"' ]
+        - [ uuid, stale-revalidate ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: '"s1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"s1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"s1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /stale
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, stale-after ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"s1"', as: equal } ]
+
+  ##############################################################################
+  # An identity copy's weak ETag is the origin's own, so a 304 may upgrade it.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /upgrade
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ uuid, upgrade-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=1" ]
+        - [ ETag, 'W/"v1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { as: absent } ]
+        - [ ETag, { value: 'W/"v1"', as: equal } ]
+
+  - client-request:
+      delay: 3s
+      method: "GET"
+      version: "1.1"
+      url: /upgrade
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ uuid, upgrade-revalidate ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: '"v1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"v1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { as: absent } ]
+        - [ ETag, { value: '"v1"', as: equal } ]
+

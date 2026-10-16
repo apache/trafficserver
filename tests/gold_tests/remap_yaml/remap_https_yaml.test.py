@@ -33,7 +33,13 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
 # desired response form the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", request_header, response_header)
-server2.addResponse("sessionlog.json", request_header, response_header)
+# Frame only the TLS origin; the plaintext origin exercises ATS chunking.
+tls_response_header = {
+    "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+    "timestamp": "1469733493.993",
+    "body": ""
+}
+server2.addResponse("sessionlog.json", request_header, tls_response_header)
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()

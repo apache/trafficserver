@@ -184,7 +184,12 @@ Http2Stream::main_event_handler(int event, void *edata)
   reentrancy_count++;
   if (e == _read_vio_event) {
     _read_vio_event = nullptr;
-    this->signal_read_event(e->callback_event);
+    // A final event retried after a mutex miss must survive a throttle that started meanwhile.
+    if (_is_final_read_event(e->callback_event)) {
+      this->signal_final_read_event(e->callback_event);
+    } else {
+      this->signal_read_event(e->callback_event);
+    }
     reentrancy_count--;
     return 0;
   } else if (e == _write_vio_event) {
@@ -255,7 +260,12 @@ Http2Stream::main_event_handler(int event, void *edata)
     _timeout.update_inactivity();
     if (e->cookie == &read_vio) {
       if (read_vio.mutex && read_vio.cont && this->_sm) {
-        this->signal_read_event(event);
+        // A completion scheduled by reenable() must survive the consumer throttling again before it is dispatched.
+        if (_is_final_read_event(event)) {
+          this->signal_final_read_event(event);
+        } else {
+          this->signal_read_event(event);
+        }
       }
     } else {
       this->update_read_request(true);
@@ -389,11 +399,14 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
         // get its content from the VIO
         // This can break if the implementation
         // changes.
-        this->signal_read_event(VC_EVENT_EOS);
+        //
+        // If the consumer has throttled the read VIO, the EOS waits for
+        // reenable(), so nothing is flushed until the consumer drains.
+        this->signal_final_read_event(VC_EVENT_EOS);
       } else {
         // Request headers.
         this->read_vio.ndone = this->read_vio.nbytes;
-        this->signal_read_event(VC_EVENT_READ_COMPLETE);
+        this->signal_final_read_event(VC_EVENT_READ_COMPLETE);
       }
     } else {
       // End of header but not end of stream, must have some body frames coming
@@ -520,13 +533,14 @@ Http2Stream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
     read_vio.buffer.clear();
   }
 
-  read_vio.mutex           = c ? c->mutex : this->mutex;
-  read_vio.cont            = c;
-  read_vio.nbytes          = nbytes;
-  read_vio.ndone           = gated_ndone;
-  read_vio.vc_server       = this;
-  read_vio.op              = VIO::READ;
-  this->_read_event_paused = nbytes == 0;
+  read_vio.mutex             = c ? c->mutex : this->mutex;
+  read_vio.cont              = c;
+  read_vio.nbytes            = nbytes;
+  read_vio.ndone             = gated_ndone;
+  read_vio.vc_server         = this;
+  read_vio.op                = VIO::READ;
+  this->_read_event_paused   = nbytes == 0;
+  this->_deferred_read_event = VC_EVENT_NONE;
 
   if (this->_read_event_paused) {
     if (this->_read_vio_event) {
@@ -761,7 +775,7 @@ Http2Stream::update_read_request(bool call_update)
   ink_release_assert(this->_thread == this_ethread());
 
   SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
-  if (this->_read_event_paused || read_vio.nbytes == 0 || read_vio.is_disabled()) {
+  if (this->_is_read_gated() || read_vio.is_disabled()) {
     return;
   }
 
@@ -866,14 +880,16 @@ Http2Stream::update_write_request(bool call_update)
       this->parsing_header_done = true;
       Http2StreamDebug("update_write_request parsing done, read %d bytes", bytes_used);
 
-      // Schedule session shutdown if response header has "Connection: close"
-      MIMEField *field = this->_send_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
-      if (field) {
-        auto value{field->value_get()};
-        if (value == static_cast<std::string_view>(HTTP_VALUE_CLOSE)) {
-          SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
-          if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
-            connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+      // A client request must not drain a shared origin session.
+      if (!this->is_outbound_connection()) {
+        MIMEField *field = this->_send_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
+        if (field) {
+          auto value{field->value_get()};
+          if (value == static_cast<std::string_view>(HTTP_VALUE_CLOSE)) {
+            SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
+            if (connection_state.get_shutdown_state() == HTTP2_SHUTDOWN_NONE) {
+              connection_state.set_shutdown_state(HTTP2_SHUTDOWN_NOT_INITIATED, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+            }
           }
         }
       }
@@ -889,6 +905,12 @@ Http2Stream::update_write_request(bool call_update)
         this->parsing_header_done = false;
       }
       if (this->is_outbound_connection() || this->_send_header.expect_final_response()) {
+        // The send-side request header is about to be torn down on outbound
+        // streams, so snapshot the request method and any conditional-header
+        // presence first. The snapshot is needed later by
+        // `payload_length_is_valid` to apply [RFC 9110] 8.6 payload preclusion
+        // for HEAD responses and 304 responses to conditional GETs.
+        this->cache_send_request_for_response_validation();
         _send_header.destroy();
         _send_header.create(this->is_outbound_connection() ? HTTPType::REQUEST : HTTPType::RESPONSE, HTTP_2_0);
         http_parser_clear(&http_parser);
@@ -926,8 +948,7 @@ void
 Http2Stream::signal_read_event(int event)
 {
   if (this->_sm == nullptr || this->read_vio.cont == nullptr || this->read_vio.cont->mutex == nullptr ||
-      this->read_vio.op == VIO::NONE || this->_read_event_paused || this->read_vio.nbytes == 0 || this->read_vio.is_disabled() ||
-      this->terminate_stream) {
+      this->read_vio.op == VIO::NONE || this->_is_read_gated() || this->read_vio.is_disabled() || this->terminate_stream) {
     return;
   }
 
@@ -949,6 +970,25 @@ Http2Stream::signal_read_event(int event)
   reentrancy_count--;
   // Clean stream up if the terminate flag is set and we are at the bottom of the handler stack
   terminate_if_possible();
+}
+
+/** Signal the event that ends the read side, or hold it until reenable() if the consumer has the read VIO disabled.
+
+  A consumer that throttles its producer disables the read VIO. The END_STREAM that arrives during that
+  window is the only end-of-read signal the stream will see, so it must not be dropped.
+ */
+void
+Http2Stream::signal_final_read_event(int event)
+{
+  if (this->_is_read_gated()) {
+    return;
+  }
+  if (this->read_vio.is_disabled()) {
+    Http2StreamDebug("defer %s until the read VIO is re-enabled", get_vc_event_name(event));
+    this->_deferred_read_event = event;
+    return;
+  }
+  this->signal_read_event(event);
 }
 
 void
@@ -1039,6 +1079,13 @@ Http2Stream::reenable(VIO *vio)
       SCOPED_MUTEX_LOCK(ssn_lock, _proxy_ssn->mutex, this_ethread());
       Http2ConnectionState &connection_state = this->get_connection_state();
       connection_state.restart_receiving(this);
+      if (this->_deferred_read_event != VC_EVENT_NONE && this->_sm != nullptr && this->read_vio.cont != nullptr) {
+        // Schedule rather than call back: the consumer re-enabling us is still on the stack. If it throttles
+        // again before the event is dispatched, main_event_handler() defers the event once more.
+        this->read_event = this->send_tracked_event(this->read_event, this->_deferred_read_event, &this->read_vio);
+        Http2StreamDebug("rescheduled deferred %s", get_vc_event_name(this->_deferred_read_event));
+        this->_deferred_read_event = VC_EVENT_NONE;
+      }
     }
   }
 }
@@ -1322,6 +1369,20 @@ Http2Stream::set_tx_error_code(ProxyError e)
       this->_sm->t_state.client_info.tx_error_code = e;
     }
   }
+}
+
+bool
+Http2Stream::is_safe_to_retry() const
+{
+  // Remember even informational, partial, or malformed response headers.
+  // A later peer assertion cannot undo evidence that it handled this request.
+  return _safe_to_retry && this->is_outbound_connection() && !_response_received && data_length == 0;
+}
+
+void
+Http2Stream::set_safe_to_retry()
+{
+  _safe_to_retry = true;
 }
 
 HTTPVersion

@@ -23,7 +23,10 @@ import inspect
 import shutil
 import tempfile
 from yaml import load, dump
-from yaml import CLoader as Loader
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
 from typing import List, Tuple
 
 from ports import get_port

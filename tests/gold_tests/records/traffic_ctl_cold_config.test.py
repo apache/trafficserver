@@ -195,3 +195,45 @@ tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     r'2 argument\(s\) expected by set', 'set must report what it was left without, as the docs show')
+
+# --cold declares TS_RECORD_YAML. A bare -c with no file name on the command line is filled
+# from it instead of falling back to the sysconfig records.yaml. new_records.yaml (written by
+# run 5) has max_alts 3, where the live records.yaml has 1 (set by run 4), so reading through
+# the variable only shows up as 3 if the variable was actually used rather than coincidentally
+# matching the default.
+
+# 17
+new_records_file = os.path.join(ts.Variables.CONFIGDIR, "new_records.yaml")
+tr = Test.AddTestRun("A bare -c with no file name reads the file named by TS_RECORD_YAML")
+tr.Processes.Default.Command = 'traffic_ctl config get proxy.config.cache.limits.http.max_alts -c'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=new_records_file)
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.cache.limits.http.max_alts: 3',
+    'TS_RECORD_YAML must supply the file name -c left out, not the live records.yaml (which has 1)')
+
+# 18
+tr = Test.AddTestRun("A file name typed on the command line wins over TS_RECORD_YAML")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=os.path.join(ts.Variables.CONFIGDIR, "does_not_exist.yaml"))
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The typed file name must be used, not the nonexistent one from the variable')
+
+# 19
+tr = Test.AddTestRun("Repeating -c still refuses a second file name even when TS_RECORD_YAML is set")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} proxy.config.diags.debug.tags -c'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=records_file)
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'A second, bare -c must not be filled from the variable instead')
+
+# 20
+# Put this last: a build that ignores TS_RECORD_YAML on the write side would write the live
+# records.yaml instead of the file named below, which later runs would otherwise see.
+new_records4_file = os.path.join(ts.Variables.CONFIGDIR, "new_records4.yaml")
+tr = Test.AddTestRun("A bare -c with no file name writes the file named by TS_RECORD_YAML")
+tr.Processes.Default.Command = 'traffic_ctl config set proxy.config.cache.limits.http.max_alts 3 -c'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=new_records4_file)
+tr.Disk.File(new_records4_file).Content = 'gold/records.yaml.cold_test5.gold'

@@ -50,6 +50,7 @@ RUN apt update \
     hwloc \
     libbrotli-dev \
     libzstd-dev \
+    liblz4-dev \
     luajit \
     libluajit-5.1-dev \
     libcap-dev \

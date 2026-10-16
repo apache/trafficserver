@@ -15,3 +15,6 @@ next_hop/zzz_strategies_peer2/zzz_strategies_peer2.test.py
 pluginTest/abuse_shield/abuse_shield.test.py
 pluginTest/abuse_shield/abuse_shield_h2_errors.test.py
 pluginTest/abuse_shield/abuse_shield_pacing.test.py
+
+# Starts 15 ATS instances and TLS origins for retry admission scenarios.
+h2/h2_to_origin_safe_retry.test.py

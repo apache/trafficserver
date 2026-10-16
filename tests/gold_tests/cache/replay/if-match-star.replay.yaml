@@ -1,0 +1,454 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  # Served if a request that should be answered from cache reaches the origin.
+  - unexpected-origin-response: &unexpected-origin-response
+      status: 500
+      reason: Unexpected
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+autest:
+  description: 'Verify If-Match: * matches cached and origin responses whatever their ETag'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    records_config:
+      proxy.config.http.negative_caching_enabled: 1
+      proxy.config.http.negative_caching_lifetime: 60
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  ##############################################################################
+  # If-Match: * matches any current representation (RFC 9110 13.1.1), even one
+  # with a weak ETag, which can never match a specific tag strongly.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, weak-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, 'W/"w1"' ]
+        - [ Content-Length, 10 ]
+      content:
+        encoding: plain
+        size: 10
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '*' ]
+        - [ uuid, weak-if-match-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '"other", *' ]
+        - [ uuid, weak-if-match-list-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, 'W/"w1"' ]
+        - [ uuid, weak-if-match-weak ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '"w1"' ]
+        - [ uuid, weak-if-match-strong ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
+
+  ##############################################################################
+  # A strong ETag matches * and itself.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /strong
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, strong-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ ETag, '"s1"' ]
+        - [ Content-Length, 10 ]
+      content:
+        encoding: plain
+        size: 10
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /strong
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '*' ]
+        - [ uuid, strong-if-match-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /strong
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '"s1"' ]
+        - [ uuid, strong-if-match-same ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /strong
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '"other"' ]
+        - [ uuid, strong-if-match-other ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
+
+  ##############################################################################
+  # A response without an ETag still has a current representation for * to match.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /no-etag
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, no-etag-fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "public, max-age=3600" ]
+        - [ Content-Length, 10 ]
+      content:
+        encoding: plain
+        size: 10
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /no-etag
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '*' ]
+        - [ uuid, no-etag-if-match-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /no-etag
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '"other"' ]
+        - [ uuid, no-etag-if-match-tag ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412
+
+  ##############################################################################
+  # With nothing stored, ATS evaluates the condition against the origin's 200.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private-weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '*' ]
+        - [ uuid, uncached-weak-if-match-star ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private" ]
+        - [ ETag, 'W/"p1"' ]
+        - [ Content-Length, 10 ]
+      content:
+        encoding: plain
+        size: 10
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /private-weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, 'W/"p1"' ]
+        - [ uuid, uncached-weak-if-match-tag ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private" ]
+        - [ ETag, 'W/"p1"' ]
+        - [ Content-Length, 10 ]
+      content:
+        encoding: plain
+        size: 10
+
+    proxy-response:
+      status: 412
+
+  ##############################################################################
+  # If-Range is unaffected: a weak validator never satisfies it.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /weak
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Range, bytes=0-4 ]
+        - [ If-Range, 'W/"w1"' ]
+        - [ uuid, weak-if-range ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Range, { as: absent } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /strong
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Range, bytes=0-4 ]
+        - [ If-Range, '"s1"' ]
+        - [ uuid, strong-if-range ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [ Content-Range, { as: present } ]
+
+  #############################################################################
+  # While a 404 is negatively cached, ATS answers for the URL itself. A
+  # precondition is ignored when the response would not be 2xx (RFC 9110
+  # 13.2.1), so If-Match: * gets the same cached 404 a plain GET gets, still
+  # without contacting the origin.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, negative-fill ]
+
+    server-response:
+      status: 404
+      reason: Not Found
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 404
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, negative-hit ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 404
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '*' ]
+        - [ uuid, negative-if-match-star ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 404
+
+  #############################################################################
+  # NOT RFC 9110 compliant, kept to detect behavior changes: RFC 9110 13.2.1
+  # says preconditions are ignored when the response would not be 2xx, so this
+  # should also be the cached 404. ATS evaluates If-Match against cached non-2xx
+  # responses too, and a specific tag can't match a response without an ETag.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /missing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ If-Match, '"other"' ]
+        - [ uuid, negative-if-match-tag ]
+
+    server-response:
+      <<: *unexpected-origin-response
+
+    proxy-response:
+      status: 412

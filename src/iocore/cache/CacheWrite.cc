@@ -643,8 +643,11 @@ CacheVC::openWriteOverwrite(int event, Event *e)
     if (!(doc->first_key == first_key)) {
       goto Lcollision;
     }
+    // Still overwrite a corrupt doc in place, but keep get_header and get_single_data from trusting its lengths.
     od->first_dir = dir;
-    first_buf     = buf;
+    if (doc->magic == DOC_MAGIC) {
+      first_buf = buf;
+    }
     goto Ldone;
   }
 Lcollision: {

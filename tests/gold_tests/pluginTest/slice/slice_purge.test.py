@@ -61,6 +61,8 @@ class SlicePurgeRequestTest:
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|slice|cache_range_requests',
+                # Exercise slice with half-open connections disallowed.
+                'proxy.config.http.allow_half_open': 0,
             })
 
     def slice_purge(self):

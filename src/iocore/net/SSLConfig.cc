@@ -46,6 +46,7 @@
 #include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 
+#include <cinttypes>
 #include <openssl/pem.h>
 #include <algorithm>
 #include <array>
@@ -70,6 +71,7 @@ char              *SSLConfigParams::ssl_ocsp_user_agent              = nullptr;
 int                SSLConfigParams::ssl_handshake_timeout_in         = 0;
 int                SSLConfigParams::origin_session_cache             = 1;
 size_t             SSLConfigParams::origin_session_cache_size        = 10240;
+size_t             SSLConfigParams::origin_session_max_size          = SSLConfigParams::ORIGIN_SESSION_MAX_SIZE_DEFAULT;
 init_ssl_ctx_func  SSLConfigParams::init_ssl_ctx_cb                  = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb                 = nullptr;
 swoc::IPRangeSet  *SSLConfigParams::proxy_protocol_ip_addrs          = nullptr;
@@ -463,9 +465,27 @@ SSLConfigParams::initialize(ConfigContext ctx)
   // SSL session cache configurations
   ssl_origin_session_cache      = RecGetRecordInt("proxy.config.ssl.origin_session_cache.enabled").value_or(0);
   ssl_origin_session_cache_size = RecGetRecordInt("proxy.config.ssl.origin_session_cache.size").value_or(0);
+  // The RECC_INT range on this record is applied when records.yaml is parsed, but
+  // initialize_record() registers a value from RecConfigOverrideFromEnvironment() without
+  // running the validity check -- so an environment override arrives here unbounded, and a
+  // negative one becomes an enormous size_t. The ceiling is the only thing keeping
+  // SSLSessionDup()'s serialization buffer inside the event thread stack, so enforce the
+  // range here rather than trusting the record layer to have done it.
+  {
+    int64_t configured = RecGetRecordInt("proxy.config.ssl.origin_session_cache.max_session_size")
+                           .value_or(static_cast<int64_t>(SSLConfigParams::ORIGIN_SESSION_MAX_SIZE_DEFAULT));
+    int64_t bounded = std::clamp(configured, static_cast<int64_t>(SSLConfigParams::ORIGIN_SESSION_MAX_SIZE_MIN),
+                                 static_cast<int64_t>(SSLConfigParams::ORIGIN_SESSION_MAX_SIZE_MAX));
+    if (bounded != configured) {
+      Warning("proxy.config.ssl.origin_session_cache.max_session_size of %" PRId64 " is outside [%zu-%zu], using %" PRId64,
+              configured, SSLConfigParams::ORIGIN_SESSION_MAX_SIZE_MIN, SSLConfigParams::ORIGIN_SESSION_MAX_SIZE_MAX, bounded);
+    }
+    ssl_origin_session_max_size = static_cast<size_t>(bounded);
+  }
 
   SSLConfigParams::origin_session_cache      = ssl_origin_session_cache;
   SSLConfigParams::origin_session_cache_size = ssl_origin_session_cache_size;
+  SSLConfigParams::origin_session_max_size   = ssl_origin_session_max_size;
 
   if (ssl_origin_session_cache == 1 && ssl_origin_session_cache_size > 0 && origin_sess_cache == nullptr) {
     origin_sess_cache = new SSLOriginSessionCache();

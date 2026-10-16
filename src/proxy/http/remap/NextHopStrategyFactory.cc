@@ -25,6 +25,7 @@
 
 #include <fstream>
 #include <cstring>
+#include <string_view>
 
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
@@ -117,7 +118,7 @@ done:
   if (!error_loading) {
     NH_Note("%s finished loading", basename);
   } else {
-    Error("%s failed to load", basename);
+    NH_Error("%s failed to load", basename);
   }
 }
 
@@ -195,10 +196,9 @@ void
 NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::stringstream &doc,
                                        std::unordered_set<std::string> &include_once)
 {
-  const char *sep = " \t";
-  char       *tok, *last;
-  struct stat buf;
-  std::string line;
+  constexpr std::string_view separators = " \t";
+  struct stat                buf;
+  std::string                line;
 
   if (stat(fileName.c_str(), &buf) == -1) {
     std::string err_msg = strerror(errno);
@@ -251,17 +251,24 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
     std::ifstream file(fileName);
     if (file.is_open()) {
       while (std::getline(file, line)) {
-        if (line[0] == '#') {
-          tok = strtok_r(const_cast<char *>(line.c_str()), sep, &last);
-          if (tok != nullptr && strcmp(tok, "#include") == 0) {
-            std::string f = strtok_r(nullptr, sep, &last);
+        std::string_view line_view{line};
+        if (line_view.starts_with('#')) {
+          const auto directive_end = line_view.find_first_of(separators);
+          if (line_view.substr(0, directive_end) == "#include") {
+            const auto include_start = line_view.find_first_not_of(separators, directive_end);
+            if (include_start == std::string_view::npos) {
+              throw std::invalid_argument("'#include' without a file name in '" + fileName + "'");
+            }
+            const auto        include_line = line_view.substr(include_start);
+            const auto        include_end  = include_line.find_first_of(separators);
+            const std::string f{include_line.substr(0, include_end)};
             if (include_once.find(f) == include_once.end()) {
               include_once.insert(f);
               // try to load included file.
               try {
                 loadConfigFile(f, doc, include_once);
-              } catch (std::exception &ex) {
-                throw std::invalid_argument("Unable to open included file '" + f + "' from '" + fileName + "'");
+              } catch (const std::exception &ex) {
+                throw std::invalid_argument("Unable to load included file '" + f + "' from '" + fileName + "': " + ex.what());
               }
             }
           }

@@ -56,11 +56,6 @@
 
 using namespace std::literals;
 
-// This is missing from BoringSSL
-#ifndef BIO_eof
-#define BIO_eof(b) (int)BIO_ctrl(b, BIO_CTRL_EOF, 0, nullptr)
-#endif
-
 #define SSL_READ_ERROR_NONE        0
 #define SSL_READ_ERROR             1
 #define SSL_READ_READY             2
@@ -457,7 +452,8 @@ bool
 SSLNetVConnection::update_rbio(bool move_to_socket)
 {
   bool retval = false;
-  if (BIO_eof(SSL_get_rbio(this->ssl)) && this->handShakeReader != nullptr) {
+  // OpenSSL 4 does not report EOF for an empty memory BIO configured to retry reads.
+  if (this->handShakeReader != nullptr && BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) {
     Dbg(dbg_ctl_ssl, "Consuming handShakeBioStored=%d bytes from the handshake reader", this->handShakeBioStored);
     this->handShakeReader->consume(this->handShakeBioStored);
     this->handShakeBioStored = 0;
@@ -1354,8 +1350,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   // We only feed CLIENT_HELLO bytes into our temporary buffers. If we are past
   // the CLIENT_HELLO, then no need to buffer.
   if (in_client_hello && this->handShakeReader) {
-    if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
-                                            // Is this the first read?
+    if (BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) { // No more data in the buffer
+                                                          // Is this the first read?
 #if TS_USE_TLS_ASYNC
       if (SSLConfigParams::async_handshake_enabled) {
         SSL_set_mode(ssl, SSL_MODE_ASYNC);
@@ -2051,12 +2047,8 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   SSLCertContext *cc = nullptr;
-  sockaddr const *proxy_protocol_dst_addr =
-    this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED ?
-      this->get_proxy_protocol_dst_addr() :
-      nullptr;
-  if (proxy_protocol_dst_addr != nullptr) {
-    ip.sa = *proxy_protocol_dst_addr;
+  if (IpEndpoint const *proxy_protocol_dst = this->_proxy_protocol_dst_endpoint(); proxy_protocol_dst != nullptr) {
+    ip = *proxy_protocol_dst;
     ip_port_text_buffer ipb1;
     ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
     cc = lookup->find(ip);
@@ -2081,6 +2073,16 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   return ctx;
+}
+
+IpEndpoint const *
+SSLNetVConnection::_proxy_protocol_dst_endpoint() const
+{
+  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED &&
+      this->get_proxy_protocol_dst_addr() != nullptr) {
+    return &pp_info.dst_addr;
+  }
+  return nullptr;
 }
 
 void

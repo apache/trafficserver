@@ -108,6 +108,8 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'slice|cache_range_requests|xdebug',
+        # Exercise slice with half-open connections disallowed.
+        'proxy.config.http.allow_half_open': 0,
     })
 
 # 0 Test - Full object slice (miss) with only block 14-20 prefetched in background, block bytes= 7

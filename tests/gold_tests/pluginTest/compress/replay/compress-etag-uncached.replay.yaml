@@ -1,0 +1,713 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - compressible-body: &compressible-body
+      content:
+        encoding: plain
+        size: 1024
+
+  # Served if a request that should be answered by ATS reaches the origin.
+  - unexpected-origin-response: &unexpected-origin-response
+      status: 500
+      reason: Unexpected
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+autest:
+  description: 'Verify compress ETags and conditional requests with nothing cached'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    copy_to_config_dir:
+      - 'compress-etag.config'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|compress'
+
+    remap_config:
+      - from: "http://compress.example/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: 'compress.so'
+            args: ['compress-etag.config']
+
+sessions:
+- transactions:
+
+  ##############################################################################
+  # Nothing is stored. For a likely cacheable request ATS drops the client's
+  # conditionals upstream and answers them from the origin's 200.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, fill ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, inm-weak ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, '"c1"' ]
+        - [ uuid, inm-strong ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, '*' ]
+        - [ uuid, inm-star ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"other"' ]
+        - [ uuid, inm-other ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Modified-Since, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ uuid, ims ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Match, 'W/"c1"' ]
+        - [ uuid, if-match-weak ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 412
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-Unmodified-Since, "Mon, 01 Jan 2024 00:00:00 GMT" ]
+        - [ uuid, ius-before ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 412
+
+  ##############################################################################
+  # Clients that can't be sent a compressed 200 keep the origin's strong ETag.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, no-ae-inm ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, br ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, unsupported-ae-inm ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Range, bytes=0-9 ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, range-inm ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, head-inm ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /image
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, image-inm ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, image/png ]
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"p1"' ]
+        - [ Last-Modified, "Wed, 01 Jan 2025 00:00:00 GMT" ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"p1"', as: equal } ]
+
+  ##############################################################################
+  # A request ATS won't cache forwards its conditionals untouched, so the
+  # origin's 304 has no stored copy to judge by. It is weakened only when the
+  # request qualifies for compression and the client holds the weak form of
+  # the 304's strong ETag.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, fwd-inm-weak ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: 'W/"c1"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, fwd-no-ae ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, br ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, fwd-unsupported-ae ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ Range, bytes=0-9 ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, fwd-range ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ uuid, fwd-head ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"c1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: '"c1"', as: equal } ]
+
+  ##############################################################################
+  # A 304 carries no Content-Type, so with nothing stored the fallback can't tell a
+  # non-compressible response from a compressible one. The client can only hold
+  # W/"p1" for a response this plugin never compresses if the origin itself issued
+  # W/"p1" and later switched to a strong "p1" (or the content type was dropped from
+  # compressible-content-type). The weak tag still matches the unchanged copy the
+  # client holds, so it can use the 304; keeping the strong tag would instead fail
+  # every compressed client on this path.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /image
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"p1"' ]
+        - [ uuid, fwd-image-304 ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, '"p1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"p1"', as: equal } ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-None-Match, 'W/"w1"' ]
+        - [ uuid, fwd-weak-origin ]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ ETag, 'W/"w1"' ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ ETag, { value: 'W/"w1"', as: equal } ]
+
+  ##############################################################################
+  # Preconditions always reach the origin as sent.
+  ##############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ Authorization, "Bearer token" ]
+        - [ If-Match, '"c1"' ]
+        - [ uuid, fwd-if-match ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-Match, { value: '"c1"', as: equal } ]
+
+    server-response:
+      status: 412
+      reason: Precondition Failed
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 412
+
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ If-None-Match, 'W/"c1"' ]
+        - [ Content-Length, 0 ]
+        - [ uuid, post-inm ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: 'W/"c1"', as: equal } ]
+
+    server-response:
+      status: 412
+      reason: Precondition Failed
+      headers:
+        fields:
+        - [ Cache-Control, "private, max-age=60" ]
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 412
+

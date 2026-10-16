@@ -88,12 +88,12 @@ extern "C" {
   }
 
 /* for http config or cntl var */
-typedef struct {
+struct ts_lua_var_item {
   int         nvar;
   char const *svar;
-} ts_lua_var_item;
+};
 
-typedef struct {
+struct ts_lua_instance_conf {
   char const *content;
   char        script[TS_LUA_MAX_SCRIPT_FNAME_LENGTH];
   void       *conf_vars[TS_LUA_MAX_CONFIG_VARS_COUNT];
@@ -107,10 +107,10 @@ typedef struct {
   int ref_count;
 
   int init_func;
-} ts_lua_instance_conf;
+};
 
 /* lua state for vconn */
-typedef struct {
+struct ts_lua_vconn_ctx {
   int ref;
 
   ts_lua_main_ctx *mctx;
@@ -120,11 +120,10 @@ typedef struct {
   TSVConn vconn;
 
   ts_lua_instance_conf *instance_conf;
-
-} ts_lua_vconn_ctx;
+};
 
 /* lua state for http request */
-typedef struct {
+struct ts_lua_http_ctx {
   ts_lua_cont_info cinfo;
 
   TSHttpTxn txnp;
@@ -151,16 +150,15 @@ typedef struct {
   int from_remap;
 
   TSRemapRequestInfo *rri;
+};
 
-} ts_lua_http_ctx;
-
-typedef struct {
+struct ts_lua_io_handle {
   TSVIO            vio;
   TSIOBuffer       buffer;
   TSIOBufferReader reader;
-} ts_lua_io_handle;
+};
 
-typedef struct {
+struct ts_lua_http_transform_ctx {
   ts_lua_cont_info cinfo;
 
   ts_lua_io_handle output;
@@ -171,10 +169,9 @@ typedef struct {
   int64_t          upstream_watermark_bytes;
   int64_t          downstream_bytes;
   int64_t          total;
+};
 
-} ts_lua_http_transform_ctx;
-
-typedef struct {
+struct ts_lua_http_intercept_ctx {
   ts_lua_cont_info cinfo;
 
   ts_lua_io_handle input;
@@ -188,7 +185,7 @@ typedef struct {
   unsigned int recv_complete : 1;
   unsigned int send_complete : 1;
   unsigned int all_ready     : 1;
-} ts_lua_http_intercept_ctx;
+};
 
 #define TS_LUA_RELEASE_IO_HANDLE(ih)    \
   do {                                  \

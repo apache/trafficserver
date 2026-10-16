@@ -81,8 +81,6 @@ struct ssl_ticket_key_block {
   ssl_ticket_key_t keys[];
 };
 
-using shared_ssl_ticket_key_block = std::shared_ptr<ssl_ticket_key_block>;
-
 /** A certificate context.
 
     This holds data about a certificate and how it is used by the SSL logic. Current this is mainly
@@ -100,20 +98,13 @@ private:
   shared_SSL_CTX            ctx;
 
 public:
-  SSLCertContext() : ctx_mutex(), ctx(nullptr), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr) {}
-  explicit SSLCertContext(SSL_CTX *c)
-    : ctx_mutex(), ctx(c, SSL_CTX_free), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr)
+  SSLCertContext() : ctx_mutex(), ctx(nullptr), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr) {}
+  explicit SSLCertContext(SSL_CTX *c) : ctx_mutex(), ctx(c, SSL_CTX_free), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr)
   {
   }
 
   SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, const shared_SSLMultiCertConfigParams &u)
-    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(nullptr)
-  {
-  }
-
-  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, const shared_SSLMultiCertConfigParams &u,
-                 shared_ssl_ticket_key_block kb)
-    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(std::move(kb))
+    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u)
   {
   }
 
@@ -129,7 +120,6 @@ public:
   SSLCertContextType              ctx_type   = SSLCertContextType::GENERIC;
   SSLCertContextOption            opt        = SSLCertContextOption::OPT_NONE; ///< Special handling option.
   shared_SSLMultiCertConfigParams userconfig = nullptr;                        ///< User provided settings
-  shared_ssl_ticket_key_block     keyblock   = nullptr;                        ///< session keys associated with this address
 };
 
 struct SSLCertLookup : public ConfigInfo {

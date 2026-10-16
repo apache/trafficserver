@@ -22,6 +22,8 @@
 #include <string_view>
 #include <yaml-cpp/yaml.h>
 
+#include "tsutil/YamlCfg.h"
+
 #include "shared/rpc/RPCRequests.h"
 
 /// JSONRPC 2.0 Client API request/response codecs only. If you need to define your own specific codecs they should then be defined
@@ -61,11 +63,33 @@ template <> struct convert<shared::rpc::JSONRPCError> {
   static bool
   decode(Node const &node, shared::rpc::JSONRPCError &error)
   {
+    using DataEntry = shared::rpc::JSONRPCError::DataEntry;
+
     error.code    = helper::try_extract<int32_t>(node, "code");
     error.message = helper::try_extract<std::string>(node, "message");
-    if (auto data = node["data"]) {
-      for (auto &&err : data) {
-        error.data.emplace_back(helper::try_extract<int32_t>(err, "code"), helper::try_extract<std::string>(err, "message"));
+    // Read only: the same tree is printed as received in json output.
+    if (auto const data = node["data"]; data && !data.IsSequence()) {
+      // Not a list of annotations: nothing in it can be read as one.
+      error.data.push_back({0, DataEntry::INVALID_SEVERITY, {}});
+    } else if (data) {
+      for (auto const &err : data) {
+        DataEntry entry;
+        entry.code    = helper::try_extract<int32_t>(err, "code");
+        entry.message = helper::try_extract<std::string>(err, "message");
+        if (!err.IsMap()) {
+          entry.severity = DataEntry::INVALID_SEVERITY;
+        } else if (auto const severity = err["severity"]) {
+          entry.severity = DataEntry::INVALID_SEVERITY;
+          // A quoted value is text, not a severity.
+          if (severity.IsScalar() && severity.Tag() != "!") {
+            try {
+              entry.severity = severity.as<int32_t>();
+            } catch (YAML::Exception const &) {
+              // Not an integer: stays INVALID_SEVERITY.
+            }
+          }
+        }
+        error.data.push_back(std::move(entry));
       }
     }
     return true;
@@ -202,7 +226,7 @@ public:
   encode(shared::rpc::JSONRPCRequest const &req)
   {
     YAML::Emitter json;
-    json << YAML::DoubleQuoted << YAML::Flow;
+    ts::Yaml::configure_json_emitter(json);
     json << YAML::BeginMap;
 
     if (!req.id.empty()) {

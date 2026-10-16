@@ -164,14 +164,26 @@ class TestGenerateOutput:
         out = capsys.readouterr().out
         assert "Parse tree not available" in out
 
-    def test_error_collector_exits_on_parse_failure(self, capsys):
-        """When tree is None and errors exist in non-AST mode, should exit(1)."""
-        errors = ErrorCollector()
-        errors.add_error(Hrw4uSyntaxError("<test>", 1, 0, "parse failed", "bad"))
+    def test_error_collector_reports_failure_to_caller(self):
+        """generate_output reports errors via its return value; run_main owns the exit status.
+
+        The input parses, so ``tree`` is not None -- the exact shape the old
+        ``tree is None`` exit gate let through.
+        """
+        tree, parser_obj, errors = create_parse_tree(
+            'REMAP { test::nope("x"); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
         args = SimpleNamespace(ast=False, debug=False, no_comments=False)
-        with pytest.raises(SystemExit) as exc_info:
-            generate_output(None, None, HRW4UVisitor, "<test>", args, errors)
-        assert exc_info.value.code == 1
+
+        assert tree is not None
+        assert generate_output(tree, parser_obj, HRW4UVisitor, "<test>", args, errors) is True
+
+    def test_clean_input_reports_no_failure(self):
+        """A clean parse must report False so a multi-file run keeps exit status 0."""
+        tree, parser_obj, errors = create_parse_tree(
+            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+        args = SimpleNamespace(ast=False, debug=False, no_comments=False)
+
+        assert generate_output(tree, parser_obj, HRW4UVisitor, "<test>", args, errors) is False
 
     def test_visitor_exception_collected(self, capsys):
         """When visitor.visit() raises, error is collected and reported."""

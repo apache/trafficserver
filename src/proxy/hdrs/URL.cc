@@ -323,6 +323,13 @@ URLImpl::unmarshal(intptr_t offset)
 }
 
 void
+URLImpl::recompute_wks_idx()
+{
+  m_scheme_wks_idx =
+    m_ptr_scheme != nullptr ? static_cast<int16_t>(hdrtoken_tokenize(m_ptr_scheme, m_len_scheme, nullptr)) : int16_t{-1};
+}
+
+void
 URLImpl::rehome_strings(HdrHeap *new_heap)
 {
   m_ptr_scheme         = new_heap->localize({m_ptr_scheme, m_len_scheme}).data();
@@ -1199,17 +1206,13 @@ url_is_strictly_compliant(const char *start, const char *end)
 bool
 url_is_mostly_compliant(const char *start, const char *end)
 {
+  // Accumulate invalid bytes without an early exit so the compiler can vectorize the scan.
+  unsigned char bad = 0;
   for (const char *i = start; i < end; ++i) {
-    if (isspace(*i)) {
-      Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
-    if (!isprint(*i)) {
-      Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
+    unsigned char const c  = static_cast<unsigned char>(*i);
+    bad                   |= static_cast<unsigned char>((c < 0x21) | (c > 0x7E));
   }
-  return true;
+  return bad == 0;
 }
 
 } // namespace UrlImpl

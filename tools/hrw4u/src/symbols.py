@@ -16,7 +16,6 @@
 
 from __future__ import annotations
 
-from typing import Callable
 from hrw4u.validation import Validator
 from hrw4u.errors import SymbolResolutionError
 import hrw4u.types as types
@@ -39,12 +38,6 @@ class SymbolResolver(SymbolResolverBase):
 
     def symbol_for(self, name: str) -> types.Symbol | None:
         return self._symbols.get(name)
-
-    def get_statement_spec(self, name: str) -> tuple[str, Callable[[str], None] | None]:
-        # Use cached lookup from base class
-        if params := self._lookup_statement_function_cached(name):
-            return params.target, params.validate
-        raise SymbolResolutionError(name, "Unknown operator or invalid standalone use")
 
     def declare_variable(
             self, name: str, type_name: str, explicit_slot: int | None = None, scope: types.VarScope = types.VarScope.TXN) -> str:
@@ -77,7 +70,7 @@ class SymbolResolver(SymbolResolverBase):
         return symbol.as_cond()
 
     def resolve_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
-        with self.debug_context("resolve_assignment", name, value, section):
+        with self.debug_context("resolve_assignment", name, value, section), self._warnings_on_success():
             self._collect_warning(self._sandbox.check_operator(name))
 
             for op_key, params in self._operator_map.items():
@@ -107,6 +100,7 @@ class SymbolResolver(SymbolResolverBase):
                     return f"{params.target if params else None} {value}"
 
             if resolved_lhs := self.symbol_for(name):
+                self._collect_warning(self._sandbox.check_language("variables"))
                 if resolved_rhs := self.symbol_for(value):
                     if resolved_rhs.var_type != resolved_lhs.var_type:
                         raise SymbolResolutionError(value, f"Type mismatch: {resolved_lhs.var_type} vs {resolved_rhs.var_type}")
@@ -123,7 +117,7 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_add_assignment(self, name: str, value: str, section: SectionType | None = None) -> str:
         """Resolve += assignment, if it is supported for the given operator."""
-        with self.debug_context("resolve_add_assignment", name, value, section):
+        with self.debug_context("resolve_add_assignment", name, value, section), self._warnings_on_success():
             self._collect_warning(self._sandbox.check_operator(name))
 
             for op_key, params in self._operator_map.items():
@@ -142,7 +136,7 @@ class SymbolResolver(SymbolResolverBase):
             raise error
 
     def resolve_condition(self, name: str, section: SectionType | None = None) -> tuple[str, bool]:
-        with self.debug_context("resolve_condition", name, section):
+        with self.debug_context("resolve_condition", name, section), self._warnings_on_success():
             if symbol := self.symbol_for(name):
                 self._collect_warning(self._sandbox.check_language("variables"))
                 return symbol.as_cond(), False
@@ -180,7 +174,9 @@ class SymbolResolver(SymbolResolverBase):
             raise error
 
     def resolve_function(self, func_name: str, args: list[str], strip_quotes: bool = False) -> str:
-        with self.debug_context("resolve_function", func_name, args):
+        with self.debug_context("resolve_function", func_name, args), self._warnings_on_success():
+            self._collect_warning(self._sandbox.check_function(func_name))
+
             if params := self._lookup_function_cached(func_name):
                 tag = params.target
                 validator = params.validate
@@ -202,7 +198,7 @@ class SymbolResolver(SymbolResolverBase):
             raise error
 
     def resolve_statement_func(self, func_name: str, args: list[str], section: SectionType | None = None) -> str:
-        with self.debug_context("resolve_statement_func", func_name, args, section):
+        with self.debug_context("resolve_statement_func", func_name, args, section), self._warnings_on_success():
             self._collect_warning(self._sandbox.check_function(func_name))
 
             if params := self._lookup_statement_function_cached(func_name):

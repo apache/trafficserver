@@ -20,7 +20,9 @@ Test.Summary = '''
 Test SNI configuration server_groups_list
 '''
 # The groups function was added in OpenSSL 1.1.1
-Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion("1.1.1"),
+    Condition.HasProgram("openssl", "openssl needs to be installed and in PATH for this test"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -74,16 +76,17 @@ ts.Disk.sni_yaml.AddLines(
 tr = Test.AddTestRun("Test 0: x25519")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.MakeCurlCommand(
-    "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'bbb.com:{0}:127.0.0.1' -k  https://bbb.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+tr.Processes.Default.Command = (
+    'printf "GET / HTTP/1.1\\r\\nHost: bbb.com\\r\\nConnection: close\\r\\n\\r\\n" | '
+    'openssl s_client -connect 127.0.0.1:{0} -servername bbb.com -tls1_2 '
+    '-cipher ECDHE-RSA-AES256-GCM-SHA384 -ign_eof'.format(ts.Variables.ssl_port))
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Setting groups list from server_groups_list to x25519", "Should log setting the server groups")
+# OpenSSL renamed this line from "Server Temp Key" to "Peer Temp Key" in 3.5.
 tr.Processes.Default.Streams.All = Testers.IncludesExpression(
-    f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519", "Curl should log using x25519 in the SSL connection")
+    r"(Server|Peer) Temp Key: X25519", "the key exchange should use the x25519 group this SNI pins")
 
 tr = Test.AddTestRun("Test 1: fail")
 tr.MakeCurlCommand(
@@ -100,14 +103,16 @@ ts.Disk.diags_log.Content = Testers.ContainsExpression(
 # Hybrid ECDH PQ key exchange TLS groups were added in OpenSSL 3.5
 if Condition.HasOpenSSLVersion("3.5.0"):
     tr = Test.AddTestRun("Test 2: X25519MLKEM768")
-    tr.MakeCurlCommand(
-        "-v --tls13-ciphers TLS_AES_256_GCM_SHA384 --resolve 'aaa.com:{0}:127.0.0.1' -k  https://aaa.com:{0}".format(
-            ts.Variables.ssl_port),
-        ts=ts)
+    tr.Processes.Default.Command = (
+        'printf "GET / HTTP/1.1\\r\\nHost: aaa.com\\r\\nConnection: close\\r\\n\\r\\n" | '
+        'openssl s_client -connect 127.0.0.1:{0} -servername aaa.com -tls1_3 '
+        '-ciphersuites TLS_AES_256_GCM_SHA384 -ign_eof'.format(ts.Variables.ssl_port))
     tr.ReturnCode = 0
     tr.StillRunningAfter = ts
     ts.Disk.traffic_out.Content += Testers.ContainsExpression(
         "Setting groups list from server_groups_list to X25519MLKEM768", "Should log setting the server groups")
+    # A hybrid group has no legacy key type, so s_client may name it on the TLS 1.3 group line
+    # rather than the temp key line.
     tr.Processes.Default.Streams.All = Testers.IncludesExpression(
-        f"SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768",
-        f"Curl should log using X25519MLKEM768 in the SSL connection")
+        r"((Server|Peer) Temp Key|Negotiated TLS1\.3 group): X25519MLKEM768",
+        "the key exchange should use the X25519MLKEM768 group this SNI pins")

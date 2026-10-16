@@ -39,6 +39,9 @@ sessions:
         server-response:
           status: 200
           reason: OK
+          headers:
+            fields:
+              - [Content-Length, 0]
 
         proxy-response:
           status: 200

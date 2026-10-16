@@ -982,11 +982,21 @@ enabled: true
         tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
-        # Step 4: Verify requests work again after expiration.
+        # Step 4: Verify requests work again after expiration. The quiet wait
+        # also repays the token debt, so these requests must not re-block the
+        # IP. Without the block action, a stale-debt re-block would still
+        # return 200, so the block metric must also remain unchanged.
         tr = Test.AddTestRun("Verify requests work after block expires")
-        tr.Processes.Default.Command = f'curl -k -s -o /dev/null -w "%{{http_code}}" https://127.0.0.1:{self._ts.Variables.ssl_port}/'
+        # AuTest expands $ in commands, so shell expansions use $$.
+        blocked = "traffic_ctl metric get abuse_shield.actions.blocked | awk '{print $$2}'"
+        curl = f'curl -k -s -o /dev/null -w "%{{http_code}}" https://127.0.0.1:{self._ts.Variables.ssl_port}/'
+        tr.Processes.Default.Command = (
+            f'before=$$({blocked}); first=$$({curl}); second=$$({curl}); after=$$({blocked}); '
+            f'echo "first=$$first second=$$second blocked_delta=$$((after - before))"')
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("200", "Verify request succeeds after block expires.")
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+            "first=200 second=200 blocked_delta=0", "Verify requests succeed after expiry without a new block.")
         tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 

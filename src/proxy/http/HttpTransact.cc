@@ -696,7 +696,23 @@ find_server_and_update_current_info(HttpTransact::State *s)
 {
   auto host{s->hdr_info.client_request.host_get()};
 
-  if (is_localhost(host)) {
+  // bypass_parent skips parent selection unless no_dns_just_forward_to_parent makes
+  // the parent responsible for reaching the origin.
+  bool bypass_parent = s->txn_conf->bypass_parent;
+  if (bypass_parent && s->txn_conf->no_dns_forward_to_parent) {
+    SiteThrottledWarning("proxy.config.http.bypass_parent is enabled, but "
+                         "proxy.config.http.no_dns_just_forward_to_parent prevents direct origin DNS; continuing with parent "
+                         "selection.");
+    bypass_parent = false;
+  }
+
+  if (bypass_parent) {
+    TxnDbg(dbg_ctl_http_trans, "bypassing parent selection due to proxy.config.http.bypass_parent (prior result %s)",
+           ParentResultStr[static_cast<int>(s->parent_result.result)]);
+    // Drop any earlier selection so its hostname, retry, and caching flags are not applied to the direct connection.
+    s->parent_result.reset();
+    s->parent_result.result = ParentResultType::DIRECT;
+  } else if (is_localhost(host)) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
@@ -2579,6 +2595,23 @@ HttpTransact::issue_revalidate(State *s)
     //  for the cache.  At this point we want to forget about the cache
     ink_assert(s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY);
     s->cache_info.action = CacheAction_t::NO_ACTION;
+    return;
+  }
+
+  // An object found under the 9.2 key cannot take a 304: the write that would
+  // apply it is a create on the current key, not an update of the legacy
+  // vector, and the cache aborts a header-only create. Ask for the full
+  // response instead, without our validators or the client's, so the 200
+  // replaces it under the current key and the legacy copy ages out. The
+  // client's conditionals are still matched against that 200. HEAD and Range
+  // requests are left alone: neither response is stored, and an unconditional
+  // range request would draw a 206 that deletes the object rather than
+  // migrating it. The next full GET migrates it instead.
+  if (s->cache_info.action == CacheAction_t::PREPARE_TO_UPDATE && s->method == HTTP_WKSIDX_GET &&
+      !s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && s->state_machine != nullptr &&
+      CompatCacheKey::is_legacy(s->state_machine->compatibility_cache_lookup)) {
+    TxnDbg(dbg_ctl_http_trans, "object under the compatibility key, revalidating unconditionally");
+    HttpTransactHeaders::remove_conditional_headers(&s->hdr_info.server_request);
     return;
   }
 
@@ -6924,6 +6957,10 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 bool
 HttpTransact::is_request_retryable(State *s)
 {
+  if (s->state_machine->origin_retry_body_unavailable) {
+    return false;
+  }
+
   // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
   // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry

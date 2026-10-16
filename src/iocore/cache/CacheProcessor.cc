@@ -247,11 +247,14 @@ CacheProcessor::start_internal(int flags)
 #endif
     int64_t blocks = span->blocks;
 
-    if (fd < 0 && (opts & O_CREAT)) { // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
+    // Try again without O_DIRECT (and O_DSYNC) for a span on a file system that does not support it, e.g. tmpfs. This retry
+    // applies to an explicit file span as much as to a directory span: the file system decides whether direct I/O is usable,
+    // not the form the span was written in. O_CREAT is carried over only when it was requested above.
+    if (fd < 0) {
 #ifdef AIO_FAULT_INJECTION
-      fd = aioFaultInjection.open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+      fd = aioFaultInjection.open(paths[gndisks], DEFAULT_CACHE_OPTIONS | (opts & O_CREAT), 0644);
 #else
-      fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+      fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS | (opts & O_CREAT), 0644);
 #endif
     }
 
@@ -1183,43 +1186,45 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix)
   rsb->fragment_document_count[2] = ts::Metrics::Counter::createPtr(prefix + ".frags_per_doc.3+");
 
   // And then everything else
-  rsb->bytes_used             = ts::Metrics::Gauge::createPtr(prefix + ".bytes_used");
-  rsb->bytes_total            = ts::Metrics::Gauge::createPtr(prefix + ".bytes_total");
-  rsb->stripes                = ts::Metrics::Gauge::createPtr(prefix + ".stripes");
-  rsb->ram_cache_bytes_total  = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.total_bytes");
-  rsb->ram_cache_bytes        = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.bytes_used");
-  rsb->ram_cache_hits         = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.hits");
-  rsb->last_open_read_hits    = ts::Metrics::Counter::createPtr(prefix + ".last_open_read.hits");
-  rsb->agg_buffer_hits        = ts::Metrics::Counter::createPtr(prefix + ".aggregation_buffer.hits");
-  rsb->ram_cache_misses       = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.misses");
-  rsb->all_mem_misses         = ts::Metrics::Counter::createPtr(prefix + ".all_memory_caches.misses");
-  rsb->pread_count            = ts::Metrics::Counter::createPtr(prefix + ".pread_count");
-  rsb->percent_full           = ts::Metrics::Gauge::createPtr(prefix + ".percent_full");
-  rsb->read_seek_fail         = ts::Metrics::Counter::createPtr(prefix + ".read.seek.failure");
-  rsb->read_invalid           = ts::Metrics::Counter::createPtr(prefix + ".read.invalid");
-  rsb->write_backlog_failure  = ts::Metrics::Counter::createPtr(prefix + ".write.backlog.failure");
-  rsb->direntries_total       = ts::Metrics::Gauge::createPtr(prefix + ".direntries.total");
-  rsb->direntries_used        = ts::Metrics::Gauge::createPtr(prefix + ".direntries.used");
-  rsb->directory_collision    = ts::Metrics::Counter::createPtr(prefix + ".directory_collision");
-  rsb->read_busy_success      = ts::Metrics::Counter::createPtr(prefix + ".read_busy.success");
-  rsb->read_busy_failure      = ts::Metrics::Counter::createPtr(prefix + ".read_busy.failure");
-  rsb->write_bytes            = ts::Metrics::Counter::createPtr(prefix + ".write_bytes_stat");
-  rsb->hdr_vector_marshal     = ts::Metrics::Counter::createPtr(prefix + ".vector_marshals");
-  rsb->hdr_marshal            = ts::Metrics::Counter::createPtr(prefix + ".hdr_marshals");
-  rsb->hdr_marshal_bytes      = ts::Metrics::Counter::createPtr(prefix + ".hdr_marshal_bytes");
-  rsb->gc_bytes_evacuated     = ts::Metrics::Counter::createPtr(prefix + ".gc_bytes_evacuated");
-  rsb->gc_frags_evacuated     = ts::Metrics::Counter::createPtr(prefix + ".gc_frags_evacuated");
-  rsb->directory_wrap         = ts::Metrics::Counter::createPtr(prefix + ".wrap_count");
-  rsb->directory_sync_count   = ts::Metrics::Counter::createPtr(prefix + ".sync.count");
-  rsb->directory_sync_bytes   = ts::Metrics::Counter::createPtr(prefix + ".sync.bytes");
-  rsb->directory_sync_time    = ts::Metrics::Counter::createPtr(prefix + ".sync.time");
-  rsb->span_errors_read       = ts::Metrics::Counter::createPtr(prefix + ".span.errors.read");
-  rsb->span_errors_write      = ts::Metrics::Counter::createPtr(prefix + ".span.errors.write");
-  rsb->span_failing           = ts::Metrics::Gauge::createPtr(prefix + ".span.failing");
-  rsb->span_offline           = ts::Metrics::Gauge::createPtr(prefix + ".span.offline");
-  rsb->span_online            = ts::Metrics::Gauge::createPtr(prefix + ".span.online");
-  rsb->stripe_lock_contention = ts::Metrics::Counter::createPtr(prefix + ".stripe.lock_contention");
-  rsb->writer_lock_contention = ts::Metrics::Counter::createPtr(prefix + ".writer.lock_contention");
+  rsb->bytes_used                    = ts::Metrics::Gauge::createPtr(prefix + ".bytes_used");
+  rsb->bytes_total                   = ts::Metrics::Gauge::createPtr(prefix + ".bytes_total");
+  rsb->stripes                       = ts::Metrics::Gauge::createPtr(prefix + ".stripes");
+  rsb->ram_cache_bytes_total         = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.total_bytes");
+  rsb->ram_cache_bytes               = ts::Metrics::Gauge::createPtr(prefix + ".ram_cache.bytes_used");
+  rsb->ram_cache_hits                = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.hits");
+  rsb->last_open_read_hits           = ts::Metrics::Counter::createPtr(prefix + ".last_open_read.hits");
+  rsb->agg_buffer_hits               = ts::Metrics::Counter::createPtr(prefix + ".aggregation_buffer.hits");
+  rsb->ram_cache_misses              = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.misses");
+  rsb->ram_cache_compress_failures   = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.compress.failure");
+  rsb->ram_cache_decompress_failures = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.decompress.failure");
+  rsb->all_mem_misses                = ts::Metrics::Counter::createPtr(prefix + ".all_memory_caches.misses");
+  rsb->pread_count                   = ts::Metrics::Counter::createPtr(prefix + ".pread_count");
+  rsb->percent_full                  = ts::Metrics::Gauge::createPtr(prefix + ".percent_full");
+  rsb->read_seek_fail                = ts::Metrics::Counter::createPtr(prefix + ".read.seek.failure");
+  rsb->read_invalid                  = ts::Metrics::Counter::createPtr(prefix + ".read.invalid");
+  rsb->write_backlog_failure         = ts::Metrics::Counter::createPtr(prefix + ".write.backlog.failure");
+  rsb->direntries_total              = ts::Metrics::Gauge::createPtr(prefix + ".direntries.total");
+  rsb->direntries_used               = ts::Metrics::Gauge::createPtr(prefix + ".direntries.used");
+  rsb->directory_collision           = ts::Metrics::Counter::createPtr(prefix + ".directory_collision");
+  rsb->read_busy_success             = ts::Metrics::Counter::createPtr(prefix + ".read_busy.success");
+  rsb->read_busy_failure             = ts::Metrics::Counter::createPtr(prefix + ".read_busy.failure");
+  rsb->write_bytes                   = ts::Metrics::Counter::createPtr(prefix + ".write_bytes_stat");
+  rsb->hdr_vector_marshal            = ts::Metrics::Counter::createPtr(prefix + ".vector_marshals");
+  rsb->hdr_marshal                   = ts::Metrics::Counter::createPtr(prefix + ".hdr_marshals");
+  rsb->hdr_marshal_bytes             = ts::Metrics::Counter::createPtr(prefix + ".hdr_marshal_bytes");
+  rsb->gc_bytes_evacuated            = ts::Metrics::Counter::createPtr(prefix + ".gc_bytes_evacuated");
+  rsb->gc_frags_evacuated            = ts::Metrics::Counter::createPtr(prefix + ".gc_frags_evacuated");
+  rsb->directory_wrap                = ts::Metrics::Counter::createPtr(prefix + ".wrap_count");
+  rsb->directory_sync_count          = ts::Metrics::Counter::createPtr(prefix + ".sync.count");
+  rsb->directory_sync_bytes          = ts::Metrics::Counter::createPtr(prefix + ".sync.bytes");
+  rsb->directory_sync_time           = ts::Metrics::Counter::createPtr(prefix + ".sync.time");
+  rsb->span_errors_read              = ts::Metrics::Counter::createPtr(prefix + ".span.errors.read");
+  rsb->span_errors_write             = ts::Metrics::Counter::createPtr(prefix + ".span.errors.write");
+  rsb->span_failing                  = ts::Metrics::Gauge::createPtr(prefix + ".span.failing");
+  rsb->span_offline                  = ts::Metrics::Gauge::createPtr(prefix + ".span.offline");
+  rsb->span_online                   = ts::Metrics::Gauge::createPtr(prefix + ".span.online");
+  rsb->stripe_lock_contention        = ts::Metrics::Counter::createPtr(prefix + ".stripe.lock_contention");
+  rsb->writer_lock_contention        = ts::Metrics::Counter::createPtr(prefix + ".writer.lock_contention");
 }
 
 // Copy the per-volume tuning fields from the volume config onto the CacheVol.
@@ -1664,21 +1669,6 @@ CacheProcessor::cacheInitialized()
         ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_total, vol_total_direntries);
         ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.direntries_used, vol_used_direntries);
         used_direntries += vol_used_direntries;
-      }
-
-      switch (cache_config_ram_cache_compress) {
-      default:
-        Fatal("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
-      case CACHE_COMPRESSION_NONE:
-      case CACHE_COMPRESSION_FASTLZ:
-        break;
-      case CACHE_COMPRESSION_LIBZ:
-        break;
-      case CACHE_COMPRESSION_LIBLZMA:
-#ifndef HAVE_LZMA_H
-        Fatal("lzma not available for RAM cache compression");
-#endif
-        break;
       }
 
       ts::Metrics::Gauge::store(cache_rsb.ram_cache_bytes_total, total_ram_cache_bytes);

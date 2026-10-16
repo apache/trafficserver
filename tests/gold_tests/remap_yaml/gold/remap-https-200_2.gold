@@ -4,9 +4,9 @@
 > User-Agent: curl/``
 ``
 < HTTP/1.1 200 OK
+< Content-Length: 0
 < Date: ``
 < Age: ``
-< Transfer-Encoding: chunked
 < Connection: keep-alive
 < Server: ATS/``
 < 

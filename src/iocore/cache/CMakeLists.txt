@@ -41,10 +41,6 @@ add_library(
 )
 add_library(ts::inkcache ALIAS inkcache)
 
-if(BUILD_REGRESSION_TESTING)
-  target_sources(inkcache PRIVATE CacheTest.cc RegressionSM.cc)
-endif()
-
 # For fastlz includes.
 target_include_directories(inkcache PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 
@@ -56,6 +52,14 @@ target_link_libraries(
 
 if(HAVE_LZMA_H)
   target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
+endif()
+
+if(HAVE_LZ4_H)
+  target_link_libraries(inkcache PRIVATE LZ4::LZ4)
+endif()
+
+if(HAVE_ZSTD_H)
+  target_link_libraries(inkcache PRIVATE zstd::zstd)
 endif()
 
 if(BUILD_TESTING)
@@ -81,6 +85,7 @@ if(BUILD_TESTING)
   endif()
   add_cache_test(CacheDir unit_tests/test_CacheDir.cc)
   add_cache_test(CacheVol unit_tests/test_CacheVol.cc)
+  add_cache_test(StripeHashTable unit_tests/test_StripeHashTable.cc)
   add_cache_test(RWW unit_tests/test_RWW.cc)
   add_cache_test(Alternate_L_to_S unit_tests/test_Alternate_L_to_S.cc)
   add_cache_test(Alternate_S_to_L unit_tests/test_Alternate_S_to_L.cc)
@@ -91,9 +96,15 @@ if(BUILD_TESTING)
   add_cache_test(Update_L_to_S unit_tests/test_Update_L_to_S.cc)
   add_cache_test(Update_S_to_L unit_tests/test_Update_S_to_L.cc)
   add_cache_test(Update_Header unit_tests/test_Update_header.cc)
+  add_cache_test(CacheUnmarshalCompat unit_tests/test_Unmarshal_Compat.cc)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
+  add_cache_test(CacheVCRead unit_tests/test_CacheVC_read.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
+  add_cache_test(RamCacheCLFUS unit_tests/test_RamCacheCLFUS.cc)
+  add_cache_test(RamCacheCopy unit_tests/test_RamCacheCopy.cc)
   add_cache_test(RamCacheCompressEntries unit_tests/test_RamCacheCompressEntries.cc)
+  add_cache_test(RamCacheSeenFilter unit_tests/test_RamCacheSeenFilter.cc)
+  add_cache_test(RamCacheHitRate unit_tests/test_RamCacheHitRate.cc)
   # Only the shutdown test attaches a live segment; the rest need no shm syscall.
   add_cache_test(CacheShm unit_tests/test_CacheShm.cc)
   if(TS_USE_CACHE_SHM)

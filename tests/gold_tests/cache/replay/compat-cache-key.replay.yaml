@@ -1,0 +1,632 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# ATS 9.2 hashed a cache key as path + ";" + params. The params segment was
+# removed from the URL parser, so ";params" now lives inside the path and the
+# separator is no longer added -- which is why every 9.2 object misses after an
+# upgrade and why proxy.config.http.cache.try_compat_key_read exists.
+#
+# That same equivalence gives this test a way to create a 9.2-key object using
+# only the running proxy: the 9.2 key of "/obj" is byte-identical to the current
+# key of "/obj;". Priming the cache with "/obj;" therefore leaves an object that
+# only a compatibility lookup for "/obj" can find.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify 92x compatibility cache lookups serve and migrate to the current key'
+
+  dns:
+    name: 'dns-compat-cache-key'
+
+  server:
+    name: 'proxy-verifier-server'
+
+  client:
+    name: 'proxy-verifier-client'
+
+  ats:
+    name: 'ts-for-proxy-verifier'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|http_cache|url_cachekey'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.cache.try_compat_key_read: 1
+      # Honour Cache-Control in the client request, which is how these
+      # transactions force revalidation without waiting for an object to age.
+      proxy.config.http.cache.ignore_client_cc_max_age: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    metric_checks:
+      # Seven compatibility hits: the fresh serve, the stale revalidation that
+      # migrates the object, the PUT in test 8, the migration in test 10, the
+      # no-cache revalidation in test 12, and the range revalidation and the
+      # hit after it in test 13.
+      - metric: proxy.process.http.cache.compat_key_reads
+        value: 7
+
+sessions:
+- transactions:
+
+  #
+  # Test 1: Prime the cache under the legacy key.
+  #
+  # "/migrate;" hashes to exactly the key ATS 9.2 produced for "/migrate", so
+  # after this transaction the cache holds what looks like a 9.2 object.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate;
+      headers:
+        fields:
+        - [ uuid, 1-prime-legacy-key ]
+        - [ Host, example.com ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"legacy-object"' ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 2: A fresh compatibility hit is served from cache.
+  #
+  # The canonical lookup for "/migrate" misses and the compatibility lookup
+  # finds the object primed above. The origin must not be contacted.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate
+      headers:
+        fields:
+        - [ uuid, 2-compat-hit-fresh ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 3: A stale compatibility hit is revalidated unconditionally.
+  #
+  # A 304 cannot be applied to a legacy-key object, because the write that would
+  # carry it is a create on the canonical key rather than an update of the
+  # legacy vector. ATS therefore asks for the full response: no conditional
+  # headers appear even though the cached object has an ETag, and the 200 is
+  # stored under the canonical key.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate
+      headers:
+        fields:
+        - [ uuid, 3-compat-migrate ]
+        - [ Host, example.com ]
+        # Ask for a revalidation rather than sleeping until the object ages out.
+        # Freshness is decided before any of the compatibility handling, so the
+        # path under test is the same either way.
+        - [ Cache-Control, max-age=0 ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { as: absent } ]
+        - [ If-Modified-Since, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"migrated-object"' ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 4: The migrated object is now a canonical-key hit.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate
+      headers:
+        fields:
+        - [ uuid, 4-canonical-hit ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 5: The legacy copy is left in place.
+  #
+  # "/migrate;" addresses the legacy key directly. Migration does not delete it:
+  # nothing at this layer reports that the new object reached disk, so removing
+  # it here would lose the object whenever that write later failed. It ages out
+  # instead, and stops being read as soon as the current key resolves -- which
+  # is what lets compat_key_reads decay to zero.
+  #
+  # Still being in the cache is observable: the object is stale by now, so it
+  # revalidates conditionally with the ETag it was stored with.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate;
+      headers:
+        fields:
+        - [ uuid, 5-legacy-key-retained ]
+        - [ Host, example.com ]
+        # Force the revalidation that reveals the stored ETag.
+        - [ Cache-Control, max-age=0 ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: '"legacy-object"', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 6: A path that already carries ";params" gets no compatibility lookup.
+  #
+  # Its current key and its 9.2 key are the same string, so a second lookup
+  # would only repeat the one that just missed.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /keep;jsessionid=abc
+      headers:
+        fields:
+        - [ uuid, 6-params-path-miss ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 7: ... and it still caches normally under the current key.
+  #
+  # Neither of these two transactions takes a compatibility path, so the
+  # running compat_key_reads count is still 2 after them. The remaining two
+  # of the four asserted in metric_checks come from tests 8 and 10.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /keep;jsessionid=abc
+      headers:
+        fields:
+        - [ uuid, 7-params-path-hit ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 8: a PUT keeps the client's precondition.
+  #
+  # Only a GET is revalidated unconditionally; a PUT takes the delete path with
+  # its request untouched. If-Match is the client's concurrency guard:
+  # dropping it would let the origin overwrite whatever is there now rather than
+  # only the version the client saw.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /put;
+      headers:
+        fields:
+        - [ uuid, 8a-prime-put-target ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"v1"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "PUT"
+      version: "1.1"
+      scheme: "http"
+      url: /put
+      headers:
+        fields:
+        - [ uuid, 8b-put-keeps-if-match ]
+        - [ Host, example.com ]
+        - [ Content-Length, 0 ]
+        - [ If-Match, '"v1"' ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-Match, { value: '"v1"', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 9-11: a purge has to reach both keys.
+  #
+  # After a migration the object exists under both the current and the legacy
+  # key. Removing only the one the purge looked up would leave the other to be
+  # served afterwards, which for a purge is the whole point of the operation.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /purge;
+      headers:
+        fields:
+        - [ uuid, 9-prime-purge-target ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"legacy-purge"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /purge
+      headers:
+        fields:
+        - [ uuid, 10-migrate-purge-target ]
+        - [ Host, example.com ]
+        - [ Cache-Control, max-age=0 ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"migrated-purge"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "PURGE"
+      version: "1.1"
+      scheme: "http"
+      url: /purge
+      headers:
+        fields:
+        - [ uuid, 11a-purge ]
+        - [ Host, example.com ]
+        - [ Content-Length, 0 ]
+      delay: 100ms
+
+    # A purge is answered from the cache and never reaches the origin.
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /purge
+      headers:
+        fields:
+        - [ uuid, 11b-purged-content-is-gone ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    # Reaching the origin at all is the assertion: a legacy copy that survived
+    # the purge is still fresh, so it would have been served from cache and the
+    # origin would never have been contacted.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"refetched"' ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 12: A fresh compatibility hit that must still be revalidated.
+  #
+  # Cache-Control: no-cache on the stored response makes every hit revalidate,
+  # fresh or not. That revalidation needs the full response just as a stale one
+  # does, or the object would never leave the legacy key and every request for
+  # it would go back to the origin.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /nocache;
+      headers:
+        fields:
+        - [ uuid, 12a-prime-no-cache-target ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, "max-age=300, no-cache" ]
+        - [ ETag, '"legacy-no-cache"' ]
+        - [ Last-Modified, "Mon, 01 Jan 2024 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /nocache
+      headers:
+        fields:
+        - [ uuid, 12b-fresh-no-cache-unconditional ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { as: absent } ]
+        - [ If-Modified-Since, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"migrated-no-cache"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /nocache
+      headers:
+        fields:
+        - [ uuid, 12c-no-cache-migrated ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 13: A range request revalidates conditionally and keeps the object.
+  #
+  # A 206 is never stored, so an unconditional range request would draw one
+  # even for an unchanged object and turn the revalidation into a delete. The
+  # conditional request lets the origin answer 304 instead, and the object stays
+  # under the legacy key for the next full GET to migrate.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /range;
+      headers:
+        fields:
+        - [ uuid, 13a-prime-range-target ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"legacy-range"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /range
+      headers:
+        fields:
+        - [ uuid, 13b-range-revalidates-conditionally ]
+        - [ Host, example.com ]
+        - [ Range, bytes=0-3 ]
+        - [ Cache-Control, max-age=0 ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: '"legacy-range"', as: equal } ]
+
+    server-response:
+      status: 304
+      reason: "Not Modified"
+      headers:
+        fields:
+        - [ ETag, '"legacy-range"' ]
+
+    proxy-response:
+      status: 206
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /range
+      headers:
+        fields:
+        - [ uuid, 13c-range-target-retained ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    # Served from the legacy copy: the range request did not delete it.
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200

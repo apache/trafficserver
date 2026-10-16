@@ -219,6 +219,18 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   TLSSNISupport::ClientHello ch = {client_hello};
 #endif
 
+  TLSEventSupport *es = TLSEventSupport::getInstance(s);
+  // The TLS library calls back again once a paused ClientHello hook reenables, by which time the
+  // ClientHello work and its hooks have run and the hook state has moved on. Dispatching from
+  // that state would hand the next stage's hooks TS_EVENT_SSL_CLIENT_HELLO.
+  if (es != nullptr && es->finished_client_hello_hooks()) {
+    // Renegotiation carries a new ClientHello, whose SNI actions must still run.
+    TLSBasicSupport *tbs = TLSBasicSupport::getInstance(s);
+    if (tbs == nullptr || !tbs->is_tls_handshake_complete()) {
+      return CLIENT_HELLO_SUCCESS;
+    }
+  }
+
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
   if (snis) {
     snis->on_client_hello(ch);
@@ -234,8 +246,10 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     return CLIENT_HELLO_ERROR;
   }
 
-  TLSEventSupport *es = TLSEventSupport::getInstance(s);
   if (es) {
+    if (es->finished_client_hello_hooks()) {
+      return CLIENT_HELLO_SUCCESS;
+    }
     bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
     if (!reenabled) {
       return CLIENT_HELLO_RETRY;
@@ -255,9 +269,11 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
 static int
 ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 {
-  TLSCertSwitchSupport *tcss     = TLSCertSwitchSupport::getInstance(ssl);
-  TLSEventSupport      *tes      = TLSEventSupport::getInstance(ssl);
-  SSLNetVConnection    *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
+  TLSCertSwitchSupport *tcss             = TLSCertSwitchSupport::getInstance(ssl);
+  TLSEventSupport      *tes              = TLSEventSupport::getInstance(ssl);
+  TLSBasicSupport      *tbs              = TLSBasicSupport::getInstance(ssl);
+  SSLNetVConnection    *sslnetvc         = dynamic_cast<SSLNetVConnection *>(tcss);
+  bool const            is_renegotiation = tbs != nullptr && tbs->is_tls_handshake_complete();
   bool                  reenabled;
   int                   retval = 1;
 
@@ -273,6 +289,12 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
     }
   }
 
+  // Reject renegotiation even when completed cert hooks let us skip certificate selection.
+  if (is_renegotiation && !SSLConfigParams::ssl_allow_client_renegotiation) {
+    Dbg(dbg_ctl_ssl_load, "ssl_cert_callback trying to renegotiate from the client");
+    return 0;
+  }
+
   SSLCertContextType ctxType = SSLCertContextType::GENERIC;
 #ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
   if (arg != nullptr) {
@@ -284,21 +306,26 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 
   if (tcss) {
     if (tes) {
-      // Do the common certificate lookup only once.  If we pause
-      // and restart processing, do not execute the common logic again
-      if (!tes->calledHooks(TS_EVENT_SSL_CERT)) {
+      bool const hooks_finished = tes->finished_cert_hooks();
+
+      // On retry, keep a context selected by a completed cert hook. A new handshake
+      // must retain the existing certificate lookup behavior.
+      if ((!hooks_finished || is_renegotiation) && !tes->calledHooks(TS_EVENT_SSL_CERT)) {
         retval = tcss->selectCertificate(ssl, ctxType);
         if (retval != 1) {
           return retval;
         }
       }
 
-      // Call the plugin cert code
-      reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
-      // If it did not re-enable, return the code to
-      // stop the accept processing
-      if (!reenabled) {
-        retval = -1; // Pause
+      // Later phases must not receive the cert event when the library retries this callback.
+      if (!hooks_finished) {
+        // Call the plugin cert code
+        reenabled = tes->callHooks(TS_EVENT_SSL_CERT);
+        // If it did not re-enable, return the code to
+        // stop the accept processing
+        if (!reenabled) {
+          retval = -1; // Pause
+        }
       }
     } else {
       if (tcss->selectCertificate(ssl, ctxType) == 1) {
@@ -1063,24 +1090,29 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
   SSL_CTX_set_select_certificate_cb(ctx, [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
     ssl_select_cert_result_t res;
-    res = ssl_client_hello_callback(client_hello);
-    if (res == ssl_select_cert_error) {
-      return res;
-    }
+    TLSEventSupport         *es = TLSEventSupport::getInstance(client_hello->ssl);
 
-    res = (ssl_servername_callback(client_hello->ssl, nullptr, nullptr) == SSL_TLSEXT_ERR_OK) ? ssl_select_cert_success :
-                                                                                                ssl_select_cert_error;
-    if (res == ssl_select_cert_error) {
-      return res;
+    // BoringSSL runs this whole callback again once a paused hook reenables, whereas OpenSSL calls
+    // only the callback that paused. After a pause in the cert hook, the client hello and
+    // servername work is already done and must not run twice.
+    if (es == nullptr || !es->reached_cert_hooks()) {
+      res = ssl_client_hello_callback(client_hello);
+      if (res != ssl_select_cert_success) {
+        return res;
+      }
+
+      res = (ssl_servername_callback(client_hello->ssl, nullptr, nullptr) == SSL_TLSEXT_ERR_OK) ? ssl_select_cert_success :
+                                                                                                  ssl_select_cert_error;
+      if (res == ssl_select_cert_error) {
+        return res;
+      }
     }
 
     int cbres = ssl_cert_callback(client_hello->ssl, (void *)client_hello);
     switch (cbres) {
     case -2:
-      res = ssl_select_cert_retry;
-      break;
     case -1:
-      res = ssl_select_cert_success;
+      res = ssl_select_cert_retry;
       break;
     case 0:
       res = ssl_select_cert_error;

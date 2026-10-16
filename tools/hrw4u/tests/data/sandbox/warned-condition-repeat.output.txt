@@ -1,0 +1,7 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{METHOD} ="GET"
+    set-header X-A "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{METHOD} ="POST"
+    set-header X-B "2"

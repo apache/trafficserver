@@ -33,21 +33,27 @@ public:
   static uint64_t
   random()
   {
-    return _state.int_dist(_state.engine);
+    State &s = state();
+
+    return s.int_dist(s.engine);
   }
 
   static double
   drandom()
   {
-    return _state.real_dist(_state.engine);
+    State &s = state();
+
+    return s.real_dist(s.engine);
   }
 
   static void
   seed(uint64_t s)
   {
-    _state.engine.seed(s);
-    _state.int_dist.reset();
-    _state.real_dist.reset();
+    State &st = state();
+
+    st.engine.seed(s);
+    st.int_dist.reset();
+    st.real_dist.reset();
   }
 
 private:
@@ -57,6 +63,14 @@ private:
     std::uniform_real_distribution<double>  real_dist{0.0, 1.0};
   };
 
-  thread_local static State _state;
+  // Defined in the header so plugins (cripts, cache_promote) don't depend on traffic_server happening to link a tscore
+  // object. Function-local rather than an inline variable: Darwin emits the inline variable's TLS wrapper as a strong symbol.
+  static State &
+  state()
+  {
+    thread_local State s;
+
+    return s;
+  }
 };
 }; // namespace ts

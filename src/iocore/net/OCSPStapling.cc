@@ -1094,6 +1094,7 @@ query_responder(const char *uri, const char *user_agent, TS_OCSP_REQUEST *req, i
 
   if (!httpreq.is_done()) {
     Error("OCSP request was timed out; uri=%s", uri);
+    SCOPED_MUTEX_LOCK(lock, httpreq.mutex, this_ethread());
     if (!httpreq.is_initiated()) {
       Dbg(dbg_ctl_ssl_ocsp, "Request is not initiated yet. Cancelling the event.");
       e->cancel(&httpreq);

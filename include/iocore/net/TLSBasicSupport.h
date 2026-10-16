@@ -52,6 +52,7 @@ public:
   ink_hrtime       get_tls_handshake_begin_time() const;
   ink_hrtime       get_tls_handshake_end_time() const;
   bool             get_tls_handshake_bytes(uint64_t &bytes_in, uint64_t &bytes_out) const;
+  bool             is_tls_handshake_complete() const;
 
   /**
    * Returns a certificate that need to be verified.
@@ -83,9 +84,10 @@ public:
 protected:
   void clear();
 
-  virtual SSL             *_get_ssl_object() const = 0;
-  virtual ssl_curve_id     _get_tls_curve() const  = 0;
-  virtual std::string_view _get_tls_group() const  = 0;
+  virtual SSL             *_get_ssl_object() const            = 0;
+  virtual ssl_curve_id     _get_tls_curve() const             = 0;
+  virtual std::string_view _get_tls_group() const             = 0;
+  virtual bool             _is_tls_handshake_complete() const = 0;
 
   void _record_tls_handshake_begin_time();
   void _record_tls_handshake_end_time();

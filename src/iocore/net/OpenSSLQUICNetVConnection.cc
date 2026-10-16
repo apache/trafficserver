@@ -1023,7 +1023,7 @@ QUICNetVConnection::_get_local_port()
 }
 
 IpEndpoint const &
-QUICNetVConnection::_getLocalEndpoint()
+QUICNetVConnection::_getCertLookupEndpoint()
 {
   return this->local_addr;
 }

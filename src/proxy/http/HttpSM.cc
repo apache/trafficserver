@@ -23,6 +23,7 @@
  */
 
 #include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HdrUtils.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_time.h"
 #include "tsutil/Metrics.h"
@@ -886,6 +887,18 @@ HttpSM::wait_for_full_body()
   _ua.get_entry()->in_tunnel = true;
   _ua.get_txn()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->transaction_no_activity_timeout_in));
   tunnel.tunnel_run(p);
+}
+
+void
+HttpSM::generate_cache_key(HttpCacheKey *key, URL *url)
+{
+  Cache::generate_key(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+}
+
+void
+HttpSM::generate_cache_key92(HttpCacheKey *key, URL *url)
+{
+  Cache::generate_key92(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 }
 
 int
@@ -2774,18 +2787,25 @@ HttpSM::state_cache_open_read(int event, void *data)
           -cache_sm.get_last_error());
 
     SMDbg(dbg_ctl_http, "open read failed.");
-    // Inform HttpTransact somebody else is updating the document
-    // HttpCacheSM already waited so transact should go ahead.
+    // A path that carries its own ";params" segment already hashes to the 9.2
+    // key, so a compatibility lookup would just repeat the lookup that missed.
+    if (cache_sm.get_last_error() != -ECACHE_DOC_BUSY && t_state.http_config_param->cache_try_compat_key_read &&
+        compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL &&
+        !cache_lookup_url()->has_path_params()) {
+      // do the retry
+      compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+      do_cache_lookup_and_read();
+      return 0;
+    }
+    // Nothing was found under either key, or the document is busy, so no legacy
+    // object is in play past this point. The reset follows the retry decision
+    // so that it cannot re-arm the retry.
+    compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
+      // Inform HttpTransact somebody else is updating the document
+      // HttpCacheSM already waited so transact should go ahead.
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::DOC_BUSY;
     } else {
-      if (t_state.http_config_param->cache_try_compat_key_read &&
-          compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL) {
-        // do the retry
-        compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
-        do_cache_lookup_and_read();
-        return 0;
-      }
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::MISS;
     }
 
@@ -4698,11 +4718,51 @@ HttpSM::check_sni_host()
 }
 
 void
+HttpSM::set_virtualhost_entry(std::string_view domain)
+{
+  VirtualHost::scoped_config vhost_config;
+  // If already set, don't need to look at configs
+  if (m_virtualhost_entry || domain.empty() || !vhost_config) {
+    return;
+  }
+
+  auto vhost_entry = vhost_config->find_by_domain(domain);
+  if (vhost_entry) {
+    SMDbg(dbg_ctl_url_rewrite, "Found virtualhost: %s", vhost_entry->get_id().c_str());
+    m_virtualhost_entry = std::move(vhost_entry);
+  }
+}
+
+void
 HttpSM::do_remap_request(bool run_inline)
 {
   SMDbg(dbg_ctl_http_seq, "Remapping request");
   SMDbg(dbg_ctl_url_rewrite, "Starting a possible remapping for request");
+
+  if (!m_virtualhost_entry) {
+    auto host_name{t_state.hdr_info.client_request.host_get()};
+    set_virtualhost_entry(host_name);
+  }
+
+  // Check virtualhost remap rules before looking at remap.config. Copying the shared_ptr pins the
+  // table for the life of this transaction, so a reload that drops the entry cannot pull the table
+  // out from under us mid-transaction.
+  bool virtualhost_remap = false;
+  if (m_virtualhost_entry && m_virtualhost_entry->remap_table) {
+    m_remap           = m_virtualhost_entry->remap_table;
+    virtualhost_remap = true;
+    SMDbg(dbg_ctl_url_rewrite, "Using virtualhost remap table: %s", m_virtualhost_entry->get_id().c_str());
+  }
+
   bool ret = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+
+  // If no remap matches in virtualhost, revert to default remap configs
+  if (!ret && virtualhost_remap) {
+    SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
+    // May be null once shutdown has cleared the table; setup_for_remap() handles that.
+    m_remap = rewrite_table.load(std::memory_order_acquire);
+    ret     = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+  }
 
   check_sni_host();
 
@@ -5292,6 +5352,28 @@ HttpSM::do_range_setup_if_necessary()
   }
 }
 
+// The URL this transaction looks up in the cache, and that every delete which
+// has to match that lookup uses too.
+//
+// hdr_info.client_request's URL always names the *current* request:
+// redirect_request() rewrites it in place, so after a redirect follow it is the
+// Location target. cache_info.lookup_url is set once, before the first lookup
+// (HttpTransact::DecideCacheLookup), and names the *original* request. Whether
+// it also moves with a redirect is an accident of how it was set: with
+// pristine_host_hdr off it aliases client_request's URL and follows it, with
+// pristine_host_hdr on it is a private copy and stays put. It is therefore not
+// a reliable way to reach the redirected URL, which is why the redirect case
+// below reads client_request instead.
+URL *
+HttpSM::cache_lookup_url()
+{
+  // Follow the redirect unless configured to keep the original cache key.
+  if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key) {
+    return t_state.hdr_info.client_request.url_get();
+  }
+  return t_state.cache_info.lookup_url;
+}
+
 void
 HttpSM::do_cache_lookup_and_read()
 {
@@ -5302,29 +5384,25 @@ HttpSM::do_cache_lookup_and_read()
   t_state.request_sent_time      = UNDEFINED_TIME;
   t_state.response_received_time = UNDEFINED_TIME;
 
-  Metrics::Counter::increment(http_rsb.cache_lookups);
-
-  ATS_PROBE1(milestone_cache_open_read_begin, sm_id);
-  milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
-  t_state.cache_lookup_result                    = HttpTransact::CacheLookupResult_t::NONE;
-  t_state.cache_info.lookup_count++;
-  // YTS Team, yamsat Plugin
-  // Changed the lookup_url to c_url which enables even
-  // the new redirect url to perform a CACHE_LOOKUP
-  URL *c_url;
-  if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key) {
-    c_url = t_state.hdr_info.client_request.url_get();
-  } else {
-    c_url = t_state.cache_info.lookup_url;
+  // A compatibility retry continues the lookup that just missed rather than
+  // starting a new one, so the counter, the probe, and the milestone all stay
+  // with the canonical-key lookup that began it.
+  if (!CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
+    Metrics::Counter::increment(http_rsb.cache_lookups);
+    ATS_PROBE1(milestone_cache_open_read_begin, sm_id);
+    milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
+    t_state.cache_info.lookup_count++;
   }
+  t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::NONE;
+  URL *c_url                  = cache_lookup_url();
 
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
-    Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  if (CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
+    generate_cache_key92(&key, c_url);
   } else {
-    Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+    generate_cache_key(&key, c_url);
   }
 
   t_state.hdr_info.cache_request.copy(&t_state.hdr_info.client_request);
@@ -5349,11 +5427,47 @@ HttpSM::do_cache_delete_all_alts()
   // Do not delete a non-existent object.
   ink_assert(t_state.cache_info.object_read);
 
-  SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
+  // Address the object that was looked up. A redirect follow can look up a
+  // different URL than cache_info.lookup_url, which is set once and does not
+  // track the redirect when the pristine host header is maintained.
+  URL *url = cache_lookup_url();
+
+  SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                      t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, url);
+  cacheProcessor.remove(nullptr, &key);
+
+  // A migration leaves the legacy copy in place, so the object can live under
+  // both keys. Removing only one of them would let the other be served after
+  // the purge.
+  do_cache_delete_compat_alts();
+}
+
+// Remove the object stored under the legacy key.
+//
+// Only for the delete paths, which have to reach both keys. A successful
+// migration deliberately leaves the legacy copy alone: VC_EVENT_WRITE_COMPLETE
+// means the tunnel handed the last byte to the cache VC, not that the object
+// reached disk, so deleting on that signal loses the object outright whenever
+// the write later fails. The copy ages out on its own, and it stops being read
+// as soon as the canonical key resolves, so compat_key_reads still decays to
+// zero.
+void
+HttpSM::do_cache_delete_compat_alts()
+{
+  // Same URL the lookup used; see do_cache_delete_all_alts().
+  URL *url = cache_lookup_url();
+
+  // A path that carries its own ";params" segment hashes to the same key
+  // under both schemes, so the canonical delete already reached it.
+  if (!t_state.http_config_param->cache_try_compat_key_read || url->has_path_params()) {
+    return;
+  }
+  SMDbg(dbg_ctl_http_seq, "Issuing compatibility cache delete for %s", url->string_get_ref());
+
+  HttpCacheKey key;
+  generate_cache_key92(&key, url);
   cacheProcessor.remove(nullptr, &key);
 }
 
@@ -5382,6 +5496,15 @@ HttpSM::do_cache_prepare_update()
       t_state.cache_info.object_store.valid() && t_state.cache_info.object_store.response_get() != nullptr &&
       t_state.cache_info.object_store.response_get()->valid() &&
       t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET) {
+    // An object found under the 9.2 key cannot be updated in place: the write
+    // would be a create on the current key, and the cache turns a header-only
+    // close of a create into an abort. Take the failed-update path instead,
+    // which serves the updated headers without storing them.
+    if (CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
+      ink_assert(t_state.cache_info.write_lock_state != HttpTransact::CacheWriteLock_t::SUCCESS);
+      call_transact_and_set_next_state(HttpTransact::HandleUpdateCachedObject);
+      return;
+    }
     t_state.cache_info.object_store.request_set(t_state.cache_info.object_read->request_get());
     // t_state.cache_info.object_read = NULL;
     // cache_sm.close_read();
@@ -5430,10 +5553,17 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   SMDbg(dbg_ctl_http_cache_write, "writing to cache with URL %s", s_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, s_url);
+
+  // A compatibility read returns an object stored under the legacy key. Passing
+  // that object to a write using the canonical key turns the write into an
+  // update, but the canonical-key vector does not contain the legacy alternate.
+  // Cache::open_write then fails with ECACHE_NO_DOC instead of creating the
+  // migrated object. Create a new canonical-key object for compatibility reads.
+  CacheHTTPInfo *write_object_read_info = CompatCacheKey::write_info(compatibility_cache_lookup, object_read_info);
 
   pending_action =
-    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, object_read_info,
+    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, write_object_read_info,
                      static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for),
                      retry, allow_multiple);
 }
@@ -5794,8 +5924,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       break;
     case HSMresult_t::RETRY:
       Metrics::Counter::increment(http_rsb.origin_reuse_fail);
-      //  Could not get shared pool lock
-      //   FIX: should retry lock
+      // Pool locking or transaction allocation failed; open a new connection.
       break;
     default:
       hsm_release_assert(0);
@@ -6317,6 +6446,41 @@ HttpSM::release_server_session(bool serve_from_cache)
   }
 }
 
+// A peer's not-processed assertion permits a retry only if we can reproduce
+// the request. This includes safe methods with bodies: method safety does not
+// make an exhausted body reader replayable. Unbuffered, incomplete, unknown-length,
+// chunked and transformed bodies are excluded. Admission rearms a complete copy;
+// body rejection latches origin_retry_body_unavailable to block later retries.
+// Both outcomes increment their corresponding origin retry counters.
+bool
+HttpSM::prepare_for_origin_retry()
+{
+  if (server_txn == nullptr || !server_txn->is_safe_to_retry()) {
+    return false;
+  }
+  bool const has_body = server_request_body_bytes > 0 ||
+                        (_ua.get_txn() != nullptr && _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                                                                     t_state.client_info.transfer_encoding ==
+                                                                                       HttpTransact::TransferEncoding_t::CHUNKED));
+  if (has_body) {
+    int64_t const length = t_state.hdr_info.request_content_length;
+    // A done buffer is not proof of completeness: HttpTunnel also marks it done
+    // on EOS. Keep the exact-length check even when upstream paths reject early.
+    if (post_transform_info.vc || t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||
+        length < 0 || length == HTTP_UNDEFINED_CL || !this->is_postbuf_valid() || !this->get_postbuf_done() ||
+        this->postbuf_buffer_avail() != length) {
+      origin_retry_body_unavailable = true;
+      Metrics::Counter::increment(http_rsb.origin_retry_body_unavailable);
+      SMDbg(dbg_ctl_http, "Origin retry denied: complete replayable request body unavailable");
+      return false;
+    }
+    is_buffering_request_body = true;
+  }
+  Metrics::Counter::increment(http_rsb.origin_retry_admitted);
+  SMDbg(dbg_ctl_http, "Origin not-processed retry admitted: method=%d body=%d", t_state.method, has_body);
+  return true;
+}
+
 // void HttpSM::handle_post_failure()
 //
 //   We failed in our attempt post (or put) a document
@@ -6349,9 +6513,13 @@ HttpSM::handle_post_failure()
   _ua.get_entry()->in_tunnel = false;
   server_entry->in_tunnel    = false;
 
-  // disable redirection in case we got a partial response and then EOS, because the buffer might not
-  // have the full post and it's deallocating the post buffers here
-  this->disable_redirect();
+  // Preserve a complete buffered body only when the origin has not responded
+  // and explicitly reports that this request was not processed. Otherwise the
+  // copy may be incomplete, so discard it along with redirect eligibility.
+  bool const retry = this->prepare_for_origin_retry();
+  if (!retry) {
+    this->disable_redirect();
+  }
 
   // Don't even think about doing keep-alive after this debacle
   t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
@@ -6362,7 +6530,10 @@ HttpSM::handle_post_failure()
   // Server is down
   if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
     t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = retry ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
+  } else if (retry && t_state.current.state == HttpTransact::CONNECTION_CLOSED) {
+    // The upload tunnel already recorded EPIPE; a clean FIN can have lerrno == 0.
+    t_state.current.state = HttpTransact::CONNECTION_ERROR;
   }
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
@@ -6482,7 +6653,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   [[maybe_unused]] UnixNetVConnection *dbg_vc = nullptr;
   switch (event) {
   case VC_EVENT_EOS:
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = this->prepare_for_origin_retry() ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
     t_state.set_connect_fail(EPIPE);
     break;
   case VC_EVENT_ERROR:
@@ -6831,6 +7002,9 @@ HttpSM::perform_cache_write_action()
   case HttpTransact::CacheAction_t::DELETE: {
     // Write close deletes the old alternate
     cache_sm.close_write();
+    // That reached only one of the two keys the object can live under while
+    // the compatibility lookup is enabled.
+    do_cache_delete_compat_alts();
     cache_sm.close_read();
     t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
     break;
@@ -7965,9 +8139,6 @@ HttpSM::kill_this()
       server_txn = nullptr;
     }
     if (_ua.get_txn()) {
-      if (_ua.get_txn()->get_server_session() != nullptr) {
-        _ua.get_txn()->attach_server_session(nullptr);
-      }
       _ua.get_txn()->transaction_done();
     }
 
@@ -8407,6 +8578,10 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::CACHE_LOOKUP: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_read);
+    // Every lookup starts from the canonical key. A redirect follow or a read
+    // retry looks up a different object than the one a previous compatibility
+    // lookup found, so the flag must not carry over.
+    compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
     do_cache_lookup_and_read();
     break;
   }
