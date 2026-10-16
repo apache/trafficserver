@@ -69,6 +69,18 @@ Annotations that carry a severity are printed with it, for example ``- [3000] Wa
 draining.``, and a JSONRPC error ``data`` entry carries a ``severity`` field when its handler sets
 one, see :ref:`jsonrpc-node-errors-severity`.
 
+Configuration Changes
+---------------------
+
+A relative ``#include`` path in :file:`strategies.yaml` is now resolved against
+the configuration directory, the same way :file:`remap.config` resolves its
+``.include`` directive. Earlier releases resolved it against the
+:program:`traffic_server` working directory, which is the install prefix. A
+legacy include such as ``#include etc/trafficserver/hosts.yaml`` is temporarily
+retried with the configuration-directory prefix removed and logs a deprecation
+warning. Update it to ``#include hosts.yaml``. Absolute include paths are
+unaffected.
+
 Upgrading to ATS v10.x
 ======================
 
