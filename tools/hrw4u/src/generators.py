@@ -120,11 +120,14 @@ class TableGenerator:
             reverse_map[name] = mapping
 
         # Add context type mappings
-        from hrw4u.tables import CONTEXT_TYPE_MAP, FALLBACK_TAG_MAP
+        from hrw4u.tables import BARE_TAG_MAP, CONTEXT_TYPE_MAP, FALLBACK_TAG_MAP
         reverse_map["CONTEXT_TYPE_MAP"] = CONTEXT_TYPE_MAP.copy()
 
         # Add fallback tag mappings
         reverse_map["FALLBACK_TAG_MAP"] = FALLBACK_TAG_MAP.copy()
+
+        # Add bare tag mappings
+        reverse_map["BARE_TAG_MAP"] = BARE_TAG_MAP.copy()
 
         return reverse_map
 
