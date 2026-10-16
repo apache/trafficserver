@@ -28,6 +28,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -82,7 +83,8 @@ TEST_CASE("SSL_SECRET hooks run one caller at a time")
       while (waiting > 0) {
         std::this_thread::yield();
       }
-      // Neither file exists, so the secret is never cached and the hook runs.
+      // Each name is new to the secret map, so getOrLoadSecret() calls
+      // loadSecret(), which runs the hook before it reads anything from disk.
       std::string cert_data;
       std::string key_data;
       secrets.getOrLoadSecret("/nonexistent/cert" + std::to_string(i) + ".pem", "/nonexistent/key" + std::to_string(i) + ".pem",
