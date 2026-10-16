@@ -756,6 +756,7 @@ StripeSM::aggWriteDone(int event, Event *e)
         (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
+    dir_set_phase(&del_dir, directory.header->phase);
     for (int done = 0; done < this->_write_buffer.get_buffer_pos();) {
       Doc *doc = reinterpret_cast<Doc *>(this->_write_buffer.get_buffer() + done);
       dir_set_offset(&del_dir, directory.header->write_pos + done);
