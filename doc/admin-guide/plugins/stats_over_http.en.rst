@@ -73,7 +73,8 @@ The plugin reuses a render for later requests in the same format and
 encoding, for ``N`` milliseconds after the render starts. With ``0``, each
 request waits for a render that starts after the request arrives. The default
 is ``0`` for the global plugin and ``1000`` for a remap rule. ``N`` must be
-from ``0`` to ``86400000``, one day. See `Rendering`_.
+from ``0`` to ``86400000``, one day. A request with ``records[]`` does not
+reuse a render. See `Rendering`_.
 
 .. option:: --wait-timeout-ms=N
 
@@ -181,6 +182,29 @@ data in the specified encoding, for example:
 
 The plugin compresses gzip and deflate responses at zlib level 6, and br responses
 at brotli quality 6 with a 64 KiB window.
+
+In both Prometheus formats, a request can ask for the samples of some records
+with ``records[]`` query parameters. Each parameter names one record, as
+Traffic Server names it, and a request can repeat the parameter. The brackets
+can be percent-encoded, as Prometheus sends them. For example, this request gets
+only the samples of the two records that it names::
+
+    http://host:port/_stats/prometheus?records[]=proxy.process.http.completed_requests&records[]=proxy.process.http.current_client_connections
+
+The response has the lines that the full output has for these records, in the
+order of the full output. It leaves out a name that matches no record, and a
+record that the full output leaves out, for example one that a rule excludes.
+The series limit of the rules does not apply. The response has no
+``current_time_epoch_ms`` sample. The JSON and CSV formats ignore
+``records[]``. A remap rule accepts ``records[]`` in the same way.
+
+A request with ``records[]`` does not reuse a render, whatever
+:option:`--max-age-ms` is. The plugin reads the current value of each named
+record by its name. It walks every record only when the request names a string
+record, or a record that the plugin has not seen yet. A string metric, such as
+``proxy.process.version.server.short``, cannot be found by its name, so a
+response has it only after the plugin has seen it in a walk of every record, as
+a request without ``records[]`` makes. The response is not compressed.
 
 Rendering
 =========

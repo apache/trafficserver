@@ -43,6 +43,7 @@
 #include <string_view>
 #include <sys/stat.h>
 #include <ts/ts.h>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 #include <unistd.h>
@@ -208,9 +209,30 @@ struct stats_instance;
 // The instance of the global plugin, which lives as long as the process.
 static std::shared_ptr<stats_instance> *global_instance = nullptr;
 
+using record_filter = std::optional<std::vector<std::string>>;
+
 static std::shared_ptr<stats_instance> make_stats_instance(const stats_options &options);
-static void                            serve_global_scrape(TSHttpTxn txnp, output_format_t format, encoding_format_t encoding);
-static bool                            parse_format(std::string_view name, output_format_t &format);
+static void serve_global_scrape(TSHttpTxn txnp, output_format_t format, encoding_format_t encoding, record_filter records);
+static bool parse_format(std::string_view name, output_format_t &format);
+
+static bool
+is_prometheus(output_format_t format)
+{
+  return format == output_format_t::PROMETHEUS_OUTPUT || format == output_format_t::PROMETHEUS_V2_OUTPUT;
+}
+
+// The records[] parameters of a request for Prometheus output.
+static record_filter
+request_record_filter(output_format_t format, TSMBuffer bufp, TSMLoc url_loc)
+{
+  int         length = 0;
+  const char *query  = is_prometheus(format) ? TSUrlHttpQueryGet(bufp, url_loc, &length) : nullptr;
+
+  if (query == nullptr || length <= 0) {
+    return std::nullopt;
+  }
+  return prometheus_record_filter({query, static_cast<size_t>(length)});
+}
 
 int    configReloadRequests = 0;
 int    configReloads        = 0;
@@ -783,10 +805,27 @@ csv_out_stats(render_state *my_state)
 }
 
 static void
-prometheus_out_stats(output_format_t format, PrometheusRenderer &renderer, render_state *my_state)
+count_render_stats(const PrometheusRenderStats &stats)
+{
+  count(metrics().series, stats.series);
+  count(metrics().series_dropped, stats.dropped);
+  count(metrics().series_relabeled, stats.relabeled);
+  count(metrics().series_duplicates, stats.duplicates);
+  count(metrics().series_type_conflicts, stats.type_conflicts);
+}
+
+// Passes every record to the renderer, in the order of TSRecordDump.
+static void
+walk_records(PrometheusRenderer &renderer)
 {
   renderer.begin();
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), prometheus_add_stat, &renderer);
+}
+
+static void
+prometheus_out_stats(output_format_t format, PrometheusRenderer &renderer, render_state *my_state)
+{
+  walk_records(renderer);
 
   std::string &body = renderer.render();
 
@@ -800,14 +839,64 @@ prometheus_out_stats(output_format_t format, PrometheusRenderer &renderer, rende
     body.append("current_time_epoch_ms ").append(std::to_string(ms_since_epoch())).append("\n");
   }
   TSIOBufferWrite(my_state->resp_buffer, body.data(), body.size());
+  count_render_stats(renderer.stats());
+}
 
-  auto const &stats = renderer.stats();
+// Whether ATS has a record named @a name.  TSMgmtDataTypeGet finds a record of librecords, and TSStatFindName a metric.  Neither
+// finds a string metric, so a request finds one only after a walk of every record has seen it.
+static bool
+record_exists(const std::string &name)
+{
+  TSRecordDataType data_type;
+  int              id;
 
-  count(metrics().series, stats.series);
-  count(metrics().series_dropped, stats.dropped);
-  count(metrics().series_relabeled, stats.relabeled);
-  count(metrics().series_duplicates, stats.duplicates);
-  count(metrics().series_type_conflicts, stats.type_conflicts);
+  return TSMgmtDataTypeGet(name.c_str(), &data_type) == TS_SUCCESS || TSStatFindName(name.c_str(), &id) == TS_SUCCESS;
+}
+
+// Reads a numeric record by its name.  A string record takes its value from a walk of the records instead, because the string
+// getter trims trailing spaces and does not find every string record.
+static bool
+read_record(const std::string &name, TSRecordDataType data_type, TSRecordData &datum)
+{
+  switch (data_type) {
+  case TS_RECORDDATATYPE_COUNTER:
+    return TSMgmtCounterGet(name.c_str(), &datum.rec_counter) == TS_SUCCESS;
+  case TS_RECORDDATATYPE_INT:
+    return TSMgmtIntGet(name.c_str(), &datum.rec_int) == TS_SUCCESS;
+  case TS_RECORDDATATYPE_FLOAT:
+    return TSMgmtFloatGet(name.c_str(), &datum.rec_float) == TS_SUCCESS;
+  default:
+    return false;
+  }
+}
+
+// Writes the samples of the named records.  The renderer reads each record that it knows by name.  A record that it has not
+// seen yet joins its family in a walk of every record, as in a full render, so that the order in which the renderer first
+// sees the records does not depend on the requests.  undumped holds the records that exist but that no walk passes, a
+// configuration record for example, so that a request for one does not walk each time.
+static void
+prometheus_out_records(PrometheusRenderer &renderer, render_state *my_state, const std::vector<std::string> &names,
+                       std::unordered_set<std::string> &undumped)
+{
+  auto const unseen = [&renderer, &undumped](const std::string &name) {
+    return !renderer.has_record(name) && undumped.count(name) == 0 && record_exists(name);
+  };
+  std::string *body = nullptr;
+
+  if (std::none_of(names.begin(), names.end(), unseen)) {
+    body = renderer.render_records(names, read_record);
+  }
+  if (body == nullptr) {
+    walk_records(renderer);
+    for (const std::string &name : names) {
+      if (unseen(name)) {
+        undumped.insert(name);
+      }
+    }
+    body = renderer.render_records(names);
+  }
+  TSIOBufferWrite(my_state->resp_buffer, body->data(), body->size());
+  count_render_stats(renderer.stats());
 }
 
 static void
@@ -844,6 +933,7 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   bool              intercept                = false;
   output_format_t   output_format            = output_format_t::JSON_OUTPUT;
   encoding_format_t encoding                 = encoding_format_t::NONE;
+  record_filter     records;
 
   Dbg(dbg_ctl, "in the read stuff");
   config = get_config(contp);
@@ -958,6 +1048,12 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     }
   }
   Dbg(dbg_ctl, "Finished AE check");
+
+  // A response with records[] is too small to gain from compression.
+  records = request_record_filter(output_format, reqp, url_loc);
+  if (records) {
+    encoding = encoding_format_t::NONE;
+  }
   goto cleanup;
 
 notforme:
@@ -976,7 +1072,7 @@ cleanup:
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, accept_encoding_field);
   }
   if (intercept) {
-    serve_global_scrape(txnp, output_format, encoding);
+    serve_global_scrape(txnp, output_format, encoding, std::move(records));
   } else {
     TSHttpTxnReenable(txnp, reenable);
   }
@@ -1381,15 +1477,16 @@ using snapshot_table = snapshot_ptr[FORMAT_COUNT][ENCODING_COUNT];
 
 // One request for the stats.  The waiter list, the transaction hooks and the intercept share it.
 struct stats_scrape {
-  stats_scrape(TSHttpTxn txn, output_format_t fmt, encoding_format_t enc, bool rule)
-    : txnp(txn), format(fmt), encoding(enc), remap(rule)
+  stats_scrape(TSHttpTxn txn, output_format_t fmt, encoding_format_t enc, bool rule, record_filter filter = std::nullopt)
+    : txnp(txn), format(fmt), encoding(enc), remap(rule), records(std::move(filter))
   {
   }
 
   TSHttpTxn         txnp;
   output_format_t   format;
   encoding_format_t encoding;
-  bool              remap; // A remap rule serves the request, rather than the global plugin.
+  bool              remap;   // A remap rule serves the request, rather than the global plugin.
+  record_filter     records; // The records that the response has, from the records[] parameters.
   // When the request started to wait for a render.
   std::chrono::steady_clock::time_point arrived;
 
@@ -1432,6 +1529,7 @@ struct stats_instance {
   std::unique_ptr<PrometheusRenderer> prometheus_v1;
   std::unique_ptr<PrometheusRenderer> prometheus_v2;
   zlib_streams                        zlib;
+  std::unordered_set<std::string>     undumped; // For prometheus_out_records().
 
   // The mutex guards the members below it.  No thread holds it while it calls an API that can run a continuation.
   std::mutex                                 mutex;
@@ -1486,6 +1584,27 @@ render_snapshots(stats_instance &instance, const bool (&wanted)[FORMAT_COUNT][EN
     }
     fresh[f][static_cast<size_t>(encoding_format_t::NONE)] = std::move(body);
   }
+}
+
+// A request takes a render younger than this when it arrives.  A request with records[] gets its own render, which reads the
+// records after the request arrives.
+static std::chrono::milliseconds
+reuse_age(const stats_instance &instance, const stats_scrape &scrape)
+{
+  return std::chrono::milliseconds{scrape.records ? 0 : instance.options.max_age_ms};
+}
+
+// Renders the records that a request with records[] names, for that request only.
+static snapshot_ptr
+render_record_snapshot(stats_instance &instance, const stats_scrape &scrape)
+{
+  auto         body = std::make_shared<stats_snapshot>();
+  render_state render{body->body, &instance.options};
+
+  prometheus_out_records(*instance.prometheus(scrape.format), &render, *scrape.records, instance.undumped);
+  body->bytes    = TSIOBufferReaderAvail(body->reader);
+  body->rendered = std::chrono::steady_clock::now();
+  return body;
 }
 
 static int watchdog_handler(TSCont contp, TSEvent event, void *edata);
@@ -1595,13 +1714,19 @@ render_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS
   bool            wanted[FORMAT_COUNT][ENCODING_COUNT] = {};
   bool            waiting                              = false;
   snapshot_table  fresh;
+  // The requests with records[] that wait when the render starts, each with its own render.
+  std::vector<std::pair<std::shared_ptr<stats_scrape>, snapshot_ptr>> by_record;
 
   {
     std::lock_guard lock{instance.mutex};
 
     for (auto const &scrape : instance.waiters) {
-      wanted[static_cast<size_t>(scrape->format)][static_cast<size_t>(scrape->encoding)] = true;
-      waiting                                                                            = true;
+      if (scrape->records) {
+        by_record.emplace_back(scrape, nullptr);
+      } else {
+        wanted[static_cast<size_t>(scrape->format)][static_cast<size_t>(scrape->encoding)] = true;
+      }
+      waiting = true;
     }
   }
   // The watchdog can answer every waiting request before the render starts.
@@ -1610,6 +1735,9 @@ render_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS
     int64_t const               start = thread_cpu_ns();
 
     render_snapshots(instance, wanted, fresh);
+    for (auto &[scrape, snapshot] : by_record) {
+      snapshot = render_record_snapshot(instance, *scrape);
+    }
     count(metrics().renders);
     count_cpu_time(metrics().render_us, start, rest);
   }
@@ -1632,7 +1760,14 @@ render_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS
 
     // As in scrape_wait, a request takes a render only if the render is younger than max_age_ms when the request arrives.
     auto const max_age  = std::chrono::milliseconds{instance.options.max_age_ms};
-    auto       rendered = [&fresh, max_age](const std::shared_ptr<stats_scrape> &scrape) -> snapshot_ptr {
+    auto       rendered = [&fresh, &by_record, max_age](const std::shared_ptr<stats_scrape> &scrape) -> snapshot_ptr {
+      if (scrape->records) {
+        auto const it =
+          std::find_if(by_record.begin(), by_record.end(), [&scrape](const auto &entry) { return entry.first == scrape; });
+
+        return it != by_record.end() ? it->second : nullptr;
+      }
+
       auto const &snapshot = fresh[static_cast<size_t>(scrape->format)][static_cast<size_t>(scrape->encoding)];
 
       return snapshot != nullptr && scrape->arrived - snapshot->rendered < max_age ? snapshot : nullptr;
@@ -1677,7 +1812,7 @@ render_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS
   return 0;
 }
 
-// Answers a request from a snapshot younger than max_age_ms.  Otherwise the request waits for a render, which starts unless
+// Answers a request from a snapshot younger than its reuse age.  Otherwise the request waits for a render, which starts unless
 // one is in flight.  Either way, the transaction continues once it has its answer.
 static void
 scrape_wait(const std::shared_ptr<stats_instance> &instance, std::shared_ptr<stats_scrape> scrape)
@@ -1691,7 +1826,7 @@ scrape_wait(const std::shared_ptr<stats_instance> &instance, std::shared_ptr<sta
     std::lock_guard lock{instance->mutex};
     auto const     &snapshot = instance->snapshots[static_cast<size_t>(scrape->format)][static_cast<size_t>(scrape->encoding)];
 
-    if (snapshot != nullptr && now - snapshot->rendered < std::chrono::milliseconds{instance->options.max_age_ms}) {
+    if (snapshot != nullptr && now - snapshot->rendered < reuse_age(*instance, *scrape)) {
       scrape->snapshot = snapshot;
     } else {
       scrape->arrived = now;
@@ -1838,9 +1973,9 @@ scrape_intercept_handler(TSCont contp, TSEvent event, void *edata)
 
 // The global plugin intercepts the request in its read request header hook, then waits there for the stats.
 static void
-serve_global_scrape(TSHttpTxn txnp, output_format_t format, encoding_format_t encoding)
+serve_global_scrape(TSHttpTxn txnp, output_format_t format, encoding_format_t encoding, record_filter records)
 {
-  auto   scrape         = std::make_shared<stats_scrape>(txnp, format, encoding, false);
+  auto   scrape         = std::make_shared<stats_scrape>(txnp, format, encoding, false, std::move(records));
   TSCont intercept_cont = TSContCreate(scrape_intercept_handler, TSMutexCreate());
 
   TSContDataSet(intercept_cont, new scrape_intercept(scrape));
@@ -2172,7 +2307,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   TSHttpTxnConfigIntSet(txnp, TS_CONFIG_HTTP_CACHE_HTTP, 0);
 
   auto const &instance = *static_cast<std::shared_ptr<stats_instance> *>(ih);
-  auto        scrape   = std::make_shared<stats_scrape>(txnp, instance->options.format, encoding_format_t::NONE, true);
+  auto        scrape   = std::make_shared<stats_scrape>(txnp, instance->options.format, encoding_format_t::NONE, true,
+                                                        request_record_filter(instance->options.format, rri->requestBufp, rri->requestUrl));
 
   if (instance->options.config_error) {
     scrape->status = TS_HTTP_STATUS_SERVICE_UNAVAILABLE;

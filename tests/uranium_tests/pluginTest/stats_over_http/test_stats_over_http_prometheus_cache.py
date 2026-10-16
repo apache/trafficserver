@@ -134,4 +134,16 @@ def test_stats_over_http_prometheus_cache(ats_factory: ATSFactory, services: Ser
             families = ["plugin_test_metrics_requests_post=1"]
         scrape(services, ats, f"concurrent-{i}", path, help_lines, expect, families, concurrency=16)
 
+    # The remap rules reuse a render for 1 s, but a request with records[] gets its own render.  The plugin's count of
+    # renders changes with each render, so two responses in a row differ.
+    result = services.process(
+        "records", [
+            sys.executable,
+            Path(__file__).parent / "check_prometheus.py",
+            str(ats.http_port), "/metrics/nohelp/v1?records%5B%5D=plugin.stats_over_http.renders", "--fresh",
+            "--family=plugin_stats_over_http_renders=1"
+        ]).run()
+    assert result.returncode == 0, result.output
+    assert "Verified 1 families and 1 samples" in result.stdout, "The response should hold only the sample of the named record."
+
     wait_for_file_lines(ats.traffic_out, "Assigned plugin.test_metrics.late=7", 1)

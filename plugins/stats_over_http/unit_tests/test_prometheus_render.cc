@@ -245,3 +245,73 @@ TEST_CASE("Records are found when they move or their name moves", "[prometheus_r
     CHECK(namer_calls == 4);
   }
 }
+
+TEST_CASE("A records render writes the named records as a full render does", "[prometheus_render]")
+{
+  PrometheusRenderer      renderer{options()};
+  std::vector<Stat> const stats = {counter("req.get", 5), gauge("conn", -3), counter("req.post", 7), floating("load", 0.5)};
+  std::string const       full  = render(renderer, stats);
+
+  CHECK(render_records(renderer, {"conn", "load", "req.get", "req.post"}, stats) == full);
+  CHECK(renderer.stats().series == 4);
+
+  // The values come from the reader, in the order of a full render.
+  CHECK(render_records(renderer, {"load", "req.post"}, {counter("req.post", 8), floating("load", 1.5)}) == "# HELP req req.get\n"
+                                                                                                           "# TYPE req counter\n"
+                                                                                                           "req{k=\"post\"} 8\n"
+                                                                                                           "# HELP load load\n"
+                                                                                                           "load 1.5\n");
+  CHECK(renderer.stats().series == 2);
+
+  // A name that no render added writes nothing, and a record that the reader cannot read fails the render.
+  CHECK(render_records(renderer, {"missing"}, stats) == "");
+  CHECK_FALSE(render_records(renderer, {"conn"}, {}).has_value());
+
+  // A full render after a records render has the values of its own records.
+  CHECK(render(renderer, stats) == full);
+}
+
+TEST_CASE("Without a reader, a records render takes the values of the records added since begin()", "[prometheus_render]")
+{
+  PrometheusRenderer renderer{options()};
+
+  render(renderer, {gauge("conn", 1), gauge("load", 2)});
+  CHECK_FALSE(renderer.has_record("new"));
+
+  renderer.begin();
+  for (const Stat &stat : {gauge("conn", 3), gauge("new", 4)}) {
+    renderer.add(stat.name, stat.data_type, stat.datum);
+  }
+  CHECK(renderer.has_record("new"));
+
+  // The walk leaves out load, and new joins a family.
+  std::string const *body = renderer.render_records({"conn", "load", "new"});
+
+  REQUIRE(body != nullptr);
+  CHECK(*body == "# HELP conn conn\n"
+                 "# TYPE conn gauge\n"
+                 "conn 3\n"
+                 "# HELP new new\n"
+                 "# TYPE new gauge\n"
+                 "new 4\n");
+}
+
+TEST_CASE("The records[] parameters of a query string", "[prometheus_render]")
+{
+  using names = std::vector<std::string>;
+
+  CHECK_FALSE(prometheus_record_filter("").has_value());
+  CHECK_FALSE(prometheus_record_filter("format=prometheus&records=a&record[]=b&name[]=c").has_value());
+  CHECK(prometheus_record_filter("records[]=b&records[]=a&records[]=b") == names{"a", "b"});
+  // Prometheus encodes the brackets of the key.
+  CHECK(prometheus_record_filter("records%5B%5D=proxy.process.a&x=1&records%5b%5d=c") == names{"c", "proxy.process.a"});
+  CHECK(prometheus_record_filter("records[]=a%2Bb&records[]=c+d") == names{"a+b", "c d"});
+  // A malformed escape stays as it is.
+  CHECK(prometheus_record_filter("records[]=a%zz%4") == names{"a%zz%4"});
+  // A records[] parameter without a value names no record, so the response has none.
+  CHECK(prometheus_record_filter("records[]") == names{""});
+  CHECK(prometheus_record_filter("records[]=&x") == names{""});
+  // No record name has a NUL, so a name with an encoded NUL is left out, and a query of only such names names no record.
+  CHECK(prometheus_record_filter("records[]=proxy.process.a%00b&records[]=c") == names{"c"});
+  CHECK(prometheus_record_filter("records[]=proxy.process.a%00") == names{});
+}

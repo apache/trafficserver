@@ -24,7 +24,9 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -43,6 +45,13 @@ void prometheus_escape_label_value(std::string &out, std::string_view value);
 
 /// Appends @a text to @a out with the escapes of HELP text.
 void prometheus_escape_help_text(std::string &out, std::string_view text);
+
+/** The record names in the @c records[] parameters of a query string, sorted and without duplicates.
+ *
+ * Each @c records[] parameter names one record.  A query without one has no value.  The key may be percent-encoded, as
+ * Prometheus sends it.  A name with a NUL, which no record name has, is left out.
+ */
+std::optional<std::vector<std::string>> prometheus_record_filter(std::string_view query);
 
 /// The Prometheus form of a record name.  An empty family leaves the record out of the output.
 struct PrometheusName {
@@ -120,6 +129,25 @@ public:
 
   /// The samples of the records added since begin().  The caller can append to the buffer.  The next render reuses it.
   std::string &render();
+
+  /// Reads the current value of a record into a datum, for render_records().  It returns false if it cannot.
+  using RecordReader = std::function<bool(const std::string &name, TSRecordDataType data_type, TSRecordData &datum)>;
+
+  /// Whether a render has added a record named @a name.
+  bool
+  has_record(const std::string &name) const
+  {
+    return _by_name.count(name) > 0;
+  }
+
+  /** The samples that a render writes for the named records, in the order of a render.
+   *
+   * With @a read, each value comes from @a read, and a record that it cannot read makes the result null.  Without it, the
+   * values are those of the records added since begin().  A name that no render has added writes nothing, and a record
+   * whose series an earlier record has writes nothing.  The series limit of the rules does not apply.  The next render
+   * reuses the buffer.
+   */
+  std::string *render_records(const std::vector<std::string> &names, const RecordReader &read = {});
 
   const PrometheusRenderStats &
   stats() const
