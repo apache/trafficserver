@@ -27,6 +27,7 @@ limitations under the License.
 #include <string>
 #include <string_view>
 
+#include "jsonrpc/CtrlRPCRequests.h"
 #include "mgmt/rpc/jsonrpc/error/RPCError.h"
 #include "shared/rpc/RPCRequests.h"
 #include "shared/rpc/yaml_codecs.h"
@@ -125,4 +126,50 @@ appExitCodeFromResponse(shared::rpc::JSONRPCResponse const &response)
                                       [](auto const &a, auto const &b) { return exit_severity_of(a) < exit_severity_of(b); });
 
   return exit_severity_of(*worst) >= App_Exit_Level_Error ? CTRL_EX_ERROR : CTRL_EX_OK;
+}
+
+/// Exit status for a config reload task, graded against @c App_Exit_Level_Error like a handler failure. The most severe log
+/// entry of the task and its sub-tasks decides. An entry without a severity (DL_Undefined) is not graded, and one whose level
+/// the server sent malformed counts as the highest severity. The state of each task bounds its entries: a task that ended
+/// `fail` or `timeout` counts as at least an error, the way an annotation without a severity does, and the entries of any
+/// other task count as at most a warning, since its handler did not fail it. A reload with a task that ended `timeout` exits
+/// CTRL_EX_TEMPFAIL below the level, since it never finished. A reload that is still running, has no state, or is in a state
+/// this client does not know, is not graded.
+inline int
+appExitCodeFromReload(ConfigReloadResponse::ReloadInfo const &task)
+{
+  auto failed = [](ConfigReloadResponse::ReloadInfo const &info) { return info.status == "fail" || info.status == "timeout"; };
+
+  if (task.status != "success" && !failed(task)) {
+    return CTRL_EX_OK;
+  }
+
+  bool timed_out = false;
+  auto worst     = [&failed, &timed_out](auto &&self, ConfigReloadResponse::ReloadInfo const &info) -> int {
+    int level = -1;
+    for (auto const &entry : info.logs) {
+      if (entry.unknown_level) {
+        level = std::max(level, static_cast<int>(DL_Emergency));
+      } else if (entry.level != DL_Undefined) {
+        level = std::max(level, static_cast<int>(entry.level));
+      }
+    }
+    if (failed(info)) {
+      level     = std::max(level, static_cast<int>(DL_Error));
+      timed_out = timed_out || info.status == "timeout";
+    } else {
+      level = std::min(level, static_cast<int>(DL_Warning));
+    }
+    for (auto const &sub : info.sub_tasks) {
+      level = std::max(level, self(self, sub));
+    }
+    return level;
+  };
+
+  int const level = worst(worst, task);
+
+  if (level >= 0 && swoc::Errata::severity_type(level) >= App_Exit_Level_Error) {
+    return CTRL_EX_ERROR;
+  }
+  return timed_out ? CTRL_EX_TEMPFAIL : CTRL_EX_OK;
 }

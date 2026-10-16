@@ -95,6 +95,31 @@ template <> struct convert<FetchConfigReloadStatusRequest::Params> {
 };
 
 template <> struct convert<ConfigReloadResponse> {
+  /// A missing level leaves the entry DL_Undefined. A level that is not one of the DiagsLevel values marks it @c unknown_level,
+  /// which the exit status grades as the highest severity. Such a level still prints as it always did: an integer below or above
+  /// the known range as the lowest or the highest level, anything else without a tag. The server sends the level quoted, as it
+  /// does every scalar.
+  static void
+  decode_level(Node const &level, ConfigReloadResponse::LogEntry &entry)
+  {
+    if (!level) {
+      return;
+    }
+    if (level.IsScalar()) {
+      try {
+        auto const value = level.as<int>();
+        if (value >= DL_Diag && value <= DL_Undefined) {
+          entry.level = static_cast<DiagsLevel>(value);
+          return;
+        }
+        entry.level = value < DL_Diag ? DL_Diag : DL_Emergency;
+      } catch (YAML::Exception const &) {
+        // Not an integer.
+      }
+    }
+    entry.unknown_level = true;
+  }
+
   static bool
   decode(Node const &node, ConfigReloadResponse &out)
   {
@@ -107,8 +132,8 @@ template <> struct convert<ConfigReloadResponse> {
       for (auto &&log : from["logs"]) {
         if (log.IsMap()) {
           ConfigReloadResponse::LogEntry entry;
-          entry.level = static_cast<DiagsLevel>(log["level"].as<int>(DL_Undefined));
-          entry.text  = log["text"].as<std::string>();
+          decode_level(log["level"], entry);
+          entry.text = log["text"].as<std::string>();
           info.logs.push_back(std::move(entry));
         } else {
           info.logs.push_back({DL_Undefined, log.as<std::string>()});

@@ -115,7 +115,8 @@ tr = Test.AddTestRun("Verify SNI failure propagates to coordinator")
 tr.DelayStart = 10
 tr.Processes.Default.Command = "traffic_ctl config status -t ssl-sni-fail"
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The reload failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("FAIL", "Coordinator should propagate FAIL from SNIConfig")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("\\[Err\\]", "SNI failure should carry [Err] severity tag")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
@@ -129,7 +130,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify --min-level warning filters Note entries")
 tr.Processes.Default.Command = ("traffic_ctl config status -t ssl-sni-fail --min-level warning")
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.ReturnCode = 0
+# The reload failed, so config status exits 2.
+tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "\\[Err\\]", "Error entries should pass --min-level warning filter")
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(

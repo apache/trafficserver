@@ -23,7 +23,9 @@ replies gets them in turn, starting over after the last one.
 import argparse
 import json
 import os
+import signal
 import socket
+import sys
 
 METHOD_NOT_FOUND = {'error': {'code': -32601, 'message': 'Method not found'}}
 
@@ -42,6 +44,11 @@ def read_request(conn: socket.socket) -> dict | None:
 
 
 def main() -> None:
+    # AuTest stops a process with SIGINT and kills it only after Autest.KillDelaySecond. A Python
+    # started with SIGINT ignored never raises KeyboardInterrupt, and would wait out that delay.
+    for signum in (signal.SIGINT, signal.SIGTERM):
+        signal.signal(signum, lambda *_: sys.exit(0))
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('directory', help='runroot for traffic_ctl: runroot.yaml, the socket and a "ready" marker are created here')
     parser.add_argument('replies', help='JSON object mapping a method name to {"error": ...} or {"result": ...}, or a list of them')
