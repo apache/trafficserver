@@ -99,7 +99,7 @@ public:
    *  classes derived from this class with the corresponding Transaction object (using
    *  Transaction::addPlugin()), or register HOOK_TXN_CLOSE (but not both).
    *
-   * @param HookType the type of hook you wish to register
+   * @param[in] hook_type the type of hook you wish to register
    * @see HookType
    * @see Plugin
    */

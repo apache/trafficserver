@@ -2,7 +2,7 @@
 
   Implements the Traffic Server C API functions.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -7742,6 +7742,7 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  * Don't be intimidated by the macros below - they're simpler than they look!
  * The end result is just a switch statement with one case per config, like:
  *
+ * @code
  *   switch (conf) {
  *     case TS_CONFIG_HTTP_CHUNKING_ENABLED:
  *       ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
@@ -7753,12 +7754,14 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  *     // ... ~130 more cases, one per overridable config ...
  *   }
  *
+ * @endcode
+ *
  * The macros just auto-generate these cases from OverridableConfigDefs.h so we
  * don't have to maintain them by hand. Here's how an entry becomes a case:
  *
  * Example 1 - Standard config (GENERIC converter):
  *   Entry in OverridableConfigDefs.h:
- *     X(HTTP_CHUNKING_ENABLED, chunking_enabled, "...", INT, GENERIC)
+ *     `X(HTTP_CHUNKING_ENABLED, chunking_enabled, "...", INT, GENERIC)`
  *   Generates this case:
  *     case TS_CONFIG_HTTP_CHUNKING_ENABLED:
  *       ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
@@ -7766,11 +7769,11 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  *
  * Example 2 - Custom converter:
  *   Entry in OverridableConfigDefs.h:
- *     X(HTTP_DOWN_SERVER_CACHE_TIME, down_server_timeout, "...", INT, HttpDownServerCacheTimeConv)
+ *     `X(HTTP_DOWN_SERVER_CACHE_TIME, down_server_timeout, "...", INT, HttpDownServerCacheTimeConv)`
  *   Generates this case:
  *     case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
- *       conv = &HttpDownServerCacheTimeConv;
- *       ret = &overridableHttpConfig->down_server_timeout;
+ *       conv = &amp;HttpDownServerCacheTimeConv;
+ *       ret = &amp;overridableHttpConfig->down_server_timeout;
  *       break;
  *
  * The magic is in _CONF_CASE_DISPATCH which uses the CONV parameter (5th field)
@@ -7780,15 +7783,17 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  * Built-in converter types:
  *   - GENERIC: Auto-selects converter based on member type (most common).
  *   - NONE: No-op for configs handled elsewhere (e.g., SSL strings).
- *   - Custom: Any other name maps to a _CONF_CASE_<name> macro defined below.
+ *   - Custom: Any other name maps to a `_CONF_CASE_<name>` macro defined below.
  *
  * To add a new custom converter:
  *   1. Define your MgmtConverter (e.g., MyConv with load/store lambdas).
  *   2. Add a macro here following this pattern:
+ *        @code
  *        #define _CONF_CASE_MyConv(KEY, MEMBER) \
  *          case TS_CONFIG_##KEY: conv = &MyConv; \
  *            ret = &overridableHttpConfig->MEMBER; break;
- *   3. Add #undef _CONF_CASE_MyConv after _conf_to_memberp().
+ *        @endcode
+ *   3. Add `#undef _CONF_CASE_MyConv` after _conf_to_memberp().
  *   4. Use "MyConv" as the CONV parameter in OverridableConfigDefs.h.
  */
 
@@ -8707,8 +8712,8 @@ TSSslClientContextsNamesGet(int n, const char **result, int *actual)
  * present before querying for them. User will need to release the context returned
  * from this function.
  * Returns valid TSSslContext on success and nullptr on failure.
- * @param first_key Key string for the top level.
- * @param second_key Key string for the second level.
+ * @param[in] ca_paths Key string for the top level.
+ * @param[in] ck_paths Key string for the second level.
  */
 TSSslContext
 TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)

@@ -2,7 +2,7 @@
 
   Definitions via the X Macro pattern for overridable configuration variables.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -60,7 +60,7 @@
      The MEMBER field is ignored but must be provided.
 
   3. Custom converter name - For configs needing special conversion logic.
-     The name must match a _CONF_CASE_<name> macro defined in InkAPI.cc.
+     The name must match a `_CONF_CASE_<name>` macro defined in InkAPI.cc.
      Examples: HttpDownServerCacheTimeConv, HttpStatusCodeList_Conv,
      ConnectionTracker_MIN_SERVER_CONV, HttpTransact_HOST_RES_CONV.
      See the X-Macro Dispatch doxygen documentation in InkAPI.cc for more

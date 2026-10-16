@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -211,7 +211,7 @@ public:
     stopCop(ne) first.
 
     @param ne NetEvent to be released.
-    @return ne->nh set to nullptr.
+    @post @a ne has its @c nh pointer set to nullptr.
    */
   void stopIO(NetEvent *ne);
 

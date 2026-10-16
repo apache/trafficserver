@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -295,7 +295,7 @@ public:
       This is useful only for regular threads and if called before @c Thread::start. The event will be
       called first before the event loop.
 
-      @Note This will override the event for a dedicate thread so that this is called instead of the
+      @note This will override the event for a dedicate thread so that this is called instead of the
       event passed to the constructor.
   */
   Event *schedule_spawn(Continuation *c, int ev = EVENT_IMMEDIATE, void *cookie = nullptr);

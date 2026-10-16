@@ -2,7 +2,7 @@
 
   NetTimeout
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -60,7 +60,7 @@ private:
 };
 
 /**
-  ActivityCop - Check activity of T in the List in every @f seconds
+  ActivityCop - Check activity of T in the List in every @c f seconds
 
   T have to handle VC_EVENT_ACTIVE_TIMEOUT and VC_EVENT_INACTIVITY_TIMEOUT events.
 

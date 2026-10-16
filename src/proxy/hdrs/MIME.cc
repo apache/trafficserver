@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1076,7 +1076,7 @@ mime_hdr_clone(MIMEHdrImpl *s_mh, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit
  * @a dest_ptr does to @a src_base.
  */
 static inline MIMEField *
-rebase(MIMEField *dest_ptr,  ///< Original pointer into @src_base memory.
+rebase(MIMEField *dest_ptr,  ///< Original pointer into @a src_base memory.
        void      *dest_base, ///< New base pointer.
        void      *src_base   ///< Original base pointer.
 )

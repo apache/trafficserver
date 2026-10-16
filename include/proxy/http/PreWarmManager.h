@@ -2,7 +2,7 @@
 
   Pre-Warming NetVConnection
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -233,7 +233,7 @@ extern ClassAllocator<PreWarmSM, false> preWarmSMAllocator;
 
 /**
    @class PreWarmQueue
-   @detail
+   @details
    - Each ET_NET thread has this queue
    - Responsible for the life cycle of PreWarmSM until giving it to HttpSM
 

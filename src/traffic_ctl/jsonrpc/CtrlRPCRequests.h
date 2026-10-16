@@ -1,5 +1,5 @@
 /**
-  @section license License
+  @par License
 
   Internal traffic_ctl request/responses definitions.
 

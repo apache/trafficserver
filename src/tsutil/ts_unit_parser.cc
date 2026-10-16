@@ -1,9 +1,11 @@
-/** @file Support for common diagnostics between core, plugins, and libswoc.
+/** @file
+
+  Support for common diagnostics between core, plugins, and libswoc.
 
   This enables specifying the set of methods usable by a user agent based on the remove IP address
   for a user agent connection.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
