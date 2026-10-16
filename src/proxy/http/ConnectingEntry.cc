@@ -37,10 +37,20 @@ DbgCtl dbg_ctl_http_connect{"http_connect"};
 
 ConnectingEntry::~ConnectingEntry()
 {
+  if (_conn_track_group) {
+    _conn_track_group->release();
+  }
   if (_netvc_read_buffer != nullptr) {
     free_MIOBuffer(_netvc_read_buffer);
     _netvc_read_buffer = nullptr;
   }
+}
+
+void
+ConnectingEntry::enable_outbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group)
+{
+  ink_assert(!_conn_track_group);
+  _conn_track_group = std::move(group);
 }
 
 int
@@ -85,8 +95,11 @@ ConnectingEntry::state_http_server_open(int event, void *data)
       auto prime_iter = connect_sms.rbegin();
       ink_release_assert(prime_iter != connect_sms.rend());
       PoolableSession *new_session = (*prime_iter)->create_server_session(*netvc, _netvc_read_buffer, _netvc_reader);
-      netvc                        = nullptr;
-      _netvc_read_buffer           = nullptr;
+      if (_conn_track_group) {
+        new_session->enable_outbound_connection_tracking(std::move(_conn_track_group));
+      }
+      netvc              = nullptr;
+      _netvc_read_buffer = nullptr;
 
       // Did we end up with a multiplexing session?
       int count = 0;
