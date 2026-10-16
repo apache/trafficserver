@@ -259,11 +259,11 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_re
             try:
                 verify_session(session, fabricate_proxy_requests)
             except VerifyError as e:
-                connection_time = session['connection-time']
-                if not connection_time:
-                    connection_time = session['start-time']
+                connection_time = None
+                if session:
+                    connection_time = session.get('connection-time') or session.get('start-time')
                 if connection_time:
-                    logging.debug("Omitting session in %s with connection-time: %d: %s", replay_file, session['connection-time'], e)
+                    logging.debug("Omitting session in %s with connection-time: %d: %s", replay_file, connection_time, e)
                 else:
                     logging.debug("Omitting a session in %s, could not find a connection time: %s", replay_file, e)
                 continue
