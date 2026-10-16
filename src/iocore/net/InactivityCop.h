@@ -1,6 +1,6 @@
 /** @file
 
-   A brief file description
+   Timer-wheel driven inactivity cop: dispatches connection timeouts under a per-pass budget, with an optional audit.
 
  @section license License
 

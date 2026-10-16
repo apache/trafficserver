@@ -28,6 +28,10 @@ Metrics
 
 * Added ``proxy.process.net.inactivity_cop_visited``
 * Added ``proxy.process.net.inactivity_cop_budget_exhausted``
+* Added ``proxy.process.net.inactivity_cop_passes``
+* Added ``proxy.process.net.inactivity_cop_fired``
+* Added ``proxy.process.net.inactivity_cop_pass_time_us``
+* Added ``proxy.process.net.inactivity_cop_pass_max_us``
 
 Performance
 -----------
