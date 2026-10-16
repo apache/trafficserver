@@ -269,8 +269,11 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
 
+  // Only the thread that owns a NetHandler ever holds its mutex, so check the thread before the
+  // holder. A migration closes the VC from another thread while the owner locks and unlocks that
+  // mutex, and reading the holder from there would race with those writes.
   EThread *t            = this_ethread();
-  bool     close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
+  bool     close_inline = !recursion && (!nh || (nh->thread == t && nh->mutex->thread_holding == t));
 
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
