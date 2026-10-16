@@ -19,6 +19,9 @@
   limitations under the License.
  */
 
+#include <cstddef>
+#include <string_view>
+
 class Arena;
 
 /*-------------------------------------------------------------------------
@@ -40,4 +43,41 @@ char *escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *d
                    const unsigned char *map = nullptr);
 char *pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst = nullptr, size_t dst_size = 0,
                         const unsigned char *map = nullptr);
+
+/** Escape a UTF-8 string for inclusion in HTML.
+
+    This implements the HTML fragment serialization escaping algorithm. The
+    characters @c &, @c <, @c >, and U+00A0 NO-BREAK SPACE are always escaped.
+    The @c " character is additionally escaped when @a use_attribute_mode is
+    @c true.
+
+    @param[in] input string to escape.
+    @param[out] dst destination buffer, which must not overlap @a input.
+    @param[in] dst_size size of @a dst, including space for the terminating NUL.
+    @param[out] length amount of data written, excluding the terminating NUL.
+      This is set to zero if escaping fails. This may be @c nullptr.
+    @param[in] use_attribute_mode whether to escape for a double-quoted HTML
+      attribute value.
+
+    @return @c true on success, @c false if @a dst is null, the output length
+      overflows, or @a dst is too small.
+ */
+bool html_escape(std::string_view input, char *dst, size_t dst_size, size_t *length, bool use_attribute_mode);
+
+/** Unescape the HTML character references emitted by html_escape().
+
+    The character references @c &amp;, @c &nbsp;, @c &lt;, @c &gt;, and
+    @c &quot; are replaced by their corresponding UTF-8 characters. Other
+    character references are preserved. Unescaping is performed once, so an
+    unescaped character reference is not unescaped again.
+
+    @param[in] input string to unescape.
+    @param[out] dst destination buffer, which must not overlap @a input.
+    @param[in] dst_size size of @a dst, including space for the terminating NUL.
+    @param[out] length amount of data written, excluding the terminating NUL.
+      This is set to zero if unescaping fails. This may be @c nullptr.
+
+    @return @c true on success, @c false if @a dst is null or too small.
+ */
+bool html_unescape(std::string_view input, char *dst, size_t dst_size, size_t *length);
 }; // namespace Encoding
