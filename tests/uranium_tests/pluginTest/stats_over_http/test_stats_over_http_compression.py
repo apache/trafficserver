@@ -53,6 +53,15 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
                 ]).run()
             assert result.returncode == 0, result.output
             assert "Verified 10000 test metrics" in result.stdout
+    # Two records by name, with gzip accepted.  The response holds only the samples of the named records that exist.
+    result = services.process(
+        "records", [
+            sys.executable, directory / "fetch_stats.py",
+            str(ats.http_port), "prometheus", "--encoding=gzip", "--record=plugin.test_metrics.gauge_0",
+            "--record=plugin.test_metrics.gauge_9999", "--record=no.such.record"
+        ]).run()
+    assert result.returncode == 0, result.output
+    assert "Families: ['plugin_test_metrics_gauge_0', 'plugin_test_metrics_gauge_9999']" in result.stdout, result.stdout
     # The continuation count comes from the freelist dump, which has no
     # INKContAllocator rows when allocations go straight to malloc.
     count_continuations = not ats.has_feature("TS_USE_MALLOC_ALLOCATOR")

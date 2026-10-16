@@ -26,6 +26,7 @@ import socket
 import struct
 import subprocess
 import sys
+import urllib.parse
 import zlib
 
 
@@ -106,6 +107,22 @@ def fetch_and_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def fetch_records(args: argparse.Namespace) -> int:
+    '''Request the records in args.record, whose samples the response must hold alone and uncompressed.'''
+    query = urllib.parse.urlencode([('records[]', name) for name in args.record])
+    response, data = request(args.port, f'/_stats/{args.format}?{query}', args.encoding)
+    content_encoding = response.getheader('Content-Encoding')
+    if response.status != 200 or content_encoding is not None:
+        print(f'Unexpected response: status {response.status}, Content-Encoding {content_encoding}')
+        return 1
+
+    body = data.decode('utf-8')
+    families = sorted({re.split(r'[{ ]', line, maxsplit=1)[0] for line in body.splitlines() if line and not line.startswith('#')})
+    print(f'Families: {families}')
+    print(f'Verified a body of {len(data)} bytes for {len(args.record)} records')
+    return 0
+
+
 def reset_after_first_byte(args: argparse.Namespace) -> int:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # A small receive window keeps most of the body in Traffic Server when the client goes away.
@@ -157,6 +174,8 @@ def main() -> int:
         default=[],
         metavar='LINE',
         help='lines that the decoded body must have, one after the other.  Repeat the option for each group of lines')
+    parser.add_argument(
+        '--record', action='append', default=[], help='a record to request with records[].  Repeat the option for each record')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         '--reset', action='store_true', help='reset the connection after the first response byte instead of verifying the body')
@@ -172,6 +191,8 @@ def main() -> int:
         return head(args)
     if args.post:
         return post(args)
+    if args.record:
+        return fetch_records(args)
     return fetch_and_verify(args)
 
 

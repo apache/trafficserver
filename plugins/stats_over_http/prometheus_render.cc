@@ -143,6 +143,50 @@ join(const std::vector<std::string> &names)
   }
   return result;
 }
+
+int
+hex_value(char c)
+{
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  }
+  if (c >= 'a' && c <= 'f') {
+    return c - 'a' + 10;
+  }
+  if (c >= 'A' && c <= 'F') {
+    return c - 'A' + 10;
+  }
+  return -1;
+}
+
+// Decodes the percent escapes and the plus signs of a query string component.  A malformed escape stays as it is.
+std::string
+query_decode(std::string_view text)
+{
+  std::string out;
+
+  out.reserve(text.size());
+  for (size_t i = 0; i < text.size(); ++i) {
+    char const c = text[i];
+
+    if (c == '+') {
+      out += ' ';
+      continue;
+    }
+    if (c == '%' && i + 2 < text.size()) {
+      int const high = hex_value(text[i + 1]);
+      int const low  = hex_value(text[i + 2]);
+
+      if (high >= 0 && low >= 0) {
+        out += static_cast<char>(high * 16 + low);
+        i   += 2;
+        continue;
+      }
+    }
+    out += c;
+  }
+  return out;
+}
 } // namespace
 
 std::string_view
@@ -196,6 +240,42 @@ prometheus_escape_help_text(std::string &out, std::string_view text)
       break;
     }
   }
+}
+
+std::optional<std::vector<std::string>>
+prometheus_record_filter(std::string_view query)
+{
+  static constexpr std::string_view KEY = "records[]";
+
+  std::optional<std::vector<std::string>> names;
+
+  while (!query.empty()) {
+    size_t const           amp   = query.find('&');
+    std::string_view const param = query.substr(0, amp);
+
+    query.remove_prefix(amp == std::string_view::npos ? query.size() : amp + 1);
+
+    size_t const           equal = param.find('=');
+    std::string_view const key   = param.substr(0, equal);
+
+    if (key != KEY && (key.find_first_of("%+") == std::string_view::npos || query_decode(key) != KEY)) {
+      continue;
+    }
+    if (!names) {
+      names.emplace();
+    }
+    std::string name = equal == std::string_view::npos ? std::string{} : query_decode(param.substr(equal + 1));
+
+    // No record name has a NUL, and a lookup by name would read only the part before it.
+    if (name.find('\0') == std::string::npos) {
+      names->push_back(std::move(name));
+    }
+  }
+  if (names) {
+    std::sort(names->begin(), names->end());
+    names->erase(std::unique(names->begin(), names->end()), names->end());
+  }
+  return names;
 }
 
 void
@@ -458,7 +538,7 @@ PrometheusRenderer::forget_series(uint32_t index)
 void
 PrometheusRenderer::regroup(uint32_t family)
 {
-  auto &members = _families[family].members;
+  std::vector<uint32_t> &members = _families[family].members;
 
   for (uint32_t member : members) {
     forget_series(member);
@@ -491,7 +571,7 @@ PrometheusRenderer::sort_output()
     std::sort(_order.begin(), _order.end(), [this](uint32_t a, uint32_t b) { return _family_info[a].name < _family_info[b].name; });
   }
   for (uint32_t family : _unsorted) {
-    auto &members = _families[family].members;
+    std::vector<uint32_t> &members = _families[family].members;
 
     std::sort(members.begin(), members.end(), [this](uint32_t a, uint32_t b) {
       int const order = _records[a].prefix.compare(_records[b].prefix);
@@ -758,4 +838,102 @@ PrometheusRenderer::render()
   _stats.relabeled      += relabeled;
   _stats.type_conflicts += type_conflicts;
   return _body;
+}
+
+std::string *
+PrometheusRenderer::render_records(const std::vector<std::string> &names, const RecordReader &read)
+{
+  bool const rules = _options.rules != nullptr;
+
+  if (!read) {
+    _slots.resize(_position);
+  }
+  _body.clear();
+  _stats = {};
+  _selected.clear();
+  for (const std::string &name : names) {
+    auto const it = _by_name.find(name);
+
+    if (it == _by_name.end()) {
+      continue;
+    }
+
+    uint32_t const index  = it->second;
+    Record        &record = _records[index];
+    RecordInfo    &info   = _info[index];
+
+    if (info.family == UINT32_MAX) {
+      _stats.dropped += info.invalid;
+      continue;
+    }
+    if (rules && record.dropped) {
+      ++_stats.dropped;
+      report(index, other_kind(index) ? WARN_KIND : WARN_LABELS);
+      continue;
+    }
+    if (rules && _writers[index].first != index) {
+      ++_stats.duplicates;
+      report(index, WARN_DUPLICATE);
+      continue;
+    }
+    if (read) {
+      if (!read(name, record.data_type, record.datum)) {
+        return nullptr;
+      }
+      if (record.value == Value::TEXT_LABEL || record.value == Value::TEXT_NUMBER) {
+        info.text.assign(record.datum.rec_string != nullptr ? record.datum.rec_string : "");
+      }
+    } else if (record.last_render != _renders) {
+      continue;
+    }
+    if (record.value == Value::TEXT_NUMBER && !parse_number(info.text, info.number)) {
+      continue;
+    }
+    _selected.push_back(index);
+  }
+
+  // The order of render(): with rules, the families by name and their samples by labels, and otherwise the order in which
+  // the renderer first saw them.
+  std::sort(_selected.begin(), _selected.end(), [this, rules](uint32_t a, uint32_t b) {
+    uint32_t const family_a = _info[a].family;
+    uint32_t const family_b = _info[b].family;
+
+    if (!rules) {
+      return family_a != family_b ? family_a < family_b : a < b;
+    }
+    if (family_a != family_b) {
+      return _family_info[family_a].name < _family_info[family_b].name;
+    }
+
+    int const order = _records[a].prefix.compare(_records[b].prefix);
+
+    return order < 0 || (order == 0 && a < b);
+  });
+
+  uint32_t current = UINT32_MAX;
+  bool     header  = false;
+
+  for (uint32_t index : _selected) {
+    Record const &record = _records[index];
+    Family const &family = _families[_info[index].family];
+
+    if (_info[index].family != current) {
+      current = _info[index].family;
+      header  = false;
+    }
+    if (rules) {
+      write(family, index, header);
+    } else {
+      if (!header) {
+        _body  += family.header;
+        header  = true;
+      }
+      _body += record.prefix;
+      append_value(record);
+    }
+    _stats.relabeled      += record.relabeled;
+    _stats.type_conflicts += record.type != family.type;
+  }
+  _stats.series = _selected.size();
+  return &_body;
 }

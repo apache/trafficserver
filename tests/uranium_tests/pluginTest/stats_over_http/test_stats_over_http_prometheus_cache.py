@@ -134,4 +134,58 @@ def test_stats_over_http_prometheus_cache(ats_factory: ATSFactory, services: Ser
             families = ["plugin_test_metrics_requests_post=1"]
         scrape(services, ats, f"concurrent-{i}", path, help_lines, expect, families, concurrency=16)
 
+    # The remap rules reuse a render for 1 s, but a request with records[] gets its own render.  The plugin's count of
+    # renders changes with each render, so two responses in a row differ.
+    result = services.process(
+        "records", [
+            sys.executable,
+            Path(__file__).parent / "check_prometheus.py",
+            str(ats.http_port), "/metrics/nohelp/v1?records%5B%5D=plugin.stats_over_http.renders", "--fresh",
+            "--family=plugin_stats_over_http_renders=1"
+        ]).run()
+    assert result.returncode == 0, result.output
+    assert "Verified 1 families and 1 samples" in result.stdout, "The response should hold only the sample of the named record."
+
     wait_for_file_lines(ats.traffic_out, "Assigned plugin.test_metrics.late=7", 1)
+
+
+def test_stats_over_http_records_unlisted(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A records[] request omits a metric that ATS has unlisted, as a full scrape does, and serves it again when relisted.
+
+    :param ats_factory: Proxy factory.
+    :param services: Scrape client factory.
+    """
+    ats = ats_factory.create("ts")
+    if not ats.plugin_exists("stats_over_http.so"):
+        pytest.skip("stats_over_http.so is required")
+    ats.copy_custom_plugin("{ATS_TEST_PLUGINS_DIR}/test_metrics.so")
+    ats.plugin_config.add_lines(["test_metrics.so --count=10", "stats_over_http.so --no-prometheus-help _stats"])
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "test_metrics|stats_over_http",
+    })
+    ats.start()
+
+    def records(name: str, samples: int) -> None:
+        result = services.process(
+            name, [
+                sys.executable,
+                Path(__file__).parent / "check_prometheus.py",
+                str(ats.http_port), "/_stats/prometheus?records%5B%5D=plugin.test_metrics.gauge_5",
+                f"--family=plugin_test_metrics_gauge_5={samples}"
+            ]).run()
+        assert result.returncode == 0, result.output
+        assert f"and {samples} samples" in result.stdout, result.stdout
+
+    def message(tag: str) -> None:
+        result = ats.traffic_ctl("plugin", "msg", tag, "plugin.test_metrics.gauge_5")
+        assert result.returncode == 0, result.output
+
+    # The metric is listed, so a records[] request has its sample.
+    records("listed", 1)
+    # Unlisting it takes it out of a full scrape, so a records[] request leaves it out too.
+    message("test_metrics.unlist")
+    records("unlisted", 0)
+    # Listing it again restores the sample.
+    message("test_metrics.relist")
+    records("relisted", 1)

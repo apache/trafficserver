@@ -82,6 +82,48 @@ sessions:
         data: "# TYPE plugin_test_metrics_negative gauge\nplugin_test_metrics_negative -42\n"
         verify: { as: contains }
 
+  # records[] parameters, with the brackets encoded as Prometheus sends them, keep only the samples of the named records.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics?records%5B%5D=plugin.test_metrics.negative&records%5B%5D=no.such.record
+      headers:
+        fields:
+        - [ Host, prometheus.example.com ]
+        - [ uuid, prometheus-records ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=0.0.4; charset=utf-8', as: equal } ]
+        - [ Content-Length, { value: '140', as: equal } ]
+        - [ X-Stats-Format, { value: prometheus, as: equal } ]
+      content:
+        encoding: plain
+        data: "# HELP plugin_test_metrics_negative plugin.test_metrics.negative\n# TYPE plugin_test_metrics_negative gauge\nplugin_test_metrics_negative -42\n"
+        verify: { as: equal }
+
+  # A record that does not exist, a configuration record, which the output never has, and a record name with an encoded
+  # NUL give an empty body.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics?records[]=no.such.record&records[]=proxy.config.diags.debug.enabled&records[]=plugin.test_metrics.negative%00a
+      headers:
+        fields:
+        - [ Host, prometheus.example.com ]
+        - [ uuid, prometheus-records-empty ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: '0', as: equal } ]
+        - [ X-Stats-Format, { value: prometheus, as: equal } ]
+
   # Neither the path nor the Accept header selects the format of a remap rule.
   - client-request:
       method: GET
@@ -137,6 +179,28 @@ sessions:
         - [ Allow, { value: 'GET, HEAD', as: equal } ]
         - [ X-Stats-Format, { as: absent } ]
 
+  # The first request to this rule names a record that its renderer has not seen, so the render walks the records.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /metrics?records%5B%5D=plugin.test_metrics.negative
+      headers:
+        fields:
+        - [ Host, prometheus-v2.example.com ]
+        - [ uuid, prometheus-v2-records ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: 'text/plain; version=2.0.0; charset=utf-8', as: equal } ]
+        - [ X-Stats-Format, { value: prometheus_v2, as: equal } ]
+      content:
+        encoding: plain
+        data: "# HELP plugin_test_metrics_negative plugin.test_metrics.negative\n# TYPE plugin_test_metrics_negative gauge\nplugin_test_metrics_negative -42\n"
+        verify: { as: equal }
+
   - client-request:
       method: GET
       version: '1.1'
@@ -175,6 +239,27 @@ sessions:
         fields:
         - [ Content-Type, { value: text/json, as: equal } ]
         - [ Content-Length, { as: present } ]
+        - [ X-Stats-Format, { value: json, as: equal } ]
+      content:
+        encoding: plain
+        data: '"plugin.test_metrics.negative": "-42",'
+        verify: { as: contains }
+
+  # The JSON output ignores records[].
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /stats?records%5B%5D=no.such.record
+      headers:
+        fields:
+        - [ Host, json.example.com ]
+        - [ uuid, json-records ]
+    proxy-request:
+      expect: absent
+    proxy-response:
+      status: 200
+      headers:
+        fields:
         - [ X-Stats-Format, { value: json, as: equal } ]
       content:
         encoding: plain

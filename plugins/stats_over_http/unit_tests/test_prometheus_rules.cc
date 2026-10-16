@@ -22,6 +22,7 @@
  */
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -128,6 +129,15 @@ public:
     return {::render(_renderer, stats), _renderer.stats()};
   }
 
+  Rendered
+  records(const std::vector<std::string> &names, const std::vector<Stat> &stats)
+  {
+    std::optional<std::string> const body = ::render_records(_renderer, names, stats);
+
+    REQUIRE(body.has_value());
+    return {*body, _renderer.stats()};
+  }
+
 private:
   static PrometheusOptions
   options(std::shared_ptr<const PrometheusRules> rules)
@@ -197,6 +207,9 @@ TEST_CASE("Rules name, label and type records", "[prometheus_rules]")
         "proxy_process_http_per_server_total_connection{origin=concurrent.example.com,origin_ip=192.0.2.1,port=443} counter");
   check("proxy.process.http.per_server.current_connection.max.origin.example.com", TS_RECORDDATATYPE_INT,
         "proxy_process_http_per_server_current_connection_max{origin=origin.example.com} gauge");
+  // A label value that also appears earlier in the name, as "ur" does in "current", leaves the rest of the name as it is.
+  check("proxy.process.http.per_server.current_connection.ur.192.0.2.1:443", TS_RECORDDATATYPE_INT,
+        "proxy_process_http_per_server_current_connection{origin=ur,origin_ip=192.0.2.1,port=443} gauge");
 
   // The per_server rule needs an IPv4 address, so an IPv6 key is a family of its own.
   check("proxy.process.http.per_server.current_connection.origin.example.com.2001:db8::1:443", TS_RECORDDATATYPE_INT,
@@ -248,29 +261,32 @@ TEST_CASE("Rule details", "[prometheus_rules]")
 TEST_CASE("Invalid rules", "[prometheus_rules]")
 {
   auto const test = GENERATE(values<ErrorCase>({
-    {"rules: [{match: 'proxy\\.process'}]",                            "has no capture group"                      },
-    {"rules: [{match: '^(a)\\.(b)', labels: {x: 3}}]",                 "3 is not a capture group"                  },
-    {"rules: [{match: '^(a'}]",                                        "cannot compile"                            },
-    {"rules: [{labels: {x: 1}}]",                                      "needs match"                               },
-    {"rules: [{match: '^(a)', labels: {value: 1}}]",                   "is also prometheus.strings.label"          },
-    {"const_labels: {x: y}\nrules: [{match: '^(a)', labels: {x: 1}}]", "is also a constant label"                  },
-    {"const_labels: {v: x}\nstrings: {label: v}",                      "is also a constant label"                  },
-    {"const_labels: {value: x}\nstrings: {names: [a]}",                "is also a constant label"                  },
-    {"rules: [{match: '^(a)', labels: {__x: 1}}]",                     "not a valid label name"                    },
-    {"const_labels: {1x: y}",                                          "not a valid label name"                    },
-    {"unknown: 1",                                                     "unknown key prometheus.unknown"            },
-    {"rules: []\nrules: [{match: '^(a)'}]",                            "duplicate key prometheus.rules"            },
-    {"const_labels: {a: b}\nconst_labels: {c: d}",                     "duplicate key prometheus.const_labels"     },
-    {"rules: [{match: '^(a)', match: '^(b)'}]",                        "duplicate key prometheus.rules.match"      },
-    {"limits: {max_series: 1, max_series: 2}",                         "duplicate key prometheus.limits.max_series"},
-    {"types: {rules: [{match: 'x', type: gauge}]}",                    "needs prometheus.types.source set to rules"},
-    {"types: {source: rules, rules: [{match: 'x', type: histogram}]}", "is not counter, gauge or untyped"          },
-    {"types: {source: labels}",                                        "is not record or rules"                    },
-    {"name: {invalid: 'x*'}",                                          "must not match an empty string"            },
-    {"name: {replace: [{to: x}]}",                                     "replace.from is missing or empty"          },
-    {"limits: {max_series: -1}",                                       "must not be negative"                      },
-    {"strings: {names: x}",                                            "must be a list"                            },
-    {"rules: {match: x}",                                              "must be a list"                            },
+    {"rules: [{match: 'proxy\\.process'}]",                            "has no capture group"                                  },
+    {"rules: [{match: '^(a)\\.(b)', labels: {x: 3}}]",                 "3 is not a capture group"                              },
+    {"rules: [{match: '^(a'}]",                                        "cannot compile"                                        },
+    {"rules: [{labels: {x: 1}}]",                                      "needs match"                                           },
+    {"rules: [{match: '^(a)', labels: {value: 1}}]",                   "is also prometheus.strings.label"                      },
+    {"const_labels: {x: y}\nrules: [{match: '^(a)', labels: {x: 1}}]", "is also a constant label"                              },
+    {"const_labels: {v: x}\nstrings: {label: v}",                      "is also a constant label"                              },
+    {"const_labels: {value: x}\nstrings: {names: [a]}",                "is also a constant label"                              },
+    {"rules: [{match: '^(a)', labels: {__x: 1}}]",                     "not a valid label name"                                },
+    {"const_labels: {1x: y}",                                          "not a valid label name"                                },
+    {"unknown: 1",                                                     "unknown key prometheus.unknown"                        },
+    {"help: maybe",                                                    "prometheus.help: 'maybe' is not true or false"         },
+    {"rules: [{match: '^(a)', labels: {x: two}}]",                     "prometheus.rules.labels.x: 'two' is not an integer"    },
+    {"limits: {max_series: lots}",                                     "prometheus.limits.max_series: 'lots' is not an integer"},
+    {"rules: []\nrules: [{match: '^(a)'}]",                            "duplicate key prometheus.rules"                        },
+    {"const_labels: {a: b}\nconst_labels: {c: d}",                     "duplicate key prometheus.const_labels"                 },
+    {"rules: [{match: '^(a)', match: '^(b)'}]",                        "duplicate key prometheus.rules.match"                  },
+    {"limits: {max_series: 1, max_series: 2}",                         "duplicate key prometheus.limits.max_series"            },
+    {"types: {rules: [{match: 'x', type: gauge}]}",                    "needs prometheus.types.source set to rules"            },
+    {"types: {source: rules, rules: [{match: 'x', type: histogram}]}", "is not counter, gauge or untyped"                      },
+    {"types: {source: labels}",                                        "is not record or rules"                                },
+    {"name: {invalid: 'x*'}",                                          "must not match an empty string"                        },
+    {"name: {replace: [{to: x}]}",                                     "replace.from is missing or empty"                      },
+    {"limits: {max_series: -1}",                                       "must not be negative"                                  },
+    {"strings: {names: x}",                                            "must be a list"                                        },
+    {"rules: {match: x}",                                              "must be a list"                                        },
   }));
 
   CAPTURE(test.yaml);
@@ -709,5 +725,85 @@ TEST_CASE("Rendered rules", "[prometheus_rules]")
                            "c 3\n");
     CHECK(rendered.stats.dropped == 2);
     CHECK(warnings.size() == 1);
+  }
+}
+
+TEST_CASE("A records render with rules", "[prometheus_rules]")
+{
+  SECTION("The samples appear in the order of a full render, with the values of the reader")
+  {
+    Renderer                renderer{"rules: [{match: '^(req)\\.(.+)$', labels: {method: 2}}]"};
+    std::vector<Stat> const stats = {counter("req.put", 1), gauge("b", 2), counter("req.get", 3), gauge("a", 5)};
+    auto const              full  = renderer.render(stats);
+
+    CHECK(renderer.records({"a", "b", "req.get", "req.put"}, stats).body == full.body);
+    CHECK(renderer.records({"req.put", "a"}, {counter("req.put", 9), gauge("a", 6)}).body == "# TYPE a gauge\n"
+                                                                                             "a 6\n"
+                                                                                             "# TYPE req counter\n"
+                                                                                             "req{method=\"put\"} 9\n");
+  }
+
+  SECTION("A record whose series an earlier record has writes nothing")
+  {
+    Renderer                renderer{"rules: [{match: '^[xy]\\.(a)$'}]"};
+    std::vector<Stat> const stats = {gauge("x.a", 1), gauge("y.a", 2)};
+
+    CHECK(renderer.render(stats).body == "# TYPE a gauge\n"
+                                         "a 1\n");
+
+    auto const rendered = renderer.records({"y.a"}, stats);
+
+    CHECK(rendered.body.empty());
+    CHECK(rendered.stats.duplicates == 1);
+    CHECK(renderer.records({"x.a", "y.a"}, stats).body == "# TYPE a gauge\n"
+                                                          "a 1\n");
+  }
+
+  SECTION("A record that a full render drops writes nothing")
+  {
+    // The record without a rule sets the label names of the family, so the record with a label is dropped.
+    Renderer                renderer{"rules: [{match: '^(req)\\.(.+)$', labels: {method: 2}}]"};
+    std::vector<Stat> const stats = {counter("req.get", 3), counter("req", 1)};
+    auto const              full  = renderer.render(stats);
+
+    REQUIRE(full.stats.dropped == 1);
+
+    auto const rendered = renderer.records({"req.get"}, stats);
+
+    CHECK(rendered.body.empty());
+    CHECK(rendered.stats.dropped == 1);
+    CHECK(renderer.records({"req", "req.get"}, stats).body == full.body);
+  }
+
+  SECTION("The series limit does not apply")
+  {
+    Renderer                renderer{"limits: {max_series: 1}"};
+    std::vector<Stat> const stats = {gauge("a", 1), gauge("b", 2)};
+
+    CHECK(renderer.render(stats).body == "# TYPE a gauge\n"
+                                         "a 1\n");
+    CHECK(renderer.records({"b"}, stats).body == "# TYPE b gauge\n"
+                                                 "b 2\n");
+  }
+
+  SECTION("String records")
+  {
+    Renderer                renderer{"strings: {names: [v.short]}"};
+    std::vector<Stat> const stats = {string("v.short", "10.2.1"), string("v.number", "42"), string("v.word", "x")};
+    auto const              full  = renderer.render(stats);
+
+    CHECK(renderer.records({"v.number", "v.short", "v.word"}, stats).body == full.body);
+    CHECK(renderer.records({"v.short"}, {string("v.short", "10.2.2")}).body == "# TYPE v_short gauge\n"
+                                                                               "v_short{value=\"10.2.2\"} 1\n");
+  }
+
+  SECTION("A record that the rules leave out writes nothing")
+  {
+    Renderer                renderer{"exclude: {names: [b]}"};
+    std::vector<Stat> const stats = {gauge("a", 1), gauge("b", 2), gauge("1c", 3)};
+    auto const              full  = renderer.render(stats);
+
+    CHECK(renderer.records({"1c", "a", "b"}, stats).body == full.body);
+    CHECK(renderer.records({"1c", "b"}, stats).body.empty());
   }
 }
