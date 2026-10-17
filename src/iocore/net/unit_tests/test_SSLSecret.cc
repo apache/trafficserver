@@ -32,7 +32,9 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdlib>
 #include <future>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -127,6 +129,7 @@ TEST_CASE("An SSL_SECRET hook can call back into SSLSecret on its own thread")
   // Static so it outlives the loader thread if that thread deadlocks.
   static SSLSecret secrets;
   g_lifecycle_hooks->append(TS_LIFECYCLE_SSL_SECRET_HOOK, new INKContInternal(reenter_load_secret, nullptr));
+  reentry_calls   = 0;
   reentry_secrets = &secrets;
 
   // Run the load on a detached thread so a deadlock fails the test instead of
@@ -142,6 +145,13 @@ TEST_CASE("An SSL_SECRET hook can call back into SSLSecret on its own thread")
   bool const completed = finished.wait_for(std::chrono::seconds(5)) == std::future_status::ready;
   reentry_secrets      = nullptr;
 
-  CHECK(completed);
+  if (!completed) {
+    // The stuck thread still holds the hook lock, so any later test that loads
+    // a secret would hang. Report the failure and stop the binary here.
+    FAIL_CHECK("getOrLoadSecret() did not finish in 5 seconds: re-entering the SSL_SECRET hook deadlocked");
+    std::cout.flush();
+    std::cerr.flush();
+    std::_Exit(1);
+  }
   CHECK(reentry_calls == 2);
 }
