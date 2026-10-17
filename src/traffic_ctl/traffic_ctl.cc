@@ -21,6 +21,10 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+#include <typeinfo>
+
 #include <iostream>
 #include <csignal>
 
@@ -29,6 +33,7 @@
 #include "tscore/ArgParser.h"
 #include "tscore/ink_assert.h"
 #include "tscore/signals.h"
+#include "tscore/Demangle.h"
 
 #include "CtrlCommands.h"
 #include "CacheShmCommand.h"
@@ -65,7 +70,7 @@ signal_register_handler(int signal_num, signal_handler_t handle_signal)
 
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   ts::ArgParser parser;
 
   std::unique_ptr<CtrlCommand> command;
@@ -418,4 +423,10 @@ main([[maybe_unused]] int argc, const char **argv)
   }
 
   return App_Exit_Status_Code;
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
+  return CTRL_EX_ERROR;
+} catch (...) {
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled exception\n");
+  return CTRL_EX_ERROR;
 }

@@ -21,11 +21,16 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+#include <typeinfo>
+
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_args.h"
 #include "tscore/Layout.h"
 #include "tscore/runroot.h"
+#include "tscore/Demangle.h"
 
 #define PROGRAM_NAME       "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE 524288 // 512KB
@@ -503,15 +508,17 @@ open_output_file(char *output_file_p)
   main
   -------------------------------------------------------------------------*/
 
+// At file scope so the exception handlers below can name these; a
+// function-try-block handler is outside the function body's scope.
+enum {
+  NO_ERROR              = 0,
+  CMD_LINE_OPTION_ERROR = 1,
+  DATA_PROCESSING_ERROR = 2,
+};
+
 int
 main(int /* argc ATS_UNUSED */, const char *argv[])
-{
-  enum {
-    NO_ERROR              = 0,
-    CMD_LINE_OPTION_ERROR = 1,
-    DATA_PROCESSING_ERROR = 2,
-  };
-
+try {
   // build the application information structure
   //
   auto &version = AppVersionInfo::setup_version(PROGRAM_NAME);
@@ -657,4 +664,10 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   }
 
   ::exit(error);
+} catch (std::exception const &ex) {
+  fprintf(stderr, "traffic_logcat: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
+  return DATA_PROCESSING_ERROR;
+} catch (...) {
+  fprintf(stderr, "traffic_logcat: terminating on an unhandled exception\n");
+  return DATA_PROCESSING_ERROR;
 }

@@ -36,6 +36,7 @@
 #include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
+#include "tscore/Demangle.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_hw.h"
@@ -54,9 +55,11 @@
 #include <syslog.h>
 #include <algorithm>
 #include <atomic>
+#include <exception>
 #include <filesystem>
 #include <list>
 #include <string>
+#include <typeinfo>
 
 using namespace std::literals;
 
@@ -1958,6 +1961,28 @@ configure_io_uring()
 }
 #endif
 
+// Runs when an exception escapes on any thread. The terminate handler runs
+// before the stack unwinds, so aborting from here keeps the throwing frame in
+// the core. Catching in main() instead would unwind those frames first and
+// would miss other threads entirely. main() installs this before
+// init_system() registers the crash handler, and before crash_logger_init()
+// starts the crash logger. A throw in that window still aborts and dumps a
+// core, but writes no crash log.
+[[noreturn]] void
+abort_on_uncaught_exception()
+{
+  if (std::exception_ptr const ep = std::current_exception(); ep) {
+    try {
+      std::rethrow_exception(ep);
+    } catch (std::exception const &ex) {
+      ink_abort("traffic_server: terminating on an unhandled %s: %s", ts::demangle(typeid(ex)).c_str(), ex.what());
+    } catch (...) {
+      ink_abort("traffic_server: terminating on an unhandled exception");
+    }
+  }
+  ink_abort("traffic_server: terminate called without an active exception");
+}
+
 } // end anonymous namespace
 
 //
@@ -1966,6 +1991,8 @@ configure_io_uring()
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
+  std::set_terminate(abort_on_uncaught_exception);
+
 #if TS_HAS_PROFILER
   HeapProfilerStart("/tmp/ts.hprof");
   ProfilerStart("/tmp/ts.prof");

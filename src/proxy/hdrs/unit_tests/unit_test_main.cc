@@ -21,8 +21,13 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+#include <typeinfo>
+
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HuffmanCodec.h"
+#include "tscore/Demangle.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_session.hpp>
@@ -31,11 +36,17 @@ extern int cmd_disable_pfreelist;
 
 int
 main(int argc, char *argv[])
-{
+try {
   // No thread setup, forbid use of thread local allocators.
   cmd_disable_pfreelist = true;
   // Get all of the HTTP WKS items populated.
   http_init();
   int result = Catch::Session().run(argc, argv);
   return result;
+} catch (std::exception const &ex) {
+  fprintf(stderr, "unit_test_main: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
+  return 1;
+} catch (...) {
+  fprintf(stderr, "unit_test_main: terminating on an unhandled exception\n");
+  return 1;
 }

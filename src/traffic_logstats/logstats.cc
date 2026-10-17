@@ -22,12 +22,17 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+#include <typeinfo>
+
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
 #include "tscore/Layout.h"
 #include "tscore/Version.h"
 #include "tscore/HashFNV.h"
 #include "tscore/ink_args.h"
+#include "tscore/Demangle.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/runroot.h"
 
@@ -2451,7 +2456,7 @@ open_main_log(ExitStatus &status)
 // main
 int
 main(int /* argc ATS_UNUSED */, const char *argv[])
-{
+try {
   ExitStatus   exit_status;
   int          res, cnt;
   int          main_fd;
@@ -2749,4 +2754,12 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     exit_status.append(" OK");
   }
   my_exit(exit_status);
+} catch (std::exception const &ex) {
+  // EXIT_UNKNOWN, not 1: 1 is EXIT_WARNING here, and a plugin that faulted is
+  // not a warning. Nagios-style wrappers read stdout, so the status goes there.
+  printf("unknown: traffic_logstats terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
+  return EXIT_UNKNOWN;
+} catch (...) {
+  printf("unknown: traffic_logstats terminating on an unhandled exception\n");
+  return EXIT_UNKNOWN;
 }
