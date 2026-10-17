@@ -38,8 +38,11 @@ DbgCtl dbg_ctl_ssl_secret_err{"ssl_secret_err"};
 // Parallel ssl_multicert loading reaches loadSecret() from several std::threads
 // at once. Those are not EThreads, so a hook continuation's mutex does not
 // exclude them, and plugins written for one call at a time corrupt their own
-// state. This lock keeps the SSL_SECRET hooks to one caller at a time.
-std::mutex secret_hook_mutex;
+// state. This lock keeps the SSL_SECRET hooks to one thread at a time. It is
+// recursive because a hook that calls TSSslSecretSet() re-enters loadSecret()
+// on the same thread when the updated certificate needs a secret that is not
+// cached yet.
+std::recursive_mutex secret_hook_mutex;
 
 } // end anonymous namespace
 

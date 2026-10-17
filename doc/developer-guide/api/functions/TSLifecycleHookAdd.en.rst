@@ -115,8 +115,9 @@ Types
       If there is no plugin override, the certificate or key will be loaded from disk and the secret name will be interpreted as a file path.
 
       |TS| may load certificates on several threads at once, and some of those are not event threads, so a mutex on the
-      continuation does not serialize the calls. |TS| instead runs this hook for one secret at a time, so a plugin does not
-      need its own lock to guard state that only this hook touches.
+      continuation does not serialize the calls. |TS| instead runs this hook on one thread at a time, so a plugin does not
+      need its own lock to guard state that only this hook touches. The hook can still be called again on the same thread
+      before it returns, if it calls :func:`TSSslSecretSet` and that update needs another secret.
 
    .. cpp:enumerator:: TS_LIFECYCLE_SHUTDOWN_HOOK
 
