@@ -61,6 +61,7 @@
 #include "tscore/ink_args.h"
 #include "tscore/Version.h"
 #include "tscore/runroot.h"
+#include "tscore/Demangle.h"
 
 using namespace std;
 
@@ -518,7 +519,7 @@ quit:
   return 0;
 } catch (std::exception const &ex) {
   restore_terminal();
-  fprintf(stderr, "traffic_top: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  fprintf(stderr, "traffic_top: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
   return 1;
 } catch (...) {
   restore_terminal();

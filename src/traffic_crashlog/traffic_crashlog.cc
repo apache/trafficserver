@@ -32,6 +32,7 @@
 #include "tscore/Version.h"
 #include "tscore/Layout.h"
 #include "tscore/ink_syslog.h"
+#include "tscore/Demangle.h"
 #include "records/RecCore.h"
 #include "records/RecordsConfig.h"
 #include "tscore/BaseLogFile.h"
@@ -361,7 +362,7 @@ try {
   fclose(fp);
   return 0;
 } catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_crashlog: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  fprintf(stderr, "traffic_crashlog: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
   return 1;
 } catch (...) {
   fprintf(stderr, "traffic_crashlog: terminating on an unhandled exception\n");

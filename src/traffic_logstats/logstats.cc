@@ -32,6 +32,7 @@
 #include "tscore/Version.h"
 #include "tscore/HashFNV.h"
 #include "tscore/ink_args.h"
+#include "tscore/Demangle.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/runroot.h"
 
@@ -2761,7 +2762,7 @@ try {
 } catch (std::exception const &ex) {
   // EXIT_UNKNOWN, not 1: 1 is EXIT_WARNING here, and a plugin that faulted is
   // not a warning. Nagios-style wrappers read stdout, so the status goes there.
-  printf("unknown: traffic_logstats terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  printf("unknown: traffic_logstats terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
   return EXIT_UNKNOWN;
 } catch (...) {
   printf("unknown: traffic_logstats terminating on an unhandled exception\n");

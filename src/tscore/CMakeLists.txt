@@ -35,6 +35,7 @@ add_library(
   ConsistentHash.cc
   ContFlags.cc
   CryptoHash.cc
+  Demangle.cc
   Diags.cc
   Encoding.cc
   EventNotify.cc

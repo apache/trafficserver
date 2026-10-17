@@ -30,6 +30,7 @@
 #include "tscore/ink_args.h"
 #include "tscore/Layout.h"
 #include "tscore/runroot.h"
+#include "tscore/Demangle.h"
 
 #define PROGRAM_NAME       "traffic_logcat"
 #define MAX_LOGBUFFER_SIZE 524288 // 512KB
@@ -664,7 +665,7 @@ try {
 
   ::exit(error);
 } catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_logcat: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  fprintf(stderr, "traffic_logcat: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
   return DATA_PROCESSING_ERROR;
 } catch (...) {
   fprintf(stderr, "traffic_logcat: terminating on an unhandled exception\n");

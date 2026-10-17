@@ -45,6 +45,7 @@
 #include "tscore/ink_file.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/ArgParser.h"
+#include "tscore/Demangle.h"
 #include <thread>
 
 #include "CacheDefs.h"
@@ -1440,7 +1441,7 @@ try {
 
   return 0;
 } catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
   return 1;
 } catch (...) {
   fprintf(stderr, "traffic_cache_tool: terminating on an unhandled exception\n");

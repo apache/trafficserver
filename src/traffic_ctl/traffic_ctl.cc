@@ -33,6 +33,7 @@
 #include "tscore/ArgParser.h"
 #include "tscore/ink_assert.h"
 #include "tscore/signals.h"
+#include "tscore/Demangle.h"
 
 #include "CtrlCommands.h"
 #include "CacheShmCommand.h"
@@ -401,7 +402,7 @@ try {
 
   return App_Exit_Status_Code;
 } catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_ctl: terminating on an unhandled %s: %s\n", typeid(ex).name(), ex.what());
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
   return CTRL_EX_ERROR;
 } catch (...) {
   fprintf(stderr, "traffic_ctl: terminating on an unhandled exception\n");

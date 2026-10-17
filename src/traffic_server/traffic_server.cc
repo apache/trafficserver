@@ -36,6 +36,7 @@
 #include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
+#include "tscore/Demangle.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_hw.h"
@@ -1936,8 +1937,11 @@ configure_io_uring()
 
 // Runs when an exception escapes on any thread. The terminate handler runs
 // before the stack unwinds, so aborting from here keeps the throwing frame in
-// the core and still reaches the crash handler. Catching in main() instead
-// would unwind those frames first and would miss other threads entirely.
+// the core. Catching in main() instead would unwind those frames first and
+// would miss other threads entirely. main() installs this before
+// init_system() registers the crash handler, and before crash_logger_init()
+// starts the crash logger. A throw in that window still aborts and dumps a
+// core, but writes no crash log.
 [[noreturn]] void
 abort_on_uncaught_exception()
 {
@@ -1945,7 +1949,7 @@ abort_on_uncaught_exception()
     try {
       std::rethrow_exception(ep);
     } catch (std::exception const &ex) {
-      ink_abort("traffic_server: terminating on an unhandled %s: %s", typeid(ex).name(), ex.what());
+      ink_abort("traffic_server: terminating on an unhandled %s: %s", ts::demangle(typeid(ex)).c_str(), ex.what());
     } catch (...) {
       ink_abort("traffic_server: terminating on an unhandled exception");
     }
