@@ -5100,6 +5100,8 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   case HTTPStatus::PARTIAL_CONTENT:
     // If we get this back we should be just passing it through.
     ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
+    SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
+    SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
     s->next_action = StateMachineAction_t::SERVER_READ;
     break;
   default:
@@ -5107,6 +5109,8 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     /* Default behavior is to pass-through response to the client */
 
     ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
+    SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
+    SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
     s->next_action = StateMachineAction_t::SERVER_READ;
     break;
   }
