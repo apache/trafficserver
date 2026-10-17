@@ -64,7 +64,9 @@ get_hash_str(const std::string &input, char hash_str[EVP_MAX_MD_SIZE * 2], unsig
 // function. The implementation of this function may call a plugin's
 // TS_EVENT_SSL_SECRET handler which in turn may grab a lock for
 // secret_map_mutex via a TSSslSecretSet call. These events will result in a
-// deadlock.
+// deadlock. The handlers run under secret_hook_mutex, which is recursive
+// because a TSSslSecretSet call from a handler can come back into this
+// function on the same thread.
 void
 SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::string &data1, std::string &data2)
 {

@@ -32,6 +32,8 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <future>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -62,6 +64,27 @@ count_concurrent_callers(TSCont /* cont ATS_UNUSED */, TSEvent /* event ATS_UNUS
   // serialized, the other threads are already waiting to enter it.
   hook_cv.wait_for(lock, std::chrono::milliseconds(250), [] { return callers_in_hook > 1; });
   --callers_in_hook;
+  return 0;
+}
+
+// The SSLSecret that reenter_load_secret() calls back into, and how many times
+// that hook has run.
+std::atomic<SSLSecret *> reentry_secrets{nullptr};
+std::atomic<int>         reentry_calls{0};
+
+// Like a plugin whose hook calls TSSslSecretSet(): that can reach loadSecret()
+// again on the same thread before the hook returns. Re-enter from the
+// outermost call only.
+int
+reenter_load_secret(TSCont /* cont ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  SSLSecret *secrets = reentry_secrets;
+  if (secrets == nullptr || reentry_calls++ > 0) {
+    return 0;
+  }
+  std::string cert_data;
+  std::string key_data;
+  secrets->getOrLoadSecret("/nonexistent/reentry-inner-cert.pem", "/nonexistent/reentry-inner-key.pem", cert_data, key_data);
   return 0;
 }
 } // end anonymous namespace
@@ -97,4 +120,28 @@ TEST_CASE("SSL_SECRET hooks run one caller at a time")
   hook_armed = false;
 
   CHECK(max_callers_in_hook == 1);
+}
+
+TEST_CASE("An SSL_SECRET hook can call back into SSLSecret on its own thread")
+{
+  // Static so it outlives the loader thread if that thread deadlocks.
+  static SSLSecret secrets;
+  g_lifecycle_hooks->append(TS_LIFECYCLE_SSL_SECRET_HOOK, new INKContInternal(reenter_load_secret, nullptr));
+  reentry_secrets = &secrets;
+
+  // Run the load on a detached thread so a deadlock fails the test instead of
+  // hanging the binary. A std::async future would block in its destructor.
+  auto done     = std::make_shared<std::promise<void>>();
+  auto finished = done->get_future();
+  std::thread([done]() {
+    std::string cert_data;
+    std::string key_data;
+    secrets.getOrLoadSecret("/nonexistent/reentry-outer-cert.pem", "/nonexistent/reentry-outer-key.pem", cert_data, key_data);
+    done->set_value();
+  }).detach();
+  bool const completed = finished.wait_for(std::chrono::seconds(5)) == std::future_status::ready;
+  reentry_secrets      = nullptr;
+
+  CHECK(completed);
+  CHECK(reentry_calls == 2);
 }
