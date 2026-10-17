@@ -137,6 +137,12 @@ sessions:
           - [ Host, example.com ]
           - [ Cookie, "TokenCookie=c3ViPXVzZXIxJmV4cD00MDczNTg3MjAwJm5iZj0xNTE0NzY0ODAwJmlhdD0xNTE0MTYwMDAwJnRpZD0xMjM0NTY3ODkwJnNjb3BlPS9zY29wZWQvaW4tc2NvcGUvJmtpZD1rZXkxJnN0PUhNQUMtU0hBLTI1NiZtZD0xOWViZDdkZGVjNzM3N2FjMDNkY2FmYmMwMDRhN2Q0ZDZkZjdjMTEwZDE0ZTQxMWQ5OGNjYWNkZGVlYTAyMjQ3" ]
 
+    server-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Length, 10 ]
+
     proxy-response:
       status: 403
 

@@ -420,10 +420,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
           TSHandleMLocRelease(serverRespBufp, TS_NULL_MLOC, serverRespHdrLoc);
         } else {
-          int   len;
-          char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
-          AccessControlError("failed to retrieve server response header for request url:%.*s",
-                             (len ? len : static_cast<int>(UNKNOWN.size())), (url ? url : UNKNOWN.data()));
+          AccessControlDebug("no server response header available; skipping origin access token handling");
         }
 
         TSHandleMLocRelease(clientRespBufp, TS_NULL_MLOC, clientRespHdrLoc);
