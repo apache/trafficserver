@@ -24,6 +24,7 @@ records = {f'{host}.ts.a.o.': ['127.0.0.1'] for host in HOSTS}
 
 dead_dns = Test.MakeDNServer('dead_dns')
 dead_dns.addRecords(records=records)
+# Not started until the last test run, so its port refuses queries until then.
 live_dns = Test.MakeDNServer('live_dns')
 live_dns.addRecords(records=records)
 
@@ -48,6 +49,8 @@ for host in HOSTS:
     ts.Disk.remap_config.AddLine(f'map /{host}/ http://{host}.ts.a.o:{origin.Variables.Port}/')
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     'connection to DNS server .* lost, marking as down', 'the dead nameserver was queried and marked down')
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    'round-robin: nameserver 0 DNS response code = 0', 'the recovered nameserver answered')
 
 
 def request(host, title):

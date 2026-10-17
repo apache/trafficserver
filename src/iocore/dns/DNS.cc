@@ -654,8 +654,8 @@ DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 
   SET_HANDLER(&DNSHandler::mainEvent);
   if (dns_ns_rr) {
-    // Split DNS uses the same round-robin connection pool as the default
-    // resolver, but does not schedule the default resolver's periodic retry.
+    // Split DNS opens one connection per nameserver like the default resolver,
+    // but does not schedule the default resolver's periodic retry.
     open_all_rr_cons();
   } else {
     open_cons(nullptr, false, 0);
