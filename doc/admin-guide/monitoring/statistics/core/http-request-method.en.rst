@@ -86,6 +86,12 @@ request.
    Represents the total number of HTTP :literal:`PUT` requests received by
    the |TS| instance since statistics collection began.
 
+.. ts:stat:: global proxy.process.http.query_requests integer
+   :type: counter
+
+   Represents the total number of HTTP :literal:`QUERY` requests received by
+   the |TS| instance since statistics collection began.
+
 .. ts:stat:: global proxy.process.http.trace_requests integer
    :type: counter
 
