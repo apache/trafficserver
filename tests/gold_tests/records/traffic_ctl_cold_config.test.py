@@ -237,3 +237,90 @@ tr.Processes.Default.Command = 'traffic_ctl config set proxy.config.cache.limits
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = dict(ts.Env, TS_RECORD_YAML=new_records4_file)
 tr.Disk.File(new_records4_file).Content = 'gold/records.yaml.cold_test5.gold'
+
+# A "--" is the way to pass a value that starts with '-'. The option scan of every enclosing
+# command covers the whole rest of the command line, so without the escape being honoured there
+# too, a value spelled like one of traffic_ctl's global options is taken as that option instead
+# of reaching the record. These use their own files, so they leave the runs above alone.
+
+# 21
+escaped_records_file = os.path.join(ts.Variables.CONFIGDIR, "escaped_records.yaml")
+tr = Test.AddTestRun("A value spelled like a global option reaches the record after --")
+tr.Processes.Default.Command = f'traffic_ctl config set -c {escaped_records_file} proxy.config.diags.debug.tags -- -f'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+    r'argument\(s\) expected by format', '-f after -- is a value, not the global --format option')
+
+# 22
+tr = Test.AddTestRun("Read back the value spelled like a global option")
+tr.Processes.Default.Command = f'traffic_ctl config get proxy.config.diags.debug.tags -c {escaped_records_file}'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    r'proxy\.config\.diags\.debug\.tags: -f$', 'The record must hold the escaped value')
+
+# 23
+# -h is the worse case of the same bug: it prints the help message and exits 0, so the record is
+# never set but a script sees success.
+help_records_file = os.path.join(ts.Variables.CONFIGDIR, "help_escaped_records.yaml")
+tr = Test.AddTestRun("A value of -h after -- does not print the help message")
+tr.Processes.Default.Command = f'traffic_ctl config set -c {help_records_file} proxy.config.diags.debug.tags -- -h'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+    'Usage: traffic_ctl', 'The command must run instead of printing usage')
+
+# 24
+tr = Test.AddTestRun("Read back the value that would have printed the help message")
+tr.Processes.Default.Command = f'traffic_ctl config get proxy.config.diags.debug.tags -c {help_records_file}'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    r'proxy\.config\.diags\.debug\.tags: -h$', 'The record must hold the escaped value')
+
+# 25
+# The escape holds in the scan of every level, not only the top one: -t is an option of
+# config set itself.
+own_option_records_file = os.path.join(ts.Variables.CONFIGDIR, "own_option_escaped_records.yaml")
+tr = Test.AddTestRun("A value spelled like an option of config set reaches the record after --")
+tr.Processes.Default.Command = f'traffic_ctl config set -c {own_option_records_file} proxy.config.diags.debug.tags -- -t'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+
+# 26
+tr = Test.AddTestRun("Read back the value spelled like an option of config set")
+tr.Processes.Default.Command = f'traffic_ctl config get proxy.config.diags.debug.tags -c {own_option_records_file}'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    r'proxy\.config\.diags\.debug\.tags: -t$', 'The record must hold the escaped value')
+
+# -w is the global --watch wherever a global option can be written, so a -w N after the record
+# names is that option and its value, not two more names to look up. These read a file of their
+# own, written the plain way, so they do not depend on the escape runs above.
+
+# 27
+watch_records_file = os.path.join(ts.Variables.CONFIGDIR, "watch_records.yaml")
+tr = Test.AddTestRun("Write a record for the -w runs")
+tr.Processes.Default.Command = f'traffic_ctl config set -c {watch_records_file} proxy.config.diags.debug.tags plain'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+
+# 28
+tr = Test.AddTestRun("A -w after the record names is the global --watch, not two more names")
+tr.Processes.Default.Command = f'traffic_ctl config get proxy.config.diags.debug.tags -c {watch_records_file} -w 5'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    r'proxy\.config\.diags\.debug\.tags: plain$', 'The record must be read')
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression('not found', '-w and 5 must not be looked up as records')
+
+# 29
+tr = Test.AddTestRun("A -w before the command is the global --watch")
+tr.Processes.Default.Command = f'traffic_ctl -w 5 config get proxy.config.diags.debug.tags -c {watch_records_file}'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    r'proxy\.config\.diags\.debug\.tags: plain$', 'The record must be read')
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression('not found', 'Only the one record must be looked up')

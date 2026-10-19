@@ -304,7 +304,7 @@ class ConfigReload(Common):
             --refresh-int, -r    Refresh interval in seconds (with --monitor). Accepts fractional values
             --force, -F          Force reload even if one in progress
             --data, -d           Inline config data (@file1 @file2, @- for stdin, or yaml string)
-            --initial-wait, -w   Initial wait before first poll (seconds). Accepts fractional values
+            --initial-wait       Initial wait before first poll (seconds). Accepts fractional values
     """
 
     def __init__(self, dir, tr, tn):
@@ -370,7 +370,7 @@ class ConfigReload(Common):
         return self
 
     def initial_wait(self, seconds: float):
-        """Set initial wait before first poll (--initial-wait, -w). Use with monitor() or show_details()"""
+        """Set initial wait before first poll (--initial-wait). Use with monitor() or show_details()"""
         self._cmd = f'{self._cmd} --initial-wait {seconds} '
         return self
 

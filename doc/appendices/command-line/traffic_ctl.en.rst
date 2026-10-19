@@ -536,10 +536,14 @@ Display the current value of a configuration record.
             $ traffic_ctl config reload -D myconfig.id=foo --monitor
             $ traffic_ctl config reload -D myconfig.id=foo -d 'myconfig: {rules: [a]}'
 
-         To pass a directive value that begins with ``-``, place ``--`` before it. Option
-         recognition then stays off for the rest of the line, so every remaining token becomes
-         a directive value and any option written afterwards is swallowed. Use
-         ``--directive=-value`` instead when options still have to follow:
+         To pass a directive value that begins with ``-``, place ``--`` before it. Recognition of
+         ``config reload``'s own options then stays off for the rest of the line, so every
+         remaining token becomes a directive value and any of those options written afterwards
+         is swallowed. The global options (``--format``, ``--help``, ``--run-root``, ...) are
+         different: only the first token after ``--`` is kept away from them, so a later token
+         spelled like one of them is still taken as that option. When options have to follow,
+         or more than one value begins with ``-``, give each such value as
+         ``--directive=-value`` instead, without ``-D --``:
 
          .. code-block:: bash
 
@@ -569,7 +573,7 @@ Display the current value of a configuration record.
       (e.g. ``0.5`` for 500ms). Controls how often ``traffic_ctl`` queries the server for
       updated reload status. Default: ``0.5``.
 
-   .. option:: --initial-wait, -w <seconds>
+   .. option:: --initial-wait <seconds>
 
       Initial wait in seconds before the first status poll. After scheduling a reload, the
       server needs a brief moment to dispatch work to all handlers. This delay avoids polling
@@ -629,6 +633,13 @@ Display the current value of a configuration record.
    Set the named configuration record to the specified value. Refer to the :file:`records.yaml`
    documentation for a list of the configuration variables you can specify. Note that this is not a
    synchronous operation.
+
+   A value that begins with ``-`` and could be read as an option, such as ``-f`` or ``-h``, needs
+   ``--`` directly before it. Only the value right after ``--`` is protected:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config set proxy.config.diags.debug.tags -- -f
 
    Supports the following options.
 

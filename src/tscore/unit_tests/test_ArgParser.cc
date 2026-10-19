@@ -25,6 +25,10 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include "tscore/ArgParser.h"
 
+#include <iostream>
+#include <sstream>
+#include <string>
+
 class TestArgParser : public ts::ArgParser
 {
 public:
@@ -717,5 +721,252 @@ TEST_CASE("The variable only applies when every occurrence of a repeated option 
     ts::Arguments parsed = parser.parse(argv);
     REQUIRE(parsed.get("directive") == true);
     REQUIRE(parsed.get("directive").size() == 0);
+  }
+}
+
+namespace
+{
+// Parser-wide state lives at file scope in ArgParser.cc and outlives any one parser: a test
+// that reaches the help path leaves usage_return_code at 0 for every test after it, and a test
+// that sets a default command leaves that too. Clear it on the way in and on the way out.
+class ArgParserStateGuard
+{
+public:
+  ArgParserStateGuard() { reset(); }
+  ~ArgParserStateGuard() { reset(); }
+  static void
+  reset()
+  {
+    Access::reset_global_state();
+  }
+
+private:
+  struct Access : ts::ArgParser {
+    using ts::ArgParser::reset_global_state;
+  };
+};
+} // namespace
+
+// Link-time check that the parser-wide state stays internal to ArgParser.cc: were any of these
+// names exported from libtscore again, this binary would fail to link with duplicate symbols.
+std::string global_usage;
+std::string description;
+std::string parser_program_name;
+std::string default_command;
+int         usage_return_code = 0;
+
+TEST_CASE("Double dash keeps a value away from an outer command's options", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_option("--format", "-f", "output format", "", 1, "", "format");
+  parser.add_option("--help", "-h", "print usage");
+  parser.add_option("--version", "-V", "print version");
+
+  // Every level has options of its own, so the escape has to hold in each level's scan.
+  ts::ArgParser::Command &config = parser.add_command("config", "configuration commands");
+  config.add_option("--mid", "-m", "an option of the intermediate command", "", 1, "", "mid");
+  config.add_command("set", "set a record", "", 2, nullptr, "set")
+    .add_option("--type", "-t", "an option of the owning command", "", 1, "", "type");
+  config.add_command("reload", "reload configs", nullptr, "reload")
+    .add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "", "directive");
+
+  SECTION("a value spelled like an outer option belongs to the subcommand that asked for it")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-f", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[0] == "a.record");
+    REQUIRE(parsed.get("set")[1] == "-f");
+    REQUIRE(parsed.get("format") == false);
+  }
+
+  SECTION("including one that would otherwise print the help message and exit 0")
+  {
+    // Without the escape the command never runs, yet a script sees success.
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-h", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-h");
+  }
+
+  SECTION("or the version message")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-V", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-V");
+  }
+
+  SECTION("a value spelled like an option of the intermediate command is left to the subcommand")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-m");
+    REQUIRE(parsed.get("mid") == false);
+  }
+
+  SECTION("so is one spelled like an option of the owning command itself")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-t", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-t");
+    REQUIRE(parsed.get("type") == false);
+  }
+
+  SECTION("and one in the --option=value form")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "--format=json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "--format=json");
+    REQUIRE(parsed.get("format") == false);
+  }
+
+  SECTION("a second double dash is itself the escaped value")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "--", "-f", "json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "--");
+    REQUIRE(parsed.get("format").value() == "json");
+  }
+
+  SECTION("an outer option written after the escaped value is still recognized")
+  {
+    // "--" escapes one token, it does not end the command line.
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-x", "-f", "json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-x");
+    REQUIRE(parsed.get("format").value() == "json");
+  }
+
+  SECTION("an outer option before the subcommand keeps working")
+  {
+    // The whole command line has been scanned at every level since the parser was written.
+    const char   *argv[] = {"test_prog", "-f", "json", "config", "set", "a.record", "value", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "json");
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "value");
+  }
+
+  SECTION("only the first value after the double dash is protected for a variable number of values")
+  {
+    // The escape covers one token in the outer scans, whatever the arity of the option that owns
+    // it, so a later token spelled like an outer option is still that option.
+    const char   *argv[] = {"test_prog", "config", "reload", "-D", "--", "-a", "-f", "json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("directive").size() == 1);
+    REQUIRE(parsed.get("directive")[0] == "-a");
+    REQUIRE(parsed.get("format").value() == "json");
+  }
+
+  SECTION("a trailing double dash with nothing to escape is still an unknown argument")
+  {
+    // The skip at the last token leaves it over, as before, rather than escaping past the end.
+    const char *argv[] = {"test_prog", "config", "set", "a.record", "value", "--", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+}
+
+TEST_CASE("The default command retry replaces the failed pass's values", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  {
+    TestArgParser parser;
+    parser.add_global_usage("test_prog [OPTIONS]");
+    parser.add_option("--zed", "-z", "values", "", MORE_THAN_ZERO_ARG_N, "", "zed");
+    parser.add_command("run", "run it", nullptr, "run");
+    parser.set_default_command("run");
+
+    // No command is named, so the first pass fails after the top level has already collected
+    // --zed. The retry inserts the default command and collects --zed again; the values of the
+    // failed pass must be replaced by it, not accumulated on top of.
+    const char   *argv[] = {"test_prog", "-z", "a", "b", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("run") == true);
+    REQUIRE(parsed.get("zed").size() == 2);
+    REQUIRE(parsed.get("zed")[0] == "a");
+    REQUIRE(parsed.get("zed")[1] == "b");
+  }
+
+  ArgParserStateGuard::reset();
+
+  // With the state cleared, a later parser has no default command: a line that names no
+  // command is not retried with one.
+  {
+    TestArgParser parser;
+    parser.add_global_usage("test_prog [OPTIONS]");
+    parser.add_command("run", "run it", nullptr, "run");
+
+    const char   *argv[] = {"test_prog", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("run") == false);
+  }
+}
+
+TEST_CASE("reset_global_state clears every piece of parser-wide state", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  // Keeps the help and usage text that these parsers print out of the test output, and lets it
+  // be checked.
+  struct CoutCapture {
+    std::ostringstream buf;
+    std::streambuf    *old = std::cout.rdbuf(buf.rdbuf());
+    ~CoutCapture() { std::cout.rdbuf(old); }
+  };
+
+  SECTION("the exit code a usage error returns, which a help request sets to 0")
+  {
+    {
+      TestArgParser parser;
+      parser.add_option("--help", "-h", "print usage");
+      parser.add_command("run", "run it", nullptr, "run");
+
+      const char *argv[] = {"test_prog", "-h", nullptr};
+      CoutCapture capture;
+      REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 0");
+    }
+    ArgParserStateGuard::reset();
+    {
+      TestArgParser parser;
+      parser.add_command("run", "run it", nullptr, "run");
+
+      const char *argv[] = {"test_prog", "bogus", nullptr};
+      CoutCapture capture;
+      REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+    }
+  }
+
+  SECTION("the description and global usage an earlier parser added")
+  {
+    {
+      TestArgParser parser;
+      parser.add_description("earlier parser's description");
+      parser.add_global_usage("earlier parser's usage");
+    }
+    ArgParserStateGuard::reset();
+
+    TestArgParser parser;
+    parser.add_command("run", "run it", nullptr, "run");
+
+    const char *argv[] = {"test_prog", "bogus", nullptr};
+    std::string out;
+    {
+      CoutCapture capture;
+      REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+      out = capture.buf.str();
+    }
+    REQUIRE(out.find("Unknown command") != std::string::npos);
+    REQUIRE(out.find("earlier parser's description") == std::string::npos);
+    REQUIRE(out.find("earlier parser's usage") == std::string::npos);
   }
 }

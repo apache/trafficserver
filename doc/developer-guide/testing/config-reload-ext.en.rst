@@ -99,7 +99,7 @@ Triggers a config reload, blocks until completion, and validates the result.
        data=None,                   # inline YAML or @file path
        force=False,                 # --force flag
        timeout="30s",               # monitor timeout
-       initial_wait=1.0,            # seconds before first poll
+       initial_wait=None,           # seconds before first poll
        refresh_int=0.5,             # seconds between polls
        expect_tasks=None,           # list or dict of expected handler names
        expect_absent_tasks=None,    # list of handler names that must NOT appear
@@ -151,7 +151,7 @@ Parameters
 
 ``initial_wait``
    Seconds to wait before the first poll, giving the server time to schedule
-   handlers. Default: ``1.0``.
+   handlers. Default: ``None``, which leaves :program:`traffic_ctl`'s own default.
 
 ``refresh_int``
    Seconds between status polls. Default: ``0.5``.

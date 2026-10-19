@@ -140,7 +140,7 @@ def AddConfigReload(
     data=None,
     force=False,
     timeout="30s",
-    initial_wait=1.0,
+    initial_wait=None,
     refresh_int=0.5,
     expect_tasks=None,
     expect_absent_tasks=None,
@@ -166,7 +166,7 @@ def AddConfigReload(
         force: If True, adds --force.
         timeout: Timeout duration string for --timeout (e.g. "30s", "1m").
             Set to None to disable.
-        initial_wait: Seconds before first poll (--initial-wait).
+        initial_wait: Seconds before first poll (--initial-wait). None leaves traffic_ctl's own default.
         refresh_int: Seconds between polls (--refresh-int).
         expect_tasks: List of task names expected in the reload, or a dict
             mapping task names to expected statuses (e.g. {"sni.yaml": "fail"}).
@@ -199,7 +199,9 @@ def AddConfigReload(
     tr.StillRunningAfter = ts
 
     cmd = f"traffic_ctl config reload -m -t {_shell_quote(token)}"
-    cmd += f" -w {initial_wait} -r {refresh_int}"
+    cmd += f" -r {refresh_int}"
+    if initial_wait is not None:
+        cmd += f" --initial-wait {initial_wait}"
 
     if timeout is not None:
         cmd += f" -T {_shell_quote(timeout)}"

@@ -193,3 +193,23 @@ tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "received an empty value", "a partial reload must not happen silently")
 tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 14: -w is the global --watch, as it has always been; config reload's
+# --initial-wait has only its long form
+# ============================================================================
+tr = Test.AddTestRun("-w after config reload is still the global --watch")
+tr.Processes.Default.Command = "traffic_ctl config reload -w"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 64
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    r"1 argument\(s\) expected by watch", "a bare -w must be reported against --watch")
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("config reload's help lists --initial-wait without a short form")
+tr.Processes.Default.Command = "traffic_ctl config reload -h"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(r"--initial-wait <arg>", "the help must list --initial-wait")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression(r"-w, --initial-wait", "-w must not be listed for --initial-wait")
+tr.StillRunningAfter = ts
