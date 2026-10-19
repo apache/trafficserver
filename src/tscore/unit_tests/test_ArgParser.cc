@@ -745,10 +745,19 @@ private:
     using ts::ArgParser::reset_global_state;
   };
 };
+
+// Keeps the help and usage text that a parser prints out of the test output, and lets it be
+// checked. std::cout is put back however the scope ends.
+struct CoutCapture {
+  std::ostringstream buf;
+  std::streambuf    *old = std::cout.rdbuf(buf.rdbuf());
+  ~CoutCapture() { std::cout.rdbuf(old); }
+};
 } // namespace
 
 // Link-time check that the parser-wide state stays internal to ArgParser.cc: were any of these
 // names exported from libtscore again, this binary would fail to link with duplicate symbols.
+// That holds for the default static libtscore; with a shared one the link does not fail.
 std::string global_usage;
 std::string description;
 std::string parser_program_name;
@@ -915,14 +924,6 @@ TEST_CASE("The default command retry replaces the failed pass's values", "[parse
 TEST_CASE("reset_global_state clears every piece of parser-wide state", "[parse]")
 {
   ArgParserStateGuard guard;
-
-  // Keeps the help and usage text that these parsers print out of the test output, and lets it
-  // be checked.
-  struct CoutCapture {
-    std::ostringstream buf;
-    std::streambuf    *old = std::cout.rdbuf(buf.rdbuf());
-    ~CoutCapture() { std::cout.rdbuf(old); }
-  };
 
   SECTION("the exit code a usage error returns, which a help request sets to 0")
   {
