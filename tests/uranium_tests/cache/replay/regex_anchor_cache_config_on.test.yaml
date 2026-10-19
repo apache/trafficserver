@@ -17,10 +17,9 @@
 meta:
   version: '1.0'
 
-autest:
+urtest:
   description: 'anchor_policy_rules=1 makes an unanchored cache.config url_regex rule inert'
 
-  # Distinct process names: both replays run in one sandbox.
   dns:
     name: 'dns-enforcing'
 

@@ -17,7 +17,7 @@
 meta:
   version: '1.0'
 
-autest:
+urtest:
   description: 'Verify anchor_policy_rules=0 keeps matching unchanged and reports unanchored rules'
 
   dns:

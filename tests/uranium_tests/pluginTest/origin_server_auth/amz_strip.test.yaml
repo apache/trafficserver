@@ -17,7 +17,9 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
+  requires:
+    plugins: [origin_server_auth.so]
   description: 'Verify origin_server_auth strips unauthorized x-amz- request headers before signing'
 
   server:

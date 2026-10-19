@@ -26,6 +26,29 @@ meta:
 # stalls, and the second transaction cannot be served. Both transactions
 # completing proves the response was forwarded without a stall.
 
+urtest:
+  description: A trailer-bearing response completes and leaves its connection reusable
+  dns: {name: dns}
+  server: {name: server}
+  client:
+    name: client
+    log_validation:
+      excludes:
+        - {expression: 'Poll timed out waiting for content', description: 'The response must not stall.'}
+        - {expression: 'never processed', description: 'Both transactions on the reused connection must complete.'}
+  ats:
+    name: ts
+    process_config:
+      enable_cache: false
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: http
+      proxy.config.http.transaction_no_activity_timeout_out: 5
+      proxy.config.http.transaction_no_activity_timeout_in: 5
+      proxy.config.net.default_inactivity_timeout: 5
+    remap_config:
+      - 'map / http://backend.example.com:{SERVER_HTTP_PORT}/'
+
 sessions:
 - transactions:
 

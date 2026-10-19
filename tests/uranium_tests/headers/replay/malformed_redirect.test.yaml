@@ -17,7 +17,7 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Verify a response the proxy cannot parse is refused whatever status it claims.'
 
   server:

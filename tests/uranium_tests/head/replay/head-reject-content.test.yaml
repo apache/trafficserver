@@ -17,7 +17,10 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
+  requires:
+    proxy_verifier: '2.8.0'
+    plugins: [conf_remap.so]
   description: 'Verify HEAD requests carrying declared body content are rejected'
 
   dns:

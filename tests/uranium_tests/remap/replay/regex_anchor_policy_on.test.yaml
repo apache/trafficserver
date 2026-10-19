@@ -17,11 +17,9 @@
 meta:
   version: '1.0'
 
-autest:
+urtest:
   description: 'Verify anchor_policy_rules=1 requires a gate pattern to match the whole subject'
 
-  # Distinct process names: both replays run in one sandbox, so reusing the
-  # default names collides when the second run stages its own binaries.
   dns:
     name: 'dns-enforcing'
 

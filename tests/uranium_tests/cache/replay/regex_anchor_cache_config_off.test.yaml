@@ -17,7 +17,7 @@
 meta:
   version: '1.0'
 
-autest:
+urtest:
   description: 'anchor_policy_rules=0 keeps a cache.config url_regex rule applying and names it'
 
   dns:
