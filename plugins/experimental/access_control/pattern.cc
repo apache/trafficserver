@@ -318,7 +318,7 @@ Pattern::compile()
                      _replacement.c_str());
 
   _re = std::make_unique<Regex>();
-  if (!_re->compile(_pattern, error, errOffset, 0)) {
+  if (!_re->compile(_pattern, error, errOffset, 0, "access_control uri path scope")) {
     AccessControlError("compile of regex '%s' at char %d: %s", _pattern.c_str(), errOffset, error.c_str());
     _re.reset();
     return false;

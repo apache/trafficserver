@@ -18,3 +18,7 @@ pluginTest/abuse_shield/abuse_shield_pacing.test.py
 
 # Starts 15 ATS instances and TLS origins for retry admission scenarios.
 h2/h2_to_origin_safe_retry.test.py
+
+# Pins exec_thread.limit to 1 and asserts origin connection reuse from a single
+# shared pool; parallel load skews the pooling window this depends on.
+post/post-early-response-100-continue.test.py
