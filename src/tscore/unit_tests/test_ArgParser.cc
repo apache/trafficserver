@@ -974,13 +974,6 @@ TEST_CASE("reset_global_state clears every piece of parser-wide state", "[parse]
 
 namespace
 {
-// Collects what std::cout prints while it lives, and puts std::cout back however the scope ends.
-struct StdoutCapture {
-  std::ostringstream out;
-  std::streambuf    *old = std::cout.rdbuf(out.rdbuf());
-  ~StdoutCapture() { std::cout.rdbuf(old); }
-};
-
 // The message a line's usage error prints, so a test can tell one exit code 64 from another.
 std::string
 usage_error(ts::ArgParser &parser, const char **argv)
@@ -989,14 +982,14 @@ usage_error(ts::ArgParser &parser, const char **argv)
   std::string printed;
 
   {
-    StdoutCapture capture;
+    CoutCapture capture;
 
     try {
       parser.parse(argv);
     } catch (std::runtime_error const &e) {
       exit_message = e.what();
     }
-    printed = capture.out.str();
+    printed = capture.buf.str();
   }
   REQUIRE(exit_message == "Test mode: exit with code 64");
   return printed;
@@ -1023,8 +1016,8 @@ swallowed(std::string const &token, std::string const &command, std::string cons
 std::string
 parse_exit(ts::ArgParser &parser, const char **argv)
 {
-  StdoutCapture capture;
-  std::string   message;
+  CoutCapture capture;
+  std::string message;
 
   try {
     parser.parse(argv);
