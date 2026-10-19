@@ -397,8 +397,8 @@ protected:
   /** Clear the parser-wide state held at file scope in ArgParser.cc.
 
       Test-only. A program builds one parser and never reuses the state, but a unit test binary
-      runs many parsers in sequence, and set_default() would otherwise leak default_command into
-      every later test.
+      runs many parsers in sequence, and set_default_command() or Command::set_default() would
+      otherwise leak default_command into every later test.
   */
   static void reset_global_state();
 
