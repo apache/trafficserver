@@ -65,6 +65,13 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+Plugins
+-------
+
+access_control
+~~~~~~~~~~~~~~
+
+The :ref:`admin-plugins-access_control` plugin now supports path-prefix scope enforcement using the ``scope`` claim in access tokens. Scope enforcement is disabled by default for backward compatibility with deployments issuing tokens with non-path scopes. To enable scope enforcement, pass ``--enforce-scope=true`` as a plugin parameter.
 traffic_ctl Changes
 -------------------
 

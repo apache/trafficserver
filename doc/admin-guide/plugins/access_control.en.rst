@@ -237,7 +237,19 @@ Query-Param-Style Named Claim format
    * ``iat`` for `issued at time`_, `optional`
    * ``tid`` for `token id`_, `optional`
    * ``ver`` for `version`_, `optional`, defaults to ``ver=1`` if not specified.
-   * ``scope`` for `scope`_, `optional`, ignored by the current version of the plugin, still not finalized (more applications and their use cases need to be studied to finalize the format)
+   * ``scope`` for `scope`_, `optional`
+      * An absent or empty scope is unrestricted.
+      * Otherwise, when ``--enforce-scope`` is enabled, it is a path-prefix restriction matched against normalized
+        path segments, including the segment boundary.
+      * For example, ``/reports`` matches ``/reports/2026`` but not
+        ``/reports2``.
+      * Request paths containing dot segments (such as ``.``, ``..``, or matrix parameters
+        like ``.;``, ``..;``, whether raw or percent-encoded), backslashes (``\``),
+        percent-encoded slashes (``%2F``), double-encoded percent signs (``%25``), or control
+        characters are rejected outright.
+      * When ``--reject-invalid-token-requests=true`` is configured, out-of-scope and rejected
+        request paths return the configured ``--invalid-scope-status-code``; otherwise, the
+        request is forwarded to the origin without extracting the subject header.
    * ``kid`` for `key id`_, `required` (tokens to be always signed)
    * ``st`` for `signature type`_, `optional` (default would be ``SHA-256`` if not specified)
    * ``md`` for `message digest`_ - this claim is `required` and expected to be always the last claim.
@@ -314,7 +326,9 @@ Plugin configuration
    * ``--invalid-syntax-status-code=<http_status_code>`` (`optional`, default:``400``) - access token bad syntax error
    * ``--invalid-signature-status-code=<http_status_code>`` (`optional`, default:``401``) - invalid access token signature
    * ``--invalid-timing-status-code=<http_status_code>`` (`optional`, default:``403``) - bad timing when validating the access token (expired, or too early)
-   * ``--invalid-scope-status-code=<http_status_code>`` (`optional`, default:``403``) - access token scope validation failed
+   * ``--invalid-scope-status-code=<http_status_code>`` (`optional`, default:``403``) - access
+     token scope validation failed (used when ``--reject-invalid-token-requests`` is enabled for
+     out-of-scope or rejected request paths)
    * ``--invalid-origin-response=<http_status_code>`` (`optional`, default:``520``) - origin_ response did not look right, i.e. the access token provided by origin_ is not valid.
    * ``--internal-error-status-code=<http_status_code>`` (`optional`, default:``500``) - unexpected internal error (should not happened ideally)
 
@@ -331,6 +345,7 @@ Plugin configuration
 
 * Behavior modifiers to support various use-cases
    * ``--reject-invalid-token-requests`` (`optional`, default:``false``) - reject invalid token requests instead of forwarding them to origin_.
+   * ``--enforce-scope`` (`optional`, default:``false``) - enforce the access token `scope`_ claim as a path-prefix restriction against the request path. When disabled, the scope claim is ignored for backward compatibility.
    * ``--use-redirects`` (`optional`, default:``false``) - used to configure `use case 2`_, not implemented yet.
 
 

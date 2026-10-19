@@ -59,16 +59,28 @@ ssl_multicert:
 
         self.ts.Setup.Copy("etc/hmac_keys.txt")
         self.ts.Disk.remap_config.AddLines(
-            {
+            [
+                f'''map /scoped/ https://127.0.0.1:{self.server.Variables.https_port}/scoped/ \
+    @plugin=access_control.so \
+    @pparam=--symmetric-keys-map={Test.RunDirectory}/hmac_keys.txt \
+    @pparam=--check-cookie=TokenCookie \
+    @pparam=--reject-invalid-token-requests=true \
+    @pparam=--enforce-scope=true \
+    @pparam=--invalid-scope-status-code=403 \
+    @pparam=--extract-subject-to-header=TokenSubject \
+    @pparam=--extract-tokenid-to-header=@TokenId \
+    @pparam=--extract-status-to-header=@TokenStatus \
+    @pparam=--token-response-header=TokenRespHdr''',
                 f'''map / https://127.0.0.1:{self.server.Variables.https_port}/ \
     @plugin=access_control.so \
     @pparam=--symmetric-keys-map={Test.RunDirectory}/hmac_keys.txt \
     @pparam=--check-cookie=TokenCookie \
-    @pparam=--extract-subject-to-header=@TokenSubject \
+    @pparam=--enforce-scope=true \
+    @pparam=--extract-subject-to-header=TokenSubject \
     @pparam=--extract-tokenid-to-header=@TokenId \
     @pparam=--extract-status-to-header=@TokenStatus \
-    @pparam=--token-response-header=TokenRespHdr'''
-            })
+    @pparam=--token-response-header=TokenRespHdr''',
+            ])
 
     def run(self):
         tr = Test.AddTestRun("Session Cookie")
