@@ -213,3 +213,39 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(r"--initial-wait <arg>", "the help must list --initial-wait")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(r"-w, --initial-wait", "-w must not be listed for --initial-wait")
 tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 15: a global option does not take an option of config reload as its
+# value. -m would otherwise become the output format and --monitor be lost
+# ============================================================================
+tr = Test.AddTestRun("A global option does not swallow an option of config reload")
+tr.Processes.Default.Command = "traffic_ctl config reload -f -m"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 64
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    r"'-m' is an option of reload, not a value of --format", "-m must be reported as reload's option, not taken by --format")
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 16: the same, with a global option taken off the line before the
+# command's name, so -m is not where it was on the command line
+# ============================================================================
+tr = Test.AddTestRun("A global option written before config reload does not hide the swallowed option")
+tr.Processes.Default.Command = "traffic_ctl -f json config reload -f -m"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 64
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    r"'-m' is an option of reload, not a value of --format", "-m must be reported as reload's option, not taken by --format")
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 17: as Test 15, for the global --watch, whose short form -w is written
+# after config reload's name
+# ============================================================================
+tr = Test.AddTestRun("The global -w does not swallow an option of config reload")
+tr.Processes.Default.Command = "traffic_ctl config reload -w -m"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 64
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    r"'-m' is an option of reload, not a value of --watch", "-m must be reported as reload's option, not taken by --watch")
+tr.StillRunningAfter = ts

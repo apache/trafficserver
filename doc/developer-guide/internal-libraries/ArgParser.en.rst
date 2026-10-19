@@ -127,6 +127,23 @@ This function call returns the new :class:`Option` instance. (0 is also number o
    option written where a value is expected leaves the value missing, which is reported as a
    usage error rather than the option being consumed and applied as the value.
 
+   Nor is a value taken from an option of a subcommand named before it on the command line. A
+   command reads its options before its subcommands do, so ``traffic_ctl config reload -f -m``
+   would otherwise set ``--format`` to ``-m`` and drop ``--monitor``. Such a line is a usage
+   error, whatever the number of values the option takes and whether or not it declares an
+   environment variable. A value that has to be spelled like such an option can still be given
+   with the ``--option=value`` form or a ``--`` in front of it; for an option taking a variable
+   number of values only the first, since a ``--`` there makes every later token a value too.
+
+   Only the subcommands the line runs count, and only for the tokens after their names. A token
+   written before a subcommand's name can never reach that subcommand, so
+   ``traffic_ctl -f -m config reload`` still sets ``--format`` to ``-m``. A subcommand's name
+   read as a value, whether an option's or a command's own positional value, does not count, nor
+   does a default command that the parser fills in for a line naming no command; a subcommand of
+   it that the line does name counts. The check is made once the whole line has been read, so a
+   line refused for another reason, or one asking for help or the version, is answered as it
+   always was.
+
    Because collection stops at the following option, an option taking an unbounded number of
    values may be written more than once, and the occurrences accumulate. This matches the
    ``--option=value`` form, which has always appended. An option taking a fixed number of
