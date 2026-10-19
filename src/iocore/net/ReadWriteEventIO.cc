@@ -50,6 +50,14 @@ ReadWriteEventIO::start(EventLoop l, int afd, NetEvent *ne, NetHandler *nh, int 
 void
 ReadWriteEventIO::process_event(int flags)
 {
+  // A migrated connection may have an event already fetched from the old kqueue.
+  // Do not put its closing VC back on a ready list.
+#if TS_USE_KQUEUE
+  if (event_loop.load() == nullptr) {
+    return;
+  }
+#endif
+
   // Remove triggered NetEvent from cop_list because it won't be timeout before
   // next InactivityCop runs.
   ATS_PROBE2(eventio_rw_process_event, _ne->get_fd(), flags);
