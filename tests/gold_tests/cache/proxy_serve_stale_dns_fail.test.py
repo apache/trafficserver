@@ -32,6 +32,8 @@ Test.testName = "STALE"
 # too old send X-Stale-Window: narrow, which shrinks the window to one second for
 # that request only, so a delay only makes them more certain. The header does not
 # change the cache key, so both kinds of request read the same cached copy.
+# Only the localhost maps load the rule, so the narrow window applies on the proxy
+# the client talks to directly, not on the parent the child forwards to.
 wide_stale_age = 300
 narrow_stale_age = 1
 stale_window_rules = [
