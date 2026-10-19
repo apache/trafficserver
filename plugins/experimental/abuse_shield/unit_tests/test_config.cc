@@ -32,7 +32,6 @@
 #include <sstream>
 #include <string>
 #include <system_error>
-#include <vector>
 
 #include <unistd.h>
 
@@ -54,15 +53,13 @@ class TempConfig
 public:
   TempConfig()
   {
-    auto              dir_template = (std::filesystem::temp_directory_path() / "abuse_shield_config_test_XXXXXX").string();
-    std::vector<char> mutable_template{dir_template.begin(), dir_template.end()};
+    auto  dir_template = (std::filesystem::temp_directory_path() / "abuse_shield_config_test_XXXXXX").string();
+    auto *created_dir  = mkdtemp(dir_template.data());
 
-    mutable_template.push_back('\0');
-    auto *created_dir = mkdtemp(mutable_template.data());
-    auto error         = errno;
-
-    INFO(std::strerror(error));
-    REQUIRE(created_dir != nullptr);
+    if (created_dir == nullptr) {
+      INFO(std::strerror(errno));
+      REQUIRE(created_dir != nullptr);
+    }
     dir_ = created_dir;
   }
 
