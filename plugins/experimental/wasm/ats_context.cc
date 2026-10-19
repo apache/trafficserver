@@ -634,6 +634,9 @@ Context::defineMetric(uint32_t metric_type, std::string_view name, uint32_t *met
 WasmResult
 Context::incrementMetric(uint32_t metric_id, int64_t offset)
 {
+  if (!TSStatIdIsValid(static_cast<int>(metric_id))) {
+    return WasmResult::BadArgument;
+  }
   TSStatIntIncrement(metric_id, offset);
   return WasmResult::Ok;
 }
@@ -641,6 +644,9 @@ Context::incrementMetric(uint32_t metric_id, int64_t offset)
 WasmResult
 Context::recordMetric(uint32_t metric_id, uint64_t value)
 {
+  if (!TSStatIdIsValid(static_cast<int>(metric_id))) {
+    return WasmResult::BadArgument;
+  }
   TSStatIntSet(metric_id, value);
   return WasmResult::Ok;
 }
@@ -648,6 +654,9 @@ Context::recordMetric(uint32_t metric_id, uint64_t value)
 WasmResult
 Context::getMetric(uint32_t metric_id, uint64_t *value_ptr)
 {
+  if (!TSStatIdIsValid(static_cast<int>(metric_id))) {
+    return WasmResult::BadArgument;
+  }
   *value_ptr = TSStatIntGet(metric_id);
   return WasmResult::Ok;
 }

@@ -83,21 +83,6 @@ DbgCtl dbg_ctl_parent_down{"parent_down"};
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_ip_allow{"ip_allow"};
 
-std::string_view
-get_at_header_source_name(HttpTransact::AtHeaderSource source)
-{
-  using AtHeaderSource = HttpTransact::AtHeaderSource;
-
-  switch (source) {
-  case AtHeaderSource::CLIENT_REQUEST:
-    return "client request";
-  case AtHeaderSource::ORIGIN_RESPONSE:
-    return "origin response";
-  }
-
-  return "unknown source";
-}
-
 Metrics::Counter::AtomicType *
 get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 {
@@ -112,6 +97,19 @@ get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 
   return nullptr;
 }
+
+void
+log_stripped_at_headers(HttpTransact::AtHeaderSource source, std::int64_t sm_id, std::uint64_t stripped_count)
+{
+  switch (source) {
+  case HttpTransact::AtHeaderSource::CLIENT_REQUEST:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from client request", sm_id, stripped_count);
+    break;
+  case HttpTransact::AtHeaderSource::ORIGIN_RESPONSE:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from origin response", sm_id, stripped_count);
+    break;
+  }
+}
 } // namespace
 
 /**
@@ -124,19 +122,21 @@ get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 void
 HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, std::int64_t sm_id)
 {
-  auto const metric      = get_at_header_source_metric(source);
-  auto const source_name = get_at_header_source_name(source);
+  std::uint64_t stripped_count{0};
 
   for (auto field = header.begin(); field != header.end();) {
     auto current = field++;
     auto name    = current->name_get();
 
     if (!name.empty() && name[0] == '@') {
-      Metrics::Counter::increment(metric);
-      Error("[%" PRId64 "] stripped internal @ header from %.*s: %.*s", sm_id, static_cast<int>(source_name.size()),
-            source_name.data(), static_cast<int>(name.size()), name.data());
+      ++stripped_count;
       header.field_delete(&*current, false);
     }
+  }
+
+  if (stripped_count > 0) {
+    Metrics::Counter::increment(get_at_header_source_metric(source), stripped_count);
+    log_stripped_at_headers(source, sm_id, stripped_count);
   }
 }
 
@@ -5835,6 +5835,15 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       return RequestError_t::UNACCEPTABLE_TE_REQUIRED;
     }
 
+    // RFC 9110 § 9.3.2: "A client SHOULD NOT send content in a HEAD request."
+    // has_request_body() is protocol-aware: HTTP/2 and HTTP/3 can signal a body via
+    // framing (e.g. DATA frames) without a Content-Length header.
+    if (s->txn_conf->reject_head_with_content && method == HTTP_WKSIDX_HEAD && s->state_machine->get_ua_txn() &&
+        s->state_machine->get_ua_txn()->has_request_body(s->hdr_info.request_content_length,
+                                                         s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED)) {
+      return RequestError_t::HEAD_CONTENT;
+    }
+
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
@@ -6251,6 +6260,36 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
+  // The keep_alive recomputed above reflects only what the origin said.  It says nothing
+  // about whether ATS held up its own end of the exchange.  If a request head declaring a
+  // body went to the origin and that body was never written in full, the origin's parser
+  // is still waiting for those bytes, and reusing the connection would hand the next
+  // request to the origin as the leftover body of this one.
+  //
+  // Only the origin side is decided here.  The client connection is handled later by
+  // do_drain_request_body(), reached from the SERVER_READ action, which consumes an
+  // undelivered body when all of it is already buffered and drops client keep-alive when it
+  // cannot.  Forcing the client side here would run before that and leave its
+  // keep-alive-preserving case unreachable.
+  //
+  // The one exception is the branch just below, which drops client keep-alive when the
+  // client 4-tuple is also the outbound one.  There the two connections are the same
+  // socket, so closing the origin side necessarily takes the client side with it.
+  //
+  // Only a response that leaves the exchange in progress is exempt, because there the body
+  // may still be on its way.  That is the ordinary Expect: 100-continue case.  The exempt
+  // set has to match the one handle_forward_server_connection_open() routes to
+  // handle_100_continue_response(), namely 100 and 103 alone.  Every other 1xx is dispatched
+  // as a final response and ends the transaction, so testing for 1xx here would leave the
+  // connection poolable while the origin is still mid-message.
+  HTTPStatus const status_code          = incoming_response->status_get();
+  bool const       exchange_in_progress = status_code == HTTPStatus::CONTINUE || status_code == HTTPStatus::EARLY_HINTS;
+
+  if (s->state_machine->server_owed_request_body && !exchange_in_progress) {
+    TxnDbg(dbg_ctl_http_hdrs, "Origin is owed request body bytes that will not be sent, not reusing the connection");
+    s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+  }
+
   if (s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE) {
     TxnDbg(dbg_ctl_http_hdrs, "Server is keep-alive.");
   } else if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_outbound_transparent() &&
@@ -6262,7 +6301,6 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     s->state_machine->t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
-  HTTPStatus status_code = incoming_response->status_get();
   if (is_response_body_precluded(status_code, s->method)) {
     s->hdr_info.response_content_length = 0;
     s->hdr_info.trust_response_cl       = true;
@@ -6929,6 +6967,12 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     TxnDbg(dbg_ctl_http_trans, "post request with negative content length value");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTPStatus::BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length");
+    return false;
+  }
+  case RequestError_t::HEAD_CONTENT: {
+    TxnDbg(dbg_ctl_http_trans, "HEAD request with body");
+    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+    build_error_response(s, HTTPStatus::BAD_REQUEST, "Content Not Allowed", "request#head_content");
     return false;
   }
   default:
