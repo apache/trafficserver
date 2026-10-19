@@ -22,9 +22,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <cerrno>
 #include <cstdarg>
 #include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -57,6 +59,9 @@ public:
 
     mutable_template.push_back('\0');
     auto *created_dir = mkdtemp(mutable_template.data());
+    auto error         = errno;
+
+    INFO(std::strerror(error));
     REQUIRE(created_dir != nullptr);
     dir_ = created_dir;
   }
