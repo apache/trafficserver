@@ -1,0 +1,6 @@
+Changes with Apache Traffic Server 9.2.16
+  #13157 - Fix build with newer Apple clang
+  #13285 - Fix Fedora 44 CI on 9.2.x
+  #13692 - 9.2.x: latest clang-analyzer fixes
+  #13716 - 9.2.x: fix(http): stale `skip_bytes` in cache-write consumer after 100 Continue with transform
+  #13866 - 9.2.x release 10-19
