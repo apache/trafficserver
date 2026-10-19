@@ -24,9 +24,10 @@ ts = Test.MakeATSProcess('ts', enable_tls=True, enable_cache=False, enable_proxy
 ts.addDefaultSSLFiles()
 
 server.addResponse(
-    'sessionlog.json',
-    {'headers': 'GET / HTTP/1.1\r\nHost: no-alpn.example.com\r\n\r\n'},
-    {'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\n', 'body': 'OK'})
+    'sessionlog.json', {'headers': 'GET / HTTP/1.1\r\nHost: no-alpn.example.com\r\n\r\n'}, {
+        'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\n',
+        'body': 'OK'
+    })
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     [
@@ -54,7 +55,6 @@ tr.Processes.Default.Command = (
     f"'https://no-alpn.example.com:{ts.Variables.proxy_protocol_ssl_port}/' "
     f"--resolve 'no-alpn.example.com:{ts.Variables.proxy_protocol_ssl_port}:127.0.0.1'")
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    '200', 'TLS with PROXY protocol succeeds without ALPN negotiation')
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('200', 'TLS with PROXY protocol succeeds without ALPN negotiation')
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
