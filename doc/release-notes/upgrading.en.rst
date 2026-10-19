@@ -233,6 +233,58 @@ Plugins
   :file:`sni.yaml` already require a whole-subject match and are unaffected by
   the setting (CVE-2026-22068).
 
+Changes in 10.2.1
+-----------------
+
+These are the behavior changes in 10.2.1 that are not security hardening. The
+security-related ones, including the new ``reject_head_with_content`` default, are
+under `Security Hardening`_ and `TLS Session Resumption`_ above.
+
+* JA4 fingerprints change. ``ja4_fingerprint`` and ``jax_fingerprint`` now hash
+  the client's signature algorithms into the last section of the fingerprint, as
+  the JA4 specification requires, hex-encode ALPN bytes that are not
+  alphanumeric, and report the correct version code for SSL 2.0. The last section
+  of almost every fingerprint differs from 10.2.0, so stored fingerprints, and
+  any allow or deny rules built from them, must be regenerated.
+
+* ``compress`` sends a weak ``ETag`` (``W/"abc"``) for a compressed response and
+  adds ``Vary`` to cached client responses. A client holding a compressed copy can
+  still revalidate with ``If-None-Match``, but ``If-Match`` and ``If-Range``
+  compare strongly and no longer match it. See :ref:`admin-plugins-compress`.
+
+* TLS session ticket keys follow the global ticket key configuration for every
+  certificate context, and for a ``dest_ip`` certificate they are derived from
+  that certificate, so a ticket issued for one certificate is not accepted for
+  another. Tickets issued by 10.2.0 may not resume after the upgrade and
+  complete a full handshake. A context whose keys cannot be bound to a
+  certificate neither issues nor accepts tickets, counted by
+  :ts:stat:`proxy.process.ssl.total_tickets_no_certificate`.
+
+* With :ts:cv:`proxy.config.http.allow_half_open` set to ``0``, a client that
+  aborts before the origin has sent its response header again tears down the
+  origin connection. Since 10.1 it was held open until the response arrived.
+
+* When :ts:cv:`proxy.config.http.cache.try_compat_key_read` is enabled, a
+  legacy object is revalidated without conditional headers so the full response
+  is stored under the current key, and invalidations are sent to both keys. Plan
+  for the extra origin transfer on first revalidation.
+
+* :program:`hrw4u` exits ``1`` when any input fails to compile, where it
+  previously exited ``0``. Build scripts that ignored the status will now fail.
+  Its sandbox policy also applies to more spellings than before, so a
+  configuration that passed with a deny list on 10.2.0 may now be rejected.
+
+* ``ts::Metrics`` no longer has an iterator; see the API note later in this
+  section.
+
+* New configuration: :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate`
+  and :ts:cv:`proxy.config.http.per_server.connection.metric_prefix`, alongside
+  the documented
+  :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`. With
+  ``metric_enabled`` set and ``metric_aggregate`` at its default of ``0``, behavior
+  is unchanged; values ``2`` and ``3`` stop publishing the per group metrics for
+  match type ``both``.
+
 Incompatible Changes
 --------------------
 

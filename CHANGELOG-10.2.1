@@ -1,0 +1,95 @@
+Changes with Apache Traffic Server 10.2.1
+  #13553 - origin_server_auth: Improve log messages
+  #13567 - Metrics: Revert added locking and annotations
+  #13505 - Add hidden metrics and MAX/MIN/incremental derived metric aggregation
+  #13538 - Fix records_yaml startup lookup race
+  #13510 - doc: rate_limit uses max_age, not max-age
+  #13238 - prefetch: move cache key acquisition to CACHE_LOOKUP_COMPLETE
+  #13580 - compress: add Vary to cached client responses
+  #13506 - Per upstream server connection metrics via hidden and derived metrics
+  #13577 - Fix silently dropped Streams.all autest assertions
+  #13110 - Add `_reload` directive support for config reload framework.
+  #13589 - Skip rate_limit AuTests when plugin not built
+  #13593 - Fix Clang 21 analyzer findings
+  #13576 - Fix client certificate context updates
+  #13578 - Remove dead JSONRPC server_shutdown handler
+  #13227 - Fix data race in SSLCertContext copy & assignment
+  #13642 - Proxy Verifier v3.2.0
+  #13558 - dns: fix remaining-space tracking when copying address records
+  #13570 - Argparser variable arg option parsing fix/improvement.
+  #13583 - Metrics: close the id lookup race and bounds gaps left by the lock revert
+  #13652 - Restore regex_remap's default PCRE2 match limit
+  #13646 - header_rewrite: build the matcher for %{LAST-CAPTURE} conditions
+  #13514 - Share HTTP accept properties
+  #13645 - Cleanup LogField Registration
+  #13063 - Add changelog generation tool for GitHub milestones
+  #13574 - Fix TransformVConnection leak in abort_tunnel()
+  #13450 - h2origin autest: honor the 30s squid.log wait budget
+  #13672 - header_rewrite: guard the i == 0 case in HRWSimpleTokenizer
+  #13673 - Fix build errors with LLVM 23
+  #13616 - Allow a metric to be unlisted
+  #13697 - Fix strncasecmp checks that accepted a prefix as equal
+  #13355 - Add --version CLI flag to hrw4u
+  #13666 - Retract per server metrics when the mode changes
+  #13700 - Fix the 9.2 compatibility cache key for paths that carry ";params"
+  #13696 - hrw4u: admit SESSION_VARS as a denyable section
+  #13611 - Make the 9.2 compatibility cache key usable end to end
+  #13571 - Use __atomic builtins as the freelist 128-bit CAS fallback
+  #13655 - QPACK: use || in the varint decode range guards
+  #13656 - hrw4u: exit non-zero on compile errors
+  #13699 - hrw4u: add an AST round-trip test over the whole corpus
+  #13675 - hrw4u: enforce sandbox NOT and in on their implicit spellings
+  #13653 - Handle all cachekey regex capture groups
+  #13715 - Test 103 Early Hints before a cached range response
+  #13718 - cache: retry without O_DIRECT for an explicit file span
+  #13560 - Honor allow_half_open when a client aborts early
+  #13455 - Reuse deleted MIME field slots
+  #13677 - Fix global TLS ticket key use for certificate contexts
+  #13717 - tests: cover the global TLSv1.3 session ticket count
+  #13740 - Coverity: avoid unsigned wrap in AIO cache_op loop
+  #13728 - Fix SSL 2.0 version code in JA4 fingerprints
+  #13736 - Bind session ticket keys to the dest_ip certificate
+  #13719 - Hex-encode non-alphanumeric ALPN bytes in JA4 fingerprints
+  #13725 - Include signature algorithms in JA4 fingerprints
+  #13762 - Python 3.15: accommodate PyYAML without CLoader
+  #13761 - Handle OpenSSL 4 handshake buffer exhaustion
+  #13760 - Support OpenSSL 4 certificate accessors in WASM
+  #13695 - Fix HTTP flow control policy reload
+  #13759 - Remove unused globals rejected by Clang 23
+  #13766 - Harden shutdown against repeated exit signals
+  #13782 - Fix parsing of bodyless HTTP/2 origin responses over 4 KB
+  #13351 - Handle HTTP/2 1xx interim responses from the origin
+  #13447 - HTTP/2 to origin session pool and reliability fixes
+  #13776 - compress: use weak ETags for compressed responses
+  #13783 - Drain an HTTP/2 origin session after it sends GOAWAY
+  #13723 - tests: drive tls_sni_groups with openssl s_client
+  #13780 - Deliver H2 END_STREAM that arrives while read is throttled
+  #13729 - Honor TLS handshake hook pauses on BoringSSL
+  #13763 - Frame empty TLS origin responses in AuTests
+  #13674 - hrw4u: enforce sandbox policy on value functions
+  #13767 - cache: keep the stripe locked after the shutdown dir sync
+  #13559 - Build the well-known-string table at compile time
+  #13376 - Reduce repeated work in HTTP header parsing
+  #13739 - hrw4u: report each sandbox warning at the use that triggers it
+  Fix use-after-free in wasm plugin TXN_CLOSE epilogue
+  Compare h2 Content-Length and payload at full width
+  wasm: Validate metric ID before making API call
+  http: reject HEAD requests carrying Content-Length/Transfer-Encoding
+  Throttle @ header strip logs
+  tsmemcache: bind to loopback by default and add configurable bind address
+  Regex: optionally require whole-subject matches for policy rules
+  Strip unauthorized x-amz- request headers in origin_server_auth
+  CVE-2025-55702 - Fix request with POST Expect: 100-continue
+  Require a matching client certificate for outbound session reuse
+  magick: require signing key and allowlist convert operators
+  origin_server_auth: clarify x-amz- stripping scope in docs and comments
+  proxy: reject resumed TLS sessions missing a required client cert
+  Fix mTLS for TLS resumption scenarios
+  Drop the special case for badly formed 302 responses
+  doc: correct the regex matching contract where sites enforce full match
+  Size chunked passthrough writes without dropped trailers
+  chunked_encoding: add regression test for chunked responses with trailers
+  Reuse an origin connection only after its request body is written
+  doc: record the security release in the release notes
+  Count the Pad Length field in the h2 DATA padding check
+  Fix a SIGSEGV in UnixNetVConnection::net_write_io on dechunked POST responses

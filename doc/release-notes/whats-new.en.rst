@@ -66,6 +66,59 @@ installation does not have, is:
 * ``magick`` requires a signing key and will not load without one, and allowlists
   the ImageMagick ``convert`` operators it will run.
 
+Changes in 10.2.1
+-----------------
+
+The 10.2.1 maintenance release adds 95 commits from 19 contributors to 10.2.0.
+Besides the security fixes above, the changes an operator or plugin author is
+likely to notice are below. The sections that follow describe 10.2 as a whole,
+including these changes where they touch the same feature. Behavior changes that
+need action before upgrading from 10.2.0 are collected under ``Changes in
+10.2.1`` in :ref:`upgrading`.
+
+* Per upstream server connection metrics. Setting
+  :ts:cv:`proxy.config.http.per_server.connection.metric_enabled` publishes
+  ``current_connection``, ``total_connection`` and ``blocked_connection`` for
+  each upstream server group, and the new
+  :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate` can instead
+  publish only per hostname sums and a ``current_connection.max`` gauge, which
+  keeps the metric count proportional to hostnames rather than to addresses. The
+  optional :ts:cv:`proxy.config.http.per_server.connection.metric_prefix`
+  distinguishes metrics of separate ``match`` configurations. See
+  :ref:`per-server-connection-metrics`.
+* The metrics store supports hidden metrics, which are recorded but never
+  published, and MAX, MIN and incremental derived metrics. See the
+  ``ts::Metrics`` documentation in the developer guide.
+* Configuration reload accepts *reload directives*: operational parameters, such
+  as scoping a reload to one entry, passed to a single handler with
+  ``traffic_ctl config reload -D config_key.directive=value`` or under a
+  ``_reload`` key in the RPC payload. They are delivered to the handler
+  separately from the configuration content.
+* HTTP/2 to the origin is considerably more robust: 1xx interim responses are
+  handled, header blocks split across ``CONTINUATION`` frames are accepted,
+  responses to ``HEAD`` and ``304`` are validated correctly, a half-closed or
+  ``GOAWAY``-draining session is no longer reused, one request's
+  ``Connection: close`` no longer poisons a long-lived session, and a request the
+  origin reports as unprocessed (``GOAWAY`` or ``REFUSED_STREAM``) is retried when
+  its body can be replayed. New counters
+  :ts:stat:`proxy.process.http.origin.reuse_fail`,
+  :ts:stat:`proxy.process.http.origin.retry_admitted` and
+  :ts:stat:`proxy.process.http.origin.retry_body_unavailable` expose this.
+* :ts:cv:`proxy.config.http.cache.try_compat_key_read` is now usable end to end:
+  revalidating a legacy object stores the full response under the current key and
+  invalidations are sent to both keys.
+* The ``compress`` plugin adds ``Vary`` to cached client responses and sends a
+  weak ``ETag`` for compressed responses.
+* ``ja4_fingerprint`` and ``jax_fingerprint`` now follow the JA4 specification.
+* :program:`hrw4u` exits non-zero on compile errors, has a ``--version`` option,
+  and its sandbox policy covers value functions, string interpolation, implicit
+  ``NOT`` and ``in`` spellings, and the ``SESSION_VARS`` section.
+* ``TSStatIdIsValid()`` lets a plugin validate a statistic index received from an
+  external source before using it.
+* A new tool generates the changelog from a GitHub milestone.
+* Builds were fixed for LLVM 23 and Clang 21 and 23 diagnostics, OpenSSL 4
+  handshake buffers and certificate accessors, and Python 3.15.
+
 Configuration Reload
 --------------------
 
