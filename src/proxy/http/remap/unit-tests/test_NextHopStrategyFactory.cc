@@ -27,16 +27,61 @@
  */
 
 #include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
-#include <fstream>                      /* ofstream */
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream> /* ofstream */
 #include <memory>
 #include <utime.h>
 #include <yaml-cpp/yaml.h>
 
-#include "nexthop_test_stubs.h"
+#include "tscore/Layout.h"
 #include "proxy/http/remap/NextHopSelectionStrategy.h"
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
-#include "proxy/http/remap/NextHopRoundRobin.h"
+
+// '#include' directives in strategy files resolve against the configuration
+// directory, so point it at a temporary configuration directory containing the
+// test fixtures.
+static std::filesystem::path config_root;
+
+struct ConfigDirListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
+
+  void
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
+  {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto prefix   = "nh_strategy_config_test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+
+    for (unsigned int attempt = 0; attempt < 100; ++attempt) {
+      config_root = temp_dir / (prefix + "-" + std::to_string(attempt));
+      if (std::filesystem::create_directory(config_root)) {
+        break;
+      }
+      config_root.clear();
+    }
+    if (config_root.empty()) {
+      std::abort();
+    }
+
+    setenv("PROXY_CONFIG_CONFIG_DIR", "etc/trafficserver", 1);
+    Layout::create(config_root.string());
+    const auto config_dir = std::filesystem::path(Layout::get()->sysconfdir);
+    std::filesystem::create_directories(config_dir);
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_dir / "hosts.yaml");
+  }
+
+  void
+  testRunEnded(Catch::TestRunStats const & /* testRunStats ATS_UNUSED */) override
+  {
+    std::filesystem::remove_all(config_root);
+  }
+};
+
+CATCH_REGISTER_LISTENER(ConfigDirListener);
 
 SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 {
@@ -64,9 +109,81 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     }
   }
 
+  GIVEN("Loading a strategy.yaml outside the configuration directory with an absolute include.")
+  {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto prefix   = "nh_strategy_include_test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    std::filesystem::path dir;
+
+    for (unsigned int attempt = 0; attempt < 100; ++attempt) {
+      dir = temp_dir / (prefix + "-" + std::to_string(attempt));
+      if (std::filesystem::create_directory(dir)) {
+        break;
+      }
+      dir.clear();
+    }
+    REQUIRE_FALSE(dir.empty());
+    {
+      std::ofstream out(dir / "strategy.yaml");
+      std::ifstream in(TS_SRC_DIR "/strategy.yaml");
+
+      out << "#include " TS_SRC_DIR "/hosts.yaml\n";
+      for (std::string line; std::getline(in, line);) {
+        if (line.rfind("#include", 0) != 0) {
+          out << line << "\n";
+        }
+      }
+    }
+    NextHopStrategyFactory nhf((dir / "strategy.yaml").c_str());
+    std::filesystem::remove_all(dir);
+
+    THEN("the included hosts are loaded")
+    {
+      REQUIRE(nhf.strategies_loaded == true);
+      REQUIRE(nhf.strategyInstance("strategy-1") != nullptr);
+      REQUIRE(nhf.strategyInstance("strategy-2") != nullptr);
+    }
+  }
+
+  GIVEN("Loading a strategy with the legacy configuration-directory prefix in its include.")
+  {
+    const auto temp_dir = std::filesystem::temp_directory_path();
+    const auto prefix =
+      "nh_strategy_legacy_include_test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+    std::filesystem::path dir;
+
+    for (unsigned int attempt = 0; attempt < 100; ++attempt) {
+      dir = temp_dir / (prefix + "-" + std::to_string(attempt));
+      if (std::filesystem::create_directory(dir)) {
+        break;
+      }
+      dir.clear();
+    }
+    REQUIRE_FALSE(dir.empty());
+    {
+      std::ofstream out(dir / "strategy.yaml");
+      std::ifstream in(TS_SRC_DIR "/strategy.yaml");
+
+      out << "#include etc/trafficserver/hosts.yaml\n";
+      for (std::string line; std::getline(in, line);) {
+        if (line.rfind("#include", 0) != 0) {
+          out << line << "\n";
+        }
+      }
+    }
+    NextHopStrategyFactory nhf((dir / "strategy.yaml").c_str());
+    std::filesystem::remove_all(dir);
+
+    THEN("the legacy include loads from the configuration directory")
+    {
+      REQUIRE(nhf.strategies_loaded == true);
+      REQUIRE(nhf.strategyInstance("strategy-1") != nullptr);
+      REQUIRE(nhf.strategyInstance("strategy-2") != nullptr);
+    }
+  }
+
   GIVEN("Loading the strategy.yaml with included 'hosts.yaml'.")
   {
-    REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
     NextHopStrategyFactory nhf(TS_SRC_DIR "/strategy.yaml");
 
     WHEN("the two files are loaded.")
