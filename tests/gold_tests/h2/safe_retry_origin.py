@@ -287,9 +287,12 @@ def run_server(mode: str, port: int, certificate: str, private_key: str, stop_fi
             tls_socket.close()
             raise
         # Finish in the background: ATS can keep a finished connection open
-        # while it opens the next one, which this origin must accept.
-        threads.append(threading.Thread(target=finish_socket, args=(tls_socket,)))
-        threads[-1].start()
+        # while it opens the next one, which this origin must accept. Start
+        # the thread by its own reference: goaway-split workers append to
+        # threads concurrently, so the list's last entry may be another one.
+        finisher = threading.Thread(target=finish_socket, args=(tls_socket,))
+        finisher.start()
+        threads.append(finisher)
 
     def serve_socket_in_thread(plain_socket: socket.socket) -> None:
         try:
@@ -306,8 +309,9 @@ def run_server(mode: str, port: int, certificate: str, private_key: str, stop_fi
                 continue
             if mode == "goaway-split":
                 # The retries of the unprocessed streams may each open a connection.
-                threads.append(threading.Thread(target=serve_socket_in_thread, args=(plain_socket,)))
-                threads[-1].start()
+                worker = threading.Thread(target=serve_socket_in_thread, args=(plain_socket,))
+                worker.start()
+                threads.append(worker)
             else:
                 serve_socket(plain_socket, listener)
 
