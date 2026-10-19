@@ -36,6 +36,9 @@
 #include "proxy/PoolableSession.h"
 #include "swoc/IntrusiveHashMap.h"
 
+#include <atomic>
+#include <vector>
+
 class ProxyTransaction;
 class HttpSM;
 
@@ -61,7 +64,8 @@ class ServerSessionPool : public Continuation
 public:
   /// Default constructor.
   /// Constructs an empty pool.
-  ServerSessionPool();
+  /// @param thread The thread that owns this pool, or @c nullptr for the shared pool.
+  explicit ServerSessionPool(EThread *thread = nullptr);
   /// Handle events from server sessions.
   int         eventHandler(int event, void *data);
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
@@ -101,13 +105,42 @@ public:
    */
   bool releaseSession(PoolableSession *ss);
 
-  /// Close all sessions and then clear the table.
-  void purge();
+  /** Ask the thread that owns this pool to close its sessions in the shared pool.
+
+      This can be called from any thread.
+   */
+  void requestPurge();
+
+  /** Remove the sessions whose connections belong to @a thread.
+
+      The caller must hold the pool lock and is responsible for closing the sessions.
+   */
+  void removeSessionsOf(EThread *thread, std::vector<PoolableSession *> &sessions);
+
+  /// Close sessions whose connections belong to the current thread.
+  static void closeSessions(std::vector<PoolableSession *> const &sessions);
+
+  /** Close a session from an event on the current thread.
+
+      This is for closing a session while a shared pool is locked. The session must already be out
+      of the pool and this must be the pool of the thread that owns the session.
+   */
+  void deferClose(PoolableSession *ssn);
 
   // Pools of server sessions.
   // Note that each server session is stored in both pools.
   IPTable   m_ip_pool;
   FQDNTable m_fqdn_pool;
+
+private:
+  void closeDeferred();
+
+  /// The thread that owns this pool, @c nullptr for the shared pool.
+  EThread *m_thread = nullptr;
+  /// Sessions waiting to be closed by this pool's thread.
+  std::vector<PoolableSession *> m_deferred_close;
+  /// Set while this pool's thread has been asked to purge and has not yet done so.
+  std::atomic<bool> m_purge_requested{false};
 };
 
 class HttpSessionManager
@@ -117,9 +150,19 @@ public:
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(HttpSM *sm, sockaddr const *addr, const char *hostname, ProxyTransaction *ua_txn);
   HSMresult_t release_session(PoolableSession *to_release);
-  void        purge_keepalives();
-  void        init();
-  int         main_handler(int event, void *data);
+  /** Close the keep-alive sessions in the shared pool.
+
+      Each thread closes its own sessions. The current thread's are closed before this returns if
+      the shared pool lock is free, the others when their thread next runs.
+   */
+  void purge_keepalives();
+  /** Close the shared pool sessions whose connections belong to the current thread.
+
+      @return @c false if the shared pool was locked by another thread and nothing was done.
+   */
+  bool purge_thread_keepalives();
+  void init();
+  int  main_handler(int event, void *data);
   void
   set_pool_type(int pool_type)
   {
