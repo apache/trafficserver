@@ -21,7 +21,7 @@ jax_fingerprint/
   log.cc / .h              Optional log file output for fingerprints.
   method.h                 Abstract Method struct (name, type, callbacks).
                            Unaware of any concrete method.
-  config.h                 PluginConfig, parsing helpers.
+  config.cc / config.h     PluginConfig and YAML configuration loading.
   common/                  Shared utilities (hash stringification, etc.).
   ja3/  ja4/  ja4h/        One subdirectory per fingerprinting method.
 ```
@@ -50,7 +50,7 @@ Suppose you want to add a method called `mymethod`. The steps are:
                                  (mirror ja4/datasource.h).
        mymethod/test.cc          Catch2 unit tests for the algorithm.
 
-  3. Register the method in plugin.cc. The dispatcher is a `constexpr` table
+  3. Register the method in config.cc. The method table is a `constexpr` array
      gated by `ENABLE_JAX_METHOD_*` macros. Add two entries:
 
        #ifdef ENABLE_JAX_METHOD_MYMETHOD
@@ -76,8 +76,11 @@ Suppose you want to add a method called `mymethod`. The steps are:
 
   5. Use the method, optionally sharing its result with other plugins:
 
-       jax_fingerprint.so --method MYMETHOD --header x-my-fingerprint \
-         --export security.fingerprints
+       jax_fingerprint:
+         fingerprints:
+           - method: MYMETHOD
+             header: x-my-fingerprint
+             export: security.fingerprints
 
 
 File naming
@@ -109,7 +112,7 @@ update the regex accordingly.
 The method directory name (lower case) maps to the macro
 `ENABLE_JAX_METHOD_<UPPER>` (so `mymethod` -> `ENABLE_JAX_METHOD_MYMETHOD`).
 `Method::name` should be the user-visible spelling (e.g. "MYMETHOD"),
-matched against `--method` on the command line.
+matched against `method` in the YAML configuration.
 
 `Method::name` must reference a string with static storage duration (a
 string literal is the natural fit). ContextMap stores `std::string_view`
@@ -123,7 +126,7 @@ Inter-plugin registry
 Each ContextMap begins with the `RegistryV1` layout declared in
 `fingerprint_registry.h`. It publishes length-delimited method/value pairs
 without serializing or recomputing fingerprints. Multiple plugin
-instances with the same storage type and `--export` name share the same map.
+fingerprints with the same storage type and `export` name share the same map.
 The producer owns the data for the lifetime of the VConn or transaction, and
 consumers treat it as immutable.
 
