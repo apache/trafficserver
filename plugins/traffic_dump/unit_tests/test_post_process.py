@@ -35,6 +35,8 @@ spec.loader.exec_module(post_process)
 INVALID_SESSIONS = {
     "null": None,
     "empty": {},
+    "list": [1],
+    "string": "abc",
     "missing_timestamp": {
         "transactions": []
     },
@@ -46,8 +48,17 @@ INVALID_SESSIONS = {
         "connection-time": 0,
         "transactions": []
     },
+    "zero_timestamp_with_fallback": {
+        "connection-time": 0,
+        "start-time": 123,
+        "transactions": []
+    },
     "connection_timestamp": {
         "connection-time": 123,
+        "transactions": []
+    },
+    "string_timestamp": {
+        "connection-time": "not-a-number",
         "transactions": []
     },
 }
@@ -101,6 +112,12 @@ class PostProcessTest(unittest.TestCase):
             self.assert_valid_sessions(output_dir)
 
     def test_incomplete_sessions(self) -> None:
+        expected_timestamps = {
+            "legacy_timestamp": "start-time: 123",
+            "zero_timestamp_with_fallback": "start-time: 123",
+            "connection_timestamp": "connection-time: 123",
+            "string_timestamp": "connection-time: not-a-number",
+        }
         for name, invalid in INVALID_SESSIONS.items():
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
                 input_dir, output_dir = write_input(Path(temp), [valid_session("/before"), invalid, valid_session("/after")])
@@ -108,8 +125,8 @@ class PostProcessTest(unittest.TestCase):
                     sessions, transactions, _ = post_process.readAndCombine(str(input_dir), 10, 2, True, str(output_dir))
                 self.assertEqual((sessions, transactions), (2, 2))
                 self.assert_valid_sessions(output_dir)
-                if name == "legacy_timestamp":
-                    self.assertIn("connection-time: 123", logs.output[0])
+                if name in expected_timestamps:
+                    self.assertIn(expected_timestamps[name], "\n".join(logs.output))
 
     def test_cli_preserves_valid_sessions(self) -> None:
         for name, invalid in INVALID_SESSIONS.items():
