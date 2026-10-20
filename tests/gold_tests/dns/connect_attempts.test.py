@@ -34,3 +34,6 @@ Test.ATSReplayTest(replay_file="replay/connect_attempts_rr_max_retries.replay.ya
 
 # rr_retries
 Test.ATSReplayTest(replay_file="replay/connect_attempts_rr_retries.replay.yaml")
+
+# Immediate connect failure (bind EADDRNOTAVAIL) on the shared and private session paths
+Test.ATSReplayTest(replay_file="replay/connect_attempts_bind_fail.replay.yaml")
