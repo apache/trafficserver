@@ -91,6 +91,7 @@ if(BUILD_TESTING)
   add_cache_test(Update_S_to_L unit_tests/test_Update_S_to_L.cc)
   add_cache_test(Update_Header unit_tests/test_Update_header.cc)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
+  add_cache_test(CacheAggWriteDone unit_tests/test_AggWriteDone.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
   # Only the shutdown test attaches a live segment; the rest need no shm syscall.
   add_cache_test(CacheShm unit_tests/test_CacheShm.cc)
