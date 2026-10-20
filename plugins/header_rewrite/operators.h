@@ -142,6 +142,24 @@ private:
   std::vector<std::string_view> _stop_list;
 };
 
+class OperatorSortDestination : public Operator
+{
+public:
+  OperatorSortDestination() { Dbg(dbg_ctl, "Calling CTOR for OperatorSortDestination"); }
+
+  // noncopyable
+  OperatorSortDestination(const OperatorSortDestination &) = delete;
+  void operator=(const OperatorSortDestination &)          = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  bool exec(const Resources &res) const override;
+
+private:
+  UrlQualifiers _url_qual = URL_QUAL_NONE;
+};
+
 class OperatorSetRedirect : public Operator
 {
 public:
