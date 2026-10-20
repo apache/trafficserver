@@ -73,6 +73,7 @@ STATEMENT_FUNCTION_MAP: dict[str, MapParams] = {
     "set-body-from-file": MapParams(target="set-body-from-file", validate=Validator.arg_count_range(1, 2).quoted_or_simple(), sections={SectionType.REMAP, SectionType.SEND_RESPONSE}),
     "set-body-from": MapParams(target="set-body-from", validate=Validator.arg_count_range(1, 2).quoted_or_simple(), sections={SectionType.READ_RESPONSE}),
     "set-config": MapParams(target="set-config", validate=Validator.arg_count(2).quoted_or_simple(), sections=HTTP_SECTIONS),
+    "cache.bypass": MapParams(target='set-config "proxy.config.http.cache.http" 0', validate=Validator.arg_count(0), sections={SectionType.REMAP}),
     "set-redirect": MapParams(target="set-redirect", validate=Validator.arg_count(2).arg_at(0, Validator.range(300, 399)).arg_at(1, Validator.quoted_or_simple()), sections=HTTP_SECTIONS),
     "skip-remap": MapParams(target="skip-remap", validate=Validator.arg_count(1).suffix_group(SuffixGroup.BOOL_FIELDS)._add(Validator.normalize_arg_at(0)), sections={SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST}),
     "set-plugin-cntl": MapParams(target="set-plugin-cntl", validate=Validator.arg_count(2)._add(Validator.normalize_arg_at(0)).arg_at(0, Validator.suffix_group(SuffixGroup.PLUGIN_CNTL_FIELDS))._add(Validator.normalize_arg_at(1))._add(Validator.conditional_arg_validation(SuffixGroup.PLUGIN_CNTL_MAPPING.value)), sections=HTTP_SECTIONS),

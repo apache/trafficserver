@@ -60,6 +60,7 @@
               "access",
               "add-header",
               "cache",
+              "cache.bypass",
               "cidr",
               "counter",
               "internal",

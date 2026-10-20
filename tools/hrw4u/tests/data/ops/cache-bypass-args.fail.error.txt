@@ -1,0 +1,1 @@
+tests/data/ops/cache-bypass-args.fail.input.txt:2:4: error: Invalid number of arguments (expected 0, got 1)
