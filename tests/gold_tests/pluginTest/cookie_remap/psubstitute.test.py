@@ -28,7 +28,7 @@ Test.testName = "cookie_remap: Substitute variables (pre-remap URL)"
 # Define default ATS
 ts = Test.MakeATSProcess("ts")
 
-server = Test.MakeOriginServer("server", ip='127.0.0.10')
+server = Test.MakeOriginServer("server")
 
 request_header = {
     "headers": "GET /photos/search?query=magic HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
