@@ -525,7 +525,7 @@ int64_t
 TransactionLogData::get_client_response_hdr_bytes() const
 {
   if (likely(m_http_sm != nullptr)) {
-    return m_http_sm->client_response_hdr_bytes;
+    return m_http_sm->reported_client_response_hdr_bytes();
   }
   return 0;
 }
