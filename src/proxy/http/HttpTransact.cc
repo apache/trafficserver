@@ -30,6 +30,7 @@
 #include <strings.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <string>
 #include <array>
 
@@ -8746,10 +8747,10 @@ HttpTransact::build_redirect_response(State *s)
 const char *
 HttpTransact::get_error_string(int erno)
 {
-  if (erno >= 0) {
+  if (erno >= 0 && erno < INK_START_ERRNO) {
     return (strerror(erno));
   } else {
-    switch (-erno) {
+    switch (std::abs(erno)) {
     case ENET_THROTTLING:
       return ("throttling");
     case ESOCK_DENIED:

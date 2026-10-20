@@ -24,10 +24,12 @@
 #include <string_view>
 #include <vector>
 #include <cstdio>
+#include <cstring>
 
 using namespace std::string_view_literals;
 
 #include "tscore/Diags.h"
+#include "tscore/InkErrno.h"
 #include "tsutil/PostScript.h"
 
 #include "proxy/http/HttpConfig.h"
@@ -969,5 +971,26 @@ TEST_CASE("HttpTransact", "[http]")
     MIMEField *field = hdr.field_find("X-Keep"sv);
     REQUIRE(field != nullptr);
     CHECK(field->value_get() == "ok"sv);
+  }
+}
+
+TEST_CASE("HttpTransact::get_error_string", "[http]")
+{
+  SECTION("OS errno")
+  {
+    CHECK(HttpTransact::get_error_string(EADDRNOTAVAIL) == std::string_view{strerror(EADDRNOTAVAIL)});
+  }
+
+  SECTION("internal errno decoded from NET_EVENT_OPEN_FAILED")
+  {
+    CHECK(HttpTransact::get_error_string(ESOCK_DENIED) == "socks error - denied"sv);
+    CHECK(HttpTransact::get_error_string(ESOCK_TIMEOUT) == "socks error - timeout"sv);
+    CHECK(HttpTransact::get_error_string(ESOCK_NO_SOCK_SERVER_CONN) == "socks error - no server connection"sv);
+  }
+
+  SECTION("negated internal errno")
+  {
+    CHECK(HttpTransact::get_error_string(-ESOCK_DENIED) == "socks error - denied"sv);
+    CHECK(HttpTransact::get_error_string(-ENET_CONNECT_FAILED) == "connect failed"sv);
   }
 }
