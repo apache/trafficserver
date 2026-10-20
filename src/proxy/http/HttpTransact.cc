@@ -825,6 +825,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     if (s->txn_conf->no_dns_forward_to_parent) {
       Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
       s->parent_result.result = ParentResultType::FAIL;
+      s->current.request_to = ResolveInfo::HOST_NONE;
       return ResolveInfo::HOST_NONE;
     }
   /* fall through */
