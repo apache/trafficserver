@@ -825,6 +825,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     if (s->txn_conf->no_dns_forward_to_parent) {
       Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
       s->parent_result.result = ParentResultType::FAIL;
+      s->current.request_to   = ResolveInfo::HOST_NONE;
       return ResolveInfo::HOST_NONE;
     }
   /* fall through */
@@ -3063,6 +3064,9 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         }
         // override the default version with what the server has
         http_version = s->current.server->http_version;
+      } else {
+        handle_parent_down(s);
+        return;
       }
 
       TxnDbg(dbg_ctl_http_trans, "CacheOpenReadHit - version %d.%d", http_version.get_major(), http_version.get_minor());
