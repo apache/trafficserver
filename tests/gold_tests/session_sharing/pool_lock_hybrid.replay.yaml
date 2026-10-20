@@ -53,6 +53,10 @@ autest:
       proxy.config.diags.debug.tags: 'http_ss'
       proxy.config.exec_thread.autoconfig.enabled: 0
       proxy.config.exec_thread.limit: 4
+      # The pool lock is only tried, so while another net thread holds it the
+      # purge and every immediate retry fail together and the session gets a
+      # 502. Waiting between retries lets the purge run once the lock is free.
+      proxy.config.http.connect_attempts_retry_backoff_base: 10
       proxy.config.http.server_max_connections: 3
       proxy.config.http.server_session_sharing.pool: 'hybrid'
       proxy.config.http.server_session_sharing.match: 'both'
