@@ -1,0 +1,1 @@
+tests/data/cachekey/empty-remap.fail.input.txt:1:0: error: REMAP section is empty; only CACHEKEY may be empty

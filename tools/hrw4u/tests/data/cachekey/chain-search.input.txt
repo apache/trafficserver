@@ -1,0 +1,6 @@
+CACHEKEY {
+    cache.key.headers.add("X-Region");
+    if inbound.url.path ~ /^api\/search/ {
+        cache.url.query.keep("term", "media");
+    }
+}

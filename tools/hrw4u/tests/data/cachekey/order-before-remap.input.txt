@@ -1,0 +1,14 @@
+CACHEKEY {
+    cache.key.headers.add("@Geo-Country");
+}
+
+REMAP {
+    inbound.req.@Geo-Country = "";
+    if geo.COUNTRY in ["CN", "RU"] {
+        inbound.req.@Geo-Country = "{geo.COUNTRY}";
+    }
+}
+
+SEND_RESPONSE {
+    inbound.resp.X-Cache-Debug = "1";
+}

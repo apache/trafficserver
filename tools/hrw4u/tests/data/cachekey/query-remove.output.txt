@@ -1,0 +1,2 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--exclude-params=utm_source,guid,utm_medium,utm_campaign,utm_term,client_id,ref,token,ts"

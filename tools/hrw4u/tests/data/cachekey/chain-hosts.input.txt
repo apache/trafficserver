@@ -1,0 +1,42 @@
+REMAP {
+    if inbound.req.X-User-Id {
+        inbound.req.@User-Id = "1";
+    }
+    if inbound.req.App-Token {
+        inbound.req.@App-Token = "1";
+    }
+    if inbound.req.Partner-Token {
+        inbound.req.@Partner-Token = "1";
+    }
+    if inbound.req.Device-Token {
+        inbound.req.@Device-Token = "1";
+    }
+    if inbound.req.SID {
+        inbound.req.@SID = "1";
+    }
+
+    if geo.COUNTRY == "CN" {
+        inbound.req.@Geo-Country = "{geo.COUNTRY}";
+    }
+    if inbound.req.@Geo-Country {
+        inbound.req.User-Country = "{inbound.req.@Geo-Country}";
+    }
+}
+
+CACHEKEY {
+    cache.url.query.sort();
+    cache.key.headers.add("User-Country", "Origin", "@User-Id", "@Geo-Country");
+    cache.key.cookies.add("session", "theme", "locale", "market");
+
+    # Episodes first: api.shows also matches the media-host regex.
+    if inbound.req.Host == "api.shows.example.com" && inbound.url.path ~ /^v1\/catalog\/[^\/]+\/shows\/[^\/]+\/episodes/ {
+        cache.key.headers.add("@App-Token", "@Partner-Token", "@Device-Token", "@SID");
+        cache.key.cookies.add("variant");
+    } elif inbound.req.Host ~ /^api(-beta)?\.(songs|shows|videos|media)\.example\.com$/ {
+        cache.key.headers.add("X-Experiment", "@App-Token", "@Partner-Token", "@Device-Token", "@SID");
+        cache.key.cookies.add("variant", "ab_group");
+    } else {
+        cache.key.headers.add("X-Experiment");
+        cache.key.cookies.add("ab_group");
+    }
+}

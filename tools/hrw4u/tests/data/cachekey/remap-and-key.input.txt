@@ -1,0 +1,32 @@
+REMAP {
+    # Override the country for some markets
+    inbound.req.@Geo-Country = "";
+    if geo.COUNTRY in ["CN", "RU"] {
+        inbound.req.@Geo-Country = "{geo.COUNTRY}";
+    }
+    if inbound.req.User-Country == "CN" with NOCASE {
+        inbound.req.@Geo-Country = "{inbound.req.User-Country}";
+    }
+
+    # Forward the country to the origin
+    if inbound.req.@Geo-Country != "" {
+        inbound.req.User-Country = "{inbound.req.@Geo-Country}";
+    }
+
+    # No region, no cache
+    if inbound.req.X-Region == "" {
+        cache.bypass();
+    }
+
+    # VIP regions skip the cache
+    if inbound.req.X-Region ~ /vip$/ {
+        set-config("proxy.config.http.cache.http", 0);
+    }
+}
+
+CACHEKEY {
+    cache.url.pristine();
+    cache.key.headers.add("X-Region", "@Geo-Country");
+    cache.key.cookies.add("session", "locale", "theme", "variant");
+    cache.url.query.remove("utm_source", "guid", "utm_medium", "utm_campaign", "utm_term", "client_id", "ref", "token", "ts");
+}

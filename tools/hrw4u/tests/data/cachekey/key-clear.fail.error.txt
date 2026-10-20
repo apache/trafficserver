@@ -1,0 +1,1 @@
+tests/data/cachekey/key-clear.fail.input.txt:2:4: error: Unknown cache key assignment: 'cache.key'

@@ -1,0 +1,18 @@
+procedure local::hdr($h) {
+    cache.key.headers.add($h);
+}
+
+procedure local::cookie($c="session") {
+    cache.key.cookies.add("$c");
+}
+
+procedure local::pass($h) {
+    local::hdr($h);
+}
+
+CACHEKEY {
+    local::hdr("X-Region");
+    local::cookie();
+    local::cookie(locale);
+    local::pass("@Geo-Country");
+}

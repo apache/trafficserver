@@ -38,6 +38,8 @@ from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
 from hrw4u.sandbox import SandboxConfig, SandboxDenialError
+from hrw4u import cachekey
+from hrw4u import cachekey_section as ck
 import hrw4u.types as types
 
 _regex_validator = Validator.regex_pattern()
@@ -94,6 +96,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._proc_search_paths: list[Path] = list(proc_search_paths) if proc_search_paths else []
         self._source_text: str = ""
         self._current_var_scope: types.VarScope = types.VarScope.TXN
+
+        self._cachekey: ck.CacheKeySection | None = None
+        self._cachekey_branch: ck.Branch | None = None
+        self._cachekey_quoted_params: set[str] = set()
+        self._cachekey_fallback_at = 0
+        self._remap_end: int | None = None
 
     def _sandbox_check(self, ctx, check_fn) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
@@ -230,7 +238,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if m.group("var"):
                     var_name, mods = split_interpolation_mods(m.group("var"))
                     self._check_value_mods(mods, ctx)
-                    resolved, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
+                    resolved, _ = self.symbol_resolver.resolve_condition(var_name, self._read_section)
                     replacement = apply_percent_mods(resolved, mods)
                     self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
@@ -257,12 +265,17 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         substituted = self._SUBSTITUTE_PATTERN.sub(repl, inner)
         return f'"{substituted}"'
 
+    @property
+    def _read_section(self) -> SectionType | None:
+        # CACHEKEY runs at the end of REMAP, so it reads what REMAP reads.
+        return SectionType.REMAP if self.current_section is SectionType.CACHEKEY else self.current_section
+
     def _resolve_identifier_with_validation(self, name: str) -> tuple[str, bool]:
         if not name:
             raise SymbolResolutionError("identifier", "Missing or empty identifier text")
 
         try:
-            return self.symbol_resolver.resolve_condition(name, self.current_section)
+            return self.symbol_resolver.resolve_condition(name, self._read_section)
         except SandboxDenialError:
             raise
         except SymbolResolutionError:
@@ -271,7 +284,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             error = SymbolResolutionError(
                 "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section."
             )
-            suggestions = self.symbol_resolver.get_variable_suggestions(name, self.current_section)
+            suggestions = self.symbol_resolver.get_variable_suggestions(name, self._read_section)
             if suggestions:
                 error.add_symbol_suggestion(suggestions)
             raise error from None
@@ -513,6 +526,17 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             )
 
         bindings = self._bind_proc_args(sig, call_ctx)
+
+        if self.current_section is SectionType.CACHEKEY:
+            quoted = self._cachekey_string_params(sig, call_ctx)
+            saved_quoted = self._cachekey_quoted_params
+            self._cachekey_quoted_params = quoted
+            try:
+                with self._proc_context(sig, bindings):
+                    self._cachekey_items(sig.body_ctx.blockItem())
+            finally:
+                self._cachekey_quoted_params = saved_quoted
+            return
 
         with self._proc_context(sig, bindings):
             self._visit_block_items(sig.body_ctx)
@@ -768,6 +792,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     comment_text = item.commentLine().COMMENT().getText()
                     self.output.append(comment_text)
             self._flush_condition()
+            if self._cachekey is not None:
+                self._emit_cachekey()
             return self.get_final_output()
 
     def visitSection(self, ctx) -> None:
@@ -780,8 +806,17 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             hook = None
             with self.trap(ctx):
                 hook = self._prepare_section(ctx)
-            if hook:
-                self._emit_section_body(ctx.sectionBody(), hook)
+                if not ctx.sectionBody() and self.current_section is not SectionType.CACHEKEY:
+                    hook = None
+                    raise SymbolResolutionError(ctx.name.text, f"{ctx.name.text} section is empty; only CACHEKEY may be empty")
+            if not hook:
+                return
+            if self.current_section is SectionType.CACHEKEY:
+                self._visit_cachekey_section(ctx)
+                return
+            self._emit_section_body(ctx.sectionBody(), hook)
+            if self.current_section is SectionType.REMAP:
+                self._remap_end = len(self.output)
 
     def _prepare_section(self, ctx):
         """Extract section info and validate. Returns hook name."""
@@ -902,6 +937,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def visitStatement(self, ctx) -> None:
         with self.debug_context("visitStatement"), self.trap(ctx):
+            if self.current_section is SectionType.CACHEKEY:
+                self._cachekey_statement(ctx)
+                return
             match ctx:
                 case _ if ctx.BREAK():
                     warning = self._sandbox.check_language("break")
@@ -961,6 +999,128 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 case _:
                     # Only reachable via parser error recovery, which already reported the error.
                     return
+
+    # CACHEKEY: collected while visiting, emitted after the last REMAP rule set.
+
+    def _visit_cachekey_section(self, ctx) -> None:
+        if self._cachekey is not None:
+            with self.trap(ctx):
+                raise SymbolResolutionError("CACHEKEY", "CACHEKEY may only appear once")
+            return
+        self._cachekey = ck.CacheKeySection()
+        self._cachekey_fallback_at = len(self.output)
+        self._cachekey_items(ctx.sectionBody())
+        for branch_ctx, entries in self._cachekey.run_plugin_sets():
+            with self.trap(branch_ctx or ctx):
+                cachekey.check_conflicts(ck.statements(entries))
+
+    def _cachekey_items(self, items) -> None:
+        """Collect section or block items. Comments are dropped: the body folds into flags."""
+        for item in items:
+            if item.conditional():
+                with self.trap(item.conditional()):
+                    self._cachekey_chain(item.conditional())
+            elif item.statement():
+                self.visit(item.statement())
+
+    def _cachekey_chain(self, ctx) -> None:
+        if self._cachekey_branch is not None:
+            raise SymbolResolutionError("if", "nested conditionals not allowed in CACHEKEY")
+        if self._cachekey.chain is not None:
+            raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
+        self._cachekey.chain = []
+        arms = [("if", ctx.ifStatement()), *(("elif", arm) for arm in ctx.elifClause())]
+        if ctx.elseClause():
+            arms.append(("else", ctx.elseClause()))
+        for keyword, arm in arms:
+            cond_lines = self._render_condition(arm.condition()) if keyword != "else" else []
+            branch = ck.Branch(keyword, cond_lines, arm)
+            self._cachekey.chain.append(branch)
+            self._cachekey_branch = branch
+            try:
+                self._cachekey_items(arm.block().blockItem())
+            finally:
+                self._cachekey_branch = None
+
+    def _render_condition(self, cond_ctx) -> list[str]:
+        """Compile a condition at indent 0 into its own lines, off the main output."""
+        saved = self.output, self.stmt_indent, self.cond_indent
+        self.output, self.stmt_indent, self.cond_indent = [], 0, 0
+        try:
+            self.visit(cond_ctx)
+            return self.output
+        finally:
+            self.output, self.stmt_indent, self.cond_indent = saved
+
+    def _cachekey_statement(self, ctx) -> None:
+        """One statement inside CACHEKEY. Anything but a key statement is outside the write fence."""
+        target = self._cachekey_branch.entries if self._cachekey_branch else self._cachekey.base
+        if ctx.BREAK():
+            raise SymbolResolutionError(
+                "break", "operator 'break' not allowed in CACHEKEY: it would end the rule set before cachekey.so runs"
+            )
+        if ctx.functionCall():
+            func = ctx.functionCall().funcName.text
+            if func in self._proc_registry or '::' in func:
+                self._expand_procedure_call(ctx.functionCall())
+                return
+            if ck.is_key_name(func):
+                target.append(cachekey.parse_statement(func, self._cachekey_args(ctx.functionCall())))
+                return
+            raise SymbolResolutionError(func, f"operator '{func}' not allowed in CACHEKEY")
+        if ctx.lhs is None:
+            return
+        lhs = ctx.lhs.text
+        if ctx.EQUAL() and ck.is_key_name(lhs):
+            target.append(cachekey.parse_assignment(lhs, self._get_value_text(ctx.value())))
+            return
+        if ctx.PLUSEQUAL() and lhs == ck.KEY_EXPR:
+            value = ctx.value()
+            if value.str_ is None:
+                raise SymbolResolutionError(lhs, "cache.key += takes a quoted string")
+            target.append(self._cachekey.new_key_part(self._substitute_strings(value.getText(), ctx)))
+            return
+        op = lhs if ctx.EQUAL() else f"{lhs} +="
+        raise SymbolResolutionError(lhs, f"operator '{op}' not allowed in CACHEKEY")
+
+    def _cachekey_args(self, call_ctx) -> list[str]:
+        """Raw argument texts for the core, with procedure parameters substituted."""
+        args = []
+        for value in call_ctx.argumentList().value() if call_ctx.argumentList() else []:
+            if value.paramRef():
+                name = value.paramRef().IDENT().getText()
+                text = self._get_value_text(value)
+                if name not in self._cachekey_quoted_params:
+                    raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be bound to a quoted string here")
+                args.append(f'"{text}"')
+            elif value.str_ is not None and self._proc_bindings:
+                args.append(self._PARAM_REF_PATTERN.sub(lambda m: self._proc_bindings.get(m.group(1), m.group(0)), value.getText()))
+            else:
+                args.append(value.getText())
+        return args
+
+    def _cachekey_string_params(self, sig: ProcSig, call_ctx) -> set[str]:
+        """Parameters bound to a quoted string, directly or through an outer parameter."""
+        values = call_ctx.argumentList().value() if call_ctx.argumentList() else []
+        quoted = set()
+        for i, param in enumerate(sig.params):
+            value = values[i] if i < len(values) else param.default_ctx
+            if value is None:
+                continue
+            if value.str_ is not None or (value.paramRef() and value.paramRef().IDENT().getText() in self._cachekey_quoted_params):
+                quoted.add(param.name)
+        return quoted
+
+    def _emit_cachekey(self) -> None:
+        at = self._remap_end if self._remap_end is not None else self._cachekey_fallback_at
+        block = self._cachekey.render()
+        if at > 0 and self.output[at - 1] != "":
+            block = ["", *block]
+        if at < len(self.output) and self.output[at] != "":
+            block = [*block, ""]
+        self.output[at:at] = block
+        while self.output and self.output[-1] == "":
+            self.output.pop()
 
     def visitVariables(self, ctx) -> None:
         with self.debug_context("visitVariables"):

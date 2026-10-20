@@ -1,0 +1,37 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-User-Id} ="" [NOT]
+    set-header @User-Id "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:App-Token} ="" [NOT]
+    set-header @App-Token "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Partner-Token} ="" [NOT]
+    set-header @Partner-Token "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Device-Token} ="" [NOT]
+    set-header @Device-Token "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:SID} ="" [NOT]
+    set-header @SID "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GEO:COUNTRY} ="CN"
+    set-header @Geo-Country "%{GEO:COUNTRY}"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:@Geo-Country} ="" [NOT]
+    set-header User-Country "%{CLIENT-HEADER:@Geo-Country}"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Host} ="api.shows.example.com" [AND]
+cond %{CLIENT-URL:PATH} /^v1\/catalog\/[^\/]+\/shows\/[^\/]+\/episodes/
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,@App-Token,@Partner-Token,@Device-Token,@SID" "--include-cookies=session,theme,locale,market,variant"
+elif
+    cond %{CLIENT-HEADER:Host} /^api(-beta)?\.(songs|shows|videos|media)\.example\.com$/
+        run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,X-Experiment,@App-Token,@Partner-Token,@Device-Token,@SID" "--include-cookies=session,theme,locale,market,variant,ab_group"
+else
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,X-Experiment" "--include-cookies=session,theme,locale,market,ab_group"

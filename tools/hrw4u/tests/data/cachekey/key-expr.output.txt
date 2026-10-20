@@ -1,0 +1,11 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Host} ="a.example.com"
+    rm-header @Hrw4u-Key-01
+    set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
+    rm-header @Hrw4u-Key-02
+    set-header @Hrw4u-Key-02 "%{CLIENT-HEADER:X-Tenant}-%{METHOD}"
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-A,@Hrw4u-Key-01,@Hrw4u-Key-02"
+else
+    rm-header @Hrw4u-Key-01
+    set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-A,@Hrw4u-Key-01"

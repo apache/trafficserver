@@ -1,0 +1,10 @@
+procedure local::search-key() {
+    cache.url.query.keep("term", "media");
+    cache.url.query.sort();
+}
+
+CACHEKEY {
+    if inbound.url.path ~ /^search/ {
+        local::search-key();
+    }
+}

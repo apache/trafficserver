@@ -1,0 +1,8 @@
+procedure local::tag() {
+    cache.url.pristine();
+    inbound.req.X-Tag = "1";
+}
+
+CACHEKEY {
+    local::tag();
+}

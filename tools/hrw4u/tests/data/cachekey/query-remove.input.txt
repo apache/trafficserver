@@ -1,0 +1,3 @@
+CACHEKEY {
+    cache.url.query.remove("utm_source", "guid", "utm_medium", "utm_campaign", "utm_term", "client_id", "ref", "token", "ts");
+}

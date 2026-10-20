@@ -1,0 +1,1 @@
+tests/data/cachekey/fence-bypass.fail.input.txt:2:4: error: operator 'cache.bypass' not allowed in CACHEKEY

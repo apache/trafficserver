@@ -1,0 +1,5 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:PATH} /^search/
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-params=term,media" "--sort-params=true"
+else
+    run-plugin "cachekey.so" "--canonical-prefix=true"

@@ -133,7 +133,7 @@ paramRef
 section
     : varSection
     | sessionVarSection
-    | name=IDENT LBRACE sectionBody+ RBRACE
+    | name=IDENT LBRACE sectionBody* RBRACE
     ;
 
 varSection

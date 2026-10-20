@@ -1,0 +1,29 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+# Override the country for some markets
+    rm-header @Geo-Country
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{GEO:COUNTRY} ("CN","RU")
+    set-header @Geo-Country "%{GEO:COUNTRY}"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:User-Country} ="CN" [NOCASE]
+    set-header @Geo-Country "%{CLIENT-HEADER:User-Country}"
+# Forward the country to the origin
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:@Geo-Country} ="" [NOT]
+    set-header User-Country "%{CLIENT-HEADER:@Geo-Country}"
+# No region, no cache
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Region} =""
+    set-config "proxy.config.http.cache.http" 0
+# VIP regions skip the cache
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Region} /vip$/
+    set-config "proxy.config.http.cache.http" 0
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--uri-type=pristine" "--exclude-params=utm_source,guid,utm_medium,utm_campaign,utm_term,client_id,ref,token,ts" "--include-headers=X-Region,@Geo-Country" "--include-cookies=session,locale,theme,variant"

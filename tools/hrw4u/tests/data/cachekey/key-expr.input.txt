@@ -1,0 +1,7 @@
+CACHEKEY {
+    cache.key.headers.add("X-A");
+    cache.key += "{geo.COUNTRY}";
+    if inbound.req.Host == "a.example.com" {
+        cache.key += "{inbound.req.X-Tenant}-{inbound.method}";
+    }
+}

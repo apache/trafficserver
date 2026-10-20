@@ -1,0 +1,9 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Host} ="a.example.com" [OR]
+cond %{CLIENT-HEADER:Host} ="b.example.com"
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--uri-type=pristine" "--include-headers=X-Tenant"
+elif
+    cond %{CLIENT-URL:PATH} /^search/
+        run-plugin "cachekey.so" "--canonical-prefix=true" "--uri-type=pristine" "--include-params=q"
+else
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--uri-type=pristine"

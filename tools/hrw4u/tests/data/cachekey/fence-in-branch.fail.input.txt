@@ -1,0 +1,5 @@
+CACHEKEY {
+    if inbound.req.Host == "a.example.com" {
+        inbound.req.X-Tag = "1";
+    }
+}
