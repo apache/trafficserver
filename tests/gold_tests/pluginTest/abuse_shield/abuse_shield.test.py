@@ -466,11 +466,13 @@ enabled: true
             "Verify the abuse_shield plugin loaded with connection rate limit rule.")
 
     def _test_conn_rate_exceeded(self) -> None:
-        """Open idle TLS connections to enforce before ClientHello."""
-        tr = Test.AddTestRun("Trigger connection rule with idle TLS connections")
+        """Flood TLS connections to enforce before ServerHello."""
+        tr = Test.AddTestRun("Trigger connection rule with a burst of TLS connections")
 
+        # The client sends a ClientHello on every connection and waits for ATS
+        # to act on each one, so the counters below are settled when read.
         client_cmd = (
-            f'{sys.executable} {Test.TestDirectory}/idle_connections.py '
+            f'{sys.executable} {Test.TestDirectory}/tls_connection_flood.py '
             f'--port {self._ts.Variables.ssl_port} --count 30')
         tr.Processes.Default.Command = client_cmd
         tr.Processes.Default.ReturnCode = 0
