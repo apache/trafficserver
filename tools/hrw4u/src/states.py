@@ -36,6 +36,8 @@ class SectionType(str, Enum):
     TXN_START = intern_section("TXN_START")
     TXN_CLOSE = intern_section("TXN_CLOSE")
     VARS = intern_section("VARS")
+    # Not an ATS hook: the compiler emits it as REMAP rules, after every REMAP rule set.
+    CACHEKEY = intern_section("CACHEKEY")
 
     @property
     def hook_name(self) -> str:
@@ -49,6 +51,7 @@ class SectionType(str, Enum):
             SectionType.TXN_START: intern_hook("TXN_START_HOOK"),
             SectionType.TXN_CLOSE: intern_hook("TXN_CLOSE_HOOK"),
             SectionType.VARS: intern_hook("VARS_SECTION"),
+            SectionType.CACHEKEY: intern_hook("REMAP_PSEUDO_HOOK"),
         }
         return hook_map[self]
 
@@ -56,12 +59,15 @@ class SectionType(str, Enum):
     def lsp_description(self) -> str:
         if self == SectionType.VARS:
             return "This section declares variables that can be used throughout the configuration."
+        if self == SectionType.CACHEKEY:
+            return "This section sets the cache key parts. It is emitted after every `REMAP` rule, as `run-plugin cachekey.so`."
         return f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS."
 
     @classmethod
     def from_hook(cls, hook_name: str) -> Self:
         for section in cls:
-            if section.hook_name == hook_name:
+            # CACHEKEY shares REMAP's hook; u4wrh must read that hook back as REMAP.
+            if section.hook_name == hook_name and section is not SectionType.CACHEKEY:
                 return section
         raise ValueError(f"No section found for hook '{hook_name}'")
 
