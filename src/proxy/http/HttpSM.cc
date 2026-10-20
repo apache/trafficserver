@@ -5812,7 +5812,7 @@ void
 HttpSM::open_prewarmed_connection()
 {
   NetVConnection *netvc = _prewarm_sm->move_netvc();
-  ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+  ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
 
   SMDbg(dbg_ctl_http_ss, "using pre-warmed tunnel netvc=%p", netvc);
 
@@ -7906,7 +7906,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 
   // if pre-warmed connection is used and it has data from origin server, forward it to ua
   if (_prewarm_sm && _prewarm_sm->has_data_from_origin_server()) {
-    ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+    ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
     client_response_hdr_bytes += to_ua_buf->write(_prewarm_sm->server_buf_reader());
   }
 
