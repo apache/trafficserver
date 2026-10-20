@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
 #include "tscore/List.h"
 #include "iocore/eventsystem/Lock.h"
@@ -85,24 +86,23 @@ public:
 };
 
 /**
-  A copyable, type-erased binding to an event-handler member function of
-  @p Base or a class derived from it.
+  A copyable binding to an event-handler member function of
+  @c Continuation or a class derived from it.
 
   Bind a handler of type @c int(D::*)(int, T*), then invoke it on a
-  @p Base pointer with a @c void* payload, which is converted to @c T*
-  before the call. One EventCallback can thus hold, over time, handlers
-  whose classes and payload types differ.
+  @c Continuation pointer with a @c void* payload, which is converted to
+  @c T* before the call. One ContinuationHandler can thus hold, over
+  time, handlers whose classes and payload types differ. Copy one to save
+  a Continuation's current handler and assign it back to restore it.
 
-  A default-constructed EventCallback is null: it holds no handler.
-
-  @tparam Base The class whose objects handlers are invoked on.
+  A default-constructed ContinuationHandler is null: it holds no handler.
 
   @par Thread Safety
   Concurrent invocations and other reads are safe. Binding a handler to
-  an EventCallback or assigning to it MUST NOT run concurrently with any
-  other access to it.
+  a ContinuationHandler or assigning to it MUST NOT run concurrently
+  with any other access to it.
 */
-template <typename Base> class EventCallback
+class ContinuationHandler
 {
 public:
   /**
@@ -110,11 +110,11 @@ public:
     @c nullptr.
 
     @tparam M @c nullptr, or a non-null pointer to a member function of
-              type @c int(D::*)(int, T*), where @c D is @p Base or a
-              class derived from it.
+              type @c int(D::*)(int, T*), where @c D is @c Continuation
+              or a class derived from it.
 
-    @post If @p M is not @c nullptr, invoking this EventCallback calls
-          @p M.
+    @post If @p M is not @c nullptr, invoking this ContinuationHandler
+          calls @p M.
 
     @par Thread Safety
     Not thread-safe.
@@ -131,18 +131,21 @@ public:
   }
 
   /**
-    Tests whether this EventCallback holds the handler @p M.
+    Tests whether this ContinuationHandler holds the handler @p M.
 
     @tparam M @c nullptr, or a pointer to a member function of type
-              @c int(D::*)(int, T*), where @c D is @p Base or derives
-              from it.
+              @c int(D::*)(int, T*), where @c D is @c Continuation or
+              derives from it.
 
-    @return If @p M is @c nullptr, whether this EventCallback is null;
-            otherwise, whether it holds the handler that @c set<M>()
-            binds.
+    @return If @p M is @c nullptr, whether this ContinuationHandler is
+            null; otherwise, whether it holds @p M.
 
-    @note @c &Base::f and @c &Derived::f are distinct even when one
-          overrides the other.
+    @note @c &B::f and @c &D::f are distinct handlers even when
+          @c D::f overrides @c B::f.
+
+    @par Thread Safety
+    Safe to call concurrently with other reads of this
+    ContinuationHandler, but not with @c set or an assignment to it.
   */
   template <auto M>
   bool
@@ -156,7 +159,7 @@ public:
   }
 
   /**
-    Invokes the bound handler on @p b with @p event and @p data.
+    Invokes the bound handler on @p c with @p event and @p data.
 
     @param[in] b     The object to invoke the handler on.
     @param[in] event The handler's event argument.
@@ -164,23 +167,26 @@ public:
 
     @return The handler's return value.
 
-    @pre  This EventCallback is not null.
-    @pre  @p b points to a live object of the handler's class or a class
+    @pre  This ContinuationHandler holds a handler.
+    @pre  @p c points to a live object of the handler's class or a class
           derived from it.
-    @pre  @p data is null, or was obtained by converting a pointer of the
-          handler's data parameter type to @c void*.
+    @pre  @p data is null, or was converted to @c void* from exactly the
+          handler's data parameter type, not from a pointer to a class
+          derived from it.
 
-    @note This call does not access this EventCallback after invoking the
-          handler, so the handler may destroy it.
+    @note This call does not access this ContinuationHandler after
+          invoking the handler, so the handler may rebind or destroy it.
 
     @par Thread Safety
-    Only reads this EventCallback, so concurrent invocations are safe
-    with respect to it; the handler's own requirements still apply.
+    Safe to call concurrently with other reads of this
+    ContinuationHandler, but not with writes to it. The handler's own
+    requirements still apply.
   */
   int
-  operator()(Base *b, int event, void *data)
+  operator()(Continuation *c, int event, void *data) const
   {
-    return this->handler(b, event, data);
+    ink_release_assert(nullptr != this->handler && "invoked null handler");
+    return this->handler(c, event, data);
   }
 
 private:
@@ -191,44 +197,18 @@ private:
     using data = T;
   };
 
-  using handler_t = int (*)(Base *, int, void *);
+  using handler_t = int (*)(Continuation *, int, void *);
 
   handler_t handler{nullptr};
 
   template <auto M>
   static int
-  invoke_handler(Base *b, int event, void *data)
+  invoke_handler(Continuation *c, int event, void *data)
   {
     using Tr = handler_traits<decltype(M)>;
-    return (static_cast<typename Tr::cls *>(b)->*M)(event, static_cast<typename Tr::data *>(data));
+    return (static_cast<typename Tr::cls *>(c)->*M)(event, static_cast<typename Tr::data *>(data));
   }
 };
-
-/** The type of @c Continuation::handler.
- *
- * Aliases @c EventCallback<Continuation>. Use it to keep a copy of a
- * Continuation's handler, e.g. to restore it after a temporary state
- * change.
- *
- * @c set<&D::m>() installs @c m, where @c D is @c Continuation or a
- * class derived from it and @c &D::m has type @c int(D::*)(int, T*);
- * @c set<nullptr>() clears the value. @c is<X>() returns whether the
- * value holds what @c set<X>() would install. @c X must be a constant
- * expression, so a handler held in a member-pointer variable cannot be
- * installed or tested.
- *
- * @par Example
- * @code
- * ContinuationHandler saved = handler;
- * handler.set<&MyStateMachine::state_retry>();
- * // ... later, from state_retry:
- * handler = saved;
- * @endcode
- *
- * @par Thread Safety
- *   As for @c EventCallback.
- */
-using ContinuationHandler = EventCallback<Continuation>;
 
 /**
   Base class for event-driven state machines dispatched by the Event
@@ -277,7 +257,7 @@ public:
     Not thread-safe. The Event System accesses this field only while
     dispatching an event, holding @c mutex if it is non-null.
   */
-  EventCallback<Continuation> handler;
+  ContinuationHandler handler;
 
 #ifdef DEBUG
   /**
