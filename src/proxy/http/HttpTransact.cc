@@ -3064,8 +3064,8 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         // override the default version with what the server has
         http_version = s->current.server->http_version;
       } else {
-          handle_parent_down(s);
-          return;
+        handle_parent_down(s);
+        return;
       }
 
       TxnDbg(dbg_ctl_http_trans, "CacheOpenReadHit - version %d.%d", http_version.get_major(), http_version.get_minor());
