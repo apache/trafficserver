@@ -749,9 +749,13 @@ private:
 // Keeps the help and usage text that a parser prints out of the test output, and lets it be
 // checked. std::cout is put back however the scope ends.
 struct CoutCapture {
+  CoutCapture()                               = default;
+  CoutCapture(CoutCapture const &)            = delete;
+  CoutCapture &operator=(CoutCapture const &) = delete;
+  ~CoutCapture() { std::cout.rdbuf(old); }
+
   std::ostringstream buf;
   std::streambuf    *old = std::cout.rdbuf(buf.rdbuf());
-  ~CoutCapture() { std::cout.rdbuf(old); }
 };
 } // namespace
 
