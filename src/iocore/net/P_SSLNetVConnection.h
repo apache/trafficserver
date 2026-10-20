@@ -129,6 +129,13 @@ public:
     return sslHandshakeStatus != SSLHandshakeStatus::SSL_HANDSHAKE_ONGOING;
   }
 
+  /** Whether a plugin rejected the handshake by reenabling a TLS hook with TS_EVENT_ERROR. */
+  bool
+  getSSLHandShakeRejected() const
+  {
+    return sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR;
+  }
+
   virtual void
   setSSLHandShakeComplete(SSLHandshakeStatus state)
   {
