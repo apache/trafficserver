@@ -45,12 +45,11 @@ nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", enable_cache=False)
 
-# These two rules deliberately exercise resource limits. Replace the blanket
-# error exclusion once, then append independent checks for each rule below.
+# The match_limit rule deliberately exercises the match limit. Replace the
+# blanket error exclusion once, then append an independent check for it below.
 ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-    r'ERROR: (?!\[regex_remap\] Bad regular expression result '
-    r'(?:-(?:46|47|53|63) .* from "\^/alpha/bravo/|-47 .* from "\^/match_limit/))',
-    "Only the deliberate resource-limit errors are allowed")
+    r'ERROR: (?!\[regex_remap\] Bad regular expression result -47 .* from "\^/match_limit/)',
+    "Only the deliberate match-limit error is allowed")
 
 testName = "regex_remap"
 
@@ -123,17 +122,17 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
 
-# 3 Test - Preserve the original crash guard from #5762. This request must
-# survive resource exhaustion without redirecting, regardless of which matching
-# resource limit is reached (JIT stack, match work, depth, or heap).
-tr = Test.AddTestRun("resource exhaustion does not crash ATS")
+# 3 Test - The 3 KB URL from #5762 matches through the shared match context and
+# its 1 MiB JIT stack. #5762 was PCRE1 recursion overflowing the native thread
+# stack; the "Regex reports resource exhaustion rather than crashing" unit test
+# asserts that PCRE2 JIT stack exhaustion is reported as an error instead.
+tr = Test.AddTestRun("long URL matches and redirects")
 creq = replay_txns[1]['client-request']
-tr.MakeCurlCommand(curl_and_args + f"--header 'uuid: {creq['headers']['fields'][1][1]}' '{creq['url']}'", ts=ts)
+tr.MakeCurlCommand(
+    curl_and_args + f"--header 'uuid: {creq['headers']['fields'][1][1]}' '{creq['url']}'" + " | grep -e '^HTTP/' -e '^Location'",
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
-ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r'ERROR: \[regex_remap\] Bad regular expression result -(?:46|47|53|63).*"\^/alpha/bravo/',
-    "The crash-guard rule must report resource exhaustion")
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
 tr.StillRunningAfter = ts
 
 # 4 Test - The nested quantifiers must exceed PCRE2's default matching-work limit.
