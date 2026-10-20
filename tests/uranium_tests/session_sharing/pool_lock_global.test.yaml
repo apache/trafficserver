@@ -28,7 +28,7 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Reuse pooled origin connections across threads with the global pool'
 
   # Every origin name resolves to the server. Pooled connections match on the
@@ -37,6 +37,7 @@ autest:
     name: 'dns'
 
   server:
+    stop_after_client: true
     name: 'server'
 
   client:

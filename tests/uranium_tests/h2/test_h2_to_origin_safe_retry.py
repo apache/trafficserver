@@ -60,6 +60,9 @@ def test_h2_to_origin_safe_retry(
         port,
         disable_log_checks=invalid,
         **{
+            # The early-reset origin closes its connection immediately. Do not
+            # reuse it for a retry before ATS has observed that close.
+            "proxy.config.http.server_session_sharing.match": "none" if mode == "early-rst" else "ip",
             "proxy.config.http.connect_attempts_max_retries": 3,
             "proxy.config.http.request_buffer_enabled": buffering,
             "proxy.config.http.post_copy_size": copy_size,

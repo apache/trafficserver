@@ -17,12 +17,43 @@
 
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock, call
 import subprocess
 
 import pytest
 import yaml
 
 from tools.uranium.replay import ReplayTest
+
+
+@pytest.mark.parametrize("stop_after_client", [False, True])
+def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_after_client: bool) -> None:
+    """Preserve intentional origin-disconnect checks without changing default teardown.
+
+    :param tmp_path: Sandbox stand-in.
+    :param stop_after_client: Whether this replay requests origin shutdown before metrics.
+    """
+    replay = Mock(spec=ReplayTest)
+    replay.spec = SimpleNamespace(urtest={"server": {"stop_after_client": stop_after_client}, "client": {}})
+    replay.runtime = Mock()
+    replay.runtime.requirement_failure.return_value = None
+    replay.sandbox = tmp_path
+    replay._sandbox_parent = tmp_path.parent
+    server = replay._start_verifier_server.return_value
+    replay.processes = [server]
+    replay._temporary_directories = []
+    order = Mock()
+    order.attach_mock(replay._validate_background_processes, "validate")
+    order.attach_mock(server.stop, "stop")
+    order.attach_mock(replay._check_metrics, "metrics")
+
+    ReplayTest.run(replay)
+
+    expected = [call.validate(server, replay._start_ats.return_value)]
+    if stop_after_client:
+        expected.append(call.stop())
+    expected.extend([call.metrics(), call.stop()])
+    assert order.mock_calls == expected
 
 
 @pytest.mark.parametrize("custom_multicert", [False, True])

@@ -23,13 +23,14 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Purge the pooled origin connection on the only net thread'
 
   dns:
     name: 'dns_single'
 
   server:
+    stop_after_client: true
     name: 'server_single'
 
   client:

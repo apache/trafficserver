@@ -117,6 +117,8 @@ class ReplayTest:
             client = self._run_verifier_client()
             self._run_post_client_commands()
             self._validate_background_processes(server, ats)
+            if server is not None and self.spec.urtest["server"].get("stop_after_client", False):
+                server.stop()
             self._check_metrics()
             self._check_files()
         finally:

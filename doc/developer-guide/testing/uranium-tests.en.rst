@@ -515,6 +515,10 @@ The ``urtest`` section configures the test environment:
 - **server** (required): Proxy Verifier Server configuration with ``name`` and
   optional ``process_config``. This acts as the HTTP origin server that receives
   requests from |TS|, verifies them, and generates configured responses.
+  Set ``stop_after_client: true`` to stop the origin after traffic completes
+  but before checking ATS metrics and files, for example to verify that
+  origin disconnects release pooled connections. The default keeps it running
+  until final cleanup.
 - **client** (required): Proxy Verifier Client configuration with ``name`` and
   optional ``process_config`` and ``timeout``. This requests content through
   |TS| and validates the response.
