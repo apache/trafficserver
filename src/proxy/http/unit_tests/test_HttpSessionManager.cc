@@ -333,6 +333,5 @@ TEST_CASE("ServerSessionPool::acquireSession", "[session_pool]")
     CHECK(pool.count() == 1);
   }
 
-  pool.purge();
   Metrics::Gauge::store(http_rsb.pooled_server_connections, 0);
 }
