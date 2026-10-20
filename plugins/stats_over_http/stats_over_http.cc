@@ -25,6 +25,7 @@
  */
 
 #include <arpa/inet.h>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <cinttypes>
@@ -34,6 +35,9 @@
 #include <ctime>
 #include <fstream>
 #include <getopt.h>
+#include <limits>
+#include <memory>
+#include <mutex>
 #include <netinet/in.h>
 #include <string>
 #include <string_view>
@@ -87,14 +91,10 @@ static const int WINDOW_BITS_GZIP    = 16;
 #define DEFLATE_MODE WINDOW_BITS_DEFLATE
 #define GZIP_MODE    (WINDOW_BITS_DEFLATE | WINDOW_BITS_GZIP)
 
-// brotli compression quality 1-11. Testing proved level '6'
-#if HAVE_BROTLI_ENCODE_H
-const int BROTLI_COMPRESSION_LEVEL = 6;
-const int BROTLI_LGW               = 16;
-#endif
-
-static bool integer_counters = false;
-static bool wrap_counters    = false;
+static bool                           integer_counters = false;
+static bool                           wrap_counters    = false;
+static std::chrono::seconds           cache_ttl{0};
+static constexpr std::chrono::seconds MAX_CACHE_TTL{3600};
 
 #if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L && (!defined(__clang__) || __clang_major__ > 16)
 #define STATS_OVER_HTTP_HAS_CONSTEXPR_STRING 1
@@ -126,8 +126,8 @@ struct config_holder_t {
   config_t       *config;
 };
 
-enum class output_format_t { JSON_OUTPUT, CSV_OUTPUT, PROMETHEUS_OUTPUT, PROMETHEUS_V2_OUTPUT };
-enum class encoding_format_t { NONE, DEFLATE, GZIP, BR };
+enum class output_format_t { JSON_OUTPUT, CSV_OUTPUT, PROMETHEUS_OUTPUT, PROMETHEUS_V2_OUTPUT, COUNT };
+enum class encoding_format_t { NONE, DEFLATE, GZIP, BR, COUNT };
 
 int    configReloadRequests = 0;
 int    configReloads        = 0;
@@ -141,26 +141,6 @@ static config_t        *get_config(TSCont cont);
 static config_holder_t *new_config_holder(const char *path);
 static bool             is_ipmap_allowed(const config_t *config, const struct sockaddr *addr);
 
-#if HAVE_BROTLI_ENCODE_H
-struct b_stream {
-  BrotliEncoderState *br        = nullptr;
-  uint8_t            *next_in   = nullptr;
-  size_t              avail_in  = 0;
-  uint8_t            *next_out  = nullptr;
-  size_t              avail_out = 0;
-  size_t              total_in  = 0;
-  size_t              total_out = 0;
-
-  ~b_stream()
-  {
-    if (br) {
-      BrotliEncoderDestroyInstance(br);
-      br = nullptr;
-    }
-  }
-};
-#endif
-
 struct stats_state {
   TSVConn net_vc    = nullptr;
   TSVIO   read_vio  = nullptr;
@@ -170,32 +150,30 @@ struct stats_state {
   TSIOBuffer       resp_buffer = nullptr;
   TSIOBufferReader resp_reader = nullptr;
 
-  int64_t                         output_bytes  = 0;
-  int                             body_written  = 0;
   output_format_t                 output_format = output_format_t::JSON_OUTPUT;
   encoding_format_t               encoding      = encoding_format_t::NONE;
-  z_stream                        zstrm;
-  bool                            zstrm_active = false;
+  std::string                     body;
   prometheus_v2_metric_family_map prometheus_v2_families;
   std::vector<std::string>        prometheus_v2_family_order;
-#if HAVE_BROTLI_ENCODE_H
-  b_stream bstrm;
-#endif
-  stats_state()
-  {
-    memset(&zstrm, 0, sizeof(z_stream));
-    zstrm.zalloc    = Z_NULL;
-    zstrm.zfree     = Z_NULL;
-    zstrm.opaque    = Z_NULL;
-    zstrm.data_type = Z_ASCII;
-  }
-  ~stats_state()
-  {
-    if (zstrm_active) {
-      deflateEnd(&zstrm);
-    }
-  }
 };
+
+// A fully rendered (and possibly compressed) response body. The encoding may differ from the one requested if compression
+// failed, so it is recorded with the body.
+struct cached_body {
+  std::chrono::steady_clock::time_point generated;
+  encoding_format_t                     encoding = encoding_format_t::NONE;
+  std::string                           body;
+};
+
+struct body_cache_slot {
+  std::shared_ptr<const cached_body> entry;
+  bool                               refreshing = false;
+};
+
+static std::mutex body_cache_mutex;
+static std::array<std::array<body_cache_slot, static_cast<size_t>(encoding_format_t::COUNT)>,
+                  static_cast<size_t>(output_format_t::COUNT)>
+  body_cache;
 
 static char *
 nstr(const char *s)
@@ -208,29 +186,6 @@ nstr(const char *s)
   return mys;
 }
 
-#if HAVE_BROTLI_ENCODE_H
-encoding_format_t
-init_br(stats_state *my_state)
-{
-  my_state->bstrm.br = nullptr;
-
-  my_state->bstrm.br = BrotliEncoderCreateInstance(nullptr, nullptr, nullptr);
-  if (!my_state->bstrm.br) {
-    Dbg(dbg_ctl, "Brotli Encoder Instance Failed");
-    return encoding_format_t::NONE;
-  }
-  BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_QUALITY, BROTLI_COMPRESSION_LEVEL);
-  BrotliEncoderSetParameter(my_state->bstrm.br, BROTLI_PARAM_LGWIN, BROTLI_LGW);
-  my_state->bstrm.next_in   = nullptr;
-  my_state->bstrm.avail_in  = 0;
-  my_state->bstrm.total_in  = 0;
-  my_state->bstrm.next_out  = nullptr;
-  my_state->bstrm.avail_out = 0;
-  my_state->bstrm.total_out = 0;
-  return encoding_format_t::BR;
-}
-#endif
-
 namespace
 {
 inline uint64_t
@@ -239,35 +194,6 @@ ms_since_epoch()
   return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 } // namespace
-
-encoding_format_t
-init_gzip(stats_state *my_state, int mode)
-{
-  my_state->zstrm.next_in   = Z_NULL;
-  my_state->zstrm.avail_in  = 0;
-  my_state->zstrm.total_in  = 0;
-  my_state->zstrm.next_out  = Z_NULL;
-  my_state->zstrm.avail_out = 0;
-  my_state->zstrm.total_out = 0;
-  my_state->zstrm.zalloc    = Z_NULL;
-  my_state->zstrm.zfree     = Z_NULL;
-  my_state->zstrm.opaque    = Z_NULL;
-  my_state->zstrm.data_type = Z_ASCII;
-  int err = deflateInit2(&my_state->zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY);
-  if (err != Z_OK) {
-    Dbg(dbg_ctl, "gzip initialization failed");
-    return encoding_format_t::NONE;
-  } else {
-    Dbg(dbg_ctl, "gzip initialized successfully");
-    my_state->zstrm_active = true;
-    if (mode == GZIP_MODE) {
-      return encoding_format_t::GZIP;
-    } else if (mode == DEFLATE_MODE) {
-      return encoding_format_t::DEFLATE;
-    }
-  }
-  return encoding_format_t::NONE;
-}
 
 static void
 stats_cleanup(TSCont contp, stats_state *my_state)
@@ -298,116 +224,78 @@ stats_process_accept(TSCont contp, stats_state *my_state)
   my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
-static int64_t
-stats_add_data_to_resp_buffer(const char *s, stats_state *my_state)
+static void
+stats_append(const char *s, stats_state *my_state)
 {
-  if (s == nullptr) {
-    return 0;
+  if (s != nullptr) {
+    my_state->body.append(s);
   }
-  int64_t s_len = strlen(s);
-
-  int64_t bytes_written = TSIOBufferWrite(my_state->resp_buffer, s, s_len);
-  if (bytes_written == TS_ERROR) {
-    return 0;
-  }
-
-  return bytes_written;
 }
 
-static const char RESP_HEADER_JSON[] = "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_JSON_GZIP[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_JSON_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_JSON_BR[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/json\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV[] = "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV_GZIP[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: deflate\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_CSV_BR[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; charset=utf-8\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_GZIP[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; "
-                                                  "charset=utf-8\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; charset=utf-8\r\nContent-Encoding: deflate\r\nCache-Control: "
-  "no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_BR[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=0.0.4; "
-                                                "charset=utf-8\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; charset=utf-8\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2_GZIP[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; "
-                                                     "charset=utf-8\r\nContent-Encoding: gzip\r\nCache-Control: no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2_DEFLATE[] =
-  "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; charset=utf-8\r\nContent-Encoding: deflate\r\nCache-Control: "
-  "no-cache\r\n\r\n";
-static const char RESP_HEADER_PROMETHEUS_V2_BR[] = "HTTP/1.0 200 OK\r\nContent-Type: text/plain; version=2.0.0; "
-                                                   "charset=utf-8\r\nContent-Encoding: br\r\nCache-Control: no-cache\r\n\r\n";
-
-static int64_t
-stats_add_resp_header(stats_state *my_state)
+static std::string
+build_resp_header(output_format_t format, const cached_body &entry)
 {
-  switch (my_state->output_format) {
-  case output_format_t::JSON_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
-    }
-    break;
+  std::string header{"HTTP/1.0 200 OK\r\nContent-Type: "};
+
+  switch (format) {
   case output_format_t::CSV_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_CSV, my_state);
-    }
+    header += "text/csv";
     break;
   case output_format_t::PROMETHEUS_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS, my_state);
-    }
+    header += "text/plain; version=0.0.4; charset=utf-8";
     break;
   case output_format_t::PROMETHEUS_V2_OUTPUT:
-    if (my_state->encoding == encoding_format_t::GZIP) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_GZIP, my_state);
-    } else if (my_state->encoding == encoding_format_t::DEFLATE) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_DEFLATE, my_state);
-    } else if (my_state->encoding == encoding_format_t::BR) {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2_BR, my_state);
-    } else {
-      return stats_add_data_to_resp_buffer(RESP_HEADER_PROMETHEUS_V2, my_state);
-    }
+    header += "text/plain; version=2.0.0; charset=utf-8";
+    break;
+  default:
+    header += "text/json";
     break;
   }
-  // Not reached.
-  return stats_add_data_to_resp_buffer(RESP_HEADER_JSON, my_state);
+  header += "\r\n";
+
+  switch (entry.encoding) {
+  case encoding_format_t::GZIP:
+    header += "Content-Encoding: gzip\r\n";
+    break;
+  case encoding_format_t::DEFLATE:
+    header += "Content-Encoding: deflate\r\n";
+    break;
+  case encoding_format_t::BR:
+    header += "Content-Encoding: br\r\n";
+    break;
+  default:
+    break;
+  }
+
+  if (cache_ttl.count() > 0) {
+    auto age = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - entry.generated);
+
+    header += "Cache-Control: max-age=" + std::to_string(cache_ttl.count()) + "\r\n";
+    header += "Age: " + std::to_string(age.count()) + "\r\n";
+    header += "Vary: Accept, Accept-Encoding\r\n";
+  } else {
+    header += "Cache-Control: no-cache\r\n";
+  }
+  header += "\r\n";
+
+  return header;
 }
+
+static std::shared_ptr<const cached_body> get_body(stats_state *my_state);
 
 static void
 stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
 {
   Dbg(dbg_ctl, "stats_process_read(%d)", event);
   if (event == TS_EVENT_VCONN_READ_READY) {
-    my_state->output_bytes = stats_add_resp_header(my_state);
+    auto        entry  = get_body(my_state);
+    std::string header = build_resp_header(my_state->output_format, *entry);
+
+    TSIOBufferWrite(my_state->resp_buffer, header.data(), header.size());
+    TSIOBufferWrite(my_state->resp_buffer, entry->body.data(), entry->body.size());
     TSVConnShutdown(my_state->net_vc, 1, 0);
-    my_state->write_vio = TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, INT64_MAX);
+    my_state->write_vio =
+      TSVConnWrite(my_state->net_vc, contp, my_state->resp_reader, TSIOBufferReaderAvail(my_state->resp_reader));
   } else if (event == TS_EVENT_ERROR) {
     TSError("[%s] stats_process_read: Received TS_EVENT_ERROR", PLUGIN_NAME);
     stats_cleanup(contp, my_state);
@@ -422,7 +310,7 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
   }
 }
 
-#define APPEND(a) my_state->output_bytes += stats_add_data_to_resp_buffer(a, my_state)
+#define APPEND(a) stats_append(a, my_state)
 
 //-----------------------------------------------------------------------------
 // JSON Formatters
@@ -901,94 +789,62 @@ json_out_stats(stats_state *my_state)
 
 #if HAVE_BROTLI_ENCODE_H
 static bool
-br_encode(stats_state *my_state, const char *data, int64_t len, bool finish, TSIOBuffer out)
+br_compress(const std::string &in, std::string &out)
 {
-  BrotliEncoderOperation const op       = finish ? BROTLI_OPERATION_FINISH : BROTLI_OPERATION_PROCESS;
-  const uint8_t               *next_in  = reinterpret_cast<const uint8_t *>(data);
-  size_t                       avail_in = static_cast<size_t>(len);
+  size_t out_size = BrotliEncoderMaxCompressedSize(in.size());
 
-  do {
-    int64_t  avail     = 0;
-    uint8_t *next_out  = reinterpret_cast<uint8_t *>(TSIOBufferBlockWriteStart(TSIOBufferStart(out), &avail));
-    size_t   avail_out = static_cast<size_t>(avail);
-
-    if (!BrotliEncoderCompressStream(my_state->bstrm.br, op, &avail_in, &next_in, &avail_out, &next_out, nullptr)) {
-      return false;
-    }
-    TSIOBufferProduce(out, avail - avail_out);
-  } while (avail_in > 0 || BrotliEncoderHasMoreOutput(my_state->bstrm.br) ||
-           (finish && !BrotliEncoderIsFinished(my_state->bstrm.br)));
-
+  if (out_size == 0) {
+    Dbg(dbg_ctl, "brotli input too large: %zu", in.size());
+    return false;
+  }
+  out.resize(out_size);
+  if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, in.size(),
+                            reinterpret_cast<const uint8_t *>(in.data()), &out_size,
+                            reinterpret_cast<uint8_t *>(out.data())) == BROTLI_FALSE) {
+    Dbg(dbg_ctl, "brotli compress error");
+    return false;
+  }
+  out.resize(out_size);
   return true;
 }
 #endif
 
 static bool
-gzip_encode(stats_state *my_state, const char *data, int64_t len, bool finish, TSIOBuffer out)
+gzip_compress(const std::string &in, std::string &out, int mode)
 {
-  z_stream &zstrm = my_state->zstrm;
-  int const flush = finish ? Z_FINISH : Z_NO_FLUSH;
-  int       err   = Z_OK;
+  z_stream zstrm{};
 
-  zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
-  zstrm.avail_in = static_cast<uInt>(len);
-  do {
-    int64_t avail   = 0;
-    zstrm.next_out  = reinterpret_cast<Bytef *>(TSIOBufferBlockWriteStart(TSIOBufferStart(out), &avail));
-    zstrm.avail_out = static_cast<uInt>(avail);
-    err             = deflate(&zstrm, flush);
-    TSIOBufferProduce(out, avail - zstrm.avail_out);
-  } while (err == Z_OK && (finish || zstrm.avail_out == 0));
-
-  return finish ? err == Z_STREAM_END : (err == Z_OK || err == Z_BUF_ERROR);
-}
-
-static bool
-encode_chunk(stats_state *my_state, const char *data, int64_t len, bool finish, TSIOBuffer out)
-{
-#if HAVE_BROTLI_ENCODE_H
-  if (my_state->encoding == encoding_format_t::BR) {
-    return br_encode(my_state, data, len, finish, out);
-  }
-#endif
-  return gzip_encode(my_state, data, len, finish, out);
-}
-
-// Replaces the uncompressed body in the response buffer with its compressed form.  The write VIO
-// has already sent the response header, so the body is all that remains in resp_reader.
-static void
-compress_out_stats(stats_state *my_state)
-{
-  TSIOBuffer       out        = TSIOBufferCreate();
-  TSIOBufferReader out_reader = TSIOBufferReaderAlloc(out);
-  int64_t const    body_bytes = TSIOBufferReaderAvail(my_state->resp_reader);
-  bool             ok         = true;
-
-  for (TSIOBufferBlock blk = TSIOBufferReaderStart(my_state->resp_reader); ok && blk != nullptr; blk = TSIOBufferBlockNext(blk)) {
-    int64_t     len  = 0;
-    const char *data = TSIOBufferBlockReadStart(blk, my_state->resp_reader, &len);
-
-    ok = encode_chunk(my_state, data, len, false, out);
-  }
-  if (!ok || !encode_chunk(my_state, nullptr, 0, true, out)) {
-    Dbg(dbg_ctl, "compression error");
+  zstrm.data_type = Z_ASCII;
+  if (int err = deflateInit2(&zstrm, ZLIB_COMPRESSION_LEVEL, Z_DEFLATED, mode, ZLIB_MEMLEVEL, Z_DEFAULT_STRATEGY); err != Z_OK) {
+    Dbg(dbg_ctl, "gzip initialization failed: %d", err);
+    return false;
   }
 
-  if (my_state->zstrm_active) {
-    deflateEnd(&my_state->zstrm);
-    my_state->zstrm_active = false;
-  }
-#if HAVE_BROTLI_ENCODE_H
-  if (my_state->bstrm.br) {
-    BrotliEncoderDestroyInstance(my_state->bstrm.br);
-    my_state->bstrm.br = nullptr;
-  }
-#endif
+  // avail_in and avail_out are uInt, so a single deflate() call cannot take a larger body.
+  uLong bound = deflateBound(&zstrm, in.size());
 
-  TSIOBufferReaderConsume(my_state->resp_reader, body_bytes);
-  my_state->output_bytes -= body_bytes;
-  my_state->output_bytes += TSIOBufferCopy(my_state->resp_buffer, out_reader, TSIOBufferReaderAvail(out_reader), 0);
-  TSIOBufferDestroy(out);
+  if (bound > std::numeric_limits<uInt>::max()) {
+    Dbg(dbg_ctl, "body too large to compress: %zu", in.size());
+    deflateEnd(&zstrm);
+    return false;
+  }
+  out.resize(bound);
+  zstrm.next_in   = reinterpret_cast<Bytef *>(const_cast<char *>(in.data()));
+  zstrm.avail_in  = in.size();
+  zstrm.next_out  = reinterpret_cast<Bytef *>(out.data());
+  zstrm.avail_out = out.size();
+
+  int  err = deflate(&zstrm, Z_FINISH);
+  bool ok  = (err == Z_STREAM_END);
+
+  if (!ok) {
+    Dbg(dbg_ctl, "deflate error: %d", err);
+  }
+  out.resize(zstrm.total_out);
+  if (err = deflateEnd(&zstrm); err != Z_OK) {
+    Dbg(dbg_ctl, "deflate end err: %d", err);
+  }
+  return ok;
 }
 
 static void
@@ -1039,32 +895,104 @@ prometheus_v2_out_stats(stats_state *my_state)
   APPEND_STAT_PROMETHEUS_NUMERIC("current_time_epoch_ms", "%" PRIu64, ms_since_epoch());
 }
 
+static std::shared_ptr<const cached_body>
+generate_body(stats_state *my_state)
+{
+  auto entry       = std::make_shared<cached_body>();
+  entry->generated = std::chrono::steady_clock::now();
+
+  switch (my_state->output_format) {
+  case output_format_t::CSV_OUTPUT:
+    csv_out_stats(my_state);
+    break;
+  case output_format_t::PROMETHEUS_OUTPUT:
+    prometheus_out_stats(my_state);
+    break;
+  case output_format_t::PROMETHEUS_V2_OUTPUT:
+    prometheus_v2_out_stats(my_state);
+    break;
+  default:
+    json_out_stats(my_state);
+    break;
+  }
+
+  bool compressed = false;
+
+  switch (my_state->encoding) {
+  case encoding_format_t::GZIP:
+    compressed = gzip_compress(my_state->body, entry->body, GZIP_MODE);
+    break;
+  case encoding_format_t::DEFLATE:
+    compressed = gzip_compress(my_state->body, entry->body, DEFLATE_MODE);
+    break;
+#if HAVE_BROTLI_ENCODE_H
+  case encoding_format_t::BR:
+    compressed = br_compress(my_state->body, entry->body);
+    break;
+#endif
+  default:
+    break;
+  }
+
+  if (compressed) {
+    entry->encoding = my_state->encoding;
+  } else {
+    entry->encoding = encoding_format_t::NONE;
+    entry->body     = std::move(my_state->body);
+  }
+  my_state->body.clear();
+  my_state->prometheus_v2_families.clear();
+  my_state->prometheus_v2_family_order.clear();
+
+  return entry;
+}
+
+// Return a fresh cached body if there is one. When it is stale, one request regenerates it while concurrent requests are
+// served the stale copy, provided it is less than twice the TTL old. Older copies are not served; those requests regenerate.
+static std::shared_ptr<const cached_body>
+get_body(stats_state *my_state)
+{
+  if (cache_ttl.count() <= 0) {
+    return generate_body(my_state);
+  }
+
+  auto &slot  = body_cache[static_cast<size_t>(my_state->output_format)][static_cast<size_t>(my_state->encoding)];
+  bool  owner = false;
+
+  {
+    std::lock_guard lock(body_cache_mutex);
+
+    if (slot.entry) {
+      auto age = std::chrono::steady_clock::now() - slot.entry->generated;
+
+      if (age < cache_ttl || (slot.refreshing && age < 2 * cache_ttl)) {
+        return slot.entry;
+      }
+    }
+    if (!slot.refreshing) {
+      slot.refreshing = true;
+      owner           = true;
+    }
+  }
+
+  Dbg(dbg_ctl, "regenerating cached stats body");
+  auto entry = generate_body(my_state);
+
+  std::lock_guard lock(body_cache_mutex);
+
+  if (!slot.entry || slot.entry->generated < entry->generated) {
+    slot.entry = entry;
+  }
+  if (owner) {
+    slot.refreshing = false;
+  }
+  return entry;
+}
+
 static void
 stats_process_write(TSCont contp, TSEvent event, stats_state *my_state)
 {
   if (event == TS_EVENT_VCONN_WRITE_READY) {
-    if (my_state->body_written == 0) {
-      my_state->body_written = 1;
-      switch (my_state->output_format) {
-      case output_format_t::JSON_OUTPUT:
-        json_out_stats(my_state);
-        break;
-      case output_format_t::CSV_OUTPUT:
-        csv_out_stats(my_state);
-        break;
-      case output_format_t::PROMETHEUS_OUTPUT:
-        prometheus_out_stats(my_state);
-        break;
-      case output_format_t::PROMETHEUS_V2_OUTPUT:
-        prometheus_v2_out_stats(my_state);
-        break;
-      }
-
-      if (my_state->encoding != encoding_format_t::NONE) {
-        compress_out_stats(my_state);
-      }
-      TSVIONBytesSet(my_state->write_vio, my_state->output_bytes);
-    }
     TSVIOReenable(my_state->write_vio);
   } else if (event == TS_EVENT_VCONN_WRITE_COMPLETE) {
     stats_cleanup(contp, my_state);
@@ -1218,15 +1146,15 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
       (str != nullptr && len > 0) ? std::string_view{str, static_cast<size_t>(len)} : std::string_view{};
     if (len >= TS_HTTP_LEN_DEFLATE && accept_encoding.find(TS_HTTP_VALUE_DEFLATE) != std::string_view::npos) {
       Dbg(dbg_ctl, "Saw deflate in accept encoding");
-      my_state->encoding = init_gzip(my_state, DEFLATE_MODE);
+      my_state->encoding = encoding_format_t::DEFLATE;
     } else if (len >= TS_HTTP_LEN_GZIP && accept_encoding.find(TS_HTTP_VALUE_GZIP) != std::string_view::npos) {
       Dbg(dbg_ctl, "Saw gzip in accept encoding");
-      my_state->encoding = init_gzip(my_state, GZIP_MODE);
+      my_state->encoding = encoding_format_t::GZIP;
     }
 #if HAVE_BROTLI_ENCODE_H
     else if (len >= TS_HTTP_LEN_BROTLI && accept_encoding.find(TS_HTTP_VALUE_BROTLI) != std::string_view::npos) {
       Dbg(dbg_ctl, "Saw br in accept encoding");
-      my_state->encoding = init_br(my_state);
+      my_state->encoding = encoding_format_t::BR;
     }
 #endif
     else {
@@ -1263,11 +1191,12 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  static const char          usage[]    = PLUGIN_NAME ".so [--integer-counters] [PATH]";
+  static const char          usage[]    = PLUGIN_NAME ".so [--integer-counters] [--wrap-counters] [--cache-ttl=SECONDS] [PATH]";
   static const struct option longopts[] = {
-    {(char *)("integer-counters"), no_argument, nullptr, 'i'},
-    {(char *)("wrap-counters"),    no_argument, nullptr, 'w'},
-    {nullptr,                      0,           nullptr, 0  }
+    {(char *)("integer-counters"), no_argument,       nullptr, 'i'},
+    {(char *)("wrap-counters"),    no_argument,       nullptr, 'w'},
+    {(char *)("cache-ttl"),        required_argument, nullptr, 't'},
+    {nullptr,                      0,                 nullptr, 0  }
   };
   TSCont           main_cont, config_cont;
   config_holder_t *config_holder;
@@ -1282,13 +1211,26 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   for (;;) {
-    switch (getopt_long(argc, (char *const *)argv, "iw", longopts, nullptr)) {
+    switch (getopt_long(argc, (char *const *)argv, "iwt:", longopts, nullptr)) {
     case 'i':
       integer_counters = true;
       break;
     case 'w':
       wrap_counters = true;
       break;
+    case 't': {
+      swoc::TextView parsed;
+      auto           value = swoc::svtoi(optarg, &parsed, 10);
+
+      if (parsed.empty() || parsed.size() != strlen(optarg) || value < 0 || value > MAX_CACHE_TTL.count()) {
+        TSWarning("[%s] invalid --cache-ttl value '%s', must be 0 to %jd seconds; caching disabled", PLUGIN_NAME, optarg,
+                  static_cast<intmax_t>(MAX_CACHE_TTL.count()));
+        cache_ttl = std::chrono::seconds{0};
+      } else {
+        cache_ttl = std::chrono::seconds{value};
+      }
+      break;
+    }
     case -1:
       goto init;
     default:

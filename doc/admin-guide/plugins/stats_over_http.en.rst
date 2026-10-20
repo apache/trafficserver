@@ -60,6 +60,25 @@ This option wraps 64-bit unsigned values to the 64-bit signed range.
 This aids interoperability with Java, since prior to the Java SE 8
 release, Java did not have a 64-bit unsigned type.
 
+.. option:: --cache-ttl=SECONDS
+
+When greater than ``0``, the generated response body is kept in memory and
+served to subsequent requests until it is ``SECONDS`` old. This reduces the
+cost of frequent scrapes on servers with many metrics. A separate copy is kept
+for each output format and content encoding. Responses carry
+``Cache-Control: max-age=SECONDS``, an ``Age`` header giving the age of the
+cached body, and ``Vary: Accept, Accept-Encoding``, rather than
+``Cache-Control: no-cache``.
+
+Once the cached body is stale, the next request regenerates it. Requests that
+arrive while that regeneration is in progress are served the stale body rather
+than waiting, as long as it is less than twice ``SECONDS`` old. If it is older,
+for example after a long idle period, they regenerate the body themselves.
+Note that ``current_time_epoch_ms``
+reflects when the body was generated, not when it was served. The default of
+``0`` disables caching. Values must be between ``0`` and ``3600``; any other
+value logs a warning and disables caching.
+
 You can optionally modify the path to use, and this is highly
 recommended in a public facing server. For example::
 
