@@ -21,6 +21,7 @@ import sys
 
 Test.Summary = __doc__
 Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
+Test.ContinueOnFail = True
 
 for order in ('rsa_ec', 'ec_rsa'):
     tr = Test.ATSReplayTest(replay_file=f'replay/dual_cert_default_{order}.replay.yaml')

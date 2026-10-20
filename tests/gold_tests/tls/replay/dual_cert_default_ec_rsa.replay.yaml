@@ -32,6 +32,7 @@ autest:
       - '  - dest_ip: "*"'
       - '    ssl_cert_name: signed-foo-ec.pem,signed-foo.pem'
       - '    ssl_key_name: signed-foo-ec.key,signed-foo.key'
+      # An entry without dest_ip defaults to "*". The empty value keeps this one name-only.
       - '  - dest_ip: ""'
       - '    ssl_cert_name: signed-san.pem,signed-san-ec.pem'
       - '    ssl_key_name: signed-san.key,signed-san-ec.key'
