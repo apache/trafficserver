@@ -1,0 +1,1 @@
+tests/data/cachekey/cache-url-read.fail.input.txt:2:7: error: cache.url.* can't be read in a condition or a string: run-plugin cachekey.so has no %{CACHE-URL}

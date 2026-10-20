@@ -1,0 +1,7 @@
+REMAP {
+    run-plugin("cachekey.so", "--canonical-prefix=true");
+}
+
+CACHEKEY {
+    cache.url.pristine();
+}

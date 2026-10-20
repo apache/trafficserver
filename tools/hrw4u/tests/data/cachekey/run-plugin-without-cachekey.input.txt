@@ -1,0 +1,6 @@
+REMAP {
+    run-plugin("cachekey.so", "--canonical-prefix=true");
+    if inbound.req.X-Stop {
+        break;
+    }
+}

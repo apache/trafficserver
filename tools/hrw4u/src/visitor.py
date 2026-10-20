@@ -61,6 +61,16 @@ class ProcSig:
 
 
 @dataclass(slots=True)
+class CacheKeyHazard:
+    """A REMAP-side construct that is only an error once the file also has a CACHEKEY."""
+
+    filename: str
+    ctx: Any
+    message: str
+    unless_pristine: bool = False
+
+
+@dataclass(slots=True)
 class QueuedItem:
     text: str
     state: CondState
@@ -100,6 +110,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._cachekey: ck.CacheKeySection | None = None
         self._cachekey_branch: ck.Branch | None = None
         self._cachekey_quoted_params: set[str] = set()
+        self._cachekey_hazards: list[CacheKeyHazard] = []
         self._cachekey_fallback_at = 0
         self._remap_end: int | None = None
 
@@ -238,6 +249,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if m.group("var"):
                     var_name, mods = split_interpolation_mods(m.group("var"))
                     self._check_value_mods(mods, ctx)
+                    self._check_not_cache_url(var_name)
                     resolved, _ = self.symbol_resolver.resolve_condition(var_name, self._read_section)
                     replacement = apply_percent_mods(resolved, mods)
                     self._drain_resolver_warnings(ctx)
@@ -270,10 +282,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         # CACHEKEY runs at the end of REMAP, so it reads what REMAP reads.
         return SectionType.REMAP if self.current_section is SectionType.CACHEKEY else self.current_section
 
+    @staticmethod
+    def _check_not_cache_url(name: str) -> None:
+        if name.startswith("cache.url."):
+            raise SymbolResolutionError(
+                name, "cache.url.* can't be read in a condition or a string: run-plugin cachekey.so has no %{CACHE-URL}"
+            )
+
     def _resolve_identifier_with_validation(self, name: str) -> tuple[str, bool]:
         if not name:
             raise SymbolResolutionError("identifier", "Missing or empty identifier text")
 
+        self._check_not_cache_url(name)
         try:
             return self.symbol_resolver.resolve_condition(name, self._read_section)
         except SandboxDenialError:
@@ -793,6 +813,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.output.append(comment_text)
             self._flush_condition()
             if self._cachekey is not None:
+                self._check_cachekey_hazards()
                 self._emit_cachekey()
             return self.get_final_output()
 
@@ -946,6 +967,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     if warning:
                         self._add_sandbox_warning(ctx, warning)
                     self._dbg("BREAK")
+                    if self.current_section is SectionType.REMAP:
+                        self._add_cachekey_hazard(ctx, "break in REMAP would skip CACHEKEY")
                     self.emit_statement("no-op [L]")
                     return
 
@@ -962,6 +985,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                             f"unknown procedure '{func}': not loaded via 'use'",
                             "",
                         )
+                    self._check_not_key_name(func)
+                    self._watch_cachekey_call(func, args, ctx)
                     subst_args = [
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
@@ -974,12 +999,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     if ctx.lhs is None:
                         raise SymbolResolutionError("assignment", "Missing left-hand side in assignment")
                     lhs = ctx.lhs.text
+                    self._check_not_key_name(lhs)
                     rhs = self._get_value_text(ctx.value())
                     if rhs.startswith('"') and rhs.endswith('"'):
                         rhs = self._substitute_strings(rhs, ctx)
                     self._dbg(f"assignment: {lhs} = {rhs}")
                     out = self.symbol_resolver.resolve_assignment(lhs, rhs, self.current_section)
                     self._drain_resolver_warnings(ctx)
+                    if self.current_section is SectionType.REMAP and out.startswith("set-destination URL "):
+                        self._add_cachekey_hazard(ctx, f"{lhs} write in REMAP requires cache.url.pristine()", unless_pristine=True)
                     self.emit_statement(out)
                     return
 
@@ -987,6 +1015,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     if ctx.lhs is None:
                         raise SymbolResolutionError("assignment", "Missing left-hand side in += assignment")
                     lhs = ctx.lhs.text
+                    self._check_not_key_name(lhs)
                     rhs = self._get_value_text(ctx.value())
                     if rhs.startswith('"') and rhs.endswith('"'):
                         rhs = self._substitute_strings(rhs, ctx)
@@ -1110,6 +1139,34 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             if value.str_ is not None or (value.paramRef() and value.paramRef().IDENT().getText() in self._cachekey_quoted_params):
                 quoted.add(param.name)
         return quoted
+
+    @staticmethod
+    def _check_not_key_name(name: str) -> None:
+        if ck.is_key_name(name):
+            raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
+
+    def _add_cachekey_hazard(self, ctx, message: str, *, unless_pristine: bool = False) -> None:
+        self._cachekey_hazards.append(CacheKeyHazard(self.filename, ctx, message, unless_pristine))
+
+    def _watch_cachekey_call(self, func: str, args: list[str], ctx) -> None:
+        first = args[0].strip('"') if args else ""
+        if func == "run-plugin" and first.rsplit("/", 1)[-1] == "cachekey.so":
+            self._add_cachekey_hazard(ctx, "run-plugin cachekey.so conflicts with CACHEKEY")
+        elif func == "set-config" and first == "proxy.config.http.cache.ignore_query":
+            self._add_cachekey_hazard(ctx, "set-config proxy.config.http.cache.ignore_query not allowed with CACHEKEY")
+
+    def _check_cachekey_hazards(self) -> None:
+        pristine = all(ck.is_pristine(entries) for _, entries in self._cachekey.run_plugin_sets())
+        saved_filename = self.filename
+        try:
+            for hazard in self._cachekey_hazards:
+                if hazard.unless_pristine and pristine:
+                    continue
+                self.filename = hazard.filename
+                with self.trap(hazard.ctx):
+                    raise SymbolResolutionError("CACHEKEY", hazard.message)
+        finally:
+            self.filename = saved_filename
 
     def _emit_cachekey(self) -> None:
         at = self._remap_end if self._remap_end is not None else self._cachekey_fallback_at

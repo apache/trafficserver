@@ -1,0 +1,7 @@
+REMAP {
+    set-config("proxy.config.http.cache.ignore_query", 1);
+}
+
+CACHEKEY {
+    cache.url.query.remove("guid");
+}

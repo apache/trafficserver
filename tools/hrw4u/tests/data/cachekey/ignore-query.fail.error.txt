@@ -1,0 +1,1 @@
+tests/data/cachekey/ignore-query.fail.input.txt:2:4: error: set-config proxy.config.http.cache.ignore_query not allowed with CACHEKEY
