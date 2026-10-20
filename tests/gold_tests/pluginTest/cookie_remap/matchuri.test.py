@@ -30,7 +30,7 @@ ts = Test.MakeATSProcess("ts")
 
 # First server is run during first test and
 # second server is run during second test
-server = Test.MakeOriginServer("server", ip='127.0.0.10')
+server = Test.MakeOriginServer("server")
 
 request_header = {
     "headers": "GET /cookiematches HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
@@ -43,7 +43,7 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
 
-server2 = Test.MakeOriginServer("server2", ip='127.0.0.11')
+server2 = Test.MakeOriginServer("server2")
 request_header2 = {
     "headers": "GET /cookiedoesntmatch HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
     "timestamp": "1469733493.993",

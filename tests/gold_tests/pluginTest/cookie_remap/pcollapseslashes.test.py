@@ -30,7 +30,7 @@ ts = Test.MakeATSProcess("ts")
 
 # We only run a server to capture ATS outbound requests
 # and verify it collapsed the double //
-server = Test.MakeOriginServer("server", ip='127.0.0.10')
+server = Test.MakeOriginServer("server")
 
 request_header = {
     "headers": "GET /i/like/cheetos?.done=http://finance.yahoo.com HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
