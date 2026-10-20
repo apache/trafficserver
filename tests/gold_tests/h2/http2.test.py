@@ -26,6 +26,9 @@ Test a basic remap of a http/2 connection
 Test.SkipUnless(Condition.HasCurlFeature('http2'))
 Test.ContinueOnFail = True
 
+# The proxy.config.http2.active_timeout_in for Test Case 5, in seconds.
+active_timeout = 3
+
 # ----
 # Setup Origin Server
 # ----
@@ -152,7 +155,7 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.http2.active_timeout_in': 3,
+        'proxy.config.http2.active_timeout_in': active_timeout,
         'proxy.config.http2.max_concurrent_streams_in': 65535,
     })
 
@@ -222,7 +225,7 @@ tr.StillRunningAfter = server
 
 # Test Case 5: h2_active_timeout
 tr = Test.AddTestRun("h2_active_timeout")
-tr.Processes.Default.Command = f'{sys.executable} h2active_timeout.py {ts.Variables.ssl_port} / 4'
+tr.Processes.Default.Command = f'{sys.executable} h2active_timeout.py {ts.Variables.ssl_port} / {active_timeout}'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
 tr.StillRunningAfter = server
