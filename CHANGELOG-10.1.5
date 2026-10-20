@@ -1,0 +1,43 @@
+Changes with Apache Traffic Server 10.1.5
+  #13525 - Stabilize post and slow_post autests under parallel runs (#12886) (#13525)
+  #13322 - slice_prefetch.test.py: address cache.log flakiness (#13322)
+  #13290 - Expand client IP debug logging test coverage (#13290)
+  #13372 - autest: skip async handshake test when plugin is absent (#13372)
+  #13323 - stale_response.test.py: address log wait flakiness (#13323)
+  #13390 - Handle webp_transform input robustly (#13390)
+  #13379 - Preserve client port in transaction logs (#13379)
+  #13423 - Fix Fedora OTEL and WAMR builds (#13423)
+  #13432 - healthchecks: reference count status file data (#13432)
+  #13410 - Cache empty chunked responses (#13410)
+  #13642 - Proxy Verifier v3.2.0 (#13642)
+  #13558 - dns: fix remaining-space tracking when copying address records (#13558)
+  #13593 - Fix Clang 21 analyzer findings (#13593)
+  #12226 - Clean up Clang analyzer warnings (#12226)
+  Restore Clang analyzer checks on 10.1.x
+  autest: make the await-file-contains helper safe for regex needles
+  #13461 - Fix JSONRPC server shutdown race (#13461)
+  10.1.x: Throttle @ header strip logs
+  Fix use-after-free in wasm plugin TXN_CLOSE epilogue
+  Compare h2 Content-Length and payload at full width
+  wasm: Validate metric ID before making API call
+  http: reject HEAD requests carrying Content-Length/Transfer-Encoding
+  tsmemcache: bind to loopback by default and add configurable bind address
+  #13316 - Downgrade inbound H2 stream error log (#13316)
+  Strip unauthorized x-amz- request headers in origin_server_auth
+  CVE-2025-55702 - Fix request with POST Expect: 100-continue
+  Require a matching client certificate for outbound session reuse
+  magick: require signing key and allowlist convert operators
+  origin_server_auth: clarify x-amz- stripping scope in docs and comments
+  10.1.x: autest stability bundle
+  proxy: reject resumed TLS sessions missing a required client cert
+  Drop the special case for badly formed 302 responses
+  doc: correct the regex matching contract where sites enforce full match
+  Size chunked passthrough writes without dropped trailers
+  chunked_encoding: add regression test for chunked responses with trailers
+  Fix mTLS for TLS resumption scenarios
+  Reuse an origin connection only after its request body is written
+  doc: record the security release in the release notes
+  Count the Pad Length field in the h2 DATA padding check
+  Fix a SIGSEGV in UnixNetVConnection::net_write_io on dechunked POST responses
+  #13574 -  Fix TransformVConnection leak in abort_tunnel() (#13574)
+  #12866 - Fix failed assertion in build_response for 1xx races (#12866)
