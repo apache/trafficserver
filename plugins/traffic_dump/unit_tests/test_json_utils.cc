@@ -118,3 +118,20 @@ TEST_CASE("JsonUtilsUtf8Entries", "[json_entry][json_entry_array]")
   CHECK(json_entry(name, value.data(), value.size()) == "\"caf\xc3\xa9\":\"\xe4\xb8\xad\xf0\x9f\x98\x80\"");
   CHECK(json_entry_array(name, value) == "[\"caf\xc3\xa9\",\"\xe4\xb8\xad\xf0\x9f\x98\x80\"]");
 }
+
+TEST_CASE("JsonUtilsInvalidUtf8", "[escape_json]")
+{
+  std::string_view const samples[] = {
+    "caf\xe9", "\xc0\xaf", "\xed\xa0\x80", "\xf0\x9f", "\x80\xbf", "\xf5\xff",
+  };
+  for (auto const text : samples) {
+    CHECK(escape_json(text) == text);
+    CHECK(escape_json(text.data(), text.size()) == text);
+  }
+
+  std::string_view const text     = "\xff\"\x80\\\xe9\n";
+  std::string_view const expected = "\xff\\\"\x80\\\\\xe9\\n";
+
+  CHECK(escape_json(text) == expected);
+  CHECK(escape_json(text.data(), text.size()) == expected);
+}

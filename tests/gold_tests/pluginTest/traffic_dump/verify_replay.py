@@ -317,7 +317,7 @@ def verify_client_request_body_bytes(replay_json, expected_body_bytes):
 
 def verify_proxy_response_body_bytes(replay_json: dict, expected_body_text: str) -> bool:
     """
-    Verify the proxy response text and its UTF-8 byte length in the replay file.
+    Verify the proxy response text and the server response's UTF-8 byte length.
     """
     try:
         received_body_text = replay_json['sessions'][0]['transactions'][0]['proxy-response']['content']['data']
@@ -363,7 +363,7 @@ def parse_args():
     parser.add_argument("--server-tls-features", help="The TLS values to expect for the server connection.")
     parser.add_argument("--client-http-version", help="The client HTTP version to expect")
     parser.add_argument("--request_body", type=str, help="Verify that the client request has the specified body bytes.")
-    parser.add_argument("--response_body", type=str, help="Verify that the proxy response has the specified body bytes.")
+    parser.add_argument("--response_body", type=str, help="Verify that the proxy response has the specified body text.")
     return parser.parse_args()
 
 
