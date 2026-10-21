@@ -923,7 +923,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
                 help_message(missing_value_message(cur_option.arg_num, cur_option.key));
               }
               state.any_bare  = true;
-              state.env_value = env_value;
+              state.env_value = std::move(env_value);
               state.arg_num   = cur_option.arg_num;
             } else {
               if (state.any_bare) {

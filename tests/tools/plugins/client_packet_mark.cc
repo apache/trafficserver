@@ -5,7 +5,7 @@
   On each request it reads a target mark from request headers, applies it to the
   client-side connection via TSHttpTxnClientPacketMarkSet, then reads the mark
   back off the client socket with getsockopt(SO_MARK) and echoes the observed
-  value into the X-Client-Packet-Mark response header for the AuTest to assert
+  value into the X-Client-Packet-Mark response header for the Uranium test to assert
   on.
 
   @section license License

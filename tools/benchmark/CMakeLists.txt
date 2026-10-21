@@ -63,3 +63,22 @@ target_link_libraries(
   benchmark_HdrParse PRIVATE Catch2::Catch2 ts::hdrs ts::inkevent libswoc::libswoc lshpack configmanager
 )
 target_include_directories(benchmark_HdrParse PRIVATE ${CMAKE_SOURCE_DIR}/lib)
+
+# Timing. No allocator interposition is compiled in, so a timed case measures the regex
+# path alone; a wrapper call costs about 1.5 ns, which would be a fifth of an operation as
+# short as copying a compiled pattern.
+add_executable(benchmark_Regex benchmark_Regex.cc)
+target_link_libraries(benchmark_Regex PRIVATE Catch2::Catch2WithMain ts::tsutil)
+
+# Allocation counting, from the same source. Nothing here is timed, so the interposer's
+# own cost does not matter.
+add_executable(benchmark_Regex_alloc benchmark_Regex.cc)
+target_link_libraries(benchmark_Regex_alloc PRIVATE Catch2::Catch2WithMain ts::tsutil)
+target_compile_definitions(benchmark_Regex_alloc PRIVATE BENCHMARK_REGEX_ALLOC)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # The counters interpose the system allocator, which needs the real symbols from the next
+  # object in the search order. RTLD_NEXT is a GNU extension; g++ and clang++ already define
+  # _GNU_SOURCE for C++ on Linux, but say so rather than relying on it.
+  target_link_libraries(benchmark_Regex_alloc PRIVATE ${CMAKE_DL_LIBS})
+  target_compile_definitions(benchmark_Regex_alloc PRIVATE _GNU_SOURCE)
+endif()

@@ -1,9 +1,0 @@
-# This is a test configuration
-
-# Do a regex against the cookie
-op:
-  cookie: fpbeta
-  operation: regex
-  regex: ilove-(\w+)-(\w+)-(\w+)
-  sendto: http://127.0.0.10:$PORT/regexmatches?cookies=$1-$2-$3
-  else: http://127.0.0.11:$ALTPORT/regexdoesntmatch

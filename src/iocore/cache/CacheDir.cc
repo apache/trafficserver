@@ -278,7 +278,7 @@ Directory::freelist_length(int s)
 }
 
 int
-Directory::bucket_length(Dir *b, int s)
+Directory::bucket_length(Dir *b, int s) const
 {
   Dir *e   = b;
   int  i   = 0;
@@ -294,7 +294,7 @@ Directory::bucket_length(Dir *b, int s)
 }
 
 int
-Directory::check_segment(int s)
+Directory::check_segment(int s) const
 {
   Dir *seg = this->get_segment(s);
 
@@ -314,7 +314,7 @@ Directory::check_segment(int s)
 }
 
 int
-Directory::check()
+Directory::check() const
 {
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
   for (int s = 0; s < this->segments; s++) {
@@ -449,14 +449,13 @@ Directory::free_entry(Dir *e, int s)
 }
 
 int
-Directory::probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_collision)
+Directory::probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_collision) const
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
   int  s         = key->slice32(0) % this->segments;
   int  b         = key->slice32(1) % this->buckets;
   Dir *seg       = this->get_segment(s);
   Dir *e         = nullptr;
-  Dir *p         = nullptr;
   Dir *collision = *last_collision;
   CHECK_DIR(d);
 Lagain:
@@ -473,9 +472,8 @@ Lagain:
       }
       if (dir_compare_tag(e, key)) {
         ink_assert(dir_offset(e));
-        // Bug: 51680. Need to check collision before checking
-        // dir_valid(). In case of a collision, if !dir_valid(), we
-        // don't want to call Directory::delete_entry.
+        // Bug: 51680. Resumption is positional, so an entry already handed back must be skipped whatever its current
+        // validity says; test the collision before dir_valid().
         if (collision) {
           if (collision == e) {
             collision = nullptr;
@@ -497,19 +495,13 @@ Lagain:
           *last_collision = e;
           ink_assert(dir_offset(e) * CACHE_BLOCK_SIZE < stripe->len);
           return 1;
-        } else { // delete the invalid entry
-          ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
-          ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
-          ATS_PROBE7(cache_dir_remove_invalid, stripe->fd, s, dir_to_offset(e, seg), dir_offset(e), dir_approx_size(e),
-                     key->slice64(0), key->slice64(1));
-          e = this->delete_entry(e, p, s);
-          continue;
         }
+        // Stale entry, left in place: reclaiming it here would make every lookup a writer. A writer collects it
+        // instead -- Directory::cleanup() at each cache cycle wrap, or freelist_clean() on freelist exhaustion.
       } else {
         DDbg(dbg_ctl_dir_probe_tag, "tag mismatch %p %X vs expected %X", e, dir_tag(e), key->slice32(3));
       }
     Lcont:
-      p = e;
       e = next_dir(e, seg);
     } while (e);
   }
@@ -632,7 +624,8 @@ Lagain:
         }
         goto Lagain;
       }
-      if (dir_tag(e) == t && dir_offset(e) == dir_offset(overwrite)) {
+      // The phase tells a live entry from a stale one left at the same offset by the previous cycle.
+      if (dir_tag(e) == t && dir_offset(e) == dir_offset(overwrite) && dir_phase(e) == dir_phase(overwrite)) {
         goto Lfill;
       }
       e = next_dir(e, seg);
@@ -708,7 +701,8 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
         return 0;
       }
       int64_t offset = dir_offset(e);
-      if (dir_compare_tag(e, key) && offset == dir_offset(del)) {
+      // The phase tells a live entry from a stale one left at the same offset by the previous cycle.
+      if (dir_compare_tag(e, key) && offset == dir_offset(del) && dir_phase(e) == dir_phase(del)) {
         ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
         ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
         ATS_PROBE7(cache_dir_remove, stripe->fd, s, dir_to_offset(e, seg), offset, dir_approx_size(e), key->slice64(0),

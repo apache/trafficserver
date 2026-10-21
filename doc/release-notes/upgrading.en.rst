@@ -547,6 +547,10 @@ Metrics
 - The network metric ``proxy.process.net.calls_to_writetonet_afterpoll`` has been removed
 - New cache metrics ``proxy.process.cache.stripes`` and
   ``proxy.process.cache.volume_X.stripes`` that counts cache stripes
+- The cache metrics ``proxy.process.cache.direntries.used`` and
+  ``proxy.process.cache.volume_X.direntries.used`` now keep counting stale
+  directory entries until they are reclaimed, at the latest by the next cache
+  cycle wrap, so they read higher through each cycle and drop at the wrap
 - All metric names that ended in ``_stat`` have had that suffix dropped and no
   longer end with ``_stat``
 - The metric ``proxy.node.cache.contents.num_doc`` was removed
