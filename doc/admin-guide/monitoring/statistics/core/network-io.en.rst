@@ -50,7 +50,7 @@ Network I/O
    :ungathered:
 
 .. ts:stat:: global proxy.process.net.connections_currently_open integer
-   :type: counter
+   :type: gauge
 
    The number of open client and origin server connections, which
    :ts:cv:`proxy.config.net.connections_throttle` limits.
