@@ -704,8 +704,6 @@ UDPNetProcessorInternal::udp_callback(UDPNetHandler *, UDPConnection *xuc, EThre
   }
 }
 
-#define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
-
 bool
 UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, Action **status, NetVCOptions const &opt)
 {
