@@ -22,7 +22,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tools.uranium.services import ATS, ATSFactory, ServiceFactory
+from tools.uranium.services import ATS, ATSFactory, ServiceFactory, wait_for_file_lines
 from tools.uranium.services import CommandResult
 from tools.uranium.utils import version_tuple
 
@@ -124,13 +124,17 @@ def assert_resumed(result: CommandResult, version: str = "1.3") -> None:
 
 
 def assert_access_counts(ats: ATS, counts: dict[str, int]) -> None:
-    """Flush logs and require exact successful-request counts per hostname.
+    """Wait for the access log, then require exact successful-request counts per hostname.
 
-    :param ats: Proxy to stop gracefully before examining its access log.
+    ATS can exit on SIGTERM before it flushes a pending log buffer, so the log is
+    read while the proxy is still running. With max_secs_per_buffer at 1 an entry
+    can still wait one periodic_tasks_interval (5 s) to reach disk, so the wait
+    allows 30.
+
+    :param ats: Proxy whose access log is examined.
     :param counts: Expected counts, including zero for forbidden hostnames.
     """
-    ats.stop()
-    content = (ats.log_directory / "squid.log").read_text()
+    content = wait_for_file_lines(ats.log_directory / "squid.log", r"^200 ", sum(counts.values()), timeout=30)
     for host, count in counts.items():
         assert len(re.findall(rf"^200 {re.escape(host)}$", content, re.MULTILINE)) == count, content
 
