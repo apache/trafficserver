@@ -121,7 +121,7 @@ public:
   std::optional<int>
   call_back(int event, void *data)
   {
-    ink_release_assert((nullptr == this->mutex || this_ethread() == this->mutex->thread_holding) &&
+    ink_release_assert((!this->mutex || this_ethread() == this->mutex->thread_holding) &&
                        "action mutex not held by calling thread");
 
     // Cancellation check happens before remaining precondition checks
