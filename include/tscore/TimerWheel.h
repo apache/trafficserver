@@ -95,7 +95,9 @@ concept TimerWheelDelegate = requires(F &f, C *e) {
 // cursor is fast-forwarded rather than replaying every intervening empty
 // tick; elements that would have been visited during that lag lose strict
 // firing-order fidelity relative to each other, but none fire early or are
-// lost.
+// lost. If the clock steps backward, expire() re-buckets every element
+// against the new time so newly due elements are not held until the clock
+// catches up.
 // N_BUCKETS default: sized from src/tscore/unit_tests/test_TimerWheel.cc's
 // "TimerWheel bucket-count sizing sweep" benchmark. At the 30s/120s keepalive
 // timeouts (the dominant real case) 256 through 4096 are all already
@@ -169,6 +171,8 @@ public:
     // init(), where _cursor starts at 0).
     if (now_tick - _cursor > N_BUCKETS) {
       _cursor = now_tick - N_BUCKETS;
+    } else if (now_tick < _cursor) {
+      _rewind(now_tick);
     }
 
     int fired  = 0;
@@ -223,6 +227,28 @@ private:
   private:
     int64_t &_draining_tick;
   };
+
+  // The clock stepped backward. Every bucket position was computed against the
+  // old cursor, including schedule() calls made since the step, which were
+  // floored to it; left alone they would not come due until the clock caught
+  // up. Re-bucket everything against the new time. O(elements), but only on a
+  // clock step. The cursor is set one tick back so already-due elements fire
+  // in this same pass.
+  void
+  _rewind(int64_t now_tick)
+  {
+    DLL<C, L> all;
+
+    for (auto &bucket : _buckets) {
+      while (C *e = bucket.pop()) {
+        all.push(e);
+      }
+    }
+    _cursor = now_tick - 1;
+    while (C *e = all.pop()) {
+      _insert(e, _cursor + 1);
+    }
+  }
 
   void
   _insert(C *e, int64_t floor_tick)

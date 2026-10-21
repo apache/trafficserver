@@ -429,6 +429,90 @@ TEST_CASE("TimerWheel expire without init catches up in bounded time", "[libts][
   CHECK(rec.fired.size() == 1);
 }
 
+// ink_get_hrtime() is CLOCK_REALTIME, so the clock can step backward. An
+// element scheduled after the step (a newly closed connection is scheduled at
+// "now") must not wait for the clock to catch up to the old cursor.
+TEST_CASE("TimerWheel fires newly due elements after a backward clock step", "[libts][TimerWheel]")
+{
+  ink_hrtime const t0 = HRTIME_SECONDS(1000);
+  Wheel            w;
+  w.init(t0);
+
+  Recorder rec;
+  CHECK(w.expire(t0, 1000, rec) == 0);
+
+  ink_hrtime const stepped = t0 - HRTIME_SECONDS(100);
+  Conn             closed{1, stepped};
+  w.schedule(&closed, closed.deadline);
+
+  CHECK(w.expire(stepped, 1000, rec) == 1);
+  REQUIRE(rec.fired.size() == 1);
+  CHECK(rec.fired[0] == 1);
+}
+
+// Elements scheduled before the step keep their true deadlines: they fire
+// once the clock reaches them, neither early nor stranded.
+TEST_CASE("TimerWheel keeps pre-step elements after a backward clock step", "[libts][TimerWheel]")
+{
+  ink_hrtime const t0 = HRTIME_SECONDS(1000);
+  Wheel            w;
+  w.init(t0);
+
+  Conn before{1, t0 + HRTIME_SECONDS(5)};
+  w.schedule(&before, before.deadline);
+
+  ink_hrtime const stepped = t0 - HRTIME_SECONDS(100);
+  Conn             after{2, stepped + HRTIME_SECONDS(10)};
+  w.schedule(&after, after.deadline);
+
+  Recorder rec;
+  for (int s = 0; s < 10; ++s) {
+    w.expire(stepped + HRTIME_SECONDS(s), 1000, rec);
+  }
+  REQUIRE(rec.fired.empty());
+  CHECK(w.expire(stepped + HRTIME_SECONDS(10), 1000, rec) == 1);
+  REQUIRE(rec.fired.size() == 1);
+  CHECK(rec.fired[0] == 2);
+  CHECK(w.is_scheduled(&before));
+
+  for (int s = 11; s < 105; ++s) {
+    w.expire(stepped + HRTIME_SECONDS(s), 1000, rec);
+  }
+  CHECK(rec.fired.size() == 1);
+  CHECK(w.expire(stepped + HRTIME_SECONDS(105), 1000, rec) == 1);
+  REQUIRE(rec.fired.size() == 2);
+  CHECK(rec.fired[1] == 1);
+}
+
+// A step backward larger than the ring aliases every bucket; nothing may be
+// lost or delayed by a full ring.
+TEST_CASE("TimerWheel survives a backward clock step larger than the ring", "[libts][TimerWheel]")
+{
+  ink_hrtime const t0 = HRTIME_SECONDS(100'000);
+  Wheel            w;
+  w.init(t0);
+
+  std::deque<Conn> conns;
+  for (int i = 0; i < 100; ++i) {
+    conns.emplace_back(i, t0 + HRTIME_SECONDS(1 + i * 37));
+  }
+  for (auto &c : conns) {
+    w.schedule(&c, c.deadline);
+  }
+
+  ink_hrtime const stepped = t0 - HRTIME_SECONDS(Wheel::N_BUCKETS * 2 + 17);
+  Conn             closed{1000, stepped};
+  w.schedule(&closed, closed.deadline);
+
+  Recorder rec;
+  CHECK(w.expire(stepped, 1000, rec) == 1);
+  REQUIRE(rec.fired.size() == 1);
+  CHECK(rec.fired[0] == 1000);
+  for (auto &c : conns) {
+    CHECK(w.is_scheduled(&c));
+  }
+}
+
 // --- Bucket-count sizing sweep -----------------------------------------
 //
 // Measures the trade the N_BUCKETS default is making: memory (N_BUCKETS
