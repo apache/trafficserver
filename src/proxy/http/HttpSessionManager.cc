@@ -638,7 +638,7 @@ HttpSessionManager::_acquire_session(sockaddr const *ip, CryptoHash const &hostn
     }
   }
 
-  if (migration || migration_failed) {
+  if (to_return && (migration || migration_failed)) {
     UnixNetVConnection *new_vc = migration ? UnixNetVConnection::attachMigrated(*migration, sm, ethread) : nullptr;
 
     // The original VC was closed by the detach and may already be freed.
