@@ -92,7 +92,7 @@ CacheVC::openReadFromWriterFailure(int event, Event *e)
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   ts::Metrics::Counter::increment(cache_rsb.read_busy_failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.read_busy_failure);
-  _action.continuation->handleEvent(event, e);
+  _action.call_back(event, e);
   free_CacheVC(this);
   return EVENT_DONE;
 }
@@ -919,7 +919,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
   }
   ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
+  _action.call_back(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return free_CacheVC(this);
 Lcallreturn:
   event_result = handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
@@ -986,7 +986,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
 
   ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_ALT_MISS));
+  _action.call_back(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_ALT_MISS));
   return free_CacheVC(this);
 Lrestart:
   SET_HANDLER(&CacheVC::openReadStartHead);
@@ -1198,11 +1198,11 @@ Ldone:
   if (!f.lookup) {
     ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
     ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-    _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-err));
+    _action.call_back(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-err));
   } else {
     ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
     ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
-    _action.continuation->handleEvent(CACHE_EVENT_LOOKUP_FAILED, reinterpret_cast<void *>(-err));
+    _action.call_back(CACHE_EVENT_LOOKUP_FAILED, reinterpret_cast<void *>(-err));
   }
   return free_CacheVC(this);
 Lcallreturn:
@@ -1213,7 +1213,7 @@ Lsuccess:
 Lookup:
   ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_LOOKUP, nullptr);
+  _action.call_back(CACHE_EVENT_LOOKUP, nullptr);
   return free_CacheVC(this);
 Learliest:
   first_buf      = buf;

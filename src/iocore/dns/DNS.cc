@@ -1516,9 +1516,8 @@ DNSEntry::post(DNSHandler *h, HostEnt *ent)
 int
 DNSEntry::postOneEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  if (!action.cancelled) {
+  if (action.call_back(DNS_EVENT_LOOKUP, result_ent.get())) {
     Dbg(dbg_ctl_dns, "called back continuation for %s", qname);
-    action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent.get());
   }
   result_ent   = nullptr;
   action.mutex = nullptr;
