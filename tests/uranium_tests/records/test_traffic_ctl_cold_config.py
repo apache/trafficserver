@@ -180,7 +180,7 @@ def test_traffic_ctl_cold_config(ats_factory: ATSFactory) -> None:
     # A "--" is the way to pass a value that starts with '-'. The option scan of every enclosing
     # command covers the whole rest of the command line, so the escape has to be honoured there
     # too, or a value spelled like a global option (-f, -h) or like an option of config set itself
-    # (-t) is taken as that option instead of reaching the record. -h is the worse case: it prints
+    # (-t) is taken as that option instead of reaching the record. -h is the worst case: it prints
     # the help and exits 0, so the record is never set but a script sees success.
     for value in ("-f", "-h", "-t"):
         escaped = _ats.config_directory / f"escaped_{value[1:]}_records.yaml"

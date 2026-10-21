@@ -889,7 +889,8 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
     // A "--" escapes the token after it. That token belongs to an option or a command further
     // down the line, which honours the escape itself in handle_args(); this scan covers the
     // whole remaining command line, so without this it would still match the escaped token
-    // against this command's options. Leave both tokens in place for the owner.
+    // against this command's options. Leave both tokens in place for the owner: this ++i steps
+    // past the "--" and the loop's own increment past the token it escapes.
     if (args[i] == "--") {
       ++i;
       continue;
