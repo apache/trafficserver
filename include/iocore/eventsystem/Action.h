@@ -130,6 +130,7 @@ public:
       return {};
     }
 
+    ink_release_assert(nullptr != this->continuation && "callback to completed action");
     ink_release_assert(this->continuation->mutex == this->mutex && "action and continuation mutex mismatch");
     ink_release_assert(!this->continuation->handler.is<nullptr>() && "callback to null handler");
     return this->continuation->handleEvent(event, data);
