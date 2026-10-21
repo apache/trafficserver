@@ -538,8 +538,8 @@ Display the current value of a configuration record.
 
          To pass a directive value that begins with ``-``, place ``--`` before it. Recognition of
          ``config reload``'s own options then stays off for the rest of the line, so every
-         remaining token becomes a directive value and any of those options written afterwards
-         is swallowed. The global options (``--format``, ``--help``, ``--run-root``, ...) are
+         remaining token becomes a directive value and any such option written afterwards is
+         swallowed. The global options (``--format``, ``--help``, ``--run-root``, ...) are
          different: only the first token after ``--`` is kept away from them, so a later token
          spelled like one of them is still taken as that option. When options have to follow,
          or more than one value begins with ``-``, give each such value as
