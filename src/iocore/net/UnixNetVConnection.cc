@@ -1079,6 +1079,9 @@ UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
   if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
       (read.vio.mutex && rlock.get_mutex() != read.vio.mutex.get()) ||
       (write.vio.mutex && wlock.get_mutex() != write.vio.mutex.get())) {
+    // The cop has already popped this vc from the wheel; put it back so the
+    // timeout is retried on a later tick.
+    rearm_timer();
     return EVENT_CONT;
   }
 
