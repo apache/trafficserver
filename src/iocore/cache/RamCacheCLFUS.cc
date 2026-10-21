@@ -858,7 +858,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   }
   Que(RamCacheCLFUSEntry, lru_link) victims;
   RamCacheCLFUSEntry *victim        = nullptr;
-  int                 requeue_count = requeue_limit;
+  int                 requeue_count = std::min(static_cast<int64_t>(requeue_limit), this->_objects);
   if (!this->_lru[1].head) { // initial fill
     if (this->_bytes + size <= this->_max_bytes) {
       goto Linsert;

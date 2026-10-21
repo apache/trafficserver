@@ -57,6 +57,36 @@ struct RamCacheCLFUSTestAccess {
   {
     return RamCacheCLFUS::cache_value_hits_size(hits, size);
   }
+
+  static RamCacheCLFUSEntry *
+  lru_head(RamCacheCLFUS &rc, int queue = 0)
+  {
+    return rc._lru[queue].head;
+  }
+
+  static RamCacheCLFUSEntry *
+  lru_tail(RamCacheCLFUS &rc, int queue = 0)
+  {
+    return rc._lru[queue].tail;
+  }
+
+  static double
+  average_value(RamCacheCLFUS &rc)
+  {
+    return rc._average_value;
+  }
+
+  static void
+  set_average_value(RamCacheCLFUS &rc, double v)
+  {
+    rc._average_value = v;
+  }
+
+  static void
+  set_last_decay_time(RamCacheCLFUS &rc, ink_hrtime t)
+  {
+    rc._last_decay_time = t;
+  }
 };
 
 namespace
@@ -397,4 +427,184 @@ TEST_CASE("CLFUS value metric is a floating-point density", "[cache][ramcache][c
   static_assert(v_one > 0.0, "CLFUS value metric truncated to zero (integer division)");
   static_assert(v_hot > v_one, "CLFUS value metric does not increase with hits");
   static_assert(v_small > v_large, "CLFUS value metric does not decrease with size");
+}
+
+namespace
+{
+
+CryptoHash
+make_key(uint64_t id)
+{
+  CryptoHash key;
+  key.u64[0] = 0xc0ffee00 + id;
+  key.u64[1] = 0xdeadbeef + id;
+  key.u32[3] = static_cast<uint32_t>(0x12345678 + id);
+  return key;
+}
+
+} // namespace
+
+TEST_CASE("CLFUS decays hit count when sparing victims during eviction", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 0;
+
+  RamCacheCLFUS rc;
+  rc.init(32 * 1024, &stripe);
+
+  auto buf  = make_buffer(compressible_bytes(8 * 1024));
+  auto key1 = make_key(1);
+  auto key2 = make_key(2);
+  auto key3 = make_key(3);
+
+  REQUIRE(rc.put(&key1, buf.get(), 8 * 1024) == 1);
+  REQUIRE(rc.put(&key2, buf.get(), 8 * 1024) == 1);
+  REQUIRE(rc.put(&key3, buf.get(), 8 * 1024) == 1);
+
+  RamCacheCLFUSEntry *e1 = RamCacheCLFUSTestAccess::find_entry(rc, key1);
+  REQUIRE(e1 != nullptr);
+  e1->hits = 16; // Give key1 high hits so it exceeds average value
+
+  // key4 triggers an eviction pass
+  auto key4 = make_key(4);
+  rc.put(&key4, buf.get(), 8 * 1024);
+
+  // e1 was evaluated as victim, had cache_value > _average_value, was spared:
+  // its hits must have decayed from 16
+  CHECK(e1->hits < 16);
+  CHECK(e1->hits >= 7);
+}
+
+TEST_CASE("CLFUS unconditionally promotes resident entries to the tail on hits", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 0;
+
+  RamCacheCLFUS rc;
+  rc.init(64 * 1024, &stripe);
+
+  auto buf  = make_buffer(compressible_bytes(4 * 1024));
+  auto key1 = make_key(1);
+  auto key2 = make_key(2);
+  auto key3 = make_key(3);
+
+  REQUIRE(rc.put(&key1, buf.get(), 4 * 1024) == 1);
+  REQUIRE(rc.put(&key2, buf.get(), 4 * 1024) == 1);
+  REQUIRE(rc.put(&key3, buf.get(), 4 * 1024) == 1);
+
+  RamCacheCLFUSEntry *e1 = RamCacheCLFUSTestAccess::find_entry(rc, key1);
+  REQUIRE(e1 != nullptr);
+  // Initial order in _lru[0] has e1 at the head
+  CHECK(RamCacheCLFUSTestAccess::lru_head(rc) == e1);
+
+  // Inflate _average_value so e1's value is lower than average
+  RamCacheCLFUSTestAccess::set_average_value(rc, 1000.0);
+
+  // get() on key1 must unconditionally promote e1 to the tail of _lru[0]
+  Ptr<IOBufferData> got;
+  CHECK(rc.get(&key1, &got) == 1);
+  CHECK(RamCacheCLFUSTestAccess::lru_tail(rc) == e1);
+  CHECK(RamCacheCLFUSTestAccess::lru_head(rc) != e1);
+}
+
+TEST_CASE("CLFUS history entry is refreshed on get() hit", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 0;
+
+  RamCacheCLFUS rc;
+  rc.init(12 * 1024, &stripe);
+
+  auto buf  = make_buffer(compressible_bytes(8 * 1024));
+  auto key1 = make_key(1);
+  auto key2 = make_key(2);
+
+  REQUIRE(rc.put(&key1, buf.get(), 8 * 1024) == 1);
+  // key2 cannot fit in 12KB (8KB + 8KB > 12KB), routed to history (_lru[1])
+  CHECK(rc.put(&key2, buf.get(), 8 * 1024) == 0);
+
+  RamCacheCLFUSEntry *e2 = RamCacheCLFUSTestAccess::find_entry(rc, key2);
+  REQUIRE(e2 != nullptr);
+  REQUIRE(e2->flag_bits.lru == 1); // in history
+
+  uint64_t          hits_before = e2->hits;
+  Ptr<IOBufferData> got;
+  CHECK(rc.get(&key2, &got) == 0); // miss
+
+  // Hits count must increment and position must refresh to the tail of _lru[1]
+  CHECK(e2->hits == hits_before + 1);
+  CHECK(RamCacheCLFUSTestAccess::lru_tail(rc, 1) == e2);
+}
+
+TEST_CASE("CLFUS size dampening curve bounds disparity between small and large objects", "[cache][ramcache][clfus]")
+{
+  constexpr double v_256 = RamCacheCLFUSTestAccess::cache_value_hits_size(10u, 256u);
+  constexpr double v_1k  = RamCacheCLFUSTestAccess::cache_value_hits_size(10u, 1024u);
+  constexpr double v_16k = RamCacheCLFUSTestAccess::cache_value_hits_size(10u, 16384u);
+  constexpr double v_64k = RamCacheCLFUSTestAccess::cache_value_hits_size(10u, 65536u);
+
+  // Monotonicity preserved
+  CHECK(v_256 > v_1k);
+  CHECK(v_1k > v_16k);
+  CHECK(v_16k > v_64k);
+
+  // Ratio between 1KB and 64KB is dampened below 15x (under pure linear division it was 64x)
+  double ratio = v_1k / v_64k;
+  CHECK(ratio < 15.0);
+  CHECK(ratio > 1.0);
+}
+
+TEST_CASE("CLFUS periodic epoch decay halves hit counts and decays average value", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 0;
+
+  RamCacheCLFUS rc;
+  rc.init(64 * 1024, &stripe);
+
+  auto buf  = make_buffer(compressible_bytes(4 * 1024));
+  auto key1 = make_key(1);
+  REQUIRE(rc.put(&key1, buf.get(), 4 * 1024) == 1);
+
+  RamCacheCLFUSEntry *e1 = RamCacheCLFUSTestAccess::find_entry(rc, key1);
+  REQUIRE(e1 != nullptr);
+  e1->hits = 20;
+
+  RamCacheCLFUSTestAccess::set_average_value(rc, 4.0);
+
+  // Simulate passage of 35 seconds
+  RamCacheCLFUSTestAccess::set_last_decay_time(rc, ink_get_hrtime() - HRTIME_SECONDS(35));
+
+  // Trigger put to execute epoch decay
+  auto key2 = make_key(2);
+  rc.put(&key2, buf.get(), 4 * 1024);
+
+  // e1->hits should have been halved by epoch decay (20 -> 10)
+  CHECK(e1->hits == 10);
+  // _average_value should have decayed by half
+  CHECK(RamCacheCLFUSTestAccess::average_value(rc) <= 2.5);
 }
