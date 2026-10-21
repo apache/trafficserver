@@ -761,7 +761,9 @@ struct CoutCapture {
 
 // Link-time check that the parser-wide state stays internal to ArgParser.cc: were any of these
 // names exported from libtscore again, this binary would fail to link with duplicate symbols.
-// That holds for the default static libtscore; with a shared one the link does not fail.
+// That holds for the default static libtscore linked without dead stripping; with a shared
+// libtscore, or with Apple ld's -dead_strip, which reports the duplicates only as warnings, the
+// link does not fail.
 std::string global_usage;
 std::string description;
 std::string parser_program_name;
