@@ -1578,6 +1578,60 @@ TEST_CASE("The owner keeps a claimed NetEvent that is not yet marked closed", "[
   CHECK(fx.counters.frees == 1);
 }
 
+// A connection closed on another thread stays in the keep-alive queue until its
+// handoff is processed. Counting it there would evict a live connection in its
+// place when the queue goes over its limit.
+TEST_CASE("Keep-alive eviction does not count a connection closed on another thread", "[net][nethandler][handoff]")
+{
+  Fixture fx(3);
+  auto   *closing = fx.mocks[0].get();
+  auto   *idle    = fx.mocks[1].get();
+  auto   *newest  = fx.mocks[2].get();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    fx.nh.max_connections_per_thread_in = 2;
+    fx.nh.add_to_keep_alive_queue(closing);
+    fx.nh.add_to_keep_alive_queue(idle);
+  }
+
+  std::thread closer([&] { fx.nh.close_from_foreign_thread(closing, 1); });
+  closer.join();
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  fx.nh.add_to_keep_alive_queue(newest);
+
+  INFO("the foreign-closed connection is freed and no live one is evicted");
+  CHECK(fx.counters.frees == 1);
+  CHECK(fx.counters.callbacks == 0);
+  CHECK(fx.nh.keep_alive_queue.in(idle));
+  CHECK(fx.nh.keep_alive_queue.in(newest));
+}
+
+// The same applies to the active queue: a foreign-closed connection must not
+// make it look full and throttle a new request.
+TEST_CASE("A full active queue does not count a connection closed on another thread", "[net][nethandler][handoff]")
+{
+  Fixture fx(2);
+  auto   *closing  = fx.mocks[0].get();
+  auto   *incoming = fx.mocks[1].get();
+
+  net_rsb.requests_max_throttled_in = Metrics::Counter::createPtr("proxy.process.net.max.requests_throttled_in");
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    fx.nh.max_requests_per_thread_in = 1;
+    REQUIRE(fx.nh.add_to_active_queue(closing));
+  }
+
+  std::thread closer([&] { fx.nh.close_from_foreign_thread(closing, 1); });
+  closer.join();
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  CHECK(fx.nh.add_to_active_queue(incoming));
+  CHECK(fx.counters.frees == 1);
+  CHECK(fx.nh.active_queue.in(incoming));
+}
+
 // The owning thread touches its wheel without the NetHandler mutex, so a re-arm
 // from any other thread - a reenable(), or a timeout set while holding only the
 // connection's mutex - must be handed over rather than applied in place.

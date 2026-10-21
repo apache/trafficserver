@@ -514,6 +514,13 @@ NetHandler::manage_active_queue(NetEvent *enabling_ne, bool ignore_queue_size = 
     return true;
   }
 
+  // As in manage_keep_alive_queue(): drop connections closed on other threads
+  // before deciding the queue is full.
+  process_handoffs();
+  if (ignore_queue_size == false && max_requests_per_thread_in > active_queue_size) {
+    return true;
+  }
+
   ink_hrtime now = ink_get_hrtime();
 
   // loop over the non-active connections and try to close them
@@ -568,6 +575,15 @@ NetHandler::manage_keep_alive_queue()
       max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
 
   if (!max_connections_per_thread_in || total_connections_in <= max_connections_per_thread_in) {
+    return;
+  }
+
+  // A connection closed on another thread stays queued, and counted, until its
+  // handoff is processed. Free those first so a live one is not evicted in its
+  // place.
+  process_handoffs();
+  total_connections_in = active_queue_size + keep_alive_queue_size;
+  if (total_connections_in <= max_connections_per_thread_in) {
     return;
   }
 
