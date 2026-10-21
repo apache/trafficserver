@@ -179,7 +179,7 @@ NetHandler::process_handoffs()
     uint8_t const state = ne->handoff.exchange(0);
 
     if (state & NetEvent::HANDOFF_CLOSING) {
-      if (!ne->closed) {
+      if (!ne->closed.load(std::memory_order_acquire)) {
         // Claimed by a closing thread that has not marked it closed yet. Keep
         // the claim, so nothing frees it under that thread, and look again on
         // the next loop.
@@ -203,7 +203,8 @@ NetHandler::close_from_foreign_thread(NetEvent *ne, int closed_value)
   // stays valid until this function is done with it.
   uint8_t const prev = ne->handoff.fetch_or(NetEvent::HANDOFF_QUEUED | NetEvent::HANDOFF_CLOSING);
 
-  ne->closed = closed_value;
+  // Release, so an owner that sees closed also sees the claim.
+  ne->closed.store(closed_value, std::memory_order_release);
   if (!(prev & NetEvent::HANDOFF_QUEUED)) {
     handoff_list.push(ne);
   }
@@ -310,6 +311,8 @@ NetHandler::free_netevent(NetEvent *ne)
   ink_assert(t == this_ethread());
 
   // A foreign close is still handing ne over; process_handoffs() frees it.
+  // Acquire pairs with the release of closed in close_from_foreign_thread().
+  (void)ne->closed.load(std::memory_order_acquire);
   if (ne->handoff.load() & NetEvent::HANDOFF_CLOSING) {
     return;
   }
