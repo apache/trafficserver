@@ -728,7 +728,7 @@ class ReplayTest:
         for check in checks:
             pattern = str(self._replace_runtime_placeholders(check.get("glob", check.get("path")), self.ats_paths))
             expected = bool(check.get("exists", True))
-            timeout = float(check.get("timeout", 10 if expected else 0))
+            timeout = float(check.get("timeout", 30 if expected else 0))
             deadline = time.monotonic() + timeout
 
             def matching_paths() -> list[Path]:

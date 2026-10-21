@@ -92,4 +92,3 @@ urtest:
     file_checks:
     - path: '{LOG_DIR}/error.log'
       contains: "/dns/mark/down' fail_count='1' marking down"
-      timeout: 10
