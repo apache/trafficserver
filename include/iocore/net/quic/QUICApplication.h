@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -31,7 +31,7 @@ class QUICApplication;
 
 /**
  * @brief Abstract QUIC Application Class
- * @detail Every quic application must inherits this class
+ * @details Every quic application must inherits this class
  */
 class QUICApplication : public Continuation
 {

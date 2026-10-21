@@ -2,7 +2,7 @@
 
     A partial implementation of RFC6125 for verifying that an X509 certificate matches a specific hostname.
 
-    @section license License
+    @par License
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file

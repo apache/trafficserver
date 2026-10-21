@@ -6,7 +6,7 @@
   auto-generate the mapping. To add a new overridable config, add an entry
   to the OVERRIDABLE_CONFIGS macro in that header file.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

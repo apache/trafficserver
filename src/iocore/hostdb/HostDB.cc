@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -151,7 +151,7 @@ check_for_retry(HostDBMark &mark, HostResStyle style)
 // Function Prototypes
 //
 HostDBHash &
-HostDBHash::set_host(TextView name)
+HostDBHash::set_host(swoc::TextView name)
 {
   host_name = name;
 

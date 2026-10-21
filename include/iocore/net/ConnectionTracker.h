@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -214,6 +214,7 @@ public:
      * @param min_keep_alive The minimum number of origin keep alive connections to maintain.
      * @param metric_enabled Whether the transaction creating this group wants per server metrics.
      * @param metric_aggregate What that transaction wants published, see @c MetricAggregate.
+     * @param[in] direction Whether the connection group is inbound or outbound.
      */
     Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive, int metric_enabled = 0,
           MetricAggregate metric_aggregate = AGGREGATE_NONE);
@@ -299,7 +300,7 @@ public:
     /** Generate a Warning that a connection was blocked.
      *
      * @param max_connections The maximum configured number of connections for the group.
-     * @param sm_id ID to display in Warning.
+     * @param[in] id ID to display in Warning.
      * @param count Count value to display in Warning.
      * @param addr IP address of the upstream.
      * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
@@ -364,7 +365,7 @@ public:
    * This sets up the global configuration and any configuration update callbacks needed. It is presumed
    * the caller has set up the actual storage where the global configuration data is stored.
    *
-   * @param config The storage for the global configuration data.
+   * @param[in,out] global The storage for the global configuration data.
    * @param txn The storage for the default per transaction data.
    * @param config_cb The callback to invoke when a configuration is updated.
    */
@@ -449,7 +450,7 @@ protected:
 
   /// Internal implementation class instance.
   struct TableSingleton {
-    friend ConnectionTracker::Group;
+    friend class ConnectionTracker::Group;
     std::unordered_map<Group::Key, std::shared_ptr<Group>, GroupMapHelper, GroupMapHelper>
                _table; ///< Hash table of connection groups.
     std::mutex _mutex; ///< Lock for insert, delete, and find.

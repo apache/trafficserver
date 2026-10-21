@@ -2,7 +2,7 @@
 
   Public RecCore declarations
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -50,6 +50,7 @@ struct CfgNode {
 
   /// @brief Construct a configuration node using just the @c YAML::Node and the @c record_name
   /// @param n The parsed @c YAML::node.
+  /// @param[in] v The field value node.
   /// @param base_record_name The base record name from where the record name should be built up.
   CfgNode(YAML::Node const &n, YAML::Node const &v, std::string_view base_record_name) : node{n}, value_node{v}
   {

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -407,7 +407,7 @@ public:
 
   /** Designate chunking behavior to the producer.
    *
-   * @param[in] producer The producer being configured.
+   * @param[in] p The producer being configured.
    * @param[in] skip_bytes The number of bytes to consume off the stream before
    * any chunked data is encountered. These are generally header bytes, if any.
    * @param[in] action The chunking behavior to enact on incoming bytes.

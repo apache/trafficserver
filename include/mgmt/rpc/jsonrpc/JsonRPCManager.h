@@ -1,5 +1,5 @@
 /**
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -125,7 +125,7 @@ public:
   /// @brief This function handles the incoming jsonrpc request and dispatch the associated registered handler.
   ///
   /// @param ctx @c Context object used pass information between rpc layers.
-  /// @param jsonString The incoming jsonrpc 2.0 message. \link https://www.jsonrpc.org/specification
+  /// @param[in] jsonString The incoming jsonrpc 2.0 message. https://www.jsonrpc.org/specification
   /// @return std::optional<std::string> For methods, a valid jsonrpc 2.0 json string will be passed back. Notifications will not
   ///         contain any json back.
   ///

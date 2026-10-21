@@ -2,7 +2,7 @@
 
   Fast-Allocators
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -91,10 +91,11 @@ public:
   /**
     Creates a new allocator.
 
-    @param name identification tag used for mem tracking .
+    @param[in] name identification tag used for mem tracking.
+    @param[in] chunk_size Number of units to allocate when the free pool is empty.
     @param element_size size of memory blocks to be allocated.
-    @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
+    @param[in] use_hugepages Whether to allocate the freelist using huge pages.
   */
   FreelistAllocator(const char *name, unsigned int element_size, unsigned int chunk_size = 128, unsigned int alignment = 8,
                     bool use_hugepages = false)
@@ -162,7 +163,7 @@ public:
     Deallocate blocks of memory allocated by the Allocator.
 
     @param head pointer to be freed.
-    @param tail pointer to be freed.
+    @note The unused tail argument is ignored.
     @param num_item of blocks to be freed.
   */
   void
@@ -182,9 +183,8 @@ public:
   /**
     Creates a new allocator.
 
-    @param name identification tag used for mem tracking .
+    @note The unused name and chunk size arguments are ignored.
     @param element_size size of memory blocks to be allocated.
-    @param chunk_size number of units to be allocated if free pool is empty.
     @param alignment of objects must be a power of 2.
   */
   MallocAllocator(const char * /* name ATS_UNUSED */, unsigned int element_size, unsigned int /* chunk_size  ATS_UNUSED */ = 128,
@@ -363,7 +363,7 @@ public:
     Create a new class specific ClassAllocator.
 
     @param name some identifying name, used for mem tracking purposes.
-    @param chunk_size number of units to be allocated if free pool is empty.
+    @param[in] chunk_size Number of units to allocate when the free pool is empty.
     @param alignment of objects must be a power of 2.
   */
   ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)

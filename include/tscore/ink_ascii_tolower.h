@@ -27,7 +27,7 @@
     - OFF (default): a portable scalar loop, which the compiler auto-vectorizes
       for the build's target. No hand-written intrinsics.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

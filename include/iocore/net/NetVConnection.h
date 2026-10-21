@@ -2,7 +2,7 @@
 
   This file implements an I/O Processor for network I/O
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

@@ -1,0 +1,56 @@
+#######################
+#
+#  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+#  agreements.  See the NOTICE file distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+#  (the "License"); you may not use this file except in compliance with the License.  You may obtain
+#  a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software distributed under the License
+#  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+#  or implied. See the License for the specific language governing permissions and limitations under
+#  the License.
+#
+#######################
+
+PROJECT_NAME           = "Apache Traffic Server"
+PROJECT_NUMBER         = "@PROJECT_VERSION@"
+OUTPUT_DIRECTORY       = "@CMAKE_BINARY_DIR@/doc/doxygen"
+INPUT                  = "@CMAKE_SOURCE_DIR@/doc/mainpage.doc" \
+                         "@CMAKE_SOURCE_DIR@/include" \
+                         "@CMAKE_SOURCE_DIR@/src"
+FILE_PATTERNS          = *.c *.cc *.h *.hpp *.h.in *.i *.cript
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = test_* */unit_tests/* */unit-tests/* */tests/*
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+JAVADOC_AUTOBRIEF      = YES
+FULL_PATH_NAMES        = NO
+SOURCE_BROWSER         = YES
+STRIP_CODE_COMMENTS    = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+SOURCE_TOOLTIPS        = NO
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+HAVE_DOT               = YES
+DOT_PATH               = "@DOXYGEN_DOT_EXECUTABLE@"
+DOTFILE_DIRS           = "@CMAKE_SOURCE_DIR@/doc/dot"
+TEMPLATE_RELATIONS     = YES
+DOT_GRAPH_MAX_NODES    = 256
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = DOXYGEN=1 ATSCPPAPI_UNUSED= "TS_PRINTFLIKE(a,b)=" \
+                         TS_HAS_OPENSSL_QUIC=@DOXYGEN_HAS_OPENSSL_QUIC@ \
+                         TS_HAS_QUICHE=@DOXYGEN_HAS_QUICHE@
+EXCLUDE                = @DOXYGEN_EXCLUDE@
+EXTENSION_MAPPING      = in=C++ cript=C++
+PLANTUML_JAR_PATH      = "@PLANTUML_JAR@"

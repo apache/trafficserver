@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -82,7 +82,7 @@ public:
   /**
      Add IOBufferBlock (chain) to end of packet.
      @param block block chain to add.
-   */
+  */
   void append_block(IOBufferBlock *block);
 
   IpEndpoint from; // what address came from
@@ -105,7 +105,8 @@ public:
      @param when ink_hrtime relative to ink_get_hrtime()
      @param buf IOBufferBlock chain of data to use
      @param segment_size Segment size
-  */
+     @param[in] send_at_hint Optional transmit time passed to the kernel.
+   */
   static UDPPacket *new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> &buf, uint16_t segment_size = 0,
                                   struct timespec *send_at_hint = nullptr);
 

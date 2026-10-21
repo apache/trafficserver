@@ -3,7 +3,7 @@
   This is a command line tool that reads an ATS log in the squid
   binary log format, and produces meaningful metrics per property.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

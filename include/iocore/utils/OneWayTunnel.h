@@ -2,7 +2,7 @@
 
   One way tunnel
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -20,7 +20,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section details Details
+  @par Details
 
   Part of the utils library which contains classes that use multiple
   components of the IO-Core to implement some useful functionality. The

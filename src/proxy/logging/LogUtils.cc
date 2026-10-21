@@ -3,7 +3,7 @@
  This file contains a set of utility routines that are used throughout the
  logging implementation.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

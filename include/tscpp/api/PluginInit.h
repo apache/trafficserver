@@ -30,12 +30,11 @@
  * Invoked for "general" plugins - listed in plugin.config. The arguments in the
  * plugin.config line are provided in this invocation.
  *
- * @param argc Count of arguments
- * @param argv Array of pointers pointing to arguments
+ * @see TSPluginInit in ts/apidefs.h.
  */
 void TSPluginInit(int argc, const char *argv[]);
 /**
- * Invoked for remap plugins - listed in remap.config. The arguments provided as @pparam
+ * Invoked for remap plugins - listed in remap.config. The arguments provided as \@pparam
  * in the remap.config line are provided in this invocation.
  *
  * @param argc Count of arguments

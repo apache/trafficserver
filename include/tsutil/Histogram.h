@@ -2,7 +2,7 @@
  *
  * Fast small foot print histogram support.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -77,7 +77,7 @@ public:
   /// Sample equal or greater than this  go in the overflow bucket.
   static constexpr raw_type OVERFLOW_BOUND = static_cast<raw_type>(1) << (N_RANGE_BITS + N_SPAN_BITS);
 
-  /** Add @sample to the histogram.
+  /** Add @a sample to the histogram.
    *
    * @param sample Value to add.
    * @return @a this

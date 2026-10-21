@@ -1,6 +1,8 @@
-/** @file BufferWriter formatting for ATS.
+/** @file
 
-@section license License
+  BufferWriter formatting for ATS.
+
+@par License
 
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file

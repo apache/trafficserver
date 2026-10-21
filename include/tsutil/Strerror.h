@@ -4,7 +4,7 @@
   GNU or XSI version.  Allows the avoidance of use of the thread-unsafe
   strerror() function.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

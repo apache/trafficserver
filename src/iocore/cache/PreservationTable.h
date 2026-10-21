@@ -2,7 +2,7 @@
 
   Preservation of documents that would be overwritten by the write head.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -131,7 +131,7 @@ public:
   /**
    * Force the preservation of the given document.
    *
-   * @param dir The directory entry for the document to preserve.
+   * @param[in] evac_dir The directory entry for the document to preserve.
    * @param pinned Whether the document is pinned (0 or 1).
    */
   void force_evacuate_head(Dir const *evac_dir, int pinned);
@@ -179,7 +179,7 @@ public:
    * Documents that were acquired by a reader and not released are not removed.
    * Invalidates pointers to evacuation blocks unless they have been acquired.
    *
-   * @param Stripe The stripe to scan for pinned documents to preserve.
+   * @param[in] stripe The stripe to scan for pinned documents to preserve.
    */
   void periodic_scan(Stripe *stripe);
 
