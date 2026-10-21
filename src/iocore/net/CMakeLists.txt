@@ -152,6 +152,7 @@ if(BUILD_TESTING)
     unit_tests/test_SSLNetVConnectionAsyncEp.cc
     unit_tests/test_SSLSecret.cc
     unit_tests/test_SSLSNIConfig.cc
+    unit_tests/test_UnixNetVConnectionTimeouts.cc
     unit_tests/test_YamlSNIConfig.cc
     unit_tests/test_OCSPStapling.cc
     unit_tests/unit_test_main.cc

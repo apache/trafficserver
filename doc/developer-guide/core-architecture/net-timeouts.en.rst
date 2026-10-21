@@ -208,6 +208,13 @@ against mock ``NetEvent`` objects at up to 100,000 connections. It is tagged
 
    ./test_net '[inactivity_cop]'
 
+The mock ``NetEvent`` takes no locks and never re-arms on its own, so the paths
+that live in ``UnixNetVConnection`` (the VIO lock-miss retry in ``mainEvent``,
+the default arming rules, and ``netActivity``'s 0-to-armed re-arm) are tested
+against a real ``UnixNetVConnection`` in
+``src/iocore/net/unit_tests/test_UnixNetVConnectionTimeouts.cc``
+(``./test_net '[unixnetvc]'``).
+
 End-to-end behavior is covered by the autests in ``tests/gold_tests/timeout/``.
 Those are the real gate for anything in this document — in particular
 ``default_inactivity_timeout.test.py`` for the arming rules above. They need a
