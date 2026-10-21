@@ -243,8 +243,8 @@ read_disable(NetHandler *nh, NetEvent *ne)
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
     ne->rearm_timer();
-    Dbg(NetHandler::dbg_ctl_socket, "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
-        ne);
+    Dbg(NetHandler::dbg_ctl_socket, "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p",
+        ne->next_inactivity_timeout_at.load(), ne);
   }
   ne->read.enabled = 0;
   ATS_PROBE4(net_read_disable, ne->get_fd(), ne->read.vio.ndone, ne->write.enabled, ne->read.vio.nbytes);
@@ -269,8 +269,8 @@ write_disable(NetHandler *nh, NetEvent *ne)
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
     ne->rearm_timer();
-    Dbg(NetHandler::dbg_ctl_socket, "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
-        ne);
+    Dbg(NetHandler::dbg_ctl_socket, "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p",
+        ne->next_inactivity_timeout_at.load(), ne);
   }
   ne->write.enabled = 0;
   ATS_PROBE4(net_write_disable, ne->get_fd(), ne->write.vio.ndone, ne->read.enabled, ne->write.vio.nbytes);

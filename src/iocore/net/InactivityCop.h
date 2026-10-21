@@ -138,14 +138,14 @@ public:
           Metrics::Counter::increment(net_rsb.keep_alive_queue_timeout_count);
         }
         Dbg(dbg_ctl_inactivity_cop_verbose, "ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
-            ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at, ne->inactivity_timeout_in);
-        ATS_PROBE6(net_inactivity_timeout, ne->get_fd(), now, ne->next_inactivity_timeout_at, ne->inactivity_timeout_in,
+            ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at.load(), ne->inactivity_timeout_in);
+        ATS_PROBE6(net_inactivity_timeout, ne->get_fd(), now, ne->next_inactivity_timeout_at.load(), ne->inactivity_timeout_in,
                    ne->is_default_inactivity_timeout() ? 1 : 0, ne->default_inactivity_timeout_in.load());
         ++timeouts;
         ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, e);
       } else if (ne->next_activity_timeout_at && ne->next_activity_timeout_at < now) {
         Dbg(dbg_ctl_inactivity_cop_verbose, "active ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
-            ink_hrtime_to_sec(now), ne->next_activity_timeout_at, ne->active_timeout_in);
+            ink_hrtime_to_sec(now), ne->next_activity_timeout_at.load(), ne->active_timeout_in);
         ++timeouts;
         ne->callback(VC_EVENT_ACTIVE_TIMEOUT, e);
       } else {

@@ -48,6 +48,48 @@ struct NetState {
   NetState() : vio(VIO::NONE) {}
 };
 
+/** A NetEvent deadline. The owning thread reads it without the NetEvent's lock
+ * while other threads may write it, so accesses are relaxed atomics. A new
+ * deadline reaches the owner through the handoff list rearm_timer() uses, not
+ * through this type. += is a load and a store, not an RMW.
+ */
+class NetDeadline
+{
+public:
+  NetDeadline(ink_hrtime v = 0) : _v(v) {}
+  NetDeadline(NetDeadline const &that) : _v(that.load()) {}
+
+  NetDeadline &
+  operator=(ink_hrtime v)
+  {
+    _v.store(v, std::memory_order_relaxed);
+    return *this;
+  }
+
+  NetDeadline &
+  operator=(NetDeadline const &that)
+  {
+    return *this = that.load();
+  }
+
+  NetDeadline &
+  operator+=(ink_hrtime delta)
+  {
+    return *this = load() + delta;
+  }
+
+  ink_hrtime
+  load() const
+  {
+    return _v.load(std::memory_order_relaxed);
+  }
+
+  operator ink_hrtime() const { return load(); }
+
+private:
+  std::atomic<ink_hrtime> _v;
+};
+
 // this class is used to NetHandler to hide some detail of NetEvent.
 // To combine the `UDPConenction` and `NetEvent`. NetHandler should
 // callback to net_read_io or net_write_io when net event happen.
@@ -118,11 +160,11 @@ public:
   ink_hrtime active_timeout_in = 0;
 
   /** The time of the next inactivity timeout. */
-  ink_hrtime next_inactivity_timeout_at = 0;
+  NetDeadline next_inactivity_timeout_at;
 
   /** The time of the next activity timeout. */
-  ink_hrtime next_activity_timeout_at = 0;
-  ink_hrtime submit_time              = 0;
+  NetDeadline next_activity_timeout_at;
+  ink_hrtime  submit_time = 0;
 
   /** Whether the current timeout is a default inactivity timeout. */
   bool use_default_inactivity_timeout = false;

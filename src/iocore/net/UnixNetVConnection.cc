@@ -1080,7 +1080,7 @@ UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
   int           signal_event;
   Continuation *reader_cont       = nullptr;
   Continuation *writer_cont       = nullptr;
-  ink_hrtime   *signal_timeout_at = nullptr;
+  NetDeadline  *signal_timeout_at = nullptr;
 
   switch (event) {
   // Treating immediate as inactivity timeout for any
