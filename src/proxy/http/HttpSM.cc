@@ -5812,7 +5812,7 @@ void
 HttpSM::open_prewarmed_connection()
 {
   NetVConnection *netvc = _prewarm_sm->move_netvc();
-  ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+  ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
 
   SMDbg(dbg_ctl_http_ss, "using pre-warmed tunnel netvc=%p", netvc);
 
@@ -6187,10 +6187,10 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     EThread *ethread = this_ethread();
     if (nullptr != ethread->connecting_pool) {
       SMDbg(dbg_ctl_http_ss, "Queue multiplexed request");
-      new_entry          = new ConnectingEntry();
-      new_entry->mutex   = this->mutex;
-      new_entry->ua_txn  = _ua.get_txn();
-      new_entry->handler = (ContinuationHandler)&ConnectingEntry::state_http_server_open;
+      new_entry         = new ConnectingEntry();
+      new_entry->mutex  = this->mutex;
+      new_entry->ua_txn = _ua.get_txn();
+      SET_CONTINUATION_HANDLER(new_entry, &ConnectingEntry::state_http_server_open);
       new_entry->ipaddr.assign(&t_state.current.server->dst_addr.sa);
       new_entry->hostname            = t_state.current.server->name;
       new_entry->sni                 = this->get_outbound_sni();
@@ -7907,7 +7907,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 
   // if pre-warmed connection is used and it has data from origin server, forward it to ua
   if (_prewarm_sm && _prewarm_sm->has_data_from_origin_server()) {
-    ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+    ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
     client_response_hdr_bytes += to_ua_buf->write(_prewarm_sm->server_buf_reader());
   }
 
