@@ -25,6 +25,10 @@ from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceF
 TEST_DIRECTORY = Path(__file__).parent
 # The proxy.config.http2.active_timeout_in for the active timeout case, in seconds.
 ACTIVE_TIMEOUT = 3
+# How long h2active_timeout.py waits for ATS to close the connection, in seconds.
+# Five seconds past the timeout is several InactivityCop periods of headroom on a
+# loaded machine, yet still fails a timeout that fires well after its deadline.
+MAX_WAIT = ACTIVE_TIMEOUT + 5
 
 
 def http2_tls_configure_origin(services: ServiceFactory, name: str) -> OriginServer:
@@ -201,8 +205,10 @@ def test_http2_active_timeout(ats_factory: ATSFactory, services: ServiceFactory)
         str(_ats.https_port),
         "/",
         str(ACTIVE_TIMEOUT),
-        # Longer than the 15 seconds h2active_timeout.py waits for the close.
-        timeout=30,
+        "--max_wait",
+        str(MAX_WAIT),
+        # Longer than MAX_WAIT, so the client reports a late close itself rather than being killed.
+        timeout=MAX_WAIT + 10,
     )
     assert result.returncode == 0, result.output
     assert "CONNECTION_TIMEOUT" in result.output
