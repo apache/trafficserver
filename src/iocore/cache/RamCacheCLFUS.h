@@ -107,7 +107,13 @@ private:
   static constexpr double
   cache_value_hits_size(const uint64_t hits, const uint32_t size)
   {
-    return static_cast<double>(hits + 1) / (size + entry_overhead);
+    // Dampen the linear size penalty using an effective size curve:
+    // (size >> 1) + 2048 prevents tiny objects (< 1KB) from having an
+    // overwhelming advantage over normal web objects (10KB-100KB),
+    // while remaining strictly monotonic with size so smaller objects still
+    // have higher density.
+    const uint32_t eff_size = (size >> 1) + 2048;
+    return static_cast<double>(hits + 1) / (eff_size + entry_overhead);
   }
 
   static constexpr double
@@ -122,6 +128,8 @@ private:
   // uses this.
   friend struct RamCacheCLFUSTestAccess;
 
+  ink_hrtime          _last_decay_time = 0;
+  void                _decay_epoch();
   void                _resize_hashtable();
   void                _victimize(RamCacheCLFUSEntry *e);
   void                _move_compressed(RamCacheCLFUSEntry *e);

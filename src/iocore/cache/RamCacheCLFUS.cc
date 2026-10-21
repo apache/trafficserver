@@ -231,8 +231,9 @@ void
 RamCacheCLFUS::init(int64_t abytes, StripeSM *astripe)
 {
   ink_assert(astripe != nullptr);
-  stripe           = astripe;
-  this->_max_bytes = abytes;
+  stripe                 = astripe;
+  this->_max_bytes       = abytes;
+  this->_last_decay_time = ink_get_hrtime();
   DDbg(dbg_ctl_ram_cache, "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!this->_max_bytes) {
     return;
@@ -241,6 +242,20 @@ RamCacheCLFUS::init(int64_t abytes, StripeSM *astripe)
   if (cache_config_ram_cache_compress) {
     eventProcessor.schedule_every(new RamCacheCLFUSCompressor(this), HRTIME_SECOND, ET_TASK);
   }
+}
+
+void
+RamCacheCLFUS::_decay_epoch()
+{
+  forl_LL(RamCacheCLFUSEntry, e, this->_lru[0])
+  {
+    e->hits >>= 1;
+  }
+  forl_LL(RamCacheCLFUSEntry, e, this->_lru[1])
+  {
+    e->hits >>= 1;
+  }
+  this->_average_value *= 0.5;
 }
 
 #ifdef CHECK_ACOUNTING
@@ -301,10 +316,8 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
     if (e->key == *key && e->auxkey == auxkey) {
       this->_move_compressed(e);
       if (!e->flag_bits.lru) { // in memory
-        if (cache_value(e) > this->_average_value) {
-          this->_lru[e->flag_bits.lru].remove(e);
-          this->_lru[e->flag_bits.lru].enqueue(e);
-        }
+        this->_lru[0].remove(e);
+        this->_lru[0].enqueue(e);
         e->hits++;
         uint32_t ram_hit_state = RAM_HIT_COMPRESS_NONE;
         if (e->flag_bits.compressed) {
@@ -423,6 +436,9 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
         DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " size %d HIT", key->slice32(3), auxkey, e->size);
         return ram_hit_state;
       } else {
+        this->_lru[1].remove(e);
+        this->_lru[1].enqueue(e);
+        e->hits++;
         ts::Metrics::Counter::increment(cache_rsb.ram_cache_misses);
         ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_misses);
         DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " HISTORY", key->slice32(3), auxkey);
@@ -775,10 +791,18 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   if (!this->_max_bytes) {
     return 0;
   }
+  ink_hrtime now = ink_get_hrtime();
+  if (now - this->_last_decay_time > HRTIME_SECONDS(30)) {
+    if (this->_last_decay_time != 0) {
+      this->_decay_epoch();
+    }
+    this->_last_decay_time = now;
+  }
   uint32_t            i            = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e            = this->_bucket[i].head;
   uint32_t            size         = copy ? len : data->block_size();
   double              victim_value = 0;
+  bool                seen_match   = false;
   while (e) {
     if (e->key == *key) {
       if (e->auxkey == auxkey) {
@@ -849,6 +873,9 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d UNSEEN", key->slice32(3), auxkey, size);
       return 0;
     }
+    if (kk == k) {
+      seen_match = true;
+    }
   }
   while (true) {
     victim = this->_lru[0].dequeue();
@@ -865,6 +892,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     }
     this->_average_value = (cache_value(victim) + (this->_average_value * (average_value_over - 1))) / average_value_over;
     if (cache_value(victim) > this->_average_value && requeue_count-- > 0) {
+      victim->hits >>= 1;
       this->_lru[0].enqueue(victim);
       continue;
     }
@@ -880,7 +908,13 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     victim_value += cache_value(victim);
     this->_tick();
     if (!e) {
-      goto Lhistory;
+      if (!seen_match) {
+        goto Lhistory;
+      }
+      if (this->_bytes + victim->size + size > this->_max_bytes && victim_value > cache_value_hits_size(1, size)) {
+        this->_requeue_victims(victims);
+        goto Lhistory;
+      }
     } else { // e from history
       DDbg(dbg_ctl_ram_cache_compare, "put %f %f", victim_value, cache_value(e));
       if (this->_bytes + victim->size + size > this->_max_bytes && victim_value > cache_value(e)) {
@@ -943,7 +977,7 @@ Lhistory:
   e         = THREAD_ALLOC(ramCacheCLFUSEntryAllocator, this_ethread());
   e->key    = *key;
   e->auxkey = auxkey;
-  e->hits   = 1;
+  e->hits   = 2;
   e->size   = data->block_size();
   e->flags  = 0;
   this->_bucket[i].push(e);
