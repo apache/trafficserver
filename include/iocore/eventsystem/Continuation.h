@@ -161,7 +161,7 @@ public:
   /**
     Invokes the bound handler on @p c with @p event and @p data.
 
-    @param[in] b     The object to invoke the handler on.
+    @param[in] c     The object to invoke the handler on.
     @param[in] event The handler's event argument.
     @param[in] data  The handler's data argument.
 
