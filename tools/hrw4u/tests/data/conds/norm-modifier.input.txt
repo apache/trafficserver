@@ -1,0 +1,9 @@
+REMAP {
+    if inbound.url.path ~ /private-/ with NORM {
+        inbound.status = 403;
+    }
+
+    if inbound.url.path == "PRIVATE-" with NOCASE,MID,NORM {
+        inbound.req.X-Private = "yes";
+    }
+}

@@ -40,6 +40,7 @@ extern int cmd_disable_pfreelist;
 
 SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", "[NextHopConsistentHash]")
 {
+  time_t const now = time(nullptr); // Elapsed test time must not make down hosts retryable.
   // We need this to build a HdrHeap object in build_request();
   // No thread setup, forbid use of thread local allocators.
   cmd_disable_pfreelist = true;
@@ -89,7 +90,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // first request.
         build_request(10001, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
 
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
@@ -102,7 +103,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // second request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10002, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
 
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p2.foo.com") == 0);
@@ -113,7 +114,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // third request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10003, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
 
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "s2.bar.com") == 0);
@@ -124,7 +125,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // fourth request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10004, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
 
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "s1.bar.com") == 0);
@@ -135,7 +136,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // fifth request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10005, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
 
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "q1.bar.com") == 0);
@@ -145,7 +146,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // sixth request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10006, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
 
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "q2.bar.com") == 0);
@@ -155,18 +156,18 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
         // seventh request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10007, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
 
         CHECK(result->result == ParentResultType::DIRECT);
         CHECK(result->hostname == nullptr);
 
-        // sleep and test that q2 is becomes retryable;
-        time_t now = time(nullptr) + 5;
+        // Advance past the retry window and check that q2 becomes retryable.
+        time_t const retry_now = time(nullptr) + 5;
 
         // eighth request - reusing the ParentResult from the last request
         // simulating a failure triggers a search for another parent, not firstcall.
         build_request(10008, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp, nullptr, now);
+        strategy->findNextHop(txnp, nullptr, retry_now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "q2.bar.com") == 0);
 
@@ -179,6 +180,7 @@ SCENARIO("Testing NextHopConsistentHash class, using policy 'consistent_hash'", 
 
 SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'consistent_hash'", "[NextHopConsistentHash]")
 {
+  time_t const now = time(nullptr); // Elapsed test time must not make down hosts retryable.
   // We need this to build a HdrHeap object in build_request();
   // No thread setup, forbid use of thread local allocators.
   cmd_disable_pfreelist = true;
@@ -220,7 +222,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
         // first request.
         build_request(20001, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
 
@@ -229,7 +231,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
         // second request
         build_request(20002, &sm, nullptr, "rabbit.net", nullptr);
         result->reset();
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "p2.foo.com") == 0);
 
@@ -239,7 +241,7 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
         // third request
         result->reset();
         build_request(20003, &sm, nullptr, "rabbit.net", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "s2.bar.com") == 0);
 
@@ -248,7 +250,6 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
 
         // fourth request
         {
-          time_t now = time(nullptr) - 1; ///< make sure down hosts are not retryable
           result->reset();
           build_request(20004, &sm, nullptr, "rabbit.net", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
@@ -261,7 +262,6 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
 
         // fifth request
         {
-          time_t now = time(nullptr) - 1; ///< make sure down hosts are not retryable
           result->reset();
           build_request(20005, &sm, nullptr, "rabbit.net/asset1", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
@@ -271,10 +271,10 @@ SCENARIO("Testing NextHopConsistentHash class (all firstcalls), using policy 'co
 
         // sixth request - wait and p1 should now become available
         {
-          time_t now = time(nullptr) + 5;
+          time_t const retry_now = time(nullptr) + 5;
           result->reset();
           build_request(20006, &sm, nullptr, "rabbit.net", nullptr);
-          strategy->findNextHop(txnp, nullptr, now);
+          strategy->findNextHop(txnp, nullptr, retry_now);
           REQUIRE(result->result == ParentResultType::SPECIFIED);
           CHECK(strcmp(result->hostname, "p1.foo.com") == 0);
         }
@@ -512,6 +512,7 @@ SCENARIO("Testing NextHopConsistentHash hash_string override", "[NextHopConsiste
 
 SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 'consistent_hash'", "[NextHopConsistentHash]")
 {
+  time_t const now = time(nullptr); // Elapsed test time must not make down hosts retryable.
   // We need this to build a HdrHeap object in build_request();
   // No thread setup, forbid use of thread local allocators.
   cmd_disable_pfreelist = true;
@@ -549,7 +550,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         result->reset();
         build_request(30001, &sm, nullptr, "bunny.net/asset1", nullptr);
         result->reset();
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c2.foo.com") == 0);
 
@@ -558,7 +559,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
 
         // second request
         build_request(30002, &sm, nullptr, "bunny.net.net/asset1", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c3.bar.com") == 0);
 
@@ -568,7 +569,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         // third request
         build_request(30003, &sm, nullptr, "bunny.net/asset2", nullptr);
         result->reset();
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c6.bar.com") == 0);
 
@@ -576,7 +577,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // fourth request
         build_request(30004, &sm, nullptr, "bunny.net/asset2", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c1.foo.com") == 0);
 
@@ -585,7 +586,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         // fifth request - new request
         build_request(30005, &sm, nullptr, "bunny.net/asset3", nullptr);
         result->reset();
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c4.bar.com") == 0);
 
@@ -594,7 +595,7 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         // sixth request
         result->reset();
         build_request(30006, &sm, nullptr, "bunny.net/asset3", nullptr);
-        strategy->findNextHop(txnp);
+        strategy->findNextHop(txnp, nullptr, now);
         REQUIRE(result->result == ParentResultType::SPECIFIED);
         CHECK(strcmp(result->hostname, "c5.bar.com") == 0);
 
@@ -602,7 +603,6 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
         strategy->markNextHop(txnp, result->hostname, result->port, NHCmd::MARK_DOWN);
         // seventh request - new request with all hosts down and go_direct is false.
         {
-          time_t now = time(nullptr) - 1; ///< make sure down hosts are not retryable
           result->reset();
           build_request(30007, &sm, nullptr, "bunny.net/asset4", nullptr);
           strategy->findNextHop(txnp, nullptr, now);
@@ -612,10 +612,10 @@ SCENARIO("Testing NextHopConsistentHash class (alternating rings), using policy 
 
         // eighth request - retry after waiting for the retry window to expire.
         {
-          time_t now = time(nullptr) + 5;
+          time_t const retry_now = time(nullptr) + 5;
           result->reset();
           build_request(30008, &sm, nullptr, "bunny.net/asset4", nullptr);
-          strategy->findNextHop(txnp, nullptr, now);
+          strategy->findNextHop(txnp, nullptr, retry_now);
           REQUIRE(result->result == ParentResultType::SPECIFIED);
           CHECK(strcmp(result->hostname, "c2.foo.com") == 0);
         }

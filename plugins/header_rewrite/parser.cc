@@ -106,6 +106,11 @@ Parser::parse_line(const std::string &original_line)
         _empty = true;
         return false;
       }
+    } else if ((state == PARSER_DEFAULT) && (i > 0) && (line[i - 1] == '%') && (line[i] == '{')) {
+      // A %{} expansion is a single token even with whitespace in it, e.g. %{CLIENT-URL:PATH [NORM]}.
+      state = PARSER_IN_EXPANSION;
+    } else if ((state == PARSER_IN_EXPANSION) && (line[i] == '}')) {
+      state = PARSER_DEFAULT;
     } else if ((state == PARSER_DEFAULT) && ((i == 0 || line[i - 1] != '%') && line[i] == '{')) {
       state            = PARSER_IN_BRACE;
       extracting_token = true;

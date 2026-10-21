@@ -427,7 +427,7 @@ getCanonicalRequestSha256Hash(TsInterface &api, bool signPayload, const StringSe
     std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), ::tolower);
 
     /* Host, content-type and x-amx-* headers are mandatory */
-    bool xAmzHeader        = (lowercaseName.length() >= X_AMZ.length() && 0 == lowercaseName.compare(0, X_AMZ.length(), X_AMZ));
+    bool xAmzHeader        = isXAmzHeader(lowercaseName);
     bool contentTypeHeader = (0 == CONTENT_TYPE.compare(lowercaseName));
     bool hostHeader        = (0 == HOST.compare(lowercaseName));
     if (!xAmzHeader && !contentTypeHeader && !hostHeader) {

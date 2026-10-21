@@ -20,6 +20,61 @@
 .. _whats_new:
 
 
+What's New in ATS v11.x
+=======================
+
+Security
+--------
+
+This release carries a large body of security work. Most of it tightens what |TS|
+accepts rather than adding anything, so the operator-visible effect -- changed
+defaults, messages now refused, ACL conditions that now apply as written, and
+plugins that now require configuration -- is described in
+:ref:`upgrading`. Read that section before upgrading.
+
+Several fixes in this release carry CVE identifiers. Refer to the security
+advisory for this release for the identifiers, severities and affected version
+ranges.
+
+Configuration
+-------------
+
+* Added :ts:cv:`proxy.config.http.reject_head_with_content` to control whether a
+  ``HEAD`` request carrying ``Content-Length`` or ``Transfer-Encoding`` is
+  refused. Enabled by default.
+* Added :ts:cv:`proxy.config.regex.anchor_policy_rules` to require that a regex
+  driving a security or routing decision match the whole subject. Disabled by
+  default; when disabled, each unanchored rule is named once at config load so
+  the effect of enabling it can be measured first. See
+  :ref:`admin-regex-best-practices`.
+* :ts:cv:`proxy.config.http2.default_buffer_water_mark` now defaults to ``32768``
+  and no longer accepts values below ``1024``.
+* :ts:cv:`proxy.config.http.header_field_max_size` and
+  :ts:cv:`proxy.config.hostdb.round_robin_max_count` are now range checked, at
+  ``0`` to ``65535`` and ``1`` to ``1024`` respectively. Their defaults are
+  unchanged, but a value outside the range is no longer accepted.
+* :file:`ip_allow.yaml` ships default outbound rules denying ``CONNECT`` tunnels
+  to unspecified, loopback, private, link-local and IPv4-mapped IPv6 destinations.
+
+Metrics
+-------
+
+* Added :ts:stat:`proxy.process.ssl.user_agent_resumed_cert_rejected`, counting
+  inbound connections rejected because the session they resumed carried no client
+  certificate where the current SNI's ``verify_client`` policy requires one.
+  Sessions are bound to the policy that issued them, so an out-of-scope session
+  completes a full handshake rather than reaching this counter, which is normally
+  zero.
+
+Plugins
+-------
+
+* ``tsmemcache``: the listener binds to the loopback address by default, and an
+  optional second plugin argument sets the address to bind instead.
+* ``magick``: a signing key is now required. The plugin refuses to load without
+  one, and the ImageMagick ``convert`` operators it will run are allowlisted.
+
+
 What's New in ATS v10.1
 =======================
 

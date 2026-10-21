@@ -1229,18 +1229,42 @@ uds-group
    ``host``      Re-use server sessions, checking that the fully qualified
                  domain name matches. In addition, if the session uses TLS, it also
                  checks that the current transaction's host header value matches the session's SNI.
-   ``both``      Equivalent to ``host,ip``.
+   ``both``      Equivalent to ``host,ip,cert``.
    ``hostonly``  Check that the fully qualified domain name matches.
    ``sni``       Check that the SNI of the session matches the SNI that would be used to
                  create a new session.  Only applicable for TLS sessions.
-   ``cert``      Check that the certificate file name used for the server session matches the
-                 certificate file name that would be used for the new server session.  Only
-                 applicable for TLS sessions.
+   ``cert``      Check that the client certificate |TS| would present when opening a
+                 new connection to the origin matches the one the pooled session
+                 authenticated with, as selected by
+                 :ts:cv:`proxy.config.ssl.client.cert.filename`.  This is the certificate
+                 |TS| sends to the origin, not the certificate the origin sends back.
+                 Only applicable for TLS sessions.
    ============= ===================================================================
 
    The setting must contain at least one of ``ip``, ``host``, ``hostonly`` or ``both``
    for session reuse to operate.  The other values may be used for greater control
    with TLS session reuse.
+
+   ``both`` includes ``cert`` because the outbound client certificate is
+   overridable per transaction, so a pooled TLS session that authenticated with
+   one client certificate must not be reused for a transaction configured to
+   present a different one.  The origin authorizes the connection on the
+   certificate presented during the handshake, and reuse performs no second
+   handshake.  See :ref:`admin-mtls` for the configurations this applies to.
+
+   ``cert`` compares only the value of
+   :ts:cv:`proxy.config.ssl.client.cert.filename`, including its per-transaction
+   overrides.  A certificate selected by a :file:`sni.yaml` ``client_cert`` entry
+   is not visible to it, and because those entries are keyed on the outbound SNI,
+   ``sni`` is the value that separates the identities they select.
+
+   Including ``cert`` makes sessions less shareable for deployments that
+   configure a client certificate, which increases the number of outbound
+   handshakes.  Deployments that configure no client certificate are unaffected,
+   because the comparison is skipped entirely for non-TLS origins and compares
+   two empty values otherwise.  A deployment that needs the previous behavior can
+   set ``ip,host`` explicitly, which selects the same validators ``both`` did
+   before ``cert`` was added.
 
 .. note::
 
@@ -2143,6 +2167,20 @@ Origin Server Connect Attempts
 .. ts:cv:: CONFIG proxy.config.http.post.check.content_length.enabled INT 1
 
     Enables (``1``) or disables (``0``) checking the Content-Length: Header for a POST request.
+
+.. ts:cv:: CONFIG proxy.config.http.reject_head_with_content INT 1
+   :reloadable:
+   :overridable:
+
+   Rejects (``1``) HEAD requests that carry non-empty content, declared via a
+   non-zero ``Content-Length`` or a chunked ``Transfer-Encoding``, with a
+   ``400 Bad Request`` response.
+
+   RFC 9110 § 9.3.2 states that a client *SHOULD NOT* send content in a HEAD
+   request.  Enabling this setting enforces that recommendation.
+
+   Setting this to ``0`` allows HEAD requests with a body to be forwarded to
+   the origin.  Disabling this setting may introduce security risks.
 
 .. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 60
    :reloadable:
@@ -4303,6 +4341,42 @@ Reverse Proxy
 
    The URL to which to redirect requests with no host headers (reverse
    proxy).
+
+Operator Regex Rules
+====================
+
+.. ts:cv:: CONFIG proxy.config.regex.anchor_policy_rules INT 0
+   :reloadable:
+
+   Require operator-authored regex rules that drive policy decisions to match
+   the whole subject, instead of matching any subject that merely contains a
+   match.
+
+   Applies to ``map_with_referer``, the ``*_regex`` rules in
+   :file:`cache.config`, :file:`parent.config` and :file:`splitdns.config`, and
+   to the ``url_sig``, ``access_control``, ``geoip_acl``, ``maxmind_acl`` and
+   ``tls_bridge`` plugins. ``regex_map`` always requires a whole-host match and
+   is unaffected.
+
+   With the default of ``0``, matching is unchanged and each rule not anchored to
+   the whole subject is reported at config load with a ``[regex-anchor]``
+   warning. A rule already written as ``^...$`` is not reported, so the report
+   shrinks as patterns are rewritten and reaches empty when enforcement is safe
+   to enable. With ``1`` each pattern the policy had to anchor is reported at
+   ``NOTE`` severity instead, so a rule added later is not silent.
+
+   Patterns compile when a configuration is loaded and this record moves no
+   file's modification time, so :program:`traffic_ctl` ``config reload``
+   recompiles nothing by itself — touch the affected configuration files too, or
+   restart. ``tls_bridge`` picks the setting up only on restart.
+
+   Enabling this makes substring-style patterns such as ``\.pdf`` match nothing,
+   which turns their rule into a no-op. It also affects patterns already written
+   as ``^...$``, because a trailing ``$`` still permits a final newline while
+   enforcement does not. ``geoip_acl`` inverts its ACL rather than going inert.
+   Audit the warnings first.
+
+   .. seealso:: :ref:`admin-regex-best-practices`
 
 URL Remap Rules
 ===============

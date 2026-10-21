@@ -114,6 +114,14 @@ Types
       This hook gives the plugin a chance to load the certificate or key from an alternative source and set via the :func:`TSSslSecretSet` API.
       If there is no plugin override, the certificate or key will be loaded from disk and the secret name will be interpreted as a file path.
 
+      |TS| may load certificates on several threads at once, and some of those are not event threads, so a mutex on the
+      continuation does not serialize the calls. |TS| instead runs this hook on one thread at a time, so a plugin does not
+      need its own lock to guard state that only this hook touches. The hook can still be called again on the same thread
+      before it returns, if it calls :func:`TSSslSecretSet` and that update needs another secret. Because the hook runs
+      under a process-wide lock, create the hook continuation without a mutex, and do not hold any lock the hook takes
+      while calling :func:`TSSslSecretSet` or :func:`TSSslSecretUpdate` from another callback. Otherwise a configuration
+      reload can deadlock.
+
    .. cpp:enumerator:: TS_LIFECYCLE_SHUTDOWN_HOOK
 
       Called after |TS| receiving a shutdown signal, such as SIGTERM.

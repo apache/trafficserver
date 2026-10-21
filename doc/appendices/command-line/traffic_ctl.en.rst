@@ -116,6 +116,70 @@ Options
 
    Path to the runroot file.
 
+.. option:: --error-level <level>
+
+   Lowest severity that makes a server error exit with ``2``. When a method handler fails, each
+   entry in the ``data`` array of the error can carry a ``severity`` (see
+   :ref:`jsonrpc-node-errors-severity`). :program:`traffic_ctl` takes the most severe entry: at
+   or above ``<level>`` the command exits ``2``, below it the command exits ``0``. The error is
+   printed either way.
+
+   An entry without a ``severity`` counts as ``error``. That is how |TS| itself treats it, and it
+   is how every entry from an older |TS| arrives, so with the default level every failure still
+   exits ``2`` unless its handler marked it as less severe. For example, ``traffic_ctl server
+   drain`` on a server that is already draining reports a ``warn`` and exits ``0``.
+
+   Accepted values, case-insensitive: ``diag``, ``debug``, ``status``, ``note``, ``warn`` (or
+   ``warning``), ``error``, ``fatal``, ``alert`` and ``emergency``. Default: ``error``. The option
+   is refused when it is given more than once, or without a value.
+
+   |TS| answers a handler result below ``warn`` with a success, so a handler failure reaches
+   :program:`traffic_ctl` only at ``warn`` or above. Against |TS|, ``diag``, ``debug``, ``status``
+   and ``note`` therefore act like ``warn``. They differ only for a failure whose entries are all
+   marked below ``warn``, which takes a handler that sets the severity of its errata apart from the
+   entries (see :ref:`jsonrpc-node-errors-severity`).
+
+   The level applies to every command that decodes the server response, in every output format,
+   ``--format json`` included. ``traffic_ctl rpc file`` and ``traffic_ctl rpc input`` are the
+   exception: they print the raw response and their exit status does not look at errors in it.
+
+   A command that cannot finish because a request it depends on failed below the level exits
+   ``75`` rather than ``0``, since what was asked was not done: ``traffic_ctl config reload
+   --monitor`` when it cannot see how the reload ended, ``traffic_ctl config reload --show-details``
+   when it cannot show the reload's details, ``traffic_ctl config reset`` when it cannot read the
+   records, ``traffic_ctl metric monitor`` when a poll fails, and ``traffic_ctl server debug enable
+   --append`` when it cannot read the current tags.
+
+   .. note::
+
+      Errors that do not come from a method handler always exit ``2``, whatever the level:
+      protocol errors such as ``-32601 Method not found``, an unauthorized call, and a handler
+      failure without ``data`` entries. The level does not change errors a command reports inside
+      a successful response either, such as the record errors of ``traffic_ctl config get`` or
+      the reload errors of ``traffic_ctl config reload``.
+
+   Examples:
+
+   .. code-block:: bash
+
+      $ traffic_ctl server drain
+      $ traffic_ctl server drain
+      Server Error found:
+      [9] Error during execution
+      - [3000] Warn: Server already draining.
+      $ echo $?
+      0
+
+      # Treat warnings as failures
+      $ traffic_ctl --error-level=warn server drain
+      $ echo $?
+      2
+
+      # Only fail on fatal or above: a read-only record (no severity, so an error) exits 0
+      $ traffic_ctl --error-level=fatal config set proxy.config.thread.max_heartbeat_mseconds 999
+      $ echo $?
+      0
+
 Subcommands
 ===========
 
@@ -529,17 +593,21 @@ Display the current value of a configuration record.
 
    ``0``
       Success. The reload was scheduled (without ``--monitor``) or completed successfully
-      (with ``--monitor``).
+      (with ``--monitor``). Without ``--monitor`` or ``--show-details``, also when the server
+      reported an error below :option:`traffic_ctl --error-level`.
 
    ``2``
-      Error. The reload reached a terminal failure state (``fail`` or ``timeout``), or an
-      RPC communication error occurred.
+      Error. The reload reached a terminal failure state (``fail`` or ``timeout``), an
+      RPC communication error occurred, or the server reported an error at or above
+      :option:`traffic_ctl --error-level`.
 
    ``75``
       Temporary failure (``EX_TEMPFAIL`` from ``sysexits.h``). A reload is already in
       progress and the command could not start a new one, monitoring was interrupted
-      (e.g. Ctrl+C) before the reload reached a terminal state, or the ``--timeout``
-      duration was exceeded. The caller is invited to retry or monitor the operation later.
+      (e.g. Ctrl+C) before the reload reached a terminal state, the ``--timeout``
+      duration was exceeded, or, with ``--monitor`` or ``--show-details``, a request failed with
+      an error below :option:`traffic_ctl --error-level`. The caller is invited to retry or
+      monitor the operation later.
 
    Example usage in scripts:
 
@@ -617,6 +685,19 @@ Display the current value of a configuration record.
 
    ``-c`` is also given at most once, so repeating it is a usage error rather than the last
    file name silently winning.
+
+   When ``-c`` is written with no file name and the ``TS_RECORD_YAML`` environment variable
+   is set, its value is used as the file name instead of the sysconfig
+   :file:`records.yaml`:
+
+   .. code-block:: bash
+
+      $ TS_RECORD_YAML=/tmp/records.yaml traffic_ctl config get proxy.config.diags.debug.enabled -c
+
+   A file name typed on the command line always takes precedence over the variable, which is
+   used only when ``-c`` is given no file name at all. ``-c`` is already refused outright when
+   written more than once, so there is no case where one occurrence has a file name and another
+   does not.
 
    If the file exists and is empty a new document will be created. If a file does not exist, an attempt to create a new file will be done.
 
@@ -1169,10 +1250,28 @@ traffic_ctl server
    This string should contain an anchored regular expression that filters the messages based on the debug tag tag.
    Please refer to :ts:cv:`proxy.config.diags.debug.tags` for more information
 
+   When ``--tags`` is written with no value and the ``TS_DEBUG_TAGS`` environment variable is
+   set, its value is used instead:
+
+   .. code-block:: bash
+
+      $ TS_DEBUG_TAGS="http|cache" traffic_ctl server debug enable --tags
+
+   A value typed on the command line always takes precedence over the variable, which is used
+   only when ``--tags`` is given no value at all. If ``--tags`` is written more than once, the
+   variable applies only when every occurrence is bare; a bare occurrence next to one that was
+   given a value, in either spelling, is the same usage error it would be without a variable:
+
+   .. code-block:: bash
+
+      $ TS_DEBUG_TAGS="http|cache" traffic_ctl server debug enable --tags dns --tags
+      Error: 1 argument(s) expected by tags
+
    .. option:: --append, -a
 
    Append the specified tags to the existing debug tags instead of replacing them. This option requires
    ``--tags`` to be specified. The new tags will be combined with existing tags using the ``|`` separator.
+   If the request that reads the existing tags fails, nothing is set and the command fails.
 
    .. option:: --client_ip, -c ip
 
@@ -1577,8 +1676,8 @@ Configure Traffic Server to insert ``Via`` header in the response to the client
       # traffic_ctl config set proxy.config.http.insert_response_via_str 1
       # traffic_ctl config reload
 
-Autest
-======
+Uranium Tests
+================
 
 Runroot needs to be configured in order to let `traffic_ctl` know where to find the socket. This is done by default
 and there is no change you have to do to interact with it, but make sure that you are not overriding the `dump_runroot=False`
@@ -1590,19 +1689,25 @@ Exit Codes
 :program:`traffic_ctl` uses the following exit codes:
 
 ``0``
-   Success. The requested operation completed successfully.
+   Success. The requested operation completed successfully, or the server returned an error whose
+   most severe annotation is below :option:`traffic_ctl --error-level` (default: ``error``).
 
 ``2``
    Error. The operation failed. This may be returned when:
 
    - The RPC communication with :program:`traffic_server` failed (e.g. socket not found or connection refused).
-   - The server response contains an error (e.g. invalid record name, malformed request).
+   - The server response contains an error (e.g. invalid record name, malformed request) whose most
+     severe annotation is at or above :option:`traffic_ctl --error-level`. An annotation without a
+     severity counts as ``error``, and errors that do not come from a method handler always
+     count.
 
 ``3``
    Unimplemented. The requested command is not yet implemented.
 
 ``75``
    Temporary failure (aligned with ``EX_TEMPFAIL`` from ``sysexits.h``). The caller is invited to retry later.
+   Also returned when a command could not finish because a request it depends on failed with an error
+   below :option:`traffic_ctl --error-level`.
 
 See also
 ========

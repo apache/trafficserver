@@ -1904,7 +1904,14 @@ HttpTunnel::final_consumer_bytes_to_write(HttpTunnelProducer *p, HttpTunnelConsu
       } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
         bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
       } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
-        bytes_to_write = p->bytes_consumed;
+        // Dropped trailers are counted in bytes_consumed but never reach the
+        // consumer buffer, so a write VIO sized from it waits for bytes that
+        // will never arrive. chunked_size counts only what was written out.
+        if (p->chunked_handler.drop_chunked_trailers) {
+          bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.chunked_size;
+        } else {
+          bytes_to_write = p->bytes_consumed;
+        }
       } else {
         bytes_to_write = p->bytes_consumed;
       }
