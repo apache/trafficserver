@@ -23,6 +23,8 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
 
 TEST_DIRECTORY = Path(__file__).parent
+# The proxy.config.http2.active_timeout_in for the active timeout case, in seconds.
+ACTIVE_TIMEOUT = 3
 
 
 def http2_tls_configure_origin(services: ServiceFactory, name: str) -> OriginServer:
@@ -54,7 +56,7 @@ def http2_tls_configure_ats(ats_factory: ATSFactory, name: str, *, _origin: Orig
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
-            "proxy.config.http2.active_timeout_in": 3,
+            "proxy.config.http2.active_timeout_in": ACTIVE_TIMEOUT,
             "proxy.config.http2.max_concurrent_streams_in": 65535,
         })
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
@@ -198,8 +200,9 @@ def test_http2_active_timeout(ats_factory: ATSFactory, services: ServiceFactory)
         TEST_DIRECTORY / "h2active_timeout.py",
         str(_ats.https_port),
         "/",
-        "4",
-        timeout=10,
+        str(ACTIVE_TIMEOUT),
+        # Longer than the 15 seconds h2active_timeout.py waits for the close.
+        timeout=30,
     )
     assert result.returncode == 0, result.output
     assert "CONNECTION_TIMEOUT" in result.output
