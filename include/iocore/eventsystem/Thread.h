@@ -1,6 +1,7 @@
 /** @file
 
-  Thread
+  The @c Thread base class for OS threads owned by ATS, and the means to
+  start one and to look up the @c Thread registered for the calling thread.
 
   @section license License
 
@@ -20,40 +21,6 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section details Details
-
-  Thread class provides the basic functionality for threads. Typically,
-  there will be additional derived classes. Having a common base class
-  for all threads is useful in many cases. I discuss below the use of
-  Threads in the context of Event Subsystem. Hopefully this would be
-  typical of other situations.
-
-  EventProcessor needs to create a bunch of threads. It declares a
-  class called EThread, derived from Thread. It is the responsibility of
-  the EventProcessor to create and manage all the threads needed in the
-  Event Subsystem (Note: we have removed the original ThreadManager class
-  which used to create and manage *all* the threads in the system). By
-  monitoring, we mean checking the heartbeat of each thread and the
-  number of threads in the system etc.
-
-  A derived class should either provide the function (and arguments)
-  needed by the Thread class (see start()), or should define the virtual
-  function execute().
-
-  The Thread class maintains a thread_key which registers *all*
-  the threads in the system (that have been created using Thread or
-  a derived class), using thread specific data calls.  Whenever, you
-  call this_thread() you get a pointer to the Thread that is currently
-  executing you.  Additionally, the EThread class (derived from Thread)
-  maintains its own independent key. All (and only) the threads created
-  in the Event Subsystem are registered with this key. Thus, whenever you
-  call this_ethread() you get a pointer to EThread. If you happen to call
-  this_ethread() from inside a thread which is not an EThread, you will
-  get a nullptr value (since that thread will not be  registered with the
-  EThread key). This will hopefully make the use of this_ethread() safer.
-  Note that an event created with EThread can also call this_thread(),
-  in which case, it will get a pointer to Thread (rather than to EThread).
-
  */
 
 #pragma once
@@ -67,55 +34,147 @@
 
 class ProxyMutex;
 
+/**
+  Size in bytes, including the terminating NUL, of a thread name buffer.
+
+  Use it to size buffers that build or read back the names of ATS
+  threads. A thread name holds at most @c MAX_THREAD_NAME_LENGTH - 1
+  bytes; longer names are truncated when the thread is started, without
+  any error being reported.
+*/
 constexpr int MAX_THREAD_NAME_LENGTH = 16;
 
-/// The signature of a function to be called by a thread.
+/**
+  Optional entry point for the OS thread spawned by @c Thread::start.
+
+  When non-empty, the spawned thread invokes the callable exactly once,
+  in place of @c Thread::execute, and exits when it returns.
+
+  @note @c Thread::start keeps its own copy of the callable. Anything the
+        callable captures by reference or pointer MUST stay valid until
+        the callable returns.
+
+  @pre The callable MUST NOT exit via an exception.
+
+  @par Thread Safety
+  The callable runs on the spawned thread, concurrently with the caller
+  of @c Thread::start. State it shares with other threads needs its own
+  synchronization.
+*/
 using ThreadFunction = std::function<void()>;
 
 /**
-  Base class for the threads in the Event System. Thread is the base
-  class for all the thread classes in the Event System. Objects of the
-  Thread class represent spawned or running threads and provide minimal
-  information for its derived classes. Thread objects have a reference
-  to a ProxyMutex, that is used for atomic operations internally, and
-  an ink_thread member that is used to identify the thread in the system.
+  Base class for an object that represents one OS thread and holds its
+  per-thread state.
 
-  You should not create an object of the Thread class, they are typically
-  instantiated after some thread startup mechanism exposed by a processor,
-  but even then you would probably deal with processor functions and
-  not the Thread object itself.
+  A @c Thread represents the OS thread on which it is registered in
+  @c this_thread_ptr.
 
+  @par Lifetime
+  A @c Thread MUST NOT be destroyed while a different OS thread may
+  still use it, for example through @c this_thread_ptr or a running
+  @c execute.
 */
 class Thread
 {
 public:
   /**
-    System-wide thread identifier. The thread identifier is represented
-    by the platform independent type ink_thread and it is the system-wide
-    value assigned to each thread. It is exposed as a convenience for
-    processors and you should not modify it directly.
+    Identifier of the OS thread spawned by @c start.
 
+    Zero until @c start is called, and remains zero for a @c Thread that
+    is registered via @c set_specific without being started. The value
+    is never reset: once the OS thread has been joined, it no longer
+    identifies a live thread and MAY be reused by the platform.
+
+    @par Thread Safety
+    Written by @c start on its calling thread before @c start returns.
+    Safe to read from that thread after @c start returns, and from any
+    thread that synchronizes with it afterward. The spawned thread
+    itself MUST NOT read @c tid without such synchronization; it should
+    obtain its own identifier from the platform instead.
   */
   // NOLINTNEXTLINE(modernize-use-nullptr)
   ink_thread tid = 0;
 
   /**
-    Thread lock to ensure atomic operations. The thread lock available
-    to derived classes to ensure atomic operations and protect critical
-    regions. Do not modify this member directly.
+    Mutex that the @c Thread holds on its own behalf.
 
+    Non-null and unchanged from construction until destruction; do not
+    assign to it. Once construction completes, the @c Thread holds this
+    mutex until destruction, so a lock taken on the OS thread this
+    @c Thread represents always succeeds immediately. Any object that
+    adopts this mutex as its own lock can therefore be locked, and its
+    work run, only on that OS thread.
+
+    @note Do not lock it from any other thread. A try-lock always
+          fails, and a blocking lock is undefined.
+
+    @par Thread Safety
+    Reading or copying the @c Ptr is safe from any thread.
   */
   Ptr<ProxyMutex> mutex;
 
+  /**
+    Registers @c this as the calling OS thread's @c Thread.
+
+    A @c Thread that spawns its own OS thread registers itself on that
+    thread before its entry point runs. Call this directly only to
+    register a @c Thread for an OS thread it did not spawn, such as the
+    main thread. Overrides MAY register additional per-subclass
+    state for the calling thread.
+
+    Registration replaces any @c Thread previously registered on the
+    calling thread.
+
+    @pre  @c this is not registered on any other running OS thread.
+
+    @post @c this_thread_ptr on the calling thread equals @c this.
+
+    @par Thread Safety
+    Thread-safe.
+  */
   virtual void
   set_specific()
   {
     this_thread_ptr = this;
   }
 
+  /**
+    The @c Thread registered for the calling OS thread, or nullptr if
+    none is registered.
+
+    Every OS thread starts with nullptr. A @c Thread that starts an OS
+    thread registers itself on it before the thread's entry point runs.
+    Registering another @c Thread replaces the value; destroying the
+    registered @c Thread on this OS thread resets it to nullptr, not to
+    any earlier value. Consumers MUST NOT assign to it.
+
+    @note Destroying the registered @c Thread on a different OS thread
+          leaves this pointer dangling on the OS thread it was
+          registered for.
+
+    @par Thread Safety
+    Thread-safe.
+  */
   static thread_local Thread *this_thread_ptr;
 
-  // For THREAD_ALLOC
+  /**
+    @name Per-thread allocator freelists
+
+    Each field is this thread's freelist for the global allocator of
+    the same name. Consumers MUST access the fields only through the
+    @c THREAD_ALLOC and @c THREAD_FREE family of macros, which select
+    the field by that name. An object MAY be freed through a different
+    @c Thread than the one it was allocated through.
+
+    @note To use these macros with a new global allocator, add a field
+          here with exactly that allocator's name.
+
+    @par Thread Safety
+    Not thread-safe. The @c Thread passed to the macros MUST be the
+    calling OS thread's own @c Thread.
+  */
+  /// @{
   ProxyAllocator eventAllocator;
   ProxyAllocator netVCAllocator;
   ProxyAllocator sslNetVCAllocator;
@@ -148,33 +207,108 @@ public:
 #if TS_HAS_CRIPTS == 1
   ProxyAllocator criptContextAllocator;
 #endif
+  /// @}
 
-  /** Start the underlying thread.
+  /**
+    Spawns the OS thread for this @c Thread.
 
-      The thread name is set to @a name. The stack for the thread is either @a stack or, if that is
-      @c nullptr a stack of size @a stacksize is allocated and used. If @a f is present and valid it
-      is called in the thread context. Otherwise the method @c execute is invoked.
+    The new thread calls @c set_specific, sets its name to @p name, and
+    then calls @p f if it is non-empty, or @c execute otherwise. The OS
+    thread exits when that call returns. If the OS thread cannot be
+    created, the process aborts.
+
+    @param[in] name      Thread name. It is copied; bytes past the first
+                         @c MAX_THREAD_NAME_LENGTH - 1 are dropped.
+    @param[in] stack     Stack for the new thread, or nullptr to let the
+                         platform allocate one.
+    @param[in] stacksize Stack size in bytes, or 0 for a build-configured
+                         default.
+    @param[in] f         Callable to run instead of @c execute. It is
+                         copied.
+
+    @pre  @c start has not been called on this @c Thread before.
+    @pre  @p name is a non-null, NUL-terminated string.
+    @pre  If @p stack is non-null, it spans at least as many bytes as
+          the stack size and stays valid until the OS thread exits.
+    @pre  This @c Thread stays alive until the OS thread exits.
+
+    @post @c tid identifies the new OS thread. The new thread may
+          already be running, or may have finished.
+
+    @note If the platform rejects @p stack or the stack size (for
+          example, because of alignment or a minimum size), which stack
+          the thread gets is unspecified.
+
+    @par Thread Safety
+    Safe to call concurrently on different @c Thread objects. The write
+    to @c tid is not synchronized with the new thread, so code running
+    on the new thread MUST NOT read @c tid.
   */
   void start(const char *name, void *stack, size_t stacksize, ThreadFunction const &f = ThreadFunction());
 
-  virtual void execute() = 0;
+  /**
+    Runs the thread's main body.
 
-  /** Get the current ATS high resolution time.
-      This gets a cached copy of the time so it is very fast and reasonably accurate.
-      The cached time is updated every time the actual operating system time is fetched which is
-      at least every 10ms and generally more frequently.
+    Subclasses override this to implement the thread's role. When the
+    thread is started without an entry-point callable, the framework
+    invokes this on the newly spawned OS thread, and that OS thread
+    exits once this returns.
 
-      @note The cached copy is thread local which means each thread need to update the cached copy by itself.
+    @pre  @c set_specific has been invoked on this instance from the
+          calling OS thread.
+    @pre  This method has not previously been invoked on this instance.
+
+    @par Thread Safety
+    Not thread-safe.
   */
+  virtual void execute() = 0;
 
   Thread(const Thread &)            = delete;
   Thread &operator=(const Thread &) = delete;
+
+  /**
+    Destroys the @c Thread without joining or signaling its OS thread.
+
+    @pre  If this instance was started, the OS thread backing it has
+          exited.
+    @pre  No running OS thread other than the caller has its
+          @c this_thread_ptr pointing at this instance.
+
+    @post If the caller's @c this_thread_ptr pointed at this instance,
+          it is nullptr.
+
+    @par Thread Safety
+    Not thread-safe.
+  */
   virtual ~Thread();
 
 protected:
+  /**
+    Constructs a @c Thread that has no OS thread yet.
+
+    @pre  Not called during static initialization.
+
+    @post @c mutex refers to a newly allocated, unlocked mutex that no
+          other object shares. @c this_thread_ptr is unchanged; the new
+          @c Thread is not registered on any OS thread.
+
+    @par Thread Safety
+    Thread-safe.
+  */
   Thread();
 };
 
+/**
+  Returns the @c Thread registered for the calling OS thread.
+
+  @return The registered @c Thread, or nullptr if none is registered.
+          An OS thread spawned by a @c Thread has that @c Thread
+          registered before any of its work runs; any other OS thread
+          has none unless one is registered for it explicitly.
+
+  @par Thread Safety
+  Thread-safe.
+*/
 inline Thread *
 this_thread()
 {
