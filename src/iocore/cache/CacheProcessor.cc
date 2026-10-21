@@ -1551,6 +1551,11 @@ CacheProcessor::cacheInitialized()
         Dbg(dbg_ctl_cache_init, "Shared cache size (for RAM pool distribution): %" PRId64 " blocks", shared_cache_size);
       }
 
+      // Recovery already debited the volume gauges; zero them before summing, as CachePeriodicMetricsUpdate() does.
+      for (int i = 0; i < gnstripes; i++) {
+        ts::Metrics::Gauge::store(gstripes[i]->cache_vol->vol_rsb.direntries_used, 0);
+      }
+
       for (int i = 0; i < gnstripes; i++) {
         StripeSM *stripe          = gstripes[i];
         int64_t   ram_cache_bytes = 0;
