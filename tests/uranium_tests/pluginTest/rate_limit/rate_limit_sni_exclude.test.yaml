@@ -1,0 +1,96 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "SNI exclusion permits TLS while ordinary limited clients still connect"
+  requires: {plugins: [rate_limit.so]}
+  server: {name: server}
+  client: {name: client}
+  ats:
+    name: ts
+    process_config: {enable_tls: true, enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: rate_limit
+      proxy.config.http.insert_response_via_str: 0
+      proxy.config.url_remap.remap_required: 0
+    inline_config_files:
+      rate_limit.yaml: |
+        lists:
+          - name: loopback
+            cidr:
+              - 127.0.0.0/8
+        selector:
+          - sni: excluded.example.com
+            limit: 1
+            exclude: loopback
+          - sni: limited.example.com
+            limit: 1
+    plugin_config:
+      - "rate_limit.so {CONFIG_DIR}/rate_limit.yaml"
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'Limiter on excluded.example.com is excluded via List=loopback'
+            description: "The excluded SNI matches the configured client IP list"
+
+sessions:
+  - protocol:
+      stack: https
+      tls: {sni: excluded.example.com}
+    transactions:
+      - client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, excluded.example.com]
+              - [uuid, excluded]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Connection, close]
+              - [Content-Length, 2]
+          content: {data: OK, size: 2}
+        proxy-response: {status: 200}
+
+  # A non-excluded client is a positive control for ordinary TLS admission.
+  - protocol:
+      stack: https
+      tls: {sni: limited.example.com}
+    transactions:
+      - client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, limited.example.com]
+              - [uuid, limited]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Connection, close]
+              - [Content-Length, 2]
+          content: {data: OK, size: 2}
+        proxy-response: {status: 200}

@@ -1,0 +1,133 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify an HTTP/2 client reset triggers a background cache fill"
+
+  requires:
+    proxy_verifier: "2.8.0"
+
+  server:
+    name: "background-fill-origin"
+
+  client:
+    name: "background-fill-client"
+
+  ats:
+    name: "background-fill-ts"
+    process_config:
+      enable_cache: true
+      enable_tls: true
+
+    records_config:
+      proxy.config.http.background_fill_active_timeout: 0
+      proxy.config.http.background_fill_completed_threshold: 0.0
+      proxy.config.http.cache.required_headers: 0
+      proxy.config.http.insert_response_via_str: 2
+      proxy.config.http.server_session_sharing.pool: thread
+      proxy.config.http.server_session_sharing.match: "ip,sni,cert"
+      proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.exec_thread.limit: 1
+      proxy.config.ssl.client.alpn_protocols: "h2,http/1.1"
+      proxy.config.ssl.client.verify.server.policy: PERMISSIVE
+      proxy.config.diags.debug.enabled: 3
+      proxy.config.diags.debug.tags: http
+
+    plugin_config:
+      - "xdebug.so --enable=x-cache"
+
+    remap_config:
+      - from: "/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+sessions:
+  - protocol:
+      stack: http2
+      tls:
+        sni: test_sni
+    transactions:
+      - client-request:
+          frames:
+            - HEADERS:
+                headers:
+                  fields:
+                    - [":method", GET]
+                    - [":scheme", https]
+                    - [":authority", example.data.com]
+                    - [":path", /a/path]
+                    - [Content-Type, text/html]
+                    - [uuid, background-fill-reset]
+                    - [x-debug, x-cache]
+            - RST_STREAM:
+                delay: 1s
+                error-code: INTERNAL_ERROR
+
+        server-response:
+          frames:
+            - HEADERS:
+                headers:
+                  fields:
+                    - [":status", 200]
+                    - [Content-Type, text/html]
+                    - [Content-Length, "11"]
+            - DATA:
+                delay: 2s
+                content:
+                  encoding: plain
+                  data: server_test
+                  size: 11
+
+  - protocol:
+      stack: http2
+      tls:
+        sni: test_sni
+    transactions:
+      - client-request:
+          delay: 3s
+          frames:
+            - HEADERS:
+                headers:
+                  fields:
+                    - [":method", GET]
+                    - [":scheme", https]
+                    - [":authority", example.data.com]
+                    - [":path", /a/path]
+                    - [Content-Type, text/html]
+                    - [uuid, background-fill-hit]
+                    - [x-debug, x-cache]
+
+        proxy-request:
+          expect: absent
+
+        server-response:
+          frames:
+            - HEADERS:
+                headers:
+                  fields:
+                    - [":status", 500]
+                    - [Content-Length, "0"]
+
+        proxy-response:
+          headers:
+            fields:
+              - [x-cache, {value: hit-fresh, as: equal}]
+          content:
+            encoding: plain
+            data: server_test
+            verify: {as: equal}
