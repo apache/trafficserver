@@ -164,6 +164,17 @@ public:
    */
   void rebase_default_inactivity_deadline(ink_hrtime previous_in);
 
+  /** Arm the default inactivity timeout on an enabled NetEvent that has no
+   * inactivity deadline, replacing any explicit timeout, and re-arm the wheel.
+   *
+   * The wheel only revisits scheduled NetEvents, so every path that can leave
+   * an enabled NetEvent without a deadline must call this; the pre-wheel cop
+   * applied the same rule to every open NetEvent once a second.
+   *
+   * @return @c true if the default was armed.
+   */
+  bool arm_default_inactivity_timeout();
+
   /// Values for @a f.shutdown
   static constexpr unsigned SHUTDOWN_READ  = 1;
   static constexpr unsigned SHUTDOWN_WRITE = 2;

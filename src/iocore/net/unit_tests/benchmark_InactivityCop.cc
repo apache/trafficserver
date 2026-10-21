@@ -1676,6 +1676,93 @@ TEST_CASE("Changing the default leaves an explicit inactivity deadline alone", "
   CHECK(m->timer_hook.deadline == deadline);
 }
 
+// A per-remap default can replace a global default of 0 after set_enabled() ran,
+// so the connection has no deadline and is not in the wheel. The old sweep armed
+// it on its next pass; the wheel never visits it, so the change must arm it.
+TEST_CASE("Raising the default from 0 arms an enabled connection with no deadline", "[net][inactivity_cop]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  ink_hrtime const start = fx._now;
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    m->inactivity_timeout_in         = 0;
+    m->default_inactivity_timeout_in = 0;
+    m->next_inactivity_timeout_at    = 0;
+    m->read.enabled                  = 1;
+    fx.nh.rearm_timer(m);
+    REQUIRE_FALSE(fx.nh.timer_wheel.is_scheduled(m));
+
+    m->set_default_inactivity_timeout(HRTIME_SECONDS(30));
+  }
+
+  CHECK(m->use_default_inactivity_timeout);
+  CHECK(m->next_inactivity_timeout_at >= start + HRTIME_SECONDS(30));
+  CHECK(fx.nh.timer_wheel.is_scheduled(m));
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(start + HRTIME_SECONDS(32), &event);
+  }
+  CHECK(fx.counters.callbacks == 1);
+}
+
+// The default only applies once I/O is enabled; set_enabled() arms it then.
+TEST_CASE("The default does not arm a connection with no I/O enabled", "[net][inactivity_cop]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    m->default_inactivity_timeout_in = 0;
+    m->next_inactivity_timeout_at    = 0;
+    m->read.enabled                  = 0;
+    m->write.enabled                 = 0;
+    fx.nh.rearm_timer(m);
+
+    m->set_default_inactivity_timeout(HRTIME_SECONDS(30));
+  }
+
+  CHECK(m->next_inactivity_timeout_at == 0);
+  CHECK_FALSE(fx.nh.timer_wheel.is_scheduled(m));
+}
+
+// After a delivered timeout clears the deadline, a connection the handler kept
+// falls back to the default, replacing the explicit timeout, as the old sweep did.
+TEST_CASE("arm_default_inactivity_timeout replaces a spent explicit timeout", "[net][inactivity_cop]")
+{
+  Fixture fx(1);
+  auto   *m = fx.mocks[0].get();
+
+  SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+  m->inactivity_timeout_in         = HRTIME_SECONDS(600);
+  m->default_inactivity_timeout_in = HRTIME_SECONDS(30);
+  m->next_inactivity_timeout_at    = 0;
+  m->write.enabled                 = 1;
+  fx.nh.rearm_timer(m);
+
+  CHECK(m->arm_default_inactivity_timeout());
+  CHECK(m->inactivity_timeout_in == 0);
+  CHECK(m->is_default_inactivity_timeout());
+  CHECK(fx.nh.timer_wheel.is_scheduled(m));
+
+  INFO("an armed deadline is left alone");
+  ink_hrtime const armed = m->next_inactivity_timeout_at;
+  CHECK_FALSE(m->arm_default_inactivity_timeout());
+  CHECK(m->next_inactivity_timeout_at == armed);
+
+  INFO("a closed connection is never armed");
+  m->next_inactivity_timeout_at = 0;
+  m->closed                     = 1;
+  CHECK_FALSE(m->arm_default_inactivity_timeout());
+  CHECK(m->next_inactivity_timeout_at == 0);
+  m->closed = 0;
+}
+
 // --- The audit scan -------------------------------------------------------
 //
 // An audit that always reports clean is worse than none, so each anomaly class

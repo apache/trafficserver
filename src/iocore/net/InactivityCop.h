@@ -116,17 +116,13 @@ public:
         return;
       }
 
-      // set a default inactivity timeout if one is not set
-      // The event `EVENT_INACTIVITY_TIMEOUT` only be triggered if a read
-      // or write I/O operation was set by `do_io_read()` or `do_io_write()`.
-      if (ne->next_inactivity_timeout_at == 0 && ne->default_inactivity_timeout_in > 0 && (ne->read.enabled || ne->write.enabled)) {
+      // Reached with no inactivity deadline only when an active timeout is
+      // what brought ne here. The event `EVENT_INACTIVITY_TIMEOUT` is only
+      // triggered if a read or write I/O operation was set by `do_io_read()`
+      // or `do_io_write()`.
+      if (ne->arm_default_inactivity_timeout()) {
         Dbg(dbg_ctl_inactivity_cop, "vc: %p inactivity timeout not set, setting a default of %d", ne,
             nh.config.default_inactivity_timeout);
-        ne->use_default_inactivity_timeout = true;
-        ne->next_inactivity_timeout_at     = now + ne->default_inactivity_timeout_in;
-        ne->inactivity_timeout_in          = 0;
-        ne->rearm_timer();
-        Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
       }
 
       if (ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) {

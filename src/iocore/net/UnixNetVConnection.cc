@@ -470,18 +470,11 @@ UnixNetVConnection::set_enabled(VIO *vio)
   ink_release_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
 
-  ink_hrtime const default_timeout_in = default_inactivity_timeout_in.load(std::memory_order_relaxed);
-
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
     rearm_timer();
-  } else if (!next_inactivity_timeout_at && !inactivity_timeout_in && default_timeout_in > 0) {
-    // No explicit timeout is set: the wheel only revisits scheduled elements, so
-    // arm the default here rather than relying on the cop's sweep to notice.
-    use_default_inactivity_timeout = true;
-    next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
-    Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
-    rearm_timer();
+  } else {
+    arm_default_inactivity_timeout();
   }
 }
 
@@ -979,26 +972,25 @@ UnixNetVConnection::netActivity()
 {
   Dbg(dbg_ctl_socket, "net_activity updating inactivity %" PRId64 ", NetVC=%p", this->inactivity_timeout_in, this);
   ink_hrtime const default_timeout_in = this->default_inactivity_timeout_in.load(std::memory_order_relaxed);
+  // Setting a deadline is normally an extension, which needs no wheel work:
+  // the wheel re-reads the real deadline when the bucket comes due. The
+  // exception is the 0 -> armed transition (a default that was 0 at
+  // set_enabled(), or a deadline mainEvent() cleared after delivering a
+  // timeout): the vc may not be in the wheel at all, so re-arm on that
+  // transition only and keep the steady-state hot path free of wheel work.
+  bool const was_unarmed = this->next_inactivity_timeout_at == 0;
 
   if (this->inactivity_timeout_in) {
     this->next_inactivity_timeout_at = ink_get_hrtime() + this->inactivity_timeout_in;
-    // Deliberately no rearm_timer(): this only pushes the deadline later, and the
-    // wheel re-reads the real deadline when the bucket comes due. Hot I/O path.
   } else if (default_timeout_in > 0) {
-    // Arming from the default is an extension too, except on the 0 -> armed
-    // transition: a vc whose default was 0 when set_enabled() ran was never
-    // scheduled, so extending a deadline it does not have would leave it out of
-    // the wheel forever. Re-arm only on that transition, which happens at most
-    // once per connection, so the steady-state path stays free of wheel work.
-    bool const was_unarmed = this->next_inactivity_timeout_at == 0;
-
     this->use_default_inactivity_timeout = true;
     this->next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
-    if (was_unarmed) {
-      this->rearm_timer();
-    }
   } else {
     this->next_inactivity_timeout_at = 0;
+    return;
+  }
+  if (was_unarmed) {
+    this->rearm_timer();
   }
 }
 
@@ -1131,6 +1123,10 @@ UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
       return EVENT_DONE;
     }
   }
+  // Still alive, so the handler kept the connection. If it left it enabled
+  // without a new inactivity deadline, fall back to the default as the
+  // pre-wheel cop did on its next sweep.
+  arm_default_inactivity_timeout();
   return EVENT_DONE;
 }
 
@@ -1360,7 +1356,9 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
   Dbg(dbg_ctl_socket, "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
   next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + inactivity_timeout_in : 0;
-  rearm_timer();
+  if (!arm_default_inactivity_timeout()) {
+    rearm_timer();
+  }
 }
 
 TS_INLINE void

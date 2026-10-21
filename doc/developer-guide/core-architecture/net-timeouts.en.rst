@@ -106,29 +106,40 @@ connections that have no explicit inactivity timeout of their own. It is stored
 per-connection in ``default_inactivity_timeout_in``, seeded from the global in
 ``NetHandler::startCop`` and overridable per transaction.
 
-The deadline it implies is armed at the moments its precondition becomes true:
+The deadline it implies is armed by ``NetEvent::arm_default_inactivity_timeout``,
+which applies the old sweep's rule: an enabled, open connection with no
+inactivity deadline gets the default, replacing any explicit timeout. It is
+called wherever a connection can be left in that state:
 
 - ``UnixNetVConnection::set_enabled``, when a VIO is first enabled and no
   explicit timeout is set;
-- ``UnixNetVConnection::netActivity``, which re-arms from the default instead
-  of clearing the deadline when there is no explicit timeout;
-- ``UnixNetVConnection::cancel_inactivity_timeout``, which leaves the default
-  active by design.
+- ``UnixNetVConnection::set_inactivity_timeout``, when the explicit timeout is
+  cleared with 0;
+- ``NetEvent::rebase_default_inactivity_deadline``, when the default changes on
+  a connection that had none armed (e.g. a per-remap default replacing a global
+  0);
+- the end of ``UnixNetVConnection::mainEvent``, when the handler kept the
+  connection after a delivered timeout cleared its deadline;
+- ``InactivityCop``, for a connection with no inactivity deadline that an
+  active timeout brought into the cop.
+
+``UnixNetVConnection::cancel_inactivity_timeout`` also leaves the default active
+by design, and ``netActivity`` re-arms from the default instead of clearing the
+deadline when there is no explicit timeout.
 
 This matters because the *only* thing that used to apply the default was the
 cop's own sweep, gated on a VIO being enabled. Under the wheel that does not
 work: a connection with no deadline is never scheduled, so the cop never visits
 it, so the default is never applied — the connection would never time out at
-all. ``InactivityCop`` retains an equivalent arming block for any path that
-enables I/O without going through ``set_enabled``, but it is a safety net, not
-the mechanism.
+all.
 
 ``netActivity()`` is also the one place that deliberately skips
 ``rearm_timer()``, since extending is free — **except** on the 0-to-armed
-transition. A connection whose default was 0 when ``set_enabled`` ran was never
-scheduled, and extending a deadline it does not have would leave it out of the
-wheel forever, so that single transition does re-arm. Everything after it is a
-plain extension and stays free.
+transition. A connection whose default was 0 when ``set_enabled`` ran, or whose
+deadline ``mainEvent`` cleared after a timeout, may not be scheduled, and
+extending a deadline it does not have would leave it out of the wheel forever,
+so that single transition does re-arm. Everything after it is a plain extension
+and stays free.
 
 Budget
 ======

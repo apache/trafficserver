@@ -23,6 +23,27 @@
 
 #include "iocore/net/NetEvent.h"
 #include "iocore/net/NetHandler.h"
+#include "P_Net.h"
+
+bool
+NetEvent::arm_default_inactivity_timeout()
+{
+  if (closed || next_inactivity_timeout_at != 0 || !(read.enabled || write.enabled)) {
+    return false;
+  }
+
+  ink_hrtime const default_in = default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
+  if (default_in <= 0) {
+    return false;
+  }
+  use_default_inactivity_timeout = true;
+  inactivity_timeout_in          = 0;
+  next_inactivity_timeout_at     = ink_get_hrtime() + default_in;
+  Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
+  rearm_timer();
+  return true;
+}
 
 void
 NetEvent::rearm_timer()
@@ -44,7 +65,11 @@ NetEvent::rearm_timer()
 void
 NetEvent::rebase_default_inactivity_deadline(ink_hrtime previous_in)
 {
-  if (!use_default_inactivity_timeout || inactivity_timeout_in != 0 || next_inactivity_timeout_at == 0) {
+  if (next_inactivity_timeout_at == 0) {
+    arm_default_inactivity_timeout();
+    return;
+  }
+  if (!use_default_inactivity_timeout || inactivity_timeout_in != 0) {
     return; // the deadline did not come from the default
   }
 
