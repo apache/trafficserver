@@ -2755,7 +2755,7 @@ try {
   }
   my_exit(exit_status);
 } catch (std::exception const &ex) {
-  // EXIT_UNKNOWN, not 1: 1 is EXIT_WARNING here, and a plugin that faulted is
+  // EXIT_UNKNOWN, not 1: 1 is EXIT_WARNING here, and an unhandled exception is
   // not a warning. Nagios-style wrappers read stdout, so the status goes there.
   printf("unknown: traffic_logstats terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
   return EXIT_UNKNOWN;
