@@ -26,6 +26,7 @@
 #include "tscore/Diags.h"
 #include "tsutil/PostScript.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -37,6 +38,7 @@ extern int cmd_disable_pfreelist;
 namespace
 {
 constexpr size_t  MAX_INPUT_LENGTH          = 16 * 1024;
+constexpr int     OUTPUT_BUF_SIZE           = 256;
 constexpr uint8_t FLAG_COPY_COMMA_LIST      = 1u << 0;
 constexpr uint8_t FLAG_COPY_SEMICOLON_LIST  = 1u << 1;
 constexpr uint8_t FLAG_COPY_TOKEN_LIST      = 1u << 2;
@@ -49,18 +51,18 @@ constexpr uint8_t FLAG_SECOND_FIELD_MISSING = 1u << 7;
 void
 exercise_lists(const std::string &value, const std::string &candidate, uint8_t flags, int output_length)
 {
-  StrList               comma_list((flags & FLAG_COPY_COMMA_LIST) != 0);
-  StrList               semicolon_list((flags & FLAG_COPY_SEMICOLON_LIST) != 0);
-  StrList               token_list((flags & FLAG_COPY_TOKEN_LIST) != 0);
-  std::array<char, 256> output{};
-  std::array<char, 256> type{};
-  std::array<char, 256> subtype{};
-  int                   matching_length  = 0;
-  int                   matching_index   = 0;
-  int                   value_length     = static_cast<int>(value.size());
-  int                   candidate_length = static_cast<int>(candidate.size());
-  char                  separator        = (flags & FLAG_SEMICOLON_SEPARATOR) != 0 ? ';' : ',';
-  bool                  ignore_wildcards = (flags & FLAG_IGNORE_WILDCARDS) != 0;
+  StrList                           comma_list((flags & FLAG_COPY_COMMA_LIST) != 0);
+  StrList                           semicolon_list((flags & FLAG_COPY_SEMICOLON_LIST) != 0);
+  StrList                           token_list((flags & FLAG_COPY_TOKEN_LIST) != 0);
+  std::array<char, OUTPUT_BUF_SIZE> output{};
+  std::array<char, OUTPUT_BUF_SIZE> type{};
+  std::array<char, OUTPUT_BUF_SIZE> subtype{};
+  int                               matching_length  = 0;
+  int                               matching_index   = 0;
+  int                               value_length     = static_cast<int>(value.size());
+  int                               candidate_length = static_cast<int>(candidate.size());
+  char                              separator        = (flags & FLAG_SEMICOLON_SEPARATOR) != 0 ? ';' : ',';
+  bool                              ignore_wildcards = (flags & FLAG_IGNORE_WILDCARDS) != 0;
 
   HttpCompat::parse_comma_list(&comma_list, value.c_str(), value_length);
   HttpCompat::parse_semicolon_list(&semicolon_list, value.c_str(), value_length);
@@ -77,7 +79,7 @@ exercise_lists(const std::string &value, const std::string &candidate, uint8_t f
 }
 
 MIMEField *
-add_field(HTTPHdr &header, std::string_view value)
+add_accept_language_field(HTTPHdr &header, std::string_view value)
 {
   MIMEField *field = header.field_create("Accept-Language");
 
@@ -98,16 +100,17 @@ exercise_vary(const std::string &first, const std::string &second, uint8_t flags
 
   first_header.create(HTTPType::REQUEST);
   second_header.create(HTTPType::REQUEST);
-  MIMEField *first_field  = (flags & FLAG_FIRST_FIELD_MISSING) != 0 ? nullptr : add_field(first_header, first);
-  MIMEField *second_field = (flags & FLAG_SECOND_FIELD_MISSING) != 0 ? nullptr : add_field(second_header, second);
+  MIMEField *first_field  = (flags & FLAG_FIRST_FIELD_MISSING) != 0 ? nullptr : add_accept_language_field(first_header, first);
+  MIMEField *second_field = (flags & FLAG_SECOND_FIELD_MISSING) != 0 ? nullptr : add_accept_language_field(second_header, second);
 
   // Missing selecting headers are supported: both absent match, only one absent does not.
   HttpCompat::do_vary_header_values_match(first_field, second_field);
   if (first_field && second_field) {
     HttpCompat::do_vary_header_values_match(first_field, first_field);
-    add_field(first_header, second);
-    add_field(second_header, first);
-    HttpCompat::do_vary_header_values_match(first_field, second_field);
+    // Match the swapped values attached to the opposite headers.
+    MIMEField *swapped_first  = add_accept_language_field(first_header, second);
+    MIMEField *swapped_second = add_accept_language_field(second_header, first);
+    HttpCompat::do_vary_header_values_match(swapped_first, swapped_second);
   }
 }
 } // namespace
@@ -129,7 +132,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
   }
 
   uint8_t     flags         = data[0];
-  int         output_length = static_cast<int>(data[1]) + 1;
+  int         output_length = std::min<int>(static_cast<int>(data[1]) + 1, OUTPUT_BUF_SIZE);
   size_t      split         = static_cast<size_t>(data[2]) * (size - 3) / 255;
   const char *payload       = reinterpret_cast<const char *>(data + 3);
   std::string first(payload, split);
