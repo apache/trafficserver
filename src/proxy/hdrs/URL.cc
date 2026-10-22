@@ -77,8 +77,10 @@ int URL_WKSIDX_MMST;
 
 namespace
 {
-// Whether we should implement url_CryptoHash_get() using url_CryptoHash_get_fast(). Note that
-// url_CryptoHash_get_fast() does NOT produce the same result as url_CryptoHash_get_general().
+// Whether url_CryptoHash_get_92() should use url_CryptoHash_get_fast_92().
+// The fast implementation emits the 9.2 ";" path/params separator and is
+// therefore valid only for 9.2 keys; the canonical url_CryptoHash_get()
+// always uses url_CryptoHash_get_general().
 constexpr int url_hash_method = 0;
 
 // Buffer size for url_CryptoHash_get() and url_CryptoHash_get_92().
@@ -318,6 +320,13 @@ URLImpl::unmarshal(intptr_t offset)
   HDR_UNMARSHAL_STR(m_ptr_query, offset);
   HDR_UNMARSHAL_STR(m_ptr_fragment, offset);
   //    HDR_UNMARSHAL_STR(m_ptr_printed_string, offset);
+}
+
+void
+URLImpl::recompute_wks_idx()
+{
+  m_scheme_wks_idx =
+    m_ptr_scheme != nullptr ? static_cast<int16_t>(hdrtoken_tokenize(m_ptr_scheme, m_len_scheme, nullptr)) : int16_t{-1};
 }
 
 void
@@ -1197,17 +1206,13 @@ url_is_strictly_compliant(const char *start, const char *end)
 bool
 url_is_mostly_compliant(const char *start, const char *end)
 {
+  // Accumulate invalid bytes without an early exit so the compiler can vectorize the scan.
+  unsigned char bad = 0;
   for (const char *i = start; i < end; ++i) {
-    if (isspace(*i)) {
-      Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
-    if (!isprint(*i)) {
-      Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
+    unsigned char const c  = static_cast<unsigned char>(*i);
+    bad                   |= static_cast<unsigned char>((c < 0x21) | (c > 0x7E));
   }
-  return true;
+  return bad == 0;
 }
 
 } // namespace UrlImpl
@@ -1709,11 +1714,18 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
  *                                                                     *
  ***********************************************************************/
 
-// fast path for CryptoHash, HTTP, no user/password/params/query,
-// no buffer overflow, no unescaping needed
+// Fast path for the 9.2 CryptoHash: HTTP, no user/password/params/query,
+// no buffer overflow, no unescaping needed.
+//
+// Emits the ";" path/params separator that 9.2 hashed between the path and
+// params components, so it is valid only for url_CryptoHash_get_92(): the
+// canonical url_CryptoHash_get_general() does not emit the separator, and
+// using this fast path there would make canonical keys collide with 9.2 keys.
+// The 9.2 caller must also ensure the path carries no literal ';' (see
+// has_path_params()), otherwise the separator would be duplicated.
 
 static inline void
-url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache_generation_t generation)
+url_CryptoHash_get_fast_92(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache_generation_t generation)
 {
   char  buffer[BUFSIZE];
   char *p;
@@ -1853,19 +1865,8 @@ void
 url_CryptoHash_get(const URLImpl *url, CryptoHash *hash, bool ignore_query, cache_generation_t generation)
 {
   URLHashContext ctx;
-  if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
-      ((url->m_len_user + url->m_len_password + (ignore_query ? 0 : url->m_len_query)) == 0) &&
-      (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
-      (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
-    url_CryptoHash_get_fast(url, ctx, hash, generation);
-#ifdef DEBUG
-    CryptoHash hash_general;
-    url_CryptoHash_get_general(url, ctx, hash_general, ignore_query, generation);
-    ink_assert(*hash == hash_general);
-#endif
-  } else {
-    url_CryptoHash_get_general(url, ctx, *hash, ignore_query, generation);
-  }
+  // No fast path here: the only one left emits the 9.2 ";" separator.
+  url_CryptoHash_get_general(url, ctx, *hash, ignore_query, generation);
 }
 
 static inline void
@@ -1899,8 +1900,16 @@ url_CryptoHash_get_general_92(const URLImpl *url, CryptoContext &ctx, CryptoHash
   ends[7] = strs[7] + 1;
   ends[8] = strs[8] + url->m_len_path;
 
-  strs[9]  = ";";
-  strs[10] = url->m_ptr_params;
+  // ATS 9.2 split "/path;params" into separate path and params components and
+  // hashed them as path + ";" + params. That parsing was removed, so ";params"
+  // now stays inside the path and already spells the same byte sequence. Adding
+  // the separator again would append a ";" that 9.2 never emitted, so only add
+  // it when the path does not carry one. The params component itself is always
+  // empty now; it is left out rather than read back as an empty string.
+  bool const path_has_params = url->has_path_params();
+
+  strs[9]  = path_has_params ? nullptr : ";";
+  strs[10] = nullptr;
   strs[11] = "?";
 
   // Special case for the query paramters, allowing us to ignore them if requested
@@ -1912,8 +1921,8 @@ url_CryptoHash_get_general_92(const URLImpl *url, CryptoContext &ctx, CryptoHash
     ends[12] = nullptr;
   }
 
-  ends[9]  = strs[9] + 1;
-  ends[10] = strs[10] + url->m_len_params;
+  ends[9]  = path_has_params ? nullptr : strs[9] + 1;
+  ends[10] = nullptr;
   ends[11] = strs[11] + 1;
 
   p = buffer;
@@ -1970,11 +1979,11 @@ void
 url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, cache_generation_t generation)
 {
   URLHashContext ctx;
-  if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
+  if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) && !url->has_path_params() &&
       ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
       (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {
-    url_CryptoHash_get_fast(url, ctx, hash, generation);
+    url_CryptoHash_get_fast_92(url, ctx, hash, generation);
 #ifdef DEBUG
     CryptoHash hash_general;
     url_CryptoHash_get_general_92(url, ctx, hash_general, ignore_query, generation);

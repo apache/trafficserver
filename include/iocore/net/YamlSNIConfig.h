@@ -112,8 +112,8 @@ struct YamlSNIConfig {
     std::optional<int>  ssl_ticket_enabled;
     std::optional<int>  ssl_ticket_number;
     std::string         ip_allow;
-    bool                protocol_unset = true;
-    unsigned long       protocol_mask;
+    bool                protocol_unset           = true;
+    unsigned long       protocol_mask            = 0;
     int                 valid_tls_version_min_in = -1;
     int                 valid_tls_version_max_in = -1;
     std::vector<int>    tunnel_alpn{};

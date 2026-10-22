@@ -99,7 +99,7 @@ QUICNetVConnection::~QUICNetVConnection() {}
 void
 QUICNetVConnection::init(SSL *ssl, QUICPacketHandler *packet_handler)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+  SET_HANDLER(&QUICNetVConnection::acceptEvent);
 
   this->_ssl                          = ssl;
   this->_packet_handler               = packet_handler;
@@ -310,7 +310,7 @@ QUICNetVConnection::_switch_to_established_state()
   QUICConDebug("Enter state_connection_established");
   this->_record_tls_handshake_end_time();
   this->_update_end_of_handshake_stats();
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_established);
+  SET_HANDLER(&QUICNetVConnection::state_established);
   this->_handshake_completed = true;
   this->_start_application();
 }
@@ -415,7 +415,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   this->read.enabled  = 1;
   this->write.enabled = 1;
 
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+  SET_HANDLER(&QUICNetVConnection::state_handshake);
 
   nh->startCop(this);
   this->set_default_inactivity_timeout(0);
@@ -1023,7 +1023,7 @@ QUICNetVConnection::_get_local_port()
 }
 
 IpEndpoint const &
-QUICNetVConnection::_getLocalEndpoint()
+QUICNetVConnection::_getCertLookupEndpoint()
 {
   return this->local_addr;
 }

@@ -38,20 +38,16 @@ namespace
 DbgCtl dbg_ctl_hdr_token{"hdr_token"};
 
 /*
- WARNING:  Indexes into this array are stored on disk for cached objects.  New strings must be added at the end of the array to
- avoid changing the indexes of pre-existing entries, unless the cache format version number is increased.
+ Indexes into this array are stored inside cached objects, but they are not a format commitment:
+ every reader rebuilds them from the header strings the object also stores, in
+ HTTPHdrImpl::recompute_wks_indices(). Strings may therefore be added, removed, reordered or
+ edited here without invalidating anyone's cache.
+
+ What that does require is that no ATS predating the rebuild ever read an object written against a
+ different table, since it would resolve the stored indexes against its own. Cache version 24.3 is
+ where the rebuild landed, and an older ATS rejects anything newer than its own version, so the
+ bump to 24.3 settles that for good. See CACHE_DB_MINOR_VERSION in iocore/cache/CacheDefs.h.
 */
-struct HdrTokenFrozen {
-  size_t   count;
-  uint32_t fingerprint;
-};
-
-// When you append strings to _hdrtoken_strs, also append an entry to _hdrtoken_strs_frozen.
-// This ledger ensures that WKS strings are append-only.
-constexpr HdrTokenFrozen _hdrtoken_strs_frozen[] = {
-  {135, 0x9ea577a9u},
-};
-
 constexpr std::string_view _hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
@@ -128,6 +124,9 @@ constexpr std::string_view _hdrtoken_strs[] = {
 
   // RFC-9213 Targeted Cache Control
   "CDN-Cache-Control"};
+
+// MIMEField::m_wks_idx, HTTPHdrImpl's method index and URLImpl's scheme index are all int16_t.
+static_assert(std::size(_hdrtoken_strs) <= INT16_MAX, "the well-known string table outgrew the type that indexes it");
 
 constexpr HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file",                 HdrTokenType::SCHEME        },
@@ -323,66 +322,19 @@ hdrtoken_ascii_toupper(unsigned char c)
 
 constexpr uint32_t HDRTOKEN_HASH_SEED = 0x811c9dc5u; // FNV-1a 32-bit offset basis
 
-// One raw FNV-1a step. hdrtoken_hash() folds case on top of it; the frozen-ledger fingerprint
-// deliberately does not.
-constexpr uint32_t
-hdrtoken_hash_step(uint32_t hval, unsigned char c)
-{
-  return (hval ^ c) * 0x01000193u;
-}
-
 // The one hash function, shared by compile-time table construction and hdrtoken_tokenize(), so the
-// two can never disagree.
+// two can never disagree. hdrtoken_field_name_scan() folds the same steps inline because it
+// discovers the length as it scans; a parity unit test pins it to this function.
 constexpr uint32_t
 hdrtoken_hash(std::string_view s)
 {
   uint32_t hval = HDRTOKEN_HASH_SEED;
 
   for (char const c : s) {
-    hval = hdrtoken_hash_step(hval, hdrtoken_ascii_toupper(static_cast<unsigned char>(c)));
+    hval = (hval ^ hdrtoken_ascii_toupper(static_cast<unsigned char>(c))) * 0x01000193u;
   }
   return hval;
 }
-
-constexpr uint32_t
-hdrtoken_frozen_fingerprint(size_t count)
-{
-  // Hashes the raw bytes, without case folding, because case is significant for frozen entries:
-  // hdrtoken_method_tokenize() matches methods case-sensitively against the stored bytes.
-  uint32_t hval = HDRTOKEN_HASH_SEED;
-
-  for (size_t i = 0; i < count; ++i) {
-    for (char const c : _hdrtoken_strs[i]) {
-      hval = hdrtoken_hash_step(hval, static_cast<unsigned char>(c));
-    }
-    hval = hdrtoken_hash_step(hval, '\0'); // fold in a terminator so entry boundaries matter
-  }
-  return hval;
-}
-
-constexpr bool
-hdrtoken_frozen_rows_valid()
-{
-  size_t prev_count = 0;
-
-  for (auto const &f : _hdrtoken_strs_frozen) {
-    if (f.count <= prev_count || f.count > std::size(_hdrtoken_strs)) {
-      return false;
-    }
-    if (hdrtoken_frozen_fingerprint(f.count) != f.fingerprint) {
-      return false;
-    }
-    prev_count = f.count;
-  }
-  return true;
-}
-
-static_assert(hdrtoken_frozen_rows_valid(),
-              "A frozen well-known string changed. Indexes are stored in cached objects, so entries may only be appended, "
-              "never inserted, reordered, removed, or edited");
-static_assert(_hdrtoken_strs_frozen[std::size(_hdrtoken_strs_frozen) - 1].count == std::size(_hdrtoken_strs),
-              "The well-known string table grew without being re-frozen; append a {count, fingerprint} row to "
-              "_hdrtoken_strs_frozen");
 
 constexpr size_t
 hdrtoken_max_literal_length()
@@ -590,6 +542,33 @@ hdrtoken_build_wks_table()
 
 constexpr std::array<HdrTokenWksEntry, std::size(_hdrtoken_strs)> hdrtoken_wks_table = hdrtoken_build_wks_table();
 
+// FNV-1a over a canonical byte sequence, independent of native padding and byte order.
+// Bump the schema byte when the interpretation of the derived indexes changes.
+constexpr uint64_t
+hdrtoken_build_wks_identity()
+{
+  uint64_t hash    = 14695981039346656037ULL;
+  auto     byte    = [&](uint8_t value) { hash = (hash ^ value) * 1099511628211ULL; };
+  auto     integer = [&](uint64_t value) {
+    for (unsigned i = 0; i < 8; ++i) {
+      byte(static_cast<uint8_t>(value >> (i * 8)));
+    }
+  };
+
+  byte(1);
+  for (size_t i = 0; i < std::size(_hdrtoken_strs); ++i) {
+    for (unsigned char c : _hdrtoken_strs[i]) {
+      byte(c);
+    }
+    byte(0);
+    integer(hdrtoken_wks_table[i].prefix.wks_info.slotid);
+    integer(hdrtoken_wks_table[i].prefix.wks_info.mask);
+  }
+  return hash;
+}
+
+static_assert(hdrtoken_build_wks_identity() != 0);
+
 /***********************************************************************
  *                                                                     *
  *                        H A S H    T A B L E                         *
@@ -619,6 +598,8 @@ hdrtoken_build_hash_table()
 constexpr std::array<HdrTokenHashBucket, HDRTOKEN_HASH_TABLE_SIZE> hdrtoken_hash_table = hdrtoken_build_hash_table();
 
 } // end anonymous namespace
+
+const uint64_t hdrtoken_wks_identity = hdrtoken_build_wks_identity();
 
 // hdrtoken_wks_to_prefix() maps a string pointer back to its entry through this table.
 const HdrTokenWksEntry *const hdrtoken_wks_entries = hdrtoken_wks_table.data();
@@ -694,21 +675,15 @@ hdrtoken_method_tokenize(const char *string, int string_len)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// WKS lookup for a name whose FNV-1a hash the caller has already computed
+// (e.g. fused into the field-name scan). Matches by slot, hash, and length like
+// hdrtoken_tokenize, but skips the interned-pointer test, so it is only valid
+// for a non-interned `string`.
 int
-hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
+hdrtoken_tokenize_prehashed(const char *string, int string_len, uint32_t hash, const char **wks_string_out)
 {
   ink_assert(string != nullptr);
-
-  if (hdrtoken_is_wks(string)) {
-    int const wks_idx = hdrtoken_wks_to_index(string);
-
-    if (wks_string_out) {
-      *wks_string_out = string;
-    }
-    return wks_idx;
-  }
-
-  uint32_t const hash = hdrtoken_hash(std::string_view{string, static_cast<size_t>(string_len)});
+  ink_assert(!hdrtoken_is_wks(string));
 
   HdrTokenHashBucket const &bucket = hdrtoken_hash_table[hash_to_slot(hash)];
 
@@ -726,6 +701,59 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 
   Dbg(dbg_ctl_hdr_token, "Did not find a WKS for '%.*s'", string_len, string);
   return -1;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+// Single-pass field-name scan for the MIME parser. Scans up to `maxlen` bytes
+// of `string` for the ':' delimiter while, in the same pass, accumulating the
+// FNV-1a name hash (identical to hdrtoken_hash) and tracking whether every byte
+// before ':' is a valid HTTP field-name char. Returns the index of ':' (i.e.
+// the field-name length) or -1 if no ':' appears within `maxlen`. `*hash_out`
+// and `*all_valid_out` describe the bytes scanned before ':' (or all `maxlen`
+// bytes when ':' is absent); both are required.
+int
+hdrtoken_field_name_scan(const char *string, int maxlen, uint32_t *hash_out, bool *all_valid_out)
+{
+  uint32_t hval      = HDRTOKEN_HASH_SEED; // same FNV-1a name hash as hdrtoken_hash
+  bool     all_valid = true;
+  int      i         = 0;
+
+  for (; i < maxlen; ++i) {
+    unsigned char const uc = static_cast<unsigned char>(string[i]);
+    if (uc == ':') {
+      break;
+    }
+    hval       = (hval ^ hdrtoken_ascii_toupper(uc)) * 0x01000193u;
+    all_valid &= (ParseRules::is_http_field_name(static_cast<char>(uc)) != 0);
+  }
+
+  *hash_out      = hval;
+  *all_valid_out = all_valid;
+  return (i < maxlen) ? i : -1;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
+{
+  ink_assert(string != nullptr);
+
+  if (hdrtoken_is_wks(string)) {
+    int const wks_idx = hdrtoken_wks_to_index(string);
+
+    if (wks_string_out) {
+      *wks_string_out = string;
+    }
+    return wks_idx;
+  }
+
+  uint32_t const hash = hdrtoken_hash(std::string_view{string, static_cast<size_t>(string_len)});
+
+  return hdrtoken_tokenize_prehashed(string, string_len, hash, wks_string_out);
 }
 
 /*-------------------------------------------------------------------------

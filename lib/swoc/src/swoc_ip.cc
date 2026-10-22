@@ -661,11 +661,12 @@ bool operator == (IPAddr const& lhs, sockaddr const * sa) {
 bool
 IPMask::load(string_view const &text) {
   TextView parsed;
-  _cidr = swoc::svtou(text, &parsed);
-  if (parsed.size() != text.size()) {
+  auto cidr = swoc::svtou(text, &parsed);
+  if (parsed.size() != text.size() || cidr > IP6Addr::WIDTH) {
     _cidr = 0;
     return false;
   }
+  _cidr = static_cast<raw_type>(cidr);
   return true;
 }
 
@@ -850,9 +851,10 @@ bool
 IP4Net::load(TextView text) {
   if (auto mask_text = text.split_suffix_at('/'); !mask_text.empty()) {
     IPMask mask;
-    bool mask_p = mask.load(mask_text);
+    bool mask_p = mask.load(mask_text) && mask.width() <= IP4Addr::WIDTH;
     if (IP4Addr addr; addr.load(text)) {
-      if (!mask_p) {
+      // A decimal mask is a prefix width, so only other text is tried as a mask address.
+      if (!mask_p && TextView(mask_text).trim_if(&isspace).find_first_not_of("0123456789") != TextView::npos) {
         if (IP4Addr m; m.load(mask_text)) {
           mask   = IPMask::mask_for(m);
           mask_p = (m == mask.as_ip4()); // must be an actual mask like address.
@@ -910,7 +912,9 @@ IPNet::load(TextView text) {
         return true;
       }
     } else if (IP4Addr a4; a4.load(text)) {
-      if (!mask_p) {
+      mask_p = mask_p && mask.width() <= IP4Addr::WIDTH;
+      // A decimal mask is a prefix width, so only other text is tried as a mask address.
+      if (!mask_p && TextView(mask_text).trim_if(&isspace).find_first_not_of("0123456789") != TextView::npos) {
         if (IP4Addr m; m.load(mask_text)) {
           mask   = IPMask::mask_for(m);
           mask_p = (m == mask.as_ip4()); // must be an actual mask like address.
@@ -960,7 +964,7 @@ IP4Range::load(string_view text) {
         if (addr.load(text.substr(0, idx))) { // load the address
           IPMask mask;
           text.remove_prefix(idx + 1); // drop address and separator.
-          if (mask.load(text)) {
+          if (mask.load(text) && mask.width() <= IP4Addr::WIDTH) {
             this->assign(addr, mask);
             return true;
           }

@@ -93,6 +93,7 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *total_ticket_keys_renewed                      = nullptr;
   Metrics::Counter::AtomicType *total_tickets_created                          = nullptr;
   Metrics::Counter::AtomicType *total_tickets_not_found                        = nullptr;
+  Metrics::Counter::AtomicType *total_tickets_no_certificate                   = nullptr;
   Metrics::Counter::AtomicType *total_tickets_renewed                          = nullptr;
   Metrics::Counter::AtomicType *total_tickets_verified_old_key                 = nullptr;
   Metrics::Counter::AtomicType *total_tickets_verified                         = nullptr;
@@ -109,6 +110,7 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *user_agent_inappropriate_fallback              = nullptr;
   Metrics::Counter::AtomicType *user_agent_no_shared_cipher                    = nullptr;
   Metrics::Counter::AtomicType *user_agent_other_errors                        = nullptr;
+  Metrics::Counter::AtomicType *user_agent_resumed_cert_rejected               = nullptr;
   Metrics::Counter::AtomicType *user_agent_revoked_cert                        = nullptr;
   Metrics::Counter::AtomicType *user_agent_unknown_ca                          = nullptr;
   Metrics::Counter::AtomicType *user_agent_unknown_cert                        = nullptr;

@@ -62,7 +62,8 @@ generates a JA4 fingerprint consisting of three sections separated by underscore
 
 **Section b (hashed)**: A SHA-256 hash of the sorted cipher suite list
 
-**Section c (hashed)**: A SHA-256 hash of the sorted extension list
+**Section c (hashed)**: A SHA-256 hash of the sorted extension list followed by
+the signature algorithms in the order the client sent them
 
 Example fingerprint::
 

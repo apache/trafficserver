@@ -177,6 +177,31 @@ public:
    */
   bool compile(std::string_view pattern, uint32_t flags = 0);
 
+  /** Compile the @a pattern into a regular expression that drives a policy decision.
+   *
+   * @param pattern Source pattern for regular expression.
+   * @param flags Compilation flags.
+   * @param policy_gate Operator-facing label identifying this pattern as a policy gate.
+   * @return @a true if compiled successfully, @a false otherwise.
+   *
+   * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * A non-empty @a policy_gate marks @a pattern as operator-authored input that
+   * drives a policy decision, subjecting it to @c policy_gate_anchoring. The label
+   * names the site in diagnostics, e.g. @c "url_sig excl_regex".
+   *
+   * @internal This is a distinct overload rather than a defaulted third parameter
+   * on the two-argument form. A default argument is supplied at the call site, so
+   * appending one changes the mangled name and every plugin already built against
+   * the old header fails to load with an undefined symbol for @c Regex::compile.
+   *
+   * @internal Dropping @a policy_gate at a call site selects the two-argument
+   * overload and compiles clean, leaving that site neither anchored nor reported.
+   * The two-argument form has to stay reachable for the plugins above, so this is
+   * covered by tests at the gate sites rather than by the signature.
+   */
+  bool compile(std::string_view pattern, uint32_t flags, std::string_view policy_gate);
+
   /** Compile the @a pattern into a regular expression.
    *
    * @param pattern Source pattern for regular expression.
@@ -190,6 +215,55 @@ public:
    * On failure any previously compiled pattern is left in place and remains usable.
    */
   bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
+
+  /** Compile the @a pattern into a regular expression that drives a policy decision.
+   *
+   * @param pattern Source pattern for regular expression.
+   * @param error String to receive error message.
+   * @param erroffset Pointer to integer to receive error offset.
+   * @param flags Compilation flags.
+   * @param policy_gate Operator-facing label identifying this pattern as a policy gate.
+   * @return @a true if compiled successfully, @a false otherwise.
+   *
+   * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * @internal A distinct overload for the same ABI reason as the two-argument form.
+   */
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags, std::string_view policy_gate);
+
+  /** Process-wide anchoring policy for policy-gate patterns.
+   *
+   * Non-zero anchors gate patterns to the whole subject. Zero (the default) leaves
+   * matching unchanged and warns instead. Read at compile time, so a change takes
+   * effect as configurations are reloaded.
+   *
+   * @internal tsutil cannot depend on librecords, so the owning process links this
+   * with @c RecEstablishStaticConfigInt32. Plugins share the variable, so they need
+   * no plumbing of their own.
+   */
+  static int32_t policy_gate_anchoring;
+
+  /** What a policy-gate report is telling the operator. */
+  enum class PolicyGateReport {
+    UNENFORCED, ///< The policy is off and this pattern is not required to match the whole subject.
+    ENFORCED,   ///< The policy anchored this pattern to the whole subject.
+  };
+
+  /** Handler invoked when a policy-gate pattern is compiled.
+   *
+   * @a message is a complete sentence. @a kind selects the severity: @c UNENFORCED is
+   * a warning, @c ENFORCED is informational, since under enforcement the pattern is
+   * safe and the operator only needs a record that the policy touched it. Null (the
+   * default) stays silent.
+   *
+   * @internal A function pointer because tsutil must not reference the diagnostics
+   * implementation: a @c Regex.cc to @c DbgCtl.cc edge pulls that object into every
+   * target linking @c libtsutil.a, colliding with the stubs some plugin tests
+   * provide and with the ODR constraint in @c plugins/esi/lib/CMakeLists.txt.
+   */
+  using PolicyGateReportHandler = void (*)(PolicyGateReport kind, std::string_view message);
+
+  static PolicyGateReportHandler policy_gate_report_handler;
 
   /** Execute the regular expression.
    *

@@ -327,14 +327,62 @@ struct AutoStopCont : public Continuation {
 class SignalContinuation : public Continuation
 {
 public:
-  SignalContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&SignalContinuation::periodic); }
+  SignalContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&SignalContinuation::state_running); }
 
   int
-  periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  state_running(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    ts::Metrics &metrics  = ts::Metrics::instance();
-    static auto  drain_id = metrics.lookup("proxy.process.proxy.draining");
+    _handle_user_signals();
 
+    if (_consume_exit_signal()) {
+      auto timeout{RecGetRecordInt("proxy.config.stop.shutdown_timeout")};
+      if (timeout && timeout.value()) {
+        ts::Metrics &metrics = ts::Metrics::instance();
+        metrics[metrics.lookup("proxy.process.proxy.draining")].store(1);
+        TSSystemState::drain(true);
+        // Close listening sockets here only if TS is running standalone
+        if (auto close_sockets{RecGetRecordInt("proxy.config.restart.stop_listening")}; close_sockets && close_sockets.value()) {
+          stop_HttpProxyServer();
+        }
+      }
+
+      Dbg(dbg_ctl_server, "received exit signal, shutting down in %" PRId64 "secs", timeout.value());
+
+      // Shutdown in `timeout` seconds (or now if that is 0).
+      eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(timeout.value()));
+      SET_HANDLER(&SignalContinuation::state_shutting_down);
+    }
+
+    return EVENT_CONT;
+  }
+
+  int
+  state_shutting_down(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  {
+    _handle_user_signals();
+
+    if (_consume_exit_signal()) {
+      Dbg(dbg_ctl_server, "received exit signal, shutdown already scheduled");
+    }
+
+    return EVENT_CONT;
+  }
+
+private:
+  bool
+  _consume_exit_signal()
+  {
+    if (!signal_received[SIGTERM] && !signal_received[SIGINT]) {
+      return false;
+    }
+    signal_received[SIGTERM] = false;
+    signal_received[SIGINT]  = false;
+    return true;
+  }
+
+  void
+  _handle_user_signals()
+  {
     if (signal_received[SIGUSR1]) {
       signal_received[SIGUSR1] = false;
 
@@ -364,28 +412,6 @@ public:
       // Reload any of the other moved log files (such as the ones in logging.yaml).
       Log::handle_log_rotation_request();
     }
-
-    if (signal_received[SIGTERM] || signal_received[SIGINT]) {
-      signal_received[SIGTERM] = false;
-      signal_received[SIGINT]  = false;
-
-      auto timeout{RecGetRecordInt("proxy.config.stop.shutdown_timeout")};
-      if (timeout && timeout.value()) {
-        metrics[drain_id].store(1);
-        TSSystemState::drain(true);
-        // Close listening sockets here only if TS is running standalone
-        if (auto close_sockets{RecGetRecordInt("proxy.config.restart.stop_listening")}; close_sockets && close_sockets.value()) {
-          stop_HttpProxyServer();
-        }
-      }
-
-      Dbg(dbg_ctl_server, "received exit signal, shutting down in %" PRId64 "secs", timeout.value());
-
-      // Shutdown in `timeout` seconds (or now if that is 0).
-      eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(timeout.value()));
-    }
-
-    return EVENT_CONT;
   }
 };
 
@@ -745,6 +771,19 @@ initialize_records()
   LibRecordsConfigInit();
 
   check_config_directories();
+
+  // Established as soon as records are readable, so the policy is in effect before
+  // cache.config, parent.config, splitdns.config, remap.config and the plugins
+  // compile their patterns. tsutil depends on neither librecords nor diags.
+  RecEstablishStaticConfigInt32(Regex::policy_gate_anchoring, "proxy.config.regex.anchor_policy_rules");
+  Regex::policy_gate_report_handler = [](Regex::PolicyGateReport kind, std::string_view message) {
+    // Enforced patterns are safe, so that report is a record rather than a problem.
+    if (kind == Regex::PolicyGateReport::ENFORCED) {
+      Note("%.*s", static_cast<int>(message.size()), message.data());
+    } else {
+      Warning("%.*s", static_cast<int>(message.size()), message.data());
+    }
+  };
 
   //
   // Define version info records

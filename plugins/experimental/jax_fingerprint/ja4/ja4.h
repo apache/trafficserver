@@ -41,14 +41,12 @@ constexpr size_t DELIMITER_2_POSITION = 23;
 /**
  * Calculate the JA4 fingerprint for the given TLS client hello.
  *
- * @param TLS_summary The TLS client hello. If there was no ALPN in the
- * Client Hello, TLS_summary.ALPN should either be empty or set to "00".
- * Behavior when the number of digits in TLS_summary.TLS_version is greater
- * than 2, the number of digits in TLS_summary.ALPN is greater than 2
- * (except when TLS_summary.ALPN is empty) is unspecified.
- * @param UnaryOp hasher A hash function. For a specification-compliant
- * JA4 fingerprint, this should be a sha256 hash.
- * @return Returns a string containing the JA4 fingerprint.
+ * @param out Buffer of at least FINGERPRINT_LENGTH bytes. The fingerprint is
+ * written to it without a terminating null.
+ * @param datasource The TLS client hello. If there was no ALPN in the Client
+ * Hello, the first ALPN value should be empty. Behavior when the number of
+ * digits in the TLS version is greater than 2 is unspecified.
+ * @return Returns a view of the JA4 fingerprint written to out.
  */
 std::string_view generate_fingerprint(char *out, Datasource &datasource);
 

@@ -86,10 +86,10 @@ do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, cons
   const char *etag_start;
   int         n, etag_length;
 
-  // Can never match a weak tag with a strong compare
-  if ((raw_tag_field_len >= 2) && (raw_tag_field[0] == 'W' && raw_tag_field[1] == '/')) {
-    return false;
-  }
+  // A missing or weak tag never matches a specific tag under a strong compare, but "*" matches any
+  // current representation.
+  bool const only_star = (raw_tag_field_len <= 0) || (raw_tag_field_len >= 2 && raw_tag_field[0] == 'W' && raw_tag_field[1] == '/');
+
   // Find the unalterated tag
   etag_start = find_etag(raw_tag_field, raw_tag_field_len, &etag_length);
 
@@ -101,6 +101,10 @@ do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, cons
     // If field is "*", then we got a match
     if ((tag->len == 1) && (tag->str[0] == '*')) {
       return true;
+    }
+
+    if (only_star) {
+      continue;
     }
 
     n = 0;
@@ -1384,12 +1388,8 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   // If-Match: must match strongly //
   if (request->presence(MIME_PRESENCE_IF_MATCH)) {
-    auto             raw_etags{response->value_get(static_cast<std::string_view>(MIME_FIELD_ETAG))};
-    std::string_view comma_sep_tag_list{};
-
-    if (!raw_etags.empty()) {
-      comma_sep_tag_list = request->value_get(static_cast<std::string_view>(MIME_FIELD_IF_MATCH));
-    }
+    auto raw_etags{response->value_get(static_cast<std::string_view>(MIME_FIELD_ETAG))};
+    auto comma_sep_tag_list{request->value_get(static_cast<std::string_view>(MIME_FIELD_IF_MATCH))};
 
     if (do_strings_match_strongly(raw_etags.data(), static_cast<int>(raw_etags.length()), comma_sep_tag_list.data(),
                                   static_cast<int>(comma_sep_tag_list.length()))) {

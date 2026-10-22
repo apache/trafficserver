@@ -2,9 +2,9 @@
 
   Bulk ASCII tolower copy.
 
-  Used on the URL canonicalization fast path for cache-key digests
-  (src/proxy/hdrs/URL.cc::url_CryptoHash_get_fast) and any other place that
-  needs to fold ASCII to lowercase over a small-to-moderate buffer.
+  Used on header and URL canonicalization paths (HPACK, QPACK, remap) and any
+  other place that needs to fold ASCII to lowercase over a small-to-moderate
+  buffer.
 
   Semantics match a byte-at-a-time loop using ParseRules::ink_tolower():
 

@@ -43,6 +43,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
 #include "tscore/InkErrno.h"
+#include "tscore/LogMessage.h"
 #include "tscore/TSSystemState.h"
 
 #include <netinet/in.h>
@@ -55,11 +56,6 @@
 #endif
 
 using namespace std::literals;
-
-// This is missing from BoringSSL
-#ifndef BIO_eof
-#define BIO_eof(b) (int)BIO_ctrl(b, BIO_CTRL_EOF, 0, nullptr)
-#endif
 
 #define SSL_READ_ERROR_NONE        0
 #define SSL_READ_ERROR             1
@@ -457,7 +453,8 @@ bool
 SSLNetVConnection::update_rbio(bool move_to_socket)
 {
   bool retval = false;
-  if (BIO_eof(SSL_get_rbio(this->ssl)) && this->handShakeReader != nullptr) {
+  // OpenSSL 4 does not report EOF for an empty memory BIO configured to retry reads.
+  if (this->handShakeReader != nullptr && BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) {
     Dbg(dbg_ctl_ssl, "Consuming handShakeBioStored=%d bytes from the handshake reader", this->handShakeBioStored);
     this->handShakeReader->consume(this->handShakeBioStored);
     this->handShakeBioStored = 0;
@@ -1354,8 +1351,8 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   // We only feed CLIENT_HELLO bytes into our temporary buffers. If we are past
   // the CLIENT_HELLO, then no need to buffer.
   if (in_client_hello && this->handShakeReader) {
-    if (BIO_eof(SSL_get_rbio(this->ssl))) { // No more data in the buffer
-                                            // Is this the first read?
+    if (BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) { // No more data in the buffer
+                                                          // Is this the first read?
 #if TS_USE_TLS_ASYNC
       if (SSLConfigParams::async_handshake_enabled) {
         SSL_set_mode(ssl, SSL_MODE_ASYNC);
@@ -1440,6 +1437,41 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   switch (ssl_error) {
   case SSL_ERROR_NONE:
+    // A resumed session carries forward the peer cert (or lack of one) from whichever connection
+    // originally established it, and a TLS library does not ask the peer for a certificate again on
+    // resumption. The session id context that bind_session_id_context_to_verify_scope() establishes
+    // from the ClientHello callback binds every session to the verify_client scope it was issued
+    // under, so the library only resumes sessions whose client certificate this SNI already
+    // verified. Sessions issued before that binding existed, or by a build without it, carry a
+    // different context and fall back to a full handshake. This check is the last line of defense
+    // should a session without a certificate be resumed under a policy that requires one, which a
+    // build with neither ClientHello callback can still admit because its earliest hook runs after
+    // the session lookup.
+    if (SSL_session_reused(ssl)) {
+      int verify_mode = SSL_get_verify_mode(ssl);
+
+      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !this->peer_provided_cert()) {
+        static LogMessage log_msg{IS_THROTTLED};
+        Metrics::Counter::increment(ssl_rsb.user_agent_resumed_cert_rejected);
+        log_msg.warning(MakeSourceLocation(), "rejecting a resumed TLS session that does not satisfy verify_client");
+        SSLVCDebug(this, "rejecting a resumed TLS session that does not satisfy verify_client");
+        return EVENT_ERROR;
+      }
+    }
+
+    // setClientCertCACerts() runs again from the certificate callback, after the session id context
+    // was established, so a store that loaded for the ClientHello callback and then failed there
+    // would leave this connection verifying against the SSL_CTX's store while the session it issues
+    // claims the scope of the store that did load. That window is checked here rather than only in
+    // bind_session_id_context_to_verify_scope(), which cannot see a failure that happens after it.
+    if (this->verify_scope_digest_failed()) {
+      static LogMessage scope_log_msg{IS_THROTTLED};
+
+      scope_log_msg.warning(MakeSourceLocation(), "rejecting a TLS session whose verify_client scope could not be established");
+      SSLVCDebug(this, "rejecting a TLS session whose verify_client scope could not be established");
+      return EVENT_ERROR;
+    }
+
     if (dbg_ctl_ssl.on()) {
 #ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
@@ -2051,12 +2083,8 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   SSLCertContext *cc = nullptr;
-  sockaddr const *proxy_protocol_dst_addr =
-    this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED ?
-      this->get_proxy_protocol_dst_addr() :
-      nullptr;
-  if (proxy_protocol_dst_addr != nullptr) {
-    ip.sa = *proxy_protocol_dst_addr;
+  if (IpEndpoint const *proxy_protocol_dst = this->_proxy_protocol_dst_endpoint(); proxy_protocol_dst != nullptr) {
+    ip = *proxy_protocol_dst;
     ip_port_text_buffer ipb1;
     ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
     cc = lookup->find(ip);
@@ -2081,6 +2109,16 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   return ctx;
+}
+
+IpEndpoint const *
+SSLNetVConnection::_proxy_protocol_dst_endpoint() const
+{
+  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED &&
+      this->get_proxy_protocol_dst_addr() != nullptr) {
+    return &pp_info.dst_addr;
+  }
+  return nullptr;
 }
 
 void

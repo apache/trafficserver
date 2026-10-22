@@ -1,0 +1,80 @@
+meta:
+  version: "1.0"
+
+  blocks:
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- transactions:
+  - client-request:
+      url: "/alpha"
+    proxy-request:
+      headers:
+        fields:
+        - [ Authorization , { as: equal, value: "alpha" }]
+    server-response:
+      <<: *base-rsp
+
+  - client-request:
+      url: "/bravo"
+    proxy-request:
+      headers:
+        fields:
+        - [ Authorization , { as: absent }]
+    server-response:
+      <<: *base-rsp
+
+urtest:
+  description: Verify txn_box Athenz-style mutual TLS authorization
+  requires: {plugins: [txn_box.so]}
+  server:
+    name: txn-box-mtls-origin
+    process_config:
+      other_args: '--format {url}'
+  dns: {name: txn-box-mtls-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-mtls-client}
+  ats:
+    name: txn-box-mtls-ts
+    process_config: {enable_tls: true}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box|ssl
+      proxy.config.http.cache.http: 0
+      proxy.config.ssl.server.cert.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.server.private_key.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.CA.cert.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.CA.cert.filename: ca-bundle.pem
+      proxy.config.ssl.client.certification_level: 2
+    copy_to_config_dir: [mTLS.txnbox.yaml]
+    copy_to_ssl_dir: [../ssl/server.key, ../ssl/server.pem, ../ssl/ca-bundle.pem]
+    ssl_multicert_yaml:
+      ssl_multicert:
+      - dest_ip: '*'
+        ssl_cert_name: server.pem
+        ssl_key_name: server.key
+    plugin_config:
+    - txn_box.so
+    - txn_box.so --key txn_box {CONFIG_DIR}/mTLS.txnbox.yaml
+    remap_config:
+    - map https://base.ex/ http://base.ex:{SERVER_HTTP_PORT}/
+  variants:
+  - name: alpha
+    client:
+      replay: mTLS-alpha.replay.yaml
+      process_config:
+        ssl_cert: ../ssl/alpha-signed.cert
+        other_args: --verbose info
+  - name: bravo
+    client:
+      replay: mTLS-bravo.replay.yaml
+      process_config:
+        ssl_cert: ../ssl/bravo-signed.cert
+        other_args: --verbose info

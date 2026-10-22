@@ -1,0 +1,117 @@
+
+urtest:
+  description: "Verify the ESI maximum nested-include depth"
+  requires:
+    plugins: ["esi.so"]
+  server:
+    name: "esi-nested-origin"
+    process_config:
+      other_args: '--format "{url}"'
+    log_validation:
+      contains:
+        - {expression: "GET /main.php", description: "The origin must receive the top-level request"}
+        - {expression: "GET /esi-nested-include.html", description: "The origin must receive the nested include"}
+  client:
+    name: "esi-nested-client"
+    process_config:
+      other_args: '--format "{url}"'
+      keys: ["/main.php"]
+    log_validation:
+      contains:
+        - {expression: "Received an HTTP/1 chunked body", description: "The client must receive the transformed response"}
+        - {expression: 'esi:include src="http://www.example.com/esi-nested-include.html"/>', description: "The maximum-depth include must remain in the body"}
+  ats:
+    name: "esi-nested-ts"
+    process_config:
+      disable_log_checks: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|plugin_esi"
+    plugin_config:
+      - "esi.so"
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}"
+    log_validation:
+      diags_log:
+        contains:
+          - expression: 'The current esi inclusion depth \(3\) is larger than or equal to the max \(3\)'
+            description: "ESI must report the maximum inclusion depth"
+
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+sessions:
+
+- transactions:
+
+  # Initial request for the main ESI document
+  - client-request:
+      method: GET
+      url: /main.php
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Accept, "*/*" ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Cache-Control, "private" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<head>\n<title>Main ESI Document</title>\n</head>\n<body>\n<esi:include src=\"http://www.example.com/esi-nested-include.html\"/>\n</body>\n"
+
+    # This is what the client receives /after/ ESI processing and fetching.
+    # Note: since the maximum inclusion depth is reached, the ESI include is
+    # not expanded.
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Type, { value: "text/html", as: equal } ]
+      content:
+        encoding: plain
+        data: "<esi:include src=\"http://www.example.com/esi-nested-include.html\"/>"
+        verify: { as: contains }
+
+  # ESI nested include requests for the ATS-generated ESI include.
+  - client-request:
+      method: GET
+      url: /esi-nested-include.html
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Cache-Control, "private" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<esi:include src=\"http://www.example.com/esi-nested-include.html\"/>"

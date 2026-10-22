@@ -83,21 +83,6 @@ DbgCtl dbg_ctl_parent_down{"parent_down"};
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_ip_allow{"ip_allow"};
 
-std::string_view
-get_at_header_source_name(HttpTransact::AtHeaderSource source)
-{
-  using AtHeaderSource = HttpTransact::AtHeaderSource;
-
-  switch (source) {
-  case AtHeaderSource::CLIENT_REQUEST:
-    return "client request";
-  case AtHeaderSource::ORIGIN_RESPONSE:
-    return "origin response";
-  }
-
-  return "unknown source";
-}
-
 Metrics::Counter::AtomicType *
 get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 {
@@ -112,6 +97,19 @@ get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 
   return nullptr;
 }
+
+void
+log_stripped_at_headers(HttpTransact::AtHeaderSource source, std::int64_t sm_id, std::uint64_t stripped_count)
+{
+  switch (source) {
+  case HttpTransact::AtHeaderSource::CLIENT_REQUEST:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from client request", sm_id, stripped_count);
+    break;
+  case HttpTransact::AtHeaderSource::ORIGIN_RESPONSE:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from origin response", sm_id, stripped_count);
+    break;
+  }
+}
 } // namespace
 
 /**
@@ -124,19 +122,21 @@ get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 void
 HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, std::int64_t sm_id)
 {
-  auto const metric      = get_at_header_source_metric(source);
-  auto const source_name = get_at_header_source_name(source);
+  std::uint64_t stripped_count{0};
 
   for (auto field = header.begin(); field != header.end();) {
     auto current = field++;
     auto name    = current->name_get();
 
     if (!name.empty() && name[0] == '@') {
-      Metrics::Counter::increment(metric);
-      Error("[%" PRId64 "] stripped internal @ header from %.*s: %.*s", sm_id, static_cast<int>(source_name.size()),
-            source_name.data(), static_cast<int>(name.size()), name.data());
+      ++stripped_count;
       header.field_delete(&*current, false);
     }
+  }
+
+  if (stripped_count > 0) {
+    Metrics::Counter::increment(get_at_header_source_metric(source), stripped_count);
+    log_stripped_at_headers(source, sm_id, stripped_count);
   }
 }
 
@@ -696,7 +696,23 @@ find_server_and_update_current_info(HttpTransact::State *s)
 {
   auto host{s->hdr_info.client_request.host_get()};
 
-  if (is_localhost(host)) {
+  // bypass_parent skips parent selection unless no_dns_just_forward_to_parent makes
+  // the parent responsible for reaching the origin.
+  bool bypass_parent = s->txn_conf->bypass_parent;
+  if (bypass_parent && s->txn_conf->no_dns_forward_to_parent) {
+    SiteThrottledWarning("proxy.config.http.bypass_parent is enabled, but "
+                         "proxy.config.http.no_dns_just_forward_to_parent prevents direct origin DNS; continuing with parent "
+                         "selection.");
+    bypass_parent = false;
+  }
+
+  if (bypass_parent) {
+    TxnDbg(dbg_ctl_http_trans, "bypassing parent selection due to proxy.config.http.bypass_parent (prior result %s)",
+           ParentResultStr[static_cast<int>(s->parent_result.result)]);
+    // Drop any earlier selection so its hostname, retry, and caching flags are not applied to the direct connection.
+    s->parent_result.reset();
+    s->parent_result.result = ParentResultType::DIRECT;
+  } else if (is_localhost(host)) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
@@ -809,6 +825,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     if (s->txn_conf->no_dns_forward_to_parent) {
       Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
       s->parent_result.result = ParentResultType::FAIL;
+      s->current.request_to   = ResolveInfo::HOST_NONE;
       return ResolveInfo::HOST_NONE;
     }
   /* fall through */
@@ -2582,6 +2599,23 @@ HttpTransact::issue_revalidate(State *s)
     return;
   }
 
+  // An object found under the 9.2 key cannot take a 304: the write that would
+  // apply it is a create on the current key, not an update of the legacy
+  // vector, and the cache aborts a header-only create. Ask for the full
+  // response instead, without our validators or the client's, so the 200
+  // replaces it under the current key and the legacy copy ages out. The
+  // client's conditionals are still matched against that 200. HEAD and Range
+  // requests are left alone: neither response is stored, and an unconditional
+  // range request would draw a 206 that deletes the object rather than
+  // migrating it. The next full GET migrates it instead.
+  if (s->cache_info.action == CacheAction_t::PREPARE_TO_UPDATE && s->method == HTTP_WKSIDX_GET &&
+      !s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE) && s->state_machine != nullptr &&
+      CompatCacheKey::is_legacy(s->state_machine->compatibility_cache_lookup)) {
+    TxnDbg(dbg_ctl_http_trans, "object under the compatibility key, revalidating unconditionally");
+    HttpTransactHeaders::remove_conditional_headers(&s->hdr_info.server_request);
+    return;
+  }
+
   // if the document is cached, just send a conditional request to the server
 
   // So the request does not have preconditions. It can, however
@@ -3030,6 +3064,9 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         }
         // override the default version with what the server has
         http_version = s->current.server->http_version;
+      } else {
+        handle_parent_down(s);
+        return;
       }
 
       TxnDbg(dbg_ctl_http_trans, "CacheOpenReadHit - version %d.%d", http_version.get_major(), http_version.get_minor());
@@ -5067,6 +5104,8 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   case HTTPStatus::PARTIAL_CONTENT:
     // If we get this back we should be just passing it through.
     ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
+    SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
+    SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
     s->next_action = StateMachineAction_t::SERVER_READ;
     break;
   default:
@@ -5074,6 +5113,8 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     /* Default behavior is to pass-through response to the client */
 
     ink_assert(s->cache_info.action == CacheAction_t::NO_ACTION);
+    SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
+    SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
     s->next_action = StateMachineAction_t::SERVER_READ;
     break;
   }
@@ -5093,6 +5134,52 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   }
 
   return;
+}
+
+// Revalidation merges in older builds deleted and re-added caching headers on every 304, and a cache
+// round trip left each dead slot unreclaimable, so a long-lived object's cached response could grow
+// to hundreds of field blocks. Deleted slots are now reused, but a header's blocks are never
+// released and every copy and marshal keeps them, so such a header stays bloated for as long as it
+// is cached and each revalidation rewrites all of it. When it holds well over the blocks its live
+// fields need, replace it with a copy of just its live fields, in slot order so field and duplicate
+// order are unchanged. The copy has to land in a fresh heap: copying onto the existing one frees the
+// dead blocks but leaves their space inside the region that marshal writes to disk.
+bool
+HttpTransact::compact_cached_response_header(HTTPHdr *cached_header)
+{
+  int blocks = 0;
+
+  for (MIMEFieldBlockImpl const *fblock = &cached_header->m_mime->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    ++blocks;
+  }
+  int const live   = cached_header->fields_count();
+  int const needed = std::max(1, (live + MIME_FIELD_BLOCK_SLOTS - 1) / MIME_FIELD_BLOCK_SLOTS);
+
+  if (blocks <= needed + 2) {
+    return false;
+  }
+
+  int const before = cached_header->m_heap->marshal_length();
+  HTTPHdr   compact;
+
+  // create() records HTTP/1.0 regardless of its version argument, and for HTTP/2 or 3 adds pseudo-fields.
+  compact.create(HTTPType::RESPONSE);
+  compact.version_set(cached_header->version_get());
+  compact.status_set(cached_header->status_get());
+  compact.reason_set(cached_header->reason_get());
+  for (auto &field : *cached_header) {
+    // name_get() gives a well-known name its canonical spelling; keep the one the header carries.
+    MIMEField *copy = compact.field_create(std::string_view{field.m_ptr_name, field.m_len_name});
+    compact.field_value_set(copy, field.value_get());
+    compact.field_attach(copy);
+  }
+  cached_header->destroy();
+  cached_header->copy(&compact);
+  compact.destroy();
+
+  Dbg(dbg_ctl_http_hdr_space, "Compacted cached response header: %d live fields in %d field blocks, marshal length %d -> %d", live,
+      blocks, before, cached_header->m_heap->marshal_length());
+  return true;
 }
 
 void
@@ -5181,6 +5268,9 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
 
     delete_warning_value(cached_hdr, HTTPWarningCode::REVALIDATION_FAILED);
   }
+
+  // Heal a header bloated by earlier revalidations now that it is final and about to be written.
+  compact_cached_response_header(cached_hdr);
 
   s->cache_info.object_store.request_get()->field_delete(static_cast<std::string_view>(MIME_FIELD_VIA));
 }
@@ -5802,6 +5892,15 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       return RequestError_t::UNACCEPTABLE_TE_REQUIRED;
     }
 
+    // RFC 9110 § 9.3.2: "A client SHOULD NOT send content in a HEAD request."
+    // has_request_body() is protocol-aware: HTTP/2 and HTTP/3 can signal a body via
+    // framing (e.g. DATA frames) without a Content-Length header.
+    if (s->txn_conf->reject_head_with_content && method == HTTP_WKSIDX_HEAD && s->state_machine->get_ua_txn() &&
+        s->state_machine->get_ua_txn()->has_request_body(s->hdr_info.request_content_length,
+                                                         s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED)) {
+      return RequestError_t::HEAD_CONTENT;
+    }
+
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
@@ -6218,6 +6317,36 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
+  // The keep_alive recomputed above reflects only what the origin said.  It says nothing
+  // about whether ATS held up its own end of the exchange.  If a request head declaring a
+  // body went to the origin and that body was never written in full, the origin's parser
+  // is still waiting for those bytes, and reusing the connection would hand the next
+  // request to the origin as the leftover body of this one.
+  //
+  // Only the origin side is decided here.  The client connection is handled later by
+  // do_drain_request_body(), reached from the SERVER_READ action, which consumes an
+  // undelivered body when all of it is already buffered and drops client keep-alive when it
+  // cannot.  Forcing the client side here would run before that and leave its
+  // keep-alive-preserving case unreachable.
+  //
+  // The one exception is the branch just below, which drops client keep-alive when the
+  // client 4-tuple is also the outbound one.  There the two connections are the same
+  // socket, so closing the origin side necessarily takes the client side with it.
+  //
+  // Only a response that leaves the exchange in progress is exempt, because there the body
+  // may still be on its way.  That is the ordinary Expect: 100-continue case.  The exempt
+  // set has to match the one handle_forward_server_connection_open() routes to
+  // handle_100_continue_response(), namely 100 and 103 alone.  Every other 1xx is dispatched
+  // as a final response and ends the transaction, so testing for 1xx here would leave the
+  // connection poolable while the origin is still mid-message.
+  HTTPStatus const status_code          = incoming_response->status_get();
+  bool const       exchange_in_progress = status_code == HTTPStatus::CONTINUE || status_code == HTTPStatus::EARLY_HINTS;
+
+  if (s->state_machine->server_owed_request_body && !exchange_in_progress) {
+    TxnDbg(dbg_ctl_http_hdrs, "Origin is owed request body bytes that will not be sent, not reusing the connection");
+    s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+  }
+
   if (s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE) {
     TxnDbg(dbg_ctl_http_hdrs, "Server is keep-alive.");
   } else if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_outbound_transparent() &&
@@ -6229,7 +6358,6 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     s->state_machine->t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
-  HTTPStatus status_code = incoming_response->status_get();
   if (is_response_body_precluded(status_code, s->method)) {
     s->hdr_info.response_content_length = 0;
     s->hdr_info.trust_response_cl       = true;
@@ -6898,6 +7026,12 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     build_error_response(s, HTTPStatus::BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length");
     return false;
   }
+  case RequestError_t::HEAD_CONTENT: {
+    TxnDbg(dbg_ctl_http_trans, "HEAD request with body");
+    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+    build_error_response(s, HTTPStatus::BAD_REQUEST, "Content Not Allowed", "request#head_content");
+    return false;
+  }
   default:
     return true;
   }
@@ -6924,6 +7058,10 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 bool
 HttpTransact::is_request_retryable(State *s)
 {
+  if (s->state_machine->origin_retry_body_unavailable) {
+    return false;
+  }
+
   // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
   // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
   // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry

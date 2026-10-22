@@ -21,16 +21,18 @@
 #pragma once
 
 #include <yaml-cpp/yaml.h>
+
+#include "tsutil/YamlCfg.h"
 #include "mgmt/rpc/jsonrpc/error/RPCError.h"
 #include "mgmt/rpc/jsonrpc/Defs.h"
 
 namespace rpc::json_codecs
 {
 ///
-/// @note The overall design is to make this classes @c yamlcpp_json_decoder and @c yamlcpp_json_encoder plugables into the Json Rpc
-/// encode/decode logic. yamlcpp does not give us all the behavior we need, such as the way it handles the null values. Json needs
-/// to use literal null and yamlcpp uses ~. If this becomes a problem, then we may need to change the codec implementation, we just
-/// follow the api and it should work with minimum changes.
+/// @note The design keeps @c yamlcpp_json_decoder and @c yamlcpp_json_encoder replaceable in the JSONRPC encode/decode logic.
+/// yaml-cpp emits null as @c ~ by default, which JSON parsers reject. Every emitter here calls
+/// @c ts::Yaml::configure_json_emitter, which writes the literal @c null instead. YAML resolves @c ~ and @c null to the same
+/// value, so the server still accepts YAML input.
 ///
 
 ///
@@ -195,6 +197,11 @@ class yamlcpp_json_encoder
       for (auto const &err : errata) {
         json << YAML::BeginMap;
         json << YAML::Key << "code" << YAML::Value << errata.code().value();
+        // Only an explicit severity goes on the wire. Clients treat a missing one as an error, which is
+        // how the server itself classifies an annotation without severity.
+        if (err.has_severity()) {
+          json << YAML::Key << "severity" << YAML::Value << static_cast<int>(err.severity());
+        }
         json << YAML::Key << "message" << YAML::Value << std::string{err.text().data(), err.text().size()};
         json << YAML::EndMap;
       }
@@ -251,8 +258,8 @@ class yamlcpp_json_encoder
     if (!resp.id.empty()) {
       json << YAML::Key << "id" << YAML::Value << resp.id;
     }
-    // else: We do not insert null as it will break the json, we need literal null and not ~ (as per yaml)
-    // json << YAML::Null;
+    // else: the field is omitted rather than set to null. Emitting it would be valid JSON now that LowerNull is set, but the
+    // omission is deliberate, see the id note in mgmt/rpc/schema/jsonrpc_response_schema.json.
 
     json << YAML::EndMap;
   }
@@ -268,7 +275,7 @@ public:
   encode(const specs::RPCResponseInfo &resp)
   {
     YAML::Emitter json;
-    json << YAML::DoubleQuoted << YAML::Flow;
+    ts::Yaml::configure_json_emitter(json);
     encode(resp, json);
 
     return json.c_str();
@@ -284,7 +291,7 @@ public:
   encode(const specs::RPCResponse &response)
   {
     YAML::Emitter json;
-    json << YAML::DoubleQuoted << YAML::Flow;
+    ts::Yaml::configure_json_emitter(json);
     {
       if (response.is_batch()) {
         json << YAML::BeginSeq;

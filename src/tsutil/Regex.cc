@@ -29,6 +29,7 @@
 #include <pthread.h>
 
 #include <array>
+#include <string>
 #include <vector>
 #include <mutex>
 #include <utility>
@@ -503,23 +504,188 @@ Regex::~Regex()
 }
 
 //----------------------------------------------------------------------------
+int32_t                        Regex::policy_gate_anchoring      = 0;
+Regex::PolicyGateReportHandler Regex::policy_gate_report_handler = nullptr;
+
+namespace
+{
+/** Is every top-level alternative of @a pattern anchored at both ends?
+ *
+ * PCRE2 cannot answer this. @c PCRE2_INFO_ALLOPTIONS reports @c PCRE2_ANCHORED whenever
+ * every alternative is start-anchored, and reports nothing whatever about the end --
+ * @c "^foo", @c "^foo$" and @c "^foo\z" are indistinguishable through every info field
+ * it offers. So the end has to be read from the pattern.
+ *
+ * Per alternative, because a check on the pattern's last character only sees the last
+ * one: @c "^a|^b$" ends in @c $ and reports @c PCRE2_ANCHORED, yet still matches
+ * @c "a-and-more".
+ *
+ * Conservative by construction -- anything unaccounted for returns @c false, so the
+ * pattern is reported rather than silently cleared. An extra report costs a log line; a
+ * missing one silently changes a rule when enforcement is enabled.
+ */
+bool
+every_alternative_anchored(std::string_view pattern)
+{
+  // A backtracking verb can end the match before a trailing anchor is reached,
+  // (*ACCEPT) most obviously, so do not reason about anchoring in its presence.
+  if (pattern.empty() || pattern.find("(*") != std::string_view::npos) {
+    return false;
+  }
+
+  auto anchored = [](std::string_view alt) {
+    if (!alt.starts_with("^") && !alt.starts_with("\\A")) {
+      return false;
+    }
+
+    size_t const anchor = alt.ends_with("\\z") ? 2 : (alt.ends_with("$") ? 1 : 0);
+
+    if (anchor == 0) {
+      return false;
+    }
+
+    // An odd number of backslashes before it makes the anchor a literal.
+    size_t backslashes = 0;
+
+    for (size_t i = alt.size() - anchor; i > 0 && alt[i - 1] == '\\'; --i) {
+      ++backslashes;
+    }
+    return (backslashes % 2) == 0;
+  };
+
+  size_t depth    = 0;
+  size_t begin    = 0;
+  bool   in_class = false;
+
+  for (size_t i = 0; i < pattern.size(); ++i) {
+    char const c = pattern[i];
+
+    if (c == '\\') {
+      ++i; // whatever follows is a literal, including '|', '[', '(' and ')'
+      continue;
+    }
+    if (in_class) {
+      in_class = (c != ']');
+      continue;
+    }
+    if (c == '[') {
+      in_class = true;
+    } else if (c == '(') {
+      ++depth;
+    } else if (c == ')') {
+      if (depth == 0) {
+        return false; // unbalanced as far as this scan can tell
+      }
+      --depth;
+    } else if (c == '|' && depth == 0) {
+      if (!anchored(pattern.substr(begin, i - begin))) {
+        return false;
+      }
+      begin = i + 1;
+    }
+  }
+
+  return !in_class && depth == 0 && anchored(pattern.substr(begin));
+}
+
+/** Tell the operator what the anchoring policy did, or would do, to a gate pattern.
+ *
+ * Silent when the pattern already requires a whole-subject match, whether the caller
+ * asked for it through the compile flags or wrote the anchors into every alternative.
+ * The common, correct ``^...$`` therefore produces nothing: reporting it would put a
+ * line in the log for most rules in a typical configuration, and a report that fires
+ * on the form operators are supposed to use is one they learn to ignore.
+ *
+ * The cost is that ``$`` is marginally weaker than @c PCRE2_ENDANCHORED -- it is also
+ * satisfied immediately before a final newline, and a subject can carry one, since
+ * @c unescapifyStr() decodes @c %0A in a request URL. Such a rule can still change
+ * under enforcement without having been reported, which the migration guidance states
+ * rather than trying to encode into a rewrite.
+ *
+ * Both modes report, so a gate rule added long after the migration is named either way
+ * rather than silently becoming inert under enforcement.
+ */
+void
+report_policy_gate(std::string_view pattern, uint32_t caller_flags, std::string_view policy_gate, bool enforcing)
+{
+  if (Regex::policy_gate_report_handler == nullptr) { // nobody listening
+    return;
+  }
+
+  // Silent when the pattern already requires a whole-subject match, either because the
+  // caller compiled for one or because it is anchored in the pattern itself.
+  if ((caller_flags & (RE_ANCHORED | RE_ENDANCHORED)) == (RE_ANCHORED | RE_ENDANCHORED) || every_alternative_anchored(pattern)) {
+    return;
+  }
+
+  std::string message{"[regex-anchor] "};
+
+  message.append(policy_gate).append(" pattern '").append(pattern);
+
+  if (enforcing) {
+    message.append("' anchored to the whole subject by policy. ");
+  } else {
+    message.append("' is not anchored to the whole subject. ");
+  }
+  message.append("See admin-guide/configuration/regex-best-practices.");
+
+  Regex::policy_gate_report_handler(enforcing ? Regex::PolicyGateReport::ENFORCED : Regex::PolicyGateReport::UNENFORCED, message);
+}
+} // namespace
+
+//----------------------------------------------------------------------------
+// The overloads without a policy_gate parameter exist so that the mangled names
+// plugins were built against keep resolving. A defaulted parameter is supplied at
+// the call site, so appending one to the declarations here would rename the symbol
+// and every already-built plugin linking Regex::compile would fail to load.
 bool
 Regex::compile(std::string_view pattern, uint32_t flags)
+{
+  return this->compile(pattern, flags, std::string_view{});
+}
+
+//----------------------------------------------------------------------------
+bool
+Regex::compile(std::string_view pattern, uint32_t flags, std::string_view policy_gate)
 {
   std::string error;
   int         erroroffset;
 
-  return this->compile(pattern, error, erroroffset, flags);
+  return this->compile(pattern, error, erroroffset, flags, policy_gate);
 }
 
 //----------------------------------------------------------------------------
 bool
 Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, uint32_t flags)
 {
+  return this->compile(pattern, error, erroroffset, flags, std::string_view{});
+}
+
+//----------------------------------------------------------------------------
+bool
+Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, uint32_t flags, std::string_view policy_gate)
+{
   // get the RegexContext instance - should only be null when shutting down
   RegexContext *regex_context = RegexContext::get_instance();
   if (regex_context == nullptr) {
     return false;
+  }
+
+  // Read the policy exactly once. The records subsystem writes it from another thread,
+  // and a 0 -> 1 transition landing between the anchor decision and the report decision
+  // would compile the pattern unanchored and also suppress the report about it, which is
+  // the one state this is meant to prevent.
+  bool const    is_gate   = !policy_gate.empty();
+  int32_t const anchoring = policy_gate_anchoring;
+
+  // What the caller asked for, before the policy or the old-PCRE2 shim below change it.
+  // The report distinguishes "the caller already required a whole-subject match" from
+  // "the policy added it", and after the OR below those are indistinguishable.
+  uint32_t const caller_flags = flags;
+
+  // Anchor gate patterns to the whole subject when the policy is on.
+  if (is_gate && anchoring) {
+    flags |= RE_ANCHORED | RE_ENDANCHORED;
   }
 
   // On PCRE2 < 10.30 the ENDANCHORED bit is not a valid pcre2_compile option. Rewrite
@@ -571,6 +737,12 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
   }
 
   _Code::set(_code, code);
+
+  // Report either way: warn-mode patterns need auditing, and enforced ones need a record
+  // that the policy touched them, so a rule added after the migration is not silent.
+  if (is_gate) {
+    report_policy_gate(pattern, caller_flags, policy_gate, anchoring != 0);
+  }
 
   return true;
 }

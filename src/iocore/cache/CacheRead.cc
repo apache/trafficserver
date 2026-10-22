@@ -60,7 +60,7 @@ thread_local int t_read_recursive = 0;
 // openReadStartEarliest into the recursive Lread path. When an inner recursion
 // level falls into free_CacheVC the outer frame then touches the recursion
 // counter through the freed `this`; reaching the depth limit is not required to
-// trigger it. Used by the autest reproducer to observe the recursive-read
+// trigger it. Used by the Uranium test reproducer to observe the recursive-read
 // use-after-free (ASan build) on the unfixed sources.
 #if TS_HAS_TESTS
 static bool const test_force_corrupt_doc = std::getenv("ATS_TEST_FORCE_CORRUPT_DOC") != nullptr;
@@ -73,17 +73,14 @@ static constexpr bool test_force_corrupt_doc = false;
 uint32_t
 CacheVC::load_http_info(CacheHTTPInfoVector *info, Doc *doc, RefCountObj *block_ptr)
 {
-  uint32_t zret = info->get_handles(doc->hdr(), doc->hlen, block_ptr);
-  if (!this->f.doc_from_ram_cache && // ram cache is always already fixed up.
-                                     // If this is an old object, the object version will be old or 0, in either case this is
-                                     // correct. Forget the 4.2 compatibility, always update older versioned objects.
-      ts::VersionNumber(doc->v_major, doc->v_minor) < CACHE_DB_VERSION) {
-    for (int i = info->xcount - 1; i >= 0; --i) {
-      info->data(i).alternate.m_alt->m_response_hdr.m_mime->recompute_accelerators_and_presence_bits();
-      info->data(i).alternate.m_alt->m_request_hdr.m_mime->recompute_accelerators_and_presence_bits();
-    }
-  }
-  return zret;
+  // The well-known string indexes, presence bits and slot accelerators these headers carry were
+  // rebuilt by HTTPInfo::unmarshal(), which every marshalled object passes through exactly once.
+  // This used to be done here instead, gated on the object being older than the running cache
+  // version and on the fragment not coming from the RAM cache. Both gates were wrong: an object
+  // written by a same-version build with a different well-known string table needs the same fixup,
+  // and with proxy.config.cache.ram_cache.compress enabled the RAM cache holds the object still
+  // marshalled, so a hit on it reaches here unfixed.
+  return info->get_handles(doc->hdr(), doc->hlen, block_ptr);
 }
 
 int
@@ -845,7 +842,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
       dir = earliest_dir;
       if ((call_result = do_read_call(&key)) == EVENT_RETURN) {
-        if (this->handler == reinterpret_cast<ContinuationHandler>(&CacheVC::openReadStartEarliest)) {
+        if (this->handler.is<&CacheVC::openReadStartEarliest>()) {
           is_recursive_call = true;
           if (t_read_recursive > MAX_READ_RECURSION_DEPTH) {
             char tmpstring[CRYPTO_HEX_SIZE];

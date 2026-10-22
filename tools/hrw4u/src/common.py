@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import re
 import sys
 from typing import Final, NoReturn, Protocol, TextIO, Any, Callable
@@ -43,18 +44,55 @@ class RegexPatterns:
     SUBSTITUTE_PATTERN: Final = re.compile(
         r"""(?P<escaped>\{\{.*?\}\})
             |
-            (?<!%)\{\s*(?P<func>[a-zA-Z_][a-zA-Z0-9_-]*)\s*\((?P<args>[^)]*)\)\s*\}
+            (?<!%)\{\s*(?P<func>[a-zA-Z_][a-zA-Z0-9_-]*)\s*\((?P<args>[^)]*)\)
+                (?:\s+with\s+(?P<func_mods>[A-Za-z][A-Za-z0-9,\s]*?))?\s*\}
             |
             (?<!%)\{(?P<var>[^{}()]+)\}
         """,
         re.VERBOSE | re.DOTALL,
     )
 
+    # An interpolated symbol may carry modifiers, spelled as on a condition: {inbound.url.path with NORM}
+    INTERPOLATION_MODS: Final = re.compile(r'^\s*(?P<name>\S+?)\s+with\s+(?P<mods>[A-Za-z][A-Za-z0-9,\s]*?)\s*$')
+
+    # Trailing [MODS] inside a %{} block, which u4wrh turns back into a "with" clause
+    PERCENT_MODS: Final = re.compile(r'^(?P<body>.*?)\s+\[(?P<mods>[A-Za-z][A-Za-z0-9,\s]*)\]$')
+
     # Additional performance patterns
     IDENTIFIER: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
     WHITESPACE: Final = re.compile(r'\s+')
     COMMENT_BLOCK: Final = re.compile(r'/\*.*?\*/', re.DOTALL)
     STRING_INTERPOLATION: Final = re.compile(r'\{([a-zA-Z_][a-zA-Z0-9_.-]*(?:\([^)]*\))?)\}', re.MULTILINE)
+
+
+def parse_mods(raw: str | None) -> list[str]:
+    """Parse 'MOD, mod,NOCASE' into ['MOD', 'NOCASE'], dropping repeats, which header_rewrite rejects."""
+    return list(dict.fromkeys(mod.strip().upper() for mod in raw.split(",") if mod.strip())) if raw else []
+
+
+def split_interpolation_mods(text: str) -> tuple[str, list[str]]:
+    """Split '<symbol> with MOD,MOD' into the symbol and its modifiers."""
+    if match := RegexPatterns.INTERPOLATION_MODS.match(text):
+        return match.group("name"), parse_mods(match.group("mods"))
+    return text.strip(), []
+
+
+def apply_percent_mods(percent: str, mods: list[str]) -> str:
+    """Write modifiers into a %{} block the way header_rewrite spells them: %{TAG:PAYLOAD [MODS]}."""
+    if not mods or not (percent.startswith("%{") and percent.endswith("}")):
+        return percent
+    return f"{percent[:-1]} [{','.join(mods)}]}}"
+
+
+def split_percent_mods(percent: str) -> tuple[str, list[str]]:
+    """Inverse of apply_percent_mods()."""
+    if not (percent.startswith("%{") and percent.endswith("}")):
+        return percent, []
+
+    if match := RegexPatterns.PERCENT_MODS.match(percent[2:-1]):
+        return f'%{{{match.group("body")}}}', parse_mods(match.group("mods"))
+
+    return percent, []
 
 
 class SystemDefaults:
@@ -238,13 +276,19 @@ def generate_output(
         filename: str,
         args: Any,
         error_collector: ErrorCollector | None = None,
-        extra_kwargs: dict[str, Any] | None = None) -> None:
-    """Generate and print output based on mode with optional error collection."""
+        extra_kwargs: dict[str, Any] | None = None,
+        out: TextIO | None = None) -> bool:
+    """Write the compiled output to `out`, and return True when the input had errors.
+
+    `out` is a parameter so the caller, which owns the destination, can still decide
+    whether to keep the bytes.
+    """
+    out = sys.stdout if out is None else out
     if args.ast:
         if tree is not None:
-            print(tree.toStringTree(recog=parser_obj))
-        elif error_collector and error_collector.has_errors():
-            print("Parse tree not available due to syntax errors.")
+            print(tree.toStringTree(recog=parser_obj), file=out)
+        elif error_collector and error_collector.has_errors() and getattr(args, 'error_format', 'plain') == 'plain':
+            print("Parse tree not available due to syntax errors.", file=sys.stderr)
     else:
         if tree is not None:
             preserve_comments = not getattr(args, 'no_comments', False)
@@ -263,7 +307,7 @@ def generate_output(
                 else:
                     result = visitor.visit(tree)
                 if result:
-                    print("\n".join(result))
+                    print("\n".join(result), file=out)
             except Exception as e:
                 if error_collector:
                     syntax_error = Hrw4uSyntaxError(filename, 0, 0, f"Visitor error: {e}", "")
@@ -278,8 +322,8 @@ def generate_output(
 
     if error_collector and (error_collector.has_errors() or error_collector.has_warnings()):
         print(error_collector.get_error_summary(), file=sys.stderr)
-        if error_collector.has_errors() and not args.ast and tree is None:
-            sys.exit(1)
+
+    return bool(error_collector and error_collector.has_errors())
 
 
 def run_main(
@@ -363,9 +407,15 @@ def run_main(
                 emit_fatal_error(args.error_format, e)
         tree, parser_obj, error_collector = create_parse_tree(
             content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format)
-        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
+        buffer = io.StringIO()
+        failed = generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer)
+        if not failed or (args.ast and buffer.getvalue()):
+            sys.stdout.write(buffer.getvalue())
+        if failed:
+            sys.exit(1)
         return
 
+    failed = False
     if any(':' in f for f in args.files):
         for pair in args.files:
             if ':' not in pair:
@@ -393,21 +443,21 @@ def run_main(
                 content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
                 args.error_format)
 
-            try:
-                with open(output_path, 'w', encoding='utf-8') as output_file:
-                    original_stdout = sys.stdout
-                    try:
-                        sys.stdout = output_file
-                        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
-                    finally:
-                        sys.stdout = original_stdout
-            except Exception as e:
-                emit_fatal_message(args.error_format, f"Error writing to '{output_path}': {e}", filename=output_path)
-    else:
-        for i, input_path in enumerate(args.files):
-            if i > 0:
-                print("# ---")
+            buffer = io.StringIO()
+            pair_failed = generate_output(
+                tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer)
+            failed |= pair_failed
 
+            # Opened only now: 'w' truncates, and a failed compile must not empty a good file.
+            if not pair_failed or (args.ast and buffer.getvalue()):
+                try:
+                    with open(output_path, 'w', encoding='utf-8') as output_file:
+                        output_file.write(buffer.getvalue())
+                except Exception as e:
+                    emit_fatal_message(args.error_format, f"Error writing to '{output_path}': {e}", filename=output_path)
+    else:
+        chunks: list[str] = []
+        for input_path in args.files:
             try:
                 with open(input_path, 'r', encoding='utf-8') as input_file:
                     content = input_file.read()
@@ -426,4 +476,17 @@ def run_main(
                 content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
                 args.error_format)
 
-            generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
+            # These concatenate into one document, so a partial run is a config with a hole.
+            buffer = io.StringIO()
+            failed |= generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer)
+            # Empty chunks hold their place, or `# ---` stops marking file boundaries.
+            chunks.append(buffer.getvalue())
+
+        if not failed or (args.ast and any(chunks)):
+            for i, text in enumerate(chunks):
+                if i > 0:
+                    print("# ---")
+                sys.stdout.write(text)
+
+    if failed:
+        sys.exit(1)

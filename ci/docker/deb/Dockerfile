@@ -56,7 +56,7 @@ RUN apt-get update; apt-get -y dist-upgrade; \
     libhwloc-dev libunwind8 libunwind-dev zlib1g-dev \
     tcl-dev tcl8.6-dev libjemalloc-dev libluajit-5.1-dev liblzma-dev \
     libhiredis-dev libbrotli-dev libncurses-dev libgeoip-dev libmagick++-dev \
-    libzstd-dev; \
+    libzstd-dev liblz4-dev; \
     # Optional: This is for the OpenSSH server, and Jenkins account + access (comment out if not needed)
     apt-get -y install openssh-server openjdk-8-jre && mkdir /run/sshd; \
     groupadd  -g 665 jenkins && \

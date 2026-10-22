@@ -1,0 +1,5 @@
+REMAP {
+    if now > 0 {
+        inbound.req.X-A = "1";
+    }
+}

@@ -1119,29 +1119,18 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 ParseResult
 validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
-  ParseResult ret = ParseResult::DONE;
-  auto        host{url->get_host()};
-  auto        path{url->get_path()};
-  auto        scheme{url->get_scheme()};
+  // The only rejected request-target is authority-form (host present, scheme
+  // absent) with a method other than CONNECT. A part is empty when its pointer
+  // is null or its length is zero, matching the getters this replaces; the
+  // asterisk-form check is intentionally disabled (URLImpl can't distinguish
+  // '*' from '/*'), so origin-, asterisk-, and absolute-form all accept.
+  bool const host_present  = url->m_ptr_host != nullptr && url->m_len_host != 0;
+  bool const scheme_absent = url->m_scheme_wks_idx < 0 && (url->m_ptr_scheme == nullptr || url->m_len_scheme == 0);
 
-  if (host.empty()) {
-    if (path == "*"sv) { // asterisk-form
-      // Skip this check for now because URLImpl can't distinguish '*' and '/*'
-      // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
-      //   ret = ParseResult::ERROR;
-      // }
-    } else { // origin-form
-      // Nothing to check here
-    }
-  } else if (scheme.empty() && !host.empty()) { // authority-form
-    if (method_wk_idx != HTTP_WKSIDX_CONNECT) {
-      ret = ParseResult::ERROR;
-    }
-  } else { // absolute-form
-    // Nothing to check here
+  if (host_present && scheme_absent && method_wk_idx != HTTP_WKSIDX_CONNECT) {
+    return ParseResult::ERROR;
   }
-
-  return ret;
+  return ParseResult::DONE;
 }
 
 bool
@@ -1966,6 +1955,26 @@ HTTPHdrImpl::unmarshal(intptr_t offset)
 }
 
 void
+HTTPHdrImpl::recompute_wks_indices()
+{
+  if (m_polarity == HTTPType::REQUEST) {
+    // http_hdr_method_get() answers from the index when it is set, so a stale index would report a
+    // different method than the one stored here. Tokenize case sensitively, exactly as the parser
+    // does, so a method that only matches a well-known string case insensitively stays untokenized.
+    u.req.m_method_wks_idx = u.req.m_ptr_method != nullptr ?
+                               static_cast<int16_t>(hdrtoken_method_tokenize(u.req.m_ptr_method, u.req.m_len_method)) :
+                               int16_t{-1};
+    if (u.req.m_url_impl != nullptr) {
+      u.req.m_url_impl->recompute_wks_idx();
+    }
+  }
+
+  if (m_fields_impl != nullptr) {
+    m_fields_impl->recompute_accelerators_and_presence_bits();
+  }
+}
+
+void
 HTTPHdrImpl::move_strings(HdrStrHeap *new_heap)
 {
   if (m_polarity == HTTPType::REQUEST) {
@@ -2111,7 +2120,7 @@ HTTPInfo::copy_frag_offsets_from(HTTPInfo *src)
 int
 HTTPInfo::marshal_length()
 {
-  int len = HTTP_ALT_MARSHAL_SIZE;
+  int len = HTTP_ALT_MARSHAL_SIZE + sizeof(uint64_t);
 
   if (m_alt->m_request_hdr.valid()) {
     len += m_alt->m_request_hdr.m_heap->marshal_length();
@@ -2146,7 +2155,7 @@ HTTPInfo::marshal(char *buf, int len)
   //   extra bytes now but will save copying any
   //   bytes on the way out of the cache
   memcpy(buf, m_alt, sizeof(HTTPCacheAlt));
-  marshal_alt->m_magic          = CacheAltMagic::MARSHALED;
+  marshal_alt->m_magic          = CacheAltMagic::MARSHALED_WKS;
   marshal_alt->m_writeable      = 0;
   marshal_alt->m_unmarshal_len  = -1;
   marshal_alt->m_ext_buffer     = nullptr;
@@ -2184,6 +2193,16 @@ HTTPInfo::marshal(char *buf, int len)
     marshal_alt->m_response_hdr.m_heap = nullptr;
   }
 
+  uint64_t identity = hdrtoken_wks_identity;
+#if TS_HAS_TESTS
+  if (char const *shift = std::getenv("ATS_TEST_WKS_IDX_SHIFT"); shift != nullptr && atoi(shift) != 0) {
+    identity = 0;
+  }
+#endif
+  ink_release_assert(len - used >= static_cast<int>(sizeof(identity)));
+  memcpy(reinterpret_cast<char *>(marshal_alt) + used, &identity, sizeof(identity));
+  used += sizeof(identity);
+
   // The prior system failed the marshal if there wasn't
   //   enough space by measuring the space for every
   //   component. Seems much faster to check once to
@@ -2192,6 +2211,30 @@ HTTPInfo::marshal(char *buf, int len)
 
   return used;
 }
+
+namespace
+{
+/** Rebuild the well-known string indexes of a freshly unmarshalled alternate.
+ *
+ * The object may have been written by a build whose well-known string table differed from this
+ * one's, in which case the indexes it stores denote different strings here than they did there.
+ * Both header heaps are fully swizzled by the time this runs, which the MIME field block walk
+ * needs. Doing this in unmarshal() rather than in the cache covers every reader of a marshalled
+ * object, and the CacheAltMagic check keeps it to once per buffer.
+ */
+void
+recompute_alt_wks_indices(HTTPCacheAlt *alt)
+{
+  // m_heap stays null unless unmarshalling filled the header in, so it also says whether m_http is
+  // a pointer this process may follow rather than one left over from the writer.
+  if (alt->m_request_hdr.m_heap != nullptr) {
+    alt->m_request_hdr.m_http->recompute_wks_indices();
+  }
+  if (alt->m_response_hdr.m_heap != nullptr) {
+    alt->m_response_hdr.m_http->recompute_wks_indices();
+  }
+}
+} // anonymous namespace
 
 int
 HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
@@ -2205,10 +2248,12 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return alt->m_unmarshal_len;
-  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED && alt->m_magic != CacheAltMagic::MARSHALED_WKS) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return -1;
   }
+
+  bool const has_wks_identity = alt->m_magic == CacheAltMagic::MARSHALED_WKS;
 
   ink_assert(alt->m_unmarshal_len < 0);
   alt->m_magic = CacheAltMagic::ALIVE;
@@ -2260,6 +2305,18 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_response_hdr.m_heap = heap;
     alt->m_response_hdr.m_http = hh;
     alt->m_response_hdr.m_mime = hh->m_fields_impl;
+  }
+
+  uint64_t identity = 0;
+  if (has_wks_identity) {
+    if (len < static_cast<int>(sizeof(identity))) {
+      return -1;
+    }
+    memcpy(&identity, buf + orig_len - len, sizeof(identity));
+    len -= sizeof(identity);
+  }
+  if (!has_wks_identity || identity != hdrtoken_wks_identity) {
+    recompute_alt_wks_indices(alt);
   }
 
   alt->m_unmarshal_len = orig_len - len;
@@ -2353,6 +2410,8 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     alt->m_response_hdr.m_mime = hh->m_fields_impl;
   }
 
+  recompute_alt_wks_indices(alt);
+
   alt->m_unmarshal_len = orig_len - len;
 
   return alt->m_unmarshal_len;
@@ -2367,7 +2426,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
 {
   HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
 
-  if (alt->m_magic != CacheAltMagic::MARSHALED) {
+  if (alt->m_magic != CacheAltMagic::MARSHALED && alt->m_magic != CacheAltMagic::MARSHALED_WKS) {
     return false;
   }
 

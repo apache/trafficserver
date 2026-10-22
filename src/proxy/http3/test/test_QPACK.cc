@@ -439,6 +439,46 @@ TEST_CASE("Encoding", "[qpack-encode]")
   }
 }
 
+// QPACK::decode() parses the Required Insert Count varint from the header
+// block prefix and stores the decoded value in a uint16_t local; the call site
+// must reject a varint whose value exceeds the uint16_t range, otherwise the
+// value silently truncates and the decoder proceeds with corrupted state.
+// Drive QPACK::decode() with a 4-byte 8-bit-prefix varint encoding 0x10000
+// and assert that the decoder reports failure rather than accepting it.
+TEST_CASE("decode() rejects oversized Required Insert Count at entry", "[qpack-decode-entry-bounds]")
+{
+  QUICApplicationDriver driver;
+  auto                  qpack   = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 4096, 100, MAX_FIELD_SIZE);
+  auto                  handler = std::make_unique<TestQPACKEventHandler>();
+
+  HTTPHdr hdr;
+  hdr.create(HTTPType::REQUEST);
+
+  uint8_t  block[16] = {0};
+  uint8_t *p         = block;
+  int      enc_len   = xpack_encode_integer(p, p + sizeof(block), 0x10000, 8);
+  REQUIRE(enc_len > 0);
+  p                += enc_len;
+  *p++              = 0x00;
+  size_t block_len  = static_cast<size_t>(p - block);
+
+  int sync_ret = qpack->decode(1, block, block_len, hdr, handler.get(), eventProcessor.all_ethreads[0]);
+
+  // decode() schedules its result asynchronously when it returns >= 0; only
+  // wait in that case. A synchronous failure (sync_ret < 0) means no event
+  // will be delivered and there is nothing to wait for.
+  if (sync_ret >= 0) {
+    sleep(1);
+  }
+
+  CAPTURE(sync_ret);
+  CAPTURE(handler->last_event());
+  CHECK_FALSE((sync_ret == 0 && handler->last_event() == QPACK_EVENT_DECODE_COMPLETE));
+  CHECK((sync_ret < 0 || handler->last_event() == QPACK_EVENT_DECODE_FAILED));
+
+  hdr.destroy();
+}
+
 TEST_CASE("Decoding", "[qpack-decode]")
 {
   char app_dir[PATH_MAX + 1] = "";

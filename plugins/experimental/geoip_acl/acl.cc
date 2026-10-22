@@ -181,7 +181,7 @@ RegexAcl::compile(const std::string &str, const char *filename, int lineno)
   _regex_s = str;
   _regex   = new Regex();
 
-  if (!_regex->compile(_regex_s, error, erroffset, 0)) {
+  if (!_regex->compile(_regex_s, error, erroffset, 0, "geoip_acl country regex")) {
     TSError("[%s] Regex compilation failed in %s:line %d with error (%s) at character %d", PLUGIN_NAME, filename, lineno,
             error.c_str(), erroffset);
     delete _regex;

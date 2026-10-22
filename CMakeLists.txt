@@ -162,8 +162,11 @@ option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault in
 if(ENABLE_DISK_FAILURE_TESTS)
   add_compile_definitions("AIO_FAULT_INJECTION")
 endif()
-option(ENABLE_AUTEST "Setup autest (default OFF)")
-option(ENABLE_AUTEST_UDS "Setup autest with curl using UDS (default OFF)")
+option(ENABLE_URTEST "Set up Uranium tests (default OFF)")
+option(ENABLE_URTEST_UDS "Set up Uranium tests with curl using UDS (default OFF)")
+if(DEFINED ENABLE_AUTEST OR DEFINED ENABLE_AUTEST_UDS)
+  message(FATAL_ERROR "ENABLE_AUTEST and ENABLE_AUTEST_UDS were removed; use ENABLE_URTEST and ENABLE_URTEST_UDS")
+endif()
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
@@ -527,32 +530,40 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(zstd CONFIG QUIET)
-if(zstd_FOUND)
+# 1.4.0 stabilized the advanced one-shot API (ZSTD_compress2 et al.) used by
+# the RAM cache; plugins/compress already requires the same floor for
+# ZSTD_compressStream2, so this is not specific to the cache.
+find_package(ZSTD 1.4.0)
+set(HAVE_ZSTD_H ${ZSTD_FOUND})
 
-  # Provide a compatibility target name if the upstream package does not export it
-  # Our code links against `zstd::zstd`; upstream zstd usually exports
-  # `zstd::libzstd_shared`/`zstd::libzstd_static`. Create an alias if needed.
-  if(NOT TARGET zstd::zstd)
-    if(TARGET zstd::libzstd_shared)
-      set(_zstd_target zstd::libzstd_shared)
-    elseif(TARGET zstd::libzstd_static)
-      set(_zstd_target zstd::libzstd_static)
-    elseif(TARGET zstd::libzstd)
-      set(_zstd_target zstd::libzstd)
-    endif()
-    if(DEFINED _zstd_target)
+# cmake/FindZSTD.cmake creates the zstd::zstd target this tree links against,
+# but with CMAKE_FIND_PACKAGE_PREFER_CONFIG the lookup can resolve through
+# zstd's own config package instead: on a case-insensitive filesystem the
+# ZSTDConfig.cmake CMake searches for matches the zstdConfig.cmake that zstd
+# installs. That package exports zstd::libzstd_shared/_static, so alias
+# whichever it gave us or the four targets linking zstd::zstd fail at generate
+# time.
+if(ZSTD_FOUND AND NOT TARGET zstd::zstd)
+  foreach(_zstd_target zstd::libzstd_shared zstd::libzstd_static zstd::libzstd)
+    if(TARGET ${_zstd_target})
       add_library(zstd_zstd INTERFACE)
       target_link_libraries(zstd_zstd INTERFACE ${_zstd_target})
       add_library(zstd::zstd ALIAS zstd_zstd)
-      set(HAVE_ZSTD_H TRUE)
-    else()
-      set(HAVE_ZSTD_H FALSE)
+      break()
     endif()
+  endforeach()
+  unset(_zstd_target)
+  if(NOT TARGET zstd::zstd)
+    message(WARNING "zstd found but it exports no target this build can use; building without zstd")
+    set(HAVE_ZSTD_H FALSE)
   endif()
-else()
-  set(HAVE_ZSTD_H FALSE)
 endif()
+
+# 1.7.0 (r129) introduced the current compression API, including
+# LZ4_compress_default(), which the RAM cache uses; 1.7.5 is the floor for
+# LZ4_versionString(), which traffic_layout reports.
+find_package(LZ4 1.7.5)
+set(HAVE_LZ4_H ${LZ4_FOUND})
 
 # ncurses is used in traffic_top
 find_package(Curses)
@@ -818,7 +829,7 @@ check_struct_has_member("struct mptcp_info" mptcpi_subflows "linux/mptcp.h" HAVE
 # find resolv library if available
 find_package(resolv)
 
-if(ENABLE_DOCS OR ENABLE_AUTEST)
+if(ENABLE_DOCS OR ENABLE_URTEST)
   find_package(Python3 REQUIRED)
   find_program(UV uv REQUIRED)
   find_program(NETCAT_PROGRAM nc REQUIRED)
@@ -834,7 +845,7 @@ if(ENABLE_DOCS)
   find_program(GRAPHVIZ_DOT dot REQUIRED)
 endif()
 
-if(ENABLE_AUTEST)
+if(ENABLE_URTEST)
   # Default the sandbox to /tmp to keep paths short. Unix domain socket paths
   # are limited to 108 characters and deep build directories (e.g. in home
   # directories) can exceed this limit, causing confusing test failures. A hash
@@ -842,19 +853,23 @@ if(ENABLE_AUTEST)
   # deterministic across runs.
   string(MD5 _build_dir_hash "${CMAKE_BINARY_DIR}")
   string(SUBSTRING "${_build_dir_hash}" 0 8 _build_dir_hash)
-  set(AUTEST_SANDBOX
-      "/tmp/sb_${_build_dir_hash}"
-      CACHE STRING "Location for autest output (default /tmp/sb_<hash>)"
+  set(URTEST_SANDBOX
+      "/tmp/urtest_${_build_dir_hash}"
+      CACHE STRING "Location for Uranium test output (default /tmp/urtest_<hash>)"
   )
-  set(AUTEST_OPTIONS
+  set(URTEST_OPTIONS
       ""
-      CACHE STRING "Additional options for autest (default \"\")"
+      CACHE STRING "Additional options for Uranium tests (default \"\")"
   )
-  # Also create AUTEST_OPTIONS_LIST from the string for use in cmake targets.
-  # This prevents cmake from escaping spaces in the arguments, which confuses
-  # the autest command. The original AUTEST_OPTIONS string is used in the
-  # autest.sh script.
-  separate_arguments(AUTEST_OPTIONS_LIST UNIX_COMMAND "${AUTEST_OPTIONS}")
+  if(DEFINED AUTEST_SANDBOX
+     OR DEFINED AUTEST_OPTIONS
+     OR DEFINED PYTEST_OPTIONS
+  )
+    message(
+      FATAL_ERROR
+        "AUTEST_SANDBOX, AUTEST_OPTIONS, and PYTEST_OPTIONS were removed; use URTEST_SANDBOX and URTEST_OPTIONS"
+    )
+  endif()
   file(READ "${CMAKE_SOURCE_DIR}/tests/proxy-verifier-version.txt" PROXY_VERIFIER_VERSION)
   string(STRIP "${PROXY_VERIFIER_VERSION}" PROXY_VERIFIER_VERSION)
   file(READ "${CMAKE_SOURCE_DIR}/tests/proxy-verifier-checksum.txt" PROXY_VERIFIER_SHA1)
@@ -974,7 +989,7 @@ add_subdirectory(src/traffic_via)
 if(ENABLE_CRIPTS)
   add_subdirectory(src/cripts)
 endif()
-if(ENABLE_AUTEST)
+if(ENABLE_URTEST)
   add_subdirectory(tests)
 endif()
 if(ENABLE_FUZZING)

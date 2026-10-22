@@ -89,7 +89,7 @@ TEST_CASE("Continuation constructed with a raw ProxyMutex pointer retains the mu
 
   REQUIRE(cont.getMutex() == mutex.get());
   REQUIRE(cont.getThreadAffinity() == nullptr);
-  REQUIRE(cont.handler != nullptr);
+  REQUIRE(!cont.handler.is<nullptr>());
 }
 
 TEST_CASE("Continuation constructed with a null ProxyMutex pointer reports a null mutex via getMutex", "[inkevent][continuation]")
@@ -212,7 +212,7 @@ TEST_CASE("SET_CONTINUATION_HANDLER installs a handler on a peer Continuation po
 {
   Ptr<ProxyMutex>        mutex{new_ProxyMutex()};
   TwoHandlerContinuation cont{mutex.get()};
-  REQUIRE(cont.handler != nullptr);
+  REQUIRE(!cont.handler.is<nullptr>());
 
   TwoHandlerContinuation *peer = &cont;
   SET_CONTINUATION_HANDLER(peer, &TwoHandlerContinuation::second);
