@@ -1862,40 +1862,42 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
 
 namespace
 {
-/** A start gate, so every thread is inside the match loop before any of them gets far
- * and the matching actually overlaps. std::latch would say this directly; it is
- * hand-rolled here to match notstd::barrier in benchmark_LogObject.cc.
+/** A reusable barrier, so every round starts with all threads alive and inside it. The
+ * matches of one round then start together on every thread. std::barrier would say this
+ * directly; it is hand-rolled here to match notstd::barrier in benchmark_LogObject.cc.
  *
- * Single-use, like the std::latch it stands in for: once the gate opens it stays open
- * and a second round returns immediately. Exactly `expected` threads must call
- * arrive_and_wait() or the rest block forever, and the gate must outlive all of them,
- * since destroying a condition_variable with waiters on it is undefined.
+ * Each completed round advances the generation, which is what releases the waiters, so
+ * the barrier can be crossed any number of times. Exactly `expected` threads must call
+ * arrive_and_wait() every round or the rest block forever, and the barrier must outlive
+ * all of them, since destroying a condition_variable with waiters on it is undefined.
  */
-class ThreadGate
+class RoundBarrier
 {
 public:
-  explicit ThreadGate(int expected) : _expected{expected} { REQUIRE(expected > 0); }
+  explicit RoundBarrier(int expected) : _expected{expected} { REQUIRE(expected > 0); }
 
   /// Count this thread in, then block until every expected thread has done the same.
   void
   arrive_and_wait()
   {
     std::unique_lock<std::mutex> lock{_mutex};
+    auto const                   generation = _generation;
 
     if (++_arrived == _expected) {
-      _open = true;
+      _arrived = 0;
+      ++_generation;
       _cv.notify_all();
       return;
     }
-    _cv.wait(lock, [this]() { return _open; });
+    _cv.wait(lock, [this, generation]() { return _generation != generation; });
   }
 
 private:
   std::mutex              _mutex;
   std::condition_variable _cv;
   int const               _expected;
-  int                     _arrived = 0;
-  bool                    _open    = false;
+  int                     _arrived    = 0;
+  unsigned                _generation = 0;
 };
 
 /** A subject the deep pattern below backtracks through once per character.
@@ -1954,10 +1956,14 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
 // PCRE2_ERROR_JIT_STACKLIMIT. Without a JIT the interpreter resolves them either way, so
 // only the concurrency half of this case carries over to such a build.
 //
-// It does not establish that the stacks are distinct. One stack shared by all eight threads
-// corrupts a result only when two matches are deep at the same instant, so it fails
-// intermittently rather than reliably and is not an oracle for that. ThreadSanitizer does
-// not close the gap either: the racing writes come from sljit-generated code it never sees.
+// Every round starts at a barrier, so all eight threads are alive for the whole case and
+// each round's matches start together on every thread. The test is deterministic when the
+// stacks are distinct, but it still does not prove that they are: one stack shared by all
+// eight corrupts a result only when two deep matches touch the same frames at once, which
+// the barrier invites but cannot force. Measured on arm64 macOS with the callback returning
+// one shared stack, about 70 of 100 runs fail, with or without the barrier. An oracle
+// would need a thread paused inside a match, which the public API does not offer.
+// ThreadSanitizer does not see those writes either, because they come from sljit code.
 TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
 {
   Regex re_captures;
@@ -1973,7 +1979,7 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
   std::string const miss{"/Alpha/xx/tail"};
 
   std::atomic<int> failures{0};
-  ThreadGate       gate{THREADS};
+  RoundBarrier     round_start{THREADS};
 
   // One caller-supplied context, built here and shared by half the threads. That is the
   // production shape: regex_remap builds a context when it loads a rule and every net
@@ -1988,9 +1994,9 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
       RegexMatchContext const *const use                = use_caller_context ? &shared_caller_context : nullptr;
       std::string const              deep               = stack_hungry_subject(i);
 
-      gate.arrive_and_wait();
-
       for (int n = 0; n < ITERATIONS; ++n) {
+        // Unconditional, so a failing round cannot leave the other threads waiting.
+        round_start.arrive_and_wait();
         if (!concurrent_match_round(re_captures, re_deep, hit, miss, deep, use)) {
           ++failures;
         }
