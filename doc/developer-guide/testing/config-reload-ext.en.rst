@@ -27,7 +27,7 @@ replace the legacy pattern of fire-and-forget ``traffic_ctl config reload``
 followed by log grepping with a deterministic, structured approach.
 
 The extension is loaded automatically from
-``tests/gold_tests/autest-site/config_reload.test.ext``.
+``tests/uranium_tests/autest-site/config_reload.test.ext``.
 
 
 Why Use This Extension
