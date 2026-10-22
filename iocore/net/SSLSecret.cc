@@ -88,6 +88,16 @@ SSLSecret::setSecret(const std::string &name, std::string_view data)
   Debug("ssl_secret", "Set secret for %s to %.*s", name.c_str(), int(data.size() > 50 ? 50 : data.size()), data.data());
 }
 
+void
+SSLSecret::invalidateSecret(const std::string &name)
+{
+  std::scoped_lock lock(secret_map_mutex);
+
+  if (secret_map.erase(name) > 0) {
+    Debug("ssl_secret", "Invalidated cached secret for %s", name.c_str());
+  }
+}
+
 std::string
 SSLSecret::getSecret(const std::string &name) const
 {
