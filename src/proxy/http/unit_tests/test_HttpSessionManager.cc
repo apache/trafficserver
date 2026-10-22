@@ -128,23 +128,32 @@ private:
 };
 
 /// The pool bookkeeping updates this gauge, which is normally initialized via HttpConfig.
-/// Create it here (when needed) and reset it between Catch2 runs so tests don't leak state.
-void
-init_metrics()
+/// Create it here (when needed) and reset it on entry and on every exit path so tests don't leak state.
+class PooledConnectionsGaugeGuard
 {
-  if (http_rsb.pooled_server_connections == nullptr) {
-    http_rsb.pooled_server_connections = Metrics::Gauge::createPtr("proxy.process.http.pooled_server_connections");
+public:
+  PooledConnectionsGaugeGuard()
+  {
+    if (http_rsb.pooled_server_connections == nullptr) {
+      http_rsb.pooled_server_connections = Metrics::Gauge::createPtr("proxy.process.http.pooled_server_connections");
+    }
+    Metrics::Gauge::store(http_rsb.pooled_server_connections, 0);
   }
-  Metrics::Gauge::store(http_rsb.pooled_server_connections, 0);
-}
+
+  ~PooledConnectionsGaugeGuard() { Metrics::Gauge::store(http_rsb.pooled_server_connections, 0); }
+
+  PooledConnectionsGaugeGuard(PooledConnectionsGaugeGuard const &)            = delete;
+  PooledConnectionsGaugeGuard &operator=(PooledConnectionsGaugeGuard const &) = delete;
+  PooledConnectionsGaugeGuard(PooledConnectionsGaugeGuard &&)                 = delete;
+  PooledConnectionsGaugeGuard &operator=(PooledConnectionsGaugeGuard &&)      = delete;
+};
 
 CryptoHash
 hash_of(char const *hostname)
 {
   CryptoHash hash;
 
-  CryptoContext().hash_immediate(hash, static_cast<unsigned char const *>(static_cast<void const *>(hostname)),
-                                 std::strlen(hostname));
+  CryptoContext().hash_immediate(hash, hostname, std::strlen(hostname));
   return hash;
 }
 
@@ -167,7 +176,7 @@ constexpr auto MATCH_BOTH     = static_cast<TSServerSessionSharingMatchMask>(TS_
 
 TEST_CASE("ServerSessionPool::acquireSession", "[session_pool]")
 {
-  init_metrics();
+  PooledConnectionsGaugeGuard gauge_guard;
 
   // Declared before the pool so the sessions outlive it.
   SessionFactory    factory;
@@ -208,6 +217,7 @@ TEST_CASE("ServerSessionPool::acquireSession", "[session_pool]")
       CHECK(pool.count() == 0);
       CHECK(pool.acquireSession(Addr{"10.0.0.1:80"}, hash_of("one.example.com"), MATCH_HOSTONLY, nullptr, acquired) ==
             HSMresult_t::NOT_FOUND);
+      CHECK(acquired == nullptr);
     }
 
     SECTION("a different address does not match")
@@ -332,6 +342,4 @@ TEST_CASE("ServerSessionPool::acquireSession", "[session_pool]")
     CHECK(acquired == right_addr);
     CHECK(pool.count() == 1);
   }
-
-  Metrics::Gauge::store(http_rsb.pooled_server_connections, 0);
 }
