@@ -1,0 +1,63 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+meta: {version: "1.0"}
+urtest:
+  description: A global header-rewrite rule changes the origin status to 303.
+  requires: {plugins: [header_rewrite.so]}
+  server: {name: origin}
+  client: {name: client}
+  ats:
+    name: ts
+    process_config: {enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: header.*
+    remap_config:
+      - map http://www.example.com http://127.0.0.1:{SERVER_HTTP_PORT}
+      - map http://www.example.com:8080 http://127.0.0.1:{SERVER_HTTP_PORT}
+    copy_to_config_dir: [rules/rule.conf]
+    plugin_config:
+      - header_rewrite.so {CONFIG_DIR}/rules/rule.conf
+    file_checks:
+      - path: '{LOG_DIR}/traffic.out'
+        contains: 'DIAG: \(header_rewrite\)'
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          url: http://www.example.com/
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Proxy-Connection, keep-alive]
+              - [uuid, rewrite-status]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Transfer-Encoding, chunked]
+              - [Connection, close]
+        proxy-response:
+          status: 303
+          reason: See Other
+          headers:
+            fields:
+              - [Date, {as: present}]
+              - [Age, {as: present}]
+              - [Transfer-Encoding, {value: chunked, as: equal}]
+              - [Proxy-Connection, {value: keep-alive, as: equal}]
+              - [Server, {value: ATS/, as: prefix}]

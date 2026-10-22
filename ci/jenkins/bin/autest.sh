@@ -30,7 +30,7 @@ if [ $? = 0 -a ! -z "$ghprbActualCommit" ]; then
     fi
 fi
 
-# Set default encoding UTF-8 for AuTest
+# Set default encoding UTF-8 for Uranium
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 echo "LC_ALL: $LC_ALL"
@@ -57,8 +57,8 @@ DEBUG=""
 WCCP=""
 QUIC=""
 CURL=""
-AUTEST_DEBUG=""
-AUTEST_VERBOSE=""
+URTEST_DEBUG=""
+URTEST_VERBOSE=""
 PROXY_VERIFIER_ARGUMENT=""
 
 [ "1" == "$enable_ccache" ] && CCACHE="--enable-ccache"
@@ -67,8 +67,8 @@ PROXY_VERIFIER_ARGUMENT=""
 [ "1" == "$enable_wccp" ] && WCCP="--enable-wccp"
 [ "1" == "$enable_quic" ] && QUIC="--with-openssl=/opt/openssl-quic"
 [ "1" == "$disable_curl" ] && CURL="--disable-curl"
-[ "1" == "$enable_autest_debug" ] && AUTEST_DEBUG="--debug"
-[ "1" == "$enable_autest_verbose" ] && AUTEST_VERBOSE="--verbose"
+[ "1" == "$enable_autest_debug" ] && URTEST_DEBUG="--log-cli-level=DEBUG"
+[ "1" == "$enable_autest_verbose" ] && URTEST_VERBOSE="--verbose"
 
 mkdir -p ${INSTALL}
 
@@ -92,6 +92,7 @@ autoreconf -if
     --with-user=jenkins \
     --enable-experimental-plugins \
     --enable-example-plugins \
+    --enable-test-tools \
     ${CCACHE} \
     ${WCCP} \
     ${QUIC} \
@@ -103,13 +104,11 @@ autoreconf -if
 ${ATS_MAKE} -j4 && ${ATS_MAKE} install
 [ -x ${INSTALL}/bin/traffic_server ] || exit -1
 
-# Now run autest
+# Run the configured Uranium launcher against the installation just built.
 set +x
 echo -n "=======>>>>  Started on "
 date
 
-AUTEST="/usr/bin/autest"
-[ ! -x ${AUTEST} ] && AUTEST="/usr/local/bin/autest"
 set -x
 
 pv_version=""
@@ -120,16 +119,16 @@ elif [ -f "${PROXY_VERIFIER_PREPARE}" ]; then
 fi
 if [ "x${pv_version}" != "x" ]; then
   PROXY_VERIFIER_BIN="${PROXY_VERIFIER_VERSIONS}/${pv_version}/bin"
+  export PROXY_VERIFIER_PATH="${PROXY_VERIFIER_BIN}"
   PROXY_VERIFIER_ARGUMENT="--proxy-verifier-bin ${PROXY_VERIFIER_BIN}"
 fi
 
-${AUTEST} \
-    -D ./tests/gold_tests \
+bash ./tests/urtest.sh \
+    --no-run-in-container \
     --sandbox "$SANDBOX" \
-    --ats-bin "${INSTALL}/bin" \
     $PROXY_VERIFIER_ARGUMENT \
-    $AUTEST_DEBUG \
-    $AUTEST_VERBOSE
+    $URTEST_DEBUG \
+    $URTEST_VERBOSE
 status=$?
 
 set +x

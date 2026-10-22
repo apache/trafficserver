@@ -1,0 +1,19 @@
+cache:
+  spans:
+    - name: /dev/sda
+      path: /dev/sda
+    - name: /dev/sdb
+      path: /dev/sdb
+      size: 10737418240
+    - name: /var/cache/disk3
+      path: /var/cache/disk3
+      hash_seed: myseed
+  volumes:
+    - id: 1
+      scheme: http
+      size: 60%
+      ram_cache: true
+    - id: 2
+      scheme: http
+      size: 40%
+      ram_cache: true

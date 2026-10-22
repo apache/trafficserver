@@ -1,0 +1,213 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+urtest:
+  description: Cache lookup conditions distinguish misses, fresh hits, and stale refreshes.
+  requires:
+    plugins:
+    - header_rewrite.so
+  server:
+    name: origin
+  client:
+    name: client
+  ats:
+    name: ts
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: header.*
+    remap_config:
+    - map http://www.example.com http://127.0.0.1:{SERVER_HTTP_PORT}
+    file_checks:
+    - path: '{LOG_DIR}/traffic.out'
+      contains: 'DIAG: \(header_rewrite\)'
+    copy_to_config_dir:
+    - rules/rule_add_cache_result_header.conf
+    plugin_config:
+    - header_rewrite.so {CONFIG_DIR}/rules/rule_add_cache_result_header.conf
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      delay: 100ms
+      headers:
+        fields:
+        - - Host
+          - www.example.com
+        - - uuid
+          - cache-0
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - - Content-Length
+          - 6
+        - - Cache-Control
+          - max-age=10,public
+        - - Connection
+          - close
+      content:
+        encoding: plain
+        data: CACHED
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - - Cache-Result
+          - value: miss
+            as: equal
+        - - Content-Length
+          - value: '6'
+            as: equal
+        - - Cache-Control
+          - value: max-age=10,public
+            as: equal
+      content:
+        encoding: plain
+        data: CACHED
+        verify:
+          as: equal
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      delay: 100ms
+      headers:
+        fields:
+        - - Host
+          - www.example.com
+        - - uuid
+          - cache-1
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - - Content-Length
+          - 6
+        - - Cache-Control
+          - max-age=10,public
+        - - Connection
+          - close
+      content:
+        encoding: plain
+        data: CACHED
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - - Cache-Result
+          - value: hit-fresh
+            as: equal
+        - - Content-Length
+          - value: '6'
+            as: equal
+        - - Cache-Control
+          - value: max-age=10,public
+            as: equal
+      content:
+        encoding: plain
+        data: CACHED
+        verify:
+          as: equal
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      delay: 15s
+      headers:
+        fields:
+        - - Host
+          - www.example.com
+        - - uuid
+          - cache-2
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - - Content-Length
+          - 6
+        - - Cache-Control
+          - max-age=10,public
+        - - Connection
+          - close
+      content:
+        encoding: plain
+        data: CACHED
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - - Cache-Result
+          - value: hit-stale
+            as: equal
+        - - Content-Length
+          - value: '6'
+            as: equal
+        - - Cache-Control
+          - value: max-age=10,public
+            as: equal
+      content:
+        encoding: plain
+        data: CACHED
+        verify:
+          as: equal
+  - client-request:
+      method: GET
+      url: /
+      version: '1.1'
+      delay: 100ms
+      headers:
+        fields:
+        - - Host
+          - www.example.com
+        - - uuid
+          - cache-3
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - - Content-Length
+          - 6
+        - - Cache-Control
+          - max-age=10,public
+        - - Connection
+          - close
+      content:
+        encoding: plain
+        data: CACHED
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - - Cache-Result
+          - value: hit-fresh
+            as: equal
+        - - Content-Length
+          - value: '6'
+            as: equal
+        - - Cache-Control
+          - value: max-age=10,public
+            as: equal
+      content:
+        encoding: plain
+        data: CACHED
+        verify:
+          as: equal

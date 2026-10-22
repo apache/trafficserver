@@ -29,6 +29,8 @@
 #include <ts/ts.h>   // for debug
 #include <cinttypes> // for PRIu64
 #include <cstring>
+#include <map>
+#include <netdb.h>
 
 // debug messages viewable by setting 'proxy.config.diags.debug.tags'
 // in 'records.config'
@@ -48,6 +50,28 @@ static char support_email[] = "shinrich@apache.org";
 // List of started sessions, SSN_START seen, SSN_CLOSE not seen yet.
 thread_local std::set<TSHttpSsn> started_ssns;
 thread_local int ssn_balance = 0; // +1 on SSN_START, -1 on SSN_CLOSE
+thread_local std::map<TSHttpSsn, std::pair<std::string, std::string>> session_addresses;
+static bool check_addresses = false;
+
+/** Return a numeric endpoint, rejecting invalid families and zero ports.
+ * @param[in] address Address returned by a session address API.
+ */
+static std::string
+numeric_endpoint(sockaddr const *address)
+{
+  if (!address || (address->sa_family != AF_INET && address->sa_family != AF_INET6)) {
+    TSError("Session address has an invalid family");
+    abort();
+  }
+  char host[NI_MAXHOST], port[NI_MAXSERV];
+  socklen_t length = address->sa_family == AF_INET ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
+  if (getnameinfo(address, length, host, sizeof(host), port, sizeof(port), NI_NUMERICHOST | NI_NUMERICSERV) != 0 ||
+      strcmp(port, "0") == 0) {
+    TSError("Session address has an invalid address or port");
+    abort();
+  }
+  return std::string(host) + ":" + port;
+}
 
 // Metadata for active transactions. Stored upon start to persist improper
 // closing behavior.
@@ -73,12 +97,13 @@ thread_local std::set<started_txn, txn_compare> closed_txns;
 thread_local int txn_balance = 0; // +1 on TXN_START -1 on TXN_CLOSE
 
 // Statistics provided by the plugin
-static int stat_ssn_close = 0; // number of TS_HTTP_SSN_CLOSE hooks caught
-static int stat_ssn_start = 0; // number of TS_HTTP_SSN_START hooks caught
-static int stat_txn_close = 0; // number of TS_HTTP_TXN_CLOSE hooks caught
-static int stat_txn_start = 0; // number of TS_HTTP_TXN_START hooks caught
-static int stat_err       = 0; // number of inaccuracies encountered
-static int stat_test_done = 0; // Set to 1 when the test is done
+static int stat_ssn_close     = 0; // number of TS_HTTP_SSN_CLOSE hooks caught
+static int stat_ssn_start     = 0; // number of TS_HTTP_SSN_START hooks caught
+static int stat_ssn_addresses = 0; // number of close hooks with unchanged numeric endpoints
+static int stat_txn_close     = 0; // number of TS_HTTP_TXN_CLOSE hooks caught
+static int stat_txn_start     = 0; // number of TS_HTTP_TXN_START hooks caught
+static int stat_err           = 0; // number of inaccuracies encountered
+static int stat_test_done     = 0; // Set to 1 when the test is done
 
 // IPC information
 static char *ctl_tag         = plugin_name; // name is a convenient identifier
@@ -142,6 +167,17 @@ handle_order(TSCont contp, TSEvent event, void *edata)
     ssnp = reinterpret_cast<TSHttpSsn>(edata);
     TSDebug(DEBUG_TAG_CLOSE, "event TS_EVENT_HTTP_SSN_CLOSE [ SSNID = %p ]", ssnp);
     TSStatIntIncrement(stat_ssn_close, 1);
+    if (check_addresses) {
+      auto expected = session_addresses.find(ssnp);
+      if (expected == session_addresses.end() || expected->second.first != numeric_endpoint(TSHttpSsnClientAddrGet(ssnp)) ||
+          expected->second.second != numeric_endpoint(TSHttpSsnIncomingAddrGet(ssnp))) {
+        TSError("Session addresses changed between SSN_START and SSN_CLOSE");
+        TSStatIntIncrement(stat_err, 1);
+        abort();
+      }
+      session_addresses.erase(expected);
+      TSStatIntIncrement(stat_ssn_addresses, 1);
+    }
     if (started_ssns.erase(ssnp) == 0) {
       // No record existsted for this session
       TSDebug(DEBUG_TAG_HOOK, "Session [ SSNID = %p ] closing was not previously started", ssnp);
@@ -164,6 +200,10 @@ handle_order(TSCont contp, TSEvent event, void *edata)
     ssnp = reinterpret_cast<TSHttpSsn>(edata);
     TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_SSN_START [ SSNID = %p ]", ssnp);
     TSStatIntIncrement(stat_ssn_start, 1);
+    if (check_addresses) {
+      session_addresses.emplace(
+        ssnp, std::make_pair(numeric_endpoint(TSHttpSsnClientAddrGet(ssnp)), numeric_endpoint(TSHttpSsnIncomingAddrGet(ssnp))));
+    }
 
     if (!started_ssns.insert(ssnp).second) {
       // Insert failed. Session already existed in the record.
@@ -298,6 +338,7 @@ handle_order(TSCont contp, TSEvent event, void *edata)
 void
 TSPluginInit(int argc, const char *argv[])
 {
+  check_addresses = argc > 1 && strcmp(argv[1], "--check-addresses") == 0;
   TSDebug(DEBUG_TAG_INIT, "initializing plugin");
 
   TSPluginRegistrationInfo info;
@@ -320,6 +361,8 @@ TSPluginInit(int argc, const char *argv[])
 
     stat_ssn_start = TSStatCreate("ssntxnorder_verify.ssn.start", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     stat_ssn_close = TSStatCreate("ssntxnorder_verify.ssn.close", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+    stat_ssn_addresses =
+      TSStatCreate("ssntxnorder_verify.ssn.addresses", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     stat_txn_start = TSStatCreate("ssntxnorder_verify.txn.start", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     stat_txn_close = TSStatCreate("ssntxnorder_verify.txn.close", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     stat_err       = TSStatCreate("ssntxnorder_verify.err", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);

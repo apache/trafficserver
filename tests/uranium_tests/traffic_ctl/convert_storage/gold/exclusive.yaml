@@ -1,0 +1,28 @@
+cache:
+  spans:
+    - name: /dev/sda
+      path: /dev/sda
+    - name: /dev/sdb
+      path: /dev/sdb
+    - name: /dev/sdc
+      path: /dev/sdc
+    - name: /dev/sdd
+      path: /dev/sdd
+  volumes:
+    - id: 1
+      scheme: http
+      size: 60%
+      ram_cache: true
+      spans:
+        - use: /dev/sda
+        - use: /dev/sdc
+    - id: 2
+      scheme: http
+      size: 40%
+      ram_cache: false
+      ram_cache_size: 1073741824
+      ram_cache_cutoff: 262144
+      avg_obj_size: 8192
+      fragment_size: 524288
+      spans:
+        - use: /dev/sdb

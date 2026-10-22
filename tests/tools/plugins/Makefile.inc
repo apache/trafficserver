@@ -87,7 +87,7 @@ noinst_LTLIBRARIES += tools/plugins/user_args.la
 tools_plugins_user_args_la_SOURCES = tools/plugins/user_args.cc
 
 noinst_LTLIBRARIES += tools/plugins/async_engine.la
-tools_plugins_async_engine_la_SOURCES = tools/plugins/async_engine.cc
+tools_plugins_async_engine_la_SOURCES = tools/plugins/async_engine.c
 tools_plugins_async_engine_la_LDFLAGS = \
   -module \
   -shared \
