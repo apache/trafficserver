@@ -19,4 +19,7 @@
 set -u
 
 test_directory=$(cd "$(dirname "$0")" && pwd)
+if [ -f "${test_directory}/urtest-configured.sh" ]; then
+  exec bash "${test_directory}/urtest-configured.sh" "$@"
+fi
 exec python3 "${test_directory}/tools/uranium/runner.py" source "$(dirname "${test_directory}")" "$@"

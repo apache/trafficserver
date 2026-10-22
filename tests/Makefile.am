@@ -48,7 +48,7 @@ urtest:
 urtest-replay:
 	bash ./urtest.sh -m replay $(URTEST_OPTIONS)
 
-EXTRA_DIST = urtest.sh.in pyproject.toml uv.lock
+EXTRA_DIST = urtest.sh urtest.sh.in pyproject.toml uv.lock
 
 include uranium_dist.inc
 

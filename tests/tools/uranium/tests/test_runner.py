@@ -18,6 +18,7 @@
 from pathlib import Path
 import os
 import subprocess
+import shutil
 
 import pytest
 
@@ -35,6 +36,31 @@ from tools.uranium.runner import (
     runner_help,
     translate_arguments,
 )
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_source_launcher_preserves_in_source_build_arguments(tmp_path: Path, configured: bool) -> None:
+    """Use the configured wrapper only when an in-source build created it.
+
+    :param tmp_path: Isolated source tree for the launcher and stub runner.
+    :param configured: Whether to simulate a configured in-source build.
+    """
+
+    test_directory = tmp_path / "tests"
+    runner_directory = test_directory / "tools" / "uranium"
+    runner_directory.mkdir(parents=True)
+    launcher = test_directory / "urtest.sh"
+    shutil.copyfile(Path(__file__).parents[3] / "urtest.sh", launcher)
+    arguments = ["-k", "cache or tls", "--no-run-in-container"]
+    if configured:
+        (test_directory / "urtest-configured.sh").write_text('printf "%s\\n" "$@"\nexit 23\n')
+        expected = arguments
+    else:
+        (runner_directory / "runner.py").write_text("import sys\nprint('\\n'.join(sys.argv[1:]))\nsys.exit(23)\n")
+        expected = ["source", str(tmp_path), *arguments]
+    result = subprocess.run(["bash", str(launcher), *arguments], capture_output=True, text=True)
+    assert result.returncode == 23, result.stderr
+    assert result.stdout.splitlines() == expected
 
 
 def test_explicit_container_mode_is_removed_from_test_arguments() -> None:
