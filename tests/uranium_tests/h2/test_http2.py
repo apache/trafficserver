@@ -21,6 +21,7 @@ import sys
 import pytest
 
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
+from .origin_test_helpers import wait_for_metrics
 
 TEST_DIRECTORY = Path(__file__).parent
 # The proxy.config.http2.active_timeout_in for the active timeout case, in seconds.
@@ -212,6 +213,9 @@ def test_http2_active_timeout(ats_factory: ATSFactory, services: ServiceFactory)
     )
     assert result.returncode == 0, result.output
     assert "CONNECTION_TIMEOUT" in result.output
+    wait_for_metrics(
+        _ats, "h2-active-timeout-metrics.gold",
+        ["proxy.process.http2.session_die_active", "proxy.process.http2.session_die_inactive"])
 
 
 def test_http2_extension_settings(ats_factory: ATSFactory, services: ServiceFactory) -> None:
