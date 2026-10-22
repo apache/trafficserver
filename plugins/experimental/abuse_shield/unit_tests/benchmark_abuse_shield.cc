@@ -746,6 +746,21 @@ TEST_CASE("abuse_shield eviction from a full table", "[abuse_shield][bench][evic
     populate(table, ips, config, RateMetric::REQUEST);
     put_in_debt(table, ips, config.rules.front().name, in_debt);
 
+    // Only entries out of debt are contest candidates, and each starts with a
+    // score of one. One pass of the contest pointer over them loses every
+    // contest and drops each score to zero; the next pass wins every contest
+    // and leaves each winner with a score of one, back where it started. A
+    // block of single calls falls in one pass or the other depending on how
+    // many calls came before it, so each measured call runs both passes and
+    // every sample sees the same mix. With no candidate, every call is the
+    // same full scan and one call is the whole cycle.
+    size_t candidates = 0;
+    for (size_t i = 0; i < ips.size(); ++i) {
+      candidates += in_debt(i) ? 0 : 1;
+    }
+    size_t const cycle = candidates > 0 ? 2 * candidates : 1;
+    table.reset_metrics();
+
     uint32_t   next_fresh = first_fresh;
     BenchStats stats;
     // The whole call for an IP that is not tracked: the contest, then a bucket
@@ -753,13 +768,25 @@ TEST_CASE("abuse_shield eviction from a full table", "[abuse_shield][bench][evic
     // each winner with no buckets, and within a few warmup rounds the samples
     // would run against a table of empty entries that are cheaper to scan and
     // to evict than the ones they replaced.
-    BENCHMARK("consume_rule_buckets on a new IP, " + std::to_string(slots) + " slots, " + label)
+    std::string const ips_label = cycle == 1 ? "a new IP" : std::to_string(cycle) + " new IPs";
+    BENCHMARK("consume_rule_buckets on " + ips_label + ", " + std::to_string(slots) + " slots, " + label)
     {
-      consume_rule_buckets(&table, nth_ip(next_fresh++), config, RateMetric::REQUEST, stats);
+      for (size_t call = 0; call < cycle; ++call) {
+        consume_rule_buckets(&table, nth_ip(next_fresh++), config, RateMetric::REQUEST, stats);
+      }
       return stats.events.load(std::memory_order_relaxed);
     };
-    INFO("contests " << table.contests() << ", won " << table.contests_won() << ", evictions " << table.evictions());
-    CHECK(table.contests() > 0);
+    uint64_t const contests     = table.contests();
+    uint64_t const no_candidate = stats.scan_exhausted.load(std::memory_order_relaxed);
+    uint64_t const lost         = stats.events_untracked.load(std::memory_order_relaxed) - no_candidate;
+    INFO("contests " << contests << ", won " << table.contests_won() << ", lost " << lost << ", no candidate " << no_candidate
+                     << ", evictions " << table.evictions());
+    CHECK(contests > 0);
+    // Whole cycles only, so each candidate lost and won the same number of times.
+    CHECK(contests % cycle == 0);
+    CHECK(table.contests_won() == contests / cycle * candidates);
+    CHECK(lost == contests / cycle * candidates);
+    CHECK(no_candidate == (candidates > 0 ? 0 : contests));
     // Every entry, original or new, still carries its buckets.
     CHECK(entries_without_bucket(table, config.rules.front().name) == 0);
   };
