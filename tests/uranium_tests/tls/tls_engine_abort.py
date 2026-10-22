@@ -13,16 +13,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Abort TLS handshakes while the async engine is mid-job.
+"""Abandon client TLS handshakes while the async engine is paused.
 
-The sample async engine pauses each handshake for two seconds. This client
-opens a TLS connection, lets ATS enter that async pause (so the handshake
-eventfd is registered on the poller with the SSLNetVConnection as its target),
-then closes the socket before the pause finishes. On that disconnect the
-SSLNetVConnection must deregister the eventfd before it is freed, otherwise the
-poller is left with a live registration pointing at a freed connection. Under
-ASan a server that fails to deregister reports an error here; a correct server
-stays clean.
+ATS may observe the peer disconnect only after the async job resumes, so
+this client alone does not establish that server-side teardown happens
+while an eventfd is still registered. It exercises abandoned handshakes,
+not a deterministic regression for mid-job eventfd deregistration.
 """
 
 import socket

@@ -2390,7 +2390,14 @@ AC_CONFIG_FILES([
   tests/Makefile
 ])
 
-AC_CONFIG_FILES([tests/urtest.sh], [chmod +x tests/urtest.sh])
+# Never register the tracked launcher as an output: Automake's distribution
+# and distclean rules include outputs from both branches of shell conditionals.
+AC_CONFIG_FILES([tests/urtest-configured.sh], [chmod +x tests/urtest-configured.sh])
+AC_CONFIG_COMMANDS([uranium-launcher], [
+  if test "`cd "$uranium_srcdir" && pwd`" != "`pwd`"; then
+    cp -p "$uranium_srcdir/tests/urtest.sh" tests/urtest.sh
+  fi
+], [uranium_srcdir="$srcdir"])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES

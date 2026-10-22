@@ -135,10 +135,23 @@ def test_missing_diags_log_has_an_assertion_message(tmp_path: Path) -> None:
         replay._validate_ats_logs()
 
 
+def test_replay_expectation_audit_accepts_symlinked_checkout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Canonicalize both sides when reporting paths from a symlinked checkout.
+
+    :param tmp_path: Directory containing the symbolic checkout path.
+    :param monkeypatch: Fixture restoring this module's source path.
+    """
+
+    checkout = tmp_path / "checkout"
+    checkout.symlink_to(Path(__file__).parents[4], target_is_directory=True)
+    monkeypatch.setitem(globals(), "__file__", str(checkout / "tests/tools/uranium/tests/test_replay.py"))
+    test_replay_expectations_have_explicit_verification_rules()
+
+
 def test_replay_expectations_have_explicit_verification_rules() -> None:
     """Prevent inert URL, header, and literal-body expectations without strict mode."""
 
-    test_root = Path(__file__).parents[3] / "uranium_tests"
+    test_root = (Path(__file__).parents[3] / "uranium_tests").resolve()
     failures = []
     pending = sorted(test_root.rglob("*.test.yaml"))
     assert pending, f"No collected replay manifests found under {test_root}"

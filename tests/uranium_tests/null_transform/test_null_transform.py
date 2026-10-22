@@ -13,7 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Check length synthesis by the buffering null-transform plugin."""
+"""Check the buffering null-transform plugin's response and diagnostics."""
 
 from pathlib import Path
 
@@ -23,7 +23,7 @@ from tools.uranium.services import ATSFactory, Curl, ServiceFactory, assert_matc
 
 
 def test_null_transform(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Transform a close-delimited origin response and synthesize its length.
+    """Preserve the expected response body, headers, and transform diagnostics.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning the microserver origin and cleanup.

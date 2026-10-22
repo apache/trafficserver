@@ -18,6 +18,7 @@
 from pathlib import Path
 import os
 import subprocess
+import shutil
 
 import pytest
 
@@ -34,6 +35,113 @@ from tools.uranium.runner import (
     runner_help,
     translate_arguments,
 )
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_source_launcher_preserves_in_source_build_arguments(tmp_path: Path, configured: bool) -> None:
+    """Use the configured wrapper only when an in-source build created it.
+
+    :param tmp_path: Isolated source tree for the launcher and stub runner.
+    :param configured: Whether to simulate a configured in-source build.
+    """
+
+    test_directory = tmp_path / "tests"
+    runner_directory = test_directory / "tools" / "uranium"
+    runner_directory.mkdir(parents=True)
+    launcher = test_directory / "urtest.sh"
+    shutil.copyfile(Path(__file__).parents[3] / "urtest.sh", launcher)
+    arguments = ["-k", "cache or tls", "--no-run-in-container"]
+    if configured:
+        (test_directory / "urtest-configured.sh").write_text('printf "%s\\n" "$@"\nexit 23\n')
+        expected = arguments
+    else:
+        (runner_directory / "runner.py").write_text("import sys\nprint('\\n'.join(sys.argv[1:]))\nsys.exit(23)\n")
+        expected = ["source", str(tmp_path), *arguments]
+    result = subprocess.run(["bash", str(launcher), *arguments], capture_output=True, text=True)
+    assert result.returncode == 23, result.stderr
+    assert result.stdout.splitlines() == expected
+
+
+def test_distribution_replaces_configured_launcher(tmp_path: Path) -> None:
+    """Ship the source launcher even when Automake selected a build-tree wrapper.
+
+    :param tmp_path: Isolated build and distribution directories.
+    """
+
+    make = shutil.which("make")
+    if make is None:
+        pytest.skip("make is required to exercise the Automake distribution hook")
+    test_root = Path(__file__).parents[3]
+    distribution = tmp_path / "distribution with spaces"
+    distribution.mkdir()
+    launcher = distribution / "urtest.sh"
+    launcher.write_text("exit 99 # stale builder paths\n")
+    (tmp_path / "urtest.sh").write_text(launcher.read_text())
+    result = subprocess.run(
+        [
+            make, "-f",
+            str(test_root / "Makefile.am"), "-I",
+            str(test_root), "dist-hook", f"top_srcdir={test_root.parent}", f"srcdir={test_root}", f"distdir={distribution}"
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert launcher.read_bytes() == (test_root / "urtest.sh").read_bytes()
+    (distribution / "urtest-configured.sh").write_text('printf "%s\\n" "$@"\nexit 23\n')
+    arguments = ["-k", "cache or tls", "--no-run-in-container"]
+    result = subprocess.run(["bash", str(launcher), *arguments], capture_output=True, text=True)
+    assert result.returncode == 23, result.stderr
+    assert result.stdout.splitlines() == arguments
+
+
+@pytest.mark.parametrize("in_tree", [True, False])
+def test_autotools_distribution_preserves_source_launcher(tmp_path: Path, in_tree: bool) -> None:
+    """Exercise the actual launcher rules through configure, distdir, and distclean.
+
+    :param tmp_path: Directory for an isolated minimal Autotools project.
+    :param in_tree: Whether configure runs in the source directory.
+    """
+
+    if not all(shutil.which(tool) for tool in ("autoreconf", "automake", "make")):
+        pytest.skip("Autotools and make are required for the packaging regression")
+    test_root = Path(__file__).parents[3]
+    source = tmp_path / "source"
+    source_tests = source / "tests"
+    source_tests.mkdir(parents=True)
+    configuration = (test_root.parent / "configure.ac").read_text().split("  tests/Makefile\n])", 1)[1]
+    configuration = configuration.split("# -----------------------------------------------------------------------------", 1)[0]
+    (source / "configure.ac").write_text(
+        'AC_INIT([uranium-launcher-test], [1])\nAM_INIT_AUTOMAKE([foreign])\n'
+        'AC_CONFIG_SRCDIR([tests/urtest.sh])\nAC_CONFIG_FILES([Makefile tests/Makefile])\n' + configuration + '\nAC_OUTPUT\n')
+    (source / "Makefile.am").write_text("SUBDIRS = tests\n")
+    rules = (test_root / "Makefile.am").read_text().split(".PHONY: urtest urtest-replay", 1)[1]
+    (source_tests / "Makefile.am").write_text(".PHONY: urtest urtest-replay" + rules.split("include uranium_dist.inc", 1)[0])
+    for name in ("urtest.sh", "urtest-configured.sh.in", "pyproject.toml", "uv.lock"):
+        shutil.copyfile(test_root / name, source_tests / name)
+    original = (source_tests / "urtest.sh").read_bytes()
+    build = source if in_tree else tmp_path / "build"
+    build.mkdir(exist_ok=True)
+    distribution = tmp_path / "dist"
+    distribution.mkdir()
+    for command, directory in (
+        (["autoreconf", "-if"], source),
+        ([str(source / "configure")], build),
+        (["make", "-C", "tests", "distdir", f"distdir={distribution}"], build),
+    ):
+        result = subprocess.run(command, cwd=directory, capture_output=True, text=True)
+        assert result.returncode == 0, result.stdout + result.stderr
+    assert (distribution / "urtest.sh").read_bytes() == original
+    assert (source_tests / "urtest.sh").read_bytes() == original
+    assert (build / "tests/urtest.sh").read_bytes() == original
+    assert (build / "tests/urtest-configured.sh").exists()
+    result = subprocess.run(["make", "-C", "tests", "distclean"], cwd=build, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (source_tests / "urtest.sh").read_bytes() == original
+    assert not (build / "tests/urtest-configured.sh").exists()
+    if not in_tree:
+        assert not (build / "tests/urtest.sh").exists()
 
 
 def test_explicit_container_mode_is_removed_from_test_arguments() -> None:

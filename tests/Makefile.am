@@ -48,7 +48,15 @@ urtest:
 urtest-replay:
 	bash ./urtest.sh -m replay $(URTEST_OPTIONS)
 
-EXTRA_DIST = urtest.sh.in pyproject.toml uv.lock
+EXTRA_DIST = urtest.sh urtest-configured.sh.in pyproject.toml uv.lock
+
+# Keep distribution independent of a stale wrapper from an older build.
+dist-hook:
+	cp -p "$(srcdir)/urtest.sh" "$(distdir)/urtest.sh"
+
+# Only out-of-tree builds have a disposable copy of the source launcher.
+distclean-local:
+	if test "$(abs_srcdir)" != "$(abs_builddir)"; then rm -f urtest.sh; fi
 
 include uranium_dist.inc
 
