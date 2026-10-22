@@ -610,7 +610,6 @@ OriginStats   totals;
 OriginStorage origins;
 OriginSet    *origin_set;
 UrlLru       *urls;
-int           parse_errors;
 
 // Command line arguments (parsing)
 struct CommandLineArgs {
@@ -1768,9 +1767,6 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
 
       case P_STATE_END:
         // Nothing to do really
-        if (flag) {
-          parse_errors++;
-        }
         break;
       }
     }
@@ -2477,8 +2473,7 @@ try {
   memset(&totals, 0, sizeof(totals));
   init_elapsed(&totals);
 
-  origin_set   = new OriginSet;
-  parse_errors = 0;
+  origin_set = new OriginSet;
 
   // Command line parsing
   cl.parse_arguments(argv);

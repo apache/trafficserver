@@ -135,7 +135,7 @@ make_vol_map(Stripe *stripe)
     Dir *seg = stripe->directory.get_segment(s);
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (stripe->directory.bucket_loop_fix(e, s)) {
+      if (stripe->directory.bucket_loop_fix(e, s, stripe)) {
         break;
       }
       while (e) {
@@ -400,6 +400,19 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       doc->magic = DOC_CORRUPT;
       Dbg(dbg_ctl_cache_bc, "Object is future version %d:%d - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", doc->v_major,
           doc->v_minor, stripe->hash_text.get(), read_key->slice64(0), read_key->slice64(1));
+      goto Ldone;
+    }
+
+    // Everything below trusts len and hlen, and STORE_COLLISION lets a doc that is not ours get this far.
+    if (doc->magic == DOC_MAGIC &&
+        (doc->len < sizeof(Doc) || doc->len > io.aiocb.aio_nbytes || doc->hlen > doc->len - sizeof(Doc))) {
+      // Callers check the key before trusting len, so a doc that is not ours stays a collision and they keep probing.
+      // Marking it corrupt would fail a read whose own fragment may be further down the chain.
+      if (doc->first_key == *read_key || doc->key == *read_key) {
+        Warning("Doc length %u (hlen %u) does not fit the %zu bytes read - disk %s offset %" PRIu64, doc->len, doc->hlen,
+                static_cast<size_t>(io.aiocb.aio_nbytes), stripe->hash_text.get(), static_cast<uint64_t>(stripe->vol_offset(&dir)));
+        doc->magic = DOC_CORRUPT;
+      }
       goto Ldone;
     }
 

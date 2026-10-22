@@ -205,7 +205,7 @@ trafficserver ............. Top src dir
   distributions. This may be out of date compared to the on-line
   requirements at
 
-  <https://cwiki.apache.org/confluence/display/TS/Building>.
+  <https://docs.trafficserver.apache.org/en/latest/admin-guide/installation/index.en.html>.
 
   As of ATS v9.0.0 and later, gcc 7 or later is required, since we now use and require the C++17 standard.
 

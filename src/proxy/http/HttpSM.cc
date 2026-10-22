@@ -2182,38 +2182,20 @@ HttpSM::state_read_server_response_header(int event, void *data)
   }
 
   switch (state) {
-  case ParseResult::ERROR: {
-    // Many broken servers send really badly formed 302 redirects.
-    //  Even if the parser doesn't like the redirect forward
-    //  if it's got a Location header.  We check the type of the
-    //  response to make sure that the parser was able to parse
-    //  something  and didn't just throw up it's hands (INKqa05339)
-    bool allow_error = false;
-    if (t_state.hdr_info.server_response.type_get() == HTTPType::RESPONSE &&
-        t_state.hdr_info.server_response.status_get() == HTTPStatus::MOVED_TEMPORARILY) {
-      if (t_state.hdr_info.server_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
-        allow_error = true;
-      }
-    }
+  case ParseResult::ERROR:
+    SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
+    t_state.current.state = HttpTransact::PARSE_ERROR;
+    t_state.set_connect_fail(EBADMSG);
 
-    if (allow_error == false) {
-      SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
-      t_state.current.state = HttpTransact::PARSE_ERROR;
-      t_state.set_connect_fail(EBADMSG);
-
-      // If the server closed prematurely on us, use the
-      //   server setup error routine since it will forward
-      //   error to a POST tunnel if any
-      if (event == VC_EVENT_EOS) {
-        handle_server_setup_error(VC_EVENT_EOS, data);
-      } else {
-        call_transact_and_set_next_state(HttpTransact::HandleResponse);
-      }
-      break;
+    // If the server closed prematurely on us, use the
+    //   server setup error routine since it will forward
+    //   error to a POST tunnel if any
+    if (event == VC_EVENT_EOS) {
+      handle_server_setup_error(VC_EVENT_EOS, data);
+    } else {
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
-    // FALLTHROUGH (since we are allowing the parse error)
-  }
-    // fallthrough
+    break;
 
   case ParseResult::DONE: {
     if (!t_state.hdr_info.server_response.check_hdr_implements()) {
@@ -2296,6 +2278,11 @@ HttpSM::state_send_server_request_header(int event, void *data)
       if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
           _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
                                           t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
+        // The origin has now been told to expect a body.  Record that it is owed those
+        // bytes, whether or not a tunnel to deliver them is started below.  When the
+        // client asked for a 100 Continue the body is withheld until the origin sends
+        // one, so there is no tunnel to infer this from.
+        server_owed_request_body = true;
         if (post_transform_info.vc) {
           setup_transform_to_server_transfer();
         } else {
@@ -4310,11 +4297,61 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     ink_assert(tunnel.is_tunnel_alive() == false);
     break;
 
-  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_WRITE_COMPLETE: {
     // Completed successfully
     c->write_success        = true;
     server_entry->in_tunnel = false;
+    // A tunnel can complete having written fewer bytes than the request head declared, so
+    // the debt is cleared on the byte count rather than on the event alone.  Only a body
+    // matching the framing ATS declared leaves the origin able to parse a following request.
+    //
+    // Both routes to a short write here are narrow.  A half close makes HttpTunnel clamp the
+    // consumer write to whatever had already arrived, but the only trigger for that flag
+    // before the request body tunnel starts is a plugin calling TSHttpTxnCloseAfterResponse.
+    // A client FIN is not one: it aborts the tunnel in tunnel_handler_post_ua, so this
+    // consumer never completes.  A truncated chunked body sets chunked_handler.truncation,
+    // which reaches this event only when producer_handler_chunked sees a completion with the
+    // body unfinished.  Neither route is exercised by post-early-response-100-continue.test.py,
+    // so the check rests on the code path above rather than on a regression test; it is kept
+    // because clearing the debt on a short body is exactly what pools a connection the
+    // origin is still parsing.
+    //
+    // The length has to come from server_request rather than from the client's
+    // request_content_length.  A request body transform rewrites the outbound
+    // Content-Length to the transformed size and leaves the client's value alone, so
+    // comparing against the client's would hold the debt open for every transformed body
+    // that came out smaller than it went in.
+    // A null producer should not be read as a complete body, because the debt must only be
+    // cleared on positive evidence that the origin got what it was promised.
+    bool const body_truncated = c->producer == nullptr || c->producer->chunked_handler.truncation;
+    bool       body_complete  = !body_truncated;
+    int64_t    declared_bytes = HTTP_UNDEFINED_CL;
+
+    // Note the truncation flag above is only set by HttpTunnel::producer_handler_chunked(),
+    // so it covers dechunking and chunked passthrough.  When ATS is the one adding chunking
+    // the framing is correct by construction, because generate_chunked_content() emits the
+    // terminating chunk even for a body cut short.  A chunked request carries no declared
+    // length either way, so there is no byte count to check against.
+    if (t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+      declared_bytes = t_state.hdr_info.server_request.get_content_length();
+    }
+
+    if (body_complete && declared_bytes != HTTP_UNDEFINED_CL) {
+      // Count from the consumer rather than from server_request_body_bytes.  That member is
+      // first write wins and is never re-armed, so on a retry it still holds the previous
+      // attempt's total and would clear the debt for a second attempt that fell short.
+      // HttpTunnel::reset() zeroes the consumers, so this count is per attempt.
+      body_complete = c->bytes_written >= declared_bytes;
+    }
+
+    if (body_complete) {
+      server_owed_request_body = false;
+    } else if (server_owed_request_body) {
+      SMDbg(dbg_ctl_http_tproxy, "Post tunnel completed but origin is still owed body bytes, wrote %" PRId64 " of %" PRId64,
+            c->bytes_written, declared_bytes);
+    }
     break;
+  }
   default:
     ink_release_assert(0);
   }
@@ -4718,11 +4755,51 @@ HttpSM::check_sni_host()
 }
 
 void
+HttpSM::set_virtualhost_entry(std::string_view domain)
+{
+  VirtualHost::scoped_config vhost_config;
+  // If already set, don't need to look at configs
+  if (m_virtualhost_entry || domain.empty() || !vhost_config) {
+    return;
+  }
+
+  auto vhost_entry = vhost_config->find_by_domain(domain);
+  if (vhost_entry) {
+    SMDbg(dbg_ctl_url_rewrite, "Found virtualhost: %s", vhost_entry->get_id().c_str());
+    m_virtualhost_entry = std::move(vhost_entry);
+  }
+}
+
+void
 HttpSM::do_remap_request(bool run_inline)
 {
   SMDbg(dbg_ctl_http_seq, "Remapping request");
   SMDbg(dbg_ctl_url_rewrite, "Starting a possible remapping for request");
+
+  if (!m_virtualhost_entry) {
+    auto host_name{t_state.hdr_info.client_request.host_get()};
+    set_virtualhost_entry(host_name);
+  }
+
+  // Check virtualhost remap rules before looking at remap.config. Copying the shared_ptr pins the
+  // table for the life of this transaction, so a reload that drops the entry cannot pull the table
+  // out from under us mid-transaction.
+  bool virtualhost_remap = false;
+  if (m_virtualhost_entry && m_virtualhost_entry->remap_table) {
+    m_remap           = m_virtualhost_entry->remap_table;
+    virtualhost_remap = true;
+    SMDbg(dbg_ctl_url_rewrite, "Using virtualhost remap table: %s", m_virtualhost_entry->get_id().c_str());
+  }
+
   bool ret = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+
+  // If no remap matches in virtualhost, revert to default remap configs
+  if (!ret && virtualhost_remap) {
+    SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
+    // May be null once shutdown has cleared the table; setup_for_remap() handles that.
+    m_remap = rewrite_table.load(std::memory_order_acquire);
+    ret     = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+  }
 
   check_sni_host();
 
@@ -5735,7 +5812,7 @@ void
 HttpSM::open_prewarmed_connection()
 {
   NetVConnection *netvc = _prewarm_sm->move_netvc();
-  ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+  ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
 
   SMDbg(dbg_ctl_http_ss, "using pre-warmed tunnel netvc=%p", netvc);
 
@@ -5884,8 +5961,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       break;
     case HSMresult_t::RETRY:
       Metrics::Counter::increment(http_rsb.origin_reuse_fail);
-      //  Could not get shared pool lock
-      //   FIX: should retry lock
+      // Pool locking or transaction allocation failed; open a new connection.
       break;
     default:
       hsm_release_assert(0);
@@ -6111,15 +6187,16 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     EThread *ethread = this_ethread();
     if (nullptr != ethread->connecting_pool) {
       SMDbg(dbg_ctl_http_ss, "Queue multiplexed request");
-      new_entry          = new ConnectingEntry();
-      new_entry->mutex   = this->mutex;
-      new_entry->ua_txn  = _ua.get_txn();
-      new_entry->handler = (ContinuationHandler)&ConnectingEntry::state_http_server_open;
+      new_entry         = new ConnectingEntry();
+      new_entry->mutex  = this->mutex;
+      new_entry->ua_txn = _ua.get_txn();
+      SET_CONTINUATION_HANDLER(new_entry, &ConnectingEntry::state_http_server_open);
       new_entry->ipaddr.assign(&t_state.current.server->dst_addr.sa);
       new_entry->hostname            = t_state.current.server->name;
       new_entry->sni                 = this->get_outbound_sni();
       new_entry->cert_name           = this->get_outbound_cert();
       new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HttpPluginTunnel_t::NONE;
+      new_entry->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
       this->t_state.set_connect_fail(EIO);
       new_entry->connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));
@@ -6407,6 +6484,41 @@ HttpSM::release_server_session(bool serve_from_cache)
   }
 }
 
+// A peer's not-processed assertion permits a retry only if we can reproduce
+// the request. This includes safe methods with bodies: method safety does not
+// make an exhausted body reader replayable. Unbuffered, incomplete, unknown-length,
+// chunked and transformed bodies are excluded. Admission rearms a complete copy;
+// body rejection latches origin_retry_body_unavailable to block later retries.
+// Both outcomes increment their corresponding origin retry counters.
+bool
+HttpSM::prepare_for_origin_retry()
+{
+  if (server_txn == nullptr || !server_txn->is_safe_to_retry()) {
+    return false;
+  }
+  bool const has_body = server_request_body_bytes > 0 ||
+                        (_ua.get_txn() != nullptr && _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                                                                     t_state.client_info.transfer_encoding ==
+                                                                                       HttpTransact::TransferEncoding_t::CHUNKED));
+  if (has_body) {
+    int64_t const length = t_state.hdr_info.request_content_length;
+    // A done buffer is not proof of completeness: HttpTunnel also marks it done
+    // on EOS. Keep the exact-length check even when upstream paths reject early.
+    if (post_transform_info.vc || t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||
+        length < 0 || length == HTTP_UNDEFINED_CL || !this->is_postbuf_valid() || !this->get_postbuf_done() ||
+        this->postbuf_buffer_avail() != length) {
+      origin_retry_body_unavailable = true;
+      Metrics::Counter::increment(http_rsb.origin_retry_body_unavailable);
+      SMDbg(dbg_ctl_http, "Origin retry denied: complete replayable request body unavailable");
+      return false;
+    }
+    is_buffering_request_body = true;
+  }
+  Metrics::Counter::increment(http_rsb.origin_retry_admitted);
+  SMDbg(dbg_ctl_http, "Origin not-processed retry admitted: method=%d body=%d", t_state.method, has_body);
+  return true;
+}
+
 // void HttpSM::handle_post_failure()
 //
 //   We failed in our attempt post (or put) a document
@@ -6439,9 +6551,13 @@ HttpSM::handle_post_failure()
   _ua.get_entry()->in_tunnel = false;
   server_entry->in_tunnel    = false;
 
-  // disable redirection in case we got a partial response and then EOS, because the buffer might not
-  // have the full post and it's deallocating the post buffers here
-  this->disable_redirect();
+  // Preserve a complete buffered body only when the origin has not responded
+  // and explicitly reports that this request was not processed. Otherwise the
+  // copy may be incomplete, so discard it along with redirect eligibility.
+  bool const retry = this->prepare_for_origin_retry();
+  if (!retry) {
+    this->disable_redirect();
+  }
 
   // Don't even think about doing keep-alive after this debacle
   t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
@@ -6452,7 +6568,10 @@ HttpSM::handle_post_failure()
   // Server is down
   if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
     t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = retry ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
+  } else if (retry && t_state.current.state == HttpTransact::CONNECTION_CLOSED) {
+    // The upload tunnel already recorded EPIPE; a clean FIN can have lerrno == 0.
+    t_state.current.state = HttpTransact::CONNECTION_ERROR;
   }
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
@@ -6572,7 +6691,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   [[maybe_unused]] UnixNetVConnection *dbg_vc = nullptr;
   switch (event) {
   case VC_EVENT_EOS:
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = this->prepare_for_origin_retry() ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
     t_state.set_connect_fail(EPIPE);
     break;
   case VC_EVENT_ERROR:
@@ -7788,7 +7907,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 
   // if pre-warmed connection is used and it has data from origin server, forward it to ua
   if (_prewarm_sm && _prewarm_sm->has_data_from_origin_server()) {
-    ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+    ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
     client_response_hdr_bytes += to_ua_buf->write(_prewarm_sm->server_buf_reader());
   }
 
@@ -8561,6 +8680,19 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
     t_state.source = HttpTransact::Source_t::HTTP_ORIGIN_SERVER;
+
+    // The origin may answer before it has read the request body, for instance a POST carrying
+    // Expect: 100-continue that is answered immediately. Whatever the origin never read is still
+    // queued on the client connection and would otherwise be framed as the next request, so drain
+    // it here, or drop keep-alive when it cannot be drained.
+    bool const    is_chunked_body     = t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED;
+    int64_t const declared_body_bytes = t_state.hdr_info.client_request.get_content_length();
+    bool const    was_body_forwarded =
+      is_chunked_body ? client_request_body_bytes > 0 : client_request_body_bytes >= declared_body_bytes;
+
+    if (_ua.get_txn() != nullptr && (is_chunked_body || declared_body_bytes > 0) && !was_body_forwarded) {
+      do_drain_request_body(transform_info.vc ? t_state.hdr_info.transform_response : t_state.hdr_info.client_response);
+    }
 
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);

@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from typing import Union
 
 __all__ = [
+    "Span",
     "LiteralStringValue",
     "IdentValue",
     "IPValue",
@@ -32,7 +33,6 @@ __all__ = [
     "IpRangeValue",
     "ValueExpr",
     "Node",
-    "Target",
     "Assignment",
     "FunctionCall",
     "Break",
@@ -95,41 +95,37 @@ class RegexValue:
 
 @dataclass(frozen=True, kw_only=True)
 class SetValue:
-    raw: str  # bracket-stripped source text, quoting preserved
+    """An `in [...]` operand. Emitted as `(raw)`, so the brackets are stripped but quoting is not."""
+    raw: str
 
 
 @dataclass(frozen=True, kw_only=True)
 class IpRangeValue:
-    raw: str  # verbatim source text
+    """An `in {...}` operand. Emitted verbatim, braces included."""
+    raw: str
 
 
+# IpRangeValue is a ValueExpr but SetValue is not, because the grammar's `value` rule admits
+# `iprange` and not `set_`: an iprange is legal anywhere a value is, a set only after `in`.
 ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, BoolValue, NumberValue, IpRangeValue]
+
+
+@dataclass(frozen=True, slots=True)
+class Span:
+    """Start position of a node. `line` is 1-based and `column` 0-based, matching ANTLR tokens."""
+    file: str
+    line: int
+    column: int
 
 
 @dataclass(frozen=True, kw_only=True)
 class Node:
-    line: int
-
-
-@dataclass(frozen=True)
-class Target:
-    namespace: str | None
-    field: str
-
-    @staticmethod
-    def from_dotted(name: str) -> Target:
-        # TODO: the grammar lexes dotted paths as a single IDENT token;
-        # ideally the grammar would split namespace/field so this
-        # heuristic isn't needed.
-        dot = name.rfind(".")
-        if dot == -1:
-            return Target(namespace=None, field=name)
-        return Target(namespace=name[:dot], field=name[dot + 1:])
+    span: Span
 
 
 @dataclass(frozen=True, kw_only=True)
 class Assignment(Node):
-    target: Target
+    name: str
     operator: str  # "=" or "+="
     value: ValueExpr
 
@@ -154,7 +150,7 @@ class Comment(Node):
 class Comparison(Node):
     left: IdentValue | FunctionCall
     operator: str  # "==", "!=", ">", "<", "~", "!~", "in", "!in"
-    right: ValueExpr | RegexValue | SetValue | IpRangeValue
+    right: ValueExpr | RegexValue | SetValue
     modifiers: tuple[str, ...]
 
 
@@ -222,7 +218,7 @@ class VarDecl(Node):
 @dataclass(frozen=True, kw_only=True)
 class VarSection(Node):
     scope: str
-    declarations: tuple[VarDecl | Comment, ...]
+    items: tuple[VarDecl | Comment, ...]
 
 
 @dataclass(frozen=True, kw_only=True)

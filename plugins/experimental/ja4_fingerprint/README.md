@@ -2,7 +2,7 @@
 
 ## General Information
 
-The JA4 algorithm designed by John Althouse is the successor to JA3. A JA4 fingerprint has three sections, delimited by underscores, called a, b, and c. The a section contains basic, un-hashed information about the client hello, such as the version and most preferred ALPN. The b section is a hash of the ciphers, and the c section is a hash of the extensions. The algorithm is licensed under the BSD 3-Clause license.
+The JA4 algorithm designed by John Althouse is the successor to JA3. A JA4 fingerprint has three sections, delimited by underscores, called a, b, and c. The a section contains basic, un-hashed information about the client hello, such as the version and most preferred ALPN. The b section is a hash of the ciphers, and the c section is a hash of the extensions and signature algorithms. The algorithm is licensed under the BSD 3-Clause license.
 
 The technical specification of the algorithm is available [here](https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md).
 

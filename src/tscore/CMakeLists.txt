@@ -50,7 +50,6 @@ add_library(
   MMH.cc
   MatcherUtils.cc
   ParseRules.cc
-  Random.cc
   Regression.cc
   SnowflakeID.cc
   TextBuffer.cc

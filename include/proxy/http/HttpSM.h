@@ -43,6 +43,7 @@
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/ProxyTransaction.h"
+#include "proxy/VirtualHost.h"
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
@@ -331,7 +332,8 @@ public:
 
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  std::shared_ptr<UrlRewrite> m_remap;
+  std::shared_ptr<UrlRewrite>   m_remap;
+  Ptr<VirtualHostConfig::Entry> m_virtualhost_entry;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *
@@ -389,6 +391,7 @@ private:
 
   // Y! ebalsa: remap handlers
   int  state_remap_request(int event, void *data);
+  void set_virtualhost_entry(std::string_view domain);
   void do_remap_request(bool);
 
   // Cache Handlers
@@ -457,6 +460,8 @@ private:
   void                handle_server_setup_error(int event, void *data);
   void                handle_http_server_open();
   void                handle_post_failure();
+  bool                prepare_for_origin_retry();
+  bool                origin_retry_body_unavailable = false;
   void                mark_host_failure(ResolveInfo *info, ts_time time_down);
   void                release_server_session(bool serve_from_cache = false);
   void                set_ua_abort(HttpTransact::AbortState_t ua_abort, int event);
@@ -549,6 +554,19 @@ public:
   bool    server_connection_is_ssl        = false;
   bool    is_waiting_for_full_body        = false;
   bool    is_buffering_request_body       = false;
+  // Set once the client's request declared a body that ATS undertook to forward, and the
+  // request head has been written to the origin.  Cleared once that body has reached the
+  // origin in full, measured against the length in server_request.  While it is set the
+  // origin's parser is mid-message and is still waiting for body bytes, so the connection
+  // cannot carry another request.
+  //
+  // The set side uses the same has_request_body() predicate that governs tunnel setup, so
+  // the two cannot diverge.  attach_server_session() appends its chunked Transfer-Encoding
+  // under that same predicate, so an outbound-only body cannot arise there.  The one
+  // outbound body not covered is the plugin-supplied one behind api_server_request_body_set,
+  // and that needs no debt: it is written into the same buffer as the request head, so
+  // WRITE_COMPLETE already means it went out in full.
+  bool server_owed_request_body = false;
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
   //  do_api_callout_internal()

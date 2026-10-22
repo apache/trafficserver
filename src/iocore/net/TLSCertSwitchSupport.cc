@@ -80,16 +80,20 @@ TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
     return 0;
   }
 
-  // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
-  // don't find a name-based match at this point, we *do not* want to mess with the context because we've
-  // already made a best effort to find the best match.
+  // Prefer a name-based match over the destination address.
   if (likely(servername)) {
     ctx = this->_lookupContextByName(servername, ctxType);
   }
 
-  // If there's no match on the server name, try to match on the peer address.
+  // If there's no match on the server name, try to match on the destination address.
   if (ctx == nullptr) {
     ctx = this->_lookupContextByIP();
+  }
+
+  // BoringSSL needs a separate context for each key type. The initial default
+  // context may not support this client, so select from the stored '*' contexts.
+  if (ctx == nullptr && ctxType != SSLCertContextType::GENERIC) {
+    ctx = this->_lookupContextByName("*", ctxType);
   }
 
   if (ctx != nullptr) {

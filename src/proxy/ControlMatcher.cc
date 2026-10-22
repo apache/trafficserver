@@ -424,9 +424,18 @@ RegexMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   ink_assert(line_info->dest_entry < MATCHER_MAX_TOKENS);
   ink_assert(pattern != nullptr);
 
-  // Create the compiled regular expression. This slot can still hold a previous line's
-  // pattern, so ask compile() rather than empty().
-  if (!regex_array[num_el].compile(pattern, error_msg, erroffset)) {
+  // Create the compiled regular expression. Name the directive, file and line rather
+  // than just the module: cache.config, parent.config and splitdns.config share this
+  // code, and host_regex and url_regex match different subjects, so which directive it
+  // is determines the right rewrite for an unanchored pattern.
+  char const *directive = line_info->line[0][line_info->dest_entry];
+  std::string gate_label;
+
+  swoc::bwprint(gate_label, "{} {} at {}:{}", matcher_name, directive ? directive : "regex", file_name ? file_name : "unknown",
+                line_info->line_num);
+
+  // This slot can still hold a previous line's pattern, so ask compile() rather than empty().
+  if (!regex_array[num_el].compile(pattern, error_msg, erroffset, 0, gate_label)) {
     return Result::failure("%s regular expression error at line %d position %d : %s", matcher_name, line_info->line_num, erroffset,
                            error_msg.c_str());
   }

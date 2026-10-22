@@ -40,11 +40,33 @@
 
 SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 {
+  GIVEN("Loading a strategies.yaml with a bare '#include' directive.")
+  {
+    REQUIRE_NOTHROW(YAML::LoadFile(TS_SRC_DIR "/include-missing-strategy.yaml"));
+    NextHopStrategyFactory nhf(TS_SRC_DIR "/include-missing-strategy.yaml");
+
+    THEN("the bare directive is rejected and no strategies load")
+    {
+      REQUIRE(nhf.strategies_loaded == false);
+      REQUIRE(nhf.strategyInstance("strategy-1") == nullptr);
+    }
+  }
+
+  GIVEN("Loading a strategies.yaml whose '#include' names a missing file.")
+  {
+    REQUIRE_NOTHROW(YAML::LoadFile(TS_SRC_DIR "/include-missing-file-strategy.yaml"));
+    NextHopStrategyFactory nhf(TS_SRC_DIR "/include-missing-file-strategy.yaml");
+
+    THEN("the nested load error is reported and no strategies load")
+    {
+      REQUIRE(nhf.strategies_loaded == false);
+      REQUIRE(nhf.strategyInstance("strategy-1") == nullptr);
+    }
+  }
+
   GIVEN("Loading the strategy.yaml with included 'hosts.yaml'.")
   {
-#ifdef TS_SRC_DIR
     REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
-#endif
     NextHopStrategyFactory nhf(TS_SRC_DIR "/strategy.yaml");
 
     WHEN("the two files are loaded.")

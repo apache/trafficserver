@@ -375,6 +375,20 @@ TLSEventSupport::calledHooks(TSEvent eventId) const
   return retval;
 }
 
+bool
+TLSEventSupport::reached_cert_hooks() const
+{
+  switch (this->sslHandshakeHookState) {
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+    return true;
+  default:
+    return false;
+  }
+}
+
 char const *
 TLSEventSupport::get_ssl_handshake_hook_state_name(SSLHandshakeHookState state)
 {
@@ -419,6 +433,35 @@ void
 TLSEventSupport::set_handshake_hook_state(TLSEventSupport::SSLHandshakeHookState state)
 {
   this->sslHandshakeHookState = state;
+}
+
+bool
+TLSEventSupport::finished_client_hello_hooks() const
+{
+  switch (this->sslHandshakeHookState) {
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_SNI:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_DONE:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool
+TLSEventSupport::finished_cert_hooks() const
+{
+  switch (this->sslHandshakeHookState) {
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_DONE:
+    return true;
+  default:
+    return false;
+  }
 }
 
 bool

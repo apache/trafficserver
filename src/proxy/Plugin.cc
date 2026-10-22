@@ -503,14 +503,19 @@ parse_plugin_yaml(const char *yaml_path)
     indexed.push_back({seq_idx++, std::move(entry)});
   }
 
-  std::stable_sort(indexed.begin(), indexed.end(), [](const IndexedEntry &a, const IndexedEntry &b) {
+  // seq_idx breaks ties, which keeps file order without std::stable_sort. The std::stable_sort
+  // temporary buffer trips a GCC 14 -Wfree-nonheap-object false positive in optimized builds.
+  std::sort(indexed.begin(), indexed.end(), [](const IndexedEntry &a, const IndexedEntry &b) {
     const bool a_has = a.entry.load_order >= 0;
     const bool b_has = b.entry.load_order >= 0;
 
-    if (a_has && b_has) {
+    if (a_has != b_has) {
+      return a_has;
+    }
+    if (a_has && a.entry.load_order != b.entry.load_order) {
       return a.entry.load_order < b.entry.load_order;
     }
-    return a_has && !b_has;
+    return a.seq_idx < b.seq_idx;
   });
 
   result.value.reserve(indexed.size());

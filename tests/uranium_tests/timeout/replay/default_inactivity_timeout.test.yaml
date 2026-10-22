@@ -1,0 +1,116 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Perform a response with a long delay to verify default_inactivity_timeout.
+#
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify the default network inactivity timeout"
+  server:
+    name: "default-inactivity-origin"
+  client:
+    name: "default-inactivity-client"
+    return_code: 1
+    process_config:
+      allow_errors: true
+      poll_timeout: 12000
+    log_validation:
+      contains:
+        - expression: "PARSE_INCOMPLETE"
+          description: "The timed-out response must be incomplete"
+        - expression: "Failed HTTP/1 transaction with key: timeout2"
+          description: "The delayed transaction must fail"
+  ats:
+    name: "default-inactivity-ts"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|cache|socket|net_queue|inactivity_cop|conf_remap"
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: "timed out due to default inactivity timeout"
+            description: "ATS must apply the inactivity timeout"
+  variants:
+    - name: "global"
+      ats:
+        records_config:
+          proxy.config.net.default_inactivity_timeout: 2
+    - name: "conf-remap"
+      ats:
+        remap_config:
+          - from: "/"
+            to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+            plugins:
+              - name: "conf_remap.so"
+                args: ["proxy.config.net.default_inactivity_timeout=2"]
+
+
+sessions:
+- transactions:
+
+  # Perform a transaction with no timeout.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/item1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, timeout1 ]
+        - [ Content-Length, 0 ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 300 ]
+
+    proxy-response:
+      status: 200
+
+  # Perform a transaction with 4s delay. This may timeout if
+  # default_inactivity_timeout is below 4s.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/item2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, timeout2 ]
+        - [ Content-Length, 0 ]
+
+    server-response:
+      # This is large, but bear in mind that the default inactivity timeout
+      # should kill the connection before this delay finishes. So this should
+      # not slow down the test as much as it seems.
+      delay: 8s
+
+      status: 200
+      reason: "OK"
+
+    proxy-response:
+      status: 200

@@ -756,10 +756,13 @@ StripeSM::aggWriteDone(int event, Event *e)
         (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
+    dir_set_phase(&del_dir, directory.header->phase);
     for (int done = 0; done < this->_write_buffer.get_buffer_pos();) {
       Doc *doc = reinterpret_cast<Doc *>(this->_write_buffer.get_buffer() + done);
-      dir_set_offset(&del_dir, directory.header->write_pos + done);
+      dir_set_offset(&del_dir, this->offset_to_vol_offset(directory.header->write_pos + done));
+      // A head's entry is under first_key rather than the doc's key, and the doc doesn't say which it is, so try both.
       this->directory.remove(&doc->key, this, &del_dir);
+      this->directory.remove(&doc->first_key, this, &del_dir);
       done += round_to_approx_size(doc->len);
     }
     this->_write_buffer.reset_buffer_pos();
@@ -1338,10 +1341,8 @@ StripeSM::add_writer(CacheVC *vc)
 void
 StripeSM::shutdown(EThread *shutdown_thread)
 {
-  // the process is going down, do a blocking call
-  // dont release the volume's lock, there could
-  // be another aggWrite in progress
-  SCOPED_MUTEX_LOCK(lock, this->mutex, shutdown_thread);
+  // Never released, so no writer can add Dir entries after this sync.
+  MUTEX_TAKE_LOCK(this->mutex, shutdown_thread);
 
   if (DISK_BAD(this->disk)) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: bad disk -- invalidating shm copy for disk recovery", this->hash_text.get());
@@ -1349,8 +1350,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
     return;
   }
 
-  // aggWriteDone advances write_pos again once we drop the mutex, so the shm header is not final; the on-disk write below
-  // plus recover_data() next start reconcile it.
+  // The shm header is not final while an AIO is in flight.
   if (CacheShm::is_shm_pointer(this->directory.raw_dir) && this->is_io_in_progress()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: AIO write in flight -- invalidating shm copy, syncing dir to disk", this->hash_text.get());
     CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
@@ -1370,8 +1370,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   if (!this->_write_buffer.is_empty()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
     if (!this->flush_aggregate_write_buffer(this->fd)) {
-      // Mark rather than lean on the unquiesced cursor the failure leaves behind: the event system is still up, so a later
-      // aggWriteDone or agg_wrap() can re-equalize agg_pos and write_pos and the gate would let this segment through.
+      // Don't rely on the attach gate to reject the cursor this failure leaves.
       Error("Dir %s: aggregation buffer flush failed during shutdown; syncing the directory to disk", this->hash_text.get());
       CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
     }

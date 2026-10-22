@@ -32,6 +32,7 @@
 
 #include "iocore/cache/Store.h"
 #include "records/RecCore.h"
+#include "tsutil/PostScript.h"
 
 #include <cstdio>
 #include <string>
@@ -171,9 +172,11 @@ TEST_CASE("StripeSM::shutdown marks the stripe untrusted without touching the di
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.shutdown(this_ethread());
     }
+    // shutdown() keeps the stripe locked until process exit, and a held mutex cannot be destroyed with the stripe.
+    MUTEX_UNTAKE_LOCK(stripe.mutex, this_ethread());
 
     // The mark goes to the control segment; raw_dir -- which is also the pwrite source -- must come through untouched, so
-    // the disk copy stays loadable. shutdown() leaves the stripe locked, so read the file unlocked.
+    // the disk copy stays loadable.
     CHECK(stripe_marked_untrusted(0));
     CHECK(stripe.directory.header->magic == STRIPE_MAGIC);
 
@@ -273,6 +276,8 @@ TEST_CASE("StripeSM::shutdown marks a bad disk's stripe without writing to it", 
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.shutdown(this_ethread());
     }
+    // shutdown() keeps the stripe locked until process exit, and a held mutex cannot be destroyed with the stripe.
+    MUTEX_UNTAKE_LOCK(stripe.mutex, this_ethread());
 
     CHECK(stripe_marked_untrusted(0));
     CHECK(stripe.directory.header->magic == STRIPE_MAGIC);
@@ -567,6 +572,8 @@ TEST_CASE("StripeSM::shutdown syncs the directory when the agg flush fails", "[c
       SCOPED_MUTEX_LOCK(lock, stripe.mutex, this_ethread());
       stripe.shutdown(this_ethread());
     }
+    // shutdown() keeps the stripe locked until process exit, and a held mutex cannot be destroyed with the stripe.
+    MUTEX_UNTAKE_LOCK(stripe.mutex, this_ethread());
 
     // Marked like the other two paths that cannot vouch for the directory; the cursor it leaves unquiesced is not durable.
     CHECK(stripe.directory.header->write_pos == write_pos_before);
@@ -587,6 +594,123 @@ TEST_CASE("StripeSM::shutdown syncs the directory when the agg flush fails", "[c
 
     CHECK(STRIPE_MAGIC == on_disk.magic);
     CHECK(expect_serial == on_disk.sync_serial);
+  }
+
+  unlink_test_segments();
+}
+
+namespace
+{
+
+// Entries recover_data() would clear: in phase, at or past write_pos.
+int
+count_unflushed_entries(const Stripe &stripe)
+{
+  int count = 0;
+  for (int i = 0; i < stripe.directory.entries(); i++) {
+    const Dir *e = &stripe.directory.dir[i];
+    if (!dir_is_empty(e) && dir_phase(e) == stripe.directory.header->phase &&
+        stripe.vol_offset(e) >= stripe.directory.header->write_pos) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+} // namespace
+
+// shutdown() must keep the stripe locked, or a late writer's Dir entry outlives its aggregation buffer into the next start.
+TEST_CASE("An entry inserted after the shutdown snapshot does not survive the next attach", "[cache][shm]")
+{
+  // A clean stripe takes shutdown()'s early return, which must keep the lock too.
+  const bool dirty = GENERATE(true, false);
+  INFO("dirty " << dirty);
+
+  unlink_test_segments();
+  if (!enable_shm()) {
+    WARN("shm unavailable in this environment; skipping");
+    unlink_test_segments();
+    return;
+  }
+
+  CacheDisk disk;
+  init_disk(disk);
+  disk.hw_sector_size = 512;
+  CacheVol cache_vol;
+  off_t    snapshot_write_pos{};
+
+  {
+    GateStripe stripe{&disk, 10, 0};
+    stripe.cache_vol = &cache_vol;
+    attach_tmpfile_to_stripe(stripe);
+    REQUIRE(CacheShm::is_shm_pointer(stripe.directory.raw_dir));
+
+    // Step 1. shutdown
+    stripe.clear_dir();
+    stripe.set_io_not_in_progress();
+    stripe.directory.header->dirty = dirty;
+
+    // A sentinel, as sync_cache_dir_on_shutdown() uses, so the test thread does not hold the lock.
+    char     shutdown_sentinel;
+    EThread *shutdown_thread = reinterpret_cast<EThread *>(&shutdown_sentinel);
+    // Stands in for process exit, even when a REQUIRE unwinds; a held mutex can't be destroyed.
+    ts::PostScript release([&]() -> void { MUTEX_UNTAKE_LOCK(stripe.mutex, shutdown_thread); });
+    stripe.shutdown(shutdown_thread);
+    snapshot_write_pos = stripe.directory.header->write_pos;
+    REQUIRE(count_unflushed_entries(stripe) == 0);
+
+    // Step 2. a writer arrives after shutdown
+    cache_rsb.write_bytes             = ts::Metrics::Counter::createPtr("unit_test.write.bytes");
+    cache_vol.vol_rsb.write_bytes     = ts::Metrics::Counter::createPtr("unit_test.write.bytes");
+    cache_rsb.direntries_used         = ts::Metrics::Gauge::createPtr("unit_test.direntries.used");
+    cache_vol.vol_rsb.direntries_used = ts::Metrics::Gauge::createPtr("unit_test.direntries.used");
+
+    CacheKey key;
+    key.b[0] = 0x1234;
+    key.b[1] = 0x5678;
+
+    WaitingVC writer{&stripe};
+    writer.key       = key;
+    writer.first_key = key;
+    writer.set_test_data("yay", 4);
+    writer.set_write_len(4);
+    writer.set_agg_len(stripe.round_to_approx_size(writer.write_len + writer.header_len + writer.frag_len));
+
+    // Writers try-lock the stripe and retry on a miss.
+    {
+      MUTEX_TRY_LOCK(lock, stripe.mutex, this_ethread());
+      CHECK_FALSE(lock.is_locked());
+      // If admitted anyway, finish the write so Step 3 shows the entry it leaves.
+      if (lock.is_locked()) {
+        stripe.add_writer(&writer);
+        stripe.aggWrite(EVENT_NONE, nullptr);
+        writer.wait_for_callback();
+        REQUIRE(stripe.get_agg_buf_pos() > 0);
+
+        // The writer's callback inserts once its Doc is in the buffer, with no AIO issued yet.
+        REQUIRE(stripe.directory.insert(&key, &stripe, &writer.dir) == 1);
+        REQUIRE(count_unflushed_entries(stripe) == 1);
+      }
+    }
+
+    REQUIRE(stripe.directory.header->agg_pos == stripe.directory.header->write_pos);
+    CacheShm::mark_clean_shutdown();
+  }
+
+  // Step 3. restart and attach the same segment
+  CacheShm::release_for_test();
+  REQUIRE(enable_shm());
+  REQUIRE(CacheShm::mode() == CacheShm::Mode::AttachExisting);
+
+  {
+    GateStripe stripe{&disk, 10, 0};
+    stripe.cache_vol = &cache_vol;
+    REQUIRE(CacheShm::is_shm_pointer(stripe.directory.raw_dir));
+    REQUIRE(stripe.directory.header->magic == STRIPE_MAGIC);
+    REQUIRE(stripe.directory.header->write_pos == snapshot_write_pos);
+    REQUIRE(stripe.shm_directory_is_valid());
+
+    CHECK(count_unflushed_entries(stripe) == 0);
   }
 
   unlink_test_segments();

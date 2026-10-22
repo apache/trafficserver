@@ -11,26 +11,26 @@ jobs:
     steps:
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@8f634126459ac994f47076ee3ba0be6b348d75e2
       with:
         oss-fuzz-project-name: 'trafficserver'
         language: c++
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@8f634126459ac994f47076ee3ba0be6b348d75e2
       with:
         oss-fuzz-project-name: 'trafficserver'
         language: c++
         fuzz-seconds: 300
         output-sarif: true
     - name: Upload Crash
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: failure() && steps.build.outcome == 'success'
       with:
         name: artifacts
         path: ./out/artifacts
     - name: Upload Sarif
       if: always() && steps.build.outcome == 'success'
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
       # Path to SARIF file relative to the root of the repository
         sarif_file: cifuzz-sarif/results.sarif
