@@ -711,7 +711,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     if (s->http_config_param->no_dns_forward_to_parent) {
       Warning("no available parents and the config proxy.config.http.no_dns_just_forward_to_parent, prevents origin lookups.");
       s->parent_result.result = PARENT_FAIL;
-      s->current.request_to == HOST_NONE;
+      s->current.request_to = HttpTransact::HOST_NONE;
       return HttpTransact::HOST_NONE;
     }
   /* fall through */
