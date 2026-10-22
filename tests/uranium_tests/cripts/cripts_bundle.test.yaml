@@ -26,7 +26,7 @@ meta:
 # any future bug that puts shared mutable state back into a Cripts plugin
 # instance.
 urtest:
-  description: 'cripts: bundle of feature tests (bundle_headers.cript: every Bundle::Headers dynamic substitution across all four hooks; direct_headers.cript: the equivalent direct Cripts API path)'
+  description: 'cripts: bundle of feature tests (bundle_headers.cript: every Bundle::Headers dynamic substitution across all four hooks; direct_headers.cript: the equivalent direct Cripts API path; sub_plugin.cript: AddPlugin() passes every option to the remap plugin)'
   requires:
     ats_features: [TS_HAS_CRIPTS]
 
@@ -53,6 +53,12 @@ urtest:
         destination: 'direct_headers.cript'
       - source: 'files/server_bundle_headers.cript'
         destination: 'server_bundle_headers.cript'
+      - source: 'files/sub_plugin.cript'
+        destination: 'sub_plugin.cript'
+      - source: 'files/sub_plugin_first.conf'
+        destination: 'sub_plugin_first.conf'
+      - source: 'files/sub_plugin_last.conf'
+        destination: 'sub_plugin_last.conf'
 
     records_config:
       proxy.config.diags.debug.enabled: 1
@@ -75,6 +81,11 @@ urtest:
         plugins:
           - name: "server_bundle_headers.cript"
             args: []
+      - from: "http://subplugin.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "sub_plugin.cript"
+            args: []
 
     log_validation:
       diags_log:
@@ -83,6 +94,8 @@ urtest:
             description: "No fatal cript or plugin errors"
           - expression: "Failed to load plugin"
             description: "all cripts under files/ should compile and load"
+          - expression: "Unable to load plugin"
+            description: "sub_plugin.cript loads header_rewrite with all of its options"
 
 # Sessions are independent connections; Proxy Verifier dispatches them in
 # parallel by default, which is what we want for exposing any latent
@@ -327,3 +340,30 @@ sessions:
         - [ X-Cript-Set-SResp,   { value: "set-sresp",      as: equal } ]
         - [ X-Cript-Over-SResp,  { value: "over-sresp",     as: equal } ]
         - [ X-Cript-Keep-SResp,  { value: "should-survive", as: equal } ]
+
+# sub_plugin.cript: a remap plugin added with AddPlugin() gets every option.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /sub
+      headers:
+        fields:
+        - [ Host, subplugin.example.com ]
+        - [ uuid, sub-plugin-1 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Sub-Plugin-First, { value: "loaded", as: equal } ]
+        - [ X-Sub-Plugin-Last,  { value: "loaded", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
