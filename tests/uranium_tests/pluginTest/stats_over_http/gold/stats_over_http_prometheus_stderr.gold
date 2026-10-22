@@ -1,0 +1,11 @@
+``
+> GET /_stats``HTTP/1.1
+``
+< HTTP/1.1 200 OK
+< Content-Type: text/plain; version=0.0.4; charset=utf-8
+< Cache-Control: no-cache
+< Date:``
+< Age:``
+< Transfer-Encoding: chunked
+< Connection:``
+``

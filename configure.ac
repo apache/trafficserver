@@ -2390,6 +2390,8 @@ AC_CONFIG_FILES([
   tests/Makefile
 ])
 
+AC_CONFIG_FILES([tests/urtest.sh], [chmod +x tests/urtest.sh])
+
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
 

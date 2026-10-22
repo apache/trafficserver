@@ -1,0 +1,39 @@
+meta:
+  version: '1.0'
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: test_sni
+  keep-connection-open: 2s
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [:method, POST]
+            - [:scheme, https]
+            - [:authority, example.data.com]
+            - [:path, /a/path]
+            - [Content-Type, text/html]
+            - [Content-Length, '11']
+            - [uuid, 1]
+      - RST_STREAM:
+          error-code: STREAM_CLOSED
+      - DATA:
+          content:
+            encoding: plain
+            data: client_test
+            size: 11
+
+    server-response:
+      headers:
+        fields:
+        - [:status, 200]
+        - [Content-Type, text/html]
+        - [Content-Length, '11']
+      content:
+        encoding: plain
+        data: server_test
+        size: 11
