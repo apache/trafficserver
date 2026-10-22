@@ -70,6 +70,7 @@ def drain_socket(sock: socket.socket, previously_read_data: bytes, num_bytes_to_
     """Read the rest of the request.
 
     :param sock: The socket to drain.
+    :param previously_read_data: Headers and body bytes already received.
     :param num_bytes_to_drain: The number of bytes to drain. If -1, then drain
     bytes until the final zero-length chunk is read.
     """
@@ -77,7 +78,7 @@ def drain_socket(sock: socket.socket, previously_read_data: bytes, num_bytes_to_
     read_data = previously_read_data
     num_bytes_drained = 0
     while True:
-        if num_bytes_to_drain > 0:
+        if num_bytes_to_drain >= 0:
             if num_bytes_drained >= num_bytes_to_drain:
                 break
         elif b'0\r\n\r\n' == read_data[-5:]:
