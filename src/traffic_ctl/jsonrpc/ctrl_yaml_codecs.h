@@ -96,9 +96,9 @@ template <> struct convert<FetchConfigReloadStatusRequest::Params> {
 
 template <> struct convert<ConfigReloadResponse> {
   /// A missing level leaves the entry DL_Undefined. A level that is not one of the DiagsLevel values marks it @c unknown_level,
-  /// which the exit status grades as the highest severity. Such a level still prints as it always did: an integer below or above
-  /// the known range as the lowest or the highest level, anything else without a tag. The server sends the level quoted, as it
-  /// does every scalar.
+  /// which the exit status grades as the highest severity, within the bounds the state of its task sets (see
+  /// appExitCodeFromReload()). Such a level still prints as it always did: an integer below or above the known range as the
+  /// lowest or the highest level, anything else without a tag. The server sends the level quoted, as it does every scalar.
   static void
   decode_level(Node const &level, ConfigReloadResponse::LogEntry &entry)
   {
