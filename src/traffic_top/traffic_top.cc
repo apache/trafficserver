@@ -22,8 +22,6 @@
 */
 
 #include <cstdio>
-#include <exception>
-#include <typeinfo>
 
 #include "tscore/ink_config.h"
 #include <map>
@@ -517,12 +515,8 @@ quit:
   restore_terminal();
 
   return 0;
-} catch (std::exception const &ex) {
-  restore_terminal();
-  fprintf(stderr, "traffic_top: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
-  return 1;
 } catch (...) {
   restore_terminal();
-  fprintf(stderr, "traffic_top: terminating on an unhandled exception\n");
+  fprintf(stderr, "traffic_top: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
   return 1;
 }

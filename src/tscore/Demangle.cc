@@ -25,17 +25,52 @@
 
 #include <cstdlib>
 #include <cxxabi.h>
+#include <exception>
 
 namespace ts
 {
 std::string
-demangle(std::type_info const &type)
+demangle(std::type_info const &type) noexcept
 {
-  int         status = 0;
-  char       *name   = abi::__cxa_demangle(type.name(), nullptr, nullptr, &status);
-  std::string result{status == 0 && name != nullptr ? name : type.name()};
+  try {
+    int         status = 0;
+    char       *name   = abi::__cxa_demangle(type.name(), nullptr, nullptr, &status);
+    std::string result;
 
-  std::free(name);
-  return result;
+    try {
+      result = status == 0 && name != nullptr ? name : type.name();
+    } catch (...) {
+      std::free(name);
+      throw;
+    }
+    std::free(name);
+    return result;
+  } catch (...) {
+    return "<unknown>";
+  }
+}
+
+std::string
+describe_current_exception() noexcept
+{
+  std::exception_ptr const ep = std::current_exception();
+
+  if (!ep) {
+    return "no active exception";
+  }
+
+  try {
+    try {
+      std::rethrow_exception(ep);
+    } catch (std::exception const &ex) {
+      return demangle(typeid(ex)) + ": " + ex.what();
+    } catch (...) {
+      if (std::type_info const *type = abi::__cxa_current_exception_type(); type != nullptr) {
+        return "exception of type " + demangle(*type);
+      }
+    }
+  } catch (...) {
+  }
+  return "exception";
 }
 } // namespace ts

@@ -22,9 +22,7 @@
  */
 
 #include <cstdio>
-#include <exception>
 #include <memory>
-#include <typeinfo>
 
 #include "traffic_crashlog.h"
 #include "tscore/ink_args.h"
@@ -361,10 +359,7 @@ try {
   fflush(fp);
   fclose(fp);
   return 0;
-} catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_crashlog: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
-  return 1;
 } catch (...) {
-  fprintf(stderr, "traffic_crashlog: terminating on an unhandled exception\n");
+  fprintf(stderr, "traffic_crashlog: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
   return 1;
 }

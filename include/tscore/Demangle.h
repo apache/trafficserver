@@ -30,7 +30,18 @@ namespace ts
 {
 /** The readable name of @a type, such as "std::runtime_error".
  *
- * Falls back to @c type.name(), which may be mangled, if demangling fails.
+ * Falls back to @c type.name(), which may be mangled, if demangling fails. This is meant for
+ * exception and terminate handlers, so it never throws: if even the fallback cannot be built
+ * because memory is exhausted, it returns "<unknown>".
  */
-std::string demangle(std::type_info const &type);
+std::string demangle(std::type_info const &type) noexcept;
+
+/** Describe the exception being handled, for a message such as "terminating on an unhandled <this>".
+ *
+ * The result is "std::runtime_error: what() text" for a std::exception, "exception of type int" for
+ * any other thrown type the runtime can name, and "exception" when it cannot. This never throws.
+ * Call it from a catch handler or a terminate handler. With no exception in flight it returns
+ * "no active exception".
+ */
+std::string describe_current_exception() noexcept;
 } // namespace ts

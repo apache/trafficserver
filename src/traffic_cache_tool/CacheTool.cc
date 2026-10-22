@@ -22,8 +22,6 @@
  */
 
 #include <cstdio>
-#include <exception>
-#include <typeinfo>
 
 #include <algorithm>
 #include <iostream>
@@ -1440,10 +1438,7 @@ try {
   }
 
   return 0;
-} catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
-  return 1;
 } catch (...) {
-  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled exception\n");
+  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
   return 1;
 }

@@ -22,8 +22,6 @@
  */
 
 #include <cstdio>
-#include <exception>
-#include <typeinfo>
 #include <sysexits.h>
 
 #include "tscore/Layout.h"
@@ -83,12 +81,9 @@ try {
   engine.arguments.invoke();
 
   return engine.status_code;
-} catch (std::exception const &ex) {
+} catch (...) {
   // This tool returns sysexits values exclusively; EX_SOFTWARE is the one for
   // an internal fault, and matches what ink_fatal() exits with.
-  fprintf(stderr, "traffic_layout: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
-  return EX_SOFTWARE;
-} catch (...) {
-  fprintf(stderr, "traffic_layout: terminating on an unhandled exception\n");
+  fprintf(stderr, "traffic_layout: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
   return EX_SOFTWARE;
 }

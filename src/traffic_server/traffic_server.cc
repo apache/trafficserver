@@ -59,7 +59,6 @@
 #include <filesystem>
 #include <list>
 #include <string>
-#include <typeinfo>
 
 using namespace std::literals;
 
@@ -1984,14 +1983,8 @@ configure_io_uring()
 [[noreturn]] void
 abort_on_uncaught_exception()
 {
-  if (std::exception_ptr const ep = std::current_exception(); ep) {
-    try {
-      std::rethrow_exception(ep);
-    } catch (std::exception const &ex) {
-      ink_abort("traffic_server: terminating on an unhandled %s: %s", ts::demangle(typeid(ex)).c_str(), ex.what());
-    } catch (...) {
-      ink_abort("traffic_server: terminating on an unhandled exception");
-    }
+  if (std::current_exception()) {
+    ink_abort("traffic_server: terminating on an unhandled %s", ts::describe_current_exception().c_str());
   }
   ink_abort("traffic_server: terminate called without an active exception");
 }

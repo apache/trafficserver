@@ -22,8 +22,6 @@
  */
 
 #include <cstdio>
-#include <exception>
-#include <typeinfo>
 
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HuffmanCodec.h"
@@ -43,10 +41,7 @@ try {
   http_init();
   int result = Catch::Session().run(argc, argv);
   return result;
-} catch (std::exception const &ex) {
-  fprintf(stderr, "unit_test_main: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
-  return 1;
 } catch (...) {
-  fprintf(stderr, "unit_test_main: terminating on an unhandled exception\n");
+  fprintf(stderr, "unit_test_main: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
   return 1;
 }

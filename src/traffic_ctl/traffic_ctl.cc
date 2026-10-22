@@ -23,7 +23,6 @@
 
 #include <cstdio>
 #include <exception>
-#include <typeinfo>
 
 #include <iostream>
 #include <csignal>
@@ -423,10 +422,7 @@ try {
   }
 
   return App_Exit_Status_Code;
-} catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_ctl: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
-  return CTRL_EX_ERROR;
 } catch (...) {
-  fprintf(stderr, "traffic_ctl: terminating on an unhandled exception\n");
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
   return CTRL_EX_ERROR;
 }

@@ -22,8 +22,6 @@
  */
 
 #include <cstdio>
-#include <exception>
-#include <typeinfo>
 
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
@@ -664,10 +662,7 @@ try {
   }
 
   ::exit(error);
-} catch (std::exception const &ex) {
-  fprintf(stderr, "traffic_logcat: terminating on an unhandled %s: %s\n", ts::demangle(typeid(ex)).c_str(), ex.what());
-  return DATA_PROCESSING_ERROR;
 } catch (...) {
-  fprintf(stderr, "traffic_logcat: terminating on an unhandled exception\n");
+  fprintf(stderr, "traffic_logcat: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
   return DATA_PROCESSING_ERROR;
 }
