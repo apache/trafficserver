@@ -18,9 +18,11 @@
 import yaml
 
 from hrw4u.ast_visitor import ASTVisitor
-from hrw4u.common import compile_to_conf
+from hrw4u.common import compile_to_conf, create_parse_tree
 from hrw4u.emit_conf import ConfEmitter
 from hrw4u.errors import ErrorCollector
+from hrw4u.hrw4uLexer import hrw4uLexer
+from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.sandbox import SandboxConfig
 from hrw4u.sema import Sema
 from utils import parse_input_text
@@ -210,3 +212,13 @@ class TestCompileToConf:
         lines = compile_to_conf(tree, "<test>", source, error_collector=collector, sandbox=SandboxConfig.load(str(config)))
         assert collector.has_errors()
         assert lines == []
+
+    def test_a_syntax_error_stops_before_the_front_end(self):
+        source = (
+            'REMAP {\n    if inbound.status > 1 {\n        no-op();\n    }\n'
+            '    # c\n    elif inbound.status > 2 {\n        no-op();\n    }\n}\n')
+        tree, _, collector = create_parse_tree(source, "<test>", hrw4uLexer, hrw4uParser, "hrw4u")
+        syntax_errors = list(collector.errors)
+        assert syntax_errors
+        assert compile_to_conf(tree, "<test>", source, error_collector=collector) == []
+        assert collector.errors == syntax_errors

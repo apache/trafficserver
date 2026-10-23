@@ -288,12 +288,16 @@ def compile_to_conf(
     Not reachable from the CLI yet -- generate_output still routes through the CST
     emitter. This is the single wiring both the switchover and the parity test use, so
     the two cannot drift. A run that reported an error returns no lines: what the emitter
-    renders around an unresolved node is not a configuration anyone asked for.
+    renders around an unresolved node is not a configuration anyone asked for. That
+    includes a syntax error already in `error_collector`, which stops the run before the
+    front end, because the AST cannot be built from an error-recovered tree.
     """
     from hrw4u.ast_visitor import ASTVisitor
     from hrw4u.emit_conf import ConfEmitter
     from hrw4u.sema import Sema
 
+    if error_collector is not None and error_collector.has_errors():
+        return []
     ast = ASTVisitor(filename=filename).visit(tree)
     sema = Sema(
         debug=debug,
