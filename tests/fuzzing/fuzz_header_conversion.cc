@@ -61,13 +61,21 @@ constexpr std::array<std::string_view, 17> FIELD_NAMES      = {
   "",
 };
 
+// Bit flags in the first input byte controlling the harness behavior.
+constexpr uint8_t FLAG_IS_RESPONSE    = 1 << 0; // Decode as a response instead of a request.
+constexpr uint8_t FLAG_IS_TEXT        = 1 << 1; // Consume the payload as HTTP/1.1 text.
+constexpr uint8_t FLAG_HTTP_3         = 1 << 2; // Target HTTP/3 instead of HTTP/2.
+constexpr uint8_t FLAG_PSEUDO_HEADERS = 1 << 3; // Add the required pseudo-headers.
+constexpr uint8_t FLAG_CONNECT        = 1 << 4; // Use the CONNECT method (requests only).
+constexpr uint8_t FLAG_TRAILER        = 1 << 5; // Treat the structured fields as trailers.
+
 void
 add_field(HTTPHdr &header, std::string_view name, std::string_view value)
 {
   // An empty name allocates an unnamed field for validator rejection coverage.
   MIMEField *field = header.field_create(name);
 
-  field->value_set(header.m_heap, header.m_mime, value);
+  header.field_value_set(field, value);
   header.field_attach(field);
 }
 
@@ -129,9 +137,9 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
   }
 
   uint8_t          flags       = data[0];
-  bool             is_response = (flags & 1) != 0;
-  bool             is_text     = (flags & 2) != 0;
-  int              version     = (flags & 4) != 0 ? 3 : 2;
+  bool             is_response = (flags & FLAG_IS_RESPONSE) != 0;
+  bool             is_text     = (flags & FLAG_IS_TEXT) != 0;
+  int              version     = (flags & FLAG_HTTP_3) != 0 ? 3 : 2;
   HTTPType         type        = is_response ? HTTPType::RESPONSE : HTTPType::REQUEST;
   HTTPHdr          header;
   ts::PostScript   cleanup([&]() { header.destroy(); });
@@ -155,11 +163,11 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     FuzzedDataProvider provider(data + 1, size - 1);
 
     header.create(type);
-    if ((flags & 8) != 0) {
+    if ((flags & FLAG_PSEUDO_HEADERS) != 0) {
       if (is_response) {
         add_field(header, ":status", "200");
       } else {
-        bool is_connect = (flags & 16) != 0;
+        bool is_connect = (flags & FLAG_CONNECT) != 0;
 
         add_field(header, ":method", is_connect ? "CONNECT" : "GET");
         if (!is_connect) {
@@ -188,7 +196,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
       add_field(header, name, value);
     }
 
-    convert_decoded_header(header, version, is_response, (flags & 32) != 0);
+    convert_decoded_header(header, version, is_response, (flags & FLAG_TRAILER) != 0);
     // Same-version conversion still validates names and values, even after semantic rejection.
     converter.convert(header, version, version);
   }
