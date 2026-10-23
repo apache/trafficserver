@@ -41,19 +41,29 @@ def test_collision_diagnostic_reaches_terminal(tmp_path: Path, workers: int) -> 
     directory.mkdir()
     for name in ("a", "b"):
         (directory / f"test_{name}.py").write_text("def test_duplicate():\n    pass\n")
-    environment = {**os.environ, "PYTHONPATH": str(Path(__file__).parents[3])}
-    result = subprocess.run(
-        [
-            sys.executable, "-m", "pytest", "-p", "tools.uranium.plugin", "--import-mode=importlib", "-n",
-            str(workers),
-            str(directory)
-        ],
-        cwd=tmp_path,
-        env=environment,
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    parent_sandbox = tmp_path / "parent-sandbox"
+    parent_sandbox.mkdir()
+    environment = {
+        **os.environ,
+        "PYTHONPATH": str(Path(__file__).parents[3]),
+        "ATS_URTEST_SANDBOX": str(parent_sandbox),
+    }
+    # Model an enclosing test session whose sandbox must not be reused.
+    with (parent_sandbox / ".session-lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        result = subprocess.run(
+            [
+                sys.executable, "-m", "pytest", "-p", "tools.uranium.plugin", "--import-mode=importlib", "--sandbox",
+                str(tmp_path / "child-sandbox"), "-n",
+                str(workers),
+                str(directory)
+            ],
+            cwd=tmp_path,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
     assert result.returncode != 0
     assert "Give these tests distinct names" in result.stdout + result.stderr
     assert "test_a.py" in result.stdout + result.stderr
