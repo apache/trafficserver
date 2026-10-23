@@ -577,7 +577,6 @@ class TestProcedureInlining:
         assert "circular procedure call" in ec.get_error_summary()
 
     def test_mutual_call_cycle_names_the_whole_chain(self, tmp_path):
-        # The CST emitter recurses until RecursionError here, so the parity test cannot cover it.
         procs = tmp_path / "procs"
         (procs / "Base").mkdir(parents=True)
         (procs / "Base" /

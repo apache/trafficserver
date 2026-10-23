@@ -76,6 +76,8 @@ class CstBug(Enum):
     ACCEPTS = auto()
     # Raises Sema's first error against the calling file instead of the procedure file.
     MISATTRIBUTES = auto()
+    # Crashes with an internal exception where Sema reports the case's `sema_error`.
+    CRASHES = auto()
 
 
 CST_BUGS = {"procedures/wrong-arity": CstBug.RAISES}
@@ -154,6 +156,8 @@ def _assert_outcomes(old: Outcome, new: Outcome, *, collect: bool, cst_bug: CstB
             _assert_sema_rejects_what_cst_accepts(old, new, sema_error)
         case CstBug.MISATTRIBUTES:
             _assert_cst_misattributes(old, new)
+        case CstBug.CRASHES:
+            _assert_sema_reports_what_cst_crashes_on(old, new, sema_error)
         case _:
             _assert_agree(old, new, collect=collect)
 
@@ -191,6 +195,15 @@ def _assert_cst_misattributes(old: Outcome, new: Outcome) -> None:
     assert old.raised[0] == "<synthetic>"
     assert first[0] != old.raised[0]
     assert first[1:] == old.raised[1:]
+
+
+def _assert_sema_reports_what_cst_crashes_on(old: Outcome, new: Outcome, message: str | None) -> None:
+    # _error gives a crash, unlike a diagnostic, as (exception type, message).
+    assert old.raised is not None and len(old.raised) == 2, "the CST emitter no longer crashes; drop its CstBug"
+    reported = new.errors[:1]
+    if new.raised is not None:
+        reported = (new.raised,)
+    assert [e[3] for e in reported] == [message]
 
 
 def _conf(lines: list[str] | None) -> str:
@@ -237,7 +250,7 @@ class Case:
     comments: bool = True
     procedure: str | None = None  # written to <tmp>/procs/syn/p.hrw4u, reachable as `use syn::p`
     cst_bug: CstBug | None = None
-    sema_error: str | None = None  # with CstBug.ACCEPTS
+    sema_error: str | None = None  # with CstBug.ACCEPTS or CstBug.CRASHES
 
 
 SYNTHETIC = [
@@ -408,6 +421,13 @@ SYNTHETIC = [
             cst_bug=CstBug.ACCEPTS,
             sema_error="procedure 'syn::p': required parameter '$b' must not follow an optional parameter"),
         id="required-after-optional-in-a-used-file"),
+    pytest.param(
+        Case(
+            'use syn::p\nREMAP {\n    syn::p();\n}\n',
+            procedure='procedure syn::p() {\n    syn::q();\n}\nprocedure syn::q() {\n    syn::p();\n}\n',
+            cst_bug=CstBug.CRASHES,
+            sema_error="circular procedure call: syn::p -> syn::q -> syn::p"),
+        id="mutual-procedure-recursion"),
 ]
 
 
