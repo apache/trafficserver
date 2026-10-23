@@ -31,6 +31,11 @@
 #include <utility>
 #include <sysexits.h>
 
+// Parser-wide state, for this translation unit only. At file scope without internal linkage
+// these are exported from libtscore under names generic enough ("description", "global_usage")
+// to collide with any other global of the same name.
+namespace
+{
 std::string global_usage;
 std::string description;
 std::string parser_program_name;
@@ -39,10 +44,22 @@ std::string default_command;
 // by default return EX_USAGE(64) when usage is called.
 // if -h or --help is called specifically, return 0
 int usage_return_code = EX_USAGE;
+} // namespace
 
 namespace ts
 {
 bool ArgParser::_test_mode = false;
+
+// protected method for testing
+/*static*/ void
+ArgParser::reset_global_state()
+{
+  global_usage.clear();
+  description.clear();
+  parser_program_name.clear();
+  default_command.clear();
+  usage_return_code = EX_USAGE;
+}
 
 ArgParser::ArgParser() {}
 
@@ -799,6 +816,15 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
 
   std::map<std::string, unsigned> check_map;
   for (unsigned i = index; i < args.size(); i++) {
+    // A "--" escapes the token after it. That token belongs to an option or a command further
+    // down the line, which honours the escape itself in handle_args(); this scan covers the
+    // whole remaining command line, so without this it would still match the escaped token
+    // against this command's options. Leave both tokens in place for the owner: this ++i steps
+    // past the "--" and the loop's own increment past the token it escapes.
+    if (args[i] == "--") {
+      ++i;
+      continue;
+    }
     // find matches of the arg
     if (args[i][0] == '-' && args[i][1] == '-' && args[i].find('=') != std::string::npos) {
       // deal with --args=

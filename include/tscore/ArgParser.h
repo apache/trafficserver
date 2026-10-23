@@ -364,6 +364,14 @@ protected:
   // Enable test mode - makes do_exit() throw instead of calling exit() for unit testing
   static void set_test_mode(bool test = true);
 
+  /** Clear the parser-wide state held at file scope in ArgParser.cc.
+
+      Test-only. A program builds one parser and never reuses the state, but a unit test binary
+      runs many parsers in sequence, and set_default_command() or Command::set_default() would
+      otherwise leak default_command into every later test.
+  */
+  static void reset_global_state();
+
   // When true, do_exit() throws instead of calling exit()
   static bool _test_mode;
 

@@ -58,6 +58,10 @@ CONFIG_RELOAD_DIRECTIVE_CLI__cases = (
     CommandCase(("config", "reload", "-d", ""), ("received an empty value",), return_code=2),
     CommandCase(("config", "reload", "-D", ""), ("received an empty value",), return_code=2),
     CommandCase(("config", "reload", "-d", "", "-d", "ip_allow: {rules: [x]}"), ("received an empty value",), return_code=2),
+    # -w is the global --watch, as it has always been; config reload's --initial-wait has only its
+    # long form.
+    CommandCase(("config", "reload", "-w"), ("1 argument(s) expected by watch",), return_code=64),
+    CommandCase(("config", "reload", "-h"), ("--initial-wait <arg>",), ("-w, --initial-wait",), return_code=0),
 )
 
 
