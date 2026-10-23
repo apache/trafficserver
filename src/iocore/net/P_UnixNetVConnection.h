@@ -133,6 +133,14 @@ public:
   {
     return this->con.close();
   }
+
+  /// @see NetEvent::handler_on_stack. Mirrors the guard do_io_close() uses.
+  bool
+  handler_on_stack() const override
+  {
+    return recursion > 0;
+  }
+
   virtual int
   get_fd() override
   {

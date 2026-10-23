@@ -118,6 +118,19 @@ public:
   // Close when EventIO close;
   virtual int close() = 0;
 
+  /** Whether one of this object's own callbacks is on the stack.
+
+      A caller that reclaims on behalf of some other thread must not free an
+      object whose handler is still running, because that handler reads the
+      object again as it unwinds. Subclasses that re-enter their continuation
+      report it here; the default is for those that cannot.
+   */
+  virtual bool
+  handler_on_stack() const
+  {
+    return false;
+  }
+
   bool has_error() const;
   void set_error_from_socket();
 

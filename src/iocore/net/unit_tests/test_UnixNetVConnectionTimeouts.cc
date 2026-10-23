@@ -290,3 +290,137 @@ TEST_CASE("netActivity re-arms an explicit timeout after a delivered one", "[net
   h.run_at(HRTIME_SECONDS(20));
   CHECK(h.sink.events == 2);
 }
+
+namespace
+{
+
+// Records reclamation instead of performing it, so the test can assert *when*
+// the free happened without reading freed memory.
+struct ProbeVC : public UnixNetVConnection {
+  bool freed             = false;
+  int  recursion_at_free = -1;
+
+  void
+  free_thread(EThread * /* t ATS_UNUSED */) override
+  {
+    freed             = true;
+    recursion_at_free = recursion;
+  }
+};
+
+// Closes one vc the way a foreign thread would, then queues another. Stands in
+// for a handler reaching add_to_keep_alive_queue() from inside its own
+// callback, which is what makes the queue managers' drain a nested call.
+struct EvictingSink : public Continuation {
+  NetHandler *nh      = nullptr;
+  ProbeVC    *foreign = nullptr;
+  ProbeVC    *other   = nullptr;
+  int         events  = 0;
+
+  EvictingSink() : Continuation(new_ProxyMutex()) { SET_HANDLER(&EvictingSink::handle); }
+
+  int
+  handle(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
+  {
+    ++events;
+    if (events > 1) {
+      // Only the first callback sets up the race; evicting `other` re-enters
+      // here and must not queue or close anything again.
+      return EVENT_CONT;
+    }
+    // Inline rather than from a second thread so the interleaving is
+    // deterministic. The resulting state is the one a real foreign close
+    // leaves: claimed, closed and on the handoff list, while this vc's own
+    // callback is on the stack.
+    nh->close_from_foreign_thread(foreign, 1);
+    nh->add_to_keep_alive_queue(other);
+    return EVENT_CONT;
+  }
+};
+
+} // namespace
+
+// process_handoffs() frees on behalf of the thread that closed the connection,
+// and the queue managers call it nested from add_to_keep_alive_queue(), which
+// handlers reach from inside their own callback. Freeing there leaves
+// read_signal_and_update() reading a freed vc as it unwinds at
+// "if (!--vc->recursion && vc->closed)".
+//
+// Without the handler_on_stack() guard in process_handoffs() this crashes
+// rather than failing an assertion: free_netevent() tears the vc down while its
+// own mainEvent() is still on the stack, and the unwind walks what is left. A
+// SIGSEGV here means that guard was lost, not that the test is flaky -- the same
+// free on the same object runs cleanly at the end of this test, once the
+// callback has returned.
+TEST_CASE("A nested handoff drain does not free a vc whose handler is running", "[net][inactivity_cop][unixnetvc]")
+{
+  NetHandler   &nh = thread_net_handler();
+  InactivityCop cop(Ptr<ProxyMutex>(new_ProxyMutex()), nh);
+  EvictingSink  sink;
+  register_net_metrics();
+
+  ink_hrtime const t0      = ink_get_hrtime();
+  auto            *closing = new ProbeVC();
+  auto            *other   = new ProbeVC();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    nh.timer_wheel.init(t0);
+
+    // Zero while populating, so add_to_keep_alive_queue() does not evict during
+    // setup; raised below to make the manager actually run.
+    nh.max_connections_per_thread_in = 0;
+
+    for (ProbeVC *vc : {closing, other}) {
+      vc->thread = this_ethread();
+      vc->nh     = &nh;
+      vc->mutex  = new_ProxyMutex();
+      SET_CONTINUATION_HANDLER(vc, &UnixNetVConnection::mainEvent);
+      vc->read.vio.op = VIO::READ;
+      vc->read.vio.set_continuation(&sink);
+      vc->read.enabled = 1;
+      nh.startCop(vc);
+      nh.add_to_keep_alive_queue(vc);
+    }
+
+    sink.nh      = &nh;
+    sink.foreign = closing;
+    sink.other   = other;
+
+    // Two queued against a limit of one, so manage_keep_alive_queue() gets past
+    // its capacity guard and reaches the drain.
+    nh.max_connections_per_thread_in = 1;
+    closing->set_inactivity_timeout(HRTIME_SECONDS(5));
+  }
+
+  {
+    Event event;
+    event.ethread = this_ethread();
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    cop.run(t0 + HRTIME_SECONDS(7), &event);
+  }
+
+  REQUIRE(sink.events >= 1);
+  INFO("the drain ran while this vc's own callback was on the stack");
+  CHECK_FALSE(closing->recursion_at_free > 0);
+
+  // Deferred, not dropped: the next top-level drain must still reclaim it.
+  {
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    nh.process_handoffs();
+  }
+  INFO("a vc skipped by the nested drain must be reclaimed by the next one");
+  CHECK(closing->freed);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    nh.max_connections_per_thread_in = 0;
+    if (!other->freed) {
+      nh.stopCop(other);
+    }
+    other->nh   = nullptr;
+    closing->nh = nullptr;
+  }
+  delete closing;
+  delete other;
+}

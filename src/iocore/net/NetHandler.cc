@@ -187,6 +187,17 @@ NetHandler::process_handoffs()
         handoff_list.push(ne);
         continue;
       }
+      if (ne->handler_on_stack()) {
+        // One of ne's own callbacks is running on this thread, and it reads ne
+        // again as it unwinds. The queue managers call this nested from
+        // add_to_*_queue(), which handlers reach from inside that callback, so
+        // this is reachable whenever a foreign close lands during one. Keep the
+        // claim and leave ne for the next top-level drain; the unwind's own
+        // free_netevent() is a no-op while the claim is held.
+        ne->handoff.store(state);
+        handoff_list.push(ne);
+        continue;
+      }
       free_netevent(ne);
       continue;
     }
