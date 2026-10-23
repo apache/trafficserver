@@ -135,9 +135,10 @@ Options
 
    |TS| answers a handler result below ``warn`` with a success, so a handler failure reaches
    :program:`traffic_ctl` only at ``warn`` or above. Against |TS|, ``diag``, ``debug``, ``status``
-   and ``note`` therefore act like ``warn``. They differ only for a failure whose entries are all
-   marked below ``warn``, which takes a handler that sets the severity of its errata apart from the
-   entries (see :ref:`jsonrpc-node-errors-severity`).
+   and ``note`` therefore act like ``warn`` for handler failures. They differ only for a failure
+   whose entries are all marked below ``warn``, which takes a handler that sets the severity of its
+   errata apart from the entries (see :ref:`jsonrpc-node-errors-severity`). Reload results are
+   graded on their own log entries, where these levels do differ, see below.
 
    The level applies to every command that decodes the server response, in every output format,
    ``--format json`` included. ``traffic_ctl rpc file`` and ``traffic_ctl rpc input`` are the
@@ -150,13 +151,30 @@ Options
    records, ``traffic_ctl metric monitor`` when a poll fails, and ``traffic_ctl server debug enable
    --append`` when it cannot read the current tags.
 
+   The outcome of a configuration reload comes back inside a successful response, as a task state
+   and the log entries of the task and its sub-tasks, each with its own severity. ``traffic_ctl
+   config reload --monitor`` and ``traffic_ctl config status`` grade a finished reload the same
+   way: the most severe log entry is compared with the level. An entry without a severity is not
+   graded, and one whose level is not a known level counts as ``emergency``. The state of each
+   task bounds its entries. A task that ended ``fail`` or ``timeout`` counts as at least
+   ``error``, even when no entry says so. The entries of any other task count as at most
+   ``warn``, since its handler did not fail it. So with the default level the exit status follows
+   the state, ``--error-level=warn`` fails a reload that succeeded with warnings or errors, and
+   ``--error-level=fatal`` lets a failed reload exit ``0`` unless a task that failed logged a
+   ``fatal`` entry or above. A reload with a task that ended ``timeout`` never finished, so below
+   the level it exits ``75`` rather than ``0``. Reload tasks log ``note`` entries as they start
+   and finish, so at ``note`` or below nearly every reload fails. ``--monitor`` grades the first
+   finished state it sees. A reload that is still running, has no state, or is in a state
+   :program:`traffic_ctl` does not know, is not graded.
+
    .. note::
 
       Errors that do not come from a method handler always exit ``2``, whatever the level:
       protocol errors such as ``-32601 Method not found``, an unauthorized call, and a handler
       failure without ``data`` entries. The level does not change errors a command reports inside
       a successful response either, such as the record errors of ``traffic_ctl config get`` or
-      the reload errors of ``traffic_ctl config reload``.
+      the errors ``traffic_ctl config reload`` lists when it cannot start a reload, such as a token
+      already in use.
 
    Examples:
 
@@ -434,8 +452,10 @@ Display the current value of a configuration record.
 
       Supply inline YAML configuration content for the reload. The content is passed directly to
       config handlers at runtime and is **not persisted to disk** — a server restart will revert
-      to the file-based configuration. A warning is printed after a successful inline reload to
-      remind the operator.
+      to the file-based configuration. A warning is printed after an inline reload that may have
+      applied it, to remind the operator: one that was scheduled, or with ``--monitor`` one that
+      ended ``success`` or was still running when the monitor stopped. A reload already in
+      progress refuses the content, so it prints no warning.
 
       Accepts the following formats:
 
@@ -592,13 +612,16 @@ Display the current value of a configuration record.
    reload operation:
 
    ``0``
-      Success. The reload was scheduled (without ``--monitor``) or completed successfully
-      (with ``--monitor``). Without ``--monitor`` or ``--show-details``, also when the server
-      reported an error below :option:`traffic_ctl --error-level`.
+      Success. The reload was scheduled (without ``--monitor``), or, with ``--monitor``, it
+      finished below :option:`traffic_ctl --error-level`: with the default level, it ended
+      ``success``. Without ``--monitor`` or ``--show-details``, also when the server reported an
+      error below :option:`traffic_ctl --error-level`.
 
    ``2``
-      Error. The reload reached a terminal failure state (``fail`` or ``timeout``), an
-      RPC communication error occurred, or the server reported an error at or above
+      Error. With ``--monitor``, the reload finished at or above
+      :option:`traffic_ctl --error-level`: with the default level, it ended ``fail`` or
+      ``timeout``. See :option:`traffic_ctl --error-level` for how a reload is graded. Also when
+      an RPC communication error occurred, or the server reported an error at or above
       :option:`traffic_ctl --error-level`.
 
    ``75``
@@ -606,8 +629,10 @@ Display the current value of a configuration record.
       progress and the command could not start a new one, monitoring was interrupted
       (e.g. Ctrl+C) before the reload reached a terminal state, the ``--timeout``
       duration was exceeded, or, with ``--monitor`` or ``--show-details``, a request failed with
-      an error below :option:`traffic_ctl --error-level`. The caller is invited to retry or
-      monitor the operation later.
+      an error below :option:`traffic_ctl --error-level`. Also, with ``--monitor``, when a task
+      of the reload ended ``timeout`` and the reload is graded below
+      :option:`traffic_ctl --error-level`. The caller is invited to
+      retry or monitor the operation later.
 
    Example usage in scripts:
 
@@ -951,6 +976,9 @@ Display the current value of a configuration record.
       (e.g. ``[Dbg]``, ``[Note]``, ``[Warn]``, ``[Err]``). Entries without a tag are
       "unleveled" (from the one-argument ``ctx.log(text)``) and always pass the filter.
 
+      The filter only changes what is displayed. The exit status grades every entry, hidden or
+      not, see :option:`traffic_ctl --error-level`.
+
    .. tip::
 
       For deeper investigation beyond what ``traffic_ctl config status`` shows, enable the
@@ -993,6 +1021,26 @@ Display the current value of a configuration record.
           }
         ]
       }
+
+   **Exit codes for config status:**
+
+   Only the newest reload shown is graded, see :option:`traffic_ctl --error-level` for how. With
+   ``--count``, the older reloads shown are history and do not change the exit status.
+
+   ``0``
+      The newest reload is graded below :option:`traffic_ctl --error-level`: with the default
+      level, no task in it ended ``fail`` or ``timeout``. Also when it is still running, and when
+      the server reported an error below :option:`traffic_ctl --error-level`.
+
+   ``2``
+      The newest reload is graded at or above :option:`traffic_ctl --error-level`: with the
+      default level, a task in it ended ``fail`` or ``timeout``. Also when the server reports that
+      no reload is found (an unknown token, or none has run yet), when ``--min-level`` is not
+      valid, and when the server reported an error at or above :option:`traffic_ctl --error-level`.
+
+   ``75``
+      A task in the newest reload ended ``timeout``, and the reload is graded below
+      :option:`traffic_ctl --error-level`.
 
 .. program:: traffic_ctl config
 .. option:: registry

@@ -65,6 +65,7 @@ struct ConfigReloadResponse {
   struct LogEntry {
     DiagsLevel  level{DL_Undefined}; ///< DL_Undefined for state-change messages
     std::string text;
+    bool        unknown_level{false}; ///< The server sent a level that is not a DiagsLevel; @a level is only what is printed.
   };
 
   struct ReloadInfo {

@@ -39,15 +39,16 @@ def rpc(ats: ATS, method: str, params: object | None = None, *, request_id: str 
     return json.loads(result.stdout)
 
 
-def require_command(result: CommandResult, *contains: str, excludes: tuple[str, ...] = ()) -> str:
-    """Require a successful command and its expected output fragments.
+def require_command(result: CommandResult, *contains: str, excludes: tuple[str, ...] = (), return_code: int = 0) -> str:
+    """Require a command's exit status and its expected output fragments.
 
     :param result: Completed command result.
     :param contains: Text fragments that must appear in combined output.
     :param excludes: Text fragments forbidden in combined output.
+    :param return_code: Exact expected command status.
     """
 
-    assert result.returncode == 0, result.output
+    assert result.returncode == return_code, result.output
     for fragment in contains:
         assert fragment in result.output, result.output
     for fragment in excludes:
@@ -62,6 +63,7 @@ def wait_for_status(
         excludes: tuple[str, ...] = (),
         extra_arguments: tuple[str, ...] = (),
         timeout: float = 20,
+        return_code: int = 0,
 ) -> str:
     """Wait for one reload status to satisfy an output contract.
 
@@ -71,15 +73,18 @@ def wait_for_status(
     :param excludes: Text fragments forbidden from the final output.
     :param extra_arguments: Additional ``config status`` arguments.
     :param timeout: Maximum number of seconds to wait.
+    :param return_code: Exact expected ``config status`` exit status: 2 for a reload that failed.
     """
 
     deadline = time.monotonic() + timeout
     output = ""
+    status = None
     while time.monotonic() < deadline:
         result = ats.traffic_ctl("config", "status", "-t", token, *extra_arguments)
         output = result.output
-        if result.returncode == 0 and "in_progress" not in output and all(fragment in output for fragment in contains) and all(
+        status = result.returncode
+        if status == return_code and "in_progress" not in output and all(fragment in output for fragment in contains) and all(
                 fragment not in output for fragment in excludes):
             return output
         time.sleep(0.2)
-    raise AssertionError(f"Reload {token!r} did not reach the expected status:\n{output}")
+    raise AssertionError(f"Reload {token!r} did not reach the expected status (last exit {status}):\n{output}")
