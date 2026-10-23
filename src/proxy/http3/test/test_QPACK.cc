@@ -536,6 +536,48 @@ TEST_CASE("Decoding", "[qpack-decode]")
   }
 }
 
+// QPACK::_arena and the encoder stream handler are private. This reaches them so
+// a test can tell whether the arena got back everything QPACK allocated out of it.
+struct QPACKTestAccess {
+  // Arena::free() never inspects the last block on its list, so nothing rewinds
+  // while the arena holds a single block. Push it past that one. This leaves about
+  // a third of the head block free, and the allocations under test must fit in it,
+  // otherwise they open a new head block and the water level moves for that reason.
+  static void
+  skip_first_block(QPACK &qpack)
+  {
+    for (int i = 0; i < 40; ++i) {
+      qpack._arena.str_alloc(64);
+    }
+  }
+
+  // Arena has no water level accessor. The address the next allocation gets
+  // stands in for it.
+  static void *
+  water_level(QPACK &qpack)
+  {
+    char *probe = qpack._arena.str_alloc(1);
+
+    qpack._arena.str_free(probe);
+    return probe;
+  }
+
+  // Hands encoder stream instructions straight to the handler a read on the
+  // encoder stream ends up in, on the calling thread. That skips event dispatch,
+  // the stream id routing in _on_read_ready() and QPACK's mutex, none of which
+  // touch the arena. Nothing else runs QPACK while a test calls this.
+  static void
+  read_encoder_stream(QPACK &qpack, const uint8_t *instructions, size_t len)
+  {
+    MIOBuffer      *buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+    IOBufferReader *reader = buffer->alloc_reader();
+
+    buffer->write(instructions, len);
+    qpack._on_encoder_stream_read_ready(*reader);
+    free_MIOBuffer(buffer);
+  }
+};
+
 // Decodes one Literal Header Field Without Name Reference. That is the field
 // representation whose name and value are both allocated out of QPACK's
 // per-connection arena and released again once the header is attached, so it is
@@ -581,6 +623,48 @@ TEST_CASE("Decoding a literal header field without name reference", "[qpack-lite
     hdr.destroy();
   }
 
+  SECTION("the arena gets back what the decode allocated")
+  {
+    QPACKTestAccess::skip_first_block(*qpack);
+    void *water_level = QPACKTestAccess::water_level(*qpack);
+
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, &event_handler, eventProcessor.all_ethreads[0]) == 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+    hdr.destroy();
+  }
+
+  SECTION("the arena gets back the name when the value fails to decode")
+  {
+    // The value carries the huffman flag and a length of 8, and an all-ones
+    // payload is not a decodable huffman sequence.
+    // clang-format off
+    const uint8_t bad_value_block[] = {
+      0x00, 0x00,
+      0x23, 'a', 'b', 'c',
+      0x88, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    };
+    // clang-format on
+
+    QPACKTestAccess::skip_first_block(*qpack);
+    void *water_level = QPACKTestAccess::water_level(*qpack);
+
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    REQUIRE(qpack->decode(1, bad_value_block, sizeof(bad_value_block), hdr, &event_handler, eventProcessor.all_ethreads[0]) == 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
+    CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+    hdr.destroy();
+  }
+
   SECTION("repeated decodes keep returning the same field")
   {
     for (int i = 0; i < 200; i++) {
@@ -601,5 +685,116 @@ TEST_CASE("Decoding a literal header field without name reference", "[qpack-lite
 
       hdr.destroy();
     }
+  }
+}
+
+// Insert Without Name Reference: 01 H <Name Length (5+)> <Name> H <Value Length (7+)> <Value>, neither string huffman coded.
+// The lengths are written as single prefix bytes, so names must be shorter than 31 bytes and values shorter than 127.
+static size_t
+append_insert_without_name_ref(uint8_t *buf, std::string_view name, std::string_view value)
+{
+  uint8_t *p = buf;
+
+  *p++ = 0x40 | name.size();
+  memcpy(p, name.data(), name.size());
+  p    += name.size();
+  *p++  = value.size();
+  memcpy(p, value.data(), value.size());
+  p += value.size();
+
+  return p - buf;
+}
+
+// Insert Without Name Reference on the encoder stream allocates the name and the
+// value out of QPACK's per-connection arena, and has to give both back once the
+// entry is in the dynamic table, or when the value fails to decode.
+TEST_CASE("Insert Without Name Reference on the encoder stream", "[qpack-encoder-stream]")
+{
+  constexpr int INSERTS = 200;
+
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  // Room in the dynamic table for every insert below.
+  auto qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 16384, 0, MAX_FIELD_SIZE);
+
+  QPACKTestAccess::skip_first_block(*qpack);
+  void *water_level = QPACKTestAccess::water_level(*qpack);
+
+  // Distinct names and values so a decoded field tells which insert it came from.
+  std::vector<uint8_t> instructions(INSERTS * 16);
+  size_t               instructions_len = 0;
+  for (int i = 0; i < INSERTS; ++i) {
+    char name[8];
+    char value[8];
+
+    snprintf(name, sizeof(name), "n%03d", i);
+    snprintf(value, sizeof(value), "v%03d", i);
+    instructions_len += append_insert_without_name_ref(instructions.data() + instructions_len, name, value);
+  }
+
+  QPACKTestAccess::read_encoder_stream(*qpack, instructions.data(), instructions_len);
+  CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+  // Required Insert Count, which this decoder takes as the absolute index of the
+  // largest entry referenced, then Delta Base 0, then two Indexed Field Lines on
+  // the dynamic table: relative index 0 is the last insert and relative index
+  // INSERTS - 1 is the first.
+  uint8_t  header_block[16] = {0};
+  uint8_t *p                = header_block;
+  uint8_t *end              = header_block + sizeof(header_block);
+
+  p    += xpack_encode_integer(p, end, INSERTS - 1, 8);
+  *p++  = 0x00;
+  *p    = 0x80;
+  p    += xpack_encode_integer(p, end, 0, 6);
+  *p    = 0x80;
+  p    += xpack_encode_integer(p, end, INSERTS - 1, 6);
+
+  size_t header_block_len = p - header_block;
+
+  SECTION("every insert lands in the dynamic table")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    // Wait before checking the result: if an insert had failed, decode() would
+    // return -1 and still schedule an event for event_handler.
+    int ret = qpack->decode(1, header_block, header_block_len, hdr, &event_handler, eventProcessor.all_ethreads[0]);
+
+    CAPTURE(ret);
+    REQUIRE(event_handler.wait_for_events(1));
+    REQUIRE(ret == 0);
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
+    MIMEField *last = hdr.field_find("n199");
+
+    REQUIRE(last != nullptr);
+    CHECK(last->value_get() == "v199");
+
+    MIMEField *first = hdr.field_find("n000");
+
+    REQUIRE(first != nullptr);
+    CHECK(first->value_get() == "v000");
+
+    hdr.destroy();
+  }
+
+  SECTION("a value that fails to decode gives the name back and fails the decoder")
+  {
+    // The name decodes. The value carries the huffman flag and a length of 8,
+    // and an all-ones payload is not a decodable huffman sequence.
+    const uint8_t bad_value[] = {0x43, 'b', 'a', 'd', 0x88, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+    QPACKTestAccess::read_encoder_stream(*qpack, bad_value, sizeof(bad_value));
+    CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    CHECK(qpack->decode(1, header_block, header_block_len, hdr, &event_handler, eventProcessor.all_ethreads[0]) < 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
+
+    hdr.destroy();
   }
 }
