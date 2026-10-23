@@ -26,6 +26,18 @@
 #include <cstdlib>
 #include <cxxabi.h>
 #include <exception>
+#include <memory>
+
+namespace
+{
+struct FreeDeleter {
+  void
+  operator()(char *p) const noexcept
+  {
+    std::free(p);
+  }
+};
+} // namespace
 
 namespace ts
 {
@@ -33,18 +45,10 @@ std::string
 demangle(std::type_info const &type) noexcept
 {
   try {
-    int         status = 0;
-    char       *name   = abi::__cxa_demangle(type.name(), nullptr, nullptr, &status);
-    std::string result;
+    int                                status = 0;
+    std::unique_ptr<char, FreeDeleter> name{abi::__cxa_demangle(type.name(), nullptr, nullptr, &status)};
 
-    try {
-      result = status == 0 && name != nullptr ? name : type.name();
-    } catch (...) {
-      std::free(name);
-      throw;
-    }
-    std::free(name);
-    return result;
+    return status == 0 && name != nullptr ? name.get() : type.name();
   } catch (...) {
     return "<unknown>";
   }

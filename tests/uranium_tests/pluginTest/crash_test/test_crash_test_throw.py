@@ -16,6 +16,7 @@
 
 from pathlib import Path
 import re
+import signal
 import time
 
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
@@ -50,7 +51,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", return_code=-6, enable_cache=False)
+    ats = ats_factory.create("ts", return_code=-signal.SIGABRT, enable_cache=False)
     ats.records.update(
         {
             "proxy.config.proxy_name": "test_proxy",

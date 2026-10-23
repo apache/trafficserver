@@ -500,19 +500,19 @@ open_output_file(char *output_file_p)
   return file_desc;
 }
 
-} // end anonymous namespace
-
-/*-------------------------------------------------------------------------
-  main
-  -------------------------------------------------------------------------*/
-
-// At file scope so the exception handlers below can name these; a
+// Outside main() so the exception handlers below can name these; a
 // function-try-block handler is outside the function body's scope.
 enum {
   NO_ERROR              = 0,
   CMD_LINE_OPTION_ERROR = 1,
   DATA_PROCESSING_ERROR = 2,
 };
+
+} // end anonymous namespace
+
+/*-------------------------------------------------------------------------
+  main
+  -------------------------------------------------------------------------*/
 
 int
 main(int /* argc ATS_UNUSED */, const char *argv[])
