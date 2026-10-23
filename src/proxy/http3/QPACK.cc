@@ -1563,6 +1563,7 @@ QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char 
   // Value
   if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 ||
       tmp > 0xFFFF) {
+    arena.str_free(*name);
     return -1;
   }
   value_len  = tmp;
