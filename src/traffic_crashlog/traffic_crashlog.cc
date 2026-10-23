@@ -21,12 +21,16 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <memory>
+
 #include "traffic_crashlog.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_cap.h"
 #include "tscore/Version.h"
 #include "tscore/Layout.h"
 #include "tscore/ink_syslog.h"
+#include "tscore/Demangle.h"
 #include "records/RecCore.h"
 #include "records/RecordsConfig.h"
 #include "tscore/BaseLogFile.h"
@@ -201,12 +205,16 @@ crashlog_exec_pgm(FILE *fp, pid_t pid)
 
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
-{
+try {
   FILE           *fp;
   char           *logname;
   crashlog_target target;
 
-  DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, new BaseLogFile("stderr")));
+  // Hold the log file in a unique_ptr until Diags is actually constructed: the
+  // Diags constructor can throw, and it only takes ownership once it succeeds.
+  auto log_file = std::make_unique<BaseLogFile>("stderr");
+  DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, log_file.get()));
+  log_file.release();
 
   auto &version = AppVersionInfo::setup_version("traffic_crashlog");
 
@@ -351,4 +359,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   fflush(fp);
   fclose(fp);
   return 0;
+} catch (...) {
+  fprintf(stderr, "traffic_crashlog: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
+  return 1;
 }
