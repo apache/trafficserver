@@ -133,7 +133,7 @@ public:
   }
 
 private:
-  int              _event = 0;
+  std::atomic<int> _event{0};
   std::atomic<int> _events_seen{0};
 };
 
