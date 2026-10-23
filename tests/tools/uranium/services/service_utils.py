@@ -27,12 +27,8 @@ if TYPE_CHECKING:
     from .ats import ATS
 
 
-def wait_for_file_lines(path: Path, expression: str, count: int, timeout: float = 30) -> str:
+def wait_for_file_lines(path: Path, expression: str, count: int, timeout: float = 10) -> str:
     """Wait until a file contains enough matching lines.
-
-    The default timeout leaves room for ATS log buffering: with default records an
-    access or error log entry can take max_secs_per_buffer plus one
-    periodic_tasks_interval, about ten seconds, to reach disk.
 
     :param path: File path to poll.
     :param expression: Regular expression matched against the file contents.

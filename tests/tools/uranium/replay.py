@@ -246,8 +246,12 @@ class ReplayTest:
                     "wait_for_cache": 1,
                 },
         }
+        # ATS writes a log buffer when it is max_secs_per_buffer old, checked every
+        # periodic_tasks_interval, both 5 s by default. At 1 s each, an entry reaches disk within a
+        # few seconds, so a test can read its logs without a long wait.
+        records["log"] = {"max_secs_per_buffer": 1, "periodic_tasks_interval": 1}
         if process_config.get("disable_log_rolling", True):
-            records["log"] = {"rolling_enabled": 0}
+            records["log"]["rolling_enabled"] = 0
         if not enable_cache:
             records["http"]["cache"] = {"http": 0}
             records["http"].pop("wait_for_cache")
@@ -728,7 +732,7 @@ class ReplayTest:
         for check in checks:
             pattern = str(self._replace_runtime_placeholders(check.get("glob", check.get("path")), self.ats_paths))
             expected = bool(check.get("exists", True))
-            timeout = float(check.get("timeout", 30 if expected else 0))
+            timeout = float(check.get("timeout", 10 if expected else 0))
             deadline = time.monotonic() + timeout
 
             def matching_paths() -> list[Path]:

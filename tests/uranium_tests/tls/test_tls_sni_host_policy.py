@@ -162,7 +162,7 @@ def verify_diagnostics(*, _ats: ATS) -> None:
     assert "SNI/hostname mismatch sni=ellen host=fran" not in diagnostics
     assert "SNI/hostname mismatch sni=other.example.com host=noipallow.example.com" not in diagnostics
 
-    wait_for_file_lines(_ats.error_log, re.escape("for host='bob' sni='dave', returning a 403"), 1, timeout=30)
+    wait_for_file_lines(_ats.error_log, re.escape("for host='bob' sni='dave', returning a 403"), 1)
 
 
 def test_tls_sni_host_policy(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
