@@ -24,8 +24,16 @@
 #include "proxy/http/HttpSessionManager.h"
 #include "proxy/http/HttpConfig.h"
 
+#include <proxy/PoolableSession.h>
+#include <iocore/net/SessionSharingAPIEnums.h>
+#include <tscore/CryptoHash.h>
+#include <tscore/ink_assert.h>
+#include <tscore/ink_inet.h>
+#include <tsutil/Metrics.h>
+
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -128,7 +136,7 @@ private:
 };
 
 /// The pool bookkeeping updates this gauge, which is normally initialized via HttpConfig.
-/// Create it here (when needed) and reset it on entry and on every exit path so tests don't leak state.
+/// Create it here (when needed) and restore its prior value on every exit path so tests don't leak state.
 class PooledConnectionsGaugeGuard
 {
 public:
@@ -137,15 +145,18 @@ public:
     if (http_rsb.pooled_server_connections == nullptr) {
       http_rsb.pooled_server_connections = Metrics::Gauge::createPtr("proxy.process.http.pooled_server_connections");
     }
-    Metrics::Gauge::store(http_rsb.pooled_server_connections, 0);
+    _saved = Metrics::Gauge::load(http_rsb.pooled_server_connections);
   }
 
-  ~PooledConnectionsGaugeGuard() { Metrics::Gauge::store(http_rsb.pooled_server_connections, 0); }
+  ~PooledConnectionsGaugeGuard() { Metrics::Gauge::store(http_rsb.pooled_server_connections, _saved); }
 
   PooledConnectionsGaugeGuard(PooledConnectionsGaugeGuard const &)            = delete;
   PooledConnectionsGaugeGuard &operator=(PooledConnectionsGaugeGuard const &) = delete;
   PooledConnectionsGaugeGuard(PooledConnectionsGaugeGuard &&)                 = delete;
   PooledConnectionsGaugeGuard &operator=(PooledConnectionsGaugeGuard &&)      = delete;
+
+private:
+  int64_t _saved;
 };
 
 CryptoHash
