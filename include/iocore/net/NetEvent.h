@@ -26,6 +26,7 @@
 #include <atomic>
 
 #include "tscore/List.h"
+#include "tscore/TimerWheel.h"
 #include "iocore/eventsystem/VIO.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/EventIO.h"
@@ -45,6 +46,48 @@ struct NetState {
   int             triggered       = 0;
 
   NetState() : vio(VIO::NONE) {}
+};
+
+/** A NetEvent deadline. The owning thread reads it without the NetEvent's lock
+ * while other threads may write it, so accesses are relaxed atomics. A new
+ * deadline reaches the owner through the handoff list rearm_timer() uses, not
+ * through this type. += is a load and a store, not an RMW.
+ */
+class NetDeadline
+{
+public:
+  NetDeadline(ink_hrtime v = 0) : _v(v) {}
+  NetDeadline(NetDeadline const &that) : _v(that.load()) {}
+
+  NetDeadline &
+  operator=(ink_hrtime v)
+  {
+    _v.store(v, std::memory_order_relaxed);
+    return *this;
+  }
+
+  NetDeadline &
+  operator=(NetDeadline const &that)
+  {
+    return *this = that.load();
+  }
+
+  NetDeadline &
+  operator+=(ink_hrtime delta)
+  {
+    return *this = load() + delta;
+  }
+
+  ink_hrtime
+  load() const
+  {
+    return _v.load(std::memory_order_relaxed);
+  }
+
+  operator ink_hrtime() const { return load(); }
+
+private:
+  std::atomic<ink_hrtime> _v;
 };
 
 // this class is used to NetHandler to hide some detail of NetEvent.
@@ -74,6 +117,19 @@ public:
 
   // Close when EventIO close;
   virtual int close() = 0;
+
+  /** Whether one of this object's own callbacks is on the stack.
+
+      A caller that reclaims on behalf of some other thread must not free an
+      object whose handler is still running, because that handler reads the
+      object again as it unwinds. Subclasses that re-enter their continuation
+      report it here; the default is for those that cannot.
+   */
+  virtual bool
+  handler_on_stack() const
+  {
+    return false;
+  }
 
   bool has_error() const;
   void set_error_from_socket();
@@ -117,23 +173,62 @@ public:
   ink_hrtime active_timeout_in = 0;
 
   /** The time of the next inactivity timeout. */
-  ink_hrtime next_inactivity_timeout_at = 0;
+  NetDeadline next_inactivity_timeout_at;
 
   /** The time of the next activity timeout. */
-  ink_hrtime next_activity_timeout_at = 0;
-  ink_hrtime submit_time              = 0;
+  NetDeadline next_activity_timeout_at;
+  ink_hrtime  submit_time = 0;
 
   /** Whether the current timeout is a default inactivity timeout. */
   bool use_default_inactivity_timeout = false;
 
   LINK(NetEvent, open_link);
-  LINK(NetEvent, cop_link);
   LINKM(NetEvent, read, ready_link)
   SLINKM(NetEvent, read, enable_link)
   LINKM(NetEvent, write, ready_link)
   SLINKM(NetEvent, write, enable_link)
   LINK(NetEvent, keep_alive_queue_link);
   LINK(NetEvent, active_queue_link);
+  LINK(NetEvent, timer_link);
+  TimerWheelHook timer_hook;
+
+  /// Bits of @a handoff. Only the owning thread may touch its timer wheel, so
+  /// other threads queue the NetEvent on NetHandler::handoff_list instead;
+  /// NetHandler::process_handoffs() consumes it there.
+  static constexpr uint8_t HANDOFF_QUEUED  = 1; ///< On handoff_list.
+  static constexpr uint8_t HANDOFF_CLOSING = 2; ///< Closed by another thread; the owner must not free it yet.
+  std::atomic<uint8_t>     handoff{0};
+  SLINK(NetEvent, handoff_link);
+
+  /** Re-arm this NetEvent's slot in its NetHandler's timer wheel.
+   *
+   * Required after any change that makes a deadline earlier - setting a
+   * timeout, shortening one, or closing. Extending needs no call: the wheel
+   * re-reads the real deadline when the bucket comes due. Safe from any thread:
+   * off the owning thread it is handed to the owner and applied on its next
+   * loop.
+   */
+  void rearm_timer();
+
+  /** Follow a change to default_inactivity_timeout_in, which was @a previous_in.
+   *
+   * A deadline the default produced must move with it. Otherwise a shorter
+   * override, such as a per-remap default installed after the global one armed
+   * the connection, would be ignored until the old deadline: netActivity() only
+   * extends deadlines and never re-arms. Keeps the idle time already accrued.
+   */
+  void rebase_default_inactivity_deadline(ink_hrtime previous_in);
+
+  /** Arm the default inactivity timeout on an enabled NetEvent that has no
+   * inactivity deadline, replacing any explicit timeout, and re-arm the wheel.
+   *
+   * The wheel only revisits scheduled NetEvents, so every path that can leave
+   * an enabled NetEvent without a deadline must call this; the pre-wheel cop
+   * applied the same rule to every open NetEvent once a second.
+   *
+   * @return @c true if the default was armed.
+   */
+  bool arm_default_inactivity_timeout();
 
   /// Values for @a f.shutdown
   static constexpr unsigned SHUTDOWN_READ  = 1;

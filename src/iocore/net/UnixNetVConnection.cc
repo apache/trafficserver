@@ -95,6 +95,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null read.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -129,6 +130,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null write.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -272,8 +274,10 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   // Only the thread that owns a NetHandler ever holds its mutex, so check the thread before the
   // holder. A migration closes the VC from another thread while the owner locks and unlocks that
   // mutex, and reading the holder from there would race with those writes.
-  EThread *t            = this_ethread();
-  bool     close_inline = !recursion && (!nh || (nh->thread == t && nh->mutex->thread_holding == t));
+  EThread    *t            = this_ethread();
+  bool        close_inline = !recursion && (!nh || (nh->thread == t && nh->mutex->thread_holding == t));
+  bool const  on_owner     = (t == this->thread);
+  NetHandler *owner_nh     = nh;
 
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
@@ -282,10 +286,19 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 
   // Must mark for closed last in case this is a
   // cross thread migration scenario.
-  if (alerrno == -1) {
-    closed = 1;
-  } else {
-    closed = -1;
+  int const closed_value = (alerrno == -1) ? 1 : -1;
+
+  // Only the owning thread may touch the timer wheel, so a foreign close hands
+  // the NetEvent back for the owner to free, even when it holds the owner's
+  // NetHandler mutex. It must not touch this NetEvent afterwards.
+  if (owner_nh && !on_owner) {
+    owner_nh->close_from_foreign_thread(this, closed_value);
+    return;
+  }
+
+  closed = closed_value;
+  if (on_owner) {
+    this->rearm_timer();
   }
 
   if (close_inline) {
@@ -456,8 +469,12 @@ UnixNetVConnection::set_enabled(VIO *vio)
   ink_assert(vio->mutex->thread_holding == this_ethread() && thread);
   ink_release_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
+
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
+    rearm_timer();
+  } else {
+    arm_default_inactivity_timeout();
   }
 }
 
@@ -954,10 +971,26 @@ void
 UnixNetVConnection::netActivity()
 {
   Dbg(dbg_ctl_socket, "net_activity updating inactivity %" PRId64 ", NetVC=%p", this->inactivity_timeout_in, this);
+  ink_hrtime const default_timeout_in = this->default_inactivity_timeout_in.load(std::memory_order_relaxed);
+  // Setting a deadline is normally an extension, which needs no wheel work:
+  // the wheel re-reads the real deadline when the bucket comes due. The
+  // exception is the 0 -> armed transition (a default that was 0 at
+  // set_enabled(), or a deadline mainEvent() cleared after delivering a
+  // timeout): the vc may not be in the wheel at all, so re-arm on that
+  // transition only and keep the steady-state hot path free of wheel work.
+  bool const was_unarmed = this->next_inactivity_timeout_at == 0;
+
   if (this->inactivity_timeout_in) {
     this->next_inactivity_timeout_at = ink_get_hrtime() + this->inactivity_timeout_in;
+  } else if (default_timeout_in > 0) {
+    this->use_default_inactivity_timeout = true;
+    this->next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
   } else {
     this->next_inactivity_timeout_at = 0;
+    return;
+  }
+  if (was_unarmed) {
+    this->rearm_timer();
   }
 }
 
@@ -1038,13 +1071,16 @@ UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
   if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
       (read.vio.mutex && rlock.get_mutex() != read.vio.mutex.get()) ||
       (write.vio.mutex && wlock.get_mutex() != write.vio.mutex.get())) {
+    // The cop has already popped this vc from the wheel; put it back so the
+    // timeout is retried on a later tick.
+    rearm_timer();
     return EVENT_CONT;
   }
 
   int           signal_event;
   Continuation *reader_cont       = nullptr;
   Continuation *writer_cont       = nullptr;
-  ink_hrtime   *signal_timeout_at = nullptr;
+  NetDeadline  *signal_timeout_at = nullptr;
 
   switch (event) {
   // Treating immediate as inactivity timeout for any
@@ -1066,7 +1102,8 @@ UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
   }
 
   *signal_timeout_at = 0;
-  writer_cont        = write.vio.cont;
+  rearm_timer();
+  writer_cont = write.vio.cont;
 
   if (closed) {
     nh->free_netevent(this);
@@ -1086,6 +1123,10 @@ UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
       return EVENT_DONE;
     }
   }
+  // Still alive, so the handler kept the connection. If it left it enabled
+  // without a new inactivity deadline, fall back to the default as the
+  // pre-wheel cop did on its next sweep.
+  arm_default_inactivity_timeout();
   return EVENT_DONE;
 }
 
@@ -1217,6 +1258,11 @@ UnixNetVConnection::clear()
   next_activity_timeout_at   = 0;
   inactivity_timeout_in      = 0;
   active_timeout_in          = 0;
+  // stopCop() is the authoritative cancel, called while nh is still valid. A
+  // still-scheduled element here means some teardown path bypassed stopCop,
+  // leaving a dangling wheel entry into freed memory -- fail loudly in debug
+  // rather than paper over it with a redundant cancel.
+  ink_assert(!get_NetHandler(this_ethread())->timer_wheel.is_scheduled(this));
 
   // clear variables for reuse
   this->mutex.clear();
@@ -1310,13 +1356,16 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
   Dbg(dbg_ctl_socket, "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
   next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + inactivity_timeout_in : 0;
+  if (!arm_default_inactivity_timeout()) {
+    rearm_timer();
+  }
 }
 
 TS_INLINE void
 UnixNetVConnection::set_default_inactivity_timeout(ink_hrtime timeout_in)
 {
   Dbg(dbg_ctl_socket, "Set default inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
-  default_inactivity_timeout_in = timeout_in;
+  rebase_default_inactivity_deadline(default_inactivity_timeout_in.exchange(timeout_in));
 }
 
 TS_INLINE bool
