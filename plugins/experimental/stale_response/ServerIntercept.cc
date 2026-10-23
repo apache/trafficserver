@@ -26,6 +26,7 @@
 #include "ts/ts.h"
 #include "ts_wrap.h"
 
+#include <cinttypes>
 #include <climits>
 #include <cstdio>
 #include <cstring>
@@ -37,7 +38,6 @@
 using namespace std;
 
 #define PLUGIN_TAG_SERV "stale_response_intercept"
-const int64_t c_max_single_write = 64 * 1024;
 
 DEF_DBG_CTL(TAG_SERV)
 
@@ -74,7 +74,6 @@ struct SContData {
 
   ConfigInfo *plugin_config;
   BodyData   *pBody;
-  uint32_t    next_chunk_written;
 
   SContData(TSCont cont)
     : net_vc(0),
@@ -87,8 +86,7 @@ struct SContData {
       conn_setup(false),
       write_setup(false),
       plugin_config(nullptr),
-      pBody(nullptr),
-      next_chunk_written(0)
+      pBody(nullptr)
   {
     http_parser = TSHttpParserCreate();
   }
@@ -152,51 +150,54 @@ connShutdownDataDestory(SContData *cont_data)
 }
 
 /*-----------------------------------------------------------------------------------------------*/
+// Move the entire body into the output buffer before arming the write. The
+// write then completes as the consumer drains the buffer, without depending
+// on a VCONN_WRITE_READY callback to refill it.
 static bool
 writeOutData(SContData *cont_data)
 {
-  int64_t  total_current_write = 0;
-  uint32_t max_chunk_count     = cont_data->pBody->getChunkCount();
-  for (uint32_t chunk_index = cont_data->next_chunk_written; chunk_index < max_chunk_count; chunk_index++) {
+  int64_t        total_written = 0;
+  uint32_t const chunk_count   = cont_data->pBody->getChunkCount();
+  for (uint32_t chunk_index = 0; chunk_index < chunk_count; ++chunk_index) {
     const char *start;
     int64_t     avail;
     if (!cont_data->pBody->getChunk(chunk_index, &start, &avail)) {
-      SRDBG(TAG_BAD, "[%s] Error while getting chunk_index %d", __FUNCTION__, chunk_index);
-      TSError("[%s] Error while getting chunk_index %d", __FUNCTION__, chunk_index);
-      break;
+      SRDBG(TAG_BAD, "[%s] Error while getting chunk_index %u", __FUNCTION__, chunk_index);
+      TSError("[%s] Error while getting chunk_index %u", __FUNCTION__, chunk_index);
+      return false;
     }
     if (TSIOBufferWrite(cont_data->output.buffer, start, avail) != avail) {
-      SRDBG(TAG_BAD, "[%s] Error while writing content avail=%d", __FUNCTION__, (int)avail);
+      SRDBG(TAG_BAD, "[%s] Error while writing content avail=%" PRId64, __FUNCTION__, avail);
+      TSError("[%s] Error while writing content avail=%" PRId64, __FUNCTION__, avail);
+      return false;
     }
     cont_data->pBody->removeChunk(chunk_index);
-    total_current_write           += avail;
-    cont_data->next_chunk_written  = chunk_index + 1;
-    if (total_current_write >= c_max_single_write) {
-      break;
-    }
+    total_written += avail;
   }
-  TSVIOReenable(cont_data->output.vio);
-
-  // SRDBG(TAG_SERV, "[%s] written=%d done=%d", __FUNCTION__, (int)total_current_write,(cont_data->next_chunk_written >=
-  // max_chunk_count));
-  return (cont_data->next_chunk_written >= max_chunk_count);
+  if (total_written != cont_data->pBody->getSize()) {
+    SRDBG(TAG_BAD, "[%s] Wrote %" PRId64 " of %" PRId64 " bytes", __FUNCTION__, total_written, cont_data->pBody->getSize());
+    return false;
+  }
+  return true;
 }
 
 /*-----------------------------------------------------------------------------------------------*/
-void
+static bool
 writeSetup(SContData *cont_data)
 {
-  if (!cont_data->write_setup) {
-    cont_data->write_setup   = true;
-    cont_data->output.buffer = TSIOBufferCreate();
-    cont_data->output.reader = TSIOBufferReaderAlloc(cont_data->output.buffer);
-    cont_data->output.vio    = TSVConnWrite(cont_data->net_vc, cont_data->contp, cont_data->output.reader, INT_MAX);
-    // set the total length to write
-    TSVIONBytesSet(cont_data->output.vio, cont_data->pBody->getSize());
-    SRDBG(TAG_SERV, "[%s] Done length=%d", __FUNCTION__, (int)cont_data->pBody->getSize());
-  } else {
+  if (cont_data->write_setup) {
     SRDBG(TAG_BAD, "[%s] Already init", __FUNCTION__);
+    return true;
   }
+  cont_data->write_setup   = true;
+  cont_data->output.buffer = TSIOBufferCreate();
+  cont_data->output.reader = TSIOBufferReaderAlloc(cont_data->output.buffer);
+  if (!writeOutData(cont_data)) {
+    return false;
+  }
+  cont_data->output.vio = TSVConnWrite(cont_data->net_vc, cont_data->contp, cont_data->output.reader, cont_data->pBody->getSize());
+  SRDBG(TAG_SERV, "[%s] Done length=%" PRId64, __FUNCTION__, cont_data->pBody->getSize());
+  return true;
 }
 
 /*-----------------------------------------------------------------------------------------------*/
@@ -276,8 +277,10 @@ serverIntercept(TSCont contp, TSEvent event, void *edata)
     }
     // VCONN_READ_READY should not happen again since we dont reenable input.vio
     if (cont_data->req_hdr_parsed && !cont_data->write_setup) {
-      writeSetup(cont_data);
-      writeOutData(cont_data);
+      if (!writeSetup(cont_data)) {
+        SRDBG(TAG_BAD, "[%s] {%u} writeSetup failed", __FUNCTION__, cont_data->pBody->key_hash);
+        shutdown = true;
+      }
     }
     break;
 
@@ -293,9 +296,8 @@ serverIntercept(TSCont contp, TSEvent event, void *edata)
     break;
 
   case TS_EVENT_VCONN_WRITE_READY:
-    // SRDBG(TAG_SERV, "[%s] {%u} vconn write ready event %d", __FUNCTION__,cont_data->pBody->key_hash,event);
-    // trying not to write out the whole body at once if its big
-    writeOutData(cont_data);
+    // The whole body is already in the output buffer.
+    SRDBG(TAG_SERV, "[%s] {%u} vconn write ready event %d", __FUNCTION__, cont_data->pBody->key_hash, event);
     break;
 
   case TS_EVENT_VCONN_WRITE_COMPLETE:
