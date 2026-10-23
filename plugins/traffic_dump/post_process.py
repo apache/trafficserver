@@ -186,7 +186,7 @@ def write_sessions(sessions, filename, indent):
     """
     new_json = deepcopy(TEMPLATE)
     new_json["sessions"] = deepcopy(sessions)
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf-8", errors="surrogateescape") as f:
         json.dump(new_json, f, ensure_ascii=False, indent=indent)
         logging.debug(f"{filename} has {len(sessions)} sessions")
 
@@ -200,6 +200,9 @@ class ParseJSONError(PostProcessError):
 def parse_json(replay_file):
     """ Open and parse the replay_file.
 
+    Captured headers and bodies may contain non-UTF-8 bytes. Preserve them
+    with surrogateescape so write_sessions can write the original bytes.
+
     Args:
         replay_file (string) The file with JSON content to parse.
 
@@ -208,15 +211,16 @@ def parse_json(replay_file):
         parsing the file.
     """
     try:
-        fd = open(replay_file, 'r')
+        fd = open(replay_file, 'r', encoding='utf-8', errors='surrogateescape')
     except Exception as e:
         logging.exception("Failed to open %s.", replay_file)
         raise ParseJSONError(e)
 
     try:
-        parsed_json = json.load(fd)
+        with fd:
+            parsed_json = json.load(fd)
     except Exception as e:
-        message = e.msg.split(':')[0]
+        message = str(e).split(':')[0]
         logging.error("Failed to load %s as a JSON object: %s", replay_file, e)
         raise ParseJSONError(message)
 
