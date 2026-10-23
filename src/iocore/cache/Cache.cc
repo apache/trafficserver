@@ -238,7 +238,14 @@ Cache::open_done()
           type  = ht->getType();
           cache = ht->getCache();
         }
-        ppt->reset(new CacheHostTable(cache, type, ctx));
+        auto new_table = std::make_unique<CacheHostTable>(cache, type, ctx);
+        if (!new_table->is_valid()) {
+          CfgLoadFail(ctx,
+                      "%s failed to load: %d invalid entries or no volumes for generic hostnames, keeping previous configuration",
+                      ts::filename::HOSTING, new_table->getNumErrors());
+          return;
+        }
+        ppt->reset(new_table.release());
         CfgLoadComplete(ctx, "%s finished loading", ts::filename::HOSTING);
       },
       config::ConfigSource::FileOnly,           // no RPC content source. Legacy for now.

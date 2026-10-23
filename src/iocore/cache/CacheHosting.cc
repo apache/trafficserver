@@ -142,7 +142,7 @@ CacheHostMatcher::Match(std::string_view rdata, CacheHostResult *result) const
 //   Creates a new host/domain record
 //
 
-void
+bool
 CacheHostMatcher::NewEntry(matcher_line *line_info)
 {
   CacheHostRecord *cur_d;
@@ -175,14 +175,14 @@ CacheHostMatcher::NewEntry(matcher_line *line_info)
   if (errNo) {
     // There was a problem so undo the effects this function
     memset(static_cast<void *>(cur_d), 0, sizeof(CacheHostRecord));
-    return;
+    return false;
   }
   Dbg(dbg_ctl_cache_hosting, "hostname: %s, host record: %p", match_data, cur_d);
   // Fill in the matching info
   host_lookup->NewEntry(match_data, (line_info->type == MATCH_DOMAIN) ? true : false, cur_d);
 
   num_el++;
-  return;
+  return true;
 }
 
 /*************************************************************
@@ -282,6 +282,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
       if (errPtr != nullptr) {
         CfgLoadLog(ctx, DL_Warning, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num, errPtr);
+        m_numErrors++;
         ats_free(current);
       } else {
         // Line parsed ok.  Figure out what the destination
@@ -347,6 +348,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
           current->line[0][current->dest_entry] = nullptr;
         } else {
           CfgLoadLog(ctx, DL_Warning, "Problems encountered while initializing the Generic Volume");
+          m_numErrors++;
         }
 
         current->num_el--;
@@ -354,14 +356,16 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
           generic_rec_initd = 1;
         } else {
           CfgLoadLog(ctx, DL_Warning, "Problems encountered while initializing the Generic Volume");
+          m_numErrors++;
         }
 
-      } else {
-        hostMatch->NewEntry(current);
+      } else if (!hostMatch->NewEntry(current)) {
+        m_numErrors++;
       }
     } else {
       CfgLoadLog(ctx, DL_Warning, "%s discarding %s entry with unknown type at line %d", matcher_name, config_file_path,
                  current->line_num);
+      m_numErrors++;
     }
 
     // Deallocate the parsing structure
@@ -376,6 +380,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     const char *cache_type = (type == CacheType::HTTP) ? "http" : "mixt";
     CfgLoadLog(ctx, DL_Warning, "No Volumes specified for Generic Hostnames for %s documents: %s cache will be disabled",
                cache_type, cache_type);
+    m_numErrors++;
   }
 
   ink_assert(second_pass == numEntries);
@@ -398,7 +403,8 @@ CacheHostTable::BuildTable(const char *config_file_path, ConfigContext ctx)
       CfgLoadLog(ctx, DL_Warning, "Cannot open the config file: %s - %s", config_file_path, strerror(ec.value()));
       break;
     default:
-      CfgLoadFail(ctx, "%s failed to load: %s", config_file_path, strerror(ec.value()));
+      CfgLoadLog(ctx, DL_Error, "%s failed to load: %s", config_file_path, strerror(ec.value()));
+      m_numErrors++;
       gen_host_rec.Init(type);
       return 0;
     }
@@ -508,7 +514,8 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
           *s            = '\0';
           volume_number = atoi(vol_no);
 
-          cachep = cp_list.head;
+          is_vol_present = 0;
+          cachep         = cp_list.head;
           for (; cachep; cachep = cachep->link.next) {
             if (cachep->vol_number == volume_number) {
               is_vol_present = 1;
