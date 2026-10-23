@@ -104,7 +104,8 @@ class TestAssignments:
         ast = _build(src)
         a = ast.body[0].body[0]
         assert isinstance(a, Assignment)
-        assert a.value == ParamRef(raw="tag")
+        # The span is the `$tag` token, not the statement: it is what names the unbound one.
+        assert a.value == ParamRef(raw="tag", span=Span(file=SystemDefaults.DEFAULT_FILENAME, line=2, column=26))
 
 
 class TestFunctionCalls:
@@ -274,6 +275,7 @@ class TestConditionExpressions:
         assert isinstance(cond, Comparison)
         assert cond.operator == "~"
         assert isinstance(cond.right, RegexValue)
+        assert cond.right.raw == "/\\.php$/"
 
     def test_in_set(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path in ["a", "b"] {\n        set-debug();\n    }\n}')
