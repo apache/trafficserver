@@ -21,3 +21,10 @@ target_include_directories(test_traffic_dump PRIVATE "${PROJECT_SOURCE_DIR}")
 target_link_libraries(test_traffic_dump PRIVATE Catch2::Catch2WithMain)
 
 add_catch2_test(NAME test_traffic_dump COMMAND test_traffic_dump)
+
+find_package(Python3 3.11 QUIET COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+  add_test(NAME test_traffic_dump_post_process COMMAND ${Python3_EXECUTABLE}
+                                                       ${CMAKE_CURRENT_SOURCE_DIR}/test_post_process.py
+  )
+endif()
