@@ -26,6 +26,7 @@ Proxy Cache Configuration
    :maxdepth: 2
 
    session-protocol.en
+   http2-to-origin.en
    cache-basics.en
    redirecting-http-requests.en
    explicit-forward-proxying.en
