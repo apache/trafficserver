@@ -401,6 +401,13 @@ SYNTHETIC = [
             procedure='procedure syn::p($a, $b = $a) {\n    inbound.req.X-B = $b;\n}\n',
             cst_bug=CstBug.MISATTRIBUTES),
         id="default-naming-an-unbound-param"),
+    pytest.param(
+        Case(
+            'use syn::p\nREMAP {\n    syn::p("1", "2");\n}\n',
+            procedure='procedure syn::p($a = "x", $b) {\n    inbound.req.X-A = "$a$b";\n}\n',
+            cst_bug=CstBug.ACCEPTS,
+            sema_error="procedure 'syn::p': required parameter '$b' must not follow an optional parameter"),
+        id="required-after-optional-in-a-used-file"),
 ]
 
 
