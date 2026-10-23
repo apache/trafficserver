@@ -72,6 +72,8 @@ class CstBug(Enum):
     # instead of a diagnostic. Sema collects the same error and carries on, which is the
     # behaviour the collector was asked for.
     RAISES = auto()
+    # Accepts what Sema rejects with the case's `sema_error`.
+    ACCEPTS = auto()
 
 
 CST_BUGS = {"procedures/wrong-arity": CstBug.RAISES}
@@ -142,10 +144,12 @@ def test_front_ends_agree(input_file: Path, collect: bool) -> None:
     _assert_outcomes(old, new, collect=collect, cst_bug=CST_BUGS.get(_case_id(input_file)))
 
 
-def _assert_outcomes(old: Outcome, new: Outcome, *, collect: bool, cst_bug: CstBug | None) -> None:
+def _assert_outcomes(old: Outcome, new: Outcome, *, collect: bool, cst_bug: CstBug | None, sema_error: str | None = None) -> None:
     match cst_bug:
         case CstBug.RAISES if collect:
             _assert_collects_what_cst_raises(old, new)
+        case CstBug.ACCEPTS:
+            _assert_sema_rejects_what_cst_accepts(old, new, sema_error)
         case _:
             _assert_agree(old, new, collect=collect)
 
@@ -165,6 +169,14 @@ def _assert_collects_what_cst_raises(old: Outcome, new: Outcome) -> None:
     assert old.raised is not None, "no longer raises; drop its CstBug"
     assert new.raised is None
     assert new.errors[:1] == (old.raised,)
+
+
+def _assert_sema_rejects_what_cst_accepts(old: Outcome, new: Outcome, message: str | None) -> None:
+    assert old.raised is None and not old.errors, "the CST emitter rejects it too; drop its CstBug"
+    reported = new.errors[:1]
+    if new.raised is not None:
+        reported = (new.raised,)
+    assert [e[3] for e in reported] == [message]
 
 
 def _conf(lines: list[str] | None) -> str:
@@ -211,6 +223,7 @@ class Case:
     comments: bool = True
     procedure: str | None = None  # written to <tmp>/procs/syn/p.hrw4u, reachable as `use syn::p`
     cst_bug: CstBug | None = None
+    sema_error: str | None = None  # with CstBug.ACCEPTS
 
 
 SYNTHETIC = [
@@ -361,6 +374,13 @@ SYNTHETIC = [
             procedure='procedure syn::p($b) {\n    inbound.req.X-A = $b;\n}\n'
             'procedure syn::q($a) {\n    syn::p("{bogus} $a");\n}\n'),
         id="interpolation-note-in-a-nested-call-argument"),
+    pytest.param(
+        Case(
+            'procedure syn::inner($x = $a) {\n    inbound.req.X-A = $x;\n}\n'
+            'procedure syn::outer($a) {\n    syn::inner();\n}\nREMAP {\n    syn::outer("v");\n}\n',
+            cst_bug=CstBug.ACCEPTS,
+            sema_error="'$a' used outside procedure context"),
+        id="default-naming-a-caller-param"),
 ]
 
 
@@ -382,4 +402,4 @@ def test_front_ends_agree_on_uncovered_constructs(case: Case, collect: bool, tmp
     old = _run("cst", tree, "<synthetic>", case.source, collect=collect, **kwargs)
     new = _run("sema", tree, "<synthetic>", case.source, collect=collect, **kwargs)
 
-    _assert_outcomes(old, new, collect=collect, cst_bug=case.cst_bug)
+    _assert_outcomes(old, new, collect=collect, cst_bug=case.cst_bug, sema_error=case.sema_error)
