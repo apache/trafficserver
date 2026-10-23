@@ -338,6 +338,17 @@ SYNTHETIC = [
             procedure='procedure syn::p($a) {\n    inbound.req.X-A = $a;\n}\n',
             cst_raises=True),
         id="param-ref-passed-to-a-procedure-outside-one"),
+    pytest.param(
+        Case(
+            'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
+            procedure='procedure syn::p($a) {\n    inbound.req.X-A = "{bogus} $a";\n}\n'),
+        id="interpolation-note-in-a-procedure"),
+    pytest.param(
+        Case(
+            'use syn::p\nREMAP {\n    syn::q("v");\n}\n',
+            procedure='procedure syn::p($b) {\n    inbound.req.X-A = $b;\n}\n'
+            'procedure syn::q($a) {\n    syn::p("{bogus} $a");\n}\n'),
+        id="interpolation-note-in-a-nested-call-argument"),
 ]
 
 

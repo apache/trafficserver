@@ -473,7 +473,7 @@ class Sema:
     def _binding_text(self, value, span: ast.Span) -> str:
         """A binding is plain text: a string literal contributes its inner text."""
         if isinstance(value, ast.LiteralStringValue):
-            return ir.value_text(self._template(value.raw, span))[1:-1]
+            return ir.value_text(self._template(value, span))[1:-1]
         if isinstance(value, ast.ParamRef):
             # _substitute replaced every bound `$param`, so one left here is unbound.
             raise self._unbound_param(value.raw, value.span or span)
@@ -486,7 +486,7 @@ class Sema:
 
         def sub_string(value):
             if isinstance(value, ast.LiteralStringValue):
-                return ast.LiteralStringValue(raw=sub_text(value.raw))
+                return ast.LiteralStringValue(raw=sub_text(value.raw), written=value.written or value.raw)
             return value
 
         def sub_value(value):
@@ -538,7 +538,7 @@ class Sema:
             case ast.NumberValue() | ast.IdentValue() | ast.BoolValue() | ast.IPValue():
                 return ir.RawArg(text=node.raw)
             case ast.LiteralStringValue():
-                return self._template(node.raw, span)
+                return self._template(node, span)
             case ast.ParamRef():
                 # Unsubstituted: the entry's validator produces the diagnostic.
                 return ir.RawArg(text=f"${node.raw}")
@@ -561,13 +561,14 @@ class Sema:
             return f'"{node.raw}"'
         return ir.value_text(self._value(node, span))
 
-    def _template(self, inner: str, span: ast.Span) -> ir.StrTemplate:
+    def _template(self, literal: ast.LiteralStringValue, span: ast.Span) -> ir.StrTemplate:
+        inner = literal.raw
         parts: list[str | ir.BuiltinRef | ir.VarRef | ir.ModifiedRef] = []
         pos = 0
         for m in RegexPatterns.SUBSTITUTE_PATTERN.finditer(inner):
             if m.start() > pos:
                 parts.append(inner[pos:m.start()])
-            parts.append(self._template_part(m, span, inner))
+            parts.append(self._template_part(m, span, literal.written or inner))
             pos = m.end()
         if pos < len(inner):
             parts.append(inner[pos:])

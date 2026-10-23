@@ -61,6 +61,7 @@ __all__ = [
 @dataclass(frozen=True, kw_only=True)
 class LiteralStringValue:
     raw: str
+    written: str | None = None  # `raw` before `$param` substitution, which diagnostics quote
 
 
 @dataclass(frozen=True, kw_only=True)
