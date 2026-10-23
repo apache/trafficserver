@@ -108,9 +108,9 @@ def wait_for_crash_log(*, _ats: ATS) -> Path:
 
     deadline = time.monotonic() + 60
     while time.monotonic() < deadline:
-        matches = list(_ats.log_directory.glob("crash-*.log"))
-        if matches and "Other Non-Crashing Threads:" in matches[0].read_text(errors="replace"):
-            return matches[0]
+        matches = sorted(_ats.log_directory.glob("crash-*.log"), key=lambda p: p.stat().st_mtime)
+        if matches and "Other Non-Crashing Threads:" in matches[-1].read_text(errors="replace"):
+            return matches[-1]
         time.sleep(0.1)
     raise AssertionError("traffic_crashlog did not produce a complete crash report")
 

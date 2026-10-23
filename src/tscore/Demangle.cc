@@ -55,11 +55,10 @@ describe_current_exception() noexcept
 {
   std::exception_ptr const ep = std::current_exception();
 
-  if (!ep) {
-    return "no active exception";
-  }
-
   try {
+    if (!ep) {
+      return "no active exception";
+    }
     try {
       std::rethrow_exception(ep);
     } catch (std::exception const &ex) {

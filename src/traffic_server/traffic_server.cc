@@ -1975,11 +1975,13 @@ configure_io_uring()
 
 // Runs when an exception escapes on any thread. The terminate handler runs
 // before the stack unwinds, so aborting from here keeps the throwing frame in
-// the core. Catching in main() instead would unwind those frames first and
-// would miss other threads entirely. main() installs this before
-// init_system() registers the crash handler, and before crash_logger_init()
-// starts the crash logger. A throw in that window still aborts and dumps a
-// core, but writes no crash log.
+// the core. The one exception is a throw that leaves a noexcept function: the
+// runtime unwinds to that function's frame before it calls terminate, so the
+// core loses the frames between the throw and it. Catching in main() instead
+// would unwind those frames first and would miss other threads entirely. main()
+// installs this before init_system() registers the crash handler, and before
+// crash_logger_init() starts the crash logger. A throw in that window still
+// aborts and dumps a core, but writes no crash log.
 [[noreturn]] void
 abort_on_uncaught_exception()
 {
