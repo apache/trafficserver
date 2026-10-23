@@ -25,6 +25,7 @@
 #include "../../iocore/net/P_UnixNetVConnection.h"
 #include "../../iocore/net/P_SSLClientUtils.h"
 #include "tsutil/DbgCtl.h"
+#include "tscore/ink_error.h"
 #include "proxy/http/ConnectingEntry.h"
 #include "proxy/http/HttpSM.h"
 
@@ -38,7 +39,14 @@ DbgCtl dbg_ctl_http_connect{"http_connect"};
 ConnectingEntry::~ConnectingEntry()
 {
   if (_conn_track_group) {
-    _conn_track_group->release();
+    // Group::release() can throw (e.g. std::system_error from its table lock), but a destructor is implicitly noexcept.
+    try {
+      _conn_track_group->release();
+    } catch (std::exception const &e) {
+      ink_abort("exception escaped %s: %s", __func__, e.what());
+    } catch (...) {
+      ink_abort("exception escaped %s", __func__);
+    }
   }
   if (_netvc_read_buffer != nullptr) {
     free_MIOBuffer(_netvc_read_buffer);
