@@ -97,7 +97,10 @@ public:
   ~ConfigContext();
 
   // Copy only - move is intentionally suppressed.
-  // ConfigContext holds a weak_ptr (cheap to copy) and a YAML::Node (ref-counted).
+  // ConfigContext holds a weak_ptr to the task and a shared_ptr to the RPC-supplied
+  // YAML and reload directives, so a copy is at most two reference-count increments.
+  // Keep it that small: it is passed by value everywhere (see the size check in
+  // ConfigContext.cc).
   // Suppressing move ensures that std::move(ctx) silently copies, keeping the
   // original valid. This is critical for execute_reload()'s post-handler check:
   // if a handler defers work (e.g. LogConfig), the original ctx must remain
@@ -186,7 +189,8 @@ public:
   /// @code
   ///   if (auto yaml = ctx.supplied_yaml()) { /* use yaml node */ }
   /// @endcode
-  /// @return copy of the supplied YAML node (cheap - YAML::Node is internally reference-counted).
+  /// @return copy of the supplied YAML node (cheap - YAML::Node is internally reference-counted),
+  ///         or a new Undefined node on each call when none was supplied.
   [[nodiscard]] YAML::Node supplied_yaml() const;
 
   /// Get reload directives extracted from the _reload key.
@@ -198,7 +202,8 @@ public:
   /// @code
   ///   if (auto directives = ctx.reload_directives()) { /* use directives */ }
   /// @endcode
-  /// @return copy of the directives YAML node (cheap - YAML::Node is internally reference-counted).
+  /// @return copy of the directives YAML node (cheap - YAML::Node is internally reference-counted),
+  ///         or a new Undefined node on each call when none were provided.
   [[nodiscard]] YAML::Node reload_directives() const;
 
 private:
@@ -213,9 +218,12 @@ private:
   /// Set reload directives. Only ConfigRegistry should call this during reload setup.
   void set_reload_directives(YAML::Node node);
 
+  /// Supplied YAML and reload directives, shared by every copy of this context.
+  /// Defined in ConfigContext.cc.
+  struct Payload;
+
   std::weak_ptr<ConfigReloadTask> _task;
-  YAML::Node                      _supplied_yaml{YAML::NodeType::Undefined};
-  YAML::Node                      _reload_directives{YAML::NodeType::Undefined};
+  std::shared_ptr<Payload const>  _payload; ///< null when nothing was supplied
 
   friend class ReloadCoordinator;
   friend class config::ConfigRegistry;

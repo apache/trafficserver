@@ -184,6 +184,21 @@ TEST_CASE("ConfigContext: supplied_yaml on default context has no content", "[co
   REQUIRE_FALSE(yaml.IsSequence());
 }
 
+TEST_CASE("ConfigContext: writing into a result does not fill a default context", "[config][context][directive]")
+{
+  ConfigContext const ctx;
+
+  {
+    auto yaml        = ctx.supplied_yaml();
+    yaml["rules"]    = "injected";
+    auto directives  = ctx.reload_directives();
+    directives["id"] = "injected";
+  }
+
+  REQUIRE_FALSE(ctx.supplied_yaml());
+  REQUIRE_FALSE(ctx.reload_directives());
+}
+
 TEST_CASE("ConfigContext: reload_directives round-trip via task", "[config][context][directive]")
 {
   auto          task = std::make_shared<ConfigReloadTask>("test-dir-1", "test", false, nullptr);
