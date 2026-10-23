@@ -29,6 +29,7 @@
 #include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
 #include "tscore/Random.h"
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <fstream>
@@ -187,7 +188,7 @@ dump_summary()
   double total_secs       = 0.0;
   for (int i = 0; i < orig_n_accessors; i++) {
     double secs    = (dev[i]->time_end - dev[i]->time_start) / 1000000000.0;
-    double ops_sec = (dev[i]->seq_reads + dev[i]->seq_writes + dev[i]->rand_reads) / secs;
+    double ops_sec = secs > 0.0 ? (dev[i]->seq_reads + dev[i]->seq_writes + dev[i]->rand_reads) / secs : 0.0;
     printf("%s: #sr:%d #sw:%d #rr:%d %0.1f secs %0.1f ops/sec\n", dev[i]->path, dev[i]->seq_reads, dev[i]->seq_writes,
            dev[i]->rand_reads, secs, ops_sec);
     total_secs       += secs;
@@ -198,20 +199,28 @@ dump_summary()
   printf("-----------------\n");
   printf("aggregate results\n");
   printf("-----------------\n");
-  total_secs /= orig_n_accessors;
-  float sr    = (total_seq_reads * seq_read_size) / total_secs;
-  sr         /= 1024.0 * 1024.0;
-  float sw    = (total_seq_writes * seq_write_size) / total_secs;
-  sw         /= 1024.0 * 1024.0;
-  float rr    = (total_rand_reads * rand_read_size) / total_secs;
-  rr         /= 1024.0 * 1024.0;
-  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_read\n", total_seq_reads, sr, total_seq_reads / total_secs,
-         total_seq_reads / total_secs / n_disk_path);
-  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_write\n", total_seq_writes, sw,
-         total_seq_writes / total_secs, total_seq_writes / total_secs / n_disk_path);
-  printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk rand_read\n", total_rand_reads, rr,
-         total_rand_reads / total_secs, total_rand_reads / total_secs / n_disk_path);
-  printf("%0.2f total mbytes/sec\n", sr + sw + rr);
+  if (orig_n_accessors > 0) {
+    total_secs /= orig_n_accessors;
+  }
+
+  if (total_secs > 0.0 && n_disk_path > 0) {
+    float sr  = (total_seq_reads * seq_read_size) / total_secs;
+    sr       /= 1024.0 * 1024.0;
+    float sw  = (total_seq_writes * seq_write_size) / total_secs;
+    sw       /= 1024.0 * 1024.0;
+    float rr  = (total_rand_reads * rand_read_size) / total_secs;
+    rr       /= 1024.0 * 1024.0;
+
+    printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_read\n", total_seq_reads, sr, total_seq_reads / total_secs,
+           total_seq_reads / total_secs / n_disk_path);
+    printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk seq_write\n", total_seq_writes, sw,
+           total_seq_writes / total_secs, total_seq_writes / total_secs / n_disk_path);
+    printf("%f ops %0.2f mbytes/sec %0.1f ops/sec %0.1f ops/sec/disk rand_read\n", total_rand_reads, rr,
+           total_rand_reads / total_secs, total_rand_reads / total_secs / n_disk_path);
+    printf("%0.2f total mbytes/sec\n", sr + sw + rr);
+  } else {
+    printf("no measurable elapsed time, skipping aggregate rates\n");
+  }
   printf("----------------------------------------------------------\n");
 
 #if TS_USE_LINUX_IO_URING
@@ -452,9 +461,8 @@ public:
 
 #endif
 
-// coverity[exn_spec_violation] - called functions may throw but this is a test program
-int
-main(int argc, char *argv[])
+static int
+run_test(int argc, char *argv[])
 {
   int i;
 
@@ -552,4 +560,20 @@ main(int argc, char *argv[])
     sleep(1);
 #endif
   }
+
+  return 0;
+}
+
+int
+main(int argc, char *argv[])
+{
+  try {
+    return run_test(argc, argv);
+  } catch (std::exception const &e) {
+    fprintf(stderr, "test_AIO aborted: %s\n", e.what());
+  } catch (...) {
+    fprintf(stderr, "test_AIO aborted: unknown exception\n");
+  }
+
+  return 1;
 }

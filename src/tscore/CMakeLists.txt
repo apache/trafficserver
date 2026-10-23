@@ -49,7 +49,6 @@ add_library(
   MMH.cc
   MatcherUtils.cc
   ParseRules.cc
-  Random.cc
   Regression.cc
   SnowflakeID.cc
   TextBuffer.cc
@@ -106,6 +105,17 @@ else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)
 endif()
 
+# Highway runtime-dispatched SIMD kernels (ASCII tolower, base64). Only
+# compiled when ENABLE_HIGHWAY_DISPATCH=ON; otherwise ink_ascii_tolower.h and
+# ink_base64.cc use their scalar paths. The source dir is added to the include
+# path so Highway's foreach_target.h self-include of each *_dispatch.cc
+# resolves.
+if(TS_HAS_HIGHWAY_DISPATCH)
+  target_sources(tscore PRIVATE ink_ascii_tolower_dispatch.cc ink_base64_dispatch.cc)
+  target_link_libraries(tscore PRIVATE hwy::hwy)
+  target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
 target_link_libraries(
   tscore PUBLIC OpenSSL::Crypto libswoc::libswoc yaml-cpp::yaml-cpp systemtap::systemtap resolv::resolv ts::tsutil
 )
@@ -127,6 +137,14 @@ if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
   target_compile_options(tscore PUBLIC "-mcx16")
 endif()
 
+if(TS_NEEDS_LIBATOMIC_FOR_CAS)
+  target_link_libraries(tscore PUBLIC atomic)
+endif()
+
+if(TS_HAS_128BIT_CAS_LIBATOMIC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(tscore PUBLIC "-Wno-error=atomic-alignment")
+endif()
+
 if(BUILD_SHARED_LIBS)
   install(
     TARGETS tscore
@@ -146,6 +164,7 @@ if(BUILD_TESTING)
     unit_tests/test_HKDF.cc
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc
+    unit_tests/test_InkAtomicList.cc
     unit_tests/test_IntrusivePtr.cc
     unit_tests/test_List.cc
     unit_tests/test_MMH.cc
@@ -160,6 +179,7 @@ if(BUILD_TESTING)
     unit_tests/test_Tokenizer.cc
     unit_tests/test_arena.cc
     unit_tests/test_ink_base64.cc
+    unit_tests/test_ink_ascii_tolower.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
     unit_tests/test_ink_string.cc

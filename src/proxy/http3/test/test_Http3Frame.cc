@@ -59,6 +59,10 @@ TEST_CASE("Load DATA Frame", "[http3]")
     CHECK(data_reader->read_avail() == 4);
     CHECK(memcmp(data_reader->start(), "\x11\x22\x33\x44", 4) == 0);
 
+    // ~Http3Frame deallocates the reader through its MIOBuffer, so release the
+    // frames before freeing that buffer.
+    data_frame.reset();
+    frame1.reset();
     free_MIOBuffer(input);
   }
 }
@@ -162,8 +166,51 @@ TEST_CASE("Load SETTINGS Frame", "[http3]")
     CHECK(settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE) == 0x0400);
     CHECK(settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS) == 0x0f);
 
+    // ~Http3Frame deallocates the reader through its MIOBuffer, so release the
+    // frames before freeing that buffer.
+    settings_frame.reset();
+    frame.reset();
     free_MIOBuffer(input);
   }
+}
+
+// A SETTINGS identifier is a full QUIC variable-length integer, and an
+// identifier the implementation does not understand must be ignored
+// (RFC 9114, Section 7.2.4). Comparing a narrowed copy of the decoded
+// identifier against the known-ID set lets an unknown identifier alias a
+// known one.
+//
+// Identifiers of the form 0x1f * N + 0x21 are reserved to exercise that
+// requirement, and endpoints are expected to send one (RFC 9114, Section
+// 7.2.4.1). 0x1f * 33824 + 0x21 == 0x100001, which shares its low 16 bits
+// with HEADER_TABLE_SIZE (0x01).
+TEST_CASE("Load SETTINGS Frame ignores reserved identifier", "[http3]")
+{
+  uint8_t buf[] = {
+    0x04,                   // Type
+    0x05,                   // Length
+    0x80, 0x10, 0x00, 0x01, // Identifier: QUIC varint encoding of 0x100001
+    0x2a,                   // Value
+  };
+  MIOBuffer *input = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input->write(buf, sizeof(buf));
+  IOBufferReader *input_reader = input->alloc_reader();
+
+  std::shared_ptr<Http3Frame> frame = Http3FrameFactory::create(*input_reader);
+  frame->update();
+  REQUIRE(frame->type() == Http3FrameType::SETTINGS);
+
+  std::shared_ptr<Http3SettingsFrame> settings_frame = std::dynamic_pointer_cast<Http3SettingsFrame>(frame);
+  REQUIRE(settings_frame);
+  REQUIRE(settings_frame->is_valid());
+
+  CHECK_FALSE(settings_frame->contains(Http3SettingsId::HEADER_TABLE_SIZE));
+
+  // ~Http3Frame deallocates the reader through its MIOBuffer, so release the
+  // frames before freeing that buffer.
+  settings_frame.reset();
+  frame.reset();
+  free_MIOBuffer(input);
 }
 
 TEST_CASE("Store SETTINGS Frame", "[http3]")

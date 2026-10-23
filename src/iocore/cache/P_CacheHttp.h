@@ -63,7 +63,6 @@ struct CacheHTTPInfoVector {
   int      marshal_length();
   int      marshal(char *buf, int length);
   uint32_t get_handles(const char *buf, int length, RefCountObj *block_ptr = nullptr);
-  int      unmarshal(const char *buf, int length, RefCountObj *block_ptr);
 
   CacheArray<vec_info> data;
   int                  xcount = 0;

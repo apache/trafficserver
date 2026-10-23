@@ -31,7 +31,7 @@ _TSAssert(const char *, const char *, int)
 }
 
 void
-TSError(const char *fmt, ...)
+TSError(const char *fmt, ...) noexcept
 {
   va_list args;
 
@@ -48,7 +48,7 @@ TSHttpHdrStatusGet(TSMBuffer, TSMLoc)
 }
 
 TSReturnCode
-TSHandleMLocRelease(TSMBuffer, TSMLoc, TSMLoc)
+TSHandleMLocRelease(TSMBuffer, TSMLoc, TSMLoc) noexcept
 {
   return TS_SUCCESS;
 }

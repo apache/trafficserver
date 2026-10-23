@@ -27,7 +27,7 @@
 #include "ts_lua_util.h"
 #include "ts_lua_client_cert_helpers.h"
 
-typedef enum {
+enum TSLuaPPInfoKey {
   TS_LUA_PP_INFO_VERSION   = TS_PP_INFO_VERSION,
   TS_LUA_PP_INFO_SRC_ADDR  = TS_PP_INFO_SRC_ADDR,
   TS_LUA_PP_INFO_SRC_PORT  = TS_PP_INFO_SRC_PORT,
@@ -35,7 +35,7 @@ typedef enum {
   TS_LUA_PP_INFO_DST_PORT  = TS_PP_INFO_DST_PORT,
   TS_LUA_PP_INFO_PROTOCOL  = TS_PP_INFO_PROTOCOL,
   TS_LUA_PP_INFO_SOCK_TYPE = TS_PP_INFO_SOCK_TYPE
-} TSLuaPPInfoKey;
+};
 
 ts_lua_var_item ts_lua_pp_info_key_vars[] = {
   TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_VERSION),  TS_LUA_MAKE_VAR_ITEM(TS_LUA_PP_INFO_SRC_ADDR),

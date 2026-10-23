@@ -50,7 +50,8 @@ public:
 private:
   bool compile();
 
-  Regex _re; /**< @brief Regex compiled object */
+  Regex   _re;               /**< @brief Regex compiled object */
+  int32_t _captureCount = 0; ///< Number of capture groups defined by the compiled pattern.
 
   String _pattern; /**< @brief Regex pattern string, containing regex patterns and capturing groups. */
   String

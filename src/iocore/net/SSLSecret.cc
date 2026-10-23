@@ -25,6 +25,7 @@
 
 #include "P_SSLConfig.h"
 
+#include <mutex>
 #include <utility>
 #include <openssl/evp.h>
 
@@ -33,6 +34,15 @@ namespace
 
 DbgCtl dbg_ctl_ssl_secret{"ssl_secret"};
 DbgCtl dbg_ctl_ssl_secret_err{"ssl_secret_err"};
+
+// Parallel ssl_multicert loading reaches loadSecret() from several std::threads
+// at once. Those are not EThreads, so a hook continuation's mutex does not
+// exclude them, and plugins written for one call at a time corrupt their own
+// state. This lock keeps the SSL_SECRET hooks to one thread at a time. It is
+// recursive because a hook that calls TSSslSecretSet() re-enters loadSecret()
+// on the same thread when the updated certificate needs a secret that is not
+// cached yet.
+std::recursive_mutex secret_hook_mutex;
 
 } // end anonymous namespace
 
@@ -54,7 +64,10 @@ get_hash_str(const std::string &input, char hash_str[EVP_MAX_MD_SIZE * 2], unsig
 // function. The implementation of this function may call a plugin's
 // TS_EVENT_SSL_SECRET handler which in turn may grab a lock for
 // secret_map_mutex via a TSSslSecretSet call. These events will result in a
-// deadlock.
+// deadlock. The handlers run under secret_hook_mutex, which is recursive
+// because a TSSslSecretSet call from a handler can come back into this
+// function on the same thread. For the same reason, no thread may hold a lock
+// that a handler takes while it calls TSSslSecretSet or TSSslSecretUpdate.
 void
 SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::string &data1, std::string &data2)
 {
@@ -66,9 +79,12 @@ SSLSecret::loadSecret(const std::string &name1, const std::string &name2, std::s
   secret_name.cert_name_len = name1.size();
   secret_name.key_name      = name2.data();
   secret_name.key_name_len  = name2.size();
-  while (curHook) {
-    curHook->blocking_invoke(TS_EVENT_SSL_SECRET, &secret_name);
-    curHook = curHook->next();
+  {
+    std::scoped_lock lock(secret_hook_mutex);
+    while (curHook) {
+      curHook->blocking_invoke(TS_EVENT_SSL_SECRET, &secret_name);
+      curHook = curHook->next();
+    }
   }
 
   data1 = this->getSecret(name1);
@@ -88,8 +104,8 @@ std::string
 SSLSecret::loadFile(const std::string &name)
 {
   Dbg(dbg_ctl_ssl_secret, "SSLSecret::loadFile(%s)", name.c_str());
-  std::error_code   error;
-  std::string const data = swoc::file::load(swoc::file::path(name), error);
+  std::error_code error;
+  std::string     data = swoc::file::load(swoc::file::path(name), error);
   if (error) {
     Dbg(dbg_ctl_ssl_secret_err, "SSLSecret::loadFile(%s) failed error code=%d message=%s", name.c_str(), error.value(),
         error.message().c_str());

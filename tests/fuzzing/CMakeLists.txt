@@ -22,6 +22,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 #  Need to rewrite the ESI Parser to remove dependencies on TS API
 #add_executable(fuzz_esi fuzz_esi.cc)
+add_executable(fuzz_chunked fuzz_chunked.cc)
 add_executable(fuzz_hpack fuzz_hpack.cc)
 add_executable(fuzz_http fuzz_http.cc)
 add_executable(fuzz_json fuzz_json.cc)
@@ -29,10 +30,13 @@ add_executable(fuzz_proxy_protocol fuzz_proxy_protocol.cc)
 add_executable(fuzz_rec_http fuzz_rec_http.cc)
 add_executable(fuzz_yamlcpp fuzz_yamlcpp.cc)
 add_executable(fuzz_http3frame fuzz_http3frame.cc)
+add_executable(fuzz_base64 fuzz_base64.cc)
 
 #  Need to rewrite the ESI Parser to remove dependencies on TS API
 #target_link_libraries(fuzz_esi PRIVATE esi-common esicore tscore tsapi inkevent http)
 #target_link_options(fuzz_esi PRIVATE "-fuse-ld=lld")
+target_link_libraries(fuzz_chunked PRIVATE ts::http)
+target_link_options(fuzz_chunked PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_hpack PRIVATE inknet inkevent tscore)
 target_link_options(fuzz_hpack PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_http PRIVATE ts::hdrs ts::tscore ts::inkevent)
@@ -47,6 +51,10 @@ target_link_libraries(fuzz_yamlcpp PRIVATE yaml-cpp)
 target_link_options(fuzz_yamlcpp PRIVATE "-fuse-ld=lld")
 target_link_libraries(fuzz_http3frame PRIVATE ts::tscore ts::quic)
 target_link_options(fuzz_http3frame PRIVATE "-fuse-ld=lld")
+target_link_libraries(fuzz_base64 PRIVATE ts::tscore)
+target_link_options(fuzz_base64 PRIVATE "-fuse-ld=lld")
+# fuzz_base64 cross-checks the public path against the scalar reference header.
+target_include_directories(fuzz_base64 PRIVATE ${CMAKE_SOURCE_DIR}/src/tscore)
 
 target_sources(
   fuzz_hpack PRIVATE ${CMAKE_SOURCE_DIR}/src/proxy/http2/HTTP2.cc ${CMAKE_SOURCE_DIR}/src/proxy/http2/Http2Frame.cc

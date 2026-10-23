@@ -358,13 +358,13 @@ SCENARIO("unloading the plugin", "[plugin][core]")
 {
   REQUIRE_FALSE(sandboxDir.empty());
 
-  std::string        error;
-  PluginDebugObject *debugObject = nullptr;
+  std::string error;
 
   GIVEN("a 'done' function")
   {
     fs::path                 pluginConfigPath = fs::path("plugin_testing_calls.so");
     RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
+    PluginDebugObject       *debugObject = nullptr;
 
     bool result = loadPlugin(plugin.get(), error, debugObject);
     CHECK(true == result);
@@ -387,6 +387,7 @@ SCENARIO("unloading the plugin", "[plugin][core]")
   {
     fs::path                 pluginConfigPath = fs::path("plugin_testing_calls.so");
     RemapPluginUnitTest::Ptr plugin{setupSandBox(pluginConfigPath)};
+    PluginDebugObject       *debugObject = nullptr;
 
     bool result = loadPlugin(plugin.get(), error, debugObject);
     CHECK(true == result);

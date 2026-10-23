@@ -32,7 +32,7 @@ add_catch2_test(NAME test_hostdb_HostFile COMMAND $<TARGET_FILE:test_HostFile>)
 # test_RefCountCache
 add_executable(test_RefCountCache test_RefCountCache.cc)
 target_include_directories(test_RefCountCache PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
-target_link_libraries(
-  test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent configmanager Catch2::Catch2WithMain
-)
-add_catch2_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
+target_link_libraries(test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkevent configmanager)
+# test_RefCountCache has its own main() and uses no Catch2 at all, so it cannot be
+# split into per-case ctest entries.
+add_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)

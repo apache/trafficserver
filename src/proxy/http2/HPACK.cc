@@ -23,6 +23,7 @@
 
 #include "proxy/http2/HPACK.h"
 
+#include "tscore/ink_ascii_tolower.h"
 #include "tsutil/LocalBuffer.h"
 #include "swoc/TextView.h"
 
@@ -722,9 +723,9 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
   while (cursor < in_buf_end) {
     int64_t read_bytes = 0;
 
-    // decode a header field encoded by HPACK
-    MIMEField       *field = mime_field_create(heap, hh->m_fields_impl);
-    MIMEFieldWrapper header(field, heap, hh->m_fields_impl);
+    // Decode a header field encoded by HPACK. The wrapper allocates the field
+    // after its name is known so the selected slot preserves duplicate order.
+    MIMEFieldWrapper header(heap, hh->m_fields_impl);
     HpackField       ftype = hpack_parse_field_type(*cursor);
 
     switch (ftype) {
@@ -762,8 +763,8 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       continue;
     }
 
-    auto name{field->name_get()};
-    auto value{field->value_get()};
+    auto name{header.name_get()};
+    auto value{header.value_get()};
 
     // [RFC 7540] 6.5.2. SETTINGS_MAX_HEADER_LIST_SIZE:
     // The value is based on the uncompressed size of header fields, including the length of the name and value in octets plus an
@@ -774,8 +775,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       return HPACK_ERROR_SIZE_EXCEEDED_ERROR;
     }
 
-    // Store to HdrHeap
-    mime_hdr_field_attach(hh->m_fields_impl, field, 1, nullptr);
+    mime_hdr_field_attach(hh->m_fields_impl, header.field_get(), 1, nullptr);
   }
   // Parsing all headers is done
   if (has_http2_violation) {
@@ -812,9 +812,7 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
     int                   name_len      = original_name.size();
     ts::LocalBuffer<char> local_buffer(name_len);
     char                 *lower_name = local_buffer.data();
-    for (int i = 0; i < name_len; i++) {
-      lower_name[i] = ParseRules::ink_tolower(original_name[i]);
-    }
+    ts::ascii::tolower_copy(lower_name, original_name.data(), name_len);
 
     std::string_view name{lower_name, static_cast<size_t>(name_len)};
     std::string_view value = field.value_get();

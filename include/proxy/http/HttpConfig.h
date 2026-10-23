@@ -213,6 +213,8 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *origin_raw;
   Metrics::Counter::AtomicType *origin_reuse;
   Metrics::Counter::AtomicType *origin_reuse_fail;
+  Metrics::Counter::AtomicType *origin_retry_admitted;
+  Metrics::Counter::AtomicType *origin_retry_body_unavailable;
   Metrics::Counter::AtomicType *origin_server_request_document_total_size;
   Metrics::Counter::AtomicType *origin_server_request_header_total_size;
   Metrics::Counter::AtomicType *origin_server_response_document_total_size;
@@ -553,6 +555,7 @@ struct OverridableHttpConfigParams {
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
+  MgmtByte bypass_parent                      = 0;
   MgmtByte attach_server_session_to_client    = 0;
   MgmtInt  max_proxy_cycles                   = 0;
   MgmtInt  tunnel_activity_check_period       = 0;
@@ -643,6 +646,8 @@ struct OverridableHttpConfigParams {
   ////////////////////////
   MgmtByte post_check_content_length_enabled = 1;
 
+  MgmtByte reject_head_with_content = 1;
+
   MgmtByte cache_post_method = 0;
 
   ////////////////////////////////////////////////
@@ -669,9 +674,12 @@ struct OverridableHttpConfigParams {
   //////////////////////////////
   // server verification mode //
   //////////////////////////////
-  char *ssl_client_verify_server_policy     = nullptr;
-  char *ssl_client_verify_server_properties = nullptr;
-  char *ssl_client_sni_policy               = nullptr;
+  char  *ssl_client_verify_server_policy         = nullptr;
+  size_t ssl_client_verify_server_policy_len     = 0;
+  char  *ssl_client_verify_server_properties     = nullptr;
+  size_t ssl_client_verify_server_properties_len = 0;
+  char  *ssl_client_sni_policy                   = nullptr;
+  size_t ssl_client_sni_policy_len               = 0;
 
   MgmtInt proxy_response_hsts_max_age = -1;
 
@@ -786,11 +794,16 @@ struct OverridableHttpConfigParams {
   MgmtFloat background_fill_threshold = 0.5;
 
   // Various strings, good place for them here ...
-  char *ssl_client_cert_filename        = nullptr;
-  char *ssl_client_private_key_filename = nullptr;
-  char *ssl_client_ca_cert_filename     = nullptr;
-  char *ssl_client_ca_cert_path         = nullptr;
-  char *ssl_client_alpn_protocols       = nullptr;
+  char  *ssl_client_cert_filename            = nullptr;
+  size_t ssl_client_cert_filename_len        = 0;
+  char  *ssl_client_private_key_filename     = nullptr;
+  size_t ssl_client_private_key_filename_len = 0;
+  char  *ssl_client_ca_cert_filename         = nullptr;
+  size_t ssl_client_ca_cert_filename_len     = 0;
+  char  *ssl_client_ca_cert_path             = nullptr;
+  size_t ssl_client_ca_cert_path_len         = 0;
+  char  *ssl_client_alpn_protocols           = nullptr;
+  size_t ssl_client_alpn_protocols_len       = 0;
 
   // Host Resolution order
   HostResData host_res_data;

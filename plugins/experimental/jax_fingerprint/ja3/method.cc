@@ -24,82 +24,8 @@
 
 #include <plugin.h>
 #include <context.h>
+#include "fingerprint.h"
 #include "method.h"
-#include "utils.h"
-
-#include <openssl/ssl.h>
-#include <openssl/md5.h>
-#include <openssl/opensslv.h>
-
-#include <algorithm>
-
-namespace
-{
-constexpr int ja3_hash_included_byte_count{16};
-static_assert(ja3_hash_included_byte_count <= MD5_DIGEST_LENGTH);
-
-constexpr int ja3_hash_hex_string_with_null_terminator_length{2 * ja3_hash_included_byte_count + 1};
-
-static std::string
-get_fingerprint(TSClientHello ch)
-{
-  std::string          raw;
-  std::size_t          len{};
-  const unsigned char *buf{};
-
-  // Get version
-  unsigned int version = ch.get_version();
-  raw.append(std::to_string(version));
-  raw.push_back(',');
-
-  // Get cipher suites
-  raw.append(ja3::encode_word_buffer(ch.get_cipher_suites(), ch.get_cipher_suites_len()));
-  raw.push_back(',');
-
-  // Get extensions
-  auto ext_types = ch.get_extension_types();
-  len            = 0;
-  auto first     = ext_types.begin();
-  auto last      = ext_types.end();
-  while (first != last) {
-    ++first;
-    ++len;
-  }
-  if (len > 0) {
-    int extension_ids[len];
-    first = ext_types.begin();
-    for (size_t i = 0; i < len; ++i, ++first) {
-      extension_ids[i] = *first;
-    }
-    raw.append(ja3::encode_integer_buffer(extension_ids, len));
-  }
-  raw.push_back(',');
-
-  // Get elliptic curves
-  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, 0x0a, &buf, &len) && len >= 2) {
-    // Skip first 2 bytes since we already have length
-    raw.append(ja3::encode_word_buffer(buf + 2, len - 2));
-  }
-  raw.push_back(',');
-
-  // Get elliptic curve point formats
-  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, 0x0b, &buf, &len) && len >= 2) {
-    // Skip first byte since we already have length
-    raw.append(ja3::encode_byte_buffer(buf + 1, len - 1));
-  }
-  Dbg(dbg_ctl, "Hashing %s", raw.c_str());
-
-  char          fingerprint[ja3_hash_hex_string_with_null_terminator_length];
-  unsigned char digest[MD5_DIGEST_LENGTH];
-  MD5(reinterpret_cast<unsigned char const *>(raw.c_str()), raw.length(), digest);
-  for (int i{0}; i < ja3_hash_included_byte_count; ++i) {
-    std::snprintf(&(fingerprint[i * 2]), sizeof(fingerprint) - (i * 2), "%02x", static_cast<unsigned int>(digest[i]));
-  }
-
-  return {fingerprint};
-}
-
-} // end anonymous namespace
 
 namespace ja3
 {
@@ -112,7 +38,7 @@ on_client_hello(JAxContext *ctx, TSVConn vconn)
   if (!ch) {
     Dbg(dbg_ctl, "Could not get TSClientHello object.");
   } else {
-    ctx->set_fingerprint(get_fingerprint(ch));
+    ctx->set_fingerprint(fingerprint(ch));
   }
 }
 

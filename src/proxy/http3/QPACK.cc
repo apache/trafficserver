@@ -25,6 +25,7 @@
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "tscore/ink_defs.h"
+#include "tscore/ink_ascii_tolower.h"
 #include "tscore/ink_memory.h"
 
 #define QPACKDebug(fmt, ...)   Dbg(dbg_ctl_qpack, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
@@ -284,7 +285,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
 
   uint64_t tmp = 0;
   int64_t  ret = xpack_decode_integer(tmp, header_block, header_block + header_block_len, 8);
-  if (ret < 0 && tmp > 0xFFFF) {
+  if (ret < 0 || tmp > 0xFFFF) {
     return -1;
   }
   uint16_t largest_reference = tmp;
@@ -372,9 +373,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
 {
   auto  name{field.name_get()};
   char *lowered_name = this->_arena.str_store(name.data(), name.length());
-  for (size_t i = 0; i < name.length(); i++) {
-    lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
-  }
+  ts::ascii::tolower_inplace(lowered_name, name.length());
   auto value{field.value_get()};
 
   // TODO Set never_index flag on/off according to encoding headers
@@ -924,7 +923,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
 
   // Decode Header Data Prefix
   uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, pos, pos + remain_len, 8)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, pos, pos + remain_len, 8)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   pos                        += ret;
@@ -933,7 +932,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
 
   uint64_t delta_base_index;
   uint16_t base_index;
-  if ((ret = xpack_decode_integer(delta_base_index, pos, pos + remain_len, 7)) < 0 && delta_base_index < 0xFFFF) {
+  if ((ret = xpack_decode_integer(delta_base_index, pos, pos + remain_len, 7)) < 0 || delta_base_index > 0xFFFF) {
     return -2;
   }
 
@@ -1019,18 +1018,24 @@ QPACK::_update_largest_known_received_index_by_insert_count(uint16_t insert_coun
 void
 QPACK::_update_largest_known_received_index_by_stream_id(uint64_t stream_id)
 {
-  uint16_t largest_ref_index = this->_references[stream_id].largest;
-  if (largest_ref_index > this->_largest_known_received_index) {
-    this->_largest_known_received_index = largest_ref_index;
+  auto it = this->_references.find(stream_id);
+  if (it == this->_references.end()) {
+    return;
+  }
+  if (it->second.largest > this->_largest_known_received_index) {
+    this->_largest_known_received_index = it->second.largest;
   }
 }
 
 void
 QPACK::_update_reference_counts(uint64_t stream_id)
 {
-  uint16_t smallest_ref_index = this->_references[stream_id].smallest;
-  if (smallest_ref_index) {
-    this->_dynamic_table.unref_entry(smallest_ref_index);
+  auto it = this->_references.find(stream_id);
+  if (it == this->_references.end()) {
+    return;
+  }
+  if (it->second.smallest) {
+    this->_dynamic_table.unref_entry(it->second.smallest);
   }
 }
 
@@ -1237,9 +1242,9 @@ const XpackLookupResult
 QPACK::StaticTable::lookup(const char *name, size_t name_len, const char *value, size_t value_len)
 {
   XpackLookupResult::MatchType match_type      = XpackLookupResult::MatchType::NONE;
-  uint16_t                     i               = 0;
-  uint16_t                     candidate_index = 0;
-  int                          n               = countof(STATIC_HEADER_FIELDS);
+  uint32_t                     i               = 0;
+  uint32_t                     candidate_index = 0;
+  unsigned int                 n               = countof(STATIC_HEADER_FIELDS);
 
   for (; i < n; ++i) {
     const Header &h = STATIC_HEADER_FIELDS[i];
@@ -1518,15 +1523,15 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
 
   // Name Index
   uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   index     = tmp;
   read_len += ret;
 
   // Value
-  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 &&
-      tmp > 0xFF) {
+  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 ||
+      tmp > 0xFFFF) {
     return -1;
   }
   value_len  = tmp;
@@ -1549,14 +1554,14 @@ QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char 
 
   // Name
   uint64_t tmp;
-  if ((ret = xpack_decode_string(arena, name, tmp, input, input + input_len, _header_field_max_size, 5)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_string(arena, name, tmp, input, input + input_len, _header_field_max_size, 5)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   name_len  = tmp;
   read_len += ret;
 
   // Value
-  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 &&
+  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 ||
       tmp > 0xFFFF) {
     return -1;
   }
@@ -1579,7 +1584,7 @@ QPACK::_read_duplicate(IOBufferReader &reader, uint16_t &index)
 
   // Index
   uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   index     = tmp;
@@ -1601,7 +1606,7 @@ QPACK::_read_dynamic_table_size_update(IOBufferReader &reader, uint16_t &max_siz
   uint64_t tmp;
 
   // Max Size
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   max_size  = tmp;
@@ -1623,7 +1628,7 @@ QPACK::_read_table_state_synchronize(IOBufferReader &reader, uint16_t &insert_co
   uint64_t tmp;
 
   // Insert Count
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   insert_count  = tmp;

@@ -37,6 +37,9 @@ class CacheTestBase;
 
 struct TestContChain : public Continuation {
   TestContChain();
+  // EThread::schedule() asserts; Coverity resolves _ink_assert() to the
+  // throwing definition in eventsystem/unit_tests/test_MIOBufferWriter.cc.
+  // coverity[UNCAUGHT_EXCEPT:FALSE]
   virtual ~TestContChain() { this->next_test(); }
 
   void

@@ -334,6 +334,8 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.no_dns_just_forward_to_parent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http.bypass_parent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.http.uncacheable_requests_bypass_parent", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.no_origin_server_dns", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
@@ -365,6 +367,8 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.flow_control.low_water", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.post.check.content_length.enabled", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.reject_head_with_content", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.strict_uri_parsing", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
@@ -406,7 +410,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-1]$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_aggregate", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-2]$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_aggregate", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-3]$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_prefix", RECD_STRING, "", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -886,7 +890,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.use_seen_filter", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-9]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.cache.ram_cache.compress", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-3]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.cache.ram_cache.compress", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-5]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cache.ram_cache.compress_percent", RECD_INT, "90", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -1128,6 +1132,21 @@ static constexpr RecordElement RecordsConfig[] =
 
   //##############################################################################
   //#
+  //# Operator Regex Rules
+  //#
+  //##############################################################################
+  // Require operator regex rules that drive policy to match the whole subject.
+  // Covers map_with_referer, the *_regex rules in cache.config / parent.config /
+  // splitdns.config, and url_sig, access_control, geoip_acl, maxmind_acl, tls_bridge.
+  // When 0 those rules match as before and any pattern not anchored at both ends gets a
+  // "[regex-anchor]" warning at config load; when 1 each pattern the policy anchors is
+  // noted instead. Patterns compile on config load, so a reload also needs the config
+  // files touched, and tls_bridge needs a restart. regex_map is always anchored.
+  {RECT_CONFIG, "proxy.config.regex.anchor_policy_rules", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+
+  //##############################################################################
+  //#
   //# Reverse Proxy
   //#
   //##############################################################################
@@ -1148,6 +1167,8 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.url_remap.min_rules_required", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.url_remap.acl_behavior_policy", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.virtualhost.filename", RECD_STRING, ts::filename::VIRTUALHOST, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
 
   //##############################################################################
@@ -1244,6 +1265,9 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.ssl.origin_session_cache.enabled", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.origin_session_cache.size", RECD_INT, "10240", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.origin_session_cache.max_session_size", RECD_INT, "8192", RECU_RESTART_TS, RR_NULL,
+   RECC_INT, "[4096-65536]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.max_record_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[-1-16383]", RECA_NULL}
   ,
@@ -1703,15 +1727,6 @@ matches_bracketed_int_range(std::string_view s)
     return false;
   }
   return i == s.size(); // must end exactly here
-}
-
-// For string literals: deduces N and strips the trailing '\0'
-template <std::size_t N>
-consteval bool
-matches_bracketed_int_range(const char (&lit)[N])
-{
-  // N includes the null terminator
-  return matches_bracketed_int_range(std::string_view{lit, N - 1});
 }
 
 // Validate all RECC_INT entries in the RecordsConfig array at compile time

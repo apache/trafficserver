@@ -22,7 +22,14 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include "tscore/ArgParser.h"
+
+class TestArgParser : public ts::ArgParser
+{
+public:
+  TestArgParser() { ts::ArgParser::set_test_mode(true); }
+};
 
 int           global;
 ts::ArgParser parser;
@@ -216,4 +223,499 @@ TEST_CASE("with_required does not trigger on default values", "[parse]")
   REQUIRE(parsed.get("tag").value() == "foo");
   REQUIRE(parsed.get("threshold").value() == "300");
   REQUIRE(parsed.get("verbose") == true);
+}
+
+TEST_CASE("Variable argument option stops at a following option", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--token", "-t", "a token", "", 1, "");
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // A flag after a variable argument option is not swallowed as a value.
+  const char   *argv1[] = {"test_prog", "reload", "-D", "a.id=1", "b.id=2", "-m", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+  REQUIRE(parsed.get("monitor") == true);
+
+  // A following option keeps its own argument.
+  const char *argv2[] = {"test_prog", "reload", "-D", "a.id=1", "-t", "my_token", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("token").value() == "my_token");
+
+  // The long form of the following option is recognized too.
+  const char *argv3[] = {"test_prog", "reload", "-D", "a.id=1", "--monitor", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("monitor") == true);
+
+  // So is its --option=value form.
+  const char *argv4[] = {"test_prog", "reload", "-D", "a.id=1", "--token=my_token", nullptr};
+  parsed              = parser.parse(argv4);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("token").value() == "my_token");
+}
+
+TEST_CASE("Double dash ends option recognition for variable argument options", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // After "--" a token that looks like an option is taken as a value instead.
+  const char   *argv[] = {"test_prog", "reload", "-D", "--", "-m", "a.id=1", nullptr};
+  ts::Arguments parsed = parser.parse(argv);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "-m");
+  REQUIRE(parsed.get("directive")[1] == "a.id=1");
+  REQUIRE(parsed.get("monitor") == false);
+}
+
+TEST_CASE("Option value keeps embedded equal signs", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+
+  // Only the first '=' separates the option from its value.
+  const char   *argv[] = {"test_prog", "reload", "--directive=ip_allow.id=foo", nullptr};
+  ts::Arguments parsed = parser.parse(argv);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("directive")[0] == "ip_allow.id=foo");
+}
+
+TEST_CASE("An option taking at most one argument leaves the positional arguments alone", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl config get [--cold [FILE]] RECORD [RECORD ...]".
+  ts::ArgParser::Command &cmd = parser.add_command("get", "get values", "", MORE_THAN_ONE_ARG_N, nullptr);
+  cmd.add_option("--cold", "-c", "read from a file", "", AT_MOST_ONE_ARG_N);
+  cmd.add_option("--records", "", "yaml output");
+
+  // The option takes its single value and stops, so the command keeps its own arguments.
+  const char   *argv1[] = {"test_prog", "get", "-c", "records.yaml", "proxy.config.x", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+  REQUIRE(parsed.get("get")[0] == "proxy.config.x");
+
+  // Several positional arguments are unaffected.
+  const char *argv2[] = {"test_prog", "get", "-c", "records.yaml", "proxy.config.x", "proxy.config.y", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 2);
+  REQUIRE(parsed.get("get")[1] == "proxy.config.y");
+
+  // Trailing placement keeps working.
+  const char *argv3[] = {"test_prog", "get", "proxy.config.x", "-c", "records.yaml", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+
+  // The --option=value form is not mistaken for a fixed arity mismatch.
+  const char *argv4[] = {"test_prog", "get", "--cold=records.yaml", "proxy.config.x", nullptr};
+  parsed              = parser.parse(argv4);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+}
+
+TEST_CASE("An option taking at most one argument accepts no value at all", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("get", "get values", "", MORE_THAN_ONE_ARG_N, nullptr);
+  cmd.add_option("--cold", "-c", "read from a file", "", AT_MOST_ONE_ARG_N);
+  cmd.add_option("--records", "", "yaml output");
+
+  // Called with no value, so the caller falls back to its own default.
+  const char   *argv1[] = {"test_prog", "get", "proxy.config.x", "-c", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("cold") == true);
+  REQUIRE(parsed.get("cold").size() == 0);
+  REQUIRE(parsed.get("cold").value().empty());
+  REQUIRE(parsed.get("get").size() == 1);
+
+  // A following option is never taken as the value.
+  const char *argv2[] = {"test_prog", "get", "-c", "--records", "proxy.config.x", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("cold").size() == 0);
+  REQUIRE(parsed.get("records") == true);
+  REQUIRE(parsed.get("get").size() == 1);
+  REQUIRE(parsed.get("get")[0] == "proxy.config.x");
+
+  // After "--" even a token shaped like an option becomes the value.
+  const char *argv3[] = {"test_prog", "get", "-c", "--", "-weird-name.yaml", "proxy.config.x", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("cold").value() == "-weird-name.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+  REQUIRE(parsed.get("get")[0] == "proxy.config.x");
+}
+
+TEST_CASE("An option taking a fixed number of arguments can be given a value shaped like an option", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl server debug enable [--tags TAGS] [--append]".
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "", 1);
+  cmd.add_option("--append", "-a", "append to the existing tags");
+
+  // A value that starts with '-' is passed after "--", which is otherwise taken as naming an
+  // option and reported as a missing value.
+  const char   *argv1[] = {"test_prog", "enable", "-t", "--", "-a", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("tags").value() == "-a");
+  REQUIRE(parsed.get("append") == false);
+
+  // The --option=value form needs no escape.
+  const char *argv2[] = {"test_prog", "enable", "--tags=-a", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("tags").value() == "-a");
+  REQUIRE(parsed.get("append") == false);
+
+  // An option written after the value keeps its own meaning.
+  const char *argv3[] = {"test_prog", "enable", "-t", "http", "-a", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("tags").value() == "http");
+  REQUIRE(parsed.get("append") == true);
+}
+
+TEST_CASE("A repeated variable argument option accumulates its values", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl config reload [-D DIRECTIVE...] [-d SOURCE...] [-m]".
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--data", "-d", "inline config data", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // Collection stops at the second -D, so the values of the first must survive it.
+  const char   *argv1[] = {"test_prog", "reload", "-D", "a.id=1", "-D", "b.id=2", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+
+  // Each occurrence keeps every value it collected, in the order written.
+  const char *argv2[] = {"test_prog", "reload", "-D", "a.id=1", "b.id=2", "-D", "c.id=3", "d.id=4", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("directive").size() == 4);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[3] == "d.id=4");
+
+  // An unrelated option written between the two occurrences keeps its own meaning.
+  const char *argv3[] = {"test_prog", "reload", "-D", "a.id=1", "-m", "-D", "b.id=2", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+  REQUIRE(parsed.get("monitor") == true);
+
+  // The two spellings count against the same option, in either order.
+  const char *argv4[] = {"test_prog", "reload", "-D", "a.id=1", "--directive=b.id=2", nullptr};
+  parsed              = parser.parse(argv4);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+
+  const char *argv5[] = {"test_prog", "reload", "--directive=a.id=1", "--directive=b.id=2", nullptr};
+  parsed              = parser.parse(argv5);
+  REQUIRE(parsed.get("directive").size() == 2);
+
+  // Repeated -d merges the same way, which is what the documented multi-source reload needs.
+  const char *argv6[] = {"test_prog", "reload", "-d", "@ip_allow.yaml", "-d", "@sni.yaml", nullptr};
+  parsed              = parser.parse(argv6);
+  REQUIRE(parsed.get("data").size() == 2);
+  REQUIRE(parsed.get("data")[0] == "@ip_allow.yaml");
+  REQUIRE(parsed.get("data")[1] == "@sni.yaml");
+
+  // Two different options each keep their own values.
+  const char *argv7[] = {"test_prog", "reload", "-D", "a.id=1", "-d", "@f.yaml", "-D", "b.id=2", nullptr};
+  parsed              = parser.parse(argv7);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("data").size() == 1);
+  REQUIRE(parsed.get("data")[0] == "@f.yaml");
+}
+
+TEST_CASE("A repeated option requiring at least one argument accumulates too", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl rpc invoke [--params PARAM...]".
+  ts::ArgParser::Command &cmd = parser.add_command("invoke", "invoke a method");
+  cmd.add_option("--params", "-p", "request parameters", "", MORE_THAN_ONE_ARG_N, "");
+  cmd.add_option("--format", "-f", "output format", "", 1, "");
+
+  const char   *argv1[] = {"test_prog", "invoke", "-p", "one", "-p", "two", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("params").size() == 2);
+  REQUIRE(parsed.get("params")[0] == "one");
+  REQUIRE(parsed.get("params")[1] == "two");
+
+  // The arity is satisfied by the first occurrence, so a later one is not left short.
+  const char *argv2[] = {"test_prog", "invoke", "-p", "one", "-f", "json", "-p", "two", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("params").size() == 2);
+  REQUIRE(parsed.get("format").value() == "json");
+}
+
+TEST_CASE("A repeated option taking a fixed number of arguments keeps the last value", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl server debug enable [--tags TAGS]". Only an unbounded arity
+  // accumulates; a fixed one keeps the behaviour it has always had.
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "", 1);
+
+  const char   *argv1[] = {"test_prog", "enable", "-t", "http", "-t", "cache", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("tags").size() == 1);
+  REQUIRE(parsed.get("tags").value() == "cache");
+}
+
+TEST_CASE("A declared environment variable fills a value the command line omitted", "[parse][env]")
+{
+  setenv("TS_ARGPARSER_TEST_FIXED", "from_env", 1);
+  setenv("TS_ARGPARSER_TEST_ATMOST", "from_env", 1);
+  setenv("TS_ARGPARSER_TEST_ATLEAST", "from_env", 1);
+  unsetenv("TS_ARGPARSER_TEST_UNSET");
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl server debug enable [--tags TAGS]" with TS_DEBUG_TAGS.
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_FIXED", 1);
+  // Mirrors "traffic_ctl config get [--cold [FILE]]" with TS_RECORD_YAML.
+  cmd.add_option("--cold", "-c", "read from a file", "TS_ARGPARSER_TEST_ATMOST", AT_MOST_ONE_ARG_N);
+  cmd.add_option("--params", "-p", "parameters", "TS_ARGPARSER_TEST_ATLEAST", MORE_THAN_ONE_ARG_N);
+  cmd.add_option("--undeclared", "-u", "no variable declared", "", 1);
+  cmd.add_option("--declared-unset", "-U", "variable declared but unset", "TS_ARGPARSER_TEST_UNSET", 1);
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // Mirrors "traffic_ctl config get RECORD [RECORD ...]", whose positionals would absorb a
+  // stray empty token and hide the bug an option without positionals cannot expose.
+  ts::ArgParser::Command &get_cmd = parser.add_command("get", "get records", "", MORE_THAN_ONE_ARG_N, nullptr);
+  get_cmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_FIXED", 1);
+
+  // Fixed arity: the flag is typed with no value, so the variable supplies it instead of a
+  // usage error.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "from_env");
+    REQUIRE(parsed.get("monitor") == true);
+  }
+
+  // AT_MOST_ONE_ARG_N: the flag is typed with no value, so the variable supplies it instead of
+  // the empty string FileConfigCommand previously saw.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-c", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("cold").value() == "from_env");
+  }
+
+  // MORE_THAN_ONE_ARG_N: no value collected, so the variable supplies a single one instead of
+  // "at least one argument expected".
+  {
+    const char   *argv[] = {"test_prog", "enable", "-p", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("params").size() == 1);
+    REQUIRE(parsed.get("params")[0] == "from_env");
+    REQUIRE(parsed.get("monitor") == true);
+  }
+
+  // A typed value always wins over the environment variable.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "cache", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "cache");
+  }
+
+  // A typed value wins by itself, not just by count: a single typed value is not joined by the
+  // variable too, for a fixed-arity option (-c, taking one value) or a repeated one (-p).
+  {
+    const char   *argv[] = {"test_prog", "enable", "-c", "file", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("cold").value() == "file");
+    REQUIRE(parsed.get("cold").size() == 1);
+  }
+  {
+    const char   *argv[] = {"test_prog", "enable", "-p", "a", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("params").size() == 1);
+    REQUIRE(parsed.get("params")[0] == "a");
+  }
+
+  // An option is never activated by its declared variable alone: the variable only fills a
+  // value for an option the caller already typed.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("cold") == false);
+    REQUIRE(parsed.get("tags") == false);
+  }
+
+  // The environment variable wins over the declared default.
+  {
+    TestArgParser default_parser;
+    default_parser.add_global_usage("test_prog [OPTIONS]");
+    ts::ArgParser::Command &dcmd = default_parser.add_command("enable", "enable debug");
+    dcmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_FIXED", 1, "default_tags");
+
+    const char   *argv[] = {"test_prog", "enable", "-t", nullptr};
+    ts::Arguments parsed = default_parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "from_env");
+  }
+
+  // A command itself can declare a variable, resolved the same way an option's is.
+  {
+    TestArgParser command_parser;
+    command_parser.add_global_usage("test_prog [OPTIONS]");
+    command_parser.add_command("init", "init", "TS_ARGPARSER_TEST_FIXED", 1, nullptr);
+
+    const char   *argv[] = {"test_prog", "init", nullptr};
+    ts::Arguments parsed = command_parser.parse(argv);
+    REQUIRE(parsed.get("init").value() == "from_env");
+  }
+
+  // Usage errors are unchanged when no variable is declared.
+  {
+    const char *argv[] = {"test_prog", "enable", "-u", "-m", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+
+  // Usage errors are unchanged when the variable is declared but unset.
+  {
+    const char *argv[] = {"test_prog", "enable", "-U", "-m", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+
+  // An empty token typed on the command line is a value, not an absent one: it must not be
+  // filled from the declared variable, or it is left in the positional arguments.
+  {
+    const char *argv[] = {"test_prog", "get", "-t", "", "rec", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+
+  // Same, after "--" ends option recognition: the empty token is still a value, never a
+  // variable fallback.
+  {
+    const char *argv[] = {"test_prog", "get", "-t", "--", "", "rec", nullptr};
+    REQUIRE_THROWS(parser.parse(argv));
+  }
+}
+
+TEST_CASE("The variable only applies when every occurrence of a repeated option is bare", "[parse][env]")
+{
+  setenv("TS_ARGPARSER_TEST_REPEAT", "from_env", 1);
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "TS_ARGPARSER_TEST_REPEAT", 1);
+  cmd.add_option("--params", "-p", "parameters", "TS_ARGPARSER_TEST_REPEAT", MORE_THAN_ONE_ARG_N);
+  cmd.add_option("--pair", "-P", "a pair of values", "TS_ARGPARSER_TEST_REPEAT", 2);
+  // No option in the tree combines this arity with a variable, so there is nothing to pin
+  // against existing callers; this is here only to prove the exclusion itself.
+  cmd.add_option("--directive", "-D", "directives", "TS_ARGPARSER_TEST_REPEAT", MORE_THAN_ZERO_ARG_N);
+
+  // Two bare occurrences are no different from one: the variable still fills a single value.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "-t", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "from_env");
+    REQUIRE(parsed.get("tags").size() == 1);
+  }
+
+  // A bare occurrence next to a valued one, in every order and spelling, is the same usage
+  // error the bare occurrence alone would have been without a variable at all (exit code 64,
+  // not merely some exception, which a help or version exit would also throw in test mode).
+  // The existing last-one-wins behaviour for an all-typed repeat (covered elsewhere) must not
+  // apply here.
+  {
+    const char *argv[] = {"test_prog", "enable", "-t", "dns", "-t", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "--tags=dns", "-t", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "-t", "--tags=dns", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "-t", "-t", "dns", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+
+  // A line with no bare occurrence at all is untouched, including the existing last-one-wins
+  // behaviour for a fixed-arity repeat, even though a variable is declared and set: the
+  // variable must not also append itself after the typed value.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-t", "a", "-t", "b", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").value() == "b");
+    REQUIRE(parsed.get("tags").size() == 1);
+  }
+
+  // MORE_THAN_ONE_ARG_N: a bare occurrence next to one that collected values is the same
+  // mixed-usage error, not a silent single-value fill.
+  {
+    const char *argv[] = {"test_prog", "enable", "-p", "a", "-p", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+  // Two bare occurrences of it still resolve to a single value from the variable.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-p", "-p", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("params").size() == 1);
+    REQUIRE(parsed.get("params")[0] == "from_env");
+  }
+
+  // A fixed arity above one: entirely bare fills every slot from the variable, but a partial
+  // set is always a usage error, since the variable fills an option only when it has no
+  // values at all.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-P", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("pair").size() == 2);
+    REQUIRE(parsed.get("pair")[0] == "from_env");
+    REQUIRE(parsed.get("pair")[1] == "from_env");
+  }
+  {
+    const char *argv[] = {"test_prog", "enable", "-P", "only_one", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+
+  // MORE_THAN_ZERO_ARG_N does not support the fallback at all: zero values is already valid
+  // input for it, so a bare occurrence stays empty rather than being filled from the variable.
+  {
+    const char   *argv[] = {"test_prog", "enable", "-D", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("directive") == true);
+    REQUIRE(parsed.get("directive").size() == 0);
+  }
 }

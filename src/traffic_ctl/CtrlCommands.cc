@@ -26,7 +26,6 @@
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
-#include <iomanip>
 #include <utility>
 #include <thread>
 #include <unistd.h>
@@ -51,6 +50,16 @@ const StringToFormatFlagsMap _Fmt_str_to_enum = {
   {"json", BasePrinter::Options::FormatFlags::JSON},
   {"rpc",  BasePrinter::Options::FormatFlags::RPC }
 };
+
+/// `-d ""`, or `-d $VAR` with VAR unset, yields an empty token that survives
+/// ArgumentData::size() and is then skipped by the parse loops, so the reload would quietly
+/// cover fewer configs than the operator asked for. Reported separately from the bare option
+/// so the operator is told which of the two mistakes they made.
+bool
+has_empty_value(ts::ArgumentData const &args)
+{
+  return std::any_of(args.begin(), args.end(), [](std::string const &value) { return value.empty(); });
+}
 
 constexpr std::string_view YAML_PREFIX{"records."};
 constexpr std::string_view RECORD_PREFIX{"proxy.config."};
@@ -80,6 +89,16 @@ display_errors(BasePrinter *printer, std::vector<ConfigReloadResponse::Error> co
       printer->write_output("--");
       print_error(*iter);
     }
+  }
+}
+
+/// A request the command depends on failed, and its error is already printed and graded. Below --error-level that grade is 0,
+/// but what was asked was not done, so the command exits CTRL_EX_TEMPFAIL instead.
+void
+mark_not_done()
+{
+  if (App_Exit_Status_Code == CTRL_EX_OK) {
+    App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
   }
 }
 
@@ -359,6 +378,9 @@ ConfigCommand::fetch_config_reload(std::string const &token, std::string const &
   auto response = invoke_rpc(request); // server will handle if token is empty or not.
 
   _printer->write_output(response); // in case of errors.
+  if (response.is_error()) {
+    throw ServerErrorReported{};
+  }
   return response.result.as<ConfigReloadResponse>();
 }
 
@@ -366,13 +388,20 @@ void
 ConfigCommand::track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval,
                                             std::chrono::milliseconds timeout, std::string const &timeout_str)
 {
+  // A status error stops the monitor before it sees how the reload ended. At or above --error-level it fails the command,
+  // below it the outcome is unknown.
+  auto stop_on_error = [this](shared::rpc::JSONRPCResponse const &response) {
+    _printer->write_output(response);
+    mark_not_done();
+  };
+
   FetchConfigReloadStatusRequest request{
     FetchConfigReloadStatusRequest::Params{token, "1" /* last reload if any*/}
   };
   auto resp = invoke_rpc(request);
 
   if (resp.is_error()) {
-    _printer->write_output(resp);
+    stop_on_error(resp);
     return;
   }
 
@@ -422,8 +451,7 @@ ConfigCommand::track_config_reload_progress(std::string const &token, std::chron
     };
     resp = invoke_rpc(request);
     if (resp.is_error()) {
-      _printer->write_output(resp);
-      App_Exit_Status_Code = CTRL_EX_ERROR;
+      stop_on_error(resp);
       return;
     }
   }
@@ -472,6 +500,9 @@ ConfigCommand::config_reload(std::string const &token, bool force, YAML::Node co
   });
   // base class method will handle error and json output if needed.
   _printer->write_output(resp);
+  if (resp.is_error()) {
+    throw ServerErrorReported{};
+  }
   return resp.result.as<ConfigReloadResponse>();
 }
 
@@ -496,7 +527,9 @@ ConfigCommand::config_reset()
   // Lookup matching records
   auto lookup_response = invoke_rpc(lookup_request);
   if (lookup_response.is_error()) {
+    // Without the records nothing can be reset.
     _printer->write_output(lookup_response);
+    mark_not_done();
     return;
   }
 
@@ -555,6 +588,21 @@ ConfigCommand::config_reload()
     _printer->write_output("");
   }
 
+  // Without content the request would silently degrade to a full reload of every handler,
+  // which is the opposite of the scoped reload the operator asked for.
+  if (data_args) {
+    if (data_args.size() == 0) {
+      _printer->write_output("Error: --data (-d) requires content: @file, @- or a YAML string");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+    if (has_empty_value(data_args)) {
+      _printer->write_output("Error: --data (-d) received an empty value, so its config would be left out");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+  }
+
   // Parse inline config data if provided (supports multiple -d arguments)
   YAML::Node configs;
   for (auto const &data_arg : data_args) {
@@ -587,16 +635,21 @@ ConfigCommand::config_reload()
 
   // Parse --directive (-D) arguments into configs[key]["_reload"][directive] = value
   auto dir_args = get_parsed_arguments()->get("directive");
+  if (dir_args) {
+    if (dir_args.size() == 0) {
+      _printer->write_output("Error: --directive (-D) requires at least one config_key.directive_key=value");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+    if (has_empty_value(dir_args)) {
+      _printer->write_output("Error: --directive (-D) received an empty value, so its directive would be left out");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+  }
   for (auto const &dir : dir_args) {
     if (dir.empty()) {
       continue;
-    }
-    if (dir[0] == '-') {
-      _printer->write_output("Error: '" + dir +
-                             "' looks like a flag, not a directive. "
-                             "Place -D as the last option on the command line.");
-      App_Exit_Status_Code = CTRL_EX_ERROR;
-      return;
     }
     std::string err;
     if (!parse_directive(dir, configs, err)) {
@@ -625,7 +678,15 @@ ConfigCommand::config_reload()
   if (show_details) {
     bool include_logs = get_parsed_arguments()->get("include-logs") ? true : false;
 
-    ConfigReloadResponse resp = config_reload(token, force, configs);
+    ConfigReloadResponse resp;
+    try {
+      resp = config_reload(token, force, configs);
+    } catch (ServerErrorReported const &) {
+      // Nothing was scheduled, so there are no details to show.
+      mark_not_done();
+      throw;
+    }
+
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
       App_Exit_Status_Code = CTRL_EX_TEMPFAIL;
       if (resp.tasks.size() > 0) {
@@ -650,7 +711,14 @@ ConfigCommand::config_reload()
       std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(initial_wait_secs * 1000)));
     }
 
-    resp = fetch_config_reload(token);
+    try {
+      resp = fetch_config_reload(token);
+    } catch (ServerErrorReported const &) {
+      // The details asked for could not be read.
+      mark_not_done();
+      throw;
+    }
+
     if (resp.error.size()) {
       display_errors(_printer.get(), resp.error);
       App_Exit_Status_Code = CTRL_EX_ERROR;
@@ -664,7 +732,14 @@ ConfigCommand::config_reload()
     }
   } else if (monitor) {
     _printer->disable_json_format(); // monitor output is not json.
-    ConfigReloadResponse resp = config_reload(token, force, configs);
+    ConfigReloadResponse resp;
+    try {
+      resp = config_reload(token, force, configs);
+    } catch (ServerErrorReported const &) {
+      // Nothing was scheduled, so there is nothing to monitor.
+      mark_not_done();
+      throw;
+    }
 
     if (contains_error(resp.error, ConfigError::RELOAD_IN_PROGRESS)) {
       in_progress = true;
@@ -847,6 +922,7 @@ MetricCommand::metric_monitor()
 
     if (resp.is_error()) { // something went wrong in the server, report it.
       _printer->write_output(resp);
+      mark_not_done();
       return;
     }
 
@@ -950,6 +1026,9 @@ HostDBCommand::HostDBCommand(ts::Arguments *args) : CtrlCommand(args)
   if (get_parsed_arguments()->get(STATUS_STR)) {
     _printer      = std::make_unique<HostDBStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_get(); };
+  } else if (get_parsed_arguments()->get(CLEAR_STR)) {
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
+    _invoked_func = [&]() { clear(); };
   }
 }
 
@@ -971,15 +1050,30 @@ HostDBCommand::status_get()
 
   _printer->write_output(response);
 }
+
+void
+HostDBCommand::clear()
+{
+  HostDBClearRequest request;
+
+  auto response = invoke_rpc(request);
+
+  _printer->write_output(response);
+}
 //------------------------------------------------------------------------------------------------------------------------------------
 PluginCommand::PluginCommand(ts::Arguments *args) : CtrlCommand(args)
 {
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+
   if (get_parsed_arguments()->get(MSG_STR)) {
     _invoked_func = [&]() { plugin_msg(); };
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
   } else if (get_parsed_arguments()->get(LIST_STR)) {
     _invoked_func = [&]() { plugin_list(); };
+    _printer      = std::make_unique<PluginListPrinter>(printOpts);
+  } else {
+    _printer = std::make_unique<GenericPrinter>(printOpts);
   }
-  _printer = std::make_unique<GenericPrinter>(parse_print_opts(args));
 }
 
 void
@@ -1003,44 +1097,7 @@ PluginCommand::plugin_list()
   GetPluginListRequest request;
   auto                 response = invoke_rpc(request);
 
-  if (response.is_error()) {
-    _printer->write_output(response);
-    return;
-  }
-
-  auto info = response.result.as<PluginListResponse>();
-
-  std::cout << "source: " << info.source << '\n';
-
-  bool has_load_order = false;
-  for (const auto &p : info.plugins) {
-    if (p.load_order >= 0) {
-      has_load_order = true;
-      break;
-    }
-  }
-
-  if (has_load_order) {
-    std::cout << "  #  plugin                          load_order   status\n";
-  } else {
-    std::cout << "  #  plugin                          status\n";
-  }
-
-  for (const auto &p : info.plugins) {
-    std::cout << " " << std::right << std::setw(2) << p.index << "  " << std::left << std::setw(30) << p.path;
-
-    if (has_load_order) {
-      char order_buf[12];
-      if (p.load_order >= 0) {
-        snprintf(order_buf, sizeof(order_buf), "%d", p.load_order);
-      } else {
-        snprintf(order_buf, sizeof(order_buf), "--");
-      }
-      std::cout << "  " << std::left << std::setw(11) << order_buf;
-    }
-
-    std::cout << "  " << p.status << '\n';
-  }
+  _printer->write_output(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 DirectRPCCommand::DirectRPCCommand(ts::Arguments *args) : CtrlCommand(args)
@@ -1213,14 +1270,19 @@ ServerCommand::server_debug()
     lookup_request.emplace_rec("proxy.config.diags.debug.tags", shared::rpc::NOT_REGEX, shared::rpc::CONFIG_REC_TYPES);
     auto lookup_response = invoke_rpc(lookup_request);
 
-    if (!lookup_response.is_error()) {
-      auto const &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
-      if (!records.recordList.empty()) {
-        std::string current_tags = records.recordList[0].currentValue;
-        if (!current_tags.empty()) {
-          // Combine: current|new
-          tags = current_tags + "|" + tags;
-        }
+    if (lookup_response.is_error()) {
+      // Without the current tags the append cannot be done: report it and set nothing.
+      _printer->write_output(lookup_response);
+      mark_not_done();
+      return;
+    }
+
+    auto const &records = lookup_response.result.as<shared::rpc::RecordLookUpResponse>();
+    if (!records.recordList.empty()) {
+      std::string current_tags = records.recordList[0].currentValue;
+      if (!current_tags.empty()) {
+        // Combine: current|new
+        tags = current_tags + "|" + tags;
       }
     }
   }

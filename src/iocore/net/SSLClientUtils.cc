@@ -198,8 +198,13 @@ validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hos
   char        buff[INET6_ADDRSTRLEN];
   const char *server_name = netvc->options.ssl_servername ? netvc->options.ssl_servername.get() : "<unknown>";
   ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
-  Warning("Origin hostname (%.*s) not in certificate. Action=%s server=%s(%s)", static_cast<int>(hostname.length()),
-          hostname.data(), enforce_mode ? "Terminate" : "Continue", server_name, buff);
+  if (enforce_mode) {
+    Dbg(dbg_ctl_ssl_verify, "Origin hostname (%.*s) not in certificate for session reuse. Action=RejectReuse server=%s(%s)",
+        static_cast<int>(hostname.length()), hostname.data(), server_name, buff);
+  } else {
+    SiteThrottledWarning("Origin hostname (%.*s) not in certificate for session reuse. Action=ContinueReuse server=%s(%s)",
+                         static_cast<int>(hostname.length()), hostname.data(), server_name, buff);
+  }
 
   return !enforce_mode;
 }

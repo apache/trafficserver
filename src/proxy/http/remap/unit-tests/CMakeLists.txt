@@ -93,8 +93,14 @@ if(NOT APPLE)
   target_link_options(test_PluginDso PRIVATE -Wl,--allow-multiple-definition)
 endif()
 
+# These tests dlopen plugins, and the stub file libinknet_stub.cc double-defines symbols.
+# Disable the resulting ODR violation report; see remap_test_dlopen_leak_suppression.txt.
+set(REMAP_DSO_TEST_ENVIRONMENT
+    "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
+)
+
 if(NOT APPLE)
-  add_catch2_test(NAME test_PluginDso COMMAND $<TARGET_FILE:test_PluginDso>)
+  add_catch2_test(NAME test_PluginDso COMMAND $<TARGET_FILE:test_PluginDso> ENVIRONMENT "${REMAP_DSO_TEST_ENVIRONMENT}")
 endif()
 ### test_PluginFactory ########################################################################
 
@@ -133,7 +139,9 @@ target_link_libraries(
 )
 
 if(NOT APPLE)
-  add_catch2_test(NAME test_PluginFactory COMMAND $<TARGET_FILE:test_PluginFactory>)
+  add_catch2_test(
+    NAME test_PluginFactory COMMAND $<TARGET_FILE:test_PluginFactory> ENVIRONMENT "${REMAP_DSO_TEST_ENVIRONMENT}"
+  )
 endif()
 ### test_RemapPluginInfo ########################################################################
 
@@ -166,18 +174,8 @@ target_link_libraries(
 )
 
 if(NOT APPLE)
-  add_catch2_test(NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo>)
-endif()
-
-# not in the same if as the above will be removed shortly.
-if(NOT APPLE)
-  # Disable ORD violation caused by double definition inside a stub file libinknet_stub.cc
-  # see remap_test_dlopen_leak_suppression.txt for more info.
-  set_tests_properties(
-    test_RemapPluginInfo test_PluginDso test_PluginFactory
-    PROPERTIES
-      ENVIRONMENT
-      "ASAN_OPTIONS=detect_odr_violation=0;LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/remap_test_dlopen_leak_suppression.txt"
+  add_catch2_test(
+    NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo> ENVIRONMENT "${REMAP_DSO_TEST_ENVIRONMENT}"
   )
 endif()
 ### test_NextHopStrategyFactory ########################################################################

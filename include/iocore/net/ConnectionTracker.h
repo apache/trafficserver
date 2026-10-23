@@ -79,29 +79,54 @@ public:
    *
    * This is independent of @c TxnConfig::metric_enabled, which decides only whether per server
    * metrics exist for a group at all. The per group metrics are always created in the hidden metric
-   * store; what varies here is what gets published from them:
-   *   - @c AGGREGATE_NONE: no aggregate. The per group metrics are published under their own names.
-   *     This is the default and matches the behavior of releases that had no aggregate support.
-   *   - @c AGGREGATE_GROUP: the per hostname aggregates are published, and so are the per group
-   *     metrics they are computed from.
-   *   - @c AGGREGATE_ONLY: the per hostname aggregates are published and the per group metrics stay
-   *     hidden, which keeps the published metric count proportional to hostnames rather than to
-   *     groups. Where a group has no aggregate to belong to -- see @c Group::host_metric_name, which
-   *     only yields a name for match type @c MATCH_BOTH -- the per group metrics are published
-   *     anyway, since otherwise nothing at all would be reported for that group.
+   * store; what varies here is what gets published from them.
+   *
+   * Two kinds of per hostname aggregate exist. The *sums* are @c current_connection,
+   * @c total_connection and @c blocked_connection added across the groups of a hostname. The *max*
+   * is @c current_connection.max, the largest @c current_connection among those groups. Which of
+   * them are published, and whether the per group metrics are published alongside, is what this
+   * selects:
+   *
+   *   | value                | per group | sums | max |
+   *   |----------------------|-----------|------|-----|
+   *   | @c AGGREGATE_NONE    | yes       | no   | no  |
+   *   | @c AGGREGATE_GROUP   | yes       | yes  | yes |
+   *   | @c AGGREGATE_MAX     | no        | no   | yes |
+   *   | @c AGGREGATE_SUM     | no        | yes  | yes |
+   *
+   * @c AGGREGATE_NONE is the default and matches the behavior of releases that had no aggregate
+   * support. @c AGGREGATE_MAX is the smallest useful configuration: one metric per hostname,
+   * answering how close the busiest group is to @c per_server.connection.max. @c AGGREGATE_SUM adds
+   * the totals for that hostname. Both keep the published metric count proportional to hostnames
+   * rather than to groups.
+   *
+   * Where a group has no aggregate to belong to -- see @c Group::host_metric_name, which only
+   * yields a name for match type @c MATCH_BOTH -- the per group metrics are published whatever this
+   * says, since otherwise nothing at all would be reported for that group.
    *
    * Keeping the per group metrics in the hidden store in every case means changing this at runtime
    * is only a change of what is registered for publication, with no metric to migrate between the
    * two stores.
    *
-   * The records layer validates and clamps this to 0..2. A plugin setting the overridable config
+   * A change is applied per group, when that group is next constructed, which happens on the first
+   * connection after its count last fell to zero. A group that never goes idle keeps whatever was
+   * in effect when it was created.
+   *
+   * The per group names belong to one group, so a group that stops publishing them retracts them,
+   * see @c ts::Metrics::unlist. The sums and the max are named per hostname and shared by its
+   * groups, so a group that stops publishing those only stops contributing to them, see
+   * @c ts::Metrics::Derived::remove_source; they are retracted once no group of that hostname
+   * publishes them.
+   *
+   * The records layer validates and clamps this to 0..3. A plugin setting the overridable config
    * directly is not clamped, see @c METRIC_AGGREGATE_CONV; any other value behaves as
-   * @c AGGREGATE_GROUP, publishing both the aggregate and the per group metrics.
+   * @c AGGREGATE_GROUP, publishing everything.
    */
   enum MetricAggregate : int {
     AGGREGATE_NONE  = 0, ///< No hostname aggregate; the per group metrics are published.
-    AGGREGATE_GROUP = 1, ///< Hostname aggregates published, along with the per group metrics.
-    AGGREGATE_ONLY  = 2, ///< Hostname aggregates published, per group metrics kept hidden.
+    AGGREGATE_GROUP = 1, ///< Hostname sums and max, published along with the per group metrics.
+    AGGREGATE_MAX   = 2, ///< Hostname max only; the per group metrics stay hidden.
+    AGGREGATE_SUM   = 3, ///< Hostname sums and max; the per group metrics stay hidden.
   };
 
   /// Per transaction configuration values.
@@ -238,15 +263,9 @@ public:
     std::shared_ptr<Group> _g;                 ///< Active group for this transaction.
     bool                   _reserved_p{false}; ///< Set if a connection slot has been reserved.
     bool                   _queued_p{false};   ///< Set if the connection is delayed / queued.
-    bool                   _exempt_p{false};   ///< Set if the peer is in the connection exempt list.
 
     /// Check if tracking is active.
     bool is_active() const;
-
-    /// Whether this group is in the connection max exempt list.
-    /// @return @c true if this group should not be blocked due to
-    /// proxy.config.net.per_client.max_connections_in.
-    bool is_exempt() const;
 
     /// Reserve a connection.
     /// @return the number of tracked connections.
@@ -287,6 +306,14 @@ public:
    * @return A @c Group for the arguments, existing if possible and created if not.
    */
   static TxnState obtain_inbound(IpEndpoint const &addr);
+
+  /** Whether client connections from @a addr are exempt from proxy.config.net.connections_throttle and
+   * proxy.config.net.per_client.max_connections_in.
+   *
+   * @param addr The peer address of the client socket, not an address from a PROXY protocol header.
+   * @return @c true if @a addr is in the client exempt list.
+   */
+  static bool is_client_exempt(IpEndpoint const &addr);
 
   /** Get or create the @c Group for the specified outbound session properties.
    * @param txn_cnf The transaction local configuration.
@@ -505,12 +532,6 @@ inline bool
 ConnectionTracker::TxnState::is_active() const
 {
   return nullptr != _g;
-}
-
-inline bool
-ConnectionTracker::TxnState::is_exempt() const
-{
-  return _exempt_p;
 }
 
 inline int

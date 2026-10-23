@@ -178,32 +178,6 @@ CacheHTTPInfoVector::marshal(char *buf, int length)
   return buf - start;
 }
 
-int
-CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj *block_ptr)
-{
-  ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
-
-  const char   *start = buf;
-  CacheHTTPInfo info;
-  xcount = 0;
-
-  while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {
-    int tmp = HTTPInfo::unmarshal(const_cast<char *>(buf), length - (buf - start), block_ptr);
-    if (tmp < 0) {
-      return -1;
-    }
-    info.m_alt  = reinterpret_cast<HTTPCacheAlt *>(const_cast<char *>(buf));
-    buf        += tmp;
-
-    data(xcount).alternate = info;
-    xcount++;
-  }
-
-  return (const_cast<caddr_t>(buf) - const_cast<caddr_t>(start));
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
 uint32_t
 CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj *block_ptr)
 {
@@ -218,7 +192,7 @@ CacheHTTPInfoVector::get_handles(const char *buf, int length, RefCountObj *block
   while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {
     int tmp = info.get_handle(const_cast<char *>(buf), length - (buf - start));
     if (tmp < 0) {
-      ink_assert(!"CacheHTTPInfoVector::unmarshal get_handle() failed");
+      ink_assert(!"CacheHTTPInfoVector::get_handles get_handle() failed");
       return static_cast<uint32_t>(-1);
     }
     buf += tmp;

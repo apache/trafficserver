@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSThreadDestroy(TSThread thread)
+.. function:: void TSThreadDestroy(TSThread thread) noexcept
 
 Description
 ===========

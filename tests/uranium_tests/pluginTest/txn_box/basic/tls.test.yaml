@@ -1,0 +1,126 @@
+# Testing dynamic SNI - set outbound SNI based on the request for specific inbound requests.
+meta:
+  version: "1.0"
+
+  txn_box:
+    remap:
+    - with: pre-remap-path
+      select:
+      - any-of:
+        - prefix: "v1/video/search/"
+        - prefix: "v1/video/alias/"
+        - prefix: "v1/video/channels/"
+        - prefix: "v1/video/sub/"
+        do:
+        - txn-conf<proxy.config.ssl.client.sni_policy>: "@{remap-target-host}"
+        - ua-req-host: "stage.video.ex"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: # plain text sessions
+    stack: http
+  transactions:
+  - all: { headers: { fields: [[ uuid, 101 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/v1/video/search/channel/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [ [ uuid, 102 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/v1/video/channels/nightwish"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+- protocol: # TLS sessions
+    stack: https
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]] }}
+    client-request:
+      <<: *base-req
+      url: "/v1/video/search/channel/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [ [ uuid, 2 ] ] } }
+    client-request:
+      <<: *base-req
+      url: "/v1/video/channels/nightwish"
+      headers:
+        fields:
+        - [ "Host", "base.ex" ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "Host", { value: "stage.video.ex", as: prefix } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+urtest:
+  description: Verify txn_box TLS handling
+  requires: {plugins: [txn_box.so]}
+  server: {name: txn-box-tls-origin}
+  dns: {name: txn-box-tls-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-tls-client, process_config: {other_args: --verbose info}}
+  ats:
+    name: txn-box-tls-ts
+    process_config: {enable_tls: true}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box|http|ssl
+      proxy.config.http.cache.http: 0
+      proxy.config.ssl.client.verify.server.policy: DISABLED
+    copy_to_config_dir: [tls.test.yaml]
+    plugin_config:
+    - txn_box.so
+    remap_config:
+    - map http://base.ex/ http://base.ex:{SERVER_HTTP_PORT}/ @plugin=txn_box.so @pparam=--key=meta.txn_box.remap @pparam={CONFIG_DIR}/tls.test.yaml
+    - map https://base.ex/ https://base.ex:{SERVER_HTTPS_PORT}/ @plugin=txn_box.so @pparam=--key=meta.txn_box.remap @pparam={CONFIG_DIR}/tls.test.yaml

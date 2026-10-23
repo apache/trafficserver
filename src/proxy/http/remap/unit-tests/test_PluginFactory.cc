@@ -33,6 +33,7 @@
 #include <catch2/interfaces/catch_interfaces_config.hpp>
 #include <fstream> /* ofstream */
 #include <memory>
+#include <utility>
 #include <utime.h>
 
 #include "plugin_testing_common.h"
@@ -256,6 +257,10 @@ SCENARIO("loading plugins", "[plugin][core]")
 
   GIVEN("an existing plugin")
   {
+    /* Coverity reads this GIVEN body as straight-line code; it does not model Catch2 re-entering
+       the body once per leaf WHEN section.  It therefore treats the copy in the last WHEN section
+       below as the only one it can turn into a move, and would report a move in any earlier
+       section as a use-after-move.  The copies of pluginName above that point are deliberate. */
     fs::path pluginName = fs::path("plugin_v1.so");
     fs::path buildPath  = pluginBuildDir / pluginName;
 
@@ -395,7 +400,8 @@ SCENARIO("loading plugins", "[plugin][core]")
 
     WHEN("config using nonexisting absolute plugin file name")
     {
-      fs::path relativeExistingPath = pluginName;
+      /* Last read of pluginName; see the note at its declaration for why only this one moves. */
+      fs::path relativeExistingPath = std::move(pluginName);
       CHECK(relativeExistingPath.is_relative());
       fs::path absoluteNonexistingPath = searchDir / "subdir" / "nonexisting_plugin.so";
       CHECK(absoluteNonexistingPath.is_absolute());

@@ -22,9 +22,11 @@
 */
 
 #include <catch2/catch_test_macros.hpp>
+#include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <unistd.h>
 
 #include "proxy/Plugin.h"
 
@@ -35,12 +37,21 @@ class TempYAML
 public:
   explicit TempYAML(const std::string &content)
   {
-    _path = std::filesystem::temp_directory_path() / "test_plugin_yaml.yaml";
+    // Unique per instance: test cases run as separate, concurrent ctest processes,
+    // so a fixed name would let one case delete another's file mid-read.
+    static std::atomic<unsigned> seq{0};
+
+    _path = std::filesystem::temp_directory_path() /
+            ("test_plugin_yaml." + std::to_string(getpid()) + "." + std::to_string(seq++) + ".yaml");
     std::ofstream f(_path);
     f << content;
   }
 
-  ~TempYAML() { std::filesystem::remove(_path); }
+  ~TempYAML()
+  {
+    std::error_code ec; // Best effort: cleanup must not throw out of a destructor.
+    std::filesystem::remove(_path, ec);
+  }
 
   const char *
   path() const

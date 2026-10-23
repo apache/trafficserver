@@ -163,7 +163,7 @@ print_port(struct sockaddr const *ip, std::string *result)
 }
 
 static void
-print_certificate(std::string *result, X509_NAME *name)
+print_certificate(std::string *result, const X509_NAME *name)
 {
   if (name == nullptr) {
     *result = pv_empty;
@@ -192,11 +192,10 @@ print_san_certificate(std::string *result, X509 *cert, int type)
 {
   int ext_ndx = X509_get_ext_by_NID(cert, NID_subject_alt_name, -1);
   if (ext_ndx >= 0) {
-    X509_EXTENSION *ext               = nullptr;
+    auto *ext                         = X509_get_ext(cert, ext_ndx);
     STACK_OF(GENERAL_NAME) *alt_names = nullptr;
     GENERAL_NAME *gen_name            = nullptr;
 
-    ext       = X509_get_ext(cert, ext_ndx);
     alt_names = static_cast<stack_st_GENERAL_NAME *>(X509V3_EXT_d2i(ext));
     if (alt_names != nullptr) {
       int  num   = sk_GENERAL_NAME_num(alt_names);
@@ -635,6 +634,9 @@ Context::defineMetric(uint32_t metric_type, std::string_view name, uint32_t *met
 WasmResult
 Context::incrementMetric(uint32_t metric_id, int64_t offset)
 {
+  if (!TSStatIdIsValid(static_cast<int>(metric_id))) {
+    return WasmResult::BadArgument;
+  }
   TSStatIntIncrement(metric_id, offset);
   return WasmResult::Ok;
 }
@@ -642,6 +644,9 @@ Context::incrementMetric(uint32_t metric_id, int64_t offset)
 WasmResult
 Context::recordMetric(uint32_t metric_id, uint64_t value)
 {
+  if (!TSStatIdIsValid(static_cast<int>(metric_id))) {
+    return WasmResult::BadArgument;
+  }
   TSStatIntSet(metric_id, value);
   return WasmResult::Ok;
 }
@@ -649,6 +654,9 @@ Context::recordMetric(uint32_t metric_id, uint64_t value)
 WasmResult
 Context::getMetric(uint32_t metric_id, uint64_t *value_ptr)
 {
+  if (!TSStatIdIsValid(static_cast<int>(metric_id))) {
+    return WasmResult::BadArgument;
+  }
   *value_ptr = TSStatIntGet(metric_id);
   return WasmResult::Ok;
 }

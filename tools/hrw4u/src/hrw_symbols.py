@@ -26,6 +26,7 @@ from hrw4u.validation import Validator
 import hrw4u.types as types
 import hrw4u.tables as tables
 from hrw4u.states import SectionType
+from hrw4u.common import apply_percent_mods, split_percent_mods
 from hrw4u.symbols_base import SymbolResolverBase
 
 
@@ -190,8 +191,7 @@ class InverseSymbolResolver(SymbolResolverBase):
 
                 if tag == "HEADER":
                     return f"{self.get_prefix_for_context('header_condition', section)}{suffix}", False
-                else:
-                    return f"{lhs_prefix}{suffix.replace(':', '.')}", False
+                return f"{lhs_prefix}{suffix.replace(':', '.')}", False
         return None
 
     def _should_lowercase_suffix(self, tag_match: str, lhs_prefix: str) -> bool:
@@ -414,7 +414,21 @@ class InverseSymbolResolver(SymbolResolverBase):
         return f"!({t})"
 
     def percent_to_ident_or_func(self, percent: str, section: SectionType | None) -> tuple[str, bool]:
-        """Convert percent block to identifier or function call."""
+        """Convert a %{} block to an identifier or function call; trailing [MODS] become a "with" clause."""
+        stripped, mods = split_percent_mods(percent)
+        expr, is_func = self._percent_to_ident_or_func(stripped, section)
+
+        if not mods:
+            return expr, is_func
+
+        # A block with no DSL equivalent comes back as %{...}, where the modifiers belong
+        # inside the braces rather than in a "with" clause.
+        if expr == stripped:
+            return apply_percent_mods(expr, mods), is_func
+
+        return f"{expr} with {','.join(mods)}", is_func
+
+    def _percent_to_ident_or_func(self, percent: str, section: SectionType | None) -> tuple[str, bool]:
         match = Validator._PERCENT_RE.match(percent)
         if not match:
             raise SymbolResolutionError(percent, "Invalid %{...} reference")
@@ -522,10 +536,15 @@ class InverseSymbolResolver(SymbolResolverBase):
             commands = params.target if params else None
             if (isinstance(commands, (list, tuple)) and cmd in commands) or (cmd == commands):
                 uppercase = params.upper if params else False
+                if params:
+                    qualifier = toks[1] if len(toks) > 1 else ""
+                    name = f"{lhs_key}{qualifier}" if lhs_key.endswith(".") else lhs_key
+                    self.validate_section_access(name, section, params.sections)
                 return self._handle_operator_command(cmd, toks, lhs_key, uppercase, section)
 
         for name, params in tables.STATEMENT_FUNCTION_MAP.items():
             if params.target == cmd:
+                self.validate_section_access(name, section, params.sections)
                 return self._handle_statement_function(name, args, section, op_state)
 
         raise SymbolResolutionError(line, f"Unknown operator: {cmd}")

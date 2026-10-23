@@ -170,12 +170,41 @@ public:
   void            readReschedule(NetHandler *nh);
   void            writeReschedule(NetHandler *nh);
   void            netActivity();
+  /// The connection state carried from one thread's NetVC to another by a migration.
+  struct MigrationState {
+    Connection              con;
+    void                   *arg = nullptr;
+    NetVCOptions            options;
+    NetVConnectionContext_t context               = NET_VCONNECTION_UNSET;
+    ink_hrtime              inactivity_timeout_in = 0;
+    NetProcessor           *processor             = nullptr;
+    bool                    client_exempt         = false;
+  };
+
   /**
-   * If the current object's thread does not match the t argument, create a new
-   * NetVC in the thread t context based on the socket and ssl information in the
-   * current NetVC and mark the current NetVC to be closed.
+   * First half of a migration to another thread. Move the socket and ssl
+   * information out of the current NetVC into ms and mark the current NetVC to
+   * be closed. The owning thread is free to release the NetVC once this
+   * returns, so the caller must not use it again.
+   *
+   * This can be called from any thread, but the caller must hold the mutex of
+   * the read and write VIOs to keep the owning thread from processing the
+   * NetVC.
+   *
+   * @return @c false if the socket could not be removed from the owning
+   * thread's event loop. The NetVC is then closed along with its connection
+   * and ms is left untouched.
    */
-  UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
+  bool detachForMigration(MigrationState &ms);
+
+  /**
+   * Second half of a migration to another thread. Create a new NetVC in the
+   * thread t context based on the socket and ssl information in ms. The
+   * connection is closed if this fails.
+   *
+   * @return The new NetVC, or nullptr on failure.
+   */
+  static UnixNetVConnection *attachMigrated(MigrationState &ms, Continuation *c, EThread *t);
 
   Action action_;
 
@@ -217,6 +246,20 @@ public:
     return _is_tunnel_endpoint;
   }
 
+  /// Whether this client connection is from an address in proxy.config.http.per_client.connection.exempt_list, and so
+  /// counted in proxy.process.net.per_client.connections_exempt_currently_open.
+  bool
+  is_client_exempt() const
+  {
+    return _client_exempt;
+  }
+
+  void
+  set_client_exempt(bool exempt)
+  {
+    _client_exempt = exempt;
+  }
+
 protected:
   virtual bool
   _isReadyToTransferData() const
@@ -236,6 +279,7 @@ private:
   virtual NetProcessor *_getNetProcessor();
 
   bool _is_tunnel_endpoint{false};
+  bool _client_exempt{false};
 
   // Called by make_tunnel_endpiont() when the far end of the TCP connection is the active/client end.
   virtual void _in_context_tunnel();

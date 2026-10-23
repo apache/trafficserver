@@ -46,6 +46,7 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *connections_throttled_in;
   Metrics::Counter::AtomicType *per_client_connections_throttled_in;
   Metrics::Counter::AtomicType *per_client_connections_exempt_in;
+  Metrics::Gauge::AtomicType   *per_client_connections_exempt_currently_open;
   Metrics::Counter::AtomicType *connections_throttled_out;
   Metrics::Counter::AtomicType *default_inactivity_timeout_applied;
   Metrics::Counter::AtomicType *default_inactivity_timeout_count;

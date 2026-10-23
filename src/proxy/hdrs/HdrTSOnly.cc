@@ -58,6 +58,9 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   ParseResult state = ParseResult::CONT;
   *bytes_used       = 0;
 
+  // A field can be split across blocks, so only the last block ends the input.
+  int64_t remaining = eof ? r->read_avail() : 0;
+
   do {
     int64_t b_avail = r->block_read_avail();
 
@@ -68,10 +71,12 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     tmp = start = r->start();
     end         = start + b_avail;
 
+    bool const block_eof = eof && b_avail >= remaining;
+
     int heap_slot = m_heap->attach_block(r->get_current_block(), start);
 
     m_heap->lock_ronly_str_heap(heap_slot);
-    state = http_parser_parse_req(parser, m_heap, m_http, &tmp, end, false, eof, strict_uri_parsing, max_request_line_size,
+    state = http_parser_parse_req(parser, m_heap, m_http, &tmp, end, false, block_eof, strict_uri_parsing, max_request_line_size,
                                   max_hdr_field_size);
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
@@ -79,6 +84,7 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     used = static_cast<int>(tmp - start);
     r->consume(used);
     *bytes_used += used;
+    remaining   -= used;
 
   } while (state == ParseResult::CONT);
 
@@ -99,6 +105,9 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
   ParseResult state = ParseResult::CONT;
   *bytes_used       = 0;
 
+  // A field can be split across blocks, so only the last block ends the input.
+  int64_t remaining = eof ? r->read_avail() : 0;
+
   do {
     int64_t b_avail = r->block_read_avail();
     tmp = start = r->start();
@@ -117,16 +126,19 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
 
     end = start + b_avail;
 
+    bool const block_eof = eof && b_avail >= remaining;
+
     int heap_slot = m_heap->attach_block(r->get_current_block(), start);
 
     m_heap->lock_ronly_str_heap(heap_slot);
-    state = http_parser_parse_resp(parser, m_heap, m_http, &tmp, end, false, eof);
+    state = http_parser_parse_resp(parser, m_heap, m_http, &tmp, end, false, block_eof);
     m_heap->set_ronly_str_heap_end(heap_slot, tmp);
     m_heap->unlock_ronly_str_heap(heap_slot);
 
     used = static_cast<int>(tmp - start);
     r->consume(used);
     *bytes_used += used;
+    remaining   -= used;
 
   } while (state == ParseResult::CONT);
 

@@ -195,6 +195,9 @@ ArgParser::parse(const char **argv)
     if (!default_command.empty()) {
       args = _argv;
       args.insert(args.begin() + 1, default_command);
+      // The pass that failed may have collected options before it gave up. Those values would
+      // now accumulate on top of the ones the retry collects rather than be replaced.
+      ret = Arguments{};
       _top_level_command.parse(ret, args);
     }
   };
@@ -418,6 +421,8 @@ ArgParser::Command::output_option() const
       return {" [<arg> ...]"};
     } else if (num == MORE_THAN_ONE_ARG_N) {
       return {" <arg> ..."};
+    } else if (num == AT_MOST_ONE_ARG_N) {
+      return {" [<arg>]"};
     } else {
       return " <arg1> ... <arg" + std::to_string(num) + ">";
     }
@@ -518,34 +523,156 @@ ArgParser::Command::output_option() const
   }
 }
 
+bool
+ArgParser::Command::is_registered_option(std::string const &token) const
+{
+  if (_option_list.find(token) != _option_list.end() || _option_map.find(token) != _option_map.end()) {
+    return true;
+  }
+  // The --option=value form.
+  if (token.size() > 2 && token[0] == '-' && token[1] == '-') {
+    if (auto const pos = token.find_first_of('='); pos != std::string::npos) {
+      return _option_list.find(token.substr(0, pos)) != _option_list.end();
+    }
+  }
+  return false;
+}
+
 // helper method to handle the arguments and put them nicely in arguments
 // can be switched to ts::errata
-static std::string
-handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index)
+namespace
 {
-  ArgumentData data;
-  ret.append(name, data);
-  // handle the args
-  if (arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N) {
-    // infinite arguments
-    if (arg_num == MORE_THAN_ONE_ARG_N && args.size() <= index + 1) {
+  // The usage error a missing value for arg_num has always been, independent of any
+  // environment variable. AT_MOST_ONE_ARG_N never needs this: a missing value is valid input for
+  // it on its own.
+  std::string
+  missing_value_message(unsigned arg_num, std::string const &name)
+  {
+    if (arg_num == MORE_THAN_ONE_ARG_N) {
       return "at least one argument expected by " + name;
     }
-    for (unsigned j = index + 1; j < args.size(); j++) {
-      ret.append_arg(name, args[j]);
+    return std::to_string(arg_num) + " argument(s) expected by " + name;
+  }
+} // namespace
+
+std::string
+ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index,
+                                std::string const &env_value, bool &was_bare) const
+{
+  was_bare = false;
+
+  // A repeated option taking an unbounded number of values accumulates, as the --option=value
+  // form always has, so an entry already written by this pass keeps the values it collected. A
+  // fixed arity option keeps its last-one-wins behaviour, which is a separate concern.
+  bool const accumulates = MORE_THAN_ZERO_ARG_N == arg_num || MORE_THAN_ONE_ARG_N == arg_num;
+
+  if (!accumulates || !ret.has(name)) {
+    ArgumentData data;
+    ret.append(name, data);
+  }
+  // handle the args
+  if (arg_num == AT_MOST_ONE_ARG_N) {
+    // Zero or one value. A value is taken only when the following token does not name
+    // another option of this command, which leaves this command's positional arguments
+    // in place. A "--" token makes whatever follows it a value rather than an option.
+    unsigned j{index + 1};
+    bool     takes_value{false};
+
+    if (j < args.size()) {
+      if (args[j] == "--") {
+        ++j;
+        takes_value = j < args.size();
+      } else {
+        takes_value = !is_registered_option(args[j]);
+      }
     }
-    args.erase(args.begin() + index, args.end());
+    if (takes_value) {
+      ret.append_arg(name, args[j]);
+      ++j;
+    } else if (!env_value.empty()) {
+      // No value on the command line: fill it now. Repetition of this option is refused
+      // outright elsewhere, so there is no later occurrence to wait for.
+      ret.append_arg(name, env_value);
+    }
+    args.erase(args.begin() + index, args.begin() + j);
+    index -= 1;
     return "";
   }
-  // finite number of argument handling
-  for (unsigned j = 0; j < arg_num; j++) {
-    if (args.size() < index + j + 2 || args[index + j + 1].empty()) {
+  if (arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N) {
+    // Variable number of arguments. Stop collecting at a token that names another option of this
+    // command, so options written afterwards keep their own values. Every other token is taken as
+    // a value, including a positional argument of the command, which is why an option whose value
+    // is optional wants AT_MOST_ONE_ARG_N rather than MORE_THAN_ZERO_ARG_N. A "--" token ends
+    // option recognition, which is how a value that starts with '-' can be passed.
+    unsigned j{index + 1};
+    unsigned collected{0};
+    bool     recognize_options{true};
+
+    for (; j < args.size(); j++) {
+      if (recognize_options) {
+        if (args[j] == "--") {
+          recognize_options = false;
+          continue;
+        }
+        if (is_registered_option(args[j])) {
+          break;
+        }
+      }
+      ret.append_arg(name, args[j]);
+      ++collected;
+    }
+    // Zero values is already valid input for MORE_THAN_ZERO_ARG_N, so there is no usage error
+    // for a variable to replace there; only MORE_THAN_ONE_ARG_N can be bare.
+    if (arg_num == MORE_THAN_ONE_ARG_N && collected == 0) {
+      if (!env_value.empty()) {
+        was_bare = true;
+      } else {
+        return "at least one argument expected by " + name;
+      }
+    }
+    args.erase(args.begin() + index, args.begin() + j);
+    index -= 1;
+    return "";
+  }
+  // Fixed number of arguments. A token naming another option of this command is not a value, so
+  // the missing value is reported rather than the following option being consumed as one. A "--"
+  // token ends option recognition, which is how a value that starts with '-' is passed.
+  unsigned j{index + 1};
+  bool     recognize_options{true};
+  unsigned collected{0};
+
+  while (collected < arg_num) {
+    // An empty token is a value the caller actually typed, not an absent one, so it must not
+    // be treated as bare: doing that would leave it in args (nothing below advances j past
+    // it), and the enclosing command would then read it as a positional argument. This mirrors
+    // the check append_option_data() already makes for AT_MOST_ONE_ARG_N.
+    if (j < args.size() && args[j].empty()) {
       return std::to_string(arg_num) + " argument(s) expected by " + name;
     }
-    ret.append_arg(name, args[index + j + 1]);
+    bool missing_value = j >= args.size();
+    if (!missing_value && recognize_options) {
+      if (args[j] == "--") {
+        recognize_options = false;
+        ++j;
+        continue;
+      }
+      missing_value = is_registered_option(args[j]);
+    }
+    if (missing_value) {
+      // A partial set (some values already collected) is always a usage error: the variable
+      // fills an option only when it has no values at all.
+      if (!env_value.empty() && collected == 0) {
+        was_bare = true;
+        break;
+      }
+      return std::to_string(arg_num) + " argument(s) expected by " + name;
+    }
+    ret.append_arg(name, args[j]);
+    ++collected;
+    ++j;
   }
   // erase the used arguments and append the data to the return structure
-  args.erase(args.begin() + index, args.begin() + index + arg_num + 1);
+  args.erase(args.begin() + index, args.begin() + j);
   index -= 1;
   return "";
 }
@@ -652,13 +779,31 @@ ArgParser::Command::validate_dependencies(Arguments &ret) const
 void
 ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int index)
 {
+  // Tracks, per option key whose arity can mix a bare occurrence with a valued one (a fixed
+  // arity or MORE_THAN_ONE_ARG_N; AT_MOST_ONE_ARG_N resolves immediately in handle_args and
+  // never reaches this map, since repetition of it is refused outright below), whether an
+  // occurrence already seen had a value and whether one was left bare. Recorded here rather
+  // than in the option's Arguments entry, so that a later occurrence cannot erase what an
+  // earlier one saw. A bare occurrence next to a valued one is reported the moment the second
+  // of the two is parsed, rather than waiting for the whole line to be scanned, so nothing
+  // written afterwards (such as --help) can run first. Only a key left bare by every
+  // occurrence reaches the resolution loop below, so its env_value is always what filling it
+  // needs.
+  struct EnvMixState {
+    bool        any_bare   = false;
+    bool        any_valued = false;
+    std::string env_value;
+    unsigned    arg_num = 0;
+  };
+  std::map<std::string, EnvMixState> env_mix;
+
   std::map<std::string, unsigned> check_map;
   for (unsigned i = index; i < args.size(); i++) {
     // find matches of the arg
     if (args[i][0] == '-' && args[i][1] == '-' && args[i].find('=') != std::string::npos) {
       // deal with --args=
       std::string option_name = args[i].substr(0, args[i].find_first_of('='));
-      std::string value       = args[i].substr(args[i].find_last_of('=') + 1);
+      std::string value       = args[i].substr(args[i].find_first_of('=') + 1);
       if (value.empty()) {
         help_message("missing argument for '" + option_name + "'");
       }
@@ -669,6 +814,15 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         if (!cur_option.envvar.empty()) {
           const char *const env = getenv(cur_option.envvar.c_str());
           ret.set_env(cur_option.key, nullptr != env ? env : "");
+          if (cur_option.arg_num != AT_MOST_ONE_ARG_N) {
+            auto &state = env_mix[cur_option.key];
+            if (state.any_bare) {
+              // An earlier bare occurrence is the usage error it would be without a variable:
+              // this occurrence having a value does not rescue it.
+              help_message(missing_value_message(cur_option.arg_num, cur_option.key));
+            }
+            state.any_valued = true;
+          }
         }
         ret.append_arg(cur_option.key, value);
         check_map[cur_option.long_option] += 1;
@@ -705,24 +859,81 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         } else {
           cur_option = _option_list.at(short_it->second);
         }
-        // handle the arguments
-        std::string err = handle_args(ret, args, cur_option.key, cur_option.arg_num, i);
+        // Counted for the same repetition check as the --option=value form, so that an option
+        // taking at most one value cannot be given more by mixing the two spellings.
+        if (cur_option.arg_num == AT_MOST_ONE_ARG_N) {
+          check_map[cur_option.long_option] += 1;
+          // An empty token is not a value, and the --option=value spelling already refuses one,
+          // so refuse it here rather than silently falling back to the declared default.
+          if (i + 1 < args.size() && args[i + 1].empty()) {
+            help_message("missing argument for '" + args[i] + "'");
+          }
+        }
+        // Resolve the current value of the declared variable before calling handle_args(), so
+        // a missing value is deferred only when the variable is actually set right now, not
+        // merely declared: an unset variable must report the same usage error immediately,
+        // exactly as if no variable had been declared at all, rather than letting a later
+        // token (e.g. --help) run first.
+        std::string env_value;
+        if (!cur_option.envvar.empty()) {
+          const char *const env = getenv(cur_option.envvar.c_str());
+          env_value             = nullptr != env ? env : "";
+        }
+        // handle_args() replaces any prior entry for this key, so set_env() below must run
+        // after it, not before.
+        bool        was_bare = false;
+        std::string err      = handle_args(ret, args, cur_option.key, cur_option.arg_num, i, env_value, was_bare);
         if (!err.empty()) {
           help_message(err);
         }
         // handle environment variable
         if (!cur_option.envvar.empty()) {
-          const char *const env = getenv(cur_option.envvar.c_str());
-          ret.set_env(cur_option.key, nullptr != env ? env : "");
+          ret.set_env(cur_option.key, env_value);
+          if (cur_option.arg_num != AT_MOST_ONE_ARG_N) {
+            auto &state = env_mix[cur_option.key];
+            if (was_bare) {
+              if (state.any_valued) {
+                // An earlier occurrence had a value: this bare one is the usage error it would
+                // be without a variable, not a later chance to be filled.
+                help_message(missing_value_message(cur_option.arg_num, cur_option.key));
+              }
+              state.any_bare  = true;
+              state.env_value = std::move(env_value);
+              state.arg_num   = cur_option.arg_num;
+            } else {
+              if (state.any_bare) {
+                help_message(missing_value_message(cur_option.arg_num, cur_option.key));
+              }
+              state.any_valued = true;
+            }
+          }
         }
       }
     }
   }
   // check for wrong number of arguments for --arg=...
   for (const auto &it : check_map) {
-    unsigned num = _option_list.at(it.first).arg_num;
-    if (num != it.second && num < MORE_THAN_ONE_ARG_N) {
-      help_message(std::to_string(_option_list.at(it.first).arg_num) + " arguments expected by " + it.first);
+    unsigned const num = _option_list.at(it.first).arg_num;
+    if (num == AT_MOST_ONE_ARG_N) {
+      // At most one, so a repeated option is as wrong as a repeated fixed arity one, which
+      // is_variable_arg_num() would otherwise wave through.
+      if (it.second > 1) {
+        help_message("at most one argument expected by " + it.first);
+      }
+    } else if (num != it.second && !is_variable_arg_num(num)) {
+      help_message(std::to_string(num) + " arguments expected by " + it.first);
+    }
+  }
+  // Resolve the variable for every option left bare by every occurrence: a mixed line was
+  // already reported above, at the occurrence that made it mixed, so any_bare here means the
+  // variable was confirmed set at the time of that occurrence and nothing since contradicted
+  // it.
+  for (auto const &[key, state] : env_mix) {
+    if (state.any_bare) {
+      unsigned const fill_count = state.arg_num == MORE_THAN_ONE_ARG_N ? 1 : state.arg_num;
+      for (unsigned n = 0; n < fill_count; ++n) {
+        ret.append_arg(key, state.env_value);
+      }
     }
   }
 }
@@ -763,14 +974,29 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
     if (_f) {
       ret._action = _f;
     }
-    const std::string err = handle_args(ret, args, _key, _arg_num, index);
+    // A command name is matched at most once per parse() call, so there is no other
+    // occurrence of it to wait for or conflict with.
+    std::string env_value;
+    if (!_envvar.empty()) {
+      const char *const env = getenv(_envvar.c_str());
+      env_value             = nullptr != env ? env : "";
+    }
+    // handle_args() replaces any prior entry for this key, so set_env() below must run after
+    // it, not before.
+    bool              was_bare = false;
+    const std::string err      = handle_args(ret, args, _key, _arg_num, index, env_value, was_bare);
     if (!err.empty()) {
       help_message(err);
     }
     // set ENV var
     if (!_envvar.empty()) {
-      const char *const env = getenv(_envvar.c_str());
-      ret.set_env(_key, nullptr != env ? env : "");
+      ret.set_env(_key, env_value);
+      if (was_bare) {
+        unsigned const fill_count = _arg_num == MORE_THAN_ONE_ARG_N ? 1 : _arg_num;
+        for (unsigned n = 0; n < fill_count; ++n) {
+          ret.append_arg(_key, env_value);
+        }
+      }
     }
 
     // Validate mutually exclusive groups
@@ -839,6 +1065,12 @@ Arguments::get(std::string const &name)
     return _data_map[name];
   }
   return ArgumentData();
+}
+
+bool
+Arguments::has(std::string const &name) const noexcept
+{
+  return _data_map.find(name) != _data_map.end();
 }
 
 void

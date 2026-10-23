@@ -74,14 +74,14 @@ TSIOBufferReaderStart(TSIOBufferReader /* readerp ATS_UNUSED */)
 }
 
 void
-TSIOBufferReaderConsume(TSIOBufferReader /* readerp ATS_UNUSED */, int64_t nbytes)
+TSIOBufferReaderConsume(TSIOBufferReader /* readerp ATS_UNUSED */, int64_t nbytes) noexcept
 {
   consumed     += nbytes;
   reader_avail -= nbytes;
 }
 
 int64_t
-TSIOBufferReaderAvail(TSIOBufferReader /* readerp ATS_UNUSED */)
+TSIOBufferReaderAvail(TSIOBufferReader /* readerp ATS_UNUSED */) noexcept
 {
   return reader_avail;
 }

@@ -1,0 +1,11 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-state-flag 0 true
+    set-state-flag 1 %{STATE-FLAG:0}
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{STATE-FLAG:0}
+    set-header X-A "%{STATE-FLAG:1}"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{STATE-INT8:0} >1
+    set-header X-B "1"

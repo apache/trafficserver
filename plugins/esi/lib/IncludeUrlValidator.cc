@@ -39,7 +39,6 @@ namespace
   // Backtracking limit for the allowlist match. PCRE2 stops and reports
   // PCRE2_ERROR_MATCHLIMIT once this many match steps are taken, bounding
   // worst-case CPU per validation against attacker-influenced hostnames.
-  // Matches the value used by the regex_remap plugin.
   constexpr uint32_t ALLOW_REGEX_MATCH_LIMIT = 1750;
 
   bool

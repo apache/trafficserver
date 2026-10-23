@@ -33,7 +33,7 @@ Synopsis
 
 .. function:: TSHttpParser TSHttpParserCreate(void)
 .. function:: void TSHttpParserClear(TSHttpParser parser)
-.. function:: void TSHttpParserDestroy(TSHttpParser parser)
+.. function:: void TSHttpParserDestroy(TSHttpParser parser) noexcept
 .. function:: TSParseResult TSHttpHdrParseReq(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char ** start, const char * end)
 .. function:: TSParseResult TSHttpHdrParseResp(TSHttpParser parser, TSMBuffer bufp, TSMLoc offset, const char ** start, const char * end)
 

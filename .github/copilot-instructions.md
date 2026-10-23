@@ -313,7 +313,7 @@ trafficserver/
 **Pattern discovery:**
 - Search for similar functionality in existing code
 - Check `include/ts/ts.h` for plugin API patterns
-- Look at tests in `tests/gold_tests/` for usage examples
+- Look at tests in `tests/uranium_tests/` for usage examples
 
 ### Code Organization
 
@@ -362,11 +362,22 @@ plugins/my_plugin/
 
 **When adding new functionality:**
 1. Check if unit tests exist in same directory (Catch2)
-2. Add integration tests in `tests/gold_tests/` (autest)
-3. Prefer `Test.ATSReplayTest()` with `replay.yaml` format (Proxy Verifier). If
-   `ATSReplayTest` doesn't fit, prefer organizing the test around a test class with
-   separate functions for configuring the servers, ATS, client, etc.
+2. Add integration tests in `tests/uranium_tests/` (pytest Uranium).
+3. Prefer direct Proxy Verifier `*.test.yaml` files with an `urtest` section.
+   If replay coverage does not fit, organize the test around a scenario class
+   with separate methods for configuring the servers, ATS, client, etc., and
+   an explicit `run()` entry point.
 4. Test both success and error paths
+
+### Uranium Process Lifetime in Code Reviews
+
+- Native scenarios explicitly start their services, while the `ats_factory`
+  and `services` fixtures own teardown after the test finishes.
+- A started service can serve several scenario steps. Assertions do not
+  extend its lifetime or control teardown.
+- Check fixture scope, explicit start/stop calls, and actual shutdown behavior
+  before reporting a lifetime bug; a missing assertion alone is not evidence.
+- Direct replay tests manage their processes through `ReplayTest.run()`.
 
 ## Configuration
 

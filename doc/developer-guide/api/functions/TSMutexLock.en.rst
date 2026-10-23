@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSMutexLock(TSMutex mutexp)
+.. function:: void TSMutexLock(TSMutex mutexp) noexcept
 
 Description
 ===========

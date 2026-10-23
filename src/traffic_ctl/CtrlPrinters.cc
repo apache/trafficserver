@@ -18,12 +18,15 @@
   limitations under the License.
 */
 
+#include <cstdio>
+#include <iomanip>
 #include <iostream>
 #include <unordered_map>
 #include <string_view>
 
 #include <swoc/swoc_meta.h>
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/YamlCfg.h"
 
 #include "CtrlPrinters.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
@@ -60,6 +63,11 @@ print_record_error_list(std::vector<shared::rpc::RecordLookUpResponse::RecordErr
 void
 BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
 {
+  // A response never clears an exit status an earlier step already set.
+  if (auto const code = appExitCodeFromResponse(response); code != CTRL_EX_OK) {
+    App_Exit_Status_Code = code;
+  }
+
   // If json, then we print the full message, either ok or error.
   if (this->is_json_format()) {
     write_output_json(response.fullMsg);
@@ -67,8 +75,6 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
   }
 
   if (response.is_error()) {
-    App_Exit_Status_Code = CTRL_EX_ERROR; // Set the exit code to error, so we can return it later.
-
     // If an error is present, then as per the specs we can ignore the jsonrpc.result field,
     // so we print the error and we are done here!
     std::cout << response.error.as<shared::rpc::JSONRPCError>(); // Already formatted.
@@ -102,7 +108,7 @@ void
 BasePrinter::write_output_json(YAML::Node const &node) const
 {
   YAML::Emitter out;
-  out << YAML::DoubleQuoted << YAML::Flow;
+  ts::Yaml::configure_json_emitter(out);
   out << node;
   std::cout << out.c_str() << '\n';
 }
@@ -697,5 +703,43 @@ void
 ServerStatusPrinter::write_output(YAML::Node const &result)
 {
   write_output_json(result["data"] ? result["data"] : result);
+}
+//-------------------------------------------------------------------------------------------------------------------------------------
+void
+PluginListPrinter::write_output(YAML::Node const &result)
+{
+  auto info = result.as<PluginListResponse>();
+
+  std::cout << "source: " << info.source << '\n';
+
+  bool has_load_order = false;
+  for (const auto &p : info.plugins) {
+    if (p.load_order >= 0) {
+      has_load_order = true;
+      break;
+    }
+  }
+
+  if (has_load_order) {
+    std::cout << "  #  plugin                          load_order   status\n";
+  } else {
+    std::cout << "  #  plugin                          status\n";
+  }
+
+  for (const auto &p : info.plugins) {
+    std::cout << " " << std::right << std::setw(2) << p.index << "  " << std::left << std::setw(30) << p.path;
+
+    if (has_load_order) {
+      char order_buf[12];
+      if (p.load_order >= 0) {
+        snprintf(order_buf, sizeof(order_buf), "%d", p.load_order);
+      } else {
+        snprintf(order_buf, sizeof(order_buf), "--");
+      }
+      std::cout << "  " << std::left << std::setw(11) << order_buf;
+    }
+
+    std::cout << "  " << p.status << '\n';
+  }
 }
 //-------------------------------------------------------------------------------------------------------------------------------------

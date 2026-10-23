@@ -585,7 +585,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   if ((rec_type & (RECT_PROCESS | RECT_NODE | RECT_PLUGIN))) {
     // First find the new metrics, this is a bit of a hack, because we still use the old
     // librecords callback with a "pseudo" record.
-    for (auto &&[name, type, val] : ts::Metrics::instance()) {
+    ts::Metrics::instance().for_each([&](std::string_view name, ts::Metrics::MetricType type, int64_t val) {
       if (regex.exec(name.data())) {
         RecRecord tmp{};
 
@@ -596,7 +596,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
         tmp.data.rec_int = val;
         callback(&tmp, data);
       }
-    }
+    });
     // Finally check string metrics
     ts::Metrics::StaticString::instance().for_each([&](const std::string &name, const std::string &value) {
       if (regex.exec(name)) {
@@ -617,14 +617,14 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   if (rec_type & RECT_HIDDEN_METRIC) {
     // Opt-in only: hidden metrics are never reachable through RECT_ALL, see RecDefs.h.
     auto &hidden = ts::Metrics::hidden_instance();
-    // Slot 0 of every Storage is the reserved bad_id placeholder, so it exists under the same name
-    // in both stores. Skip it here, otherwise a query matching it returns two identically named
-    // records that differ only in value.
-    auto it = hidden.begin();
 
-    ++it;
-    for (; it != hidden.end(); ++it) {
-      auto &&[name, type, val] = *it;
+    hidden.for_each([&](std::string_view name, ts::Metrics::MetricType type, int64_t val) {
+      // Slot 0 of every Storage is the reserved bad_id placeholder, so it exists under the same
+      // name in both stores. Skip it here, otherwise a query matching it returns two identically
+      // named records that differ only in value.
+      if (name == ts::Metrics::BAD_ID_NAME) {
+        return;
+      }
 
       if (regex.exec(name.data())) {
         RecRecord tmp{};
@@ -641,7 +641,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
         tmp.data.rec_int = val;
         callback(&tmp, data);
       }
-    }
+    });
   }
 
   int num_records = g_num_records;
@@ -968,11 +968,11 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
   // Dump all new metrics as well (no "type" for them)
   RecData datum;
 
-  for (auto &&[name, type, val] : ts::Metrics::instance()) {
+  ts::Metrics::instance().for_each([&](std::string_view name, Metrics::MetricType type, int64_t val) {
     datum.rec_int = val;
     callback(RECT_PLUGIN, edata, true, name.data(),
              type == Metrics::MetricType::COUNTER ? TS_RECORDDATATYPE_COUNTER : TS_RECORDDATATYPE_INT, &datum);
-  }
+  });
 
   ts::Metrics::StaticString::instance().for_each([&](const std::string &name, const std::string &value) {
     datum.rec_string = const_cast<char *>(value.c_str());

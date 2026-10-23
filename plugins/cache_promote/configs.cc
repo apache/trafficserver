@@ -20,6 +20,7 @@
 #include "configs.h"
 #include "lru_policy.h"
 #include "chance_policy.h"
+#include "tsutil/StringCompare.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // ToDo: It's ugly that this is a "global" options list, clearly each policy should be able
@@ -58,9 +59,9 @@ PromotionConfig::factory(int argc, char *argv[])
     if (opt == -1) {
       break;
     } else if (opt == 'p') {
-      if (0 == strncasecmp(optarg, "chance", 6)) {
+      if (ts::iequals(optarg, "chance")) {
         _policy = new ChancePolicy();
-      } else if (0 == strncasecmp(optarg, "lru", 3)) {
+      } else if (ts::iequals(optarg, "lru")) {
         _policy = new LRUPolicy();
       } else {
         TSError("[%s] Unknown policy --policy=%s", PLUGIN_NAME, optarg);

@@ -226,6 +226,13 @@ HQTransaction::transaction_done()
 int
 HQTransaction::get_transaction_id() const
 {
+  // Narrowing is intentional here; see get_quic_stream_id() for the full-width value.
+  return static_cast<int>(this->_stream_id);
+}
+
+QUICStreamId
+HQTransaction::get_quic_stream_id() const
+{
   return this->_stream_id;
 }
 
@@ -655,7 +662,7 @@ Http3Transaction::do_io_close(int lerrno)
 bool
 Http3Transaction::_is_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&Http3Transaction::state_stream_closed);
+  return this->handler.is<&Http3Transaction::state_stream_closed>();
 }
 
 void
@@ -856,7 +863,7 @@ Http09Transaction::do_io_close(int lerrno)
 bool
 Http09Transaction::_is_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&Http09Transaction::state_stream_closed);
+  return this->handler.is<&Http09Transaction::state_stream_closed>();
 }
 
 int

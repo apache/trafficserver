@@ -72,6 +72,10 @@ if(BUILD_TESTING)
   add_executable(test_LogBuffer unit-tests/test_LogBuffer.cc)
   target_link_libraries(test_LogBuffer ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain)
   add_catch2_test(NAME test_LogBuffer COMMAND test_LogBuffer)
+
+  add_executable(test_LogRolling unit-tests/test_LogRolling.cc)
+  target_link_libraries(test_LogRolling ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_LogRolling COMMAND test_LogRolling)
 endif()
 
 clang_tidy_check(logging)

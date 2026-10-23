@@ -36,7 +36,7 @@ class SandboxDenialError(SymbolResolutionError):
 
 _VALID_CATEGORY_KEYS = frozenset({"sections", "functions", "conditions", "operators", "language", "modifiers"})
 _VALID_LANGUAGE_CONSTRUCTS = frozenset({"break", "variables", "in", "else", "elif"})
-_VALID_MODIFIERS = frozenset({"AND", "OR", "NOT", "NOCASE", "PRE", "SUF", "EXT", "MID", "I", "L", "QSA"})
+_VALID_MODIFIERS = frozenset({"AND", "OR", "NOT", "NOCASE", "PRE", "SUF", "EXT", "MID", "NORM", "I", "L", "QSA"})
 
 
 def _load_set(data: dict[str, Any], key: str, prefix: str) -> frozenset[str]:

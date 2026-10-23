@@ -28,11 +28,12 @@
 
 #include "common.h"
 #include "config.h"
+#include "tsutil/StringCompare.h"
 
 static bool
 isTrue(const char *arg)
 {
-  return (nullptr == arg || 0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
+  return (nullptr == arg || ts::iequals("true", arg) || ts::iequals("1", arg) || ts::iequals("yes", arg));
 }
 
 /**

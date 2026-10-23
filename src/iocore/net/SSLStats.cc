@@ -231,6 +231,7 @@ SSLInitializeStatistics()
   ssl_rsb.total_ticket_keys_renewed          = Metrics::Counter::createPtr("proxy.process.ssl.total_ticket_keys_renewed");
   ssl_rsb.total_tickets_created              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_created");
   ssl_rsb.total_tickets_not_found            = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_not_found");
+  ssl_rsb.total_tickets_no_certificate       = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_no_certificate");
   ssl_rsb.total_tickets_renewed              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_renewed");
   ssl_rsb.total_tickets_verified             = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified");
   ssl_rsb.total_tickets_verified_old_key     = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_verified_old_key");
@@ -248,6 +249,7 @@ SSLInitializeStatistics()
   ssl_rsb.user_agent_inappropriate_fallback = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_inappropriate_fallback");
   ssl_rsb.user_agent_no_shared_cipher       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_no_shared_cipher");
   ssl_rsb.user_agent_other_errors           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_other_errors");
+  ssl_rsb.user_agent_resumed_cert_rejected  = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_resumed_cert_rejected");
   ssl_rsb.user_agent_revoked_cert           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_revoked_cert");
   ssl_rsb.user_agent_session_hit            = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_hit");
   ssl_rsb.user_agent_session_miss           = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_miss");

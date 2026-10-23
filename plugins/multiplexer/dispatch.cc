@@ -54,7 +54,7 @@ Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l) : host
   assert(TSHttpHdrLengthGet(b, l) >= length);
 }
 
-Request::Request(Request &&that) : host(std::move(that.host)), length(that.length), io(std::move(that.io))
+Request::Request(Request &&that) noexcept : host(std::move(that.host)), length(that.length), io(std::move(that.io))
 {
   assert(!host.empty());
   assert(length > 0);
@@ -62,15 +62,17 @@ Request::Request(Request &&that) : host(std::move(that.host)), length(that.lengt
 }
 
 Request &
-Request::operator=(const Request &r)
+Request::operator=(Request &&r) noexcept
 {
-  host   = r.host;
-  length = r.length;
-  io.reset(const_cast<Request &>(r).io.release());
-  assert(!host.empty());
-  assert(length > 0);
-  assert(io.get() != nullptr);
-  assert(r.io.get() == nullptr);
+  if (this != &r) {
+    host   = std::move(r.host);
+    length = r.length;
+    io     = std::move(r.io);
+    assert(!host.empty());
+    assert(length > 0);
+    assert(io.get() != nullptr);
+    assert(r.io.get() == nullptr);
+  }
   return *this;
 }
 

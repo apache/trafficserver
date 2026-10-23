@@ -24,6 +24,7 @@
 #include "mgmt/config/ReloadCoordinator.h"
 
 #include <algorithm>
+#include <iterator>
 #include <mutex>
 #include <utility>
 

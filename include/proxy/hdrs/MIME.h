@@ -90,6 +90,9 @@ enum class MimeParseState {
 #define MIME_FIELD_SLOTNUM_MAX     (MIME_FIELD_SLOTNUM_MASK - 1)
 #define MIME_FIELD_SLOTNUM_UNKNOWN MIME_FIELD_SLOTNUM_MAX
 
+#define MIME_FIELD_FREE_SLOT_NONE          -1
+#define MIME_FIELD_FREE_SLOT_UNINITIALIZED -2
+
 /***********************************************************************
  *                                                                     *
  *                    MIMEField & MIMEFieldBlockImpl                   *
@@ -99,16 +102,19 @@ enum class MimeParseState {
 struct MIMEHdrImpl;
 
 struct MIMEField {
-  const char *m_ptr_name;                   // 4
-  const char *m_ptr_value;                  // 4
-  MIMEField  *m_next_dup;                   // 4
-  int16_t     m_wks_idx;                    // 2
-  uint16_t    m_len_name;                   // 2
-  uint32_t    m_len_value             : 24; // 3
-  uint8_t     m_n_v_raw_printable     : 1;  // 1/8
-  uint8_t     m_n_v_raw_printable_pad : 3;  // 3/8
-  uint8_t     m_readiness             : 2;  // 2/8
-  uint8_t     m_flags                 : 2;  // 2/8
+  const char *m_ptr_name;  // 4
+  const char *m_ptr_value; // 4
+  union {
+    MIMEField *m_next_dup;  // 4
+    int32_t    m_free_next; ///< Slot number of the next deleted field.
+  };
+  int16_t  m_wks_idx;                    // 2
+  uint16_t m_len_name;                   // 2
+  uint32_t m_len_value             : 24; // 3
+  uint8_t  m_n_v_raw_printable     : 1;  // 1/8
+  uint8_t  m_n_v_raw_printable_pad : 3;  // 3/8
+  uint8_t  m_readiness             : 2;  // 2/8
+  uint8_t  m_flags                 : 2;  // 2/8
 
   bool
   is_dup_head() const
@@ -304,7 +310,8 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
     friend struct MIMEHdrImpl;
   };
 
-  // HdrHeapObjImpl is 4 bytes, so this will result in 4 bytes padding
+  // HdrHeapObjImpl is 4 bytes, so this uses the 4 bytes that would otherwise be padding.
+  int32_t  m_free_slot; ///< Slot number at the head of the deleted field free list.
   uint64_t m_presence_bits;
   uint32_t m_slot_accelerators[4];
 
@@ -748,6 +755,7 @@ int        mime_hdr_fields_count(MIMEHdrImpl *mh);
 
 void       mime_field_init(MIMEField *field);
 MIMEField *mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh);
+MIMEField *mime_field_create_for_name(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
 MIMEField *mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name);
 
 void mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIMEField *prev_dup);
@@ -1183,7 +1191,7 @@ MIMEHdr::fields_count() const
 inline MIMEField *
 MIMEHdr::field_create(std::string_view name)
 {
-  MIMEField *field = mime_field_create(m_heap, m_mime);
+  MIMEField *field = name.empty() ? mime_field_create(m_heap, m_mime) : mime_field_create_for_name(m_heap, m_mime, name);
 
   if (!name.empty()) {
     auto length{static_cast<int>(name.length())};

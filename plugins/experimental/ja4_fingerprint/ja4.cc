@@ -44,6 +44,20 @@ static std::string hexify(std::uint16_t n);
 namespace
 {
 constexpr std::size_t U16_HEX_BUF_SIZE{4};
+
+bool
+is_ASCII_alphanumeric(unsigned char c)
+{
+  return ('0' <= c && c <= '9') || ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z');
+}
+
+char
+to_hex_digit(unsigned char nibble)
+{
+  constexpr char digits[]{"0123456789abcdef"};
+
+  return digits[nibble & 0xf];
+}
 } // end anonymous namespace
 
 std::string
@@ -80,10 +94,8 @@ convert_TLS_version_to_string(std::uint16_t TLS_version)
     return "10";
   case 0x300:
     return "s3";
-  case 0x200:
+  case 0x002:
     return "s2";
-  case 0x100:
-    return "s1";
   case 0xfeff:
     return "d1";
   case 0xfefd:
@@ -114,6 +126,10 @@ convert_count_to_two_digit_string(std::size_t count)
   return result;
 }
 
+// If either end of the value is not ASCII alphanumeric, the specification calls
+// for the first and last characters of its hex representation instead, which
+// are the high nibble of the first byte and the low nibble of the last byte.
+// See https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md#alpn-extension-value
 std::string
 convert_ALPN_to_two_char_string(std::string_view ALPN)
 {
@@ -121,8 +137,16 @@ convert_ALPN_to_two_char_string(std::string_view ALPN)
   if (ALPN.empty()) {
     result = "00";
   } else {
-    result.push_back(ALPN.front());
-    result.push_back(ALPN.back());
+    unsigned char const first{static_cast<unsigned char>(ALPN.front())};
+    unsigned char const last{static_cast<unsigned char>(ALPN.back())};
+
+    if (is_ASCII_alphanumeric(first) && is_ASCII_alphanumeric(last)) {
+      result.push_back(static_cast<char>(first));
+      result.push_back(static_cast<char>(last));
+    } else {
+      result.push_back(to_hex_digit(first >> 4));
+      result.push_back(to_hex_digit(last & 0xf));
+    }
   }
   return result;
 }
@@ -156,6 +180,16 @@ JA4::make_JA4_c_raw(TLSClientHelloSummary const &TLS_summary)
     result.push_back(',');
   }
   remove_trailing_character(result);
+
+  auto const &sig_algs = TLS_summary.get_signature_algorithms();
+  if (!sig_algs.empty()) {
+    result.push_back(JA4::PORTION_DELIMITER);
+    for (auto alg : sig_algs) {
+      result.append(hexify(alg));
+      result.push_back(',');
+    }
+    remove_trailing_character(result);
+  }
   return result;
 }
 

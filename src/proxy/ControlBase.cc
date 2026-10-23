@@ -34,6 +34,8 @@
 #include "tscore/ink_defs.h"
 #include "tscore/ink_time.h"
 
+#include "tsutil/StringCompare.h"
+
 #include "proxy/hdrs/URL.h"
 #include "tscore/Tokenizer.h"
 #include "proxy/ControlBase.h"
@@ -661,9 +663,9 @@ InternalMod::make(char *value, const char **error)
 {
   InternalMod tmp;
 
-  if (0 == strncasecmp("false", value, 5)) {
+  if (ts::iequals("false", value)) {
     tmp.flag = false;
-  } else if (0 == strncasecmp("true", value, 4)) {
+  } else if (ts::iequals("true", value)) {
     tmp.flag = true;
   } else {
     *error = "Value must be true or false";
