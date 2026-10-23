@@ -22,6 +22,7 @@
  */
 
 #include "tscore/ArgParser.h"
+#include "tscore/ink_assert.h"
 #include "tscore/ink_file.h"
 #include "tscore/Version.h"
 
@@ -31,6 +32,11 @@
 #include <utility>
 #include <sysexits.h>
 
+// Parser-wide state, for this translation unit only. At file scope without internal linkage
+// these are exported from libtscore under names generic enough ("description", "global_usage")
+// to collide with any other global of the same name.
+namespace
+{
 std::string global_usage;
 std::string description;
 std::string parser_program_name;
@@ -39,10 +45,22 @@ std::string default_command;
 // by default return EX_USAGE(64) when usage is called.
 // if -h or --help is called specifically, return 0
 int usage_return_code = EX_USAGE;
+} // namespace
 
 namespace ts
 {
 bool ArgParser::_test_mode = false;
+
+// protected method for testing
+/*static*/ void
+ArgParser::reset_global_state()
+{
+  global_usage.clear();
+  description.clear();
+  parser_program_name.clear();
+  default_command.clear();
+  usage_return_code = EX_USAGE;
+}
 
 ArgParser::ArgParser() {}
 
@@ -189,8 +207,11 @@ ArgParser::parse(const char **argv)
   parser_program_name      = _argv[0];
   Arguments ret; // the parsed arg object to return
   AP_StrVec args = _argv;
+  // what the parse saw, for the check once it has succeeded
+  Command::ParseTrace trace;
+  trace.start(size, false);
   // call the recursive parse method in Command
-  if (!_top_level_command.parse(ret, args)) {
+  if (!_top_level_command.parse(ret, args, trace)) {
     // deal with default command
     if (!default_command.empty()) {
       args = _argv;
@@ -198,7 +219,8 @@ ArgParser::parse(const char **argv)
       // The pass that failed may have collected options before it gave up. Those values would
       // now accumulate on top of the ones the retry collects rather than be replaced.
       ret = Arguments{};
-      _top_level_command.parse(ret, args);
+      trace.start(size, true);
+      _top_level_command.parse(ret, args, trace);
     }
   };
   // if there is anything left, then output usage
@@ -217,6 +239,32 @@ ArgParser::parse(const char **argv)
       command = &it->second;
     }
     command->help_message(msg);
+  }
+  // A token an option took as its value was written for a command dispatched below that
+  // option's command when it names one of that command's options and comes after its name:
+  // only there could that command have received it. The line is checked only now that it has
+  // parsed, so a line refused for another reason, or one asking for help or the version, is
+  // answered as it always was. The default command inserted above is not on the line, so its
+  // name comes before nothing.
+  for (auto const &value : trace.values) {
+    std::string const &token = _argv[value.pos];
+    bool               below = false;
+
+    for (auto const &[command, name_pos] : trace.dispatched) {
+      if (command == value.owner) {
+        below = true;
+      } else if (below && name_pos >= 0 && name_pos < value.pos && command->is_registered_option(token)) {
+        std::string const &long_option = value.option->long_option;
+        unsigned const     arg_num     = value.option->arg_num;
+        // A "--" ends option recognition for the rest of the line when an option takes a variable
+        // number of values, so it would take every later token as well.
+        std::string const hint = arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N ?
+                                   "write " + long_option + "=" + token + " to make it one" :
+                                   "put -- before it to make it one";
+        value.owner->help_message("'" + token + "' is an option of " + command->_name + ", not a value of " + long_option + " (" +
+                                  hint + ")");
+      }
+    }
   }
   return ret;
 }
@@ -555,11 +603,43 @@ namespace
   }
 } // namespace
 
+void
+ArgParser::Command::ParseTrace::start(int size, bool with_default)
+{
+  pos.clear();
+  dispatched.clear();
+  values.clear();
+  for (int i = 0; i < size; ++i) {
+    pos.push_back(i);
+  }
+  if (with_default) {
+    pos.insert(pos.begin() + 1, -1);
+  }
+}
+
+void
+ArgParser::Command::ParseTrace::erase(AP_StrVec &args, unsigned first, unsigned last)
+{
+  ink_assert(pos.size() == args.size());
+  args.erase(args.begin() + first, args.begin() + last);
+  pos.erase(pos.begin() + first, pos.begin() + last);
+}
+
 std::string
 ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index,
-                                std::string const &env_value, bool &was_bare) const
+                                std::string const &env_value, bool &was_bare, ParseTrace &trace, Option const *option) const
 {
   was_bare = false;
+  ink_assert(trace.pos.size() == args.size());
+
+  // Record a value of an option that could name an option of a command further down the line,
+  // for the check ArgParser::parse() makes once the line has parsed. A value escaped by "--" was
+  // meant as one and is not recorded.
+  auto const record = [&](unsigned j) {
+    if (option != nullptr && !args[j].empty() && args[j][0] == '-') {
+      trace.values.push_back({this, option, trace.pos[j]});
+    }
+  };
 
   // A repeated option taking an unbounded number of values accumulates, as the --option=value
   // form always has, so an entry already written by this pass keeps the values it collected. A
@@ -584,6 +664,9 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
         takes_value = j < args.size();
       } else {
         takes_value = !is_registered_option(args[j]);
+        if (takes_value) {
+          record(j);
+        }
       }
     }
     if (takes_value) {
@@ -594,7 +677,7 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
       // outright elsewhere, so there is no later occurrence to wait for.
       ret.append_arg(name, env_value);
     }
-    args.erase(args.begin() + index, args.begin() + j);
+    trace.erase(args, index, j);
     index -= 1;
     return "";
   }
@@ -617,6 +700,7 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
         if (is_registered_option(args[j])) {
           break;
         }
+        record(j);
       }
       ret.append_arg(name, args[j]);
       ++collected;
@@ -630,7 +714,7 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
         return "at least one argument expected by " + name;
       }
     }
-    args.erase(args.begin() + index, args.begin() + j);
+    trace.erase(args, index, j);
     index -= 1;
     return "";
   }
@@ -667,12 +751,15 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
       }
       return std::to_string(arg_num) + " argument(s) expected by " + name;
     }
+    if (recognize_options) {
+      record(j);
+    }
     ret.append_arg(name, args[j]);
     ++collected;
     ++j;
   }
   // erase the used arguments and append the data to the return structure
-  args.erase(args.begin() + index, args.begin() + j);
+  trace.erase(args, index, j);
   index -= 1;
   return "";
 }
@@ -777,7 +864,7 @@ ArgParser::Command::validate_dependencies(Arguments &ret) const
 
 // Append the args of option to parsed data. Return true if there is any option called
 void
-ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int index)
+ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int index, ParseTrace &trace)
 {
   // Tracks, per option key whose arity can mix a bare occurrence with a valued one (a fixed
   // arity or MORE_THAN_ONE_ARG_N; AT_MOST_ONE_ARG_N resolves immediately in handle_args and
@@ -799,6 +886,15 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
 
   std::map<std::string, unsigned> check_map;
   for (unsigned i = index; i < args.size(); i++) {
+    // A "--" escapes the token after it. That token belongs to an option or a command further
+    // down the line, which honours the escape itself in handle_args(); this scan covers the
+    // whole remaining command line, so without this it would still match the escaped token
+    // against this command's options. Leave both tokens in place for the owner: this ++i steps
+    // past the "--" and the loop's own increment past the token it escapes.
+    if (args[i] == "--") {
+      ++i;
+      continue;
+    }
     // find matches of the arg
     if (args[i][0] == '-' && args[i][1] == '-' && args[i].find('=') != std::string::npos) {
       // deal with --args=
@@ -826,7 +922,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         }
         ret.append_arg(cur_option.key, value);
         check_map[cur_option.long_option] += 1;
-        args.erase(args.begin() + i);
+        trace.erase(args, i, i + 1);
         i -= 1;
       }
     } else {
@@ -882,7 +978,8 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         // handle_args() replaces any prior entry for this key, so set_env() below must run
         // after it, not before.
         bool        was_bare = false;
-        std::string err      = handle_args(ret, args, cur_option.key, cur_option.arg_num, i, env_value, was_bare);
+        std::string err      = handle_args(ret, args, cur_option.key, cur_option.arg_num, i, env_value, was_bare, trace,
+                                           &_option_list.at(cur_option.long_option));
         if (!err.empty()) {
           help_message(err);
         }
@@ -957,19 +1054,21 @@ ArgParser::Command::apply_option_defaults(Arguments &ret) const
 
 // Main recursive logic of Parsing
 bool
-ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
+ArgParser::Command::parse(Arguments &ret, AP_StrVec &args, ParseTrace &trace)
 {
   bool command_called = false;
   // Only check the first remaining argument for command name to avoid
   // treating arguments as commands (e.g., "metric match host" where "host" is an arg, not a command)
   if (!args.empty() && _name == args[0]) {
     command_called = true;
+    ink_assert(trace.pos.size() == args.size());
+    trace.dispatched.push_back({this, trace.pos[0]});
     // Note: handle_args modifies its index parameter (designed for loop usage), but we
     // discard the result. This causes unsigned underflow (0 - 1 = UINT_MAX) which is
     // harmless since we don't use index afterward.
     unsigned index{0};
     // handle the option
-    append_option_data(ret, args, index);
+    append_option_data(ret, args, index, trace);
     // handle the action
     if (_f) {
       ret._action = _f;
@@ -984,7 +1083,7 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
     // handle_args() replaces any prior entry for this key, so set_env() below must run after
     // it, not before.
     bool              was_bare = false;
-    const std::string err      = handle_args(ret, args, _key, _arg_num, index, env_value, was_bare);
+    const std::string err      = handle_args(ret, args, _key, _arg_num, index, env_value, was_bare, trace);
     if (!err.empty()) {
       help_message(err);
     }
@@ -1015,7 +1114,7 @@ ArgParser::Command::parse(Arguments &ret, AP_StrVec &args)
     bool flag = false;
     // recursively call subcommand
     for (auto &it : _subcommand_list) {
-      if (it.second.parse(ret, args)) {
+      if (it.second.parse(ret, args, trace)) {
         flag = true;
         break;
       }

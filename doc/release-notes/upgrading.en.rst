@@ -85,6 +85,18 @@ Annotations that carry a severity are printed with it, for example ``- [3000] Wa
 draining.``, and a JSONRPC error ``data`` entry carries a ``severity`` field when its handler sets
 one, see :ref:`jsonrpc-node-errors-severity`.
 
+A ``--`` now protects the token after it at every level of the command line, so a value spelled
+like a global option reaches the command that asked for it: ``traffic_ctl config set NAME -- -f``
+sets the record to ``-f`` instead of failing on ``--format``.
+
+An option of an outer command, such as a global option, no longer takes as its value an option of
+a command named before it on the line. ``traffic_ctl config reload -f -m`` used to set
+``--format`` to ``-m`` and silently drop ``--monitor``; it is now a usage error. This holds for
+every option, including one that declares an environment variable, such as the ``--run-root`` of
+:program:`traffic_layout`. Lines where the option comes before the command's name, such as
+``traffic_ctl -f -m config reload``, are read as before. A value that has to look like such an
+option can be given as ``--format=-m`` or ``--format -- -m``.
+
 Security Hardening
 ------------------
 

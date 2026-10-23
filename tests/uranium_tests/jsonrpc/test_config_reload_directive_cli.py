@@ -58,6 +58,17 @@ CONFIG_RELOAD_DIRECTIVE_CLI__cases = (
     CommandCase(("config", "reload", "-d", ""), ("received an empty value",), return_code=2),
     CommandCase(("config", "reload", "-D", ""), ("received an empty value",), return_code=2),
     CommandCase(("config", "reload", "-d", "", "-d", "ip_allow: {rules: [x]}"), ("received an empty value",), return_code=2),
+    # -w is the global --watch, as it has always been; config reload's --initial-wait has only its
+    # long form.
+    CommandCase(("config", "reload", "-w"), ("1 argument(s) expected by watch",), return_code=64),
+    CommandCase(("config", "reload", "-h"), ("--initial-wait <arg>",), ("-w, --initial-wait",), return_code=0),
+    # A global option does not take an option of config reload as its value: -m would otherwise
+    # become that option's value and --monitor be lost. The same holds when a global option is taken
+    # off the line before the command's name, and for the global -w.
+    CommandCase(("config", "reload", "-f", "-m"), ("'-m' is an option of reload, not a value of --format",), return_code=64),
+    CommandCase(
+        ("-f", "json", "config", "reload", "-f", "-m"), ("'-m' is an option of reload, not a value of --format",), return_code=64),
+    CommandCase(("config", "reload", "-w", "-m"), ("'-m' is an option of reload, not a value of --watch",), return_code=64),
 )
 
 

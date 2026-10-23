@@ -25,6 +25,10 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include "tscore/ArgParser.h"
 
+#include <iostream>
+#include <sstream>
+#include <string>
+
 class TestArgParser : public ts::ArgParser
 {
 public:
@@ -718,4 +722,782 @@ TEST_CASE("The variable only applies when every occurrence of a repeated option 
     REQUIRE(parsed.get("directive") == true);
     REQUIRE(parsed.get("directive").size() == 0);
   }
+}
+
+namespace
+{
+// Parser-wide state lives at file scope in ArgParser.cc and outlives any one parser: a test
+// that reaches the help path leaves usage_return_code at 0 for every test after it, and a test
+// that sets a default command leaves that too. Clear it on the way in and on the way out.
+class ArgParserStateGuard
+{
+public:
+  ArgParserStateGuard() { reset(); }
+  ~ArgParserStateGuard() { reset(); }
+  static void
+  reset()
+  {
+    Access::reset_global_state();
+  }
+
+private:
+  struct Access : ts::ArgParser {
+    using ts::ArgParser::reset_global_state;
+  };
+};
+
+// Keeps the help and usage text that a parser prints out of the test output, and lets it be
+// checked. std::cout is put back however the scope ends.
+struct CoutCapture {
+  CoutCapture()                               = default;
+  CoutCapture(CoutCapture const &)            = delete;
+  CoutCapture &operator=(CoutCapture const &) = delete;
+  ~CoutCapture() { std::cout.rdbuf(old); }
+
+  std::ostringstream buf;
+  std::streambuf    *old = std::cout.rdbuf(buf.rdbuf());
+};
+} // namespace
+
+// Link-time check that the parser-wide state stays internal to ArgParser.cc: were any of these
+// names exported from libtscore again, this binary would fail to link with duplicate symbols.
+// That holds for the default static libtscore linked without dead stripping; with a shared
+// libtscore, or with Apple ld's -dead_strip, which reports the duplicates only as warnings, the
+// link does not fail.
+std::string global_usage;
+std::string description;
+std::string parser_program_name;
+std::string default_command;
+int         usage_return_code = 0;
+
+TEST_CASE("Double dash keeps a value away from an outer command's options", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_option("--format", "-f", "output format", "", 1, "", "format");
+  parser.add_option("--help", "-h", "print usage");
+  parser.add_option("--version", "-V", "print version");
+
+  // Every level has options of its own, so the escape has to hold in each level's scan.
+  ts::ArgParser::Command &config = parser.add_command("config", "configuration commands");
+  config.add_option("--mid", "-m", "an option of the intermediate command", "", 1, "", "mid");
+  config.add_command("set", "set a record", "", 2, nullptr, "set")
+    .add_option("--type", "-t", "an option of the owning command", "", 1, "", "type");
+  config.add_command("reload", "reload configs", nullptr, "reload")
+    .add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "", "directive");
+
+  SECTION("a value spelled like an outer option belongs to the subcommand that asked for it")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-f", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[0] == "a.record");
+    REQUIRE(parsed.get("set")[1] == "-f");
+    REQUIRE(parsed.get("format") == false);
+  }
+
+  SECTION("including one that would otherwise print the help message and exit 0")
+  {
+    // Without the escape the command never runs, yet a script sees success.
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-h", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-h");
+  }
+
+  SECTION("or the version message")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-V", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-V");
+  }
+
+  SECTION("a value spelled like an option of the intermediate command is left to the subcommand")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-m");
+    REQUIRE(parsed.get("mid") == false);
+  }
+
+  SECTION("so is one spelled like an option of the owning command itself")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-t", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-t");
+    REQUIRE(parsed.get("type") == false);
+  }
+
+  SECTION("and one in the --option=value form")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "--format=json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "--format=json");
+    REQUIRE(parsed.get("format") == false);
+  }
+
+  SECTION("a second double dash is itself the escaped value")
+  {
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "--", "-f", "json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "--");
+    REQUIRE(parsed.get("format").value() == "json");
+  }
+
+  SECTION("an outer option written after the escaped value is still recognized")
+  {
+    // "--" escapes one token, it does not end the command line.
+    const char   *argv[] = {"test_prog", "config", "set", "a.record", "--", "-x", "-f", "json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "-x");
+    REQUIRE(parsed.get("format").value() == "json");
+  }
+
+  SECTION("an outer option before the subcommand keeps working")
+  {
+    // The whole command line has been scanned at every level since the parser was written.
+    const char   *argv[] = {"test_prog", "-f", "json", "config", "set", "a.record", "value", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "json");
+    REQUIRE(parsed.get("set").size() == 2);
+    REQUIRE(parsed.get("set")[1] == "value");
+  }
+
+  SECTION("only the first value after the double dash is protected for a variable number of values")
+  {
+    // The escape covers one token in the outer scans, whatever the arity of the option that owns
+    // it, so a later token spelled like an outer option is still that option.
+    const char   *argv[] = {"test_prog", "config", "reload", "-D", "--", "-a", "-f", "json", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("directive").size() == 1);
+    REQUIRE(parsed.get("directive")[0] == "-a");
+    REQUIRE(parsed.get("format").value() == "json");
+  }
+
+  SECTION("a trailing double dash with nothing to escape is still an unknown argument")
+  {
+    // The skip at the last token leaves it over, as before, rather than escaping past the end.
+    const char *argv[] = {"test_prog", "config", "set", "a.record", "value", "--", nullptr};
+    REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+  }
+}
+
+TEST_CASE("The default command retry replaces the failed pass's values", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  {
+    TestArgParser parser;
+    parser.add_global_usage("test_prog [OPTIONS]");
+    parser.add_option("--zed", "-z", "values", "", MORE_THAN_ZERO_ARG_N, "", "zed");
+    parser.add_command("run", "run it", nullptr, "run");
+    parser.set_default_command("run");
+
+    // No command is named, so the first pass fails after the top level has already collected
+    // --zed. The retry inserts the default command and collects --zed again; the values of the
+    // failed pass must be replaced by it, not accumulated on top of.
+    const char   *argv[] = {"test_prog", "-z", "a", "b", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("run") == true);
+    REQUIRE(parsed.get("zed").size() == 2);
+    REQUIRE(parsed.get("zed")[0] == "a");
+    REQUIRE(parsed.get("zed")[1] == "b");
+  }
+
+  ArgParserStateGuard::reset();
+
+  // With the state cleared, a later parser has no default command: a line that names no
+  // command is not retried with one.
+  {
+    TestArgParser parser;
+    parser.add_global_usage("test_prog [OPTIONS]");
+    parser.add_command("run", "run it", nullptr, "run");
+
+    const char   *argv[] = {"test_prog", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("run") == false);
+  }
+}
+
+TEST_CASE("reset_global_state clears every piece of parser-wide state", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  SECTION("the exit code a usage error returns, which a help request sets to 0")
+  {
+    {
+      TestArgParser parser;
+      parser.add_option("--help", "-h", "print usage");
+      parser.add_command("run", "run it", nullptr, "run");
+
+      const char *argv[] = {"test_prog", "-h", nullptr};
+      CoutCapture capture;
+      REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 0");
+    }
+    ArgParserStateGuard::reset();
+    {
+      TestArgParser parser;
+      parser.add_command("run", "run it", nullptr, "run");
+
+      const char *argv[] = {"test_prog", "bogus", nullptr};
+      CoutCapture capture;
+      REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+    }
+  }
+
+  SECTION("the description and global usage an earlier parser added")
+  {
+    {
+      TestArgParser parser;
+      parser.add_description("earlier parser's description");
+      parser.add_global_usage("earlier parser's usage");
+    }
+    ArgParserStateGuard::reset();
+
+    TestArgParser parser;
+    parser.add_command("run", "run it", nullptr, "run");
+
+    const char *argv[] = {"test_prog", "bogus", nullptr};
+    std::string out;
+    {
+      CoutCapture capture;
+      REQUIRE_THROWS_WITH(parser.parse(argv), "Test mode: exit with code 64");
+      out = capture.buf.str();
+    }
+    REQUIRE(out.find("Unknown command") != std::string::npos);
+    REQUIRE(out.find("earlier parser's description") == std::string::npos);
+    REQUIRE(out.find("earlier parser's usage") == std::string::npos);
+  }
+}
+
+namespace
+{
+// The message a line's usage error prints, so a test can tell one exit code 64 from another.
+std::string
+usage_error(ts::ArgParser &parser, const char **argv)
+{
+  std::string exit_message;
+  std::string printed;
+
+  {
+    CoutCapture capture;
+
+    try {
+      parser.parse(argv);
+    } catch (std::runtime_error const &e) {
+      exit_message = e.what();
+    }
+    printed = capture.buf.str();
+  }
+  REQUIRE(exit_message == "Test mode: exit with code 64");
+  return printed;
+}
+
+bool
+contains(std::string const &text, std::string const &part)
+{
+  return text.find(part) != std::string::npos;
+}
+
+// The usage error for a value an option took though it names an option of a command named earlier
+// on the line. For an option taking a variable number of values a "--" would take the rest of the
+// line too, so the hint is the --option=value form instead.
+std::string
+swallowed(std::string const &token, std::string const &command, std::string const &option, bool variable = false)
+{
+  std::string const hint = variable ? "write " + option + "=" + token + " to make it one" : "put -- before it to make it one";
+
+  return "'" + token + "' is an option of " + command + ", not a value of " + option + " (" + hint + ")";
+}
+
+// How a line that answers with a message, such as its help, instead of parsing ends.
+std::string
+parse_exit(ts::ArgParser &parser, const char **argv)
+{
+  CoutCapture capture;
+  std::string message;
+
+  try {
+    parser.parse(argv);
+  } catch (std::runtime_error const &e) {
+    message = e.what();
+  }
+  return message;
+}
+} // namespace
+
+TEST_CASE("An option's value is not taken from an option of a command named earlier on the line", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_option("--format", "-f", "output format", "", 1, "", "format");
+  parser.add_option("--level", "-l", "a level, which may be left out", "", AT_MOST_ONE_ARG_N, "", "level");
+  parser.add_option("--tags", "-T", "tags", "", MORE_THAN_ZERO_ARG_N, "", "tags");
+  parser.add_option("--pair", "-P", "two values", "", 2, "", "pair");
+  parser.add_option("--list", "-L", "one value or more", "", MORE_THAN_ONE_ARG_N, "", "list");
+  parser.add_option("--help", "-h", "help");
+  parser.add_option("--version", "-V", "version");
+
+  ts::ArgParser::Command &config = parser.add_command("config", "configuration commands");
+  config.add_option("--scope", "-c", "an option of the command in the middle of the line");
+  config.add_option("--section", "-S", "an option of the command in the middle of the line taking one value", "", 1, "", "section");
+  config.add_option("--both", "-b", "an option config and reload both have");
+  config.add_command("reload", "reload configs", nullptr, "reload")
+    .add_option("--monitor", "-m", "monitor progress")
+    .add_option("--both", "-b", "an option config and reload both have", "", 0, "", "reload_both")
+    .add_option("--token", "-t", "a token", "", 1, "", "token");
+  config.add_command("get", "get records", "", MORE_THAN_ONE_ARG_N, nullptr, "get")
+    .add_option("--json", "-j", "an option only config get has");
+  config.add_command("status", "show the status", nullptr, "status");
+
+  SECTION("a subcommand's option is not swallowed as the value of an outer option")
+  {
+    const char *argv[] = {"test_prog", "config", "reload", "-f", "-m", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--format")));
+  }
+
+  SECTION("nor by its long name")
+  {
+    const char *argv[] = {"test_prog", "config", "reload", "-f", "--monitor", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("--monitor", "reload", "--format")));
+  }
+
+  SECTION("nor in its --option=value form")
+  {
+    const char *argv[] = {"test_prog", "config", "reload", "-f", "--token=abc", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("--token=abc", "reload", "--format")));
+  }
+
+  SECTION("whatever the number of values the outer option takes")
+  {
+    {
+      const char *argv[] = {"test_prog", "config", "reload", "-l", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--level")));
+    }
+    {
+      const char *argv[] = {"test_prog", "config", "reload", "-T", "a", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--tags", true)));
+    }
+    {
+      const char *argv[] = {"test_prog", "config", "reload", "-L", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--list", true)));
+    }
+    {
+      const char *argv[] = {"test_prog", "config", "reload", "-P", "a", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--pair")));
+    }
+    {
+      const char *argv[] = {"test_prog", "config", "reload", "-P", "-m", "a", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--pair")));
+    }
+  }
+
+  SECTION("tokens taken off the line before the subcommand's name do not hide it")
+  {
+    // Each command takes its own options off the line before its subcommands are read, so the
+    // position that counts is the one on the command line, not the one left in what remains.
+    {
+      const char *argv[] = {"test_prog", "-f", "json", "config", "reload", "-f", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--format")));
+    }
+    {
+      const char *argv[] = {"test_prog", "--tags=a", "--tags=b", "config", "reload", "-f", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--format")));
+    }
+    {
+      const char *argv[] = {"test_prog", "-f", "x", "config", "reload", "-S", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--section")));
+    }
+  }
+
+  SECTION("nor by an option of the command in the middle of the line")
+  {
+    const char *argv[] = {"test_prog", "config", "reload", "-S", "-m", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--section")));
+  }
+
+  SECTION("an option of the command in the middle of the line counts too")
+  {
+    const char *argv[] = {"test_prog", "config", "reload", "-f", "-c", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-c", "config", "--format")));
+  }
+
+  SECTION("a token naming an option of two commands on the line is reported for the outer one")
+  {
+    const char *argv[] = {"test_prog", "config", "reload", "-f", "-b", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-b", "config", "--format")));
+  }
+
+  SECTION("one written before the subcommand's name is still a value, since it could never reach the subcommand there")
+  {
+    const char   *argv[] = {"test_prog", "-f", "-m", "config", "reload", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+    REQUIRE(parsed.get("reload") == true);
+    REQUIRE(parsed.get("monitor") == false);
+  }
+
+  SECTION("an option of a command that is not on the line is still a value")
+  {
+    // Only the commands actually dispatched count, so adding an option to one command does not
+    // change how a line that names another command is read.
+    {
+      const char   *argv[] = {"test_prog", "config", "reload", "-f", "-j", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("format").value() == "-j");
+    }
+    {
+      const char   *argv[] = {"test_prog", "config", "status", "-f", "-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("format").value() == "-m");
+    }
+    {
+      const char   *argv[] = {"test_prog", "-f", "-j", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("format").value() == "-j");
+    }
+  }
+
+  SECTION("so is a token that names no option at all")
+  {
+    const char   *argv[] = {"test_prog", "config", "reload", "-f", "-weird", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-weird");
+  }
+
+  SECTION("a value spelled like a subcommand's option can still be passed on purpose")
+  {
+    {
+      const char   *argv[] = {"test_prog", "config", "reload", "-f", "--", "-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("format").value() == "-m");
+      REQUIRE(parsed.get("monitor") == false);
+    }
+    {
+      const char   *argv[] = {"test_prog", "config", "reload", "--format=-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("format").value() == "-m");
+      REQUIRE(parsed.get("monitor") == false);
+    }
+    {
+      const char   *argv[] = {"test_prog", "config", "reload", "-l", "--", "-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("level").value() == "-m");
+    }
+    {
+      const char   *argv[] = {"test_prog", "config", "reload", "-P", "a", "--", "-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("pair")[1] == "-m");
+    }
+    {
+      const char   *argv[] = {"test_prog", "config", "reload", "-T", "a", "--", "-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("tags").size() == 2);
+      REQUIRE(parsed.get("tags")[1] == "-m");
+    }
+  }
+
+  SECTION("the hint for an option taking a variable number of values keeps the rest of the line")
+  {
+    // A "--" there would take -t and its value as tags too.
+    const char   *argv[] = {"test_prog", "config", "reload", "-T", "a", "--tags=-m", "-t", "x", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("tags").size() == 2);
+    REQUIRE(parsed.get("tags")[1] == "-m");
+    REQUIRE(parsed.get("token").value() == "x");
+  }
+
+  SECTION("a line refused for another reason keeps its own error")
+  {
+    const char *argv[] = {"test_prog", "config", "reload", "-f", "-m", "-t", nullptr};
+    std::string out    = usage_error(parser, argv);
+    REQUIRE(contains(out, "1 argument(s) expected by token"));
+    REQUIRE(!contains(out, "is an option of"));
+  }
+
+  SECTION("a line asking for help or the version still gets it")
+  {
+    {
+      const char *argv[] = {"test_prog", "config", "reload", "-f", "-m", "-h", nullptr};
+      REQUIRE(parse_exit(parser, argv) == "Test mode: exit with code 0");
+    }
+    {
+      const char *argv[] = {"test_prog", "config", "reload", "-f", "-m", "--version", nullptr};
+      REQUIRE(parse_exit(parser, argv) == "Test mode: exit with code 0");
+    }
+  }
+}
+
+TEST_CASE("Only a command the line dispatches counts, wherever its name appears", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_option("--format", "-f", "output format", "", 1, "", "format");
+  ts::ArgParser::Command &config = parser.add_command("config", "configuration commands");
+  config.add_option("--section", "-S", "an option of config taking one value", "", 1, "", "section");
+  config.add_option("--pair", "-Q", "an option of config taking two values", "", 2, "", "pair");
+  config.add_option("--vary", "-V", "an option of config taking any number of values", "", MORE_THAN_ZERO_ARG_N, "", "vary");
+  config.add_option("--maybe", "-O", "an option of config taking at most one value", "", AT_MOST_ONE_ARG_N, "", "maybe");
+  config.add_command("reload", "reload configs", nullptr, "reload")
+    .add_option("--monitor", "-m", "monitor progress")
+    .add_option("--token", "-t", "a token", "", 1, "", "token");
+  config.add_command("status", "show the status", nullptr, "status");
+
+  SECTION("a value spelled like a subcommand does not name it")
+  {
+    // "reload" is --section's value; config status is the command that runs, and -m is not its option.
+    const char   *argv[] = {"test_prog", "config", "-S", "reload", "status", "-f", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+    REQUIRE(parsed.get("section").value() == "reload");
+    REQUIRE(parsed.get("status") == true);
+  }
+
+  SECTION("nor when that option is spelled by its long name")
+  {
+    const char   *argv[] = {"test_prog", "config", "--section", "reload", "status", "-f", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+  }
+
+  SECTION("nor any of its values, when it takes more than one")
+  {
+    const char   *argv[] = {"test_prog", "config", "-Q", "a", "reload", "status", "-f", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+    REQUIRE(parsed.get("pair").size() == 2);
+    REQUIRE(parsed.get("pair")[1] == "reload");
+  }
+
+  SECTION("nor when it takes at most one")
+  {
+    const char   *argv[] = {"test_prog", "config", "-O", "reload", "status", "-f", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+    REQUIRE(parsed.get("maybe").value() == "reload");
+    REQUIRE(parsed.get("status") == true);
+  }
+
+  SECTION("nor when the number of values it takes varies")
+  {
+    const char   *argv[] = {"test_prog", "config", "-V", "x", "reload", "-f", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+    REQUIRE(parsed.get("vary").size() == 2);
+    REQUIRE(parsed.get("vary")[1] == "reload");
+    REQUIRE(parsed.get("reload") == false);
+  }
+
+  SECTION("nor one escaped by a -- among its values")
+  {
+    const char   *argv[] = {"test_prog", "config", "-S", "--", "reload", "status", "-f", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+    REQUIRE(parsed.get("section").value() == "reload");
+  }
+
+  SECTION("but only the first -- among them is an escape; a second one is the value")
+  {
+    const char *argv[] = {"test_prog", "config", "-S", "--", "--", "reload", "-f", "-m", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--format")));
+  }
+
+  SECTION("a value spelled like a subcommand that has the option is not taken for that subcommand")
+  {
+    // -t is reload's option, but reload is only --section's value here.
+    const char   *argv[] = {"test_prog", "config", "-S", "reload", "-f", "-t", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-t");
+  }
+}
+
+TEST_CASE("A command with a value and a subcommand", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_option("--format", "-f", "output format", "", 1, "", "format");
+  parser.add_command("cmd", "a command with a value and a subcommand", "", 1, nullptr, "cmd")
+    .add_command("sub", "its subcommand", nullptr, "sub")
+    .add_option("--sopt", "-s", "an option of the subcommand");
+
+  SECTION("its value comes before any subcommand's name, so it may be spelled like the subcommand's option")
+  {
+    const char   *argv[] = {"test_prog", "cmd", "-s", "sub", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("cmd").size() == 1);
+    REQUIRE(parsed.get("cmd")[0] == "-s");
+    REQUIRE(parsed.get("sub") == true);
+  }
+
+  SECTION("a value spelled like its subcommand is its value, not the subcommand")
+  {
+    const char   *argv[] = {"test_prog", "cmd", "sub", "-f", "-s", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-s");
+    REQUIRE(parsed.get("cmd")[0] == "sub");
+    REQUIRE(parsed.get("sub") == false);
+  }
+
+  SECTION("and a second one is the subcommand")
+  {
+    const char *argv[] = {"test_prog", "cmd", "sub", "sub", "-f", "-s", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-s", "sub", "--format")));
+  }
+
+  SECTION("a subcommand name escaped by -- is its value, not a subcommand")
+  {
+    const char   *argv[] = {"test_prog", "cmd", "--", "sub", "-f", "-s", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-s");
+    REQUIRE(parsed.get("cmd").size() == 1);
+    REQUIRE(parsed.get("cmd")[0] == "sub");
+    REQUIRE(parsed.get("sub") == false);
+  }
+
+  SECTION("a subcommand named after an escaped value still counts")
+  {
+    const char *argv[] = {"test_prog", "cmd", "--", "-v", "sub", "-f", "-s", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-s", "sub", "--format")));
+  }
+}
+
+TEST_CASE("A subcommand sharing its parent's name counts only where it is named", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_command("a", "the parent", nullptr, "parent")
+    .add_option("--opt", "-o", "an option of the parent", "", 1, "", "opt")
+    .add_command("a", "a child with the parent's name", nullptr, "child")
+    .add_option("--xopt", "-x", "an option of the child");
+
+  SECTION("the parent's own name is not the child's")
+  {
+    const char   *argv[] = {"test_prog", "a", "-o", "-x", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("opt").value() == "-x");
+  }
+
+  SECTION("a second one names the child")
+  {
+    const char *argv[] = {"test_prog", "a", "a", "-o", "-x", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-x", "a", "--opt")));
+  }
+}
+
+TEST_CASE("A default command counts only when it is written out", "[parse]")
+{
+  ArgParserStateGuard guard;
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_option("--format", "-f", "output format", "", 1, "", "format");
+  ts::ArgParser::Command &reload = parser.add_command("reload", "reload configs", nullptr, "reload");
+  reload.add_option("--monitor", "-m", "monitor progress").add_option("--target", "-g", "a target", "", 1, "", "target");
+  reload.add_command("all", "reload everything", nullptr, "all").add_option("--wait", "-w", "wait for it");
+  parser.add_command("init", "initialize", nullptr, "init").add_option("--init-opt", "-i", "an option of init");
+  parser.set_default_command("reload");
+
+  SECTION("the one the parser fills in for a line that names no command does not count")
+  {
+    const char   *argv[] = {"test_prog", "-f", "-m", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-m");
+    REQUIRE(parsed.get("reload") == true);
+    REQUIRE(parsed.get("monitor") == false);
+  }
+
+  SECTION("written out, it counts like any other")
+  {
+    const char *argv[] = {"test_prog", "reload", "-f", "-m", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--format")));
+  }
+
+  SECTION("a subcommand of it that the line does write counts")
+  {
+    const char *argv[] = {"test_prog", "all", "-f", "-w", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-w", "all", "--format")));
+  }
+
+  SECTION("a command name taken as a value on the way to the default command does not count")
+  {
+    // The first pass dispatches nothing, so the line is read again as the default command's.
+    const char   *argv[] = {"test_prog", "-g", "init", "-f", "-i", nullptr};
+    ts::Arguments parsed = parser.parse(argv);
+    REQUIRE(parsed.get("format").value() == "-i");
+    REQUIRE(parsed.get("target").value() == "init");
+    REQUIRE(parsed.get("init") == false);
+  }
+
+  SECTION("nothing carries over from one line to the next")
+  {
+    {
+      const char   *argv[] = {"test_prog", "-f", "-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("format").value() == "-m");
+    }
+    {
+      const char *argv[] = {"test_prog", "reload", "-f", "-m", nullptr};
+      REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--format")));
+    }
+    {
+      const char   *argv[] = {"test_prog", "-f", "-m", nullptr};
+      ts::Arguments parsed = parser.parse(argv);
+      REQUIRE(parsed.get("format").value() == "-m");
+    }
+  }
+}
+
+TEST_CASE("A declared variable does not stand in for a value written for a subcommand", "[parse][env]")
+{
+  ArgParserStateGuard guard;
+  setenv("TS_ARGPARSER_TEST_NAMED_ROOT", "root_env", 1);
+  setenv("TS_ARGPARSER_TEST_NAMED_LEVEL", "level_env", 1);
+  setenv("TS_ARGPARSER_TEST_NAMED_LIST", "list_env", 1);
+
+  TestArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+  parser.add_option("--root", "-r", "a root", "TS_ARGPARSER_TEST_NAMED_ROOT", 1, "", "root");
+  parser.add_option("--level", "-l", "a level", "TS_ARGPARSER_TEST_NAMED_LEVEL", AT_MOST_ONE_ARG_N, "", "level");
+  parser.add_option("--list", "-L", "a list", "TS_ARGPARSER_TEST_NAMED_LIST", MORE_THAN_ONE_ARG_N, "", "list");
+  parser.add_command("reload", "reload configs", nullptr, "reload").add_option("--monitor", "-m", "monitor progress");
+
+  // The line is refused, as it is without the variable, rather than the variable filling the
+  // option while the subcommand's option is quietly applied.
+  SECTION("for a fixed number of values")
+  {
+    const char *argv[] = {"test_prog", "reload", "-r", "-m", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--root")));
+  }
+
+  SECTION("for at most one value")
+  {
+    const char *argv[] = {"test_prog", "reload", "-l", "-m", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--level")));
+  }
+
+  SECTION("for one value or more")
+  {
+    const char *argv[] = {"test_prog", "reload", "-L", "-m", nullptr};
+    REQUIRE(contains(usage_error(parser, argv), swallowed("-m", "reload", "--list", true)));
+  }
+
+  unsetenv("TS_ARGPARSER_TEST_NAMED_ROOT");
+  unsetenv("TS_ARGPARSER_TEST_NAMED_LEVEL");
+  unsetenv("TS_ARGPARSER_TEST_NAMED_LIST");
 }
