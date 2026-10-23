@@ -16,8 +16,9 @@
 """Verify regex_remap matching and compiled-rule generation sharing."""
 
 import json
-import shlex
 import os
+import re
+import shlex
 import time
 from typing import Any
 
@@ -26,6 +27,16 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory, wait_for_file_lines
 
 REGEX_REMAP_UPDATED_RULE = "^/cache-generation$ https://updated.example/ @status=302"
+
+# A query long enough to exhaust the shared 1 MiB JIT stack on the redirect rule, which
+# backtracks once per subject character. Measured on arm64 with PCRE2 10.47, 43,672
+# characters after "action=newsfed;" match and 43,673 return -46. The ceiling is the
+# 65,535 byte request line the parser asserts on, so 64,000 sits near the top of a
+# window that configuration cannot widen. Shortening it turns the case into a plain
+# redirect check.
+JIT_STACK_EXHAUSTING_QUERY_LENGTH = 64000
+
+ALPHA_BRAVO_RESOURCE_ERROR = r'ERROR: \[regex_remap\] Bad regular expression result -(?:46|47|53|63) .*"\^/alpha/bravo/'
 
 REGEX_REMAP_ORIGINAL_RULES = (
     "# regex_remap configuration",
@@ -113,6 +124,10 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.diags.debug.tags": "http|regex_remap",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
+            # Room for the JIT stack exhaustion request. Do not raise request_line_max_size
+            # to match: http_parser_parse_req asserts on a request line of 65,535 bytes or
+            # more before it can reject one, so that is the real ceiling.
+            "proxy.config.http.request_header_max_size": 131072,
         })
     return ats
 
@@ -162,11 +177,38 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
     assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output
     output = _request(f"http://example.three{path}", "smoke", _ats=_ats, _curl=_curl)
     assert "HTTP/1.1 200 OK" in output and "Content-Length: 6128" in output
-    for transaction in (long_match, short_match):
-        output = _request(
-            transaction["client-request"]["url"], transaction["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
-        assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
+    # A 3 KB query backtracks once per character. It used to exhaust the 32 KiB stack
+    # PCRE2 falls back to when a match context carries none, so the rule was skipped.
+    # The plugin's context now resolves the shared 1 MiB stack and the redirect fires.
+    # Without a JIT the interpreter matches it on the heap, so this holds either way.
+    output = _request(
+        long_match["client-request"]["url"], long_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
+    assert "HTTP/1.1 301" in output and "Location: https://redirect.com/" in output, output
+    output = _request(
+        short_match["client-request"]["url"], short_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
+    assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
     wait_for_file_lines(_ats.diags_log, r"ERROR: .regex_remap. Bad regular expression result -47", 1)
+    if _ats.has_feature("TS_HAS_PCRE2_JIT"):
+        run_jit_stack_exhaustion_check(_ats=_ats, _curl=_curl)
+
+
+def run_jit_stack_exhaustion_check(*, _ats: ATS, _curl: Curl) -> None:
+    """Verify a query past the JIT stack bound fails the rule without crashing ATS.
+
+    This is the crash guard from #5762. Only the JIT engine has a stack to exhaust:
+    the interpreter keeps its backtracking frames on the heap, matches this subject
+    and redirects, so the caller runs this only when ``TS_HAS_PCRE2_JIT`` is set.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    errors_before = len(re.findall(ALPHA_BRAVO_RESOURCE_ERROR, _ats.diags_log.read_text(errors="replace"), re.MULTILINE))
+    query = "action=newsfed;" + "x" * JIT_STACK_EXHAUSTING_QUERY_LENGTH
+    output = _request(f"http://example.one/alpha/bravo/?{query}", "180", _ats=_ats, _curl=_curl)
+    assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output, output
+    assert "Location: https://redirect.com/" not in output, output
+    wait_for_file_lines(_ats.diags_log, ALPHA_BRAVO_RESOURCE_ERROR, errors_before + 1)
 
 
 def reload_rules(*, _ats: ATS) -> None:
