@@ -74,6 +74,8 @@ class CstBug(Enum):
     RAISES = auto()
     # Accepts what Sema rejects with the case's `sema_error`.
     ACCEPTS = auto()
+    # Raises Sema's first error against the calling file instead of the procedure file.
+    MISATTRIBUTES = auto()
 
 
 CST_BUGS = {"procedures/wrong-arity": CstBug.RAISES}
@@ -150,6 +152,8 @@ def _assert_outcomes(old: Outcome, new: Outcome, *, collect: bool, cst_bug: CstB
             _assert_collects_what_cst_raises(old, new)
         case CstBug.ACCEPTS:
             _assert_sema_rejects_what_cst_accepts(old, new, sema_error)
+        case CstBug.MISATTRIBUTES:
+            _assert_cst_misattributes(old, new)
         case _:
             _assert_agree(old, new, collect=collect)
 
@@ -177,6 +181,16 @@ def _assert_sema_rejects_what_cst_accepts(old: Outcome, new: Outcome, message: s
     if new.raised is not None:
         reported = (new.raised,)
     assert [e[3] for e in reported] == [message]
+
+
+def _assert_cst_misattributes(old: Outcome, new: Outcome) -> None:
+    assert old.raised is not None, "the CST emitter no longer raises; drop its CstBug"
+    first = new.raised
+    if first is None:
+        first = new.errors[0]
+    assert old.raised[0] == "<synthetic>"
+    assert first[0] != old.raised[0]
+    assert first[1:] == old.raised[1:]
 
 
 def _conf(lines: list[str] | None) -> str:
@@ -381,6 +395,12 @@ SYNTHETIC = [
             cst_bug=CstBug.ACCEPTS,
             sema_error="'$a' used outside procedure context"),
         id="default-naming-a-caller-param"),
+    pytest.param(
+        Case(
+            'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
+            procedure='procedure syn::p($a, $b = $a) {\n    inbound.req.X-B = $b;\n}\n',
+            cst_bug=CstBug.MISATTRIBUTES),
+        id="default-naming-an-unbound-param"),
 ]
 
 
