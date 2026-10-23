@@ -1,0 +1,21 @@
+# doc.start
+- with: [ random, pre-remap-path ]
+  select:
+  - as-tuple:
+    - lt: 30
+    - any-of:
+      - prefix: "v1/video/search/"
+      - prefix: "v1/video/alias/"
+    do:
+    - ua-req-host: "stage.video.ex"
+  - as-tuple:
+    - lt: 10
+    - prefix: "v1/video/channels/"
+    do:
+    - ua-req-host: "stage.video.ex"
+# doc.end
+  - as-tuple:
+    - lt: 100
+    - prefix: "v1/video/sub/"
+    do:
+    - ua-req-host: "stage.video.ex"

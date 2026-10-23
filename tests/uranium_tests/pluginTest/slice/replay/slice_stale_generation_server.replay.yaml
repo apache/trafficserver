@@ -1,0 +1,286 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Origin side of slice_stale_generation.test.py.
+#
+# The server is keyed on "{url}{field.range}{field.uuid}", so each slice block
+# request selects a transaction by the block's byte range and by the phase uuid
+# that the client propagated through the plugin. The phase uuid is what replaces
+# the origin object: the fill phase is answered with generation 1 (32 bytes,
+# ETag "v1"), every later phase with generation 2 (64 bytes, ETag "v2").
+#
+# For the two phases that read the already cached object there is deliberately
+# only one transaction each, the reference block. Those exist so the origin
+# really does hold the new object, but the test asserts the server never
+# receives them: the cached blocks are fresh for a day, so nothing revalidates.
+# If slice did go upstream it would either pick up generation 2, failing the
+# client side assertions, or ask for an unregistered block and get a 404,
+# failing the diags.log assertion.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  #
+  # Phase fill: the origin holds generation 1, cached in 16 byte blocks with a
+  # day of freshness.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-15]
+        - [uuid, fill]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-15/32]
+        - [Content-Length, '16']
+        - [ETag, '"v1"']
+        - [Last-Modified, 'Mon, 01 Jun 2026 00:00:00 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'aaaaaaaaaaaaaaaa', size: 16}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-31]
+        - [uuid, fill]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 16-31/32]
+        - [Content-Length, '16']
+        - [ETag, '"v1"']
+        - [Last-Modified, 'Mon, 01 Jun 2026 00:00:00 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'aaaaaaaaaaaaaaaa', size: 16}
+
+  #
+  # The object is replaced here. Generation 2 is longer, with a new ETag and
+  # Last-Modified, under the same URL. The reference block is registered for
+  # each phase that reads the cached object, so the origin genuinely holds the
+  # new object, but the test asserts these keys are never requested.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-15]
+        - [uuid, clipped]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-15/64]
+        - [Content-Length, '16']
+        - [ETag, '"v2"']
+        - [Last-Modified, 'Wed, 08 Jul 2026 23:54:41 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'bbbbbbbbbbbbbbbb', size: 16}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-15]
+        - [uuid, unsatisfiable]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-15/64]
+        - [Content-Length, '16']
+        - [ETag, '"v2"']
+        - [Last-Modified, 'Wed, 08 Jul 2026 23:54:41 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'bbbbbbbbbbbbbbbb', size: 16}
+
+  #
+  # Phase control: a path first requested after the object was replaced, so
+  # nothing about it is cached and the client must see generation 2.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /fresh
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-15]
+        - [uuid, control]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-15/64]
+        - [Content-Length, '16']
+        - [ETag, '"v2"']
+        - [Last-Modified, 'Wed, 08 Jul 2026 23:54:41 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'bbbbbbbbbbbbbbbb', size: 16}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /fresh
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-31]
+        - [uuid, control]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 16-31/64]
+        - [Content-Length, '16']
+        - [ETag, '"v2"']
+        - [Last-Modified, 'Wed, 08 Jul 2026 23:54:41 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'bbbbbbbbbbbbbbbb', size: 16}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /fresh
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=32-47]
+        - [uuid, control]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 32-47/64]
+        - [Content-Length, '16']
+        - [ETag, '"v2"']
+        - [Last-Modified, 'Wed, 08 Jul 2026 23:54:41 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'bbbbbbbbbbbbbbbb', size: 16}
+
+  #
+  # Phase fill-interior, used by SliceMixedGenerationTest: /mixed at generation
+  # 1. The reference block is given a one second freshness lifetime so that
+  # later only it revalidates. In production the reference block was evicted and
+  # refetched after the replacement while the interior blocks survived; a short
+  # lifetime reaches the same end state without depending on eviction.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-15]
+        - [uuid, fill-interior]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-15/32]
+        - [Content-Length, '16']
+        - [ETag, '"v1"']
+        - [Last-Modified, 'Mon, 01 Jun 2026 00:00:00 GMT']
+        - [Cache-Control, 'public, max-age=1']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'aaaaaaaaaaaaaaaa', size: 16}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-31]
+        - [uuid, fill-interior]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 16-31/32]
+        - [Content-Length, '16']
+        - [ETag, '"v1"']
+        - [Last-Modified, 'Mon, 01 Jun 2026 00:00:00 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'aaaaaaaaaaaaaaaa', size: 16}
+
+  #
+  # Phase mixed: the object has been replaced. Only the reference block is
+  # stale, so only it revalidates, and it comes back as generation 2 while the
+  # cached interior block is still generation 1. That is the disagreement slice
+  # cannot heal.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-15]
+        - [uuid, mixed]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-15/64]
+        - [Content-Length, '16']
+        - [ETag, '"v2"']
+        - [Last-Modified, 'Wed, 08 Jul 2026 23:54:41 GMT']
+        - [Cache-Control, 'public, max-age=86400']
+        - [Accept-Ranges, bytes]
+      content: {encoding: plain, data: 'bbbbbbbbbbbbbbbb', size: 16}

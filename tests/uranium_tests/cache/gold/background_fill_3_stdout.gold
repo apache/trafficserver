@@ -1,0 +1,15 @@
+``
+[DEBUG]: Received an HTTP/2 response for key 1 with stream id 1:
+:status: 200
+content-type: text/html
+content-length: 11
+``
+x-cache: miss
+``
+[DEBUG]: Received an HTTP/2 response for key 2 with stream id 1:
+:status: 200
+content-type: text/html
+content-length: 11
+``
+x-cache: hit-fresh
+``

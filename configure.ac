@@ -2390,6 +2390,13 @@ AC_CONFIG_FILES([
   tests/Makefile
 ])
 
+# Preserve the tracked source launcher when configuring in the source tree.
+AS_IF([test "`cd "$srcdir" && pwd`" = "`pwd`"], [
+  AC_CONFIG_FILES([tests/urtest-configured.sh:tests/urtest.sh.in], [chmod +x tests/urtest-configured.sh])
+], [
+  AC_CONFIG_FILES([tests/urtest.sh], [chmod +x tests/urtest.sh])
+])
+
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
 

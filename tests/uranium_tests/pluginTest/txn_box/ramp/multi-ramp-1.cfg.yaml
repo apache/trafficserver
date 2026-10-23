@@ -1,0 +1,27 @@
+# doc.start
+- with: pre-remap-path
+  select:
+  - any-of:
+    - prefix: "v1/video/search/"
+    - prefix: "v1/video/alias/"
+    do:
+    - with: random
+      select:
+      - lt: 30
+        do:
+        - ua-req-host: "stage.video.ex"
+  - prefix: "v1/video/channels/"
+    do:
+    - with: random
+      select:
+      - lt: 10
+        do:
+        - ua-req-host: "stage.video.ex"
+# doc.end
+  - prefix: "v1/video/sub/"
+    do:
+    - with: random
+      select:
+      - lt: 100
+        do:
+        - ua-req-host: "stage.video.ex"

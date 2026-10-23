@@ -1,0 +1,8 @@
+plugins:
+  - path: regex_remap.so
+    params:
+      - maps_https.config
+      - --no-query
+  - path: header_rewrite.so
+    params:
+      - /etc/trafficserver/my rules.conf
