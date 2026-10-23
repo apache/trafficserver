@@ -1,0 +1,2 @@
+proxy.process.http2.session_die_active 1
+proxy.process.http2.session_die_inactive 0
