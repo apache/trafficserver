@@ -247,15 +247,20 @@ RamCacheCLFUS::init(int64_t abytes, StripeSM *astripe)
 void
 RamCacheCLFUS::_decay_epoch()
 {
-  forl_LL(RamCacheCLFUSEntry, e, this->_lru[0])
-  {
-    e->hits >>= 1;
-  }
-  forl_LL(RamCacheCLFUSEntry, e, this->_lru[1])
-  {
-    e->hits >>= 1;
-  }
+  ++this->_epoch;
   this->_average_value *= 0.5;
+}
+
+// Entries are decayed lazily: hits is halved once for every epoch that has
+// passed since the entry was last touched, so an epoch change costs O(1)
+// rather than a walk over every entry.
+void
+RamCacheCLFUS::_apply_decay(RamCacheCLFUSEntry *e)
+{
+  uint32_t elapsed = this->_epoch - e->epoch;
+
+  e->hits  = elapsed < 32 ? e->hits >> elapsed : 0;
+  e->epoch = this->_epoch;
 }
 
 #ifdef CHECK_ACOUNTING
@@ -318,6 +323,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
       if (!e->flag_bits.lru) { // in memory
         this->_lru[0].remove(e);
         this->_lru[0].enqueue(e);
+        this->_apply_decay(e);
         e->hits++;
         uint32_t ram_hit_state = RAM_HIT_COMPRESS_NONE;
         if (e->flag_bits.compressed) {
@@ -438,6 +444,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
       } else {
         this->_lru[1].remove(e);
         this->_lru[1].enqueue(e);
+        this->_apply_decay(e);
         e->hits++;
         ts::Metrics::Counter::increment(cache_rsb.ram_cache_misses);
         ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_misses);
@@ -470,6 +477,7 @@ RamCacheCLFUS::_tick()
   if (!e) {
     return;
   }
+  this->_apply_decay(e);
   e->hits >>= 1;
   if (e->hits) {
     e->hits = requeue_hits(e->hits);
@@ -815,6 +823,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     e = e->hash_link.next;
   }
   if (e) {
+    this->_apply_decay(e);
     e->hits++;
     if (!e->flag_bits.lru) { // already in cache
       this->_move_compressed(e);
@@ -858,7 +867,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   }
   Que(RamCacheCLFUSEntry, lru_link) victims;
   RamCacheCLFUSEntry *victim        = nullptr;
-  int                 requeue_count = std::min(static_cast<int64_t>(requeue_limit), this->_objects);
+  int64_t             requeue_count = std::min(static_cast<int64_t>(requeue_limit), this->_objects);
   if (!this->_lru[1].head) { // initial fill
     if (this->_bytes + size <= this->_max_bytes) {
       goto Linsert;
@@ -890,6 +899,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " NO VICTIM", key->slice32(3), auxkey);
       return 0;
     }
+    this->_apply_decay(victim);
     this->_average_value = (cache_value(victim) + (this->_average_value * (average_value_over - 1))) / average_value_over;
     if (cache_value(victim) > this->_average_value && requeue_count-- > 0) {
       victim->hits >>= 1;
@@ -920,7 +930,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       if (this->_bytes + victim->size + size > this->_max_bytes && victim_value > cache_value(e)) {
         this->_requeue_victims(victims);
         this->_lru[1].enqueue(e);
-        DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d INC %" PRId64 " HISTORY", key->slice32(3), auxkey, e->size, e->hits);
+        DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d INC %" PRIu32 " HISTORY", key->slice32(3), auxkey, e->size, e->hits);
         return 0;
       }
     }
@@ -947,6 +957,7 @@ Linsert:
     e->key    = *key;
     e->auxkey = auxkey;
     e->hits   = 1;
+    e->epoch  = this->_epoch;
     this->_bucket[i].push(e);
     if (this->_objects > this->_nbuckets) {
       ++this->_ibuckets;
@@ -978,6 +989,7 @@ Lhistory:
   e->key    = *key;
   e->auxkey = auxkey;
   e->hits   = 2;
+  e->epoch  = this->_epoch;
   e->size   = data->block_size();
   e->flags  = 0;
   this->_bucket[i].push(e);

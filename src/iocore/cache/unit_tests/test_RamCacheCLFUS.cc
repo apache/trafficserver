@@ -87,6 +87,12 @@ struct RamCacheCLFUSTestAccess {
   {
     rc._last_decay_time = t;
   }
+
+  static void
+  decay_epoch(RamCacheCLFUS &rc)
+  {
+    rc._decay_epoch();
+  }
 };
 
 namespace
@@ -436,8 +442,8 @@ CryptoHash
 make_key(uint64_t id)
 {
   CryptoHash key;
-  key.u64[0] = 0xc0ffee00 + id;
-  key.u64[1] = 0xdeadbeef + id;
+  key.u32[0] = static_cast<uint32_t>(0xc0ffee00 + id);
+  key.u32[2] = static_cast<uint32_t>(0xdeadbeef + id);
   key.u32[3] = static_cast<uint32_t>(0x12345678 + id);
   return key;
 }
@@ -603,8 +609,52 @@ TEST_CASE("CLFUS periodic epoch decay halves hit counts and decays average value
   auto key2 = make_key(2);
   rc.put(&key2, buf.get(), 4 * 1024);
 
-  // e1->hits should have been halved by epoch decay (20 -> 10)
-  CHECK(e1->hits == 10);
+  // Decay is lazy: the epoch change does not walk the entries.
+  CHECK(e1->hits == 20);
   // _average_value should have decayed by half
   CHECK(RamCacheCLFUSTestAccess::average_value(rc) <= 2.5);
+
+  // Touching e1 applies the pending decay (20 -> 10) before counting the hit.
+  Ptr<IOBufferData> out;
+  REQUIRE(rc.get(&key1, &out) != 0);
+  CHECK(e1->hits == 11);
+}
+
+TEST_CASE("CLFUS lazy decay applies every elapsed epoch", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 0;
+
+  RamCacheCLFUS rc;
+  rc.init(64 * 1024, &stripe);
+
+  auto buf = make_buffer(compressible_bytes(4 * 1024));
+  auto key = make_key(1);
+  REQUIRE(rc.put(&key, buf.get(), 4 * 1024) == 1);
+
+  RamCacheCLFUSEntry *e = RamCacheCLFUSTestAccess::find_entry(rc, key);
+  REQUIRE(e != nullptr);
+  e->hits = 64;
+
+  for (int i = 0; i < 3; ++i) {
+    RamCacheCLFUSTestAccess::decay_epoch(rc);
+  }
+
+  Ptr<IOBufferData> out;
+  REQUIRE(rc.get(&key, &out) != 0);
+  CHECK(e->hits == 64 / 8 + 1);
+
+  // Enough epochs to shift out every bit must clear the count, not wrap the shift.
+  e->hits = 0xffffffff;
+  for (int i = 0; i < 40; ++i) {
+    RamCacheCLFUSTestAccess::decay_epoch(rc);
+  }
+  REQUIRE(rc.get(&key, &out) != 0);
+  CHECK(e->hits == 1);
 }

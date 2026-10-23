@@ -41,9 +41,10 @@ class StripeSM;
 struct RamCacheCLFUSEntry {
   CryptoHash key;
   uint64_t   auxkey;
-  uint64_t   hits;
-  uint32_t   size; // memory used including padding in buffer
-  uint32_t   len;  // actual data length
+  uint32_t   hits;
+  uint32_t   epoch; // value of RamCacheCLFUS::_epoch when hits was last decayed
+  uint32_t   size;  // memory used including padding in buffer
+  uint32_t   len;   // actual data length
   uint32_t   compressed_len;
   union {
     struct {
@@ -129,7 +130,9 @@ private:
   friend struct RamCacheCLFUSTestAccess;
 
   ink_hrtime          _last_decay_time = 0;
+  uint32_t            _epoch           = 0;
   void                _decay_epoch();
+  void                _apply_decay(RamCacheCLFUSEntry *e);
   void                _resize_hashtable();
   void                _victimize(RamCacheCLFUSEntry *e);
   void                _move_compressed(RamCacheCLFUSEntry *e);
