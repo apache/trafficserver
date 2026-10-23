@@ -21,10 +21,12 @@ import argparse
 import gzip
 import http.client
 import json
+import re
 import socket
 import struct
 import subprocess
 import sys
+import urllib.parse
 import zlib
 
 
@@ -53,20 +55,30 @@ def test_metric_values(stats_format: str, body: str) -> list[int]:
     return sorted(int(value) for name, value in items if name.startswith(prefix))
 
 
-def get(args: argparse.Namespace, headers: dict[str, str]) -> tuple[http.client.HTTPResponse, bytes]:
-    headers = {'Connection': 'close', **headers}
-    if args.encoding:
-        headers['Accept-Encoding'] = args.encoding
-    conn = http.client.HTTPConnection('127.0.0.1', args.port, timeout=60)
-    conn.request('GET', f'/_stats/{args.format}', headers=headers)
+def request(
+        port: int,
+        path: str,
+        encoding: str | None = None,
+        headers: dict[str, str] | None = None,
+        method: str = 'GET',
+        timeout: float = 60) -> tuple[http.client.HTTPResponse, bytes]:
+    headers = {'Connection': 'close', **(headers or {})}
+    if encoding:
+        headers['Accept-Encoding'] = encoding
+    conn = http.client.HTTPConnection('127.0.0.1', port, timeout=timeout)
+    conn.request(method, path, headers=headers)
     response = conn.getresponse()
     body = response.read()
     conn.close()
     return response, body
 
 
+def fetch(args: argparse.Namespace, headers: dict[str, str], method: str = 'GET') -> tuple[http.client.HTTPResponse, bytes]:
+    return request(args.port, f'/_stats/{args.format}', args.encoding, headers, method)
+
+
 def fetch_and_verify(args: argparse.Namespace) -> int:
-    response, encoded = get(args, {})
+    response, encoded = fetch(args, {})
     content_encoding = response.getheader('Content-Encoding')
     if response.status != 200 or content_encoding != args.encoding:
         print(f'Unexpected response: status {response.status}, Content-Encoding {content_encoding}')
@@ -75,10 +87,39 @@ def fetch_and_verify(args: argparse.Namespace) -> int:
     body = decode(args.encoding, encoded).decode('utf-8')
     values = test_metric_values(args.format, body)
     print(f'{args.format} {args.encoding}: {len(encoded)} encoded bytes, {len(body)} decoded bytes')
+    print(f'X-Stats-Format: {response.getheader("X-Stats-Format")}')
     if values != list(range(args.count)):
         print(f'Found {len(values)} test metrics, expected {args.count} with values 0 to {args.count - 1}')
         return 1
+    lines = body.split('\n')
+    missing = False
+    for expected in args.expect:
+        if any(lines[i:i + len(expected)] == expected for i in range(len(lines))):
+            print(f'Found the lines {expected}')
+            continue
+        missing = True
+        # The last line of a group is a sample, whose name ends at a space, a comma or a colon.
+        name = re.split(r'[ ,:]', expected[-1], maxsplit=1)[0]
+        print(f'The body does not have the lines {expected}.  Its lines with {name}: {[line for line in lines if name in line]}')
+    if missing:
+        return 1
     print(f'Verified {len(values)} test metrics')
+    return 0
+
+
+def fetch_records(args: argparse.Namespace) -> int:
+    '''Request the records in args.record, whose samples the response must hold alone and uncompressed.'''
+    query = urllib.parse.urlencode([('records[]', name) for name in args.record])
+    response, data = request(args.port, f'/_stats/{args.format}?{query}', args.encoding)
+    content_encoding = response.getheader('Content-Encoding')
+    if response.status != 200 or content_encoding is not None:
+        print(f'Unexpected response: status {response.status}, Content-Encoding {content_encoding}')
+        return 1
+
+    body = data.decode('utf-8')
+    families = sorted({re.split(r'[{ ]', line, maxsplit=1)[0] for line in body.splitlines() if line and not line.startswith('#')})
+    print(f'Families: {families}')
+    print(f'Verified a body of {len(data)} bytes for {len(args.record)} records')
     return 0
 
 
@@ -88,7 +129,7 @@ def reset_after_first_byte(args: argparse.Namespace) -> int:
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
     sock.settimeout(60)
     sock.connect(('127.0.0.1', args.port))
-    request = f'GET /_stats/{args.format} HTTP/1.1\r\nHost: 127.0.0.1\r\n'
+    request = f'GET /_stats/{args.format} HTTP/1.1\r\nHost: 127.0.0.1:{args.port}\r\n'
     if args.encoding:
         request += f'Accept-Encoding: {args.encoding}\r\n'
     sock.sendall(f'{request}\r\n'.encode())
@@ -102,9 +143,22 @@ def reset_after_first_byte(args: argparse.Namespace) -> int:
 def request_rejected(args: argparse.Namespace) -> int:
     # Traffic Server rejects "TE: identity;q=0" after stats_over_http has set up its intercept, so the
     # intercept is never connected.
-    response, _ = get(args, {'TE': 'identity;q=0'})
+    response, _ = fetch(args, {'TE': 'identity;q=0'})
     print(f'Response status {response.status}')
     return 0 if response.status == 406 else 1
+
+
+def head(args: argparse.Namespace) -> int:
+    response, _ = fetch(args, {}, method='HEAD')
+    print(f'Response status {response.status}')
+    return 0 if response.status == 200 else 1
+
+
+def post(args: argparse.Namespace) -> int:
+    response, _ = fetch(args, {}, method='POST')
+    allow = response.getheader('Allow')
+    print(f'Response status {response.status}, Allow: {allow}')
+    return 0 if response.status == 405 and allow == 'GET, HEAD' else 1
 
 
 def main() -> int:
@@ -113,15 +167,32 @@ def main() -> int:
     parser.add_argument('format', choices=['json', 'csv', 'prometheus', 'prometheus_v2'])
     parser.add_argument('--encoding', choices=['gzip', 'deflate', 'br'], help='the content coding to request')
     parser.add_argument('--count', type=int, default=0, help='the --count given to test_metrics.so')
+    parser.add_argument(
+        '--expect',
+        nargs='+',
+        action='append',
+        default=[],
+        metavar='LINE',
+        help='lines that the decoded body must have, one after the other.  Repeat the option for each group of lines')
+    parser.add_argument(
+        '--record', action='append', default=[], help='a record to request with records[].  Repeat the option for each record')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
         '--reset', action='store_true', help='reset the connection after the first response byte instead of verifying the body')
     mode.add_argument('--reject', action='store_true', help='send a request that Traffic Server rejects with a 406')
+    mode.add_argument('--head', action='store_true', help='send a HEAD request instead of verifying the body')
+    mode.add_argument('--post', action='store_true', help='send a POST request, which a remap rule rejects with a 405')
     args = parser.parse_args()
     if args.reset:
         return reset_after_first_byte(args)
     if args.reject:
         return request_rejected(args)
+    if args.head:
+        return head(args)
+    if args.post:
+        return post(args)
+    if args.record:
+        return fetch_records(args)
     return fetch_and_verify(args)
 
 
