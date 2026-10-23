@@ -1,0 +1,80 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+    version: '1.0'
+
+urtest:
+  description: "Verify TSHttpTxnServerAddrSet redirects the origin connection"
+  dns:
+    name: "server-addr-dns"
+    process_config:
+      default: ["127.0.0.1"]
+  server:
+    name: "server-addr-origin"
+    log_validation:
+      contains:
+        - {expression: "redirect-succeeded", description: "The origin must send the redirected response"}
+  client:
+    name: "server-addr-client"
+    log_validation:
+      contains:
+        - {expression: "redirect-succeeded", description: "The client must receive the redirected response"}
+  ats:
+    name: "server-addr-ts"
+    copy_custom_plugin:
+      - "{AtsBuildUraniumTestsDir}/pluginTest/tsapi/.libs/test_TSHttpTxnServerAddrSet.so"
+    plugin_config:
+      - "test_TSHttpTxnServerAddrSet.so 127.0.0.1 {SERVER_HTTP_PORT}"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|dns|hostdb|test_plugin"
+    remap_config:
+      - from: "/"
+        to: "http://non.existent.server.com:{UNUSED_PORT}"
+
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /pictures/flower.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, first-request ]
+
+    server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+          - [ Content-Type, image/jpeg ]
+          - [ Transfer-Encoding, chunked ]
+          - [ Connection, keep-alive ]
+          - [ X-Response, redirect-succeeded ]
+        content:
+          size: 45
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: redirect-succeeded, as: equal } ]
