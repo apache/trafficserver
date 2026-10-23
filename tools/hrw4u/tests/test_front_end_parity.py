@@ -53,6 +53,7 @@ of the `else` line leaves the config untouched and would pass a weaker assertion
 """
 
 from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 
 import pytest
@@ -64,10 +65,16 @@ from hrw4u.errors import ErrorCollector, Hrw4uSyntaxError
 from hrw4u.sandbox import SandboxConfig
 from hrw4u.visitor import HRW4UVisitor
 
-# Inputs where the CST emitter raises out of visit() even though it was given an error
-# collector, so its caller gets an exception instead of a diagnostic. Sema collects the same
-# error and carries on, which is the behaviour the collector was asked for.
-COLLECTS_INSTEAD_OF_RAISING = {"procedures/wrong-arity"}
+
+class CstBug(Enum):
+    """A known way the CST emitter gets an input wrong, and so where Sema must differ from it."""
+    # Raises out of visit() despite an error collector, so its caller gets an exception
+    # instead of a diagnostic. Sema collects the same error and carries on, which is the
+    # behaviour the collector was asked for.
+    RAISES = auto()
+
+
+CST_BUGS = {"procedures/wrong-arity": CstBug.RAISES}
 
 COLLECT_MODES = [pytest.param(True, id="collected"), pytest.param(False, id="stop-on-error")]
 
@@ -132,10 +139,15 @@ def test_front_ends_agree(input_file: Path, collect: bool) -> None:
     old = _compile("cst", tree, input_file, text, collect=collect)
     new = _compile("sema", tree, input_file, text, collect=collect)
 
-    if collect and _case_id(input_file) in COLLECTS_INSTEAD_OF_RAISING:
-        _assert_collects_what_cst_raises(old, new)
-    else:
-        _assert_agree(old, new, collect=collect)
+    _assert_outcomes(old, new, collect=collect, cst_bug=CST_BUGS.get(_case_id(input_file)))
+
+
+def _assert_outcomes(old: Outcome, new: Outcome, *, collect: bool, cst_bug: CstBug | None) -> None:
+    match cst_bug:
+        case CstBug.RAISES if collect:
+            _assert_collects_what_cst_raises(old, new)
+        case _:
+            _assert_agree(old, new, collect=collect)
 
 
 def _assert_agree(old: Outcome, new: Outcome, *, collect: bool) -> None:
@@ -150,7 +162,7 @@ def _assert_agree(old: Outcome, new: Outcome, *, collect: bool) -> None:
 
 
 def _assert_collects_what_cst_raises(old: Outcome, new: Outcome) -> None:
-    assert old.raised is not None, "no longer raises; drop it from the set"
+    assert old.raised is not None, "no longer raises; drop its CstBug"
     assert new.raised is None
     assert new.errors[:1] == (old.raised,)
 
@@ -198,7 +210,7 @@ class Case:
     warn: dict | None = None  # the sandbox `warn:` block
     comments: bool = True
     procedure: str | None = None  # written to <tmp>/procs/syn/p.hrw4u, reachable as `use syn::p`
-    cst_raises: bool = False  # as COLLECTS_INSTEAD_OF_RAISING
+    cst_bug: CstBug | None = None
 
 
 SYNTHETIC = [
@@ -336,7 +348,7 @@ SYNTHETIC = [
         Case(
             'use syn::p\nREMAP {\n    syn::p($x);\n}\n',
             procedure='procedure syn::p($a) {\n    inbound.req.X-A = $a;\n}\n',
-            cst_raises=True),
+            cst_bug=CstBug.RAISES),
         id="param-ref-passed-to-a-procedure-outside-one"),
     pytest.param(
         Case(
@@ -370,7 +382,4 @@ def test_front_ends_agree_on_uncovered_constructs(case: Case, collect: bool, tmp
     old = _run("cst", tree, "<synthetic>", case.source, collect=collect, **kwargs)
     new = _run("sema", tree, "<synthetic>", case.source, collect=collect, **kwargs)
 
-    if collect and case.cst_raises:
-        _assert_collects_what_cst_raises(old, new)
-    else:
-        _assert_agree(old, new, collect=collect)
+    _assert_outcomes(old, new, collect=collect, cst_bug=case.cst_bug)
