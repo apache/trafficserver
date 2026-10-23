@@ -166,9 +166,11 @@ make_JA4_fingerprint(TLSClientHelloSummary const &TLS_summary, UnaryOp hasher)
   std::string result;
   result.append(make_JA4_a_raw(TLS_summary));
   result.push_back(JA4::PORTION_DELIMITER);
-  result.append(hasher(make_JA4_b_raw(TLS_summary)).substr(0, 12));
+  std::string const b_raw{make_JA4_b_raw(TLS_summary)};
+  result.append((b_raw.empty()) ? "000000000000" : hasher(b_raw).substr(0, 12));
   result.push_back(JA4::PORTION_DELIMITER);
-  result.append(hasher(make_JA4_c_raw(TLS_summary)).substr(0, 12));
+  std::string const c_raw{make_JA4_c_raw(TLS_summary)};
+  result.append((c_raw.empty()) ? "000000000000" : hasher(c_raw).substr(0, 12));
   return result;
 }
 
