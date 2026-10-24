@@ -345,11 +345,94 @@ init_HttpProxyServer()
 #endif
 }
 
+namespace
+{
+
+/** Open a loopback-bound companion listener for @a port, exempt from watchdog backpressure.
+ *
+ * Local connections arrive on the same port as all other traffic, so there is no port to exempt -
+ * only a source address. But watchdog backpressure is a decision about a
+ * listen socket, taken before @c accept4, and a connection's peer address is not knowable until after
+ * it. The way out is to let the kernel do the discrimination: a socket bound explicitly to the
+ * loopback address takes precedence over the wildcard socket on the same port, so local connections
+ * land on this listener and everything from off box lands on the original one. Marking only this
+ * listener exempt then protects local connections without giving up the backpressure for the flood.
+ *
+ * Opened whenever the watchdog is enabled at all, rather than when an active mode is selected:
+ * `proxy.config.exec_thread.watchdog.mode` is reloadable, and binding or unbinding sockets in
+ * response to a config change would be a great deal of risk for no benefit. An exempt loopback
+ * listener behaves identically to the wildcard one when no backpressure is engaged.
+ *
+ * @param[in] acceptor The acceptor whose continuation and options this listener shares.
+ * @param[in] port The proxy port being duplicated on loopback.
+ */
+void
+start_loopback_companion_acceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port)
+{
+  NetProcessor::AcceptOptions net_opt = acceptor._net_opt;
+
+  // localhost_only takes precedence over local_ip in accept_internal(), which is what binds this to
+  // 127.0.0.1 or ::1 according to the port's address family.
+  net_opt.localhost_only    = true;
+  net_opt.f_watchdog_exempt = true;
+
+  // Overlapping binds - this loopback socket and the port's wildcard socket - require SO_REUSEPORT on
+  // both. The caller has already set it on the wildcard side.
+  net_opt.f_force_reuseport = true;
+
+  // Never take the proxy down over a supplementary listener. Without it the exemption is simply not
+  // in effect, which the warning from Server::listen() reports.
+  net_opt.f_non_fatal_listen = true;
+
+  // Don't double the process's dedicated accept threads for a listener that will see only a low
+  // volume of local connections. Left alone when accept threads are not in use, so that the companion follows
+  // the same per-thread or SO_REUSEPORT model as the port it shadows.
+  int accept_threads = net_opt.accept_threads;
+  if (accept_threads < 0) {
+    accept_threads = RecGetRecordInt("proxy.config.accept_threads").value_or(0);
+  }
+  if (accept_threads > 0) {
+    net_opt.accept_threads = 1;
+  }
+
+  // A TLS port's companion has to go through the SSL processor so the loopback listener negotiates
+  // exactly as the wildcard one does. Never inherit the pre-opened descriptor - that one belongs to
+  // the wildcard listener.
+  NetProcessor &np = port.isSSL() ? static_cast<NetProcessor &>(sslNetProcessor) : static_cast<NetProcessor &>(netProcessor);
+
+  // A failed listen has already been warned about by Server::listen().
+  if (nullptr == np.main_accept(acceptor._accept, ts::NO_FD, net_opt)) {
+    return;
+  }
+  Note("opened watchdog-exempt loopback listener on port %d for local connections", port.m_port);
+}
+
+/** Whether @a port should get a loopback companion listener.
+ *
+ * Only plain TCP ports bound to a wildcard address qualify. A port already pinned to a specific
+ * address was deliberately scoped by the operator, and adding a loopback bind to it would be new
+ * exposure they did not ask for. QUIC is UDP and does not use this accept path at all, unix domain
+ * sockets are local by construction, and a plugin port has no listen socket.
+ */
+bool
+wants_loopback_companion(HttpProxyPort const &port)
+{
+  return !port.isQUIC() && !port.isPlugin() && AF_UNIX != port.m_family && !port.m_inbound_ip.isValid() &&
+         !(AF_INET6 == port.m_family && HttpConfig::m_master.inbound.has_ip6()) &&
+         !(AF_INET == port.m_family && HttpConfig::m_master.inbound.has_ip4());
+}
+
+} // namespace
+
 void
 start_HttpProxyServer()
 {
   static bool           called_once = false;
   HttpProxyPort::Group &proxy_ports = HttpProxyPort::global();
+
+  // The watchdog's shrink timeout is fixed at startup, so whether the exempt loopback listeners are
+  // needed is decided once here.
+  int watchdog_shrink_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_shrink_ms").value_or(0);
 
   ///////////////////////////////////
   // start accepting connections   //
@@ -361,6 +444,14 @@ start_HttpProxyServer()
   for (int i = 0, n = proxy_ports.size(); i < n; ++i) {
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
     HttpProxyPort     &port     = proxy_ports[i];
+
+    // Decided before the port is opened, because an overlapping bind needs SO_REUSEPORT on *both*
+    // sockets and it can only be set before bind().
+    bool const companion = watchdog_shrink_timeout_ms > 0 && wants_loopback_companion(port);
+    if (companion) {
+      acceptor._net_opt.f_force_reuseport = true;
+    }
+
     if (port.isSSL()) {
       if (nullptr == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
@@ -378,6 +469,10 @@ start_HttpProxyServer()
     }
     // XXX although we make a good pretence here, I don't believe that NetProcessor::main_accept() ever actually returns
     // NULL. It would be useful to be able to detect errors and spew them here though.
+
+    if (companion) {
+      start_loopback_companion_acceptor(acceptor, port);
+    }
   }
 
   // Alert plugins that connections will be accepted.
