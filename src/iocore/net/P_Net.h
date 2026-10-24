@@ -78,6 +78,8 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *socks_connections_successful;
   Metrics::Counter::AtomicType *socks_connections_unsuccessful;
   Metrics::Counter::AtomicType *tcp_accept;
+  Metrics::Counter::AtomicType *watchdog_accepts_refused;
+  Metrics::Gauge::AtomicType   *watchdog_listen_backlog;
   Metrics::Counter::AtomicType *write_bytes;
   Metrics::Counter::AtomicType *write_bytes_count;
   Metrics::Gauge::AtomicType   *connection_tracker_table_size;

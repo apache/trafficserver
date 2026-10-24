@@ -130,11 +130,27 @@ struct NetAccept : public Continuation {
   HttpProxyPort *proxyPort = nullptr;
   AcceptOptions  opt;
 
+  /** Listen backlog scale currently applied to @a server, in permille.
+
+      Tracks @c Watchdog::backlog_scale_permille() so the accept paths can re-listen only on a change rather
+      than on every pass. Owned by whichever thread runs this acceptor's accept callback; the watchdog
+      publishes the target and never touches the socket itself, which keeps it clear of the event
+      system's locks.
+  */
+  int applied_backlog_permille = 1000;
+
+  /** Pending retry timer for an @c acceptFastEvent pass that refused under watchdog backpressure.
+
+      Every arrival on the edge-triggered listen fd wakes the acceptor, so without this each refused
+      pass would start its own timer chain. At most one is kept outstanding per acceptor.
+  */
+  Event *refuse_retry = nullptr;
+
   virtual NetProcessor *getNetProcessor() const;
 
   virtual void       init_accept(EThread *t = nullptr);
-  void               init_accept_loop();
-  void               init_accept_per_thread();
+  bool               init_accept_loop();
+  bool               init_accept_per_thread();
   virtual void       stop_accept();
   virtual NetAccept *clone() const;
 

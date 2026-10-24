@@ -93,4 +93,36 @@ struct AcceptOptions {
   /// Proxy Protocol enabled
   bool f_proxy_protocol            = false;
   bool f_proxy_protocol_client_src = false;
+
+  /** Exempt this listener from event thread watchdog accept backpressure.
+
+      Set on the loopback companion listeners opened alongside each configured proxy port when the
+      watchdog is enabled, so that a local connection is still accepted and served while inbound
+      backpressure is shedding everything arriving from off box. Because the exemption is a property
+      of the listen socket rather than of an individual connection, it can be honored *before*
+      @c accept4 - which is what lets backpressure leave non-exempt connections in the kernel accept
+      queue rather than having to accept them to discover where they came from.
+  */
+  bool f_watchdog_exempt = false;
+
+  /** Set @c SO_REUSEPORT on the listen socket even when not listening per thread.
+
+      Required on both sockets when two listeners overlap on the same port - a wildcard bind plus a
+      more specific bind, as the watchdog's loopback companion listener does. On Linux @c SO_REUSEADDR
+      does not permit overlapping binds for listening sockets; only @c SO_REUSEPORT does, and every
+      socket in the overlap must set it before @c bind.
+
+      @note This also lets any process with the same effective uid bind the port and receive a share
+      of its connections. Only enable it where that is acceptable.
+  */
+  bool f_force_reuseport = false;
+
+  /** Warn rather than abort the process if the listen socket cannot be opened.
+
+      The default is @c Fatal, which is right for a configured proxy port: silently serving nothing is
+      worse than failing to start. It is wrong for a supplementary listener like the watchdog's
+      loopback companion, where losing the exemption degrades overload behavior but must not take the
+      proxy down.
+  */
+  bool f_non_fatal_listen = false;
 };

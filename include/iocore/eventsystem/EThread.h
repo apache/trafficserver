@@ -381,6 +381,9 @@ public:
   {
     explicit DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
 
+    /* Not instrumented for the watchdog. This handler is used by non-ET_NET threads and by ET_NET
+       before its NetHandler is installed; the monitor only watches ET_NET, and skips any thread
+       whose heartbeat is still at the initial sentinel. */
     int
     waitForActivity(ink_hrtime timeout) override
     {

@@ -1533,7 +1533,11 @@ UDPNetHandler::waitForActivity(ink_hrtime timeout)
 {
   UnixUDPConnection *uc;
   PollCont          *pc = get_UDPPollCont(this->thread);
-  pc->do_poll(timeout);
+  {
+    // Only do_poll blocks; the connection list handling below is awake work.
+    Watchdog::SleepScope sleep_scope{this->thread->heartbeat_state};
+    pc->do_poll(timeout);
+  }
 
   /* Notice: the race between traversal of newconn_list and UDPBind()
    *

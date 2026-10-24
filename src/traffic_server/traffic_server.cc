@@ -2345,12 +2345,25 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
-  // Start the watchdog
-  int watchdog_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_ms").value_or(0);
-  if (watchdog_timeout_ms > 0) {
+  // Start the watchdog. The mode is reloadable and tracked inside the watchdog itself; only the
+  // shrink timeout is fixed at startup, since it determines the monitor's scan period.
+  RecInt watchdog_shrink_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_shrink_ms").value_or(0);
+  RecInt watchdog_legacy_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_ms").value_or(0);
+  Watchdog::register_config_callbacks();
+  if (watchdog_shrink_timeout_ms > 0) {
+    if (watchdog_legacy_timeout_ms > 0) {
+      Warning("proxy.config.exec_thread.watchdog.timeout_ms is deprecated and ignored because "
+              "proxy.config.exec_thread.watchdog.timeout_shrink_ms is set");
+    }
     watchdog = std::make_unique<Watchdog::Monitor>(eventProcessor.thread_group[ET_NET]._thread,
                                                    static_cast<size_t>(eventProcessor.thread_group[ET_NET]._count),
-                                                   std::chrono::milliseconds{watchdog_timeout_ms});
+                                                   std::chrono::milliseconds{watchdog_shrink_timeout_ms});
+  } else if (watchdog_legacy_timeout_ms > 0) {
+    Warning("proxy.config.exec_thread.watchdog.timeout_ms is deprecated, use "
+            "proxy.config.exec_thread.watchdog.timeout_shrink_ms instead; running the watchdog in warn-only mode");
+    watchdog = std::make_unique<Watchdog::Monitor>(eventProcessor.thread_group[ET_NET]._thread,
+                                                   static_cast<size_t>(eventProcessor.thread_group[ET_NET]._count),
+                                                   std::chrono::milliseconds{watchdog_legacy_timeout_ms}, true);
   }
 
   {

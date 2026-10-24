@@ -1605,6 +1605,17 @@ static constexpr RecordElement RecordsConfig[] =
   //#
   //###########
   {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_ms", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-10000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_shrink_ms", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT,
+   "[0-10000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_refuse_ms", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT,
+   "[0-10000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.backlog_min_permille", RECD_INT, "50", RECU_DYNAMIC, RR_NULL, RECC_INT,
+   "[1-1000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.backlog_decrease_permille", RECD_INT, "500", RECU_DYNAMIC, RR_NULL,
+   RECC_INT, "[1-999]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.backlog_increase_permille", RECD_INT, "100", RECU_DYNAMIC, RR_NULL,
+   RECC_INT, "[1-1000]", RECA_NULL},
 
   //###########
   //#

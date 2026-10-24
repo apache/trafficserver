@@ -319,16 +319,10 @@ EThread::execute_regular()
     ink_hrtime post_drain  = event_time;
     ink_hrtime drain_queue = post_drain - loop_start_time;
 
-    // watchdog kick - pre-sleep
-    // Relaxed store because this EThread is the only writer and the watchdog only needs a coherent timestamp.
-    this->heartbeat_state.last_sleep.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
-
+    // The watchdog heartbeat is kicked inside the tail handler, bracketing only the blocking poll -
+    // see Watchdog::SleepScope. Most of waitForActivity is dispatch work, not sleep, so timestamping
+    // around this call would attribute the busiest part of the loop to being asleep.
     tail_cb->waitForActivity(sleep_time);
-
-    // watchdog kick - post-wake
-    // Relaxed store/fetch because the monitor thread is the single reader and per-field coherence is sufficient.
-    this->heartbeat_state.last_wake.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
-    this->heartbeat_state.seq.fetch_add(1, std::memory_order_relaxed);
 
     // loop cleanup
     loop_finish_time = ink_get_hrtime();
