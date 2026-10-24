@@ -44,8 +44,8 @@ namespace
 /** A minimal PoolableSession that can be pooled and matched.
  *
  * Only the remote address and the hostname hash participate in the match
- * paths exercised here, so no NetVConnection is required. The session must
- * not be multiplexing, otherwise acquireSession consults the HttpSM.
+ * paths exercised here, so no NetVConnection is required. The session is
+ * never multiplexing, so acquireSession does not consult the HttpSM.
  */
 class TestPoolableSession : public PoolableSession
 {
@@ -115,6 +115,12 @@ public:
     return &_remote_addr.sa;
   }
 
+  bool
+  is_multiplexing() const override
+  {
+    return false;
+  }
+
   int close_count = 0;
 
 private:
@@ -136,7 +142,8 @@ private:
 };
 
 /// The pool bookkeeping updates this gauge, which is normally initialized via HttpConfig.
-/// Create it here (when needed) and restore its prior value on every exit path so tests don't leak state.
+/// Create it here if needed; the gauge then stays registered for the rest of the process.
+/// Only its value is restored on exit, so tests don't leak counts into each other.
 class PooledConnectionsGaugeGuard
 {
 public:
