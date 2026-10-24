@@ -329,8 +329,7 @@ public:
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
 
-  ProtectedQueue     EventQueueExternal;
-  PriorityEventQueue EventQueue;
+  ProtectedQueue EventQueueExternal;
 
   static constexpr int NO_ETHREAD_ID = -1;
   int                  id            = NO_ETHREAD_ID;
@@ -588,11 +587,15 @@ private:
     int        ev_count{}; // # of events handled
   };
 
+  PriorityEventQueue EventQueue;
+
   void cons_common();
 
   EventStatistics fire_ready_events(ink_hrtime loop_start_time);
 
   ink_hrtime get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice);
+
+  friend class Event;
 };
 
 // --- Inline implementation
