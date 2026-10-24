@@ -326,11 +326,6 @@ public:
 
   Event *schedule(Event *e);
 
-  /** Block of memory to allocate thread specific data e.g. stat system arrays. */
-  char thread_private[PER_THREAD_DATA];
-
-  ProtectedQueue EventQueueExternal;
-
   static constexpr int NO_ETHREAD_ID = -1;
   int                  id            = NO_ETHREAD_ID;
 
@@ -373,36 +368,6 @@ public:
   ServerSessionPool *server_session_pool = nullptr;
   PreWarmQueue      *prewarm_queue       = nullptr;
   ConnectingPool    *connecting_pool     = nullptr;
-
-  /** Default handler used until it is overridden.
-
-      This uses the cond var wait in @a ExternalQueue.
-  */
-  class DefaultTailHandler : public LoopTailHandler
-  {
-    explicit DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
-
-    int
-    waitForActivity(ink_hrtime timeout) override
-    {
-      _q.wait(ink_get_hrtime() + timeout);
-      return 0;
-    }
-    void
-    signalActivity() override
-    {
-      /* Try to acquire the `EThread::lock` of the Event Thread:
-       *   - Acquired, indicating that the Event Thread is sleep,
-       *               must send a wakeup signal to the Event Thread.
-       *   - Failed, indicating that the Event Thread is busy, do nothing.
-       */
-      (void)_q.try_signal();
-    }
-
-    ProtectedQueue &_q;
-
-    friend class EThread;
-  } DEFAULT_TAIL_HANDLER = DefaultTailHandler(EventQueueExternal);
 
   struct Metrics {
     using self_type = Metrics; ///< Self reference type.
@@ -587,7 +552,41 @@ private:
     int        ev_count{}; // # of events handled
   };
 
+  /** Block of memory to allocate thread specific data e.g. stat system arrays. */
+  char thread_private[PER_THREAD_DATA];
+
+  ProtectedQueue     EventQueueExternal;
   PriorityEventQueue EventQueue;
+
+  /** Default handler used until it is overridden.
+
+      This uses the cond var wait in @a ExternalQueue.
+  */
+  class DefaultTailHandler : public LoopTailHandler
+  {
+    explicit DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
+
+    int
+    waitForActivity(ink_hrtime timeout) override
+    {
+      _q.wait(ink_get_hrtime() + timeout);
+      return 0;
+    }
+    void
+    signalActivity() override
+    {
+      /* Try to acquire the `EThread::lock` of the Event Thread:
+       *   - Acquired, indicating that the Event Thread is sleep,
+       *               must send a wakeup signal to the Event Thread.
+       *   - Failed, indicating that the Event Thread is busy, do nothing.
+       */
+      (void)_q.try_signal();
+    }
+
+    ProtectedQueue &_q;
+
+    friend class EThread;
+  } DEFAULT_TAIL_HANDLER = DefaultTailHandler(EventQueueExternal);
 
   void cons_common();
 
@@ -596,6 +595,7 @@ private:
   ink_hrtime get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice);
 
   friend class Event;
+  friend class EventProcessor;
 };
 
 // --- Inline implementation
