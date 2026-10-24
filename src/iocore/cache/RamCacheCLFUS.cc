@@ -823,6 +823,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   uint32_t            i            = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e            = this->_bucket[i].head;
   uint32_t            size         = copy ? len : data->block_size();
+  int64_t             needed       = static_cast<int64_t>(size) + entry_overhead;
   double              victim_value = 0;
   bool                seen_match   = false;
   while (e) {
@@ -883,7 +884,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   RamCacheCLFUSEntry *victim        = nullptr;
   int64_t             requeue_count = std::min(static_cast<int64_t>(requeue_limit), this->_objects);
   if (!this->_lru[1].head) { // initial fill
-    if (this->_bytes + size <= this->_max_bytes) {
+    if (this->_bytes + needed <= this->_max_bytes) {
       goto Linsert;
     }
   }
@@ -903,7 +904,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   while (true) {
     victim = this->_lru[0].dequeue();
     if (!victim) {
-      if (this->_bytes + size <= this->_max_bytes) {
+      if (this->_bytes + needed <= this->_max_bytes) {
         goto Linsert;
       }
       if (e) {
@@ -935,26 +936,27 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       if (!seen_match) {
         goto Lhistory;
       }
-      if (this->_bytes + victim->size + size > this->_max_bytes && victim_value > cache_value_hits_size(1, size)) {
+      if (this->_bytes + victim->size + entry_overhead + needed > this->_max_bytes &&
+          victim_value > cache_value_hits_size(1, size)) {
         this->_requeue_victims(victims);
         goto Lhistory;
       }
     } else { // e from history
       DDbg(dbg_ctl_ram_cache_compare, "put %f %f", victim_value, cache_value(e));
-      if (this->_bytes + victim->size + size > this->_max_bytes && victim_value > cache_value(e)) {
+      if (this->_bytes + victim->size + entry_overhead + needed > this->_max_bytes && victim_value > cache_value(e)) {
         this->_requeue_victims(victims);
         this->_lru[1].enqueue(e);
         DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d INC %" PRIu32 " HISTORY", key->slice32(3), auxkey, e->size, e->hits);
         return 0;
       }
     }
-    if (this->_bytes + size <= this->_max_bytes) {
+    if (this->_bytes + needed <= this->_max_bytes) {
       goto Linsert;
     }
   }
 Linsert:
   while ((victim = victims.dequeue())) {
-    if (this->_bytes + size + victim->size <= this->_max_bytes) {
+    if (this->_bytes + needed + victim->size + entry_overhead <= this->_max_bytes) {
       this->_bytes += victim->size + entry_overhead;
       ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, victim->size);
       ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, victim->size);

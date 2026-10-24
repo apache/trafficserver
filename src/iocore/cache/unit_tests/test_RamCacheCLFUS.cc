@@ -107,6 +107,18 @@ struct RamCacheCLFUSTestAccess {
     return rc._objects;
   }
 
+  static int64_t
+  bytes(RamCacheCLFUS &rc)
+  {
+    return rc._bytes;
+  }
+
+  static int64_t
+  max_bytes(RamCacheCLFUS &rc)
+  {
+    return rc._max_bytes;
+  }
+
   static void
   set_resident_hits(RamCacheCLFUS &rc, uint32_t hits)
   {
@@ -753,4 +765,47 @@ TEST_CASE("CLFUS seen filter admits a filtered key on its second sighting", "[ca
     CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k1)->flag_bits.lru == 0);
     CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k2)->flag_bits.lru == 0);
   }
+}
+
+TEST_CASE("CLFUS admission accounts for per-entry overhead", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 1;
+
+  RamCacheCLFUS rc;
+  rc.init(32 * 1024, &stripe);
+
+  auto buf = make_buffer(compressible_bytes(8 * 1024));
+  auto k1  = make_key(1);
+  auto k2  = make_key(2);
+  auto k3  = make_key(3);
+  REQUIRE(rc.put(&k1, buf.get(), 8 * 1024) == 1);
+  REQUIRE(rc.put(&k2, buf.get(), 8 * 1024) == 1);
+  REQUIRE(rc.put(&k3, buf.get(), 8 * 1024) == 1);
+
+  RamCacheCLFUSTestAccess::set_average_value(rc, 1e9);
+  for (uint64_t id = 10; RamCacheCLFUSTestAccess::history(rc) < RamCacheCLFUSTestAccess::objects(rc); ++id) {
+    REQUIRE(id < 20);
+    auto k = make_key(id);
+    REQUIRE(rc.put(&k, buf.get(), 8 * 1024) == 0);
+  }
+  REQUIRE(RamCacheCLFUSTestAccess::objects(rc) == 3);
+  RamCacheCLFUSTestAccess::set_resident_hits(rc, 1000);
+
+  // The three residents use 3 * (8 KiB + 256 B overhead), leaving exactly
+  // 7424 bytes, so the candidate fits beside them only if its own overhead is
+  // ignored. The first victim is worth more than the candidate, so the
+  // candidate must not be admitted alongside it.
+  constexpr uint32_t len = 7424;
+  auto               k   = make_key(50);
+  CHECK(rc.put(&k, buf.get(), len, true) == 0);
+  CHECK(rc.put(&k, buf.get(), len, true) == 0);
+  CHECK(RamCacheCLFUSTestAccess::bytes(rc) <= RamCacheCLFUSTestAccess::max_bytes(rc));
+  CHECK(RamCacheCLFUSTestAccess::objects(rc) == 3);
 }
