@@ -583,7 +583,14 @@ public:
   Watchdog::Heartbeat heartbeat_state;
 
 private:
+  struct EventStatistics {
+    ink_hrtime event_time{};
+    int        ev_count{}; // # of events handled
+  };
+
   void cons_common();
+
+  EventStatistics fire_ready_events(ink_hrtime loop_start_time);
 
   ink_hrtime get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice);
 };
