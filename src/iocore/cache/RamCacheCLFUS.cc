@@ -33,6 +33,8 @@
 #include "fastlz/fastlz.h"
 #include "tscore/CryptoHash.h"
 
+#include <algorithm>
+#include <cmath>
 #include <zlib.h>
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
@@ -99,8 +101,9 @@ constexpr uint32_t history_hysteria     = 10;
 constexpr uint32_t lzma_base_memlimit = 64 * 1024 * 1024;
 #endif
 
-constexpr uint32_t average_value_over = 100;
-constexpr uint32_t requeue_limit      = 100;
+constexpr uint32_t   average_value_over = 100;
+constexpr uint32_t   requeue_limit      = 100;
+constexpr ink_hrtime decay_interval     = HRTIME_SECONDS(30);
 
 #ifdef DEBUG
 
@@ -244,11 +247,24 @@ RamCacheCLFUS::init(int64_t abytes, StripeSM *astripe)
   }
 }
 
+// Advance one epoch for every full decay interval that has elapsed, so idle
+// periods age popularity as much as busy ones. Called from both get() and
+// put() so that hit-only traffic still ages entries.
 void
-RamCacheCLFUS::_decay_epoch()
+RamCacheCLFUS::_decay_epochs()
 {
-  ++this->_epoch;
-  this->_average_value *= 0.5;
+  ink_hrtime now     = ink_get_hrtime();
+  ink_hrtime elapsed = now - this->_last_decay_time;
+
+  if (elapsed < decay_interval) {
+    return;
+  }
+  // 32 or more epochs clears every hit count, so the advance can be capped
+  // without changing the result while keeping _epoch differences in range.
+  int epochs              = static_cast<int>(std::min<ink_hrtime>(elapsed / decay_interval, 32));
+  this->_epoch           += epochs;
+  this->_average_value    = std::ldexp(this->_average_value, -epochs);
+  this->_last_decay_time  = now - elapsed % decay_interval;
 }
 
 // Entries are decayed lazily: hits is halved once for every epoch that has
@@ -314,6 +330,7 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
   if (!this->_max_bytes) {
     return 0;
   }
+  this->_decay_epochs();
   int64_t             i = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e = this->_bucket[i].head;
   char               *b = nullptr;
@@ -799,13 +816,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
   if (!this->_max_bytes) {
     return 0;
   }
-  ink_hrtime now = ink_get_hrtime();
-  if (now - this->_last_decay_time > HRTIME_SECONDS(30)) {
-    if (this->_last_decay_time != 0) {
-      this->_decay_epoch();
-    }
-    this->_last_decay_time = now;
-  }
+  this->_decay_epochs();
   uint32_t            i            = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e            = this->_bucket[i].head;
   uint32_t            size         = copy ? len : data->block_size();

@@ -131,7 +131,7 @@ private:
 
   ink_hrtime          _last_decay_time = 0;
   uint32_t            _epoch           = 0;
-  void                _decay_epoch();
+  void                _decay_epochs();
   void                _apply_decay(RamCacheCLFUSEntry *e);
   void                _resize_hashtable();
   void                _victimize(RamCacheCLFUSEntry *e);

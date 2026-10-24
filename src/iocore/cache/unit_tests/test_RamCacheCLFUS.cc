@@ -88,10 +88,10 @@ struct RamCacheCLFUSTestAccess {
     rc._last_decay_time = t;
   }
 
-  static void
-  decay_epoch(RamCacheCLFUS &rc)
+  static ink_hrtime
+  last_decay_time(RamCacheCLFUS &rc)
   {
-    rc._decay_epoch();
+    return rc._last_decay_time;
   }
 };
 
@@ -620,7 +620,7 @@ TEST_CASE("CLFUS periodic epoch decay halves hit counts and decays average value
   CHECK(e1->hits == 11);
 }
 
-TEST_CASE("CLFUS lazy decay applies every elapsed epoch", "[cache][ramcache][clfus]")
+TEST_CASE("CLFUS get-only traffic applies one decay per elapsed interval", "[cache][ramcache][clfus]")
 {
   CacheDisk disk;
   init_disk(disk);
@@ -641,20 +641,23 @@ TEST_CASE("CLFUS lazy decay applies every elapsed epoch", "[cache][ramcache][clf
   RamCacheCLFUSEntry *e = RamCacheCLFUSTestAccess::find_entry(rc, key);
   REQUIRE(e != nullptr);
   e->hits = 64;
+  RamCacheCLFUSTestAccess::set_average_value(rc, 8.0);
 
-  for (int i = 0; i < 3; ++i) {
-    RamCacheCLFUSTestAccess::decay_epoch(rc);
-  }
-
+  // Three and a half intervals pass with no put(): the get() alone must age
+  // the entry by all three whole intervals, not just one.
+  RamCacheCLFUSTestAccess::set_last_decay_time(rc, ink_get_hrtime() - HRTIME_SECONDS(105));
   Ptr<IOBufferData> out;
   REQUIRE(rc.get(&key, &out) != 0);
   CHECK(e->hits == 64 / 8 + 1);
+  CHECK(RamCacheCLFUSTestAccess::average_value(rc) == 1.0);
 
-  // Enough epochs to shift out every bit must clear the count, not wrap the shift.
+  // The partial interval carries over, so the next one is due in about 15s rather than 30s.
+  CHECK(ink_get_hrtime() - RamCacheCLFUSTestAccess::last_decay_time(rc) >= HRTIME_SECONDS(15));
+
+  // A long idle period must clear the count, not wrap the shift.
   e->hits = 0xffffffff;
-  for (int i = 0; i < 40; ++i) {
-    RamCacheCLFUSTestAccess::decay_epoch(rc);
-  }
+  RamCacheCLFUSTestAccess::set_last_decay_time(rc, ink_get_hrtime() - HRTIME_SECONDS(40 * 30));
   REQUIRE(rc.get(&key, &out) != 0);
   CHECK(e->hits == 1);
+  CHECK(RamCacheCLFUSTestAccess::average_value(rc) < 1e-9);
 }
