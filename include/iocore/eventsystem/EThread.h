@@ -26,14 +26,16 @@
 
 #include <atomic>
 
-#include "tscore/ink_platform.h"
-#include "tscore/ink_rand.h"
-#include "tscore/Version.h"
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
 #include "iocore/eventsystem/Watchdog.h"
+
+#include <tscore/ink_hrtime.h>
+#include <tscore/ink_platform.h>
+#include <tscore/ink_rand.h>
+#include <tscore/Version.h>
 
 #if TS_USE_HWLOC
 struct hwloc_obj;
@@ -582,6 +584,8 @@ public:
 
 private:
   void cons_common();
+
+  ink_hrtime get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice);
 };
 
 // --- Inline implementation

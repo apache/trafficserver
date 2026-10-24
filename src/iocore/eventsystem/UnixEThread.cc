@@ -237,7 +237,6 @@ EThread::execute_regular()
 {
   Event *e;
   Que(Event, link) NegativeQueue;
-  ink_hrtime next_time;
   ink_hrtime delta;            // time spent in the event loop
   ink_hrtime loop_start_time;  // Time the loop started.
   ink_hrtime loop_finish_time; // Time at the end of the loop.
@@ -300,20 +299,7 @@ EThread::execute_regular()
       }
     }
 
-    next_time             = EventQueue.earliest_timeout();
-    ink_hrtime sleep_time = next_time - event_time;
-    if (sleep_time > 0) {
-      if (EventQueueExternal.localQueue.empty()) {
-        sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
-      } else {
-        // Because of a missed lock, Timed-Event and Negative-Event have been pushed into localQueue for retry in awhile.
-        // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
-        sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
-      }
-      ++(current_slice->_wait);
-    } else {
-      sleep_time = 0;
-    }
+    ink_hrtime sleep_time = get_sleep_time(event_time, current_slice);
 
     // drained the queue by this point
     ink_hrtime post_drain  = event_time;
@@ -343,6 +329,26 @@ EThread::execute_regular()
     current_slice->record_event_count(ev_count);
     current_slice->record_drain_queue(drain_queue);
   }
+}
+
+ink_hrtime
+EThread::get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice)
+{
+  ink_hrtime next_time  = EventQueue.earliest_timeout();
+  ink_hrtime sleep_time = next_time - event_time;
+  if (sleep_time > 0) {
+    if (EventQueueExternal.localQueue.empty()) {
+      sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
+    } else {
+      // Because of a missed lock, Timed-Event and Negative-Event have been pushed into localQueue for retry in awhile.
+      // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
+      sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
+    }
+    ++(current_slice->_wait);
+  } else {
+    sleep_time = 0;
+  }
+  return sleep_time;
 }
 
 //
