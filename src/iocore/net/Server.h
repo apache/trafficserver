@@ -56,3 +56,11 @@ struct Server {
 
   Server() { ink_zero(accept_addr); }
 };
+
+/** The configured listen backlog.
+
+    @c proxy.config.net.listen_backlog, or the system @c somaxconn when that is unset or out of range.
+    Exposed because the watchdog re-listens at a fraction of it while shedding and so needs the
+    baseline.
+ */
+int get_listen_backlog();

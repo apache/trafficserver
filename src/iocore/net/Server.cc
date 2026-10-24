@@ -59,7 +59,6 @@ DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
 
 } // end anonymous namespace
 
-static int get_listen_backlog();
 static int add_http_filter(int fd);
 
 int
@@ -158,6 +157,13 @@ Lerror:
     close();
   }
 
+  if (opt.f_non_fatal_listen) {
+    // A supplementary listener. Losing it degrades behavior but must not take the proxy down.
+    Warning("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
+            prot == IPPROTO_MPTCP, errno, strerror(errno), res);
+    return res;
+  }
+
   Fatal("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
         prot == IPPROTO_MPTCP, errno, strerror(errno), res);
   return res;
@@ -235,12 +241,15 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     goto Lerror;
   }
   listen_per_thread = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
-  if (listen_per_thread == 1 && opt.ip_family != AF_UNIX) {
+  if ((listen_per_thread == 1 || opt.f_force_reuseport) && opt.ip_family != AF_UNIX) {
     if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
       goto Lerror;
     }
 #ifdef SO_REUSEPORT_LB
-    if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
+    // The load balancing variant only makes sense for the per-thread listeners it was added for.
+    // Overlapping binds (see @c f_force_reuseport) rely on the kernel preferring the more specific
+    // address, not on connections being spread across the group.
+    if (listen_per_thread == 1 && sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
       goto Lerror;
     }
 #endif

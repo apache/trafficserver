@@ -420,6 +420,11 @@ The following :file:`records.yaml` changes have been made:
   ``HostDBInfo::State::SUSPECT`` state it actually applies to (a recovering origin allowed a limited probe budget after
   :ts:cv:`proxy.config.http.down_server.cache_time` elapses). When only the deprecated record is set, its value is mirrored
   forward to the new record and a warning is logged. When both are set, the new record wins.
+- The records.yaml entry ``proxy.config.exec_thread.watchdog.timeout_ms`` is now deprecated in favor of
+  :ts:cv:`proxy.config.exec_thread.watchdog.timeout_shrink_ms`. When only the deprecated record is set, the watchdog
+  behaves as before - it only logs a warning for each event loop iteration that runs past the timeout - and a
+  deprecation warning is logged. The new watchdog metrics and backpressure settings require
+  :ts:cv:`proxy.config.exec_thread.watchdog.timeout_shrink_ms`. When both are set, the new record wins.
 - The entry ``proxy.config.http.connect.dead.policy`` has been renamed to :ts:cv:`proxy.config.http.connect.down.policy`.
 - The records.yaml entry ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
   ``proxy.config.http.post_connect_attempts_timeout`` have been removed. Instead use
