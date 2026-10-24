@@ -564,14 +564,20 @@ TEST_CASE("CLFUS history entry is refreshed on get() hit", "[cache][ramcache][cl
   auto buf  = make_buffer(compressible_bytes(8 * 1024));
   auto key1 = make_key(1);
   auto key2 = make_key(2);
+  auto key3 = make_key(3);
 
   REQUIRE(rc.put(&key1, buf.get(), 8 * 1024) == 1);
-  // key2 cannot fit in 12KB (8KB + 8KB > 12KB), routed to history (_lru[1])
+  // key2 and key3 cannot fit in 12KB (8KB + 8KB > 12KB), routed to history (_lru[1])
   CHECK(rc.put(&key2, buf.get(), 8 * 1024) == 0);
+  CHECK(rc.put(&key3, buf.get(), 8 * 1024) == 0);
 
   RamCacheCLFUSEntry *e2 = RamCacheCLFUSTestAccess::find_entry(rc, key2);
+  RamCacheCLFUSEntry *e3 = RamCacheCLFUSTestAccess::find_entry(rc, key3);
   REQUIRE(e2 != nullptr);
+  REQUIRE(e3 != nullptr);
   REQUIRE(e2->flag_bits.lru == 1); // in history
+  REQUIRE(e3->flag_bits.lru == 1);
+  REQUIRE(RamCacheCLFUSTestAccess::lru_tail(rc, 1) == e3);
 
   uint64_t          hits_before = e2->hits;
   Ptr<IOBufferData> got;
