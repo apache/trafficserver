@@ -196,7 +196,7 @@ EThread::process_event(Event *e, int calling_code, ink_hrtime event_time)
 }
 
 ink_hrtime
-EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count, ink_hrtime event_time)
+EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, ink_hrtime event_time)
 {
   Event *e;
 
@@ -227,7 +227,6 @@ EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_
         NegativeQueue->insert(e, p);
       }
     }
-    ++(*nq_count);
   }
   return event_time;
 }
@@ -300,9 +299,8 @@ EThread::fire_ready_events(ink_hrtime loop_start_time)
 {
   Que(Event, link) NegativeQueue;
   EventStatistics result{0, 0};
-  int             nq_count = 0; // count # of elements put on negative queue.
 
-  result.event_time = process_queue(&NegativeQueue, &result.ev_count, &nq_count, loop_start_time);
+  result.event_time = process_queue(&NegativeQueue, &result.ev_count, loop_start_time);
 
   bool done_one;
   do {
@@ -323,7 +321,7 @@ EThread::fire_ready_events(ink_hrtime loop_start_time)
 
   // execute any negative (poll) events
   if (NegativeQueue.head) {
-    result.event_time = process_queue(&NegativeQueue, &result.ev_count, &nq_count, result.event_time);
+    result.event_time = process_queue(&NegativeQueue, &result.ev_count, result.event_time);
 
     // execute poll events
     while (Event *e = NegativeQueue.dequeue()) {
