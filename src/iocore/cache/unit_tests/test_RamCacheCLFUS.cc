@@ -30,6 +30,7 @@
 #include "tscore/ink_config.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -92,6 +93,27 @@ struct RamCacheCLFUSTestAccess {
   last_decay_time(RamCacheCLFUS &rc)
   {
     return rc._last_decay_time;
+  }
+
+  static int64_t
+  history(RamCacheCLFUS &rc)
+  {
+    return rc._history;
+  }
+
+  static int64_t
+  objects(RamCacheCLFUS &rc)
+  {
+    return rc._objects;
+  }
+
+  static void
+  set_resident_hits(RamCacheCLFUS &rc, uint32_t hits)
+  {
+    forl_LL(RamCacheCLFUSEntry, e, rc._lru[0])
+    {
+      e->hits = hits;
+    }
   }
 };
 
@@ -481,10 +503,10 @@ TEST_CASE("CLFUS decays hit count when sparing victims during eviction", "[cache
   auto key4 = make_key(4);
   rc.put(&key4, buf.get(), 8 * 1024);
 
-  // e1 was evaluated as victim, had cache_value > _average_value, was spared:
-  // its hits must have decayed from 16
-  CHECK(e1->hits < 16);
-  CHECK(e1->hits >= 7);
+  // e1 was spared on its first pass as a victim (16 -> 8), then taken on the
+  // second pass once the requeue budget ran out and put back by
+  // _requeue_victims() (8 -> 7). Without the spared-victim decay it would be 15.
+  CHECK(e1->hits == 7);
 }
 
 TEST_CASE("CLFUS unconditionally promotes resident entries to the tail on hits", "[cache][ramcache][clfus]")
@@ -659,5 +681,70 @@ TEST_CASE("CLFUS get-only traffic applies one decay per elapsed interval", "[cac
   RamCacheCLFUSTestAccess::set_last_decay_time(rc, ink_get_hrtime() - HRTIME_SECONDS(40 * 30));
   REQUIRE(rc.get(&key, &out) != 0);
   CHECK(e->hits == 1);
-  CHECK(RamCacheCLFUSTestAccess::average_value(rc) < 1e-9);
+  CHECK(RamCacheCLFUSTestAccess::average_value(rc) == std::ldexp(1.0, -40));
+}
+
+TEST_CASE("CLFUS seen filter admits a filtered key on its second sighting", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 1;
+
+  // Room for two 8 KiB objects, not three.
+  RamCacheCLFUS rc;
+  rc.init(20 * 1024, &stripe);
+
+  auto buf = make_buffer(compressible_bytes(8 * 1024));
+  auto k1  = make_key(1);
+  auto k2  = make_key(2);
+  REQUIRE(rc.put(&k1, buf.get(), 8 * 1024) == 1);
+  REQUIRE(rc.put(&k2, buf.get(), 8 * 1024) == 1);
+
+  // New keys go to history until it is as large as the resident set, after
+  // which the seen filter rejects keys it has not seen before.
+  for (uint64_t id = 10; RamCacheCLFUSTestAccess::history(rc) < RamCacheCLFUSTestAccess::objects(rc); ++id) {
+    REQUIRE(id < 20);
+    auto k = make_key(id);
+    REQUIRE(rc.put(&k, buf.get(), 8 * 1024) == 0);
+  }
+
+  // Keep victims from being spared so the outcome depends only on the
+  // victim-value comparison.
+  RamCacheCLFUSTestAccess::set_average_value(rc, 1e9);
+
+  SECTION("admitted when the victims are worth less than the new object")
+  {
+    RamCacheCLFUSTestAccess::set_resident_hits(rc, 0);
+
+    auto k = make_key(50);
+    CHECK(rc.put(&k, buf.get(), 8 * 1024) == 0);
+    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k) == nullptr);
+
+    CHECK(rc.put(&k, buf.get(), 8 * 1024) == 1);
+    RamCacheCLFUSEntry *e = RamCacheCLFUSTestAccess::find_entry(rc, k);
+    REQUIRE(e != nullptr);
+    CHECK(e->flag_bits.lru == 0);
+  }
+
+  SECTION("sent to history when the victims are worth more")
+  {
+    RamCacheCLFUSTestAccess::set_resident_hits(rc, 1000);
+
+    auto k = make_key(60);
+    CHECK(rc.put(&k, buf.get(), 8 * 1024) == 0);
+    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k) == nullptr);
+
+    CHECK(rc.put(&k, buf.get(), 8 * 1024) == 0);
+    RamCacheCLFUSEntry *e = RamCacheCLFUSTestAccess::find_entry(rc, k);
+    REQUIRE(e != nullptr);
+    CHECK(e->flag_bits.lru == 1);
+    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k1) != nullptr);
+    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k1)->flag_bits.lru == 0);
+    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k2)->flag_bits.lru == 0);
+  }
 }

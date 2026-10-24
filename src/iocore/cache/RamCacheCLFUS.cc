@@ -259,11 +259,14 @@ RamCacheCLFUS::_decay_epochs()
   if (elapsed < decay_interval) {
     return;
   }
-  // 32 or more epochs clears every hit count, so the advance can be capped
-  // without changing the result while keeping _epoch differences in range.
-  int epochs              = static_cast<int>(std::min<ink_hrtime>(elapsed / decay_interval, 32));
-  this->_epoch           += epochs;
-  this->_average_value    = std::ldexp(this->_average_value, -epochs);
+  ink_hrtime intervals = elapsed / decay_interval;
+
+  // 32 or more epochs clears every hit count, so the entry epoch advance can
+  // be capped without changing the result while keeping _epoch differences in
+  // range. The average has no such floor and ages by every interval; past
+  // ~1100 halvings it is already 0.
+  this->_epoch           += static_cast<uint32_t>(std::min<ink_hrtime>(intervals, 32));
+  this->_average_value    = std::ldexp(this->_average_value, -static_cast<int>(std::min<ink_hrtime>(intervals, 2048)));
   this->_last_decay_time  = now - elapsed % decay_interval;
 }
 
