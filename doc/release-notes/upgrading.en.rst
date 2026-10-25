@@ -56,6 +56,7 @@ access_control
 ~~~~~~~~~~~~~~
 
 The :ref:`admin-plugins-access_control` plugin now supports path-prefix scope enforcement using the ``scope`` claim in access tokens. Scope enforcement is disabled by default for backward compatibility with deployments issuing tokens with non-path scopes. To enable scope enforcement, pass ``--enforce-scope=true`` as a plugin parameter.
+
 traffic_ctl Changes
 -------------------
 

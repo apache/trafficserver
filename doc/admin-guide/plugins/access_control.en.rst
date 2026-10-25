@@ -241,6 +241,9 @@ Query-Param-Style Named Claim format
       * An absent or empty scope is unrestricted.
       * Otherwise, when ``--enforce-scope`` is enabled, it is a path-prefix restriction matched against normalized
         path segments, including the segment boundary.
+      * Scope is matched against the origin-side (post-remap rewritten) request path rather than the
+        path sent by the client. For example, with ``map /public/ https://origin/internal/``, the token
+        must be scoped to ``/internal/...``.
       * For example, ``/reports`` matches ``/reports/2026`` but not
         ``/reports2``.
       * Request paths containing dot segments (such as ``.``, ``..``, or matrix parameters
