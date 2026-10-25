@@ -168,7 +168,7 @@ PreWarmSM::retry()
 void
 PreWarmSM::stop()
 {
-  if (handler == &PreWarmSM::state_closed) {
+  if (handler.is<&PreWarmSM::state_closed>()) {
     // do nothing
     return;
   }
@@ -199,7 +199,7 @@ PreWarmSM::destroy()
 NetVConnection *
 PreWarmSM::move_netvc()
 {
-  if (handler != &PreWarmSM::state_open) {
+  if (!handler.is<&PreWarmSM::state_open>()) {
     return nullptr;
   }
 
@@ -526,7 +526,7 @@ PreWarmSM::is_inactive_timeout_expired(ink_hrtime now)
 void
 PreWarmSM::process_hostdb_info(HostDBRecord *r)
 {
-  ink_release_assert(this->handler == &PreWarmSM::state_dns_lookup);
+  ink_release_assert(this->handler.is<&PreWarmSM::state_dns_lookup>());
 
   this->handleEvent(EVENT_HOST_DB_LOOKUP, r);
 }
@@ -534,7 +534,7 @@ PreWarmSM::process_hostdb_info(HostDBRecord *r)
 void
 PreWarmSM::process_srv_info(HostDBRecord *r)
 {
-  ink_release_assert(this->handler == &PreWarmSM::state_dns_lookup);
+  ink_release_assert(this->handler.is<&PreWarmSM::state_dns_lookup>());
 
   this->handleEvent(EVENT_SRV_LOOKUP, r);
 }
@@ -751,7 +751,7 @@ PreWarmQueue::state_running(int event, void * /* data ATS_UNUSED */)
 void
 PreWarmQueue::push(const PreWarm::SPtrConstDst &dst, PreWarmSM *sm)
 {
-  ink_release_assert(sm->handler == &PreWarmSM::state_open);
+  ink_release_assert(sm->handler.is<&PreWarmSM::state_open>());
 
   if (auto res = _map.find(dst); res != _map.end()) {
     Queue *init_list = res->second.init_list;
@@ -791,7 +791,7 @@ PreWarmQueue::dequeue(const PreWarm::SPtrConstDst &target)
     sm = q->front();
     q->pop_front();
 
-    if (sm->handler == &PreWarmSM::state_open) {
+    if (sm->handler.is<&PreWarmSM::state_open>()) {
       _cop_list.remove(sm);
       break;
     }
@@ -831,7 +831,7 @@ PreWarmQueue::_new_prewarm_sm(const PreWarm::SPtrConstDst &dst, const PreWarm::S
 void
 PreWarmQueue::_delete_prewarm_sm(PreWarmSM *sm)
 {
-  ink_release_assert(sm->handler == &PreWarmSM::state_closed);
+  ink_release_assert(sm->handler.is<&PreWarmSM::state_closed>());
 
   _cop_list.remove(sm);
 
@@ -984,7 +984,7 @@ void
 PreWarmQueue::_delete_closed_sm(Queue *q)
 {
   for (auto it = q->begin(); it != q->end();) {
-    if ((*it)->handler == &PreWarmSM::state_closed) {
+    if ((*it)->handler.is<&PreWarmSM::state_closed>()) {
       _delete_prewarm_sm(*it);
       it = q->erase(it);
     } else {

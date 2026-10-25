@@ -314,18 +314,18 @@ public:
    */
   int max_bucket_depth() const;
 
-  int  probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+  int  probe(const CacheKey *, StripeSM *, Dir *, Dir **) const;
   int  insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
   int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
   int  remove(const CacheKey *key, StripeSM *stripe, Dir *del);
   void free_entry(Dir *e, int s);
-  int  check();
+  int  check() const;
   /// check() for one segment, so a caller already walking segments need not stream the whole directory a second time.
-  int      check_segment(int s);
+  int      check_segment(int s) const;
   void     cleanup(StripeSM *stripe);
   void     clear_range(off_t start, off_t end, StripeSM *stripe);
   uint64_t entries_used();
-  int      bucket_length(Dir *b, int s);
+  int      bucket_length(Dir *b, int s) const;
   int      freelist_length(int s);
   void     clean_segment(int s, StripeSM *stripe);
   /// @a stripe owns the used-entry gauges to debit; null when the caller is itself counting for them.

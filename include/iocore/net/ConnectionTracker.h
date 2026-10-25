@@ -263,15 +263,9 @@ public:
     std::shared_ptr<Group> _g;                 ///< Active group for this transaction.
     bool                   _reserved_p{false}; ///< Set if a connection slot has been reserved.
     bool                   _queued_p{false};   ///< Set if the connection is delayed / queued.
-    bool                   _exempt_p{false};   ///< Set if the peer is in the connection exempt list.
 
     /// Check if tracking is active.
     bool is_active() const;
-
-    /// Whether this group is in the connection max exempt list.
-    /// @return @c true if this group should not be blocked due to
-    /// proxy.config.net.per_client.max_connections_in.
-    bool is_exempt() const;
 
     /// Reserve a connection.
     /// @return the number of tracked connections.
@@ -312,6 +306,14 @@ public:
    * @return A @c Group for the arguments, existing if possible and created if not.
    */
   static TxnState obtain_inbound(IpEndpoint const &addr);
+
+  /** Whether client connections from @a addr are exempt from proxy.config.net.connections_throttle and
+   * proxy.config.net.per_client.max_connections_in.
+   *
+   * @param addr The peer address of the client socket, not an address from a PROXY protocol header.
+   * @return @c true if @a addr is in the client exempt list.
+   */
+  static bool is_client_exempt(IpEndpoint const &addr);
 
   /** Get or create the @c Group for the specified outbound session properties.
    * @param txn_cnf The transaction local configuration.
@@ -530,12 +532,6 @@ inline bool
 ConnectionTracker::TxnState::is_active() const
 {
   return nullptr != _g;
-}
-
-inline bool
-ConnectionTracker::TxnState::is_exempt() const
-{
-  return _exempt_p;
 }
 
 inline int

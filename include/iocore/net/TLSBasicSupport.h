@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <array>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -62,6 +64,41 @@ public:
    * We could (and probably should) pass a cert to verify as an argument of TS_EVENT_SSL_VERIFY_CLIENT/SERVER event.
    */
   X509_STORE_CTX *get_tls_cert_to_verify() const;
+
+  /// Length of a verify-scope digest, which is a SHA-256 hash.
+  static constexpr size_t VERIFY_SCOPE_DIGEST_LENGTH = 32;
+
+  using VerifyScopeDigest = std::array<unsigned char, VERIFY_SCOPE_DIGEST_LENGTH>;
+
+  /**
+   * Records a digest of the CA store sni.yaml's verify_client_ca_certs selected for this connection.
+   *
+   * The digest is taken where the store is loaded, because the TLS libraries do not uniformly let a
+   * store be read back off the SSL object, and because it must be folded into the session id context
+   * before the TLS library creates or looks up a session.
+   *
+   * @param digest Digest of the selected store, or no value when the SSL_CTX's own store applies.
+   */
+  void set_verify_scope_digest(std::optional<VerifyScopeDigest> const &digest);
+
+  /**
+   * Records that a store was selected for this connection but could not be digested.
+   *
+   * Distinct from having no store at all: a failure must not silently resolve to some other scope,
+   * so the handshake is failed rather than bound to a context that would permit resumption across
+   * scopes.
+   */
+  void mark_verify_scope_digest_failed();
+
+  /**
+   * @return true if a store was selected but could not be loaded or digested.
+   */
+  bool verify_scope_digest_failed() const;
+
+  /**
+   * @return The digest recorded by set_verify_scope_digest(), if any.
+   */
+  std::optional<VerifyScopeDigest> const &get_verify_scope_digest() const;
 
   void set_valid_tls_version_min(int min);
   void set_valid_tls_version_max(int max);
@@ -103,7 +140,9 @@ protected:
 private:
   static int _ex_data_index;
 
-  X509_STORE_CTX *_cert_to_verify = nullptr;
+  X509_STORE_CTX                  *_cert_to_verify = nullptr;
+  std::optional<VerifyScopeDigest> _verify_scope_digest;
+  bool                             _verify_scope_digest_failed = false;
 
   ink_hrtime       _tls_handshake_begin_time     = 0;
   ink_hrtime       _tls_handshake_end_time       = 0;

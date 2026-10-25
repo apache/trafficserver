@@ -31,7 +31,7 @@ else
     echo "Python 3.6 or newer detected!"
 fi
 
-# Check for python development header which is needed for the autest pip package.
+# Check for Python development headers needed by test dependencies with native extensions.
 python3-config &> /dev/null
 if [ $? = 1 ]; then
     echo "python3-dev/devel detected!"

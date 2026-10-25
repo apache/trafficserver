@@ -192,7 +192,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       }
 
       cfg->excl_regex = std::make_unique<Regex>();
-      if (!cfg->excl_regex->compile(value, error, erroffset, 0)) {
+      if (!cfg->excl_regex->compile(value, error, erroffset, 0, "url_sig excl_regex")) {
         Dbg(dbg_ctl, "Regex compilation failed with error (%s) at character %d", error.c_str(), erroffset);
         cfg->excl_regex.reset();
       }
