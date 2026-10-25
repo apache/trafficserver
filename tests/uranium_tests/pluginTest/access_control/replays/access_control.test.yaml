@@ -17,9 +17,24 @@ urtest:
       proxy.config.http.insert_response_via_str: 2
       proxy.config.ssl.client.alpn_protocols: "http/1.1"
       proxy.config.ssl.client.verify.server.policy: "PERMISSIVE"
+      proxy.config.outgoing_ip_to_bind: "127.0.0.1"
     copy_to_config_dir:
       - "etc/hmac_keys.txt"
     remap_config:
+      - from: "/scoped/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/scoped/"
+        plugins:
+          - name: "access_control.so"
+            args:
+              - "--symmetric-keys-map={CONFIG_DIR}/etc/hmac_keys.txt"
+              - "--check-cookie=TokenCookie"
+              - "--reject-invalid-token-requests=true"
+              - "--enforce-scope=true"
+              - "--invalid-scope-status-code=403"
+              - "--extract-subject-to-header=TokenSubject"
+              - "--extract-tokenid-to-header=@TokenId"
+              - "--extract-status-to-header=@TokenStatus"
+              - "--token-response-header=TokenRespHdr"
       - from: "/"
         to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
         plugins:
@@ -27,7 +42,8 @@ urtest:
             args:
               - "--symmetric-keys-map={CONFIG_DIR}/etc/hmac_keys.txt"
               - "--check-cookie=TokenCookie"
-              - "--extract-subject-to-header=@TokenSubject"
+              - "--enforce-scope=true"
+              - "--extract-subject-to-header=TokenSubject"
               - "--extract-tokenid-to-header=@TokenId"
               - "--extract-status-to-header=@TokenStatus"
               - "--token-response-header=TokenRespHdr"
