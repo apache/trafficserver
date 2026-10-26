@@ -122,8 +122,11 @@ sessions:
               - [Content-Length, 0]
         proxy-response:
           status: 200
-          content: {data: shortfinal, size: 10}
-
+          content:
+            data: shortfinal
+            size: 10
+            verify:
+              as: equal
       - all: {headers: {fields: [[uuid, short-s2]]}}
         client-request:
           method: GET

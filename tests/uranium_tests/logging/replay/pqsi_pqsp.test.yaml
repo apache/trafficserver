@@ -68,4 +68,7 @@ sessions:
         server-response: {status: 503}
         proxy-response:
           status: 200
-          content: {data: "body\n", size: 5}
+          content:
+            data: "body\n"
+            size: 5
+            verify: {as: equal}

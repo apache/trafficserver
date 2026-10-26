@@ -23,6 +23,13 @@ urtest:
   server:
     name: "server"
     log_validation:
+      contains:
+        - expression: '^GET /texts/demo-1\.txt\?next=&next=demo-2\.txt&next=\.\./private/secret\.txt HTTP/1\.1$'
+          description: "The original query request reaches the origin"
+        - expression: '^GET /texts/demo-2\.txt\?next=&next=demo-2\.txt&next=\.\./private/secret\.txt HTTP/1\.1$'
+          description: "The safe prefetch reaches the origin with its preserved query"
+        - expression: '^X-CDN-Prefetch: texts/demo-1\.txt$'
+          description: "The safe origin request is marked as a prefetch"
       excludes:
         - expression: "GET /texts/\\.\\./private/secret\\.txt"
           description: "Traversal prefetch should not reach the origin"
@@ -82,7 +89,8 @@ sessions:
 
         proxy-request:
           method: "GET"
-          url: "/texts/demo-1.txt?next=&next=demo-2.txt&next=../private/secret.txt"
+          # Prefetch copies the initiating uuid, so verify both distinct
+          # request targets and the prefetch marker in the origin log above.
           headers:
             fields:
               - [Host, {value: "127.0.0.1", as: prefix}]
@@ -114,7 +122,8 @@ sessions:
 
         proxy-request:
           method: "GET"
-          url: "/cmcd/segment-1.m4s"
+          url:
+            - [path, {value: "/cmcd/segment-1.m4s", as: equal}]
           headers:
             fields:
               - [Host, {value: "127.0.0.1", as: prefix}]
@@ -142,13 +151,6 @@ sessions:
             fields:
               - [Host, domain.in]
               - [uuid, query-path-traversal]
-
-        proxy-request:
-          method: "GET"
-          url: "/texts/demo-2.txt?next=&next=demo-2.txt&next=../private/secret.txt"
-          headers:
-            fields:
-              - [X-CDN-Prefetch, {value: "texts/demo-1.txt", as: equal}]
 
         server-response:
           status: 200

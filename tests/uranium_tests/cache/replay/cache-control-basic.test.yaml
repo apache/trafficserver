@@ -135,7 +135,7 @@ sessions:
         - [x-debug, "x-cache,x-cache-key,via"]
         - [uuid, no-cache-control]
 
-    server-response:
+    server-response: &uncacheable-response
       status: 200
       reason: OK
       headers:
@@ -158,7 +158,34 @@ sessions:
         verify: { as: equal }
 
   #############################################################################
-  # Test 4: Hit stale cache - wait for cache entry to become stale
+  # Test 4: Explicit client no-cache still reaches the origin
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /no_cache_control
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [Cache-Control, no-cache]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, client-no-cache]
+    proxy-request:
+      headers:
+        fields:
+        - [Cache-Control, {value: no-cache, as: equal}]
+    server-response: *uncacheable-response
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, {value: miss, as: equal}]
+      content:
+        data: "the flinstones"
+        verify: {as: equal}
+
+  #############################################################################
+  # Test 5: Hit stale cache - wait for cache entry to become stale
   #############################################################################
   - client-request:
       # Wait for the cache entry from Test 1 to become stale
@@ -192,16 +219,17 @@ sessions:
         - [X-Cache, { value: "hit-stale", as: equal }]
 
   #############################################################################
-  # Test 5: only-if-cached - should return 504 if not in cache
+  # Test 6: only-if-cached - should return 504 if not in cache
   #############################################################################
   - client-request:
       method: GET
-      url: /not_in_cache
+      url: /no_cache_control
       version: '1.1'
       headers:
         fields:
         - [Host, www.example.com]
         - [Cache-Control, "only-if-cached"]
+        - [Cache-Control, "max-age=300"]
         - [x-debug, "x-cache,x-cache-key,via"]
         - [uuid, only-if-cached]
 

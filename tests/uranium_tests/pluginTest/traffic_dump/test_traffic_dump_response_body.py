@@ -128,6 +128,8 @@ def verify_dump(index: int, response_body: str | None = None, *, _ats: ATS, _dum
     ]
     if response_body is not None:
         arguments.extend(("--response_body", response_body))
+    if index == 3:
+        arguments.extend(("--client-tls-features", "version:TLSv1.2"))
     result = _ats.run(*arguments)
     assert result.returncode == 0, result.output
 
