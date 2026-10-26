@@ -315,7 +315,7 @@ def test_ssl_multicert_sni_only_reload(ats_factory: ATSFactory, services: Servic
     initial = named_entry("server.pem", "server.key")
     ats, origin = configure_ats("sni-only", initial, partial_reload=True, _ats_factory=ats_factory, _services=services)
     start(ats, origin)
-    request(ats, SSL_MULTICERT_PARTIAL_RELOAD__valid_sni, _curl=curl)
+    request(ats, "example.com", _curl=curl)
     generate_rsa(ats, "sni-new", "sni-c-new.example.com")
     write_entries(ats, (*bad_entry(), *named_entry("sni-new.pem", "sni-new.key")))
     reload(ats, "sni-only-mixed", "success")
