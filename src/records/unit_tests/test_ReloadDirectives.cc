@@ -28,8 +28,10 @@
 #include "mgmt/config/ConfigReloadTrace.h"
 
 #include <yaml-cpp/yaml.h>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 
 // ─── parse_directive: standalone copy of the traffic_ctl parsing logic ────────
 //
@@ -182,6 +184,26 @@ TEST_CASE("ConfigContext: supplied_yaml on default context has no content", "[co
   REQUIRE_FALSE(yaml);
   REQUIRE_FALSE(yaml.IsMap());
   REQUIRE_FALSE(yaml.IsSequence());
+}
+
+TEST_CASE("ConfigContext: std::move copies and leaves the source valid", "[config][context]")
+{
+  auto          task = std::make_shared<ConfigReloadTask>("test-move-1", "test", false, nullptr);
+  ConfigContext src(task, "move_handler");
+  REQUIRE(src);
+
+  // Move is suppressed on purpose (see the header), so std::move copies.
+  ConfigContext moved(std::move(src));
+  REQUIRE(src);
+  REQUIRE(moved);
+
+  ConfigContext assigned;
+  assigned = std::move(moved);
+  REQUIRE(moved);
+  REQUIRE(assigned);
+
+  REQUIRE_FALSE(src.is_terminal());
+  REQUIRE(src.get_description() == "move_handler");
 }
 
 TEST_CASE("ConfigContext: writing into a result does not fill a default context", "[config][context][directive]")

@@ -90,11 +90,11 @@ class RecordTriggeredReloadContinuation;
 class ConfigContext
 {
 public:
-  ConfigContext();
+  ConfigContext() = default;
 
   explicit ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description = "", std::string_view filename = "");
 
-  ~ConfigContext();
+  ~ConfigContext() = default;
 
   // Copy only - move is intentionally suppressed.
   // ConfigContext holds a weak_ptr to the task and a shared_ptr to the RPC-supplied
@@ -105,8 +105,8 @@ public:
   // original valid. This is critical for execute_reload()'s post-handler check:
   // if a handler defers work (e.g. LogConfig), the original ctx must remain
   // valid so is_terminal() can detect the non-terminal state and emit a warning.
-  ConfigContext(ConfigContext const &);
-  ConfigContext &operator=(ConfigContext const &);
+  ConfigContext(ConfigContext const &)            = default;
+  ConfigContext &operator=(ConfigContext const &) = default;
 
   /// Check if this context wraps a live task.
   /// Returns false for default-constructed or dedup-rejected contexts.

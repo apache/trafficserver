@@ -38,13 +38,10 @@ struct ConfigContext::Payload {
   std::optional<YAML::Node> reload_directives;
 };
 
-// ConfigContext is passed by value to every reload handler.
+// ConfigContext is passed by value to every reload handler, and Coverity flags by-value
+// parameters over 128 bytes. A bound of 64 keeps it well under that with libstdc++ and
+// libc++ (it is 32 with both).
 static_assert(sizeof(ConfigContext) <= 64, "ConfigContext is passed by value; add new state to ConfigContext::Payload");
-
-ConfigContext::ConfigContext()                                 = default;
-ConfigContext::~ConfigContext()                                = default;
-ConfigContext::ConfigContext(ConfigContext const &)            = default;
-ConfigContext &ConfigContext::operator=(ConfigContext const &) = default;
 
 ConfigContext::ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description, std::string_view filename)
   : _task(t)
