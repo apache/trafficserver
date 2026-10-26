@@ -33,8 +33,22 @@ SERVER_NAME = b'jax.server.test'
 
 GREASE_CIPHER = 0x0A0A
 CIPHERS = [
-    GREASE_CIPHER, 0x1301, 0x1302, 0x1303, 0xC02B, 0xC02F, 0xC02C, 0xC030, 0xCCA9, 0xCCA8, 0xC013, 0xC014, 0x009C, 0x009D, 0x002F,
-    0x0035
+    GREASE_CIPHER,
+    0x1301,
+    0x1302,
+    0x1303,
+    0xC02B,
+    0xC02F,
+    0xC02C,
+    0xC030,
+    0xCCA9,
+    0xCCA8,
+    0xC013,
+    0xC014,
+    0x009C,
+    0x009D,
+    0x002F,
+    0x0035,
 ]
 
 SIGNATURE_ALGORITHMS = [0x0403, 0x0804, 0x0401, 0x0503, 0x0805, 0x0501, 0x0806, 0x0601]
@@ -47,18 +61,34 @@ LAST_GREASE_EXTENSION = 0x9A9A
 
 
 def is_grease(value: int) -> bool:
+    """Identify a reserved GREASE value.
+
+    :param value: Unsigned 16-bit cipher or extension identifier.
+    """
     return (value & 0x0F0F) == 0x0A0A and (value >> 8) == (value & 0xFF)
 
 
 def u8_prefixed(data: bytes) -> bytes:
+    """Prefix bytes with their one-byte length.
+
+    :param data: Payload of at most 255 bytes.
+    """
     return struct.pack('!B', len(data)) + data
 
 
 def u16_prefixed(data: bytes) -> bytes:
+    """Prefix bytes with their network-order two-byte length.
+
+    :param data: Payload of at most 65535 bytes.
+    """
     return struct.pack('!H', len(data)) + data
 
 
 def u16_list(values: list[int]) -> bytes:
+    """Encode a list of network-order unsigned integers.
+
+    :param values: Unsigned 16-bit identifiers to concatenate.
+    """
     return b''.join(struct.pack('!H', v) for v in values)
 
 
@@ -103,11 +133,15 @@ def client_hello_records(fragment_size: int = 0) -> bytes:
     body += u16_prefixed(b''.join(struct.pack('!HH', t, len(d)) + d for t, d in extensions()))
     handshake = b'\x01' + struct.pack('!I', len(body))[1:] + body
     size = fragment_size or len(handshake)
-    fragments = [handshake[i:i + size] for i in range(0, len(handshake), size)]
+    fragments = [handshake[i : i + size] for i in range(0, len(handshake), size)]
     return b''.join(struct.pack('!BHH', 0x16, 0x0301, len(f)) + f for f in fragments)
 
 
 def truncated_sha256(values: list[str]) -> str:
+    """Hash comma-separated fields using JA4's truncated SHA-256 format.
+
+    :param values: Ordered hexadecimal fingerprint fields.
+    """
     return hashlib.sha256(','.join(values).encode()).hexdigest()[:12]
 
 
@@ -131,7 +165,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('port', type=int, help='The TLS port to send the ClientHello to.')
     parser.add_argument(
-        '--fragment-size', type=int, default=0, help='Split the ClientHello across records of at most this many bytes.')
+        '--fragment-size', type=int, default=0, help='Split the ClientHello across records of at most this many bytes.'
+    )
     args = parser.parse_args()
 
     with socket.create_connection(('127.0.0.1', args.port), timeout=5) as sock:
