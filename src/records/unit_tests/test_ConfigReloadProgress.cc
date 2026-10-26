@@ -56,16 +56,22 @@ struct ReloadCheckerListener : inkevent_test::EventProcessorListener {
 };
 
 bool
-wait_for_sole_owner(ConfigReloadTaskPtr const &task, std::chrono::seconds timeout)
+wait_for_owners_below(ConfigReloadTaskPtr const &task, long owners, std::chrono::seconds timeout)
 {
   auto const deadline = std::chrono::steady_clock::now() + timeout;
-  while (task.use_count() > 1) {
+  while (task.use_count() >= owners) {
     if (std::chrono::steady_clock::now() >= deadline) {
       return false;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds{50});
   }
   return true;
+}
+
+bool
+wait_for_sole_owner(ConfigReloadTaskPtr const &task, std::chrono::seconds timeout)
+{
+  return wait_for_owners_below(task, 2, timeout);
 }
 } // namespace
 
@@ -138,10 +144,7 @@ TEST_CASE("A dependent context inherits its parent's RPC content", "[config][rel
   child.reset();
   parent.reset();
 
-  // Like the cases above, don't leave the checker running past the test.
-  auto const deadline = std::chrono::steady_clock::now() + std::chrono::seconds{15};
-  while (main_task.use_count() >= owners_with_checker && std::chrono::steady_clock::now() < deadline) {
-    std::this_thread::sleep_for(std::chrono::milliseconds{50});
-  }
-  REQUIRE(main_task.use_count() < owners_with_checker);
+  // Like the cases above, don't leave the checker running past the test. Same bound as the
+  // terminal case: the checker confirms a terminal state about 7 s after it starts.
+  REQUIRE(wait_for_owners_below(main_task, owners_with_checker, std::chrono::seconds{15}));
 }

@@ -189,8 +189,9 @@ public:
   /// @code
   ///   if (auto yaml = ctx.supplied_yaml()) { /* use yaml node */ }
   /// @endcode
-  /// @return copy of the supplied YAML node (cheap - YAML::Node is internally reference-counted),
-  ///         or a new Undefined node on each call when none was supplied.
+  /// @return a handle on the supplied YAML node, or a new Undefined node on each call when
+  ///         none was supplied. YAML::Node is reference-counted: copies and dependents of
+  ///         this context share the node, so a write through it is seen by all of them.
   [[nodiscard]] YAML::Node supplied_yaml() const;
 
   /// Get reload directives extracted from the _reload key.
@@ -202,8 +203,9 @@ public:
   /// @code
   ///   if (auto directives = ctx.reload_directives()) { /* use directives */ }
   /// @endcode
-  /// @return copy of the directives YAML node (cheap - YAML::Node is internally reference-counted),
-  ///         or a new Undefined node on each call when none were provided.
+  /// @return a handle on the directives YAML node, or a new Undefined node on each call when
+  ///         none were provided. YAML::Node is reference-counted: copies and dependents of
+  ///         this context share the node, so a write through it is seen by all of them.
   [[nodiscard]] YAML::Node reload_directives() const;
 
 private:
