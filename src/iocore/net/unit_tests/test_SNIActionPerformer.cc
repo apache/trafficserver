@@ -45,6 +45,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #if TS_USE_QUIC == 1
 // The look-alike connections below stand in for QUICNetVConnection, so it must have the same shape.
@@ -209,6 +210,9 @@ private:
 
 const std::string         server_name{"allowed.example.com"};
 const ActionItem::Context no_context{};
+
+// TunnelDestination keeps a reference to its ALPN list, so the list has to outlive the action.
+const std::vector<int> no_alpn{};
 } // end anonymous namespace
 
 TEST_CASE("SNI_IpAllow checks the peer of a connection that is not an SSLNetVConnection", "[sni][ip_allow]")
@@ -480,7 +484,7 @@ TEST_CASE("TunnelDestination refuses a connection that is not an SSLNetVConnecti
   SECTION("without TLS tunnel support")
   {
     auto              vc = std::make_unique<NonSSLNetVConnection>();
-    TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, {}};
+    TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
     vc->bind_to(ssl.get());
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
@@ -489,7 +493,7 @@ TEST_CASE("TunnelDestination refuses a connection that is not an SSLNetVConnecti
   SECTION("with TLS tunnel support")
   {
     auto              vc = std::make_unique<NonSSLTunnelNetVConnection>();
-    TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::FORWARD, YamlSNIConfig::TunnelPreWarm::UNSET, {}};
+    TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::FORWARD, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
     vc->bind_to(ssl.get());
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
@@ -498,7 +502,7 @@ TEST_CASE("TunnelDestination refuses a connection that is not an SSLNetVConnecti
 
   SECTION("nothing is bound to the SSL object")
   {
-    TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, {}};
+    TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
   }
@@ -508,7 +512,7 @@ TEST_CASE("TunnelDestination still routes an SSLNetVConnection", "[sni][tunnel_r
 {
   SSLObject         ssl;
   auto              vc = std::make_unique<PeerSSLNetVConnection>();
-  TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, {}};
+  TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
   vc->bind_to(ssl.get());
 
