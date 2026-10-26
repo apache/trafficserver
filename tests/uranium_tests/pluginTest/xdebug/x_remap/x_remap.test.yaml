@@ -19,6 +19,9 @@ meta: {version: "1.0"}
 urtest:
   description: "Verify xdebug X-Remap, Probe, and fwd request-header behavior"
   requires: {plugins: [xdebug.so]}
+  # No default address, so the unmapped "none" host gets NXDOMAIN at once
+  # instead of waiting on the host resolver.
+  dns: {name: "x-remap-dns", process_config: {default: []}}
   server: {name: "x-remap-origin"}
   client: {name: "x-remap-client"}
   ats:
