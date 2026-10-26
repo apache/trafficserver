@@ -47,18 +47,34 @@ LAST_GREASE_EXTENSION = 0x9A9A
 
 
 def is_grease(value: int) -> bool:
+    """Identify a reserved GREASE value.
+
+    :param value: Unsigned 16-bit cipher or extension identifier.
+    """
     return (value & 0x0F0F) == 0x0A0A and (value >> 8) == (value & 0xFF)
 
 
 def u8_prefixed(data: bytes) -> bytes:
+    """Prefix bytes with their one-byte length.
+
+    :param data: Payload of at most 255 bytes.
+    """
     return struct.pack('!B', len(data)) + data
 
 
 def u16_prefixed(data: bytes) -> bytes:
+    """Prefix bytes with their network-order two-byte length.
+
+    :param data: Payload of at most 65535 bytes.
+    """
     return struct.pack('!H', len(data)) + data
 
 
 def u16_list(values: list[int]) -> bytes:
+    """Encode a list of network-order unsigned integers.
+
+    :param values: Unsigned 16-bit identifiers to concatenate.
+    """
     return b''.join(struct.pack('!H', v) for v in values)
 
 
@@ -108,6 +124,10 @@ def client_hello_records(fragment_size: int = 0) -> bytes:
 
 
 def truncated_sha256(values: list[str]) -> str:
+    """Hash comma-separated fields using JA4's truncated SHA-256 format.
+
+    :param values: Ordered hexadecimal fingerprint fields.
+    """
     return hashlib.sha256(','.join(values).encode()).hexdigest()[:12]
 
 
