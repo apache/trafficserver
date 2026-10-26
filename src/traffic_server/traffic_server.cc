@@ -55,6 +55,7 @@
 #include <algorithm>
 #include <atomic>
 #include <filesystem>
+#include <limits>
 #include <list>
 #include <string>
 
@@ -552,7 +553,9 @@ public:
     // ink_get_current_rss() reports current (not peak) RSS in bytes, portably,
     // so the gauge can both rise and fall and the throttle releases correctly.
     uint64_t rss = ink_get_current_rss();
-    ts::Metrics::Gauge::store(memory_rss, static_cast<int64_t>(rss));
+    // The gauge is signed; never let a reading turn it negative.
+    constexpr uint64_t max_gauge = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
+    ts::Metrics::Gauge::store(memory_rss, rss > max_gauge ? std::numeric_limits<int64_t>::max() : static_cast<int64_t>(rss));
     Dbg(dbg_ctl_server, "memory usage - current rss: %" PRIu64 " bytes memory limit: %" PRId64 " bytes", rss, _memory_limit);
 
     // net_memory_throttle is read on accept threads, so use relaxed atomics.
