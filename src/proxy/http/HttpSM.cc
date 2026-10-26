@@ -1361,7 +1361,7 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
         //   handler to clean this mess up
         ink_assert(t_info == &post_transform_info);
         return (this->*tunnel_handler)(event, data);
-      } else {
+      } else if (c->write_success) {
         // On the response side, we just forward as much
         //   as we can of truncated documents so
         //   just don't cache the result
@@ -1369,6 +1369,12 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
         t_state.api_info.cache_transformed = false;
         return 0;
       }
+      // The tunnel aborted the transform before the transform
+      //   signaled TRANSFORM_READ_READY, so it never will.
+      //   Fall through to the error case so the client gets
+      //   a 502 response instead of waiting forever.
+      ink_assert(t_info == &transform_info);
+      t_state.http_return_code = HTTPStatus::BAD_GATEWAY;
     } else {
       // Case 3 - wait for transform read ready
       return 0;
