@@ -28,7 +28,7 @@ sessions:
     transactions:
       - all: { headers: { fields: [[ uuid, foo ]]}}
 
-        proxy-request:
+        proxy-request: &foo-request
           protocol:
             stack: http2
             tls:
@@ -36,18 +36,18 @@ sessions:
               proxy-verify-mode: 1
               proxy-provided-cert: false
           version: '2'
-          scheme: https
-          method: GET
-          url: /foo
           headers:
             encoding: esc_json
             fields:
-              - [ Host, foo.com ]
+              - [":method", {value: GET, as: equal}]
+              - [":scheme", {value: https, as: equal}]
+              - [":path", {value: /foo, as: equal}]
+              - [ ":authority", {value: foo.com, as: equal} ]
           content:
             encoding: plain
             size: 0
 
-        server-response:
+        server-response: &response
           version: '2'
           status: 200
           headers:
@@ -58,3 +58,16 @@ sessions:
             encoding: plain
             data: foo-response
             size: 12
+
+      # Permissive session reuse sends the second authority over the same
+      # TLS connection. A distinct key verifies that request independently.
+      - all: {headers: {fields: [[uuid, bar]]}}
+        proxy-request:
+          <<: *foo-request
+          headers:
+            fields:
+              - [":method", {value: GET, as: equal}]
+              - [":scheme", {value: https, as: equal}]
+              - [":path", {value: /foo, as: equal}]
+              - [":authority", {value: bar.com, as: equal}]
+        server-response: *response

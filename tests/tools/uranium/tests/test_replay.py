@@ -132,3 +132,65 @@ def test_missing_diags_log_has_an_assertion_message(tmp_path: Path) -> None:
 
     with pytest.raises(AssertionError, match="ATS diagnostic log does not exist"):
         replay._validate_ats_logs()
+
+
+def test_audited_replay_expectations_have_explicit_verification_rules() -> None:
+    """Keep the audited migration scenarios and their external replays verifiable.
+
+    These scenarios previously used literal URL, header, or body expectations
+    without enabling strict verification. Other master scenarios need a
+    separate audit before this inventory can cover the entire suite.
+    """
+
+    test_root = Path(__file__).parents[3] / "uranium_tests"
+    failures = []
+    manifests = (
+        "at_headers/at_headers.test.yaml",
+        "cache/replay/cache-control-basic.test.yaml",
+        "h2/replay/h2_origin_cert_reverify.test.yaml",
+        "h2/replay/h2_origin_cert_reverify_permissive.test.yaml",
+        "logging/replay/pqsi_pqsp.test.yaml",
+        "pluginTest/cache_range_requests/cache_range_requests_cachekey_global.test.yaml",
+        "pluginTest/cookie_remap/cookie_remap.test.yaml",
+        "pluginTest/lua/lua_api.test.yaml",
+        "pluginTest/prefetch/prefetch_query_path_traversal.test.yaml",
+        "pluginTest/redirect_limit/redirect_limit.test.yaml",
+        "pluginTest/slice/replay/slice_regex.test.yaml",
+        "pluginTest/xdebug/x_remap/x_remap.test.yaml",
+        "remap/replay/regex_map.test.yaml",
+        "session_sharing/session_match.test.yaml",
+        "url/uri.test.yaml",
+    )
+    pending = [test_root / manifest for manifest in manifests]
+    assert pending, "The audited replay manifest inventory is empty"
+    for path in pending:
+        assert path.is_file(), f"Missing audited replay manifest: {path}"
+    visited = set()
+    while pending:
+        path = pending.pop().resolve()
+        if path in visited:
+            continue
+        visited.add(path)
+        document = yaml.safe_load(path.read_text())
+        for role in ("server", "client"):
+            reference = document.get("urtest", {}).get(role, {}).get("replay")
+            if reference:
+                replay = (path.parent / reference).resolve()
+                assert replay.exists(), f"Missing {role} replay referenced by {path}: {replay}"
+                referenced = sorted(replay.rglob("*.yaml")) if replay.is_dir() else [replay]
+                assert referenced, f"Empty {role} replay directory referenced by {path}: {replay}"
+                pending.extend(referenced)
+        for session in document.get("sessions", []):
+            for transaction in session.get("transactions", []):
+                for direction in ("proxy-request", "proxy-response"):
+                    expected = transaction.get(direction) or {}
+                    context = f"{path.relative_to(test_root)}: {direction}"
+                    if isinstance(expected.get("url"), str):
+                        failures.append(f"{context} URL has no component verification rules")
+                    for field in (expected.get("headers") or {}).get("fields") or []:
+                        if len(field) == 2 and not isinstance(field[1], dict):
+                            failures.append(f"{context} header {field[0]} has no verification rule")
+                    content = expected.get("content") or {}
+                    if "data" in content and "verify" not in content:
+                        failures.append(f"{context} literal body has no verification rule")
+    assert not failures, "\n".join(failures)

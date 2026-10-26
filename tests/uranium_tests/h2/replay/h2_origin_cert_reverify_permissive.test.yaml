@@ -80,6 +80,7 @@ sessions:
           content:
             encoding: plain
             data: foo-response
+            verify: {as: equal}
             size: 12
   - protocol:
       stack: http
@@ -87,7 +88,7 @@ sessions:
       - all:
           headers:
             fields:
-              - [uuid, foo]
+              - [uuid, bar]
         client-request:
           method: GET
           url: /foo
@@ -100,4 +101,5 @@ sessions:
           content:
             encoding: plain
             data: foo-response
+            verify: {as: equal}
             size: 12

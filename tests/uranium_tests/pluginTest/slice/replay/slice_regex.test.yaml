@@ -49,7 +49,7 @@ sessions:
               - [uuid, slice-exclude-txt]
         proxy-request:
           method: GET
-          url: /slice.txt
+          url: [[path, {value: /slice.txt, as: equal}], [query, {as: absent}]]
           headers:
             fields:
               - [Range, {as: absent}]
@@ -72,6 +72,7 @@ sessions:
               - [X-Info, {value: notsliced, as: equal}]
           content:
             data: "lets go surfin now"
+            verify: {as: equal}
 
       - client-request:
           method: GET
@@ -83,7 +84,7 @@ sessions:
               - [uuid, slice-exclude-mp4]
         proxy-request:
           method: GET
-          url: /slice.mp4
+          url: [[path, {value: /slice.mp4, as: equal}], [query, {as: absent}]]
           headers:
             fields:
               - [Range, {value: "bytes=0-99", as: equal}]
@@ -107,6 +108,7 @@ sessions:
               - [X-Info, {value: sliced, as: equal}]
           content:
             data: "lets go surfin now"
+            verify: {as: equal}
 
       - client-request:
           method: GET
@@ -118,7 +120,7 @@ sessions:
               - [uuid, slice-include-txt]
         proxy-request:
           method: GET
-          url: /slice.txt
+          url: [[path, {value: /slice.txt, as: equal}], [query, {as: absent}]]
           headers:
             fields:
               - [Range, {as: absent}]
@@ -136,7 +138,7 @@ sessions:
               - [uuid, slice-include-mp4]
         proxy-request:
           method: GET
-          url: /slice.mp4
+          url: [[path, {value: /slice.mp4, as: equal}], [query, {as: absent}]]
           headers:
             fields:
               - [Range, {value: "bytes=0-99", as: equal}]
