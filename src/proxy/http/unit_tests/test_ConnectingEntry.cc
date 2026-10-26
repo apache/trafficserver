@@ -38,6 +38,7 @@
 #include <memory>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -98,7 +99,8 @@ public:
     if (_tracked) {
       auto retry     = ConnectionTracker::obtain_outbound(test_config(), FQDN, _addr);
       count_at_retry = retry.reserve();
-      retry.clear();
+      // Group::release(), unlike TxnState::clear(), takes the group out of the table at zero.
+      retry.drop()->release();
     }
 
     return 0;
@@ -123,6 +125,66 @@ probe_sm()
 
   return *sm;
 }
+
+// The outbound table is a static that is destroyed at exit, after the metrics that ~Group() decrements,
+// so a test must take every group it adds out of the table again.
+size_t
+outbound_group_count()
+{
+  std::vector<std::shared_ptr<ConnectionTracker::Group const>> groups;
+
+  ConnectionTracker::get_outbound_groups(groups);
+
+  return groups.size();
+}
+
+// A reservation the test holds. It is given back through Group::release(), which takes the group out of
+// the table at zero, also when a failed REQUIRE ends the test case early.
+class HeldReservation
+{
+public:
+  HeldReservation()                                   = default;
+  HeldReservation(HeldReservation const &)            = delete;
+  HeldReservation &operator=(HeldReservation const &) = delete;
+  ~HeldReservation() { release(); }
+
+  // Reserve a slot on the outbound group for @a addr, and return the count the reservation gave.
+  int
+  reserve(IpEndpoint const &addr)
+  {
+    auto      state = ConnectionTracker::obtain_outbound(test_config(), FQDN, addr);
+    int const count = state.reserve();
+
+    _group = state.drop();
+
+    return count;
+  }
+
+  std::shared_ptr<ConnectionTracker::Group> const &
+  group() const
+  {
+    return _group;
+  }
+
+  // Pass the reservation on to whoever gives it back next.
+  std::shared_ptr<ConnectionTracker::Group>
+  handover()
+  {
+    return std::move(_group);
+  }
+
+  void
+  release()
+  {
+    if (_group) {
+      _group->release();
+      _group.reset();
+    }
+  }
+
+private:
+  std::shared_ptr<ConnectionTracker::Group> _group;
+};
 
 EThread *
 connecting_thread()
@@ -173,26 +235,27 @@ TEST_CASE("Failed connect returns its reservation before queued HttpSMs retry", 
 
   EThread *thread = connecting_thread();
   auto    &sm     = probe_sm();
+  // Taken on the first generator run only, so a group left behind fails just the run that left it.
+  static size_t const outbound_groups = outbound_group_count();
 
   IpEndpoint addr;
 
   REQUIRE(0 == ats_ip_pton("192.0.2.20:443", &addr));
   sm.expect_retry(addr, true);
 
-  ConnectionTracker::TxnState live;
+  HeldReservation live;
 
   if (live_connections > 0) {
-    live = ConnectionTracker::obtain_outbound(test_config(), FQDN, addr);
-    REQUIRE(live.reserve() == 1);
+    REQUIRE(live.reserve(addr) == 1);
   }
 
-  auto first = ConnectionTracker::obtain_outbound(test_config(), FQDN, addr);
+  HeldReservation first;
 
-  REQUIRE(first.reserve() == live_connections + 1);
+  REQUIRE(first.reserve(addr) == live_connections + 1);
 
-  auto group = first.drop();
+  auto group = first.group();
 
-  fail_connect(thread, sm, queue_entry(thread, sm, addr, group), event);
+  fail_connect(thread, sm, queue_entry(thread, sm, addr, first.handover()), event);
 
   REQUIRE(sm.notified_event == event);
   // The retry must neither find the failed entry to queue on nor count its slot. With
@@ -203,7 +266,8 @@ TEST_CASE("Failed connect returns its reservation before queued HttpSMs retry", 
   // The failed connection's slot is given back exactly once, so the live connection keeps its own.
   CHECK(group->_count == live_connections);
 
-  live.clear();
+  live.release();
+  CHECK(outbound_group_count() == outbound_groups);
 }
 
 // With per_server.connection.max, min and the metrics off (the default), do_http_server_open() never
@@ -231,19 +295,22 @@ TEST_CASE("Failed connect with no tracking group notifies queued HttpSMs", "[Con
 // destructor returns that reservation.
 TEST_CASE("Deleting a pending ConnectingEntry returns its reservation", "[ConnectingEntry]")
 {
+  size_t const outbound_groups = outbound_group_count();
+
   IpEndpoint addr;
 
   REQUIRE(0 == ats_ip_pton("192.0.2.22:443", &addr));
 
-  auto first = ConnectionTracker::obtain_outbound(test_config(), FQDN, addr);
+  HeldReservation first;
 
-  REQUIRE(first.reserve() == 1);
+  REQUIRE(first.reserve(addr) == 1);
 
-  auto  group = first.drop();
+  auto  group = first.group();
   auto *entry = new ConnectingEntry();
 
-  entry->enable_outbound_connection_tracking(group);
+  entry->enable_outbound_connection_tracking(first.handover());
   delete entry;
 
   CHECK(group->_count == 0);
+  CHECK(outbound_group_count() == outbound_groups);
 }
