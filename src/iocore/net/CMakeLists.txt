@@ -147,6 +147,7 @@ if(BUILD_TESTING)
     unit_tests/test_EventIOMigration.cc
     unit_tests/test_NetHandler.cc
     unit_tests/test_ProxyProtocol.cc
+    unit_tests/test_SNIActionPerformer.cc
     unit_tests/test_SSLCertLookup.cc
     unit_tests/test_SSLNetVConnectionAsyncEp.cc
     unit_tests/test_SSLSecret.cc
