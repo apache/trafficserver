@@ -187,8 +187,7 @@ public:
   int last_event = CONTINUATION_EVENT_NONE;
 
   // Mirrors UnixNetVConnection::set_inactivity_timeout / set_default_inactivity_timeout /
-  // is_default_inactivity_timeout (UnixNetVConnection.cc:1290-1310).
-  // Mirrors UnixNetVConnection, including its use of ink_get_hrtime(). No
+  // is_default_inactivity_timeout, including its use of ink_get_hrtime(). No
   // scenario calls this - they set the deadline fields directly from the
   // fixture's synthetic clock - so the real-time stamp here is currently
   // inert. If you do start exercising it, pass the fixture's _now in instead:

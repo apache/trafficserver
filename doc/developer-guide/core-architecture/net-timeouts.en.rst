@@ -135,11 +135,11 @@ all.
 
 ``netActivity()`` is also the one place that deliberately skips
 ``rearm_timer()``, since extending is free — **except** on the 0-to-armed
-transition. A connection whose default was 0 when ``set_enabled`` ran, or whose
-deadline ``mainEvent`` cleared after a timeout, may not be scheduled, and
-extending a deadline it does not have would leave it out of the wheel forever,
-so that single transition does re-arm. Everything after it is a plain extension
-and stays free.
+transition. The arming points above should leave no enabled connection
+without a deadline, but one that reaches ``netActivity`` unarmed may not be
+scheduled, and extending a deadline it does not have would leave it out of the
+wheel forever, so that single transition still re-arms. Everything after it is
+a plain extension and stays free.
 
 Budget
 ======

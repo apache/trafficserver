@@ -51,7 +51,7 @@ struct NetState {
 /** A NetEvent deadline. The owning thread reads it without the NetEvent's lock
  * while other threads may write it, so accesses are relaxed atomics. A new
  * deadline reaches the owner through the handoff list rearm_timer() uses, not
- * through this type. += is a load and a store, not an RMW.
+ * through this type.
  */
 class NetDeadline
 {
@@ -75,7 +75,8 @@ public:
   NetDeadline &
   operator+=(ink_hrtime delta)
   {
-    return *this = load() + delta;
+    _v.fetch_add(delta, std::memory_order_relaxed);
+    return *this;
   }
 
   ink_hrtime
@@ -215,7 +216,7 @@ public:
    * A deadline the default produced must move with it. Otherwise a shorter
    * override, such as a per-remap default installed after the global one armed
    * the connection, would be ignored until the old deadline: netActivity() only
-   * extends deadlines and never re-arms. Keeps the idle time already accrued.
+   * re-arms a connection that has no deadline. Keeps the idle time already accrued.
    */
   void rebase_default_inactivity_deadline(ink_hrtime previous_in);
 

@@ -974,10 +974,10 @@ UnixNetVConnection::netActivity()
   ink_hrtime const default_timeout_in = this->default_inactivity_timeout_in.load(std::memory_order_relaxed);
   // Setting a deadline is normally an extension, which needs no wheel work:
   // the wheel re-reads the real deadline when the bucket comes due. The
-  // exception is the 0 -> armed transition (a default that was 0 at
-  // set_enabled(), or a deadline mainEvent() cleared after delivering a
-  // timeout): the vc may not be in the wheel at all, so re-arm on that
-  // transition only and keep the steady-state hot path free of wheel work.
+  // exception is the 0 -> armed transition: the arming points should leave no
+  // enabled vc without a deadline, but an unarmed vc may not be in the wheel at
+  // all, so re-arm on that transition only and keep the steady-state hot path
+  // free of wheel work.
   bool const was_unarmed = this->next_inactivity_timeout_at == 0;
 
   if (this->inactivity_timeout_in) {
