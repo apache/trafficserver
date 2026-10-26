@@ -15,12 +15,12 @@
 #  limitations under the License.
 
 meta:
-  version: "1.0"
-
+  version: '1.0'
 urtest:
-  description: "Verify jax_fingerprint setup, methods, modes, protocols, and SNI filtering"
+  description: Verify jax_fingerprint setup, methods, modes, protocols, and SNI filtering
   requires:
-    plugins: [jax_fingerprint.so]
+    plugins:
+    - jax_fingerprint.so
   dns:
     name: dns
     process_config:
@@ -34,223 +34,528 @@ urtest:
     process_config:
       enable_tls: true
       enable_cache: false
-    records_config: &common-records
+    records_config:
       proxy.config.ssl.client.verify.server.policy: PERMISSIVE
       proxy.config.proxy_name: test.proxy.test
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: jax_fingerprint|http
       proxy.config.log.max_secs_per_buffer: 1
-
   variants:
-    - name: global-ja4h-overwrite
-      replay: jax_fingerprint_global.replay.yaml
-      ats:
-        plugin_config:
-          - "jax_fingerprint.so --method JA4H --header x-jax --via-header x-jax-via --log-filename jax_fingerprint --standalone"
-        remap_config:
-          - "map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4H: [a-z0-9_-]+"
-
-    - name: global-ja3-overwrite
-      replay: jax_fingerprint_tls.replay.yaml
-      ats:
-        plugin_config:
-          - "jax_fingerprint.so --method JA3 --header x-jax --via-header x-jax-via --log-filename jax_fingerprint --standalone"
-        remap_config:
-          - "map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA3: [a-z0-9_-]+"
-
-    - name: remap-ja4h
-      replay: jax_fingerprint_remap.replay.yaml
-      ats:
-        remap_config:
-          - "map http://jax-no-plugin.server.test http://jax.backend.test:{SERVER_HTTP_PORT}"
-          - >-
-            map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
-            @plugin=jax_fingerprint.so @pparam=--method @pparam=JA4H @pparam=--header @pparam=x-jax
-            @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4H: [a-z0-9_-]+"
-
-    - name: remap-ja3-standalone
-      replay: jax_fingerprint_remap_tls.replay.yaml
-      ats:
-        remap_config:
-          - "map https://jax-no-plugin.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-          - >-
-            map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
-            @plugin=jax_fingerprint.so @pparam=--method @pparam=JA3 @pparam=--header @pparam=x-jax
-            @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
-            @pparam=--standalone
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA3: [a-z0-9_-]+"
-
-    - name: hybrid-ja4
-      replay: jax_fingerprint_remap_tls.replay.yaml
-      ats:
-        plugin_config:
-          - "jax_fingerprint.so --method JA4"
-        remap_config:
-          - "map https://jax-no-plugin.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-          - >-
-            map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
-            @plugin=jax_fingerprint.so @pparam=--method @pparam=JA4 @pparam=--header @pparam=x-jax
-            @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4: [a-z0-9_-]+"
-
-    - name: global-ja4-http2
-      replay: jax_fingerprint_global_h2.replay.yaml
-      ats:
-        plugin_config:
-          - "jax_fingerprint.so --method JA4 --header x-jax --via-header x-jax-via --log-filename jax_fingerprint --standalone"
-        remap_config:
-          - "map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4: [a-z0-9_-]+"
-
-    - name: global-ja4h-http2
-      replay: jax_fingerprint_global_h2.replay.yaml
-      ats:
-        plugin_config:
-          - "jax_fingerprint.so --method JA4H --header x-jax --via-header x-jax-via --log-filename jax_fingerprint --standalone"
-        remap_config:
-          - "map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4H: [a-z0-9_-]+"
-
-    - name: global-ja4h-keep
-      replay: jax_fingerprint_keep.replay.yaml
-      ats:
-        plugin_config:
-          - >-
-            jax_fingerprint.so --method JA4H --header x-jax --via-header x-jax-via
-            --log-filename jax_fingerprint --standalone --mode keep
-        remap_config:
-          - "map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4H: [a-z0-9_-]+"
-
-    - name: global-ja4h-append
-      replay: jax_fingerprint_append.replay.yaml
-      ats:
-        plugin_config:
-          - >-
-            jax_fingerprint.so --method JA4H --header x-jax --via-header x-jax-via
-            --log-filename jax_fingerprint --standalone --mode append
-        remap_config:
-          - "map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4H: [a-z0-9_-]+"
-
-    - name: global-ja4-servernames
-      replay: jax_fingerprint_servernames.replay.yaml
-      ats:
-        plugin_config:
-          - >-
-            jax_fingerprint.so --method JA4 --header x-jax --via-header x-jax-via
-            --log-filename jax_fingerprint --standalone --servernames jax.server.test
-        remap_config:
-          - "map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-          - "map https://jax-filtered.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4: [a-z0-9_-]+"
-
-    - name: hybrid-ja4-servernames
-      replay: jax_fingerprint_hybrid_servernames.replay.yaml
-      ats:
-        plugin_config:
-          - "jax_fingerprint.so --method JA4 --servernames jax.server.test"
-        remap_config:
-          - &hybrid-allowed >-
-            map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
-            @plugin=jax_fingerprint.so @pparam=--method @pparam=JA4 @pparam=--header @pparam=x-jax
-            @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
-          - >-
-            map https://jax-filtered.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
-            @plugin=jax_fingerprint.so @pparam=--method @pparam=JA4 @pparam=--header @pparam=x-jax
-            @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4: [a-z0-9_-]+"
-
-    - name: global-ja4h-log-field
-      replay: jax_fingerprint_global.replay.yaml
-      ats:
-        plugin_config:
-          - >-
-            jax_fingerprint.so --method JA4H --header x-jax --via-header x-jax-via
-            --log-filename jax_fingerprint --standalone --log-field jaxja4h
-        remap_config:
-          - "map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}"
-        logging_yaml:
-          logging:
-            formats:
-              - name: jax_custom
-                format: "JA4H: %<jaxja4h>"
-            logs:
-              - filename: jax_log_field
-                format: jax_custom
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4H: [a-z0-9_-]+"
-          - path: "{LOG_DIR}/jax_log_field.log"
-            contains: "JA4H: [a-z0-9]"
-
-    - name: global-ja4-log-field
-      replay: jax_fingerprint_tls.replay.yaml
-      ats:
-        plugin_config:
-          - >-
-            jax_fingerprint.so --method JA4 --header x-jax --via-header x-jax-via
-            --log-filename jax_fingerprint --standalone --log-field jaxja4
-        remap_config:
-          - "map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-        logging_yaml:
-          logging:
-            formats:
-              - name: jax_custom
-                format: "JA4: %<jaxja4>"
-            logs:
-              - filename: jax_log_field
-                format: jax_custom
-        file_checks:
-          - path: "{LOG_DIR}/jax_fingerprint.log"
-            contains: "JA4: [a-z0-9_-]+"
-          - path: "{LOG_DIR}/jax_log_field.log"
-            contains: "JA4: [a-z0-9]"
-
-    - name: all-methods-share-context
-      replay: jax_fingerprint_all_methods.replay.yaml
-      ats:
-        plugin_config:
-          - "jax_fingerprint.so --method JA3 --header x-ja3 --standalone --export test.jax.registry"
-          - "jax_fingerprint.so --method JA4 --header x-ja4 --standalone --export test.jax.registry"
-          - "jax_fingerprint.so --method JA4H --header x-ja4h --standalone --export test.jax.registry"
-        remap_config:
-          - "map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
-        file_checks:
-          - path: "{LOG_DIR}/traffic.out"
-            contains: "Using shared user_arg: type=txn, name=test.jax.registry, method=JA4H, index=[0-9]+"
-            matches:
-              - expression: "Reserved shared user_arg slot: type=vconn, name=test.jax.registry, index=[0-9]+"
-                min: 1
-                max: 1
-              - expression: "Reserved shared user_arg slot: type=txn, name=test.jax.registry, index=[0-9]+"
-                min: 1
-                max: 1
-              - expression: "Using shared user_arg: type=vconn, name=test.jax.registry, method=JA3, index=([0-9]+)[\\s\\S]*Using shared user_arg: type=vconn, name=test.jax.registry, method=JA4, index=\\1"
-                min: 1
-                max: 1
+  - name: global-ja4h-overwrite
+    replay: jax_fingerprint_global.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja3-overwrite
+    replay: jax_fingerprint_tls.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA3: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA3
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: remap-ja4h
+    replay: jax_fingerprint_remap.replay.yaml
+    ats:
+      remap_config:
+      - map http://jax-no-plugin.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT} @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint_remap.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: remap-plugin-request
+          description: The expected fingerprinted request reaches the origin.
+  - name: remap-ja3-standalone
+    replay: jax_fingerprint_remap_tls.replay.yaml
+    ats:
+      remap_config:
+      - map https://jax-no-plugin.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT} @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA3: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint_remap.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA3
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: remap-tls-plugin-request
+          description: The expected fingerprinted request reaches the origin.
+  - name: hybrid-ja4
+    replay: jax_fingerprint_remap_tls.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax-no-plugin.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT} @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+        jax_fingerprint_remap.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: remap-tls-plugin-request
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4-http2
+    replay: jax_fingerprint_global_h2.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4h-http2
+    replay: jax_fingerprint_global_h2.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4h-keep
+    replay: jax_fingerprint_keep.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+              mode: keep
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4h-append
+    replay: jax_fingerprint_append.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+              mode: append
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4-servernames
+    replay: jax_fingerprint_servernames.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      - map https://jax-filtered.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+              servernames:
+              - jax.server.test
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: servernames-in-filter
+          description: The expected fingerprinted request reaches the origin.
+  - name: hybrid-ja4-servernames
+    replay: jax_fingerprint_hybrid_servernames.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT} @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml
+      - map https://jax-filtered.server.test https://jax.backend.test:{SERVER_HTTPS_PORT} @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4: [a-z0-9_-]+'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              servernames:
+              - jax.server.test
+        jax_fingerprint_remap.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: hybrid-servernames-in-filter
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4h-log-field
+    replay: jax_fingerprint_global.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      logging_yaml:
+        logging:
+          formats:
+          - name: jax_custom
+            format: 'JA4H: %<jaxja4h>'
+          logs:
+          - filename: jax_log_field
+            format: jax_custom
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+      - path: '{LOG_DIR}/jax_log_field.log'
+        contains: 'JA4H: [a-z0-9]'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+              log_field: jaxja4h
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4-log-field
+    replay: jax_fingerprint_tls.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      logging_yaml:
+        logging:
+          formats:
+          - name: jax_custom
+            format: 'JA4: %<jaxja4>'
+          logs:
+          - filename: jax_log_field
+            format: jax_custom
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4: [a-z0-9_-]+'
+      - path: '{LOG_DIR}/jax_log_field.log'
+        contains: 'JA4: [a-z0-9]'
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              header: x-jax
+              via_header: x-jax-via
+              log_filename: jax_fingerprint
+              standalone: true
+              log_field: jaxja4
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: all-methods-share-context
+    replay: jax_fingerprint_all_methods.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/traffic.out'
+        contains: 'Using shared user_arg: type=txn, name=test.jax.registry, method=JA4H, index=[0-9]+'
+        matches:
+        - expression: 'Reserved shared user_arg slot: type=vconn, name=test.jax.registry, index=[0-9]+'
+          min: 1
+          max: 1
+        - expression: 'Reserved shared user_arg slot: type=txn, name=test.jax.registry, index=[0-9]+'
+          min: 1
+          max: 1
+        - expression: 'Using shared user_arg: type=vconn, name=test.jax.registry, method=JA3, index=([0-9]+)[\s\S]*Using shared
+            user_arg: type=vconn, name=test.jax.registry, method=JA4, index=\1'
+          min: 1
+          max: 1
+      inline_config_files:
+        jax_fingerprint.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA3
+              header: x-ja3
+              standalone: true
+              export: test.jax.registry
+            - method: JA4
+              header: x-ja4
+              standalone: true
+              export: test.jax.registry
+            - method: JA4H
+              header: x-ja4h
+              standalone: true
+              export: test.jax.registry
+      log_validation:
+        diags_log:
+          excludes:
+          - expression: multiple loading of plugin
+            description: A multi-method YAML file loads the plugin only once.
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-ja3:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: '(?i)x-ja4:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: '(?i)x-ja4h:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4h-overwrite-command-line
+    replay: jax_fingerprint_global.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so --method JA4H --header x-jax --via-header x-jax-via --log-filename jax_fingerprint --standalone
+      remap_config:
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: remap-ja3-standalone-command-line
+    replay: jax_fingerprint_remap_tls.replay.yaml
+    ats:
+      remap_config:
+      - map https://jax-no-plugin.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT} @plugin=jax_fingerprint.so @pparam=--method
+        @pparam=JA3 @pparam=--header @pparam=x-jax @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
+        @pparam=--standalone
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA3: [a-z0-9_-]+'
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: remap-tls-plugin-request
+          description: The expected fingerprinted request reaches the origin.
+  - name: hybrid-ja4-servernames-command-line
+    replay: jax_fingerprint_hybrid_servernames.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so --method JA4 --servernames jax.server.test
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT} @plugin=jax_fingerprint.so @pparam=--method
+        @pparam=JA4 @pparam=--header @pparam=x-jax @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
+      - map https://jax-filtered.server.test https://jax.backend.test:{SERVER_HTTPS_PORT} @plugin=jax_fingerprint.so @pparam=--method
+        @pparam=JA4 @pparam=--header @pparam=x-jax @pparam=--via-header @pparam=x-jax-via @pparam=--log-filename @pparam=jax_fingerprint
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4: [a-z0-9_-]+'
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: hybrid-servernames-in-filter
+          description: The expected fingerprinted request reaches the origin.
+  - name: global-ja4h-log-field-command-line
+    replay: jax_fingerprint_global.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so --method JA4H --header x-jax --via-header x-jax-via --log-filename jax_fingerprint --standalone
+        --log-field jaxja4h
+      remap_config:
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      logging_yaml:
+        logging:
+          formats:
+          - name: jax_custom
+            format: 'JA4H: %<jaxja4h>'
+          logs:
+          - filename: jax_log_field
+            format: jax_custom
+      file_checks:
+      - path: '{LOG_DIR}/jax_fingerprint.log'
+        contains: 'JA4H: [a-z0-9_-]+'
+      - path: '{LOG_DIR}/jax_log_field.log'
+        contains: 'JA4H: [a-z0-9]'
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-jax:'
+          description: The expected fingerprinted request reaches the origin.
+  - name: all-methods-share-context-command-line
+    replay: jax_fingerprint_all_methods.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so --method JA3 --header x-ja3 --standalone --export test.jax.registry
+      - jax_fingerprint.so --method JA4 --header x-ja4 --standalone --export test.jax.registry
+      - jax_fingerprint.so --method JA4H --header x-ja4h --standalone --export test.jax.registry
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      file_checks:
+      - path: '{LOG_DIR}/traffic.out'
+        contains: 'Using shared user_arg: type=txn, name=test.jax.registry, method=JA4H, index=[0-9]+'
+        matches:
+        - expression: 'Reserved shared user_arg slot: type=vconn, name=test.jax.registry, index=[0-9]+'
+          min: 1
+          max: 1
+        - expression: 'Reserved shared user_arg slot: type=txn, name=test.jax.registry, index=[0-9]+'
+          min: 1
+          max: 1
+        - expression: 'Using shared user_arg: type=vconn, name=test.jax.registry, method=JA3, index=([0-9]+)[\s\S]*Using shared
+            user_arg: type=vconn, name=test.jax.registry, method=JA4, index=\1'
+          min: 1
+          max: 1
+    server:
+      log_validation:
+        contains:
+        - expression: '(?i)x-ja3:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: '(?i)x-ja4:'
+          description: The expected fingerprinted request reaches the origin.
+        - expression: '(?i)x-ja4h:'
+          description: The expected fingerprinted request reaches the origin.
