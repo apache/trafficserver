@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-#  Simple wrapper to run cmake-format on a directory.
+#  Simple wrapper to run cmakefmt on a directory.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,12 +18,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Update the these VERSION variables with the new desired cmake-version tag when
-# a new cmakelang version is desired.
+# Update this version variable with the new desired cmakefmt release when a
+# new cmakefmt version is desired.
 # See:
-# https://github.com/cheshirekow/cmake_format/tags
-CMAKE_FORMAT_VERSION="0.6.13"
-VERSION="0.6.13"
+# https://github.com/cmakefmt/cmakefmt/releases
+CMAKEFMT_VERSION="2.3.1"
 
 function cmake_vendorlib_grep() {
   grep -E "CMakeLists.txt|.cmake$" | grep -vE "lib/(Catch2|fastlz|highway|ls-hpack|swoc|yamlcpp)" || true
@@ -38,17 +37,9 @@ function main() {
     exit 1
   fi
 
-  ver=$(uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format --version 2>&1)
-  if [ "$ver" != "$VERSION" ]
-  then
-      echo "Wrong version of cmake-format!"
-      echo "Expected: \"${VERSION}\", got: \"${ver}\""
-      exit 1
-  fi
-
   DIR=${@:-.}
 
-  # Only run cmake-format on tracked files. This saves time and possibly avoids
+  # Only run cmakefmt on tracked files. This saves time and possibly avoids
   # formatting files the user doesn't want formatted.
   tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
   files=${tmp_dir}/git_files.txt
@@ -63,17 +54,18 @@ function main() {
   # Efficiently retrieving modification timestamps in a platform
   # independent way is challenging. We use find's -newer argument, which
   # seems to be broadly supported. The following file is created and has a
-  # timestamp just before running cmake-format. Any file with a timestamp
-  # after this we assume was modified by cmake-format.
+  # timestamp just before running cmakefmt. Any file with a timestamp
+  # after this we assume was modified by cmakefmt.
   start_time_file=${tmp_dir}/format_start.$$
   touch ${start_time_file}
-  uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format -i $(cat ${files})
+  uv tool run --quiet --from cmakefmt@${CMAKEFMT_VERSION} cmakefmt --required-version ${CMAKEFMT_VERSION} --quiet -i \
+    --files-from ${files}
   find $(cat ${files}) -newer ${start_time_file}
 
   rm -rf ${tmp_dir}
 }
 
-if [[ "$(basename -- "$0")" == 'cmake-format.sh' ]]; then
+if [[ "$(basename -- "$0")" == 'cmakefmt.sh' ]]; then
   main "$@"
 fi
-# When sourced, CMAKE_FORMAT_VERSION is already set at the top of this file.
+# When sourced, CMAKEFMT_VERSION is already set at the top of this file.

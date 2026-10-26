@@ -43,7 +43,7 @@ if [ ! -x "$FORMAT" ]; then
     exit 1
 fi
 
-# Check for uv which is required for yapf and cmake-format.
+# Check for uv which is required for yapf and cmakefmt.
 if ! command -v uv &> /dev/null; then
     echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
@@ -51,13 +51,13 @@ fi
 
 # Get version variables from the formatting scripts.
 source "$GIT_TOP/tools/yapf.sh"
-source "$GIT_TOP/tools/cmake-format.sh"
+source "$GIT_TOP/tools/cmakefmt.sh"
 
 # Where to store the patch
 clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
 yapf_patch_file=$(mktemp -t yapf.XXXXXXXXXX)
-cmake_format_patch_file=$(mktemp -t cmake-format.XXXXXXXXXX)
-trap "rm -f $clang_patch_file $yapf_patch_file $cmake_format_patch_file" 0 1 2 3 5 15
+cmakefmt_patch_file=$(mktemp -t cmakefmt.XXXXXXXXXX)
+trap "rm -f $clang_patch_file $yapf_patch_file $cmakefmt_patch_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
 REPO_ROOT=$(cd $(dirname $0)/../.. && git rev-parse --show-toplevel)
@@ -81,7 +81,7 @@ done
 
 # Now repeat the above for CMakeLists.txt files.
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -E 'CMakeLists.txt|\.cmake$' | grep -vE "lib/(Catch2|highway|fastlz|ls-hpack|swoc|yamlcpp)" | while read file; do
-    uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format "$file" | diff -u "$file" - >>"$cmake_format_patch_file"
+    uv tool run --quiet --from cmakefmt@${CMAKEFMT_VERSION} cmakefmt "$file" | diff -u "$file" - >>"$cmakefmt_patch_file"
 done
 
 if [ -s "$clang_patch_file" ]; then
@@ -106,14 +106,14 @@ else
     echo
 fi
 
-if [ -s "$cmake_format_patch_file" ]; then
-    echo "The commit is not accepted because cmake-format reports issues with it."
+if [ -s "$cmakefmt_patch_file" ]; then
+    echo "The commit is not accepted because cmakefmt reports issues with it."
     echo "The easiest way to fix this is to run:"
     echo
     echo "    $ cmake --build <build_dir> --target format"
     exit 1
 else
-    echo "This commit complies with the current cmake-format formatting rules."
+    echo "This commit complies with the current cmakefmt formatting rules."
     echo
 fi
 
