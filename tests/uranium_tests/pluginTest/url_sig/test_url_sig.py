@@ -152,6 +152,14 @@ def request_cases(*, _origin: OriginServer) -> tuple[UrlCase, ...]:
             f"http://one.two.three/{dynamic_path}{sign(payload, 'dqsgopTSM_doT6iAysasQVUKaPykyb6e')}",
             "200 OK",
         ))
+    no_parts_path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=0&S="
+    no_parts_payload = "?E=33046618506&A=1&K=7&P=0&S="
+    cases.append(
+        UrlCase(
+            "non-pristine-sha1-no-parts",
+            f"http://one.two.three/{no_parts_path}{sign(no_parts_payload, 'dqsgopTSM_doT6iAysasQVUKaPykyb6e')}",
+            "200 OK",
+        ))
     cases.extend(
         (
             UrlCase(
