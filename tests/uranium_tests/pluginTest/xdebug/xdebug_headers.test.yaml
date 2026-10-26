@@ -19,6 +19,9 @@ meta: {version: "1.0"}
 urtest:
   description: "Verify xdebug cache-info and effective-URL response headers"
   requires: {plugins: [xdebug.so]}
+  # No default address, so the unmapped "none" host gets NXDOMAIN at once
+  # instead of waiting on the host resolver.
+  dns: {name: "xdebug-header-dns", process_config: {default: []}}
   server: {name: "xdebug-header-origin"}
   client: {name: "xdebug-header-client"}
   ats:
