@@ -216,8 +216,11 @@ ConfigRegistry::do_register(Entry entry)
       owner_str, entry.default_filename.c_str(), entry.filename_record.empty() ? "<none>" : entry.filename_record.c_str(),
       entry.trigger_records.size());
 
+  // A copy of the key, so the key argument does not alias the Entry being moved.
+  std::string key{entry.key};
+
   std::unique_lock lock(_mutex);
-  auto [it, inserted] = _entries.try_emplace(entry.key, std::move(entry));
+  auto [it, inserted] = _entries.try_emplace(std::move(key), std::move(entry));
 
   if (inserted) {
     setup_triggers(it->second);

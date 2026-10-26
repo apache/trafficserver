@@ -25,6 +25,9 @@
 
 #include "mgmt/config/ConfigRegistry.h"
 #include "records/RecCore.h"
+#include "test_Diags.h"
+
+#include <string>
 
 using config::ConfigRegistry;
 using config::ConfigSource;
@@ -288,6 +291,51 @@ TEST_CASE("ConfigRegistry register_plugin_config reports duplicate-key failure",
   REQUIRE(entry != nullptr);
   CHECK(entry->plugin_name == "test_plugin");
   CHECK(entry->default_filename == "a.yaml");
+}
+
+TEST_CASE("ConfigRegistry duplicate-key warning names both owners", "[config][registry][plugin][duplicate]")
+{
+  auto &reg   = ConfigRegistry::Get_Instance();
+  auto *cdiag = static_cast<CatchDiags *>(diags());
+
+  // A null owner registers through the core path, which returns nothing.
+  auto register_as = [&](std::string const &key, char const *owner) {
+    if (owner == nullptr) {
+      reg.register_config(key, "", "", noop_handler, ConfigSource::FileOnly, {});
+      return true;
+    }
+    return reg.register_plugin_config(key, owner, "", "", noop_handler, ConfigSource::FileOnly, {}, false);
+  };
+
+  // Registers @a key twice and returns the warning the second registration produced.
+  // The owner names fit in the string's inline buffer, so a registration that had been
+  // moved from before the warning was built would print an empty owner.
+  auto rejected_warning = [&](std::string const &key, char const *first_owner, char const *second_owner) {
+    bool const first = register_as(key, first_owner);
+    if (first_owner != nullptr) {
+      REQUIRE(first);
+    }
+    cdiag->messages.clear();
+    bool const second = register_as(key, second_owner);
+    if (second_owner != nullptr) {
+      CHECK_FALSE(second);
+    }
+
+    auto const *entry = reg.find(key);
+    REQUIRE(entry != nullptr);
+    CHECK(entry->key == key);
+    CHECK(entry->plugin_name == (first_owner == nullptr ? "" : first_owner));
+
+    REQUIRE(cdiag->messages.size() == 1);
+    return cdiag->messages.front();
+  };
+
+  CHECK(rejected_warning("test_dup_owner_pp", "plug_a", "plug_b") ==
+        "Config 'test_dup_owner_pp' already registered by plug_a; ignoring registration from plug_b");
+  CHECK(rejected_warning("test_dup_owner_cp", nullptr, "plug_b") ==
+        "Config 'test_dup_owner_cp' already registered by core; ignoring registration from plug_b");
+  CHECK(rejected_warning("test_dup_owner_pc", "plug_a", nullptr) ==
+        "Config 'test_dup_owner_pc' already registered by plug_a; ignoring registration from core");
 }
 
 // ─── is_reloadable: handler-less entries are not schedulable ───────────────────
