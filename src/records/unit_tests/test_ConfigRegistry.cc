@@ -325,7 +325,8 @@ namespace
 ConfigContext
 reload_with(std::string const &key, YAML::Node const &content)
 {
-  // emplace/reset, not assignment: copy-assignment is what one of the tests below checks.
+  // Copy-assignment has its own test below, so this helper does not use it: emplace()
+  // and reset() only copy-construct and destroy contexts.
   static std::optional<ConfigContext> seen;
 
   auto &reg = ConfigRegistry::Get_Instance();

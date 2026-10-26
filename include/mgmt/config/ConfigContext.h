@@ -218,8 +218,8 @@ private:
   /// Set reload directives. Only ConfigRegistry should call this during reload setup.
   void set_reload_directives(YAML::Node node);
 
-  /// Supplied YAML and reload directives, shared by every copy of this context.
-  /// Defined in ConfigContext.cc.
+  /// Supplied YAML and reload directives. Copies and dependents of this context share
+  /// it; the setters replace it instead of changing it. Defined in ConfigContext.cc.
   struct Payload;
 
   std::weak_ptr<ConfigReloadTask> _task;

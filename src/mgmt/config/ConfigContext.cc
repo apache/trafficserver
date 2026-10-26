@@ -29,10 +29,10 @@
 
 #include <optional>
 
-// Shared by every copy of a context, so a built Payload is never changed: the
-// setters build a new one instead, because assigning into a YAML::Node writes
-// through to every other handle on the same node. The YAML it holds is still
-// shared, so a write through a returned node reaches every copy.
+// Copies and dependents of a context share its Payload, so a built Payload is never
+// changed: the setters build a new one instead, because assigning into a YAML::Node
+// writes through to every other handle on the same node. The YAML it holds is still
+// shared, so a write through a returned node reaches every context that shares it.
 struct ConfigContext::Payload {
   std::optional<YAML::Node> supplied_yaml;
   std::optional<YAML::Node> reload_directives;

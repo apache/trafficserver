@@ -1,7 +1,7 @@
 /** @file
 
   Unit tests for the ConfigReloadProgress checker's ownership of its reload task, and
-  for ConfigContext behaviour that needs a live reload
+  for ConfigContext behavior that needs a live reload
 
   @section license License
 
