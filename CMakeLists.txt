@@ -1104,8 +1104,8 @@ add_custom_target(
 )
 
 add_custom_target(
-  cmake-format
-  ${CMAKE_SOURCE_DIR}/tools/cmake-format.sh ${CMAKE_SOURCE_DIR}
+  cmakefmt
+  ${CMAKE_SOURCE_DIR}/tools/cmakefmt.sh ${CMAKE_SOURCE_DIR}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "formatting CMakeLists.txt files"
   VERBATIM
@@ -1122,7 +1122,7 @@ add_custom_target(
 # Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format ruff cmake-format whitespace-format
+  DEPENDS clang-format ruff cmakefmt whitespace-format
   COMMENT "formatting all files"
 )
 
