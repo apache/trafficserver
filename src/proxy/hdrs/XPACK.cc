@@ -191,17 +191,14 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
 int64_t
 xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len, uint8_t n)
 {
-  uint8_t       *p           = buf_start;
-  constexpr bool use_huffman = true;
+  uint8_t *p = buf_start;
 
   uint32_t const                 max_expected_size = value_len * 4;
   ts::LocalBuffer<uint8_t, 4096> local_buffer(max_expected_size);
   uint8_t                       *data     = local_buffer.data();
   int64_t                        data_len = 0;
 
-  // TODO Choose whether to use Huffman encoding wisely
-  // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
-  if (use_huffman && value_len) {
+  if (value_len) {
     data_len = huffman_encode(data, max_expected_size, reinterpret_cast<const uint8_t *>(value), value_len);
   }
 
@@ -209,8 +206,12 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
     return -1;
   }
 
+  // Only use Huffman if the encoded representation is smaller than the raw string.
+  const bool    use_huffman = (value_len == 0 || static_cast<uint64_t>(data_len) < value_len);
+  const int64_t payload_len = use_huffman ? data_len : static_cast<int64_t>(value_len);
+
   // Length
-  const int64_t len = xpack_encode_integer(p, buf_end, data_len, n);
+  const int64_t len = xpack_encode_integer(p, buf_end, payload_len, n);
   if (len == -1) {
     return -1;
   }
@@ -222,14 +223,14 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
   }
   p += len;
 
-  if (buf_end < p || buf_end - p < data_len) {
+  if (buf_end < p || buf_end - p < payload_len) {
     return -1;
   }
 
   // Value
-  if (data_len) {
-    memcpy(p, data, data_len);
-    p += data_len;
+  if (payload_len) {
+    memcpy(p, use_huffman ? data : reinterpret_cast<const uint8_t *>(value), payload_len);
+    p += payload_len;
   }
 
   return p - buf_start;
