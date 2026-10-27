@@ -131,6 +131,6 @@ def test_h3_go_client(ats_factory: ATSFactory, services: ServiceFactory) -> None
     assert "completed 13 HTTP/3 requests" in result.stdout
     get_pattern = r"c_alpn=h3 client_version=http/3 c_method=GET c_url=https://go\.example\.com:[0-9]+/go-get-empty"
     post_pattern = r"c_alpn=h3 client_version=http/3 c_method=POST c_url=https://go\.example\.com:[0-9]+/go-post-large"
-    content = wait_for_file_lines(_ats.log_directory / "h3_go_access.log", post_pattern, 1, timeout=10)
+    content = wait_for_file_lines(_ats.log_directory / "h3_go_access.log", post_pattern, 1)
     assert re.search(get_pattern, content)
     assert re.search(post_pattern, content)

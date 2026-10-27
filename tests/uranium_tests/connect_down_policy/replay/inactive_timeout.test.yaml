@@ -61,7 +61,6 @@ urtest:
       file_checks:
       - path: '{LOG_DIR}/error.log'
         contains: marking down
-        timeout: 10
   - name: do-not-mark-down
     ats:
       records_config:
