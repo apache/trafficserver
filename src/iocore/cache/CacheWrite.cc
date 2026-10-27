@@ -770,7 +770,7 @@ Lsuccess:
 Lfailure:
   ts::Metrics::Counter::increment(cache_rsb.status[op_type].failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
+  _action.call_back(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
 Lcancel:
   if (od) {
     od->reading_vec = false;
