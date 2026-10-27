@@ -110,15 +110,15 @@ public:
   }
 
   int
-  last_event()
+  last_event() const
   {
-    return this->_event;
+    return this->_event.load();
   }
 
   // Delivered on an event thread, so wait for this to move rather than sleeping
   // a fixed time when the handler must outlive the events QPACK schedules.
   int
-  events_seen()
+  events_seen() const
   {
     return this->_events_seen.load();
   }
@@ -540,15 +540,23 @@ TEST_CASE("Decoding", "[qpack-decode]")
 // a test can tell whether the arena got back everything QPACK allocated out of it.
 struct QPACKTestAccess {
   // Arena::free() never inspects the last block on its list, so nothing rewinds
-  // while the arena holds a single block. Push it past that one. This leaves about
-  // a third of the head block free, and the allocations under test must fit in it,
-  // otherwise they open a new head block and the water level moves for that reason.
+  // while the arena holds a single block. Allocate until a release is seen to
+  // rewind, which happens once a second block heads the list. That block is
+  // mostly free; the allocations under test must fit in it, otherwise they open
+  // a new head block and the water level moves for that reason.
   static void
   skip_first_block(QPACK &qpack)
   {
-    for (int i = 0; i < 40; ++i) {
+    for (int i = 0; i < 1000; ++i) {
+      char *probe = qpack._arena.str_alloc(1);
+
+      qpack._arena.str_free(probe);
+      if (water_level(qpack) == probe) {
+        return;
+      }
       qpack._arena.str_alloc(64);
     }
+    FAIL("the arena never rewound a release");
   }
 
   // Arena has no water level accessor. The address the next allocation gets
@@ -688,21 +696,19 @@ TEST_CASE("Decoding a literal header field without name reference", "[qpack-lite
   }
 }
 
-// Insert Without Name Reference: 01 H <Name Length (5+)> <Name> H <Value Length (7+)> <Value>, neither string huffman coded.
-// The lengths are written as single prefix bytes, so names must be shorter than 31 bytes and values shorter than 127.
-static size_t
-append_insert_without_name_ref(uint8_t *buf, std::string_view name, std::string_view value)
+// Appends an Insert Without Name Reference: 01 H <Name Length (5+)> <Name> H <Value Length (7+)> <Value>,
+// neither string huffman coded. The lengths are written as single prefix bytes, which holds for names
+// shorter than 31 bytes and values shorter than 127.
+static void
+append_insert_without_name_ref(std::vector<uint8_t> &instructions, std::string_view name, std::string_view value)
 {
-  uint8_t *p = buf;
+  REQUIRE(name.size() < 31);
+  REQUIRE(value.size() < 127);
 
-  *p++ = 0x40 | name.size();
-  memcpy(p, name.data(), name.size());
-  p    += name.size();
-  *p++  = value.size();
-  memcpy(p, value.data(), value.size());
-  p += value.size();
-
-  return p - buf;
+  instructions.push_back(static_cast<uint8_t>(0x40 | name.size()));
+  instructions.insert(instructions.end(), name.begin(), name.end());
+  instructions.push_back(static_cast<uint8_t>(value.size()));
+  instructions.insert(instructions.end(), value.begin(), value.end());
 }
 
 // Insert Without Name Reference on the encoder stream allocates the name and the
@@ -721,18 +727,17 @@ TEST_CASE("Insert Without Name Reference on the encoder stream", "[qpack-encoder
   void *water_level = QPACKTestAccess::water_level(*qpack);
 
   // Distinct names and values so a decoded field tells which insert it came from.
-  std::vector<uint8_t> instructions(INSERTS * 16);
-  size_t               instructions_len = 0;
+  std::vector<uint8_t> instructions;
   for (int i = 0; i < INSERTS; ++i) {
     char name[8];
     char value[8];
 
     snprintf(name, sizeof(name), "n%03d", i);
     snprintf(value, sizeof(value), "v%03d", i);
-    instructions_len += append_insert_without_name_ref(instructions.data() + instructions_len, name, value);
+    append_insert_without_name_ref(instructions, name, value);
   }
 
-  QPACKTestAccess::read_encoder_stream(*qpack, instructions.data(), instructions_len);
+  QPACKTestAccess::read_encoder_stream(*qpack, instructions.data(), instructions.size());
   CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
 
   // Required Insert Count, which this decoder takes as the absolute index of the
