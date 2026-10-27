@@ -29,9 +29,10 @@ namespace ja4
 
 /** Compute a JA4 fingerprint from an ATS ClientHello.
  *
+ * @param[in] vconn The connection the ClientHello arrived on, whose transport the fingerprint reports.
  * @param[in] client_hello The ClientHello to fingerprint.
  * @return The JA4 fingerprint.
  */
-std::string fingerprint(TSClientHello client_hello);
+std::string fingerprint(TSVConn vconn, TSClientHello client_hello);
 
 } // namespace ja4

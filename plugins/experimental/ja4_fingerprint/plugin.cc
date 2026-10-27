@@ -56,7 +56,7 @@ static void               register_hooks();
 static int                handle_client_hello(TSCont cont, TSEvent event, void *edata);
 char                     *get_IP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 static void               log_fingerprint(JA4_data const *data);
-static std::string        get_fingerprint(TSClientHello ch);
+static std::string        get_fingerprint(TSVConn vconn, TSClientHello ch);
 static std::uint16_t      get_version(TSClientHello ch);
 static std::string        get_first_ALPN(TSClientHello ch);
 static void               add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch);
@@ -208,7 +208,7 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
     Dbg(dbg_ctl, "Could not get TSClientHello object.");
   } else {
     auto data{std::make_unique<JA4_data>()};
-    data->fingerprint = get_fingerprint(ch);
+    data->fingerprint = get_fingerprint(ssl_vc, ch);
     get_IP(TSNetVConnRemoteAddrGet(ssl_vc), data->IP_addr);
     log_fingerprint(data.get());
     // The VCONN_CLOSE handler is now responsible for freeing the resource.
@@ -219,10 +219,10 @@ handle_client_hello(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 }
 
 std::string
-get_fingerprint(TSClientHello ch)
+get_fingerprint(TSVConn vconn, TSClientHello ch)
 {
   JA4::TLSClientHelloSummary summary{};
-  summary.protocol    = JA4::Protocol::TLS;
+  summary.protocol    = TSVConnProtocolStackContains(vconn, "quic") ? JA4::Protocol::QUIC : JA4::Protocol::TLS;
   summary.TLS_version = get_version(ch);
   summary.ALPN        = get_first_ALPN(ch);
   add_ciphers(summary, ch);

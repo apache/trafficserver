@@ -37,7 +37,7 @@ on_client_hello(JAxContext *ctx, TSVConn vconn)
   if (!ch) {
     Dbg(dbg_ctl, "Could not get TSClientHello object.");
   } else {
-    ctx->set_fingerprint(fingerprint(ch));
+    ctx->set_fingerprint(fingerprint(vconn, ch));
   }
 }
 
