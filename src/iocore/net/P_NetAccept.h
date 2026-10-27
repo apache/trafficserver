@@ -44,6 +44,7 @@
 #include "Server.h"
 
 #include <atomic>
+#include <memory>
 #include <vector>
 
 struct NetAccept;
@@ -133,11 +134,12 @@ struct NetAccept : public Continuation {
   /** Listen backlog scale currently applied to @a server, in permille.
 
       Tracks @c Watchdog::backlog_scale_permille() so the accept paths can re-listen only on a change rather
-      than on every pass. Owned by whichever thread runs this acceptor's accept callback; the watchdog
-      publishes the target and never touches the socket itself, which keeps it clear of the event
-      system's locks.
+      than on every pass. Shared by acceptors cloned onto one listening socket, so whichever of them
+      resizes it is seen by the rest; an acceptor that opens its own socket gets its own value (see
+      @c accept_per_thread). The watchdog publishes the target and never touches the socket itself,
+      which keeps it clear of the event system's locks.
   */
-  int applied_backlog_permille = 1000;
+  std::shared_ptr<std::atomic<int>> applied_backlog_permille = std::make_shared<std::atomic<int>>(1000);
 
   /** Pending retry timer for an @c acceptFastEvent pass that refused under watchdog backpressure.
 
@@ -145,6 +147,9 @@ struct NetAccept : public Continuation {
       pass would start its own timer chain. At most one is kept outstanding per acceptor.
   */
   Event *refuse_retry = nullptr;
+
+  /// Set by @c stop_accept() so no refusal retry is armed once the acceptor is on its way to deletion.
+  bool refuse_retry_stopped = false;
 
   virtual NetProcessor *getNetProcessor() const;
 

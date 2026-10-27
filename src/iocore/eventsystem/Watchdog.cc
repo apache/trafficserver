@@ -129,11 +129,12 @@ namespace
       measurement noise, so nothing is lost by refusing to go deeper; below the floor the knob keeps
       sharpening the shed and stops affecting the release.
    */
-  std::chrono::milliseconds
+  std::chrono::nanoseconds
   release_threshold(std::chrono::milliseconds threshold)
   {
     int32_t const retain = std::max(min_release_permille, backlog_decrease_permille.load(std::memory_order_relaxed));
-    return threshold * retain / 1000;
+    // Scaled in nanoseconds so a small timeout keeps its fractional-millisecond boundary.
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(threshold) * retain / 1000;
   }
 
   int
@@ -246,12 +247,19 @@ record_awake_span(Heartbeat &hb, std::chrono::steady_clock::duration span)
 bool
 accept_refuse()
 {
-  return accept_refuse_state.load(std::memory_order_relaxed);
+  // Gated on the live configuration so a scan that raced a config callback and published a stale
+  // result cannot re-enable an action that has since been turned off.
+  return accept_refuse_state.load(std::memory_order_relaxed) &&
+         current_mode.load(std::memory_order_relaxed) == Mode::BACKPRESSURE &&
+         refuse_timeout_ms.load(std::memory_order_relaxed) > 0;
 }
 
 int
 backlog_scale_permille()
 {
+  if (current_mode.load(std::memory_order_relaxed) != Mode::BACKPRESSURE) {
+    return 1000;
+  }
   return backlog_scale.load(std::memory_order_relaxed);
 }
 
@@ -265,16 +273,15 @@ SleepScope::SleepScope(Heartbeat &hb) : _hb(hb)
     record_awake_span(_hb, now - last_wake);
   }
 
-  _hb.last_sleep.store(now, std::memory_order_relaxed);
-  // Enter the odd (sleeping) phase. Release so the monitor cannot observe the increment before the
-  // timestamp store above.
-  _hb.seq.fetch_add(1, std::memory_order_release);
+  // Enter the odd (sleeping) phase.
+  _hb.seq.fetch_add(1, std::memory_order_relaxed);
 }
 
 SleepScope::~SleepScope()
 {
   _hb.last_wake.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
-  // Back to even (awake).
+  // Back to even (awake). Release so the monitor cannot observe the even sequence before the
+  // timestamp store above.
   _hb.seq.fetch_add(1, std::memory_order_release);
 }
 
@@ -361,23 +368,24 @@ Monitor::scan(std::chrono::steady_clock::time_point now)
     if (awake_duration > _shrink_timeout) {
       // Monitor thread is the sole reader (and warned_seq writer), so relaxed accesses are race-free.
       uint64_t warned_seq = t->heartbeat_state.warned_seq.load(std::memory_order_relaxed);
-      if (warned_seq < seq_before && _legacy) {
-        // The deprecated timeout_ms warned here, and a config that still sets it gets what it asked for.
-        Warning("Watchdog: [ET_NET %zu] has been awake for %lld ms", i,
-                std::chrono::duration_cast<printable_milli>(awake_duration).count());
-        t->heartbeat_state.warned_seq.store(seq_before, std::memory_order_relaxed);
-      } else if (warned_seq < seq_before) {
-        // Debug rather than Warning: on a busy proxy the timeout is crossed routinely, and a log line
-        // per event loop that runs long is noise an operator cannot act on. The condition is already
-        // reported continuously and cheaply as proxy.process.watchdog.max_awake_ms, and counted per
-        // scan as proxy.process.watchdog.timeout_shrink_exceeded_count, which is the right thing to
-        // alert on.
-        // This is here for the case where you need to know *which* thread.
-        //
-        // Reported once per loop iteration, not once per scan.
-        Dbg(dbg_ctl_watchdog, "[ET_NET %zu] has been awake for %lld ms (shrink timeout %lld ms)", i,
-            std::chrono::duration_cast<printable_milli>(awake_duration).count(),
-            std::chrono::duration_cast<printable_milli>(_shrink_timeout).count());
+      if (warned_seq < seq_before) {
+        if (_legacy) {
+          // The deprecated timeout_ms warned here, and a config that still sets it gets what it asked for.
+          Warning("Watchdog: [ET_NET %zu] has been awake for %lld ms", i,
+                  std::chrono::duration_cast<printable_milli>(awake_duration).count());
+        } else {
+          // Debug rather than Warning: on a busy proxy the timeout is crossed routinely, and a log line
+          // per event loop that runs long is noise an operator cannot act on. The condition is already
+          // reported continuously and cheaply as proxy.process.watchdog.max_awake_ms, and counted per
+          // scan as proxy.process.watchdog.timeout_shrink_exceeded_count, which is the right thing to
+          // alert on.
+          // This is here for the case where you need to know *which* thread.
+          //
+          // Reported once per loop iteration, not once per scan.
+          Dbg(dbg_ctl_watchdog, "[ET_NET %zu] has been awake for %lld ms (shrink timeout %lld ms)", i,
+              std::chrono::duration_cast<printable_milli>(awake_duration).count(),
+              std::chrono::duration_cast<printable_milli>(_shrink_timeout).count());
+        }
         t->heartbeat_state.warned_seq.store(seq_before, std::memory_order_relaxed);
       }
     }
@@ -540,7 +548,9 @@ Monitor::monitor_loop()
         want_permille = std::min(1000, _backlog_scale + recovery_step_permille());
       }
 
-      if (want_permille != _backlog_scale) {
+      // Also compare against the published value: a config callback resets it without touching
+      // _backlog_scale, and the two must be reconciled even when the monitor's own scale is unchanged.
+      if (want_permille != _backlog_scale || want_permille != backlog_scale.load(std::memory_order_relaxed)) {
         _backlog_scale = want_permille;
         backlog_scale.store(want_permille, std::memory_order_relaxed);
         Metrics::Gauge::store(_backlog_permille, want_permille);

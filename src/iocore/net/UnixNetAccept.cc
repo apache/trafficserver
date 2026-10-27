@@ -135,7 +135,7 @@ watchdog_apply_backlog(NetAccept *na)
     want_permille = Watchdog::backlog_scale_permille();
   }
 
-  if (want_permille == na->applied_backlog_permille || !na->server.sock.is_ok()) {
+  if (!na->server.sock.is_ok() || want_permille == na->applied_backlog_permille->load(std::memory_order_relaxed)) {
     return;
   }
 
@@ -147,13 +147,13 @@ watchdog_apply_backlog(NetAccept *na)
     // this listener keeps its previous queue depth, which is a degradation and not a failure.
     Warning("watchdog could not resize listen backlog on port %d to %d (%d permille of %d): %s",
             ats_ip_port_host_order(&na->server.accept_addr), target, want_permille, configured, strerror(errno));
-    na->applied_backlog_permille = want_permille;
+    na->applied_backlog_permille->store(want_permille, std::memory_order_relaxed);
     return;
   }
 
   Dbg(dbg_ctl_iocore_net_accept, "resized listen backlog on port %d to %d (%d permille of %d)",
       ats_ip_port_host_order(&na->server.accept_addr), target, want_permille, configured);
-  na->applied_backlog_permille = want_permille;
+  na->applied_backlog_permille->store(want_permille, std::memory_order_relaxed);
 
   // The absolute depth now in force, for operators who cannot derive it from the percentage alone -
   // when proxy.config.net.listen_backlog is -1 the baseline is the resolved somaxconn, which is not
@@ -204,6 +204,16 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
+    if (count > 0) {
+      // Re-check mid-drain: with an unbounded accept limit a sustained arrival rate could otherwise
+      // keep this loop running across watchdog transitions. Ldone releases the try-lock taken above.
+      watchdog_apply_backlog(na);
+      if (watchdog_should_refuse(na)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        goto Ldone;
+      }
+    }
+
     if ((res = na->server.accept(&con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE) {
         goto Ldone;
@@ -387,6 +397,9 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
       ats_unix_append_id(&server.accept_addr.sun, id);
     }
 
+    // This clone opens its own socket, so it must not share the resize state of the acceptor it was copied from.
+    applied_backlog_permille = std::make_shared<std::atomic<int>>(1000);
+
     if (do_listen()) {
       Fatal("[NetAccept::accept_per_thread]:error listening on ports");
       return -1;
@@ -440,6 +453,17 @@ NetAccept::stop_accept()
 {
   action_->cancel();
   server.close();
+
+  // The retry timer dispatches into this acceptor, which the caller is about to delete. Cancel it under
+  // the mutex that serializes acceptFastEvent, and stop the handler from arming another.
+  if (mutex != nullptr) {
+    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+    refuse_retry_stopped = true;
+    if (refuse_retry != nullptr) {
+      refuse_retry->cancel(this);
+      refuse_retry = nullptr;
+    }
+  }
 }
 
 int
@@ -506,6 +530,15 @@ NetAccept::do_blocking_accept(EThread *t)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
+    if (count > 0) {
+      watchdog_apply_backlog(this);
+      if (watchdog_should_refuse(this)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        safe_delay(net_throttle_delay);
+        return 0;
+      }
+    }
+
     if ((res = server.accept(&con)) < 0) {
       int seriousness = accept_error_seriousness(res);
       switch (seriousness) {
@@ -669,7 +702,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   // so only arm the timer if one is not already pending.
   if (watchdog_should_refuse(this)) {
     Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
-    if (refuse_retry == nullptr) {
+    if (refuse_retry == nullptr && !refuse_retry_stopped) {
       refuse_retry = t->schedule_in(this, HRTIME_MSECONDS(net_throttle_delay));
     }
     return EVENT_CONT;
@@ -682,6 +715,17 @@ NetAccept::acceptFastEvent(int event, void *ep)
   }
 
   do {
+    if (count > 0) {
+      watchdog_apply_backlog(this);
+      if (watchdog_should_refuse(this)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        if (refuse_retry == nullptr && !refuse_retry_stopped) {
+          refuse_retry = t->schedule_in(this, HRTIME_MSECONDS(net_throttle_delay));
+        }
+        goto Ldone;
+      }
+    }
+
     socklen_t  sz = sizeof(con.addr);
     UnixSocket sock{-1};
     if (int res{server.sock.accept4(&con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC)}; res >= 0) {
