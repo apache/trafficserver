@@ -27,6 +27,10 @@
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/Continuation.h"
 
+#include <tscore/ink_assert.h>
+
+#include <optional>
+
 /** Handle for cancelling a pending asynchronous operation.
 
   A function that starts an asynchronous operation on behalf of a
@@ -88,6 +92,49 @@ public:
     Not thread-safe. Concurrent accessors must hold @c mutex.
   */
   bool cancelled = false;
+
+  /**
+    Calls back @c continuation for this operation unless the operation has
+    been cancelled.
+
+    @param[in] event The event code passed to the handler.
+    @param[in] data  The data passed to the handler.
+
+    @return Returns the handler's return value, or an empty optional if
+            the operation has been cancelled.
+
+    @pre  If the operation has not been cancelled, @c continuation points
+          to a live Continuation with a handler installed, and
+          @c continuation->mutex and @c mutex are both null or refer to
+          the same mutex.
+
+    @note The handler may destroy @c continuation and this Action. Unless
+          the owner documents otherwise, do not access either after this
+          call returns.
+
+    @note If @p data transfers ownership of an object to @c continuation,
+          the caller must dispose of that object when the result is empty.
+
+    @par Thread Safety
+    Not thread-safe. The caller must hold @c mutex where non-null.
+  */
+  std::optional<int>
+  call_back(int event, void *data)
+  {
+    ink_release_assert((!this->mutex || this_ethread() == this->mutex->thread_holding) &&
+                       "action mutex not held by calling thread");
+
+    // Cancellation check happens before remaining precondition checks
+    // because the continuation must not be accessed if it is cancelled.
+    if (this->cancelled) {
+      return {};
+    }
+
+    ink_release_assert(nullptr != this->continuation && "callback to completed action");
+    ink_release_assert(this->continuation->mutex == this->mutex && "action and continuation mutex mismatch");
+    ink_release_assert(!this->continuation->handler.is<nullptr>() && "callback to null handler");
+    return this->continuation->handleEvent(event, data);
+  }
 
   /**
     Cancels the asynchronous operation represented by this Action.
