@@ -24,6 +24,8 @@
 #include <tscore/ink_sys_control.h>
 #include <catch2/catch_test_macros.hpp>
 
+#include <limits>
+
 #if defined(__linux__) || defined(darwin) || defined(freebsd)
 #include <cstdint>
 #include <sys/mman.h>
@@ -39,6 +41,7 @@ TEST_CASE("ink_get_current_rss reports a plausible current RSS", "[ink_sys_contr
   // and well above a trivially small floor (at least one page).
   REQUIRE(rss > 0);
   REQUIRE(rss >= 4096);
+  REQUIRE(rss <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()));
 
   SECTION("RSS grows when we touch a large fresh mapping")
   {
@@ -68,4 +71,46 @@ TEST_CASE("ink_get_current_rss reports a plausible current RSS", "[ink_sys_contr
   // On unsupported platforms the helper is documented to return 0.
   REQUIRE(ink_get_current_rss() == 0);
 #endif
+}
+
+TEST_CASE("ink_rss_pages_to_bytes converts plausible page counts", "[ink_sys_control]")
+{
+  CHECK(ink_rss_pages_to_bytes(0, 4096) == 0);
+  CHECK(ink_rss_pages_to_bytes(1, 4096) == 4096);
+  CHECK(ink_rss_pages_to_bytes(262144, 4096) == 1073741824);
+  CHECK(ink_rss_pages_to_bytes(16384, 65536) == 1073741824);
+}
+
+TEST_CASE("ink_rss_pages_to_bytes reports an impossible RSS as 0", "[ink_sys_control]")
+{
+  constexpr uint64_t max_rss    = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
+  constexpr uint64_t max_uint64 = std::numeric_limits<uint64_t>::max();
+
+  SECTION("a page size of 0")
+  {
+    CHECK(ink_rss_pages_to_bytes(1, 0) == 0);
+    CHECK(ink_rss_pages_to_bytes(max_uint64, 0) == 0);
+  }
+
+  SECTION("the largest count that fits in an int64, and one page more")
+  {
+    for (uint64_t page_size : {uint64_t{1}, uint64_t{3}, uint64_t{4096}, uint64_t{16384}, uint64_t{65536}}) {
+      INFO("page_size " << page_size);
+      uint64_t const fits = max_rss / page_size;
+
+      CHECK(ink_rss_pages_to_bytes(fits, page_size) == fits * page_size);
+      CHECK(ink_rss_pages_to_bytes(fits + 1, page_size) == 0);
+    }
+  }
+
+  SECTION("counts whose byte value would wrap")
+  {
+    // These wrap to a small value, which only a check made before the multiply rejects.
+    CHECK(ink_rss_pages_to_bytes((uint64_t{1} << 52) + 1, 4096) == 0);
+    CHECK(ink_rss_pages_to_bytes((uint64_t{1} << 63) + 1, 2) == 0);
+    CHECK(ink_rss_pages_to_bytes(max_uint64, max_uint64) == 0);
+
+    CHECK(ink_rss_pages_to_bytes(max_uint64, 4096) == 0);
+    CHECK(ink_rss_pages_to_bytes(1, max_uint64) == 0);
+  }
 }
