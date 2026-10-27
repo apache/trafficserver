@@ -211,6 +211,7 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
   TLSBasicSupport::clear();
   TLSEventSupport::clear();
   TLSCertSwitchSupport::_clear();
+  this->_client_hello_rejected = false;
 
   if (this->_packet_handler != nullptr) {
     this->_packet_handler->close_connection(this);
@@ -937,6 +938,43 @@ QUICNetVConnection::reenable(int event)
   if (event == TS_EVENT_ERROR) {
     this->_is_cert_verified = false;
   }
+
+  if (this->get_handshake_hook_state() != SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE) {
+    return;
+  }
+
+  if (event == TS_EVENT_ERROR) {
+    this->_client_hello_rejected = true;
+  }
+  this->resume_tls_event();
+
+  // Resume the handshake, whose ClientHello callback runs the remaining hooks. Before acceptEvent() has
+  // run, it does this itself.
+  if (this->nh != nullptr) {
+    this->_schedule_openssl_event(false);
+  }
+}
+
+int
+QUICNetVConnection::run_client_hello_hooks(SSL *ssl)
+{
+  if (this->_client_hello_rejected) {
+    return SSL_CLIENT_HELLO_ERROR;
+  }
+
+  TLSSNISupport::ClientHello client_hello{ssl};
+  this->on_client_hello(client_hello);
+  while (!this->finished_client_hello_hooks()) {
+    if (this->get_handshake_hook_state() == SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE) {
+      return SSL_CLIENT_HELLO_RETRY;
+    }
+    this->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+    if (this->_client_hello_rejected) {
+      return SSL_CLIENT_HELLO_ERROR;
+    }
+  }
+
+  return SSL_CLIENT_HELLO_SUCCESS;
 }
 
 Continuation *
@@ -954,7 +992,8 @@ QUICNetVConnection::getThreadForTLSEvents()
 Ptr<ProxyMutex>
 QUICNetVConnection::getMutexForTLSEvents()
 {
-  return this->nh->mutex;
+  // The ClientHello hooks can run before acceptEvent() sets nh. This is the NetHandler's mutex.
+  return this->mutex;
 }
 
 bool
