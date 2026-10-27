@@ -646,6 +646,7 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
       ink_release_assert(field != nullptr);
       ink_release_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED);
       ink_release_assert(++free_count <= deleted_count);
+      ink_release_assert(field->m_free_next < free_slot);
       free_slot = field->m_free_next;
     }
     ink_release_assert(free_count == deleted_count);
@@ -1401,29 +1402,15 @@ mime_field_create_for_name(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name
     ink_release_assert(last_dup_slot >= 0);
   }
 
-  int32_t previous_free_slot = MIME_FIELD_FREE_SLOT_NONE;
-  int32_t free_slot          = mh->m_free_slot;
-
-  while (free_slot != MIME_FIELD_FREE_SLOT_NONE) {
-    MIMEField *field = mime_hdr_field_get_slotnum(mh, free_slot);
+  // The free list is kept in descending slot order, so the head is the only candidate worth checking.
+  if (mh->m_free_slot > last_dup_slot) {
+    MIMEField *field = mime_hdr_field_get_slotnum(mh, mh->m_free_slot);
     ink_release_assert(field != nullptr);
     ink_release_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED);
 
-    if (free_slot > last_dup_slot) {
-      if (previous_free_slot == MIME_FIELD_FREE_SLOT_NONE) {
-        mh->m_free_slot = field->m_free_next;
-      } else {
-        MIMEField *previous_free = mime_hdr_field_get_slotnum(mh, previous_free_slot);
-
-        ink_release_assert(previous_free != nullptr);
-        previous_free->m_free_next = field->m_free_next;
-      }
-      mime_field_init(field);
-      return field;
-    }
-
-    previous_free_slot = free_slot;
-    free_slot          = field->m_free_next;
+    mh->m_free_slot = field->m_free_next;
+    mime_field_init(field);
+    return field;
   }
 
   return mime_field_create(heap, mh);
@@ -1710,11 +1697,18 @@ mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field)
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
 
   if (mh->m_free_slot == MIME_FIELD_FREE_SLOT_UNINITIALIZED) {
-    mime_hdr_rebuild_field_free_list(mh);
-  } else {
+    return;
+  }
+
+  int32_t slotnum = mime_hdr_field_slotnum(mh, field);
+  ink_release_assert(slotnum >= 0);
+
+  if (slotnum > mh->m_free_slot) {
     field->m_free_next = mh->m_free_slot;
-    mh->m_free_slot    = mime_hdr_field_slotnum(mh, field);
-    ink_release_assert(mh->m_free_slot >= 0);
+    mh->m_free_slot    = slotnum;
+  } else {
+    // Inserting below the head would break the descending order, so rebuild lazily when a slot is next needed.
+    mh->m_free_slot = MIME_FIELD_FREE_SLOT_UNINITIALIZED;
   }
 }
 
