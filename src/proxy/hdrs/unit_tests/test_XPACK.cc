@@ -127,11 +127,22 @@ TEST_CASE("XPACK_String", "[xpack]")
     {(char *)"\xff\xff\xff\xff",        4,
      (uint8_t *)"\x04"
                 "\xff\xff\xff\xff",                                                                     5 },
+    {(char *)"XZ",                      2,
+     (uint8_t *)"\x02"
+                "XZ",                                                                                   3 },
+    {(char *)"a",                       1,
+     (uint8_t *)"\x01"
+                "a",                                                                                    2 },
+    {(char *)"aaa",                     3,
+     (uint8_t *)"\x82"
+                "\x18\xc7",                                                                             3 },
+    {(char *)"BCDEFGHIX",               9,
+     (uint8_t *)"\x88"
+                "\xbb\x7a\xfe\x0c\x38\xb1\xe4\xfc",                                                     9 },
   };
 
   SECTION("Encoding")
   {
-    // FIXME Current encoder support only huffman coding.
     for (unsigned int i = 2; i < sizeof(string_test_case) / sizeof(string_test_case[0]); i++) {
       uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST] = {0};
       int64_t len = xpack_encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string,
