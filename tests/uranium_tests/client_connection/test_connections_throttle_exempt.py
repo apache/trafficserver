@@ -31,6 +31,7 @@ EXEMPT_LIST_VAR = "proxy.config.http.per_client.connection.exempt_list"
 OPEN = "proxy.process.net.connections_currently_open"
 EXEMPT_OPEN = "proxy.process.net.per_client.connections_exempt_currently_open"
 THROTTLED = "proxy.process.net.connections_throttled_in"
+MEMORY_RSS = "proxy.process.traffic_server.memory.rss"
 EXEMPT = "proxy.process.net.per_client.connections_exempt_in"
 
 # An IPv4 and an IPv6 prefix longer than the address. If either were read as /0, it would exempt the first address, the
@@ -234,6 +235,9 @@ def test_memory_limit_applies(ats_factory: ATSFactory) -> None:
     # Traffic Server checks memory use every 10 seconds, and serves the health check until then.
     request("::1", ats.ipv6_port, "refused", retry=30)
     wait_for_metrics(ats, {THROTTLED: 1})
+    # The throttle is on, so the published RSS is above the 1 byte limit, and it is a real byte count.
+    rss = metrics(ats, [MEMORY_RSS])[MEMORY_RSS]
+    assert 1 < rss < 1 << 40, f"Expected a plausible {MEMORY_RSS}, found {rss}"
     stop_and_check_diags(ats)
 
 
