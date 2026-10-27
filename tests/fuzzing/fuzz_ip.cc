@@ -51,7 +51,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
   // Parse every whitespace separated token with every IP text parser that
   // trafficserver exposes and cross exercise the range set bookkeeping.
-  swoc::IPRangeSet         ranges;
+  swoc::IPRangeSet          ranges;
   std::vector<swoc::IPAddr> addrs;
 
   size_t pos = 0;
@@ -126,7 +126,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     IpEndpoint ts_endpoint{};
     if (ats_ip_pton(token, &ts_endpoint.sa) == 0) {
       char        buff[INET6_ADDRSTRLEN] = {0};
-      char const *rendered = ats_ip_ntop(&ts_endpoint.sa, buff, sizeof(buff));
+      char const *rendered               = ats_ip_ntop(&ts_endpoint.sa, buff, sizeof(buff));
       if (rendered != nullptr) {
         swoc::IPAddr roundtrip(rendered);
         (void)roundtrip.family();
