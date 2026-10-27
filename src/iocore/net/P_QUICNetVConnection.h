@@ -86,6 +86,16 @@ public:
   void                    init(SSL *ssl, QUICPacketHandler *packet_handler);
   void                    set_quic_endpoints(IpEndpoint const &local, IpEndpoint const &remote);
   QUICConnectionErrorUPtr create_openssl_stream(uint64_t flags, QUICStreamId &new_stream_id);
+
+  /** Run the TS_SSL_CLIENT_HELLO_HOOK hooks from the TLS ClientHello callback.
+   *
+   * Plugins read the ClientHello, which OpenSSL exposes only during that callback, so a hook that
+   * reenables the connection later has the remaining hooks run when OpenSSL calls back again.
+   *
+   * @param[in] ssl The SSL object of the ClientHello callback.
+   * @return The SSL_CLIENT_HELLO_* result for the ClientHello callback to return.
+   */
+  int run_client_hello_hooks(SSL *ssl);
 #elif TS_HAS_QUICHE
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
@@ -268,6 +278,8 @@ private:
   void _schedule_openssl_event(bool delay = true);
   void _unschedule_openssl_event();
   bool _openssl_connection_closed() const;
+
+  bool _client_hello_rejected = false;
 #endif
 
   void _propagate_event(int event);

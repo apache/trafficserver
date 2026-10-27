@@ -590,7 +590,6 @@ QUICPacketHandlerIn::_service_listener()
       remote_addr.setToAnyAddr(this->server.accept_addr.sa.sa_family);
     }
 
-    vc->init(ssl, this);
     vc->id = net_next_connection_number();
     vc->set_quic_endpoints(this->server.accept_addr, remote_addr);
     vc->submit_time = ink_get_hrtime();
@@ -601,6 +600,9 @@ QUICPacketHandlerIn::_service_listener()
     vc->set_context(NET_VCONNECTION_IN);
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = this->server.accept_addr.sa.sa_family;
+    // init() binds the NetVC to the SSL object, after which OpenSSL can run the ClientHello hooks on it, so
+    // set the NetVC up first.
+    vc->init(ssl, this);
     this_ethread()->schedule_imm(vc, EVENT_NONE, nullptr);
   }
 }

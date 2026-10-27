@@ -90,6 +90,14 @@ Plugins
   optional second plugin argument sets the address to bind instead.
 * ``magick``: a signing key is now required. The plugin refuses to load without
   one, and the ImageMagick ``convert`` operators it will run are allowlisted.
+* ``jax_fingerprint`` and ``ja4_fingerprint``: JA4 fingerprints of HTTP/3
+  connections start with ``q`` instead of ``t``.
+
+TS API
+------
+
+* Add ``TSVConnProtocolStackContains`` to check the protocols of a net
+  virtual connection, such as whether it is QUIC, before there is a session.
 
 
 What's New in ATS v10.1
