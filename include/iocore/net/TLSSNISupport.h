@@ -30,10 +30,12 @@
 #include <netinet/in.h>
 #include <openssl/ssl.h>
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <memory>
 #include <optional>
+#include <vector>
 
 class TLSSNISupport
 {
@@ -71,8 +73,16 @@ public:
       size_t _offset  = 0;
     };
 
-    uint16_t            getVersion();
-    std::string_view    getCipherSuites();
+    uint16_t         getVersion();
+    std::string_view getCipherSuites();
+    /** Iterate every extension type in the ClientHello in wire order.
+     *
+     * This includes GREASE values and extension types the TLS library does
+     * not recognize. OpenSSL omits those from its parsed ClientHello, so on
+     * OpenSSL this walks the extension types recorded from the raw
+     * ClientHello message, falling back to OpenSSL's parsed list if the raw
+     * message could not be parsed.
+     */
     ExtensionIdIterator begin();
     ExtensionIdIterator end();
 
@@ -105,6 +115,22 @@ public:
    * This is for client-side connections.
    */
   void on_client_hello(ClientHello &client_hello);
+
+  /** Record the extension types of a raw ClientHello handshake message.
+   *
+   * @param[in] msg The full handshake message, including its four byte header.
+   * @param[in] len The length of @a msg in bytes.
+   */
+  void on_client_hello_message(const uint8_t *msg, size_t len);
+
+  /** Parse the extension types of a raw ClientHello handshake message.
+   *
+   * @param[in] msg The full handshake message, including its four byte header.
+   * @param[in] len The length of @a msg in bytes.
+   * @param[out] types The extension types, in wire order.
+   * @return true if @a msg is a well formed ClientHello, false otherwise.
+   */
+  static bool parse_client_hello_extension_types(const uint8_t *msg, size_t len, std::vector<int> &types);
 
   /** Process the servername extension when a client uses one in the TLS handshake.
    *
@@ -160,4 +186,9 @@ private:
 
   void         _set_sni_server_name_buffer(std::string_view name);
   ClientHello *_ch = nullptr;
+
+  // Extension types from the raw ClientHello, used where the TLS library's
+  // parsed ClientHello omits extensions it doesn't recognize.
+  std::vector<int> _raw_extension_types;
+  bool             _has_raw_extension_types = false;
 };
