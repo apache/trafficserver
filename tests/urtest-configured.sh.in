@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+set -u
+
+test_directory=$(cd "$(dirname "$0")" && pwd)
+source_directory=$(cd "${test_directory}" && cd "@srcdir@/.." && pwd)
+build_directory=$(cd "${test_directory}/.." && pwd)
+verifier_version=$(cat "${source_directory}/tests/proxy-verifier-version.txt")
+configured_curl_uds=""
+curl_uds_argument=()
+if [ -n "${configured_curl_uds}" ]; then
+  curl_uds_argument=(--configured-curl-uds)
+fi
+
+exec python3 "${source_directory}/tests/tools/uranium/runner.py" configured \
+  "--source-root=${source_directory}" \
+  "--build-root=${build_directory}" \
+  "--install-prefix=@prefix@" \
+  "--verifier-bin=${PROXY_VERIFIER_PATH:-${source_directory}/tests/proxy-verifier/unpack/${verifier_version}/bin}" \
+  "--sandbox=${ATS_URTEST_SANDBOX:-/tmp/urtest-9-2}" \
+  "--project-directory=${source_directory}/tests" \
+  ${curl_uds_argument[@]+"${curl_uds_argument[@]}"} \
+  -- "$@"

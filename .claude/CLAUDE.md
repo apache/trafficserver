@@ -81,31 +81,28 @@ make check          # build and run all unit tests
 To run one test binary directly, build it and invoke it from its source
 directory, e.g. `proxy/hdrs/test_*` or `src/tscore/test_*`.
 
-### End-to-End Tests (AuTest)
-AuTest lives under `tests/` and is invoked through `tests/autest.sh` (it does
-**not** go through the build system on this branch):
+### End-to-End Tests (Uranium)
+Uranium uses pytest and the configured Autotools test wrapper:
 ```bash
-cd tests
-pipenv install                                   # first time only
-# --ats-bin is REQUIRED: point it at the installed bin dir (e.g. <prefix>/bin).
-./autest.sh --ats-bin /opt/ats/bin --sandbox /tmp/sb --clean=none -f <test_name_without_test_py>
+cd build-urtest/tests
+./urtest.sh --no-run-in-container -n 8
 ```
-For example, to run `cache-auth.test.py`:
+For example, to select cache authentication tests:
 ```bash
-./autest.sh --ats-bin /opt/ats/bin --sandbox /tmp/sb --clean=none -f cache-auth
+./urtest.sh --no-run-in-container -k cache_auth --sandbox /tmp/sb --keep-sandboxes
 ```
-Most end-to-end coverage is in `tests/gold_tests/`. Gold files can mask dynamic
+Most end-to-end coverage is in `tests/uranium_tests/`. Gold files can mask dynamic
 output with a double-backtick (``` `` ```) wildcard.
 
-### Writing Autests
-**New tests should use the `Test.ATSReplayTest()` approach**, which references a
-`replay.yaml` file describing the test configuration and traffic using the
-Proxy Verifier format. This is simpler, more maintainable, and tool-parseable.
+### Writing Uranium Tests
+Prefer a self-contained `.test.yaml` replay with an `urtest` configuration
+section. Use plain pytest functions taking fixtures for custom clients and
+process lifecycles. ATS 9.2 uses records.config and traffic_manager for reloads.
 
 For complete details see:
-- `doc/developer-guide/testing/blackbox-testing.en.rst` — the AuTest guide (autest.sh, gold_tests)
+- `doc/developer-guide/testing/uranium-tests.en.rst` — the Uranium guide
+- `doc/developer-guide/testing/uranium-api.en.rst` — fixtures and service APIs
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier
-- AuTest framework: https://autestsuite.bitbucket.io/
 
 ## Development Workflow
 

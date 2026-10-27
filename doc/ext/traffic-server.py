@@ -384,8 +384,7 @@ with open(CONFIGURE_AC, 'r') as f:
     autoconf_version = '.'.join(match.group(1).split('.', 2)[:2] + ['x'])
 
 # get the current branch the local repository is on
-REPO_GIT_DIR = os.path.join(REPO_ROOT, ".git")
-git_branch = subprocess.check_output(['git', '--git-dir', REPO_GIT_DIR, 'rev-parse', '--abbrev-ref', 'HEAD'])
+git_branch = subprocess.check_output(['git', '-C', REPO_ROOT, 'rev-parse', '--abbrev-ref', 'HEAD'])
 
 
 def make_github_link(name, rawtext, text, lineno, inliner, options=None, content=None):

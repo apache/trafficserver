@@ -68,3 +68,4 @@ port\.h
 ^configuru.hpp$
 ^yamlcpp$
 ^tests/gold_tests/autest-site/min_cfg$
+^uv\.lock$

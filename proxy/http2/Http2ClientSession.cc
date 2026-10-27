@@ -46,6 +46,12 @@ Http2ClientSession::destroy()
     in_destroy = true;
     REMEMBER(NO_EVENT, this->recursion)
     Http2SsnDebug("session destroy");
+    if (_vc) {
+      ats_ip_copy(&cached_client_addr, _vc->get_remote_addr());
+      ats_ip_copy(&cached_local_addr, _vc->get_local_addr());
+      _vc->do_io_close();
+      _vc = nullptr;
+    }
     // Let everyone know we are going down
     do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
   }
@@ -54,10 +60,6 @@ Http2ClientSession::destroy()
 void
 Http2ClientSession::free()
 {
-  if (_vc) {
-    _vc->do_io_close();
-    _vc = nullptr;
-  }
   auto mutex_thread = this->mutex->thread_holding;
   if (Http2CommonSession::common_free(this)) {
     HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, mutex_thread);

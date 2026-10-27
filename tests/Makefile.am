@@ -30,16 +30,35 @@ AM_LDFLAGS += $(TS_PLUGIN_LD_FLAGS)
 # generation of so objects for these test files.
 AM_LDFLAGS += -rpath $(abs_builddir)
 
-include gold_tests/bigobj/Makefile.inc
-include gold_tests/at_headers/plugins/Makefile.inc
-include gold_tests/continuations/plugins/Makefile.inc
-include gold_tests/chunked_encoding/Makefile.inc
-include gold_tests/pluginTest/tsapi/Makefile.inc
-include gold_tests/timeout/Makefile.inc
-include gold_tests/tls/Makefile.inc
+include uranium_tests/bigobj/Makefile.inc
+include uranium_tests/at_headers/plugins/Makefile.inc
+include uranium_tests/continuations/plugins/Makefile.inc
+include uranium_tests/chunked_encoding/Makefile.inc
+include uranium_tests/pluginTest/tsapi/Makefile.inc
+include uranium_tests/timeout/Makefile.inc
+include uranium_tests/tls/Makefile.inc
 include tools/plugins/Makefile.inc
 
 TESTS = $(check_PROGRAMS)
+
+.PHONY: urtest urtest-replay
+urtest:
+	bash ./urtest.sh $(URTEST_OPTIONS)
+
+urtest-replay:
+	bash ./urtest.sh -m replay $(URTEST_OPTIONS)
+
+EXTRA_DIST = urtest.sh urtest-configured.sh.in pyproject.toml uv.lock
+
+# Keep distribution independent of a stale wrapper from an older build.
+dist-hook:
+	cp -p "$(srcdir)/urtest.sh" "$(distdir)/urtest.sh"
+
+# Only out-of-tree builds have a disposable copy of the source launcher.
+distclean-local:
+	if test "$(abs_srcdir)" != "$(abs_builddir)"; then rm -f urtest.sh; fi
+
+include uranium_dist.inc
 
 clang-tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)

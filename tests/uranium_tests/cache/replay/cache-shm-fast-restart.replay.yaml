@@ -1,0 +1,87 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Traffic for the cache shm fast-restart test. The two transactions share a
+# cache key (same method + host + url); they differ only in the uuid so the
+# verifier-client can drive them one at a time via --keys:
+#
+#   * key "fill": replayed against ts1 (cold cache). The request misses, ATS
+#     forwards it to the origin (verifier-server) and caches the 200 response.
+#
+#   * key "hit": replayed against ts2 after a clean shutdown + shm fast restart.
+#     ATS must serve it from the shm-attached directory WITHOUT contacting the
+#     origin. The 502 server-response is a sentinel: it is only ever returned if
+#     ATS wrongly forwards the request, in which case the proxy-response check
+#     (expecting the cached 200 / X-Cache: hit-fresh) fails.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /cache-shm-fast-restart/object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, fill ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, "max-age=300,public" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # Restart ATS
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /cache-shm-fast-restart/object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, hit ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 502
+      reason: "Bad Gateway"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: hit-fresh, as: equal } ]
