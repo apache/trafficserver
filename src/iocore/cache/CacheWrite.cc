@@ -627,6 +627,10 @@ CacheVC::openWriteOverwrite(int event, Event *e)
 {
   cancel_trigger();
   if (event != AIO_EVENT_DONE) {
+    // The stripe lock retry below re-enters here, possibly after cancellation.
+    if (_action.cancelled) {
+      return openWriteCloseDir(event, e);
+    }
     if (event == EVENT_IMMEDIATE) {
       last_collision = nullptr;
     }
