@@ -162,6 +162,8 @@ public:
       regress_rand_CacheKey(&key);
       stripe->directory.insert(&key, stripe, &dir);
     }
+    // Full, healthy chains in every segment must not read as corrupt.
+    CHECK(stripe->directory.clear_corrupt_segments() == 0);
 
     Dir dir1;
     memset(static_cast<void *>(&dir1), 0, sizeof(dir1));
@@ -433,6 +435,49 @@ public:
       collision = nullptr;
       CHECK(stripe->directory.probe(&key, stripe, &probed, &collision) == 1);
       CHECK(dir_offset(&probed) == 2);
+    }
+    stripe->clear_dir();
+
+    // A torn directory can leave a bucket chain running into the free list. Without a loop the bounded walks never
+    // notice, yet cleaning that chain pushes each free entry back onto the free list it is still linked from, looping
+    // the free list; with a loop further down the free list, cleanup instead churns until the bound trips.
+    Dbg(dbg_ctl_cache_dir_test, "bucket chain into the free list test");
+    for (bool free_list_loops : {false, true}) {
+      stripe->clear_dir();
+      stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+
+      int  s       = 0;
+      Dir *seg_dir = stripe->directory.get_segment(s);
+
+      auto free_entry_at = [&](int hops) {
+        Dir *e = dir_from_offset(stripe->directory.header->freelist[s], seg_dir);
+        for (int i = 0; i < hops; i++) {
+          e = next_dir(e, seg_dir);
+        }
+        return e;
+      };
+
+      Dir *head = dir_bucket(3, seg_dir);
+      dir_clear(head);
+      dir_set_offset(head, 1);
+      dir_set_phase(head, stripe->directory.header->phase);
+      REQUIRE(stripe->dir_valid(head));
+      dir_set_next(head, dir_to_offset(free_entry_at(100), seg_dir));
+      if (free_list_loops) {
+        dir_set_next(free_entry_at(400), dir_to_offset(free_entry_at(300), seg_dir));
+      }
+
+      CHECK(!stripe->directory.segment_links_valid(s));
+
+      stripe->directory.header->dirty = 0;
+      CHECK(stripe->directory.clear_corrupt_segments() == 1);
+      CHECK(stripe->directory.header->dirty == 1);
+      CHECK(stripe->directory.segment_links_valid(s));
+      CHECK(dir_offset(head) == 0);
+      CHECK(stripe->directory.freelist_length(s) == (DIR_DEPTH - 1) * stripe->directory.buckets);
+
+      stripe->directory.clean_segment(s, stripe);
+      CHECK(stripe->directory.segment_links_valid(s));
     }
     stripe->clear_dir();
 

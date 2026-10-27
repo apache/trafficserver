@@ -36,6 +36,7 @@
 #include <thread>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -323,6 +324,51 @@ Directory::check() const
     }
   }
   return 1;
+}
+
+bool
+Directory::segment_links_valid(int s) const
+{
+  Dir              *seg     = this->get_segment(s);
+  int64_t           entries = this->buckets * DIR_DEPTH;
+  std::vector<bool> seen(entries);
+
+  auto walk = [&](int64_t next) {
+    while (next != 0) {
+      Dir    *e     = dir_from_offset(next, seg);
+      int64_t index = e - seg;
+      if (index >= entries || index % DIR_DEPTH == 0 || seen[index]) {
+        return false;
+      }
+      seen[index] = true;
+      next        = dir_next(e);
+    }
+    return true;
+  };
+
+  for (int64_t b = 0; b < this->buckets; b++) {
+    if (!walk(dir_next(dir_bucket(b, seg)))) {
+      return false;
+    }
+  }
+  return walk(this->header->freelist[s]);
+}
+
+/**
+  Recovery only: cacheInitialized() stores the gauges afterwards, so init_segment() is not given the stripe to debit.
+ */
+int
+Directory::clear_corrupt_segments()
+{
+  int cleared = 0;
+  for (int s = 0; s < this->segments; s++) {
+    if (!this->segment_links_valid(s)) {
+      Dbg(dbg_ctl_cache_check_dir, "segment %d has corrupt links, clearing", s);
+      this->init_segment(s, nullptr);
+      cleared++;
+    }
+  }
+  return cleared;
 }
 
 inline void

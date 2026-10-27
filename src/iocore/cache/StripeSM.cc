@@ -278,6 +278,10 @@ StripeSM::handle_dir_read(int event, void *data)
     clear_dir_aio();
     return EVENT_DONE;
   }
+  // A directory torn by a crash can pass the magic and sync-serial checks yet hold links recovery cannot clean safely.
+  if (int cleared = directory.clear_corrupt_segments(); cleared > 0) {
+    Warning("cleared %d of %d cache directory segments with corrupt links on '%s'", cleared, directory.segments, hash_text.get());
+  }
   CHECK_DIR(this);
 
   sector_size = directory.header->sector_size;

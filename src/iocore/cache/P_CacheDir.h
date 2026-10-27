@@ -333,6 +333,16 @@ public:
   int  bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
   Dir *delete_entry(Dir *e, Dir *p, int s);
 
+  /* Whether every non-head row of segment @a s is on at most one list, a bucket chain or the free list, with no list
+   * looping, leaving the segment or linking to a head row.
+   *
+   * Cleanup depends on this. A bucket chain that runs into the free list is acyclic, so the bounded walks never trip,
+   * yet deleting those entries pushes them back onto the same free list and loops it.
+   */
+  bool segment_links_valid(int s) const;
+  /// Wipes every segment failing segment_links_valid() and returns how many. Recovery only, like clear_range().
+  int clear_corrupt_segments();
+
 private:
   void unlink_from_freelist(Dir *e, int s);
   /// Counted over the segment's rows: the chains are corrupt wherever this is used.
