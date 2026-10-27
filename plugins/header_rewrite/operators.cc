@@ -468,10 +468,11 @@ OperatorRMDestination::exec(const Resources &res) const
   if (res._rri || (res.bufp && res.hdr_loc)) {
     std::string value = "";
 
-    // Determine which TSMBuffer and TSMLoc to use
+    // Determine which TSMBuffer and TSMLoc to use.
+    // If the URL was modified earlier (e.g. set-destination URL), re-read from hdr_loc to avoid a stale requestUrl handle.
     TSMBuffer bufp;
     TSMLoc    url_m_loc;
-    if (res._rri) {
+    if (res._rri && !res.changed_url) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
     } else {
