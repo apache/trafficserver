@@ -112,6 +112,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 
   sock = UnixSocket{addr.sa.sa_family, SOCK_STREAM, prot};
   if (!sock.is_ok()) {
+    res = -errno;
     goto Lerror;
   }
 
@@ -126,10 +127,12 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 
   if (ats_is_unix(&accept_addr)) {
     if (chmod(accept_addr.sun.sun_path, opt.unix_perm) < 0) {
+      res = -errno;
       goto Lerror;
     }
     if (opt.unix_uid != static_cast<uid_t>(-1) || opt.unix_gid != static_cast<gid_t>(-1)) {
       if (chown(accept_addr.sun.sun_path, opt.unix_uid, opt.unix_gid) < 0) {
+        res = -errno;
         goto Lerror;
       }
     }
@@ -172,10 +175,12 @@ Lerror:
 int
 get_listen_backlog()
 {
-  int listen_backlog;
-
-  listen_backlog = RecGetRecordInt("proxy.config.net.listen_backlog").value_or(0);
-  return (0 < listen_backlog && listen_backlog <= 65535) ? listen_backlog : ats_tcp_somaxconn();
+  static const int backlog = []() {
+    int const somaxconn      = ats_tcp_somaxconn();
+    int const listen_backlog = RecGetRecordInt("proxy.config.net.listen_backlog").value_or(0);
+    return (0 < listen_backlog && listen_backlog <= 65535) ? std::min(listen_backlog, somaxconn) : somaxconn;
+  }();
+  return backlog;
 }
 
 int

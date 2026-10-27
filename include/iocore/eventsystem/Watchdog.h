@@ -156,17 +156,13 @@ enum class Mode : int {
 };
 
 struct Heartbeat {
-  std::atomic<std::chrono::time_point<std::chrono::steady_clock>> last_sleep{
-    std::chrono::steady_clock::time_point::min()}; // set right before sleeping (e.g. before epoll_wait)
   std::atomic<std::chrono::time_point<std::chrono::steady_clock>> last_wake{
     std::chrono::steady_clock::time_point::min()}; // set right after waking from sleep (e.g. epoll_wait returns)
-  /** Seqlock over the sleep/wake pair, and loop counter for warning dedup.
+  /** Seqlock over @c last_wake, and loop counter for warning dedup.
 
       Odd means the thread is inside the blocking poll; even means it is awake.  The monitor uses
-      this to read the pair without tearing: it samples @c seq before and after reading both
-      timestamps and discards the sample if the value changed or was odd.  Without that, the monitor
-      can pair @c last_sleep from one loop with @c last_wake from another and compute a duration that
-      corresponds to no real interval.
+      this to read @c last_wake without tearing: it samples @c seq before and after reading the
+      timestamp and discards the sample if the value changed or was odd.
    */
   std::atomic<uint64_t> seq{0};
   std::atomic<uint64_t> warned_seq{0}; // last seq we logged a warning about
