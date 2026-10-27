@@ -479,6 +479,51 @@ TEST_CASE("decode() rejects oversized Required Insert Count at entry", "[qpack-d
   hdr.destroy();
 }
 
+// QPACK::StaticTable::lookup() indexes the fixed STATIC_HEADER_FIELDS array
+// directly with the client-supplied index taken from an Indexed Header Field
+// in the QPACK-encoded HEADERS block. The static table has 99 entries, so an
+// index of 99 or more must be rejected; otherwise the array access reads past
+// the table. Drive QPACK::decode() with a block whose Indexed Header Field
+// references static index 99 and assert the decoder reports failure rather
+// than accepting it (under ASan the unpatched code faults on the read).
+TEST_CASE("decode() rejects out-of-range static table index", "[qpack-decode-static-bounds]")
+{
+  QUICApplicationDriver driver;
+  auto                  qpack   = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 4096, 100, MAX_FIELD_SIZE);
+  auto                  handler = std::make_unique<TestQPACKEventHandler>();
+
+  HTTPHdr hdr;
+  hdr.create(HTTPType::REQUEST);
+
+  uint8_t  block[16] = {0};
+  uint8_t *p         = block;
+
+  // Header Data Prefix: Required Insert Count = 0, Delta Base = 0 (base index 0).
+  *p++ = 0x00;
+  *p++ = 0x00;
+
+  // Indexed Header Field referencing the static table at index 99, one past the
+  // last valid entry (valid indices are 0..98).
+  int idx_len = xpack_encode_integer(p, block + sizeof(block), 99, 6);
+  REQUIRE(idx_len > 0);
+  p[0]             |= 0x80 | 0x40; // 0x80 = Indexed Header Field, 0x40 = static table
+  p                += idx_len;
+  size_t block_len  = static_cast<size_t>(p - block);
+
+  int sync_ret = qpack->decode(1, block, block_len, hdr, handler.get(), eventProcessor.all_ethreads[0]);
+
+  if (sync_ret >= 0) {
+    sleep(1);
+  }
+
+  CAPTURE(sync_ret);
+  CAPTURE(handler->last_event());
+  CHECK_FALSE((sync_ret == 0 && handler->last_event() == QPACK_EVENT_DECODE_COMPLETE));
+  CHECK((sync_ret < 0 || handler->last_event() == QPACK_EVENT_DECODE_FAILED));
+
+  hdr.destroy();
+}
+
 TEST_CASE("Decoding", "[qpack-decode]")
 {
   char app_dir[PATH_MAX + 1] = "";
