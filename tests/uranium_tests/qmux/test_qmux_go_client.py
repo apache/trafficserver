@@ -128,7 +128,7 @@ def test_qmux_go_client(ats_factory: ATSFactory, services: ServiceFactory) -> No
     assert result.returncode == 0, result.output
     assert "completed 3 QMux HTTP/3 requests: alpn=h3qx-01" in result.stdout
     access_log = _ats.log_directory / "qmux_access.log"
-    content = wait_for_file_lines(access_log, r"c_alpn=h3qx-01", 2, timeout=10)
+    content = wait_for_file_lines(access_log, r"c_alpn=h3qx-01", 2)
     assert re.search(
         r"c_alpn=h3qx-01 client_version=http/3 c_method=GET "
         r"c_url=https://qmux\.example\.com:[0-9]+/qmux-get-empty",

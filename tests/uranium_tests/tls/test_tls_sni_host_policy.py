@@ -15,10 +15,10 @@
 #  limitations under the License.
 
 from pathlib import Path
+import re
 import shlex
-import time
 
-from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory, wait_for_file_lines
 
 TEST_DIRECTORY = Path(__file__).parent
 SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
@@ -162,13 +162,7 @@ def verify_diagnostics(*, _ats: ATS) -> None:
     assert "SNI/hostname mismatch sni=ellen host=fran" not in diagnostics
     assert "SNI/hostname mismatch sni=other.example.com host=noipallow.example.com" not in diagnostics
 
-    expected_error = "for host='bob' sni='dave', returning a 403"
-    for _ in range(200):
-        errors = _ats.error_log.read_text(errors="replace") if _ats.error_log.exists() else ""
-        if expected_error in errors:
-            return
-        time.sleep(0.05)
-    raise AssertionError(f"Expected Host/SNI mismatch error:\n{errors}")
+    wait_for_file_lines(_ats.error_log, re.escape("for host='bob' sni='dave', returning a 403"), 1)
 
 
 def test_tls_sni_host_policy(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:

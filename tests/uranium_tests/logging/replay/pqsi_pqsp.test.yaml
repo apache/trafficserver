@@ -37,7 +37,6 @@ urtest:
     file_checks:
       - path: "{LOG_DIR}/field-test.log"
         line_count_min: 2
-        timeout: 10
         matches:
           - {expression: '^127\.0\.0\.1 [1-6][0-9]*$', min: 1, max: 1}
           - {expression: '^0 0$', min: 1, max: 1}
