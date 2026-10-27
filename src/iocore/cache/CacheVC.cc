@@ -853,8 +853,12 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         }
       }
       earliest_key = key;
-      int result1  = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OBJECT, vector.get(i));
-      switch (result1) {
+      auto result1 = _action.call_back(CACHE_EVENT_SCAN_OBJECT, vector.get(i));
+      // The handler may have cancelled the scan.
+      if (_action.cancelled) {
+        goto Lcancel;
+      }
+      switch (*result1) {
       case CACHE_SCAN_RESULT_CONTINUE:
         continue;
       case CACHE_SCAN_RESULT_DELETE:
