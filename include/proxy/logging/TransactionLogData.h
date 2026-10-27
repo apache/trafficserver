@@ -132,6 +132,8 @@ public:
   const char *get_client_cipher_suite() const;
   const char *get_client_curve() const;
   const char *get_client_security_group() const;
+  const char *get_client_offered_signature_algorithms() const;
+  const char *get_client_negotiated_signature_algorithm() const;
   int         get_client_alpn_id() const;
 
   // ===== SNI =====
