@@ -83,7 +83,7 @@ class CacheKeySection:
         return chain
 
     def run_plugin_sets(self) -> list[tuple[Any, list[Entry]]]:
-        """(ctx, entries) for each run-plugin line: what check_conflicts and the pristine check look at."""
+        """(ctx, entries) for each run-plugin line: what check_conflicts looks at."""
         branches = self.branches()
         if not branches:
             return [(None, self.base)]
@@ -115,10 +115,6 @@ def statements(entries: list[Entry]) -> list[CacheKeyStatement]:
     return [
         CacheKeyStatement("cache.key.headers.add", (entry.header,)) if isinstance(entry, KeyPart) else entry for entry in entries
     ]
-
-
-def is_pristine(entries: list[Entry]) -> bool:
-    return any(stmt.name == "cache.url.pristine" for stmt in statements(entries))
 
 
 def _plugin_lines(entries: list[Entry], depth: int) -> list[str]:

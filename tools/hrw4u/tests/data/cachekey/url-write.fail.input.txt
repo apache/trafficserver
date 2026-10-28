@@ -1,9 +1,0 @@
-REMAP {
-    inbound.url.url = "http://origin.example.com/";
-}
-
-CACHEKEY {
-    if inbound.req.Host == "a.example.com" {
-        cache.url.pristine();
-    }
-}

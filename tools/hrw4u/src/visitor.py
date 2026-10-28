@@ -67,7 +67,6 @@ class CacheKeyHazard:
     filename: str
     ctx: Any
     message: str
-    unless_pristine: bool = False
 
 
 @dataclass(slots=True)
@@ -1006,8 +1005,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self._dbg(f"assignment: {lhs} = {rhs}")
                     out = self.symbol_resolver.resolve_assignment(lhs, rhs, self.current_section)
                     self._drain_resolver_warnings(ctx)
-                    if self.current_section is SectionType.REMAP and out.startswith("set-destination URL "):
-                        self._add_cachekey_hazard(ctx, f"{lhs} write in REMAP requires cache.url.pristine()", unless_pristine=True)
                     self.emit_statement(out)
                     return
 
@@ -1161,23 +1158,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if ck.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
 
-    def _add_cachekey_hazard(self, ctx, message: str, *, unless_pristine: bool = False) -> None:
-        self._cachekey_hazards.append(CacheKeyHazard(self.filename, ctx, message, unless_pristine))
+    def _add_cachekey_hazard(self, ctx, message: str) -> None:
+        self._cachekey_hazards.append(CacheKeyHazard(self.filename, ctx, message))
 
     def _watch_cachekey_call(self, func: str, args: list[str], ctx) -> None:
         first = args[0].strip('"') if args else ""
         if func == "run-plugin" and first.rsplit("/", 1)[-1] == "cachekey.so":
             self._add_cachekey_hazard(ctx, "run-plugin cachekey.so conflicts with CACHEKEY")
-        elif func == "set-config" and first == "proxy.config.http.cache.ignore_query":
-            self._add_cachekey_hazard(ctx, "set-config proxy.config.http.cache.ignore_query not allowed with CACHEKEY")
 
     def _check_cachekey_hazards(self) -> None:
-        pristine = all(ck.is_pristine(entries) for _, entries in self._cachekey.run_plugin_sets())
         saved_filename = self.filename
         try:
             for hazard in self._cachekey_hazards:
-                if hazard.unless_pristine and pristine:
-                    continue
                 self.filename = hazard.filename
                 with self.trap(hazard.ctx):
                     raise SymbolResolutionError("CACHEKEY", hazard.message)
