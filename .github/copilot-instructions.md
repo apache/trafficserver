@@ -74,7 +74,11 @@ void function() {
 - Classes: `CamelCase` → `HttpSM`, `NetVConnection`, `CacheProcessor`
 - Functions/variables: `snake_case` → `handle_request()`, `server_port`, `cache_key`
 - Constants/macros: `UPPER_CASE` → `HTTP_STATUS_OK`, `MAX_BUFFER_SIZE`
-- Member variables: `snake_case` with no prefix → `connection_count`, `buffer_size`
+- Private member variables use both `_` and `m_` prefixes in the source code;
+  be consistent with the surrounding code. For new files, prefer the `_` prefix
+  because that reflects the community consensus.
+- Boolean variables and functions returning boolean values are named as
+  predicates: use `was_modified` rather than `modified`.
 
 **C++20 Patterns (Use These):**
 ```cpp
@@ -153,6 +157,7 @@ for (auto &conn : connections) {
 - Python 3.11+ with type hints
 - 4-space indentation (never tabs)
 - Type annotations on all function signatures
+- Use f'...' strings rather than .format() strings for new Python code.
 
 ### License Headers
 
@@ -308,7 +313,7 @@ trafficserver/
 **Pattern discovery:**
 - Search for similar functionality in existing code
 - Check `include/ts/ts.h` for plugin API patterns
-- Look at tests in `tests/gold_tests/` for usage examples
+- Look at tests in `tests/uranium_tests/` for usage examples
 
 ### Code Organization
 
@@ -357,9 +362,22 @@ plugins/my_plugin/
 
 **When adding new functionality:**
 1. Check if unit tests exist in same directory (Catch2)
-2. Add integration tests in `tests/gold_tests/` (autest)
-3. Prefer `Test.ATSReplayTest()` with `replay.yaml` format (Proxy Verifier)
+2. Add integration tests in `tests/uranium_tests/` (pytest Uranium).
+3. Prefer direct Proxy Verifier `*.test.yaml` files with an `urtest` section.
+   If replay coverage does not fit, organize the test around a scenario class
+   with separate methods for configuring the servers, ATS, client, etc., and
+   an explicit `run()` entry point.
 4. Test both success and error paths
+
+### Uranium Process Lifetime in Code Reviews
+
+- Native scenarios explicitly start their services, while the `ats_factory`
+  and `services` fixtures own teardown after the test finishes.
+- A started service can serve several scenario steps. Assertions do not
+  extend its lifetime or control teardown.
+- Check fixture scope, explicit start/stop calls, and actual shutdown behavior
+  before reporting a lifetime bug; a missing assertion alone is not evidence.
+- Direct replay tests manage their processes through `ReplayTest.run()`.
 
 ## Configuration
 

@@ -467,13 +467,13 @@ For more information check the  :func:`TSRPCRegister` for API details and :ref:`
 Unit test
 =========
 
-All new methods exposed through the RPC server can be tested using the jsonrpc autest extension.
+All new methods exposed through the RPC server can be tested using the JSONRPC Uranium compatibility extension.
 
 jsonrpc_client.test.text
 ------------------------
 
 This extension provides the ability to interact with the JSONRPC interface by using :program:`traffic_ctl` as a client. As a helper
-for all new autest that needs to write and read jsonrpc message, there is also a new module `jsonrpc.py` which provides
+for every new compatibility test that needs to write and read jsonrpc message, there is also a new module `jsonrpc.py` which provides
 a nice and easy interface to write methods and notifications.
 This extension also provides the facility to write custom jsonrpc validations. Please check some of the following examples:
 
