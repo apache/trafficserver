@@ -55,6 +55,7 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
             "proxy.config.http.cache.max_stale_age": wide_stale_age,
             "proxy.config.http.parent_proxy.self_detect": 0,
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
         })
     child.parent_config.add_line(f"dest_domain=. parent=localhost:{parent.http_port} round_robin=consistent_hash go_direct=false")
     child.write_config_file("stale_window.conf", stale_window_rules)
@@ -66,6 +67,7 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
             "proxy.config.url_remap.pristine_host_hdr": 1,
             "proxy.config.http.cache.max_stale_age": wide_stale_age,
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
         })
     parent.write_config_file("stale_window.conf", stale_window_rules)
     parent.remap_config.add_lines(
