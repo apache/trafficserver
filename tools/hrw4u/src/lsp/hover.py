@@ -639,7 +639,7 @@ class SectionHoverProvider:
             section_type = SectionType(section_name)
             return HoverInfoProvider.create_hover_info(
                 f"**{section_name}** - HRW4U Section\n\n"
-                + f"**Hook:** `{section_type.hook_name}`\n\n"
+                + f"**Hook:** `{section_type.hook_name}`{section_type.hook_note}\n\n"
                 + section_type.lsp_description
             )
         except ValueError:

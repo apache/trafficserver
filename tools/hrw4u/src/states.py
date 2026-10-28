@@ -56,6 +56,11 @@ class SectionType(str, Enum):
         return hook_map[self]
 
     @property
+    def hook_note(self) -> str:
+        """Appended where the LSP shows the hook: CACHEKEY has no hook of its own."""
+        return ", after every REMAP rule" if self == SectionType.CACHEKEY else ""
+
+    @property
     def lsp_description(self) -> str:
         if self == SectionType.VARS:
             return "This section declares variables that can be used throughout the configuration."
