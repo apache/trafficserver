@@ -1037,9 +1037,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._cachekey_fallback_at = len(self.output)
         self._cachekey_items(ctx.sectionBody())
         self._cachekey_sandbox_check(ctx)
-        for branch_ctx, entries in self._cachekey.run_plugin_sets():
-            with self.trap(branch_ctx or ctx):
-                cachekey.check_conflicts(ck.statements(entries))
+        base = self._cachekey.base
+        with self.trap(ctx):
+            cachekey.check_conflicts(ck.statements(base))
+            for branch in self._cachekey.chain or []:
+                with self.trap(branch.ctx):
+                    cachekey.check_conflicts(ck.statements(base + branch.entries))
 
     def _cachekey_sandbox_check(self, ctx) -> None:
         """The lowering writes run-plugin, and an else the source may lack: the policy covers both."""

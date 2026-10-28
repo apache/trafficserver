@@ -82,13 +82,6 @@ class CacheKeySection:
             chain.append(Branch("else", []))
         return chain
 
-    def run_plugin_sets(self) -> list[tuple[Any, list[Entry]]]:
-        """(ctx, entries) for each run-plugin line: what check_conflicts looks at."""
-        branches = self.branches()
-        if not branches:
-            return [(None, self.base)]
-        return [(branch.ctx, self.base + branch.entries) for branch in branches]
-
     def render(self) -> list[str]:
         lines = [HOOK_LINE]
         branches = self.branches()
