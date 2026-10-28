@@ -1021,7 +1021,7 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
         maps_to="cachekey.so --include-headers=H1,H2",
         usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
         parameters=[
-            ParameterDoc("names", "string", "One or more names, each its own argument, case-sensitive. Static: no {...} values.")
+            ParameterDoc("names", "string", "One or more names, each its own argument, case-insensitive. Static: no {...} values.")
         ],
         examples=["cache.key.headers.add(\"X-Region\", \"@Geo-Country\");"],
     ),

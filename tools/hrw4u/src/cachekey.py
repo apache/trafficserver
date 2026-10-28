@@ -37,6 +37,8 @@ class CacheKeyFlag:
     fixed_value: str | None = None
     # Written as `<name> = ""`, routed like any assignment, not a call.
     assignment: bool = False
+    # cachekey.so looks the names up ignoring case, so a second spelling would add the same value twice.
+    case_insensitive: bool = False
 
     @property
     def takes_list(self) -> bool:
@@ -52,7 +54,7 @@ CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
     "cache.url.query.sort":   CacheKeyFlag("--sort-params", "true"),
     "cache.url.query":        CacheKeyFlag("--remove-all-params", "true", assignment=True),
     "cache.url.path":         CacheKeyFlag("--remove-path", "true", assignment=True),
-    "cache.key.headers.add":  CacheKeyFlag("--include-headers"),
+    "cache.key.headers.add":  CacheKeyFlag("--include-headers", case_insensitive=True),
     "cache.key.cookies.add":  CacheKeyFlag("--include-cookies"),
 }
 # yapf: enable
@@ -140,14 +142,17 @@ def _spell(name: str) -> str:
 
 def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
     """Merge statements into one cachekey.so flag list, in table order."""
-    ordered_items: dict[str, dict[str, None]] = {}
+    ordered_items: dict[str, dict[str, str]] = {}
     for stmt in statements:
-        ordered_items.setdefault(stmt.name, {}).update(dict.fromkeys(stmt.items))
+        items = ordered_items.setdefault(stmt.name, {})
+        fold = CACHEKEY_STATEMENTS[stmt.name].case_insensitive
+        for item in stmt.items:
+            items.setdefault(item.lower() if fold else item, item)
 
     flags = [CANONICAL_PREFIX]
     for name, flag in CACHEKEY_STATEMENTS.items():
         if name in ordered_items:
-            value = ",".join(ordered_items[name]) if flag.takes_list else flag.fixed_value
+            value = ",".join(ordered_items[name].values()) if flag.takes_list else flag.fixed_value
             flags.append(f"{flag.option}={value}")
     return flags
 

@@ -149,6 +149,15 @@ class TestMerge:
             ("cache.key.headers.add", ['"A"', '"C"']),
         ) == ["--canonical-prefix=true", "--include-headers=B,A,C"]
 
+    def test_header_names_dedupe_ignoring_case_and_keep_first_spelling(self) -> None:
+        assert flags(
+            ("cache.key.headers.add", ['"X-A"', '"x-a"']),
+            ("cache.key.headers.add", ['"X-B"', '"x-b"']),
+        ) == ["--canonical-prefix=true", "--include-headers=X-A,X-B"]
+
+    def test_cookie_names_keep_case(self) -> None:
+        assert flags(("cache.key.cookies.add", ['"c"', '"C"'])) == ["--canonical-prefix=true", "--include-cookies=c,C"]
+
     def test_repeated_flag_statement_is_a_no_op(self) -> None:
         assert flags(("cache.url.pristine", []), ("cache.url.pristine", [])) == ["--canonical-prefix=true", "--uri-type=pristine"]
 
