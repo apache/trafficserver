@@ -1,0 +1,2 @@
+'else' is denied by sandbox policy (language)
+CACHEKEY adds an else to an if/elif chain, so every request gets a key

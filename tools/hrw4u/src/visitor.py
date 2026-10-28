@@ -114,7 +114,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._cachekey_fallback_at = 0
         self._remap_end: int | None = None
 
-    def _sandbox_check(self, ctx, check_fn) -> bool:
+    def _sandbox_check(self, ctx, check_fn, *, note: str | None = None) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
 
         Returns True if the check passed (or warned), False if denied.
@@ -122,10 +122,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         try:
             warning = check_fn()
             if warning:
-                self._add_sandbox_warning(ctx, warning)
+                self._add_sandbox_warning(ctx, f"{warning}: {note}" if note else warning)
             return True
         except SandboxDenialError:
-            with self.trap(ctx):
+            with self.trap(ctx, note=note):
                 raise
             return False
 
@@ -1039,9 +1039,23 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._cachekey = ck.CacheKeySection()
         self._cachekey_fallback_at = len(self.output)
         self._cachekey_items(ctx.sectionBody())
+        self._cachekey_sandbox_check(ctx)
         for branch_ctx, entries in self._cachekey.run_plugin_sets():
             with self.trap(branch_ctx or ctx):
                 cachekey.check_conflicts(ck.statements(entries))
+
+    def _cachekey_sandbox_check(self, ctx) -> None:
+        """The lowering writes run-plugin, and an else the source may lack: the policy covers both."""
+        self._sandbox_check(
+            ctx, lambda: self._sandbox.check_function("run-plugin"), note="CACHEKEY compiles to run-plugin cachekey.so"
+        )
+        chain = self._cachekey.chain
+        if chain and chain[-1].keyword != "else":
+            self._sandbox_check(
+                chain[0].ctx,
+                lambda: self._sandbox.check_language("else"),
+                note="CACHEKEY adds an else to an if/elif chain, so every request gets a key",
+            )
 
     def _cachekey_items(self, items) -> None:
         """Collect section or block items. Comments are dropped: the body folds into flags."""
@@ -1062,6 +1076,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if ctx.elseClause():
             arms.append(("else", ctx.elseClause()))
         for keyword, arm in arms:
+            if keyword != "if":
+                self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword))
             cond_lines = self._render_condition(arm.condition()) if keyword != "else" else []
             branch = ck.Branch(keyword, cond_lines, arm)
             self._cachekey.chain.append(branch)

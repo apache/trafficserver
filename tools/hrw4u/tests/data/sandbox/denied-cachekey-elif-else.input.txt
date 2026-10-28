@@ -1,0 +1,9 @@
+CACHEKEY {
+    if inbound.req.X-Foo == "a" {
+        cache.key.headers.add("X-A");
+    } elif inbound.req.X-Foo == "b" {
+        cache.key.headers.add("X-B");
+    } else {
+        cache.key.headers.add("X-C");
+    }
+}

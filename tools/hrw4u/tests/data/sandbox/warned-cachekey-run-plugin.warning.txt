@@ -1,0 +1,2 @@
+'run-plugin' is warned by sandbox policy (function): CACHEKEY compiles to run-plugin cachekey.so
+This feature will be denied in a future release. Contact platform team.
