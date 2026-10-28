@@ -1283,7 +1283,8 @@ int
 HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHandler tunnel_handler, int event, void *data)
 {
   STATE_ENTER(state_common_wait_for_transform_read, event);
-  HttpTunnelConsumer *c = nullptr;
+  HttpTunnelConsumer *c                = nullptr;
+  bool                transform_closed = false;
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE:
@@ -1309,13 +1310,22 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
         //   handler to clean this mess up
         ink_assert(t_info == &post_transform_info);
         return (this->*tunnel_handler)(event, data);
-      } else {
+      } else if (c->write_success) {
         // On the response side, we just forward as much
         //   as we can of truncated documents so
         //   just don't cache the result
         ink_assert(t_info == &transform_info);
         t_state.api_info.cache_transformed = false;
         return 0;
+      }
+      // The tunnel aborted and closed the transform before the
+      //   transform signaled TRANSFORM_READ_READY, so it never
+      //   will. Fall through to the error case so the client gets
+      //   an error response instead of waiting forever.
+      ink_assert(t_info == &transform_info);
+      transform_closed = true;
+      if (c->producer->vc_type == HttpTunnelType_t::HTTP_SERVER) {
+        t_state.http_return_code = HTTPStatus::BAD_GATEWAY;
       }
     } else {
       // Case 3 - wait for transform read ready
@@ -1332,10 +1342,11 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     }
     vc_table.cleanup_entry(t_info->entry);
     t_info->entry = nullptr;
-    // In Case 1: error due to transform write,
-    // we need to keep the original t_info->vc for transform_cleanup()
-    // to skip do_io_close(); otherwise, set it to NULL.
-    if (c->handler_state != HTTP_SM_TRANSFORM_FAIL) {
+    // In Case 1: error due to transform write, and when the tunnel
+    // already closed the transform, we need to keep the original
+    // t_info->vc for transform_cleanup() to skip do_io_close();
+    // otherwise, set it to NULL.
+    if (c->handler_state != HTTP_SM_TRANSFORM_FAIL && !transform_closed) {
       t_info->vc = nullptr;
     }
     if (c->producer->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
