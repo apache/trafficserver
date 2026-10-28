@@ -27,13 +27,21 @@
 
 #include <yaml-cpp/yaml.h>
 
-// Defined here (not = default in header) so that YAML::Node ctor/dtor/copy
-// symbols are only emitted in this TU (part of librecords, which links yaml-cpp).
-// Otherwise every consumer of RecCore.h would need yaml-cpp at link time.
-ConfigContext::ConfigContext()                                 = default;
-ConfigContext::~ConfigContext()                                = default;
-ConfigContext::ConfigContext(ConfigContext const &)            = default;
-ConfigContext &ConfigContext::operator=(ConfigContext const &) = default;
+#include <optional>
+
+// Copies and dependents of a context share its Payload, so a built Payload is never
+// changed: the setters build a new one instead, because assigning into a YAML::Node
+// writes through to every other handle on the same node. The YAML it holds is still
+// shared, so a write through a returned node reaches every context that shares it.
+struct ConfigContext::Payload {
+  std::optional<YAML::Node> supplied_yaml;
+  std::optional<YAML::Node> reload_directives;
+};
+
+// ConfigContext is passed by value to every reload handler, and Coverity flags by-value
+// parameters over 128 bytes. A bound of 64 keeps it well under that with libstdc++ and
+// libc++ (it is 32 with both).
+static_assert(sizeof(ConfigContext) <= 64, "ConfigContext is passed by value; add new state to ConfigContext::Payload");
 
 ConfigContext::ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description, std::string_view filename)
   : _task(t)
@@ -158,8 +166,7 @@ ConfigContext::add_dependent_ctx(std::string_view description, std::string_view 
     // child task will get the full content of the parent task
     // TODO: eventually we can have a "key" passed so child module
     // only gets their node of interest.
-    child._supplied_yaml     = _supplied_yaml;
-    child._reload_directives = _reload_directives;
+    child._payload = _payload;
     return child;
   }
   return {};
@@ -168,7 +175,10 @@ ConfigContext::add_dependent_ctx(std::string_view description, std::string_view 
 void
 ConfigContext::set_supplied_yaml(YAML::Node node)
 {
-  _supplied_yaml = node; // YAML::Node has no move semantics; copy is cheap (ref-counted).
+  auto next = _payload ? std::make_shared<Payload>(*_payload) : std::make_shared<Payload>();
+  // emplace() copy-constructs the node; assigning into an engaged optional would write through.
+  next->supplied_yaml.emplace(node); // YAML::Node has no move semantics; copy is cheap (ref-counted).
+  _payload = std::move(next);
 }
 
 void
@@ -182,19 +192,29 @@ ConfigContext::set_plugin_name(std::string_view name)
 YAML::Node
 ConfigContext::supplied_yaml() const
 {
-  return _supplied_yaml;
+  if (_payload && _payload->supplied_yaml) {
+    return *_payload->supplied_yaml;
+  }
+  // A fresh node each time: a default YAML::Node is a (truthy) Null, and a shared one
+  // would turn defined for every caller once one of them wrote into it.
+  return YAML::Node{YAML::NodeType::Undefined};
 }
 
 void
 ConfigContext::set_reload_directives(YAML::Node node)
 {
-  _reload_directives = node;
+  auto next = _payload ? std::make_shared<Payload>(*_payload) : std::make_shared<Payload>();
+  next->reload_directives.emplace(node);
+  _payload = std::move(next);
 }
 
 YAML::Node
 ConfigContext::reload_directives() const
 {
-  return _reload_directives;
+  if (_payload && _payload->reload_directives) {
+    return *_payload->reload_directives;
+  }
+  return YAML::Node{YAML::NodeType::Undefined};
 }
 
 namespace config

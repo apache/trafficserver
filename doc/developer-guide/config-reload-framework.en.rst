@@ -247,7 +247,7 @@ ConfigContext API
 ``ConfigContext`` is a lightweight value type passed to reload handlers. It provides methods to
 report progress and access inline YAML content.
 
-``ConfigContext`` is copyable (cheap — holds a ``weak_ptr`` and a ref-counted ``YAML::Node``).
+``ConfigContext`` is copyable (cheap — holds a ``weak_ptr`` to the task and a ``shared_ptr`` to the RPC-supplied YAML and reload directives).
 Move is intentionally suppressed: ``std::move(ctx)`` silently copies, keeping the original valid.
 
 in_progress(text)
