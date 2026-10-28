@@ -123,7 +123,7 @@ def test_h3_python_client(ats_factory: ATSFactory, services: ServiceFactory) -> 
     result = _client.run(timeout=120)
     assert result.returncode == 0, result.output
     assert "completed 18 Python HTTP/3 checks" in result.stdout
-    content = wait_for_file_lines(_ats.log_directory / "h3_python_access.log", r"c_alpn=h3", 2, timeout=10)
+    content = wait_for_file_lines(_ats.log_directory / "h3_python_access.log", r"c_alpn=h3", 2)
     assert re.search(
         r"c_alpn=h3 client_version=http/3 c_method=GET c_url=https://py\.example\.com:[0-9]+/py-get-empty",
         content,

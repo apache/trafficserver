@@ -36,6 +36,7 @@
 #include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
+#include "tscore/Demangle.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_hw.h"
@@ -54,7 +55,9 @@
 #include <syslog.h>
 #include <algorithm>
 #include <atomic>
+#include <exception>
 #include <filesystem>
+#include <limits>
 #include <list>
 #include <string>
 
@@ -552,7 +555,9 @@ public:
     // ink_get_current_rss() reports current (not peak) RSS in bytes, portably,
     // so the gauge can both rise and fall and the throttle releases correctly.
     uint64_t rss = ink_get_current_rss();
-    ts::Metrics::Gauge::store(memory_rss, static_cast<int64_t>(rss));
+    // The gauge is signed; never let a reading turn it negative.
+    constexpr uint64_t max_gauge = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
+    ts::Metrics::Gauge::store(memory_rss, rss > max_gauge ? std::numeric_limits<int64_t>::max() : static_cast<int64_t>(rss));
     Dbg(dbg_ctl_server, "memory usage - current rss: %" PRIu64 " bytes memory limit: %" PRId64 " bytes", rss, _memory_limit);
 
     // net_memory_throttle is read on accept threads, so use relaxed atomics.
@@ -1971,6 +1976,24 @@ configure_io_uring()
 }
 #endif
 
+// Runs when an exception escapes on any thread. The terminate handler runs
+// before the stack unwinds, so aborting from here keeps the throwing frame in
+// the core. The one exception is a throw that leaves a noexcept function: the
+// runtime unwinds to that function's frame before it calls terminate, so the
+// core loses the frames between the throw and it. Catching in main() instead
+// would unwind those frames first and would miss other threads entirely. main()
+// installs this before init_system() registers the crash handler, and before
+// crash_logger_init() starts the crash logger. A throw in that window still
+// aborts and dumps a core, but writes no crash log.
+[[noreturn]] void
+abort_on_uncaught_exception()
+{
+  if (std::current_exception()) {
+    ink_abort("traffic_server: terminating on an unhandled %s", ts::describe_current_exception().c_str());
+  }
+  ink_abort("traffic_server: terminate called without an active exception");
+}
+
 } // end anonymous namespace
 
 //
@@ -1979,6 +2002,8 @@ configure_io_uring()
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
+  std::set_terminate(abort_on_uncaught_exception);
+
 #if TS_HAS_PROFILER
   HeapProfilerStart("/tmp/ts.hprof");
   ProfilerStart("/tmp/ts.prof");

@@ -1,7 +1,6 @@
 /** @file
 
-  Catch based unit tests for the outbound connection-tracker reservation a ConnectingEntry holds for
-  the origin connect it opens.
+  Catch based unit tests for ConnectingEntry.
 
   @section license License
 
@@ -43,7 +42,7 @@
 namespace
 {
 
-constexpr std::string_view FQDN{"connecting.entry.retry.origin"};
+constexpr std::string_view FQDN{"connecting.entry.test.origin"};
 
 ConnectionTracker::TxnConfig &
 test_config()
@@ -60,6 +59,37 @@ test_config()
   }
 
   return txn;
+}
+
+// A reservation on the outbound group for @a addr_text, as HttpSM makes before it creates a ConnectingEntry.
+std::shared_ptr<ConnectionTracker::Group>
+reserved_group(char const *addr_text)
+{
+  IpEndpoint addr;
+
+  REQUIRE(0 == ats_ip_pton(addr_text, &addr));
+
+  auto state = ConnectionTracker::obtain_outbound(test_config(), FQDN, addr);
+
+  REQUIRE(state.is_active());
+  state.reserve();
+
+  return state.drop();
+}
+
+bool
+in_outbound_table(std::shared_ptr<ConnectionTracker::Group> const &group)
+{
+  std::vector<std::shared_ptr<ConnectionTracker::Group const>> groups;
+
+  ConnectionTracker::get_outbound_groups(groups);
+  for (auto const &g : groups) {
+    if (g == group) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /* Stands in for an HttpSM queued on a ConnectingEntry. With
@@ -226,6 +256,51 @@ fail_connect(EThread *thread, RetryProbeSM &sm, ConnectingEntry *entry, int even
 
 } // namespace
 
+// A failed or cancelled connect deletes the entry while it still holds the reservation.
+TEST_CASE("ConnectingEntry destructor returns the outbound reservation", "[ConnectingEntry]")
+{
+  auto group = reserved_group("192.0.2.10:80");
+
+  REQUIRE(group->_count == 1);
+  REQUIRE(in_outbound_table(group));
+
+  auto *entry = new ConnectingEntry();
+
+  entry->enable_outbound_connection_tracking(group);
+  delete entry;
+
+  CHECK(group->_count == 0);
+  CHECK_FALSE(in_outbound_table(group));
+}
+
+TEST_CASE("ConnectingEntry destructor releases exactly one reservation", "[ConnectingEntry]")
+{
+  auto group = reserved_group("192.0.2.11:80");
+  auto other = reserved_group("192.0.2.11:80");
+
+  REQUIRE(group == other);
+  REQUIRE(group->_count == 2);
+
+  auto *entry = new ConnectingEntry();
+
+  entry->enable_outbound_connection_tracking(group);
+  delete entry;
+
+  CHECK(other->_count == 1);
+  CHECK(in_outbound_table(other));
+
+  other->release();
+}
+
+// With connection tracking off, HttpSM still hands the entry its (empty) group; deleting it must not touch the tracker.
+TEST_CASE("ConnectingEntry destructor without connection tracking", "[ConnectingEntry]")
+{
+  auto *entry = new ConnectingEntry();
+
+  entry->enable_outbound_connection_tracking({});
+  delete entry;
+}
+
 TEST_CASE("Failed connect returns its reservation before queued HttpSMs retry", "[ConnectingEntry]")
 {
   // The four failure events share one branch in ConnectingEntry::state_http_server_open.
@@ -289,28 +364,4 @@ TEST_CASE("Failed connect with no tracking group notifies queued HttpSMs", "[Con
   CHECK(sm.notified_event == event);
   CHECK_FALSE(sm.entry_pooled_at_retry);
   CHECK(thread->connecting_pool->m_ip_pool.count(addr) == 0);
-}
-
-// HttpSM::cancel_pending_server_connection() deletes an entry whose connect is still pending. Only the
-// destructor returns that reservation.
-TEST_CASE("Deleting a pending ConnectingEntry returns its reservation", "[ConnectingEntry]")
-{
-  size_t const outbound_groups = outbound_group_count();
-
-  IpEndpoint addr;
-
-  REQUIRE(0 == ats_ip_pton("192.0.2.22:443", &addr));
-
-  HeldReservation first;
-
-  REQUIRE(first.reserve(addr) == 1);
-
-  auto  group = first.group();
-  auto *entry = new ConnectingEntry();
-
-  entry->enable_outbound_connection_tracking(first.handover());
-  delete entry;
-
-  CHECK(group->_count == 0);
-  CHECK(outbound_group_count() == outbound_groups);
 }

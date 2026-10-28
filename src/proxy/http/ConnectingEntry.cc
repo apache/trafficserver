@@ -37,6 +37,7 @@ DbgCtl dbg_ctl_http_connect{"http_connect"};
 
 ConnectingEntry::~ConnectingEntry()
 {
+  // coverity[exn_spec_violation] - release() throws only on a broken table mutex or a Dbg format error; terminate is fine
   release_outbound_connection_tracking();
   if (_netvc_read_buffer != nullptr) {
     free_MIOBuffer(_netvc_read_buffer);

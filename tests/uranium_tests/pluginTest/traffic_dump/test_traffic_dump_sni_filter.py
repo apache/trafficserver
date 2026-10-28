@@ -135,6 +135,6 @@ def test_traffic_dump_sni_filter(ats_factory: ATSFactory, services: ServiceFacto
         "--client-protocols",
         "http,tls,tcp,ip",
         "--client-tls-features",
-        "sni:bob.com,proxy-verify-mode:0,proxy-provided-cert:true",
+        "sni:bob.com,proxy-verify-mode:0,proxy-provided-cert:true,version:TLSv1.2",
     )
     assert verify.returncode == 0, verify.output

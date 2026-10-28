@@ -172,7 +172,7 @@ def verify_initial_dumps(*, _ats: ATS, _dump_directory: Path) -> None:
     :param _dump_directory: Test-local dump directory configured by the test.
     """
 
-    client_tls = "sni:www.tls.com,proxy-verify-mode:0,proxy-provided-cert:true"
+    client_tls = "sni:www.tls.com,proxy-verify-mode:0,proxy-provided-cert:true,version:TLSv1.2"
     server_tls = "proxy-provided-cert:false,sni:www.tls.com,proxy-verify-mode:1"
     verify_dump(
         0,

@@ -26,14 +26,16 @@
 
 #include <atomic>
 
-#include "tscore/ink_platform.h"
-#include "tscore/ink_rand.h"
-#include "tscore/Version.h"
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
 #include "iocore/eventsystem/Watchdog.h"
+
+#include <tscore/ink_hrtime.h>
+#include <tscore/ink_platform.h>
+#include <tscore/ink_rand.h>
+#include <tscore/Version.h>
 
 #if TS_USE_HWLOC
 struct hwloc_obj;
@@ -346,7 +348,7 @@ public:
 
   void             execute() override;
   void             execute_regular();
-  ink_hrtime       process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count, ink_hrtime event_time);
+  ink_hrtime       process_queue(Que(Event, link) * NegativeQueue, int *ev_count, ink_hrtime event_time);
   ink_hrtime       process_event(Event *e, int calling_code, ink_hrtime event_time);
   void             free_event(Event *e);
   LoopTailHandler *tail_cb = &DEFAULT_TAIL_HANDLER;
@@ -581,7 +583,16 @@ public:
   Watchdog::Heartbeat heartbeat_state;
 
 private:
+  struct EventStatistics {
+    ink_hrtime event_time{};
+    int        ev_count{}; // # of events handled
+  };
+
   void cons_common();
+
+  EventStatistics fire_ready_events(ink_hrtime loop_start_time);
+
+  ink_hrtime get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice);
 };
 
 // --- Inline implementation

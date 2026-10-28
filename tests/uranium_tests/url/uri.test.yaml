@@ -125,9 +125,12 @@ sessions:
         - [ uuid, encoded_path ]
 
     proxy-request:
-      # Verify that the origin gets the encoded path.
-      url: /path%2ffoo
-
+      url:
+      - - path
+        - value: /path%2ffoo
+          as: equal
+      - - query
+        - as: absent
     <<: *404_ok_response
 
     proxy-response:
@@ -149,8 +152,12 @@ sessions:
         - [ uuid, unencoded_path ]
 
     proxy-request:
-      url: /path/foo
-
+      url:
+      - - path
+        - value: /path/foo
+          as: equal
+      - - query
+        - as: absent
     <<: *200_ok_response
 
     proxy-response:

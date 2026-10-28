@@ -19,6 +19,9 @@ meta: {version: "1.0"}
 urtest:
   description: "Verify xdebug X-Remap, Probe, and fwd request-header behavior"
   requires: {plugins: [xdebug.so]}
+  # No default address, so the unmapped "none" host gets NXDOMAIN at once
+  # instead of waiting on the host resolver.
+  dns: {name: "x-remap-dns", process_config: {default: []}}
   server: {name: "x-remap-origin"}
   client: {name: "x-remap-client"}
   ats:
@@ -48,7 +51,7 @@ sessions:
           headers:
             fields:
               - [Content-Type, {value: "text/html; charset=utf-8", as: equal}]
-              - [X-Remap, "from=Not-Found, to=Not-Found"]
+              - [X-Remap, {value: "from=Not-Found, to=Not-Found", as: equal}]
 
       - all: {headers: {fields: [[uuid, x-remap-one]]}}
         client-request:
@@ -117,7 +120,7 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, two], [X-Debug, "X-Remap, fwd, Probe"]]}
         proxy-request:
-          headers: {fields: [[X-Debug, "X-Remap, fwd, Probe"]]}
+          headers: {fields: [[X-Debug, {value: "X-Remap, fwd, Probe", as: equal}]]}
         server-response: *ok
         proxy-response: {status: 200, content: *probe}
 
@@ -139,7 +142,7 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, two], [X-Debug, "X-Remap, fwd= 1, Probe"]]}
         proxy-request:
-          headers: {fields: [[X-Debug, "X-Remap, fwd=0, Probe"]]}
+          headers: {fields: [[X-Debug, {value: "X-Remap, fwd=0, Probe", as: equal}]]}
         server-response: *ok
         proxy-response: {status: 200, content: *probe}
 
@@ -150,7 +153,7 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, two], [X-Debug, "PROBE, X-Remap, fwd = 999999"]]}
         proxy-request:
-          headers: {fields: [[X-Debug, "PROBE, X-Remap, fwd=999998"]]}
+          headers: {fields: [[X-Debug, {value: "PROBE, X-Remap, fwd=999998", as: equal}]]}
         server-response: *ok
         proxy-response: {status: 200, content: *probe}
 

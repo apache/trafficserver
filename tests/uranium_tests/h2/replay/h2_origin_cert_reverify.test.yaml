@@ -81,6 +81,7 @@ sessions:
           content:
             encoding: plain
             data: foo-response
+            verify: {as: equal}
             size: 12
   - protocol:
       stack: http

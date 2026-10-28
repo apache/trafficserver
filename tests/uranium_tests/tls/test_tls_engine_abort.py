@@ -116,6 +116,9 @@ def test_tls_engine_abort(ats_factory: ATSFactory, services: ServiceFactory, cur
     aborts = _abort_client.run(timeout=30)
     assert aborts.returncode == 0, aborts.output
     assert "sent 30 aborted handshakes" in aborts.output
+    # Prove the abandoned handshakes reached the asynchronous wakeup path
+    # before the healthy request can produce a wakeup of its own.
+    wait_for_file_lines(_ats.traffic_out, "sent async wake signal to", 1, timeout=10)
 
     result = curl.run_for(
         _ats,
@@ -125,5 +128,6 @@ def test_tls_engine_abort(ats_factory: ATSFactory, services: ServiceFactory, cur
     )
     assert result.returncode == 0, result.output
     assert re.search(r"HTTP/(2|1\.1) 200", result.output), result.output
+    assert result.stdout == "ok", result.output
     traffic_out = wait_for_file_lines(_ats.traffic_out, "sent async wake signal to", 1, timeout=10)
     assert "AddressSanitizer" not in traffic_out
