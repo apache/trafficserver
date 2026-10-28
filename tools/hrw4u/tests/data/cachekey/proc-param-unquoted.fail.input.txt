@@ -1,7 +1,0 @@
-procedure local::hdr($h) {
-    cache.key.headers.add($h);
-}
-
-CACHEKEY {
-    local::hdr(X-Region);
-}

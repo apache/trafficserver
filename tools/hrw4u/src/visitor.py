@@ -108,7 +108,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         self._cachekey: ck.CacheKeySection | None = None
         self._cachekey_branch: ck.Branch | None = None
-        self._cachekey_quoted_params: set[str] = set()
         self._cachekey_hazards: list[CacheKeyHazard] = []
         self._cachekey_fallback_at = 0
         self._remap_end: int | None = None
@@ -547,14 +546,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         bindings = self._bind_proc_args(sig, call_ctx)
 
         if self.current_section is SectionType.CACHEKEY:
-            quoted = self._cachekey_string_params(sig, call_ctx)
-            saved_quoted = self._cachekey_quoted_params
-            self._cachekey_quoted_params = quoted
-            try:
-                with self._proc_context(sig, bindings):
-                    self._cachekey_items(sig.body_ctx.blockItem())
-            finally:
-                self._cachekey_quoted_params = saved_quoted
+            with self._proc_context(sig, bindings):
+                self._cachekey_items(sig.body_ctx.blockItem())
             return
 
         with self._proc_context(sig, bindings):
@@ -1121,40 +1114,24 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return
         if ctx.PLUSEQUAL() and lhs == ck.KEY_EXPR:
             value = ctx.value()
-            if value.str_ is None:
+            if value.str_ is None and not value.paramRef():
                 raise SymbolResolutionError(lhs, "cache.key += takes a quoted string")
-            target.append(self._cachekey.new_key_part(self._substitute_strings(value.getText(), ctx)))
+            target.append(self._cachekey.new_key_part(self._substitute_strings(self._cachekey_arg(value), ctx)))
             return
         op = lhs if ctx.EQUAL() else f"{lhs} +="
         raise SymbolResolutionError(lhs, f"operator '{op}' not allowed in CACHEKEY")
 
     def _cachekey_args(self, call_ctx) -> list[str]:
         """Raw argument texts for the core, with procedure parameters substituted."""
-        args = []
-        for value in call_ctx.argumentList().value() if call_ctx.argumentList() else []:
-            if value.paramRef():
-                name = value.paramRef().IDENT().getText()
-                text = self._get_value_text(value)
-                if name not in self._cachekey_quoted_params:
-                    raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be bound to a quoted string here")
-                args.append(f'"{text}"')
-            elif value.str_ is not None and self._proc_bindings:
-                args.append(self._PARAM_REF_PATTERN.sub(lambda m: self._proc_bindings.get(m.group(1), m.group(0)), value.getText()))
-            else:
-                args.append(value.getText())
-        return args
+        return [self._cachekey_arg(value) for value in (call_ctx.argumentList().value() if call_ctx.argumentList() else [])]
 
-    def _cachekey_string_params(self, sig: ProcSig, call_ctx) -> set[str]:
-        """Parameters bound to a quoted string, directly or through an outer parameter."""
-        values = call_ctx.argumentList().value() if call_ctx.argumentList() else []
-        quoted = set()
-        for i, param in enumerate(sig.params):
-            value = values[i] if i < len(values) else param.default_ctx
-            if value is None:
-                continue
-            if value.str_ is not None or (value.paramRef() and value.paramRef().IDENT().getText() in self._cachekey_quoted_params):
-                quoted.add(param.name)
-        return quoted
+    def _cachekey_arg(self, value) -> str:
+        """A bare $param stands for its binding as a string, the same as "$param"."""
+        if value.paramRef():
+            return f'"{self._get_value_text(value)}"'
+        if value.str_ is not None:
+            return self._flatten_substitute_params(value.getText(), self._proc_bindings)
+        return value.getText()
 
     @staticmethod
     def _check_not_key_name(name: str) -> None:

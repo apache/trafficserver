@@ -10,9 +10,15 @@ procedure local::pass($h) {
     local::hdr($h);
 }
 
+procedure local::part($v) {
+    cache.key += $v;
+}
+
 CACHEKEY {
     local::hdr("X-Region");
+    local::hdr(X-Tenant);
     local::cookie();
     local::cookie(locale);
     local::pass("@Geo-Country");
+    local::part("{geo.COUNTRY}");
 }
