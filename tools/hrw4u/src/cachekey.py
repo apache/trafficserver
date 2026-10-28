@@ -35,6 +35,8 @@ CANONICAL_PREFIX: Final[str] = "--canonical-prefix=true"
 class CacheKeyFlag:
     option: str
     fixed_value: str | None = None
+    # Written as `<name> = ""`, routed like any assignment, not a call.
+    assignment: bool = False
 
     @property
     def takes_list(self) -> bool:
@@ -48,6 +50,8 @@ CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
     "cache.url.query.remove": CacheKeyFlag("--exclude-params"),
     "cache.url.query.keep":   CacheKeyFlag("--include-params"),
     "cache.url.query.sort":   CacheKeyFlag("--sort-params", "true"),
+    "cache.url.query":        CacheKeyFlag("--remove-all-params", "true", assignment=True),
+    "cache.url.path":         CacheKeyFlag("--remove-path", "true", assignment=True),
     "cache.key.headers.add":  CacheKeyFlag("--include-headers"),
     "cache.key.cookies.add":  CacheKeyFlag("--include-cookies"),
 }
@@ -61,14 +65,29 @@ class CacheKeyStatement:
 
 
 def is_cachekey_statement(name: str) -> bool:
-    return name in CACHEKEY_STATEMENTS
+    flag = CACHEKEY_STATEMENTS.get(name)
+    return flag is not None and not flag.assignment
+
+
+def is_cachekey_assignment(lhs: str) -> bool:
+    flag = CACHEKEY_STATEMENTS.get(lhs)
+    return flag is not None and flag.assignment
+
+
+def parse_assignment(lhs: str, rhs: str) -> CacheKeyStatement:
+    """Validate `lhs = rhs`. rhs is the raw value text, quotes included."""
+    if not is_cachekey_assignment(lhs):
+        raise SymbolResolutionError(lhs, f"Unknown cache key assignment: '{lhs}'")
+    if rhs != '""':
+        raise SymbolResolutionError(lhs, f'{lhs} can only be set to ""')
+    return CacheKeyStatement(lhs)
 
 
 def parse_statement(name: str, args: list[str]) -> CacheKeyStatement:
     """Validate one statement. args are the raw argument texts, quotes included."""
-    flag = CACHEKEY_STATEMENTS.get(name)
-    if flag is None:
+    if not is_cachekey_statement(name):
         raise SymbolResolutionError(name, f"Unknown cache key statement: '{name}'")
+    flag = CACHEKEY_STATEMENTS[name]
 
     if not flag.takes_list:
         if args:
@@ -97,6 +116,26 @@ def parse_statement(name: str, args: list[str]) -> CacheKeyStatement:
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a quote or backslash")
         items.append(item)
     return CacheKeyStatement(name, tuple(items))
+
+
+# Each pair contradicts itself on one run-plugin line: cachekey.so drops or skews one side.
+CONFLICTS: Final[tuple[tuple[str, str], ...]] = (
+    ("cache.url.query.keep", "cache.url.query.remove"),
+    ("cache.url.query", "cache.url.query.keep"),
+    ("cache.url.query", "cache.url.query.remove"),
+)
+
+
+def check_conflicts(statements: Iterable[CacheKeyStatement]) -> None:
+    """Raise if statements that lower to one run-plugin contradict each other."""
+    names = {stmt.name for stmt in statements}
+    for first, second in CONFLICTS:
+        if first in names and second in names:
+            raise SymbolResolutionError(first, f"{_spell(first)} and {_spell(second)} can't be used together")
+
+
+def _spell(name: str) -> str:
+    return f'{name} = ""' if CACHEKEY_STATEMENTS[name].assignment else f"{name}()"
 
 
 def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:

@@ -18,7 +18,15 @@ from __future__ import annotations
 
 import pytest
 
-from hrw4u.cachekey import is_cachekey_statement, merge, parse_statement, render
+from hrw4u.cachekey import (
+    check_conflicts,
+    is_cachekey_assignment,
+    is_cachekey_statement,
+    merge,
+    parse_assignment,
+    parse_statement,
+    render,
+)
 from hrw4u.errors import SymbolResolutionError
 
 
@@ -41,9 +49,80 @@ class TestIsCachekeyStatement:
     def test_known(self, name: str) -> None:
         assert is_cachekey_statement(name)
 
-    @pytest.mark.parametrize("name", ["cache", "cache.bypass", "cache.url", "run-plugin", "cache.key.require_headers"])
+    @pytest.mark.parametrize("name", ["cache", "cache.bypass", "cache.url", "run-plugin", "cache.url.query", "cache.url.path"])
     def test_unknown(self, name: str) -> None:
         assert not is_cachekey_statement(name)
+
+
+class TestIsCachekeyAssignment:
+    @pytest.mark.parametrize("lhs", ["cache.url.query", "cache.url.path"])
+    def test_known(self, lhs: str) -> None:
+        assert is_cachekey_assignment(lhs)
+
+    @pytest.mark.parametrize("lhs", ["cache", "cache.url", "cache.url.pristine", "cache.key", "inbound.url.query"])
+    def test_unknown(self, lhs: str) -> None:
+        assert not is_cachekey_assignment(lhs)
+
+
+class TestParseAssignment:
+    @pytest.mark.parametrize(
+        "lhs,flag",
+        [
+            ("cache.url.query", "--remove-all-params=true"),
+            ("cache.url.path", "--remove-path=true"),
+        ],
+    )
+    def test_flag(self, lhs: str, flag: str) -> None:
+        assert merge([parse_assignment(lhs, '""')]) == ["--canonical-prefix=true", flag]
+
+    @pytest.mark.parametrize(
+        "lhs,rhs,message",
+        [
+            ("cache.url.query", '"a=1"', 'can only be set to ""'),
+            ("cache.url.path", '"/x"', 'can only be set to ""'),
+            ("cache.url.query", "x", 'can only be set to ""'),
+            ("cache.url.pristine", '""', "Unknown cache key assignment"),
+        ],
+    )
+    def test_rejects(self, lhs: str, rhs: str, message: str) -> None:
+        with pytest.raises(SymbolResolutionError, match=message):
+            parse_assignment(lhs, rhs)
+
+    def test_assignment_name_is_not_a_statement(self) -> None:
+        with pytest.raises(SymbolResolutionError, match="Unknown cache key statement"):
+            parse_statement("cache.url.query", [])
+
+
+class TestCheckConflicts:
+    @pytest.mark.parametrize(
+        "stmts,message",
+        [
+            (
+                [parse_statement("cache.url.query.keep", ['"a"']), parse_statement("cache.url.query.remove", ['"b"'])],
+                r"cache.url.query.keep\(\) and cache.url.query.remove\(\)",
+            ),
+            (
+                [parse_assignment("cache.url.query", '""'), parse_statement("cache.url.query.keep", ['"a"'])],
+                r'cache.url.query = "" and cache.url.query.keep\(\)',
+            ),
+            (
+                [parse_statement("cache.url.query.remove", ['"a"']), parse_assignment("cache.url.query", '""')],
+                r'cache.url.query = "" and cache.url.query.remove\(\)',
+            ),
+        ],
+    )
+    def test_rejects(self, stmts: list, message: str) -> None:
+        with pytest.raises(SymbolResolutionError, match=message):
+            check_conflicts(stmts)
+
+    def test_compatible(self) -> None:
+        check_conflicts(
+            [
+                parse_statement("cache.url.query.remove", ['"a"']),
+                parse_statement("cache.url.query.sort", []),
+                parse_assignment("cache.url.path", '""'),
+            ]
+        )
 
 
 class TestMerge:
@@ -80,17 +159,26 @@ class TestMerge:
             "--exclude-params=q",
             "--include-params=k",
             "--sort-params=true",
+            "--remove-path=true",
             "--include-headers=H",
             "--include-cookies=c",
         ]
         assert (
-            flags(
-                ("cache.key.cookies.add", ['"c"']),
-                ("cache.key.headers.add", ['"H"']),
-                ("cache.url.query.sort", []),
-                ("cache.url.query.keep", ['"k"']),
-                ("cache.url.query.remove", ['"q"']),
-                ("cache.url.pristine", []),
+            merge(
+                [
+                    parse_statement("cache.key.cookies.add", ['"c"']),
+                    parse_assignment("cache.url.path", '""'),
+                ]
+                + [
+                    parse_statement(name, args)
+                    for name, args in (
+                        ("cache.key.headers.add", ['"H"']),
+                        ("cache.url.query.sort", []),
+                        ("cache.url.query.keep", ['"k"']),
+                        ("cache.url.query.remove", ['"q"']),
+                        ("cache.url.pristine", []),
+                    )
+                ]
             )
             == expected
         )
