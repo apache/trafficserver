@@ -278,6 +278,9 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     if (!reenabled) {
       return CLIENT_HELLO_RETRY;
     }
+    if (SSLNetVConnection *netvc = SSLNetVCAccess(s); netvc && netvc->getSSLHandShakeRejected()) {
+      return CLIENT_HELLO_ERROR;
+    }
   } else {
     Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
     return CLIENT_HELLO_ERROR;
@@ -359,6 +362,8 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
         // stop the accept processing
         if (!reenabled) {
           retval = -1; // Pause
+        } else if (sslnetvc && sslnetvc->getSSLHandShakeRejected()) {
+          retval = 0; // A plugin rejected the handshake
         }
       }
     } else {
