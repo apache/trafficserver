@@ -38,6 +38,7 @@ DbgCtl dbg_ctl_http_connect{"http_connect"};
 ConnectingEntry::~ConnectingEntry()
 {
   if (_conn_track_group) {
+    // coverity[exn_spec_violation] - release() throws only on a broken table mutex or a Dbg format error; terminate is fine
     _conn_track_group->release();
   }
   if (_netvc_read_buffer != nullptr) {
