@@ -248,9 +248,6 @@ TEST_CASE("LogAccess marshals response HTTP versions as compact strings", "[LogA
 
 TEST_CASE("LogAccess JSON string slice stays within the raw value", "[LogAccess]")
 {
-  // A value made of control bytes escapes to six times its raw length. A slice
-  // offset expressed in that escaped space must not be used to index the raw
-  // marshalled value, or the read runs well past its end.
   constexpr int     val_len = 10;
   std::vector<char> src(INK_MIN_ALIGN * 2, '\x7e'); // sentinel fills the padding
   for (int i = 0; i < val_len; ++i) {
@@ -269,13 +266,21 @@ TEST_CASE("LogAccess JSON string slice stays within the raw value", "[LogAccess]
     CHECK(n == 0);
   }
 
-  SECTION("an in-range slice escapes only the selected raw bytes")
+  SECTION("the escaped output is cut at end - start, dropping a partial escape")
   {
-    char     spec[] = "x[2:5]";
+    char     spec[] = "x[0:14]";
     LogSlice slice(spec);
     char    *ptr = src.data();
     int      n   = LogAccess::unmarshal_str(&ptr, dest, sizeof(dest), &slice, LOG_ESCAPE_JSON);
-    CHECK(n == 18); // three control bytes, six escaped bytes each
-    CHECK(std::string_view(dest, 6) == "\\u0001");
+    CHECK(std::string_view(dest, n) == "\\u0001\\u0001");
+  }
+
+  SECTION("a slice reaching past the raw value reads only up to its end")
+  {
+    char     spec[] = "x[8:60]";
+    LogSlice slice(spec);
+    char    *ptr = src.data();
+    int      n   = LogAccess::unmarshal_str(&ptr, dest, sizeof(dest), &slice, LOG_ESCAPE_JSON);
+    CHECK(std::string_view(dest, n) == "\\u0001\\u0001");
   }
 }
