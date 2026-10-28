@@ -74,7 +74,7 @@ def run_remap_reload(ats_factory: ATSFactory, services: ServiceFactory, *, use_y
         :param ats_factory: Factory for isolated Traffic Server instances.
         """
 
-        ats = ats_factory.create("ts")
+        ats = ats_factory.create("ts", disable_log_checks=True)
         ats.records.update(
             {
                 "proxy.config.url_remap.min_rules_required": 3,

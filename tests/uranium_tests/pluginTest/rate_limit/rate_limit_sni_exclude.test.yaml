@@ -50,6 +50,9 @@ urtest:
         contains:
           - expression: 'Limiter on excluded.example.com is excluded via List=loopback'
             description: "The excluded SNI matches the configured client IP list"
+        excludes:
+          - expression: 'Limiter on limited.example.com is excluded'
+            description: "The limited SNI has no exclusion list and is admitted by its limiter"
 
 sessions:
   - protocol:

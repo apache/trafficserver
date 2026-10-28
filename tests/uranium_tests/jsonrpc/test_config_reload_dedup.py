@@ -18,6 +18,8 @@ import time
 
 from tools.uranium.services import ATS, ATSFactory
 
+from .config_reload_helpers import wait_for_reload
+
 
 def configure_ats(ats_factory: ATSFactory) -> ATS:
     """Configure valid files that participate in the reload.
@@ -87,7 +89,7 @@ def check_reload(*, _ats: ATS) -> None:
 
     reload_result = _ats.traffic_ctl("config", "reload", "-t", "dedup_test")
     assert reload_result.returncode == 0, reload_result.output
-    time.sleep(15)
+    assert wait_for_reload(_ats, "dedup_test", after_log="Reserved subtask") == "success"
     status = _ats.traffic_ctl("config", "status", "-t", "dedup_test")
     assert status.returncode == 0, status.output
     assert "in_progress" not in status.stdout

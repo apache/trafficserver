@@ -36,7 +36,7 @@ def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
         :param ats_factory: Factory for isolated Traffic Server instances.
         """
 
-        ats = ats_factory.create("ts")
+        ats = ats_factory.create("ts", disable_log_checks=True)
         ats.records.update({
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc|config",
@@ -237,14 +237,15 @@ def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
             }
         }, "directive 'ID' is not supported"),
     ])
-def test_virtualhost_reload_failure(ats: ATS, content: str, config: object, marker: str) -> None:
+def test_virtualhost_reload_failure(ats_factory: ATSFactory, content: str, config: object, marker: str) -> None:
     """Report virtualhost handler failures as failed asynchronous tasks.
 
-    :param ats: Isolated server exposing the reload RPC.
+    :param ats_factory: Factory for the isolated server exposing the reload RPC.
     :param content: Whether virtualhost.yaml exists.
     :param config: Inline virtualhost reload payload.
     :param marker: Required handler diagnostic in the failed task.
     """
+    ats = ats_factory.create("ats", disable_log_checks=True)
     if content == "present":
         ats.write_config_file("virtualhost.yaml", "virtualhost:\n  - id: myhost.example.com\n    domains: [myhost.example.com]\n")
     else:

@@ -155,7 +155,7 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origins: dict[st
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ats", enable_cache=False)
+    ats = ats_factory.create("ats", enable_cache=False, disable_log_checks=True)
     required = ("header_rewrite.so", "regex_remap.so", "tslua.so")
     if not all(ats.plugin_exists(plugin) for plugin in required):
         pytest.skip("header_rewrite.so, regex_remap.so, and tslua.so are required")

@@ -110,7 +110,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _variant: E
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ats")
+    ats = ats_factory.create("ats", disable_log_checks=_variant.behavior == "too-small")
     if not ats.plugin_exists("esi.so"):
         pytest.skip("esi.so is not installed")
     ats.records.update({

@@ -69,7 +69,7 @@ class ReplayTest:
         self.spec = spec
         self.runtime = runtime
         self.node_name = node_name or spec.path.stem
-        self.sandbox = runtime.item_sandbox(spec.path, self.node_name)
+        self.sandbox = runtime.item_sandbox(self.node_name)
         self._sandbox_parent = sandbox_parent
         if sandbox_parent is not None:
             self.sandbox = sandbox_parent / runtime.sandbox_name(self.node_name)

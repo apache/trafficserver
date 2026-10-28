@@ -21,6 +21,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 import json
 import os
+import re
 import signal
 import shutil
 import subprocess
@@ -143,6 +144,7 @@ class ATS:
         self._exit_was_expected = False
         self._uds_directory: Path | None = None
         self._allow_fatal_diagnostics = False
+        self._allowed_errors: list[re.Pattern[str]] = []
         self.records = RecordsConfig(self._records)
 
     @property
@@ -372,6 +374,28 @@ class ATS:
         self._config["startup_failure"] = expression
         self._config["return_code"] = list(return_code) if not isinstance(return_code, int) else return_code
         self._allow_fatal_diagnostics = True
+
+    def chown_for_ats(self, path: Path) -> None:
+        """Give files a test created to the user Traffic Server runs as.
+
+        This does nothing unless the test runs as root, in which case Traffic
+        Server switches to an unprivileged user that cannot read root-owned
+        0600 files such as generated keys.
+
+        :param path: Directory whose contents are handed to the ATS user.
+        """
+
+        self._runner._chown_for_ats(path)
+
+    def allow_errors(self, expression: str) -> None:
+        """Accept diags.log ``ERROR:`` lines matching a regular expression.
+
+        Errors that do not match any allowed expression still fail the test.
+
+        :param expression: Regular expression searched for in each error line.
+        """
+
+        self._allowed_errors.append(re.compile(expression))
 
     def stop(self) -> None:
         """Stop Traffic Server without relinquishing fixture ownership."""
@@ -639,15 +663,31 @@ class ATS:
         return (Path(self._context.runtime.layout["PLUGINDIR"]) / filename).is_file()
 
     def close(self) -> None:
-        """Stop Traffic Server and validate fatal diagnostics."""
+        """Stop Traffic Server and validate its diagnostics.
+
+        Once :meth:`expect_start_failure` is called, no diagnostics are
+        checked, including whether diags.log exists. Otherwise fatal
+        diagnostics fail the test, as do errors not accepted by
+        :meth:`allow_errors` and unrecognized configuration values, unless
+        the instance was created with ``disable_log_checks=True``.
+        """
 
         try:
             self.stop()
-            if self._was_started:
+            if self._was_started and not self._allow_fatal_diagnostics:
                 assert self.diags_log.is_file(), f"Missing ATS diagnostic log: {self.diags_log}"
                 content = self.diags_log.read_text(errors="replace")
-                if "FATAL:" in content and not self._allow_fatal_diagnostics:
-                    raise AssertionError(f"{self.name} emitted a fatal diagnostic:\n{content}")
+                lines = content.splitlines()
+                expressions = ["FATAL:"]
+                if not self._process_options.get("disable_log_checks", False):
+                    expressions += ["ERROR:", "Unrecognized configuration value"]
+                for expression in expressions:
+                    unexpected = [
+                        line for line in lines if expression in line and
+                        not (expression == "ERROR:" and any(allowed.search(line) for allowed in self._allowed_errors))
+                    ]
+                    if unexpected:
+                        raise AssertionError(f"{self.name} emitted an unexpected {expression!r} diagnostic:\n{content}")
         finally:
             for directory in self._runner._temporary_directories:
                 shutil.rmtree(directory, ignore_errors=True)

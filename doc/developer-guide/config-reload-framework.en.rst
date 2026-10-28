@@ -863,20 +863,20 @@ directives passed via ``--directive``.
 Test plugins
 ------------
 
-The autest suite ships small plugins that exercise the public
+The Uranium test suite ships small plugins that exercise the public
 ``TSCfg*`` surface end-to-end. They are the recommended reference for
 how to wire registration, handler logic, and deferred completion:
 
-- ``tests/gold_tests/jsonrpc/plugins/cfg_plugin_test.cc`` - basic
+- ``tests/uranium_tests/jsonrpc/plugins/cfg_plugin_test.cc`` - basic
   registration and synchronous handler.
-- ``tests/gold_tests/jsonrpc/plugins/cfg_plugin_directives_test.cc`` -
+- ``tests/uranium_tests/jsonrpc/plugins/cfg_plugin_directives_test.cc`` -
   reading inline YAML and reload directives.
-- ``tests/gold_tests/jsonrpc/plugins/cfg_plugin_deferred_test.cc`` -
+- ``tests/uranium_tests/jsonrpc/plugins/cfg_plugin_deferred_test.cc`` -
   asynchronous / deferred completion pattern.
 
-The matching autests
-(``config_reload_plugin_api.test.py`` and friends in
-``tests/gold_tests/jsonrpc/``) demonstrate driving these plugins via
+The matching tests
+(``test_config_reload_plugin_api.py`` and friends in
+``tests/uranium_tests/jsonrpc/``) demonstrate driving these plugins via
 :program:`traffic_ctl` and validating both the task tree and the
 ``[plugin: <name>]`` attribution.
 
@@ -1189,22 +1189,17 @@ After registering a new handler:
 7. Use :option:`traffic_ctl config status` ``--format json`` to inspect the raw
    :ref:`get_reload_config_status` response for automation testing.
 
-**Uranium tests** — the project includes compatibility helpers for config reload testing.
+**Uranium tests** — reload tests are native pytest scenarios. They trigger a reload with
+``ATS.traffic_ctl("config", "reload", "-m", "-t", token)`` or, when they need fine-grained
+control over request and response payloads, with ``ATS.rpc()`` and ``admin_config_reload``.
+They validate the task tree through :ref:`get_reload_config_status`. See
+:ref:`uranium-config-reload` for the pattern and the existing tests for examples:
 
-For **Uranium tests** that trigger a reload via ``traffic_ctl`` and validate the result, use
-the :ref:`autest-config-reload` extension (``Test.AddConfigReload()``).
-This is the recommended approach for most reload tests.
-
-For **JSONRPC-level tests** that need fine-grained control over request and response payloads,
-use ``AddJsonRPCClientRequest`` with ``Request.admin_config_reload()`` to trigger reloads, and
-``Testers.CustomJSONRPCResponse`` to validate responses programmatically. See the existing tests
-for examples:
-
-- ``tests/uranium_tests/jsonrpc/config_reload_tracking.test.py`` — token generation, status
+- ``tests/uranium_tests/jsonrpc/test_config_reload_tracking.py`` — token generation, status
   queries, history, force reload, duplicate token rejection.
-- ``tests/uranium_tests/jsonrpc/config_reload_rpc.test.py`` — inline reload, multiple configs,
+- ``tests/uranium_tests/jsonrpc/test_config_reload_rpc.py`` — inline reload, multiple configs,
   ``FileOnly`` rejection, large payloads.
-- ``tests/uranium_tests/jsonrpc/config_reload_failures.test.py`` — error handling, broken configs,
+- ``tests/uranium_tests/jsonrpc/test_config_reload_failures.py`` — error handling, broken configs,
   handler failure reporting.
 
 

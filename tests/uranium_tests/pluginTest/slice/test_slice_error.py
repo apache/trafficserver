@@ -99,7 +99,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ats", enable_cache=False)
+    ats = ats_factory.create("ats", enable_cache=False, disable_log_checks=True)
     if not ats.plugin_exists("slice.so"):
         pytest.skip("slice.so is not installed")
     ats.remap_config.add_line(
