@@ -101,13 +101,16 @@ Field Name                            Description
                                       this may have impacts in :program:`traffic_ctl`)
 ``backlog``                           Check https://man7.org/linux/man-pages/man2/listen.2.html
 ``max_retry_on_transient_errors``     Number of times the implementation is allowed to retry when a transient error is encountered.
-``restricted_api``                    This setting specifies whether the jsonrpc node access should be restricted to root processes.
-                                      If this is set to ``false``, then on platforms that support passing process credentials, non-root
-                                      processes will be allowed to make read-only JSONRPC calls. Any calls that modify server state
-                                      (eg. setting a configuration variable) will still be restricted to root processes. If set to ``true``
-                                      then only root processes will be allowed to perform any api call.
-                                      If restricted, the Unix Domain Socket will be created with `0700` permissions, otherwise `0777`.
-                                      ``true`` by default.
+``restricted_api``                    This setting specifies whether access to the jsonrpc node should be restricted at the socket.
+                                      ``false`` by default.
+                                      If this is set to ``false``, then on platforms that support passing process credentials, the
+                                      Unix Domain Socket is created with ``0777`` permissions and any local process is allowed to make
+                                      read-only JSONRPC calls. Restricted calls, which include every call that modifies server state
+                                      (eg. setting a configuration variable), are only accepted from root or from the user |TS| runs
+                                      as. On platforms that do not support passing process credentials, the socket is created as if
+                                      this were set to ``true``.
+                                      If this is set to ``true``, the Unix Domain Socket is created with ``0700`` permissions, so only
+                                      root and processes running as the socket owner can connect.
                                       In case of an unauthorized call is made, a corresponding rpc error will be returned, you can
                                       check :ref:`jsonrpc-node-errors-unauthorized-action` for details about the errors.
 ``incoming_request_max_size``         Maximum allowed size for the incoming jsonrpc request. Default ``96000`` bytes. Size must be

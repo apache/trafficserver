@@ -126,7 +126,7 @@ protected: // unit test access
     int  backlog{5};
     int  maxRetriesOnTransientErrors{64};
     bool restrictedAccessApi{
-      NON_RESTRICTED_API}; // This config value will drive the permissions of the jsonrpc socket(either 0700(default) or 0777).
+      NON_RESTRICTED_API}; // This config value will drive the permissions of the jsonrpc socket(either 0777(default) or 0700).
     size_t incomingRequestMaxBufferSize{INTERNAL_BUFFER_SIZE * 3};
   };
 
