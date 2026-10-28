@@ -160,6 +160,7 @@ struct SSLCtxDeleter {
   }
 };
 
+// Declare the connection before this, so the connection outlives the SSL object that points at it.
 class SSLObject
 {
 public:
@@ -197,6 +198,7 @@ class ScopedAclSubjects
 public:
   ScopedAclSubjects(std::initializer_list<uint8_t> subjects)
   {
+    REQUIRE(subjects.size() <= IpAllow::Subject::MAX_SUBJECTS);
     std::copy(std::begin(IpAllow::subjects), std::end(IpAllow::subjects), std::begin(_saved));
     std::fill(std::begin(IpAllow::subjects), std::end(IpAllow::subjects), IpAllow::Subject::MAX_SUBJECTS);
     std::copy(subjects.begin(), subjects.end(), std::begin(IpAllow::subjects));
@@ -220,8 +222,8 @@ TEST_CASE("SNI_IpAllow checks the peer of a connection that is not an SSLNetVCon
   ScopedAclSubjects subjects{IpAllow::Subject::PEER};
   std::string       allow_list{"10.1.0.0/16,2001:db8:1::/48"};
   SNI_IpAllow       action{allow_list, server_name};
-  SSLObject         ssl;
   auto              vc = std::make_unique<NonSSLNetVConnection>();
+  SSLObject         ssl;
 
   vc->bind_to(ssl.get());
 
@@ -255,8 +257,8 @@ TEST_CASE("SNI_IpAllow takes the PROXY protocol source of a connection that is n
   ScopedAclSubjects subjects{IpAllow::Subject::PROXY, IpAllow::Subject::PEER};
   std::string       allow_list{"10.1.0.0/16"};
   SNI_IpAllow       action{allow_list, server_name};
-  SSLObject         ssl;
   auto              vc = std::make_unique<NonSSLNetVConnection>();
+  SSLObject         ssl;
 
   vc->bind_to(ssl.get());
 
@@ -283,8 +285,8 @@ TEST_CASE("SNI_IpAllow takes the copied PROXY source as the peer of a connection
   ScopedAclSubjects subjects{IpAllow::Subject::PEER};
   std::string       allow_list{"10.1.0.0/16"};
   SNI_IpAllow       action{allow_list, server_name};
-  SSLObject         ssl;
   auto              vc = std::make_unique<NonSSLNetVConnection>();
+  SSLObject         ssl;
 
   vc->bind_to(ssl.get());
   vc->set_is_proxy_protocol(true, true);
@@ -311,8 +313,8 @@ TEST_CASE("SNI_IpAllow falls back to the peer when PROXY is the only subject", "
   ScopedAclSubjects subjects{IpAllow::Subject::PROXY};
   std::string       allow_list{"10.1.0.0/16"};
   SNI_IpAllow       action{allow_list, server_name};
-  SSLObject         ssl;
   auto              vc = std::make_unique<NonSSLNetVConnection>();
+  SSLObject         ssl;
 
   vc->bind_to(ssl.get());
 
@@ -379,8 +381,8 @@ TEST_CASE("SNI_IpAllow still checks the peer of an SSLNetVConnection", "[sni][ip
   ScopedAclSubjects subjects{IpAllow::Subject::PEER};
   std::string       allow_list{"10.1.0.0/16"};
   SNI_IpAllow       action{allow_list, server_name};
-  SSLObject         ssl;
   auto              vc = std::make_unique<PeerSSLNetVConnection>();
+  SSLObject         ssl;
 
   vc->bind_to(ssl.get());
 
@@ -399,8 +401,8 @@ TEST_CASE("SNI_IpAllow still checks the peer of an SSLNetVConnection", "[sni][ip
 
 TEST_CASE("VerifyClient refuses a connection that is not an SSLNetVConnection when it has to verify", "[sni][verify_client]")
 {
-  SSLObject ssl;
   auto      vc = std::make_unique<NonSSLNetVConnection>();
+  SSLObject ssl;
 
   vc->bind_to(ssl.get());
 
@@ -428,8 +430,8 @@ TEST_CASE("VerifyClient refuses a connection that is not an SSLNetVConnection wh
 
 TEST_CASE("VerifyClient still applies the level to an SSLNetVConnection", "[sni][verify_client]")
 {
-  SSLObject ssl;
   auto      vc = std::make_unique<PeerSSLNetVConnection>();
+  SSLObject ssl;
 
   vc->bind_to(ssl.get());
 
@@ -479,11 +481,10 @@ TEST_CASE("VerifyClient with nothing bound to the SSL object", "[sni][verify_cli
 
 TEST_CASE("TunnelDestination refuses a connection that is not an SSLNetVConnection", "[sni][tunnel_route]")
 {
-  SSLObject ssl;
-
   SECTION("without TLS tunnel support")
   {
     auto              vc = std::make_unique<NonSSLNetVConnection>();
+    SSLObject         ssl;
     TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
     vc->bind_to(ssl.get());
@@ -493,6 +494,7 @@ TEST_CASE("TunnelDestination refuses a connection that is not an SSLNetVConnecti
   SECTION("with TLS tunnel support")
   {
     auto              vc = std::make_unique<NonSSLTunnelNetVConnection>();
+    SSLObject         ssl;
     TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::FORWARD, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
     vc->bind_to(ssl.get());
@@ -502,6 +504,7 @@ TEST_CASE("TunnelDestination refuses a connection that is not an SSLNetVConnecti
 
   SECTION("nothing is bound to the SSL object")
   {
+    SSLObject         ssl;
     TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
@@ -510,8 +513,8 @@ TEST_CASE("TunnelDestination refuses a connection that is not an SSLNetVConnecti
 
 TEST_CASE("TunnelDestination still routes an SSLNetVConnection", "[sni][tunnel_route]")
 {
-  SSLObject         ssl;
   auto              vc = std::make_unique<PeerSSLNetVConnection>();
+  SSLObject         ssl;
   TunnelDestination action{"tunnel.example.com:443", SNIRoutingType::BLIND, YamlSNIConfig::TunnelPreWarm::UNSET, no_alpn};
 
   vc->bind_to(ssl.get());
