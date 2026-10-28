@@ -1135,16 +1135,6 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
         ],
         examples=["set-config(\"proxy.config.http.cache.http\", 0);", "set-config(\"proxy.config.http.allow_multi_range\", 1);"],
     ),
-    "cache.bypass": FunctionDoc(
-        name="Cache Bypass Function",
-        category="Statement Function",
-        description="Skips the cache for this transaction: no lookup and no store. The request still goes to the origin.",
-        syntax="cache.bypass()",
-        maps_to="set-config \"proxy.config.http.cache.http\" 0",
-        usage_context="Used as a statement in REMAP, optionally inside a conditional",
-        parameters=[],
-        examples=["if !inbound.req.X-Required {\n    cache.bypass();\n}"],
-    ),
     "no-op": FunctionDoc(
         name="No Operation Function",
         category="Statement Function",
