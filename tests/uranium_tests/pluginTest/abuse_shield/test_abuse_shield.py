@@ -256,10 +256,10 @@ def test_abuse_shield_request_rates(ats_factory: ATSFactory, services: ServiceFa
 
 
 def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Idle TLS connections trigger blocking before ClientHello.
+    """A TLS connection burst triggers blocking before ServerHello.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
-    :param services: Factory for the idle-connection helper.
+    :param services: Factory for the TLS connection flood helper.
     :param curl: Curl command runner.
     """
 
@@ -269,10 +269,16 @@ def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: Service
         "rules:\n  - {name: conn_rate_flood, filter: {max_conn_rate: 5}, action: [log, block]}\n"
         "enabled: true\n")
     harness.start(ats)
-    harness.helper("idle-client", "idle_connections.py", "--port", str(ats.https_port), "--count", "30")
+    harness.helper("flood-client", "tls_connection_flood.py", "--port", str(ats.https_port), "--count", "30")
     wait_for_file_lines(ats.diags_log, r'Rule "conn_rate_flood" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
+    ats.stop()
+    diagnostics = ats.diags_log.read_text(errors="replace")
+    # The log action deliberately emits an ERROR for this rule match.
+    assert not re.search(
+        r'ERROR:(?! \[abuse_shield\] Rule "conn_rate_flood" matched for IP=127\.0\.0\.1 actions=\[log,block\] )'
+        r"|FATAL:|Unrecognized configuration value", diagnostics), diagnostics
 
 
 def test_abuse_shield_rate_limited_ips(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
