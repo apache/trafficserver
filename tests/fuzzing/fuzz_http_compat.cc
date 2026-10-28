@@ -132,7 +132,7 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
   }
 
   uint8_t     flags         = data[0];
-  int         output_length = std::min<int>(static_cast<int>(data[1]) + 1, OUTPUT_BUF_SIZE);
+  int         output_length = std::min<int>(static_cast<int>(data[1]) + 1, OUTPUT_BUF_SIZE - 1);
   size_t      split         = static_cast<size_t>(data[2]) * (size - 3) / 255;
   const char *payload       = reinterpret_cast<const char *>(data + 3);
   std::string first(payload, split);
