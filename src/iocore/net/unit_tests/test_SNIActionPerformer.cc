@@ -41,6 +41,7 @@
 #include <openssl/ssl.h>
 
 #include <algorithm>
+#include <initializer_list>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -48,7 +49,7 @@
 #include <vector>
 
 #if TS_USE_QUIC == 1
-// The look-alike connections below stand in for QUICNetVConnection, so it must have the same shape.
+// The look-alike connections below model QUICNetVConnection, so QUICNetVConnection must keep this shape.
 static_assert(std::is_convertible_v<QUICNetVConnection *, TLSSNISupport *>);
 static_assert(std::is_convertible_v<QUICNetVConnection *, NetVConnection *>);
 static_assert(!std::is_base_of_v<SSLNetVConnection, QUICNetVConnection>);
@@ -279,7 +280,8 @@ TEST_CASE("SNI_IpAllow takes the PROXY protocol source of a connection that is n
   }
 }
 
-TEST_CASE("SNI_IpAllow takes the copied PROXY source as the peer of a connection that is not an SSLNetVConnection",
+TEST_CASE("SNI_IpAllow takes the PROXY source as the peer of a connection that is not an SSLNetVConnection when the port is "
+          "set to copy it",
           "[sni][ip_allow]")
 {
   ScopedAclSubjects subjects{IpAllow::Subject::PEER};
@@ -289,7 +291,7 @@ TEST_CASE("SNI_IpAllow takes the copied PROXY source as the peer of a connection
   SSLObject         ssl;
 
   vc->bind_to(ssl.get());
-  vc->set_is_proxy_protocol(true, true);
+  vc->set_is_proxy_protocol(true /* PROXY protocol port */, true /* copy the PROXY source as the peer */);
 
   SECTION("an allowed source is accepted from a peer outside the list")
   {
@@ -359,20 +361,21 @@ TEST_CASE("SNI_IpAllow refuses when it cannot find the connection", "[sni][ip_al
   ScopedAclSubjects subjects{IpAllow::Subject::PEER};
   std::string       allow_list{"0.0.0.0/0,::/0"};
   SNI_IpAllow       action{allow_list, server_name};
-  SSLObject         ssl;
 
   SECTION("nothing is bound to the SSL object")
   {
+    SSLObject ssl;
+
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
   }
 
   SECTION("the bound TLSSNISupport is not a connection")
   {
     DetachedSNISupport snis;
+    SSLObject          ssl;
 
     TLSSNISupport::bind(ssl.get(), &snis);
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
-    TLSSNISupport::unbind(ssl.get());
   }
 }
 
