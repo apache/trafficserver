@@ -564,6 +564,36 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return text
         return self._PARAM_REF_PATTERN.sub(lambda m: bindings.get(m.group(1), m.group(0)), text)
 
+    def _flatten_item_text(self, item, source_text: str, bindings: dict[str, str]) -> str:
+        """Source text of item with $params substituted, quoting the ones _cachekey_arg quotes."""
+        pieces: list[str] = []
+        pos = item.start.start
+        for value in self._cachekey_param_values(item):
+            name = value.paramRef().IDENT().getText()
+            if name not in bindings:
+                continue
+            pieces.append(self._flatten_substitute_params(source_text[pos : value.start.start], bindings))
+            pieces.append(f'"{bindings[name]}"')
+            pos = value.stop.stop + 1
+        pieces.append(self._flatten_substitute_params(source_text[pos : item.stop.stop + 1], bindings))
+        return "".join(pieces)
+
+    def _cachekey_param_values(self, ctx):
+        """Bare $param values, in source order, that are cache.* arguments or cache.key += values."""
+        for child in ctx.getChildren():
+            if not isinstance(child, hrw4uParser.ValueContext):
+                if hasattr(child, "getChildren"):
+                    yield from self._cachekey_param_values(child)
+                continue
+            if not child.paramRef():
+                continue
+            parent = child.parentCtx
+            if isinstance(parent, hrw4uParser.ArgumentListContext):
+                if ck.is_key_name(parent.parentCtx.funcName.text):
+                    yield child
+            elif isinstance(parent, hrw4uParser.StatementContext) and parent.PLUSEQUAL() and parent.lhs.text == ck.KEY_EXPR:
+                yield child
+
     def _flatten_reindent(self, text: str, indent: str, source_indent: str | None = None) -> list[str]:
         """Re-indent text: replace source indentation with target indent, preserving relative nesting.
 
@@ -639,8 +669,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 lines.extend(self._flatten_conditional(item.conditional(), indent, source_text, bindings))
                 continue
 
-            item_text = self._get_source_text(item, source_text)
-            item_text = self._flatten_substitute_params(item_text, bindings)
+            item_text = self._flatten_item_text(item, source_text, bindings)
             source_indent = self._source_indent_at(item, source_text)
             lines.extend(self._flatten_reindent(item_text, indent, source_indent))
 

@@ -1,8 +1,8 @@
 procedure test::cache-parts($h, $part="{geo.COUNTRY}") {
     if inbound.req.X-Tier == "gold" {
-        cache.key.headers.add("$h");
+        cache.key.headers.add($h);
     } else {
         cache.key.cookies.add("session");
     }
-    cache.key += "$part";
+    cache.key += $part;
 }
