@@ -150,6 +150,7 @@ produce_features(bool json)
   print_feature("TS_HAS_BACKTRACE", TS_HAS_BACKTRACE, json);
   print_feature("TS_HAS_PROFILER", TS_HAS_PROFILER, json);
   print_feature("TS_USE_FAST_SDK", TS_USE_FAST_SDK, json);
+  print_feature("TS_USE_MALLOC_ALLOCATOR", TS_USE_MALLOC_ALLOCATOR, json);
   print_feature("TS_USE_DIAGS", TS_USE_DIAGS, json);
   print_feature("TS_USE_CACHE_SHM", TS_USE_CACHE_SHM, json);
   print_feature("TS_USE_EPOLL", TS_USE_EPOLL, json);
