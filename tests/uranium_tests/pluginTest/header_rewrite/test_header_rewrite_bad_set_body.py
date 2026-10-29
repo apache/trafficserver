@@ -97,6 +97,66 @@ def test_header_rewrite_bad_set_body(ats_factory: ATSFactory) -> None:
             None,
             None,
         ),
+        (
+            "duplicate-modifiers",
+            [hook, "  cond %{CLIENT-HEADER:foo} =bar [AND,AND]", "  set-header X-Test yes"],
+            r"Duplicate modifier",
+            None,
+            None,
+        ),
+        (
+            "unclosed-modifiers",
+            [hook, "  cond %{CLIENT-HEADER:foo} =bar [AND", "  set-header X-Test yes"],
+            r"mods have to be enclosed in \[\]",
+            None,
+            None,
+        ),
+        (
+            "condition-without-operator",
+            [hook, "  cond %{CLIENT-HEADER:foo} =bar"],
+            r"conditions without operators are not allowed",
+            None,
+            None,
+        ),
+        (
+            "orphan-short-modifier",
+            [hook, "  set-header X-Test yes", "[L]"],
+            r"modifiers must follow a condition or operator: \[L\]",
+            None,
+            None,
+        ),
+        (
+            "orphan-long-modifier",
+            [hook, "  set-header X-Test yes", "[AND,NOCASE,NOT,L,QSA,I,EXT,PRE]"],
+            r"modifiers must follow a condition or operator: \[AND,NOCASE,NOT,L,QSA,I,EXT,PRE\]",
+            None,
+            None,
+        ),
+        (
+            "cond-with-only-modifier",
+            [hook, "  set-header X-Test yes", "cond [L]"],
+            r"cond must be followed by a condition",
+            None,
+            None,
+        ),
+        (
+            "cond-without-condition",
+            [hook, "  set-header X-Test yes", "cond"],
+            r"cond must be followed by a condition",
+            None,
+            None,
+        ),
     )
     for name, rules, marker, records, files in cases:
         verify_failure(configure_failure(name, rules, marker, records, files, _ats_factory=ats_factory))
+
+
+def test_header_rewrite_global_bad_config(ats_factory: ATSFactory) -> None:
+    """Loading an invalid configuration as a global plugin triggers TSFatal."""
+    ats = ats_factory.create("ats-global-bad-config", enable_cache=False)
+    if not ats.plugin_exists("header_rewrite.so"):
+        pytest.skip("header_rewrite.so is required")
+    ats.write_config_file("bad_global.conf", "cond %{CLIENT-HEADER:foo} =bar [AND,AND]\nset-header X-Test yes\n")
+    ats.plugin_config.add_line("header_rewrite.so bad_global.conf")
+    ats.expect_start_failure(r"failed to parse configuration file bad_global\.conf", return_code=(33, 70))
+    verify_failure(ats)

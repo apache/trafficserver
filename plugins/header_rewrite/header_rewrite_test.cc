@@ -473,6 +473,41 @@ test_parsing()
     END_TEST();
   }
 
+  { /* duplicate modifier */
+    ParserTest p("cond %{CLIENT-HEADER:foo} =bar [AND,AND]");
+
+    CHECK_EQ(p.parse_succeeded, true);
+    CHECK_EQ(p.has_duplicate_mods(), true);
+    CHECK_EQ(p.validate_mods(), false);
+
+    END_TEST();
+  }
+
+  { /* unclosed modifier list on condition */
+    ParserTest p("cond %{CLIENT-HEADER:foo} =bar [AND");
+
+    CHECK_EQ(p.parse_succeeded, false);
+
+    END_TEST();
+  }
+
+  { /* unclosed modifier list on operator */
+    ParserTest p("set-header X-Foo bar [L");
+
+    CHECK_EQ(p.parse_succeeded, false);
+
+    END_TEST();
+  }
+
+  { /* valid modifier list */
+    ParserTest p("cond %{CLIENT-HEADER:foo} =bar [AND,NOT]");
+
+    CHECK_EQ(p.parse_succeeded, true);
+    CHECK_EQ(p.has_duplicate_mods(), false);
+
+    END_TEST();
+  }
+
   return errors;
 }
 
