@@ -25,11 +25,10 @@ from tools.uranium.services import ATS, ATSFactory, Curl
 TEST_DIRECTORY = Path(__file__).parent
 
 
-def configure_ats(ats_factory: ATSFactory, openssl_version: str) -> ATS:
+def configure_ats(ats_factory: ATSFactory) -> ATS:
     """Configure global TLS 1.2 and an SNI-specific TLS 1.0–1.1 range.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
-    :param openssl_version: Openssl version used by this test step.
     """
 
     ats = ats_factory.create("ts", enable_tls=True)
@@ -56,7 +55,9 @@ def configure_ats(ats_factory: ATSFactory, openssl_version: str) -> ATS:
         "ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:"
         "ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:"
         "DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2")
-    version = re.search(r"\d+(?:\.\d+)+", openssl_version)
+    # BoringSSL reports itself as OpenSSL 1.1.1 and rejects the whole list if
+    # it contains an @SECLEVEL directive.
+    version = re.search(r"\d+(?:\.\d+)+", ats.tls_library())
     if version is not None and tuple(int(part) for part in version.group().split(".")) >= (3, 0, 0):
         cipher_suite += ":@SECLEVEL=0"
     ats.write_config_file(
@@ -110,7 +111,7 @@ def test_tls_client_versions_minmax(ats_factory: ATSFactory, curl: Curl) -> None
     curl_help = subprocess.check_output(("curl", "--help", "all"), text=True)
     _supports_tls_1_0 = "--tlsv1" in curl_help
     _supports_tls_1_1 = "--tlsv1.1" in curl_help
-    _ats = configure_ats(ats_factory, openssl)
+    _ats = configure_ats(ats_factory)
 
     _ats.start()
     request("foo.com", "1.2", 35, _ats=_ats, _curl=curl)
