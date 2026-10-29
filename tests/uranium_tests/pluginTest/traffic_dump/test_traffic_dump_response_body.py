@@ -77,7 +77,7 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
 
 
 def run_traffic(*, _ats: ATS, _services: ServiceFactory) -> None:
-    """Replay the four HTTP/1 and HTTP/2 response cases.
+    """Replay the HTTP/1 and HTTP/2 response cases, including UTF-8 bodies.
 
     :param _ats: Test-local ats configured by the test.
     :param _services: Test-local services configured by the test.
@@ -151,4 +151,6 @@ def test_traffic_dump_response_body(ats_factory: ATSFactory, services: ServiceFa
     verify_dump(1, "0000000 0000001 ", _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(2, '12"34', _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(3, "0000000 0000001 0000002 ", _ats=_ats, _dump_directory=_dump_directory)
+    verify_dump(4, 'café 中文 😀', _ats=_ats, _dump_directory=_dump_directory)
+    verify_dump(5, '中文 "café" \\ 😀\n', _ats=_ats, _dump_directory=_dump_directory)
     assert "Dumping body bytes: true" in _ats.traffic_out.read_text(errors="replace")
