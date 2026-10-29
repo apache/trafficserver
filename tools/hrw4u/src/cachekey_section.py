@@ -115,7 +115,6 @@ def _plugin_lines(entries: list[Entry], depth: int) -> list[str]:
     lines = []
     for entry in entries:
         if isinstance(entry, KeyPart):
-            # The rm-header drops a client-sent header of the same name.
-            lines += [f"{pad}rm-header {entry.header}", f"{pad}set-header {entry.header} {entry.value}"]
+            lines.append(f"{pad}set-header {entry.header} {entry.value}")
     lines.append(pad + cachekey.render(cachekey.merge(statements(entries))))
     return lines

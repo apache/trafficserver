@@ -3,10 +3,8 @@ cond %{REMAP_PSEUDO_HOOK} [AND]
 
 cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{CLIENT-HEADER:X-Tier} ="gold"
-    rm-header @Hrw4u-Key-01
     set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
     run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=@Hrw4u-Key-01,X-Region"
 else
-    rm-header @Hrw4u-Key-01
     set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
     run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=@Hrw4u-Key-01" "--include-cookies=session"
