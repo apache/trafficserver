@@ -18,50 +18,12 @@ from __future__ import annotations
 
 import pytest
 
-from hrw4u.cachekey import (
-    check_conflicts,
-    is_cachekey_assignment,
-    is_cachekey_statement,
-    merge,
-    parse_assignment,
-    parse_statement,
-    render,
-)
+from hrw4u.cachekey import check_conflicts, merge, parse_assignment, parse_statement, render
 from hrw4u.errors import SymbolResolutionError
 
 
 def flags(*calls: tuple[str, list[str]]) -> list[str]:
     return merge(parse_statement(name, args) for name, args in calls)
-
-
-class TestIsCachekeyStatement:
-    @pytest.mark.parametrize(
-        "name",
-        [
-            "cache.url.pristine",
-            "cache.url.query.remove",
-            "cache.url.query.keep",
-            "cache.url.query.sort",
-            "cache.key.headers.add",
-            "cache.key.cookies.add",
-        ],
-    )
-    def test_known(self, name: str) -> None:
-        assert is_cachekey_statement(name)
-
-    @pytest.mark.parametrize("name", ["cache", "cache.bypass", "cache.url", "run-plugin", "cache.url.query", "cache.url.path"])
-    def test_unknown(self, name: str) -> None:
-        assert not is_cachekey_statement(name)
-
-
-class TestIsCachekeyAssignment:
-    @pytest.mark.parametrize("lhs", ["cache.url.query", "cache.url.path"])
-    def test_known(self, lhs: str) -> None:
-        assert is_cachekey_assignment(lhs)
-
-    @pytest.mark.parametrize("lhs", ["cache", "cache.url", "cache.url.pristine", "cache.key", "inbound.url.query"])
-    def test_unknown(self, lhs: str) -> None:
-        assert not is_cachekey_assignment(lhs)
 
 
 class TestParseAssignment:

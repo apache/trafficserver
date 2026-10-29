@@ -66,19 +66,10 @@ class CacheKeyStatement:
     items: tuple[str, ...] = ()
 
 
-def is_cachekey_statement(name: str) -> bool:
-    flag = CACHEKEY_STATEMENTS.get(name)
-    return flag is not None and not flag.assignment
-
-
-def is_cachekey_assignment(lhs: str) -> bool:
-    flag = CACHEKEY_STATEMENTS.get(lhs)
-    return flag is not None and flag.assignment
-
-
 def parse_assignment(lhs: str, rhs: str) -> CacheKeyStatement:
     """Validate `lhs = rhs`. rhs is the raw value text, quotes included."""
-    if not is_cachekey_assignment(lhs):
+    flag = CACHEKEY_STATEMENTS.get(lhs)
+    if flag is None or not flag.assignment:
         raise SymbolResolutionError(lhs, f"Unknown cache key assignment: '{lhs}'")
     if rhs != '""':
         raise SymbolResolutionError(lhs, f'{lhs} can only be set to ""')
@@ -87,9 +78,9 @@ def parse_assignment(lhs: str, rhs: str) -> CacheKeyStatement:
 
 def parse_statement(name: str, args: list[str]) -> CacheKeyStatement:
     """Validate one statement. args are the raw argument texts, quotes included."""
-    if not is_cachekey_statement(name):
+    flag = CACHEKEY_STATEMENTS.get(name)
+    if flag is None or flag.assignment:
         raise SymbolResolutionError(name, f"Unknown cache key statement: '{name}'")
-    flag = CACHEKEY_STATEMENTS[name]
 
     if not flag.takes_list:
         if args:
