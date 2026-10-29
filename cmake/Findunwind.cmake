@@ -28,10 +28,21 @@
 #     unwind::unwind
 #
 
-find_library(unwind_LIBRARY NAMES unwind)
 find_library(unwind_ptrace_LIBRARY NAMES unwind-ptrace)
 find_library(unwind_generic_LIBRARY NAMES unwind-generic)
-find_path(unwind_INCLUDE_DIR NAMES libunwind.h libunwind/libunwind.h)
+# LLVM's unwinder also installs a libunwind.so and libunwind.h, which may be
+# earlier in the search path but lack the remote unwinding API. Take the ones
+# installed alongside libunwind-ptrace.
+if(unwind_ptrace_LIBRARY)
+  get_filename_component(_unwind_library_dir "${unwind_ptrace_LIBRARY}" DIRECTORY)
+  find_library(
+    unwind_LIBRARY
+    NAMES unwind
+    PATHS "${_unwind_library_dir}"
+    NO_DEFAULT_PATH
+  )
+endif()
+find_path(unwind_INCLUDE_DIR NAMES libunwind-ptrace.h libunwind/libunwind-ptrace.h)
 
 mark_as_advanced(unwind_FOUND unwind_LIBRARY unwind_ptrace_LIBRARY unwind_generic_LIBRARY unwind_INCLUDE_DIR)
 
