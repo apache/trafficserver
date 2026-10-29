@@ -125,6 +125,16 @@ check_net_throttle(ThrottleType t)
   return false;
 }
 
+/// Whether to refuse an accepted connection. An exempt connection is still refused while memory use is over the limit.
+TS_INLINE bool
+check_net_accept_throttle(bool exempt)
+{
+  if (exempt) {
+    return net_memory_throttle.load(std::memory_order_relaxed);
+  }
+  return check_net_throttle(ACCEPT);
+}
+
 TS_INLINE void
 check_throttle_warning(ThrottleType type)
 {
@@ -232,8 +242,9 @@ read_disable(NetHandler *nh, NetEvent *ne)
     // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
-    Dbg(NetHandler::dbg_ctl_socket, "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
-        ne);
+    ne->rearm_timer();
+    Dbg(NetHandler::dbg_ctl_socket, "read_disable updating inactivity_at %" PRId64 ", NetEvent=%p",
+        ne->next_inactivity_timeout_at.load(), ne);
   }
   ne->read.enabled = 0;
   ATS_PROBE4(net_read_disable, ne->get_fd(), ne->read.vio.ndone, ne->write.enabled, ne->read.vio.nbytes);
@@ -257,8 +268,9 @@ write_disable(NetHandler *nh, NetEvent *ne)
     // Clear the next scheduled inactivity time, but don't clear inactivity_timeout_in,
     // so the current timeout is used when the NetEvent is reenabled and not the default inactivity timeout
     ne->next_inactivity_timeout_at = 0;
-    Dbg(NetHandler::dbg_ctl_socket, "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p", ne->next_inactivity_timeout_at,
-        ne);
+    ne->rearm_timer();
+    Dbg(NetHandler::dbg_ctl_socket, "write_disable updating inactivity_at %" PRId64 ", NetEvent=%p",
+        ne->next_inactivity_timeout_at.load(), ne);
   }
   ne->write.enabled = 0;
   ATS_PROBE4(net_write_disable, ne->get_fd(), ne->write.vio.ndone, ne->read.enabled, ne->write.vio.nbytes);

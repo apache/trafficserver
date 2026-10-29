@@ -38,7 +38,7 @@ namespace config
  */
 struct SSLMultiCertEntry {
   std::string        ssl_cert_name;      ///< Certificate file name (required unless action is tunnel).
-  std::string        dest_ip{"*"};       ///< IP address to match (default "*").
+  std::string        dest_ip;            ///< IP address to match (empty means no binding). Only "*" sets default.
   std::string        ssl_key_name;       ///< Private key file name (optional).
   std::string        ssl_ca_name;        ///< CA certificate file name (optional).
   std::string        ssl_ocsp_name;      ///< OCSP response file name (optional).

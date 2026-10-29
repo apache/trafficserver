@@ -124,6 +124,9 @@ TEST_CASE("XPACK_String", "[xpack]")
     {(char *)"cw Times New Roman_σ=1", 23,
      (uint8_t *)"\x95"
                 "\x27\x85\x37\x9a\x92\xa1\x4d\x25\xf0\xa6\xd3\xd2\x3a\xa2\xff\xff\xf6\xff\xff\x44\x01", 22},
+    {(char *)"\xff\xff\xff\xff",        4,
+     (uint8_t *)"\x04"
+                "\xff\xff\xff\xff",                                                                     5 },
   };
 
   SECTION("Encoding")

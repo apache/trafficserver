@@ -756,10 +756,13 @@ StripeSM::aggWriteDone(int event, Event *e)
         (uint64_t)io.aiocb.aio_offset / CACHE_BLOCK_SIZE, (uint64_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) / CACHE_BLOCK_SIZE);
     Dir del_dir;
     dir_clear(&del_dir);
+    dir_set_phase(&del_dir, directory.header->phase);
     for (int done = 0; done < this->_write_buffer.get_buffer_pos();) {
       Doc *doc = reinterpret_cast<Doc *>(this->_write_buffer.get_buffer() + done);
-      dir_set_offset(&del_dir, directory.header->write_pos + done);
+      dir_set_offset(&del_dir, this->offset_to_vol_offset(directory.header->write_pos + done));
+      // A head's entry is under first_key rather than the doc's key, and the doc doesn't say which it is, so try both.
       this->directory.remove(&doc->key, this, &del_dir);
+      this->directory.remove(&doc->first_key, this, &del_dir);
       done += round_to_approx_size(doc->len);
     }
     this->_write_buffer.reset_buffer_pos();
@@ -1436,5 +1439,8 @@ StripeSM::close_write(CacheVC *cont)
 void
 StripeSM::recompute_hit_evacuate_window()
 {
-  this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
+  // data_blocks counts STORE_BLOCK_SIZE blocks; directory offsets count CACHE_BLOCK_SIZE blocks.
+  off_t data_cblocks = this->data_blocks * (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE);
+
+  this->hit_evacuate_window = (data_cblocks * cache_config_hit_evacuate_percent) / 100;
 }

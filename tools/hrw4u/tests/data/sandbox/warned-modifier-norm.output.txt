@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-header X-Path "%{CLIENT-URL:PATH [NORM]}"
+    set-header X-Random "%{RANDOM:100 [NORM]}"

@@ -405,8 +405,8 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
                   "\x6e\x91"
                   "\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43"
                   "\xd3",                                                 54},
-      {(uint8_t *)"\x48\x83"
-                  "\x64\x0e\xff"
+      {(uint8_t *)"\x48\x03"
+                  "307"
                   "\xc1"
                   "\xc0"
                   "\xbf",                                                 8 },

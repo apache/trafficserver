@@ -808,8 +808,8 @@ HostDBContinuation::dnsPendingEvent(int event, Event *e)
       timeout = eventProcessor.schedule_in(this, HOST_DB_RETRY_PERIOD);
       return EVENT_CONT;
     }
-    if (!action.cancelled && action.continuation) {
-      action.continuation->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
+    if (action.continuation) {
+      action.call_back(EVENT_HOST_DB_LOOKUP, nullptr);
     }
     if (hostDB.remove_from_pending_dns_for_hash(hash.hash, this)) {
       hostdb_cont_free(this);
@@ -860,8 +860,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     // We don't try a different family here because a timeout indicates
     // a server issue that won't be fixed by asking for a different
     // address family.
-    if (!action.cancelled && action.continuation) {
-      action.continuation->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
+    if (action.continuation) {
+      action.call_back(EVENT_HOST_DB_LOOKUP, nullptr);
     }
     action = nullptr;
     return EVENT_DONE;
@@ -1085,7 +1085,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
 
   if (!hostdb_enable || (!*hash.host_name && !hash.ip.isValid())) {
     if (action.continuation) {
-      action.continuation->handleEvent(EVENT_HOST_DB_LOOKUP, nullptr);
+      action.call_back(EVENT_HOST_DB_LOOKUP, nullptr);
     }
     hostdb_cont_free(this);
     return EVENT_DONE;

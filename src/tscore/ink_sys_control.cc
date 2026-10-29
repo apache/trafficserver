@@ -23,6 +23,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <unistd.h>
 
 #include "tscore/ink_defs.h"
@@ -111,6 +112,21 @@ ink_get_max_files()
   return RLIM_INFINITY;
 }
 
+namespace
+{
+// The largest RSS ink_get_current_rss() reports: it must fit the int64 metrics gauge.
+constexpr uint64_t MAX_RSS_BYTES = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
+} // namespace
+
+uint64_t
+ink_rss_pages_to_bytes(uint64_t pages, uint64_t page_size)
+{
+  if (page_size == 0 || pages > MAX_RSS_BYTES / page_size) {
+    return 0;
+  }
+  return pages * page_size;
+}
+
 uint64_t
 ink_get_current_rss()
 {
@@ -136,7 +152,7 @@ ink_get_current_rss()
     return 0;
   }
 
-  return static_cast<uint64_t>(resident_pages) * static_cast<uint64_t>(page_size);
+  return ink_rss_pages_to_bytes(resident_pages, static_cast<uint64_t>(page_size));
 #elif defined(darwin)
   // On macOS, task_info() reports resident_size in bytes.
   mach_task_basic_info_data_t info;
@@ -145,6 +161,9 @@ ink_get_current_rss()
     return 0;
   }
 
+  if (info.resident_size > MAX_RSS_BYTES) {
+    return 0;
+  }
   return static_cast<uint64_t>(info.resident_size);
 #elif defined(freebsd)
   // On FreeBSD, kinfo_proc.ki_rssize is the resident set size in pages.
@@ -160,7 +179,11 @@ ink_get_current_rss()
     return 0;
   }
 
-  return static_cast<uint64_t>(kp.ki_rssize) * static_cast<uint64_t>(page_size);
+  // ki_rssize is a signed segsz_t.
+  if (kp.ki_rssize < 0) {
+    return 0;
+  }
+  return ink_rss_pages_to_bytes(static_cast<uint64_t>(kp.ki_rssize), static_cast<uint64_t>(page_size));
 #else
   return 0;
 #endif

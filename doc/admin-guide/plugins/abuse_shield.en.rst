@@ -149,11 +149,12 @@ are rejected. Invalid boolean values are also rejected. An invalid reload leaves
 Burst multipliers default to 1.0 and must be at least 1.0. Every rule has an
 independent token bucket for each configured rate, so thresholds do not depend
 on rule order. A rate is exceeded when its token bucket becomes negative.
-Excess events add proportional token debt. Replenishment occurs on the next
-event for that address and metric; quiet addresses retain their stored debt.
-Entries with debt are protected from bounded-table eviction. All positive
-integer rates preserve fractional credit at millisecond resolution, including
-rates such as 30, 60, and 75. Burst capacity cannot exceed 2,147,483 tokens.
+Excess events add proportional token debt. Debt is repaid over time at the
+rule's rate whether or not the address sends more events, so a quiet address
+leaves debt once it has earned the tokens back. Entries with current debt are
+protected from bounded-table eviction. All positive integer rates preserve
+fractional credit at millisecond resolution, including rates such as 30, 60,
+and 75. Burst capacity cannot exceed 2,147,483 tokens.
 Operator-facing token balances are whole tokens, with negative fractions
 rounded down.
 
@@ -260,7 +261,8 @@ as is the state set by ``abuse_shield.enabled``. ``ip_tracking.slots`` and
 ``log_file`` and ``fingerprint_registry`` are startup-only; a reload that
 changes any of these settings is rejected. Fingerprint additions and removals
 apply to the next ClientHello. Buckets for removed or renamed rate rules are
-pruned on reload and during periodic maintenance, releasing obsolete debt.
+pruned on reload and during the next few maintenance passes, releasing
+obsolete debt.
 
 Other lifecycle messages are::
 

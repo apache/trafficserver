@@ -36,6 +36,9 @@
 #include "proxy/PoolableSession.h"
 #include "swoc/IntrusiveHashMap.h"
 
+#include <atomic>
+#include <vector>
+
 class ProxyTransaction;
 class HttpSM;
 
@@ -61,7 +64,8 @@ class ServerSessionPool : public Continuation
 public:
   /// Default constructor.
   /// Constructs an empty pool.
-  ServerSessionPool();
+  /// @param thread The thread that owns this pool, or @c nullptr for the shared pool.
+  explicit ServerSessionPool(EThread *thread = nullptr);
   /// Handle events from server sessions.
   int         eventHandler(int event, void *data);
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
@@ -85,14 +89,47 @@ public:
   static bool match(PoolableSession *ss, sockaddr const *addr, CryptoHash const &host_hash,
                     TSServerSessionSharingMatchMask match_style);
 
-  /** Get a session from the pool.
-
-      The session is selected based on @a match_style equivalently to @a match. If found the session
-      is removed from the pool.
-
-      @return A pointer to the session or @c NULL if not matching session was found.
-  */
-  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchMask match_style,
+  /** Search the pool for a server session compatible with the given address, hostname, and state machine.
+   *
+   * The selection criteria are controlled by @p match_style. At least one of
+   * @c TS_SERVER_SESSION_SHARING_MATCH_MASK_IP or @c TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY
+   * must be set for a match to be possible; if neither is set, @c HSMresult_t::NOT_FOUND is
+   * returned unconditionally.
+   *
+   * Regardless of @p match_style, a session that supports multiplexed streams is selected only if
+   * its origin certificate is valid for the host that @p sm would verify on a new connection.
+   *
+   * When a compatible session is found and does not support multiplexed streams, it is removed from
+   * the pool and ownership transfers to the caller. A session that supports multiplexed streams is
+   * not removed and remains available for subsequent acquisitions.
+   *
+   * @param[in]  addr           Remote address and port to match.
+   * @param[in]  hostname_hash  Hash of the target hostname, computed the same way as
+   *                            @c PoolableSession::hostname_hash.
+   * @param[in]  match_style    Bitmask of @c TSServerSessionSharingMatchMask values specifying which
+   *                            attributes must agree between the candidate session and the request.
+   * @param[in]  sm             The requesting HTTP state machine. Must be non-null unless no SNI,
+   *                            HOSTSNISYNC, or CERT bit is set in @p match_style and no session
+   *                            supporting multiplexed streams has been added to this pool; when
+   *                            non-null, @c t_state.txn_conf,
+   *                            @c t_state.scheme, and @c t_state.hdr_info.server_request must be
+   *                            initialized.
+   * @param[out] server_session Set to the matched session when @c HSMresult_t::DONE is returned;
+   *                            @c nullptr otherwise.
+   *
+   * @return @c HSMresult_t::DONE if a matching session was found;
+   *         @c HSMresult_t::NOT_FOUND otherwise.
+   *
+   * @pre  Called on an @c EThread.
+   *
+   * @post If the returned session was removed from the pool, @c http_rsb.pooled_server_connections
+   *       is decremented, and the caller must redirect the session's I/O away from this pool before
+   *       this pool can receive another event for it.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
+  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash, TSServerSessionSharingMatchMask match_style,
                              HttpSM *sm, PoolableSession *&server_session);
   /** Release a session to the pool.
 
@@ -101,13 +138,42 @@ public:
    */
   bool releaseSession(PoolableSession *ss);
 
-  /// Close all sessions and then clear the table.
-  void purge();
+  /** Ask the thread that owns this pool to close its sessions in the shared pool.
+
+      This can be called from any thread.
+   */
+  void requestPurge();
+
+  /** Remove the sessions whose connections belong to @a thread.
+
+      The caller must hold the pool lock and is responsible for closing the sessions.
+   */
+  void removeSessionsOf(EThread *thread, std::vector<PoolableSession *> &sessions);
+
+  /// Close sessions whose connections belong to the current thread.
+  static void closeSessions(std::vector<PoolableSession *> const &sessions);
+
+  /** Close a session from an event on the current thread.
+
+      This is for closing a session while a shared pool is locked. The session must already be out
+      of the pool and this must be the pool of the thread that owns the session.
+   */
+  void deferClose(PoolableSession *ssn);
 
   // Pools of server sessions.
   // Note that each server session is stored in both pools.
   IPTable   m_ip_pool;
   FQDNTable m_fqdn_pool;
+
+private:
+  void closeDeferred();
+
+  /// The thread that owns this pool, @c nullptr for the shared pool.
+  EThread *m_thread = nullptr;
+  /// Sessions waiting to be closed by this pool's thread.
+  std::vector<PoolableSession *> m_deferred_close;
+  /// Set while this pool's thread has been asked to purge and has not yet done so.
+  std::atomic<bool> m_purge_requested{false};
 };
 
 class HttpSessionManager
@@ -117,9 +183,19 @@ public:
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(HttpSM *sm, sockaddr const *addr, const char *hostname, ProxyTransaction *ua_txn);
   HSMresult_t release_session(PoolableSession *to_release);
-  void        purge_keepalives();
-  void        init();
-  int         main_handler(int event, void *data);
+  /** Close the keep-alive sessions in the shared pool.
+
+      Each thread closes its own sessions. The current thread's are closed before this returns if
+      the shared pool lock is free, the others when their thread next runs.
+   */
+  void purge_keepalives();
+  /** Close the shared pool sessions whose connections belong to the current thread.
+
+      @return @c false if the shared pool was locked by another thread and nothing was done.
+   */
+  bool purge_thread_keepalives();
+  void init();
+  int  main_handler(int event, void *data);
   void
   set_pool_type(int pool_type)
   {

@@ -2568,6 +2568,13 @@ void      TSStatIntSet(int the_stat, TSMgmtInt value);
 
 TSReturnCode TSStatFindName(const char *name, int *idp);
 
+/** Check whether @a the_stat is a valid statistic index.
+
+    The other TSStatInt* functions assert on an invalid index, so a plugin handling an
+    externally supplied index should validate it with this first.
+ */
+bool TSStatIdIsValid(int the_stat);
+
 /**
    Records.yaml file handling API.
 

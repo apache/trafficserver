@@ -44,24 +44,19 @@ DbgCtl dbg_ctl_iocore_net_accept{"iocore_net_accept"};
 /** Check and handle if the number of client connections exceeds the configured max.
  *
  * @param[in] addr The client address of the new incoming connection.
+ * @param[in] exempt Whether @a addr is in the client exempt list, which the per client limit does not apply to.
  * @param[out] conn_track_group The connection tracker group associated with the
  * new incoming connection if connections are being tracked.
  *
  * @return true if the connection should be accepted, false otherwise.
  */
 bool
-handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<ConnectionTracker::Group> &conn_track_group)
+handle_max_client_connections(IpEndpoint const &addr, bool exempt, std::shared_ptr<ConnectionTracker::Group> &conn_track_group)
 {
   int const client_max = NetHandler::get_per_client_max_connections_in();
-  if (client_max > 0) {
-    auto inbound_tracker = ConnectionTracker::obtain_inbound(addr);
-    if (inbound_tracker.is_exempt()) {
-      // The user configured connections like this to not be tracked. Simply exempt it.
-      Metrics::Counter::increment(net_rsb.per_client_connections_exempt_in);
-      Dbg(dbg_ctl_iocore_net_accepts, "Ignoring client connection counting for an incoming address in the exempt list.");
-      return true;
-    }
-    auto const tracked_count = inbound_tracker.reserve();
+  if (client_max > 0 && !exempt) {
+    auto       inbound_tracker = ConnectionTracker::obtain_inbound(addr);
+    auto const tracked_count   = inbound_tracker.reserve();
     if (tracked_count > client_max) {
       // close the connection as we are in per client connection throttle state
       inbound_tracker.release();
@@ -75,6 +70,19 @@ handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<Connection
     conn_track_group = inbound_tracker.drop();
   }
   return true;
+}
+
+/// Count an accepted client connection, and whether it is from the client exempt list.
+void
+count_client_connection(UnixNetVConnection *vc, bool exempt)
+{
+  Metrics::Gauge::increment(net_rsb.connections_currently_open);
+  vc->set_client_exempt(exempt);
+  if (exempt) {
+    Metrics::Counter::increment(net_rsb.per_client_connections_exempt_in);
+    Metrics::Gauge::increment(net_rsb.per_client_connections_exempt_currently_open);
+    Dbg(dbg_ctl_iocore_net_accepts, "Accepted a client connection from an address in the exempt list.");
+  }
 }
 
 } // end anonymous namespace
@@ -125,8 +133,9 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     }
     Metrics::Counter::increment(net_rsb.tcp_accept);
 
+    bool const                                exempt = ConnectionTracker::is_client_exempt(con.addr);
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
-    if (!handle_max_client_connections(con.addr, conn_track_group)) {
+    if (!handle_max_client_connections(con.addr, exempt, conn_track_group)) {
       con.close();
       continue;
     }
@@ -138,7 +147,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
-    Metrics::Gauge::increment(net_rsb.connections_currently_open);
+    count_client_connection(vc, exempt);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -395,8 +404,10 @@ NetAccept::do_blocking_accept(EThread *t)
         return -1;
       }
     }
+    bool const exempt = ConnectionTracker::is_client_exempt(con.addr);
+
     // check for throttle
-    if (check_net_throttle(ACCEPT)) {
+    if (check_net_accept_throttle(exempt)) {
       check_throttle_warning(ACCEPT);
       // close the connection as we are in throttle state
       con.close();
@@ -404,7 +415,7 @@ NetAccept::do_blocking_accept(EThread *t)
       continue;
     }
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
-    if (!handle_max_client_connections(con.addr, conn_track_group)) {
+    if (!handle_max_client_connections(con.addr, exempt, conn_track_group)) {
       con.close();
       continue;
     }
@@ -423,7 +434,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
-    Metrics::Gauge::increment(net_rsb.connections_currently_open);
+    count_client_connection(vc, exempt);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -526,16 +537,19 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     con.sock = sock;
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
+    bool                                      exempt = false;
 
     if (likely(sock.is_ok())) {
+      exempt = ConnectionTracker::is_client_exempt(con.addr);
+
       // check for throttle
-      if (check_net_throttle(ACCEPT)) {
+      if (check_net_accept_throttle(exempt)) {
         // close the connection as we are in throttle state
         con.close();
         Metrics::Counter::increment(net_rsb.connections_throttled_in);
         continue;
       }
-      if (!handle_max_client_connections(con.addr, conn_track_group)) {
+      if (!handle_max_client_connections(con.addr, exempt, conn_track_group)) {
         con.close();
         continue;
       }
@@ -591,7 +605,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
-    Metrics::Gauge::increment(net_rsb.connections_currently_open);
+    count_client_connection(vc, exempt);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);

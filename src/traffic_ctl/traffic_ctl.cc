@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include <iostream>
 #include <csignal>
 
@@ -29,6 +32,7 @@
 #include "tscore/ArgParser.h"
 #include "tscore/ink_assert.h"
 #include "tscore/signals.h"
+#include "tscore/Demangle.h"
 
 #include "CtrlCommands.h"
 #include "CacheShmCommand.h"
@@ -36,9 +40,11 @@
 #include "FileConfigCommand.h"
 #include "SSLMultiCertCommand.h"
 #include "TrafficCtlStatus.h"
+#include "tsutil/ts_errata.h"
 
 // Define the global variable
-int App_Exit_Status_Code = CTRL_EX_OK; // Initialize it to a default value
+int                         App_Exit_Status_Code = CTRL_EX_OK; // Initialize it to a default value
+swoc::Errata::severity_type App_Exit_Level_Error = ERRATA_ERROR;
 namespace
 {
 void
@@ -63,7 +69,7 @@ signal_register_handler(int signal_num, signal_handler_t handle_signal)
 
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   ts::ArgParser parser;
 
   std::unique_ptr<CtrlCommand> command;
@@ -92,7 +98,10 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format")
     .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "10000", "read-timeout")
     .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts")
-    .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch");
+    .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch")
+    .add_option("--error-level", "",
+                "Minimum severity to treat as error for exit status: " + error_level_names() + ". Default: error", "",
+                AT_MOST_ONE_ARG_N, "", "error-level");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
   auto &cache_command      = parser.add_command("cache", "Manage the document cache").require_commands();
@@ -384,6 +393,19 @@ main([[maybe_unused]] int argc, const char **argv)
     signal_register_handler(SIGINT, handle_signal);
 
     auto args = parser.parse(argv);
+
+    // ArgParser refuses it given more than once. Given without a value it is an error, not the default.
+    if (auto const &error_level = args.get("error-level"); error_level) {
+      if (error_level.size() == 0) {
+        throw std::runtime_error("--error-level needs a value. Use one of " + error_level_names());
+      }
+      if (auto const level = parse_error_level(error_level.value()); level) {
+        App_Exit_Level_Error = *level;
+      } else {
+        throw std::runtime_error("Unknown error level: " + error_level.value() + ". Use one of " + error_level_names());
+      }
+    }
+
     argparser_runroot_handler(args.get("run-root").value(), argv[0]);
     Layout::create();
 
@@ -392,10 +414,15 @@ main([[maybe_unused]] int argc, const char **argv)
     }
     // Execute
     args.invoke();
+  } catch (ServerErrorReported const &) {
+    // Already printed, and App_Exit_Status_Code holds its grade.
   } catch (std::exception const &ex) {
     App_Exit_Status_Code = CTRL_EX_ERROR;
     std::cerr << "Error found:\n" << ex.what() << '\n';
   }
 
   return App_Exit_Status_Code;
+} catch (...) {
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
+  return CTRL_EX_ERROR;
 }

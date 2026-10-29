@@ -53,7 +53,7 @@ Building
 --------
 
 Currently, the HRW4U compiler is not built as part of the ATS build process. You need to
-build it separately using Python 3.10+ and pyenv environments. There's a ``bootstrap.sh``
+build it separately using Python 3.12+ and uv. There's a ``bootstrap.sh``
 script in the ``tools/hrw4u`` directory that helps with the setup process.
 
 Once set up, simply run:
@@ -130,11 +130,22 @@ Status Meaning
        from ``argparse`` and follows Python's usage-error convention.
 ====== ==========================================================================
 
-A compile error does not stop the run: every input is still processed before
-the status is decided, so one bad file in a multi-file or bulk run does not
-skip the files after it. The fatal problems above still abort immediately. A
-failing compile writes its partial output; the exit status is what marks that
-output untrustworthy.
+A compile error does not stop the run: every input is still compiled before the
+status is decided, so one bad file does not skip the files after it.
+``--stop-on-error`` instead ends the run at the first error, and fatal problems
+such as a missing or unreadable input always end it immediately.
+
+A run that reported an error writes no configuration:
+
+- On standard output the inputs form one document, so nothing is written if any
+  input failed, including when the run ended early.
+- In ``input:output`` form only the failing pairs are skipped. Their output files
+  are left as they were, and pairs already written stay written.
+
+``--ast`` output is written even when the run fails, since it is a parse tree
+rather than a configuration; a target is left untouched only when no tree could
+be built. ``--ast`` skips the semantic checks, so a program that parses but is
+otherwise invalid exits 0 under it.
 
 Reverse Tool (u4wrh)
 ^^^^^^^^^^^^^^^^^^^^
@@ -661,6 +672,7 @@ MID           Match substring
 SUF           Match the end of a string
 PRE           Match the beginning of a string
 NOCASE        Case insensitive match
+NORM          Normalize the value first, currently percent-decoding
 ============= ===============================================
 
 These can be used with both sets and equality checks, using the ``with`` keyword:
@@ -674,6 +686,18 @@ These can be used with both sets and equality checks, using the ``with`` keyword
    if inbound.url.path in ["mp3", "mp4"] with EXT,NOCASE {
      ...
    }
+
+``NORM`` acts on the value rather than on the comparison, so it also applies to
+regular expression matches, and it is the one modifier allowed on an interpolated
+value:
+
+.. code-block:: none
+
+   if inbound.url.path ~ /private-/ with NORM {
+     ...
+   }
+
+   inbound.req.X-Decoded-Path = "{inbound.url.path with NORM}";
 
 Running and Debugging
 =====================

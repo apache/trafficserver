@@ -60,7 +60,7 @@ thread_local int t_read_recursive = 0;
 // openReadStartEarliest into the recursive Lread path. When an inner recursion
 // level falls into free_CacheVC the outer frame then touches the recursion
 // counter through the freed `this`; reaching the depth limit is not required to
-// trigger it. Used by the autest reproducer to observe the recursive-read
+// trigger it. Used by the Uranium test reproducer to observe the recursive-read
 // use-after-free (ASan build) on the unfixed sources.
 #if TS_HAS_TESTS
 static bool const test_force_corrupt_doc = std::getenv("ATS_TEST_FORCE_CORRUPT_DOC") != nullptr;
@@ -92,7 +92,7 @@ CacheVC::openReadFromWriterFailure(int event, Event *e)
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   ts::Metrics::Counter::increment(cache_rsb.read_busy_failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.read_busy_failure);
-  _action.continuation->handleEvent(event, e);
+  _action.call_back(event, e);
   free_CacheVC(this);
   return EVENT_DONE;
 }
@@ -842,7 +842,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
         dir_lookaside_probe(&key, stripe, &earliest_dir, nullptr)) {
       dir = earliest_dir;
       if ((call_result = do_read_call(&key)) == EVENT_RETURN) {
-        if (this->handler == reinterpret_cast<ContinuationHandler>(&CacheVC::openReadStartEarliest)) {
+        if (this->handler.is<&CacheVC::openReadStartEarliest>()) {
           is_recursive_call = true;
           if (t_read_recursive > MAX_READ_RECURSION_DEPTH) {
             char tmpstring[CRYPTO_HEX_SIZE];
@@ -919,7 +919,7 @@ CacheVC::openReadStartEarliest(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
   }
   ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
+  _action.call_back(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_NO_DOC));
   return free_CacheVC(this);
 Lcallreturn:
   event_result = handleEvent(AIO_EVENT_DONE, nullptr); // hopefully a tail call
@@ -986,7 +986,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
 
   ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_ALT_MISS));
+  _action.call_back(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-ECACHE_ALT_MISS));
   return free_CacheVC(this);
 Lrestart:
   SET_HANDLER(&CacheVC::openReadStartHead);
@@ -1198,11 +1198,11 @@ Ldone:
   if (!f.lookup) {
     ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
     ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Read)].failure);
-    _action.continuation->handleEvent(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-err));
+    _action.call_back(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<void *>(-err));
   } else {
     ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
     ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
-    _action.continuation->handleEvent(CACHE_EVENT_LOOKUP_FAILED, reinterpret_cast<void *>(-err));
+    _action.call_back(CACHE_EVENT_LOOKUP_FAILED, reinterpret_cast<void *>(-err));
   }
   return free_CacheVC(this);
 Lcallreturn:
@@ -1213,7 +1213,7 @@ Lsuccess:
 Lookup:
   ts::Metrics::Counter::increment(cache_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[static_cast<int>(CacheOpType::Lookup)].failure);
-  _action.continuation->handleEvent(CACHE_EVENT_LOOKUP, nullptr);
+  _action.call_back(CACHE_EVENT_LOOKUP, nullptr);
   return free_CacheVC(this);
 Learliest:
   first_buf      = buf;
