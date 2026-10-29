@@ -43,6 +43,7 @@ public:
   // Http3FrameGenerator
   Http3FrameUPtr generate_frame() override;
   bool           is_done() const override;
+  Http3ErrorUPtr take_error() override;
 
   void reset();
   bool is_final_header_sent() const;
@@ -59,6 +60,8 @@ private:
   bool              _sent_all_data           = false;
   bool              _is_current_header_final = false;
   bool              _is_final_header_sent    = false;
+  bool              _encode_failed           = false; // No HEADERS frame is generated for a header that failed to encode
+  Http3ErrorUPtr    _error;
   HTTPParser        _http_parser;
   HTTPHdr           _header;
   VersionConverter  _hvc;

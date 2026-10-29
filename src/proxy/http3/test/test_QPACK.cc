@@ -492,11 +492,20 @@ TEST_CASE("encode() keeps every field of a header set larger than one buffer blo
   auto                  decoder = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
   auto                  handler = std::make_unique<TestQPACKEventHandler>();
 
-  constexpr int    NUM_FIELDS   = 64;
-  constexpr size_t VALUE_LENGTH = 256;
+  constexpr int    NUM_FIELDS             = 64;
+  constexpr size_t VALUE_LENGTH           = 256;
+  constexpr size_t OVERSIZED_VALUE_LENGTH = 1024;
 
   HTTPHdr original;
   original.create(HTTPType::RESPONSE);
+
+  // The encoded size bound of this field exceeds the initial 2 KB block, so encode() has to replace that block before
+  // anything is written to it.
+  std::string oversized_value(OVERSIZED_VALUE_LENGTH, 'z');
+  MIMEField  *oversized = original.field_create(std::string_view{"x-oversized-header"});
+  original.field_attach(oversized);
+  original.field_value_set(oversized, oversized_value);
+
   for (int i = 0; i < NUM_FIELDS; ++i) {
     char name[32];
     snprintf(name, sizeof(name), "x-large-header-%02d", i);
