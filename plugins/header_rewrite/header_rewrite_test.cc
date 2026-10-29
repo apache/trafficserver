@@ -473,6 +473,16 @@ test_parsing()
     END_TEST();
   }
 
+  { /* duplicate modifier */
+    ParserTest p("cond %{CLIENT-HEADER:foo} =bar [AND,AND]");
+
+    CHECK_EQ(p.parse_succeeded, true);
+    CHECK_EQ(p.has_duplicate_mods(), true);
+    CHECK_EQ(p.validate_mods(), false);
+
+    END_TEST();
+  }
+
   return errors;
 }
 
