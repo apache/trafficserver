@@ -64,7 +64,7 @@ You can perform the following cache configuration tasks:
 -  Override cache directives for a requested domain name, regex on a url,
    hostname or ip, with extra filters for time, port, method of the request,
    and more. ATS can be configured to never cache, always cache,
-   ignore no-cache directives, etc. These are configured in :file:`cache.config`.
+   ignore no-cache directives, etc. These are configured in :file:`cache.yaml`.
 
 The RAM Cache
 =============

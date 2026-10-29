@@ -271,6 +271,8 @@ class ReplayTest:
             records.setdefault("plugin", {})["compiler_path"] = str(compiler)
 
         configured_records = self._replace_runtime_placeholders(config.get("records_config", {}), paths)
+        if "cache_config" in config and "cache_yaml" not in config:
+            configured_records.setdefault("proxy.config.cache.control.filename", "cache.config")
         records_path = paths["config"] / "records.yaml"
         write_yaml(records_path, merge_flat_records(configured_records, records))
         for document in config.get("records_documents", []):
@@ -567,6 +569,7 @@ class ReplayTest:
             (config_dir / filename).write_text("\n".join(lines) + ("\n" if lines else ""))
         if "logging_yaml" in config:
             write_yaml(config_dir / "logging.yaml", config["logging_yaml"])
+        write_yaml(config_dir / "cache.yaml", self._replace_runtime_placeholders(config.get("cache_yaml", {"cache": []}), paths))
         if "storage_yaml" in config:
             write_yaml(config_dir / "storage.yaml", config["storage_yaml"])
         if "storage_lines" in config:

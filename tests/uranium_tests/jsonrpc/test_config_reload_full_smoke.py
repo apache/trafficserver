@@ -60,7 +60,7 @@ def touch_all_config_files(*, _ats: ATS) -> None:
     filenames = (
         "ip_allow.yaml",
         "parent.config",
-        "cache.config",
+        "cache.yaml",
         "hosting.config",
         "splitdns.config",
         "logging.yaml",

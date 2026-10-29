@@ -580,6 +580,14 @@ class ATS:
 
         self._config["logging_yaml"] = dict(document)
 
+    def set_cache_yaml(self, document: Mapping[str, object]) -> None:
+        """Write structured, first-match cache rules when ATS starts.
+
+        :param document: Parsed cache.yaml document to serialize.
+        """
+
+        self._config["cache_yaml"] = dict(document)
+
     def set_ssl_multicert_yaml(self, document: Mapping[str, object]) -> None:
         """Write structured TLS certificate configuration without defaults.
 

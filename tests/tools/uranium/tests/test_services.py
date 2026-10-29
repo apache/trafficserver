@@ -87,6 +87,20 @@ def attach_process(ats: ATS) -> FakeProcess:
     return process
 
 
+def test_cache_yaml_configuration_is_staged(tmp_path: Path) -> None:
+    """Native tests preserve structured cache rules through startup.
+
+    :param tmp_path: Temporary sandbox for the fake ATS instance.
+    """
+
+    ats = ATS(make_context(tmp_path))
+    attach_process(ats)
+    document = {"cache": [{"match": {"dest_domain": "example.com"}, "action": {"cache": "never"}}]}
+    ats.set_cache_yaml(document)
+    ats.start()
+    assert ats._runner.spec.urtest["ats"]["cache_yaml"] == document
+
+
 def test_services_facade_reexports_focused_implementations() -> None:
     """Keep the existing scenario import surface stable after the split."""
 

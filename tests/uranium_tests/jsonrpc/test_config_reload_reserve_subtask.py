@@ -79,7 +79,7 @@ def touch_other_reload_files(*, _ats: ATS) -> None:
         _ats.config_directory / "ip_allow.yaml",
         _ats.config_directory / "logging.yaml",
         _ats.config_directory / "sni.yaml",
-        _ats.config_directory / "cache.config",
+        _ats.config_directory / "cache.yaml",
     )
     for path in paths:
         path.touch()

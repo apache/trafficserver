@@ -532,7 +532,9 @@ The ``urtest`` section configures the test environment:
     ``enable_tls``, ``enable_quic``, and ``enable_cripts``
   - **records_config**: Dictionary of records.config settings
   - **remap_config**: List of remap rules (string or dict format)
-  - **cache_config**: List of cache.config rules
+  - **cache_yaml**: Structured cache.yaml document with first-match rules
+  - **cache_config**: List of legacy additive cache.config rules; selects
+    cache.config unless cache_yaml or an explicit filename is supplied
   - **hosting_config**: List of hosting.config rules
   - **environment**: Dictionary of environment variables for the ATS process
   - **copy_to_config_dir**: List of files/directories to copy to ATS config directory
