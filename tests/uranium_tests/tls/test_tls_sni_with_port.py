@@ -45,17 +45,19 @@ def configure_ats(
         })
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server_three.http_port}")
     ats.allow_private_connect(("CONNECT", "GET"))
+    # Addresses, since HostDB does not read /etc/hosts and CI resolvers need
+    # not answer for localhost.
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
         "  - fqdn: yay.example.com\n"
         f"    inbound_port_ranges: {port_one}-{port_one}\n"
-        f"    tunnel_route: localhost:{_server_one.https_port}\n"
+        f"    tunnel_route: 127.0.0.1:{_server_one.https_port}\n"
         "  - fqdn: yay.example.com\n"
         "    inbound_port_ranges:\n"
         f"      - {port_two}\n"
         f"      - {port_three}\n"
-        f"    tunnel_route: localhost:{_server_two.https_port}\n",
+        f"    tunnel_route: 127.0.0.1:{_server_two.https_port}\n",
     )
     return ats
 

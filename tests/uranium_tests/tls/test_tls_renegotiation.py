@@ -122,5 +122,5 @@ def test_tls_renegotiation(ats_factory: ATSFactory, services: ServiceFactory, cu
     assert "HTTP/1.1 200 OK" in result.stderr
     traffic_out = _ats.traffic_out.read_text(errors="replace")
     assert "received signal" not in traffic_out and "failed assertion" not in traffic_out
-    if "BoringSSL" not in ssl.OPENSSL_VERSION:
+    if "BoringSSL" not in _ats.tls_library():
         assert "trying to renegotiate from the client" in traffic_out

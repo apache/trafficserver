@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 import json
@@ -50,6 +50,9 @@ class TestRuntime:
     sandbox_root: Path
     layout: dict[str, str]
     features: dict[str, Any]
+    # Library versions ATS was built with, keyed as traffic_layout --versions
+    # reports them, e.g. "openssl_str" for the TLS library.
+    versions: dict[str, str] = field(default_factory=dict)
 
     @classmethod
     def create(
@@ -77,6 +80,7 @@ class TestRuntime:
         try:
             layout = json.loads(subprocess.check_output([traffic_layout, "--json"], text=True))
             features = json.loads(subprocess.check_output([traffic_layout, "--features", "--json"], text=True))
+            versions = json.loads(subprocess.check_output([traffic_layout, "--versions", "--json"], text=True))
         except (subprocess.CalledProcessError, json.JSONDecodeError) as error:
             raise RuntimeConfigError(f"Could not query {traffic_layout}: {error}") from error
 
@@ -90,6 +94,7 @@ class TestRuntime:
                 key: value.rstrip("/") for key, value in layout.items()
             },
             features=features,
+            versions=versions,
         )
 
     @property

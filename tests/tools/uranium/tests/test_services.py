@@ -318,7 +318,11 @@ def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
     process = attach_process(ats)
 
     assert ats.http_port == 12345
-    assert ats.uds_path.endswith("/run/ats/runtime/ats.sock")
+    # A long tmp_path, such as under xdist with a deep TMP, moves the listener
+    # to the short directory that test_long_sandbox_uses_short_uds_path covers.
+    default_uds = ats._root / "runtime" / "ats.sock"
+    if len(os.fsencode(default_uds)) < 104:
+        assert ats.uds_path.endswith("/run/ats/runtime/ats.sock")
     assert not ats.is_running
 
     ats.records.update({"proxy.config.http.server_ports": "12345"})
