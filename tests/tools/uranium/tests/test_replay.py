@@ -26,15 +26,16 @@ import yaml
 from tools.uranium.replay import ReplayTest
 
 
-@pytest.mark.parametrize("stop_after_client", [False, True])
-def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_after_client: bool) -> None:
+@pytest.mark.parametrize("stop_after_client", [None, False, True])
+def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_after_client: bool | None) -> None:
     """Preserve intentional origin-disconnect checks without changing default teardown.
 
     :param tmp_path: Sandbox stand-in.
-    :param stop_after_client: Whether this replay requests origin shutdown before metrics.
+    :param stop_after_client: Whether this replay requests origin shutdown before metrics, or None to omit the key.
     """
     replay = Mock(spec=ReplayTest)
-    replay.spec = SimpleNamespace(urtest={"server": {"stop_after_client": stop_after_client}, "client": {}})
+    server_config = {} if stop_after_client is None else {"stop_after_client": stop_after_client}
+    replay.spec = SimpleNamespace(urtest={"server": server_config, "client": {}})
     replay.runtime = Mock()
     replay.runtime.requirement_failure.return_value = None
     replay.sandbox = tmp_path
@@ -49,6 +50,7 @@ def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_af
 
     ReplayTest.run(replay)
 
+    replay.runtime.prepare_sandbox.assert_called_once_with(tmp_path, parent=tmp_path.parent)
     expected = [call.validate(server, replay._start_ats.return_value)]
     if stop_after_client:
         expected.append(call.stop())

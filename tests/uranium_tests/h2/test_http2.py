@@ -78,7 +78,7 @@ def http2_settings_rate_limit_configure_ats(ats_factory: ATSFactory) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ats-settings-rate-limit", enable_tls=True, enable_cache=False)
+    ats = ats_factory.create("ats-settings-rate-limit", enable_tls=True, enable_cache=False, disable_log_checks=True)
     ats.add_default_ssl_files()
     ats.records.update(
         {

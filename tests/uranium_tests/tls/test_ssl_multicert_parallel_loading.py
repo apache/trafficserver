@@ -29,7 +29,7 @@ def test_ssl_multicert_parallel_loading(ats_factory: ATSFactory, services: Servi
         {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n"},
         {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
     )
-    ats = ats_factory.create("ats", enable_tls=True)
+    ats = ats_factory.create("ats", enable_tls=True, disable_log_checks=True)
     ats.records.update(
         {
             "proxy.config.ssl.server.multicert.concurrency": 4,

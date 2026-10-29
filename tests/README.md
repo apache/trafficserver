@@ -75,6 +75,11 @@ Running `uv sync` in `tests/` creates an environment that editors can discover.
 `pyrightconfig.json`, remember that Pyright gives that file precedence over the
 settings in `pyproject.toml`.
 
+`tests/uv.lock` is committed so that CI and local runs resolve the same Python
+dependency versions. Merge Dependabot pull requests that bump it. After
+changing the dependencies in `tests/pyproject.toml`, regenerate the lock by
+running `uv lock` in `tests/` and commit both files together.
+
 ### Selecting tests
 
 Pass pytest's `-k` expression through the wrapper:
@@ -127,8 +132,12 @@ validation together and is independently schedulable.
 
 Use a native `test_*.py` scenario when the test needs a custom curl, OpenSSL,
 raw-socket, or Python client; a specialized server; multiple ATS instances; or
-ordered runtime mutations. Structure these tests around a scenario class with
-named configuration and phase methods and an explicit `run()` entry point.
+ordered runtime mutations. Write these as plain pytest `test_*` functions whose
+signatures list the fixtures they use, such as `ats`, `ats_factory`,
+`services`, and `curl`. Put repeated setup and phases in small helper
+functions, and use parametrization for variations of the same behavior. A
+scenario class and `run()` entry point are not needed; keep classes for
+genuinely stateful protocol clients or services.
 
 The native fixtures are imported from `tools.uranium.services`. The most common
 ones are `ATSFactory`, `ServiceFactory`, and `Curl`. They own process cleanup,

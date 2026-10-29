@@ -129,9 +129,13 @@ Uranium test items.
 Successful test sandboxes are removed by default. Pass ``--keep-sandboxes`` to
 retain them for local inspection; failed-test sandboxes are always retained.
 Each sandbox is ``<sandbox-root>/<test-name>/``, using the full pytest test
-name and parameter IDs without a generated suffix. A rerun clears that test's
-previous directory first. Collected tests must have distinct sandbox names;
-name collisions cause a collection error. Unix sockets use short paths when
+name and parameter IDs without a generated suffix. The name omits the file
+path, so test names must be unique across the whole suite, not just within one
+file. A rerun clears that test's previous directory first. Collected tests must
+have distinct sandbox names; name collisions cause a collection error, or fail
+the colliding tests under ``-n``. Because the check sees only collected tests,
+a selective run can still reuse the directory of a same-named test in another
+file from an earlier run. Unix sockets use short paths when
 needed independently of the artifact directory names.
 
 Manual Tests

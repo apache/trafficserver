@@ -132,13 +132,14 @@ Build-time configuration
                                   IDE indexing).
 
 
-Unit tests vs. AuTest
----------------------
+Unit tests vs. Uranium tests
+----------------------------
 
   * Catch2 unit tests (`test_jax`) live in each `*/test.cc` and cover pure
     algorithm logic. Built when BUILD_TESTING is on; run via ctest or the
     test_jax binary directly.
 
-  * End-to-end AuTests live under `tests/uranium_tests/pluginTest/jax_fingerprint/`
-    and exercise the plugin via Proxy Verifier replay yamls. They require a
-    full install (traffic_server, traffic_layout, the plugin .so).
+  * End-to-end Uranium tests live under
+    `tests/uranium_tests/pluginTest/jax_fingerprint/` and exercise the plugin
+    via Proxy Verifier replay yamls. They require a full install
+    (traffic_server, traffic_layout, the plugin .so).

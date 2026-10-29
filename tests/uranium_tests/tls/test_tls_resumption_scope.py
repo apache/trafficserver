@@ -26,6 +26,8 @@ from tools.uranium.services import ATS, ATSFactory, ServiceFactory
 from tools.uranium.services import CommandResult
 from tools.uranium.utils import version_tuple
 
+from ..jsonrpc.config_reload_helpers import reload_task_statuses
+
 DIRECTORY = Path(__file__).parent
 SSL = DIRECTORY / "ssl"
 
@@ -127,12 +129,14 @@ def assert_access_counts(ats: ATS, counts: dict[str, int]) -> None:
     """Flush logs and require exact successful-request counts per hostname.
 
     :param ats: Proxy to stop gracefully before examining its access log.
-    :param counts: Expected counts, including zero for forbidden hostnames.
+    :param counts: Expected counts; a zero count forbids any line for that hostname.
     """
     ats.stop()
     content = (ats.log_directory / "squid.log").read_text()
     for host, count in counts.items():
         assert len(re.findall(rf"^200 {re.escape(host)}$", content, re.MULTILINE)) == count, content
+        if count == 0:
+            assert re.search(rf" {re.escape(host)}$", content, re.MULTILINE) is None, content
 
 
 def test_tls_resume_cross_sni(ats_factory: ATSFactory, services: ServiceFactory) -> None:
@@ -222,6 +226,8 @@ def test_tls_resume_verify_level(ats_factory: ATSFactory, services: ServiceFacto
     (ats.config_directory / "sni.yaml").write_text(policy.replace("MODERATE", "STRICT"))
     result = ats.traffic_ctl("config", "reload", "-m", "-t", "verify-level", "-w", "1", "-r", "0.5", "-T", "30s")
     assert result.returncode == 0, result.output
+    statuses = reload_task_statuses(ats, "verify-level")
+    assert "sni.yaml" in statuses, statuses
     result = connect(ats, "level.example.com", session, certificate="aaa-signed")
     assert result.returncode == 0, result.output
     assert "Reused" not in result.output, result.output
@@ -260,6 +266,8 @@ def test_tls_resume_ca_replacement(ats_factory: ATSFactory, services: ServiceFac
         os.utime(bundle, (old_mtime + 2, old_mtime + 2))
         result = ats.traffic_ctl("config", "reload", "-m", "-t", "replace-ca", "-w", "1", "-r", "0.5", "-T", "30s")
         assert result.returncode == 0, result.output
+        statuses = reload_task_statuses(ats, "replace-ca")
+        assert "ssl_multicert.config" in statuses, statuses
     for version in versions:
         result = connect(ats, host, ats.run_directory / f"session-{version}", version=version, certificate=cert, chain=chain)
         assert f"New, TLSv{version}" in result.output, result.output
