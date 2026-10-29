@@ -163,7 +163,9 @@ def test_tls_sni_groups(ats_factory: ATSFactory, curl: Curl) -> None:
 
     require_refused(s_client("aaa.com", "-tls1_2", _ats=_ats))
     if openssl_at_least((3, 5, 0)):
-        result = s_client("aaa.com", "-ciphersuites", "TLS_AES_256_GCM_SHA384", _ats=_ats)
+        # System crypto policies, such as RHEL's, may leave X25519MLKEM768 out
+        # of the groups s_client offers by default.
+        result = s_client("aaa.com", "-ciphersuites", "TLS_AES_256_GCM_SHA384", "-groups", "X25519MLKEM768", _ats=_ats)
         require_version(result, "TLSv1.3")
         assert re.search(r"((Server|Peer) Temp Key|Negotiated TLS1\.3 group): X25519MLKEM768", result.output), result.output
         traffic_out = _ats.traffic_out.read_text(errors="replace")

@@ -53,10 +53,14 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
                 ]).run()
             assert result.returncode == 0, result.output
             assert "Verified 10000 test metrics" in result.stdout
+    # The continuation count comes from the freelist dump, which has no
+    # INKContAllocator rows when allocations go straight to malloc.
+    count_continuations = not ats.has_feature("TS_USE_MALLOC_ALLOCATOR")
     baseline = ats.run_directory / "cont_baseline"
-    result = services.process("count-before",
-                              [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
-    assert result.returncode == 0, result.output
+    if count_continuations:
+        result = services.process(
+            "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
+        assert result.returncode == 0, result.output
     result = services.process(
         "reject", [sys.executable, directory / "fetch_stats.py",
                    str(ats.http_port), "json", "--reject", "--encoding=gzip"]).run()
@@ -69,9 +73,10 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
             [sys.executable, directory / "fetch_stats.py",
              str(ats.http_port), "prometheus", "--reset", *arguments]).run()
         assert result.returncode == 0, result.output
-    result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
-    assert result.returncode == 0, result.output
-    assert "no more than the baseline" in result.stdout
+    if count_continuations:
+        result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
+        assert result.returncode == 0, result.output
+        assert "no more than the baseline" in result.stdout
     result = services.process(
         "after-aborts",
         [sys.executable, directory / "fetch_stats.py",

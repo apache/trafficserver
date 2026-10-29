@@ -64,11 +64,13 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "    ssl_key_name: server.key",
         ))
     ats.remap_config.add_line(f"map https://http-test:{ats.https_port}/ https://127.0.0.1:{_origin.https_port}/")
+    # An address, since HostDB does not read /etc/hosts and CI resolvers
+    # need not answer for localhost.
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
         "  - fqdn: tunnel-test\n"
-        f"    tunnel_route: localhost:{_origin.https_port}\n",
+        f"    tunnel_route: 127.0.0.1:{_origin.https_port}\n",
     )
     ats.allow_private_connect(("CONNECT", "GET"))
     return ats

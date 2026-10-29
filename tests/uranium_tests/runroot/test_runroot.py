@@ -220,6 +220,11 @@ def test_runroot_verify(procedural_context: ProceduralContext) -> None:
     _layout = context.runtime.layout
 
     bin_suffix, log_suffix = require_prefix_layout(_layout=_layout)
+    # A runroot keeps state directories configured outside PREFIX, such as a
+    # packaged /var/log/trafficserver, at their installed location, where the
+    # test user cannot pass verify's write checks.
+    if not _layout["LOGDIR"].startswith(_layout["PREFIX"]):
+        pytest.skip("traffic_layout verify needs LOGDIR below PREFIX")
     path = _directory / "runroot"
     init(path, _directory=_directory, _traffic_layout=_traffic_layout)
     runroot_yaml = path / "runroot.yaml"
