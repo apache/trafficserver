@@ -50,7 +50,9 @@ Operator::initialize(Parser &p)
     _mods = static_cast<OperModifiers>(_mods | OPER_INV);
   }
 
-  p.validate_mods();
+  if (!p.validate_mods()) {
+    throw std::runtime_error("unknown modifier(s)");
+  }
 }
 
 void
