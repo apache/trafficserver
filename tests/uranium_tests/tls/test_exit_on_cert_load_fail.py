@@ -29,7 +29,7 @@ def configure_ats(ats_factory: ATSFactory, *, _exit_on_failure: bool, _side: str
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True)
+    ats = ats_factory.create("ts", enable_tls=True, disable_log_checks=True)
     if _side == "client":
         ats.add_default_ssl_files()
         ats.ssl_multicert_config.add_lines(

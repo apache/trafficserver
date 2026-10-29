@@ -145,8 +145,8 @@ transaction hooks::
         TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);
     }
 
-For more example code using hooks, see the test_hooks plugin in tests/tools/plugins (used by the test_hooks.test.py
-Uranium test).
+For more example code using hooks, see the test_hooks plugin in tests/tools/plugins (used by the
+tests/uranium_tests/pluginTest/test_hooks/test_api_hooks.py Uranium test).
 
 See Also
 ========

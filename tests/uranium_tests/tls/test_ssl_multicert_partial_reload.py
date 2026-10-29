@@ -140,6 +140,7 @@ def generate_rsa(ats: ATS, stem: str, common_name: str) -> None:
         f"/CN={common_name}",
     )
     assert result.returncode == 0, result.output
+    ats.chown_for_ats(ats.ssl_directory)
 
 
 def generate_ec(ats: ATS, stem: str, common_name: str) -> None:
@@ -170,6 +171,7 @@ def generate_ec(ats: ATS, stem: str, common_name: str) -> None:
         f"/CN={common_name}",
     )
     assert cert_result.returncode == 0, cert_result.output
+    ats.chown_for_ats(ats.ssl_directory)
 
 
 def reload(ats: ATS, token: str, expected: str) -> None:

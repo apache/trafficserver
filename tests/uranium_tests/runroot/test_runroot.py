@@ -248,6 +248,8 @@ def test_runroot_verify(procedural_context: ProceduralContext) -> None:
     for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
         assert expected in result.stdout
 
+    if os.geteuid() == 0:
+        pytest.skip("root can write a 0400 file, so the write-permission failure cannot be exercised")
     inaccessible = path / log_suffix / "unwritable.log"
     inaccessible.touch(mode=0o400)
     failed = run(

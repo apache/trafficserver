@@ -79,7 +79,7 @@ class AbuseShieldHarness:
         :param jax: Whether to load and export JA3 fingerprints.
         """
 
-        ats = self._ats_factory.create("ts", enable_tls=tls, enable_cache=True)
+        ats = self._ats_factory.create("ts", enable_tls=tls, enable_cache=True, disable_log_checks=True)
         if not ats.plugin_exists("abuse_shield.so"):
             pytest.skip("abuse_shield.so is required")
         if jax and not ats.plugin_exists("jax_fingerprint.so"):

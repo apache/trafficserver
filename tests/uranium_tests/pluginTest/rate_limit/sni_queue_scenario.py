@@ -95,6 +95,11 @@ def run_rate_limit_sni(
         if client_script == "rate_limit_sni_expiry_client.sh":
             assert "Queueing the VC" in traffic_out, traffic_out
             assert "Queued VC is too old" in traffic_out, traffic_out
+        if client_script == "rate_limit_sni_queue_client.sh":
+            assert "Queueing the VC" in traffic_out, traffic_out
+            assert "Enabling queued VC" in traffic_out, traffic_out
+            assert "Rejecting connection" not in traffic_out, traffic_out
+            assert re.search(r"Releasing a slot, active entities == [0-9]{4,}", traffic_out) is None, traffic_out
         assert re.search(failure_expression, traffic_out) is None, traffic_out
 
     _ats = configure_ats(ats_factory)

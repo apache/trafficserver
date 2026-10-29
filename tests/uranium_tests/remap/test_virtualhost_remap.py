@@ -18,9 +18,9 @@ import copy
 
 import yaml
 
-from tools.uranium.services import ATS, Curl, ServiceFactory, wait_for_file_lines
+from tools.uranium.services import ATSFactory, Curl, ServiceFactory, wait_for_file_lines
 
-from ..jsonrpc.config_reload_helpers import wait_for_status
+from ..jsonrpc.config_reload_helpers import reload_task_statuses
 
 
 def virtualhost_entry(identifier: str, domains: list[str], routes: list[tuple[str, str]], origin: str) -> dict[str, object]:
@@ -47,13 +47,14 @@ def virtualhost_entry(identifier: str, domains: list[str], routes: list[tuple[st
     }
 
 
-def test_virtualhost_remap(ats: ATS, services: ServiceFactory, curl: Curl) -> None:
+def test_virtualhost_remap(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
     """Select exact/wildcard tables and preserve both entries after a refused reload.
 
-    :param ats: Proxy with both global and per-domain remap tables.
+    :param ats_factory: Factory for the proxy with both global and per-domain remap tables.
     :param services: Factory owning the path-keyed backend.
     :param curl: Transport-aware request client.
     """
+    ats = ats_factory.create("ats", disable_log_checks=True)
     server = services.origin("server")
     for path in ("vhost-exact-domain", "vhost-deep-wildcard", "vhost-wide-wildcard", "vhost-wildcard-precedence",
                  "vhost-exact-precedence", "vhost-fallback-rule", "global-fallback/other", "global-plain", "vhost-conflict"):
@@ -107,9 +108,12 @@ def test_virtualhost_remap(ats: ATS, services: ServiceFactory, curl: Curl) -> No
         "deep-wildcard", ["*.deep.example.com", "exact.example.org"],
         [("http://x.deep.example.com/", "vhost-conflict"), ("http://exact.example.org/", "vhost-conflict")], origin)
     (ats.config_directory / "virtualhost.yaml").write_text(yaml.safe_dump({"virtualhost": conflict}))
-    result = ats.traffic_ctl("config", "reload", "-t", "vhost-conflict", "--directive=virtualhost.id=deep-wildcard")
-    assert result.returncode == 0, result.output
-    wait_for_status(ats, "vhost-conflict", "virtualhost", "fail")
+    result = ats.traffic_ctl(
+        "config", "reload", "-m", "-t", "vhost-conflict", "-w", "1", "-r", "0.5", "-T", "30s",
+        "--directive=virtualhost.id=deep-wildcard")
+    assert result.returncode == 2, result.output
+    statuses = reload_task_statuses(ats, "vhost-conflict")
+    assert statuses.get("virtualhost") == "fail", statuses
     wait_for_file_lines(ats.diags_log, "is already claimed by virtualhost 'exact-only'", 1)
     for host, expected in (("x.deep.example.com", "vhost-deep-wildcard"), ("exact.example.org", "vhost-exact-domain")):
         result = curl.get(ats, headers={"Host": host})

@@ -165,19 +165,10 @@ class TestRuntime:
             finally:
                 fcntl.flock(lock, fcntl.LOCK_UN)
 
-    def item_sandbox(self, replay_path: Path, node_name: str) -> Path:
-        """Return the named sandbox for one replay item.
+    def item_sandbox(self, node_name: str) -> Path:
+        """Return the named sandbox for one replay or procedural item.
 
-        :param replay_path: Source replay file associated with the item.
         :param node_name: Pytest node identifier or replay name.
-        """
-
-        return self.sandbox_root / self.sandbox_name(node_name)
-
-    def procedural_sandbox(self, node_name: str) -> Path:
-        """Return the named sandbox for one procedural item.
-
-        :param node_name: Complete pytest node identifier.
         """
 
         return self.sandbox_root / self.sandbox_name(node_name)

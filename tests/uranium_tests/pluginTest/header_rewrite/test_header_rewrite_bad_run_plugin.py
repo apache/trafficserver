@@ -91,7 +91,7 @@ def configure_reload_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> 
     :param _origin: Test-local origin configured by the test.
     """
 
-    ats = _ats_factory.create("ts-reload", enable_cache=False)
+    ats = _ats_factory.create("ts-reload", enable_cache=False, disable_log_checks=True)
     ats.records.update({
         "proxy.config.diags.debug.enabled": 1,
         "proxy.config.diags.debug.tags": "header_rewrite",
