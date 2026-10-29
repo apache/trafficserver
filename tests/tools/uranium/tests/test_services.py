@@ -130,7 +130,7 @@ def test_procedural_sandbox_preserves_name_and_cleans_previous_run(tmp_path: Pat
         layout={},
         features={},
     )
-    sandbox = runtime.procedural_sandbox(
+    sandbox = runtime.item_sandbox(
         "uranium_tests/cache/test_cache_shm_control_size_mismatch.py::test_cache_shm_control_size_mismatch")
     assert sandbox.name == "test_cache_shm_control_size_mismatch"
     runtime.prepare_sandbox(sandbox)
@@ -157,9 +157,8 @@ def test_replay_sandbox_identifies_test_and_avoids_name_collisions(tmp_path: Pat
         layout={},
         features={},
     )
-    replay = tmp_path / "tests" / "uranium_tests" / "cache" / "cache.test.yaml"
-    first = runtime.item_sandbox(replay, "uranium_tests/cache/cache.test.yaml::cache-default")
-    second = runtime.item_sandbox(replay, "uranium_tests/cache/cache.test.yaml::cache-tls")
+    first = runtime.item_sandbox("uranium_tests/cache/cache.test.yaml::cache-default")
+    second = runtime.item_sandbox("uranium_tests/cache/cache.test.yaml::cache-tls")
 
     assert first.parent == runtime.sandbox_root
     assert first.name == "cache-default"
@@ -430,8 +429,68 @@ def test_ats_checks_configured_diagnostic_destination(tmp_path: Path, destinatio
     attach_process(ats)
     ats.start()
     ats.diags_log.write_text("FATAL: diagnostic in the configured destination\n")
-    with pytest.raises(AssertionError, match="emitted a fatal diagnostic"):
+    with pytest.raises(AssertionError, match="unexpected 'FATAL:' diagnostic"):
         ats.close()
+
+
+@pytest.mark.parametrize("diagnostic", ["ERROR: unexpected failure", "Unrecognized configuration value 'x'"])
+def test_ats_rejects_error_diagnostics(tmp_path: Path, diagnostic: str) -> None:
+    """Errors in a procedural test's diags.log fail the test by default.
+
+    :param tmp_path: Temporary test tree.
+    :param diagnostic: Diagnostic line written to diags.log.
+    """
+
+    ats = ATS(make_context(tmp_path))
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.write_text(f"{diagnostic}\n")
+    with pytest.raises(AssertionError, match="emitted an unexpected"):
+        ats.close()
+
+
+def test_ats_disable_log_checks_allows_errors_but_not_fatal(tmp_path: Path) -> None:
+    """``disable_log_checks`` permits deliberate errors while still rejecting fatal diagnostics.
+
+    :param tmp_path: Temporary test tree.
+    """
+
+    ats = ATS(make_context(tmp_path), disable_log_checks=True)
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.write_text("ERROR: deliberate\nUnrecognized configuration value 'x'\n")
+    ats.close()
+
+    (tmp_path / "fatal").mkdir()
+    fatal = ATS(make_context(tmp_path / "fatal"), disable_log_checks=True)
+    attach_process(fatal)
+    fatal.start()
+    fatal.diags_log.write_text("FATAL: still fatal\n")
+    with pytest.raises(AssertionError, match="unexpected 'FATAL:' diagnostic"):
+        fatal.close()
+
+
+def test_ats_allow_errors_accepts_only_matching_errors(tmp_path: Path) -> None:
+    """Allowed errors pass, while any other error still fails the test.
+
+    :param tmp_path: Temporary test tree.
+    """
+
+    ats = ATS(make_context(tmp_path))
+    ats.allow_errors(r"ERROR: \[plugin\] deliberate")
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.write_text("ERROR: [plugin] deliberate failure\n")
+    ats.close()
+
+    (tmp_path / "other").mkdir()
+    other = ATS(make_context(tmp_path / "other"))
+    other.allow_errors(r"ERROR: \[plugin\] deliberate")
+    attach_process(other)
+    other.start()
+    other.diags_log.write_text("ERROR: [plugin] deliberate failure\nERROR: [plugin] unrelated\n")
+    with pytest.raises(AssertionError, match="unexpected 'ERROR:' diagnostic"):
+        other.close()
 
 
 def test_origin_healthcheck_has_a_distinct_header_lookup_key(tmp_path: Path) -> None:

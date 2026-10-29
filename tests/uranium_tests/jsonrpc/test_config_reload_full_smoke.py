@@ -18,6 +18,8 @@ import time
 
 from tools.uranium.services import ATS, ATSFactory
 
+from .config_reload_helpers import wait_for_reload
+
 
 def configure_ats(ats_factory: ATSFactory) -> ATS:
     """Create valid content for handlers that reject empty files.
@@ -89,7 +91,7 @@ def file_reload(*, _ats: ATS) -> None:
     touch_all_config_files(_ats=_ats)
     reload_result = _ats.traffic_ctl("config", "reload", "-t", "full_reload_smoke")
     assert reload_result.returncode == 0, reload_result.output
-    time.sleep(15)
+    assert wait_for_reload(_ats, "full_reload_smoke") == "success"
     status = _ats.traffic_ctl("config", "status", "-t", "full_reload_smoke")
     assert status.returncode == 0, status.output
     assert "in_progress" not in status.stdout

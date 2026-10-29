@@ -22,7 +22,7 @@ import shutil
 
 import pytest
 
-from tools.uranium.services import ATS, ATSFactory, Curl
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl
 
 TEST_DIRECTORY = Path(__file__).parent
 
@@ -44,7 +44,7 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True)
+    ats = ats_factory.create("ts", enable_tls=True, disable_log_checks=True)
     ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
     ats.ssl_multicert_config.add_lines(
         (
@@ -98,8 +98,46 @@ def request(hostname: str, *cipher_options: str, _ats: ATS, _curl: Curl) -> str:
     return result.output
 
 
+NEGOTIATED_VERSION = re.compile(r"New, (TLSv1\.\d),")
+
+
+def s_client(hostname: str, *options: str, _ats: ATS) -> CommandResult:
+    """Send one request through ``openssl s_client`` with @a hostname as SNI.
+
+    :param hostname: SNI and Host header value.
+    :param options: Additional ``s_client`` protocol and cipher options.
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    return _ats.run_shell(
+        f'printf "GET / HTTP/1.1\\r\\nHost: {hostname}\\r\\nConnection: close\\r\\n\\r\\n" | '
+        f'openssl s_client -connect 127.0.0.1:{_ats.https_port} -servername {hostname} {shlex.join(options)} -ign_eof')
+
+
+def require_version(result: CommandResult, version: str) -> None:
+    """Require a completed handshake at exactly @a version.
+
+    :param result: Completed ``s_client`` run.
+    :param version: Expected negotiated protocol, such as ``TLSv1.2``.
+    """
+
+    assert result.returncode == 0, result.output
+    match = NEGOTIATED_VERSION.search(result.output)
+    assert match is not None and match.group(1) == version, result.output
+
+
+def require_refused(result: CommandResult) -> None:
+    """Require that no TLS session was negotiated.
+
+    :param result: Completed ``s_client`` run.
+    """
+
+    assert result.returncode != 0, result.output
+    assert NEGOTIATED_VERSION.search(result.output) is None, result.output
+
+
 def test_tls_sni_groups(ats_factory: ATSFactory, curl: Curl) -> None:
-    """SNI policy selects supported TLS groups and rejects invalid ones.
+    """SNI policy selects supported TLS groups and versions and rejects invalid ones.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param curl: Transport-aware curl command runner.
@@ -113,24 +151,20 @@ def test_tls_sni_groups(ats_factory: ATSFactory, curl: Curl) -> None:
     _ats = configure_ats(ats_factory)
 
     _ats.start()
-    result = _ats.run_shell(
-        'printf "GET / HTTP/1.1\\r\\nHost: bbb.com\\r\\nConnection: close\\r\\n\\r\\n" | '
-        f'openssl s_client -connect 127.0.0.1:{_ats.https_port} -servername bbb.com -tls1_2 '
-        '-cipher ECDHE-RSA-AES256-GCM-SHA384 -ign_eof')
-    assert result.returncode == 0, result.output
+    result = s_client("bbb.com", "-cipher", "ECDHE-RSA-AES256-GCM-SHA384", _ats=_ats)
+    require_version(result, "TLSv1.2")
     assert re.search(r"(Server|Peer) Temp Key: X25519", result.output), result.output
+    require_refused(s_client("bbb.com", "-tls1_3", _ats=_ats))
     request("ccc.com", "--ciphers", "ECDHE-RSA-AES256-GCM-SHA384", _ats=_ats, _curl=curl)
 
     traffic_out = _ats.traffic_out.read_text(errors="replace")
     assert "Setting groups list from server_groups_list to x25519" in traffic_out
     assert "ERROR: Invalid server_groups_list: ABC123" in _ats.diags_log.read_text(errors="replace")
 
+    require_refused(s_client("aaa.com", "-tls1_2", _ats=_ats))
     if openssl_at_least((3, 5, 0)):
-        result = _ats.run_shell(
-            'printf "GET / HTTP/1.1\\r\\nHost: aaa.com\\r\\nConnection: close\\r\\n\\r\\n" | '
-            f'openssl s_client -connect 127.0.0.1:{_ats.https_port} -servername aaa.com -tls1_3 '
-            '-ciphersuites TLS_AES_256_GCM_SHA384 -ign_eof')
-        assert result.returncode == 0, result.output
+        result = s_client("aaa.com", "-ciphersuites", "TLS_AES_256_GCM_SHA384", _ats=_ats)
+        require_version(result, "TLSv1.3")
         assert re.search(r"((Server|Peer) Temp Key|Negotiated TLS1\.3 group): X25519MLKEM768", result.output), result.output
         traffic_out = _ats.traffic_out.read_text(errors="replace")
         assert "Setting groups list from server_groups_list to X25519MLKEM768" in traffic_out

@@ -21,12 +21,13 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+import errno
 import fcntl
 import os
 import subprocess
 import sys
 
-from tools.uranium.plugin import _mark_manual_tests, _update_sandbox_retention, pytest_collection_modifyitems
+from tools.uranium.plugin import _mark_manual_tests, _update_sandbox_retention, pytest_collection_modifyitems, pytest_sessionstart
 
 
 @pytest.mark.parametrize("workers", [0, 2])
@@ -65,9 +66,12 @@ def test_collision_diagnostic_reaches_terminal(tmp_path: Path, workers: int) -> 
             timeout=30,
         )
     assert result.returncode != 0
+    assert "INTERNALERROR" not in result.stdout + result.stderr
     assert "Give these tests distinct names" in result.stdout + result.stderr
     assert "test_a.py" in result.stdout + result.stderr
     assert "test_b.py" in result.stdout + result.stderr
+    if workers:
+        assert "2 errors" in result.stdout
 
 
 def test_concurrent_session_cannot_enter_shared_sandbox(tmp_path: Path) -> None:
@@ -93,6 +97,22 @@ def test_concurrent_session_cannot_enter_shared_sandbox(tmp_path: Path) -> None:
     assert result.returncode == 4
     assert "already in use" in result.stdout + result.stderr
     assert evidence.read_text() == "first session"
+
+
+def test_unlockable_sandbox_reports_the_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Report a filesystem that cannot lock the sandbox as a usage error.
+
+    :param tmp_path: User-supplied sandbox stand-in.
+    :param monkeypatch: Fixture simulating a filesystem without lock support.
+    """
+
+    def flock(*_args: Any) -> None:
+        raise OSError(errno.ENOLCK, os.strerror(errno.ENOLCK))
+
+    monkeypatch.setattr(fcntl, "flock", flock)
+    config = SimpleNamespace(getoption=lambda name: str(tmp_path) if name == "sandbox" else None)
+    with pytest.raises(pytest.UsageError, match=f"Cannot lock Uranium sandbox {tmp_path}"):
+        pytest_sessionstart(SimpleNamespace(config=config))  # type: ignore[arg-type]
 
 
 def test_duplicate_sandbox_names_fail_collection(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -197,8 +217,8 @@ def test_procedural_sandbox_retention_policy(
         """Return the sandbox owned by the synthetic item."""
 
         @staticmethod
-        def procedural_sandbox(_nodeid: str) -> Path:
-            """Return the procedural sandbox for one node identifier.
+        def item_sandbox(_nodeid: str) -> Path:
+            """Return the item sandbox for one node identifier.
 
             :param _nodeid: Synthetic pytest node identifier.
             """
