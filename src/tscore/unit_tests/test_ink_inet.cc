@@ -28,7 +28,9 @@
 #include "swoc/bwf_ip.h"
 #include "tscore/ink_inet.h"
 #include <catch2/catch_test_macros.hpp>
+#include <cstring>
 #include <iostream>
+#include <memory>
 #include "ts/apidefs.h"
 #include "tscore/ink_inet.h"
 
@@ -150,6 +152,55 @@ TEST_CASE("ats_ip_pton", "[libts][inet][ink_inet]")
   REQUIRE(addr == lower);
   addr.load("c000::ffff:ffff:ffff:ffff:ffff:ffff");
   REQUIRE(addr == upper);
+}
+
+TEST_CASE("ats_ip_pton port", "[libts][inet][ink_inet]")
+{
+  IpEndpoint ep;
+
+  SECTION("port at the very end of the buffer")
+  {
+    // An exact size copy with no terminating NUL after the port.
+    constexpr std::string_view text{"1.2.3.4:80"};
+    auto                       buf = std::make_unique<char[]>(text.size());
+    memcpy(buf.get(), text.data(), text.size());
+    REQUIRE(0 == ats_ip_pton(std::string_view{buf.get(), text.size()}, &ep.sa));
+    CHECK(ep.host_order_port() == 80);
+  }
+
+  SECTION("port followed by more digits outside the view")
+  {
+    constexpr std::string_view text4{"1.2.3.4:8099"};
+    REQUIRE(0 == ats_ip_pton(text4.substr(0, 10), &ep.sa));
+    CHECK(ep.host_order_port() == 80);
+
+    constexpr std::string_view text6{"[::1]:44399"};
+    REQUIRE(0 == ats_ip_pton(text6.substr(0, 9), &ep.sa));
+    CHECK(ep.host_order_port() == 443);
+  }
+
+  SECTION("odd ports")
+  {
+    auto port_of = [&ep](std::string_view text) -> int {
+      REQUIRE(0 == ats_ip_pton(text, &ep.sa));
+      return ep.host_order_port();
+    };
+    CHECK(port_of("1.2.3.4") == 0);
+    CHECK(port_of("1.2.3.4:") == 0);
+    CHECK(port_of("1.2.3.4:http") == 0);
+    CHECK(port_of("1.2.3.4:-80") == 0);
+    CHECK(port_of("1.2.3.4:80abc") == 80);
+    CHECK(port_of("1.2.3.4:080") == 80); // decimal, not octal
+    CHECK(port_of("[::1]:443") == 443);
+    CHECK(port_of("1.2.3.4:65535") == 65535);
+    // Out of range values keep only the low 16 bits.
+    CHECK(port_of("1.2.3.4:65536") == 0);
+    CHECK(port_of("1.2.3.4:70000") == 4464);
+    CHECK(port_of("1.2.3.4:99999999999") == 59391);
+    // Values too large to parse saturate, which leaves 65535.
+    CHECK(port_of("1.2.3.4:9223372036854775808") == 65535);
+    CHECK(port_of("1.2.3.4:99999999999999999999") == 65535);
+  }
 }
 
 TEST_CASE("inet formatting", "[libts][ink_inet][bwformat]")
