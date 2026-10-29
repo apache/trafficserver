@@ -99,7 +99,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         self._cachekey: ck.CacheKeySection | None = None
         self._cachekey_branch: ck.Branch | None = None
-        self._cachekey_fallback_at = 0
         self._remap_end: int | None = None
 
     def _sandbox_check(self, ctx, check_fn, *, note: str | None = None) -> bool:
@@ -789,7 +788,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             # Visited before the first regular section, so REMAP knows whether it exists. VARS and
             # procedures already come first, so CACHEKEY can use them.
             cachekeys = [item.section() for item in program_items if item.section() and self._is_cachekey(item.section())]
-            first_cachekey = cachekeys[0] if cachekeys else None
             for idx, item in enumerate(program_items):
                 start_length = len(self.output)
                 if item.useDirective():
@@ -824,8 +822,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                             self.visit(cachekey_ctx)
                         cachekeys = []
                     if self._is_cachekey(section):
-                        if section is first_cachekey:
-                            self._cachekey_fallback_at = len(self.output)
                         continue
                     self.visit(section)
                     if idx < len(program_items) - 1 and len(self.output) > start_length:
@@ -1178,7 +1174,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:
-        at = self._remap_end if self._remap_end is not None else self._cachekey_fallback_at
+        at = self._remap_end if self._remap_end is not None else len(self.output)
         block = self._cachekey.render()
         if at > 0 and self.output[at - 1] != "":
             block = ["", *block]
