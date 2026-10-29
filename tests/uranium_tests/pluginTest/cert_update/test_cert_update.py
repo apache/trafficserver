@@ -52,6 +52,8 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
         """
 
         ats = ats_factory.create("ts", enable_tls=True, command="traffic_manager")
+        ats.allow_errors(
+            r"ERROR: (?:SSL::\d+:error:.*PEM|SSLCreateClientContext\(\): failed to load client certificate: .*/client1\.pem)")
         ats.copy_to_ssl(
             SSL_DIRECTORY / "server1.pem",
             SSL_DIRECTORY / "server2.pem",

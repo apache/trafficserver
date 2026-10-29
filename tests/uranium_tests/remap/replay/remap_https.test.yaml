@@ -44,30 +44,55 @@ sessions:
     transactions:
       - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 127.0.0.1], [uuid, no-map]]}}
         server-response: {status: 599}
-        proxy-response: {status: 404}
+        proxy-response: &not-found
+          status: 404
+          headers:
+            fields:
+              - [Server, {value: "ATS/", as: contains}]
+              - [Date, {as: present}]
+              - [Connection, {as: present}]
+              - [Content-Type, {value: "text/html", as: equal}]
       - all: {headers: {fields: [[uuid, https-basic]]}}
         client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.example.com]]}}
-        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
-        proxy-response: {status: 200}
+        server-response: &unframed-origin {status: 200, headers: {fields: [[Connection, close]]}}
+        proxy-response: &chunked-to-client
+          status: 200
+          headers:
+            fields:
+              - [Transfer-Encoding, {value: chunked, as: equal}]
+              - [Content-Length, {as: absent}]
+              - [Connection, {value: keep-alive, as: equal}]
+              - [Server, {value: "ATS/", as: contains}]
+              - [Date, {as: present}]
+              - [Age, {as: present}]
       - all: {headers: {fields: [[uuid, https-default-port]]}}
         client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:443']]}}
-        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
-        proxy-response: {status: 200}
+        server-response: *unframed-origin
+        proxy-response: *chunked-to-client
       - all: {headers: {fields: [[uuid, https-listener-port]]}}
         client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:{ATS_HTTPS_PORT}']]}}
-        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
-        proxy-response: {status: 200}
+        server-response: *unframed-origin
+        proxy-response: *chunked-to-client
       - all: {headers: {fields: [[uuid, https-recv-port]]}}
         client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.example3.com]]}}
-        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
-        proxy-response: {status: 200}
+        server-response: *unframed-origin
+        proxy-response: *chunked-to-client
       - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.test.com], [uuid, missing-rule]]}}
         server-response: {status: 599}
-        proxy-response: {status: 404}
+        proxy-response: *not-found
       - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:1234'], [uuid, bad-port]]}}
         server-response: {status: 599}
-        proxy-response: {status: 404}
+        proxy-response: *not-found
       - all: {headers: {fields: [[uuid, https-origin]]}}
         client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.anotherexample.com]]}}
-        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
-        proxy-response: {status: 200}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0], [Connection, close]]}}
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, {value: "0", as: equal}]
+              - [Transfer-Encoding, {as: absent}]
+              - [Connection, {value: keep-alive, as: equal}]
+              - [Server, {value: "ATS/", as: contains}]
+              - [Date, {as: present}]
+              - [Age, {as: present}]

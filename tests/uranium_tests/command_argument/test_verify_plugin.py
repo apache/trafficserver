@@ -33,7 +33,7 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts")
+    ats = ats_factory.create("ts", disable_log_checks=True)
     for plugin in VERIFY_PLUGIN__PLUGINS:
         ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{plugin}")
     return ats

@@ -127,13 +127,15 @@ def assert_access_counts(ats: ATS, counts: dict[str, int]) -> None:
     """Flush logs and require exact successful-request counts per hostname.
 
     :param ats: Proxy to stop gracefully before examining its access log.
-    :param counts: Expected counts, including zero for forbidden hostnames.
+    :param counts: Expected counts; a zero count forbids any line for that hostname.
     """
     wait_for_file_lines(ats.log_directory / "squid.log", r"^200 ", sum(counts.values()), timeout=15)
     ats.stop()
     content = (ats.log_directory / "squid.log").read_text()
     for host, count in counts.items():
         assert len(re.findall(rf"^200 {re.escape(host)}$", content, re.MULTILINE)) == count, content
+        if count == 0:
+            assert re.search(rf" {re.escape(host)}$", content, re.MULTILINE) is None, content
 
 
 def test_tls_resume_cross_sni(ats_factory: ATSFactory, services: ServiceFactory) -> None:

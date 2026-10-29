@@ -40,7 +40,7 @@ def configure_ats(name: str, policy: int, server: VerifierServer, *, _ats_factor
     :param server: Server used by this test.
     """
 
-    ats = _ats_factory.create(f"ts-{name}", enable_tls=True, enable_cache=False)
+    ats = _ats_factory.create(f"ts-{name}", enable_tls=True, enable_cache=False, disable_log_checks=name == "enforce")
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,

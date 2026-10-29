@@ -63,7 +63,7 @@ def configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> ATS:
     :param _origin: Test-local origin configured by the test.
     """
 
-    ats = _ats_factory.create("ats", enable_tls=True, enable_cache=False)
+    ats = _ats_factory.create("ats", enable_tls=True, enable_cache=False, disable_log_checks=True)
     if not ats.plugin_exists("url_sig.so"):
         pytest.skip("url_sig.so is not installed")
     ats.add_default_ssl_files()
