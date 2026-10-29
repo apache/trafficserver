@@ -209,9 +209,10 @@ ats_ip_pton(const std::string_view &src, sockaddr *ip)
         ats_ip4_set(ip, addr4.s_addr);
       }
     }
-    // If we had a successful conversion, set the port.
+    // If we had a successful conversion, set the port. @a port is all digits but is not
+    // NUL terminated, so parse it with a bounded decimal conversion.
     if (ats_is_ip(ip)) {
-      ats_ip_port_cast(ip) = port.empty() ? 0 : htons(atoi(port.data()));
+      ats_ip_port_cast(ip) = port.empty() ? 0 : htons(static_cast<in_port_t>(swoc::svtoi(port, nullptr, 10)));
     }
   }
 
