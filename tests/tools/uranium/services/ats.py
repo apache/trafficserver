@@ -461,12 +461,15 @@ class ATS:
         """
 
         command = tuple(str(argument) for argument in arguments)
+        # Clients such as openssl s_client echo binary protocol data, e.g. an
+        # HTTP/2 SETTINGS frame, which must not fail the decode.
         completed = subprocess.run(
             command,
             cwd=self.run_directory,
             env=self.environment,
             capture_output=True,
             text=True,
+            errors="replace",
             timeout=timeout,
             check=False,
         )
@@ -653,6 +656,15 @@ class ATS:
 
         return bool(self._context.runtime.features.get(feature))
 
+    def tls_library(self) -> str:
+        """Return the version string of the TLS library ATS was built with.
+
+        Test clients such as openssl and Python's ssl module may use a
+        different library, e.g. system OpenSSL against a BoringSSL ATS.
+        """
+
+        return self._context.runtime.versions.get("openssl_str", "")
+
     def plugin_exists(self, name: str) -> bool:
         """Return whether an installed ATS plugin is available.
 
@@ -721,6 +733,15 @@ class ATSFactory:
         """
 
         return bool(self._context.runtime.features.get(feature))
+
+    def tls_library(self) -> str:
+        """Return the version string of the TLS library ATS was built with.
+
+        Test clients such as openssl and Python's ssl module may use a
+        different library, e.g. system OpenSSL against a BoringSSL ATS.
+        """
+
+        return self._context.runtime.versions.get("openssl_str", "")
 
     def create(self, name: str | None = None, **process_options: Any) -> ATS:
         """Create a named Traffic Server with fixture-owned cleanup.
