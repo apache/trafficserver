@@ -54,6 +54,8 @@
 namespace
 {
 using abuse_shield::dbg_ctl;
+using abuse_shield::metric_burst_multiplier;
+using abuse_shield::metric_rate;
 using abuse_shield::PLUGIN_NAME;
 
 // Optional log file for LOG action output.
@@ -196,34 +198,6 @@ reset_tracker_stats(Table *tracker, abuse_shield::TrackerStats &stats)
 // ============================================================================
 // Rule evaluation
 // ============================================================================
-
-int
-metric_rate(const abuse_shield::RuleFilter &filter, abuse_shield::RateMetric metric)
-{
-  switch (metric) {
-  case abuse_shield::RateMetric::REQUEST:
-    return filter.max_req_rate;
-  case abuse_shield::RateMetric::CONNECTION:
-    return filter.max_conn_rate;
-  case abuse_shield::RateMetric::H2_ERROR:
-    return filter.max_h2_error_rate;
-  }
-  return 0;
-}
-
-double
-metric_burst_multiplier(const abuse_shield::RuleFilter &filter, abuse_shield::RateMetric metric)
-{
-  switch (metric) {
-  case abuse_shield::RateMetric::REQUEST:
-    return filter.req_burst_multiplier;
-  case abuse_shield::RateMetric::CONNECTION:
-    return filter.conn_burst_multiplier;
-  case abuse_shield::RateMetric::H2_ERROR:
-    return filter.h2_burst_multiplier;
-  }
-  return 1.0;
-}
 
 template <typename Table>
 bool
@@ -1094,17 +1068,7 @@ size_t
 prune_rule_buckets(const abuse_shield::Config &config)
 {
   auto prune = [&config](auto &table, abuse_shield::RateMetric metric) {
-    std::unordered_set<std::string> names;
-    for (const auto &rule : config.rules()) {
-      if (metric_rate(rule.filter, metric) > 0) {
-        names.insert(rule.name);
-      }
-    }
-    size_t removed = 0;
-    for (const auto &data : table->data_snapshot()) {
-      removed += data->buckets.prune(names);
-    }
-    return removed;
+    return abuse_shield::prune_tracker_buckets(*table, config.rules(), metric);
   };
   return prune(g_txn_tracker, abuse_shield::RateMetric::REQUEST) + prune(g_conn_tracker, abuse_shield::RateMetric::CONNECTION) +
          prune(g_h2_tracker, abuse_shield::RateMetric::H2_ERROR);
