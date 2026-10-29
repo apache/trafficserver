@@ -61,15 +61,6 @@ class ProcSig:
 
 
 @dataclass(slots=True)
-class CacheKeyHazard:
-    """A REMAP-side construct that is only an error once the file also has a CACHEKEY."""
-
-    filename: str
-    ctx: Any
-    message: str
-
-
-@dataclass(slots=True)
 class QueuedItem:
     text: str
     state: CondState
@@ -108,7 +99,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         self._cachekey: ck.CacheKeySection | None = None
         self._cachekey_branch: ck.Branch | None = None
-        self._cachekey_hazards: list[CacheKeyHazard] = []
         self._cachekey_fallback_at = 0
         self._remap_end: int | None = None
 
@@ -796,6 +786,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitProgram"):
             seen_sections = False
             program_items = ctx.programItem()
+            # Visited before the first regular section, so REMAP knows whether it exists. VARS and
+            # procedures already come first, so CACHEKEY can use them.
+            cachekeys = [item.section() for item in program_items if item.section() and self._is_cachekey(item.section())]
+            first_cachekey = cachekeys[0] if cachekeys else None
             for idx, item in enumerate(program_items):
                 start_length = len(self.output)
                 if item.useDirective():
@@ -824,7 +818,16 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         self.visitProcedureDecl(item.procedureDecl())
                 elif item.section():
                     seen_sections = True
-                    self.visit(item.section())
+                    section = item.section()
+                    if cachekeys and not (section.varSection() or section.sessionVarSection()):
+                        for cachekey_ctx in cachekeys:
+                            self.visit(cachekey_ctx)
+                        cachekeys = []
+                    if self._is_cachekey(section):
+                        if section is first_cachekey:
+                            self._cachekey_fallback_at = len(self.output)
+                        continue
+                    self.visit(section)
                     if idx < len(program_items) - 1 and len(self.output) > start_length:
                         next_items = program_items[idx + 1 :]
                         if any(next_item.section() for next_item in next_items):
@@ -834,7 +837,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.output.append(comment_text)
             self._flush_condition()
             if self._cachekey is not None:
-                self._check_cachekey_hazards()
                 self._emit_cachekey()
             return self.get_final_output()
 
@@ -988,8 +990,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     if warning:
                         self._add_sandbox_warning(ctx, warning)
                     self._dbg("BREAK")
-                    if self.current_section is SectionType.REMAP:
-                        self._add_cachekey_hazard(ctx, "break in REMAP would skip CACHEKEY")
+                    if self.current_section is SectionType.REMAP and self._cachekey is not None:
+                        raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
                     self.emit_statement("no-op [L]")
                     return
 
@@ -1007,7 +1009,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                             "",
                         )
                     self._check_not_key_name(func)
-                    self._watch_cachekey_call(func, args, ctx)
+                    self._check_cachekey_call(func, args)
                     subst_args = [
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
@@ -1056,7 +1058,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 raise SymbolResolutionError("CACHEKEY", "CACHEKEY may only appear once")
             return
         self._cachekey = ck.CacheKeySection()
-        self._cachekey_fallback_at = len(self.output)
         self._cachekey_items(ctx.sectionBody())
         self._cachekey_sandbox_check(ctx)
         base = self._cachekey.base
@@ -1167,23 +1168,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if ck.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
 
-    def _add_cachekey_hazard(self, ctx, message: str) -> None:
-        self._cachekey_hazards.append(CacheKeyHazard(self.filename, ctx, message))
+    @staticmethod
+    def _is_cachekey(section_ctx) -> bool:
+        return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY.value
 
-    def _watch_cachekey_call(self, func: str, args: list[str], ctx) -> None:
+    def _check_cachekey_call(self, func: str, args: list[str]) -> None:
         first = args[0].strip('"') if args else ""
-        if func == "run-plugin" and first.rsplit("/", 1)[-1] == "cachekey.so":
-            self._add_cachekey_hazard(ctx, "run-plugin cachekey.so conflicts with CACHEKEY")
-
-    def _check_cachekey_hazards(self) -> None:
-        saved_filename = self.filename
-        try:
-            for hazard in self._cachekey_hazards:
-                self.filename = hazard.filename
-                with self.trap(hazard.ctx):
-                    raise SymbolResolutionError("CACHEKEY", hazard.message)
-        finally:
-            self.filename = saved_filename
+        if self._cachekey is not None and func == "run-plugin" and first.rsplit("/", 1)[-1] == "cachekey.so":
+            raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:
         at = self._remap_end if self._remap_end is not None else self._cachekey_fallback_at
