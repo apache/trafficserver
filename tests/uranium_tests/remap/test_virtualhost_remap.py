@@ -109,7 +109,8 @@ def test_virtualhost_remap(ats: ATS, services: ServiceFactory, curl: Curl) -> No
     (ats.config_directory / "virtualhost.yaml").write_text(yaml.safe_dump({"virtualhost": conflict}))
     result = ats.traffic_ctl("config", "reload", "-t", "vhost-conflict", "--directive=virtualhost.id=deep-wildcard")
     assert result.returncode == 0, result.output
-    wait_for_status(ats, "vhost-conflict", "virtualhost", "fail")
+    # The reload failed, so config status exits 2.
+    wait_for_status(ats, "vhost-conflict", "virtualhost", "fail", return_code=2)
     wait_for_file_lines(ats.diags_log, "is already claimed by virtualhost 'exact-only'", 1)
     for host, expected in (("x.deep.example.com", "vhost-deep-wildcard"), ("exact.example.org", "vhost-exact-domain")):
         result = curl.get(ats, headers={"Host": host})

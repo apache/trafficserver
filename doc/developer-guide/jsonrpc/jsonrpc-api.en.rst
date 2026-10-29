@@ -1184,7 +1184,7 @@ Field               Type          Description
 
 ``traffic_ctl`` maps ``--count all`` to ``count: 0`` in the RPC request. The server keeps a
 rolling history of the last 100 reloads — when the limit is reached, the oldest entry is evicted
-to make room for new ones. ``count: 0`` returns the full history, most recent first.
+to make room for new ones. ``count: 0`` returns the full history, oldest first.
 
 
 Result
