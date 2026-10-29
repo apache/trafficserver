@@ -1,0 +1,1 @@
+(program (programItem (section SEND_RESPONSE { (sectionBody (statement inbound.resp.X-Served = (value "1") ;)) })) (programItem (section CACHEKEY { (sectionBody (statement (functionCall cache.key.headers.add ( (argumentList (value "X-Region")) )) ;)) })) (programItem (section READ_RESPONSE { (sectionBody (statement outbound.resp.X-Origin = (value "1") ;)) })) <EOF>)

@@ -1,0 +1,8 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Served "1"
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Origin "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-Region"
