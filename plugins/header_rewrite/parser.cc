@@ -187,14 +187,26 @@ Parser::preprocess(std::vector<std::string> tokens)
           std::string        t;
 
           while (getline(iss, t, ',')) {
+            auto const start = t.find_first_not_of(" \t");
+            if (start == std::string::npos) {
+              continue;
+            }
+            auto const end = t.find_last_not_of(" \t");
+            t              = t.substr(start, end - start + 1);
+
             if (std::find(_mods.begin(), _mods.end(), t) != _mods.end()) {
-              // This produces an error, but it's not fatal for load / reload. ToDo: ATS v11 fix.
               TSError("[%s] Duplicate modifier: %s", PLUGIN_NAME, t.c_str());
+              _has_duplicate_mods = true;
             } else {
               _mods.push_back(std::move(t));
             }
           }
         } else {
+          auto const start = m.find_first_not_of(" \t");
+          if (start != std::string::npos) {
+            auto const end = m.find_last_not_of(" \t");
+            m              = m.substr(start, end - start + 1);
+          }
           _mods.push_back(std::move(m));
         }
         tokens.pop_back(); // consume it, so we don't concatenate it into the value
@@ -327,11 +339,13 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
   return false;
 }
 
-// This is a TSError() here, but where this is called from does not treat "false" as a
-// load failure. This is a systemic problem in a some of the parsing. ToDo: ATS v11 fix.
 bool
 Parser::validate_mods() const
 {
+  if (_has_duplicate_mods) {
+    return false;
+  }
+
   if (_mods.empty()) {
     return true;
   }

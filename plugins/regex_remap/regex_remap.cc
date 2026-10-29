@@ -311,7 +311,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
-      break;
+      return false;
     } else if (opt.compare(start, 6, "status") == 0) {
       _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), nullptr, 10));
     } else if (opt.compare(start, 14, "active_timeout") == 0) {
@@ -359,6 +359,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
         last_override = tmp;
       } else {
         TSError("[%s] Unknown options: %s", PLUGIN_NAME, opt.c_str());
+        return false;
       }
     }
     start = opt.find_first_of('@', pos2);
@@ -654,48 +655,46 @@ compile_rule_set(std::string const &filename, std::string const &source)
       continue;
     }
 
-    pos1 = line.find_first_not_of(" \t\n");
-    if (pos1 != std::string::npos) {
-      if (line[pos1] == '#') {
-        continue;
-      }
+    pos1 = line.find_first_not_of(" \t\r\n");
+    if (pos1 == std::string::npos || line[pos1] == '#') {
+      continue;
+    }
 
-      pos2 = line.find_first_of(" \t\n", pos1);
-      if (pos2 != std::string::npos) {
-        regex = line.substr(pos1, pos2 - pos1);
-        pos1  = line.find_first_not_of(" \t\n#", pos2);
+    pos2 = line.find_first_of(" \t\r\n", pos1);
+    if (pos2 != std::string::npos) {
+      regex = line.substr(pos1, pos2 - pos1);
+      pos1  = line.find_first_not_of(" \t\r\n#", pos2);
+      if (pos1 != std::string::npos) {
+        pos2 = line.find_first_of(" \t\r\n", pos1);
+        if (pos2 == std::string::npos) {
+          pos2 = line.length();
+        }
+        subst = line.substr(pos1, pos2 - pos1);
+        pos1  = line.find_first_not_of(" \t\r\n#", pos2);
         if (pos1 != std::string::npos) {
-          pos2 = line.find_first_of(" \t\n", pos1);
+          pos2 = line.find_first_of("\r\n#", pos1);
           if (pos2 == std::string::npos) {
             pos2 = line.length();
           }
-          subst = line.substr(pos1, pos2 - pos1);
-          pos1  = line.find_first_not_of(" \t\n#", pos2);
-          if (pos1 != std::string::npos) {
-            pos2 = line.find_first_of("\n#", pos1);
-            if (pos2 == std::string::npos) {
-              pos2 = line.length();
-            }
-            options = line.substr(pos1, pos2 - pos1);
-          }
+          options = line.substr(pos1, pos2 - pos1);
         }
       }
     }
 
     if (regex.empty()) {
       TSError("[%s] no regexp found in %s: line %d", PLUGIN_NAME, filename.c_str(), lineno);
-      continue;
+      return nullptr;
     }
     if (subst.empty() && options.empty()) {
       TSError("[%s] no substitution string found in %s: line %d", PLUGIN_NAME, filename.c_str(), lineno);
-      continue;
+      return nullptr;
     }
 
     auto cur = std::make_unique<RemapRegex>();
 
     if (!cur->initialize(regex, subst, options)) {
       TSError("[%s] can't create a new regex remap rule", PLUGIN_NAME);
-      continue;
+      return nullptr;
     }
 
     std::string error;
@@ -714,7 +713,7 @@ compile_rule_set(std::string const &filename, std::string const &source)
         oss << "  regex: \"" << cur->regex() << '"';
       }
       TSError("%s", oss.str().c_str());
-      continue;
+      return nullptr;
     }
 
     Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
@@ -835,18 +834,14 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_sizeATS_UNUSED */)
 {
-  RemapInstance *ri = new RemapInstance();
-
-  *ih = (void *)ri;
-  if (ri == nullptr) {
-    TSError("[%s] Unable to create remap instance", PLUGIN_NAME);
-    return TS_ERROR;
-  }
+  *ih = nullptr;
 
   if (argc < 3) {
     TSError("[%s] missing configuration file", PLUGIN_NAME);
     return TS_ERROR;
   }
+
+  auto ri = std::make_unique<RemapInstance>();
 
   // Really simple (e.g. basic) config parser
   for (int i = 3; i < argc; ++i) {
@@ -872,6 +867,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       ri->pristine_url = false;
     } else {
       TSError("[%s] invalid option '%s'", PLUGIN_NAME, argv[i]);
+      return TS_ERROR;
     }
   }
 
@@ -919,6 +915,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     ri->rule_hits.resize(ri->rule_set->rules().size());
   }
 
+  *ih = ri.release();
   return TS_SUCCESS;
 }
 

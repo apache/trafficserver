@@ -97,6 +97,31 @@ def test_header_rewrite_bad_set_body(ats_factory: ATSFactory) -> None:
             None,
             None,
         ),
+        (
+            "duplicate-modifiers",
+            [hook, "  cond %{CLIENT-HEADER:foo} =bar [AND,AND]", "  set-header X-Test yes"],
+            r"Duplicate modifier",
+            None,
+            None,
+        ),
+        (
+            "condition-without-operator",
+            [hook, "  cond %{CLIENT-HEADER:foo} =bar"],
+            r"conditions without operators are not allowed",
+            None,
+            None,
+        ),
     )
     for name, rules, marker, records, files in cases:
         verify_failure(configure_failure(name, rules, marker, records, files, _ats_factory=ats_factory))
+
+
+def test_header_rewrite_global_bad_config(ats_factory: ATSFactory) -> None:
+    """Loading an invalid configuration as a global plugin triggers TSFatal."""
+    ats = ats_factory.create("ats-global-bad-config", enable_cache=False)
+    if not ats.plugin_exists("header_rewrite.so"):
+        pytest.skip("header_rewrite.so is required")
+    ats.write_config_file("bad_global.conf", "cond %{CLIENT-HEADER:foo} =bar [AND,AND]\nset-header X-Test yes\n")
+    ats.plugin_config.add_line("header_rewrite.so bad_global.conf")
+    ats.expect_start_failure(r"failed to parse configuration file bad_global\.conf")
+    verify_failure(ats)
