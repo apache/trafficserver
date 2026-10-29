@@ -1,0 +1,12 @@
+REMAP {
+    inbound.req.X-Seen = "yes";
+}
+
+CACHEKEY {
+    if inbound.req.X-Tier == "gold" {
+        cache.key.headers.add("X-Region");
+    } else {
+        cache.key.cookies.add("session");
+    }
+    cache.key += "{geo.COUNTRY}";
+}
