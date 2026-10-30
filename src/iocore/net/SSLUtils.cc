@@ -119,15 +119,29 @@ track_client_ca_bundle(const char *file)
 }
 
 #if TS_USE_RPK
-// SSL_CTX-level ex_data index holding this context's trusted client RPK keys (a heap-allocated
-// SSLRPKUtils::TrustedKeySet*), so ssl_verify_client_callback() can reach it without needing a
-// per-connection back-reference to the SSLMultiCertConfigParams that built the context.
+/// The client raw public keys a multicert entry trusts, as loaded from ssl_client_rpk_ca_name.
+struct TrustedClientRPK {
+  SSLRPKUtils::TrustedKeySet keys;
+  /// Identifies @a keys in the session id context, taken once when the entry loaded.
+  std::string digest;
+};
+
+// SSL_CTX-level ex_data index holding this context's TrustedClientRPK, so the verify callbacks can
+// reach it without needing a per-connection back-reference to the SSLMultiCertConfigParams that
+// built the context.
 static int ssl_client_rpk_ca_index = -1;
 
 static void
 ssl_client_rpk_ca_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  delete static_cast<SSLRPKUtils::TrustedKeySet *>(ptr);
+  delete static_cast<TrustedClientRPK *>(ptr);
+}
+
+/// @return the client raw public keys @a ctx's entry trusts, or nullptr if it pins none.
+static TrustedClientRPK const *
+trusted_client_rpk(SSL_CTX *ctx)
+{
+  return static_cast<TrustedClientRPK const *>(SSL_CTX_get_ex_data(ctx, ssl_client_rpk_ca_index));
 }
 #endif
 
@@ -300,8 +314,8 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
     // X509_V_ERR_RPK_UNTRUSTED before invoking this callback (see verify_rpk() in
     // crypto/x509/x509_vfy.c). Clear it on a successful pin match so the preset error doesn't
     // survive into SSL_get_verify_result() for a connection we actually accepted.
-    auto *trusted = static_cast<SSLRPKUtils::TrustedKeySet *>(SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_client_rpk_ca_index));
-    bool  pin_ok  = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
+    auto const *trusted = trusted_client_rpk(SSL_get_SSL_CTX(ssl));
+    bool        pin_ok  = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, trusted->keys);
     Dbg(dbg_ctl_ssl_verify, "Client authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (pin_ok) {
       X509_STORE_CTX_set_error(ctx, X509_V_OK);
@@ -352,9 +366,9 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
 
   if (SSL_get_peer_cert_type(ssl) == TLSEXT_cert_type_rpk) {
-    EVP_PKEY *peer_rpk = SSL_get0_peer_rpk(ssl);
-    auto     *trusted  = static_cast<SSLRPKUtils::TrustedKeySet *>(SSL_CTX_get_ex_data(ctx, ssl_client_rpk_ca_index));
-    bool      pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
+    EVP_PKEY   *peer_rpk = SSL_get0_peer_rpk(ssl);
+    auto const *trusted  = trusted_client_rpk(ctx);
+    bool        pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, trusted->keys);
     if (!pin_ok) {
       Warning("client raw public key did not match any trusted key for %s", servername);
     }
@@ -638,8 +652,8 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   if (retval == 1) {
     // SSL_set_SSL_CTX() above duplicates the cert/credential list, but not accepted_peer_cert_types
     // or the custom_verify callback, which were cached from the default "*" ctx at SSL_new().
-    SSL_CTX *matched_ctx = SSL_get_SSL_CTX(ssl);
-    auto    *trusted     = static_cast<SSLRPKUtils::TrustedKeySet *>(SSL_CTX_get_ex_data(matched_ctx, ssl_client_rpk_ca_index));
+    SSL_CTX    *matched_ctx = SSL_get_SSL_CTX(ssl);
+    auto const *trusted     = trusted_client_rpk(matched_ctx);
     // Per-connection, not per-ctx: a verify_client SNI action has already run and may have
     // overridden the mode this connection inherited.
     int const mode = SSL_get_verify_mode(ssl);
@@ -1584,6 +1598,17 @@ bind_session_id_context_to_verify_scope(SSL *ssl)
   if (!update_trust_store()) {
     return false;
   }
+
+#if TS_USE_RPK
+  // Pinned client raw public keys are trust anchors as well, and only the matched entry carries
+  // them. Digested where the entry loaded them, so replacing the file retires the sessions they
+  // verified.
+  if ((verify_mode & SSL_VERIFY_PEER) != 0) {
+    if (auto const *trusted = trusted_client_rpk(SSL_get_SSL_CTX(ssl)); trusted != nullptr) {
+      update_sv(trusted->digest);
+    }
+  }
+#endif
 
   SHA256_Final(hash_buf, &ctx);
 
@@ -3020,18 +3045,22 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       return false;
     }
     std::string completeClientRPKCAPath(Layout::relative_to(params->serverCACertPath, sslMultCertSettings->client_rpk_ca.get()));
-    auto       *trusted = new SSLRPKUtils::TrustedKeySet();
-    if (!SSLRPKUtils::loadTrustedKeys(completeClientRPKCAPath.c_str(), *trusted)) {
-      delete trusted;
+    auto        trusted = std::make_unique<TrustedClientRPK>();
+    if (!SSLRPKUtils::loadTrustedKeys(completeClientRPKCAPath.c_str(), trusted->keys)) {
       SSLError("failed to load trusted client RPK keys from %s", completeClientRPKCAPath.c_str());
       return false;
     }
+    trusted->digest = SSLRPKUtils::digestTrustedKeys(trusted->keys);
+    if (trusted->digest.empty()) {
+      SSLError("failed to digest trusted client RPK keys from %s", completeClientRPKCAPath.c_str());
+      return false;
+    }
     // ssl_client_rpk_ca_ex_free() releases `trusted` when ctx is freed.
-    if (!SSL_CTX_set_ex_data(ctx, ssl_client_rpk_ca_index, trusted)) {
-      delete trusted;
+    if (!SSL_CTX_set_ex_data(ctx, ssl_client_rpk_ca_index, trusted.get())) {
       SSLError("failed to attach trusted client RPK keys to %s", completeClientRPKCAPath.c_str());
       return false;
     }
+    trusted.release();
 
 #if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
     static const unsigned char client_cert_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
