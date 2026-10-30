@@ -85,9 +85,10 @@ def request(hostname: str, version: str, expected_code: int | None, *, _ats: ATS
     """
 
     protocol_option = {"1.0": "--tlsv1", "1.1": "--tlsv1.1", "1.2": "--tlsv1.2"}[version]
+    ciphers = "DEFAULT@SECLEVEL=0" if _curl.accepts_seclevel() else "DEFAULT"
     result = _curl.run_for(
         _ats,
-        f"--verbose --ciphers DEFAULT@SECLEVEL=0 --tls-max {version} {protocol_option} "
+        f"--verbose --ciphers {ciphers} --tls-max {version} {protocol_option} "
         f"--resolve {hostname}:{_ats.https_port}:127.0.0.1 --insecure "
         f"https://{hostname}:{_ats.https_port}",
     )
