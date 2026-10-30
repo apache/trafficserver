@@ -462,9 +462,10 @@ In addition ``verify_server_properties`` specifies what |TS| will check when per
 
 
 If ``server_rpk_ca`` is set and the next hop authenticates with a raw public key rather than a
-certificate, ``verify_server_properties``'s :code:`NAME` check has nothing to act on -- a raw
-public key has no subject alternative name -- so ``server_rpk_ca`` (matching the offered key
-against a configured trusted set) takes its place. ``verify_server_policy`` still governs whether
+certificate, neither the certificate chain check nor ``verify_server_properties``'s :code:`NAME`
+check has anything to act on -- a raw public key has no issuer or subject alternative name -- so
+``server_rpk_ca`` (matching the offered key against a configured trusted set) takes the place of
+both. ``verify_server_policy`` still governs whether
 a key that is not in the trusted set is fatal, exactly as for a failed certificate check. Since
 raw public keys are negotiated alongside X.509 rather than instead of it, this only applies when
 the next hop actually offers one; a next hop that does not support RFC 7250 falls back to a normal
@@ -473,8 +474,8 @@ certificate exchange, and the usual certificate checks apply.
 Replacing the file named by ``server_rpk_ca`` and running :option:`traffic_ctl config reload`
 takes effect for requests that follow. A pooled origin connection carries a request verified under
 :code:`ENFORCED` only while the set that request would pin still contains the key the connection
-was authenticated with, so adding a key for rotation keeps existing connections while removing one
-retires them, and a connection whose key was accepted only under :code:`PERMISSIVE` never carries
+was authenticated with, so adding a key for rotation keeps existing connections while removing a key
+retires the connections it authenticated, and a connection whose key was accepted only under :code:`PERMISSIVE` never carries
 such a request. A request verified under :code:`PERMISSIVE` would accept the key in a new handshake
 anyway, so it may use the connection either way. Cached
 TLS sessions are keyed on the whole set, so any change to it makes the next connection to that

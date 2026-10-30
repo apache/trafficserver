@@ -365,7 +365,7 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
     const uint8_t       *data = CRYPTO_BUFFER_data(buf);
     X509                *cert = d2i_X509(nullptr, &data, CRYPTO_BUFFER_len(buf));
     if (cert == nullptr) {
-      SSLError("failed to parse an origin certificate on a RPK-enabled connection");
+      SSLError("failed to parse an origin certificate on an RPK-enabled connection");
       X509_free(leaf);
       sk_X509_pop_free(intermediates, X509_free);
       *out_alert = SSL_AD_BAD_CERTIFICATE;
@@ -374,7 +374,7 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
     if (i == 0) {
       leaf = cert;
     } else if (!sk_X509_push(intermediates, cert)) {
-      SSLError("failed to append an intermediate certificate on a RPK-enabled connection");
+      SSLError("failed to append an intermediate certificate on an RPK-enabled connection");
       X509_free(cert);
       X509_free(leaf);
       sk_X509_pop_free(intermediates, X509_free);
@@ -636,7 +636,8 @@ origin_rpk_record_resumed_peer_key(SSL *ssl)
 void
 ssl_client_rpk_initialize()
 {
-  ssl_server_rpk_index = SSL_get_ex_new_index(0, (void *)"Trusted next-hop RPK keys", nullptr, nullptr, ssl_server_rpk_ex_free);
+  ssl_server_rpk_index =
+    SSL_get_ex_new_index(0, (void *)"Trusted next-hop raw public keys", nullptr, nullptr, ssl_server_rpk_ex_free);
 }
 
 bool

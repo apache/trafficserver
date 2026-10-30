@@ -39,7 +39,7 @@ loadTrustedKeys(const char *path, TrustedKeySet &out)
 {
   scoped_BIO bio(BIO_new_file(path, "r"));
   if (!bio) {
-    SSLError("SSLRPKUtils: failed to open trusted RPK key file %s", path);
+    SSLError("SSLRPKUtils: failed to open trusted raw public key file %s", path);
     return false;
   }
 

@@ -28,13 +28,13 @@
 #include "iocore/net/SSLTypes.h"
 
 /**
-   Shared helpers for RFC 7250 Raw Public Key (RPK) support.
+   Shared helpers for RFC 7250 raw public key (RPK) support.
 
    These are used identically regardless of whether ATS is built against
    OpenSSL or BoringSSL, so that RPK pinning behaves the same way no matter
    which TLS library a given build links. Only the code that calls into these
-   helpers (extracting the peer's offered key from a `X509_STORE_CTX` on
-   OpenSSL vs. a `SSL *` on BoringSSL) is library-specific.
+   helpers (extracting the peer's offered key from an `X509_STORE_CTX` on
+   OpenSSL vs. an `SSL *` on BoringSSL) is library-specific.
  */
 namespace SSLRPKUtils
 {
@@ -54,7 +54,7 @@ bool pinnedKeyMatches(const unsigned char *peer_spki_der, int peer_spki_len, con
 /// Convenience wrapper: DER-encode @a pkey as a SubjectPublicKeyInfo and check it against @a trusted.
 bool pinnedKeyMatches(EVP_PKEY *pkey, const TrustedKeySet &trusted);
 
-/** Reduce @a keys to a stable identity, for keying caches whose entries were authenticated by it.
+/** Reduce @a keys to a stable identity, for keying caches whose entries were authenticated by that set.
 
     Derived from the key material rather than from the file path or the parsed object's address, so
     that a configuration reload leaving the pinned set unchanged keeps the identity and does not

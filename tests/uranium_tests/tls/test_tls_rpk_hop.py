@@ -171,7 +171,7 @@ def configure_edge(
     :param pin_file: Trusted parent raw public keys (sni.yaml server_rpk_ca), or None for no pin.
     :param policy: proxy.config.ssl.client.verify.server.policy toward the parent.
     :param offer_client_rpk: Offer a raw public key derived from server.pem/server.key, the same
-        identity the edge serves inbound, as the edge's client certificate toward the parent.
+        identity the edge serves inbound, as the edge's client credential toward the parent.
     :param offer_client_x509: Offer the classic X.509 client certificate named by client_cert
         instead.
     :param client_cert: X.509 client certificate offered when offer_client_x509 is set.
@@ -498,7 +498,7 @@ def test_rpk_hop_mtls_pin_matches(ats_factory: ATSFactory, services: ServiceFact
     result = request_through(curl, edge)
     stop_tiers(edge, parent)
 
-    assert "origin response" in result.output, "the request should succeed once the client cert pin matches"
+    assert "origin response" in result.output, "the request should succeed once the edge's raw public key matches the pin"
     # Without this, an edge falling back to its X.509 client certificate would pass too.
     assert_log_contains(
         parent.traffic_out, "Client authenticated with a raw public key .*pin match=yes",
@@ -507,7 +507,7 @@ def test_rpk_hop_mtls_pin_matches(ats_factory: ATSFactory, services: ServiceFact
 
 
 def test_rpk_hop_mtls_pin_mismatch(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A required client certificate whose pin does not match is always fatal.
+    """A required client raw public key that does not match the pin is always fatal.
 
     Unlike verify_server_policy, inbound mTLS has no PERMISSIVE equivalent that only warns.
 
@@ -536,7 +536,7 @@ def test_rpk_hop_mtls_pin_mismatch(ats_factory: ATSFactory, services: ServiceFac
 
 
 def test_rpk_hop_mtls_per_entry_scoping(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A specific multicert entry's client_rpk_ca reaches the connection, not the default entry's.
+    """A specific multicert entry's ssl_client_rpk_ca_name reaches the connection, not the default entry's.
 
     The default ("dest_ip: *") entry stays plain X.509 mTLS, while the more specific
     ("dest_ip: 127.0.0.1") entry pins the edge's raw public key. Every connection lands on the
@@ -581,7 +581,7 @@ def test_rpk_hop_mtls_per_entry_scoping(ats_factory: ATSFactory, services: Servi
     stop_tiers(edge, parent)
 
     assert "origin response" in result.output, "the request should succeed on the specific entry, not the default entry"
-    # The default entry has no client_rpk_ca, so if settings leaked from it the RPK-aware verify path
+    # The default entry has no ssl_client_rpk_ca_name, so if settings leaked from it the RPK-aware verify path
     # would never run and the X.509-only path would reject the edge's raw public key outright.
     # BoringSSL takes the custom_verify path; OpenSSL's classic callback logs the RPK branch directly.
     assert_log_contains(
@@ -592,7 +592,7 @@ def test_rpk_hop_mtls_per_entry_scoping(ats_factory: ATSFactory, services: Servi
 def test_rpk_hop_mtls_x509_fallback(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
     """A classic X.509 client certificate still verifies on an RPK-enabled entry.
 
-    Installing custom_verify, which the RPK branch needs at all, disables BoringSSL's automatic
+    Installing custom_verify, without which the RPK branch cannot run at all, disables BoringSSL's automatic
     X.509 verification for the context, so ssl_custom_verify_client_callback()'s X.509 fallback has
     to accept the chain itself from BoringSSL's already-parsed copy.
 
@@ -620,7 +620,7 @@ def test_rpk_hop_mtls_x509_fallback(ats_factory: ATSFactory, services: ServiceFa
 
     assert "origin response" in result.output, "a valid X.509 client cert should still verify on an RPK-enabled entry"
     # Confirms the verification this entry needs engaged, rather than another path accepting the
-    # chain. BoringSSL must take its custom_verify fallback; OpenSSL has no such split, one classic
+    # chain. BoringSSL must take its custom_verify fallback; OpenSSL has no such split: one classic
     # callback handles both RPK and X.509.
     expected_callback = (
         "Callback: custom verify client cert" if "BoringSSL" in ats_factory.tls_library() else "Callback: verify client cert")
@@ -896,7 +896,7 @@ def test_rpk_hop_replaced_pin_set_retires_pooled_connections(ats_factory: ATSFac
     statuses = reload_config(edge, "replace-pin-set")
     assert "sni.yaml" in statuses, statuses
     assert "origin response" not in request_through(curl, edge).output, \
-        "a set that no longer trusts the key must not reuse the connection it authenticated"
+        "a request whose set no longer trusts the key must not reuse the connection that key authenticated"
     stop_tiers(edge, parent)
     assert_log_contains(
         edge.diags_log, "Origin raw public key did not match any trusted key. Action=Terminate",
@@ -910,7 +910,7 @@ def test_rpk_hop_permissive_connection_not_reused_when_enforced(
 
     The pinned set is the same for every request, so only the key that connection presented and the
     requesting transaction's policy tell them apart. Over HTTP/2 the first request takes the session
-    through the connection handoff and the pooled session is multiplexed, both separate checks.
+    through the connection handoff and the pooled session is multiplexed; each goes through a separate check.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -1182,7 +1182,7 @@ def test_rpk_hop_verify_client_hook_rejects_pinned_key(ats_factory: ATSFactory, 
         parent.traffic_out, "Client authenticated with a raw public key .*pin match=yes",
         "the pin must have matched, so that only the plugin rejected it")
     assert_log_contains(
-        parent.diags_log, "TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check",
+        parent.diags_log, "TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client raw public key check",
         "the verify hook must run for a raw public key")
 
 
@@ -1258,8 +1258,8 @@ def test_rpk_hop_offer_without_client_key(ats_factory: ATSFactory, services: Ser
 def test_rpk_hop_resumed_connection_is_reused(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
     """A pooled connection that resumed a cached session is reused like one from a full handshake.
 
-    A resumed handshake runs no verify callback, so the key reuse checks against has to come from
-    the session instead.
+    A resumed handshake runs no verify callback, so the key that reuse is checked against has to
+    come from the session instead.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.

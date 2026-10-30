@@ -174,8 +174,8 @@ ssl_client_rpk_ca_name: FILENAME (optional)
   On HTTP/3, see the note under ``ssl_rpk_enabled`` above. A ``verify_client`` action does not
   reach an HTTP/3 connection, so there the client certificate level is the only way to request a
   client credential. With OpenSSL's QUIC, setting this key on the default entry lets a client that
-  prefers raw public keys negotiate one on a connection matching another entry, and that entry has
-  no trusted keys to match it against, so the handshake fails rather than falling back to X.509.
+  prefers raw public keys negotiate one on a connection matching another entry; if that entry has
+  no trusted keys to match it against, the handshake fails rather than falling back to X.509.
 
   Only available in builds linked against a TLS library with RFC 7250 support; see
   ``ssl_rpk_enabled`` above.

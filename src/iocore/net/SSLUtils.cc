@@ -340,7 +340,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
     }
     // No store context for the hook, as on BoringSSL: there is no certificate in it to inspect.
     if (tbs->verify_certificate(nullptr) == 1) {
-      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
+      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client raw public key check for %s.", servername);
       return false;
     }
     return pin_ok;
@@ -365,9 +365,9 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 static bool bind_session_id_context_to_verify_scope(SSL *ssl);
 
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-// BoringSSL's SSL_CTX_set_custom_verify(), required to accept RPK client certs, replaces its
-// automatic X.509 chain verification entirely -- unlike OpenSSL's classic SSL_CTX_set_verify(),
-// which only lets ssl_verify_client_callback() observe/override a chain BoringSSL already
+// BoringSSL's SSL_CTX_set_custom_verify(), required to accept a client raw public key, replaces its
+// automatic X.509 chain verification entirely -- unlike the classic SSL_CTX_set_verify(),
+// which only lets ssl_verify_client_callback() observe/override a chain the library already
 // validated. For the X.509 fallback case (the client didn't offer an RPK this time), this
 // callback must therefore redo that validation manually via the legacy X509_STORE_CTX API,
 // against the same certificate store _setup_client_cert_verification() configured on this ctx.
@@ -399,7 +399,7 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     }
     // As above: the hook always runs, and can add rejection but not override a failed pin match.
     if (tbs->verify_certificate(nullptr) == 1) {
-      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
+      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client raw public key check for %s.", servername);
       *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
       return ssl_verify_invalid;
     }
@@ -1267,7 +1267,7 @@ SSLInitializeLibrary()
 
 #if TS_USE_RPK
   ssl_client_rpk_ca_index =
-    SSL_CTX_get_ex_new_index(0, (void *)"Trusted client RPK keys", nullptr, nullptr, ssl_client_rpk_ca_ex_free);
+    SSL_CTX_get_ex_new_index(0, (void *)"Trusted client raw public keys", nullptr, nullptr, ssl_client_rpk_ca_ex_free);
   ssl_client_rpk_initialize();
 #endif
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
@@ -2063,7 +2063,7 @@ SSLMultiCertConfigLoader::_setup_client_cert_verification(SSL_CTX *ctx)
     }
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-    // On BoringSSL only a custom_verify callback can see an RPK client cert, and it takes precedence
+    // On BoringSSL only a custom_verify callback can see a client raw public key, and it takes precedence
     // over the classic one when both are set. Entries that configured ssl_client_rpk_ca_name (via
     // the ex_data load_certs() attached) take that path; everything else keeps classic verify.
     if (SSL_CTX_get_ex_data(ctx, ssl_client_rpk_ca_index) != nullptr) {
@@ -3058,7 +3058,7 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
 #if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
     // OpenSSL derives the raw public key it offers from whatever certificate/private key is
     // already configured on this SSL_CTX (see SSL_set1_server_cert_type(3)) -- there is no
-    // separate RPK key to load; enabling the extension is all that's needed here.
+    // separate key to load; enabling the extension is all that's needed here.
     static const unsigned char cert_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
     if (!SSL_CTX_set1_server_cert_type(ctx, cert_types, sizeof(cert_types))) {
       SSLError("failed to enable RPK server cert type negotiation");
@@ -3091,17 +3091,17 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
     track_client_ca_bundle(completeClientRPKCAPath.c_str());
     auto trusted = std::make_unique<TrustedClientRPK>();
     if (!SSLRPKUtils::loadTrustedKeys(completeClientRPKCAPath.c_str(), trusted->keys)) {
-      SSLError("failed to load trusted client RPK keys from %s", completeClientRPKCAPath.c_str());
+      SSLError("failed to load trusted client raw public keys from %s", completeClientRPKCAPath.c_str());
       return false;
     }
     trusted->digest = SSLRPKUtils::digestTrustedKeys(trusted->keys);
     if (trusted->digest.empty()) {
-      SSLError("failed to digest trusted client RPK keys from %s", completeClientRPKCAPath.c_str());
+      SSLError("failed to digest trusted client raw public keys from %s", completeClientRPKCAPath.c_str());
       return false;
     }
     // ssl_client_rpk_ca_ex_free() releases `trusted` when ctx is freed.
     if (!SSL_CTX_set_ex_data(ctx, ssl_client_rpk_ca_index, trusted.get())) {
-      SSLError("failed to attach trusted client RPK keys to %s", completeClientRPKCAPath.c_str());
+      SSLError("failed to attach the trusted client raw public keys from %s to the context", completeClientRPKCAPath.c_str());
       return false;
     }
     trusted.release();

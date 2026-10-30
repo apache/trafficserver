@@ -131,7 +131,7 @@ TEST_CASE("SSLRPKUtils matches any key in a rotation set", "[rpk]")
   REQUIRE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_multi.pem").c_str(), keys));
 
   // The first and a later entry must both match, and matching must not depend on the key algorithm:
-  // rpk_rsa.pem is the RSA entry of the three, the other two are EC.
+  // rpk_rsa.pem is the RSA entry of the three; the other two are EC.
   for (auto const *name : {"rpk_single.pem", "rpk_other.pem", "rpk_rsa.pem"}) {
     EVP_PKEY *peer = load_pubkey(name);
     REQUIRE(peer != nullptr);
