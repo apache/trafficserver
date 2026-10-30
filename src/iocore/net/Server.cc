@@ -59,7 +59,6 @@ DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
 
 } // end anonymous namespace
 
-static int get_listen_backlog();
 static int add_http_filter(int fd);
 
 int
@@ -113,6 +112,7 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 
   sock = UnixSocket{addr.sa.sa_family, SOCK_STREAM, prot};
   if (!sock.is_ok()) {
+    res = -errno;
     goto Lerror;
   }
 
@@ -127,10 +127,12 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
 
   if (ats_is_unix(&accept_addr)) {
     if (chmod(accept_addr.sun.sun_path, opt.unix_perm) < 0) {
+      res = -errno;
       goto Lerror;
     }
     if (opt.unix_uid != static_cast<uid_t>(-1) || opt.unix_gid != static_cast<gid_t>(-1)) {
       if (chown(accept_addr.sun.sun_path, opt.unix_uid, opt.unix_gid) < 0) {
+        res = -errno;
         goto Lerror;
       }
     }
@@ -158,6 +160,13 @@ Lerror:
     close();
   }
 
+  if (opt.f_non_fatal_listen) {
+    // A supplementary listener. Losing it degrades behavior but must not take the proxy down.
+    Warning("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
+            prot == IPPROTO_MPTCP, errno, strerror(errno), res);
+    return res;
+  }
+
   Fatal("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
         prot == IPPROTO_MPTCP, errno, strerror(errno), res);
   return res;
@@ -166,10 +175,12 @@ Lerror:
 int
 get_listen_backlog()
 {
-  int listen_backlog;
-
-  listen_backlog = RecGetRecordInt("proxy.config.net.listen_backlog").value_or(0);
-  return (0 < listen_backlog && listen_backlog <= 65535) ? listen_backlog : ats_tcp_somaxconn();
+  static const int backlog = []() {
+    int const somaxconn      = ats_tcp_somaxconn();
+    int const listen_backlog = RecGetRecordInt("proxy.config.net.listen_backlog").value_or(0);
+    return (0 < listen_backlog && listen_backlog <= 65535) ? std::min(listen_backlog, somaxconn) : somaxconn;
+  }();
+  return backlog;
 }
 
 int
@@ -235,12 +246,15 @@ Server::setup_fd_for_listen(bool non_blocking, const NetProcessor::AcceptOptions
     goto Lerror;
   }
   listen_per_thread = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
-  if (listen_per_thread == 1 && opt.ip_family != AF_UNIX) {
+  if ((listen_per_thread == 1 || opt.f_force_reuseport) && opt.ip_family != AF_UNIX) {
     if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
       goto Lerror;
     }
 #ifdef SO_REUSEPORT_LB
-    if (sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
+    // The load balancing variant only makes sense for the per-thread listeners it was added for.
+    // Overlapping binds (see @c f_force_reuseport) rely on the kernel preferring the more specific
+    // address, not on connections being spread across the group.
+    if (listen_per_thread == 1 && sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
       goto Lerror;
     }
 #endif

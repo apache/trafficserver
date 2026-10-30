@@ -102,8 +102,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     Fatal("Please disable accept_threads or exec_thread.listen");
   }
 
-  Metrics::Gauge::increment(net_rsb.accepts_currently_open);
-
   // We've handled the config stuff at start up, but there are a few cases
   // we must handle at this point.
   if (opt.ip_family == AF_UNIX) {
@@ -136,10 +134,18 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->action_ = new NetAcceptAction(cont, &na->server);
 
   if (opt.frequent_accept) { // true
+    bool listening = false;
     if (accept_threads > 0 && listen_per_thread == 0) {
-      na->init_accept_loop();
+      listening = na->init_accept_loop();
     } else {
-      na->init_accept_per_thread();
+      listening = na->init_accept_per_thread();
+    }
+
+    // A supplementary listener that could not be opened has already been warned about. Drop it
+    // rather than keep a dead acceptor around, and report the failure the same way as any other.
+    if (!listening && opt.f_non_fatal_listen) {
+      delete na;
+      return nullptr;
     }
 #if !TS_USE_POSIX_CAP
     if (fd == ts::NO_FD && opt.local_port < 1024 && 0 != geteuid() && opt.ip_family != AF_UNIX) {
@@ -154,6 +160,8 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   } else {
     na->init_accept(nullptr);
   }
+
+  Metrics::Gauge::increment(net_rsb.accepts_currently_open);
 
   {
     SCOPED_MUTEX_LOCK(lock, naVecMutex, this_ethread());

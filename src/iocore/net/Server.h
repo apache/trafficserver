@@ -56,3 +56,11 @@ struct Server {
 
   Server() { ink_zero(accept_addr); }
 };
+
+/** The effective listen backlog: @c proxy.config.net.listen_backlog capped at the system @c somaxconn,
+  or @c somaxconn when unset or out of range.
+
+  The kernel caps a listen socket's accept queue limit at @c min(backlog, somaxconn), so the watchdog
+  scales against that effective limit rather than an uncapped configuration value above @c somaxconn.
+*/
+int get_listen_backlog();
