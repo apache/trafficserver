@@ -158,9 +158,9 @@ public:
 
   // number of matches, or negative if failed
   int
-  match(std::string_view const str, RegexMatches &matches, RegexMatchContext const *match_context) const
+  match(std::string_view const str, RegexMatches &matches) const
   {
-    int const stat = _rex.exec(str, matches, 0, match_context);
+    int const stat = _rex.exec(str, matches, 0);
     if (0 <= stat) {
       Dbg(dbg_ctl, "Regex match (%d): %.*s", stat, (int)str.length(), str.data());
       return matches.size();
@@ -805,18 +805,17 @@ private:
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  SharedRuleSet     rule_set;
-  std::vector<int>  rule_hits;
-  RegexMatchContext match_context = {};
-  bool              pristine_url  = false;
-  bool              profile       = false;
-  bool              method        = false;
-  bool              query_string  = true;
-  bool              host          = false;
-  int               hits          = 0;
-  int               misses        = 0;
-  int               failures      = 0;
-  std::string       filename;
+  SharedRuleSet    rule_set;
+  std::vector<int> rule_hits;
+  bool             pristine_url = false;
+  bool             profile      = false;
+  bool             method       = false;
+  bool             query_string = true;
+  bool             host         = false;
+  int              hits         = 0;
+  int              misses       = 0;
+  int              failures     = 0;
+  std::string      filename;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1057,7 +1056,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     auto const &re = rules[rule_ix];
 
     // Since we check substitutions on parse time, we don't need to reset ovector
-    auto match_result = re->match(match_buf.data(), matches, &(ri->match_context));
+    auto match_result = re->match(match_buf.data(), matches);
     if (match_result >= 0) {
       int new_len = re->get_lengths(matches, lengths, rri, &req_url);
 
