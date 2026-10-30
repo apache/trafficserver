@@ -37,10 +37,8 @@ DbgCtl dbg_ctl_http_connect{"http_connect"};
 
 ConnectingEntry::~ConnectingEntry()
 {
-  if (_conn_track_group) {
-    // coverity[exn_spec_violation] - release() throws only on a broken table mutex or a Dbg format error; terminate is fine
-    _conn_track_group->release();
-  }
+  // coverity[exn_spec_violation] - release() throws only on a broken table mutex or a Dbg format error; terminate is fine
+  release_outbound_connection_tracking();
   if (_netvc_read_buffer != nullptr) {
     free_MIOBuffer(_netvc_read_buffer);
     _netvc_read_buffer = nullptr;
@@ -52,6 +50,15 @@ ConnectingEntry::enable_outbound_connection_tracking(std::shared_ptr<ConnectionT
 {
   ink_assert(!_conn_track_group);
   _conn_track_group = std::move(group);
+}
+
+void
+ConnectingEntry::release_outbound_connection_tracking()
+{
+  if (_conn_track_group) {
+    _conn_track_group->release();
+    _conn_track_group.reset();
+  }
 }
 
 int
@@ -167,6 +174,9 @@ ConnectingEntry::state_http_server_open(int event, void *data)
       lerrno           = netvc->lerrno == 0 ? lerrno : netvc->lerrno;
       netvc->do_io_close();
     }
+    // The failed connection no longer counts against the origin. Return its slot before the
+    // queued HttpSMs run, because a retry with no backoff reserves a new slot synchronously.
+    release_outbound_connection_tracking();
     while (!connect_sms.empty()) {
       auto entry = connect_sms.begin();
       SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
