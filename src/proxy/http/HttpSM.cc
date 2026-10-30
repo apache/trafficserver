@@ -4956,7 +4956,7 @@ HttpSM::track_connect_fail() const
   // Excludes two cases:
   // - Reused keep-alive connection: there is a known race between ATS reusing and the origin closing it.
   // - Multiplexed origins (HTTP/2): stream-level failure does not indicate a connection failure.
-  if (policy >= 4) {
+  if (policy >= 4 && server_txn != nullptr) {
     bool multiplexed = false;
     auto ssn         = server_txn->get_proxy_ssn();
     if (ssn != nullptr) {
