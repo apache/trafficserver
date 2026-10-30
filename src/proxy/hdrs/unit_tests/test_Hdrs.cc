@@ -3374,9 +3374,28 @@ TEST_CASE("HTTP parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
   req_hdr.destroy();
 }
 
-TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endings", "[proxy][hdrtest]")
+TEST_CASE("HTTP request parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
 {
-  constexpr std::string_view message = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: \r\r\r\r\n\r\n"sv;
+  struct Test {
+    std::string_view raw_value;
+    std::string_view normalized_field;
+  };
+
+  // The four-CR case from #13595 produces the maximum raw-print pad and is rejected by the
+  // existing pad-size limit alone. These smaller pads exercise the parser check independently.
+  static const std::vector<Test> tests = {
+    {"\r \r\n"sv,    "Extra-CRs: \r\n"sv   },
+    {"\r\r \r\n"sv,  "Extra-CRs: \r\n"sv   },
+    {"bar\r \r\n"sv, "Extra-CRs: bar\r\n"sv},
+    {"\r\t\r\n"sv,   "Extra-CRs: \r\n"sv   },
+  };
+
+  auto test = GENERATE(from_range(tests));
+  CAPTURE(test.raw_value);
+
+  std::string message  = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: ";
+  message             += test.raw_value;
+  message             += "\r\n";
 
   HTTPParser parser;
   http_parser_init(&parser);
@@ -3385,7 +3404,7 @@ TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endin
   HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
   req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
 
-  auto start = message.data();
+  const char *start = message.data();
   REQUIRE(req_hdr.parse_req(&parser, &start, message.data() + message.size(), true) == ParseResult::DONE);
 
   std::string serialized(static_cast<size_t>(req_hdr.length_get()), '\0');
@@ -3394,10 +3413,38 @@ TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endin
   req_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
   serialized.resize(static_cast<size_t>(index));
 
-  CHECK(serialized.find("Extra-CRs: \r\n") != std::string::npos);
-  CHECK(serialized.find("Extra-CRs: \r\r") == std::string::npos);
+  CHECK(serialized.find(test.normalized_field) != std::string::npos);
+  std::string raw_field  = "Extra-CRs: ";
+  raw_field             += test.raw_value;
+  CHECK(serialized.find(raw_field) == std::string::npos);
 
   req_hdr.destroy();
+}
+
+TEST_CASE("HTTP response parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
+{
+  constexpr std::string_view message = "HTTP/1.1 200 OK\r\nExtra-CRs: bar\r \r\n\r\n"sv;
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  resp_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  resp_hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
+
+  const char *start = message.data();
+  REQUIRE(resp_hdr.parse_resp(&parser, &start, message.data() + message.size(), true) == ParseResult::DONE);
+
+  std::string serialized(static_cast<size_t>(resp_hdr.length_get()), '\0');
+  int         index  = 0;
+  int         offset = 0;
+  resp_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
+  serialized.resize(static_cast<size_t>(index));
+
+  CHECK(serialized.find("Extra-CRs: bar\r\n") != std::string::npos);
+  CHECK(serialized.find("Extra-CRs: bar\r \r\n") == std::string::npos);
+
+  resp_hdr.destroy();
 }
 
 TEST_CASE("HTTP response parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
