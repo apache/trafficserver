@@ -529,6 +529,32 @@ TEST_CASE("Cache-Control Valid Cooking", "[proxy][hdrutils]")
      "Cache-Control: max-age=-1\r\n\r\n",
      MIME_COOKED_MASK_CC_MAX_AGE,
      -1, 0, 0, 0},
+
+    // Qualified directives (RFC 9111, Sections 5.2.2.4 and 5.2.2.7)
+    {"qualified private with max-age",
+     "Cache-Control: private=\"X-User-Token\", max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"qualified private with a field-name list",
+     "Cache-Control: max-age=600, private=\"X-User-Token, Set-Cookie\"\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"qualified private in token form",
+     "Cache-Control: private=X-User-Token, max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"qualified no-cache with s-maxage",
+     "Cache-Control: no-cache=\"Set-Cookie\", s-maxage=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_S_MAXAGE,
+     0, 600, 0, 0},
+
+    {"qualified no-cache with an escaped quote",
+     "Cache-Control: no-cache=\"a\\\"b\", max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
   };
   // clang-format on
 
