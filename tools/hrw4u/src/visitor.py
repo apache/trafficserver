@@ -948,17 +948,13 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def visitStatement(self, ctx) -> None:
         with self.debug_context("visitStatement"), self.trap(ctx):
-            if self.current_section is SectionType.CACHEKEY:
-                self._cachekey_statement(ctx)
-                return
+            self._check_outside_cachekey(ctx)
             match ctx:
                 case _ if ctx.BREAK():
                     warning = self._sandbox.check_language("break")
                     if warning:
                         self._add_sandbox_warning(ctx, warning)
                     self._dbg("BREAK")
-                    if self.current_section is SectionType.REMAP and self._has_cachekey:
-                        raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
                     self.emit_statement("no-op [L]")
                     return
 
@@ -975,8 +971,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                             f"unknown procedure '{func}': not loaded via 'use'",
                             "",
                         )
-                    self._check_not_key_name(func)
-                    self._check_not_cachekey_plugin(func, args)
                     subst_args = [
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
@@ -989,7 +983,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     if ctx.lhs is None:
                         raise SymbolResolutionError("assignment", "Missing left-hand side in assignment")
                     lhs = ctx.lhs.text
-                    self._check_not_key_name(lhs)
                     rhs = self._get_value_text(ctx.value())
                     if rhs.startswith('"') and rhs.endswith('"'):
                         rhs = self._substitute_strings(rhs, ctx)
@@ -1003,7 +996,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     if ctx.lhs is None:
                         raise SymbolResolutionError("assignment", "Missing left-hand side in += assignment")
                     lhs = ctx.lhs.text
-                    self._check_not_key_name(lhs)
                     rhs = self._get_value_text(ctx.value())
                     if rhs.startswith('"') and rhs.endswith('"'):
                         rhs = self._substitute_strings(rhs, ctx)
@@ -1054,7 +1046,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 with self.trap(item.conditional()):
                     self._cachekey_chain(item.conditional())
             elif item.statement():
-                self.visit(item.statement())
+                with self.trap(item.statement()):
+                    self._cachekey_statement(item.statement())
 
     def _cachekey_chain(self, ctx) -> None:
         if self._cachekey_branch is not None:
@@ -1137,27 +1130,30 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return value.getText()
 
     @staticmethod
-    def _check_not_key_name(name: str) -> None:
-        if ck.is_key_name(name):
-            raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
-
-    @staticmethod
     def _is_cachekey(section_ctx) -> bool:
         return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY.value
 
-    @property
-    def _has_cachekey(self) -> bool:
-        """True if the rule has a CACHEKEY section.
+    def _check_outside_cachekey(self, ctx) -> None:
+        """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
 
-        Final for every other section: visitProgram visits CACHEKEY before them.
+        cache.* key operators belong in CACHEKEY. With a CACHEKEY section, a break in REMAP would
+        skip it, and a hand-written run-plugin cachekey.so would set the key twice, the later
+        instance overriding the earlier. visitProgram visits CACHEKEY before every other section,
+        so self._cachekey is final here.
         """
-        return self._cachekey is not None
-
-    def _check_not_cachekey_plugin(self, func: str, args: list[str]) -> None:
-        """Raise if a rule with CACHEKEY also runs cachekey.so by hand: each instance sets the key, and the later one overrides the earlier."""
-        plugin = args[0].strip('"') if args else ""
-        if self._has_cachekey and func == "run-plugin" and plugin.rsplit("/", 1)[-1] == "cachekey.so":
-            raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
+        if ctx.BREAK():
+            if self.current_section is SectionType.REMAP and self._cachekey is not None:
+                raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
+            return
+        call = ctx.functionCall()
+        name = call.funcName.text if call else ctx.lhs.text if ctx.lhs else None
+        if name and ck.is_key_name(name):
+            raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
+        if call and name == "run-plugin" and self._cachekey is not None:
+            values = call.argumentList().value() if call.argumentList() else []
+            plugin = values[0].getText().strip('"') if values else ""
+            if plugin.rsplit("/", 1)[-1] == "cachekey.so":
+                raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:
         at = self._remap_end if self._remap_end is not None else len(self.output)
