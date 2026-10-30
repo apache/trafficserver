@@ -32,8 +32,8 @@
 #pragma once
 
 #include "tscore/ParseRules.h"
-#include "tscore/Result.h"
 #include "tscore/ink_inet.h"
+#include "tscore/ink_platform.h"
 
 // Look in MatcherUtils.cc for comments on function usage
 char *readIntoBuffer(const char *file_path, const char *module_name, int *read_size_ptr);
