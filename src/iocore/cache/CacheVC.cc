@@ -853,8 +853,12 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         }
       }
       earliest_key = key;
-      int result1  = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OBJECT, vector.get(i));
-      switch (result1) {
+      auto result1 = _action.call_back(CACHE_EVENT_SCAN_OBJECT, vector.get(i));
+      // The handler may have cancelled the scan.
+      if (_action.cancelled) {
+        goto Lcancel;
+      }
+      switch (*result1) {
       case CACHE_SCAN_RESULT_CONTINUE:
         continue;
       case CACHE_SCAN_RESULT_DELETE:
@@ -973,11 +977,18 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   Dbg(dbg_ctl_cache_scan_truss, "inside %p:scanOpenWrite", this);
   cancel_trigger();
+  if (_action.cancelled) {
+    return free_CacheVC(this);
+  }
   // get volume lock
   if (writer_lock_retry > SCAN_WRITER_LOCK_MAX_RETRY) {
-    int r = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OPERATION_BLOCKED, nullptr);
+    auto r = _action.call_back(CACHE_EVENT_SCAN_OPERATION_BLOCKED, nullptr);
     Dbg(dbg_ctl_cache_scan, "still haven't got the writer lock, asking user..");
-    switch (r) {
+    // The handler may have cancelled the scan.
+    if (_action.cancelled) {
+      return free_CacheVC(this);
+    }
+    switch (*r) {
     case CACHE_SCAN_RESULT_RETRY:
       writer_lock_retry = 0;
       break;
