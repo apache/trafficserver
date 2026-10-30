@@ -75,9 +75,9 @@ def client_command(*, _ats: ATS, _case: AcceptTimeoutCase) -> str:
         return f"printf 'GET /.html HTTP/1.1' | {command}" if _case.incomplete_request else command
     if _case.incomplete_request:
         request = shlex.quote(str(TEST_DIRECTORY / "create_request.sh"))
-        client = f"nc -c {request} 127.0.0.1 {_ats.http_port}"
-    else:
-        client = f"telnet 127.0.0.1 {_ats.http_port}"
+        client = f"nc 127.0.0.1 {_ats.http_port}"
+        return f"bash {request} | bash {timer} {shlex.quote(client)}"
+    client = f"telnet 127.0.0.1 {_ats.http_port}"
     return f"bash {timer} {shlex.quote(client)}"
 
 
