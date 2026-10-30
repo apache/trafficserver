@@ -26,6 +26,7 @@ from typing import Any
 
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.error.ErrorStrategy import BailErrorStrategy
+from antlr4.tree.Trees import Trees
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
@@ -557,7 +558,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         """Source text of item with $params substituted, quoting the ones _cachekey_arg quotes."""
         pieces: list[str] = []
         pos = item.start.start
-        for value in self._cachekey_param_values(item):
+        for value in Trees.descendants(item):
+            if not self._is_quoted_param(value):
+                continue
             name = value.paramRef().IDENT().getText()
             if name not in bindings:
                 continue
@@ -567,21 +570,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         pieces.append(self._flatten_substitute_params(source_text[pos : item.stop.stop + 1], bindings))
         return "".join(pieces)
 
-    def _cachekey_param_values(self, ctx):
-        """Bare $param values, in source order, that are cache.* arguments or cache.key += values."""
-        for child in ctx.getChildren():
-            if not isinstance(child, hrw4uParser.ValueContext):
-                if hasattr(child, "getChildren"):
-                    yield from self._cachekey_param_values(child)
-                continue
-            if not child.paramRef():
-                continue
-            parent = child.parentCtx
-            if isinstance(parent, hrw4uParser.ArgumentListContext):
-                if ck.is_key_name(parent.parentCtx.funcName.text):
-                    yield child
-            elif isinstance(parent, hrw4uParser.StatementContext) and parent.PLUSEQUAL() and parent.lhs.text == ck.KEY_EXPR:
-                yield child
+    @staticmethod
+    def _is_quoted_param(node) -> bool:
+        """True if node is a bare $param that compile reads as a string: a cache.* argument or a cache.key += value."""
+        if not isinstance(node, hrw4uParser.ValueContext) or not node.paramRef():
+            return False
+        parent = node.parentCtx
+        if isinstance(parent, hrw4uParser.ArgumentListContext):
+            return ck.is_key_name(parent.parentCtx.funcName.text)
+        return isinstance(parent, hrw4uParser.StatementContext) and bool(parent.PLUSEQUAL()) and parent.lhs.text == ck.KEY_EXPR
 
     def _flatten_reindent(self, text: str, indent: str, source_indent: str | None = None) -> list[str]:
         """Re-indent text: replace source indentation with target indent, preserving relative nesting.
