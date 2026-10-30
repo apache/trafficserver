@@ -73,6 +73,14 @@ if(BUILD_TESTING)
     test_jsonrpcserver Catch2::Catch2WithMain ts::jsonrpc_server ts::inkevent libswoc::libswoc configmanager
   )
   add_catch2_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)
+  # ~ScopedMethodHandler must survive its CHECK throwing under --abort. "fatal error condition" means
+  # std::terminate ended the binary; a missing summary means it died without Catch2's signal handler.
+  add_test(NAME test_jsonrpcserver.guard_abort COMMAND test_jsonrpcserver "[guard_abort]" --abort)
+  set_tests_properties(
+    test_jsonrpcserver.guard_abort
+    PROPERTIES ENVIRONMENT RPC_TEST_GUARD_ABORT=1 PASS_REGULAR_EXPRESSION "handler: guard_abort_handler.*test cases: "
+               FAIL_REGULAR_EXPRESSION "fatal error condition"
+  )
 
   add_executable(test_record_yaml handlers/common/unit_tests/test_record_yaml.cc)
   target_link_libraries(
