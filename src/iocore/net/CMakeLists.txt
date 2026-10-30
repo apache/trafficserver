@@ -16,64 +16,65 @@
 #######################
 
 add_library(
-  inknet STATIC
-  ALPNSupport.cc
-  AsyncSignalEventIO.cc
-  BIO_fastopen.cc
-  BoringSSLUtils.cc
-  Connection.cc
-  ConnectionTracker.cc
-  EventIO.cc
-  YamlSNIConfig.cc
-  Net.cc
-  NetEvent.cc
-  NetHandler.cc
-  NetVCOptions.cc
-  NetAcceptEventIO.cc
-  NetVConnection.cc
-  PollCont.cc
-  ProxyProtocol.cc
-  ReadWriteEventIO.cc
-  Server.cc
-  Socks.cc
-  SSLAPIHooks.cc
-  SSLCertLookup.cc
-  SSLClientCoordinator.cc
-  SSLClientUtils.cc
-  SSLConfig.cc
-  SSLSecret.cc
-  SSLDiags.cc
-  SSLNetAccept.cc
-  SSLNetProcessor.cc
-  SSLNetVConnection.cc
-  SSLNextProtocolAccept.cc
-  SSLNextProtocolSet.cc
-  SSLSNIConfig.cc
-  SSLStats.cc
-  SSLSessionCache.cc
-  SSLSessionTicket.cc
-  SSLUtils.cc
-  SSLKeyUtils.cc
-  OCSPStapling.cc
-  TLSBasicSupport.cc
-  TLSEventSupport.cc
-  TLSCertSwitchSupport.cc
-  TLSEarlyDataSupport.cc
-  TLSKeyLogger.cc
-  TLSSessionResumptionSupport.cc
-  TLSSNISupport.cc
-  TLSTunnelSupport.cc
-  TLSCertCompression.cc
-  UDPEventIO.cc
-  UnixConnection.cc
-  UnixNet.cc
-  UnixNetAccept.cc
-  UnixNetProcessor.cc
-  UnixNetVConnection.cc
-  UnixUDPConnection.cc
-  UnixUDPNet.cc
-  SSLDynlock.cc
-  SNIActionPerformer.cc
+  inknet
+  STATIC
+    ALPNSupport.cc
+    AsyncSignalEventIO.cc
+    BIO_fastopen.cc
+    BoringSSLUtils.cc
+    Connection.cc
+    ConnectionTracker.cc
+    EventIO.cc
+    YamlSNIConfig.cc
+    Net.cc
+    NetEvent.cc
+    NetHandler.cc
+    NetVCOptions.cc
+    NetAcceptEventIO.cc
+    NetVConnection.cc
+    PollCont.cc
+    ProxyProtocol.cc
+    ReadWriteEventIO.cc
+    Server.cc
+    Socks.cc
+    SSLAPIHooks.cc
+    SSLCertLookup.cc
+    SSLClientCoordinator.cc
+    SSLClientUtils.cc
+    SSLConfig.cc
+    SSLSecret.cc
+    SSLDiags.cc
+    SSLNetAccept.cc
+    SSLNetProcessor.cc
+    SSLNetVConnection.cc
+    SSLNextProtocolAccept.cc
+    SSLNextProtocolSet.cc
+    SSLSNIConfig.cc
+    SSLStats.cc
+    SSLSessionCache.cc
+    SSLSessionTicket.cc
+    SSLUtils.cc
+    SSLKeyUtils.cc
+    OCSPStapling.cc
+    TLSBasicSupport.cc
+    TLSEventSupport.cc
+    TLSCertSwitchSupport.cc
+    TLSEarlyDataSupport.cc
+    TLSKeyLogger.cc
+    TLSSessionResumptionSupport.cc
+    TLSSNISupport.cc
+    TLSTunnelSupport.cc
+    TLSCertCompression.cc
+    UDPEventIO.cc
+    UnixConnection.cc
+    UnixNet.cc
+    UnixNetAccept.cc
+    UnixNetProcessor.cc
+    UnixNetVConnection.cc
+    UnixUDPConnection.cc
+    UnixUDPNet.cc
+    SSLDynlock.cc
+    SNIActionPerformer.cc
 )
 add_library(ts::inknet ALIAS inknet)
 
@@ -108,13 +109,14 @@ target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 
 target_link_libraries(
   inknet
-  PUBLIC ts::inkevent
-         ts::proxy
-         ts::records
-         ts::tscore
-         OpenSSL::Crypto
-         OpenSSL::SSL
-         ts::tsapibackend
+  PUBLIC
+    ts::inkevent
+    ts::proxy
+    ts::records
+    ts::tscore
+    OpenSSL::Crypto
+    OpenSSL::SSL
+    ts::tsapibackend
   PRIVATE ts::config ts::tsutil yaml-cpp::yaml-cpp
 )
 
@@ -212,14 +214,15 @@ if(BUILD_TESTING)
     # CMake <3.24 does not support LINK_GROUP. Use -Wl,--start-group and -Wl,--end-group manually.
     target_link_libraries(
       test_net
-      PRIVATE Catch2::Catch2WithMain
-              ts::tscore
-              -Wl,--start-group
-              ${LINK_GROUP_LIBS}
-              -Wl,--end-group
-              ts::tsutil
-              ts::inkevent
-              libswoc::libswoc
+      PRIVATE
+        Catch2::Catch2WithMain
+        ts::tscore
+        -Wl,--start-group
+        ${LINK_GROUP_LIBS}
+        -Wl,--end-group
+        ts::tsutil
+        ts::inkevent
+        libswoc::libswoc
     )
   endif()
   if(NOT APPLE)

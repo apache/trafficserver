@@ -32,21 +32,21 @@ target_compile_definitions(uri_signing_test PRIVATE UNITTEST)
 target_include_directories(uri_signing_test PRIVATE ${PROJECT_SOURCE_DIR})
 target_link_libraries(
   uri_signing_test
-  PRIVATE OpenSSL::SSL
-          OpenSSL::Crypto
-          Catch2::Catch2WithMain
-          jansson::jansson
-          cjose::cjose
-          ts::tsapi
-          ts::http
-          ts::hdrs
-          ts::proxy
-          ts::configmanager
-          ts::logging
-          ts::inknet
-          ts::overridable_txn_vars
+  PRIVATE
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    Catch2::Catch2WithMain
+    jansson::jansson
+    cjose::cjose
+    ts::tsapi
+    ts::http
+    ts::hdrs
+    ts::proxy
+    ts::configmanager
+    ts::logging
+    ts::inknet
+    ts::overridable_txn_vars
 )
-add_catch2_test(
-  NAME uri_signing_test COMMAND uri_signing_test ENVIRONMENT
-  "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/uri_signing_test_leak_suppression.txt"
+add_catch2_test(NAME uri_signing_test COMMAND uri_signing_test ENVIRONMENT
+                "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/uri_signing_test_leak_suppression.txt"
 )

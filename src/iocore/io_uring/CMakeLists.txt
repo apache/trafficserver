@@ -18,11 +18,7 @@
 add_library(inkuring STATIC io_uring.cc IOUringEventIO.cc)
 add_library(ts::inkuring ALIAS inkuring)
 
-target_link_libraries(
-  inkuring
-  PUBLIC ts::tscore uring
-  PRIVATE ts::tsutil
-)
+target_link_libraries(inkuring PUBLIC ts::tscore uring PRIVATE ts::tsutil)
 
 if(BUILD_TESTING)
   add_executable(test_iouring unit_tests/test_diskIO.cc)

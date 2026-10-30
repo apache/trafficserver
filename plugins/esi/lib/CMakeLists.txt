@@ -16,16 +16,17 @@
 #######################
 
 add_library(
-  esicore STATIC
-  EsiGunzip.cc
-  EsiGzip.cc
-  EsiParser.cc
-  EsiProcessor.cc
-  Expression.cc
-  HandlerManager.cc
-  IncludeUrlValidator.cc
-  Stats.cc
-  Variables.cc
+  esicore
+  STATIC
+    EsiGunzip.cc
+    EsiGzip.cc
+    EsiParser.cc
+    EsiProcessor.cc
+    Expression.cc
+    HandlerManager.cc
+    IncludeUrlValidator.cc
+    Stats.cc
+    Variables.cc
 )
 # esicore is a static library dlopen()ed as part of plugins (esi.so, combo_handler.so) alongside
 # traffic_server. We do NOT link ts::tsutil here even though IncludeUrlValidator.cc references

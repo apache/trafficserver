@@ -16,36 +16,33 @@
 #######################
 
 add_library(
-  http3 STATIC
-  Http09App.cc
-  Http3.cc
-  Http3Config.cc
-  Http3App.cc
-  Http3Types.cc
-  Http3SessionAccept.cc
-  Http3Session.cc
-  Http3Transaction.cc
-  Http3DebugNames.cc
-  Http3Frame.cc
-  Http3FrameCollector.cc
-  Http3FrameCounter.cc
-  Http3FrameDispatcher.cc
-  Http3HeaderFramer.cc
-  Http3DataFramer.cc
-  Http3HeaderVIOAdaptor.cc
-  Http3ProtocolEnforcer.cc
-  Http3SettingsHandler.cc
-  Http3SettingsFramer.cc
-  Http3StreamDataVIOAdaptor.cc
-  QPACK.cc
+  http3
+  STATIC
+    Http09App.cc
+    Http3.cc
+    Http3Config.cc
+    Http3App.cc
+    Http3Types.cc
+    Http3SessionAccept.cc
+    Http3Session.cc
+    Http3Transaction.cc
+    Http3DebugNames.cc
+    Http3Frame.cc
+    Http3FrameCollector.cc
+    Http3FrameCounter.cc
+    Http3FrameDispatcher.cc
+    Http3HeaderFramer.cc
+    Http3DataFramer.cc
+    Http3HeaderVIOAdaptor.cc
+    Http3ProtocolEnforcer.cc
+    Http3SettingsHandler.cc
+    Http3SettingsFramer.cc
+    Http3StreamDataVIOAdaptor.cc
+    QPACK.cc
 )
 add_library(ts::http3 ALIAS http3)
 
-target_link_libraries(
-  http3
-  PUBLIC ts::quic
-  PRIVATE ts::proxy
-)
+target_link_libraries(http3 PUBLIC ts::quic PRIVATE ts::proxy)
 
 if(TS_USE_QMUX)
   target_link_libraries(http3 PUBLIC ts::qmux)
@@ -69,26 +66,28 @@ if(BUILD_TESTING)
   )
   target_link_libraries(
     test_http3
-    PRIVATE Catch2::Catch2WithMain
-            ts::quic
-            ts::inkevent
-            ts::records
-            ts::tsutil
-            ts::hdrs
-            ts::tscore
+    PRIVATE
+      Catch2::Catch2WithMain
+      ts::quic
+      ts::inkevent
+      ts::records
+      ts::tsutil
+      ts::hdrs
+      ts::tscore
   )
   add_catch2_test(NAME test_http3 COMMAND test_http3)
 
   add_executable(test_qpack test/main_qpack.cc test/test_QPACK.cc QPACK.cc)
   target_link_libraries(
     test_qpack
-    PRIVATE Catch2::Catch2
-            ts::quic
-            ts::inkevent
-            ts::records
-            ts::tsutil
-            ts::hdrs
-            ts::tscore
+    PRIVATE
+      Catch2::Catch2
+      ts::quic
+      ts::inkevent
+      ts::records
+      ts::tsutil
+      ts::hdrs
+      ts::tscore
   )
   add_catch2_test(NAME test_qpack COMMAND test_qpack)
 endif()

@@ -28,11 +28,7 @@ endif()
 if(BUILD_TESTING)
   add_executable(test_AIO test_AIO.cc)
   target_link_libraries(test_AIO ts::aio configmanager)
-  add_test(
-    NAME test_AIO
-    COMMAND $<TARGET_FILE:test_AIO>
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/iocore/aio
-  )
+  add_test(NAME test_AIO COMMAND $<TARGET_FILE:test_AIO> WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/iocore/aio)
 
   add_executable(test_AIOCallback unit_tests/test_AIOCallback.cc)
   target_link_libraries(test_AIOCallback PRIVATE ts::aio Catch2::Catch2WithMain)

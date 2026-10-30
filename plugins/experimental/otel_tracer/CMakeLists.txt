@@ -25,8 +25,7 @@ elseif(APPLE)
   target_link_libraries(otel_tracer PRIVATE ${opentelemetry_LIBRARIES} protobuf::libprotobuf CURL::libcurl)
 else()
   target_link_libraries(
-    otel_tracer PRIVATE -Wl,--start-group ${opentelemetry_LIBRARIES} protobuf::libprotobuf CURL::libcurl
-                        -Wl,--end-group
+    otel_tracer PRIVATE -Wl,--start-group ${opentelemetry_LIBRARIES} protobuf::libprotobuf CURL::libcurl -Wl,--end-group
   )
 endif()
 verify_global_plugin(otel_tracer)

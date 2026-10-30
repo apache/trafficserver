@@ -16,28 +16,29 @@
 #######################
 
 add_library(
-  proxy STATIC
-  private/SSLProxySession.cc
-  CacheControl.cc
-  ControlBase.cc
-  ControlMatcher.cc
-  HostStatus.cc
-  IPAllow.cc
-  ParentConsistentHash.cc
-  ParentRoundRobin.cc
-  ParentSelectionStrategy.cc
-  ParentSelection.cc
-  Plugin.cc
-  PluginThreadContext.cc
-  PluginVC.cc
-  ProtocolProbeSessionAccept.cc
-  ProxySession.cc
-  ProxyTransaction.cc
-  ReverseProxy.cc
-  Transform.cc
-  FetchSM.cc
-  PluginHttpConnect.cc
-  VirtualHost.cc
+  proxy
+  STATIC
+    private/SSLProxySession.cc
+    CacheControl.cc
+    ControlBase.cc
+    ControlMatcher.cc
+    HostStatus.cc
+    IPAllow.cc
+    ParentConsistentHash.cc
+    ParentRoundRobin.cc
+    ParentSelectionStrategy.cc
+    ParentSelection.cc
+    Plugin.cc
+    PluginThreadContext.cc
+    PluginVC.cc
+    ProtocolProbeSessionAccept.cc
+    ProxySession.cc
+    ProxyTransaction.cc
+    ReverseProxy.cc
+    Transform.cc
+    FetchSM.cc
+    PluginHttpConnect.cc
+    VirtualHost.cc
 )
 add_library(ts::proxy ALIAS proxy)
 

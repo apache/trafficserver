@@ -36,11 +36,7 @@ add_atsplugin(
 add_library(header_rewrite_parser STATIC parser.cc)
 target_link_libraries(header_rewrite_parser PUBLIC libswoc::libswoc)
 
-target_link_libraries(
-  header_rewrite
-  PRIVATE OpenSSL::Crypto
-  PUBLIC libswoc::libswoc
-)
+target_link_libraries(header_rewrite PRIVATE OpenSSL::Crypto PUBLIC libswoc::libswoc)
 
 if(ENABLE_CRIPTS)
   target_link_libraries(header_rewrite PRIVATE ts::cripts)
@@ -63,16 +59,11 @@ if(BUILD_TESTING)
     target_compile_definitions(test_header_rewrite PRIVATE TS_USE_HRW_MAXMINDDB=1)
     target_link_libraries(test_header_rewrite PRIVATE maxminddb::maxminddb)
 
-    find_package(
-      Python3
-      COMPONENTS Interpreter
-      QUIET
-    )
+    find_package(Python3 COMPONENTS Interpreter QUIET)
     if(Python3_FOUND)
       execute_process(
-        COMMAND "${Python3_EXECUTABLE}" -c "import mmdb_writer; import netaddr"
-        RESULT_VARIABLE _mmdb_python_result
-        OUTPUT_QUIET ERROR_QUIET
+        COMMAND "${Python3_EXECUTABLE}" -c "import mmdb_writer; import netaddr" RESULT_VARIABLE _mmdb_python_result
+                                                                                                OUTPUT_QUIET ERROR_QUIET
       )
       if(_mmdb_python_result EQUAL 0)
         set(_mmdb_test_dir "${CMAKE_CURRENT_BINARY_DIR}/test_mmdb")
