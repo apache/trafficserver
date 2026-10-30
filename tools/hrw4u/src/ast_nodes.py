@@ -61,6 +61,7 @@ __all__ = [
 @dataclass(frozen=True, kw_only=True)
 class LiteralStringValue:
     raw: str
+    written: str | None = None  # `raw` before `$param` substitution, which diagnostics quote
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -76,6 +77,7 @@ class IPValue:
 @dataclass(frozen=True, kw_only=True)
 class ParamRef:
     raw: str
+    span: Span | None = None  # the `$name` token, for the error when nothing binds it
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -91,6 +93,7 @@ class NumberValue:
 @dataclass(frozen=True, kw_only=True)
 class RegexValue:
     raw: str
+    span: Span | None = None  # the regex literal's own position, for validator error reporting
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -152,6 +155,7 @@ class Comparison(Node):
     operator: str  # "==", "!=", ">", "<", "~", "!~", "in", "!in"
     right: ValueExpr | RegexValue | SetValue
     modifiers: tuple[str, ...]
+    modifier_span: Span | None = None  # the whole `with ...` clause, where a denied modifier is reported
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -194,6 +198,7 @@ class IfBlock(Node):
     elif_branches: tuple[ElifBranch, ...]
     else_body: tuple[BodyNode, ...]
     has_else: bool  # an empty else body is not the same as no else clause
+    else_span: Span | None = None  # the `else` keyword; the node's own span is the `if`
 
 
 @dataclass(frozen=True, kw_only=True)
