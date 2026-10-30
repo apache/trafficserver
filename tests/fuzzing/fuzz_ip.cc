@@ -27,7 +27,7 @@
 #include <string_view>
 #include <vector>
 
-#define kMinInputLength 4
+#define kMinInputLength 1
 #define kMaxInputLength 4096
 
 namespace
@@ -49,8 +49,9 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
   std::string_view text(reinterpret_cast<char const *>(data), size);
 
-  // Parse every whitespace separated token with every IP text parser that
-  // trafficserver exposes and cross exercise the range set bookkeeping.
+  // Parse every whitespace separated token with the swoc IP text parsers
+  // (IPAddr, IPEndpoint, IPMask, IPRange, IPSrv) and tscore's ats_ip_pton /
+  // ats_ip_range_parse, then cross exercise the range set bookkeeping.
   swoc::IPRangeSet          ranges;
   std::vector<swoc::IPAddr> addrs;
 
@@ -103,7 +104,11 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
     swoc::IPRange range;
     if (range.load(token)) {
-      ranges.mark(range);
+      // An inverted range such as "2.2.2.2-1.1.1.1" loads as an empty range;
+      // skip marking those so the set's bookkeeping only sees usable ranges.
+      if (!range.empty()) {
+        ranges.mark(range);
+      }
       swoc::IPAddr rmin = range.min();
       swoc::IPAddr rmax = range.max();
       (void)rmin.family();
@@ -132,6 +137,11 @@ LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
         (void)roundtrip.family();
       }
     }
+
+    // Exercise tscore's remap ACL style range parser on the same token.
+    IpAddr range_lower;
+    IpAddr range_upper;
+    (void)ats_ip_range_parse(token, range_lower, range_upper);
   }
 
   // Tie the parsed addresses to the accumulated range set.
