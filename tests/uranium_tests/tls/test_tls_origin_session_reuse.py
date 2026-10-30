@@ -93,10 +93,15 @@ def configure_remaps(*, _origin: OriginServer, _ts1: ATS, _ts2: ATS, _ts3: ATS, 
     """
 
     _ts1.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
+    # /remove_oldest needs a second origin address so its session gets a
+    # separate cache entry. Only Linux routes all of 127.0.0.0/8 to loopback;
+    # ::1 is available everywhere.
+    _ts1.records.update(
+        {"proxy.config.http.server_ports": f"{_ts1.http_port} {_ts1.https_port}:ssl {_ts1.ipv6_https_port}:ssl:ipv6"})
     _ts2.remap_config.add_lines(
         (
             f"map /reuse_session https://127.0.0.1:{_ts1.https_port}",
-            f"map /remove_oldest https://127.0.1.1:{_ts1.https_port}",
+            f"map /remove_oldest https://[::1]:{_ts1.ipv6_https_port}",
         ))
     _ts3.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
     _ts4.remap_config.add_line(f"map / https://127.0.0.1:{_ts3.https_port}")
