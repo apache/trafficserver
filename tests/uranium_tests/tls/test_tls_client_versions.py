@@ -76,10 +76,11 @@ def request(hostname: str, version: str, expected_code: int | None, *, _ats: ATS
     :param expected_code: Expected code for this case.
     """
 
+    ciphers = "DEFAULT@SECLEVEL=0" if _curl.accepts_seclevel() else "DEFAULT"
     result = _curl.run_for(
         _ats,
         (
-            f"--verbose --ciphers DEFAULT@SECLEVEL=0 --tls-max '{version}' "
+            f"--verbose --ciphers {ciphers} --tls-max '{version}' "
             f"'{'--tlsv1' if version == '1.0' else '--tlsv1.2'}' --resolve "
             f"'{hostname}:{_ats.https_port}:127.0.0.1' --insecure 'https://{hostname}:{_ats.https_port}'"),
     )

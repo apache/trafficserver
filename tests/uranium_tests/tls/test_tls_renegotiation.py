@@ -112,10 +112,11 @@ def test_tls_renegotiation(ats_factory: ATSFactory, services: ServiceFactory, cu
     renegotiation = _client.run(timeout=20)
     assert renegotiation.returncode == 0, renegotiation.output
 
+    ciphers = "DEFAULT@SECLEVEL=0" if curl.accepts_seclevel() else "DEFAULT"
     result = curl.run_for(
         _ats,
         (
-            f"--verbose --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers DEFAULT@SECLEVEL=0 --insecure --resolve "
+            f"--verbose --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers {ciphers} --insecure --resolve "
             f"'example.com:{_ats.https_port}:127.0.0.1' 'https://example.com:{_ats.https_port}/'"),
     )
     assert result.returncode == 0, result.output
