@@ -1107,7 +1107,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return
         lhs = ctx.lhs.text
         if ctx.EQUAL() and ck.is_key_name(lhs):
-            target.append(cachekey.parse_assignment(lhs, self._get_value_text(ctx.value())))
+            target.append(cachekey.parse_assignment(lhs, self._cachekey_arg(ctx.value())))
             return
         if ctx.PLUSEQUAL() and lhs == ck.KEY_EXPR:
             value = ctx.value()
@@ -1124,7 +1124,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return [self._cachekey_arg(value) for value in (call_ctx.argumentList().value() if call_ctx.argumentList() else [])]
 
     def _cachekey_arg(self, value) -> str:
-        """Source text of a cache.* argument or cache.key += value, with $params substituted in a string.
+        """Source text of a value in a cache.* call or assignment, with $params substituted in a string.
 
         Raises for a bare $param: its binding has no quotes, so it can't be a string. Any other
         value is returned as written, for the caller to reject.

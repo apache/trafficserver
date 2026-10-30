@@ -1,3 +1,3 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
     set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-Region,X-Tenant,@Geo-Country,@Hrw4u-Key-01" "--include-cookies=session,locale"
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--remove-path=true" "--include-headers=X-Region,X-Tenant,@Geo-Country,@Hrw4u-Key-01" "--include-cookies=session,locale"

@@ -14,6 +14,10 @@ procedure local::part($v) {
     cache.key += "$v";
 }
 
+procedure local::no-path($p="") {
+    cache.url.path = "$p";
+}
+
 CACHEKEY {
     local::hdr("X-Region");
     local::hdr(X-Tenant);
@@ -21,4 +25,5 @@ CACHEKEY {
     local::cookie(locale);
     local::pass("@Geo-Country");
     local::part("{geo.COUNTRY}");
+    local::no-path();
 }

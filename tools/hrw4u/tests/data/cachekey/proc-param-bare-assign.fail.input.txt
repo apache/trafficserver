@@ -1,0 +1,7 @@
+procedure local::all-query($v) {
+    cache.url.query = $v;
+}
+
+CACHEKEY {
+    local::all-query("");
+}
