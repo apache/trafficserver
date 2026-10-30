@@ -117,8 +117,11 @@ public:
   RegexMatchContext(RegexMatchContext const &orig);
   RegexMatchContext &operator=(RegexMatchContext const &orig);
 
-  RegexMatchContext(RegexMatchContext &&)            = default;
-  RegexMatchContext &operator=(RegexMatchContext &&) = default;
+  /// Steals the context. A moved-from object holds nothing and frees nothing.
+  /// These cannot be defaulted: _match_context wraps a bare void* that the destructor
+  /// frees, so a defaulted move copies the pointer and both ends free it.
+  RegexMatchContext(RegexMatchContext &&that) noexcept;
+  RegexMatchContext &operator=(RegexMatchContext &&that) noexcept;
 
   /** Limits the amount of backtracking that can take place.
    * Any regex exec call that fails will return PCRE2_ERROR_MATCHLIMIT(-47)
