@@ -957,7 +957,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     if warning:
                         self._add_sandbox_warning(ctx, warning)
                     self._dbg("BREAK")
-                    if self.current_section is SectionType.REMAP and self._cachekey is not None:
+                    if self.current_section is SectionType.REMAP and self._has_cachekey:
                         raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
                     self.emit_statement("no-op [L]")
                     return
@@ -976,7 +976,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                             "",
                         )
                     self._check_not_key_name(func)
-                    self._check_cachekey_call(func, args)
+                    self._check_not_cachekey_plugin(func, args)
                     subst_args = [
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
@@ -1145,9 +1145,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def _is_cachekey(section_ctx) -> bool:
         return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY.value
 
-    def _check_cachekey_call(self, func: str, args: list[str]) -> None:
-        first = args[0].strip('"') if args else ""
-        if self._cachekey is not None and func == "run-plugin" and first.rsplit("/", 1)[-1] == "cachekey.so":
+    @property
+    def _has_cachekey(self) -> bool:
+        """True if the rule has a CACHEKEY section.
+
+        Final for every other section: visitProgram visits CACHEKEY before them.
+        """
+        return self._cachekey is not None
+
+    def _check_not_cachekey_plugin(self, func: str, args: list[str]) -> None:
+        """Raise if a rule with CACHEKEY also runs cachekey.so by hand: each instance sets the key, and the later one overrides the earlier."""
+        plugin = args[0].strip('"') if args else ""
+        if self._has_cachekey and func == "run-plugin" and plugin.rsplit("/", 1)[-1] == "cachekey.so":
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:
