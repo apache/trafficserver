@@ -28,18 +28,15 @@
 #define _STR(s)  #s
 #define _XSTR(s) _STR(s)
 
+#include <initializer_list>
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
-
-#include "tscore/ink_config.h"
 
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 
 #include "../SSLRPKUtils.h"
-
-#if TS_USE_RPK
 
 namespace
 {
@@ -90,6 +87,13 @@ TEST_CASE("SSLRPKUtils reports a malformed trusted key file", "[rpk]")
   // A malformed file must fail rather than silently yielding an empty (accept-nothing) set.
   SSLRPKUtils::TrustedKeySet keys;
   CHECK_FALSE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_malformed.pem").c_str(), keys));
+}
+
+TEST_CASE("SSLRPKUtils reports a malformed block after a valid key", "[rpk]")
+{
+  // Stopping at the first bad block would silently pin only the keys before it.
+  SSLRPKUtils::TrustedKeySet keys;
+  CHECK_FALSE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_good_then_malformed.pem").c_str(), keys));
 }
 
 TEST_CASE("SSLRPKUtils rejects a trusted key followed by trailing data", "[rpk]")
@@ -190,15 +194,3 @@ TEST_CASE("SSLRPKUtils digests entry order and entry boundaries", "[rpk]")
   // Each entry is length-prefixed, so two entries cannot collide with one holding their joined bytes.
   CHECK(SSLRPKUtils::digestTrustedKeys({first, second}) != SSLRPKUtils::digestTrustedKeys({joined}));
 }
-
-#else // TS_USE_RPK
-
-// Without this, the whole file compiles to zero test cases on a build lacking RFC 7250 support and
-// the suite reports green with nothing to distinguish that from real coverage.
-TEST_CASE("SSLRPKUtils is not built without RFC 7250 support", "[ssl][rpk][skipped]")
-{
-  WARN("TS_USE_RPK is off in this build: raw public key unit tests are not compiled");
-  SUCCEED();
-}
-
-#endif // TS_USE_RPK
