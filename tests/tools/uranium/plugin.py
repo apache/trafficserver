@@ -24,6 +24,7 @@ import os
 import shutil
 import sys
 import fcntl
+import zlib
 
 import pytest
 
@@ -156,12 +157,12 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     if shard_count is not None:
         if shard_count <= 0 or shard_index < 0 or shard_index >= shard_count:
             raise pytest.UsageError("ATS shard values must satisfy 0 <= index < count")
-        shard_nodeids = {
-            item.nodeid
-            for position, item in enumerate(sorted(selected, key=lambda candidate: candidate.nodeid))
-            if position % shard_count == shard_index
-        }
-        selected, rejected = _partition_items(selected, lambda item: item.nodeid in shard_nodeids)
+        # Hash the test id rather than its sorted position, so adding or
+        # removing a test never moves other tests to a different shard.
+        selected, rejected = _partition_items(
+            selected,
+            lambda item: zlib.crc32(item.nodeid.encode()) % shard_count == shard_index,
+        )
         deselected.extend(rejected)
 
     if deselected:

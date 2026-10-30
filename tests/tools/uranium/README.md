@@ -108,6 +108,10 @@ Defines pytest hooks, custom replay collectors and items, markers, sharding,
 serial scheduling, manual-test selection, and the public Uranium fixtures. It
 connects pytest to `ReplaySpec`, `ReplayTest`, and the procedural services.
 
+CI shards are assigned by a CRC32 hash of each test id, so a test keeps its
+shard when other tests are added or removed. Rerunning one failed shard reruns
+the same tests.
+
 ### `process.py`
 
 Defines the low-level `ManagedProcess` primitive and `ProcessError`.
@@ -189,7 +193,7 @@ Contains fast framework tests rather than Traffic Server scenarios:
 - `test_config.py` covers metadata parsing, variants, replay inventory, and
   configuration transformations.
 - `test_assertions.py` covers shared gold-file comparison and diff selection.
-- `test_plugin.py` covers pytest marker and manual-test behavior.
+- `test_plugin.py` covers pytest marker, manual-test, and shard selection behavior.
 - `test_process.py` covers subprocess handling and placeholder replacement.
 - `test_runner.py` covers wrapper arguments, containers, sharding, builds, and
   sandbox copying.
