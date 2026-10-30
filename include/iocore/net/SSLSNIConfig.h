@@ -52,7 +52,7 @@
 struct NextHopProperty {
   std::string client_cert_file;           // full path to client cert file for lookup
   std::string client_key_file;            // full path to client key file for lookup
-  bool        client_rpk_enabled = false; // offer a RFC 7250 raw public key (derived from the configured client
+  bool        client_rpk_enabled = false; // offer an RFC 7250 raw public key (derived from the configured client
                                           // cert/key) alongside X.509 when connecting to this next hop
   std::string server_rpk_ca_file;         // full path to the PEM of trusted next-hop raw public keys to pin against
   // Parsed once at config load rather than re-parsed from disk on every outbound handshake to

@@ -47,7 +47,7 @@ struct SSLMultiCertEntry {
   std::string        action;                 ///< Action (e.g., "tunnel").
   std::optional<int> ssl_ticket_enabled;     ///< Session ticket enabled (optional).
   std::optional<int> ssl_ticket_number;      ///< Number of session tickets (optional).
-  std::optional<int> ssl_rpk_enabled;        ///< Offer a RFC 7250 raw public key alongside X.509 (optional).
+  std::optional<int> ssl_rpk_enabled;        ///< Offer an RFC 7250 raw public key alongside X.509 (optional).
   std::string        ssl_client_rpk_ca_name; ///< Trusted client raw public keys file name (optional).
 };
 
