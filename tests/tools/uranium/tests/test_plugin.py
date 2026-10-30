@@ -262,3 +262,57 @@ def test_procedural_sandbox_retention_policy(
     _update_sandbox_retention(item, teardown)  # type: ignore[arg-type]
 
     assert sandbox.exists() is is_retained
+
+
+def _shard_membership(monkeypatch: pytest.MonkeyPatch, nodeids: list[str], shard_count: int) -> dict[str, int]:
+    """Collect every shard and return the shard each test landed in.
+
+    :param monkeypatch: Fixture isolating collection from serial-test metadata.
+    :param nodeids: Test ids to distribute.
+    :param shard_count: Number of CI shards.
+    """
+
+    monkeypatch.setattr("tools.uranium.plugin._is_serial_test", lambda path: False)
+    membership: dict[str, int] = {}
+    for shard_index in range(shard_count):
+        options = {"urtest_shard_index": shard_index, "urtest_shard_count": shard_count}
+        config = SimpleNamespace(
+            getoption=lambda name, options=options: options.get(name, False),
+            hook=SimpleNamespace(pytest_deselected=lambda items: None),
+        )
+        items = [
+            SimpleNamespace(
+                nodeid=nodeid,
+                name=nodeid,
+                path=Path("framework/example.py"),
+                add_marker=lambda marker: None,
+                get_closest_marker=lambda name: None,
+            ) for nodeid in nodeids
+        ]
+        pytest_collection_modifyitems(config, items)
+        for item in items:
+            assert item.nodeid not in membership, f"{item.nodeid} was collected by two shards"
+            membership[item.nodeid] = shard_index
+    assert set(membership) == set(nodeids)
+    return membership
+
+
+def test_adding_a_test_does_not_move_other_tests_between_shards(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep each test in its shard when the suite grows.
+
+    Rerunning one failed shard must rerun the test that failed. If adding an
+    unrelated test moves existing tests to other shards, a rerun on a newer
+    base can silently leave the failing test out.
+
+    :param monkeypatch: Fixture isolating collection from serial-test metadata.
+    """
+
+    nodeids = [f"uranium_tests/area{index:03d}/case.test.yaml::case{index:03d}" for index in range(200)]
+    before = _shard_membership(monkeypatch, nodeids, shard_count=3)
+    # Sorts ahead of every existing id, the worst case for position-based shards.
+    after = _shard_membership(monkeypatch, ["uranium_tests/aaa/new.test.yaml::new", *nodeids], shard_count=3)
+
+    moved = [nodeid for nodeid in nodeids if before[nodeid] != after[nodeid]]
+    assert moved == []
+    # Every shard still gets a fair share of the work.
+    assert all(list(after.values()).count(shard) > 40 for shard in range(3))
