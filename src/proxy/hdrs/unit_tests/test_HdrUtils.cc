@@ -529,6 +529,22 @@ TEST_CASE("Cache-Control Valid Cooking", "[proxy][hdrutils]")
      "Cache-Control: max-age=-1\r\n\r\n",
      MIME_COOKED_MASK_CC_MAX_AGE,
      -1, 0, 0, 0},
+
+    // Malformed restrictive directives are kept rather than ignored.
+    {"private with a semicolon separator",
+     "Cache-Control: private; max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
+
+    {"no-store with trailing garbage",
+     "Cache-Control: no-store garbage, max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"no-cache with a space before the equals sign",
+     "Cache-Control: no-cache =\"Set-Cookie\", max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
   };
   // clang-format on
 

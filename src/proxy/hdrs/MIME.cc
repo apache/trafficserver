@@ -3985,11 +3985,14 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
               // There's non-whitespace content that wasn't parsed. This means
               // that we cannot really understand what this directive is.
               // Per RFC 7234 Section 5.2: "A cache MUST ignore unrecognized cache
-              // directives."
-              if (csv_value_mask != 0) {
-                // Reverse the mask that we set above.
-                m_cooked_stuff.m_cache_control.m_mask &= ~csv_value_mask;
-              }
+              // directives." Directives that restrict storage or reuse are
+              // kept, though: dropping them could expose a response that the
+              // origin meant to protect, such as with "private; max-age=600".
+              constexpr uint32_t restrictive_mask = MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE |
+                                                    MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MUST_REVALIDATE |
+                                                    MIME_COOKED_MASK_CC_PROXY_REVALIDATE;
+
+              m_cooked_stuff.m_cache_control.m_mask &= ~(csv_value_mask & ~restrictive_mask);
             }
           }
         }
