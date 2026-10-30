@@ -35,10 +35,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("origin")
     for index in range(1, 5):
         origin.add_response(
-            {
-                "headers": f"GET /test-{index} HTTP/1.1\r\nHost: test-{index if index < 4 else 2}\r\n\r\n",
-                "body": ""
-            },
+            {"headers": f"GET /test-{index} HTTP/1.1\r\nHost: test-{index if index < 4 else 2}\r\n\r\n", "body": ""},
             {
                 "headers": "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n",
                 "body": f"Test {index}",
@@ -59,20 +56,18 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [{
-                            "name": "custom",
-                            "escape": "json",
-                            "format": '{"foo":"%<{Foo}cqh>","foo-slice":"%<{Foo}cqh[2:-3]>"}',
-                        }],
-                    "logs": [{
-                        "filename": "field-json-test",
-                        "format": "custom"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "custom",
+                        "escape": "json",
+                        "format": '{"foo":"%<{Foo}cqh>","foo-slice":"%<{Foo}cqh[2:-3]>"}',
+                    }
+                ],
+                "logs": [{"filename": "field-json-test", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 

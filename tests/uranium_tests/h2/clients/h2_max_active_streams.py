@@ -64,7 +64,7 @@ def make_socket(port: int) -> ssl.SSLSocket:
 
 
 def make_frame(frame_type: int, flags: int = 0, stream_id: int = 0, payload: bytes = b'') -> bytes:
-    return (len(payload).to_bytes(3, 'big') + bytes([frame_type, flags]) + (stream_id & 0x7fffffff).to_bytes(4, 'big') + payload)
+    return len(payload).to_bytes(3, 'big') + bytes([frame_type, flags]) + (stream_id & 0x7FFFFFFF).to_bytes(4, 'big') + payload
 
 
 def read_exact(sock: ssl.SSLSocket, size: int) -> bytes:
@@ -84,7 +84,7 @@ def read_frame(sock: ssl.SSLSocket) -> Tuple[int, int, int, bytes]:
     length = int.from_bytes(header[0:3], 'big')
     frame_type = header[3]
     flags = header[4]
-    stream_id = int.from_bytes(header[5:9], 'big') & 0x7fffffff
+    stream_id = int.from_bytes(header[5:9], 'big') & 0x7FFFFFFF
     payload = read_exact(sock, length)
     return frame_type, flags, stream_id, payload
 
@@ -164,7 +164,8 @@ def main() -> int:
         '--probe-from',
         type=int,
         default=None,
-        help='lowest stream id (odd) to carry the shared probe header; omit to disable probe')
+        help='lowest stream id (odd) to carry the shared probe header; omit to disable probe',
+    )
     args = parser.parse_args()
     return run(args.port, args.streams, args.probe_from)
 

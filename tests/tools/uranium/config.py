@@ -153,7 +153,7 @@ def merge_flat_records(records: Mapping[str, Any], defaults: Mapping[str, Any] |
         name = original_name
         for prefix in ("proxy.config.", "local.config."):
             if name.startswith(prefix):
-                name = name[len(prefix):]
+                name = name[len(prefix) :]
                 break
         cursor = result
         parts = name.split(".")

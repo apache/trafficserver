@@ -52,11 +52,14 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "ssl_sni",
-    })
+        )
+    )
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_sni",
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
@@ -89,7 +92,8 @@ def request(hostname: str, *cipher_options: str, _ats: ATS, _curl: Curl) -> str:
         _ats,
         (
             f"--verbose {shlex.join(cipher_options)} --resolve '{hostname}:{_ats.https_port}:127.0.0.1' "
-            f"--insecure 'https://{hostname}:{_ats.https_port}'"),
+            f"--insecure 'https://{hostname}:{_ats.https_port}'"
+        ),
     )
     if hostname == "ccc.com":
         assert result.returncode == 35, result.output
@@ -111,7 +115,8 @@ def s_client(hostname: str, *options: str, _ats: ATS) -> CommandResult:
 
     return _ats.run_shell(
         f'printf "GET / HTTP/1.1\\r\\nHost: {hostname}\\r\\nConnection: close\\r\\n\\r\\n" | '
-        f'openssl s_client -connect 127.0.0.1:{_ats.https_port} -servername {hostname} {shlex.join(options)} -ign_eof')
+        f'openssl s_client -connect 127.0.0.1:{_ats.https_port} -servername {hostname} {shlex.join(options)} -ign_eof'
+    )
 
 
 def require_version(result: CommandResult, version: str) -> None:

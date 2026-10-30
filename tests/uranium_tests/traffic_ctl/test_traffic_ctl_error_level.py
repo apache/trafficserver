@@ -50,9 +50,8 @@ def test_traffic_ctl_error_level(ats_factory: ATSFactory, services: ServiceFacto
         """
         directory = ats.run_directory / name
         process = services.process(
-            name,
-            [sys.executable, Path(__file__).with_name("jsonrpc_error_stub.py"), directory,
-             json.dumps(replies)])
+            name, [sys.executable, Path(__file__).with_name("jsonrpc_error_stub.py"), directory, json.dumps(replies)]
+        )
         process.start()
         deadline = time.monotonic() + 10
         while not (directory / "ready").exists():
@@ -93,8 +92,12 @@ def test_traffic_ctl_error_level(ats_factory: ATSFactory, services: ServiceFacto
     run('traffic_ctl config set proxy.config.diags.debug.tags -e', 0)
     tr = run('traffic_ctl config get proxy.config.diags.debug.tags', 0)
     assert re.search('proxy.config.diags.debug.tags: -e$', tr.stdout, re.MULTILINE), tr.output
-    for twice in ('--error-level bogus --error-level warn', '--error-level=bogus --error-level warn',
-                  '--error-level warn --error-level=bogus', '--error-level=warn --error-level=fatal'):
+    for twice in (
+        '--error-level bogus --error-level warn',
+        '--error-level=bogus --error-level warn',
+        '--error-level warn --error-level=bogus',
+        '--error-level=warn --error-level=fatal',
+    ):
         tr = run(f'traffic_ctl {twice} config get proxy.config.http.server_ports', 64)
         assert re.search('at most one argument expected by --error-level', tr.output, re.MULTILINE), tr.output
     tr = run('traffic_ctl config get proxy.config.http.server_ports --error-level', 2)
@@ -108,60 +111,26 @@ def test_traffic_ctl_error_level(ats_factory: ATSFactory, services: ServiceFacto
         return {'error': {'code': 9, 'message': 'Error during execution', 'data': list(entries)}}
 
     node, ctl = stub(
-        'stub', {
-            'stub_old_server': execution_error({
-                'code': 3000,
-                'message': 'sent without severity'
-            }),
-            'stub_warn': execution_error({
-                'code': 3000,
-                'severity': 4,
-                'message': 'already in that state'
-            }),
-            'stub_out_of_range': execution_error({
-                'code': 1,
-                'severity': 256,
-                'message': 'out of range'
-            }),
-            'stub_not_a_number': execution_error({
-                'code': 1,
-                'severity': 'warn',
-                'message': 'not a number'
-            }),
-            'stub_quoted_number': execution_error({
-                'code': 1,
-                'severity': '0',
-                'message': 'quoted'
-            }),
-            'stub_diag': execution_error({
-                'code': 1,
-                'severity': 0,
-                'message': 'diag entry'
-            }),
+        'stub',
+        {
+            'stub_old_server': execution_error({'code': 3000, 'message': 'sent without severity'}),
+            'stub_warn': execution_error({'code': 3000, 'severity': 4, 'message': 'already in that state'}),
+            'stub_out_of_range': execution_error({'code': 1, 'severity': 256, 'message': 'out of range'}),
+            'stub_not_a_number': execution_error({'code': 1, 'severity': 'warn', 'message': 'not a number'}),
+            'stub_quoted_number': execution_error({'code': 1, 'severity': '0', 'message': 'quoted'}),
+            'stub_diag': execution_error({'code': 1, 'severity': 0, 'message': 'diag entry'}),
             'stub_null_entry': execution_error(None),
-            'stub_unauthorized':
-                {
-                    'error':
-                        {
-                            'code': 10,
-                            'message': 'Unauthorized action',
-                            'data': [{
-                                'code': 1,
-                                'severity': 4,
-                                'message': 'Denied privileged API access'
-                            }]
-                        }
-                },
-            'admin_config_reload': execution_error({
-                'code': 1,
-                'severity': 4,
-                'message': 'reload warning'
-            }),
-            'get_reload_config_status': execution_error({
-                'code': 1,
-                'message': 'status failure'
-            })
-        })
+            'stub_unauthorized': {
+                'error': {
+                    'code': 10,
+                    'message': 'Unauthorized action',
+                    'data': [{'code': 1, 'severity': 4, 'message': 'Denied privileged API access'}],
+                }
+            },
+            'admin_config_reload': execution_error({'code': 1, 'severity': 4, 'message': 'reload warning'}),
+            'get_reload_config_status': execution_error({'code': 1, 'message': 'status failure'}),
+        },
+    )
     tr = run(f'{ctl} rpc invoke stub_old_server', 2)
     assert re.search('- \\[3000\\] sent without severity', tr.stdout, re.MULTILINE), tr.output
     run(f'{ctl} --error-level fatal rpc invoke stub_old_server', 0)
@@ -191,47 +160,29 @@ def test_traffic_ctl_error_level(ats_factory: ATSFactory, services: ServiceFacto
     assert not re.search('Error found', tr.stderr, re.MULTILINE), tr.output
     run(f'{ctl} --error-level fatal config status', 0)
     token_node, token_ctl = stub(
-        'stub_token', {
-            'admin_config_reload': {
-                'result': {
-                    'errors': [{
-                        'code': 6002,
-                        'message': "Token 't1' already exists."
-                    }]
-                }
-            },
-            'get_reload_config_status': execution_error({
-                'code': 1,
-                'severity': 4,
-                'message': 'status warning'
-            })
-        })
+        'stub_token',
+        {
+            'admin_config_reload': {'result': {'errors': [{'code': 6002, 'message': "Token 't1' already exists."}]}},
+            'get_reload_config_status': execution_error({'code': 1, 'severity': 4, 'message': 'status warning'}),
+        },
+    )
     tr = run(f'{token_ctl} config reload -s -t t1', 2)
     assert re.search("Token 't1' already in use", tr.stdout, re.MULTILINE), tr.output
     assert re.search('Warn: status warning', tr.stdout, re.MULTILINE), tr.output
     DEBUG_SET = {'result': {'record': [{'record_name': 'proxy.config.diags.debug.tags'}]}}
     UNAUTHORIZED = {
-        'error': {
-            'code': 10,
-            'message': 'Unauthorized action',
-            'data': [{
-                'code': 2,
-                'message': 'Denied privileged API access'
-            }]
-        }
+        'error': {'code': 10, 'message': 'Unauthorized action', 'data': [{'code': 2, 'message': 'Denied privileged API access'}]}
     }
     LOOKUP_WARNING = execution_error({'code': 1, 'severity': 4, 'message': 'lookup warning'})
     APPEND = 'server debug enable --tags http --append'
     denied_node, denied_ctl = stub('stub_debug', {'admin_lookup_records': UNAUTHORIZED, 'admin_config_set_records': DEBUG_SET})
     warned_node, warned_ctl = stub(
-        'stub_debug_warn', {
-            'admin_lookup_records': LOOKUP_WARNING,
-            'admin_config_set_records': DEBUG_SET
-        })
+        'stub_debug_warn', {'admin_lookup_records': LOOKUP_WARNING, 'admin_config_set_records': DEBUG_SET}
+    )
     DEBUG_LOOKUP_FAILURES = [
         ('the tag lookup is refused', denied_node, f'{denied_ctl} {APPEND}', 2, 'Denied privileged API access'),
         ('the tag lookup warns: not done', warned_node, f'{warned_ctl} {APPEND}', 75, 'lookup warning'),
-        ('the tag lookup warns, --error-level warn', warned_node, f'{warned_ctl} --error-level warn {APPEND}', 2, 'lookup warning')
+        ('the tag lookup warns, --error-level warn', warned_node, f'{warned_ctl} --error-level warn {APPEND}', 2, 'lookup warning'),
     ]
     for what, process, command, code, why in DEBUG_LOOKUP_FAILURES:
         tr = run(command, code)
@@ -239,20 +190,12 @@ def test_traffic_ctl_error_level(ats_factory: ATSFactory, services: ServiceFacto
         assert not re.search('TS Runtime debug set', tr.stdout, re.MULTILINE), tr.output
         assert not re.search('Error found', tr.stderr, re.MULTILINE), tr.output
     METRIC_OK = {
-        'result': {
-            'recordList': [{
-                'record': {
-                    'record_name': 'proxy.process.stub',
-                    'current_value': '5'
-                }
-            }],
-            'errorList': []
-        }
+        'result': {'recordList': [{'record': {'record_name': 'proxy.process.stub', 'current_value': '5'}}], 'errorList': []}
     }
     reset_node, reset_ctl = stub('stub_reset', {'admin_lookup_records': LOOKUP_WARNING})
     RESET_STOPS = [
         ('the lookup warns: not done', f'{reset_ctl} config reset proxy.config.diags', 75),
-        ('the lookup warns, --error-level warn', f'{reset_ctl} --error-level warn config reset proxy.config.diags', 2)
+        ('the lookup warns, --error-level warn', f'{reset_ctl} --error-level warn config reset proxy.config.diags', 2),
     ]
     for what, command, code in RESET_STOPS:
         tr = run(command, code)
@@ -269,46 +212,38 @@ def test_traffic_ctl_error_level(ats_factory: ATSFactory, services: ServiceFacto
     IN_PROGRESS = {'result': {'tasks': [{'config_token': 'm1', 'status': 'in_progress'}]}}
     MONITOR = 'config reload -t m1 -m --initial-wait 0 --refresh-int 0.1'
     first_node, first_ctl = stub(
-        'stub_mon_first', {
+        'stub_mon_first',
+        {
             'admin_config_reload': RELOAD_SCHEDULED,
-            'get_reload_config_status': execution_error({
-                'code': 1,
-                'severity': 4,
-                'message': 'status warning'
-            })
-        })
+            'get_reload_config_status': execution_error({'code': 1, 'severity': 4, 'message': 'status warning'}),
+        },
+    )
     tr = run(f'{first_ctl} {MONITOR}', 75)
     assert re.search('Warn: status warning', tr.stdout, re.MULTILINE), tr.output
     run(f'{first_ctl} --error-level warn {MONITOR}', 2)
     later_node, later_ctl = stub(
-        'stub_mon_later', {
+        'stub_mon_later',
+        {
             'admin_config_reload': RELOAD_SCHEDULED,
-            'get_reload_config_status': [IN_PROGRESS, execution_error({
-                'code': 1,
-                'message': 'status failure'
-            })]
-        })
+            'get_reload_config_status': [IN_PROGRESS, execution_error({'code': 1, 'message': 'status failure'})],
+        },
+    )
     tr = run(f'{later_ctl} {MONITOR}', 2)
     assert re.search('status failure', tr.stdout, re.MULTILINE), tr.output
     run(f'{later_ctl} --error-level fatal {MONITOR}', 75)
     refused_node, refused_ctl = stub(
-        'stub_mon_refused', {'admin_config_reload': execution_error({
-            'code': 1,
-            'severity': 4,
-            'message': 'reload warning'
-        })})
+        'stub_mon_refused', {'admin_config_reload': execution_error({'code': 1, 'severity': 4, 'message': 'reload warning'})}
+    )
     tr = run(f'{refused_ctl} {MONITOR}', 75)
     assert re.search('Warn: reload warning', tr.stdout, re.MULTILINE), tr.output
     run(f'{refused_ctl} --error-level warn {MONITOR}', 2)
     details_node, details_ctl = stub(
-        'stub_details', {
+        'stub_details',
+        {
             'admin_config_reload': RELOAD_SCHEDULED,
-            'get_reload_config_status': execution_error({
-                'code': 1,
-                'severity': 4,
-                'message': 'status warning'
-            })
-        })
+            'get_reload_config_status': execution_error({'code': 1, 'severity': 4, 'message': 'status warning'}),
+        },
+    )
     SHOW_DETAILS = 'config reload -t m1 -s --initial-wait 0'
     tr = run(f'{details_ctl} {SHOW_DETAILS}', 75)
     assert re.search('Reload scheduled \\[m1\\]', tr.stdout, re.MULTILINE), tr.output

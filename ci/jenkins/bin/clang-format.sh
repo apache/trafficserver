@@ -48,15 +48,15 @@ autoreconf -if && ./configure
 ${ATS_MAKE} clang-format
 [ "0" != "$?" ] && exit 1
 
-# Older branches didn't have either autopep8 or yapf. Only run these checks on
+# Older branches didn't have autopep8, YAPF, or Ruff. Only run these checks on
 # branches where the pre-commit hook was updated to check them.
 if grep -q autopep8 tools/git/pre-commit; then
     ${ATS_MAKE} autopep8
     [ "0" != "$?" ] && exit 1
 fi
 
-if grep -q yapf tools/git/pre-commit; then
-    ${ATS_MAKE} yapf
+if grep -q ruff tools/git/pre-commit; then
+    ${ATS_MAKE} ruff
     [ "0" != "$?" ] && exit 1
 fi
 

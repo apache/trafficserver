@@ -32,11 +32,8 @@ def main() -> int:
     port = int(sys.argv[2]) if len(sys.argv) > 2 else 8080
 
     request = (
-        'POST / HTTP/1.1\r\n'
-        'Host: quick.server.com\r\n'
-        'Content-Type: application/octet-stream\r\n'
-        'Content-Length: 100000\r\n'
-        '\r\n').encode()
+        'POST / HTTP/1.1\r\nHost: quick.server.com\r\nContent-Type: application/octet-stream\r\nContent-Length: 100000\r\n\r\n'
+    ).encode()
 
     partial_body = b'x' * 4096
 

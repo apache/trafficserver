@@ -40,13 +40,15 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: signed-bar.pem",
             "    ssl_key_name: signed-bar.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl",
-        })
+        }
+    )
     return ats
 
 

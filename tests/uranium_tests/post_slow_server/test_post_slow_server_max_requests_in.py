@@ -50,7 +50,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
             "proxy.config.http.connect_attempts_timeout": 1,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / https://127.0.0.1:{_origin_port}/")
     return ats
 
@@ -85,8 +86,7 @@ def test_post_slow_server_max_requests_in(ats_factory: ATSFactory, services: Ser
     _ats.start()
     result = curl.run_for(
         _ats,
-        (f"--request POST --http1.1 --verbose --silent 'http://127.0.0.1:{_ats.http_port}/' --data "
-         f"key=value"),
+        (f"--request POST --http1.1 --verbose --silent 'http://127.0.0.1:{_ats.http_port}/' --data key=value"),
         timeout=10,
     )
     assert result.returncode == 0, result.output

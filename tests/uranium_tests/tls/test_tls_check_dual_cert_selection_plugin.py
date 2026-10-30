@@ -59,14 +59,16 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.server.cert.path": str(ats.ssl_directory.parent),
             "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory.parent),
             "proxy.config.diags.debug.tags": "ssl_secret_load_test",
             "proxy.config.diags.debug.enabled": 1,
-        })
+        }
+    )
     return ats
 
 
@@ -77,7 +79,7 @@ def certificate_prefix(name: str) -> str:
     """
 
     content = (SSL_DIRECTORY / name).read_text()
-    return content[:content.index("END CERTIFICATE-----")]
+    return content[: content.index("END CERTIFICATE-----")]
 
 
 def handshake(hostname: str, *, rsa_only: bool = False, ca_file: str = "signer.pem", _ats: ATS) -> str:
@@ -92,7 +94,8 @@ def handshake(hostname: str, *, rsa_only: bool = False, ca_file: str = "signer.p
     sigalgs = " -sigalgs RSA-PSS+SHA256" if rsa_only else ""
     script = (
         f"printf 'foo\\n' | openssl s_client -CAfile {shlex.quote(str(SSL_DIRECTORY / ca_file))} "
-        f"-servername {shlex.quote(hostname)}{sigalgs} -connect 127.0.0.1:{_ats.https_port}")
+        f"-servername {shlex.quote(hostname)}{sigalgs} -connect 127.0.0.1:{_ats.https_port}"
+    )
     result = _ats.run_shell(script)
     assert result.returncode == 0, result.output
     return result.output

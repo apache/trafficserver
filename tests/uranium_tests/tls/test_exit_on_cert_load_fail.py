@@ -38,14 +38,12 @@ def configure_ats(ats_factory: ATSFactory, *, _exit_on_failure: bool, _side: str
                 '  - dest_ip: "*"',
                 "    ssl_cert_name: server.pem",
                 "    ssl_key_name: server.key",
-            ))
+            )
+        )
     else:
         ats.set_ssl_multicert_yaml(
-            {"ssl_multicert": [{
-                "dest_ip": "*",
-                "ssl_cert_name": "server.pem",
-                "ssl_key_name": "server.key"
-            }]})
+            {"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"}]}
+        )
     client_cert = "NULL" if _side == "server" else str(ats.ssl_directory / "non-existent-cert.pem")
     ats.records.update(
         {
@@ -54,7 +52,8 @@ def configure_ats(ats_factory: ATSFactory, *, _exit_on_failure: bool, _side: str
             "proxy.config.ssl.client.cert.filename": client_cert,
             "proxy.config.ssl.server.multicert.exit_on_load_fail": int(_exit_on_failure and _side == "server"),
             "proxy.config.ssl.client.cert.exit_on_load_fail": int(_exit_on_failure and _side == "client"),
-        })
+        }
+    )
     ats.remap_config.add_line("map / https://127.0.0.1:12345/")
     if _exit_on_failure:
         ats.expect_start_failure("EMERGENCY:", return_code=33)

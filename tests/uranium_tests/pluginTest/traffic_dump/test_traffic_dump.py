@@ -61,7 +61,13 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
         TEST_DIRECTORY / "ssl" / "server.key",
         TEST_DIRECTORY / "ssl" / "signer.pem",
     )
-    ats.set_ssl_multicert_yaml({"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"},]})
+    ats.set_ssl_multicert_yaml(
+        {
+            "ssl_multicert": [
+                {"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"},
+            ]
+        }
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -76,32 +82,34 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.ssl.TLSv1_3.enabled": 0,
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
             "proxy.config.http.connect_ports": str(_server.http_port),
-        })
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map https://www.client_only_tls.com/ http://127.0.0.1:{_server.http_port}",
             f"map https://www.tls.com/ https://127.0.0.1:{_server.https_port}",
             f"map http://www.connect_target.com/ http://127.0.0.1:{_server.http_port}",
             f"map / http://127.0.0.1:{_server.http_port}",
-        ))
+        )
+    )
     ats.allow_private_connect(("CONNECT", "GET", "POST"))
     ats.plugin_config.add_line(
         f'traffic_dump.so --logdir {ats.log_directory} --sample 1 --limit 1000000000 '
-        '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"')
+        '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"'
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
+            "logging": {
+                "formats": [
+                    {
                         "name": "basic",
                         "format": "%<cluc>: Read result: %<crc>:%<crsc>:%<chm>, Write result: %<cwr>",
-                    }],
-                    "logs": [{
-                        "filename": "transactions",
-                        "format": "basic"
-                    }],
-                }
-        })
+                    }
+                ],
+                "logs": [{"filename": "transactions", "format": "basic"}],
+            }
+        }
+    )
     return ats
 
 
@@ -182,17 +190,21 @@ def verify_initial_dumps(*, _ats: ATS, _dump_directory: Path) -> None:
         "tcp,ip",
         sensitive=True,
         _ats=_ats,
-        _dump_directory=_dump_directory)
+        _dump_directory=_dump_directory,
+    )
     verify_dump(
-        1, "--client-http-version", "1.1", "--request-target", "/two", sensitive=True, _ats=_ats, _dump_directory=_dump_directory)
+        1, "--client-http-version", "1.1", "--request-target", "/two", sensitive=True, _ats=_ats, _dump_directory=_dump_directory
+    )
     verify_dump(2, "--request-target", "http://www.some.host.com/candy", sensitive=True, _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(3, "--client-request-size", "12345", sensitive=True, _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(5, "--client-protocols", "tcp,ip", _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(6, "--client-protocols", "tcp,ip", _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(
-        7, "--client-protocols", "tls,tcp,ip", "--client-tls-features", client_tls, _ats=_ats, _dump_directory=_dump_directory)
+        7, "--client-protocols", "tls,tcp,ip", "--client-tls-features", client_tls, _ats=_ats, _dump_directory=_dump_directory
+    )
     verify_dump(
-        7, "--server-protocols", "http,tls,tcp,ip", "--server-tls-features", server_tls, _ats=_ats, _dump_directory=_dump_directory)
+        7, "--server-protocols", "http,tls,tcp,ip", "--server-tls-features", server_tls, _ats=_ats, _dump_directory=_dump_directory
+    )
     verify_dump(
         8,
         "--client-http-version",
@@ -202,9 +214,11 @@ def verify_initial_dumps(*, _ats: ATS, _dump_directory: Path) -> None:
         "--client-tls-features",
         client_tls,
         _ats=_ats,
-        _dump_directory=_dump_directory)
+        _dump_directory=_dump_directory,
+    )
     verify_dump(
-        8, "--server-protocols", "http,tls,tcp,ip", "--server-tls-features", server_tls, _ats=_ats, _dump_directory=_dump_directory)
+        8, "--server-protocols", "http,tls,tcp,ip", "--server-tls-features", server_tls, _ats=_ats, _dump_directory=_dump_directory
+    )
     verify_dump(9, "--client-http-version", "1.1", "--client-protocols", "tls,tcp,ip", _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(9, "--server-protocols", "http,tcp,ip", _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(10, sensitive=True, _ats=_ats, _dump_directory=_dump_directory)
@@ -217,11 +231,15 @@ def set_limit(value: int | None, *, _ats: ATS) -> None:
     :param value: Value used by this test step.
     """
 
-    arguments = ("plugin", "msg", "traffic_dump.unlimit") if value is None else (
-        "plugin",
-        "msg",
-        "traffic_dump.limit",
-        str(value),
+    arguments = (
+        ("plugin", "msg", "traffic_dump.unlimit")
+        if value is None
+        else (
+            "plugin",
+            "msg",
+            "traffic_dump.limit",
+            str(value),
+        )
     )
     result = _ats.traffic_ctl(*arguments)
     assert result.returncode == 0, result.output

@@ -38,9 +38,9 @@ def test_http2_origin_interim_response(ats_factory: ATSFactory, services: Servic
     port = services.allocate_port()
     origin = services.process(
         "origin",
-        [sys.executable, Path(__file__).with_name("h2_interim_origin.py"), "127.0.0.1",
-         str(port), "--mode", mode],
-        ready_port=port)
+        [sys.executable, Path(__file__).with_name("h2_interim_origin.py"), "127.0.0.1", str(port), "--mode", mode],
+        ready_port=port,
+    )
     ats = ats_factory.create("ts", enable_tls=True)
     ats.add_default_ssl_files()
     ats.remap_config.add_line(f"map http://ats.test/{mode} https://127.0.0.1:{port}/")
@@ -53,7 +53,8 @@ def test_http2_origin_interim_response(ats_factory: ATSFactory, services: Servic
             "proxy.config.exec_thread.limit": 4,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http2|http",
-        })
+        }
+    )
     origin.start()
     ats.start()
     result = curl.run_for(ats, f'--verbose --silent --max-time 10 -H "Host: ats.test" http://127.0.0.1:{ats.http_port}/{mode}')

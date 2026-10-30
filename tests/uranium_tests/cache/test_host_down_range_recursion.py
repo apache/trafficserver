@@ -34,19 +34,22 @@ def test_host_down_range_recursion(ats: ATS, services: ServiceFactory) -> None:
             "proxy.config.diags.debug.tags": "http|host_statuses",
             "proxy.config.http.cache.range.write": 1,
             "proxy.config.http.insert_response_via_str": 3,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map http://backend.example.com/ http://127.0.0.1:{origin.http_port}/")
     origin.start()
     ats.start()
     result = services.verifier_client("prime-client", _PRIME_REPLAY, http_ports=[ats.http_port]).run()
 
     assert result.returncode == 0, result.output
-    result = ats.rpc(Request.admin_host_set_status(
-        operation="down",
-        host=["127.0.0.1"],
-        reason="manual",
-        time="0",
-    ))
+    result = ats.rpc(
+        Request.admin_host_set_status(
+            operation="down",
+            host=["127.0.0.1"],
+            reason="manual",
+            time="0",
+        )
+    )
 
     assert result.returncode == 0, result.output
     result = services.verifier_client("range-client", _RANGE_REPLAY, http_ports=[ats.http_port]).run(timeout=10)

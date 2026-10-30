@@ -57,7 +57,8 @@ def configure_status_ats(status: int, host: str, origin: OriginServer, *, _ats_f
     ats.write_config_file("maps.reg", f"//.*/ http://127.0.0.1:{origin.port} @status={status}\n")
     ats.remap_config.add_line(
         f"map http://{host} http://127.0.0.1:{origin.port} "
-        "@plugin=regex_remap.so @pparam=maps.reg @pparam=no-query-string @pparam=host")
+        "@plugin=regex_remap.so @pparam=maps.reg @pparam=no-query-string @pparam=host"
+    )
     return ats
 
 
@@ -106,7 +107,8 @@ def test_http_204_responses(ats_factory: ATSFactory, services: ServiceFactory) -
     ats.remap_config.add_line(
         f"map http://{custom_host} http://127.0.0.1:{origin.port} "
         "@plugin=regex_remap.so @pparam=maps.reg @pparam=no-query-string @pparam=host "
-        f"@plugin=conf_remap.so @pparam=proxy.config.body_factory.template_base={custom_host}")
+        f"@plugin=conf_remap.so @pparam=proxy.config.body_factory.template_base={custom_host}"
+    )
     ats.write_body_factory_file(
         f"default/{custom_host}_default",
         textwrap.dedent(
@@ -125,7 +127,8 @@ def test_http_204_responses(ats_factory: ATSFactory, services: ServiceFactory) -
                 </B></FONT>
                 <HR>
                 </BODY>
-                """).lstrip(),
+                """
+        ).lstrip(),
     )
     ats.start()
     run_client(ats, f"{default_host}_get.txt", "http-204.gold", _directory=_directory, _services=services)

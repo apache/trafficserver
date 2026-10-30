@@ -36,7 +36,8 @@ def configure_ats(ats_factory: ATSFactory, name: str) -> ATS:
             "proxy.config.log.periodic_tasks_interval": 1,
             "proxy.config.log.rolling_enabled": 0,
             "proxy.config.log.auto_delete_rolled_files": 0,
-        })
+        }
+    )
     return ats
 
 
@@ -104,18 +105,12 @@ def check_configured_log(*, _ats_factory: ATSFactory, _curl: Curl, _services: Se
     ats.remap_config.add_line(f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{origin.http_port}")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "has_path",
-                        "format": "%<pqu>: %<sssc>"
-                    }],
-                    "logs": [{
-                        "filename": "test_rotation",
-                        "format": "has_path"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "has_path", "format": "%<pqu>: %<sssc>"}],
+                "logs": [{"filename": "test_rotation", "format": "has_path"}],
+            }
+        }
+    )
     configured = ats.log_directory / "test_rotation.log"
     rotated = Path(f"{configured}_old")
 

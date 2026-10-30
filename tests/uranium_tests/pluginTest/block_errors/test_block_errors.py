@@ -28,10 +28,12 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     ats = ats_factory.create("ts", disable_log_checks=True)
     if not ats.plugin_exists("block_errors.so"):
         pytest.skip("block_errors.so is required")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "block_errors",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "block_errors",
+        }
+    )
     ats.plugin_config.add_line("block_errors.so")
     return ats
 

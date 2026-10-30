@@ -15,6 +15,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Tests for LSPPatternMatcher in tables.py."""
+
 from __future__ import annotations
 
 import pytest
@@ -22,7 +23,6 @@ from hrw4u.tables import LSPPatternMatcher
 
 
 class TestMatchFieldPattern:
-
     def test_now_field(self):
         match = LSPPatternMatcher.match_field_pattern("now.YEAR")
         assert match is not None
@@ -48,7 +48,6 @@ class TestMatchFieldPattern:
 
 
 class TestMatchHeaderPattern:
-
     def test_inbound_req(self):
         match = LSPPatternMatcher.match_header_pattern("inbound.req.X-Foo")
         assert match is not None
@@ -65,7 +64,6 @@ class TestMatchHeaderPattern:
 
 
 class TestMatchCookiePattern:
-
     def test_inbound_cookie(self):
         match = LSPPatternMatcher.match_cookie_pattern("inbound.cookie.session_id")
         assert match is not None
@@ -82,7 +80,6 @@ class TestMatchCookiePattern:
 
 
 class TestMatchCertificatePattern:
-
     def test_inbound_client_cert(self):
         match = LSPPatternMatcher.match_certificate_pattern("inbound.conn.client-cert.CN")
         assert match is not None
@@ -98,7 +95,6 @@ class TestMatchCertificatePattern:
 
 
 class TestMatchConnectionPattern:
-
     def test_inbound_conn(self):
         match = LSPPatternMatcher.match_connection_pattern("inbound.conn.TLS")
         assert match is not None
@@ -115,7 +111,6 @@ class TestMatchConnectionPattern:
 
 
 class TestMatchAnyPattern:
-
     def test_field(self):
         match = LSPPatternMatcher.match_any_pattern("now.YEAR")
         assert match is not None

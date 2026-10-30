@@ -48,24 +48,31 @@ def main(port: int, policy: int, window: int) -> None:
         connection.initiate_connection()
         synchronize(connection, sock, 0)
         assert connection.remote_settings.initial_window_size == window, (
-            f"preface stream window {connection.remote_settings.initial_window_size} != {window}")
+            f"preface stream window {connection.remote_settings.initial_window_size} != {window}"
+        )
         session_window = window if policy == 0 else window * 100
         # HTTP/2 cannot shrink the initial connection window with WINDOW_UPDATE.
-        assert connection.outbound_flow_control_window == max(
-            65535,
-            session_window), (f"connection window {connection.outbound_flow_control_window} != {max(65535, session_window)}")
+        assert connection.outbound_flow_control_window == max(65535, session_window), (
+            f"connection window {connection.outbound_flow_control_window} != {max(65535, session_window)}"
+        )
         for count, stream_id in enumerate((1, 3, 5), start=1):
             # Buffered, unfinished bodies keep streams open without an origin.
             connection.send_headers(
-                stream_id, [
-                    (":method", "POST"), (":scheme", "http"), (":authority", "window.example"), (":path", "/"),
-                    ("content-length", "1")
+                stream_id,
+                [
+                    (":method", "POST"),
+                    (":scheme", "http"),
+                    (":authority", "window.example"),
+                    (":path", "/"),
+                    ("content-length", "1"),
                 ],
-                end_stream=False)
+                end_stream=False,
+            )
             synchronize(connection, sock, count)
             expected = session_window // count if policy == 2 else window
             assert connection.remote_settings.initial_window_size == expected, (
-                f"{count} streams: window {connection.remote_settings.initial_window_size} != {expected}")
+                f"{count} streams: window {connection.remote_settings.initial_window_size} != {expected}"
+            )
             for active_id in range(1, stream_id + 1, 2):
                 assert connection.streams[active_id].outbound_flow_control_window == expected
         print(f"verified policy={policy} stream_window={window} connection_window={max(65535, session_window)}")

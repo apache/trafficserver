@@ -38,14 +38,8 @@ def run_remap_ip_resolve(ats_factory: ATSFactory, services: ServiceFactory, curl
         ipv6 = services.origin("origin-ipv6", ip="::1")
         for origin, body in ((ipv4, "ipv4"), (ipv6, "ipv6")):
             origin.add_response(
-                {
-                    "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                    "body": ""
-                },
-                {
-                    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                    "body": body
-                },
+                {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
+                {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
             )
         return ipv4, ipv6
 
@@ -56,10 +50,12 @@ def run_remap_ip_resolve(ats_factory: ATSFactory, services: ServiceFactory, curl
         """
 
         dns = services.dns("dns")
-        dns.add_records({
-            "test.ipv4.only.com.": ["127.0.0.1"],
-            "test.ipv6.only.com.": ["127.0.0.1", "::1"],
-        })
+        dns.add_records(
+            {
+                "test.ipv4.only.com.": ["127.0.0.1"],
+                "test.ipv6.only.com.": ["127.0.0.1", "::1"],
+            }
+        )
         return dns
 
     def configure_ats(ats_factory: ATSFactory) -> ATS:
@@ -79,7 +75,8 @@ def run_remap_ip_resolve(ats_factory: ATSFactory, services: ServiceFactory, curl
                 "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
                 "proxy.config.dns.resolv_conf": "NULL",
                 "proxy.config.hostdb.ip_resolve": "ipv4",
-            })
+            }
+        )
         if use_yaml:
             ats.remap_yaml.add_lines(
                 [
@@ -96,7 +93,8 @@ def run_remap_ip_resolve(ats_factory: ATSFactory, services: ServiceFactory, curl
                     "    plugins:",
                     "      - name: conf_remap.so",
                     "        params: ['proxy.config.hostdb.ip_resolve=ipv6;only']",
-                ])
+                ]
+            )
         else:
             ats.remap_config.add_lines(
                 [
@@ -104,7 +102,8 @@ def run_remap_ip_resolve(ats_factory: ATSFactory, services: ServiceFactory, curl
                     "@plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;ipv4;client",
                     f"map http://testDNS2.com http://test.ipv6.only.com:{_ipv6_origin.port} "
                     "@plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;only",
-                ])
+                ]
+            )
         return ats
 
     def request(host: str, expected: str) -> None:

@@ -33,15 +33,12 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     headers = "POST /post HTTP/1.1\r\nHost: www.example.com\r\nContent-Length:1000\r\n"
     headers += "".join(f"header{index}:{index}\r\n" for index in range(LARGE_TLS_POST__header_count))
     origin.add_response(
+        {"headers": headers + "\r\n", "body": "0" * 1000},
         {
-            "headers": headers + "\r\n",
-            "body": "0" * 1000
-        },
-        {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                    "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"
+            ),
             "body": "ok",
         },
     )
@@ -64,13 +61,15 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl",
-        })
+        }
+    )
     return ats
 
 

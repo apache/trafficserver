@@ -28,22 +28,18 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     """
 
     oversized_path = "A" * (MAX_REQUEST_LENGTH + 1)
-    body = (
-        "<html>\n<body>\n"
-        f'<p>Hello, <esi:include src="http://www.example.com/{oversized_path}"/></p>\n'
-        "</body>\n</html>\n")
+    body = f"<html>\n<body>\n<p>Hello, <esi:include src=\"http://www.example.com/{oversized_path}\"/></p>\n</body>\n</html>\n"
     origin = services.origin("origin")
     origin.add_response(
         {
-            "headers": ("GET /oversized.php HTTP/1.1\r\n"
-                        "Host: www.example.com\r\nContent-Length: 0\r\n\r\n"),
+            "headers": ("GET /oversized.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"),
             "body": "",
         },
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nX-Esi: 1\r\n"
-                    f"Connection: close\r\nContent-Length: {len(body)}\r\nCache-Control: max-age=300\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nX-Esi: 1\r\n"
+                f"Connection: close\r\nContent-Length: {len(body)}\r\nCache-Control: max-age=300\r\n\r\n"
+            ),
             "body": body,
         },
     )
@@ -61,10 +57,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     if not ats.plugin_exists("esi.so"):
         pytest.skip("esi.so is required")
     ats.plugin_config.add_line("esi.so")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http|plugin_esi",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|plugin_esi",
+        }
+    )
     ats.remap_config.add_line(f"map http://www.example.com/ http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -93,10 +91,7 @@ def test_esi_request_size_cap(ats_factory: ATSFactory, services: ServiceFactory,
     result = curl.get(
         _ats,
         "/oversized.php",
-        headers={
-            "Host": "www.example.com",
-            "Accept": "*/*"
-        },
+        headers={"Host": "www.example.com", "Accept": "*/*"},
         options=f"--output /dev/null --silent",
     )
     verify_client(result)

@@ -42,7 +42,7 @@ def count_frames(payload: bytes, frame_type: int) -> int:
         if len(payload) - offset < HTTP2_FRAME_HEADER_SIZE:
             raise RuntimeError("truncated HTTP/2 frame header")
 
-        length = int.from_bytes(payload[offset:offset + 3], "big")
+        length = int.from_bytes(payload[offset : offset + 3], "big")
         frame_end = offset + HTTP2_FRAME_HEADER_SIZE + length
         if frame_end > len(payload):
             raise RuntimeError("truncated HTTP/2 frame payload")
@@ -123,9 +123,11 @@ def serve_connection(tls_socket: ssl.SSLSocket, expected_responses: int, lifecyc
                 if paths[event.stream_id] != "/trailers":
                     headers.extend(
                         [
-                            ("content-length", "4"), ("x-continuation-padding-one", padding_one),
-                            ("x-continuation-padding-two", padding_two)
-                        ])
+                            ("content-length", "4"),
+                            ("x-continuation-padding-one", padding_one),
+                            ("x-continuation-padding-two", padding_two),
+                        ]
+                    )
                 connection.send_headers(event.stream_id, headers)
                 connection.send_data(event.stream_id, b"okay", end_stream=paths[event.stream_id] != "/trailers")
                 if paths[event.stream_id] == "/trailers":

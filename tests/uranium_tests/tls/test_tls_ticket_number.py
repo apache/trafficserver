@@ -34,13 +34,9 @@ def test_tls_ticket_number(ats_factory: ATSFactory, services: ServiceFactory, ti
         pytest.skip("openssl is required")
     server = services.origin("server")
     server.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: ticket-number.example.com\r\n\r\n",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "ticket number test"
-        })
+        {"headers": "GET / HTTP/1.1\r\nHost: ticket-number.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "ticket number test"},
+    )
     ats = ats_factory.create("ts", enable_tls=True)
     ats.copy_to_ssl("ssl/server.pem")
     ats.copy_to_ssl("ssl/server.key")
@@ -51,12 +47,14 @@ def test_tls_ticket_number(ats_factory: ATSFactory, services: ServiceFactory, ti
         {
             "proxy.config.ssl.server.session_ticket.enable": 1,
             "proxy.config.ssl.server.session_ticket.number": ticket_number,
-            "proxy.config.ssl.server.ticket_key.filename": str(ats.config_directory / "file.ticket")
-        })
+            "proxy.config.ssl.server.ticket_key.filename": str(ats.config_directory / "file.ticket"),
+        }
+    )
     server.start()
     ats.start()
     result = ats.run_shell(
         "printf 'GET / HTTP/1.1\\r\\nHost: ticket-number.example.com\\r\\nConnection: close\\r\\n\\r\\n' | "
-        f"openssl s_client -connect 127.0.0.1:{ats.https_port} -tls1_3 -msg -ign_eof")
+        f"openssl s_client -connect 127.0.0.1:{ats.https_port} -tls1_3 -msg -ign_eof"
+    )
     assert result.returncode == 0, result.output
     assert len(re.findall("NewSessionTicket", result.output)) == ticket_number, result.output

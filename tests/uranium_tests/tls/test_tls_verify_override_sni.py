@@ -28,11 +28,13 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
     """
 
     dns = services.dns("dns")
-    dns.add_records({
-        "foo.com.": ["127.0.0.1"],
-        "bar.com.": ["127.0.0.1"],
-        "random.com.": ["127.0.0.1"],
-    })
+    dns.add_records(
+        {
+            "foo.com.": ["127.0.0.1"],
+            "bar.com.": ["127.0.0.1"],
+            "random.com.": ["127.0.0.1"],
+        }
+    )
     return dns
 
 
@@ -89,7 +91,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _dns: DNSServe
             "@plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED",
             f"map http://foo.com/overrideproperties https://bar.com:{_foo.https_port} "
             "@plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -103,7 +106,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _dns: DNSServe
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.ssl.client.sni_policy": "remap",
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"

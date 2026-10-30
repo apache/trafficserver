@@ -53,14 +53,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin", ssl=True)
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "ok bar"
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "ok bar"},
     )
     return origin
 
@@ -96,7 +90,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             '  - dest_ip: "*"',
             "    ssl_cert_name: signed-foo.pem",
             "    ssl_key_name: signed-foo.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.http.connect_ports": f"{ats.https_port} {_origin.https_port}",
@@ -105,13 +100,12 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.allow_private_connect()
     ats.write_config_file(
         "sni.yaml",
-        "sni:\n"
-        "  - fqdn: foo.com\n"
-        f"    partial_blind_route: localhost:{_origin.https_port}\n",
+        f"sni:\n  - fqdn: foo.com\n    partial_blind_route: localhost:{_origin.https_port}\n",
     )
     return ats
 
@@ -132,8 +126,7 @@ def test_tls_partial_blind_tunnel(ats_factory: ATSFactory, services: ServiceFact
     _ats.start()
     response = curl.run_for(
         _ats,
-        (f"--http1.1 --verbose --resolve 'foo.com:{_ats.https_port}:127.0.0.1' --insecure "
-         f"'https://foo.com:{_ats.https_port}'"),
+        (f"--http1.1 --verbose --resolve 'foo.com:{_ats.https_port}:127.0.0.1' --insecure 'https://foo.com:{_ats.https_port}'"),
     )
     assert response.returncode == 0, response.output
     assert "HTTP/1.1 200 OK" in response.stderr

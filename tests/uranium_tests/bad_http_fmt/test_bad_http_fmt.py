@@ -80,7 +80,8 @@ def configure_ats(ats_factory: ATSFactory, *, _method_port: int, _origin: Origin
             "proxy.config.url_remap.remap_required": 0,
             "proxy.config.http.strict_uri_parsing": 1,
             "proxy.config.http.cache.http": 0,
-        })
+        }
+    )
     ats.write_config_file(
         "ip_allow.yaml",
         "ip_allow:\n"
@@ -93,10 +94,12 @@ def configure_ats(ats_factory: ATSFactory, *, _method_port: int, _origin: Origin
         "    action: allow\n"
         "    methods: [GET]\n",
     )
-    ats.remap_config.add_lines((
-        f"map /add-method http://127.0.0.1:{_method_port}/",
-        f"map / http://127.0.0.1:{_origin.port}/",
-    ))
+    ats.remap_config.add_lines(
+        (
+            f"map /add-method http://127.0.0.1:{_method_port}/",
+            f"map / http://127.0.0.1:{_origin.port}/",
+        )
+    )
     return ats
 
 
@@ -107,7 +110,8 @@ def filtered_response(response: str) -> str:
     """
 
     lines = [
-        line for line in response.replace("\r\n", "\n").splitlines()
+        line
+        for line in response.replace("\r\n", "\n").splitlines()
         if line.startswith("HTTP/") or "X-Resp-Id:" in line or "<HTML>" in line
     ]
     return "\n".join(lines) + ("\n" if lines else "") + "======\n"

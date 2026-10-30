@@ -39,10 +39,12 @@ def configure_ats(ats_factory: ATSFactory, *, _hostnames: list[str], _ports: lis
             "proxy.config.http.parent_proxy.retry_time": 300,
             "proxy.config.http.parent_proxy.self_detect": 0,
             "proxy.config.url_remap.remap_required": 0,
-        })
+        }
+    )
     parent_list = ", ".join(f"{hostname}:{port}|1" for hostname, port in zip(_hostnames, _ports, strict=True))
     ats.parent_config.add_line(
-        f'dest_domain=. parent="{parent_list}" round_robin=consistent_hash go_direct=false parent_is_proxy=true')
+        f'dest_domain=. parent="{parent_list}" round_robin=consistent_hash go_direct=false parent_is_proxy=true'
+    )
     return ats
 
 
@@ -84,7 +86,8 @@ def test_consistent_hash_ring_walk(ats_factory: ATSFactory, services: ServiceFac
         _ats,
         (
             f"--silent --output /dev/null --write-out '%{{http_code}}' --proxy '127.0.0.1:{_ats.http_port}' "
-            f"http://example.com/ring-walk-probe"),
+            f"http://example.com/ring-walk-probe"
+        ),
     )
     verify_response(result)
     traffic_out = wait_for_file_lines(_ats.traffic_out, rf"getHostStatus calls: {NUM_PARENTS}\b", 1)

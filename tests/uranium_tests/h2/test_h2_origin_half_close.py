@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Locally half-closed origin sessions must not reenter the reusable pool."""
+
 import sys
 from pathlib import Path
 from tools.uranium.services import ATSFactory, ServiceFactory
@@ -32,13 +33,14 @@ def test_h2_origin_half_close(ats_factory: ATSFactory, services: ServiceFactory)
     stop = ats.run_directory / "stop"
     ssl = Path(__file__).parents[2] / "tools/ssl"
     origin = services.process(
-        "origin", [sys.executable, script, "origin",
-                   str(port), ssl / "server.pem", ssl / "server.key", stop], ready_port=port)
+        "origin", [sys.executable, script, "origin", str(port), ssl / "server.pem", ssl / "server.key", stop], ready_port=port
+    )
     origin.stdout.contains("half_close sessions=2 requests=3", "Validate the origin's framing and request handling")
     origin.start()
     ats.start()
-    result = services.process(
-        "client", [sys.executable, script, "client", str(ats.http_port), stop, ats.traffic_out]).run(timeout=30)
+    result = services.process("client", [sys.executable, script, "client", str(ats.http_port), stop, ats.traffic_out]).run(
+        timeout=30
+    )
     assert result.returncode == 0, result.output
     assert origin.is_running
     finish_origin(services, origin, stop)

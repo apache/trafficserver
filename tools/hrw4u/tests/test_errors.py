@@ -15,8 +15,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from hrw4u.errors import ErrorCollector, Hrw4uSyntaxError, SymbolResolutionError, \
-    ThrowingErrorListener, hrw4u_error, CollectingErrorListener, Warning
+from hrw4u.errors import (
+    ErrorCollector,
+    Hrw4uSyntaxError,
+    SymbolResolutionError,
+    ThrowingErrorListener,
+    hrw4u_error,
+    CollectingErrorListener,
+    Warning,
+)
 from hrw4u.formatters import FORMATTERS, JSON_SCHEMA_VERSION, JSONFormatter, MarkdownFormatter, PlainTextFormatter
 from hrw4u.validation import Validator, ValidatorChain
 import json
@@ -67,7 +74,6 @@ class TestThrowingErrorListener:
             tokenSource = FakeTokenSource()
 
         class FakeParser:
-
             def getInputStream(self):
                 return FakeStream()
 

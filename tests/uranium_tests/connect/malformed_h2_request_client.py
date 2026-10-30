@@ -41,7 +41,7 @@ PROTOCOL_ERROR = 0x01
 
 
 def make_frame(frame_type: int, flags: int, stream_id: int, payload: bytes = b"") -> bytes:
-    return (len(payload).to_bytes(3, "big") + bytes([frame_type, flags]) + (stream_id & 0x7FFFFFFF).to_bytes(4, "big") + payload)
+    return len(payload).to_bytes(3, "big") + bytes([frame_type, flags]) + (stream_id & 0x7FFFFFFF).to_bytes(4, "big") + payload
 
 
 def recv_exact(sock: socket.socket, size: int) -> bytes:

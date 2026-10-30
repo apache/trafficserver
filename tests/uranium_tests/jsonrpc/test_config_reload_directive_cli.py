@@ -32,18 +32,26 @@ class CommandCase:
 
 CONFIG_RELOAD_DIRECTIVE_CLI__cases = (
     CommandCase(
-        ("config", "reload", "-D", "ip_allow.id=foo", "-t", "cli_token_1", "-f", "rpc"), ('"token": "cli_token_1"', '"id": "foo"'),
-        return_code=2),
+        ("config", "reload", "-D", "ip_allow.id=foo", "-t", "cli_token_1", "-f", "rpc"),
+        ('"token": "cli_token_1"', '"id": "foo"'),
+        return_code=2,
+    ),
     CommandCase(
         ("config", "reload", "-D", "ip_allow.id=1", "sni.id=2", "-t", "cli_token_2", "-f", "rpc"),
         ('"token": "cli_token_2"', '"ip_allow"', '"sni"'),
-        return_code=2),
+        return_code=2,
+    ),
     CommandCase(
-        ("config", "reload", "-D", "ip_allow.id=foo", "-d", "ip_allow: {rules: [x]}", "-f", "rpc"), ('"rules"', '"_reload"'),
-        return_code=2),
+        ("config", "reload", "-D", "ip_allow.id=foo", "-d", "ip_allow: {rules: [x]}", "-f", "rpc"),
+        ('"rules"', '"_reload"'),
+        return_code=2,
+    ),
     CommandCase(
-        ("config", "reload", "--directive=ip_allow.id=foo", "-f", "rpc"), ('"id": "foo"',), ("Invalid directive format",),
-        return_code=2),
+        ("config", "reload", "--directive=ip_allow.id=foo", "-f", "rpc"),
+        ('"id": "foo"',),
+        ("Invalid directive format",),
+        return_code=2,
+    ),
     CommandCase(("config", "reload", "-D", "--", "-m"), ("Invalid directive format '-m'",), return_code=2),
     CommandCase(("config", "reload", "-D"), ("requires at least one",), return_code=2),
     CommandCase(("config", "reload", "-d"), ("requires content",), return_code=2),
@@ -51,10 +59,13 @@ CONFIG_RELOAD_DIRECTIVE_CLI__cases = (
     CommandCase(
         ("config", "reload", "-D", "ip_allow.id=1", "-t", "cli_token_8", "-D", "sni.id=2", "-f", "rpc"),
         ('"token": "cli_token_8"', '"ip_allow"', '"sni"'),
-        return_code=2),
+        return_code=2,
+    ),
     CommandCase(
-        ("config", "reload", "-d", "ip_allow: {rules: [x]}", "-d", "sni: {rules: [y]}", "-f", "rpc"), ('"ip_allow"', '"sni"'),
-        return_code=2),
+        ("config", "reload", "-d", "ip_allow: {rules: [x]}", "-d", "sni: {rules: [y]}", "-f", "rpc"),
+        ('"ip_allow"', '"sni"'),
+        return_code=2,
+    ),
     CommandCase(("config", "reload", "-d", ""), ("received an empty value",), return_code=2),
     CommandCase(("config", "reload", "-D", ""), ("received an empty value",), return_code=2),
     CommandCase(("config", "reload", "-d", "", "-d", "ip_allow: {rules: [x]}"), ("received an empty value",), return_code=2),
@@ -68,17 +79,21 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     """
 
     ats = ats_factory.create("ts")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "rpc|config.reload",
-    })
-    ats.ip_allow_config.add_lines((
-        "ip_allow:",
-        "- apply: in",
-        "  ip_addrs: 0/0",
-        "  action: allow",
-        "  methods: ALL",
-    ))
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config.reload",
+        }
+    )
+    ats.ip_allow_config.add_lines(
+        (
+            "ip_allow:",
+            "- apply: in",
+            "  ip_addrs: 0/0",
+            "  action: allow",
+            "  methods: ALL",
+        )
+    )
     return ats
 
 

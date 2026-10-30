@@ -57,7 +57,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.http.accept_no_activity_timeout": 2,
             "proxy.config.net.default_inactivity_timeout": 10,
             "proxy.config.net.defer_accept": 0,
-        })
+        }
+    )
     return ats
 
 

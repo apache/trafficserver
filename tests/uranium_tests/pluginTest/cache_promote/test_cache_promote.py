@@ -44,15 +44,18 @@ def configure_ats(*, _ats_factory: ATSFactory, _origin: HttpBinServer) -> ATS:
             "proxy.config.diags.debug.tags": "http|cache_promote",
             "proxy.config.http.number_of_redirections": 1,
             "proxy.config.http.redirect.actions": "self:follow",
-        })
+        }
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-cache-key")
     ats.remap_config.add_line(
         f"map /test_0/ http://127.0.0.1:{_origin.port}/ "
-        "@plugin=cache_promote.so @pparam=--policy=lru @pparam=--hits=2 @pparam=--buckets=15000000")
+        "@plugin=cache_promote.so @pparam=--policy=lru @pparam=--hits=2 @pparam=--buckets=15000000"
+    )
     ats.remap_config.add_line(
         f"map /test_1/ http://127.0.0.1:{_origin.port}/ "
         "@plugin=cache_promote.so @pparam=--policy=lru @pparam=--hits=2 @pparam=--buckets=15000000 "
-        "@pparam=--disable-on-redirect @plugin=cachekey.so @pparam=--static-prefix=trafficserver.apache.org/443")
+        "@pparam=--disable-on-redirect @plugin=cachekey.so @pparam=--static-prefix=trafficserver.apache.org/443"
+    )
     return ats
 
 

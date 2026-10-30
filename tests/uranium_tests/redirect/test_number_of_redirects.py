@@ -29,40 +29,28 @@ def configure_origins(services: ServiceFactory) -> tuple[OriginServer, OriginSer
     server2 = services.origin("server2")
     server3 = services.origin("server3")
     server1.add_response(
+        {"headers": "GET /ping HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: a.test\r\n\r\n", "body": ""},
         {
-            "headers": "GET /ping HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: a.test\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers":
-                (
-                    f"HTTP/1.1 302 Redirect\r\nLocation: http://b.test:{server2.port}/pong\r\n"
-                    "Content-Length: 0\r\nConnection: close\r\n\r\n"),
+            "headers": (
+                f"HTTP/1.1 302 Redirect\r\nLocation: http://b.test:{server2.port}/pong\r\n"
+                "Content-Length: 0\r\nConnection: close\r\n\r\n"
+            ),
             "body": "",
         },
     )
     server2.add_response(
+        {"headers": "GET /pong HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: b.test\r\n\r\n", "body": ""},
         {
-            "headers": "GET /pong HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: b.test\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers":
-                (
-                    f"HTTP/1.1 302 Redirect\r\nLocation: http://c.test:{server3.port}/pang\r\n"
-                    "Content-Length: 0\r\nConnection: close\r\n\r\n"),
+            "headers": (
+                f"HTTP/1.1 302 Redirect\r\nLocation: http://c.test:{server3.port}/pang\r\n"
+                "Content-Length: 0\r\nConnection: close\r\n\r\n"
+            ),
             "body": "",
         },
     )
     server3.add_response(
-        {
-            "headers": "GET /pang HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: c.test\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /pang HTTP/1.1\r\nuuid: redirect_test_1\r\nHost: c.test\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", "body": ""},
     )
     return server1, server2, server3
 
@@ -79,8 +67,14 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _dns: DNSServer, _redirect_limit: int, _server1: OriginServer, _server2: OriginServer,
-        _server3: OriginServer) -> ATS:
+    ats_factory: ATSFactory,
+    *,
+    _dns: DNSServer,
+    _redirect_limit: int,
+    _server1: OriginServer,
+    _server2: OriginServer,
+    _server3: OriginServer,
+) -> ATS:
     """Configure the requested internal redirect-following limit.
 
     :param _dns: Test-local dns configured by the test.
@@ -101,13 +95,15 @@ def configure_ats(
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.url_remap.remap_required": 0,
             "proxy.config.http.redirect.actions": "self:follow",
-        })
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map http://a.test/ping http://a.test:{_server1.port}/ping",
             f"map http://b.test:{_server2.port}/pong http://b.test:{_server2.port}/pong",
             f"map http://c.test:{_server3.port}/pang http://c.test:{_server3.port}/pang",
-        ))
+        )
+    )
     return ats
 
 
@@ -128,7 +124,8 @@ def test_number_of_redirects(
     _server1, _server2, _server3 = configure_origins(services)
     _dns = configure_dns(services)
     _ats = configure_ats(
-        ats_factory, _dns=_dns, _redirect_limit=redirect_limit, _server1=_server1, _server2=_server2, _server3=_server3)
+        ats_factory, _dns=_dns, _redirect_limit=redirect_limit, _server1=_server1, _server2=_server2, _server3=_server3
+    )
 
     for server in (_server1, _server2, _server3):
         server.start()
@@ -136,8 +133,7 @@ def test_number_of_redirects(
     _ats.start()
     result = curl.run_for(
         _ats,
-        (f"--location --verbose --proxy '127.0.0.1:{_ats.http_port}' --header 'uuid: redirect_test_1' "
-         f"http://a.test/ping"),
+        (f"--location --verbose --proxy '127.0.0.1:{_ats.http_port}' --header 'uuid: redirect_test_1' http://a.test/ping"),
     )
     assert result.returncode == 0, result.output
     assert "HTTP/1.1 200 OK" in result.stderr

@@ -35,18 +35,16 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     html = (
         "<html>\r\n<head>\r\n<link rel='stylesheet' type='text/css' href='/app/style.css' />\r\n"
         "<script src='/app/script.js'></script>\r\n</head>\r\n<body>\r\nServer Push Preload Test\r\n"
-        "</body>\r\n</html>\r\n")
+        "</body>\r\n</html>\r\n"
+    )
     origin.add_response(
+        {"headers": "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
         {
-            "headers": "GET /index.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers":
-                (
-                    f"HTTP/1.1 200 OK\r\nContent-Length: {len(html)}\r\nConnection: close\r\n"
-                    "Link: </app/style.css>; rel=preload; as=style; nopush\r\n"
-                    "Link: </app/script.js>; rel=preload; as=script\r\n\r\n"),
+            "headers": (
+                f"HTTP/1.1 200 OK\r\nContent-Length: {len(html)}\r\nConnection: close\r\n"
+                "Link: </app/style.css>; rel=preload; as=style; nopush\r\n"
+                "Link: </app/script.js>; rel=preload; as=script\r\n\r\n"
+            ),
             "body": html,
         },
     )
@@ -55,10 +53,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
         ("/app/script.js", "function do_nothing() { return; }\r\n"),
     ):
         origin.add_response(
-            {
-                "headers": f"GET {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                "body": ""
-            },
+            {"headers": f"GET {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
             {
                 "headers": f"HTTP/1.1 200 OK\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n",
                 "body": body,
@@ -82,7 +77,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http2|server_push_preload",
             "proxy.config.http2.active_timeout_in": 3,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/ @plugin=server_push_preload.so")
     return ats
 

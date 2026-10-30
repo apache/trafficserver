@@ -40,7 +40,8 @@ def invalid_flow_control_policy_configure_ats(ats_factory: ATSFactory, *, _case:
             "proxy.config.diags.debug.enabled": 3,
             "proxy.config.diags.debug.tags": "http",
             f"proxy.config.http2.flow_control.policy_{direction}": 23,
-        })
+        }
+    )
     return ats
 
 
@@ -73,7 +74,8 @@ def dynamic_window_settings_cap_configure_ats(ats_factory: ATSFactory, *, _serve
             "proxy.config.http2.active_timeout_in": 5,
             "proxy.config.http2.flow_control.policy_in": 2,
             "proxy.config.http2.max_concurrent_streams_in": 2,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}")
     return ats
 

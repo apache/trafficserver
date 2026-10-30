@@ -49,55 +49,31 @@ def configure_origins(services: ServiceFactory, *, _destination: OriginServer) -
     redirect = services.origin("redirect")
     final = {"headers": "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n", "body": ""}
     _destination.add_response(
-        {
-            "headers": "GET /redirectDest HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /redirectDest HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
         final,
     )
     redirect.add_response(
-        {
-            "headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
         {
             "headers": (f"HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{_destination.port}/redirectDest\r\n\r\n"),
             "body": "",
         },
     )
     redirect.add_response(
-        {
-            "headers": "GET /redirect-relative-path HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 302 Found\r\nLocation: /redirect\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /redirect-relative-path HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 302 Found\r\nLocation: /redirect\r\n\r\n", "body": ""},
     )
     redirect.add_response(
-        {
-            "headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /redirect HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
         final,
     )
     redirect.add_response(
-        {
-            "headers": "GET /redirect-relative-path-no-leading-slash HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 302 Found\r\nLocation: redirect\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /redirect-relative-path-no-leading-slash HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 302 Found\r\nLocation: redirect\r\n\r\n", "body": ""},
     )
     for status, phrase in REDIRECT__statuses.items():
         redirect.add_response(
-            {
-                "headers": f"GET /redirect{status} HTTP/1.1\r\nHost: *\r\n\r\n",
-                "body": ""
-            },
+            {"headers": f"GET /redirect{status} HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
             {
                 "headers": (f"HTTP/1.1 {status} {phrase}\r\nConnection: close\r\nLocation: /redirect\r\n\r\n"),
                 "body": "",
@@ -134,21 +110,21 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer) -> ATS:
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.url_remap.remap_required": 0,
             "proxy.config.http.redirect.actions": "self:follow",
-        })
+        }
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
+            "logging": {
+                "formats": [
+                    {
                         "name": "custom",
                         "format": "client_url=%<pqu> cache_result: code=%<crc> subcode=%<crsc>",
-                    }],
-                    "logs": [{
-                        "filename": "the_log",
-                        "format": "custom"
-                    }],
-                }
-        })
+                    }
+                ],
+                "logs": [{"filename": "the_log", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 
@@ -160,8 +136,7 @@ def _request(path: str, *, _ats: ATS, _redirect: OriginServer) -> str:
     :param path: Resource or file path used by this operation.
     """
 
-    request = (f"GET {path} HTTP/1.1\r\nHost: iwillredirect.test:{_redirect.port}\r\n"
-               "Connection: close\r\n\r\n").encode()
+    request = (f"GET {path} HTTP/1.1\r\nHost: iwillredirect.test:{_redirect.port}\r\nConnection: close\r\n\r\n").encode()
     chunks = []
     with socket.create_connection(("127.0.0.1", _ats.http_port), timeout=5) as connection:
         connection.sendall(request)

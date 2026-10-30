@@ -39,12 +39,14 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     cipher_suite = (
         "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:"
         "ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:"
         "ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:"
-        "DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2")
+        "DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2"
+    )
     # BoringSSL reports itself as OpenSSL 1.1.1 and rejects the whole list if
     # it contains an @SECLEVEL directive.
     version = re.search(r"\d+(?:\.\d+)+", ats.tls_library())
@@ -58,7 +60,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.ssl.TLSv1_1": 0,
             "proxy.config.ssl.TLSv1_2": 1,
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n- fqdn: foo.com\n  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]\n",
@@ -81,7 +84,8 @@ def request(hostname: str, version: str, expected_code: int | None, *, _ats: ATS
         (
             f"--verbose --ciphers DEFAULT@SECLEVEL=0 --tls-max '{version}' "
             f"'{'--tlsv1' if version == '1.0' else '--tlsv1.2'}' --resolve "
-            f"'{hostname}:{_ats.https_port}:127.0.0.1' --insecure 'https://{hostname}:{_ats.https_port}'"),
+            f"'{hostname}:{_ats.https_port}:127.0.0.1' --insecure 'https://{hostname}:{_ats.https_port}'"
+        ),
     )
     if expected_code is not None:
         assert result.returncode == expected_code, result.output

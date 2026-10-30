@@ -65,7 +65,8 @@ def test_deny_any_address(ats: ATS, services: ServiceFactory) -> None:
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.url_remap.remap_required": 0,
-        })
+        }
+    )
     redirect_origin.start()
     dns.start()
     ats.start()

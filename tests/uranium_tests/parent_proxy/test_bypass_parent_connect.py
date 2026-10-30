@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Per-remap bypass_parent applies to CONNECT parenting."""
+
 from pathlib import Path
 import pytest
 from tools.uranium.services import ATSFactory, ServiceFactory
@@ -43,14 +44,16 @@ def test_bypass_parent_connect(ats_factory: ATSFactory, services: ServiceFactory
             "proxy.config.http.uncacheable_requests_bypass_parent": 0,
             "proxy.config.http.parent_proxy.total_connect_attempts": 1,
             "proxy.config.http.parent_proxy.per_parent_connect_attempts": 1,
-        })
+        }
+    )
     ats.parent_config.add_line('dest_domain=. parent="127.0.0.1:1|1" go_direct=false parent_is_proxy=true')
     ats.remap_config.add_lines(
         [
             f"map http://connect-direct.test:80/ http://origin.test:{origin.http_port}/ "
             "@plugin=conf_remap.so @pparam=proxy.config.http.bypass_parent=1",
             f"map http://connect-parent.test:80/ http://origin.test:{origin.http_port}/",
-        ])
+        ]
+    )
     ats.allow_private_connect()
     dns.start()
     origin.start()

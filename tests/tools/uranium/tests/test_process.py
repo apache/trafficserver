@@ -213,10 +213,12 @@ def test_runtime_placeholders_are_replaced_in_structured_metadata(tmp_path: Path
         "ssl": tmp_path / "ssl",
     }
     sni_yaml = {
-        "sni": [{
-            "fqdn": "proxy.test",
-            "proxy_protocol_port": "{ATS_PROXY_PROTOCOL_PORT}",
-        }]
+        "sni": [
+            {
+                "fqdn": "proxy.test",
+                "proxy_protocol_port": "{ATS_PROXY_PROTOCOL_PORT}",
+            }
+        ]
     }
 
     rendered = replay._replace_runtime_placeholders(sni_yaml, paths)

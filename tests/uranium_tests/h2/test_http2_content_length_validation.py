@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Validate DATA lengths without narrowing Content-Length or underflowing padding."""
+
 import re
 import sys
 from pathlib import Path
@@ -32,10 +33,9 @@ def test_http2_content_length_validation(ats_factory: ATSFactory, services: Serv
     origin = services.origin("origin")
     for case in proxied:
         origin.add_response(
-            {
-                "headers": f"POST /{case} HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 3\r\n\r\n",
-                "body": "abc"
-            }, {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"})
+            {"headers": f"POST /{case} HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 3\r\n\r\n", "body": "abc"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"},
+        )
     ats = ats_factory.create("ts", enable_tls=True, enable_cache=False, disable_log_checks=True)
     ats.records.update({"proxy.config.diags.debug.enabled": 1, "proxy.config.diags.debug.tags": "http2"})
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}/")
@@ -45,8 +45,12 @@ def test_http2_content_length_validation(ats_factory: ATSFactory, services: Serv
         result = ats.run(sys.executable, Path(__file__).parent / "clients/h2_content_length_client.py", str(ats.https_port), case)
         assert result.returncode == 0, result.output
         expression = (
-            r"Received (RST_STREAM|GOAWAY|HTTP/2 response with status 4\d\d)" if case in rejected else
-            r"Received GOAWAY with error code 1\b" if case in padding else "Received HTTP/2 response with status 200")
+            r"Received (RST_STREAM|GOAWAY|HTTP/2 response with status 4\d\d)"
+            if case in rejected
+            else r"Received GOAWAY with error code 1\b"
+            if case in padding
+            else "Received HTTP/2 response with status 200"
+        )
         assert re.search(expression, result.stdout), result.output
     ats.stop()
     log = ats.diags_log.read_text()

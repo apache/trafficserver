@@ -28,24 +28,28 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     """
 
     ats = ats_factory.create("ts", enable_cache=True)
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "rpc|config|reload",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config|reload",
+        }
+    )
     ats.write_config_file(
         "ip_allow.yaml",
-        "ip_allow:\n"
-        "  - apply: in\n"
-        "    ip_addrs: 0/0\n"
-        "    action: allow\n"
-        "    methods: ALL\n",
+        "ip_allow:\n  - apply: in\n    ip_addrs: 0/0\n    action: allow\n    methods: ALL\n",
     )
-    ats.set_logging_yaml({"logging": {
-        "formats": [{
-            "name": "smoke",
-            "format": "%<cqtq>",
-        }]
-    }})
+    ats.set_logging_yaml(
+        {
+            "logging": {
+                "formats": [
+                    {
+                        "name": "smoke",
+                        "format": "%<cqtq>",
+                    }
+                ]
+            }
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         'sni:\n  - fqdn: "*.example.com"\n    verify_client: NONE\n',

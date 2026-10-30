@@ -62,7 +62,8 @@ def send_early_hints_and_redirect(conn):
         b'Link: </assets/styles/main-stylesheet.css>; rel=preload; as=style\r\n'
         b'Link: </assets/scripts/application-bundle.js>; rel=preload; as=script\r\n'
         b'Link: </assets/fonts/body-font-regular.woff2>; rel=preload; as=font; crossorigin\r\n'
-        b'\r\n')
+        b'\r\n'
+    )
     time.sleep(0.5)
 
     body = b'Redirecting to https://example.com/new/location/for/the/resource\n'
@@ -72,7 +73,8 @@ def send_early_hints_and_redirect(conn):
         b'Content-Type: text/plain\r\n'
         b'Cache-Control: public, max-age=3600\r\n'
         b'Content-Length: ' + str(len(body)).encode() + b'\r\n'
-        b'\r\n' + body)
+        b'\r\n' + body
+    )
 
 
 def handle_connection(conn, addr, mode):
@@ -120,7 +122,8 @@ def handle_connection(conn, addr, mode):
             b'Content-Type: text/javascript\r\n'
             b'Cache-Control: public, max-age=3600\r\n'
             b'Content-Length: ' + str(len(body)).encode() + b'\r\n'
-            b'\r\n' + body)
+            b'\r\n' + body
+        )
         conn.sendall(response)
     except Exception as e:
         print(f'Error handling connection from {addr}: {e}', file=sys.stderr)

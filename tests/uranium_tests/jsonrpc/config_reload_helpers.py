@@ -57,12 +57,12 @@ def require_command(result: CommandResult, *contains: str, excludes: tuple[str, 
 
 
 def wait_for_status(
-        ats: ATS,
-        token: str,
-        *contains: str,
-        excludes: tuple[str, ...] = (),
-        extra_arguments: tuple[str, ...] = (),
-        timeout: float = 20,
+    ats: ATS,
+    token: str,
+    *contains: str,
+    excludes: tuple[str, ...] = (),
+    extra_arguments: tuple[str, ...] = (),
+    timeout: float = 20,
 ) -> str:
     """Wait for one reload status to satisfy an output contract.
 
@@ -79,8 +79,12 @@ def wait_for_status(
     while time.monotonic() < deadline:
         result = ats.traffic_ctl("config", "status", "-t", token, *extra_arguments)
         output = result.output
-        if result.returncode == 0 and root_task_status(ats, token) in TERMINAL_STATUSES and all(
-                fragment in output for fragment in contains) and all(fragment not in output for fragment in excludes):
+        if (
+            result.returncode == 0
+            and root_task_status(ats, token) in TERMINAL_STATUSES
+            and all(fragment in output for fragment in contains)
+            and all(fragment not in output for fragment in excludes)
+        ):
             return output
         time.sleep(0.2)
     raise AssertionError(f"Reload {token!r} did not reach the expected status:\n{output}")

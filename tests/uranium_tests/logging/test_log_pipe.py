@@ -40,18 +40,20 @@ def configure_ats(suffix: str, pipe_name: str, pipe_size: int | None = None, *, 
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "log-file",
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line("map / http://www.linkedin.com/ @action=deny")
     log = {"filename": pipe_name, "mode": "ascii_pipe", "format": "custom"}
     if pipe_size is not None:
         log["pipe_buffer_size"] = pipe_size
-    ats.set_logging_yaml({"logging": {
-        "formats": [{
-            "name": "custom",
-            "format": "%<hii> %<hiih>"
-        }],
-        "logs": [log],
-    }})
+    ats.set_logging_yaml(
+        {
+            "logging": {
+                "formats": [{"name": "custom", "format": "%<hii> %<hiih>"}],
+                "logs": [log],
+            }
+        }
+    )
     return ats
 
 

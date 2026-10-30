@@ -39,7 +39,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.url_remap.pristine_host_hdr": 1,
@@ -49,12 +50,14 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl",
-        })
+        }
+    )
     cipher_suite = (
         "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:"
         "ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:"
         "ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:"
-        "DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2")
+        "DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2"
+    )
     # BoringSSL reports itself as OpenSSL 1.1.1 and rejects the whole list if
     # it contains an @SECLEVEL directive.
     version = re.search(r"\d+(?:\.\d+)+", ats.tls_library())

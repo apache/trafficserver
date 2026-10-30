@@ -97,8 +97,6 @@ class OriginServer(ProcessService):
         else:
             document = {
                 "sessions": [Session(filename, None, None, [transaction]).toJSON()],
-                "meta": {
-                    "version": "1.0"
-                },
+                "meta": {"version": "1.0"},
             }
         path.write_text(json.dumps(document))

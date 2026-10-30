@@ -66,16 +66,14 @@ def configure_origin(
     origin = services.origin(name, ssl=ssl)
     origin.add_response(
         {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": body
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
     )
     return origin
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _bar: OriginServer, _dns: DNSServer, _foo: OriginServer, _random: OriginServer) -> ATS:
+    ats_factory: ATSFactory, *, _bar: OriginServer, _dns: DNSServer, _foo: OriginServer, _random: OriginServer
+) -> ATS:
     """Configure exact tunnel, exact forward, and default forward routes.
 
     :param _bar: Test-local bar configured by the test.
@@ -97,7 +95,8 @@ def configure_ats(
             '  - dest_ip: "*"',
             "    ssl_cert_name: signed-foo.pem",
             "    ssl_key_name: signed-foo.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.http.connect_ports": (f"{ats.https_port} {_foo.https_port} {_bar.http_port} {_random.http_port}"),
@@ -106,7 +105,8 @@ def configure_ats(
             "proxy.config.url_remap.pristine_host_hdr": 1,
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.allow_private_connect()
     ats.write_config_file(
         "sni.yaml",

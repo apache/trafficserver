@@ -56,7 +56,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.url_remap.pristine_host_hdr": 1,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl",
-        })
+        }
+    )
     return ats
 
 

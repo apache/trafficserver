@@ -62,10 +62,10 @@ def test_log_retention(ats_factory: ATSFactory, services: ServiceFactory, curl: 
         return origin
 
     def configure_ats(
-            records: Mapping[str, object],
-            logs: Sequence[Mapping[str, object]] = (),
-            *,
-            plugin: bool = False,
+        records: Mapping[str, object],
+        logs: Sequence[Mapping[str, object]] = (),
+        *,
+        plugin: bool = False,
     ) -> ATS:
         """Create one isolated ATS instance for a retention phase.
 
@@ -83,13 +83,18 @@ def test_log_retention(ats_factory: ATSFactory, services: ServiceFactory, curl: 
         ats.remap_config.add_line(f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{_origin.port}")
         if logs:
             ats.set_logging_yaml(
-                {"logging": {
-                    "formats": [{
-                        "name": "long",
-                        "format": f"{__long_prefix}: %<sssc>",
-                    }],
-                    "logs": list(logs),
-                }})
+                {
+                    "logging": {
+                        "formats": [
+                            {
+                                "name": "long",
+                                "format": f"{__long_prefix}: %<sssc>",
+                            }
+                        ],
+                        "logs": list(logs),
+                    }
+                }
+            )
         if plugin:
             ats.copy_custom_plugin("{AtsTestPluginsDir}/test_log_interface.so")
             ats.plugin_config.add_line("test_log_interface.so")
@@ -105,7 +110,8 @@ def test_log_retention(ats_factory: ATSFactory, services: ServiceFactory, curl: 
         script = (
             f"for ((request = 0; request < {count}; ++request)); do "
             f'{{curl}} --fail --silent --output /dev/null "http://127.0.0.1:{ats.http_port}/"; '
-            "done")
+            "done"
+        )
         result = curl.run_script(ats, script, timeout=300)
         assert result.returncode == 0, result.output
 
@@ -293,7 +299,8 @@ def test_log_retention(ats_factory: ATSFactory, services: ServiceFactory, curl: 
             "proxy.config.log.rolling_min_count": 3,
             "proxy.config.output.logfile.rolling_min_count": 4,
             "proxy.config.diags.logfile.rolling_min_count": 5,
-        })
+        }
+    )
     ats.start()
     send_requests(ats, 1)
     assert_messages(

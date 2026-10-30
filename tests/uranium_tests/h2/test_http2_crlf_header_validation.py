@@ -36,14 +36,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -56,10 +50,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     """
 
     ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     return ats
 

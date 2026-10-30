@@ -68,7 +68,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _default: Orig
             f"map https://bar.com/ https://127.0.0.1:{_bar.https_port}",
             f"map https://bad_bar.com/ https://127.0.0.1:{_bar.https_port}",
             f"map / https://127.0.0.1:{_default.https_port}",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
@@ -77,7 +78,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _default: Orig
             "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.url_remap.pristine_host_hdr": 1,
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"

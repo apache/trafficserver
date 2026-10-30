@@ -26,10 +26,12 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     """
 
     ats = ats_factory.create("ts")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "parent_select|config",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "parent_select|config",
+        }
+    )
     ats.parent_config.add_line('dest_domain=example.com parent="origin.example.com:80"')
     return ats
 

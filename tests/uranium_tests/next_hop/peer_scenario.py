@@ -62,12 +62,8 @@ def run_peer_strategy(
         """Resolve all ATS peer and upstream names to loopback."""
 
         records = {
-            **{
-                f"ts_peer{index}": ["127.0.0.1"] for index in range(_NUM_PEERS)
-            },
-            **{
-                f"ts_upstream{index}": ["127.0.0.1"] for index in range(_NUM_UPSTREAMS)
-            },
+            **{f"ts_peer{index}": ["127.0.0.1"] for index in range(_NUM_PEERS)},
+            **{f"ts_upstream{index}": ["127.0.0.1"] for index in range(_NUM_UPSTREAMS)},
         }
         _dns.add_records(records)
 
@@ -103,7 +99,8 @@ def run_peer_strategy(
                     "        - scheme: http",
                     f"          port: {host.http_port}",
                     "      weight: 1.0",
-                ))
+                )
+            )
         return lines
 
     def strategies_document(peer_index: int) -> str:
@@ -127,15 +124,18 @@ def run_peer_strategy(
                 "    ignore_self_detect: false",
                 "    groups:",
                 "      - *peer_group",
-            ))
+            )
+        )
         if has_upstream_group:
             lines.append("      - *peer_upstream")
-        lines.extend((
-            "    scheme: http",
-            "    failover:",
-            "      ring_mode: peering_ring",
-            f"      self: ts_peer{peer_index}",
-        ))
+        lines.extend(
+            (
+                "    scheme: http",
+                "    failover:",
+                "      ring_mode: peering_ring",
+                f"      self: ts_peer{peer_index}",
+            )
+        )
         return "\n".join(lines) + "\n"
 
     def configure_peers() -> None:
@@ -155,14 +155,16 @@ def run_peer_strategy(
                     "proxy.config.http.no_dns_just_forward_to_parent": int(has_upstream_group),
                     "proxy.config.http.parent_proxy.mark_down_hostdb": 0,
                     "proxy.config.http.parent_proxy.self_detect": 1,
-                })
+                }
+            )
             peer.write_config_file("strategies.yaml", strategies_document(index))
             if has_upstream_group:
                 suffix = (
-                    " @strategy=the-strategy @plugin=cachekey.so"
-                    " @pparam=--uri-type=remap @pparam=--capture-prefix=/(.*):(.*)/$1/")
+                    " @strategy=the-strategy @plugin=cachekey.so @pparam=--uri-type=remap @pparam=--capture-prefix=/(.*):(.*)/$1/"
+                )
                 peer.remap_config.add_lines(
-                    ("map http://dummy.com http://not_used" + suffix, "map http://not_used http://also_not_used" + suffix))
+                    ("map http://dummy.com http://not_used" + suffix, "map http://not_used http://also_not_used" + suffix)
+                )
             else:
                 for upstream in _upstreams:
                     prefix = f"http://{upstream.name}:{upstream.http_port}/"

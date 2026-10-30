@@ -101,7 +101,8 @@ def test_metric_check_retries_until_the_value_matches(monkeypatch: pytest.Monkey
         [
             subprocess.CompletedProcess([], 0, "proxy.process.test 1\n", ""),
             subprocess.CompletedProcess([], 0, "proxy.process.test 2\n", ""),
-        ])
+        ]
+    )
     calls = []
 
     def read_metric(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:

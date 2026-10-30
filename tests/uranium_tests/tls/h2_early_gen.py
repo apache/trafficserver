@@ -90,7 +90,8 @@ def make_settins_frame(ack=False, empty=False):
         frame_type=TYPE_SETTINGS_FRAME,
         frame_flags=1 if ack else 0,
         frame_stream_id=0,
-        frame_payload=payload)
+        frame_payload=payload,
+    )
 
     return frame
 
@@ -100,7 +101,8 @@ def make_window_update_frame():
     payload = bytes.fromhex(payload)
 
     frame = make_frame(
-        frame_length=len(payload), frame_type=TYPE_WINDOW_UPDATE_FRAME, frame_flags=0, frame_stream_id=0, frame_payload=payload)
+        frame_length=len(payload), frame_type=TYPE_WINDOW_UPDATE_FRAME, frame_flags=0, frame_stream_id=0, frame_payload=payload
+    )
     return frame
 
 
@@ -128,7 +130,8 @@ def make_headers_frame(method, path='', stream_id=0x01):
         frame_type=TYPE_HEADERS_FRAME,
         frame_flags=HEADERS_FLAG_END_STREAM | HEADERS_FLAG_END_HEADERS,
         frame_stream_id=stream_id,
-        frame_payload=headers_encoded)
+        frame_payload=headers_encoded,
+    )
 
     return frame
 
@@ -144,7 +147,7 @@ def make_h2_req(test):
             make_settins_frame(ack=True),
             make_headers_frame('get', '/early_multi_1', 1),
             make_headers_frame('get', '/early_multi_2', 3),
-            make_headers_frame('get', '/early_multi_3', 5)
+            make_headers_frame('get', '/early_multi_3', 5),
         ]
         for frame in frames:
             h2_req += frame
@@ -153,7 +156,7 @@ def make_h2_req(test):
             make_settins_frame(ack=True),
             make_headers_frame('get', '/early_multi_1', 1),
             make_headers_frame('post', stream_id=3),
-            make_headers_frame('get', '/early_multi_3', 5)
+            make_headers_frame('get', '/early_multi_3', 5),
         ]
         for frame in frames:
             h2_req += frame

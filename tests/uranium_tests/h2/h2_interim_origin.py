@@ -112,7 +112,7 @@ def handle(sock: ssl.SSLSocket, mode: str) -> None:
             if not preface_done:
                 if len(buf) < len(preface):
                     continue
-                buf = buf[len(preface):]
+                buf = buf[len(preface) :]
                 preface_done = True
             while len(buf) >= 9:
                 ln = int.from_bytes(buf[0:3], "big")
@@ -121,7 +121,7 @@ def handle(sock: ssl.SSLSocket, mode: str) -> None:
                 ftype = buf[3]
                 flags = buf[4]
                 sid = int.from_bytes(buf[5:9], "big") & 0x7FFFFFFF
-                buf = buf[9 + ln:]
+                buf = buf[9 + ln :]
                 if ftype == 0x4 and not (flags & 0x1):  # client SETTINGS -> ACK it
                     sock.sendall(frame(0x4, 0x1, 0, b""))
                 if ftype == 0x1:  # a request HEADERS -> respond on the same stream
@@ -135,12 +135,25 @@ def make_cert() -> tuple[str, str]:
     key = tempfile.NamedTemporaryFile(dir=".", suffix=".key", delete=False).name
     subprocess.run(
         [
-            "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", key, "-out", cert, "-days", "3", "-subj",
-            "/CN=interim-origin"
+            "openssl",
+            "req",
+            "-x509",
+            "-newkey",
+            "rsa:2048",
+            "-nodes",
+            "-keyout",
+            key,
+            "-out",
+            cert,
+            "-days",
+            "3",
+            "-subj",
+            "/CN=interim-origin",
         ],
         check=True,
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL)
+        stderr=subprocess.DEVNULL,
+    )
     return cert, key
 
 

@@ -73,7 +73,8 @@ def handle(conn: socket.socket) -> None:
                 b"HTTP/1.1 200 OK\r\n"
                 b"Content-Type: text/plain\r\n"
                 b"Cache-Control: public, max-age=300\r\n"
-                b"Content-Length: %d\r\n\r\n" % len(body)) + body
+                b"Content-Length: %d\r\n\r\n" % len(body)
+            ) + body
             conn.sendall(resp)
     except OSError:
         pass

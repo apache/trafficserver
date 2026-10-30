@@ -31,11 +31,10 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
         {
-            "headers":
-                "HTTP/1.1 200 OK\r\n"
-                "Connection: close\r\n"
-                "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n"
-                "Cache-Control: max-age=1\r\n\r\n",
+            "headers": "HTTP/1.1 200 OK\r\n"
+            "Connection: close\r\n"
+            "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n"
+            "Cache-Control: max-age=1\r\n\r\n",
             "body": "xxx",
         },
     )
@@ -58,7 +57,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http.response_via_str": 3,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -74,7 +74,8 @@ def curl_request(*, _ats: ATS, _curl: Curl) -> str:
         _ats,
         (
             f"--silent --dump-header - --verbose --ipv4 --http1.1 --header 'x-debug: x-cache,x-cache-key,via' "
-            f"--header 'Host: www.example.com' 'http://localhost:{_ats.http_port}/'"),
+            f"--header 'Host: www.example.com' 'http://localhost:{_ats.http_port}/'"
+        ),
     )
     assert result.returncode == 0, result.output
     return result.stdout
@@ -87,8 +88,7 @@ def raw_request(request: str, *, _ats: ATS) -> str:
     :param request: Request used by this test step.
     """
 
-    command = (f"printf %s {shlex.quote(request)} | "
-               f"nc 127.0.0.1 -w 1 {_ats.http_port}")
+    command = f"printf %s {shlex.quote(request)} | nc 127.0.0.1 -w 1 {_ats.http_port}"
     result = _ats.run_shell(command)
     assert result.returncode == 0, result.output
     return result.stdout
@@ -133,7 +133,8 @@ def test_cache_and_req_body(ats_factory: ATSFactory, services: ServiceFactory, c
         "Host: www.example.com\r\n"
         "Content-Length: 71\r\n\r\n"
         "GET /index.html?evil=zorg810 HTTP/1.1\r\n"
-        "Host: dummy-host.example.com\r\n\r\n")
+        "Host: dummy-host.example.com\r\n\r\n"
+    )
     assert_cached_response(raw_request(hidden_request, _ats=_ats), "keep-alive")
     truncated_body = (
         "GET / HTTP/1.1\r\n"
@@ -142,5 +143,6 @@ def test_cache_and_req_body(ats_factory: ATSFactory, services: ServiceFactory, c
         "Cache-control: max-age=300\r\n"
         "Content-Length: 100\r\n\r\n"
         "GET /index.html?evil=zorg810 HTTP/1.1\r\n"
-        "Host: dummy-host.example.com\r\n\r\n")
+        "Host: dummy-host.example.com\r\n\r\n"
+    )
     assert_cached_response(raw_request(truncated_body, _ats=_ats), "close")

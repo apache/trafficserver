@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """HostDB can be cleared and repopulated without restarting ATS."""
+
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -49,9 +50,11 @@ def test_hostdb_clear(ats_factory: ATSFactory, services: ServiceFactory, curl: C
     assert re.search(r"proxy.process.hostdb.cache.current_items 0$", result.stdout, re.MULTILINE), result.output
     with ThreadPoolExecutor(max_workers=1) as executor:
         future = executor.submit(
-            curl.run_for, ats,
+            curl.run_for,
+            ats,
             f'--fail --silent --show-error -o /dev/null -H "Host: {hostname}" -H "X-Request: request" -H "uuid: 1" '
-            f'http://127.0.0.1:{ats.http_port}/some/path')
+            f'http://127.0.0.1:{ats.http_port}/some/path',
+        )
         deadline = time.monotonic() + 5
         while True:
             result = ats.traffic_ctl("hostdb", "status", hostname)

@@ -35,14 +35,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("origin")
     for path, body in (("/", "112233"), ("/xYz", "445566")):
         origin.add_response(
-            {
-                "headers": f"GET {path} HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": body
-            },
+            {"headers": f"GET {path} HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "body": ""},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
         )
     return origin
 
@@ -64,20 +58,23 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.url_remap.remap_required": 1,
             "proxy.config.diags.debug.enabled": 3,
             "proxy.config.diags.debug.tags": "http|test_tsapi",
-        })
+        }
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     plugins = f"@plugin={TSAPI__plugin} @plugin={TSAPI__plugin}"
     ats.remap_config.add_lines(
         (
             f"map http://myhost.test http://127.0.0.1:{_origin.port} {plugins}",
             f"map https://myhost.test:123 http://127.0.0.1:{_origin.port} {plugins}",
-        ))
+        )
+    )
     return ats
 
 
@@ -123,7 +120,8 @@ def test_tsapi(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) ->
             "Host: myhost.test:123",
             f"HttPs://LocalHost:{_ats.https_port}/",
             _ats=_ats,
-            _curl=curl)
+            _curl=curl,
+        )
 
     expected_events = 2 if curl.uses_uds else 3
     log = wait_for_file_lines(_log, "Global: event=TS_EVENT_HTTP_SEND_REQUEST_HDR", expected_events)

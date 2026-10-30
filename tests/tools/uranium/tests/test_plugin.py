@@ -54,10 +54,17 @@ def test_collision_diagnostic_reaches_terminal(tmp_path: Path, workers: int) -> 
         fcntl.flock(lock, fcntl.LOCK_EX)
         result = subprocess.run(
             [
-                sys.executable, "-m", "pytest", "-p", "tools.uranium.plugin", "--import-mode=importlib", "--sandbox",
-                str(tmp_path / "child-sandbox"), "-n",
+                sys.executable,
+                "-m",
+                "pytest",
+                "-p",
+                "tools.uranium.plugin",
+                "--import-mode=importlib",
+                "--sandbox",
+                str(tmp_path / "child-sandbox"),
+                "-n",
                 str(workers),
-                str(directory)
+                str(directory),
             ],
             cwd=tmp_path,
             env=environment,
@@ -86,8 +93,7 @@ def test_concurrent_session_cannot_enter_shared_sandbox(tmp_path: Path) -> None:
     with (tmp_path / ".session-lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", "-p", "tools.uranium.plugin", "--sandbox",
-             str(tmp_path), "--collect-only"],
+            [sys.executable, "-m", "pytest", "-p", "tools.uranium.plugin", "--sandbox", str(tmp_path), "--collect-only"],
             cwd=tmp_path,
             env=environment,
             capture_output=True,
@@ -129,7 +135,8 @@ def test_duplicate_sandbox_names_fail_collection(monkeypatch: pytest.MonkeyPatch
             path=Path(f"uranium_tests/{directory}/test_example.py"),
             add_marker=lambda marker: None,
             get_closest_marker=lambda name: name == "uranium_procedural",
-        ) for directory in ("first", "second")
+        )
+        for directory in ("first", "second")
     ]
     with pytest.raises(pytest.UsageError, match="Give these tests distinct names"):
         pytest_collection_modifyitems(config, items)

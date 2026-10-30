@@ -44,7 +44,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "      - name: conf_remap.so",
             "        params:",
             f"          - {ats.config_directory}/conf_remap.yaml",
-        ])
+        ]
+    )
     return ats
 
 

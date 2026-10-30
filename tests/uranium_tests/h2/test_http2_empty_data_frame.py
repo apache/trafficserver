@@ -44,7 +44,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
             "proxy.config.http.insert_response_via_str": 2,
             "proxy.config.http2.active_timeout_in": 3,
             "proxy.config.http2.stream_error_rate_threshold": 0.1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -61,8 +62,7 @@ def run_client(name: str, streams: int, *, _ats: ATS, _client: Path, _services: 
 
     result = _services.process(
         name,
-        [sys.executable, _client, str(_ats.https_port), "/cache/10", "-n",
-         str(streams)],
+        [sys.executable, _client, str(_ats.https_port), "/cache/10", "-n", str(streams)],
     ).run()
     assert result.returncode == 0, result.output
 

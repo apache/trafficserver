@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Solicited client SETTINGS ACKs must not consume the receive limit."""
+
 import re
 import sys
 from pathlib import Path
@@ -36,14 +37,17 @@ def test_h2_settings_ack_inbound(ats_factory: ATSFactory, services: ServiceFacto
             "proxy.config.http.request_buffer_enabled": 1,
             "proxy.config.http2.initial_window_size_in": 65535,
             "proxy.config.http2.max_concurrent_streams_in": 100,
-        })
+        }
+    )
     ats.remap_config.add_line("map / http://127.0.0.1:1")
     ats.start()
     result = services.process(
-        "client", [sys.executable, Path(__file__).with_name("settings_ack_client.py"),
-                   str(ats.https_port)]).run(timeout=15)
+        "client", [sys.executable, Path(__file__).with_name("settings_ack_client.py"), str(ats.https_port)]
+    ).run(timeout=15)
     assert result.returncode == 0, result.output
     assert re.search(r"dynamic_settings_acknowledged=([3-9]|[1-9][0-9]+)", result.stdout), result.output
     wait_for_metrics(
-        ats, "h2-settings-ack-metrics.gold",
-        ["proxy.process.http2.max_settings_frames_per_minute_exceeded", "proxy.process.http2.connection_errors"])
+        ats,
+        "h2-settings-ack-metrics.gold",
+        ["proxy.process.http2.max_settings_frames_per_minute_exceeded", "proxy.process.http2.connection_errors"],
+    )

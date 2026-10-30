@@ -29,8 +29,7 @@ def _response(cache_control: str, etag: str) -> dict[str, str]:
     :param etag: ETag response header value.
     """
     return {
-        "headers": (f"HTTP/1.1 200 OK\r\nCache-Control: {cache_control}\r\nConnection: close\r\n"
-                    f"Etag: {etag}\r\n\r\n"),
+        "headers": (f"HTTP/1.1 200 OK\r\nCache-Control: {cache_control}\r\nConnection: close\r\nEtag: {etag}\r\n\r\n"),
         "body": "hello hello",
     }
 
@@ -43,10 +42,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET /200 HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /200 HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
         _response("max-age=1", "772102f4-56f4bc1e6d417"),
     )
     for path, cache_control, etag in (
@@ -55,17 +51,13 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     ):
         origin.add_response(
             {
-                "headers": (f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\n"
-                            "Accept: */*\r\nRange: bytes=0-4\r\n\r\n"),
+                "headers": (f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\nAccept: */*\r\nRange: bytes=0-4\r\n\r\n"),
                 "body": "",
             },
             _response(cache_control, etag),
         )
     origin.add_response(
-        {
-            "headers": "GET /global HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /global HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
         _response("max-age=1", "661091f3-45f3bc0e5d306"),
     )
     return origin
@@ -82,15 +74,17 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     missing = [plugin for plugin in ("cache_fill.so", "xdebug.so") if not ats.plugin_exists(plugin)]
     if missing:
         pytest.skip(f"Required plugins are unavailable: {', '.join(missing)}")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "cache_fill|.*cache.*",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "cache_fill|.*cache.*",
+        }
+    )
     ats.plugin_config.add_lines(("xdebug.so --enable=x-cache,x-cache-key", "cache_fill.so"))
     for path, origin_path in (("200", "200"), ("range", "range"), ("nostore", "nostore"), ("304", "range")):
         ats.remap_config.add_line(
-            f"map http://www.example.com/{path} http://127.0.0.1:{_origin.port}/{origin_path} "
-            "@plugin=cache_fill.so")
+            f"map http://www.example.com/{path} http://127.0.0.1:{_origin.port}/{origin_path} @plugin=cache_fill.so"
+        )
     ats.remap_config.add_line(f"map http://www.example.com/global http://127.0.0.1:{_origin.port}/global")
     return ats
 
@@ -176,18 +170,21 @@ def test_cache_fill_range_options(ats: ATS, services: ServiceFactory, curl: Curl
     if not all(ats.plugin_exists(plugin) for plugin in ("cache_fill.so", "xdebug.so")):
         pytest.skip("cache_fill.so and xdebug.so are required")
     origin = services.origin("range-origin")
-    for path, option in (("fill_on_range", "--range-req-only=true"), ("skip_when_plain", "--range-req-only=true"),
-                         ("decline_on_range", "--cache-range-req=false")):
+    for path, option in (
+        ("fill_on_range", "--range-req-only=true"),
+        ("skip_when_plain", "--range-req-only=true"),
+        ("decline_on_range", "--cache-range-req=false"),
+    ):
         origin.add_response(
             {"headers": f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
             {
                 "headers": f'HTTP/1.1 200 OK\r\nCache-Control: max-age=300\r\nConnection: close\r\nEtag: "{path}"\r\n\r\n',
-                "body": "hello hello"
+                "body": "hello hello",
             },
         )
         ats.remap_config.add_line(
-            f"map http://www.example.com/{path} http://127.0.0.1:{origin.port}/{path} "
-            f"@plugin=cache_fill.so @pparam={option}")
+            f"map http://www.example.com/{path} http://127.0.0.1:{origin.port}/{path} @plugin=cache_fill.so @pparam={option}"
+        )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-cache-key")
     ats.records.update({"proxy.config.diags.debug.enabled": 1, "proxy.config.diags.debug.tags": "cache_fill"})
     origin.start()
@@ -201,8 +198,10 @@ def test_cache_fill_range_options(ats: ATS, services: ServiceFactory, curl: Curl
         """
         options = "--range 0-4" if byte_range else ""
         result = curl.run_for(
-            ats, f"--silent --dump-header - --proxy localhost:{ats.http_port} "
-            f"-H 'x-debug: x-cache,x-cache-key' {options} http://www.example.com/{path}")
+            ats,
+            f"--silent --dump-header - --proxy localhost:{ats.http_port} "
+            f"-H 'x-debug: x-cache,x-cache-key' {options} http://www.example.com/{path}",
+        )
         assert result.returncode == 0, result.output
         return result.stdout.lower()
 
@@ -222,6 +221,9 @@ def test_cache_fill_range_options(ats: ATS, services: ServiceFactory, curl: Curl
         assert "x-cache: miss" in response, response
     ats.stop()
     output = ats.traffic_out.read_text(errors="replace")
-    for marker in ("_range_req_only=true; This transaction is not a range request",
-                   "_cache_range_req=false; This transaction is a range request", "scheduling background fetch"):
+    for marker in (
+        "_range_req_only=true; This transaction is not a range request",
+        "_cache_range_req=false; This transaction is a range request",
+        "scheduling background fetch",
+    ):
         assert marker in output, output

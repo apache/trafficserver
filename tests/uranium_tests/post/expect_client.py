@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from http_utils import (wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket)
+from http_utils import wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket
 
 import argparse
 import socket
@@ -38,13 +38,15 @@ def parse_args() -> argparse.Namespace:
         '--server-hostname',
         dest="server_hostname",
         default="some.server.com",
-        help="The hostname of the server to connect to.")
+        help="The hostname of the server to connect to.",
+    )
     parser.add_argument(
         '--mode',
         choices=["continue", "immediate", "delayed", "chunked"],
         default="continue",
         help="Whether to verify plain 100-Continue handling, or to probe body framing with a body that "
-        "accompanies the headers, follows them, or is chunked.")
+        "accompanies the headers, follows them, or is chunked.",
+    )
     parser.add_argument('--path', default="/api/1", help="The request target to use.")
     parser.add_argument('--delay', type=float, default=1.0, help="Seconds to wait before sending a delayed body.")
     parser.add_argument('--read-timeout', type=float, default=2.0, help="Seconds to wait for further proxy output.")
@@ -77,7 +79,8 @@ def send_expect_request(sock: socket.socket, server_hostname: str) -> None:
         b"Content-Length: 3\r\n"
         b"uuid: expect\r\n"
         b"Expect: 100-Continue\r\n"
-        b"\r\n")
+        b"\r\n"
+    )
     sock.sendall(request)
     print('Sent Expect: 100-Continue request:')
     print(request.decode())
@@ -116,10 +119,7 @@ def build_framing_probe(server_hostname: str, path: str, mode: str) -> tuple:
     :param mode: One of immediate, delayed or chunked.
     :return: The request headers and the body, as they should appear on the wire.
     """
-    smuggled: bytes = (f'GET /smuggled HTTP/1.1\r\n'
-                       f'Host: {server_hostname}\r\n'
-                       f'X-Smuggled: yes\r\n'
-                       f'\r\n').encode()
+    smuggled: bytes = (f'GET /smuggled HTTP/1.1\r\nHost: {server_hostname}\r\nX-Smuggled: yes\r\n\r\n').encode()
     if mode == 'chunked':
         body = f'{len(smuggled):x}\r\n'.encode() + smuggled + b'\r\n0\r\n\r\n'
         framing = 'Transfer-Encoding: chunked\r\n'
@@ -128,12 +128,8 @@ def build_framing_probe(server_hostname: str, path: str, mode: str) -> tuple:
         framing = f'Content-Length: {len(body)}\r\n'
 
     headers: bytes = (
-        f'POST {path} HTTP/1.1\r\n'
-        f'Host: {server_hostname}\r\n'
-        f'Connection: keep-alive\r\n'
-        f'Expect: 100-continue\r\n'
-        f'{framing}'
-        f'\r\n').encode()
+        f'POST {path} HTTP/1.1\r\nHost: {server_hostname}\r\nConnection: keep-alive\r\nExpect: 100-continue\r\n{framing}\r\n'
+    ).encode()
     return headers, body
 
 

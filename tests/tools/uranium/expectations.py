@@ -124,7 +124,8 @@ class StreamExpectations:
                 except AssertionError as error:
                     prefix = f"{expectation.explanation}\n" if expectation.explanation else ""
                     raise AssertionError(
-                        f"{prefix}Expected {self._process_name} {self._stream_name} to match {path}.\n{error}") from error
+                        f"{prefix}Expected {self._process_name} {self._stream_name} to match {path}.\n{error}"
+                    ) from error
             else:
                 raise ValueError(f"Unknown stream expectation: {expectation.kind}")
 
@@ -136,7 +137,8 @@ class StreamExpectations:
 
         raise TypeError(
             f"{self._stream_name} does not support +=; use {self._stream_name}.contains(), "
-            f"{self._stream_name}.excludes(), or {self._stream_name}.matches_gold()")
+            f"{self._stream_name}.excludes(), or {self._stream_name}.matches_gold()"
+        )
 
     def _fail(self, operation: str, expectation: StreamExpectation, content: str) -> Never:
         """Raise a diagnostic assertion for a regular-expression mismatch.
@@ -148,7 +150,8 @@ class StreamExpectations:
 
         raise AssertionError(
             f"{expectation.explanation}\nExpected {self._process_name} {self._stream_name} to {operation} "
-            f"{str(expectation.value)!r}.\n--- {self._process_name} {self._stream_name} ---\n{content}")
+            f"{str(expectation.value)!r}.\n--- {self._process_name} {self._stream_name} ---\n{content}"
+        )
 
     @staticmethod
     def _require_explanation(explanation: str, method: str) -> None:
