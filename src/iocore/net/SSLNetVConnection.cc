@@ -2031,6 +2031,10 @@ SSLNetVConnection::_beReadyToTransferData()
     if (this->write.vio.ntodo() <= 0) {
       this->readSignalDone(VC_EVENT_WRITE_COMPLETE, nh);
     }
+  } else if (ret == SSL_WAIT_FOR_HOOK && this->is_invoked_state()) {
+    // A plugin holds the handshake, and reenable() resumes it. Rescheduling
+    // here can put this VC straight back on the write ready list being
+    // drained, spinning the thread.
   } else {
     this->writeReschedule(nh);
   }
