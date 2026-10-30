@@ -1352,8 +1352,9 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   bool const in_client_hello =
     this->get_handshake_hook_state() == TLSEventSupport::SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO;
   // We only feed CLIENT_HELLO bytes into our temporary buffers. If we are past
-  // the CLIENT_HELLO, then no need to buffer.
-  if (in_client_hello && this->handShakeReader) {
+  // the CLIENT_HELLO, then no need to buffer. A delayed ClientHello hook resumes
+  // with the TLS library already holding the whole CLIENT_HELLO.
+  if (in_client_hello && !this->resuming_client_hello_hooks() && this->handShakeReader) {
     if (BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) { // No more data in the buffer
                                                           // Is this the first read?
 #if TS_USE_TLS_ASYNC
@@ -1787,6 +1788,14 @@ SSLNetVConnection::reenable(int event)
   // Mark as error to stop the Handshake
   if (event == TS_EVENT_ERROR) {
     sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ERROR;
+  }
+
+  // The ClientHello is only readable during the TLS library's ClientHello callback, which
+  // the resumed handshake calls again to run the remaining ClientHello hooks.
+  if (this->get_handshake_hook_state() == TLSEventSupport::SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE) {
+    this->resume_tls_event();
+    this->readReschedule(nh);
+    return;
   }
 
   this->resume_tls_event();

@@ -451,6 +451,19 @@ TLSEventSupport::finished_client_hello_hooks() const
   }
 }
 
+/** Whether a ClientHello hook has reenabled the connection with ClientHello hooks left to run.
+ *
+ * The ClientHello is only readable during the TLS library's ClientHello callback, so the remaining
+ * hooks run when the resumed handshake calls it again.
+ *
+ * @return True if the ClientHello callback must run the remaining ClientHello hooks.
+ */
+bool
+TLSEventSupport::resuming_client_hello_hooks() const
+{
+  return this->sslHandshakeHookState == SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO && this->curHook != nullptr;
+}
+
 bool
 TLSEventSupport::finished_cert_hooks() const
 {
