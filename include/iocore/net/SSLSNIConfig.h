@@ -99,7 +99,7 @@ public:
   SNIConfigParams() = default;
   ~SNIConfigParams() override;
 
-  const NextHopProperty *get_property_config(const std::string &servername) const;
+  const NextHopProperty *get_property_config(std::string_view servername) const;
   bool                   initialize(ConfigContext ctx = {});
   bool                   initialize(const std::string &sni_filename, ConfigContext ctx = {});
   /** Walk sni.yaml config and populate sni_action_list

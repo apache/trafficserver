@@ -75,8 +75,18 @@ public:
 
       @a session_sni comes from TLSSNISupport and is "" rather than nullptr when the connection sent
       no name, so a session established without an SNI matches a request that would not send one.
+      A nullptr @a session_sni is treated the same as "".
    */
   static bool sni_matches(std::string_view proposed_sni, const char *session_sni);
+  /** @return true if a pooled raw public key session may carry @a sm's request.
+
+      The pinned key set is the whole of what authenticated such a session, so this compares that set
+      with the one @a sm's own connection would pin, rather than inferring it from a name.
+
+      @param sm The transaction looking for a session.
+      @param netvc A pooled origin connection for which origin_pinned_raw_public_key() is true.
+   */
+  static bool validate_pinned_origin(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
   void        removeSession(PoolableSession *ssn);
   void        addSession(PoolableSession *ssn);

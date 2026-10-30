@@ -114,12 +114,11 @@ ConnectingEntry::state_http_server_open(int event, void *data)
           void *event_data = new_session;
 
           NetVConnection *session_netvc = new_session->get_netvc();
-          // A raw public key origin was authenticated by the next hop's pin set, which belongs to
-          // the sni.yaml entry the outbound SNI selected, so only a transaction that would send the
-          // same SNI may join this session.
+          // A raw public key origin was authenticated by its pinned key set, so only a transaction
+          // whose own connection would pin that same set may join this session.
           bool const acceptable =
             origin_pinned_raw_public_key(session_netvc) ?
-              ServerSessionPool::validate_sni(*entry, session_netvc) :
+              ServerSessionPool::validate_pinned_origin(*entry, session_netvc) :
               validate_server_certificate_hostname(session_netvc, (*entry)->get_outbound_sni_for_cert_verification());
 
           if (!acceptable) {

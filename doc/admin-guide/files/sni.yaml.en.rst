@@ -466,13 +466,11 @@ raw public keys are negotiated alongside X.509 rather than instead of it, this o
 the next hop actually offers one; a next hop that does not support RFC 7250 falls back to a normal
 certificate exchange, and the usual certificate checks apply.
 
-Replacing the file named by ``server_rpk_ca`` and reloading does not reach connections that are
-already established. A pooled origin connection is reused without a new handshake, so requests can
-continue to be sent over one that a retired key authenticated until that connection is closed. This
-is how |TS| already treats a replaced certificate authority for X.509 origins, but it is worth
-stating for raw public keys, where the trusted set is the whole of what authenticated the next hop
-rather than one input to a chain check. Cached TLS *sessions* are not affected: those are keyed on
-the trusted set, so a replacement retires them and the next handshake is a full one.
+Replacing the file named by ``server_rpk_ca`` and running :option:`traffic_ctl config reload`
+retires what the old set authenticated. A pooled origin connection is reused only for a request
+whose own connection would pin the same set, and cached TLS sessions are keyed on the set, so the
+next request to that next hop completes a full handshake against the new one. Requests already in
+progress on an existing connection are not interrupted.
 
 If ``tunnel_route`` is specified, none of the certificate verification will be done because the TLS
 negotiation will be tunneled to the upstream target, making those values irrelevant for that

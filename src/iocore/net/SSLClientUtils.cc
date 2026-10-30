@@ -27,6 +27,7 @@
 #include "SSLSessionCache.h"
 #include "TLSCertCompression.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/SSLDiags.h"
 #include "tscore/ink_config.h"
@@ -428,6 +429,19 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
 }
 #endif
 
+std::string_view
+next_hop_property_key(std::string_view sni, sockaddr const *remote_addr, char (&buffer)[INET6_ADDRSTRLEN])
+{
+  IpEndpoint ip;
+
+  // Matches NetVCOptions::set_sni_servername(), which drops an IP literal rather than send it.
+  if (!sni.empty() && ats_ip_pton(sni, &ip) != 0) {
+    return sni;
+  }
+  ats_ip_ntop(remote_addr, buffer, INET6_ADDRSTRLEN);
+  return buffer;
+}
+
 bool
 origin_pinned_raw_public_key([[maybe_unused]] NetVConnection *netvc)
 {
@@ -440,6 +454,29 @@ origin_pinned_raw_public_key([[maybe_unused]] NetVConnection *netvc)
   auto *ssl = tls != nullptr ? tls->get_tls_handle() : nullptr;
 
   return ssl != nullptr && SSL_get0_peer_rpk(ssl) != nullptr;
+#else
+  return false;
+#endif
+}
+
+bool
+origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] std::string_view property_key)
+{
+#if TS_USE_RPK
+  auto *tls = netvc != nullptr ? netvc->get_service<TLSBasicSupport>() : nullptr;
+  auto *ssl = tls != nullptr ? tls->get_tls_handle() : nullptr;
+
+  if (ssl == nullptr) {
+    return false;
+  }
+
+  std::string_view const   session_identity = origin_rpk_pin_identity(ssl);
+  SNIConfig::scoped_config sni_config;
+  auto const              *nps = sni_config->get_property_config(property_key);
+
+  // The digest is derived from key material, so a set that is unchanged across a reload still
+  // matches while a replaced one retires the sessions it authenticated.
+  return !session_identity.empty() && nps != nullptr && session_identity == nps->server_rpk_ca_digest;
 #else
   return false;
 #endif

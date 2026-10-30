@@ -1193,12 +1193,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       // Making the check here instead of later, so we only
       // do this setting immediately after we create the SSL object
       SNIConfig::scoped_config sniParam;
-      const char              *serverKey = this->options.sni_servername;
-      if (!serverKey) {
-        ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
-        serverKey = buff;
-      }
-      auto           nps       = sniParam->get_property_config(serverKey);
+      const char              *sni = this->options.sni_servername;
+      auto nps = sniParam->get_property_config(next_hop_property_key(sni != nullptr ? sni : "", this->get_remote_addr(), buff));
       shared_SSL_CTX sharedCTX = nullptr;
       SSL_CTX       *clientCTX = nullptr;
       std::string    caCertPathStorage;

@@ -109,7 +109,7 @@ NamedElement::set_regex_name(const std::string &regex_name)
 // SNIConfigParams
 //
 const NextHopProperty *
-SNIConfigParams::get_property_config(const std::string &servername) const
+SNIConfigParams::get_property_config(std::string_view servername) const
 {
   const NextHopProperty *nps = nullptr;
   RegexMatches           matches;

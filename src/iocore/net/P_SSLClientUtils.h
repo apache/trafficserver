@@ -44,14 +44,37 @@ SSL_CTX *SSLCreateClientContext(const struct SSLConfigParams *params, const char
 int  verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
 bool validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hostname);
 
+/** @return the key that selects an outbound connection's sni.yaml next-hop properties.
+
+    That is the SNI the connection sends, or the text of @a remote_addr when it sends none, which
+    includes the case of an IP literal since one is never sent as an SNI. The handshake and the
+    origin session reuse checks both select through here, so they cannot disagree about the entry.
+
+    @param sni The outbound SNI a connection would be given; may be empty or an IP literal.
+    @param remote_addr The next hop's address.
+    @param buffer Storage for the address text, which the returned key may refer to.
+ */
+std::string_view next_hop_property_key(std::string_view sni, sockaddr const *remote_addr, char (&buffer)[INET6_ADDRSTRLEN]);
+
 /** @return true if this origin connection authenticated with an RFC 7250 raw public key.
 
-    Such a connection was vouched for by the next hop's pin set rather than by a certificate, and
-    that set comes from the sni.yaml entry the outbound SNI selected. Callers gating origin session
-    reuse must therefore limit it to a request that would select the same entry. Always false when
-    server verification is disabled for the connection, since nothing was pinned.
+    Such a connection was vouched for by the pinned key set attached to it rather than by a
+    certificate, so callers gating origin session reuse must check that set with
+    origin_rpk_pin_matches() instead of a name. Always false when server verification is disabled
+    for the connection, since nothing was pinned.
  */
 bool origin_pinned_raw_public_key(NetVConnection *netvc);
+
+/** @return true if the key set that authenticated @a netvc is the set sni.yaml now pins for the
+    next-hop entry @a property_key selects.
+
+    A raw public key session can only carry a request whose own connection would have pinned the
+    same set; a name says nothing about which set that is. False when the entry pins no set.
+
+    @param netvc A pooled origin connection for which origin_pinned_raw_public_key() is true.
+    @param property_key The new request's key, from next_hop_property_key().
+ */
+bool origin_rpk_pin_matches(NetVConnection *netvc, std::string_view property_key);
 
 #if TS_USE_RPK
 /** Configure @a ssl to offer and/or pin RFC 7250 raw public keys for an outbound connection.
