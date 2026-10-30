@@ -66,5 +66,6 @@ public:
   String     _extrTokenIdHdrName;    /** @brief header name to extract the token id, if empty => no extraction */
   String     _extrValidationHdrName; /** @brief header name to extract the token validation status, if empty => no extraction */
   bool       _useRedirects = false;  /** @brief true - use redirect to set the access token cookie, @todo not used yet */
+  bool       _enforceScope = false;  /** @brief true - enforce token scope claim against request path */
   Classifier _uriPathScope; /**< @brief denylist (exclude) and allow-list (include) which path should have the access control */
 };

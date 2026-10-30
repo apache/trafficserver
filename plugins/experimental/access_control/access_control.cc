@@ -23,11 +23,106 @@
 
 #include <iostream>
 #include <string>
+#include <charconv>
+#include <system_error>
 
 #include "access_control.h"
 
 size_t calcMessageDigest(const StringView hf, const char *secret, const char *message, size_t messageLen, char *buffer, size_t len);
 const char *getSecretMap(const StringMap &map, const StringView &key, size_t &secretSize);
+
+static bool
+normalizePath(StringView path, String &normalized)
+{
+  normalized.clear();
+  if (path.empty()) {
+    normalized = "/";
+    return true;
+  }
+
+  normalized.reserve(path.size() + 1);
+  size_t i = 0;
+
+  while (i < path.size()) {
+    while (i < path.size() && path[i] == '/') {
+      ++i;
+    }
+    if (i >= path.size()) {
+      break;
+    }
+
+    size_t seg_start = normalized.size();
+    normalized.push_back('/');
+
+    while (i < path.size() && path[i] != '/') {
+      if (path[i] == '\\' || static_cast<unsigned char>(path[i]) < 0x20 || static_cast<unsigned char>(path[i]) == 0x7F) {
+        return false;
+      }
+      if (path[i] == '%') {
+        unsigned int val = 0;
+        if (i + 2 >= path.size()) {
+          return false;
+        }
+        auto [end, ec] = std::from_chars(path.data() + i + 1, path.data() + i + 3, val, 16);
+        if (end == path.data() + i + 3 && ec == std::errc{} && val <= 0xFF) {
+          if (val == '/' || val == '\\' || val == '%' || val < 0x20 || val == 0x7F) {
+            return false;
+          }
+          normalized.push_back(static_cast<char>(val));
+          i += 3;
+        } else {
+          return false;
+        }
+      } else {
+        normalized.push_back(path[i]);
+        ++i;
+      }
+    }
+
+    StringView seg(normalized.data() + seg_start + 1, normalized.size() - seg_start - 1);
+    size_t     semi     = seg.find(';');
+    StringView base_seg = (semi == StringView::npos) ? seg : seg.substr(0, semi);
+
+    if (base_seg == "." || base_seg == "..") {
+      return false;
+    }
+  }
+  if (normalized.empty()) {
+    normalized = "/";
+  }
+  return true;
+}
+
+ScopeValidationResult
+validateScopeDetailed(StringView requestPath, StringView scope)
+{
+  if (scope.empty()) {
+    return ScopeValidationResult::IN_SCOPE;
+  }
+
+  String normScope;
+  if (!normalizePath(scope, normScope)) {
+    return ScopeValidationResult::INVALID_SCOPE;
+  }
+
+  if (normScope == "/") {
+    return ScopeValidationResult::IN_SCOPE;
+  }
+
+  String normRequestPath;
+  if (!normalizePath(requestPath, normRequestPath)) {
+    return ScopeValidationResult::INVALID_REQUEST_PATH;
+  }
+
+  if (normRequestPath == normScope) {
+    return ScopeValidationResult::IN_SCOPE;
+  }
+  if (normRequestPath.compare(0, normScope.size(), normScope) == 0 && normRequestPath[normScope.length()] == '/') {
+    return ScopeValidationResult::IN_SCOPE;
+  }
+
+  return ScopeValidationResult::OUT_OF_SCOPE;
+}
 
 /* AccessToken ***************************************************************************************************** */
 
@@ -61,8 +156,7 @@ AccessToken::validate(const StringView token, time_t time)
     return _state;
   }
 
-  /** @todo: validate scope eventually */
-
+  /* Note that scope validation is performed against the request path during transaction enforcement */
   return _state;
 }
 
