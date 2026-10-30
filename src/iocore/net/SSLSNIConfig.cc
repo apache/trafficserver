@@ -200,6 +200,11 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
   if (!item.server_rpk_ca.empty()) {
     SSLConfig::scoped_config params;
     nps.prop.server_rpk_ca_file = Layout::get()->relative_to(params->clientCACertPath, item.server_rpk_ca.data());
+    // Watched so that replacing the file in place is picked up by a configuration reload, which is
+    // the only point the set below is re-read.
+    if (SSLConfigParams::load_ssl_file_cb != nullptr) {
+      SSLConfigParams::load_ssl_file_cb(nps.prop.server_rpk_ca_file.c_str());
+    }
     // Parsed once here rather than re-parsed from disk on every outbound handshake to this next
     // hop; also fails the config load now rather than at handshake time if the keys are unreadable.
     auto trusted = std::make_shared<SSLRPKUtils::TrustedKeySet>();

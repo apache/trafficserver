@@ -3045,7 +3045,9 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       return false;
     }
     std::string completeClientRPKCAPath(Layout::relative_to(params->serverCACertPath, sslMultCertSettings->client_rpk_ca.get()));
-    auto        trusted = std::make_unique<TrustedClientRPK>();
+    // Read only as contexts are built, the same as a client CA bundle.
+    track_client_ca_bundle(completeClientRPKCAPath.c_str());
+    auto trusted = std::make_unique<TrustedClientRPK>();
     if (!SSLRPKUtils::loadTrustedKeys(completeClientRPKCAPath.c_str(), trusted->keys)) {
       SSLError("failed to load trusted client RPK keys from %s", completeClientRPKCAPath.c_str());
       return false;

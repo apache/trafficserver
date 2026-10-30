@@ -160,6 +160,10 @@ ssl_client_rpk_ca_name: FILENAME (optional)
   An unmatched pin is always fatal to the connection, the same as a failed certificate check --
   there is no separate log-only mode.
 
+  Replacing the file and running :option:`traffic_ctl config reload` takes effect for new
+  handshakes, and a TLS session a client authenticated under the old set cannot be resumed under
+  the new one.
+
   This key only has an effect where a client certificate is actually requested, which means either
   a non-zero :ts:cv:`proxy.config.ssl.client.certification_level` or a
   :file:`sni.yaml` ``verify_client`` action covering the connection. With neither, the entry
