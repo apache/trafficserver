@@ -797,7 +797,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.visit(section)
                     if idx < len(program_items) - 1 and len(self.output) > start_length:
                         next_items = program_items[idx + 1 :]
-                        if any(next_item.section() for next_item in next_items):
+                        if any(next_item.section() and not self._is_cachekey(next_item.section()) for next_item in next_items):
                             self.emit_separator()
                 elif item.commentLine() and self.preserve_comments:
                     comment_text = item.commentLine().COMMENT().getText()
@@ -1155,15 +1155,17 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:
-        at = self._remap_end if self._remap_end is not None else len(self.output)
+        """Insert the compiled CACHEKEY section after the output of the last REMAP section, one blank line on each side.
+
+        With no REMAP it is the only rule set on its hook, so it goes at the end.
+        """
+        insert_at = self._remap_end if self._remap_end is not None else len(self.output)
         block = self._cachekey.render()
-        if at > 0 and self.output[at - 1] != "":
+        if insert_at > 0 and self.output[insert_at - 1] != "":
             block = ["", *block]
-        if at < len(self.output) and self.output[at] != "":
+        if insert_at < len(self.output) and self.output[insert_at] != "":
             block = [*block, ""]
-        self.output[at:at] = block
-        while self.output and self.output[-1] == "":
-            self.output.pop()
+        self.output[insert_at:insert_at] = block
 
     def visitVariables(self, ctx) -> None:
         with self.debug_context("visitVariables"):
