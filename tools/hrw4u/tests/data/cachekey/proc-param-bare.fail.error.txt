@@ -1,0 +1,1 @@
+tests/data/cachekey/proc-param-bare.fail.input.txt:2:4: error: procedure parameter '$h' must be quoted here: write "$h"

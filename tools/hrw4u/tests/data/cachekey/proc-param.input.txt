@@ -1,5 +1,5 @@
 procedure local::hdr($h) {
-    cache.key.headers.add($h);
+    cache.key.headers.add("$h");
 }
 
 procedure local::cookie($c="session") {
@@ -11,7 +11,7 @@ procedure local::pass($h) {
 }
 
 procedure local::part($v) {
-    cache.key += $v;
+    cache.key += "$v";
 }
 
 CACHEKEY {

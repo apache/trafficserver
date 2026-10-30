@@ -26,7 +26,6 @@ from typing import Any
 
 from antlr4 import InputStream, CommonTokenStream
 from antlr4.error.ErrorStrategy import BailErrorStrategy
-from antlr4.tree.Trees import Trees
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
@@ -554,32 +553,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return text
         return self._PARAM_REF_PATTERN.sub(lambda m: bindings.get(m.group(1), m.group(0)), text)
 
-    def _flatten_item_text(self, item, source_text: str, bindings: dict[str, str]) -> str:
-        """Source text of item with $params substituted, quoting the ones _cachekey_arg quotes."""
-        pieces: list[str] = []
-        pos = item.start.start
-        for value in Trees.descendants(item):
-            if not self._is_quoted_param(value):
-                continue
-            name = value.paramRef().IDENT().getText()
-            if name not in bindings:
-                continue
-            pieces.append(self._flatten_substitute_params(source_text[pos : value.start.start], bindings))
-            pieces.append(f'"{bindings[name]}"')
-            pos = value.stop.stop + 1
-        pieces.append(self._flatten_substitute_params(source_text[pos : item.stop.stop + 1], bindings))
-        return "".join(pieces)
-
-    @staticmethod
-    def _is_quoted_param(node) -> bool:
-        """True if node is a bare $param that compile reads as a string: a cache.* argument or a cache.key += value."""
-        if not isinstance(node, hrw4uParser.ValueContext) or not node.paramRef():
-            return False
-        parent = node.parentCtx
-        if isinstance(parent, hrw4uParser.ArgumentListContext):
-            return ck.is_key_name(parent.parentCtx.funcName.text)
-        return isinstance(parent, hrw4uParser.StatementContext) and bool(parent.PLUSEQUAL()) and parent.lhs.text == ck.KEY_EXPR
-
     def _flatten_reindent(self, text: str, indent: str, source_indent: str | None = None) -> list[str]:
         """Re-indent text: replace source indentation with target indent, preserving relative nesting.
 
@@ -655,7 +628,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 lines.extend(self._flatten_conditional(item.conditional(), indent, source_text, bindings))
                 continue
 
-            item_text = self._flatten_item_text(item, source_text, bindings)
+            item_text = self._get_source_text(item, source_text)
+            item_text = self._flatten_substitute_params(item_text, bindings)
             source_indent = self._source_indent_at(item, source_text)
             lines.extend(self._flatten_reindent(item_text, indent, source_indent))
 
@@ -1137,9 +1111,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return
         if ctx.PLUSEQUAL() and lhs == ck.KEY_EXPR:
             value = ctx.value()
-            if value.str_ is None and not value.paramRef():
+            text = self._cachekey_arg(value)
+            if value.str_ is None:
                 raise SymbolResolutionError(lhs, "cache.key += takes a quoted string")
-            target.append(self._cachekey.new_key_part(self._substitute_strings(self._cachekey_arg(value), ctx)))
+            target.append(self._cachekey.new_key_part(self._substitute_strings(text, ctx)))
             return
         op = lhs if ctx.EQUAL() else f"{lhs} +="
         raise SymbolResolutionError(lhs, f"operator '{op}' not allowed in CACHEKEY")
@@ -1149,9 +1124,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return [self._cachekey_arg(value) for value in (call_ctx.argumentList().value() if call_ctx.argumentList() else [])]
 
     def _cachekey_arg(self, value) -> str:
-        """A bare $param stands for its binding as a string, the same as "$param"."""
+        """Source text of a cache.* argument or cache.key += value, with $params substituted in a string.
+
+        Raises for a bare $param: its binding has no quotes, so it can't be a string. Any other
+        value is returned as written, for the caller to reject.
+        """
         if value.paramRef():
-            return f'"{self._get_value_text(value)}"'
+            name = value.paramRef().IDENT().getText()
+            raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be quoted here: write \"${name}\"")
         if value.str_ is not None:
             return self._flatten_substitute_params(value.getText(), self._proc_bindings)
         return value.getText()
