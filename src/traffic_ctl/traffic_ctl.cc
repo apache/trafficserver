@@ -177,8 +177,9 @@ try {
     .add_option("--data", "-d", "Inline config data (@file, @- for stdin, or yaml string)", "", MORE_THAN_ZERO_ARG_N, "")
     .add_option("--directive", "-D", "Pass a reload directive to a config handler (format: config_key.directive_key=value)", "",
                 MORE_THAN_ZERO_ARG_N, "")
+    // No short form: -w is the global --watch.
     .add_option(
-      "--initial-wait", "-w",
+      "--initial-wait", "",
       "Initial wait before first poll, giving the server time to schedule all handlers (seconds). Accepts fractional values", "", 1,
       "2")
     .add_option("--timeout", "-T",
