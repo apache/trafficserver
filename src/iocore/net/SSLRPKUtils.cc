@@ -79,13 +79,17 @@ loadTrustedKeys(const char *path, TrustedKeySet &out)
     if (is_pubkey) {
       const unsigned char *p = data;
       // Decode the PEM payload so a corrupt key is rejected at config load rather than silently
-      // pinned as opaque bytes -- and so the pin is the canonical re-encoding of the key rather
-      // than the payload as received: d2i_PUBKEY() doesn't reject trailing bytes after a valid
-      // DER structure, so a non-canonically-encoded payload would otherwise get pinned including
-      // whatever garbage follows the key, and could never match a peer's cleanly-encoded SPKI.
+      // pinned as opaque bytes, and so the pin is the canonical re-encoding of the key rather than
+      // the payload as received, which a peer's cleanly-encoded SPKI could fail to match.
       pkey = d2i_PUBKEY(nullptr, &p, len);
       if (pkey == nullptr) {
         SSLError("SSLRPKUtils: failed to parse a raw public key from %s", path);
+      } else if (p != data + len) {
+        // d2i_PUBKEY() stops after the first DER structure, so whatever follows has to be rejected
+        // here or it would be dropped without a word.
+        SSLError("SSLRPKUtils: a raw public key in %s is followed by trailing data", path);
+        EVP_PKEY_free(pkey);
+        pkey = nullptr;
       }
     }
 

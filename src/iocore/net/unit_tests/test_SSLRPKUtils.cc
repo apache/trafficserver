@@ -92,6 +92,13 @@ TEST_CASE("SSLRPKUtils reports a malformed trusted key file", "[rpk]")
   CHECK_FALSE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_malformed.pem").c_str(), keys));
 }
 
+TEST_CASE("SSLRPKUtils rejects a trusted key followed by trailing data", "[rpk]")
+{
+  // rpk_single.pem's key with one extra byte appended, which a prefix parse would quietly drop.
+  SSLRPKUtils::TrustedKeySet keys;
+  CHECK_FALSE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_trailing.pem").c_str(), keys));
+}
+
 TEST_CASE("SSLRPKUtils matches a pinned key", "[rpk]")
 {
   SSLRPKUtils::TrustedKeySet keys;
