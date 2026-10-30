@@ -455,7 +455,7 @@ Http2CommonSession::write_reenable()
   if (write_vio) {
     // Grab the lock for the write_vio.  Holding the lock is
     // checked eventually via the reenable logic
-    SCOPED_MUTEX_LOCK(lock, write_vio->mutex, this_ethread());
+    SCOPED_MUTEX_LOCK(lock, this->get_mutex(), this_ethread());
     write_vio->reenable();
   }
 }
