@@ -186,8 +186,8 @@ bool
 ServerSessionPool::sni_matches(std::string_view proposed_sni, const char *session_sni)
 {
   // A plain comparison, because get_sni_server_name() yields "" rather than nullptr when the
-  // connection sent no name, and a session that sent none must be reusable by a request that would
-  // send none.
+  // connection sent no name, and a session that sent none must be reusable by a request whose
+  // outbound SNI is empty.
   return proposed_sni == std::string_view{session_sni != nullptr ? session_sni : ""};
 }
 

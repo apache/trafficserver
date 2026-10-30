@@ -37,8 +37,8 @@ TEST_CASE("ServerSessionPool refuses a different SNI", "[session_pool]")
 
 TEST_CASE("ServerSessionPool matches when neither side sends an SNI", "[session_pool]")
 {
-  // A next hop reached without an SNI -- an IP literal origin, for one -- would be reached the same
-  // way again, so its sessions have to stay reusable. Refusing here retires every such session.
+  // A request with an empty outbound SNI, such as under the server_name policy when the client sent
+  // none, would open a new session without one too. Refusing here would retire every such session.
   CHECK(ServerSessionPool::sni_matches("", ""));
 }
 

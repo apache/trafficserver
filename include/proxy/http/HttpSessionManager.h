@@ -71,11 +71,11 @@ public:
   int         eventHandler(int event, void *data);
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
-  /** @return true if a session established with @a session_sni would be established again for a
-      request that sends @a proposed_sni.
+  /** @return true if a session established with @a session_sni may carry a request whose outbound
+      SNI is @a proposed_sni.
 
       @a session_sni comes from TLSSNISupport and is "" rather than nullptr when the connection sent
-      no name, so a session established without an SNI matches a request that would not send one.
+      no name, so a session established without an SNI matches an empty @a proposed_sni.
       A nullptr @a session_sni is treated the same as "".
    */
   static bool sni_matches(std::string_view proposed_sni, const char *session_sni);
