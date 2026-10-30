@@ -1464,8 +1464,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // the session lookup.
     if (SSL_session_reused(ssl)) {
       int verify_mode = SSL_get_verify_mode(ssl);
+      // A raw public key is a client's credential as much as a certificate is, and both TLS
+      // libraries restore it with the session.
+      bool peer_credential = this->peer_provided_cert();
+#if TS_USE_RPK
+      peer_credential = peer_credential || SSL_get0_peer_rpk(ssl) != nullptr;
+#endif
 
-      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !this->peer_provided_cert()) {
+      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !peer_credential) {
         static LogMessage log_msg{IS_THROTTLED};
         Metrics::Counter::increment(ssl_rsb.user_agent_resumed_cert_rejected);
         log_msg.warning(MakeSourceLocation(), "rejecting a resumed TLS session that does not satisfy verify_client");
