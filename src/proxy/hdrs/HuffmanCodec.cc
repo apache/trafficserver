@@ -25,6 +25,12 @@
 #include "ls-hpack/lshpack.h"
 #include <cstdint>
 
+int64_t
+huffman_encoded_len(uint8_t const *src, uint32_t src_len)
+{
+  return litespeed::lshpack_enc_huff_encoded_len(src, src + src_len);
+}
+
 // Implementation taken from LiteSpeed:
 // lshpack_dec_huff_decode
 int64_t

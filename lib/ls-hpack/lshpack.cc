@@ -97,6 +97,16 @@ hdec_huff_dec4bits(uint8_t src_4bits, char *dst, struct decode_status *status)
 } // anonymous namespace
 
 int64_t
+lshpack_enc_huff_encoded_len(uint8_t const *src, uint8_t const *const src_end)
+{
+  uint64_t nbits = 0;
+  while (src != src_end) {
+    nbits += encode_table[*src++].bits;
+  }
+  return (nbits + 7) / 8;
+}
+
+int64_t
 lshpack_enc_huff_encode(uint8_t const *src, uint8_t const *const src_end, uint8_t *dst, uint32_t dst_len)
 {
   uint8_t           *p_dst   = dst;
