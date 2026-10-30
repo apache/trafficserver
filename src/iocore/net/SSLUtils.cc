@@ -2682,9 +2682,9 @@ get_verify_str(SSL *ssl)
 
 #if TS_USE_RPK
     // A raw public key next hop is authenticated by its pinned key set rather than by a chain, and
-    // that set is not part of the SSL_CTX the rest of this key identifies -- contexts are shared by
-    // (cert, key, CA). Without this term a session would keep resuming after the pinned set was
-    // replaced, and a resumed handshake never re-presents the key for the pin check to run again.
+    // a resumed handshake never re-presents the key for the pin check to run again. The SSL_CTX in
+    // the rest of this key does not identify the set: contexts are shared by (cert, key, CA), and
+    // the one a reload builds can be allocated at the address of the one it replaced.
     if (std::string_view const pin_identity = origin_rpk_pin_identity(ssl); !pin_identity.empty()) {
       verify_str.append(":").append(pin_identity);
     }
