@@ -617,8 +617,8 @@ def test_rpk_hop_mtls_x509_wrong_purpose(ats_factory: ATSFactory, services: Serv
     """The X.509 fallback enforces certificate purpose, not just chain signatures.
 
     server.ocsp.pem chains cleanly to ca.ocsp.pem but carries extendedKeyUsage = serverAuth only, so
-    it must not authenticate as a client. Without X509_STORE_CTX_set_default(..., "ssl_client") the
-    purpose check never runs and this connection is accepted.
+    it must not authenticate as a client. On BoringSSL, without X509_STORE_CTX_set_default(...,
+    "ssl_client") the purpose check never runs and this connection is accepted.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -649,9 +649,9 @@ def test_rpk_hop_mtls_x509_wrong_purpose(ats_factory: ATSFactory, services: Serv
 
     assert "origin response" not in result.output, "a serverAuth-only cert must not authenticate as a client"
     # This chain verifies, so a generic failure would mean something else rejected it and the
-    # purpose check went untested.
+    # purpose check went untested. BoringSSL and OpenSSL word X509_V_ERR_INVALID_PURPOSE differently.
     assert_log_contains(
-        parent.traffic_out, "client certificate chain verification failed: unsupported certificate purpose",
+        parent.traffic_out, "client certificate chain verification failed: (unsupported|unsuitable) certificate purpose",
         "the chain must be rejected on purpose alone, not on its signatures")
 
 
