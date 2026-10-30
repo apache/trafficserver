@@ -17,8 +17,9 @@
 
 find_package(Python3 3.11 QUIET COMPONENTS Interpreter)
 if(Python3_Interpreter_FOUND)
-  add_test(NAME test_traffic_dump_post_process_encoding
-           COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_post_process_encoding.py
+  add_test(
+    NAME test_traffic_dump_post_process_encoding COMMAND ${Python3_EXECUTABLE}
+                                                         ${CMAKE_CURRENT_SOURCE_DIR}/test_post_process_encoding.py
   )
 endif()
 
@@ -31,7 +32,7 @@ add_catch2_test(NAME test_traffic_dump COMMAND test_traffic_dump)
 
 find_package(Python3 3.11 QUIET COMPONENTS Interpreter)
 if(Python3_Interpreter_FOUND)
-  add_test(NAME test_traffic_dump_post_process COMMAND ${Python3_EXECUTABLE}
-                                                       ${CMAKE_CURRENT_SOURCE_DIR}/test_post_process.py
+  add_test(
+    NAME test_traffic_dump_post_process COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_post_process.py
   )
 endif()

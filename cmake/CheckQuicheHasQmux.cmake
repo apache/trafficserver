@@ -34,8 +34,5 @@ function(CHECK_QUICHE_HAS_QMUX OUT_VAR)
   set(CMAKE_REQUIRED_LIBRARIES quiche::quiche)
   include(CheckCXXSourceCompiles)
   check_cxx_source_compiles("${CHECK_PROGRAM}" ${OUT_VAR})
-  set(${OUT_VAR}
-      ${${OUT_VAR}}
-      PARENT_SCOPE
-  )
+  set(${OUT_VAR} ${${OUT_VAR}} PARENT_SCOPE)
 endfunction()

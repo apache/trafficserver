@@ -43,12 +43,7 @@ if(unwind_ptrace_LIBRARY)
       unset(unwind_LIBRARY CACHE)
     endif()
   endif()
-  find_library(
-    unwind_LIBRARY
-    NAMES unwind
-    PATHS "${_unwind_library_dir}"
-    NO_DEFAULT_PATH
-  )
+  find_library(unwind_LIBRARY NAMES unwind PATHS "${_unwind_library_dir}" NO_DEFAULT_PATH)
 endif()
 if(unwind_INCLUDE_DIR
    AND NOT EXISTS "${unwind_INCLUDE_DIR}/libunwind-ptrace.h"

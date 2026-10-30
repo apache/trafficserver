@@ -16,19 +16,20 @@
 #######################
 
 add_library(
-  quic STATIC
-  QUICApplication.cc
-  QUICApplicationMap.cc
-  QUICConfig.cc
-  QUICContext.cc
-  QUICConnectionTable.cc
-  QUICGlobals.cc
-  QUICTypes.cc
-  QUICIntUtil.cc
-  QUICStream.cc
-  QUICStreamManager.cc
-  QUICStreamAdapter.cc
-  QUICStreamVCAdapter.cc
+  quic
+  STATIC
+    QUICApplication.cc
+    QUICApplicationMap.cc
+    QUICConfig.cc
+    QUICContext.cc
+    QUICConnectionTable.cc
+    QUICGlobals.cc
+    QUICTypes.cc
+    QUICIntUtil.cc
+    QUICStream.cc
+    QUICStreamManager.cc
+    QUICStreamAdapter.cc
+    QUICStreamVCAdapter.cc
 )
 add_library(ts::quic ALIAS quic)
 
@@ -42,9 +43,5 @@ if(TS_OPENSSL_QUIC_TLS_CBS_COMPAT AND TS_HAS_QUICHE)
   add_library(openssl_quic_compat STATIC OpenSSLQuicCompat.cc)
   add_library(ts::openssl_quic_compat ALIAS openssl_quic_compat)
   target_link_libraries(openssl_quic_compat PUBLIC OpenSSL::SSL OpenSSL::Crypto)
-  set_property(
-    TARGET quiche::quiche
-    APPEND
-    PROPERTY INTERFACE_LINK_LIBRARIES ts::openssl_quic_compat
-  )
+  set_property(TARGET quiche::quiche APPEND PROPERTY INTERFACE_LINK_LIBRARIES ts::openssl_quic_compat)
 endif()
