@@ -15,6 +15,8 @@
 #  limitations under the License.
 
 from dataclasses import dataclass
+import errno
+import os
 import shlex
 
 import pytest
@@ -38,10 +40,14 @@ class TimeoutCase:
         return f"/{self.method.lower()}_{delay}_blocked"
 
 
+# ATS uses strerror() of the connect errno as the 502 reason phrase, and its
+# wording differs between C libraries.
+_CONNECT_TIMEOUT_STATUS = f"HTTP/1.1 502 {os.strerror(errno.ETIMEDOUT)}"
+
 CASES = (
-    TimeoutCase("POST", 3, 0, "HTTP/1.1 502 Connection timed out"),
+    TimeoutCase("POST", 3, 0, _CONNECT_TIMEOUT_STATUS),
     TimeoutCase("POST", 0, 6, "504 Connection Timed Out"),
-    TimeoutCase("GET", 3, 0, "HTTP/1.1 502 Connection timed out"),
+    TimeoutCase("GET", 3, 0, _CONNECT_TIMEOUT_STATUS),
     TimeoutCase("GET", 0, 6, "504 Connection Timed Out"),
 )
 
