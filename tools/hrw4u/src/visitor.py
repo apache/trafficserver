@@ -98,6 +98,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._current_var_scope: types.VarScope = types.VarScope.TXN
 
         self._cachekey: ck.CacheKeySection | None = None
+        self._has_cachekey = False
         self._cachekey_branch: ck.Branch | None = None
         self._remap_end: int | None = None
 
@@ -756,9 +757,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitProgram"):
             seen_sections = False
             program_items = ctx.programItem()
-            # Visited before the first regular section, so REMAP knows whether it exists. VARS and
-            # procedures already come first, so CACHEKEY can use them.
-            cachekeys = [item.section() for item in program_items if item.section() and self._is_cachekey(item.section())]
+
+            # Known before any section is visited: REMAP's checks need it, and REMAP may come first.
+            self._has_cachekey = any(item.section() and self._is_cachekey_section(item.section()) for item in program_items)
+
             for idx, item in enumerate(program_items):
                 start_length = len(self.output)
                 if item.useDirective():
@@ -787,17 +789,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         self.visitProcedureDecl(item.procedureDecl())
                 elif item.section():
                     seen_sections = True
-                    section = item.section()
-                    if cachekeys and not (section.varSection() or section.sessionVarSection()):
-                        for cachekey_ctx in cachekeys:
-                            self.visit(cachekey_ctx)
-                        cachekeys = []
-                    if self._is_cachekey(section):
-                        continue
-                    self.visit(section)
+                    self.visit(item.section())
                     if idx < len(program_items) - 1 and len(self.output) > start_length:
                         next_items = program_items[idx + 1 :]
-                        if any(next_item.section() and not self._is_cachekey(next_item.section()) for next_item in next_items):
+                        if any(
+                            next_item.section() and not self._is_cachekey_section(next_item.section()) for next_item in next_items
+                        ):
                             self.emit_separator()
                 elif item.commentLine() and self.preserve_comments:
                     comment_text = item.commentLine().COMMENT().getText()
@@ -1129,26 +1126,26 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return value.getText()
 
     @staticmethod
-    def _is_cachekey(section_ctx) -> bool:
-        return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY.value
+    def _is_cachekey_section(section_ctx) -> bool:
+        return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY
 
     def _check_outside_cachekey(self, ctx) -> None:
         """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
 
         cache.* key operators belong in CACHEKEY. With a CACHEKEY section, a break in REMAP would
         skip it, and a hand-written run-plugin cachekey.so would set the key twice, the later
-        instance overriding the earlier. visitProgram visits CACHEKEY before every other section,
-        so self._cachekey is final here.
+        instance overriding the earlier. visitProgram sets self._has_cachekey before visiting any
+        section, so the answer holds wherever CACHEKEY sits.
         """
         if ctx.BREAK():
-            if self.current_section is SectionType.REMAP and self._cachekey is not None:
+            if self.current_section is SectionType.REMAP and self._has_cachekey:
                 raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
             return
         call = ctx.functionCall()
         name = call.funcName.text if call else ctx.lhs.text if ctx.lhs else None
         if name and ck.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
-        if call and name == "run-plugin" and self._cachekey is not None:
+        if call and name == "run-plugin" and self._has_cachekey:
             values = call.argumentList().value() if call.argumentList() else []
             plugin = values[0].getText().strip('"') if values else ""
             if plugin.rsplit("/", 1)[-1] == "cachekey.so":
