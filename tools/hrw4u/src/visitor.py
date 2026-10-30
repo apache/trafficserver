@@ -1031,10 +1031,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._sandbox_check(
             ctx, lambda: self._sandbox.check_function("run-plugin"), note="CACHEKEY compiles to run-plugin cachekey.so"
         )
-        chain = self._cachekey.chain
-        if chain and chain[-1].keyword != "else":
+        if self._cachekey.adds_else:
             self._sandbox_check(
-                chain[0].ctx,
+                self._cachekey.chain[0].ctx,
                 lambda: self._sandbox.check_language("else"),
                 note="CACHEKEY adds an else to an if/elif chain, so every request gets a key",
             )

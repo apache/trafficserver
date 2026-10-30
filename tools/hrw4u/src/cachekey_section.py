@@ -75,10 +75,15 @@ class CacheKeySection:
         self.key_parts += 1
         return KeyPart(KEY_HEADER_FORMAT.format(self.key_parts), value)
 
+    @property
+    def adds_else(self) -> bool:
+        """True if the chain has no else, so the lowering adds one that keys on the base parts."""
+        return bool(self.chain) and self.chain[-1].keyword != "else"
+
     def branches(self) -> list[Branch]:
-        """The chain, closed with an else that keys on the base parts, so every request gets a key."""
+        """The chain, closed with an else when it lacks one, so every request gets a key."""
         chain = list(self.chain or [])
-        if chain and chain[-1].keyword != "else":
+        if self.adds_else:
             chain.append(Branch("else", []))
         return chain
 
