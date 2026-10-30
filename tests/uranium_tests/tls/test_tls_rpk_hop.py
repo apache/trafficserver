@@ -14,18 +14,28 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
 import re
 from pathlib import Path
 
 import pytest
 
-from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory, wait_for_file_lines
+
+from ..jsonrpc.config_reload_helpers import reload_task_statuses
 
 SSL_DIRECTORY = Path(__file__).parent / "ssl"
 
 # The single-entry ssl_multicert.yaml both tiers serve their inbound TLS from. server.pubkey.pem is
 # this certificate's public key, so it is what the pinning scenarios pin.
 DEFAULT_MULTICERT_ENTRY = {"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"}
+
+# A different trusted set that still contains server.pem's key, so a connection pinned against it
+# succeeds and only the set's identity changes.
+WIDENED_PIN_SET = (SSL_DIRECTORY / "server.pubkey.pem").read_text() + (SSL_DIRECTORY / "server.wrongpubkey.pem").read_text()
+
+NEW_ORIGIN_SESSION = "new session to origin server"
+REUSED_ORIGIN_SESSION = "reused session to origin server"
 
 
 @pytest.fixture(autouse=True)
@@ -266,6 +276,54 @@ def assert_log_excludes(log: Path, expression: str, explanation: str) -> None:
     content = log.read_text(errors="replace")
     match = re.search(expression, content)
     assert match is None, f"{explanation}: {expression!r} matched {match.group(0)!r} in {log}"
+
+
+def rewrite_watched_file(path: Path, content: str) -> None:
+    """Rewrite a file ATS watches so that the next reload notices it.
+
+    :param path: File to rewrite in place.
+    :param content: New contents, which may equal the old ones.
+    """
+
+    old_mtime = path.stat().st_mtime
+    path.write_text(content)
+    # Two writes within one modification-time tick would otherwise look unchanged.
+    os.utime(path, (old_mtime + 2, old_mtime + 2))
+
+
+def reload_config(ats: ATS, token: str) -> dict[str, str]:
+    """Reload ATS's configuration and wait for the reload to finish.
+
+    :param ats: Running Traffic Server instance.
+    :param token: Reload token, unique within the test.
+    :return: The status of every task in the reload, keyed by description and file name.
+    """
+
+    result = ats.traffic_ctl("config", "reload", "-m", "-t", token, "-w", "1", "-r", "0.5", "-T", "30s")
+    assert result.returncode == 0, result.output
+    return reload_task_statuses(ats, token)
+
+
+def inbound_handshakes(ats: ATS) -> int:
+    """Count the TLS handshakes an ATS instance has completed as a server.
+
+    :param ats: Running Traffic Server instance.
+    """
+
+    result = ats.traffic_ctl("metric", "get", "proxy.process.ssl.total_success_handshake_count_in")
+    assert result.returncode == 0, result.output
+    return int(result.stdout.split()[-1])
+
+
+def origin_session_lookup_keys(log: Path, count: int) -> list[str]:
+    """Wait for and return the edge's origin session cache lookup keys, oldest first.
+
+    :param log: The edge's traffic.out.
+    :param count: Number of lookups expected so far.
+    """
+
+    content = wait_for_file_lines(log, "origin session cache lookup key = ", count)
+    return re.findall(r"origin session cache lookup key = (\S+)", content)
 
 
 def test_rpk_hop_pin_matches(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -689,3 +747,124 @@ def test_rpk_hop_sni_client_ca_override(ats_factory: ATSFactory, services: Servi
     assert_log_excludes(
         parent.diags_log, "no per-connection client CA store", "the per-connection store must be readable from the callback")
     assert_log_excludes(parent.traffic_out, "client certificate chain verification failed", "the override must verify this chain")
+
+
+def test_rpk_hop_replaced_pin_set_retires_origin_sessions(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Replacing the edge's pinned set stops a cached origin session from being resumed.
+
+    A resumed handshake never re-presents the key for the pin check to run again, so the cache key
+    has to identify the set that authenticated the session.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(ats_factory, "edge_resume", parent, "server.pubkey.pem")
+    edge.records.update(
+        {
+            # A connection per request, so that each one offers the cached session.
+            "proxy.config.http.server_session_sharing.match": "none",
+            "proxy.config.ssl.origin_session_cache.enabled": 1,
+        })
+    start_hop(origin, parent, edge)
+
+    for _ in range(2):
+        assert "origin response" in request_through(curl, edge).output
+    # Without a resumption here there would be nothing for the replacement to retire.
+    content = wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 1)
+    assert content.count(NEW_ORIGIN_SESSION) == 1, content
+
+    rewrite_watched_file(edge.ssl_directory / "server.pubkey.pem", WIDENED_PIN_SET)
+    statuses = reload_config(edge, "replace-pin-set")
+    assert "sni.yaml" in statuses, statuses
+
+    assert "origin response" in request_through(curl, edge).output
+    content = wait_for_file_lines(edge.traffic_out, NEW_ORIGIN_SESSION, 2)
+    assert content.count(REUSED_ORIGIN_SESSION) == 1, content
+    keys = origin_session_lookup_keys(edge.traffic_out, 3)
+    digests = [key.rsplit(":", 1)[-1] for key in keys]
+    assert digests[0] == digests[1] != digests[2], keys
+
+
+def test_rpk_hop_replaced_pin_set_retires_pooled_connections(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A pooled origin connection is reused only while the edge still pins the set that authenticated it.
+
+    The edge reaches the parent by an IP literal and so sends no SNI, which a name comparison would
+    find equal on both sides whatever the pinned set.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(ats_factory, "edge_pool", parent, "server.pubkey.pem")
+    # The pool is per thread, so one thread keeps every request in reach of the pooled connection.
+    edge.records.update({"proxy.config.exec_thread.autoconfig.enabled": 0, "proxy.config.exec_thread.limit": 1})
+    start_hop(origin, parent, edge)
+    pin_file = edge.ssl_directory / "server.pubkey.pem"
+
+    for _ in range(2):
+        assert "origin response" in request_through(curl, edge).output
+    # Without reuse here there would be no pooled connection for the replacement to retire.
+    assert inbound_handshakes(parent) == 1, "the second request should reuse the pooled connection"
+
+    # The identity is derived from the keys, so a reload that leaves them unchanged keeps the pool.
+    rewrite_watched_file(pin_file, pin_file.read_text())
+    statuses = reload_config(edge, "unchanged-pin-set")
+    assert "sni.yaml" in statuses, statuses
+    assert "origin response" in request_through(curl, edge).output
+    assert inbound_handshakes(parent) == 1, "an unchanged pinned set should keep its pooled connection"
+
+    rewrite_watched_file(pin_file, WIDENED_PIN_SET)
+    statuses = reload_config(edge, "replace-pin-set")
+    assert "sni.yaml" in statuses, statuses
+    assert "origin response" in request_through(curl, edge).output
+    assert inbound_handshakes(parent) == 2, "a replaced pinned set must not reuse the connection the old set authenticated"
+
+
+def test_rpk_hop_mtls_replaced_pin_set_retires_sessions(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Replacing a parent's trusted client keys stops a session they authenticated from being resumed.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(
+        ats_factory, "parent_mtls", origin, rpk_enabled=True, client_rpk_ca_file="server.pubkey.pem", client_cert_level=2)
+    edge = configure_edge(ats_factory, "edge_mtls", parent, "server.pubkey.pem", offer_client_rpk=True)
+    edge.records.update(
+        {
+            # A connection per request, so that each one offers the cached session.
+            "proxy.config.http.server_session_sharing.match": "none",
+            "proxy.config.ssl.origin_session_cache.enabled": 1,
+        })
+    start_hop(origin, parent, edge)
+    pin_file = parent.ssl_directory / "server.pubkey.pem"
+
+    for _ in range(2):
+        assert "origin response" in request_through(curl, edge).output
+    # Without a resumption here there would be nothing for the replacement to retire.
+    content = wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 1)
+    assert content.count(NEW_ORIGIN_SESSION) == 1, content
+
+    # The identity is derived from the keys, so a reload that leaves them unchanged keeps resuming.
+    rewrite_watched_file(pin_file, pin_file.read_text())
+    statuses = reload_config(parent, "unchanged-pin-set")
+    assert "ssl_multicert.yaml" in statuses, statuses
+    assert "origin response" in request_through(curl, edge).output
+    content = wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 2)
+    assert content.count(NEW_ORIGIN_SESSION) == 1, content
+
+    rewrite_watched_file(pin_file, WIDENED_PIN_SET)
+    statuses = reload_config(parent, "replace-pin-set")
+    assert "ssl_multicert.yaml" in statuses, statuses
+    assert "origin response" in request_through(curl, edge).output
+    content = wait_for_file_lines(edge.traffic_out, NEW_ORIGIN_SESSION, 2)
+    assert content.count(REUSED_ORIGIN_SESSION) == 2, content
