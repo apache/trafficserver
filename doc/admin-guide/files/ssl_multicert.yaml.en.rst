@@ -143,10 +143,12 @@ ssl_rpk_enabled: 1|0 (optional)
   later, or a sufficiently recent BoringSSL). If this key is set on a build without that support,
   |TS| logs a warning and ignores it.
 
-  Not supported for HTTP/3. QUIC connections select their certificate through a separate callback
-  that does not apply per-connection certificate type negotiation, so an HTTP/3 connection keeps
-  whatever certificate types the default (``dest_ip: "*"``) entry configured. Setting this key on a
-  non-default entry therefore has no effect on HTTP/3, and no warning is logged.
+  HTTP/3 support depends on the QUIC implementation |TS| is built with, and is not covered by
+  tests. With quiche, entries apply to HTTP/3 connections as they do to TLS over TCP. With
+  OpenSSL's QUIC, an HTTP/3 connection keeps the certificate types of the default
+  (``dest_ip: "*"``) entry, because QUIC connections select their certificate through a separate
+  callback: the default entry's raw public key settings apply to every HTTP/3 connection, and
+  other entries' settings do not apply to any. No warning is logged.
 
 ssl_client_rpk_ca_name: FILENAME (optional)
   The name of the file containing the raw public key(s) (RFC 7250) that a client is trusted to
@@ -166,13 +168,14 @@ ssl_client_rpk_ca_name: FILENAME (optional)
 
   This key only has an effect where a client certificate is actually requested, which means either
   a non-zero :ts:cv:`proxy.config.ssl.client.certification_level` or a
-  :file:`sni.yaml` ``verify_client`` action covering the connection. With neither, the entry
-  advertises raw public key acceptance, no credential is ever requested, and nothing is pinned.
+  :file:`sni.yaml` ``verify_client`` action covering the connection. With neither, no credential is
+  requested and nothing is pinned.
 
-  Not supported for HTTP/3, for the reason given under ``ssl_rpk_enabled`` above. A ``verify_client``
-  action does not reach an HTTP/3 connection either, so on HTTP/3 the only way to request a client
-  credential at all is a non-zero
-  :ts:cv:`proxy.config.ssl.client.certification_level` on the default entry.
+  On HTTP/3, see the note under ``ssl_rpk_enabled`` above. A ``verify_client`` action does not
+  reach an HTTP/3 connection, so there the client certificate level is the only way to request a
+  client credential. With OpenSSL's QUIC, setting this key on the default entry lets a client that
+  prefers raw public keys negotiate one on a connection matching another entry, and that entry has
+  no trusted keys to match it against, so the handshake fails rather than falling back to X.509.
 
   Only available in builds linked against a TLS library with RFC 7250 support; see
   ``ssl_rpk_enabled`` above.
