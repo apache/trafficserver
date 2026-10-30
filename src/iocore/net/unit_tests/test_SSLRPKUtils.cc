@@ -179,6 +179,18 @@ TEST_CASE("SSLRPKUtils digests a trusted key set by its contents", "[rpk]")
   CHECK(SSLRPKUtils::digestTrustedKeys(empty_set).empty());
 }
 
+TEST_CASE("SSLRPKUtils digests entry order and entry boundaries", "[rpk]")
+{
+  SSLRPKUtils::TrustedKey const first{0x01, 0x02};
+  SSLRPKUtils::TrustedKey const second{0x03};
+  SSLRPKUtils::TrustedKey const joined{0x01, 0x02, 0x03};
+
+  // A reordered file stops matching rather than silently aliasing.
+  CHECK(SSLRPKUtils::digestTrustedKeys({first, second}) != SSLRPKUtils::digestTrustedKeys({second, first}));
+  // Each entry is length-prefixed, so two entries cannot collide with one holding their joined bytes.
+  CHECK(SSLRPKUtils::digestTrustedKeys({first, second}) != SSLRPKUtils::digestTrustedKeys({joined}));
+}
+
 #else // TS_USE_RPK
 
 // Without this, the whole file compiles to zero test cases on a build lacking RFC 7250 support and
