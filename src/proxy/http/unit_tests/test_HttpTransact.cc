@@ -26,10 +26,12 @@
 #include <string_view>
 #include <vector>
 #include <cstdio>
+#include <cstring>
 
 using namespace std::string_view_literals;
 
 #include "tscore/Diags.h"
+#include "tscore/InkErrno.h"
 #include "tsutil/PostScript.h"
 
 #include "proxy/http/HttpConfig.h"
@@ -1133,5 +1135,26 @@ TEST_CASE("HttpTransact compacts a bloated cached response header", "[http]")
     add_field(stored, "Age"sv, "0"sv);
     CHECK(stored.fields_count() == 12);
     CHECK(HttpTransact::compact_cached_response_header(&stored) == false);
+  }
+}
+
+TEST_CASE("HttpTransact::get_error_string", "[http]")
+{
+  SECTION("OS errno")
+  {
+    CHECK(HttpTransact::get_error_string(EADDRNOTAVAIL) == std::string_view{strerror(EADDRNOTAVAIL)});
+  }
+
+  SECTION("internal errno decoded from NET_EVENT_OPEN_FAILED")
+  {
+    CHECK(HttpTransact::get_error_string(ESOCK_DENIED) == "socks error - denied"sv);
+    CHECK(HttpTransact::get_error_string(ESOCK_TIMEOUT) == "socks error - timeout"sv);
+    CHECK(HttpTransact::get_error_string(ESOCK_NO_SOCK_SERVER_CONN) == "socks error - no server connection"sv);
+  }
+
+  SECTION("negated internal errno")
+  {
+    CHECK(HttpTransact::get_error_string(-ESOCK_DENIED) == "socks error - denied"sv);
+    CHECK(HttpTransact::get_error_string(-ENET_CONNECT_FAILED) == "connect failed"sv);
   }
 }

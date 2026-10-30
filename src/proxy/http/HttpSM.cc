@@ -2022,6 +2022,12 @@ HttpSM::state_http_server_open(int event, void *data)
   case NET_EVENT_OPEN_FAILED: {
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     t_state.outbound_conn_track_state.clear();
+    if (event == NET_EVENT_OPEN_FAILED && data != nullptr) {
+      int const lerrno = -static_cast<int>(reinterpret_cast<intptr_t>(data));
+
+      t_state.current.server->connect_result = lerrno;
+      t_state.cause_of_death_errno           = lerrno;
+    }
     if (_netvc != nullptr) {
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
         t_state.set_connect_fail(_netvc->lerrno);
