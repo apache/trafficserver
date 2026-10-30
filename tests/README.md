@@ -54,6 +54,11 @@ Each test gets `<sandbox>/<test-name>/`. Failed-test sandboxes are retained;
 previous sandbox. Tests in `serial_tests.txt` run without overlap. Opt into
 manual tests explicitly with `--run-manual -k <test-name>`.
 
+`tests/uv.lock` is committed so that CI and local runs resolve the same Python
+dependency versions. Merge Dependabot pull requests that bump it. After
+changing the dependencies in `tests/pyproject.toml`, regenerate the lock by
+running `uv lock` in `tests/` and commit both files together.
+
 ## Writing tests
 
 Prefer a self-contained `<scenario>.test.yaml`: its `urtest` section configures

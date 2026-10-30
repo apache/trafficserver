@@ -104,7 +104,6 @@ def run_tls_verify_override(
                 "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
                 "proxy.config.dns.resolv_conf": "NULL",
                 "proxy.config.exec_thread.autoconfig.scale": 1.0,
-                "proxy.config.http.connect.down.policy": 1,
             })
         if not include_server_name:
             ats.records.update(

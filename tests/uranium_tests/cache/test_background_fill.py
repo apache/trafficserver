@@ -58,7 +58,6 @@ ssl_multicert:
                 "proxy.config.exec_thread.limit": 1,
                 "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
                 "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
-                "proxy.config.ssl.client.alpn_protocols": "h2,http/1.1",
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
                 "proxy.config.diags.debug.enabled": 3,
                 "proxy.config.diags.debug.tags": "http",

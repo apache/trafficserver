@@ -287,7 +287,6 @@ EXTRA_DIST += \
   uranium_tests/h2/gold/bigfile.gold \
   uranium_tests/h2/gold/chunked.gold \
   uranium_tests/h2/gold/h2-settings-ack-metrics.gold \
-  uranium_tests/h2/gold/h2o-pool-reuse-metrics.gold \
   uranium_tests/h2/gold/h2o-retry-admitted-twice.gold \
   uranium_tests/h2/gold/h2o-retry-admitted.gold \
   uranium_tests/h2/gold/h2o-retry-body-denied.gold \
@@ -619,9 +618,7 @@ EXTRA_DIST += \
   uranium_tests/pluginTest/esi/gold/nested_include_body.gold \
   uranium_tests/pluginTest/esi/test_esi.py \
   uranium_tests/pluginTest/esi/test_esi_request_size_cap.py \
-  uranium_tests/pluginTest/header_rewrite/gold/header_rewrite-303.gold \
   uranium_tests/pluginTest/header_rewrite/gold/header_rewrite-client.gold \
-  uranium_tests/pluginTest/header_rewrite/gold/header_rewrite-l_value.gold \
   uranium_tests/pluginTest/header_rewrite/gold/header_rewrite-set_body_from_200.gold \
   uranium_tests/pluginTest/header_rewrite/gold/header_rewrite-set_body_from_conn_fail.gold \
   uranium_tests/pluginTest/header_rewrite/gold/header_rewrite-set_body_from_remap_fail.gold \
@@ -955,27 +952,8 @@ EXTRA_DIST += \
   uranium_tests/remap/basic_conf_remap.py \
   uranium_tests/remap/deactivate_ip_allow.py \
   uranium_tests/remap/deny_head_post.replay.yaml \
-  uranium_tests/remap/gold/200OK_test.gold \
-  uranium_tests/remap/gold/200OK_test_uds.gold \
-  uranium_tests/remap/gold/lookupTest.gold \
-  uranium_tests/remap/gold/remap-200.gold \
-  uranium_tests/remap/gold/remap-404.gold \
-  uranium_tests/remap/gold/remap-DNS-200.gold \
-  uranium_tests/remap/gold/remap-DNS-ipv6-200.gold \
-  uranium_tests/remap/gold/remap-hitATS-404.gold \
-  uranium_tests/remap/gold/remap-https-200.gold \
-  uranium_tests/remap/gold/remap-https-200_2.gold \
-  uranium_tests/remap/gold/remap-https-200_3.gold \
-  uranium_tests/remap/gold/remap-ip-resolve.gold \
-  uranium_tests/remap/gold/remap-redirect.gold \
-  uranium_tests/remap/gold/remap-referer-hit.gold \
-  uranium_tests/remap/gold/remap-referer-miss.gold \
   uranium_tests/remap/gold/remap-ws-metrics-uds.gold \
   uranium_tests/remap/gold/remap-ws-metrics.gold \
-  uranium_tests/remap/gold/remap-ws-upgrade-400.gold \
-  uranium_tests/remap/gold/remap-ws-upgrade.gold \
-  uranium_tests/remap/gold/remap-zero-200.gold \
-  uranium_tests/remap/gold/remap2-200.gold \
   uranium_tests/remap/map_with_recv_port.py \
   uranium_tests/remap/named_filter_combinations.py \
   uranium_tests/remap/reload_1.replay.yaml \
@@ -1004,7 +982,6 @@ EXTRA_DIST += \
   uranium_tests/runroot/test_runroot.py \
   uranium_tests/runroot/test_runroot_manager.py \
   uranium_tests/session_sharing/gold/200.gold \
-  uranium_tests/session_sharing/gold/200_two.gold \
   uranium_tests/session_sharing/session_match.test.yaml \
   uranium_tests/session_sharing/test_session_sharing_client_cert.py \
   uranium_tests/shutdown/test_shutdown.py \
@@ -1033,7 +1010,6 @@ EXTRA_DIST += \
   uranium_tests/timeout/replay/inactive_client_timeout.test.yaml \
   uranium_tests/timeout/setupnetns.sh \
   uranium_tests/timeout/slow_server.yaml \
-  uranium_tests/timeout/slow_server_uds.yaml \
   uranium_tests/timeout/ssl-delay-server.cc \
   uranium_tests/timeout/ssl/cert.crt \
   uranium_tests/timeout/ssl/private-key.key \

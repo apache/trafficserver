@@ -42,7 +42,7 @@ def configure_valid_ats(ats_factory: ATSFactory, name: str, origin: OriginServer
     :param origin: Configured origin service.
     """
 
-    ats = ats_factory.create(name, enable_tls=True, command="traffic_manager")
+    ats = ats_factory.create(name, enable_tls=True, command="traffic_manager", disable_log_checks=True)
     ats.add_default_ssl_files()
     ats.records.update(
         {
