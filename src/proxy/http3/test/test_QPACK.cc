@@ -479,6 +479,73 @@ TEST_CASE("decode() rejects oversized Required Insert Count at entry", "[qpack-d
   hdr.destroy();
 }
 
+// QPACK::encode() compresses a header set into IOBufferBlocks that are then
+// framed as a HEADERS frame. A response whose compressed fields do not fit in a
+// single 2 KB block must still be encoded in full; a field that is silently
+// dropped never reaches the client. Encode a large header set, decode the
+// resulting header block with a second QPACK instance and check that every
+// field survived the round trip.
+TEST_CASE("encode() keeps every field of a header set larger than one buffer block", "[qpack-encode-large]")
+{
+  QUICApplicationDriver driver;
+  auto                  encoder = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+  auto                  decoder = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+  auto                  handler = std::make_unique<TestQPACKEventHandler>();
+
+  constexpr int    NUM_FIELDS             = 64;
+  constexpr size_t VALUE_LENGTH           = 256;
+  constexpr size_t OVERSIZED_VALUE_LENGTH = 1024;
+
+  HTTPHdr original;
+  original.create(HTTPType::RESPONSE);
+
+  // The encoded size bound of this field exceeds the initial 2 KB block, so encode() has to replace that block before
+  // anything is written to it.
+  std::string oversized_value(OVERSIZED_VALUE_LENGTH, 'z');
+  MIMEField  *oversized = original.field_create(std::string_view{"x-oversized-header"});
+  original.field_attach(oversized);
+  original.field_value_set(oversized, oversized_value);
+
+  for (int i = 0; i < NUM_FIELDS; ++i) {
+    char name[32];
+    snprintf(name, sizeof(name), "x-large-header-%02d", i);
+    std::string value(VALUE_LENGTH, static_cast<char>('a' + (i % 26)));
+    MIMEField  *field = original.field_create(std::string_view{name});
+    original.field_attach(field);
+    original.field_value_set(field, value);
+  }
+
+  MIOBuffer      *header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  IOBufferReader *header_block_reader = header_block->alloc_reader();
+  uint64_t        header_block_len    = 0;
+
+  REQUIRE(encoder->encode(1, original, header_block, header_block_len) == 0);
+  REQUIRE(header_block_len == static_cast<uint64_t>(header_block_reader->read_avail()));
+
+  std::vector<uint8_t> block(header_block_len);
+  header_block_reader->memcpy(block.data(), block.size());
+
+  HTTPHdr decoded;
+  decoded.create(HTTPType::RESPONSE);
+  REQUIRE(decoder->decode(1, block.data(), block.size(), decoded, handler.get(), eventProcessor.all_ethreads[0]) == 0);
+  sleep(1);
+  REQUIRE(handler->last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
+  CHECK(decoded.fields_count() == original.fields_count());
+  for (auto &field : original) {
+    auto name = field.name_get();
+    CAPTURE(name);
+    MIMEField *decoded_field = decoded.field_find(name);
+    REQUIRE(decoded_field != nullptr);
+    CHECK(decoded_field->value_get() == field.value_get());
+  }
+
+  decoded.destroy();
+  original.destroy();
+  header_block->dealloc_reader(header_block_reader);
+  free_MIOBuffer(header_block);
+}
+
 TEST_CASE("Decoding", "[qpack-decode]")
 {
   char app_dir[PATH_MAX + 1] = "";

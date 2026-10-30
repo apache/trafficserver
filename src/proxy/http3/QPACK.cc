@@ -35,6 +35,17 @@ namespace
 {
 DbgCtl dbg_ctl_qpack{"qpack"};
 
+// Upper bound of the encoded size of a header field. Huffman codes are at most 30 bits long, so an encoded string is
+// shorter than 4 bytes per input byte (the bound xpack_encode_string relies on as well), and a field representation
+// carries at most three variable-length integers of up to 11 bytes each.
+int64_t
+max_encoded_field_size(const MIMEField &field)
+{
+  constexpr int64_t MAX_INTEGER_LENGTH = 11;
+
+  return 4 * static_cast<int64_t>(field.name_get().length() + field.value_get().length()) + 3 * MAX_INTEGER_LENGTH;
+}
+
 } // end anonymous namespace
 
 // qpack-05 Appendix A.
@@ -242,10 +253,32 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
   uint16_t       largest_reference  = 0;
   uint16_t       smallest_reference = 0;
   IOBufferBlock *compressed_headers = new_IOBufferBlock();
+  IOBufferBlock *current_block      = compressed_headers;
   compressed_headers->alloc(BUFFER_SIZE_INDEX_2K);
 
   for (auto &field : header_set) {
-    int ret            = this->_encode_header(field, base_index, compressed_headers, referred_index);
+    // The field encoders fail when the field does not fit in the space left in the block. Chain a block that is large
+    // enough for the whole field before encoding it, so that no field is left out of the header block.
+    int64_t required = max_encoded_field_size(field);
+    if (required > current_block->write_avail()) {
+      if (required > DEFAULT_MAX_BUFFER_SIZE) {
+        compressed_headers->free();
+        return -1;
+      }
+      IOBufferBlock *next_block = new_IOBufferBlock();
+      next_block->alloc(std::max<int64_t>(BUFFER_SIZE_INDEX_2K, iobuffer_size_to_index(required, MAX_BUFFER_SIZE_INDEX)));
+      if (current_block->read_avail() == 0) {
+        // Nothing has been written to the current block, so replace it rather than leaving an empty block in the chain
+        ink_assert(current_block == compressed_headers);
+        compressed_headers->free();
+        compressed_headers = next_block;
+      } else {
+        current_block->next = next_block;
+      }
+      current_block = next_block;
+    }
+
+    int ret            = this->_encode_header(field, base_index, current_block, referred_index);
     largest_reference  = std::max(largest_reference, referred_index);
     smallest_reference = std::min(smallest_reference, referred_index);
     if (ret < 0) {
@@ -265,7 +298,9 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
   header_block_len += header_data_prefix->size();
 
   header_block->append_block(compressed_headers);
-  header_block_len += compressed_headers->size();
+  for (IOBufferBlock *block = compressed_headers; block != nullptr; block = block->next.get()) {
+    header_block_len += block->size();
+  }
 
   return 0;
 }
@@ -462,56 +497,61 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
   }
 
   // Encode
+  int ret = 0;
   if (lookup_result_static.match_type == XpackLookupResult::MatchType::EXACT) {
-    this->_encode_indexed_header_field(lookup_result_static.index, base_index, false, compressed_header);
+    ret = this->_encode_indexed_header_field(lookup_result_static.index, base_index, false, compressed_header);
     QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_static.index,
                base_index, false);
     referred_index = 0;
   } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::EXACT) {
     if (lookup_result_dynamic.index < this->_largest_known_received_index) {
-      this->_encode_indexed_header_field(lookup_result_dynamic.index, base_index, true, compressed_header);
+      ret = this->_encode_indexed_header_field(lookup_result_dynamic.index, base_index, true, compressed_header);
       QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_dynamic.index,
                  base_index, true);
     } else {
-      this->_encode_indexed_header_field_with_postbase_index(lookup_result_dynamic.index, base_index, never_index,
-                                                             compressed_header);
+      ret = this->_encode_indexed_header_field_with_postbase_index(lookup_result_dynamic.index, base_index, never_index,
+                                                                   compressed_header);
       QPACKDebug("Encoded Indexed Header With Postbase Index: abs_index=%d, base_index=%d, never_index=%d",
                  lookup_result_dynamic.index, base_index, never_index);
     }
-    this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
-    referred_index = lookup_result_dynamic.index;
+    if (ret == 0) {
+      this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
+      referred_index = lookup_result_dynamic.index;
+    }
   } else if (lookup_result_static.match_type == XpackLookupResult::MatchType::NAME) {
-    this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value.data(), value.length(),
-                                                     never_index, compressed_header);
+    ret = this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value.data(),
+                                                           value.length(), never_index, compressed_header);
     QPACKDebug(
       "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
       lookup_result_static.index, base_index, false, static_cast<int>(value.length()), value.data(), never_index);
     referred_index = 0;
   } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::NAME) {
     if (lookup_result_dynamic.index <= this->_largest_known_received_index) {
-      this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value.data(), value.length(),
-                                                       never_index, compressed_header);
+      ret = this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value.data(),
+                                                             value.length(), never_index, compressed_header);
       QPACKDebug(
         "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
         lookup_result_dynamic.index, base_index, true, static_cast<int>(value.length()), value.data(), never_index);
     } else {
-      this->_encode_literal_header_field_with_postbase_name_ref(lookup_result_dynamic.index, base_index, value.data(),
-                                                                value.length(), never_index, compressed_header);
+      ret = this->_encode_literal_header_field_with_postbase_name_ref(lookup_result_dynamic.index, base_index, value.data(),
+                                                                      value.length(), never_index, compressed_header);
       QPACKDebug("Encoded Literal Header Field With Postbase Name Ref: abs_index=%d, base_index=%d, value=%.*s, never_index=%d",
                  lookup_result_dynamic.index, base_index, static_cast<int>(value.length()), value.data(), never_index);
     }
-    this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
-    referred_index = lookup_result_dynamic.index;
+    if (ret == 0) {
+      this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
+      referred_index = lookup_result_dynamic.index;
+    }
   } else {
-    this->_encode_literal_header_field_without_name_ref(lowered_name, name.length(), value.data(), value.length(), never_index,
-                                                        compressed_header);
+    ret = this->_encode_literal_header_field_without_name_ref(lowered_name, name.length(), value.data(), value.length(),
+                                                              never_index, compressed_header);
     QPACKDebug("Encoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s, never_index=%d",
                static_cast<int>(name.length()), lowered_name, static_cast<int>(value.length()), value.data(), never_index);
   }
 
   this->_arena.str_free(lowered_name);
 
-  return 0;
+  return ret;
 }
 
 int
@@ -520,6 +560,10 @@ QPACK::_encode_indexed_header_field(uint16_t index, uint16_t base_index, bool dy
   char *buf     = compressed_header->end();
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
+
+  if (buf >= buf_end) {
+    return -1;
+  }
 
   // Indexed Header Field
   buf[0] = 0x80;
@@ -554,6 +598,10 @@ QPACK::_encode_indexed_header_field_with_postbase_index(uint16_t index, uint16_t
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
 
+  if (buf >= buf_end) {
+    return -1;
+  }
+
   // Indexed Header Field with Post-Base Index
   buf[0] = 0x10;
 
@@ -578,6 +626,10 @@ QPACK::_encode_literal_header_field_with_name_ref(uint16_t index, bool dynamic_t
   char *buf     = compressed_header->end();
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
+
+  if (buf >= buf_end) {
+    return -1;
+  }
 
   // Literal Header Field With Name Reference
   buf[0] = 0x40;
@@ -623,6 +675,10 @@ QPACK::_encode_literal_header_field_without_name_ref(const char *name, int name_
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
 
+  if (buf >= buf_end) {
+    return -1;
+  }
+
   // Literal Header Field Without Name Reference
   buf[0] = 0x20;
 
@@ -658,6 +714,10 @@ QPACK::_encode_literal_header_field_with_postbase_name_ref(uint16_t index, uint1
   char *buf     = compressed_header->end();
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
+
+  if (buf >= buf_end) {
+    return -1;
+  }
 
   // Literal Header Field With Post-Base Name Reference
   buf[0] = 0x00;

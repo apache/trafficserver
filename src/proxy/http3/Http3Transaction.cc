@@ -742,6 +742,13 @@ Http3Transaction::_process_write_vio()
                                                           nwritten, all_done);
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
     Http3TransDebug("Error occurred while processing write vio: %hu", error->get_code());
+    // The QUIC layer cannot reset a single stream, so a failure to produce the response is reported by closing the
+    // connection (RFC 9114, Section 8). Unlike _handle_error() this does not mark the transaction done, because the
+    // HttpSM writing the response still holds it.
+    if (error->cls == Http3ErrorClass::CONNECTION) {
+      NetVC2QUICCon(this->_proxy_ssn->get_netvc())
+        ->close_quic_connection(std::make_unique<QUICConnectionError>(QUICErrorClass::APPLICATION, error->get_code()));
+    }
     return 0;
   }
   this->_sent_bytes += nwritten;
