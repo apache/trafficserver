@@ -495,40 +495,33 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
       return CLIENT_HELLO_ERROR;
     }
 #if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
-    // OpenSSL locks in RFC 7250 cert-type negotiation in tls_early_post_process_client_hello(),
-    // before SSL_CTX_set_cert_cb()'s callback runs, so the ctx has to be switched here rather than
-    // in ssl_cert_callback(). Use the SNI name on_client_hello() just extracted from the raw
-    // ClientHello; SSL_get_servername() returns nothing this early. ssl_cert_callback()'s later
-    // call then no-ops, since SSL_set_SSL_CTX() returns early when already on the matched ctx.
-    TLSCertSwitchSupport *tcss = TLSCertSwitchSupport::getInstance(s);
-    if (tcss) {
+    // OpenSSL negotiates RFC 7250 certificate types in tls_early_post_process_client_hello(), before
+    // the certificate callback runs, from the lists the SSL copied out of the default "*" context at
+    // SSL_new(). Where some entry uses raw public keys, the context is therefore selected here,
+    // using the SNI on_client_hello() just extracted since SSL_get_servername() returns nothing this
+    // early. ssl_cert_callback() still runs afterwards, on the selected context.
+    SSLCertificateConfig::scoped_config lookup;
+    TLSCertSwitchSupport               *tcss = TLSCertSwitchSupport::getInstance(s);
+    if (tcss != nullptr && lookup && lookup->has_raw_public_keys) {
       if (tcss->selectCertificate(s, SSLCertContextType::GENERIC, snis->get_sni_server_name()) != 1) {
         return CLIENT_HELLO_ERROR;
       }
-      // server_cert_type/client_cert_type are copied onto the connection only at SSL_new(), from
-      // the default "*" ctx, so they have to be re-applied from the matched one -- in both
-      // directions, or an entry with no list of its own keeps the default entry's.
+      // Copied from the matched context in both directions. An entry without a list leaves the
+      // library default in place, under which the peer's certificate type preference is ignored.
       SSL_CTX       *matched_ctx   = SSL_get_SSL_CTX(s);
       unsigned char *cert_type     = nullptr;
       size_t         cert_type_len = 0;
-      unsigned char  x509_only[]   = {TLSEXT_cert_type_x509};
 
-      if (!SSL_CTX_get0_server_cert_type(matched_ctx, &cert_type, &cert_type_len) || cert_type == nullptr) {
-        cert_type     = x509_only;
-        cert_type_len = sizeof(x509_only);
-      }
-      if (!SSL_set1_server_cert_type(s, cert_type, cert_type_len)) {
+      if (!SSL_CTX_get0_server_cert_type(matched_ctx, &cert_type, &cert_type_len) ||
+          !SSL_set1_server_cert_type(s, cert_type, cert_type_len)) {
         SSLError("failed to apply the matched entry's server cert type negotiation");
         return CLIENT_HELLO_ERROR;
       }
 
       cert_type     = nullptr;
       cert_type_len = 0;
-      if (!SSL_CTX_get0_client_cert_type(matched_ctx, &cert_type, &cert_type_len) || cert_type == nullptr) {
-        cert_type     = x509_only;
-        cert_type_len = sizeof(x509_only);
-      }
-      if (!SSL_set1_client_cert_type(s, cert_type, cert_type_len)) {
+      if (!SSL_CTX_get0_client_cert_type(matched_ctx, &cert_type, &cert_type_len) ||
+          !SSL_set1_client_cert_type(s, cert_type, cert_type_len)) {
         SSLError("failed to apply the matched entry's client cert type acceptance");
         return CLIENT_HELLO_ERROR;
       }
@@ -1898,6 +1891,11 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
       goto fail;
     }
 
+    // Every context, not only the default one: certificate selection can switch a connection to any
+    // of them before the TLS library runs the certificate callback, and the library then looks for
+    // that callback on the context it switched to.
+    this->_set_handshake_callbacks(ctx);
+
 #if TS_HAS_TLS_KEYLOGGING
     if (unlikely(TLSKeyLogger::is_enabled()) && !this->_set_keylog_callback(ctx)) {
       goto fail;
@@ -2228,6 +2226,10 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   // without the lock, allowing parallel cert loading across threads.
   std::lock_guard<std::mutex> lock(_loader_mutex);
 
+  if (sslMultCertSettings && (sslMultCertSettings->rpk_enabled || sslMultCertSettings->client_rpk_ca)) {
+    lookup->has_raw_public_keys = true;
+  }
+
   for (const auto &loadingctx : ctxs) {
     if (!sslMultCertSettings ||
         !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
@@ -2314,7 +2316,6 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
         if ((*policy_iter)->addr) {
           SSLCertContext *cc = nullptr;
           if (strcmp((*policy_iter)->addr, "*") == 0) {
-            this->_set_handshake_callbacks(ctx.get());
             cc = lookup->find("*", loadingctx.ctx_type);
           } else {
             IpEndpoint ep;
@@ -2389,7 +2390,6 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
       if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, ctx_type, sslMultCertSettings)) >= 0) {
         inserted = true;
         lookup->setDefaultContext(ctx);
-        this->_set_handshake_callbacks(ctx.get());
       }
     } else {
       IpEndpoint ep;

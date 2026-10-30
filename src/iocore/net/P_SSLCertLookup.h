@@ -128,7 +128,10 @@ struct SSLCertLookup : public ConfigInfo {
   std::unique_ptr<SSLContextStorage> ssl_storage;
   std::unique_ptr<SSLContextStorage> ec_storage;
 
-  bool     is_valid        = true;
+  bool is_valid = true;
+  /// Some entry offers or pins RFC 7250 raw public keys, so on OpenSSL certificate selection has to
+  /// run before the library negotiates certificate types.
+  bool     has_raw_public_keys = false;
   unsigned user_cert_count = 0; ///< Count of certificate-bearing entries successfully loaded by the last load(). Tunnel-only and
                                 ///< bootstrap entries are not counted.
 
