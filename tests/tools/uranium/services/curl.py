@@ -23,6 +23,7 @@ import shlex
 import subprocess
 from typing import TYPE_CHECKING
 
+from ..utils import version_tuple
 from .context import CommandResult
 
 if TYPE_CHECKING:
@@ -57,6 +58,25 @@ class Curl:
 
         result = subprocess.run(("curl", "--version"), capture_output=True, text=True, check=False)
         return feature.lower() in (result.stdout + result.stderr).lower()
+
+    @staticmethod
+    def accepts_seclevel() -> bool:
+        """Return whether curl's TLS library accepts an @SECLEVEL directive in ``--ciphers``.
+
+        OpenSSL 1.1.0 and later, and its quictls fork, accept the directive.
+        BoringSSL rejects the whole cipher list, so curl fails before the
+        TLS handshake. A curl built with several TLS backends lists the
+        inactive ones in parentheses, so only the active backend counts.
+        """
+
+        result = subprocess.run(("curl", "--version"), capture_output=True, text=True, check=False)
+        for component in result.stdout.partition("\n")[0].split():
+            name, _, version = component.partition("/")
+            if name == "quictls":
+                return True
+            if name == "OpenSSL":
+                return version_tuple(version) >= (1, 1, 0)
+        return False
 
     def get(
         self,

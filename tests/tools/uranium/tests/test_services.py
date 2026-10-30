@@ -599,3 +599,41 @@ def test_curl_parses_a_shell_style_argument_string(monkeypatch: pytest.MonkeyPat
         "http://example.test/path",
     )
     assert observed["shell"] is False
+
+
+@pytest.mark.parametrize(
+    ("version_line", "expected"),
+    [
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/3.6.4 zlib/0.0.0", True, id="openssl"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 quictls/0.0.0 nghttp3/0.0.0", True, id="quictls"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/1.0.2k zlib/0.0.0", False, id="old-openssl"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 BoringSSL zlib/0.0.0", False, id="boringssl"),
+        pytest.param(
+            "curl 0.0.0 (platform) libcurl/0.0.0 (SecureTransport) LibreSSL/0.0.0 zlib/0.0.0", False,
+            id="multissl-libressl-active"),
+        pytest.param(
+            "curl 0.0.0 (platform) libcurl/0.0.0 SecureTransport (OpenSSL/3.0.0) zlib/0.0.0", False,
+            id="multissl-openssl-inactive"),
+    ],
+)
+def test_curl_accepts_seclevel_follows_the_active_tls_backend(
+        monkeypatch: pytest.MonkeyPatch, version_line: str, expected: bool) -> None:
+    """Accept @SECLEVEL only when curl's active TLS backend is OpenSSL 1.1.0+ or quictls.
+
+    :param monkeypatch: Pytest fixture used to supply ``curl --version`` output.
+    :param version_line: First line of the synthetic ``curl --version`` output.
+    :param expected: Whether the cipher directive should be accepted.
+    """
+
+    def run(command: tuple[str, ...], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        """Return the synthetic version output.
+
+        :param command: Tokenized command passed to subprocess.
+        :param kwargs: Subprocess execution options.
+        """
+
+        return subprocess.CompletedProcess(command, 0, f"{version_line}\nFeatures: HTTP2 SSL\n", "")
+
+    monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
+
+    assert Curl.accepts_seclevel() is expected
