@@ -48,6 +48,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/Layout.h"
+#include "tscore/LogMessage.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_cap.h"
 #include "tscore/ink_mutex.h"
@@ -85,6 +86,7 @@
 #include <thread>
 #include <utility>
 #include <string>
+#include <string_view>
 #include <unistd.h>
 #include <termios.h>
 #include <vector>
@@ -135,6 +137,16 @@ static void
 ssl_client_rpk_ca_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
   delete static_cast<TrustedClientRPK *>(ptr);
+}
+
+/// Report a client raw public key that matched none of the keys its entry trusts. Any client can
+/// trigger this, so it is throttled.
+static void
+warn_client_rpk_mismatch(const char *servername)
+{
+  static LogMessage log_msg{IS_THROTTLED};
+
+  log_msg.warning(MakeSourceLocation(), "client raw public key did not match any trusted key for %s", servername);
 }
 
 /// @return the client raw public keys @a ctx's entry trusts, or nullptr if it pins none.
@@ -310,19 +322,24 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
     // The hook still always runs, mirroring the X.509 path below: plugins see every attempt, and
     // may add further rejection, but can't turn a failed pin match into acceptance.
     //
-    // `preverify_ok` is always 0 here: with no DANE configured, OpenSSL presets
-    // X509_V_ERR_RPK_UNTRUSTED before invoking this callback (see verify_rpk() in
-    // crypto/x509/x509_vfy.c). Clear it on a successful pin match so the preset error doesn't
-    // survive into SSL_get_verify_result() for a connection we actually accepted.
+    // x509_verify_rpk() in crypto/x509/x509_vfy.c may first invoke this callback for a key below the
+    // security level. Only the invocation that follows, with X509_V_ERR_RPK_UNTRUSTED preset since no
+    // DANE is configured, is the pin decision; clearing that error on a match keeps it out of
+    // SSL_get_verify_result() for a connection we accepted.
+    if (X509_STORE_CTX_get_error(ctx) != X509_V_ERR_RPK_UNTRUSTED) {
+      Dbg(dbg_ctl_ssl_verify, "client raw public key rejected: %s", X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
+      return preverify_ok;
+    }
     auto const *trusted = trusted_client_rpk(SSL_get_SSL_CTX(ssl));
     bool        pin_ok  = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, trusted->keys);
     Dbg(dbg_ctl_ssl_verify, "Client authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (pin_ok) {
       X509_STORE_CTX_set_error(ctx, X509_V_OK);
     } else {
-      Warning("client raw public key did not match any trusted key for %s", servername);
+      warn_client_rpk_mismatch(servername);
     }
-    if (tbs->verify_certificate(ctx) == 1) {
+    // No store context for the hook, as on BoringSSL: there is no certificate in it to inspect.
+    if (tbs->verify_certificate(nullptr) == 1) {
       Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
       return false;
     }
@@ -376,11 +393,17 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     EVP_PKEY   *peer_rpk = SSL_get0_peer_rpk(ssl);
     auto const *trusted  = trusted_client_rpk(ctx);
     bool        pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, trusted->keys);
+    Dbg(dbg_ctl_ssl_verify, "Client authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (!pin_ok) {
-      Warning("client raw public key did not match any trusted key for %s", servername);
+      warn_client_rpk_mismatch(servername);
     }
     // As above: the hook always runs, and can add rejection but not override a failed pin match.
-    if (tbs->verify_certificate(nullptr) == 1 || !pin_ok) {
+    if (tbs->verify_certificate(nullptr) == 1) {
+      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
+      *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+      return ssl_verify_invalid;
+    }
+    if (!pin_ok) {
       *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
       return ssl_verify_invalid;
     }
@@ -433,12 +456,13 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
                      // trust from set_default() above survive because ATS never sets them here.
                      X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(store_ctx), SSL_get0_param(ssl)) &&
                      X509_STORE_CTX_set_ex_data(store_ctx, SSL_get_ex_data_X509_STORE_CTX_idx(), ssl);
-  bool verified = false;
+  bool verified     = false;
+  int  verify_error = X509_V_OK;
   if (initialized) {
     verified = X509_verify_cert(store_ctx) == 1;
     if (!verified) {
-      Dbg(dbg_ctl_ssl_verify, "client certificate chain verification failed: %s",
-          X509_verify_cert_error_string(X509_STORE_CTX_get_error(store_ctx)));
+      verify_error = X509_STORE_CTX_get_error(store_ctx);
+      Dbg(dbg_ctl_ssl_verify, "client certificate chain verification failed: %s", X509_verify_cert_error_string(verify_error));
     }
   } else {
     SSLError("failed to initialize X509_STORE_CTX for client certificate verification");
@@ -447,13 +471,23 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   // The hook always runs when we have a usable store_ctx to hand it -- even for a chain that
   // already failed verification, mirroring ssl_verify_client_callback()'s contract -- but there's
   // nothing useful to hand a plugin if we couldn't even build one (an internal error, not a
-  // normal verification outcome).
+  // normal verification outcome). It runs once for the whole chain here, where the library calls
+  // the classic callback once per chain depth.
   bool hook_ok = initialized && tbs->verify_certificate(store_ctx) == 0;
 
   X509_STORE_CTX_free(store_ctx);
 
-  if (!initialized || !verified || !hook_ok) {
-    *out_alert = initialized ? SSL_AD_CERTIFICATE_UNKNOWN : SSL_AD_INTERNAL_ERROR;
+  if (!initialized) {
+    *out_alert = SSL_AD_INTERNAL_ERROR;
+    return ssl_verify_invalid;
+  }
+  if (!verified) {
+    // The alert the library's own verification would have sent for this error.
+    *out_alert = SSL_alert_from_verify_result(verify_error);
+    return ssl_verify_invalid;
+  }
+  if (!hook_ok) {
+    *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
     return ssl_verify_invalid;
   }
 
