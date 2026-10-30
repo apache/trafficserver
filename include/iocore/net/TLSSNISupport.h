@@ -106,6 +106,10 @@ public:
    */
   void on_client_hello(ClientHello &client_hello);
 
+  /** Forget the CLIENT_HELLO passed to on_client_hello(), which is only valid during the ClientHello callback.
+   */
+  void clear_client_hello();
+
   /** Process the servername extension when a client uses one in the TLS handshake.
    *
    * This is for client-side connections.

@@ -58,6 +58,12 @@ TLSSNISupport::get_client_hello() const
 }
 
 void
+TLSSNISupport::clear_client_hello()
+{
+  this->_ch = nullptr;
+}
+
+void
 TLSSNISupport::bind(SSL *ssl, TLSSNISupport *snis)
 {
   SSL_set_ex_data(ssl, _ex_data_index, snis);
