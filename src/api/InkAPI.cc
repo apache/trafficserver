@@ -9311,6 +9311,14 @@ TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
 }
 
 const char *
+TSVConnProtocolStackContains(TSVConn vconn, const char *tag)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(vconn) == TS_SUCCESS);
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
+  return vc->protocol_contains(std::string_view{tag});
+}
+
+const char *
 TSHttpTxnServerProtocolStackContains(TSHttpTxn txnp, const char *tag)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

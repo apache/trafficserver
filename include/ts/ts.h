@@ -3054,6 +3054,7 @@ TSReturnCode TSHttpTxnClientProtocolStackGet(TSHttpTxn txnp, int count, const ch
 TSReturnCode TSHttpSsnClientProtocolStackGet(TSHttpSsn ssnp, int count, const char **result, int *actual);
 const char  *TSHttpTxnClientProtocolStackContains(TSHttpTxn txnp, char const *tag);
 const char  *TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, char const *tag);
+const char  *TSVConnProtocolStackContains(TSVConn vconn, char const *tag);
 const char  *TSNormalizedProtocolTag(char const *tag);
 const char  *TSRegisterProtocolTag(char const *tag);
 
