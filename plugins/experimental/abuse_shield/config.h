@@ -117,6 +117,36 @@ struct Rule {
   ActionSet   actions{0};
 };
 
+/** The rate @a filter sets for @a metric, or 0 if it does not limit that metric. */
+inline int
+metric_rate(const RuleFilter &filter, RateMetric metric)
+{
+  switch (metric) {
+  case RateMetric::REQUEST:
+    return filter.max_req_rate;
+  case RateMetric::CONNECTION:
+    return filter.max_conn_rate;
+  case RateMetric::H2_ERROR:
+    return filter.max_h2_error_rate;
+  }
+  return 0;
+}
+
+/** The burst multiplier @a filter sets for @a metric. */
+inline double
+metric_burst_multiplier(const RuleFilter &filter, RateMetric metric)
+{
+  switch (metric) {
+  case RateMetric::REQUEST:
+    return filter.req_burst_multiplier;
+  case RateMetric::CONNECTION:
+    return filter.conn_burst_multiplier;
+  case RateMetric::H2_ERROR:
+    return filter.h2_burst_multiplier;
+  }
+  return 1.0;
+}
+
 /** Result of rule evaluation, including the matched rule for logging. */
 struct RuleMatch {
   const Rule      *rule{nullptr}; ///< nullptr if no match
