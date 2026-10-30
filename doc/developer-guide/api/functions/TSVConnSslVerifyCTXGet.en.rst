@@ -39,6 +39,10 @@ corresponding to :arg:`svc`.
 This value is only meaningful during the peer certificate verification callbacks, specifically during callbacks
 invoked from the TS_SSL_VERIFY_SERVER_HOOK and TS_SSL_VERIFY_CLIENT_HOOK.
 
+When the peer authenticated with an RFC 7250 raw public key rather than a certificate, there is no certificate to
+verify and this returns ``nullptr``. The key itself is available from the connection's SSL object, obtained with
+:func:`TSVConnSslConnectionGet`, through ``SSL_get0_peer_rpk()``.
+
 Types
 =====
 

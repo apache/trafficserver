@@ -23,6 +23,7 @@
 
 #include "P_SSLConfig.h"
 #include "SSLRPKUtils.h"
+#include "tscore/ink_inet.h"
 
 #include <openssl/ssl.h>
 #include <memory>
@@ -35,6 +36,7 @@
 #endif
 
 class NetVConnection;
+struct NextHopProperty;
 
 // Create and initialize a SSL client context.
 SSL_CTX *SSLInitClientContext(const struct SSLConfigParams *param);
@@ -46,9 +48,11 @@ bool validate_server_certificate_hostname(NetVConnection *netvc, std::string_vie
 
 /** @return the key that selects an outbound connection's sni.yaml next-hop properties.
 
-    That is the SNI the connection sends, or the text of @a remote_addr when it sends none, which
-    includes the case of an IP literal since one is never sent as an SNI. The handshake and the
-    origin session reuse checks both select through here, so they cannot disagree about the entry.
+    That is the name the connection was given as its SNI, or the text of @a remote_addr when it has
+    none, which includes the case of an IP literal since one is never sent as an SNI. Under
+    verify_with_name_source the name actually sent can differ; selection still uses this one. The
+    handshake and the origin session reuse checks both select through here, so they cannot disagree
+    about the entry.
 
     @param sni The outbound SNI a connection would be given; may be empty or an IP literal.
     @param remote_addr The next hop's address.
@@ -65,18 +69,44 @@ std::string_view next_hop_property_key(std::string_view sni, sockaddr const *rem
  */
 bool origin_pinned_raw_public_key(NetVConnection *netvc);
 
-/** @return true if the key set that authenticated @a netvc is the set sni.yaml now pins for the
-    next-hop entry @a property_key selects.
+/** @return the server verification policy an outbound connection runs under.
 
-    A raw public key session can only carry a request whose own connection would have pinned the
-    same set; a name says nothing about which set that is. False when the entry pins no set.
+    That is @a txn_policy if the transaction set one, else the policy of the connection's sni.yaml
+    next-hop entry @a nps, else the global default. The handshake and the origin session reuse checks
+    both resolve it through here.
+
+    @param txn_policy The transaction's own policy, or UNSET.
+    @param nps The connection's next-hop properties, or nullptr if no entry matched.
+    @param params The SSL configuration supplying the global default.
+ */
+YamlSNIConfig::Policy resolve_verify_server_policy(YamlSNIConfig::Policy txn_policy, const NextHopProperty *nps,
+                                                   const SSLConfigParams *params);
+
+/** @return true if a raw public key origin connection may carry a request whose own connection
+    would select the sni.yaml next-hop entry @a property_key.
+
+    Under ENFORCED that requires the key the connection was authenticated with to be in the set the
+    entry pins now; a name says nothing about which set that is. Under PERMISSIVE or DISABLED a new
+    handshake would accept the key regardless, so the connection may carry the request too.
 
     @param netvc A pooled origin connection for which origin_pinned_raw_public_key() is true.
     @param property_key The new request's key, from next_hop_property_key().
+    @param txn_policy The new request's own verification policy, or UNSET.
  */
-bool origin_rpk_pin_matches(NetVConnection *netvc, std::string_view property_key);
+bool origin_rpk_pin_matches(NetVConnection *netvc, std::string_view property_key, YamlSNIConfig::Policy txn_policy);
 
 #if TS_USE_RPK
+/// Reserve the per-connection data slot for next-hop raw public keys. Called once at startup.
+void ssl_client_rpk_initialize();
+
+/** Record the raw public key a resumed origin session carries.
+
+    A resumed handshake runs no verify callback, which is where the key is otherwise recorded, and
+    origin session reuse needs it to check the connection against the pinned set in force later.
+    The library restores the key with the session.
+ */
+void origin_rpk_record_resumed_peer_key(SSL *ssl);
+
 /** Configure @a ssl to offer and/or pin RFC 7250 raw public keys for an outbound connection.
 
     @a trusted_key_set, when non-null, is the next hop's acceptable raw public keys (parsed once at

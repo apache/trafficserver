@@ -267,6 +267,8 @@ client_rpk_enabled                       Outbound  Set to :code:`true` to offer 
                                                    to an X.509 certificate for this outbound connection. The raw public key is offered
                                                    alongside the X.509 certificate, not instead of it: if the next hop does not support
                                                    raw public keys, the connection negotiates a normal certificate exchange instead.
+                                                   Without a client certificate and key there is nothing to offer, so |TS| logs a
+                                                   warning and connects as if this key were not set.
 
                                                    Only available in builds linked against a TLS library with RFC 7250 support
                                                    (OpenSSL 3.2 or later, or a sufficiently recent BoringSSL). If this key is set on a
@@ -275,6 +277,8 @@ client_rpk_enabled                       Outbound  Set to :code:`true` to offer 
 server_rpk_ca                            Outbound  The file containing the raw public key(s) (RFC 7250) that this next hop is trusted
                                                    to present, PEM-encoded. The file may contain more than one key concatenated together,
                                                    which allows an "old" and "new" key to both be trusted during a planned key rotation.
+                                                   Keys are compared in their encoded form, so EC keys must be written with uncompressed
+                                                   points, which is what ``openssl pkey -pubout`` produces by default.
 
                                                    If this is relative, it is relative to the path in
                                                    :ts:cv:`proxy.config.ssl.client.CA.cert.path`.
@@ -457,8 +461,8 @@ In addition ``verify_server_properties`` specifies what |TS| will check when per
   Verify both the signature and the SNI in the origin certificate.
 
 
-If ``client_rpk_enabled`` is set and the next hop authenticates with a raw public key rather than
-a certificate, ``verify_server_properties``'s :code:`NAME` check has nothing to act on -- a raw
+If ``server_rpk_ca`` is set and the next hop authenticates with a raw public key rather than a
+certificate, ``verify_server_properties``'s :code:`NAME` check has nothing to act on -- a raw
 public key has no subject alternative name -- so ``server_rpk_ca`` (matching the offered key
 against a configured trusted set) takes its place. ``verify_server_policy`` still governs whether
 a key that is not in the trusted set is fatal, exactly as for a failed certificate check. Since
@@ -467,10 +471,15 @@ the next hop actually offers one; a next hop that does not support RFC 7250 fall
 certificate exchange, and the usual certificate checks apply.
 
 Replacing the file named by ``server_rpk_ca`` and running :option:`traffic_ctl config reload`
-retires what the old set authenticated. A pooled origin connection is reused only for a request
-whose own connection would pin the same set, and cached TLS sessions are keyed on the set, so the
-next request to that next hop completes a full handshake against the new one. Requests already in
-progress on an existing connection are not interrupted.
+takes effect for requests that follow. A pooled origin connection carries a request verified under
+:code:`ENFORCED` only while the set that request would pin still contains the key the connection
+was authenticated with, so adding a key for rotation keeps existing connections while removing one
+retires them, and a connection whose key was accepted only under :code:`PERMISSIVE` never carries
+such a request. A request verified under :code:`PERMISSIVE` would accept the key in a new handshake
+anyway, so it may use the connection either way. Cached
+TLS sessions are keyed on the whole set, so any change to it makes the next connection to that
+next hop a full handshake. Requests already in progress on an existing connection are not
+interrupted.
 
 If ``tunnel_route`` is specified, none of the certificate verification will be done because the TLS
 negotiation will be tunneled to the upstream target, making those values irrelevant for that

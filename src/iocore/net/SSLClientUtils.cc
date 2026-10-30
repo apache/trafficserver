@@ -33,14 +33,14 @@
 #include "tscore/ink_config.h"
 #include "tscore/SimpleTokenizer.h"
 #include "tscore/Filenames.h"
+#include "tscore/LogMessage.h"
 #include "tscore/X509HostnameValidator.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
 
-#include <mutex>
 #include <string_view>
-#include <strings.h>
+#include <utility>
 
 SSLOriginSessionCache *origin_sess_cache;
 
@@ -60,6 +60,9 @@ int ssl_server_rpk_index = -1;
 struct TrustedRPK {
   std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys;
   std::string                                       digest;
+  /// The raw public key the next hop presented (DER SubjectPublicKeyInfo), whether or not it matched,
+  /// so origin session reuse can check it against the set in force at that time.
+  SSLRPKUtils::TrustedKey peer_key;
 };
 
 void
@@ -68,21 +71,54 @@ ssl_server_rpk_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, in
   delete static_cast<TrustedRPK *>(ptr);
 }
 
-const TrustedRPK *
+TrustedRPK *
 ssl_get_trusted_rpk_holder(const SSL *ssl)
 {
   if (ssl_server_rpk_index < 0) {
     return nullptr;
   }
-  return static_cast<const TrustedRPK *>(SSL_get_ex_data(ssl, ssl_server_rpk_index));
+  return static_cast<TrustedRPK *>(SSL_get_ex_data(ssl, ssl_server_rpk_index));
 }
 
-const SSLRPKUtils::TrustedKeySet *
-ssl_get_trusted_rpk(const SSL *ssl)
+/// Record @a peer_rpk as the key the next hop presented. @return false if it could not be encoded.
+bool
+record_peer_rpk(TrustedRPK &holder, EVP_PKEY *peer_rpk)
 {
-  auto const *holder = ssl_get_trusted_rpk_holder(ssl);
+  unsigned char *der = nullptr;
+  int const      len = peer_rpk != nullptr ? i2d_PUBKEY(peer_rpk, &der) : 0;
 
-  return holder != nullptr ? holder->keys.get() : nullptr;
+  if (len <= 0) {
+    return false;
+  }
+  holder.peer_key.assign(der, der + len);
+  OPENSSL_free(der);
+  return true;
+}
+
+/** Check the raw public key a next hop presented against the connection's pinned set.
+
+    The key is recorded on the connection either way, for origin session reuse to check later.
+
+    @return true if @a peer_rpk is in the pinned set.
+ */
+bool
+ssl_pin_peer_rpk(const SSL *ssl, EVP_PKEY *peer_rpk)
+{
+  TrustedRPK *holder = ssl_get_trusted_rpk_holder(ssl);
+
+  return holder != nullptr && holder->keys != nullptr && record_peer_rpk(*holder, peer_rpk) &&
+         SSLRPKUtils::pinnedKeyMatches(holder->peer_key.data(), static_cast<int>(holder->peer_key.size()), *holder->keys);
+}
+
+void
+warn_origin_rpk_mismatch(bool enforce_mode, NetVConnection *netvc)
+{
+  static LogMessage log_msg{IS_THROTTLED};
+  char              buff[INET6_ADDRSTRLEN];
+
+  ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
+  log_msg.warning(MakeSourceLocation(), "Origin raw public key did not match any trusted key. Action=%s server=%s(%s)",
+                  enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
 }
 #endif
 
@@ -139,21 +175,21 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     // SIGNATURE_MASK/NAME_MASK properties have nothing to act on. verifyServerPolicy still
     // decides whether a mismatch is fatal, matching the X.509 paths.
     //
-    // Note `signature_ok` is always 0 here: without DANE enabled, OpenSSL presets
-    // X509_V_ERR_RPK_UNTRUSTED and invokes this callback with `ctx->error == X509_V_OK` being
-    // false (see verify_rpk() in crypto/x509/x509_vfy.c). Our pin match is what decides the
-    // outcome, so on success the preset error has to be cleared -- otherwise it survives into
-    // SSL_get_verify_result() and marks a properly pinned connection as unverified.
-    const SSLRPKUtils::TrustedKeySet *trusted = ssl_get_trusted_rpk(ssl);
-    bool                              pin_ok  = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
+    // x509_verify_rpk() in crypto/x509/x509_vfy.c may first invoke this callback for a key below the
+    // security level, which verifyServerPolicy treats like any other failed check. Only the
+    // invocation that follows, with X509_V_ERR_RPK_UNTRUSTED preset since no DANE is configured, is
+    // the pin decision, and on a match that preset error is cleared so it does not survive into
+    // SSL_get_verify_result() for a properly pinned connection.
+    if (err != X509_V_ERR_RPK_UNTRUSTED) {
+      Dbg(dbg_ctl_ssl_verify, "origin raw public key failed verification: %s", X509_verify_cert_error_string(err));
+      return !enforce_mode;
+    }
+    bool const pin_ok = ssl_pin_peer_rpk(ssl, peer_rpk);
     Dbg(dbg_ctl_ssl_verify, "Origin authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (pin_ok) {
       X509_STORE_CTX_set_error(ctx, X509_V_OK);
     } else {
-      char buff[INET6_ADDRSTRLEN];
-      ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
-      Warning("Origin raw public key did not match any trusted key. Action=%s server=%s(%s)",
-              enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
+      warn_origin_rpk_mismatch(enforce_mode, netvc);
       if (!enforce_mode) {
         // Permissive mode continues the handshake, and the X.509 paths likewise leave the
         // recorded error in place for a failure that is only warned about.
@@ -168,7 +204,8 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
       Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
       return false;
     }
-    if (tbs->verify_certificate(ctx) == 1) {
+    // No store context for the hook, as on BoringSSL: there is no certificate in it to inspect.
+    if (tbs->verify_certificate(nullptr) == 1) {
       Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check for %s. Action=%s",
               netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
       return !enforce_mode;
@@ -282,15 +319,10 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
   }
 
   if (SSL_get_peer_cert_type(ssl) == TLSEXT_cert_type_rpk) {
-    EVP_PKEY                         *peer_rpk = SSL_get0_peer_rpk(ssl);
-    const SSLRPKUtils::TrustedKeySet *trusted  = ssl_get_trusted_rpk(ssl);
-    bool                              pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
+    bool const pin_ok = ssl_pin_peer_rpk(ssl, SSL_get0_peer_rpk(ssl));
     Dbg(dbg_ctl_ssl_verify, "Origin authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (!pin_ok) {
-      char buff[INET6_ADDRSTRLEN];
-      ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
-      Warning("Origin raw public key did not match any trusted key. Action=%s server=%s(%s)",
-              enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
+      warn_origin_rpk_mismatch(enforce_mode, netvc);
     }
 
     // There is no X509_STORE_CTX to hand the hook for a raw public key, but the hook still runs on
@@ -363,6 +395,7 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
                            X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(store_ctx), SSL_get0_param(ssl)) &&
                            X509_STORE_CTX_set_ex_data(store_ctx, SSL_get_ex_data_X509_STORE_CTX_idx(), ssl);
   bool accepted = false;
+  int  alert    = SSL_AD_CERTIFICATE_UNKNOWN;
   if (initialized) {
     bool const signature_ok = X509_verify_cert(store_ctx) == 1;
     bool const check_sig =
@@ -387,6 +420,8 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
               static_cast<int>(sni_name.length()), sni_name.data(), enforce_mode ? "Terminate" : "Continue",
               X509_verify_cert_error_string(err), netvc->options.ssl_servername.get(), buff);
       accepted = !enforce_mode;
+      // The alert the library's own verification would have sent for this error.
+      alert = SSL_alert_from_verify_result(err);
     }
 
     if (accepted && check_name) {
@@ -402,7 +437,8 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
       }
     }
 
-    // As on the other paths, the hook always runs and may only add rejection.
+    // As on the other paths, the hook always runs and may only add rejection. It runs once for the
+    // whole chain here, where the library calls verify_callback() once per chain depth.
     if (tbs->verify_certificate(store_ctx) == 1) {
       Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for %s.  Action=%s SNI=%.*s",
               netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue", static_cast<int>(sni_name.length()),
@@ -422,7 +458,7 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
     return ssl_verify_invalid;
   }
   if (!accepted) {
-    *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+    *out_alert = alert;
     return ssl_verify_invalid;
   }
   return ssl_verify_ok;
@@ -459,8 +495,21 @@ origin_pinned_raw_public_key([[maybe_unused]] NetVConnection *netvc)
 #endif
 }
 
+YamlSNIConfig::Policy
+resolve_verify_server_policy(YamlSNIConfig::Policy txn_policy, const NextHopProperty *nps, const SSLConfigParams *params)
+{
+  if (txn_policy != YamlSNIConfig::Policy::UNSET) {
+    return txn_policy;
+  }
+  if (nps != nullptr && nps->verify_server_policy != YamlSNIConfig::Policy::UNSET) {
+    return nps->verify_server_policy;
+  }
+  return params->verifyServerPolicy;
+}
+
 bool
-origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] std::string_view property_key)
+origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] std::string_view property_key,
+                       [[maybe_unused]] YamlSNIConfig::Policy txn_policy)
 {
 #if TS_USE_RPK
   auto *tls = netvc != nullptr ? netvc->get_service<TLSBasicSupport>() : nullptr;
@@ -470,13 +519,20 @@ origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] 
     return false;
   }
 
-  std::string_view const   session_identity = origin_rpk_pin_identity(ssl);
+  TrustedRPK const        *holder = ssl_get_trusted_rpk_holder(ssl);
   SNIConfig::scoped_config sni_config;
+  SSLConfig::scoped_config ssl_config;
   auto const              *nps = sni_config->get_property_config(property_key);
 
-  // The digest is derived from key material, so a set that is unchanged across a reload still
-  // matches while a replaced one retires the sessions it authenticated.
-  return !session_identity.empty() && nps != nullptr && session_identity == nps->server_rpk_ca_digest;
+  if (resolve_verify_server_policy(txn_policy, nps, ssl_config) != YamlSNIConfig::Policy::ENFORCED) {
+    return true;
+  }
+
+  // The key itself is checked rather than the identity of the set it was pinned against, so a key a
+  // rotated set still trusts keeps its connections, and one accepted only under PERMISSIVE does not
+  // pass for pinned.
+  return holder != nullptr && !holder->peer_key.empty() && nps != nullptr && nps->server_rpk_ca != nullptr &&
+         SSLRPKUtils::pinnedKeyMatches(holder->peer_key.data(), static_cast<int>(holder->peer_key.size()), *nps->server_rpk_ca);
 #else
   return false;
 #endif
@@ -569,6 +625,20 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 }
 
 #if TS_USE_RPK
+void
+origin_rpk_record_resumed_peer_key(SSL *ssl)
+{
+  if (TrustedRPK *holder = ssl_get_trusted_rpk_holder(ssl); holder != nullptr && holder->peer_key.empty()) {
+    record_peer_rpk(*holder, SSL_get0_peer_rpk(ssl));
+  }
+}
+
+void
+ssl_client_rpk_initialize()
+{
+  ssl_server_rpk_index = SSL_get_ex_new_index(0, (void *)"Trusted next-hop RPK keys", nullptr, nullptr, ssl_server_rpk_ex_free);
+}
+
 bool
 ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set,
                      std::string_view trusted_key_digest)
@@ -578,10 +648,6 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils
   }
   [[maybe_unused]] bool const has_trusted_keys = trusted_key_set != nullptr;
 
-  static std::once_flag rpk_index_once;
-  std::call_once(rpk_index_once, []() {
-    ssl_server_rpk_index = SSL_get_ex_new_index(0, (void *)"Trusted next-hop RPK keys", nullptr, nullptr, ssl_server_rpk_ex_free);
-  });
   if (ssl_server_rpk_index < 0) {
     SSLError("failed to reserve an ex_data index for next-hop raw public keys");
     return false;
@@ -590,7 +656,7 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils
   if (trusted_key_set != nullptr) {
     // ssl_server_rpk_ex_free() releases this holder (and, via it, the shared TrustedKeySet from
     // the SNI config the caller parsed it from) when ssl is freed.
-    auto *holder = new TrustedRPK{std::move(trusted_key_set), std::string{trusted_key_digest}};
+    auto *holder = new TrustedRPK{std::move(trusted_key_set), std::string{trusted_key_digest}, {}};
     if (!SSL_set_ex_data(ssl, ssl_server_rpk_index, holder)) {
       delete holder;
       SSLError("failed to attach trusted next-hop raw public keys to the connection");
@@ -610,14 +676,17 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils
     }
   }
 
+  // Both libraries derive the offered raw public key from the client certificate/key already on the
+  // context. Without one there is nothing to offer, and the connection proceeds as it would without
+  // client_rpk_enabled.
+  if (offer_rpk && SSL_CTX_get0_privatekey(SSL_get_SSL_CTX(ssl)) == nullptr) {
+    static LogMessage log_msg{IS_THROTTLED};
+    log_msg.warning(MakeSourceLocation(), "client_rpk_enabled has no effect without a client certificate/key for this next hop");
+    offer_rpk = false;
+  }
+
   if (offer_rpk) {
     static const unsigned char client_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
-    // Both libraries derive/wrap the offered raw public key from the client certificate/key
-    // already configured on the context -- there is nothing to offer if that's unset.
-    if (SSL_CTX_get0_privatekey(SSL_get_SSL_CTX(ssl)) == nullptr) {
-      SSLError("client_rpk_enabled requires a client certificate/key configured for this next hop");
-      return false;
-    }
 #if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
     // OpenSSL derives the offered raw public key from the certificate/key already on the context.
     if (!SSL_set1_client_cert_type(ssl, client_types, sizeof(client_types))) {

@@ -1241,13 +1241,7 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
         clientCTX = sharedCTX.get();
       }
 
-      if (options.verifyServerPolicy != YamlSNIConfig::Policy::UNSET) {
-        // Stay with conf-override version as the highest priority
-      } else if (nps && nps->verify_server_policy != YamlSNIConfig::Policy::UNSET) {
-        options.verifyServerPolicy = nps->verify_server_policy;
-      } else {
-        options.verifyServerPolicy = params->verifyServerPolicy;
-      }
+      options.verifyServerPolicy = resolve_verify_server_policy(options.verifyServerPolicy, nps, params);
 
       if (options.verifyServerProperties != YamlSNIConfig::Property::UNSET) {
         // Stay with conf-override version as the highest priority
@@ -2470,6 +2464,9 @@ SSLNetVConnection::_ssl_connect()
     if (SSL_session_reused(ssl)) {
       Metrics::Counter::increment(ssl_rsb.origin_session_reused_count);
       Dbg(dbg_ctl_ssl_origin_session_cache, "reused session to origin server");
+#if TS_USE_RPK
+      origin_rpk_record_resumed_peer_key(ssl);
+#endif
     } else {
       Dbg(dbg_ctl_ssl_origin_session_cache, "new session to origin server");
     }

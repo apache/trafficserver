@@ -37,6 +37,7 @@
 #include "swoc/IntrusiveHashMap.h"
 
 #include <atomic>
+#include <string_view>
 #include <vector>
 
 class ProxyTransaction;

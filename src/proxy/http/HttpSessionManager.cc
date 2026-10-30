@@ -42,6 +42,7 @@
 #include "ts/ats_probe.h"
 #include <iterator>
 #include <optional>
+#include <string_view>
 
 namespace
 {
@@ -199,7 +200,8 @@ ServerSessionPool::validate_pinned_origin(HttpSM *sm, NetVConnection *netvc)
   char buffer[INET6_ADDRSTRLEN];
 
   return origin_rpk_pin_matches(netvc,
-                                next_hop_property_key(sm->get_outbound_sni(), &sm->t_state.current.server->dst_addr.sa, buffer));
+                                next_hop_property_key(sm->get_outbound_sni(), &sm->t_state.current.server->dst_addr.sa, buffer),
+                                sm->get_outbound_verify_server_policy());
 }
 
 bool

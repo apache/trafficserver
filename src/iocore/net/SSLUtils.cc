@@ -1268,6 +1268,7 @@ SSLInitializeLibrary()
 #if TS_USE_RPK
   ssl_client_rpk_ca_index =
     SSL_CTX_get_ex_new_index(0, (void *)"Trusted client RPK keys", nullptr, nullptr, ssl_client_rpk_ca_ex_free);
+  ssl_client_rpk_initialize();
 #endif
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
   ssl_verify_store_index =
