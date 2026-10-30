@@ -85,6 +85,10 @@ Annotations that carry a severity are printed with it, for example ``- [3000] Wa
 draining.``, and a JSONRPC error ``data`` entry carries a ``severity`` field when its handler sets
 one, see :ref:`jsonrpc-node-errors-severity`.
 
+A ``--`` now protects the token after it at every level of the command line, so a value spelled
+like a global option reaches the command that asked for it: ``traffic_ctl config set NAME -- -f``
+sets the record to ``-f`` instead of failing on ``--format``.
+
 Security Hardening
 ------------------
 
