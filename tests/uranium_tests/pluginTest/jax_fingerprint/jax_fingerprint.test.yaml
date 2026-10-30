@@ -207,7 +207,7 @@ urtest:
           - path: "{LOG_DIR}/jax_fingerprint.log"
             contains: "JA4H: [a-z0-9_-]+"
           - path: "{LOG_DIR}/jax_log_field.log"
-            contains: "JA4H: [a-z0-9]"
+            contains: "JA4H: [a-z][0-9a-z_]{9,}"
 
     - name: global-ja4-log-field
       replay: jax_fingerprint_tls.replay.yaml
@@ -230,7 +230,7 @@ urtest:
           - path: "{LOG_DIR}/jax_fingerprint.log"
             contains: "JA4: [a-z0-9_-]+"
           - path: "{LOG_DIR}/jax_log_field.log"
-            contains: "JA4: [a-z0-9]"
+            contains: "JA4: [a-z][0-9a-z_]{9,}"
 
     - name: all-methods-share-context
       replay: jax_fingerprint_all_methods.replay.yaml
