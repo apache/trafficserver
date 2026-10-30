@@ -175,14 +175,12 @@ validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
     }
     break;
 
+  case Parser::CondClause::COND:
   case Parser::CondClause::OPER:
     if (!rule->has_operator()) {
       TSError("[%s] conditions without operators are not allowed in file: %s, lineno: %d", PLUGIN_NAME, fname.c_str(), lineno);
       return false;
     }
-    break;
-
-  case Parser::CondClause::COND:
     break;
 
   case Parser::CondClause::IF:
@@ -629,27 +627,27 @@ TSPluginInit(int argc, const char *argv[])
       Dbg(pi_dbg_ctl, "Successfully loaded global config file %s", argv[i]);
       got_config = true;
     } else {
-      TSError("[%s] failed to parse configuration file %s", PLUGIN_NAME, argv[i]);
+      delete conf;
+      TSFatal("[%s] failed to parse configuration file %s", PLUGIN_NAME, argv[i]);
     }
   }
 
-  if (got_config) {
-    TSCont contp = TSContCreate(cont_rewrite_headers, nullptr);
-    TSContDataSet(contp, conf);
-
-    // We always need to hook TXN_START to call setPluginControlValues at the beginning.
-    TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
-
-    for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
-      if (conf->rule(i)) {
-        Dbg(pi_dbg_ctl, "Adding global ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
-        TSHttpHookAdd(static_cast<TSHttpHookID>(i), contp);
-      }
-    }
-  } else {
-    // Didn't get anything, nuke it.
-    TSError("[%s] failed to parse any configuration file", PLUGIN_NAME);
+  if (!got_config) {
     delete conf;
+    TSFatal("[%s] failed to parse any configuration file", PLUGIN_NAME);
+  }
+
+  TSCont contp = TSContCreate(cont_rewrite_headers, nullptr);
+  TSContDataSet(contp, conf);
+
+  // We always need to hook TXN_START to call setPluginControlValues at the beginning.
+  TSHttpHookAdd(TS_HTTP_TXN_START_HOOK, contp);
+
+  for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {
+    if (conf->rule(i)) {
+      Dbg(pi_dbg_ctl, "Adding global ruleset to hook=%s", TSHttpHookNameLookup(static_cast<TSHttpHookID>(i)));
+      TSHttpHookAdd(static_cast<TSHttpHookID>(i), contp);
+    }
   }
 }
 

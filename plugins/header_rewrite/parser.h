@@ -209,7 +209,13 @@ public:
   }
 
   // Validate that all modifiers were consumed; logs error and returns false if not
-  bool validate_mods() const;
+  [[nodiscard]] bool validate_mods() const;
+
+  [[nodiscard]] bool
+  has_duplicate_mods() const
+  {
+    return _has_duplicate_mods;
+  }
 
   bool cond_is_hook(TSHttpHookID &hook) const;
 
@@ -272,10 +278,11 @@ public:
 private:
   bool preprocess(std::vector<std::string> tokens);
 
-  CondClause               _clause   = CondClause::OPER;
-  bool                     _empty    = false;
-  char                    *_from_url = nullptr;
-  char                    *_to_url   = nullptr;
+  CondClause               _clause             = CondClause::OPER;
+  bool                     _empty              = false;
+  bool                     _has_duplicate_mods = false;
+  char                    *_from_url           = nullptr;
+  char                    *_to_url             = nullptr;
   std::vector<std::string> _mods;
   std::string              _op;
   std::string              _arg;

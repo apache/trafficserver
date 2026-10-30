@@ -311,7 +311,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());
-      break;
+      return false;
     } else if (opt.compare(start, 6, "status") == 0) {
       _status = static_cast<TSHttpStatus>(strtol(opt_val.c_str(), nullptr, 10));
     } else if (opt.compare(start, 14, "active_timeout") == 0) {
@@ -359,6 +359,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
         last_override = tmp;
       } else {
         TSError("[%s] Unknown options: %s", PLUGIN_NAME, opt.c_str());
+        return false;
       }
     }
     start = opt.find_first_of('@', pos2);
@@ -654,48 +655,46 @@ compile_rule_set(std::string const &filename, std::string const &source)
       continue;
     }
 
-    pos1 = line.find_first_not_of(" \t\n");
-    if (pos1 != std::string::npos) {
-      if (line[pos1] == '#') {
-        continue;
-      }
+    pos1 = line.find_first_not_of(" \t\r\n");
+    if (pos1 == std::string::npos || line[pos1] == '#') {
+      continue;
+    }
 
-      pos2 = line.find_first_of(" \t\n", pos1);
-      if (pos2 != std::string::npos) {
-        regex = line.substr(pos1, pos2 - pos1);
-        pos1  = line.find_first_not_of(" \t\n#", pos2);
+    pos2 = line.find_first_of(" \t\r\n", pos1);
+    if (pos2 != std::string::npos) {
+      regex = line.substr(pos1, pos2 - pos1);
+      pos1  = line.find_first_not_of(" \t\r\n#", pos2);
+      if (pos1 != std::string::npos) {
+        pos2 = line.find_first_of(" \t\r\n", pos1);
+        if (pos2 == std::string::npos) {
+          pos2 = line.length();
+        }
+        subst = line.substr(pos1, pos2 - pos1);
+        pos1  = line.find_first_not_of(" \t\r\n#", pos2);
         if (pos1 != std::string::npos) {
-          pos2 = line.find_first_of(" \t\n", pos1);
+          pos2 = line.find_first_of("\r\n#", pos1);
           if (pos2 == std::string::npos) {
             pos2 = line.length();
           }
-          subst = line.substr(pos1, pos2 - pos1);
-          pos1  = line.find_first_not_of(" \t\n#", pos2);
-          if (pos1 != std::string::npos) {
-            pos2 = line.find_first_of("\n#", pos1);
-            if (pos2 == std::string::npos) {
-              pos2 = line.length();
-            }
-            options = line.substr(pos1, pos2 - pos1);
-          }
+          options = line.substr(pos1, pos2 - pos1);
         }
       }
     }
 
     if (regex.empty()) {
       TSError("[%s] no regexp found in %s: line %d", PLUGIN_NAME, filename.c_str(), lineno);
-      continue;
+      return nullptr;
     }
     if (subst.empty() && options.empty()) {
       TSError("[%s] no substitution string found in %s: line %d", PLUGIN_NAME, filename.c_str(), lineno);
-      continue;
+      return nullptr;
     }
 
     auto cur = std::make_unique<RemapRegex>();
 
     if (!cur->initialize(regex, subst, options)) {
       TSError("[%s] can't create a new regex remap rule", PLUGIN_NAME);
-      continue;
+      return nullptr;
     }
 
     std::string error;
@@ -714,7 +713,7 @@ compile_rule_set(std::string const &filename, std::string const &source)
         oss << "  regex: \"" << cur->regex() << '"';
       }
       TSError("%s", oss.str().c_str());
-      continue;
+      return nullptr;
     }
 
     Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
@@ -846,6 +845,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   if (argc < 3) {
     TSError("[%s] missing configuration file", PLUGIN_NAME);
+    delete ri;
+    *ih = nullptr;
     return TS_ERROR;
   }
 
@@ -873,6 +874,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       ri->pristine_url = false;
     } else {
       TSError("[%s] invalid option '%s'", PLUGIN_NAME, argv[i]);
+      delete ri;
+      *ih = nullptr;
+      return TS_ERROR;
     }
   }
 
@@ -889,16 +893,22 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   struct stat st;
   if (0 != stat(ri->filename.c_str(), &st)) {
     TSError("[%s] failed to stat %s: %s", PLUGIN_NAME, ri->filename.c_str(), strerror(errno));
+    delete ri;
+    *ih = nullptr;
     return TS_ERROR;
   }
   if (!S_ISREG(st.st_mode)) {
     TSError("[%s] %s is not a regular file", PLUGIN_NAME, ri->filename.c_str());
+    delete ri;
+    *ih = nullptr;
     return TS_ERROR;
   }
 
   std::ifstream f((ri->filename).c_str(), std::ios::in | std::ios::binary);
   if (!f.is_open()) {
     TSError("[%s] unable to open %s", PLUGIN_NAME, (ri->filename).c_str());
+    delete ri;
+    *ih = nullptr;
     return TS_ERROR;
   }
   Dbg(dbg_ctl, "Loading regular expressions from %s", (ri->filename).c_str());
@@ -909,11 +919,15 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (f.bad() || f.gcount() != expected_size) {
     TSError("[%s] short read on %s: got %lld of %lld bytes", PLUGIN_NAME, ri->filename.c_str(), static_cast<long long>(f.gcount()),
             static_cast<long long>(expected_size));
+    delete ri;
+    *ih = nullptr;
     return TS_ERROR;
   }
 
   ri->rule_set = RuleSetCache::get(ri->filename, source);
   if (!ri->rule_set) {
+    delete ri;
+    *ih = nullptr;
     return TS_ERROR;
   }
   if (ri->profile) {

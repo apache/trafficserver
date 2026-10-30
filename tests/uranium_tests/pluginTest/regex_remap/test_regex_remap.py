@@ -235,3 +235,22 @@ def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     run_matching_checks(_ats=_ats, _curl=_curl, _transactions=_transactions)
     reload_rules(_ats=_ats)
     run_generation_checks(_ats=_ats, _curl=_curl)
+
+
+def test_regex_remap_crlf_blank_lines(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """regex_remap successfully loads rules from CRLF files with blank lines."""
+    _origin = configure_server(_services=services, _transactions=load_transactions(_services=services))
+    _dns = configure_dns(_services=services)
+    ats = ats_factory.create("ats-crlf", enable_cache=False)
+    if not ats.plugin_exists("regex_remap.so"):
+        pytest.skip("regex_remap.so is not installed")
+    crlf_content = "^/ http://example.test/ @status=302\r\n\r\n^/alpha/bravo/.*$ http://127.0.0.1\r\n"
+    ats.write_config_file("regex_remap_crlf.conf", crlf_content)
+    ats.remap_config.add_line(
+        f"map http://crlf.example.com/ http://127.0.0.1:{_origin.port}/ "
+        "@plugin=regex_remap.so @pparam=regex_remap_crlf.conf")
+    _origin.start()
+    _dns.start()
+    ats.start()
+    traffic_out = ats.traffic_out.read_text(errors="replace") if ats.traffic_out.exists() else ""
+    assert "Traffic Server is fully initialized" in traffic_out
