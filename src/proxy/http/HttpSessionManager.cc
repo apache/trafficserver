@@ -42,6 +42,7 @@
 #include "ts/ats_probe.h"
 #include <iterator>
 #include <optional>
+#include <string_view>
 
 namespace
 {
@@ -50,8 +51,18 @@ DbgCtl dbg_ctl_http_ss{"http_ss"};
 bool
 validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
 {
-  return !session->is_multiplexing() ||
-         validate_server_certificate_hostname(session->get_netvc(), sm->get_outbound_sni_for_cert_verification());
+  NetVConnection *netvc = session->get_netvc();
+  if (origin_presented_raw_public_key(netvc)) {
+    // Deliberately not gated on multiplexing, the SNI match mask, the scheme, or NAME being in
+    // verify_server_properties: only a pin set can vouch for this origin, and the pool key, a name or
+    // an address, does not determine which set that is.
+    return ServerSessionPool::validate_pinned_origin(sm, netvc);
+  }
+
+  if (!session->is_multiplexing()) {
+    return true;
+  }
+  return validate_server_certificate_hostname(netvc, sm->get_outbound_sni_for_cert_verification());
 }
 
 } // end anonymous namespace
@@ -163,16 +174,34 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
       std::string_view proposed_sni = sm->get_outbound_sni();
       Dbg(dbg_ctl_http_ss, "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
           session_sni);
-      if (!session_sni || session_sni[0] == '\0' || proposed_sni.length() == 0) {
-        retval = session_sni == nullptr && proposed_sni.length() == 0;
-      } else {
-        retval = proposed_sni.compare(session_sni) == 0;
-      }
+      retval = sni_matches(proposed_sni, session_sni);
     } else {
       retval = false;
     }
   }
   return retval;
+}
+
+bool
+ServerSessionPool::sni_matches(std::string_view proposed_sni, const char *session_sni)
+{
+  // A plain comparison, because get_sni_server_name() yields "" rather than nullptr when the
+  // connection sent no name, and a session that sent none must be reusable by a request whose
+  // outbound SNI is empty.
+  return proposed_sni == std::string_view{session_sni != nullptr ? session_sni : ""};
+}
+
+bool
+ServerSessionPool::validate_pinned_origin(HttpSM *sm, NetVConnection *netvc)
+{
+  // The entry is selected by the request's outbound SNI or, without one, by the address it would
+  // connect to. Sessions to different addresses behind one hostname can be pool candidates
+  // for each other, and sni.yaml can pin a different set for each.
+  char buffer[INET6_ADDRSTRLEN];
+
+  return origin_rpk_pin_matches(netvc,
+                                next_hop_property_key(sm->get_outbound_sni(), &sm->t_state.current.server->dst_addr.sa, buffer),
+                                sm->get_outbound_verify_server_policy());
 }
 
 bool

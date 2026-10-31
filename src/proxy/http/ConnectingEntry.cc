@@ -27,6 +27,7 @@
 #include "tsutil/DbgCtl.h"
 #include "proxy/http/ConnectingEntry.h"
 #include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpSessionManager.h"
 
 namespace
 {
@@ -112,7 +113,16 @@ ConnectingEntry::state_http_server_open(int event, void *data)
           auto  event      = CONNECT_EVENT_TXN;
           void *event_data = new_session;
 
-          if (!validate_server_certificate_hostname(new_session->get_netvc(), (*entry)->get_outbound_sni_for_cert_verification())) {
+          NetVConnection *session_netvc = new_session->get_netvc();
+          // Only a pinned key set can vouch for a raw public key origin, so a transaction joins this
+          // session only if validate_pinned_origin() accepts it for the transaction's own set and
+          // policy.
+          bool const acceptable =
+            origin_presented_raw_public_key(session_netvc) ?
+              ServerSessionPool::validate_pinned_origin(*entry, session_netvc) :
+              validate_server_certificate_hostname(session_netvc, (*entry)->get_outbound_sni_for_cert_verification());
+
+          if (!acceptable) {
             // Retry without joining another multiplexed connect queue so this
             // transaction gets its own TLS handshake and certificate check.
             event      = CONNECT_EVENT_DIRECT;

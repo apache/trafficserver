@@ -39,6 +39,12 @@ corresponding to :arg:`svc`.
 This value is only meaningful during the peer certificate verification callbacks, specifically during callbacks
 invoked from the TS_SSL_VERIFY_SERVER_HOOK and TS_SSL_VERIFY_CLIENT_HOOK.
 
+When the peer authenticated with an RFC 7250 raw public key rather than a certificate, there is no certificate to
+verify and this returns ``nullptr``. In TS_SSL_VERIFY_SERVER_HOOK the key itself is available from the connection's SSL
+object, obtained with :func:`TSVConnSslConnectionGet`, through ``SSL_get0_peer_rpk()``. In TS_SSL_VERIFY_CLIENT_HOOK
+the key is available this way only with BoringSSL. OpenSSL attaches a client's key to the SSL object after
+verification, so with OpenSSL a plugin cannot see the client's key from this hook.
+
 Types
 =====
 

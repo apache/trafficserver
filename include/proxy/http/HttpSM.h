@@ -47,6 +47,7 @@
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
+#include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/TLSTunnelSupport.h"
 
 #include "tscore/History.h"
@@ -215,6 +216,8 @@ public:
   HttpCacheSM     &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
   std::string_view get_outbound_sni() const;
   std::string_view get_outbound_cert() const;
+  /// @return the transaction's own proxy.config.ssl.client.verify.server.policy, or UNSET if it sets none.
+  YamlSNIConfig::Policy get_outbound_verify_server_policy() const;
   /// Return the name used by outbound TLS certificate name verification. This
   /// usually matches @c get_outbound_sni() above, but adds fallbacks for reuse
   /// checks that run after the original NetVCOptions are no longer being

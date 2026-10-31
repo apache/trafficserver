@@ -1193,12 +1193,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       // Making the check here instead of later, so we only
       // do this setting immediately after we create the SSL object
       SNIConfig::scoped_config sniParam;
-      const char              *serverKey = this->options.sni_servername;
-      if (!serverKey) {
-        ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
-        serverKey = buff;
-      }
-      auto           nps       = sniParam->get_property_config(serverKey);
+      const char              *sni = this->options.sni_servername;
+      auto nps = sniParam->get_property_config(next_hop_property_key(sni != nullptr ? sni : "", this->get_remote_addr(), buff));
       shared_SSL_CTX sharedCTX = nullptr;
       SSL_CTX       *clientCTX = nullptr;
       std::string    caCertPathStorage;
@@ -1245,13 +1241,7 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
         clientCTX = sharedCTX.get();
       }
 
-      if (options.verifyServerPolicy != YamlSNIConfig::Policy::UNSET) {
-        // Stay with conf-override version as the highest priority
-      } else if (nps && nps->verify_server_policy != YamlSNIConfig::Policy::UNSET) {
-        options.verifyServerPolicy = nps->verify_server_policy;
-      } else {
-        options.verifyServerPolicy = params->verifyServerPolicy;
-      }
+      options.verifyServerPolicy = resolve_verify_server_policy(options.verifyServerPolicy, nps, params);
 
       if (options.verifyServerProperties != YamlSNIConfig::Property::UNSET) {
         // Stay with conf-override version as the highest priority
@@ -1283,6 +1273,18 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       }
 
       SSL_set_verify(this->ssl, SSL_VERIFY_PEER, verify_callback);
+
+#if TS_USE_RPK
+      // Offer and/or pin RFC 7250 raw public keys when this next hop is configured for them.
+      // Both are advertised alongside X.509, so a next hop that doesn't (yet) support RPK -- a
+      // normal state during a rolling upgrade -- negotiates down to a certificate exchange.
+      if (nps && (nps->client_rpk_enabled || nps->server_rpk_ca)) {
+        if (!ssl_client_setup_rpk(this->ssl, nps->client_rpk_enabled, nps->server_rpk_ca, nps->server_rpk_ca_digest)) {
+          SSLErrorVC(this, "failed to configure raw public keys for the outbound connection");
+          return EVENT_ERROR;
+        }
+      }
+#endif
 
       // SNI
       ats_scoped_str &tlsext_host_name = this->options.sni_hostname ? this->options.sni_hostname : this->options.sni_servername;
@@ -1452,8 +1454,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // the session lookup.
     if (SSL_session_reused(ssl)) {
       int verify_mode = SSL_get_verify_mode(ssl);
+      // A raw public key is a client's credential as much as a certificate is, and both TLS
+      // libraries restore it with the session.
+      bool peer_credential = this->peer_provided_cert();
+#if TS_USE_RPK
+      peer_credential = peer_credential || SSL_get0_peer_rpk(ssl) != nullptr;
+#endif
 
-      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !this->peer_provided_cert()) {
+      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !peer_credential) {
         static LogMessage log_msg{IS_THROTTLED};
         Metrics::Counter::increment(ssl_rsb.user_agent_resumed_cert_rejected);
         log_msg.warning(MakeSourceLocation(), "rejecting a resumed TLS session that does not satisfy verify_client");
@@ -2456,6 +2464,9 @@ SSLNetVConnection::_ssl_connect()
     if (SSL_session_reused(ssl)) {
       Metrics::Counter::increment(ssl_rsb.origin_session_reused_count);
       Dbg(dbg_ctl_ssl_origin_session_cache, "reused session to origin server");
+#if TS_USE_RPK
+      origin_rpk_record_resumed_peer_key(ssl);
+#endif
     } else {
       Dbg(dbg_ctl_ssl_origin_session_cache, "new session to origin server");
     }
