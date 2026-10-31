@@ -223,6 +223,7 @@ RamCacheCLFUS::_resize_hashtable()
   this->_bucket   = new_bucket;
   this->_nbuckets = anbuckets;
   ats_free(this->_seen);
+  this->_seen = nullptr;
   if (cache_config_ram_cache_use_seen_filter) {
     int size    = bucket_sizes[this->_ibuckets] * sizeof(uint16_t);
     this->_seen = static_cast<uint16_t *>(ats_malloc(size));

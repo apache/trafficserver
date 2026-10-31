@@ -809,3 +809,29 @@ TEST_CASE("CLFUS admission accounts for per-entry overhead", "[cache][ramcache][
   CHECK(RamCacheCLFUSTestAccess::bytes(rc) <= RamCacheCLFUSTestAccess::max_bytes(rc));
   CHECK(RamCacheCLFUSTestAccess::objects(rc) == 3);
 }
+
+TEST_CASE("CLFUS hashtable resizes after the seen filter is disabled", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 1;
+
+  RamCacheCLFUS rc;
+  rc.init(1024 * 1024, &stripe);
+
+  // Inserting past 127 and then 251 objects resizes the hashtable twice with
+  // the seen filter off; both resizes must leave _seen in a valid state.
+  cache_config_ram_cache_use_seen_filter = 0;
+  auto buf                               = make_buffer(compressible_bytes(128));
+  for (uint64_t id = 1; id <= 300; ++id) {
+    auto key = make_key(id);
+    REQUIRE(rc.put(&key, buf.get(), 128) == 1);
+  }
+  CHECK(RamCacheCLFUSTestAccess::objects(rc) == 300);
+  CHECK(RamCacheCLFUSTestAccess::bytes(rc) <= RamCacheCLFUSTestAccess::max_bytes(rc));
+}
