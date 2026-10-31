@@ -23,6 +23,7 @@
 
 #include <string>
 #include <memory>
+#include <atomic>
 
 #include "ts/ts.h"
 
@@ -713,7 +714,11 @@ protected:
   bool exec(const Resources &res) const override;
 
 private:
-  Value _value;
+  Value                     _value;                // Expanded per transaction when it has conditions.
+  std::string               _stratname;            // Literal name, when _value has no conditions.
+  TSStrategy                _strategy = nullptr;   // Resolved at remap init; otherwise looked up per transaction.
+  bool                      _inert    = false;     // Remap-mode resolution failed at load; skip at runtime.
+  mutable std::atomic<bool> _lookup_failed{false}; // Throttle the global-mode per-transaction error.
 };
 
 ///////////////////////////////////////////////////////////////////////////////

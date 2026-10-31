@@ -15,12 +15,37 @@
 #  limitations under the License.
 """Verify remap plugins can select and clear next-hop strategies."""
 
-import pytest
+import re
 import shlex
+
+import pytest
 
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
 STRATEGY_PLUGINS_ORIGIN_SUFFIXES = ("0", "1", "2", "p", "s")
+
+# (tag, plugin, plugin parameter) for each remap plugin under test.
+PLUGINS = (
+    ("hr", "header_rewrite.so", "hdr_rw.config"),
+    ("rr", "regex_remap.so", "regex_remap.config"),
+    ("lua", "tslua.so", "strategies.lua"),
+)
+
+# (host prefix, remap rule strategy) for each mapping of every plugin.
+MAPPINGS = (
+    ("nhp", None),
+    ("nhs", "nh0"),
+    ("nh0", "nh0"),
+    ("nh1", "nh1"),
+    ("nh2", None),
+)
+
+# The 'nemo' cases must fail to resolve, and nothing else may log an ERROR.
+EXPECTED_ERRORS = (
+    r"\[header_rewrite\] Failed to resolve strategy 'nemo' while loading the remap rule",
+    r"\[regex_remap\] Unable to resolve strategy: 'nemo'",
+    r"\[ts_lua\]\[ts_lua_http_set_next_hop_strategy\] Failed get next hop strategy name 'nemo'",
+)
 
 
 def configure_dns(services: ServiceFactory) -> DNSServer:
@@ -71,6 +96,20 @@ def header_rewrite_config() -> str:
             "set-next-hop-strategy null",
             'cond %{CLIENT-HEADER:Strategy} ="clear"',
             'set-next-hop-strategy ""',
+        )) + "\n"
+
+
+def global_header_rewrite_config() -> str:
+    """Return global strategy mutations, including a per-transaction expanded name."""
+
+    return "\n".join(
+        (
+            "cond %{READ_REQUEST_HDR_HOOK} [AND]",
+            'cond %{CLIENT-HEADER:GlobalStrategy} ="nh1"',
+            "set-next-hop-strategy nh1",
+            "cond %{READ_REQUEST_HDR_HOOK} [AND]",
+            "cond %{CLIENT-HEADER:DynStrategy} /nh/",
+            "set-next-hop-strategy %{CLIENT-HEADER:DynStrategy}",
         )) + "\n"
 
 
@@ -147,12 +186,48 @@ def strategies_config(*, _origins: dict[str, OriginServer]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origins: dict[str, OriginServer]) -> ATS:
+def remap_config_lines() -> list[str]:
+    """Return the remap.config rules for every plugin and mapping."""
+
+    lines = []
+    for tag, plugin, pparam in PLUGINS:
+        for host, strategy in MAPPINGS:
+            strategy_arg = f" @strategy={strategy}" if strategy else ""
+            lines.append(f"map http://{host}_{tag} http://origin{strategy_arg} @plugin={plugin} @pparam={pparam}")
+    return lines
+
+
+def remap_yaml_lines() -> list[str]:
+    """Return the remap.yaml rules equivalent to :func:`remap_config_lines`."""
+
+    lines = ["remap:"]
+    for tag, plugin, pparam in PLUGINS:
+        for host, strategy in MAPPINGS:
+            lines += [
+                "  - type: map",
+                "    from:",
+                f"      url: http://{host}_{tag}",
+                "    to:",
+                "      url: http://origin",
+            ]
+            if strategy:
+                lines.append(f"    strategy: {strategy}")
+            lines += [
+                "    plugins:",
+                f"      - name: {plugin}",
+                "        params:",
+                f"          - {pparam}",
+            ]
+    return lines
+
+
+def configure_ats(ats_factory: ATSFactory, use_yaml: bool, *, _dns: DNSServer, _origins: dict[str, OriginServer]) -> ATS:
     """Configure plugins, strategies, and the parent.config fallback.
 
     :param _dns: Test-local dns configured by the test.
     :param _origins: Test-local origins configured by the test.
     :param ats_factory: Factory for isolated Traffic Server instances.
+    :param use_yaml: Load the remap rules from remap.yaml instead of remap.config.
     """
 
     ats = ats_factory.create("ats", enable_cache=False, disable_log_checks=True)
@@ -172,34 +247,30 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origins: dict[st
             "proxy.config.diags.debug.tags": "next_hop|dns|http|parent|regex_remap|header_rewrite|tslua",
         })
     ats.write_config_file("hdr_rw.config", header_rewrite_config())
+    ats.write_config_file("global_hdr_rw.config", global_header_rewrite_config())
+    ats.plugin_config.add_line("header_rewrite.so global_hdr_rw.config")
     ats.write_config_file("regex_remap.config", regex_remap_config())
     ats.write_config_file("strategies.lua", lua_config())
     ats.write_config_file("strategies.yaml", strategies_config(_origins=_origins))
     ats.parent_config.add_line(
         f'dest_domain=. parent="nh2:{_origins["nh2"].port}" '
         "round_robin=false go_direct=false parent_is_proxy=false")
-    ats.remap_config.add_lines(
-        (
-            "map http://nhp_hr http://origin @plugin=header_rewrite.so @pparam=hdr_rw.config",
-            "map http://nhs_hr http://origin @strategy=nh0 @plugin=header_rewrite.so @pparam=hdr_rw.config",
-            "map http://nh0_hr http://origin @strategy=nh0 @plugin=header_rewrite.so @pparam=hdr_rw.config",
-            "map http://nh1_hr http://origin @strategy=nh1 @plugin=header_rewrite.so @pparam=hdr_rw.config",
-            "map http://nh2_hr http://origin @plugin=header_rewrite.so @pparam=hdr_rw.config",
-            "map http://nhp_rr http://origin @plugin=regex_remap.so @pparam=regex_remap.config",
-            "map http://nhs_rr http://origin @strategy=nh0 @plugin=regex_remap.so @pparam=regex_remap.config",
-            "map http://nh0_rr http://origin @strategy=nh0 @plugin=regex_remap.so @pparam=regex_remap.config",
-            "map http://nh1_rr http://origin @strategy=nh1 @plugin=regex_remap.so @pparam=regex_remap.config",
-            "map http://nh2_rr http://origin @plugin=regex_remap.so @pparam=regex_remap.config",
-            "map http://nhp_lua http://origin @plugin=tslua.so @pparam=strategies.lua",
-            "map http://nhs_lua http://origin @strategy=nh0 @plugin=tslua.so @pparam=strategies.lua",
-            "map http://nh0_lua http://origin @strategy=nh0 @plugin=tslua.so @pparam=strategies.lua",
-            "map http://nh1_lua http://origin @strategy=nh1 @plugin=tslua.so @pparam=strategies.lua",
-            "map http://nh2_lua http://origin @plugin=tslua.so @pparam=strategies.lua",
-        ))
+    if use_yaml:
+        ats.remap_yaml.add_lines(remap_yaml_lines())
+    else:
+        ats.remap_config.add_lines(remap_config_lines())
     return ats
 
 
-def request(host: str, path: str, expected_origin: str, *, strategy: str | None = None, _ats: ATS, _curl: Curl) -> None:
+def request(
+        host: str,
+        path: str,
+        expected_origin: str,
+        *,
+        strategy: str | None = None,
+        header: str = "Strategy",
+        _ats: ATS,
+        _curl: Curl) -> None:
     """Issue one request and verify which origin served it.
 
     :param _ats: Test-local ats configured by the test.
@@ -208,11 +279,12 @@ def request(host: str, path: str, expected_origin: str, *, strategy: str | None 
     :param path: Resource or file path used by this operation.
     :param expected_origin: Expected origin for this case.
     :param strategy: Strategy used by this test step.
+    :param header: Request header that carries ``strategy``.
     """
 
     arguments = ["--silent", "--show-error", "--proxy", f"http://127.0.0.1:{_ats.http_port}"]
     if strategy is not None:
-        arguments.extend(("--header", f"Strategy: {strategy}"))
+        arguments.extend(("--header", f"{header}: {strategy}"))
     arguments.append(f"http://{host}{path}")
     result = _curl.run_for(
         _ats,
@@ -243,6 +315,30 @@ def run_header_rewrite_cases(*, _ats: ATS, _curl: Curl) -> None:
         request(host, "/path", expected, strategy=strategy, _ats=_ats, _curl=_curl)
 
 
+def run_global_header_rewrite_cases(*, _ats: ATS, _curl: Curl) -> None:
+    """Verify a global header_rewrite resolves strategies per transaction.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    request("nhp_hr", "/path", "nh1", strategy="nh1", header="GlobalStrategy", _ats=_ats, _curl=_curl)
+    request("nhp_hr", "/path", "nh0", strategy="nh0", header="DynStrategy", _ats=_ats, _curl=_curl)
+
+
+def check_diags(_ats: ATS) -> None:
+    """Verify each expected strategy failure was logged and no other ERROR was.
+
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    content = _ats.diags_log.read_text(errors="replace")
+    for pattern in EXPECTED_ERRORS:
+        assert re.search(pattern, content), f"missing expected error {pattern!r}:\n{content}"
+    unexpected = re.findall(rf"ERROR: (?!{'|'.join(EXPECTED_ERRORS)}).*", content)
+    assert not unexpected, f"unexpected errors: {unexpected}"
+
+
 def run_plugin_cases(suffix: str, *, _ats: ATS, _curl: Curl) -> None:
     """Verify regex_remap or tslua changes strategy from the request path.
 
@@ -262,16 +358,18 @@ def run_plugin_cases(suffix: str, *, _ats: ATS, _curl: Curl) -> None:
         request(host, path, expected, _ats=_ats, _curl=_curl)
 
 
-def test_strategies_plugins(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+@pytest.mark.parametrize("use_yaml", (False, True), ids=("remap_config", "remap_yaml"))
+def test_strategies_plugins(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, use_yaml: bool) -> None:
     """Remap plugins can move among strategies and the parent.config fallback.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
     :param curl: Transport-aware curl command runner.
+    :param use_yaml: Load the remap rules from remap.yaml instead of remap.config.
     """
     _dns = configure_dns(services)
     _origins = configure_origins(services)
-    _ats = configure_ats(ats_factory, _dns=_dns, _origins=_origins)
+    _ats = configure_ats(ats_factory, use_yaml, _dns=_dns, _origins=_origins)
 
     _dns.start()
     for origin in _origins.values():
@@ -280,4 +378,6 @@ def test_strategies_plugins(ats_factory: ATSFactory, services: ServiceFactory, c
     run_header_rewrite_cases(_ats=_ats, _curl=curl)
     run_plugin_cases("rr", _ats=_ats, _curl=curl)
     run_plugin_cases("lua", _ats=_ats, _curl=curl)
-    assert "ERROR" in _ats.diags_log.read_text(errors="replace")
+    run_global_header_rewrite_cases(_ats=_ats, _curl=curl)
+    _ats.stop()
+    check_diags(_ats)

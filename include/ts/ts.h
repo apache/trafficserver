@@ -1756,17 +1756,39 @@ void TSHttpTxnErrorBodySet(TSHttpTxn txnp, char *buf, size_t buflength, char *mi
 char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
 
 /**
-    Sets the Transaction's Next Hop Parent Strategy.
-    Calling this after TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK will
-    result in bad behavior.
+    Retrieves a handle to the named strategy in the strategy table.
+    Returns nullptr if no strategy is found.
+    This uses the current transaction's state machine to get
+    access to UrlRewrite's NextHopStrategyFactory.
+    It's preferable to retrieve strategies during TSRemapNewInstance.
 
-    You can get this strategy pointer by calling TSHttpTxnParentStrategyGet().
+    @param txnp HTTP transaction which holds the strategy table.
+    @param name of the strategy to look up.
+
+ */
+TSStrategy TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name);
+
+/**
+    Sets the Transaction's Next Hop Parent Strategy.
+    Must be called before parent selection logic is required.
+
+    You can get this strategy pointer by calling TSHttpTxnNextHopStrategyFind()
+    or TSRemapNextHopStrategyFind().
+
+    A non-null strategy must be a live strategy in this transaction's
+    NextHopStrategyFactory. A handle that is not (e.g. one cached across
+    a configuration reload) is normally rejected (logged, no effect).
+    The check compares addresses, so it is a safety net, not a guarantee:
+    it never lets a freed strategy through, but if a stale handle's address
+    has been reused by a current strategy, that strategy is used. Plugins
+    must re-obtain handles after a reload. Passing nullptr clears the
+    transaction's strategy so parent.config is used.
 
     @param txnp HTTP transaction whose parent strategy to set.
     @param pointer to the given strategy.
 
  */
-void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
+void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy strategy);
 
 /**
     Retrieves a pointer to the current next hop selection strategy.
@@ -1777,32 +1799,67 @@ void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
     @param txnp HTTP transaction whose next hop strategy to get.
 
  */
-void const *TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
+TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
 
 /**
     Returns either null pointer or null terminated pointer to name.
-                DO NOT FREE.
+    DO NOT FREE.
 
     This value may be a nullptr due to:
       - parent proxying not enabled
       - no parent selection strategy (using parent.config)
 
-    @param txnp HTTP transaction whose next hop strategy to get.
+    @param pointer to the NextHopStrategy.
 
  */
-char const *TSHttpNextHopStrategyNameGet(void const *strategy);
+char const *TSNextHopStrategyNameGet(TSStrategy strategy);
 
 /**
     Retrieves a pointer to the named strategy in the strategy table.
-    Returns nullptr if no strategy is set.
-    This uses the current transaction's state machine to get
-    access to UrlRewrite's NextHopStrategyFactory.
+    This can only be called during TSRemapNewInstance.
+    DO NOT FREE.
 
-    @param txnp HTTP transaction which holds the strategy table.
-    @param name of the strategy to look up.
+    Returns nullptr if no strategy is found with the given name, or if the
+    call is made outside of remap rule initialization (e.g. from a
+    globally loaded plugin). A call outside of remap rule initialization
+    is logged the first time it occurs.
+    This uses the NextHopStrategyFactory of the remap config being loaded.
+
+    @param name of the strategy to look up; must not be nullptr (asserts).
 
  */
-void const *TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name);
+TSStrategy TSRemapNextHopStrategyFind(const char *name);
+
+/**
+    Retrieves the strategy pointer of the remap rule currently being loaded.
+    This can only be called during TSRemapNewInstance.
+    DO NOT FREE.
+
+    Returns nullptr if no strategy is assigned to the rule, or if the call
+    is made outside of remap rule initialization. A call outside of remap
+    rule initialization is logged the first time it occurs.
+
+ */
+TSStrategy TSRemapNextHopStrategyGet();
+
+/**
+    Sets the remap rule's next hop strategy.
+    This can only be called during TSRemapNewInstance.
+
+    The strategy must have been obtained via TSRemapNextHopStrategyFind()
+    during the current remap config load; a handle not present in the
+    loading NextHopStrategyFactory is normally rejected (logged, no
+    effect). The check compares addresses only, as for
+    TSHttpTxnNextHopStrategySet(), and checks factory membership, not
+    which rule obtained the handle.
+    Passing nullptr clears the rule's strategy so parent.config is used.
+    A call outside of remap rule initialization has no effect and is
+    logged the first time it occurs.
+
+    @param handle to the strategy to set.
+
+ */
+void TSRemapNextHopStrategySet(TSStrategy strategy);
 
 /**
     Sets the parent proxy name and port. The string hostname is copied
