@@ -79,12 +79,7 @@ def configure_proxy(ats_factory: ATSFactory, *, _ts_a: ATS, _ts_b: ATS) -> ATS:
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             # Every request needs its own origin handshake.
             "proxy.config.http.keep_alive_enabled_out": 0,
-            "proxy.config.ssl.origin_session_cache.enabled": 1,
-            "proxy.config.ssl.origin_session_cache.size": 1,
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-            "proxy.config.log.max_secs_per_buffer": 1,
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "ssl.origin_session_cache",
         })
     ats.remap_config.add_lines((
         f"map /a https://127.0.0.1:{_ts_a.https_port}",
@@ -154,10 +149,9 @@ def test_tls_origin_session_reuse_log(ats_factory: ATSFactory, services: Service
     for path in ("/a", "/a", "/b"):
         request(_proxy, path, _curl=curl)
 
-    log = wait_for_file_lines(_proxy.log_directory / "reuse.log", r"pqssr=", 3)
+    log = wait_for_file_lines(_proxy.log_directory / "reuse.log", r"^\S+ pqssr=\d$", 3)
     entries = re.findall(r"^(\S+) pqssr=(\d)$", log, re.MULTILINE)
 
     assert metric(_proxy, "proxy.process.ssl.ssl_origin_session_cache_hit") == 2, log
     assert metric(_proxy, "proxy.process.ssl.origin_session_reused") == 1, log
-    assert entries[:2] == [("/a", "0"), ("/a", "1")], log
-    assert entries[2] == ("/b", "0"), log
+    assert entries == [("/a", "0"), ("/a", "1"), ("/b", "0")], log
