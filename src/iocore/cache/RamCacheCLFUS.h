@@ -108,11 +108,11 @@ private:
   static constexpr double
   cache_value_hits_size(const uint64_t hits, const uint32_t size)
   {
-    // Dampen the linear size penalty using an effective size curve:
-    // (size >> 1) + 2048 prevents tiny objects (< 1KB) from having an
-    // overwhelming advantage over normal web objects (10KB-100KB),
-    // while remaining strictly monotonic with size so smaller objects still
-    // have higher density.
+    // Equal to 2 * (hits + 1) / (size + 4608): halving the size does not
+    // change any ranking, so the effect is a fixed per-object charge of about
+    // 4.5 KiB instead of 256 bytes. That keeps tiny objects from swamping
+    // normal web objects (1 KiB vs 64 KiB is about 12.5x rather than 51x),
+    // while value never increases with size.
     const uint32_t eff_size = (size >> 1) + 2048;
     return static_cast<double>(hits + 1) / (eff_size + entry_overhead);
   }
@@ -123,10 +123,9 @@ private:
     return cache_value_hits_size(e->hits, e->size);
   }
 
-  // Lets the unit tests reach a stored entry so the decompression failure
-  // paths in get() can be exercised, and the value metric so it can be
-  // checked; see unit_tests/test_RamCacheCLFUS.cc. Nothing in the product
-  // uses this.
+  // Lets the unit tests inspect and adjust internal state: stored entries,
+  // the LRU queues, counters, the value metric and the decay clock; see
+  // unit_tests/test_RamCacheCLFUS.cc. Nothing in the product uses this.
   friend struct RamCacheCLFUSTestAccess;
 
   ink_hrtime          _last_decay_time = 0;

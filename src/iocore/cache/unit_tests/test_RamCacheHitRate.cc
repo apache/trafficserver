@@ -310,7 +310,7 @@ TEST_CASE("RamCacheS3FIFO meets the hit-rate floor with non-default tunables", "
 }
 
 // CLFUS weighs hits by size, so on a 50/50 mix of 4K and 64K objects it should keep far more of the hot set than LRU
-// without giving up byte hit rate. Measured at 1/4/16 MB: +14.8/+11.4/+8.8 object points, +4.3/+3.6/+2.9 byte points.
+// without giving up byte hit rate. Measured at 1/4/16 MB: +15.2/+11.7/+9.0 object points, +5.1/+3.8/+3.3 byte points.
 TEST_CASE("RamCacheCLFUS beats LRU on a mix of 4K and 64K objects", "[cache][ramcache][hitrate]")
 {
   CacheDisk disk;

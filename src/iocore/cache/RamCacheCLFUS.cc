@@ -257,6 +257,11 @@ RamCacheCLFUS::_decay_epochs()
   ink_hrtime now     = ink_get_hrtime();
   ink_hrtime elapsed = now - this->_last_decay_time;
 
+  // A backward wall-clock step would otherwise stall decay until the clock caught up.
+  if (elapsed < 0) {
+    this->_last_decay_time = now;
+    return;
+  }
   if (elapsed < decay_interval) {
     return;
   }
@@ -894,11 +899,13 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
     uint16_t k     = key->slice32(3) >> 16;
     uint16_t kk    = this->_seen[s];
     this->_seen[s] = k;
-    if (this->_history >= this->_objects && kk != k) {
-      DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d UNSEEN", key->slice32(3), auxkey, size);
-      return 0;
-    }
-    if (kk == k) {
+    if (this->_history >= this->_objects) {
+      if (kk != k) {
+        DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d UNSEEN", key->slice32(3), auxkey, size);
+        return 0;
+      }
+      // Rejected as unseen last time, so this is the second sighting: let it
+      // compete for admission instead of spending a third request in history.
       seen_match = true;
     }
   }
@@ -1005,7 +1012,7 @@ Lhistory:
   e         = THREAD_ALLOC(ramCacheCLFUSEntryAllocator, this_ethread());
   e->key    = *key;
   e->auxkey = auxkey;
-  e->hits   = 2;
+  e->hits   = 2; // survive one _tick() so a returning key can still be found in history
   e->epoch  = this->_epoch;
   e->size   = data->block_size();
   e->flags  = 0;

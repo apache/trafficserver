@@ -546,13 +546,11 @@ TEST_CASE("CLFUS unconditionally promotes resident entries to the tail on hits",
 
   RamCacheCLFUSEntry *e1 = RamCacheCLFUSTestAccess::find_entry(rc, key1);
   REQUIRE(e1 != nullptr);
-  // Initial order in _lru[0] has e1 at the head
   CHECK(RamCacheCLFUSTestAccess::lru_head(rc) == e1);
 
   // Inflate _average_value so e1's value is lower than average
   RamCacheCLFUSTestAccess::set_average_value(rc, 1000.0);
 
-  // get() on key1 must unconditionally promote e1 to the tail of _lru[0]
   Ptr<IOBufferData> got;
   CHECK(rc.get(&key1, &got) == 1);
   CHECK(RamCacheCLFUSTestAccess::lru_tail(rc) == e1);
@@ -589,13 +587,14 @@ TEST_CASE("CLFUS history entry is refreshed on get() hit", "[cache][ramcache][cl
   REQUIRE(e3 != nullptr);
   REQUIRE(e2->flag_bits.lru == 1); // in history
   REQUIRE(e3->flag_bits.lru == 1);
+  // New history entries start at 2 hits, so e2 survived the _tick() from key3's put.
+  CHECK(e3->hits == 2);
   REQUIRE(RamCacheCLFUSTestAccess::lru_tail(rc, 1) == e3);
 
   uint64_t          hits_before = e2->hits;
   Ptr<IOBufferData> got;
   CHECK(rc.get(&key2, &got) == 0); // miss
 
-  // Hits count must increment and position must refresh to the tail of _lru[1]
   CHECK(e2->hits == hits_before + 1);
   CHECK(RamCacheCLFUSTestAccess::lru_tail(rc, 1) == e2);
 }
@@ -612,7 +611,7 @@ TEST_CASE("CLFUS size dampening curve bounds disparity between small and large o
   CHECK(v_1k > v_16k);
   CHECK(v_16k > v_64k);
 
-  // Ratio between 1KB and 64KB is dampened below 15x (under pure linear division it was 64x)
+  // The fixed per-object charge keeps the 1 KB to 64 KB ratio near 12.5x.
   double ratio = v_1k / v_64k;
   CHECK(ratio < 15.0);
   CHECK(ratio > 1.0);
@@ -761,9 +760,12 @@ TEST_CASE("CLFUS seen filter admits a filtered key on its second sighting", "[ca
     RamCacheCLFUSEntry *e = RamCacheCLFUSTestAccess::find_entry(rc, k);
     REQUIRE(e != nullptr);
     CHECK(e->flag_bits.lru == 1);
-    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k1) != nullptr);
-    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k1)->flag_bits.lru == 0);
-    CHECK(RamCacheCLFUSTestAccess::find_entry(rc, k2)->flag_bits.lru == 0);
+    RamCacheCLFUSEntry *e1 = RamCacheCLFUSTestAccess::find_entry(rc, k1);
+    RamCacheCLFUSEntry *e2 = RamCacheCLFUSTestAccess::find_entry(rc, k2);
+    REQUIRE(e1 != nullptr);
+    REQUIRE(e2 != nullptr);
+    CHECK(e1->flag_bits.lru == 0);
+    CHECK(e2->flag_bits.lru == 0);
   }
 }
 
@@ -834,4 +836,63 @@ TEST_CASE("CLFUS hashtable resizes after the seen filter is disabled", "[cache][
   }
   CHECK(RamCacheCLFUSTestAccess::objects(rc) == 300);
   CHECK(RamCacheCLFUSTestAccess::bytes(rc) <= RamCacheCLFUSTestAccess::max_bytes(rc));
+}
+
+TEST_CASE("CLFUS decay clock recovers from a backward wall-clock step", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 0;
+
+  RamCacheCLFUS rc;
+  rc.init(64 * 1024, &stripe);
+
+  RamCacheCLFUSTestAccess::set_last_decay_time(rc, ink_get_hrtime() + HRTIME_HOURS(1));
+
+  auto              key = make_key(1);
+  Ptr<IOBufferData> got;
+  rc.get(&key, &got);
+  CHECK(RamCacheCLFUSTestAccess::last_decay_time(rc) <= ink_get_hrtime());
+}
+
+TEST_CASE("CLFUS seen filter does not bypass history before it is saturated", "[cache][ramcache][clfus]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  cache_config_ram_cache_compress        = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_use_seen_filter = 1;
+
+  RamCacheCLFUS rc;
+  rc.init(32 * 1024, &stripe);
+
+  auto buf = make_buffer(compressible_bytes(8 * 1024));
+  for (uint64_t id = 1; id <= 3; ++id) {
+    auto k = make_key(id);
+    REQUIRE(rc.put(&k, buf.get(), 8 * 1024) == 1);
+  }
+  RamCacheCLFUSTestAccess::set_average_value(rc, 1e9);
+  RamCacheCLFUSTestAccess::set_resident_hits(rc, 0);
+
+  auto ka = make_key(10);
+  REQUIRE(rc.put(&ka, buf.get(), 8 * 1024) == 0);
+  REQUIRE(RamCacheCLFUSTestAccess::history(rc) < RamCacheCLFUSTestAccess::objects(rc));
+
+  // A different key with the same seen-filter tag and slot.
+  CryptoHash kb  = ka;
+  kb.u32[0]     ^= 0xffffffff;
+
+  CHECK(rc.put(&kb, buf.get(), 8 * 1024) == 0);
+  RamCacheCLFUSEntry *eb = RamCacheCLFUSTestAccess::find_entry(rc, kb);
+  REQUIRE(eb != nullptr);
+  CHECK(eb->flag_bits.lru == 1);
+  CHECK(RamCacheCLFUSTestAccess::objects(rc) == 3);
 }
