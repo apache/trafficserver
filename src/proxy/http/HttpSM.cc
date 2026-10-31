@@ -6931,22 +6931,29 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
                         HttpTunnelType_t::TRANSFORM, "post transform");
     post_transform_info.entry->in_tunnel = true;
     break;
-  case HttpVC_t::SERVER_VC:
+  case HttpVC_t::SERVER_VC: {
+    HttpTunnelConsumer *c;
     // YTS Team, yamsat Plugin
     // When redirect in process is true and redirection is enabled
     // add http server as the consumer
     if (post_redirect) {
       chunked = false;
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_for_partial_post);
-      tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server,
-                          HttpTunnelType_t::HTTP_SERVER, "redirect http server post");
+      c = tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server,
+                              HttpTunnelType_t::HTTP_SERVER, "redirect http server post");
     } else {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-      tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server, HttpTunnelType_t::HTTP_SERVER,
-                          "http server post");
+      c = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server,
+                              HttpTunnelType_t::HTTP_SERVER, "http server post");
     }
+    // Only an HTTP/1.1 origin supports chunked encoding, and its request body ends
+    // where its framing says. An HTTP/2 request body ends with END_STREAM, which the
+    // origin stream sends only when a write completes, so an empty body still needs
+    // that write or the origin waits for the rest.
+    c->write_empty_body     = !server_txn->is_chunked_encoding_supported();
     server_entry->in_tunnel = true;
     break;
+  }
   default:
     ink_release_assert(0);
     break;

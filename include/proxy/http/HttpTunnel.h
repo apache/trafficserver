@@ -239,6 +239,9 @@ struct HttpTunnelConsumer {
   bool        write_success = false;
   const char *name          = nullptr;
 
+  /// The VC ends its message when a write completes, so it needs a write even for an empty body.
+  bool write_empty_body = false;
+
   /** Check if this consumer is downstream from @a vc.
       @return @c true if any producer in the tunnel eventually feeds
       data to this consumer.

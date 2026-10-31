@@ -1219,7 +1219,12 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         if (c->write_vio == nullptr) {
           consumer_handler(VC_EVENT_ERROR, c);
         }
+      } else if (c->write_empty_body && (c->write_vio = c->vc->do_io_write(this, 0, c->buffer_reader)) != nullptr) {
+        // The VC reports the write complete once it has ended the message.
+        c->write_vio->reenable();
       } else {
+        // Nothing to wait for: the VC needs no write to end an empty body, or
+        // it can no longer write, so the body has already ended.
         c->write_vio = nullptr;
         consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }

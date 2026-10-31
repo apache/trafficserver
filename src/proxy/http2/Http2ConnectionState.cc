@@ -2709,24 +2709,23 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       int method = send_hdr->method_get_wksidx();
       stream->set_sent_request_method(method);
 
-      // Set END_STREAM on request headers for POST, etc. methods combined with
-      // an explicit length 0. Some origins RST on request headers with
-      // explicit zero length and no end stream flag, causing the request to
-      // fail. We emulate chromium behaviour here prevent such RSTs. Transfer-encoding
-      // implies there’s a body, regardless of whether it is chunked or not.
-      bool    content_method       = method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT;
+      // Set END_STREAM on request headers unless a body will follow them. Some
+      // origins RST request headers with an explicit zero length and no end
+      // stream flag, causing the request to fail; chromium sets the flag for
+      // the same reason. Whether a body follows is decided from the client
+      // request, as HttpSM does before starting the request body tunnel: a
+      // POST without Content-Length may have no body, and a chunked body has
+      // normally lost its Transfer-Encoding from send_hdr by now.
+      HttpSM *sm                   = stream->get_sm();
       bool    is_transfer_encoded  = send_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING);
       bool    has_content_header   = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH);
       bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;
-      int64_t content_length       = has_content_header ? send_hdr->get_content_length() : 0L;
-      bool is_chunked = is_transfer_encoded && send_hdr->value_get(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) ==
-                                                 static_cast<std::string_view>(HTTP_VALUE_CHUNKED);
+      bool    client_chunked       = sm->t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED;
 
       bool expect_content_stream =
-        is_transfer_encoded ||                                                        // transfer encoded content length is unknown
-        (!content_method && has_content_header && !explicit_zero_length) ||           // nonzero content with GET,etc
-        (content_method && !explicit_zero_length) ||                                  // content-length >0 or empty with POST etc
-        stream->get_sm()->get_ua_txn()->has_request_body(content_length, is_chunked); // request has a body
+        is_transfer_encoded ||                           // transfer encoded content length is unknown
+        (has_content_header && !explicit_zero_length) || // nonzero content length
+        sm->get_ua_txn()->has_request_body(sm->t_state.hdr_info.request_content_length, client_chunked); // request has a body
 
       // send END_STREAM if we don't expect any content
       if (!expect_content_stream) {
