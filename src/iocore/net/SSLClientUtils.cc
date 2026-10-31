@@ -479,10 +479,10 @@ next_hop_property_key(std::string_view sni, sockaddr const *remote_addr, char (&
 }
 
 bool
-origin_pinned_raw_public_key([[maybe_unused]] NetVConnection *netvc)
+origin_presented_raw_public_key([[maybe_unused]] NetVConnection *netvc)
 {
 #if TS_USE_RPK
-  if (netvc == nullptr || netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+  if (netvc == nullptr) {
     return false;
   }
 
@@ -628,6 +628,10 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 void
 origin_rpk_record_resumed_peer_key(SSL *ssl)
 {
+  if (SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+      netvc == nullptr || netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+    return;
+  }
   if (TrustedRPK *holder = ssl_get_trusted_rpk_holder(ssl); holder != nullptr && holder->peer_key.empty()) {
     record_peer_rpk(*holder, SSL_get0_peer_rpk(ssl));
   }

@@ -52,10 +52,10 @@ bool
 validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
 {
   NetVConnection *netvc = session->get_netvc();
-  if (origin_pinned_raw_public_key(netvc)) {
+  if (origin_presented_raw_public_key(netvc)) {
     // Deliberately not gated on multiplexing, the SNI match mask, the scheme, or NAME being in
-    // verify_server_properties: the pin set is the whole of what authenticated this origin, and the
-    // pool key, a name or an address, does not determine which set that was.
+    // verify_server_properties: only a pin set can vouch for this origin, and the pool key, a name or
+    // an address, does not determine which set that is.
     return ServerSessionPool::validate_pinned_origin(sm, netvc);
   }
 
@@ -194,8 +194,8 @@ ServerSessionPool::sni_matches(std::string_view proposed_sni, const char *sessio
 bool
 ServerSessionPool::validate_pinned_origin(HttpSM *sm, NetVConnection *netvc)
 {
-  // The entry is selected by the name the request would send or, without one, by the address it
-  // would connect to. Sessions to different addresses behind one hostname can be pool candidates
+  // The entry is selected by the request's outbound SNI or, without one, by the address it would
+  // connect to. Sessions to different addresses behind one hostname can be pool candidates
   // for each other, and sni.yaml can pin a different set for each.
   char buffer[INET6_ADDRSTRLEN];
 

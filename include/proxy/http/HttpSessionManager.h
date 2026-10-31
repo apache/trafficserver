@@ -81,11 +81,13 @@ public:
   static bool sni_matches(std::string_view proposed_sni, const char *session_sni);
   /** @return true if a pooled raw public key session may carry @a sm's request.
 
-      The pinned key set is the whole of what authenticated such a session, so this compares that set
-      with the one @a sm's own connection would pin, rather than inferring it from a name.
+      Only a pinned key set can vouch for such a session, so this checks the key the origin
+      presented on it against the set @a sm's own connection would pin, under @a sm's policy, rather
+      than inferring a match from a name. Under ENFORCED the key must also have been recorded, which
+      a connection opened under DISABLED never does.
 
       @param sm The transaction looking for a session.
-      @param netvc A pooled origin connection for which origin_pinned_raw_public_key() is true.
+      @param netvc A pooled origin connection for which origin_presented_raw_public_key() is true.
    */
   static bool validate_pinned_origin(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);

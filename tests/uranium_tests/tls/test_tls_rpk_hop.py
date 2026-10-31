@@ -903,19 +903,23 @@ def test_rpk_hop_replaced_pin_set_retires_pooled_connections(ats_factory: ATSFac
         "the request must be refused by a new handshake against the replaced set")
 
 
+@pytest.mark.parametrize("policy", ("PERMISSIVE", "DISABLED"))
 @pytest.mark.parametrize("origin_alpn", ("http/1.1", "h2,http/1.1"), ids=("http1", "h2"))
-def test_rpk_hop_permissive_connection_not_reused_when_enforced(
-        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, origin_alpn: str) -> None:
-    """A connection accepted under PERMISSIVE with an unpinned key does not carry an ENFORCED request.
+def test_rpk_hop_unpinned_connection_not_reused_when_enforced(
+        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, origin_alpn: str, policy: str) -> None:
+    """A connection whose key was never matched against the pin set does not carry an ENFORCED request.
 
-    The pinned set is the same for every request, so only the key that connection presented and the
-    requesting transaction's policy tell them apart. Over HTTP/2 the first request takes the session
-    through the connection handoff and the pooled session is multiplexed; each goes through a separate check.
+    Under PERMISSIVE the key was compared and accepted despite the mismatch; under DISABLED it was
+    never compared. The pinned set is the same for every request, so only the key that connection
+    presented and the requesting transaction's policy tell them apart. Over HTTP/2 the first request
+    takes the session through the connection handoff and the pooled session is multiplexed; each goes
+    through a separate check.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
     :param curl: Curl command runner.
     :param origin_alpn: Protocols the edge offers toward the parent.
+    :param policy: The edge's own verification policy toward the parent.
     """
 
     origin = configure_origin(services)
@@ -925,7 +929,7 @@ def test_rpk_hop_permissive_connection_not_reused_when_enforced(
         "edge_policy",
         parent,
         "server.wrongpubkey.pem",
-        policy="PERMISSIVE",
+        policy=policy,
         extra_remap_rules=[
             f"map /enforced/ https://127.0.0.1:{parent.https_port}/ @plugin=conf_remap.so"
             " @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED"
@@ -938,18 +942,23 @@ def test_rpk_hop_permissive_connection_not_reused_when_enforced(
         })
     start_hop(origin, parent, edge)
 
-    # A PERMISSIVE request would accept the key in a new handshake, so it may use the connection.
+    # A request under the edge's own policy would accept the key in a new handshake, so it may use the
+    # connection.
     for _ in range(2):
-        assert "origin response" in request_through(curl, edge).output, "PERMISSIVE should accept the unpinned key"
-    content = wait_for_file_lines(edge.traffic_out, PIN_MISMATCH, 1)
-    assert len(re.findall(PIN_MISMATCH, content)) == 1, "the second PERMISSIVE request should reuse the connection"
+        assert "origin response" in request_through(curl, edge).output, f"{policy} should accept the unpinned key"
+    assert inbound_handshakes(parent) == 1, f"the second {policy} request should reuse the connection"
+    # PERMISSIVE compared the key once, in the one handshake; DISABLED never compared it.
+    mismatches_before = 1 if policy == "PERMISSIVE" else 0
+    if mismatches_before:
+        wait_for_file_lines(edge.traffic_out, PIN_MISMATCH, mismatches_before)
+    assert len(re.findall(PIN_MISMATCH, edge.traffic_out.read_text(errors="replace"))) == mismatches_before
     result = curl.run(f"-k https://127.0.0.1:{edge.https_port}/enforced/", timeout=30)
     assert result.returncode == 0, result.output
     stop_tiers(edge, parent)
 
     assert "origin response" not in result.output, "an ENFORCED request must not reuse a connection its pin set never matched"
     # Counted rather than read from the warnings, which are throttled.
-    assert len(re.findall(PIN_MISMATCH, edge.traffic_out.read_text(errors="replace"))) > 1, \
+    assert len(re.findall(PIN_MISMATCH, edge.traffic_out.read_text(errors="replace"))) > mismatches_before, \
         "the ENFORCED request must be refused by a handshake of its own"
 
 
@@ -1286,3 +1295,53 @@ def test_rpk_hop_resumed_connection_is_reused(ats_factory: ATSFactory, services:
     wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 1)
     assert "origin response" in request_through(curl, edge).output
     assert inbound_handshakes(parent) == 2, "the connection that resumed a session should be reused from the pool"
+
+
+def test_rpk_hop_resumed_disabled_connection_not_reused_when_enforced(
+        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A connection that resumed a session under DISABLED does not carry an ENFORCED request.
+
+    A full handshake under DISABLED never compares the key, so it records none; a resumed one must not
+    record the key the session carries either. The pinned key is the parent's own, so the ENFORCED
+    request's own handshake succeeds and only the parent's handshake count shows whether it reused
+    the connection.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(
+        ats_factory,
+        "edge_resumed_disabled",
+        parent,
+        "server.pubkey.pem",
+        policy="DISABLED",
+        extra_remap_rules=[
+            f"map /enforced/ https://127.0.0.1:{parent.https_port}/ @plugin=conf_remap.so"
+            " @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED"
+        ])
+    edge.records.update(
+        {
+            "proxy.config.exec_thread.autoconfig.enabled": 0,
+            "proxy.config.exec_thread.limit": 1,
+            "proxy.config.ssl.origin_session_cache.enabled": 1,
+            # Short enough that the first connection leaves the pool, and the next one resumes its
+            # session, within the test.
+            "proxy.config.http.keep_alive_no_activity_timeout_out": 2,
+        })
+    start_hop(origin, parent, edge)
+
+    assert "origin response" in request_through(curl, edge).output
+    wait_for_metric(edge, "proxy.process.http.current_server_connections", 0)
+    assert "origin response" in request_through(curl, edge).output
+    wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 1)
+    # Without this, the connection timing out of the pool would pass for a refusal below.
+    assert "origin response" in request_through(curl, edge).output
+    assert inbound_handshakes(parent) == 2, "a DISABLED request should reuse the connection that resumed"
+    result = curl.run(f"-k https://127.0.0.1:{edge.https_port}/enforced/", timeout=30)
+    assert result.returncode == 0, result.output
+    assert "origin response" in result.output, "the ENFORCED request should succeed over a connection of its own"
+    assert inbound_handshakes(parent) == 3, "the ENFORCED request must not reuse the connection that resumed under DISABLED"

@@ -474,10 +474,11 @@ certificate exchange, and the usual certificate checks apply.
 Replacing the file named by ``server_rpk_ca`` and running :option:`traffic_ctl config reload`
 takes effect for requests that follow. A pooled origin connection carries a request verified under
 :code:`ENFORCED` only while the set that request would pin still contains the key the connection
-was authenticated with, so adding a key for rotation keeps existing connections while removing a key
-retires the connections it authenticated, and a connection whose key was accepted only under :code:`PERMISSIVE` never carries
-such a request. A request verified under :code:`PERMISSIVE` would accept the key in a new handshake
-anyway, so it may use the connection either way. Cached
+presented. Adding a key for rotation keeps existing connections, while removing a key retires the
+connections that presented it. A connection accepted under :code:`PERMISSIVE` with a key outside the
+set, or opened under :code:`DISABLED`, never carries a request verified under :code:`ENFORCED`. A request verified under
+:code:`PERMISSIVE` would accept the key in a new handshake anyway, so it may use the connection
+either way. Cached
 TLS sessions are keyed on the whole set, so any change to it makes the next connection to that
 next hop a full handshake. Requests already in progress on an existing connection are not
 interrupted.

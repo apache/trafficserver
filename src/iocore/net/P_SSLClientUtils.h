@@ -60,14 +60,13 @@ bool validate_server_certificate_hostname(NetVConnection *netvc, std::string_vie
  */
 std::string_view next_hop_property_key(std::string_view sni, sockaddr const *remote_addr, char (&buffer)[INET6_ADDRSTRLEN]);
 
-/** @return true if this origin connection authenticated with an RFC 7250 raw public key.
+/** @return true if the next hop presented an RFC 7250 raw public key on this origin connection.
 
-    Such a connection was vouched for by the pinned key set attached to it rather than by a
-    certificate, so callers gating origin session reuse must check that set with
-    origin_rpk_pin_matches() instead of a name. Always false when server verification is disabled
-    for the connection, since nothing was pinned.
+    Only a pinned key set can vouch for such a connection, so callers gating origin session reuse
+    must check the connection with origin_rpk_pin_matches() instead of a name. That includes a
+    connection whose own policy was DISABLED: the key was negotiated but never compared with a set.
  */
-bool origin_pinned_raw_public_key(NetVConnection *netvc);
+bool origin_presented_raw_public_key(NetVConnection *netvc);
 
 /** @return the server verification policy an outbound connection runs under.
 
@@ -85,11 +84,13 @@ YamlSNIConfig::Policy resolve_verify_server_policy(YamlSNIConfig::Policy txn_pol
 /** @return true if a raw public key origin connection may carry a request whose own connection
     would select the sni.yaml next-hop entry @a property_key.
 
-    Under ENFORCED that requires the key the connection was authenticated with to be in the set the
-    entry pins now; a name says nothing about which set that is. Under PERMISSIVE or DISABLED a new
-    handshake would accept the key regardless, so the connection may carry the request too.
+    When the request's policy is ENFORCED, the key the connection presented must be in the set the
+    entry pins now; a name says nothing about which set that is. A connection whose own policy was
+    DISABLED never compared its key with a set, so it has no recorded key and fails that check. When the
+    request's policy is PERMISSIVE or DISABLED, a new handshake would accept the key regardless, so
+    the connection may carry the request too.
 
-    @param netvc A pooled origin connection for which origin_pinned_raw_public_key() is true.
+    @param netvc A pooled origin connection for which origin_presented_raw_public_key() is true.
     @param property_key The new request's key, from next_hop_property_key().
     @param txn_policy The new request's own verification policy, or UNSET.
  */
@@ -103,7 +104,8 @@ void ssl_client_rpk_initialize();
 
     A resumed handshake runs no verify callback, which is where the key is otherwise recorded, and
     origin session reuse needs it to check the connection against the pinned set in force later.
-    The library restores the key with the session.
+    The library restores the key with the session. Nothing is recorded when the connection's policy
+    is DISABLED, as in a full handshake, whose verify callback returns before the key is compared.
  */
 void origin_rpk_record_resumed_peer_key(SSL *ssl);
 
