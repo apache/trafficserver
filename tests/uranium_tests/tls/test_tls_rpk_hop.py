@@ -1331,24 +1331,27 @@ def test_rpk_hop_resumed_disabled_connection_not_reused_when_enforced(
         policy="DISABLED",
         extra_remap_rules=[
             f"map /enforced/ https://127.0.0.1:{parent.https_port}/ @plugin=conf_remap.so"
-            " @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED"
+            " @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED",
+            # The connection a request releases takes that request's idle timeout, so only the first
+            # connection leaves the pool quickly. The one that resumes its session keeps the default,
+            # so it cannot time out of the pool and pass for a refusal within the test.
+            f"map /short-idle/ https://127.0.0.1:{parent.https_port}/ @plugin=conf_remap.so"
+            " @pparam=proxy.config.http.keep_alive_no_activity_timeout_out=2",
         ])
     edge.records.update(
         {
             "proxy.config.exec_thread.autoconfig.enabled": 0,
             "proxy.config.exec_thread.limit": 1,
             "proxy.config.ssl.origin_session_cache.enabled": 1,
-            # Short enough that the first connection leaves the pool, and the next one resumes its
-            # session, within the test.
-            "proxy.config.http.keep_alive_no_activity_timeout_out": 2,
         })
     start_hop(origin, parent, edge)
 
-    assert "origin response" in request_through(curl, edge).output
+    first = curl.run(f"-k https://127.0.0.1:{edge.https_port}/short-idle/", timeout=30)
+    assert first.returncode == 0, first.output
+    assert "origin response" in first.output
     wait_for_metric(edge, "proxy.process.http.current_server_connections", 0)
     assert "origin response" in request_through(curl, edge).output
     wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 1)
-    # Without this, the connection timing out of the pool would pass for a refusal below.
     assert "origin response" in request_through(curl, edge).output
     assert inbound_handshakes(parent) == 2, "a DISABLED request should reuse the connection that resumed"
     result = curl.run(f"-k https://127.0.0.1:{edge.https_port}/enforced/", timeout=30)
