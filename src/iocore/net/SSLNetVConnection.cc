@@ -2457,6 +2457,10 @@ SSLNetVConnection::_ssl_connect()
       Metrics::Counter::increment(ssl_rsb.origin_session_reused_count);
       Dbg(dbg_ctl_ssl_origin_session_cache, "reused session to origin server");
     } else {
+      // The origin can decline an offered session, so the resumption state and
+      // the cached curve and group recorded at lookup do not describe this
+      // full handshake.
+      TLSSessionResumptionSupport::clear();
       Dbg(dbg_ctl_ssl_origin_session_cache, "new session to origin server");
     }
     return SSL_ERROR_NONE;
