@@ -319,13 +319,13 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   if (EVP_PKEY *peer_rpk = X509_STORE_CTX_get0_rpk(ctx); peer_rpk != nullptr) {
     // The client presented a raw public key instead of a certificate: there's no chain and no
     // hostname to check, so pinning against the configured trusted keys stands in for preverify_ok.
-    // The hook still always runs, mirroring the X.509 path below: plugins see every attempt, and
-    // may add further rejection, but can't turn a failed pin match into acceptance.
+    // The hook runs for every key that reaches the pin decision, and may add further rejection, but
+    // can't turn a failed pin match into acceptance.
     //
     // x509_verify_rpk() in crypto/x509/x509_vfy.c may first invoke this callback for a key below the
-    // security level. Only the invocation that follows, with X509_V_ERR_RPK_UNTRUSTED preset since no
-    // DANE is configured, is the pin decision; clearing that error on a match keeps it out of
-    // SSL_get_verify_result() for a connection we accepted.
+    // security level; that invocation is refused without calling the hook. Only the invocation that follows, with
+    // X509_V_ERR_RPK_UNTRUSTED preset since no DANE is configured, is the pin decision; clearing that
+    // error on a match keeps it out of SSL_get_verify_result() for a connection we accepted.
     if (X509_STORE_CTX_get_error(ctx) != X509_V_ERR_RPK_UNTRUSTED) {
       Dbg(dbg_ctl_ssl_verify, "client raw public key rejected: %s", X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
       return preverify_ok;

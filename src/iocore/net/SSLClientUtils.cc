@@ -120,6 +120,20 @@ warn_origin_rpk_mismatch(bool enforce_mode, NetVConnection *netvc)
   log_msg.warning(MakeSourceLocation(), "Origin raw public key did not match any trusted key. Action=%s server=%s(%s)",
                   enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
 }
+
+#if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
+void
+warn_origin_rpk_rejected(bool enforce_mode, NetVConnection *netvc, int err)
+{
+  static LogMessage log_msg{IS_THROTTLED};
+  char              buff[INET6_ADDRSTRLEN];
+
+  ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
+  log_msg.warning(MakeSourceLocation(), "Origin raw public key failed verification. Action=%s Error=%s server=%s(%s)",
+                  enforce_mode ? "Terminate" : "Continue", X509_verify_cert_error_string(err), netvc->options.ssl_servername.get(),
+                  buff);
+}
+#endif
 #endif
 
 } // end anonymous namespace
@@ -176,12 +190,12 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     // decides whether a mismatch is fatal, matching the X.509 paths.
     //
     // x509_verify_rpk() in crypto/x509/x509_vfy.c may first invoke this callback for a key below the
-    // security level, which verifyServerPolicy treats like any other failed check. Only the
-    // invocation that follows, with X509_V_ERR_RPK_UNTRUSTED preset since no DANE is configured, is
-    // the pin decision, and on a match that preset error is cleared so it does not survive into
-    // SSL_get_verify_result() for a properly pinned connection.
+    // security level, which verifyServerPolicy treats like any other failed check, without calling the hook.
+    // Only the invocation that follows, with X509_V_ERR_RPK_UNTRUSTED preset since no DANE is
+    // configured, is the pin decision, and on a match that preset error is cleared so it does not
+    // survive into SSL_get_verify_result() for a properly pinned connection.
     if (err != X509_V_ERR_RPK_UNTRUSTED) {
-      Dbg(dbg_ctl_ssl_verify, "origin raw public key failed verification: %s", X509_verify_cert_error_string(err));
+      warn_origin_rpk_rejected(enforce_mode, netvc, err);
       return !enforce_mode;
     }
     bool const pin_ok = ssl_pin_peer_rpk(ssl, peer_rpk);
@@ -196,9 +210,8 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_RPK_UNTRUSTED);
       }
     }
-    // The hook runs on every raw public key attempt, and may add rejection but cannot turn a
-    // failed pin match into acceptance. (The X.509 paths below return early in some cases without
-    // reaching their hook call, so this is not a claim about the whole function.)
+    // The hook runs for every key that reaches the pin decision, and may add rejection but cannot
+    // turn a failed pin match into acceptance.
     TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
     if (tbs == nullptr) {
       Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
