@@ -115,8 +115,8 @@ ConnectingEntry::state_http_server_open(int event, void *data)
 
           NetVConnection *session_netvc = new_session->get_netvc();
           // Only a pinned key set can vouch for a raw public key origin, so a transaction joins this
-          // session only if its own connection would accept the key the origin presented and, under
-          // ENFORCED, that key was recorded against a pinned set.
+          // session only if validate_pinned_origin() accepts it for the transaction's own set and
+          // policy.
           bool const acceptable =
             origin_presented_raw_public_key(session_netvc) ?
               ServerSessionPool::validate_pinned_origin(*entry, session_netvc) :
