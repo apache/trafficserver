@@ -855,7 +855,9 @@ def test_rpk_hop_replaced_pin_set_retires_origin_sessions(
     assert digests[0] == digests[1] != digests[2], keys
 
 
-def test_rpk_hop_replaced_pin_set_retires_pooled_connections(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+@pytest.mark.parametrize("match", ("both", "host"))
+def test_rpk_hop_replaced_pin_set_retires_pooled_connections(
+        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, match: str) -> None:
     """A pooled origin connection is reused only while the edge still pins the key that authenticated it.
 
     The edge reaches the parent by an IP literal and so sends no SNI, which a name comparison would
@@ -864,13 +866,21 @@ def test_rpk_hop_replaced_pin_set_retires_pooled_connections(ats_factory: ATSFac
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
     :param curl: Curl command runner.
+    :param match: proxy.config.http.server_session_sharing.match. The session pool searches by
+        address for "both" and by hostname alone for "host", and either way the pool checks the
+        presented key, not a name.
     """
 
     origin = configure_origin(services)
     parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
     edge = configure_edge(ats_factory, "edge_pool", parent, "server.pubkey.pem")
     # The pool is per thread, so one thread keeps every request in reach of the pooled connection.
-    edge.records.update({"proxy.config.exec_thread.autoconfig.enabled": 0, "proxy.config.exec_thread.limit": 1})
+    edge.records.update(
+        {
+            "proxy.config.exec_thread.autoconfig.enabled": 0,
+            "proxy.config.exec_thread.limit": 1,
+            "proxy.config.http.server_session_sharing.match": match,
+        })
     start_hop(origin, parent, edge)
     pin_file = edge.ssl_directory / "server.pubkey.pem"
 
