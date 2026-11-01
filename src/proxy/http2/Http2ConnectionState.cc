@@ -2701,13 +2701,13 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     return;
   }
 
-  if (stream->is_outbound_connection()) { // Will be sending a request_header
+  if (stream->is_outbound_connection()) {
     int method = send_hdr->method_get_wksidx();
     stream->set_sent_request_method(method);
 
-    // Nothing written after the request header ends the stream unless a body
-    // follows it, so END_STREAM goes on HEADERS otherwise. A Content-Length says
-    // whether a body follows, including one a plugin supplies with the header.
+    // When no body follows the request header nothing else is written to this
+    // stream, so END_STREAM has to go on HEADERS. A Content-Length, including the
+    // one HttpSM sets for a body a plugin supplies, says whether a body follows.
     // Without one, a body follows only when HttpSM forwards the client's.
     bool body_follows = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) ? send_hdr->get_content_length() > 0 :
                                                                            stream->get_sm()->forwards_client_request_body();
@@ -2725,8 +2725,9 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     }
   }
 
-  // Send a HEADERS frame. END_STREAM stays on it when CONTINUATION frames carry
-  // the rest of the header block, and END_HEADERS goes on the last of them.
+  // CONTINUATION frames have no END_STREAM flag, so END_STREAM stays on HEADERS
+  // even when CONTINUATION frames carry the rest of the header block. END_HEADERS
+  // goes on the last frame of the block.
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length  = header_blocks_size;
     flags          |= HTTP2_FLAGS_HEADERS_END_HEADERS;

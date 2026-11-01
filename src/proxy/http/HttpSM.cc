@@ -6944,6 +6944,8 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
     // An HTTP/1 request body ends where its framing says. An HTTP/2 one ends with
     // END_STREAM, which the stream sends on the DATA frame that finishes a write,
     // so an empty body still needs a write or the origin waits for the rest.
+    // Only an HTTP/1 origin transaction supports chunked encoding, so that is
+    // what tells the two apart here.
     c->write_empty_body     = !server_txn->is_chunked_encoding_supported();
     server_entry->in_tunnel = true;
     break;

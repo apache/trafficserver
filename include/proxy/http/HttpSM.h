@@ -297,8 +297,9 @@ public:
   bool is_redirect_required();
 
   /// Whether the client request body goes to the origin after the request header,
-  /// through the request body tunnel. A body a plugin sets for the origin request
-  /// replaces it and goes out with the header, and a TRACE body is never forwarded.
+  /// through the request body tunnel. True when the client declares a body, even
+  /// one that turns out empty. False when a plugin sets the origin request body,
+  /// which replaces the client's and goes out with the header, and for TRACE.
   bool forwards_client_request_body() const;
 
   /// Get the protocol stack for the inbound (client, user agent) connection.

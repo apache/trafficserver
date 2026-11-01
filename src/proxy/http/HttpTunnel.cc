@@ -1224,10 +1224,13 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         c->write_vio->reenable();
       } else {
         // Either the VC needs no write to end an empty body, or its stream is
-        // already half closed or closed, by an END_STREAM on the request header
-        // or by a reset, so no write can go out. The consumer is complete either
-        // way, and the second, empty pass over a buffered request body waits on
-        // this event.
+        // already half closed (local) or closed, by an END_STREAM on the request
+        // header or by a reset, so no write can go out. The consumer is complete
+        // either way, and the second, empty pass over a buffered request body
+        // waits on this event.
+        if (c->write_empty_body) {
+          Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] consumer '%s' cannot write, empty body ends without a write", sm->sm_id, c->name);
+        }
         c->write_vio = nullptr;
         consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }

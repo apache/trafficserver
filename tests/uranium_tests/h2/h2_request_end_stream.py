@@ -3,14 +3,15 @@
 clients: an HTTP/2 one that places its END_STREAM in different frames, and an
 HTTP/1.1 one that frames its body with Content-Length or chunked encoding.
 
-The origin replies when it sees END_STREAM, reporting the method and the number of
-body bytes it received.  A request whose END_STREAM ATS never forwards gets no reply
-from the origin, so ATS gives up with a 504 once its origin no-activity timeout
-fires.
+The origin replies when it sees END_STREAM, reporting the method, the number of
+body bytes it received and whether END_STREAM came on HEADERS or on DATA.  A
+request whose END_STREAM ATS never forwards gets no reply from the origin, so ATS
+gives up with a 504 once its origin no-activity timeout fires.
 
-The origin delays each TLS handshake so that, for a request whose client sends its
-END_STREAM together with HEADERS, the client stream has ended before ATS can start
-the request body tunnel.  That ordering is otherwise left to a race.
+The origin delays each TLS handshake so that, for a request whose client sends the
+DATA frame carrying END_STREAM in the same write as HEADERS, the client stream has
+ended before ATS can start the request body tunnel.  That ordering is otherwise
+left to a race.
 """
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -39,6 +40,7 @@ import time
 import h2.config
 import h2.connection
 import h2.events
+import h2.exceptions
 
 # How the client ends the request stream:
 #   headers  END_STREAM on HEADERS.
@@ -46,13 +48,17 @@ import h2.events
 #   late     HEADERS, then a pause well past the origin handshake delay, then the DATA frame.
 ENDINGS = ("headers", "data", "late")
 
+# The frame that carried END_STREAM to the origin.
+END_FRAMES = ("headers", "data")
+
 
 def filler(size: int) -> str:
-    """Return a header value of the given size that HPACK cannot shrink to fit one HEADERS frame."""
+    """Return a random header value of the given size, which HPACK's Huffman coding shrinks only slightly."""
     return "".join(random.Random(size).choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=size))
 
 
 def serve(args: argparse.Namespace) -> int:
+    """Accept origin connections from ATS, serving each on its own thread."""
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.load_cert_chain(args.cert, args.key)
     ctx.set_alpn_protocols(["h2"])
@@ -67,6 +73,7 @@ def serve(args: argparse.Namespace) -> int:
 
 
 def handle(ctx: ssl.SSLContext, conn: socket.socket, delay: float) -> None:
+    """Serve one origin connection, answering each request only after its stream ends."""
     # A port probe connects and closes without a handshake; delaying it is harmless.
     time.sleep(delay)
     try:
@@ -85,14 +92,19 @@ def handle(ctx: ssl.SSLContext, conn: socket.socket, delay: float) -> None:
                 return
             for event in h2c.receive_data(data):
                 if isinstance(event, h2.events.RequestReceived):
-                    requests[event.stream_id] = {"headers": dict(event.headers), "bytes": 0}
+                    requests[event.stream_id] = {"headers": dict(event.headers), "bytes": 0, "end": "data"}
+                    if event.stream_ended is not None:
+                        requests[event.stream_id]["end"] = "headers"
                 elif isinstance(event, h2.events.DataReceived):
                     requests[event.stream_id]["bytes"] += len(event.data)
                     h2c.acknowledge_received_data(event.flow_controlled_length, event.stream_id)
                 elif isinstance(event, h2.events.StreamEnded):
                     request = requests.pop(event.stream_id)
                     method = request["headers"][":method"]
-                    print(f"origin: {method} {request['headers'][':path']} ended with {request['bytes']} body bytes", flush=True)
+                    print(
+                        f"origin: {method} {request['headers'][':path']} ended on {request['end']} "
+                        f"with {request['bytes']} body bytes",
+                        flush=True)
                     body = b"ended"
                     h2c.send_headers(
                         event.stream_id, [
@@ -100,15 +112,41 @@ def handle(ctx: ssl.SSLContext, conn: socket.socket, delay: float) -> None:
                             ("content-length", str(len(body))),
                             ("x-origin-method", method),
                             ("x-origin-body-bytes", str(request["bytes"])),
+                            ("x-origin-end-frame", request["end"]),
                         ])
                     h2c.send_data(event.stream_id, body, end_stream=True)
             sock.sendall(h2c.data_to_send())
+    except h2.exceptions.ProtocolError as e:
+        # A frame ATS should not have sent, such as DATA after END_STREAM.
+        print(f"origin: protocol error from ATS: {e!r}", flush=True)
     except (ConnectionError, ssl.SSLError, OSError):
         return
     finally:
         for stream_id, request in requests.items():
             print(f"origin: stream {stream_id} {request['headers'][':method']} never ended", flush=True)
         sock.close()
+
+
+def check_origin_reply(
+        args: argparse.Namespace, status: int | None, fields: dict[str, str], response_body: bytes, forwarded: int) -> int:
+    """Check the reply the origin sent once it saw the request end, returning the exit status."""
+    if status != 200:
+        print(f"FAIL: expected status 200, got {status}")
+        return 1
+    if fields.get("x-origin-method") != args.method:
+        print(f"FAIL: origin did not answer this request: {fields}")
+        return 1
+    if fields.get("x-origin-body-bytes") != str(forwarded):
+        print(f"FAIL: origin received {fields.get('x-origin-body-bytes')} body bytes, expected {forwarded}")
+        return 1
+    if args.origin_end_frame and fields.get("x-origin-end-frame") != args.origin_end_frame:
+        print(f"FAIL: END_STREAM reached the origin on {fields.get('x-origin-end-frame')}, expected {args.origin_end_frame}")
+        return 1
+    if response_body != b"ended":
+        print(f"FAIL: unexpected response body {response_body[:80]!r}")
+        return 1
+    print("PASS")
+    return 0
 
 
 def request(args: argparse.Namespace) -> int:
@@ -160,25 +198,12 @@ def request(args: argparse.Namespace) -> int:
                     done = True
             sock.sendall(h2c.data_to_send())
 
-    elapsed = time.monotonic() - start
     print(
         f"{args.method} end={args.end} content-length={args.content_length} body={len(body)}: "
-        f"status {status} in {elapsed:.1f}s, origin saw {response_headers.get('x-origin-body-bytes')} body bytes")
-    if status != 200:
-        print(f"FAIL: expected status 200, got {status}")
-        return 1
-    if response_headers.get("x-origin-method") != args.method:
-        print(f"FAIL: origin did not answer this request: {response_headers}")
-        return 1
+        f"status {status} in {time.monotonic() - start:.1f}s, origin saw {response_headers.get('x-origin-body-bytes')} "
+        f"body bytes and END_STREAM on {response_headers.get('x-origin-end-frame')}")
     forwarded = len(body) if args.origin_body_bytes is None else args.origin_body_bytes
-    if response_headers.get("x-origin-body-bytes") != str(forwarded):
-        print(f"FAIL: origin received {response_headers.get('x-origin-body-bytes')} body bytes, expected {forwarded}")
-        return 1
-    if response_body != b"ended":
-        print(f"FAIL: unexpected response body {response_body[:80]!r}")
-        return 1
-    print("PASS")
-    return 0
+    return check_origin_reply(args, status, response_headers, response_body, forwarded)
 
 
 def request_h1(args: argparse.Namespace) -> int:
@@ -189,14 +214,22 @@ def request_h1(args: argparse.Namespace) -> int:
         head += f"X-Filler: {filler(args.header_size)}\r\n"
     if args.framing == "chunked":
         head += "Transfer-Encoding: chunked\r\n"
-        payload = (f"{len(body):x}\r\n".encode() + body + b"\r\n" if body else b"") + b"0\r\n\r\n"
+        first = head.encode() + b"\r\n" + (f"{len(body):x}\r\n".encode() + body + b"\r\n" if body else b"")
+        rest = b"0\r\n\r\n"
     else:
         head += f"Content-Length: {len(body)}\r\n"
-        payload = body
+        first = head.encode() + b"\r\n"
+        rest = body
     start = time.monotonic()
     response = b""
     with socket.create_connection((args.address, args.port), timeout=args.timeout) as sock:
-        sock.sendall(head.encode() + b"\r\n" + payload)
+        if args.late:
+            # The end of the body arrives well after ATS has started forwarding the request.
+            sock.sendall(first)
+            time.sleep(args.late_delay)
+            sock.sendall(rest)
+        else:
+            sock.sendall(first + rest)
         try:
             while chunk := sock.recv(65536):
                 response += chunk
@@ -209,18 +242,8 @@ def request_h1(args: argparse.Namespace) -> int:
     fields = {name.strip().lower(): value.strip() for name, _, value in (line.partition(":") for line in lines[1:])}
     print(
         f"HTTP/1.1 {args.method} {args.framing} body={len(body)}: status {status} in {time.monotonic() - start:.1f}s, "
-        f"origin saw {fields.get('x-origin-body-bytes')} body bytes")
-    if status != 200:
-        print(f"FAIL: expected status 200, got {status}")
-        return 1
-    if fields.get("x-origin-method") != args.method or fields.get("x-origin-body-bytes") != str(len(body)):
-        print(f"FAIL: origin did not receive this request and all of its body: {fields}")
-        return 1
-    if response_body != b"ended":
-        print(f"FAIL: unexpected response body {response_body[:80]!r}")
-        return 1
-    print("PASS")
-    return 0
+        f"origin saw {fields.get('x-origin-body-bytes')} body bytes and END_STREAM on {fields.get('x-origin-end-frame')}")
+    return check_origin_reply(args, status, fields, response_body, len(body))
 
 
 def main() -> int:
@@ -239,10 +262,7 @@ def main() -> int:
     c.add_argument("--end", choices=ENDINGS, required=True)
     c.add_argument("--content-length", type=int)
     c.add_argument("--body", default="")
-    c.add_argument("--path", default="/end-stream")
-    c.add_argument("--timeout", type=float, default=15)
     c.add_argument("--late-delay", type=float, default=1.5)
-    c.add_argument("--header-size", type=int, default=0, help="size of an extra request header value")
     c.add_argument("--origin-body-bytes", type=int, help="body bytes the origin should receive, if not the whole body")
     h = sub.add_parser("request-h1")
     h.add_argument("address")
@@ -250,9 +270,13 @@ def main() -> int:
     h.add_argument("method")
     h.add_argument("--framing", choices=("length", "chunked"), required=True)
     h.add_argument("--body", default="")
-    h.add_argument("--path", default="/end-stream")
-    h.add_argument("--timeout", type=float, default=15)
-    h.add_argument("--header-size", type=int, default=0, help="size of an extra request header value")
+    h.add_argument("--late", action="store_true", help="send the end of the body after a pause")
+    h.add_argument("--late-delay", type=float, default=1.5)
+    for client in (c, h):
+        client.add_argument("--path", default="/end-stream")
+        client.add_argument("--timeout", type=float, default=15)
+        client.add_argument("--header-size", type=int, default=0, help="size of an extra request header value")
+        client.add_argument("--origin-end-frame", choices=END_FRAMES, help="frame that should carry END_STREAM to the origin")
     args = p.parse_args()
     if args.command == "serve":
         return serve(args)
