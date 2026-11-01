@@ -103,7 +103,7 @@ urtest:
         log_validation:
           access_log:
             filename: "squid.log"
-            # The last field counts the request body bytes written to the origin.
+            # The last field, %<pqcl>, counts the request body bytes ATS sent to the origin.
             contains:
               - {expression: " 3 http/1.1 http/2 .* 8$"}
               - {expression: " 4 http/1.1 http/2 .* 32$"}
@@ -115,6 +115,7 @@ urtest:
               - {expression: " 9 http/2 http/2 .* 3200$"}
               - {expression: " 10 http/2 http/2 .* 3200$"}
               - {expression: " 11 http/2 http/2 .* 32$"}
+              # Larger than the flow control window, so sending resumes after a WINDOW_UPDATE.
               - {expression: " 16 http/2 http/2 .* 300000$"}
 
 sessions: []
