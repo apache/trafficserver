@@ -473,7 +473,7 @@ Http2Stream::cache_send_request_for_response_validation()
 inline bool
 Http2Stream::payload_length_is_valid() const
 {
-  uint32_t const content_length = _receive_header.get_content_length();
+  int64_t const content_length = _receive_header.get_content_length();
 
   // Apply the [RFC 9110] 8.6 / [RFC 7230] 3.3.2 payload preclusion rules to
   // origin responses on outbound streams. The send-side `_send_header` may
@@ -495,9 +495,17 @@ Http2Stream::payload_length_is_valid() const
     }
   }
 
-  if (content_length != 0 && !is_payload_precluded && content_length != data_length) {
-    Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,
-            static_cast<int>(data_length), _proxy_ssn->connection_id());
+  // Both diagnostics below are driven by peer-supplied framing, so a peer could
+  // otherwise emit one log line per stream. Throttle them per call site.
+  if (content_length < 0) {
+    SiteThrottledWarning("Negative payload length content_length=%" PRId64 " session_id=%" PRId64, content_length,
+                         _proxy_ssn->connection_id());
+    return false;
+  }
+
+  if (content_length != 0 && !is_payload_precluded && static_cast<uint64_t>(content_length) != data_length) {
+    SiteThrottledWarning("Bad payload length content_length=%" PRId64 " data_length=%" PRIu64 " session_id=%" PRId64,
+                         content_length, data_length, _proxy_ssn->connection_id());
     return false;
   }
   return true;

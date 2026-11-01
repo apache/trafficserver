@@ -1,0 +1,131 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Purge the shared origin session pool on the thread that hit the limit.
+#
+# With a single net thread no other thread can make room, so the request to
+# the second host succeeds only if the thread closes its own pooled connection
+# before the request retries.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Purge the pooled origin connection on the only net thread'
+
+  dns:
+    name: 'dns_single'
+
+  server:
+    stop_after_client: true
+    name: 'server_single'
+
+  client:
+    name: 'client_single'
+
+  ats:
+    name: 'ts_single'
+    process_config:
+      enable_tls: false
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_ss'
+      proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.exec_thread.limit: 1
+      proxy.config.http.server_max_connections: 1
+      proxy.config.http.server_session_sharing.pool: 'global'
+      proxy.config.http.server_session_sharing.match: 'both'
+
+    remap_config:
+      - from: "http://a.pool.test/"
+        to: "http://a.origin.test:{SERVER_HTTP_PORT}/"
+      - from: "http://d.pool.test/"
+        to: "http://d.origin.test:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'global pool search successful'
+            description: 'Verify the pooled origin connection was reused'
+          - expression: '\[purge keepalives\] closing 1'
+            description: 'Verify reaching server_max_connections purged the pooled connection'
+
+    metric_checks:
+      - metric: 'proxy.process.http.origin_shutdown.migration_failure'
+        value: 0
+      - metric: 'proxy.process.http.pooled_server_connections'
+        value: 0
+      - metric: 'proxy.process.http.current_server_connections'
+        value: 0
+
+sessions:
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /a/first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, a.pool.test ]
+        - [ uuid, a-first ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /a/second
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, a.pool.test ]
+        - [ uuid, a-second ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+
+# The one allowed origin connection is pooled, so this host has to purge it.
+- transactions:
+  - client-request:
+      method: GET
+      url: /d/first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, d.pool.test ]
+        - [ uuid, d-first ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200

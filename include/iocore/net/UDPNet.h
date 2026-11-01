@@ -75,33 +75,6 @@ public:
      created successfully, or ACTION_IO_ERROR if not.
   */
   Action *UDPBind(Continuation *c, sockaddr const *addr, int fd = -1, int send_bufsize = 0, int recv_bufsize = 0);
-
-  // Regarding sendto_re, sendmsg_re, recvfrom_re:
-  // * You may be called back on 'c' with completion or error status.
-  // * 'token' is an opaque which can be used by caller to match up the I/O
-  //   with the completion event.
-  // * If IOBufferBlock * is passed in the interface, it is reference
-  //   counted internally.
-  // * For recvfrom_re, data is written beginning at IOBufferBlock::end() and
-  //   the IOBufferBlock is not fill()'ed until I/O actually occurs.  This
-  //   kind of implies that you can only have one outstanding I/O per
-  //   IOBufferBlock
-  // Callback:
-  // * callback signature is: handleEvent(int event,CompletionEvent *cevent);
-  //   where event is one of:
-  //  NET_EVENT_DATAGRAM_WRITE_COMPLETE
-  //  NET_EVENT_DATAGRAM_WRITE_ERROR
-  // * You can get the value of 'token' that you passed in by calling
-  //   completionUtil::getHandle(cevent);
-  // * You can get other info about the completed operation through use
-  //   of the completionUtil class.
-  Action *sendto_re(Continuation *c, void *token, int fd, sockaddr const *toaddr, int toaddrlen, IOBufferBlock *buf, int len);
-  // I/O buffers referenced by msg must be pinned by the caller until
-  // continuation is called back.
-  Action *sendmsg_re(Continuation *c, void *token, int fd, struct msghdr *msg);
-
-  Action *recvfrom_re(Continuation *c, void *token, int fd, sockaddr *fromaddr, socklen_t *fromaddrlen, IOBufferBlock *buf, int len,
-                      bool useReadCont = true, int timeout = 0);
 };
 
 extern UDPNetProcessor &udpNet;

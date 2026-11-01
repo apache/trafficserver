@@ -154,7 +154,7 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.iprange():
             return IpRangeValue(raw=ctx.iprange().getText())
         if ctx.paramRef():
-            return ParamRef(raw=ctx.paramRef().IDENT().getText())
+            return ParamRef(raw=ctx.paramRef().IDENT().getText(), span=self._span(ctx.paramRef()))
         raise self._unhandled("value alternative", ctx)
 
     def _visit_conditional(self, ctx) -> IfBlock:
@@ -170,6 +170,9 @@ class ASTVisitor(hrw4uVisitor):
 
         else_clause = ctx.elseClause()
         else_body = tuple(self._visit_body(else_clause.block().blockItem())) if else_clause else ()
+        else_span = None
+        if else_clause:
+            else_span = self._span(else_clause)
 
         return IfBlock(
             condition=condition,
@@ -177,6 +180,7 @@ class ASTVisitor(hrw4uVisitor):
             elif_branches=tuple(elif_branches),
             else_body=else_body,
             has_else=else_clause is not None,
+            else_span=else_span,
             span=self._span(ctx))
 
     def _visit_condition(self, ctx) -> ConditionExpr:
@@ -223,8 +227,12 @@ class ASTVisitor(hrw4uVisitor):
         operator = self._detect_comparison_operator(ctx)
         right = self._extract_comparison_rhs(ctx, operator)
         modifiers = self._extract_modifiers(ctx)
+        modifier_span = None
+        if ctx.modifier():
+            modifier_span = self._span(ctx.modifier())
 
-        return Comparison(left=left, operator=operator, right=right, modifiers=modifiers, span=self._span(ctx))
+        return Comparison(
+            left=left, operator=operator, right=right, modifiers=modifiers, modifier_span=modifier_span, span=self._span(ctx))
 
     def _detect_comparison_operator(self, ctx) -> str:
         if ctx.EQUALS():
@@ -248,7 +256,7 @@ class ASTVisitor(hrw4uVisitor):
 
     def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | SetValue:
         if operator in ("~", "!~"):
-            return RegexValue(raw=ctx.regex().getText()[1:-1])
+            return RegexValue(raw=ctx.regex().getText(), span=self._span(ctx.regex()))
         if operator in ("in", "!in"):
             if ctx.set_():
                 return SetValue(raw=ctx.set_().getText()[1:-1])

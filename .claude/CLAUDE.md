@@ -179,6 +179,18 @@ SMDebug(dbg_ctl, "Processing request for URL: %s", url);
 - This includes `.cc`, `.h`, `.py`, and other code files
 - Follow the existing license header format used in the codebase
 
+### Comments
+In general, comments should explain "why" and not "what"; no narration,
+restated signatures, review-round residue, tracker tags or agent names, and
+never previous behavior — what the code used to do and why it changed go in
+the PR and commit message. Functions and classes should state their
+responsibilities and the semantics of the variables - do not restate the type
+of the variable. For instance, "Returns a std::string" is worse than useless -
+the reader of the code can see the return type. Explain what the string is and
+means in the context of its use in the codebase, such as "Returns the parsed
+URL", for example. These comment instructions apply to the whole code base,
+including production code, tests, Python, CMake and replay YAML files.
+
 ### Code Style
 - C++20 standard (nothing from C++23 or later)
 - Use RAII principles
@@ -186,7 +198,6 @@ SMDebug(dbg_ctl, "Processing request for URL: %s", url);
 - Don't use templates unless needed and appropriate
 - Run `cmake --build build -t format` before committing
 - Line length: 132 characters maximum
-- Don't add comments where the code documents itself, don't comment claude interactions
 
 **C++ Formatting (Mozilla-based style):**
 - Indentation: 2 spaces for C/C++

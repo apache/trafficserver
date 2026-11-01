@@ -25,6 +25,7 @@
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetProcessor.h"
 #include "tscore/ink_atomic.h"
+#include "tscore/ink_inet.h"
 
 /*
   TODO
@@ -1583,13 +1584,17 @@ MC::tunnel_event(int event, void *data)
 }
 
 int
-init_tsmemcache(int port)
+init_tsmemcache(int port, IpAddr const &bind_addr)
 {
   tsmemcache_constants();
   MCAccept *a = new MCAccept;
   a->mutex    = new_ProxyMutex();
   NetProcessor::AcceptOptions options(NetProcessor::DEFAULT_ACCEPT_OPTIONS);
   options.local_port = a->accept_port = port;
+  // Bind the listener to a specific address. Without this the listener binds
+  // the wildcard (0.0.0.0), exposing the unauthenticated memcache cache
+  // control surface to the network. Default is loopback (see TSPluginInit).
+  options.local_ip = bind_addr;
   netProcessor.accept(a, options);
   return 0;
 }
@@ -1604,7 +1609,17 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = (char *)"ats";
   info.support_email = (char *)"jplevyak@apache.org";
 
-  int port = 11211;
+  int    port = 11211;
+  IpAddr bind_addr;
+  // Default to loopback only. Binding the wildcard address exposes the
+  // unauthenticated memcache cache surface to the network (see the Security
+  // note in doc/admin-guide/plugins/memcache.en.rst). Fail closed if even the
+  // loopback literal cannot be parsed rather than leaving local_ip unset
+  // (which would bind the wildcard address).
+  if (bind_addr.load("127.0.0.1") != 0) {
+    TSError("[tsmemcache] failed to initialize default loopback bind address\n");
+    goto error;
+  }
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[PluginInit] tsmemcache registration failed.\n");
@@ -1612,17 +1627,37 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   if (argc < 2) {
-    TSError("[tsmemcache] Usage: tsmemcache.so [accept_port]\n");
+    TSError("[tsmemcache] Usage: tsmemcache.so <accept_port> [bind_ip]\n");
     goto error;
-  } else {
-    int port = atoi(argv[1]);
-    if (!port) {
-      TSError("[tsmemcache] bad accept_port '%s'\n", argv[1]);
+  }
+
+  port = atoi(argv[1]);
+  if (port < 1 || port > 65535) {
+    TSError("[tsmemcache] bad accept_port '%s' (must be 1-65535)\n", argv[1]);
+    goto error;
+  }
+
+  // Optional bind address (argv[2]). Default is loopback; specifying an
+  // explicit non-loopback address is the operator's deliberate opt-in to
+  // network exposure. Fail closed on a bad address rather than silently
+  // falling back to a wildcard bind.
+  if (argc >= 3) {
+    if (bind_addr.load(argv[2]) != 0) {
+      TSError("[tsmemcache] bad bind address '%s'\n", argv[2]);
       goto error;
     }
-    MCDebug(dbg_ctl_tsmemcache, "using accept_port %d", port);
   }
-  init_tsmemcache(port);
+
+  if (!bind_addr.isLoopback()) {
+    char ipbuf[INET6_ADDRSTRLEN];
+    bind_addr.toString(ipbuf, sizeof(ipbuf));
+    Warning("[tsmemcache] listening on non-loopback address %s; this memcache surface has no authentication or IpAllow - restrict "
+            "access by firewall",
+            ipbuf);
+  }
+
+  MCDebug(dbg_ctl_tsmemcache, "using accept_port %d", port);
+  init_tsmemcache(port, bind_addr);
   return;
 
 error:

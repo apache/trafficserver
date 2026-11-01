@@ -95,6 +95,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null read.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -129,6 +130,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null write.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -269,8 +271,13 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
   write.vio.nbytes = 0;
   write.vio.op     = VIO::NONE;
 
-  EThread *t            = this_ethread();
-  bool     close_inline = !recursion && (!nh || nh->mutex->thread_holding == t);
+  // Only the thread that owns a NetHandler ever holds its mutex, so check the thread before the
+  // holder. A migration closes the VC from another thread while the owner locks and unlocks that
+  // mutex, and reading the holder from there would race with those writes.
+  EThread    *t            = this_ethread();
+  bool        close_inline = !recursion && (!nh || (nh->thread == t && nh->mutex->thread_holding == t));
+  bool const  on_owner     = (t == this->thread);
+  NetHandler *owner_nh     = nh;
 
   INK_WRITE_MEMORY_BARRIER;
   if (alerrno && alerrno != -1) {
@@ -279,10 +286,19 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 
   // Must mark for closed last in case this is a
   // cross thread migration scenario.
-  if (alerrno == -1) {
-    closed = 1;
-  } else {
-    closed = -1;
+  int const closed_value = (alerrno == -1) ? 1 : -1;
+
+  // Only the owning thread may touch the timer wheel, so a foreign close hands
+  // the NetEvent back for the owner to free, even when it holds the owner's
+  // NetHandler mutex. It must not touch this NetEvent afterwards.
+  if (owner_nh && !on_owner) {
+    owner_nh->close_from_foreign_thread(this, closed_value);
+    return;
+  }
+
+  closed = closed_value;
+  if (on_owner) {
+    this->rearm_timer();
   }
 
   if (close_inline) {
@@ -453,8 +469,12 @@ UnixNetVConnection::set_enabled(VIO *vio)
   ink_assert(vio->mutex->thread_holding == this_ethread() && thread);
   ink_release_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
+
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
+    rearm_timer();
+  } else {
+    arm_default_inactivity_timeout();
   }
 }
 
@@ -785,6 +805,17 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
       read_reschedule(nh, this);
     }
 
+    // A POST half-close in the handler shut down the write side; nothing is left to write.
+    if (!buf.reader()) {
+      return;
+    }
+
+    // The handler replaced the write VIO while writes were enabled, so nothing else requeues this VC.
+    if (c != s->vio.cont) {
+      write_reschedule(nh, this);
+      return;
+    }
+
     if (!(buf.reader()->is_read_avail_more_than(0))) {
       write_disable(nh, this);
       return;
@@ -940,10 +971,26 @@ void
 UnixNetVConnection::netActivity()
 {
   Dbg(dbg_ctl_socket, "net_activity updating inactivity %" PRId64 ", NetVC=%p", this->inactivity_timeout_in, this);
+  ink_hrtime const default_timeout_in = this->default_inactivity_timeout_in.load(std::memory_order_relaxed);
+  // Setting a deadline is normally an extension, which needs no wheel work:
+  // the wheel re-reads the real deadline when the bucket comes due. The
+  // exception is the 0 -> armed transition: the arming points should leave no
+  // enabled vc without a deadline, but an unarmed vc may not be in the wheel at
+  // all, so re-arm on that transition only and keep the steady-state hot path
+  // free of wheel work.
+  bool const was_unarmed = this->next_inactivity_timeout_at == 0;
+
   if (this->inactivity_timeout_in) {
     this->next_inactivity_timeout_at = ink_get_hrtime() + this->inactivity_timeout_in;
+  } else if (default_timeout_in > 0) {
+    this->use_default_inactivity_timeout = true;
+    this->next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
   } else {
     this->next_inactivity_timeout_at = 0;
+    return;
+  }
+  if (was_unarmed) {
+    this->rearm_timer();
   }
 }
 
@@ -1010,29 +1057,30 @@ UnixNetVConnection::acceptEvent(int /* event ATS_UNUSED */, Event *e)
 // and for active and inactivity timeouts.
 //
 int
-UnixNetVConnection::mainEvent(int event, Event *e)
+UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
 {
   ink_assert(event == VC_EVENT_ACTIVE_TIMEOUT || event == VC_EVENT_INACTIVITY_TIMEOUT);
   ink_assert(thread == this_ethread());
 
-  MUTEX_TRY_LOCK(hlock, get_NetHandler(thread)->mutex, e->ethread);
-  MUTEX_TRY_LOCK(rlock, read.vio.mutex ? read.vio.mutex : e->ethread->mutex, e->ethread);
-  MUTEX_TRY_LOCK(wlock, write.vio.mutex ? write.vio.mutex : e->ethread->mutex, e->ethread);
+  EThread *t = this_ethread();
+
+  MUTEX_TRY_LOCK(hlock, get_NetHandler(thread)->mutex, t);
+  MUTEX_TRY_LOCK(rlock, read.vio.mutex ? read.vio.mutex : t->mutex, t);
+  MUTEX_TRY_LOCK(wlock, write.vio.mutex ? write.vio.mutex : t->mutex, t);
 
   if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
       (read.vio.mutex && rlock.get_mutex() != read.vio.mutex.get()) ||
       (write.vio.mutex && wlock.get_mutex() != write.vio.mutex.get())) {
+    // The cop has already popped this vc from the wheel; put it back so the
+    // timeout is retried on a later tick.
+    rearm_timer();
     return EVENT_CONT;
-  }
-
-  if (e->cancelled) {
-    return EVENT_DONE;
   }
 
   int           signal_event;
   Continuation *reader_cont       = nullptr;
   Continuation *writer_cont       = nullptr;
-  ink_hrtime   *signal_timeout_at = nullptr;
+  NetDeadline  *signal_timeout_at = nullptr;
 
   switch (event) {
   // Treating immediate as inactivity timeout for any
@@ -1054,7 +1102,8 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   }
 
   *signal_timeout_at = 0;
-  writer_cont        = write.vio.cont;
+  rearm_timer();
+  writer_cont = write.vio.cont;
 
   if (closed) {
     nh->free_netevent(this);
@@ -1074,6 +1123,10 @@ UnixNetVConnection::mainEvent(int event, Event *e)
       return EVENT_DONE;
     }
   }
+  // Still alive, so the handler kept the connection. If it left it enabled
+  // without a new inactivity deadline, fall back to the default as the
+  // pre-wheel cop did on its next sweep.
+  arm_default_inactivity_timeout();
   return EVENT_DONE;
 }
 
@@ -1205,6 +1258,11 @@ UnixNetVConnection::clear()
   next_activity_timeout_at   = 0;
   inactivity_timeout_in      = 0;
   active_timeout_in          = 0;
+  // stopCop() is the authoritative cancel, called while nh is still valid. A
+  // still-scheduled element here means some teardown path bypassed stopCop,
+  // leaving a dangling wheel entry into freed memory -- fail loudly in debug
+  // rather than paper over it with a redundant cancel.
+  ink_assert(!get_NetHandler(this_ethread())->timer_wheel.is_scheduled(this));
 
   // clear variables for reuse
   this->mutex.clear();
@@ -1232,8 +1290,9 @@ UnixNetVConnection::clear()
     read.vio.buffer.clear();
     write.vio.buffer.clear();
   }
-  closed        = 0;
-  netvc_context = NET_VCONNECTION_UNSET;
+  closed         = 0;
+  netvc_context  = NET_VCONNECTION_UNSET;
+  _client_exempt = false;
   ink_assert(!read.ready_link.prev && !read.ready_link.next);
   ink_assert(!read.enable_link.next);
   ink_assert(!write.ready_link.prev && !write.ready_link.next);
@@ -1252,6 +1311,9 @@ UnixNetVConnection::free_thread(EThread *t)
   if (con.sock.is_ok()) {
     release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
+    if (_client_exempt) {
+      Metrics::Gauge::decrement(net_rsb.per_client_connections_exempt_currently_open);
+    }
   }
   con.close();
 
@@ -1294,13 +1356,16 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
   Dbg(dbg_ctl_socket, "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
   next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + inactivity_timeout_in : 0;
+  if (!arm_default_inactivity_timeout()) {
+    rearm_timer();
+  }
 }
 
 TS_INLINE void
 UnixNetVConnection::set_default_inactivity_timeout(ink_hrtime timeout_in)
 {
   Dbg(dbg_ctl_socket, "Set default inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
-  default_inactivity_timeout_in = timeout_in;
+  rebase_default_inactivity_deadline(default_inactivity_timeout_in.exchange(timeout_in));
 }
 
 TS_INLINE bool
@@ -1311,43 +1376,67 @@ UnixNetVConnection::is_default_inactivity_timeout()
 
 /*
  * Close down the current netVC.  Save aside the socket and SSL information
- * and create new netVC in the current thread/netVC
+ * so a new netVC can be created from them in another thread.
  */
-UnixNetVConnection *
-UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
+bool
+UnixNetVConnection::detachForMigration(MigrationState &ms)
 {
-  NetHandler *client_nh = get_NetHandler(t);
-  ink_assert(client_nh);
-  if (this->nh == client_nh) {
-    // We're already there!
-    return this;
+  // Remove the fd from the original thread's poller first, so it is not processed on two threads
+  // simultaneously. While this VC still owns the socket and SSL information a failure only needs
+  // an ordinary close.
+  //
+  // This stop is not synchronized with the original thread. That thread may have already seen
+  // this VC as open and enabled in NetHandler::process_ready_list, in which case it goes on to
+  // net_read_io, fails the try lock on the VIO mutex held by the caller, and reschedules the VC.
+  // The reschedule calls ep.refresh on the EventIO stopped here, so EventIO::modify and
+  // EventIO::refresh do nothing on a stopped EventIO.
+  //
+  // Unlike an ordinary close, migration keeps the fd open, so kqueue registrations must
+  // also be removed here before the old VC can be freed.
+  if (this->ep.stop_for_migration() != 0) {
+    Error("Failed to remove migrating socket %d from its event loop, errno=%d (%s)", this->con.sock.get_fd(), errno,
+          strerror(errno));
+    ink_assert(!"stop_for_migration failed");
+    this->do_io_close();
+    return false;
   }
 
-  Connection hold_con;
-  hold_con.move(this->con);
-
-  void *arg = this->_prepareForMigration();
+  ms.con.move(this->con);
+  ms.arg                   = this->_prepareForMigration();
+  ms.options               = this->options;
+  ms.context               = this->get_context();
+  ms.inactivity_timeout_in = this->inactivity_timeout_in;
+  ms.processor             = this->_getNetProcessor();
+  ms.client_exempt         = _client_exempt;
 
   // Do_io_close will signal the VC to be freed on the original thread
   // Since we moved the con context, the fd will not be closed
-  // Go ahead and remove the fd from the original thread's epoll structure, so it is not
-  // processed on two threads simultaneously
-  this->ep.stop();
-
-  // Create new VC:
-  UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(this->_getNetProcessor()->allocate_vc(t));
-  ink_assert(newvc != nullptr);
-  if (newvc->populate(hold_con, cont, arg) != EVENT_DONE) {
-    newvc->do_io_close();
-    newvc = nullptr;
-  }
-  if (newvc) {
-    newvc->set_context(get_context());
-    newvc->options = this->options;
-  }
-
-  // Do not mark this closed until the end so it does not get freed by the other thread too soon
+  // Do not mark this closed until the end so it does not get freed by the other thread too soon.
+  // The original thread reads closed without the VIO mutex before it frees the VC, so the atomic
+  // store of closed is what orders the moves and copies above before that free.
   this->do_io_close();
+  return true;
+}
+
+/*
+ * Create a new netVC in the current thread from the socket and SSL
+ * information saved aside by detachForMigration.
+ */
+UnixNetVConnection *
+UnixNetVConnection::attachMigrated(MigrationState &ms, Continuation *cont, EThread *t)
+{
+  UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(ms.processor->allocate_vc(t));
+
+  ink_assert(newvc != nullptr);
+  // Before populate() gives the socket to the new VC, which updates the exempt gauge when it is freed.
+  newvc->_client_exempt = ms.client_exempt;
+  if (newvc->populate(ms.con, cont, ms.arg) != EVENT_DONE) {
+    newvc->do_io_close();
+    return nullptr;
+  }
+  newvc->set_context(ms.context);
+  newvc->options = ms.options;
+  newvc->set_inactivity_timeout(ms.inactivity_timeout_in);
   return newvc;
 }
 

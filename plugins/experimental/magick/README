@@ -1,16 +1,72 @@
-ats-magick is a transformation plug-in which allows to run any ImageMagick's convert command while processing images from the origin.
+ats-magick is a transformation plug-in which runs a restricted set of ImageMagick's convert operators on images coming from the origin.
 
 Ideas for how to use this plug-in are, but not limited to:
  - convert from multiple formats to a single image format.
- - do simple operatins like resize, crop, etc.
- - add watermarks or automated labels.
- - transform images in a very radical way.
+ - do simple operations like resize, crop, rotate, etc.
+ - strip metadata from images.
 
 Once transformed, the image can (and should) be stored into ATS's cache.
 
 The input for the plug-in's request is the query parameter "magick" which contains a url escaped, base64 encoded version of the parameters passed to ImageMagick's convert command line utility. When this global plug-in is enabled, it will first look into the `Content-Type` response header in all transactions, to then check this query parameter in order to decide to do the transformation.
 
-To avoid being exploited, the plug-in accepts one configuration argument specified on `plugin.config`; a OpenSSL's RSA256 public key file used to verify if the raw content of the "magick" parameter is valid and authorized. When it is configured, an additional query parameter "magickSig" is required on each request.
+To avoid being exploited, the plug-in requires one configuration argument specified on `plugin.config`; an OpenSSL's RSA256 public key file used to verify if the raw content of the "magick" parameter is valid and authorized. This argument is mandatory: the plug-in refuses to load without it, because an unsigned deployment would let any client run arbitrary ImageMagick convert operators on image responses. When configured, an additional query parameter "magickSig" is required on each request.
+
+## Command shape
+
+As a second layer of defense, even signature-verified requests are restricted. The decoded command must have exactly this shape:
+
+```
+convert mpr:b <operators...> mpr:a
+```
+
+`mpr:b` and `mpr:a` are the plug-in's own in-memory registers, holding the origin image and the transformed image respectively. `mpr:b` is mandatory rather than merely position-constrained: without an input image the conversion fails, and because ImageMagick's MPR registry is process-global, `mpr:a` would still hold another request's image. Anything else in those two positions is rejected with a 403.
+
+## Allowed operators
+
+Operators taking no value:
+
+```
+-auto-orient  -flip  -flop  -magnify  -strip  -transpose  -transverse  -trim
+```
+
+Operators taking exactly one value, with the value type each one accepts:
+
+| Operator | Value |
+| --- | --- |
+| `-background` | color (`red`, `#ff0000`, `rgb(255,0,0)`, `gray50`) |
+| `-blur` | geometry |
+| `-colorspace` | enum token (`sRGB`) |
+| `-crop` | geometry |
+| `-density` | geometry |
+| `-depth` | integer |
+| `-extent` | geometry |
+| `-filter` | enum token (`Lanczos`) |
+| `-gaussian-blur` | geometry |
+| `-gravity` | enum token (`NorthWest`) |
+| `-interpolate` | enum token |
+| `-quality` | integer |
+| `-resize` | geometry |
+| `-rotate` | geometry |
+| `-sample` | geometry |
+| `-scale` | geometry |
+| `-sharpen` | geometry |
+| `-thumbnail` | geometry |
+
+Any operator not in these two lists is rejected with a 403. That includes `-write`, bare `@file` references, and the `msl:`/`url:`/`ephemeral:` coders, but also everything else, such as `-draw`, `-annotate`, `-fill`, `-pointsize` and `-font`; watermarking and text labelling are not possible with this plug-in.
+
+The `+` spellings (`+resize`, `+flip`, ...) are all rejected, deliberately. ImageMagick's option table gives `+resize` an arity of 1 while `ConvertImageCommand` consumes zero arguments for it, so accepting `+` forms would desynchronize the plug-in's position model from convert's actual parsing.
+
+## What the validator does and does not guarantee
+
+Both halves of an operator are checked: the operator name against the lists above, and its value against the type in the table. Value typing is not optional hardening. `MagickCommandGenesis()` pre-scans the whole of argv before the convert command runs and has no concept of option arity, so a value position is reachable as an option; `-bench` and `-distribute-cache` in particular are acted on during that pre-scan. The value types are therefore chosen so that no option name can fit in a value position: enum tokens and colors may not begin with `-`, geometries admit no letters at all, and `@` is excluded everywhere even though it is valid area geometry for `-resize`. Note that a geometry may legitimately begin with `-`, as in `-rotate -90`, so this has to be per-option typing rather than a leading-character test.
+
+The safety of the position model rests on the arity in the two lists above matching what ImageMagick's `CommandOptions` table declares. Nothing in this tree verifies that external invariant, and the two failure directions are not symmetric: listing a genuinely one-argument option as zero-argument causes a rejection, but the reverse makes the validator skip a token that ImageMagick will then interpret. `unit_tests/test_magick_args.cc` locks the behaviour described here.
+
+## Failure handling
+
+If the conversion fails for any reason, the plug-in emits no body, the response becomes a 502 rather than a 200 carrying stale or empty content, the origin's freshness and validator headers are stripped in favour of `Cache-Control: no-store`, and the transformed response is not written to the cache. The reason ImageMagick reported is logged along with the request URL.
+
+## Keys
 
 The size of the keys directly impact how easy to compute (and break) the signature as well as the length of it. Generate a private & public pair of RSA256 keys using the following OpenSSL commands:
 
@@ -22,16 +78,22 @@ openssl genrsa -out rsa256-private 512;
 openssl rsa -in rsa256-private -pubout > rsa256-public;
 ```
 
-The `test.sh` script, helps verifying ImageMagick's convert works. The script outputs the right query parameter for you.
+## Examples
 
-`
+The `test.sh` script helps verify that a command works. It takes the operators only, wraps them in the required shape, and outputs the signed query parameters for you. It does not consult the allowlist, so it will happily sign a command that the plug-in rejects.
 
-##ImageMagick's convert examples:
+```
+./test.sh -flip;
+./test.sh -rotate 90;
+./test.sh -resize 128x128;
+./test.sh -auto-orient -resize 800x600 -quality 85 -strip;
+```
 
-`convert input.jpg -flip output.jpg;`
+The commands those produce, which is what the "magick" query parameter carries once decoded:
 
-`convert input.jpg -rotate 90 output.jpg;`
-
-`convert input.jpg -resize 128x128 output.jpg;`
-
-`convert input.jpg output.png;`
+```
+convert mpr:b -flip mpr:a;
+convert mpr:b -rotate 90 mpr:a;
+convert mpr:b -resize 128x128 mpr:a;
+convert mpr:b -auto-orient -resize 800x600 -quality 85 -strip mpr:a;
+```

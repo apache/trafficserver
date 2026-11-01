@@ -32,6 +32,7 @@
 #include "protocol_binary.h"
 #include "tscore/ink_memory.h"
 #include "tscore/ink_hrtime.h"
+#include "tscore/ink_inet.h" // IpAddr (init_tsmemcache bind address)
 #include "tscore/CryptoHash.h"
 
 #define TSMEMCACHE_VERSION              "1.0.0"
@@ -206,7 +207,7 @@ struct MC : Continuation {
   int  die();
 };
 
-int init_tsmemcache(int port = 11211);
+int init_tsmemcache(int port, IpAddr const &bind_addr);
 
 // INLINE FUNCTIONS
 

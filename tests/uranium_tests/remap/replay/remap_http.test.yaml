@@ -1,0 +1,140 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Exercise HTTP map, redirect, referer, DNS, and plugin rules"
+  requires:
+    plugins: ["conf_remap.so"]
+  dns:
+    name: "dns"
+    process_config: {default: "127.0.0.1"}
+  server: {name: "origin"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|dns|conf_remap"
+      proxy.config.http.referer_filter: 1
+  variants:
+    - name: "classic"
+      ats:
+        remap_config:
+          - "map http://www.example.com http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "map_with_recv_port http://www.example2.com:{ATS_HTTP_PORT} http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "map http://www.example.com:8080 http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "redirect http://test3.com http://httpbin.org"
+          - "map_with_referer http://test4.com http://127.0.0.1:{SERVER_HTTP_PORT} http://httpbin.org (.*[.])?persia[.]com"
+          - "map http://testDNS.com http://audrey.hepburn.com:{SERVER_HTTP_PORT}"
+          - "map http://www.testexample.com http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1"
+    - name: "yaml"
+      ats:
+        remap_yaml_lines:
+          - "remap:"
+          - "  - type: map"
+          - "    from: {url: 'http://www.example.com'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "  - type: map_with_recv_port"
+          - "    from: {url: 'http://www.example2.com:{ATS_HTTP_PORT}'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "  - type: map"
+          - "    from: {url: 'http://www.example.com:8080'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "  - type: redirect"
+          - "    from: {url: 'http://test3.com'}"
+          - "    to: {url: 'http://httpbin.org'}"
+          - "  - type: map_with_referer"
+          - "    from: {url: 'http://test4.com'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "    redirect:"
+          - "      url: http://httpbin.org"
+          - "      regex: ['(.*[.])?persia[.]com']"
+          - "  - type: map"
+          - "    from: {url: 'http://testDNS.com'}"
+          - "    to: {url: 'http://audrey.hepburn.com:{SERVER_HTTP_PORT}'}"
+          - "  - type: map"
+          - "    from: {url: 'http://www.testexample.com'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "    plugins:"
+          - "      - name: conf_remap.so"
+          - "        params: ['proxy.config.url_remap.pristine_host_hdr=1']"
+
+sessions:
+  - transactions:
+      - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 127.0.0.1], [uuid, no-map]]}}
+        server-response: {status: 599}
+        proxy-response: {status: 404}
+      - all: {headers: {fields: [[uuid, map-basic]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.example.com]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, map-recv-port]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.example2.com]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, map-default-port]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:80']]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, map-explicit-port]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:8080']]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.test.com], [uuid, missing-rule]]}}
+        server-response: {status: 599}
+        proxy-response: {status: 404}
+      - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, test3.com], [uuid, redirect]]}}
+        server-response: {status: 599}
+        proxy-response:
+          status: 301
+          headers: {fields: [[Location, {value: 'http://httpbin.org/', as: equal}]]}
+      - all: {headers: {fields: [[uuid, referer-match]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, test4.com], [Referer, persia.com]]}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, test4.com], [Referer, monkey.com], [uuid, referer-miss]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 302
+          headers: {fields: [[Location, {value: 'http://httpbin.org', as: equal}]]}
+      - all: {headers: {fields: [[uuid, referer-subdomain]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, test4.com], [Referer, www.persia.com]]}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, dns-origin]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, testDNS.com]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, pristine-host]]}}
+        client-request: {method: GET, url: /test, version: "1.1", headers: {fields: [[Host, www.testexample.com]]}}
+        proxy-request:
+          headers: {fields: [[Host, {value: www.testexample.com, as: equal}]]}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}

@@ -95,8 +95,64 @@ add_custom_target(
 clang_tidy_check(cripts)
 
 if(BUILD_TESTING)
-  add_executable(test_cripts unit_tests/test_CacheGroup.cc CacheGroup.cc unit_tests/stub.cc)
-  target_include_directories(test_cripts PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/src)
-  target_link_libraries(test_cripts PRIVATE libswoc::libswoc fmt::fmt Catch2::Catch2WithMain OpenSSL::Crypto)
-  add_test(NAME test_cripts COMMAND test_cripts)
+  # The cases run against the real plugin API and header heaps, without a running server. They are loaded
+  # like a cript: a module resolving the TS API against an executable that carries the core.
+  # Only the core's headers: linking its libraries would give the module private copies of the core's globals.
+  add_library(test_cripts_cases MODULE unit_tests/test_CacheGroup.cc unit_tests/test_Headers.cc unit_tests/test_Urls.cc)
+  target_include_directories(test_cripts_cases PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
+  target_link_libraries(test_cripts_cases PRIVATE Catch2::Catch2 ts::cripts)
+  set_target_properties(
+    test_cripts_cases
+    PROPERTIES PREFIX ""
+               SUFFIX ".so"
+               LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  if(APPLE)
+    target_link_options(test_cripts_cases PRIVATE -undefined dynamic_lookup)
+  endif()
+
+  # The executable runs the cases the module registers, which only works with a single, shared, Catch2 registry.
+  get_target_property(CRIPTS_CATCH2_TYPE Catch2::Catch2 TYPE)
+  if(NOT CRIPTS_CATCH2_TYPE STREQUAL "SHARED_LIBRARY")
+    message(FATAL_ERROR "test_cripts needs Catch2 built as a shared library, not ${CRIPTS_CATCH2_TYPE}")
+  endif()
+
+  add_executable(test_cripts unit_tests/main.cc)
+  add_dependencies(test_cripts test_cripts_cases)
+  target_compile_definitions(test_cripts PRIVATE CRIPTS_TEST_CASES_PATH="$<TARGET_FILE:test_cripts_cases>")
+  # Relinking on a module change is what makes ctest rediscover the test cases. LINK_DEPENDS takes no generator
+  # expressions before CMake 3.27, hence the module's pinned output directory and name.
+  set_target_properties(
+    test_cripts PROPERTIES ENABLE_EXPORTS ON LINK_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/test_cripts_cases.so
+  )
+  target_link_libraries(
+    test_cripts
+    PRIVATE ${CMAKE_DL_LIBS}
+            Catch2::Catch2
+            tsapi_objects
+            ts::tscore
+            ts::overridable_txn_vars
+            ts::tsutil
+            ts::http
+            ts::http_remap
+            ts::http2
+            ts::logging
+            ts::hdrs
+            ts::diagsconfig
+            ts::inkutils
+            ts::inkdns
+            ts::inkhostdb
+            ts::inkcache
+            ts::aio
+            ts::proxy
+            ts::inknet
+            ts::records
+            ts::inkevent
+            libswoc::libswoc
+            ts::jsonrpc_protocol
+            ts::jsonrpc_server
+            ts::rpcpublichandlers
+            ts::configmanager
+  )
+  add_catch2_test(NAME test_cripts COMMAND test_cripts)
 endif()

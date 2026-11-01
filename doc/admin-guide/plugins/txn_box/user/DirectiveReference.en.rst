@@ -379,7 +379,7 @@ Transaction
    This could be done using :drtv:`proxy-reply` and :drtv:`when` but is a common enough case to
    warrant a directive.
 
-   .. literalinclude:: ../../../../../tests/gold_tests/pluginTest/txn_box/basic/redirect.replay.yaml
+   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/redirect.test.yaml
       :start-after: doc-redirect-reply-form-<
       :end-before: doc-redirect-reply-form->
 

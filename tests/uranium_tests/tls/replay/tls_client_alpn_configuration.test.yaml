@@ -1,0 +1,249 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Verify negative_revalidating disabled behavior. This replay file assumes:
+#   * ATS is configured with negative_revalidating disabled.
+#   * max_stale_age is set to 6 seconds.
+#
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify ALPN configuration for TLS origin connections"
+
+  server:
+    name: "alpn-origin"
+
+  client:
+    name: "alpn-client"
+
+  ats:
+    name: "alpn-ts"
+    process_config:
+      enable_tls: true
+      enable_cache: false
+    records_config:
+      proxy.config.ssl.client.verify.server.policy: "PERMISSIVE"
+      proxy.config.diags.debug.enabled: 3
+      proxy.config.diags.debug.tags: "ssl|http"
+    remap_config:
+      - from: "/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+  variants:
+    - name: "default"
+      server:
+        log_validation:
+          contains:
+            - expression: "Negotiated ALPN: none"
+              description: "ATS must send no ALPN by default"
+      ats:
+        log_validation:
+          diags_log:
+            excludes:
+              - {expression: "ERROR.*ALPN", description: "The default ALPN must parse"}
+
+    - name: "http1"
+      server:
+        log_validation:
+          contains:
+            - {expression: "ALPN.*:.*http/1.1", description: "The origin must negotiate HTTP/1.1"}
+      ats:
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: "http/1.1"
+        log_validation:
+          diags_log:
+            excludes:
+              - {expression: "ERROR.*ALPN", description: "The HTTP/1.1 ALPN must parse"}
+
+    - name: "http1-http10"
+      server:
+        log_validation:
+          contains:
+            - {expression: "ALPN.*:.*http/1.1", description: "The origin must parse HTTP/1.1"}
+            - {expression: "ALPN.*:.*http/1.0", description: "The origin must parse HTTP/1.0"}
+      ats:
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: "http/1.1,http/1.0"
+        log_validation:
+          diags_log:
+            excludes:
+              - {expression: "ERROR.*ALPN", description: "The ALPN list must parse"}
+
+    - name: "conf-remap"
+      server:
+        log_validation:
+          contains:
+            - {expression: "ALPN.*:.*http/1.1", description: "The remap ALPN must contain HTTP/1.1"}
+            - {expression: "ALPN.*:.*http/1.0", description: "The remap ALPN must contain HTTP/1.0"}
+      ats:
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: "http/1.1"
+        remap_config:
+          - from: "/"
+            to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+            plugins:
+              - name: "conf_remap.so"
+                args: ["proxy.config.ssl.client.alpn_protocols=http/1.1,http/1.0"]
+        log_validation:
+          diags_log:
+            excludes:
+              - {expression: "ERROR.*ALPN", description: "The remap ALPN must parse"}
+
+    - name: "h2-http1"
+      server:
+        log_validation:
+          contains:
+            - {expression: "ALPN.*:.*h2", description: "The origin must parse h2"}
+            - {expression: "ALPN.*:.*http/1.1", description: "The origin must parse HTTP/1.1"}
+      ats:
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: "h2,http/1.1"
+        log_validation:
+          diags_log:
+            excludes:
+              - {expression: "ERROR.*ALPN", description: "The h2 and HTTP/1.1 ALPN list must parse"}
+
+    - name: "h2"
+      server:
+        log_validation:
+          contains:
+            - {expression: "ALPN.*:.*h2", description: "The origin must parse h2"}
+      ats:
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: "h2"
+        log_validation:
+          diags_log:
+            excludes:
+              - {expression: "ERROR.*ALPN", description: "The h2 ALPN must parse"}
+
+    - name: "invalid-protocol"
+      server:
+        log_validation:
+          contains:
+            - {expression: "Negotiated ALPN: none", description: "Malformed ALPN must not be sent"}
+      ats:
+        process_config:
+          disable_log_checks: true
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: "not_a_protocol"
+        log_validation:
+          diags_log:
+            contains:
+              - {expression: "ERROR.*ALPN", description: "ATS must diagnose malformed ALPN"}
+
+    - name: "unsupported-h3"
+      server:
+        log_validation:
+          contains:
+            - {expression: "Negotiated ALPN: none", description: "Unsupported h3 ALPN must not be sent"}
+      ats:
+        process_config:
+          disable_log_checks: true
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: "h3"
+        log_validation:
+          diags_log:
+            contains:
+              - {expression: "ERROR.*ALPN", description: "ATS must diagnose unsupported h3 ALPN"}
+
+
+sessions:
+
+# HTTP/1.1 over TLS.
+- protocol:
+    stack: https
+    tls:
+      sni: www.example.com
+  transactions:
+
+  # This test has more to do with ALPN configuration than the transactions. The
+  # following generates a simple request and response.
+  - client-request:
+      method: GET
+      url: /some/path/2
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, alpn_http1_request ]
+        - [ uuid, first-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'alpn_http1_request', as: equal } ]
+
+    server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+          - [ Content-Length, 36 ]
+          - [ X-Response, alpn_http1_response ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'alpn_http1_response', as: equal } ]
+
+# HTTP/2 over TLS.
+- protocol:
+    stack: http2
+    tls:
+      sni: www.example.com
+  transactions:
+
+  # This test has more to do with ALPN configuration than the transactions. The
+  # following generates a simple request and response.
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /some/path/2 ]
+        - [ Content-Length, 0 ]
+        - [ X-Request, alpn_http2_request ]
+        - [ uuid, second-request ]
+      content:
+        encoding: plain
+        size: 0
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'alpn_http2_request', as: equal } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ ":status", 200 ]
+        - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+        - [ Content-Length, 0 ]
+        - [ X-Response, alpn_http2_response ]
+      content:
+        encoding: plain
+        size: 0
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'alpn_http2_response', as equal } ]

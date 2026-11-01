@@ -70,6 +70,8 @@ TLSBasicSupport::unbind(SSL *ssl)
 void
 TLSBasicSupport::clear()
 {
+  this->_verify_scope_digest.reset();
+  this->_verify_scope_digest_failed   = false;
   this->_tls_handshake_begin_time     = 0;
   this->_tls_handshake_end_time       = 0;
   this->_tls_handshake_bytes_measured = false;
@@ -182,6 +184,12 @@ TLSBasicSupport::get_tls_handshake_end_time() const
   return this->_tls_handshake_end_time;
 }
 
+bool
+TLSBasicSupport::is_tls_handshake_complete() const
+{
+  return this->_is_tls_handshake_complete();
+}
+
 void
 TLSBasicSupport::set_valid_tls_protocols(unsigned long proto_mask, unsigned long max_mask)
 {
@@ -257,6 +265,32 @@ X509_STORE_CTX *
 TLSBasicSupport::get_tls_cert_to_verify() const
 {
   return this->_cert_to_verify;
+}
+
+void
+TLSBasicSupport::set_verify_scope_digest(std::optional<VerifyScopeDigest> const &digest)
+{
+  this->_verify_scope_digest        = digest;
+  this->_verify_scope_digest_failed = false;
+}
+
+void
+TLSBasicSupport::mark_verify_scope_digest_failed()
+{
+  this->_verify_scope_digest.reset();
+  this->_verify_scope_digest_failed = true;
+}
+
+bool
+TLSBasicSupport::verify_scope_digest_failed() const
+{
+  return this->_verify_scope_digest_failed;
+}
+
+std::optional<TLSBasicSupport::VerifyScopeDigest> const &
+TLSBasicSupport::get_verify_scope_digest() const
+{
+  return this->_verify_scope_digest;
 }
 
 void

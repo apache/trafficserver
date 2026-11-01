@@ -80,9 +80,8 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
       if (limiter->exclude() && limiter->exclude()->contains(swoc::IPAddr(sock))) {
         Dbg(dbg_ctl, "Limiter on %s is excluded via List=%s", sni_name.c_str(), limiter->exclude()->name().c_str());
         TSUserArgSet(vc, gVCIdx, nullptr);
-        TSVConnReenableEx(vc, TS_EVENT_ERROR);
-
-        return TS_ERROR;
+        TSVConnReenable(vc);
+        break;
       }
 
       // Check if we have an IP reputation for this SNI, and if we should block

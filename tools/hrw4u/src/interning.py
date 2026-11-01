@@ -41,7 +41,7 @@ class StringInterning:
     }
 
     MODIFIERS: Final[dict[str, str]] = {
-        mod: sys.intern(mod) for mod in ['AND', 'OR', 'NOT', 'NOCASE', 'PRE', 'SUF', 'EXT', 'MID', 'I', 'L', 'QSA']
+        mod: sys.intern(mod) for mod in ['AND', 'OR', 'NOT', 'NOCASE', 'PRE', 'SUF', 'EXT', 'MID', 'NORM', 'I', 'L', 'QSA']
     }
 
     LSP_STRINGS: Final[dict[str, str]] = {

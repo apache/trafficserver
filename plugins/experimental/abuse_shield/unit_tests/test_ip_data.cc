@@ -216,9 +216,12 @@ TEST_CASE("Removing a rule releases obsolete debt", "[abuse_shield][table]")
   data->consume("removed", 0, 1);
   data->consume("retained", 0, 2);
   REQUIRE_FALSE(data->is_evictable());
+  size_t removed = 0;
   for (const auto &entry : table.data_snapshot()) {
-    entry->buckets.prune({"retained"});
+    removed += entry->buckets.prune({"retained"});
   }
+  CHECK(removed == 1);
+  CHECK(data->buckets.prune({"retained"}) == 0);
   CHECK(data->is_evictable());
   CHECK(data->buckets.tokens("retained") == 1);
   CHECK(table.process_event(swoc::IPAddr{"192.0.2.2"}, 100));

@@ -21,6 +21,8 @@
     limitations under the License.
  */
 
+#include <cstdio>
+
 #include <algorithm>
 #include <iostream>
 #include <list>
@@ -41,6 +43,7 @@
 #include "tscore/ink_file.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/ArgParser.h"
+#include "tscore/Demangle.h"
 #include <thread>
 
 #include "CacheDefs.h"
@@ -1369,7 +1372,7 @@ Scan_Cache(swoc::file::path const &regex_path)
 
 int
 main([[maybe_unused]] int argc, const char *argv[])
-{
+try {
   swoc::file::path input_url_file;
   std::string      inputFile;
 
@@ -1435,4 +1438,7 @@ main([[maybe_unused]] int argc, const char *argv[])
   }
 
   return 0;
+} catch (...) {
+  fprintf(stderr, "traffic_cache_tool: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
+  return 1;
 }

@@ -5,7 +5,7 @@
   Both plugins read a target mark out of a request header, apply it to a
   connection via the tsapi under test, read the applied mark back off the
   relevant socket with getsockopt(SO_MARK), and echo the observed value into a
-  response header for the accompanying AuTest to assert on. Everything except
+  response header for the accompanying Uranium test to assert on. Everything except
   the tsapi call and the fd getter is identical, so it lives here.
 
   @section license License

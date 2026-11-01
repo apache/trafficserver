@@ -49,13 +49,13 @@ github:
         # strict means "Require branches to be up to date before merging"
         strict: false
         contexts:
-          - AuTest 0of4
-          - AuTest 1of4
-          - AuTest 2of4
-          - AuTest 3of4
+          - URTest 0of3
+          - URTest 1of3
+          - URTest 2of3
           - Rocky
           - CentOS
           - Clang-Analyzer
+          - Clang-Tidy
           - Format
           - Debian
           - Docs

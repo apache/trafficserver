@@ -196,7 +196,7 @@ EThread::process_event(Event *e, int calling_code, ink_hrtime event_time)
 }
 
 ink_hrtime
-EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count, ink_hrtime event_time)
+EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, ink_hrtime event_time)
 {
   Event *e;
 
@@ -227,7 +227,6 @@ EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_
         NegativeQueue->insert(e, p);
       }
     }
-    ++(*nq_count);
   }
   return event_time;
 }
@@ -235,9 +234,6 @@ EThread::process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_
 void
 EThread::execute_regular()
 {
-  Event *e;
-  Que(Event, link) NegativeQueue;
-  ink_hrtime next_time;
   ink_hrtime delta;            // time spent in the event loop
   ink_hrtime loop_start_time;  // Time the loop started.
   ink_hrtime loop_finish_time; // Time at the end of the loop.
@@ -247,9 +243,6 @@ EThread::execute_regular()
   // Track this so we can update on boundary crossing.
   auto prev_slice = this->metrics.prev_slice(metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES);
 
-  int nq_count;
-  int ev_count;
-
   // A statically initialized instance we can use as a prototype for initializing other instances.
   static const Metrics::Slice SLICE_INIT;
 
@@ -257,9 +250,6 @@ EThread::execute_regular()
 
   // give priority to immediate events
   while (!TSSystemState::is_event_system_shut_down()) {
-    nq_count = 0; // count # of elements put on negative queue.
-    ev_count = 0; // # of events handled.
-
     current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES;
     metrics.current_slice.store(current_slice, std::memory_order_release);
     if (current_slice != prev_slice) {
@@ -271,52 +261,11 @@ EThread::execute_regular()
     }
     ++(current_slice->_count); // loop started, bump count.
 
-    ink_hrtime event_time = process_queue(&NegativeQueue, &ev_count, &nq_count, loop_start_time);
-
-    bool done_one;
-    do {
-      done_one = false;
-      // execute all the eligible internal events
-      EventQueue.check_ready(event_time, this);
-      while ((e = EventQueue.dequeue_ready(event_time))) {
-        ink_assert(e);
-        ink_assert(e->timeout_at > 0);
-        if (e->cancelled) {
-          free_event(e);
-        } else {
-          done_one   = true;
-          event_time = process_event(e, e->callback_event, event_time);
-        }
-      }
-    } while (done_one);
-
-    // execute any negative (poll) events
-    if (NegativeQueue.head) {
-      event_time = process_queue(&NegativeQueue, &ev_count, &nq_count, event_time);
-
-      // execute poll events
-      while ((e = NegativeQueue.dequeue())) {
-        event_time = process_event(e, EVENT_POLL, event_time);
-      }
-    }
-
-    next_time             = EventQueue.earliest_timeout();
-    ink_hrtime sleep_time = next_time - event_time;
-    if (sleep_time > 0) {
-      if (EventQueueExternal.localQueue.empty()) {
-        sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
-      } else {
-        // Because of a missed lock, Timed-Event and Negative-Event have been pushed into localQueue for retry in awhile.
-        // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
-        sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
-      }
-      ++(current_slice->_wait);
-    } else {
-      sleep_time = 0;
-    }
+    EventStatistics statistics = fire_ready_events(loop_start_time);
+    ink_hrtime      sleep_time = get_sleep_time(statistics.event_time, current_slice);
 
     // drained the queue by this point
-    ink_hrtime post_drain  = event_time;
+    ink_hrtime post_drain  = statistics.event_time;
     ink_hrtime drain_queue = post_drain - loop_start_time;
 
     // watchdog kick - pre-sleep
@@ -340,9 +289,67 @@ EThread::execute_regular()
 
     metrics.decay();
     metrics.record_loop_time(delta);
-    current_slice->record_event_count(ev_count);
+    current_slice->record_event_count(statistics.ev_count);
     current_slice->record_drain_queue(drain_queue);
   }
+}
+
+EThread::EventStatistics
+EThread::fire_ready_events(ink_hrtime loop_start_time)
+{
+  Que(Event, link) NegativeQueue;
+  EventStatistics result{0, 0};
+
+  result.event_time = process_queue(&NegativeQueue, &result.ev_count, loop_start_time);
+
+  bool done_one;
+  do {
+    done_one = false;
+    // execute all the eligible internal events
+    EventQueue.check_ready(result.event_time, this);
+    while (Event *e = EventQueue.dequeue_ready(result.event_time)) {
+      ink_assert(e);
+      ink_assert(e->timeout_at > 0);
+      if (e->cancelled) {
+        free_event(e);
+      } else {
+        done_one          = true;
+        result.event_time = process_event(e, e->callback_event, result.event_time);
+      }
+    }
+  } while (done_one);
+
+  // execute any negative (poll) events
+  if (NegativeQueue.head) {
+    result.event_time = process_queue(&NegativeQueue, &result.ev_count, result.event_time);
+
+    // execute poll events
+    while (Event *e = NegativeQueue.dequeue()) {
+      result.event_time = process_event(e, EVENT_POLL, result.event_time);
+    }
+  }
+
+  return result;
+}
+
+ink_hrtime
+EThread::get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice)
+{
+  ink_hrtime next_time  = EventQueue.earliest_timeout();
+  ink_hrtime sleep_time = next_time - event_time;
+  if (sleep_time > 0) {
+    if (EventQueueExternal.localQueue.empty()) {
+      sleep_time = std::min(sleep_time, HRTIME_MSECONDS(thread_max_heartbeat_mseconds));
+    } else {
+      // Because of a missed lock, Timed-Event and Negative-Event have been pushed into localQueue for retry in awhile.
+      // Therefore, we have to set the limitation of sleep time in order to handle the next retry in time.
+      sleep_time = std::min(sleep_time, DELAY_FOR_RETRY);
+    }
+    ++(current_slice->_wait);
+  } else {
+    sleep_time = 0;
+  }
+  return sleep_time;
 }
 
 //

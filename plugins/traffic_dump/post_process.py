@@ -186,7 +186,7 @@ def write_sessions(sessions, filename, indent):
     """
     new_json = deepcopy(TEMPLATE)
     new_json["sessions"] = deepcopy(sessions)
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf-8", errors="surrogateescape") as f:
         json.dump(new_json, f, ensure_ascii=False, indent=indent)
         logging.debug(f"{filename} has {len(sessions)} sessions")
 
@@ -200,6 +200,9 @@ class ParseJSONError(PostProcessError):
 def parse_json(replay_file):
     """ Open and parse the replay_file.
 
+    Captured headers and bodies may contain non-UTF-8 bytes. Preserve them
+    with surrogateescape so write_sessions can write the original bytes.
+
     Args:
         replay_file (string) The file with JSON content to parse.
 
@@ -208,15 +211,16 @@ def parse_json(replay_file):
         parsing the file.
     """
     try:
-        fd = open(replay_file, 'r')
+        fd = open(replay_file, 'r', encoding='utf-8', errors='surrogateescape')
     except Exception as e:
         logging.exception("Failed to open %s.", replay_file)
         raise ParseJSONError(e)
 
     try:
-        parsed_json = json.load(fd)
+        with fd:
+            parsed_json = json.load(fd)
     except Exception as e:
-        message = e.msg.split(':')[0]
+        message = str(e).split(':')[0]
         logging.error("Failed to load %s as a JSON object: %s", replay_file, e)
         raise ParseJSONError(message)
 
@@ -259,11 +263,15 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_re
             try:
                 verify_session(session, fabricate_proxy_requests)
             except VerifyError as e:
-                connection_time = session['connection-time']
-                if not connection_time:
-                    connection_time = session['start-time']
+                connection_time = None
+                time_key = 'connection-time'
+                if isinstance(session, dict):
+                    connection_time = session.get(time_key)
+                    if not connection_time:
+                        time_key = 'start-time'
+                        connection_time = session.get(time_key)
                 if connection_time:
-                    logging.debug("Omitting session in %s with connection-time: %d: %s", replay_file, session['connection-time'], e)
+                    logging.debug("Omitting session in %s with %s: %s: %s", replay_file, time_key, connection_time, e)
                 else:
                     logging.debug("Omitting a session in %s, could not find a connection time: %s", replay_file, e)
                 continue

@@ -134,7 +134,7 @@ def _value(v: ValueExpr | RegexValue | SetValue) -> str:
         case ParamRef():
             return f"${v.raw}"
         case RegexValue():
-            return f"/{v.raw}/"
+            return v.raw
         case SetValue():
             return f"[{v.raw}]"
     raise ValueError(f"unparse: unhandled value {type(v).__name__}")

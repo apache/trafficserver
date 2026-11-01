@@ -261,7 +261,8 @@ as is the state set by ``abuse_shield.enabled``. ``ip_tracking.slots`` and
 ``log_file`` and ``fingerprint_registry`` are startup-only; a reload that
 changes any of these settings is rejected. Fingerprint additions and removals
 apply to the next ClientHello. Buckets for removed or renamed rate rules are
-pruned on reload and during periodic maintenance, releasing obsolete debt.
+pruned on reload and during the next few maintenance passes, releasing
+obsolete debt.
 
 Other lifecycle messages are::
 

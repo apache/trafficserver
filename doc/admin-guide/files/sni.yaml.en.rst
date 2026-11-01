@@ -144,6 +144,19 @@ verify_client                            Inbound   One of the values :code:`NONE
 
                                                    By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
+                                                   A resumed TLS session does not re-request a client certificate, so |TS|
+                                                   only resumes a session under the SNI and ``verify_client`` policy that
+                                                   issued it, where the policy includes the trust anchors in force. A session
+                                                   offered under any other SNI, after that SNI's policy changed, or after
+                                                   those trust anchors were replaced, falls back to a full handshake in which
+                                                   the current policy is applied. Replacing a bundle file named by
+                                                   ``verify_client_ca_certs`` takes effect on the next connection, whereas
+                                                   replacing :ts:cv:`proxy.config.ssl.CA.cert.filename` takes effect on the
+                                                   next :option:`traffic_ctl config reload`; a hashed directory contributes
+                                                   only its path. Disabling session tickets via ``ssl_ticket_enabled`` is not
+                                                   required as a workaround for this. See :ref:`admin-mtls` for the cases
+                                                   where the binding cannot be applied.
+
 verify_client_ca_certs                   Inbound   Specifies an alternate set of certificate authority certs to use to verify the
                                                    client cert.  The value must be either a file path, or a nested set of key /
                                                    value pairs.  If the value is a file path, it must specify a file containing the

@@ -197,6 +197,11 @@ class yamlcpp_json_encoder
       for (auto const &err : errata) {
         json << YAML::BeginMap;
         json << YAML::Key << "code" << YAML::Value << errata.code().value();
+        // Only an explicit severity goes on the wire. Clients treat a missing one as an error, which is
+        // how the server itself classifies an annotation without severity.
+        if (err.has_severity()) {
+          json << YAML::Key << "severity" << YAML::Value << static_cast<int>(err.severity());
+        }
         json << YAML::Key << "message" << YAML::Value << std::string{err.text().data(), err.text().size()};
         json << YAML::EndMap;
       }
