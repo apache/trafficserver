@@ -115,8 +115,8 @@ public:
 
   /// uses pcre2_match_context_copy for a deep copy.
   RegexMatchContext(RegexMatchContext const &orig);
-  /// If PCRE2 cannot allocate the copy, this object is left unchanged and keeps its
-  /// own settings rather than taking those of @a orig.
+  /// Replaces this object's settings with a copy of those of @a orig, or with none if
+  /// @a orig holds none. If PCRE2 cannot allocate the copy, this object keeps its own.
   RegexMatchContext &operator=(RegexMatchContext const &orig);
 
   /// Steals the context. A moved-from object holds nothing and frees nothing.

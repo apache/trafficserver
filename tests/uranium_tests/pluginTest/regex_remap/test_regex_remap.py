@@ -28,12 +28,12 @@ from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServe
 
 REGEX_REMAP_UPDATED_RULE = "^/cache-generation$ https://updated.example/ @status=302"
 
-# A query long enough to exhaust the shared 1 MiB JIT stack on the redirect rule, which
+# A query long enough to exhaust the 1 MiB per thread JIT stack on the redirect rule, which
 # backtracks once per subject character. Measured on arm64 with PCRE2 10.47, 43,672
 # characters after "action=newsfed;" match and 43,673 return -46. The ceiling is the
 # 65,535 byte request line the parser asserts on, so 64,000 sits near the top of a
-# window that configuration cannot widen. Shortening it turns the case into a plain
-# redirect check.
+# window that configuration cannot widen. Below the threshold the rule matches and
+# redirects, and this check fails.
 JIT_STACK_EXHAUSTING_QUERY_LENGTH = 64000
 
 ALPHA_BRAVO_RESOURCE_ERROR = r'ERROR: \[regex_remap\] Bad regular expression result -(?:46|47|53|63) .*"\^/alpha/bravo/'
@@ -179,7 +179,7 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
     assert "HTTP/1.1 200 OK" in output and "Content-Length: 6128" in output
     # A 3 KB query backtracks once per character. That exhausts the 32 KiB stack PCRE2
     # falls back to when a match context carries none, which would skip the rule. The
-    # plugin's context resolves the shared 1 MiB stack, so the rule matches and the
+    # plugin's context resolves a 1 MiB per thread stack, so the rule matches and the
     # redirect fires. Without a JIT the interpreter matches it on the heap, so this
     # holds either way.
     output = _request(

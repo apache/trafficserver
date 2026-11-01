@@ -1776,9 +1776,9 @@ TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex
     // On an ordinary build the assertions below do not detect a dropped
     // pcre2_match_context_free(old): removing that call leaves this section passing,
     // because a leak has no observer here. The oracle for the leak is LeakSanitizer,
-    // on any build with AddressSanitizer.
+    // which AddressSanitizer turns on by default on Linux but not on macOS.
     //
-    // The section still earns its place: it is what gives LSan an assignment onto a
+    // The section still earns its place: it is what gives LSan a move assignment onto a
     // live context to observe, which no other case in this file produces. Without it
     // the leak is unreachable and therefore undetectable anywhere.
     RegexMatchContext destination;
@@ -1796,19 +1796,17 @@ TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex
   {
     RegexMatchContext ctx;
 
-    REQUIRE(matches_through(&ctx) == expected);
+    // A match limit of one fails this match, so the result after the move shows whether
+    // ctx still holds its own context. Without the this != &that guard the operator frees
+    // the context and then nulls itself, and the match runs on PCRE2's defaults instead.
+    ctx.set_match_limit(1);
+    REQUIRE(matches_through(&ctx) == PCRE2_ERROR_MATCHLIMIT);
 
-    // Without the this != &that guard this frees the context and then reads the freed
-    // pointer back into itself, so the match below runs on freed memory.
-    //
-    // Removing that guard leaves this section passing on an ordinary build, because a
-    // use after free does not reliably fault. AddressSanitizer is the oracle. As above,
-    // the value here is producing the access at all.
     auto &alias = ctx;
 
     ctx = std::move(alias);
 
-    REQUIRE(matches_through(&ctx) == expected);
+    REQUIRE(matches_through(&ctx) == PCRE2_ERROR_MATCHLIMIT);
   }
 }
 
@@ -1901,10 +1899,10 @@ private:
 
 /** A subject the deep pattern below backtracks through once per character.
  *
- * At 40 bytes of JIT stack per character the longest of these needs about 223KiB: six
- * times what PCRE2's 32KiB fallback resolves, and under a quarter of the shared
- * context's 1MiB stack. Each thread gets its own length and its own content, so no two
- * threads are matching identical bytes.
+ * At 40 bytes of JIT stack per character the longest of these needs about 223KiB: seven
+ * times what PCRE2's 32KiB fallback resolves, and under a quarter of the 1MiB stack.
+ * Each thread gets its own length and its own content, so no two threads are matching
+ * identical bytes.
  */
 std::string
 stack_hungry_subject(int thread_index)
@@ -1918,8 +1916,7 @@ stack_hungry_subject(int thread_index)
 // One pass of the three matches every thread in the concurrency case performs: a hit that
 // must yield the same three captures, a miss that must stay a miss, and a deep subject that
 // only resolves on the 1MiB stack. Returns false on the first disagreement, so a caller
-// counts rounds that went wrong rather than individual assertions. The case asserts on zero
-// either way, so the change of denominator does not weaken it.
+// counts rounds that went wrong rather than individual assertions.
 bool
 concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
                        std::string const &deep, RegexMatchContext const *const use)
@@ -1957,11 +1954,11 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
 //
 // Every round starts at a barrier, so all eight threads are alive for the whole case and
 // each round's matches start together on every thread. The test is deterministic when the
-// stacks are distinct, but it still does not prove that they are: one stack shared by all
-// eight corrupts a result only when two deep matches touch the same frames at once, which
-// the barrier invites but cannot force. Measured on arm64 macOS with the callback returning
-// one shared stack, about 70 of 100 runs fail, with or without the barrier. An oracle
-// would need a thread paused inside a match, which the public API does not offer.
+// stacks are distinct, but it does not prove that they are: one stack shared by all eight
+// corrupts a result only when two deep matches touch the same frames at once, which the
+// barrier invites but cannot force. With the callback returning one stack for every
+// thread, about 70 of 100 runs fail on arm64 macOS. An oracle would need a thread
+// paused inside a match, which the public API does not offer.
 // ThreadSanitizer does not see those writes either, because they come from sljit code.
 TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
 {

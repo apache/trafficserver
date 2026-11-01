@@ -197,13 +197,12 @@ produce_features(bool json)
 #else
     // Below 10.45 there is no library-wide probe that also proves the allocator works,
     // and PCRE2_CONFIG_JIT alone is exactly the misleading answer described above. This
-    // tree still supports those versions: Rocky 8.10 links PCRE2 10.32, so this is the
-    // live path on that CI lane rather than a theoretical one.
+    // tree supports those versions; Rocky 8.10, for one, ships PCRE2 10.32.
     //
-    // So ask the question that cannot be wrong about it. JIT compile a real pattern and
-    // see whether a JIT block came back, which is what the unit tests already do per
-    // pattern in pattern_has_jit(). A hardened runtime fails the compile and reports a
-    // zero JIT size, and the feature correctly reads false.
+    // Instead, JIT compile a real pattern and see whether a JIT block came back, which
+    // is what the unit tests already do per pattern in pattern_has_jit(). A hardened
+    // runtime fails the compile and reports a zero JIT size, and the feature correctly
+    // reads false.
     {
       int         errnum    = 0;
       PCRE2_SIZE  erroffset = 0;

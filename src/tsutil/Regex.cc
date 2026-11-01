@@ -82,9 +82,10 @@ my_free(void *ptr, void * /*caller*/)
 }
 
 //----------------------------------------------------------------------------
-// One match context is shared by every thread that matches through it, and PCRE2
-// requires a distinct JIT stack per thread, so the stack comes from a callback
-// invoked at match time rather than a pointer baked in when the context is built.
+// A caller-supplied match context can be shared by every thread that matches through
+// it, and PCRE2 requires a distinct JIT stack per thread, so the stack comes from a
+// callback invoked at match time rather than a pointer baked in when the context is
+// built.
 //
 // The per thread stack is held in a pthread key rather than a thread_local. A
 // thread_local with a destructor registers it through __cxa_thread_atexit, which
@@ -381,9 +382,6 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
 //----------------------------------------------------------------------------
 RegexMatchContext::RegexMatchContext(RegexMatchContext &&that) noexcept
 {
-  // Through the typed accessors rather than std::exchange on the raw member: _ptr is
-  // void *, and void * does not implicitly convert to pcre2_match_context *, which is
-  // what set() takes.
   _MatchContext::set(_match_context, _MatchContext::get(that._match_context));
   _MatchContext::set(that._match_context, nullptr);
 }
