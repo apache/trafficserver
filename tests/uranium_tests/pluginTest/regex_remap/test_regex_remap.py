@@ -177,10 +177,11 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
     assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output
     output = _request(f"http://example.three{path}", "smoke", _ats=_ats, _curl=_curl)
     assert "HTTP/1.1 200 OK" in output and "Content-Length: 6128" in output
-    # A 3 KB query backtracks once per character. It used to exhaust the 32 KiB stack
-    # PCRE2 falls back to when a match context carries none, so the rule was skipped.
-    # The plugin's context now resolves the shared 1 MiB stack and the redirect fires.
-    # Without a JIT the interpreter matches it on the heap, so this holds either way.
+    # A 3 KB query backtracks once per character. That exhausts the 32 KiB stack PCRE2
+    # falls back to when a match context carries none, which would skip the rule. The
+    # plugin's context resolves the shared 1 MiB stack, so the rule matches and the
+    # redirect fires. Without a JIT the interpreter matches it on the heap, so this
+    # holds either way.
     output = _request(
         long_match["client-request"]["url"], long_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
     assert "HTTP/1.1 301" in output and "Location: https://redirect.com/" in output, output
@@ -195,9 +196,9 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
 def run_jit_stack_exhaustion_check(*, _ats: ATS, _curl: Curl) -> None:
     """Verify a query past the JIT stack bound fails the rule without crashing ATS.
 
-    This is the crash guard from #5762. Only the JIT engine has a stack to exhaust:
-    the interpreter keeps its backtracking frames on the heap, matches this subject
-    and redirects, so the caller runs this only when ``TS_HAS_PCRE2_JIT`` is set.
+    Only the JIT engine has a stack to exhaust: the interpreter keeps its
+    backtracking frames on the heap, matches this subject and redirects, so the
+    caller runs this only when ``TS_HAS_PCRE2_JIT`` is set.
 
     :param _ats: Test-local ats configured by the test.
     :param _curl: Test-local curl configured by the test.

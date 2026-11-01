@@ -318,9 +318,9 @@ struct RegexMatchContext::_MatchContext {
 //----------------------------------------------------------------------------
 RegexMatchContext::RegexMatchContext()
 {
-  // A blank context silently drops the JIT stack callback, which is how this type
-  // came to run with PCRE2's fallback 32KiB stack instead of the 1MiB one. Assign
-  // the callback directly rather than copying the shared context.
+  // A blank context has no JIT stack callback, so a match through it would run on
+  // PCRE2's fallback 32KiB stack instead of the 1MiB one. Assign the callback
+  // directly rather than copying the shared context.
   //
   // Copying it would mean calling RegexContext::get_instance(), and that constructs
   // a thread_local whose destructor registers through __cxa_thread_atexit, taking
@@ -329,7 +329,8 @@ RegexMatchContext::RegexMatchContext()
   // this constructor would invert lock order for exactly the reason described above
   // jit_stack_key. Nothing else the shared context carries is needed here: the
   // callback is thread independent because it resolves its stack through the
-  // pthread key, and a null general context is what this constructor used before.
+  // pthread key, and a null general context gives PCRE2's default malloc and free,
+  // which is all the shared general context wraps.
   auto *ctx = pcre2_match_context_create(nullptr);
 
   debug_assert_message(ctx, "Failed to obtain a pcre2 match context");
@@ -357,8 +358,7 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
     auto ptr = _MatchContext::get(other._match_context);
 
     // Take the copy before releasing what this object already holds, so a failing
-    // copy leaves it holding its old context rather than a freed one. Releasing it
-    // is what this operator used to omit, and every assignment leaked one context.
+    // copy leaves it holding its old context rather than a freed one.
     pcre2_match_context *const ctx = nullptr != ptr ? pcre2_match_context_copy(ptr) : nullptr;
 
     // pcre2_match_context_copy() returns nullptr when it cannot allocate. Assigning it

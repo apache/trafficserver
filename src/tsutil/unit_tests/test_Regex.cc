@@ -1687,9 +1687,10 @@ pattern_has_jit(char const *pattern)
 } // namespace
 
 // A caller-supplied RegexMatchContext must behave like the shared context that
-// Regex::exec uses when none is supplied. A context built from scratch silently
-// drops everything the shared one configures, which is how regex_remap came to
-// run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB one.
+// Regex::exec uses when none is supplied. A context built from scratch drops
+// everything the shared one configures, the JIT stack callback included, and a
+// match through it then runs on PCRE2's fallback 32KiB JIT stack instead of the
+// 1MiB one.
 TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexMatchContext]")
 {
   // Quantified alternation of capture groups: every subject character pushes a
@@ -1733,14 +1734,13 @@ TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexM
   REQUIRE(re.exec(subject, assigned_matches, 0, &assigned) == shared_rc);
 }
 
-// Ownership only, and deliberately NOT inside the case above.
+// Ownership only, and deliberately not inside the case above.
 //
 // That case SKIPs when pattern_has_jit() is false, which is right for what it tests and
-// wrong for this: move construction and move assignment have nothing to do with the JIT.
-// Gating them there meant the only coverage of the double free stopped running on exactly
-// the builds it was written for, a PCRE2 without JIT or the hardened runtime where JIT
-// allocation fails. A regression test that disappears on the affected platform is worse
-// than none, because it reports green.
+// wrong for this: move construction and move assignment have nothing to do with the JIT,
+// and a double free matters as much on a PCRE2 without JIT, or on a hardened runtime
+// where JIT allocation fails, as anywhere else. Inside that case this coverage would
+// skip on exactly those builds and still report green.
 TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex][RegexMatchContext]")
 {
   Regex re;
@@ -1773,10 +1773,10 @@ TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex
 
   SECTION("move assignment onto a destination that already holds a context")
   {
-    // HONEST LABEL: on an ordinary build the assertions below do NOT detect a dropped
-    // pcre2_match_context_free(old). Measured: removing that call leaves this section
-    // passing, because a leak has no observer here. The oracle for the leak is
-    // LeakSanitizer on the ci-rocky lane, which is the only PR check inheriting asan.
+    // On an ordinary build the assertions below do not detect a dropped
+    // pcre2_match_context_free(old): removing that call leaves this section passing,
+    // because a leak has no observer here. The oracle for the leak is LeakSanitizer,
+    // on any build with AddressSanitizer.
     //
     // The section still earns its place: it is what gives LSan an assignment onto a
     // live context to observe, which no other case in this file produces. Without it
@@ -1801,9 +1801,9 @@ TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex
     // Without the this != &that guard this frees the context and then reads the freed
     // pointer back into itself, so the match below runs on freed memory.
     //
-    // HONEST LABEL: measured, removing that guard leaves this section passing on an
-    // ordinary build, because a use after free does not reliably fault. AddressSanitizer
-    // on ci-rocky is the oracle. As above, the value here is producing the access at all.
+    // Removing that guard leaves this section passing on an ordinary build, because a
+    // use after free does not reliably fault. AddressSanitizer is the oracle. As above,
+    // the value here is producing the access at all.
     auto &alias = ctx;
 
     ctx = std::move(alias);
@@ -1812,10 +1812,9 @@ TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex
   }
 }
 
-// The guard from #5762: a pattern that backtracks once per character must fail
-// cleanly rather than run the thread out of stack. PCRE1 recursed on the machine
-// stack and a long enough subject crashed the server; PCRE2 must report an error
-// instead.
+// A pattern that backtracks once per character must fail cleanly rather than run
+// the thread out of stack. A regex engine that recurses on the machine stack crashes
+// the server on a long enough subject; PCRE2 must report an error instead.
 TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex][limits]")
 {
   // Only the JIT path has a bound to exhaust here. PCRE2's interpreter keeps its
