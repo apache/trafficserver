@@ -296,3 +296,35 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[libinknet][Connect
     }
   }
 }
+
+TEST_CASE("Connection tracker client exempt list", "[libinknet][ConnectionTracker]")
+{
+  test_config();
+
+  IpEndpoint addr_in;
+  IpEndpoint addr_out;
+  REQUIRE(ats_ip_pton("192.168.1.100", &addr_in) == 0);
+  REQUIRE(ats_ip_pton("10.0.0.1", &addr_out) == 0);
+
+  ConnectionTracker::clear_client_exempt_list();
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(addr_in));
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(addr_out));
+
+  swoc::IPRange range;
+  REQUIRE(range.load("192.168.1.0/24"));
+  ConnectionTracker::add_client_exempt_range(range);
+
+  CHECK(ConnectionTracker::is_client_exempt(addr_in));
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(addr_out));
+
+  ConnectionTracker::remove_client_exempt_range(range);
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(addr_in));
+
+  swoc::IPRangeSet range_set;
+  range_set.mark(range);
+  ConnectionTracker::set_client_exempt_list(range_set);
+  CHECK(ConnectionTracker::is_client_exempt(addr_in));
+
+  ConnectionTracker::clear_client_exempt_list();
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(addr_in));
+}
