@@ -259,6 +259,7 @@ Config_Update_Conntrack_Client_Exempt_List(const char * /* name ATS_UNUSED */, R
     // There is no exempt list configured. Ensure that our exempt list is empty.
     std::lock_guard<ts::bravo::shared_mutex> lock(config->client_exempt_list_mutex);
     config->client_exempt_list.clear();
+    config->has_client_exempt_entries.store(false, std::memory_order_relaxed);
     return true;
   }
   std::string_view exempt_list_string{data.rec_string};
@@ -291,6 +292,7 @@ Config_Update_Conntrack_Client_Exempt_List(const char * /* name ATS_UNUSED */, R
   for (auto const &ip_range : new_exempt_list) {
     config->client_exempt_list.mark(ip_range);
   }
+  config->has_client_exempt_entries.store(!config->client_exempt_list.empty(), std::memory_order_relaxed);
 
   return true;
 }
@@ -310,6 +312,7 @@ ConnectionTracker::GlobalConfig::GlobalConfig(GlobalConfig const &other)
   for (auto const &ip_range : other.client_exempt_list) {
     this->client_exempt_list.mark(ip_range);
   }
+  this->has_client_exempt_entries.store(!this->client_exempt_list.empty(), std::memory_order_relaxed);
 }
 
 ConnectionTracker::GlobalConfig &
@@ -327,6 +330,7 @@ ConnectionTracker::GlobalConfig::operator=(GlobalConfig const &other)
     for (auto const &ip_range : other.client_exempt_list) {
       this->client_exempt_list.mark(ip_range);
     }
+    this->has_client_exempt_entries.store(!this->client_exempt_list.empty(), std::memory_order_relaxed);
   }
   return *this;
 }
@@ -363,6 +367,7 @@ ConnectionTracker::set_client_exempt_list(swoc::IPRangeSet const &ip_ranges)
   for (auto const &ip_range : ip_ranges) {
     _global_config->client_exempt_list.mark(ip_range);
   }
+  _global_config->has_client_exempt_entries.store(!_global_config->client_exempt_list.empty(), std::memory_order_relaxed);
 
   return true;
 }
@@ -378,6 +383,7 @@ ConnectionTracker::add_client_exempt_range(swoc::IPRange const &ip_range)
   // Acquire exclusive lock and add the new range to the existing exempt list.
   std::lock_guard<ts::bravo::shared_mutex> lock(_global_config->client_exempt_list_mutex);
   _global_config->client_exempt_list.mark(ip_range);
+  _global_config->has_client_exempt_entries.store(!_global_config->client_exempt_list.empty(), std::memory_order_relaxed);
 
   return true;
 }
@@ -393,6 +399,7 @@ ConnectionTracker::remove_client_exempt_range(swoc::IPRange const &ip_range)
   // Acquire exclusive lock and remove the range from the existing exempt list.
   std::lock_guard<ts::bravo::shared_mutex> lock(_global_config->client_exempt_list_mutex);
   _global_config->client_exempt_list.erase(ip_range);
+  _global_config->has_client_exempt_entries.store(!_global_config->client_exempt_list.empty(), std::memory_order_relaxed);
 
   return true;
 }
@@ -408,12 +415,13 @@ ConnectionTracker::clear_client_exempt_list()
   // Acquire exclusive lock and clear all ranges from the exempt list.
   std::lock_guard<ts::bravo::shared_mutex> lock(_global_config->client_exempt_list_mutex);
   _global_config->client_exempt_list.clear();
+  _global_config->has_client_exempt_entries.store(false, std::memory_order_relaxed);
 }
 
 bool
 ConnectionTracker::is_client_exempt(IpEndpoint const &addr)
 {
-  if (_global_config == nullptr) {
+  if (_global_config == nullptr || !_global_config->has_client_exempt_entries.load(std::memory_order_relaxed)) {
     return false;
   }
 

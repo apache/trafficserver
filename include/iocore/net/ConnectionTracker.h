@@ -148,7 +148,8 @@ public:
     std::chrono::seconds            server_alert_delay{60}; ///< Alert delay in seconds.
     std::string                     metric_prefix;          ///< Per server metric prefix.
     swoc::IPRangeSet                client_exempt_list; ///< The set of IP addresses to not block due client connection counting.
-    mutable ts::bravo::shared_mutex client_exempt_list_mutex; ///< Protects client_exempt_list from concurrent access.
+    std::atomic<bool>               has_client_exempt_entries{false}; ///< Whether client_exempt_list contains any entries.
+    mutable ts::bravo::shared_mutex client_exempt_list_mutex;         ///< Protects client_exempt_list from concurrent access.
   };
 
   // The names of the configuration values.
