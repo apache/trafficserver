@@ -24,9 +24,9 @@ SCRIPT = Path(__file__).with_name("h2_request_end_stream.py")
 
 # Each case: id, method, how the client ends its stream, Content-Length, body, and the
 # frame that should carry END_STREAM to the origin.  END_STREAM goes on HEADERS when
-# the outbound request says no body follows: a zero Content-Length, or a client that
-# ended its stream on HEADERS.  Otherwise it goes on the DATA frame that ends the body,
-# even an empty one.
+# no body follows: the outbound request has a zero Content-Length, or the client ended
+# its stream on HEADERS.  Otherwise it goes on the DATA frame that ends the body, even an
+# empty one.
 CASES = [
     ("get-headers", "GET", "headers", None, "", "headers"),
     ("options-headers", "OPTIONS", "headers", None, "", "headers"),

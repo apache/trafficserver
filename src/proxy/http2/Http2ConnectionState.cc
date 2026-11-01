@@ -2726,8 +2726,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   }
 
   // CONTINUATION frames have no END_STREAM flag, so END_STREAM stays on HEADERS
-  // even when CONTINUATION frames carry the rest of the header block. END_HEADERS
-  // goes on the last frame of the block.
+  // even when CONTINUATION frames carry the rest of the header block.
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length  = header_blocks_size;
     flags          |= HTTP2_FLAGS_HEADERS_END_HEADERS;
