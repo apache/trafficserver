@@ -1045,9 +1045,8 @@ Http2Stream::send_body(bool /* call_update ATS_UNUSED */)
   reentrancy_count++;
 
   SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
-  // Only a stream on a client connection has a node in the priority tree, which
-  // orders the responses sent to that client. A stream to an origin sends its
-  // request body without priority scheduling.
+  // Priority scheduling works on the stream's node in the dependency tree, and
+  // only a stream on a client connection gets one.
   if (Http2::stream_priority_enabled && !this->is_outbound_connection()) {
     connection_state.schedule_stream_to_send_priority_frames(this);
     // signal_write_event() will be called from `Http2ConnectionState::send_data_frames_depends_on_priority()`

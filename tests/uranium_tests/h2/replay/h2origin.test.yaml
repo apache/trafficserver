@@ -43,7 +43,7 @@ urtest:
       logging:
         formats:
           - name: "testformat"
-            format: "%<cqtq> %<ttms> %<crc> %<pssc> %<{uuid}cqh> %<cqpv> %<sqpv> %<cqssl> %<cqtr> %<pqssl> %<sstc>"
+            format: "%<cqtq> %<ttms> %<crc> %<pssc> %<{uuid}cqh> %<cqpv> %<sqpv> %<cqssl> %<cqtr> %<pqssl> %<sstc> %<pqcl>"
         logs:
           - mode: "ascii"
             format: "testformat"
@@ -97,8 +97,24 @@ urtest:
     - name: "stream-priority"
       ats:
         records_config:
-          # Priorities order what ATS sends to its clients; the request bodies in
-          # this replay must still reach the origin with them enabled.
+          # Stream priorities order what ATS sends to its clients; the request
+          # bodies in this replay must still reach the origin with them enabled.
           proxy.config.http2.stream_priority_enabled: 1
+        log_validation:
+          access_log:
+            filename: "squid.log"
+            # The last field counts the request body bytes written to the origin.
+            contains:
+              - {expression: " 3 http/1.1 http/2 .* 8$"}
+              - {expression: " 4 http/1.1 http/2 .* 32$"}
+              - {expression: " 12 http/1.1 http/2 .* 3200$"}
+              - {expression: " 13 http/1.1 http/2 .* 3200$"}
+              - {expression: " 14 http/1.1 http/2 .* 32$"}
+              - {expression: " 7 http/2 http/2 .* 8$"}
+              - {expression: " 8 http/2 http/2 .* 32$"}
+              - {expression: " 9 http/2 http/2 .* 3200$"}
+              - {expression: " 10 http/2 http/2 .* 3200$"}
+              - {expression: " 11 http/2 http/2 .* 32$"}
+              - {expression: " 16 http/2 http/2 .* 300000$"}
 
 sessions: []
