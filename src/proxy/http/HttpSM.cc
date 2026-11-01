@@ -2290,10 +2290,11 @@ HttpSM::state_send_server_request_header(int event, void *data)
       free_MIOBuffer(server_entry->write_buffer);
       server_entry->write_buffer = nullptr;
       if (forwards_client_request_body()) {
-        // The origin has now been told to expect a body.  Record that it is owed those
-        // bytes, whether or not a tunnel to deliver them is started below.  When the
-        // client asked for a 100 Continue the body is withheld until the origin sends
-        // one, so there is no tunnel to infer this from.
+        // The client's body, possibly empty, follows the request header.  Record
+        // that the origin is owed it, whether or not a tunnel to deliver it is
+        // started below.  When the client asked for a 100 Continue the body is
+        // withheld until the origin sends one, so there is no tunnel to infer
+        // this from.
         server_owed_request_body = true;
         if (post_transform_info.vc) {
           setup_transform_to_server_transfer();

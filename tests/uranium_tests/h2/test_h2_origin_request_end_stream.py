@@ -23,8 +23,10 @@ from .origin_test_helpers import configure_h2_origin
 SCRIPT = Path(__file__).with_name("h2_request_end_stream.py")
 
 # Each case: id, method, how the client ends its stream, Content-Length, body, and the
-# frame that should carry END_STREAM to the origin.  END_STREAM goes on HEADERS
-# whenever no body follows them, including for a declared zero length.
+# frame that should carry END_STREAM to the origin.  END_STREAM goes on HEADERS when
+# the outbound request says no body follows: a zero Content-Length, or a client that
+# ended its stream on HEADERS.  Otherwise it goes on the DATA frame that ends the body,
+# even an empty one.
 CASES = [
     ("get-headers", "GET", "headers", None, "", "headers"),
     ("options-headers", "OPTIONS", "headers", None, "", "headers"),
@@ -232,9 +234,9 @@ def test_h2_client_trace_body_end_stream(ats_factory: ATSFactory, services: Serv
     """A TRACE request reaches the origin ended and without the body its client sent.
 
     ATS never forwards a TRACE body, so nothing but the HEADERS frame can end the
-    origin stream.  An HTTP/2 client without Content-Length is the one way a TRACE
-    body gets this far: with a nonzero Content-Length, or a chunked HTTP/1.1 body,
-    ATS answers 400.
+    origin stream.  A client that sends the body without Content-Length over HTTP/2
+    or HTTP/3 gets it this far: with a nonzero Content-Length, or a chunked HTTP/1.1
+    body, ATS answers 400.
 
     :param ats_factory: Proxy factory.
     :param services: Custom origin and client factory.

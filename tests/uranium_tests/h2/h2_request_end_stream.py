@@ -53,7 +53,7 @@ END_FRAMES = ("headers", "data")
 
 
 def filler(size: int) -> str:
-    """Return a random header value of the given size, which HPACK's Huffman coding shrinks only slightly."""
+    """Return a fixed pseudo-random value of letters and digits, which HPACK's Huffman code keeps at about 80% of its size."""
     return "".join(random.Random(size).choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=size))
 
 
@@ -117,7 +117,8 @@ def handle(ctx: ssl.SSLContext, conn: socket.socket, delay: float) -> None:
                     h2c.send_data(event.stream_id, body, end_stream=True)
             sock.sendall(h2c.data_to_send())
     except h2.exceptions.ProtocolError as e:
-        # A frame ATS should not have sent, such as DATA after END_STREAM.
+        # A connection error in ATS's frames, such as a malformed header block.  A frame
+        # on a stream that already ended gets RST_STREAM instead and does not reach here.
         print(f"origin: protocol error from ATS: {e!r}", flush=True)
     except (ConnectionError, ssl.SSLError, OSError):
         return
