@@ -2278,8 +2278,6 @@ HttpSM::state_send_server_request_header(int event, void *data)
   ink_assert(server_entry->write_vio == (VIO *)data);
   STATE_ENTER(state_send_server_request_header, event);
 
-  int method;
-
   switch (event) {
   case VC_EVENT_WRITE_READY:
     server_entry->write_vio->reenable();
@@ -2291,10 +2289,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
     if (server_entry->write_buffer) {
       free_MIOBuffer(server_entry->write_buffer);
       server_entry->write_buffer = nullptr;
-      method                     = t_state.hdr_info.server_request.method_get_wksidx();
-      if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
-          _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                          t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
+      if (forwards_client_request_body()) {
         // The origin has now been told to expect a body.  Record that it is owed those
         // bytes, whether or not a tunnel to deliver them is started below.  When the
         // client asked for a 100 Continue the body is withheld until the origin sends
@@ -6946,10 +6941,9 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
       c = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server,
                               HttpTunnelType_t::HTTP_SERVER, "http server post");
     }
-    // Only an HTTP/1.1 origin supports chunked encoding, and its request body ends
-    // where its framing says. An HTTP/2 request body ends with END_STREAM, which the
-    // origin stream sends only when a write completes, so an empty body still needs
-    // that write or the origin waits for the rest.
+    // An HTTP/1 request body ends where its framing says. An HTTP/2 one ends with
+    // END_STREAM, which the stream sends on the DATA frame that finishes a write,
+    // so an empty body still needs a write or the origin waits for the rest.
     c->write_empty_body     = !server_txn->is_chunked_encoding_supported();
     server_entry->in_tunnel = true;
     break;
@@ -9250,6 +9244,14 @@ HttpSM::set_server_session_private(bool private_session)
     return true;
   }
   return false;
+}
+
+bool
+HttpSM::forwards_client_request_body() const
+{
+  return !t_state.api_server_request_body_set && t_state.hdr_info.server_request.method_get_wksidx() != HTTP_WKSIDX_TRACE &&
+         _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                         t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED);
 }
 
 bool

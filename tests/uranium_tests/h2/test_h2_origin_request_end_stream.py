@@ -44,6 +44,23 @@ H1_CASES = [
     ("patch-chunked", "PATCH", "chunked", "hello"),
 ]
 
+# A request header block this large leaves ATS more than one frame of HPACK output, so
+# it sends HEADERS followed by CONTINUATION frames.  It still fits the default request
+# header limits.
+LARGE_HEADER_SIZE = 30000
+
+LARGE_HEADER_CASES = [
+    ("get-headers", "GET", "headers", None, ""),
+    ("options-empty-data", "OPTIONS", "data", None, ""),
+    ("post-body", "POST", "data", 5, "hello"),
+]
+
+H1_LARGE_HEADER_CASES = [
+    ("get", "GET", "length", ""),
+    ("post-length", "POST", "length", "hello"),
+    ("post-chunked", "POST", "chunked", "hello"),
+]
+
 
 def start_proxy(ats_factory: ATSFactory, services: ServiceFactory) -> ATS:
     """Start an origin that replies only to ended streams, and a proxy that gives up on it quickly.
@@ -74,6 +91,62 @@ def start_proxy(ats_factory: ATSFactory, services: ServiceFactory) -> ATS:
     return ats
 
 
+def run_h2_client(
+        services: ServiceFactory,
+        ats: ATS,
+        method: str,
+        end: str,
+        content_length: int | None,
+        body: str,
+        header_size: int,
+        origin_body_bytes: int | None = None) -> None:
+    """Send one HTTP/2 request through the proxy and check that the origin answered it.
+
+    :param services: Custom origin and client factory.
+    :param ats: Running proxy.
+    :param method: Request method.
+    :param end: Frame that carries the client's END_STREAM.
+    :param content_length: Content-Length the client sends, if any.
+    :param body: Request body the client sends.
+    :param header_size: Size of an extra request header value, or 0 for none.
+    :param origin_body_bytes: Body bytes the origin should receive, if not the whole body.
+    """
+    command = [
+        sys.executable, SCRIPT, "request", "127.0.0.1",
+        str(ats.https_port), method, "--end", end, "--body", body, "--header-size",
+        str(header_size)
+    ]
+    if content_length is not None:
+        command += ["--content-length", str(content_length)]
+    if origin_body_bytes is not None:
+        command += ["--origin-body-bytes", str(origin_body_bytes)]
+    result = services.process("client", command).run(timeout=30)
+    assert result.returncode == 0, result.output
+    assert "PASS" in result.stdout
+    assert ats.is_running
+
+
+def run_h1_client(services: ServiceFactory, ats: ATS, method: str, framing: str, body: str, header_size: int) -> None:
+    """Send one HTTP/1.1 request through the proxy and check that the origin received all of it.
+
+    :param services: Custom origin and client factory.
+    :param ats: Running proxy.
+    :param method: Request method.
+    :param framing: Content-Length or chunked body framing.
+    :param body: Request body the client sends.
+    :param header_size: Size of an extra request header value, or 0 for none.
+    """
+    command = [
+        sys.executable, SCRIPT, "request-h1", "127.0.0.1",
+        str(ats.http_port), method, "--framing", framing, "--body", body, "--header-size",
+        str(header_size)
+    ]
+    result = services.process("client", command).run(timeout=30)
+    assert result.returncode == 0, result.output
+    assert "PASS" in result.stdout
+    assert ats.is_running
+
+
 @pytest.mark.parametrize("method,end,content_length,body", [pytest.param(*case[1:], id=case[0]) for case in CASES])
 def test_h2_origin_request_end_stream(
         ats_factory: ATSFactory, services: ServiceFactory, method: str, end: str, content_length: int | None, body: str) -> None:
@@ -86,14 +159,7 @@ def test_h2_origin_request_end_stream(
     :param content_length: Content-Length the client sends, if any.
     :param body: Request body the client sends.
     """
-    ats = start_proxy(ats_factory, services)
-    command = [sys.executable, SCRIPT, "request", "127.0.0.1", str(ats.https_port), method, "--end", end, "--body", body]
-    if content_length is not None:
-        command += ["--content-length", str(content_length)]
-    result = services.process("client", command).run(timeout=30)
-    assert result.returncode == 0, result.output
-    assert "PASS" in result.stdout
-    assert ats.is_running
+    run_h2_client(services, start_proxy(ats_factory, services), method, end, content_length, body, 0)
 
 
 @pytest.mark.parametrize("method,framing,body", [pytest.param(*case[1:], id=case[0]) for case in H1_CASES])
@@ -107,9 +173,46 @@ def test_h1_client_request_end_stream(
     :param framing: Content-Length or chunked body framing.
     :param body: Request body the client sends.
     """
-    ats = start_proxy(ats_factory, services)
-    command = [sys.executable, SCRIPT, "request-h1", "127.0.0.1", str(ats.http_port), method, "--framing", framing, "--body", body]
-    result = services.process("client", command).run(timeout=30)
-    assert result.returncode == 0, result.output
-    assert "PASS" in result.stdout
-    assert ats.is_running
+    run_h1_client(services, start_proxy(ats_factory, services), method, framing, body, 0)
+
+
+@pytest.mark.parametrize("method,end,content_length,body", [pytest.param(*case[1:], id=case[0]) for case in LARGE_HEADER_CASES])
+def test_h2_client_large_header_end_stream(
+        ats_factory: ATSFactory, services: ServiceFactory, method: str, end: str, content_length: int | None, body: str) -> None:
+    """The origin receives the end of an HTTP/2 client request whose header block spans CONTINUATION frames.
+
+    :param ats_factory: Proxy factory.
+    :param services: Custom origin and client factory.
+    :param method: Request method.
+    :param end: Frame that carries the client's END_STREAM.
+    :param content_length: Content-Length the client sends, if any.
+    :param body: Request body the client sends.
+    """
+    run_h2_client(services, start_proxy(ats_factory, services), method, end, content_length, body, LARGE_HEADER_SIZE)
+
+
+@pytest.mark.parametrize("method,framing,body", [pytest.param(*case[1:], id=case[0]) for case in H1_LARGE_HEADER_CASES])
+def test_h1_client_large_header_end_stream(
+        ats_factory: ATSFactory, services: ServiceFactory, method: str, framing: str, body: str) -> None:
+    """The origin receives the end of an HTTP/1.1 client request whose header block spans CONTINUATION frames.
+
+    :param ats_factory: Proxy factory.
+    :param services: Custom origin and client factory.
+    :param method: Request method.
+    :param framing: Content-Length or chunked body framing.
+    :param body: Request body the client sends.
+    """
+    run_h1_client(services, start_proxy(ats_factory, services), method, framing, body, LARGE_HEADER_SIZE)
+
+
+def test_h2_client_trace_body_end_stream(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A TRACE request reaches the origin ended and without the body its client sent.
+
+    ATS never forwards a TRACE body, so nothing but the HEADERS frame can end the
+    origin stream.  An HTTP/2 client without Content-Length is the one way a TRACE
+    body gets this far: with one, ATS rejects the request.
+
+    :param ats_factory: Proxy factory.
+    :param services: Custom origin and client factory.
+    """
+    run_h2_client(services, start_proxy(ats_factory, services), "TRACE", "data", None, "hello", 0, origin_body_bytes=0)

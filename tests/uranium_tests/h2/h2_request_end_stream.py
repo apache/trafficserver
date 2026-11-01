@@ -29,6 +29,7 @@ the request body tunnel.  That ordering is otherwise left to a race.
 #  limitations under the License.
 
 import argparse
+import random
 import socket
 import ssl
 import sys
@@ -44,6 +45,11 @@ import h2.events
 #   data     HEADERS, then one DATA frame (empty or carrying the body) with END_STREAM, in one write.
 #   late     HEADERS, then a pause well past the origin handshake delay, then the DATA frame.
 ENDINGS = ("headers", "data", "late")
+
+
+def filler(size: int) -> str:
+    """Return a header value of the given size that HPACK cannot shrink to fit one HEADERS frame."""
+    return "".join(random.Random(size).choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=size))
 
 
 def serve(args: argparse.Namespace) -> int:
@@ -120,6 +126,8 @@ def request(args: argparse.Namespace) -> int:
         headers = [(":method", args.method), (":scheme", "https"), (":authority", "end-stream.test"), (":path", args.path)]
         if args.content_length is not None:
             headers.append(("content-length", str(args.content_length)))
+        if args.header_size:
+            headers.append(("x-filler", filler(args.header_size)))
         stream_id = h2c.get_next_available_stream_id()
         h2c.send_headers(stream_id, headers, end_stream=args.end == "headers")
         if args.end == "late":
@@ -162,8 +170,9 @@ def request(args: argparse.Namespace) -> int:
     if response_headers.get("x-origin-method") != args.method:
         print(f"FAIL: origin did not answer this request: {response_headers}")
         return 1
-    if response_headers.get("x-origin-body-bytes") != str(len(body)):
-        print(f"FAIL: origin received {response_headers.get('x-origin-body-bytes')} body bytes, expected {len(body)}")
+    forwarded = len(body) if args.origin_body_bytes is None else args.origin_body_bytes
+    if response_headers.get("x-origin-body-bytes") != str(forwarded):
+        print(f"FAIL: origin received {response_headers.get('x-origin-body-bytes')} body bytes, expected {forwarded}")
         return 1
     if response_body != b"ended":
         print(f"FAIL: unexpected response body {response_body[:80]!r}")
@@ -176,6 +185,8 @@ def request_h1(args: argparse.Namespace) -> int:
     """Send one request to ATS over HTTP/1.1 and check the origin saw all of its body."""
     body = args.body.encode()
     head = f"{args.method} {args.path} HTTP/1.1\r\nHost: end-stream.test\r\nConnection: close\r\n"
+    if args.header_size:
+        head += f"X-Filler: {filler(args.header_size)}\r\n"
     if args.framing == "chunked":
         head += "Transfer-Encoding: chunked\r\n"
         payload = (f"{len(body):x}\r\n".encode() + body + b"\r\n" if body else b"") + b"0\r\n\r\n"
@@ -231,6 +242,8 @@ def main() -> int:
     c.add_argument("--path", default="/end-stream")
     c.add_argument("--timeout", type=float, default=15)
     c.add_argument("--late-delay", type=float, default=1.5)
+    c.add_argument("--header-size", type=int, default=0, help="size of an extra request header value")
+    c.add_argument("--origin-body-bytes", type=int, help="body bytes the origin should receive, if not the whole body")
     h = sub.add_parser("request-h1")
     h.add_argument("address")
     h.add_argument("port", type=int)
@@ -239,6 +252,7 @@ def main() -> int:
     h.add_argument("--body", default="")
     h.add_argument("--path", default="/end-stream")
     h.add_argument("--timeout", type=float, default=15)
+    h.add_argument("--header-size", type=int, default=0, help="size of an extra request header value")
     args = p.parse_args()
     if args.command == "serve":
         return serve(args)

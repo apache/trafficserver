@@ -239,7 +239,11 @@ struct HttpTunnelConsumer {
   bool        write_success = false;
   const char *name          = nullptr;
 
-  /// The VC ends its message when a write completes, so it needs a write even for an empty body.
+  /** Give this consumer a zero length write when the body is empty, instead of
+      completing it without one.  HttpSM sets this for an origin whose request
+      body ends with the frame that finishes a write, so that write is what ends
+      the request.
+  */
   bool write_empty_body = false;
 
   /** Check if this consumer is downstream from @a vc.

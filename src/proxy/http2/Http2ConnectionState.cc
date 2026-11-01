@@ -2701,47 +2701,35 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     return;
   }
 
-  // Send a HEADERS frame
+  if (stream->is_outbound_connection()) { // Will be sending a request_header
+    int method = send_hdr->method_get_wksidx();
+    stream->set_sent_request_method(method);
+
+    // Nothing written after the request header ends the stream unless a body
+    // follows it, so END_STREAM goes on HEADERS otherwise. A Content-Length says
+    // whether a body follows, including one a plugin supplies with the header.
+    // Without one, a body follows only when HttpSM forwards the client's.
+    bool body_follows = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) ? send_hdr->get_content_length() > 0 :
+                                                                           stream->get_sm()->forwards_client_request_body();
+    if (!body_follows) {
+      Http2StreamDebug(session, stream->get_id(), "request END_STREAM");
+      flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
+      stream->send_end_stream  = true;
+    }
+  } else {
+    if ((send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) && send_hdr->get_content_length() == 0) ||
+        (!send_hdr->expect_final_response() && stream->is_write_vio_done())) {
+      Http2StreamDebug(session, stream->get_id(), "response END_STREAM");
+      flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
+      stream->send_end_stream  = true;
+    }
+  }
+
+  // Send a HEADERS frame. END_STREAM stays on it when CONTINUATION frames carry
+  // the rest of the header block, and END_HEADERS goes on the last of them.
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length  = header_blocks_size;
     flags          |= HTTP2_FLAGS_HEADERS_END_HEADERS;
-    if (stream->is_outbound_connection()) { // Will be sending a request_header
-      int method = send_hdr->method_get_wksidx();
-      stream->set_sent_request_method(method);
-
-      // Set END_STREAM on request headers unless a body will follow them. Some
-      // origins RST request headers with an explicit zero length and no end
-      // stream flag, causing the request to fail; chromium sets the flag for
-      // the same reason. Whether a body follows is decided from the client
-      // request, as HttpSM does before starting the request body tunnel: a
-      // POST without Content-Length may have no body, and a chunked body has
-      // normally lost its Transfer-Encoding from send_hdr by now.
-      HttpSM *sm                   = stream->get_sm();
-      bool    is_transfer_encoded  = send_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING);
-      bool    has_content_header   = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH);
-      bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;
-      bool    client_chunked       = sm->t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED;
-
-      bool expect_content_stream =
-        is_transfer_encoded ||                           // transfer encoded content length is unknown
-        (has_content_header && !explicit_zero_length) || // nonzero content length
-        sm->get_ua_txn()->has_request_body(sm->t_state.hdr_info.request_content_length, client_chunked); // request has a body
-
-      // send END_STREAM if we don't expect any content
-      if (!expect_content_stream) {
-        // TODO deal with the chunked encoding case
-        Http2StreamDebug(session, stream->get_id(), "request END_STREAM");
-        flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
-        stream->send_end_stream  = true;
-      }
-    } else {
-      if ((send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) && send_hdr->get_content_length() == 0) ||
-          (!send_hdr->expect_final_response() && stream->is_write_vio_done())) {
-        Http2StreamDebug(session, stream->get_id(), "response END_STREAM");
-        flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
-        stream->send_end_stream  = true;
-      }
-    }
     stream->mark_milestone(Http2StreamMilestone::START_TX_HEADERS_FRAMES);
   } else {
     payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);

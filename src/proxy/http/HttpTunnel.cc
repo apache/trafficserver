@@ -1220,11 +1220,14 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
           consumer_handler(VC_EVENT_ERROR, c);
         }
       } else if (c->write_empty_body && (c->write_vio = c->vc->do_io_write(this, 0, c->buffer_reader)) != nullptr) {
-        // The VC reports the write complete once it has ended the message.
+        // The VC signals WRITE_COMPLETE once it has sent the frame that ends the body.
         c->write_vio->reenable();
       } else {
-        // Nothing to wait for: the VC needs no write to end an empty body, or
-        // it can no longer write, so the body has already ended.
+        // Either the VC needs no write to end an empty body, or its stream is
+        // already half closed or closed, by an END_STREAM on the request header
+        // or by a reset, so no write can go out. The consumer is complete either
+        // way, and the second, empty pass over a buffered request body waits on
+        // this event.
         c->write_vio = nullptr;
         consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }
