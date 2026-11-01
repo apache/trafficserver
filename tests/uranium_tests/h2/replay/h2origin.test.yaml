@@ -94,5 +94,11 @@ urtest:
             excludes:
               - {expression: " [1-4] http/2 http/2"}
               - {expression: " [5-9] http/1.1 http/2"}
+    - name: "stream-priority"
+      ats:
+        records_config:
+          # Priorities order what ATS sends to its clients; the request bodies in
+          # this replay must still reach the origin with them enabled.
+          proxy.config.http2.stream_priority_enabled: 1
 
 sessions: []
