@@ -6713,7 +6713,13 @@ HttpSM::handle_server_setup_error(int event, void *data)
     t_state.set_connect_fail(EPIPE);
     break;
   case VC_EVENT_ERROR:
-    t_state.current.state = HttpTransact::CONNECTION_ERROR;
+    // A QUERY body may have been consumed before a TLS read error. Only an
+    // admitted not-processed retry can rearm it after the request was sent.
+    if (t_state.method == HTTP_WKSIDX_QUERY && server_request_hdr_bytes > 0) {
+      t_state.current.state = this->prepare_for_origin_retry() ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
+    } else {
+      t_state.current.state = HttpTransact::CONNECTION_ERROR;
+    }
     t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
     break;
   case VC_EVENT_ACTIVE_TIMEOUT:
