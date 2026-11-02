@@ -345,6 +345,8 @@ public:
   // this, with a lot of work, but this is easier for now.
   std::shared_ptr<UrlRewrite>   m_remap;
   Ptr<VirtualHostConfig::Entry> m_virtualhost_entry;
+  // Pins the table owning a plugin-set next_hop_strategy, since m_remap can be replaced by remap.
+  std::shared_ptr<UrlRewrite> m_strategy_owner;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *

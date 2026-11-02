@@ -5510,6 +5510,7 @@ TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy stratptr)
   // A null strategy falls back to parent.config.
   if (stratptr == nullptr) {
     sm->t_state.next_hop_strategy = nullptr;
+    sm->m_strategy_owner.reset();
     return;
   }
 
@@ -5523,6 +5524,7 @@ TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy stratptr)
   }
 
   sm->t_state.next_hop_strategy = candidate;
+  sm->m_strategy_owner          = sm->m_remap;
 }
 
 namespace
