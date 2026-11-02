@@ -23,9 +23,9 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from antlr4 import InputStream, CommonTokenStream
+from antlr4 import InputStream, CommonTokenStream, ParserRuleContext
 from antlr4.error.ErrorStrategy import BailErrorStrategy
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
@@ -100,11 +100,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._current_var_scope: types.VarScope = types.VarScope.TXN
 
         self._cachekey: cachekey_section.CacheKeySection | None = None  # set once the CACHEKEY section is visited
-        self._program_has_cachekey = False  # set before any section is visited, for checks in sections before CACHEKEY
+        self._program_has_cachekey: bool = False  # set before any section is visited, for checks in sections before CACHEKEY
         self._cachekey_branch: cachekey_section.Branch | None = None
         self._remap_end: int | None = None  # output index just past the last REMAP section's rules
 
-    def _sandbox_check(self, ctx, check_fn, *, note: str | None = None) -> bool:
+    def _sandbox_check(self, ctx: ParserRuleContext, check_fn: Callable[[], str | None], *, note: str | None = None) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
 
         Returns True if the check passed (or warned), False if denied.
@@ -1064,7 +1064,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return lines
 
     def _cachekey_statement(self, ctx: hrw4uParser.StatementContext) -> None:
-        """Add one CACHEKEY statement to the current branch, or to the base outside the chain.
+        """Add one CACHEKEY statement to the current branch, or to the shared parts outside the chain.
 
         Expands procedure calls. Raises for anything that isn't a cache.* key statement.
         """

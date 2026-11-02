@@ -16,6 +16,7 @@
 #  limitations under the License.
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
@@ -188,7 +189,7 @@ class BaseHRWVisitor:
         return _Trap()
 
     @contextmanager
-    def detached_output(self):
+    def detached_output(self) -> Iterator[list[str]]:
         """Collect output at indent 0 into a fresh list, leaving the main output untouched."""
         saved = self.output, self.stmt_indent, self.cond_indent
         self.output, self.stmt_indent, self.cond_indent = [], 0, 0
