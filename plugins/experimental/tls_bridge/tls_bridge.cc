@@ -114,9 +114,7 @@ void
 BridgeConfig::load_pair(std::string_view rxp, std::string_view service, swoc::file::path const &src, int ln)
 {
   Regex r;
-  // Unfortunately PCRE2 can only compile null terminated strings...
-  std::string pattern{rxp};
-  if (r.compile(pattern.c_str(), REFlags::RE_ANCHORED)) {
+  if (r.compile(rxp, REFlags::RE_ANCHORED, "tls_bridge service")) {
     _items.emplace_back(rxp, std::move(r), service);
   } else {
     char buff[std::numeric_limits<int>::digits10 + 2] = "";

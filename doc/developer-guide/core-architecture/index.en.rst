@@ -27,4 +27,5 @@ Core Architecture
 
    heap.en
    hostdb.en
+   net-timeouts.en
    url_rewrite_architecture.en.rst

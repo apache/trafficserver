@@ -1,0 +1,141 @@
+meta:
+  version: "1.0"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol:
+    stack: http
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, 0 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+        - [ "Best-Band", "NightWish" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "NightWish", as: equal } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 10 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "Ship-Name", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 11 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, two.ex ]
+        - [ "Best-Band", "NightWish" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "Delain", as: equal } ]
+        - [ "Ship-Name", { as: absent } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 20 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, both.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { as: absent } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+  - all: { headers: { fields: [[ uuid, 21 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/alpha/"
+      headers:
+        fields:
+        - [ Host, both.ex ]
+        - [ "Best-Band", "NightWish" ]
+    proxy-request:
+      headers:
+        fields:
+        - [ "Best-Band", { value: "Delain", as: equal } ]
+        - [ "Ship-Name", { value: "Frank Exchange of Views", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+
+urtest:
+  description: Verify multiple txn_box remap configurations
+  requires: {plugins: [txn_box.so]}
+  server: {name: txn-box-multi-cfg-origin}
+  dns: {name: txn-box-multi-cfg-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-multi-cfg-client}
+  ats:
+    name: txn-box-multi-cfg-ts
+    records_config:
+      proxy.config.log.max_secs_per_buffer: 1
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box
+    copy_to_config_dir: [multi-cfg.1.yaml, multi-cfg.2.yaml]
+    plugin_config:
+    - txn_box.so
+    remap_config:
+    - map http://one.ex http://one.ex:{SERVER_HTTP_PORT} @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-cfg.1.yaml
+    - map http://two.ex http://two.ex:{SERVER_HTTP_PORT} @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-cfg.2.yaml
+    - map http://both.ex http://both.ex:{SERVER_HTTP_PORT} @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-cfg.1.yaml @pparam={CONFIG_DIR}/multi-cfg.2.yaml

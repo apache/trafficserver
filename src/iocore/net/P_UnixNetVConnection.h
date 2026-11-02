@@ -133,6 +133,14 @@ public:
   {
     return this->con.close();
   }
+
+  /// @see NetEvent::handler_on_stack. Mirrors the guard do_io_close() uses.
+  bool
+  handler_on_stack() const override
+  {
+    return recursion > 0;
+  }
+
   virtual int
   get_fd() override
   {
@@ -170,12 +178,41 @@ public:
   void            readReschedule(NetHandler *nh);
   void            writeReschedule(NetHandler *nh);
   void            netActivity();
+  /// The connection state carried from one thread's NetVC to another by a migration.
+  struct MigrationState {
+    Connection              con;
+    void                   *arg = nullptr;
+    NetVCOptions            options;
+    NetVConnectionContext_t context               = NET_VCONNECTION_UNSET;
+    ink_hrtime              inactivity_timeout_in = 0;
+    NetProcessor           *processor             = nullptr;
+    bool                    client_exempt         = false;
+  };
+
   /**
-   * If the current object's thread does not match the t argument, create a new
-   * NetVC in the thread t context based on the socket and ssl information in the
-   * current NetVC and mark the current NetVC to be closed.
+   * First half of a migration to another thread. Move the socket and ssl
+   * information out of the current NetVC into ms and mark the current NetVC to
+   * be closed. The owning thread is free to release the NetVC once this
+   * returns, so the caller must not use it again.
+   *
+   * This can be called from any thread, but the caller must hold the mutex of
+   * the read and write VIOs to keep the owning thread from processing the
+   * NetVC.
+   *
+   * @return @c false if the socket could not be removed from the owning
+   * thread's event loop. The NetVC is then closed along with its connection
+   * and ms is left untouched.
    */
-  UnixNetVConnection *migrateToCurrentThread(Continuation *c, EThread *t);
+  bool detachForMigration(MigrationState &ms);
+
+  /**
+   * Second half of a migration to another thread. Create a new NetVC in the
+   * thread t context based on the socket and ssl information in ms. The
+   * connection is closed if this fails.
+   *
+   * @return The new NetVC, or nullptr on failure.
+   */
+  static UnixNetVConnection *attachMigrated(MigrationState &ms, Continuation *c, EThread *t);
 
   Action action_;
 
@@ -217,6 +254,20 @@ public:
     return _is_tunnel_endpoint;
   }
 
+  /// Whether this client connection is from an address in proxy.config.http.per_client.connection.exempt_list, and so
+  /// counted in proxy.process.net.per_client.connections_exempt_currently_open.
+  bool
+  is_client_exempt() const
+  {
+    return _client_exempt;
+  }
+
+  void
+  set_client_exempt(bool exempt)
+  {
+    _client_exempt = exempt;
+  }
+
 protected:
   virtual bool
   _isReadyToTransferData() const
@@ -236,6 +287,7 @@ private:
   virtual NetProcessor *_getNetProcessor();
 
   bool _is_tunnel_endpoint{false};
+  bool _client_exempt{false};
 
   // Called by make_tunnel_endpiont() when the far end of the TCP connection is the active/client end.
   virtual void _in_context_tunnel();
@@ -322,14 +374,27 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
   Dbg(_dbg_ctl_socket, "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
   active_timeout_in        = timeout_in;
   next_activity_timeout_at = (active_timeout_in > 0) ? ink_get_hrtime() + timeout_in : 0;
+  rearm_timer();
 }
 
 inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   Dbg(_dbg_ctl_socket, "Cancel inactive timeout for NetVC=%p", this);
-  inactivity_timeout_in      = 0;
-  next_inactivity_timeout_at = 0;
+  inactivity_timeout_in = 0;
+
+  // Documented contract: the default inactivity timeout, if any, still
+  // applies after cancel. The wheel only revisits scheduled elements, so
+  // arm it here rather than relying on the cop's sweep to notice.
+  ink_hrtime const default_timeout_in = default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
+  if (default_timeout_in > 0) {
+    use_default_inactivity_timeout = true;
+    next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
+  } else {
+    next_inactivity_timeout_at = 0;
+  }
+  rearm_timer();
 }
 
 inline void
@@ -338,6 +403,7 @@ UnixNetVConnection::cancel_active_timeout()
   Dbg(_dbg_ctl_socket, "Cancel active timeout for NetVC=%p", this);
   active_timeout_in        = 0;
   next_activity_timeout_at = 0;
+  rearm_timer();
 }
 
 inline UnixNetVConnection::~UnixNetVConnection()

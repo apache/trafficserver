@@ -24,6 +24,7 @@ from typing import Final, TYPE_CHECKING
 from antlr4.error.ErrorListener import ErrorListener
 
 if TYPE_CHECKING:
+    from hrw4u.ast_nodes import Span
     from hrw4u.formatters import ErrorFormatter
 
 _TOKEN_NAMES: Final[dict[str, str]] = {
@@ -129,6 +130,12 @@ class SymbolResolutionError(Exception):
             self.add_note(f"Did you mean: {suggestions[0]}?")
 
 
+def _with_notes(error: Hrw4uSyntaxError, exc: Exception) -> Hrw4uSyntaxError:
+    for note in getattr(exc, '__notes__', ()):
+        error.add_note(note)
+    return error
+
+
 def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:
     if isinstance(exc, Hrw4uSyntaxError):
         return exc
@@ -136,11 +143,7 @@ def hrw4u_error(filename: str, ctx: object, exc: Exception) -> Hrw4uSyntaxError:
     line, col, source_line = _extract_source_context(ctx) if ctx else (0, 0, "")
     error = Hrw4uSyntaxError(filename, line, col, str(exc), source_line)
 
-    if hasattr(exc, '__notes__') and exc.__notes__:
-        for note in exc.__notes__:
-            error.add_note(note)
-
-    return error
+    return _with_notes(error, exc)
 
 
 def format_diagnostic(filename: str, ctx: object, severity: str, message: str) -> str:
@@ -165,6 +168,10 @@ class Warning:
     def from_ctx(cls, filename: str, ctx: object, message: str) -> Warning:
         line, col, source_line = _extract_source_context(ctx)
         return cls(filename=filename, line=line, column=col, message=message, source_line=source_line)
+
+    @classmethod
+    def from_span(cls, span: Span, message: str, source_line: str = "") -> Warning:
+        return cls(filename=span.file, line=span.line, column=span.column, message=message, source_line=source_line)
 
 
 class ErrorCollector:
@@ -232,3 +239,32 @@ class CollectingErrorListener(ErrorListener):
 
         if self.error_collector.at_limit:
             raise error
+
+
+class SourceMap:
+    """Line lookup for diagnostics, keyed by the file a span names."""
+
+    def __init__(self) -> None:
+        self._lines: dict[str, list[str]] = {}
+
+    def add(self, filename: str, text: str) -> None:
+        self._lines[filename] = text.splitlines()
+
+    def line_at(self, span: Span) -> str:
+        lines = self._lines.get(span.file, [])
+        index = span.line - 1
+        if 0 <= index < len(lines):
+            return lines[index]
+        return ""
+
+    def error_at(self, span: Span, message: str) -> Hrw4uSyntaxError:
+        return Hrw4uSyntaxError(span.file, span.line, span.column, message, self.line_at(span))
+
+
+def hrw4u_error_at(span: Span, exc: Exception, source_line: str = "") -> Hrw4uSyntaxError:
+    if isinstance(exc, Hrw4uSyntaxError):
+        return exc
+
+    error = Hrw4uSyntaxError(span.file, span.line, span.column, str(exc), source_line)
+
+    return _with_notes(error, exc)

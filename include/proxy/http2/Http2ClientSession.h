@@ -54,6 +54,7 @@ public:
 
   ////////////////////
   // Accessors
+  sockaddr const *get_client_addr() const override;
   sockaddr const *get_remote_addr() const override;
   sockaddr const *get_local_addr() override;
   int             get_transact_count() const override;
@@ -76,6 +77,7 @@ private:
   int main_event_handler(int, void *);
 
   IpEndpoint cached_client_addr;
+  IpEndpoint cached_effective_client_addr;
   IpEndpoint cached_local_addr;
 };
 

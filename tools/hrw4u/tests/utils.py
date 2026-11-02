@@ -44,6 +44,7 @@ __all__: Final[list[str]] = [
     "collect_sandbox_deny_test_files",
     "collect_sandbox_allow_test_files",
     "collect_sandbox_warn_test_files",
+    "sandbox_file_for",
     "run_output_test",
     "run_ast_test",
     "run_failing_test",
@@ -141,14 +142,20 @@ def collect_reverse_failing_inputs(group: str) -> Iterator[pytest.param]:
         yield pytest.param(input_file, id=test_id)
 
 
-def _collect_sandbox_test_files(group: str, result_suffix: str) -> Iterator[pytest.param]:
-    """Collect sandbox test files: (input, result, sandbox_config).
+def sandbox_file_for(input_file: Path) -> Path | None:
+    """A per-test `{name}.sandbox.yaml` if present, otherwise a shared `sandbox.yaml` in the same directory."""
+    per_test_sandbox = input_file.with_suffix("").with_suffix("").with_suffix(".sandbox.yaml")
+    if per_test_sandbox.exists():
+        return per_test_sandbox
+    shared_sandbox = input_file.parent / "sandbox.yaml"
+    if shared_sandbox.exists():
+        return shared_sandbox
+    return None
 
-    Uses a per-test `{name}.sandbox.yaml` if present, otherwise falls back
-    to a shared `sandbox.yaml` in the same directory.
-    """
+
+def _collect_sandbox_test_files(group: str, result_suffix: str) -> Iterator[pytest.param]:
+    """Collect sandbox test files: (input, result, sandbox_config)."""
     base_dir = Path("tests/data") / group
-    shared_sandbox = base_dir / "sandbox.yaml"
 
     for input_file in sorted(base_dir.glob("*.input.txt")):
         base = input_file.with_suffix("").with_suffix("")
@@ -157,10 +164,9 @@ def _collect_sandbox_test_files(group: str, result_suffix: str) -> Iterator[pyte
         if not result_file.exists():
             continue
 
-        per_test_sandbox = base.with_suffix(".sandbox.yaml")
-        sandbox_file = per_test_sandbox if per_test_sandbox.exists() else shared_sandbox
+        sandbox_file = sandbox_file_for(input_file)
 
-        if not sandbox_file.exists():
+        if sandbox_file is None:
             continue
 
         yield pytest.param(input_file, result_file, sandbox_file, id=base.name)

@@ -74,7 +74,8 @@ CONDITION_MODIFIERS = frozenset(
         intern_modifier("PRE"),
         intern_modifier("SUF"),
         intern_modifier("EXT"),
-        intern_modifier("MID")
+        intern_modifier("MID"),
+        intern_modifier("NORM")
     })
 
 OPERATOR_MODIFIERS = frozenset({intern_modifier("I"), intern_modifier("L"), intern_modifier("QSA")})
@@ -86,10 +87,15 @@ WITH_MODIFIER_ORDER = [
     intern_modifier("NOCASE"),
     intern_modifier("PRE"),
     intern_modifier("MID"),
-    intern_modifier("SUF")
+    intern_modifier("SUF"),
+    intern_modifier("NORM")
 ]
 
 WITH_MODIFIERS = frozenset(WITH_MODIFIER_ORDER)
+
+# Modifiers that mean something on an interpolated value rather than on a match. The rest
+# (NOCASE, PRE, ...) only affect how a condition compares, so they are rejected there.
+VALUE_MODIFIERS = frozenset({intern_modifier("NORM")})
 
 
 class ModifierType(str, Enum):
@@ -121,11 +127,12 @@ class CondState:
     and_or: bool = False  # False == AND (default)
     not_: bool = False
     nocase: bool = False
+    norm: bool = False
     substr: SubstringMode = SubstringMode.NONE
     last: bool = False  # For condition logic (last in AND/OR chain)
 
     def reset(self) -> None:
-        self.and_or = self.not_ = self.nocase = self.last = False
+        self.and_or = self.not_ = self.nocase = self.norm = self.last = False
         self.substr = SubstringMode.NONE
 
     def copy(self) -> Self:
@@ -141,6 +148,8 @@ class CondState:
             self.not_ = True
         elif mod_upper == intern_modifier("NOCASE"):
             self.nocase = True
+        elif mod_upper == intern_modifier("NORM"):
+            self.norm = True
         elif mod_upper in SubstringMode.__members__:
             if self.substr != SubstringMode.NONE:
                 raise SymbolResolutionError(mod, f"Multiple substring modifiers (already {self.substr.name})")
@@ -158,6 +167,8 @@ class CondState:
             parts.append("NOCASE")
         if self.substr is not SubstringMode.NONE:
             parts.append(self.substr.name)
+        if self.norm:
+            parts.append("NORM")
         return parts
 
     def to_with_modifiers(self) -> list[str]:
@@ -166,6 +177,8 @@ class CondState:
             mods.append("NOCASE")
         if self.substr is not SubstringMode.NONE:
             mods.append(self.substr.name)
+        if self.norm:
+            mods.append("NORM")
         mods.sort(key=lambda m: WITH_MODIFIER_ORDER.index(m) if m in WITH_MODIFIER_ORDER else 999)
         return mods
 

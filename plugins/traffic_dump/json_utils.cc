@@ -80,7 +80,7 @@ esc_json_out(const char *buf, int64_t len, std::ostream &jsonfile)
   // For an explanation of the algorithm here, see the doxygen comment for
   // write_buffered_content.
   for (idx = 0; idx < len; idx++) {
-    char c = *(buf + idx);
+    unsigned char c = static_cast<unsigned char>(buf[idx]);
     switch (c) {
     case '"':
     case '\\': {

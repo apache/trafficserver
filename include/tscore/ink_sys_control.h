@@ -39,6 +39,18 @@ rlim_t ink_get_max_files();
  * Implemented via /proc/self/statm on Linux, task_info() on macOS, and
  * sysctl(KERN_PROC_PID) on FreeBSD.
  *
- * @return current RSS in bytes, or 0 if it could not be determined.
+ * @return current RSS in bytes (never more than INT64_MAX), or 0 if it could not be determined.
  */
 uint64_t ink_get_current_rss();
+
+/** Convert a resident page count to bytes for ink_get_current_rss().
+ *
+ * No real resident set comes near INT64_MAX bytes, so a product above that (or a
+ * @a page_size of 0) means the count is not a real RSS. That is reported as 0,
+ * "could not be determined", rather than as a wrapped or saturated value.
+ *
+ * @param [in] pages     Number of resident pages.
+ * @param [in] page_size Size of a page, in bytes.
+ * @return @a pages * @a page_size, or 0 if that is not a plausible RSS.
+ */
+uint64_t ink_rss_pages_to_bytes(uint64_t pages, uint64_t page_size);

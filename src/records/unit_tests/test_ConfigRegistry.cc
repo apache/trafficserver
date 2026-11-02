@@ -25,6 +25,14 @@
 
 #include "mgmt/config/ConfigRegistry.h"
 #include "records/RecCore.h"
+#include "test_Diags.h"
+
+#include <string>
+
+#include <yaml-cpp/yaml.h>
+
+#include <optional>
+#include <string>
 
 using config::ConfigRegistry;
 using config::ConfigSource;
@@ -290,6 +298,51 @@ TEST_CASE("ConfigRegistry register_plugin_config reports duplicate-key failure",
   CHECK(entry->default_filename == "a.yaml");
 }
 
+TEST_CASE("ConfigRegistry duplicate-key warning names both owners", "[config][registry][plugin][duplicate]")
+{
+  auto &reg   = ConfigRegistry::Get_Instance();
+  auto *cdiag = static_cast<CatchDiags *>(diags());
+
+  // A null owner registers through the core path, which returns nothing.
+  auto register_as = [&](std::string const &key, char const *owner) {
+    if (owner == nullptr) {
+      reg.register_config(key, "", "", noop_handler, ConfigSource::FileOnly, {});
+      return true;
+    }
+    return reg.register_plugin_config(key, owner, "", "", noop_handler, ConfigSource::FileOnly, {}, false);
+  };
+
+  // Registers @a key twice and returns the warning the second registration produced.
+  // The owner names fit in the string's inline buffer, so a registration that had been
+  // moved from before the warning was built would print an empty owner.
+  auto rejected_warning = [&](std::string const &key, char const *first_owner, char const *second_owner) {
+    bool const first = register_as(key, first_owner);
+    if (first_owner != nullptr) {
+      REQUIRE(first);
+    }
+    cdiag->messages.clear();
+    bool const second = register_as(key, second_owner);
+    if (second_owner != nullptr) {
+      CHECK_FALSE(second);
+    }
+
+    auto const *entry = reg.find(key);
+    REQUIRE(entry != nullptr);
+    CHECK(entry->key == key);
+    CHECK(entry->plugin_name == (first_owner == nullptr ? "" : first_owner));
+
+    REQUIRE(cdiag->messages.size() == 1);
+    return cdiag->messages.front();
+  };
+
+  CHECK(rejected_warning("test_dup_owner_pp", "plug_a", "plug_b") ==
+        "Config 'test_dup_owner_pp' already registered by plug_a; ignoring registration from plug_b");
+  CHECK(rejected_warning("test_dup_owner_cp", nullptr, "plug_b") ==
+        "Config 'test_dup_owner_cp' already registered by core; ignoring registration from plug_b");
+  CHECK(rejected_warning("test_dup_owner_pc", "plug_a", nullptr) ==
+        "Config 'test_dup_owner_pc' already registered by plug_a; ignoring registration from core");
+}
+
 // ─── is_reloadable: handler-less entries are not schedulable ───────────────────
 
 TEST_CASE("ConfigRegistry is_reloadable distinguishes handler-less entries", "[config][registry][reloadable]")
@@ -308,4 +361,132 @@ TEST_CASE("ConfigRegistry is_reloadable distinguishes handler-less entries", "[c
 
   // An unknown key is not reloadable.
   CHECK_FALSE(reg.is_reloadable("test_reloadable_unknown_xyz"));
+}
+
+// ─── ConfigContext content on the execute_reload() path ───────────────────────
+//
+// No reload is in progress here, so execute_reload() hands the handler a task-less
+// context, and the RPC-supplied content is still applied to it.
+
+namespace
+{
+ConfigContext
+reload_with(std::string const &key, YAML::Node const &content)
+{
+  // Copy-assignment has its own test below, so this helper does not use it: emplace()
+  // and reset() only copy-construct and destroy contexts.
+  static std::optional<ConfigContext> seen;
+
+  auto &reg = ConfigRegistry::Get_Instance();
+  if (!reg.contains(key)) {
+    reg.register_config(key, "", "", [](ConfigContext ctx) { seen.emplace(ctx); }, ConfigSource::FileAndRpc, {});
+  }
+  seen.reset();
+  reg.set_passed_config(key, YAML::Clone(content));
+  reg.execute_reload(key);
+  REQUIRE(seen.has_value());
+
+  ConfigContext ctx{*seen};
+  seen.reset();
+  return ctx;
+}
+} // namespace
+
+TEST_CASE("ConfigContext: RPC content and directives reach the handler", "[config][context][payload]")
+{
+  ConfigContext const ctx = reload_with("test_ctx_payload_both", YAML::Load("{_reload: {id: foo}, data: x}"));
+
+  YAML::Node const content = ctx.supplied_yaml();
+  REQUIRE(content);
+  REQUIRE(content["data"].as<std::string>() == "x");
+  REQUIRE_FALSE(content["_reload"]);
+
+  YAML::Node const directives = ctx.reload_directives();
+  REQUIRE(directives);
+  REQUIRE(directives["id"].as<std::string>() == "foo");
+}
+
+TEST_CASE("ConfigContext: assigning to a copy leaves the original alone", "[config][context][payload]")
+{
+  ConfigContext const original = reload_with("test_ctx_payload_assign", YAML::Load("{_reload: {id: foo}, data: x}"));
+
+  ConfigContext copy = original;
+  copy               = ConfigContext{};
+  REQUIRE_FALSE(copy.supplied_yaml());
+
+  YAML::Node const content = original.supplied_yaml();
+  REQUIRE(content);
+  REQUIRE(content["data"].as<std::string>() == "x");
+  YAML::Node const directives = original.reload_directives();
+  REQUIRE(directives);
+  REQUIRE(directives["id"].as<std::string>() == "foo");
+
+  // The plugin wrapper assigns a handler's context into an empty one it keeps.
+  ConfigContext kept;
+  kept = original;
+  REQUIRE(kept.supplied_yaml().is(content));
+  REQUIRE(kept.reload_directives().is(directives));
+}
+
+TEST_CASE("ConfigContext: copies share the content", "[config][context][payload]")
+{
+  ConfigContext const ctx  = reload_with("test_ctx_payload_shared", YAML::Load("{_reload: {id: foo}, data: x}"));
+  ConfigContext const copy = ctx;
+
+  REQUIRE(copy.supplied_yaml().is(ctx.supplied_yaml()));
+  REQUIRE(copy.reload_directives().is(ctx.reload_directives()));
+}
+
+TEST_CASE("ConfigContext: a dependent of a task-less context has no content", "[config][context][payload]")
+{
+  ConfigContext       ctx   = reload_with("test_ctx_payload_taskless_dep", YAML::Load("{_reload: {id: foo}, data: x}"));
+  ConfigContext const child = ctx.add_dependent_ctx("dependent");
+
+  REQUIRE(ctx.supplied_yaml());
+  REQUIRE_FALSE(child.supplied_yaml());
+  REQUIRE_FALSE(child.reload_directives());
+}
+
+TEST_CASE("ConfigContext: a copy keeps the content after the original is gone", "[config][context][payload]")
+{
+  std::optional<ConfigContext> original{reload_with("test_ctx_payload_outlive", YAML::Load("{_reload: {id: foo}, data: x}"))};
+  ConfigContext const          copy = *original;
+  original.reset();
+
+  YAML::Node const content = copy.supplied_yaml();
+  REQUIRE(content);
+  REQUIRE(content["data"].as<std::string>() == "x");
+  YAML::Node const directives = copy.reload_directives();
+  REQUIRE(directives);
+  REQUIRE(directives["id"].as<std::string>() == "foo");
+}
+
+TEST_CASE("ConfigContext: content without directives keeps directives absent", "[config][context][payload]")
+{
+  ConfigContext const ctx = reload_with("test_ctx_payload_content_only", YAML::Load("{data: x}"));
+  REQUIRE(ctx.supplied_yaml());
+
+  {
+    // A careless handler writing into the result must not give the context directives.
+    auto directives = ctx.reload_directives();
+    REQUIRE_FALSE(directives);
+    directives["id"] = "injected";
+  }
+  REQUIRE_FALSE(ctx.reload_directives());
+}
+
+TEST_CASE("ConfigContext: directives without content keep content absent", "[config][context][payload]")
+{
+  ConfigContext const ctx = reload_with("test_ctx_payload_directives_only", YAML::Load("{_reload: {id: bar}}"));
+
+  YAML::Node const directives = ctx.reload_directives();
+  REQUIRE(directives);
+  REQUIRE(directives["id"].as<std::string>() == "bar");
+
+  {
+    auto content = ctx.supplied_yaml();
+    REQUIRE_FALSE(content);
+    content["rules"] = "injected";
+  }
+  REQUIRE_FALSE(ctx.supplied_yaml());
 }

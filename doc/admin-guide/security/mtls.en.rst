@@ -17,6 +17,8 @@
 
 .. include:: ../../common.defs
 
+.. _admin-mtls:
+
 Mututal TLS
 ***********
 
@@ -98,6 +100,46 @@ Then you would set :ts:cv:`proxy.config.ssl.CA.cert.filename` to client_CA_bundl
           verify_client_ca_certs: partners_bundle.pem
           verify_client: STRICT
 
+Session resumption across co-hosted SNIs
+----------------------------------------
+TLS session resumption never asks the client for its certificate again, so a resumed session
+carries forward whatever peer certificate the original handshake produced.  |TS| therefore binds
+every session it issues to the SNI it was issued under together with that SNI's ``verify_client``
+mode and depth, and the trust anchors the client certificate was verified against.  A session
+offered under a different SNI, under the same SNI after its policy changed, or after those trust
+anchors were replaced, is not resumed.  The TLS library declines it and proceeds with a full
+handshake, in which the current policy is applied as usual.  This is what RFC 6066 section 3
+requires of session ID resumption; RFC 8446 imposes no equivalent requirement on TLS 1.3 tickets,
+and |TS| applies the binding to them because that is what makes ``verify_client`` enforceable
+across resumption.
+
+Two tenants sharing a listener therefore do not accept each other's sessions, whatever their
+``verify_client`` levels, except where the binding cannot be established before the TLS library
+selects a session.  That is the case on a build providing neither ClientHello callback, and on
+|TS| built against OpenSSL when a plugin changes client verification from a ``TS_EVENT_SSL_CERT``
+hook, because OpenSSL creates and looks up the session before those hooks run.
+
+Which changes retire existing sessions depends on how the trust anchors are configured:
+
+- A bundle file, from ``verify_client_ca_certs``'s ``file`` or from
+  :ts:cv:`proxy.config.ssl.CA.cert.filename`, contributes the certificates it holds.  Replacing
+  it in place retires the sessions it verified.  For ``verify_client_ca_certs`` this takes effect
+  on the next connection; for :ts:cv:`proxy.config.ssl.CA.cert.filename` it takes effect on the
+  next :option:`traffic_ctl config reload`, because that bundle is read when certificate contexts
+  are built.
+- A hashed directory, from ``verify_client_ca_certs``'s ``dir`` or from
+  :ts:cv:`proxy.config.ssl.CA.cert.path`, contributes only its configured path.  Its certificates
+  are read lazily during verification, and reading them on every handshake to discover which are
+  present would cost more than the guarantee is worth.  Retiring a trust anchor from such a
+  directory does not retire the sessions it verified; where that matters, use a bundle file.
+
+Because a session can only be resumed under the policy that verified its client certificate, the
+certificate does not have to be re-validated on resumption.  A client certificate issued by an
+intermediate CA therefore keeps working across resumption with only the root in the applicable CA
+bundle, exactly as it does on a full handshake.  Should a resumed session nonetheless carry no
+client certificate where ``verify_client: STRICT`` requires one, |TS| rejects the handshake and
+increments :ts:stat:`proxy.process.ssl.user_agent_resumed_cert_rejected`.
+
 Guidance for testing
 --------------------
 If you use curl to test your SNI-based Traffic Server configuration, you must make sure the
@@ -149,7 +191,29 @@ starts with /pci will use the pci.pem certificate. ::
 
    map /case1 https://server.com/case1 @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=customer-case1.pem
    map /case2 https://server.com/case2 @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=customer-case2.pem
-   map https://bank.example.com/pci https://pci.server.com/ @plugin=conf_remap.so @param=proxy.config.ss.client.cert.filename=pci.pem
+   map https://bank.example.com/pci https://pci.server.com/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=pci.pem
+
+Outbound session reuse and client certificates
+----------------------------------------------
+Two remap rules that present different client certificates can reach the same
+origin, so a pooled outbound session has to be matched on the certificate as
+well as the address and hostname.  Otherwise a keep-alive session that
+authenticated with one certificate can serve a transaction configured for
+another, and the origin continues to authorize it as the first identity because
+reuse performs no second handshake.
+
+:ts:cv:`proxy.config.http.server_session_sharing.match` covers this by default:
+its default value of ``both`` includes ``cert``.  If you set that record
+explicitly, include ``cert`` whenever a remap rule or a plugin overrides
+:ts:cv:`proxy.config.ssl.client.cert.filename`, for example ``ip,host,cert``.  A
+value that omits ``cert``, such as ``ip`` or ``ip,host``, disables the check.
+
+``cert`` tracks only :ts:cv:`proxy.config.ssl.client.cert.filename` and its
+per-transaction overrides.  It does not see a client certificate selected by a
+:file:`sni.yaml` ``client_cert`` entry, because that path picks the outbound
+context directly rather than through the overridable record.  Those entries are
+keyed on the outbound SNI, so ``sni`` is the value that separates the identities
+they select; include it when :file:`sni.yaml` chooses the certificate.
 
 Guidance for testing
 --------------------

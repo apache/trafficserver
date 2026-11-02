@@ -203,6 +203,7 @@ TSOverridableConfigKey Value                                               Confi
 :enumerator:`TS_CONFIG_HTTP_CACHE_POST_METHOD`                           :ts:cv:`proxy.config.http.cache.post_method`
 :enumerator:`TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS`        :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`
 :enumerator:`TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE_PERCENT`                 :ts:cv:`proxy.config.http.cache.max_stale_age_percent`
+:enumerator:`TS_CONFIG_HTTP_REJECT_HEAD_WITH_CONTENT`                    :ts:cv:`proxy.config.http.reject_head_with_content`
 ======================================================================== ====================================================================
 
 Examples

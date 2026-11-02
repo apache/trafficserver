@@ -69,6 +69,16 @@ static const String HOST                 = "host";
 
 String trimWhiteSpaces(const String &s);
 
+/**
+ * @brief Check if an already-lowercased header name has the "x-amz-" prefix.
+ * @param lowercaseName header name, already lowercased by the caller.
+ */
+inline bool
+isXAmzHeader(const String &lowercaseName)
+{
+  return lowercaseName.length() >= X_AMZ.length() && 0 == lowercaseName.compare(0, X_AMZ.length(), X_AMZ);
+}
+
 template <typename ContainerType>
 void
 commaSeparateString(ContainerType &ss, const String &input, bool trim = true, bool lowerCase = true)

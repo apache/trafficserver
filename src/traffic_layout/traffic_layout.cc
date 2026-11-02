@@ -21,15 +21,19 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <sysexits.h>
+
 #include "tscore/Layout.h"
 #include "tscore/runroot.h"
+#include "tscore/Demangle.h"
 #include "engine.h"
 
 using namespace std::literals;
 
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   LayoutEngine engine;
 
   int i = 0;
@@ -77,4 +81,9 @@ main([[maybe_unused]] int argc, const char **argv)
   engine.arguments.invoke();
 
   return engine.status_code;
+} catch (...) {
+  // This tool returns sysexits values exclusively; EX_SOFTWARE is the one for
+  // an internal fault, and matches what ink_fatal() exits with.
+  fprintf(stderr, "traffic_layout: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
+  return EX_SOFTWARE;
 }

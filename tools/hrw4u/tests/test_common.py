@@ -161,8 +161,9 @@ class TestGenerateOutput:
         errors.add_error(Hrw4uSyntaxError("<test>", 1, 0, "parse failed", "bad"))
         args = SimpleNamespace(ast=True, debug=False)
         generate_output(None, None, HRW4UVisitor, "<test>", args, errors)
-        out = capsys.readouterr().out
-        assert "Parse tree not available" in out
+        captured = capsys.readouterr()
+        assert "Parse tree not available" in captured.err
+        assert captured.out == ""
 
     def test_error_collector_reports_failure_to_caller(self):
         """generate_output reports errors via its return value; run_main owns the exit status.

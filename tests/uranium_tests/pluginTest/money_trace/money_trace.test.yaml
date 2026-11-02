@@ -1,0 +1,214 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Verify money_trace remap and global header propagation"
+  requires: {plugins: [money_trace.so]}
+  server: {name: "money-trace-origin"}
+  client: {name: "money-trace-client"}
+  ats:
+    name: "money-trace-ts"
+    process_config: {enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 0
+      proxy.config.diags.debug.tags: "money_trace"
+  variants:
+    - name: "remap-plugin"
+      client:
+        process_config:
+          keys: "money-remap-00 money-remap-01 money-remap-02 money-remap-03 money-remap-04 money-remap-05 money-remap-06 money-remap-07 money-remap-08 money-remap-09 money-remap-10 money-remap-11 money-remap-12 money-remap-13 money-remap-14 money-remap-15 money-remap-16 money-remap-17 money-remap-18 money-remap-19 money-remap-20 money-remap-21 money-remap-22"
+      ats:
+        remap_config:
+          - "map http://none/ http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "map http://basic/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so"
+          - "map http://header/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so @pparam=--header=mt"
+          - "map http://pregen/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so @pparam=--pregen-header=@pregen"
+          - "map http://pgh/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so @pparam=--header=mt @pparam=--pregen-header=@pregen"
+          - "map http://create/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so @pparam=--create-if-none=true"
+          - "map http://cheader/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--header=mt"
+          - "map http://cpregen/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--pregen-header=@pregen"
+          - "map http://passthru/ http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=money_trace.so @pparam=--passthru=true"
+        logging_yaml:
+          logging:
+            formats:
+              - name: custom
+                format: 'cqh: %<{X-MoneyTrace}cqh> %<{mt}cqh> %<{@pregen}cqh> pqh: %<{X-MoneyTrace}pqh> %<{mt}pqh> psh: %<{X-MoneyTrace}psh> %<{mt}psh>'
+            logs:
+              - {filename: remap, format: custom}
+        file_checks:
+          - {path: "{LOG_DIR}/remap.log", line_count_min: 23, timeout: 15}
+        log_validation:
+          access_log: {filename: "remap.log", gold_file: "gold/remap-log.gold"}
+
+    - name: "global-plugin"
+      client: {process_config: {keys: "money-global-0 money-global-1 money-global-2"}}
+      ats:
+        plugin_config:
+          - "money_trace.so --pregen-header=@pregen --header=MoneyTrace --create-if-none=true --global-skip-header=Skip-Global-MoneyTrace"
+        remap_config:
+          - "map http://ats http://127.0.0.1:{SERVER_HTTP_PORT}"
+        logging_yaml:
+          logging:
+            formats:
+              - name: custom
+                format: 'cqh: %<{MoneyTrace}cqh> %<{@pregen}cqh> pqh: %<{MoneyTrace}pqh> psh: %<{MoneyTrace}psh>'
+            logs:
+              - {filename: global, format: custom}
+        file_checks:
+          - {path: "{LOG_DIR}/global.log", line_count_min: 3, timeout: 15}
+        log_validation:
+          access_log: {filename: "global.log", gold_file: "gold/global-log.gold"}
+
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, money-remap-00]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, none]]}}
+        server-response: &ok {status: 200, headers: {fields: [[Content-Length, 0], [Connection, close]]}}
+        proxy-response: &proxy-ok {status: 200}
+      - all: {headers: {fields: [[uuid, money-remap-01]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, basic]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-02]]}}
+        client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers: {fields: [[Host, basic], [X-MoneyTrace, "trace-id=basic;parent-id=foo;span-id=bar"]]}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-03]]}}
+        client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers: {fields: [[Host, header], [mt, "trace-id=header;parent-id=foo;span-id=bar"]]}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-04]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, pregen]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-05]]}}
+        client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers: {fields: [[Host, pregen], [X-MoneyTrace, "trace-id=pregen;parent-id=foo;span-id=bar"]]}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-06]]}}
+        client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers: {fields: [[Host, pgh], [mt, "trace-id=pgh;parent-id=foo;span-id=bar"]]}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-07]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, create]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-08]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cheader]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-09]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cpregen]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-10]]}}
+        client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers: {fields: [[Host, passthru], [X-MoneyTrace, "trace-id=passthru;parent-id=foo;span-id=bar"]]}
+        server-response: *ok
+        proxy-response: *proxy-ok
+
+      - all: {headers: {fields: [[uuid, money-remap-11]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, pregen], [X-MoneyTrace, "trace-id=spaces; parent-id=foo; span-id=bar"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-12]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, pregen], [X-MoneyTrace, "trace-id=noparent;span-id=8215111;span-name=this is some description"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-13]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, pregen], [X-MoneyTrace, "trace-id=badspan;span-id="]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-14]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, pregen], [X-MoneyTrace, "trace-id=traceonly"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-15]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, pregen], [X-MoneyTrace, "trace-id=traceonlysemi;"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-16]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, pregen], [X-MoneyTrace, "not a trace header"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+
+      - all: {headers: {fields: [[uuid, money-remap-17]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cpregen], [X-MoneyTrace, "trace-id=spaces; parent-id=foo; span-id=bar"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-18]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cpregen], [X-MoneyTrace, "trace-id=noparent;span-id=8215111;span-name=this is some description"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-19]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cpregen], [X-MoneyTrace, "trace-id=badspan;span-id="]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-20]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cpregen], [X-MoneyTrace, "trace-id=traceonly"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-21]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cpregen], [X-MoneyTrace, "trace-id=traceonlysemi;"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-remap-22]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, cpregen], [X-MoneyTrace, "not a trace header"]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok
+
+      - all: {headers: {fields: [[uuid, money-global-0]]}}
+        client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers: {fields: [[Host, ats], [MoneyTrace, "trace-id=foo;parent-id=bar;span-id=baz"]]}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-global-1]]}}
+        client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers: {fields: [[Host, ats], [Skip-Global-MoneyTrace, "true"]]}
+        server-response: *ok
+        proxy-response: *proxy-ok
+      - all: {headers: {fields: [[uuid, money-global-2]]}}
+        client-request: {method: GET, url: /path, version: "1.1", headers: {fields: [[Host, ats]]}}
+        server-response: *ok
+        proxy-response: *proxy-ok

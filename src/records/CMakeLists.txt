@@ -58,6 +58,13 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_records PRIVATE records configmanager inkevent Catch2::Catch2 ts::tscore libswoc::libswoc)
   add_catch2_test(NAME test_records COMMAND test_records)
+
+  add_executable(test_ConfigReloadProgress unit_tests/test_ConfigReloadProgress.cc)
+  target_include_directories(test_ConfigReloadProgress PRIVATE ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem/unit_tests)
+  target_link_libraries(
+    test_ConfigReloadProgress PRIVATE records configmanager inkevent Catch2::Catch2WithMain ts::tscore
+  )
+  add_catch2_test(NAME test_ConfigReloadProgress COMMAND test_ConfigReloadProgress)
 endif()
 
 clang_tidy_check(records)

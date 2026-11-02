@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "tscore/ink_config.h"
 #include "tscore/ink_platform.h"
 
@@ -72,8 +74,8 @@ struct EventIO {
 #if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
   int events = 0; ///< a bit mask of enabled events
 #endif
-  EventLoop event_loop = nullptr; ///< the assigned event loop
-  bool      syscall    = true;    ///< if false, disable all functionality (for QUIC)
+  std::atomic<EventLoop> event_loop{nullptr}; ///< the assigned event loop
+  bool                   syscall = true;      ///< if false, disable all functionality (for QUIC)
 
   /** Alter the events that will trigger the continuation, for level triggered I/O.
      @param events add with positive mask(+EVENTIO_READ), or remove with negative mask (-EVENTIO_READ)
@@ -90,10 +92,25 @@ struct EventIO {
   /// Remove the kernel or epoll event. Returns 0 on success.
   int stop();
 
+  /// Stop a migrated socket without closing it, removing its old kqueue registrations.
+  int stop_for_migration();
+
   // Process one event that has triggered.
   virtual void process_event(int flags) = 0;
 
   EventIO() {}
+  EventIO(EventIO const &that) : EventIO() { *this = that; }
+  EventIO &
+  operator=(EventIO const &that)
+  {
+    fd = that.fd;
+#if TS_USE_KQUEUE || TS_USE_EPOLL && !defined(USE_EDGE_TRIGGER)
+    events = that.events;
+#endif
+    event_loop.store(that.event_loop.load());
+    syscall = that.syscall;
+    return *this;
+  }
   virtual ~EventIO() {}
 
 protected:
