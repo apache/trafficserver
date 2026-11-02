@@ -519,6 +519,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def _expand_procedure_call(self, call_ctx) -> None:
         """Expand a procedure call inline at the current indent level."""
+        sig, bindings = self._resolve_procedure_call(call_ctx)
+        with self._proc_context(sig, bindings):
+            self._visit_block_items(sig.body_ctx)
+
+    def _resolve_procedure_call(self, call_ctx) -> tuple[ProcSig, dict[str, str]]:
+        """Look up a called procedure and bind its arguments. Raises if it's unknown or the call is circular."""
         name = call_ctx.funcName.text
         sig = self._proc_registry.get(name)
 
@@ -533,15 +539,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 self.filename, call_ctx.start.line, call_ctx.start.column, f"circular procedure call: {cycle}", ""
             )
 
-        bindings = self._bind_proc_args(sig, call_ctx)
-
-        if self.current_section is SectionType.CACHEKEY:
-            with self._proc_context(sig, bindings):
-                self._cachekey_items(sig.body_ctx.blockItem())
-            return
-
-        with self._proc_context(sig, bindings):
-            self._visit_block_items(sig.body_ctx)
+        return sig, self._bind_proc_args(sig, call_ctx)
 
     @staticmethod
     def _get_source_text(ctx, source_text: str) -> str:
@@ -1086,7 +1084,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if ctx.functionCall():
             func = ctx.functionCall().funcName.text
             if func in self._proc_registry or '::' in func:
-                self._expand_procedure_call(ctx.functionCall())
+                sig, bindings = self._resolve_procedure_call(ctx.functionCall())
+                with self._proc_context(sig, bindings):
+                    self._cachekey_items(sig.body_ctx.blockItem())
                 return
             if ck.is_key_name(func):
                 target.append(cachekey.parse_statement(func, self._cachekey_args(ctx.functionCall())))
