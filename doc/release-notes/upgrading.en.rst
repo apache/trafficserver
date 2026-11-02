@@ -304,6 +304,17 @@ check at or after its deadline. So a value raised to relieve load now only
 delays timeouts by up to that interval. If you tuned it for that reason,
 returning it to the default of 1 costs nothing and restores accuracy.
 
+A relative ``#include`` path in :file:`strategies.yaml` is now resolved against
+the configuration directory, the same way :file:`remap.config` resolves its
+``.include`` directive. Earlier releases resolved it against the
+:program:`traffic_server` working directory, which is the install prefix. A
+relative include that is missing from the configuration directory is temporarily
+retried relative to the install prefix and logs a deprecation warning with the
+replacement spelling. This fallback will be removed in ATS 12.0.0. For example,
+update ``#include etc/trafficserver/strategy_hosts.yaml`` to
+``#include strategy_hosts.yaml``, and give a file outside the configuration
+directory an absolute path. Absolute include paths are unaffected.
+
 Upgrading to ATS v10.x
 ======================
 
