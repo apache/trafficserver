@@ -1076,7 +1076,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             self.output, self.stmt_indent, self.cond_indent = saved
 
     def _cachekey_statement(self, ctx) -> None:
-        """One statement inside CACHEKEY. Anything but a key statement is outside the write fence."""
+        """Add one CACHEKEY statement to the current branch, or to the base outside the chain.
+
+        Expands procedure calls. Raises for anything that isn't a cache.* key statement.
+        """
         target = self._cachekey_branch.entries if self._cachekey_branch else self._cachekey.base
         if ctx.BREAK():
             raise SymbolResolutionError(
@@ -1090,10 +1093,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self._cachekey_items(sig.body_ctx.blockItem())
                 return
             if ck.is_key_name(func):
-                target.append(cachekey.parse_statement(func, self._cachekey_args(ctx.functionCall())))
+                values = ctx.functionCall().argumentList().value() if ctx.functionCall().argumentList() else []
+                target.append(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values]))
                 return
             raise SymbolResolutionError(func, f"operator '{func}' not allowed in CACHEKEY")
         if ctx.lhs is None:
+            # Only reachable via parser error recovery, which already reported the error.
             return
         lhs = ctx.lhs.text
         if ctx.EQUAL() and ck.is_key_name(lhs):
@@ -1101,30 +1106,31 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return
         if ctx.PLUSEQUAL() and lhs == ck.KEY_EXPR:
             value = ctx.value()
-            text = self._cachekey_arg(value)
+            self._check_not_bare_param(value)
             if value.str_ is None:
                 raise SymbolResolutionError(lhs, "cache.key += takes a quoted string")
-            target.append(self._cachekey.new_key_part(self._substitute_strings(text, ctx)))
+            target.append(self._cachekey.new_key_part(self._substitute_strings(value.getText(), ctx)))
             return
         op = lhs if ctx.EQUAL() else f"{lhs} +="
         raise SymbolResolutionError(lhs, f"operator '{op}' not allowed in CACHEKEY")
 
-    def _cachekey_args(self, call_ctx) -> list[str]:
-        """Raw argument texts for the core, with procedure parameters substituted."""
-        return [self._cachekey_arg(value) for value in (call_ctx.argumentList().value() if call_ctx.argumentList() else [])]
-
     def _cachekey_arg(self, value) -> str:
         """Source text of a value in a cache.* call or assignment, with $params substituted in a string.
 
-        Raises for a bare $param: its binding has no quotes, so it can't be a string. Any other
-        value is returned as written, for the caller to reject.
+        Raises for a bare $param (see _check_not_bare_param). Any other value is returned as
+        written, for cachekey.parse_* to reject.
         """
-        if value.paramRef():
-            name = value.paramRef().IDENT().getText()
-            raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be quoted here: write \"${name}\"")
+        self._check_not_bare_param(value)
         if value.str_ is not None:
             return self._flatten_substitute_params(value.getText(), self._proc_bindings)
         return value.getText()
+
+    @staticmethod
+    def _check_not_bare_param(value) -> None:
+        """Raise for a bare $param in CACHEKEY: its binding has no quotes, so it can't be a string."""
+        if value.paramRef():
+            name = value.paramRef().IDENT().getText()
+            raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be quoted here: write \"${name}\"")
 
     @staticmethod
     def _is_cachekey_section(section_ctx) -> bool:
@@ -1143,14 +1149,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
             return
         call = ctx.functionCall()
-        name = call.funcName.text if call else ctx.lhs.text if ctx.lhs else None
+        name, args = self._parse_function_call(call) if call else (ctx.lhs.text if ctx.lhs else None, [])
         if name and ck.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
-        if call and name == "run-plugin" and self._has_cachekey:
-            values = call.argumentList().value() if call.argumentList() else []
-            plugin = values[0].getText().strip('"') if values else ""
-            if plugin.rsplit("/", 1)[-1] == "cachekey.so":
-                raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
+        if call and name == "run-plugin" and self._has_cachekey and args and args[0].strip('"').rsplit("/", 1)[-1] == "cachekey.so":
+            raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:
         """Insert the compiled CACHEKEY section after the output of the last REMAP section, one blank line on each side.
