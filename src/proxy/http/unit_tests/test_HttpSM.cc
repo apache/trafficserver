@@ -103,7 +103,8 @@ TEST_CASE("QUERY header errors distinguish queued bytes from write progress", "[
 
   int64_t const written    = GENERATE(0, 1, 100);
   bool const    read_error = GENERATE(false, true);
-  CAPTURE(written, read_error);
+  int const     event      = GENERATE(VC_EVENT_ERROR, VC_EVENT_EOS);
+  CAPTURE(written, read_error, event);
   HeaderWriteTransaction txn;
   TestableHttpSM         sm;
   VIO                    read;
@@ -114,15 +115,16 @@ TEST_CASE("QUERY header errors distinguish queued bytes from write progress", "[
   sm.attach_for_error(txn, read, write);
 
   if (read_error) {
-    sm.handle_server_setup_error(VC_EVENT_ERROR, &read);
+    sm.handle_server_setup_error(event, &read);
   } else {
-    sm.state_send_server_request_header(VC_EVENT_ERROR, &write);
+    sm.state_send_server_request_header(event, &write);
   }
 
   CHECK(txn.closed);
   CHECK(sm.server_request_hdr_bytes == 100);
   CHECK(sm.written_header_bytes() == written);
-  CHECK(sm.t_state.current.state == (written == 0 ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED));
+  CHECK(sm.t_state.current.state ==
+        (event == VC_EVENT_ERROR && written == 0 ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED));
   CHECK(HttpTransact::is_request_retryable(&sm.t_state) == (written == 0));
 }
 
@@ -139,6 +141,8 @@ TEST_CASE("QUERY header progress survives replacement by the body write VIO", "[
   http_rsb.origin_shutdown_cleanup_entry = Metrics::Counter::createPtr("proxy.process.http.test.header_write_cleanup");
   ts::PostScript restore_counter([&]() { http_rsb.origin_shutdown_cleanup_entry = counter; });
 
+  int const event = GENERATE(VC_EVENT_ERROR, VC_EVENT_EOS);
+  CAPTURE(event);
   HeaderWriteTransaction txn;
   TestableHttpSM         sm;
   VIO                    read;
@@ -149,7 +153,7 @@ TEST_CASE("QUERY header progress survives replacement by the body write VIO", "[
   sm.attach_for_error(txn, read, write);
   sm.state_send_server_request_header(VC_EVENT_WRITE_COMPLETE, &write);
   sm.replace_write_vio(body_write);
-  sm.handle_server_setup_error(VC_EVENT_ERROR, &read);
+  sm.handle_server_setup_error(event, &read);
 
   CHECK(txn.closed);
   CHECK(sm.written_header_bytes() == 100);
