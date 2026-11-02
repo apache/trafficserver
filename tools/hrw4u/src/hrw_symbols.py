@@ -75,7 +75,7 @@ class InverseSymbolResolver(SymbolResolverBase):
     @cached_property
     def _rev_sections(self) -> dict[str, str]:
         """Cached reverse section mapping."""
-        return {s.hook_name: s.value for s in SectionType if s.emits_as is s}
+        return {s.hook_name: s.value for s in SectionType if s.has_own_hook}
 
     def _section_label_for_tag(self, tag: str) -> str | None:
         try:

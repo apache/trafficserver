@@ -22,24 +22,35 @@ and where the run-plugin rule is emitted, is up to the visitor.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from collections.abc import Iterable
+from dataclasses import dataclass, field
+from collections.abc import Iterable, Sequence
 from typing import Final
+
+from antlr4 import ParserRuleContext
 
 from hrw4u.errors import SymbolResolutionError
 
-KEY_EXPR: Final[str] = "cache.key"
+KEY_NAME: Final[str] = "cache.key"
 URL_PREFIX: Final[str] = "cache.url."
 CANONICAL_PREFIX: Final[str] = "--canonical-prefix=true"
 
 
 def is_key_name(name: str) -> bool:
-    """True for any cache.url.* or cache.key* name, known or not. cache() and cache.bypass() are not key names."""
-    return name == KEY_EXPR or name.startswith((f"{KEY_EXPR}.", URL_PREFIX))
+    """True for any cache.url.* or cache.key* name, known or not.
+
+    cache() and cache.bypass() share the prefix but aren't key names.
+    """
+    return name == KEY_NAME or name.startswith((f"{KEY_NAME}.", URL_PREFIX))
 
 
 @dataclass(frozen=True, slots=True)
 class CacheKeyFlag:
+    """How one cache.* statement lowers to a cachekey.so flag.
+
+    option is the flag name. A flag with a fixed_value is a switch; one without
+    takes the statement's names as a comma-separated list.
+    """
+
     option: str
     fixed_value: str | None = None
     # Written as `<name> = ""`, routed like any assignment, not a call.
@@ -69,21 +80,27 @@ CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
 
 @dataclass(frozen=True, slots=True)
 class CacheKeyStatement:
+    """One validated cache.* statement: its table name and the names it lists, unquoted.
+
+    source is the parse node it came from, so errors found later can point at it.
+    """
+
     name: str
     items: tuple[str, ...] = ()
+    source: ParserRuleContext | None = field(default=None, compare=False, repr=False)
 
 
-def parse_assignment(lhs: str, rhs: str) -> CacheKeyStatement:
+def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None) -> CacheKeyStatement:
     """Validate `lhs = rhs`. rhs is the raw value text, quotes included."""
     flag = CACHEKEY_STATEMENTS.get(lhs)
     if flag is None or not flag.assignment:
         raise SymbolResolutionError(lhs, f"Unknown cache key assignment: '{lhs}'")
     if rhs != '""':
         raise SymbolResolutionError(lhs, f'{lhs} can only be set to ""')
-    return CacheKeyStatement(lhs)
+    return CacheKeyStatement(lhs, source=source)
 
 
-def parse_statement(name: str, args: list[str]) -> CacheKeyStatement:
+def parse_statement(name: str, args: list[str], source: ParserRuleContext | None = None) -> CacheKeyStatement:
     """Validate one statement. args are the raw argument texts, quotes included."""
     flag = CACHEKEY_STATEMENTS.get(name)
     if flag is None or flag.assignment:
@@ -92,7 +109,7 @@ def parse_statement(name: str, args: list[str]) -> CacheKeyStatement:
     if not flag.takes_list:
         if args:
             raise SymbolResolutionError(name, f"{name}() takes no arguments")
-        return CacheKeyStatement(name)
+        return CacheKeyStatement(name, source=source)
 
     if not args:
         raise SymbolResolutionError(name, f"{name}() takes at least one string argument")
@@ -115,7 +132,7 @@ def parse_statement(name: str, args: list[str]) -> CacheKeyStatement:
         if '"' in item or "\\" in item:
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a quote or backslash")
         items.append(item)
-    return CacheKeyStatement(name, tuple(items))
+    return CacheKeyStatement(name, tuple(items), source)
 
 
 # Each pair contradicts itself on one run-plugin line: cachekey.so drops or skews one side.
@@ -126,15 +143,27 @@ CONFLICTS: Final[tuple[tuple[str, str], ...]] = (
 )
 
 
-def check_conflicts(statements: Iterable[CacheKeyStatement]) -> None:
-    """Raise if statements that lower to one run-plugin contradict each other."""
-    names = {stmt.name for stmt in statements}
+class ConflictError(SymbolResolutionError):
+    """Two statements on one run-plugin line contradict each other.
+
+    statement is the later of the two, the one to point the error at.
+    """
+
+    def __init__(self, first: str, second: str, statement: CacheKeyStatement) -> None:
+        super().__init__(first, f"{_as_written(first)} and {_as_written(second)} can't be used together")
+        self.statement = statement
+
+
+def check_conflicts(statements: Sequence[CacheKeyStatement]) -> None:
+    """Raise ConflictError if statements that lower to one run-plugin contradict each other."""
+    last_seen = {stmt.name: (index, stmt) for index, stmt in enumerate(statements)}
     for first, second in CONFLICTS:
-        if first in names and second in names:
-            raise SymbolResolutionError(first, f"{_spell(first)} and {_spell(second)} can't be used together")
+        if first in last_seen and second in last_seen:
+            _, later = max(last_seen[first], last_seen[second], key=lambda seen: seen[0])
+            raise ConflictError(first, second, later)
 
 
-def _spell(name: str) -> str:
+def _as_written(name: str) -> str:
     return f'{name} = ""' if CACHEKEY_STATEMENTS[name].assignment else f"{name}()"
 
 
@@ -143,9 +172,9 @@ def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
     ordered_items: dict[str, dict[str, str]] = {}
     for stmt in statements:
         items = ordered_items.setdefault(stmt.name, {})
-        fold = CACHEKEY_STATEMENTS[stmt.name].case_insensitive
+        case_insensitive = CACHEKEY_STATEMENTS[stmt.name].case_insensitive
         for item in stmt.items:
-            items.setdefault(item.lower() if fold else item, item)
+            items.setdefault(item.lower() if case_insensitive else item, item)
 
     flags = [CANONICAL_PREFIX]
     for name, flag in CACHEKEY_STATEMENTS.items():
@@ -156,4 +185,5 @@ def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
 
 
 def render(flags: list[str]) -> str:
+    """The run-plugin cachekey.so operator line for a merged flag list."""
     return " ".join(['run-plugin "cachekey.so"', *(f'"{flag}"' for flag in flags)])

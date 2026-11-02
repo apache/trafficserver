@@ -45,6 +45,10 @@ class SectionType(str, Enum):
         return SectionType.REMAP if self is SectionType.CACHEKEY else self
 
     @property
+    def has_own_hook(self) -> bool:
+        return self.emits_as is self
+
+    @property
     def hook_name(self) -> str:
         hook_map = {
             SectionType.REMAP: intern_hook("REMAP_PSEUDO_HOOK"),
@@ -62,7 +66,7 @@ class SectionType(str, Enum):
     @property
     def hook_note(self) -> str:
         """Appended where the LSP shows the hook, for a section with no hook of its own."""
-        return f", after every {self.emits_as.value} rule" if self.emits_as is not self else ""
+        return "" if self.has_own_hook else f", after every {self.emits_as.value} rule"
 
     @property
     def lsp_description(self) -> str:
@@ -75,7 +79,7 @@ class SectionType(str, Enum):
     @classmethod
     def from_hook(cls, hook_name: str) -> Self:
         for section in cls:
-            if section.emits_as is section and section.hook_name == hook_name:
+            if section.has_own_hook and section.hook_name == hook_name:
                 return section
         raise ValueError(f"No section found for hook '{hook_name}'")
 

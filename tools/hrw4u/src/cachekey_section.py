@@ -24,10 +24,13 @@ The branches are exclusive, so exactly one cachekey.so instance runs per request
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Final
+from enum import Enum
+from typing import Final
+
+from antlr4 import ParserRuleContext
 
 from hrw4u import cachekey
-from hrw4u.cachekey import CacheKeyStatement
+from hrw4u.cachekey import CacheKeyStatement, ConflictError
 from hrw4u.common import SystemDefaults
 from hrw4u.errors import SymbolResolutionError
 from hrw4u.states import SectionType
@@ -48,63 +51,109 @@ class KeyPart:
     value: str  # quoted HRW string, interpolations already resolved
 
 
-Entry = CacheKeyStatement | KeyPart
+@dataclass(slots=True)
+class KeyParts:
+    """What one cachekey.so instance keys on.
+
+    statements is in source order, a computed part counted as its --include-headers name.
+    computed holds the cache.key += values, each set into its header before cachekey.so runs.
+    """
+
+    statements: list[CacheKeyStatement] = field(default_factory=list)
+    computed: list[KeyPart] = field(default_factory=list)
+
+    def add_computed(self, part: KeyPart) -> None:
+        self.computed.append(part)
+        self.statements.append(CacheKeyStatement("cache.key.headers.add", (part.header,)))
+
+    def __add__(self, other: KeyParts) -> KeyParts:
+        return KeyParts(self.statements + other.statements, self.computed + other.computed)
+
+    def plugin_lines(self, depth: int) -> list[str]:
+        """The set-header for each computed part, then the run-plugin cachekey.so line."""
+        pad = INDENT * depth
+        lines = [f"{pad}set-header {part.header} {part.value}" for part in self.computed]
+        lines.append(pad + cachekey.render(cachekey.merge(self.statements)))
+        return lines
+
+
+class BranchKeyword(str, Enum):
+    IF = "if"
+    ELIF = "elif"
+    ELSE = "else"
 
 
 @dataclass(slots=True)
 class Branch:
-    keyword: str  # "if", "elif" or "else"
-    ctx: Any = None  # parse node, for error locations; None for the added else
-    cond_lines: list[str] = field(default_factory=list)  # rendered at indent 0; empty for "else"
-    entries: list[Entry] = field(default_factory=list)
+    """One arm of the CACHEKEY if/elif/else chain, keyed on the shared parts plus its own."""
+
+    keyword: BranchKeyword
+    ctx: ParserRuleContext | None = None  # None for the else the lowering adds
+    cond_lines: list[str] = field(default_factory=list)  # rendered at indent 0; empty for else
+    parts: KeyParts = field(default_factory=KeyParts)
 
 
 @dataclass(slots=True)
 class CacheKeySection:
-    base: list[Entry] = field(default_factory=list)
+    """The collected CACHEKEY section: parts every request keys on, and at most one chain.
+
+    shared holds the statements outside the chain, wherever they sit.
+    """
+
+    shared: KeyParts = field(default_factory=KeyParts)
     chain: list[Branch] = field(default_factory=list)
     key_part_count: int = 0
 
     def new_key_part(self, value: str) -> KeyPart:
         """Number the next key part. Numbers run across the whole section, not per branch."""
         if self.key_part_count == MAX_KEY_PARTS:
-            raise SymbolResolutionError(cachekey.KEY_EXPR, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
+            raise SymbolResolutionError(cachekey.KEY_NAME, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
         self.key_part_count += 1
         return KeyPart(KEY_HEADER_FORMAT.format(self.key_part_count), value)
 
+    def add_branch(self, keyword: BranchKeyword, ctx: ParserRuleContext) -> Branch:
+        """Append an arm to the chain. Raises on an if when the section already has a chain."""
+        if keyword is BranchKeyword.IF and self.chain:
+            raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
+        branch = Branch(keyword, ctx)
+        self.chain.append(branch)
+        return branch
+
+    @property
+    def chain_start(self) -> ParserRuleContext | None:
+        """The parse node of the chain's if, or None with no chain."""
+        return self.chain[0].ctx if self.chain else None
+
     @property
     def adds_else(self) -> bool:
-        """True if the chain has no else, so the lowering adds one that keys on the base parts."""
-        return bool(self.chain) and self.chain[-1].keyword != "else"
+        """True if the chain has no else, so the lowering adds one that keys on the shared parts."""
+        return bool(self.chain) and self.chain[-1].keyword is not BranchKeyword.ELSE
+
+    def conflicts(self) -> list[ConflictError]:
+        """The contradictions on each run-plugin line. A conflict in the shared parts is reported once, not per branch."""
+        try:
+            cachekey.check_conflicts(self.shared.statements)
+        except ConflictError as error:
+            return [error]
+        errors = []
+        for branch in self.chain:
+            try:
+                cachekey.check_conflicts((self.shared + branch.parts).statements)
+            except ConflictError as error:
+                errors.append(error)
+        return errors
 
     def render(self) -> list[str]:
-        """The rule set: one run-plugin cachekey.so per branch, each with the base parts plus its own."""
+        """The rule set: one run-plugin cachekey.so per branch, each with the shared parts plus its own."""
         if not self.chain:
-            return [HOOK_LINE, *_plugin_lines(self.base, 1)]
+            return [HOOK_LINE, *self.shared.plugin_lines(1)]
 
         lines = [HOOK_LINE]
-        for branch in [*self.chain, Branch("else")] if self.adds_else else self.chain:
-            if branch.keyword != "if":
-                lines.append(branch.keyword)
+        for branch in [*self.chain, Branch(BranchKeyword.ELSE)] if self.adds_else else self.chain:
+            if branch.keyword is not BranchKeyword.IF:
+                lines.append(branch.keyword.value)
             # header_rewrite nests an elif's conditions and operators one level deeper.
-            depth = 2 if branch.keyword == "elif" else 1
+            depth = 2 if branch.keyword is BranchKeyword.ELIF else 1
             lines += [INDENT * (depth - 1) + line for line in branch.cond_lines]
-            lines += _plugin_lines(self.base + branch.entries, depth)
+            lines += (self.shared + branch.parts).plugin_lines(depth)
         return lines
-
-
-def as_statements(entries: list[Entry]) -> list[CacheKeyStatement]:
-    """The entries as cachekey.py statements: a key part is one more --include-headers name."""
-    return [
-        CacheKeyStatement("cache.key.headers.add", (entry.header,)) if isinstance(entry, KeyPart) else entry for entry in entries
-    ]
-
-
-def _plugin_lines(entries: list[Entry], depth: int) -> list[str]:
-    pad = INDENT * depth
-    lines = []
-    for entry in entries:
-        if isinstance(entry, KeyPart):
-            lines.append(f"{pad}set-header {entry.header} {entry.value}")
-    lines.append(pad + cachekey.render(cachekey.merge(as_statements(entries))))
-    return lines

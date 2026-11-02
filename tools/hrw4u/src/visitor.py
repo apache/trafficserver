@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
@@ -40,6 +41,7 @@ from hrw4u.procedures import resolve_use_path
 from hrw4u.sandbox import SandboxConfig, SandboxDenialError
 from hrw4u import cachekey
 from hrw4u import cachekey_section
+from hrw4u.cachekey_section import BranchKeyword
 import hrw4u.types as types
 
 _regex_validator = Validator.regex_pattern()
@@ -97,8 +99,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._source_text: str = ""
         self._current_var_scope: types.VarScope = types.VarScope.TXN
 
-        self._cachekey: cachekey_section.CacheKeySection | None = None
-        self._has_cachekey = False
+        self._cachekey: cachekey_section.CacheKeySection | None = None  # set once the CACHEKEY section is visited
+        self._program_has_cachekey = False  # set before any section is visited, for checks in sections before CACHEKEY
         self._cachekey_branch: cachekey_section.Branch | None = None
         self._remap_end: int | None = None  # output index just past the last REMAP section's rules
 
@@ -756,8 +758,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             seen_sections = False
             program_items = ctx.programItem()
 
-            # Known before any section is visited: REMAP's checks need it, and REMAP may come first.
-            self._has_cachekey = any(item.section() and self._is_cachekey_section(item.section()) for item in program_items)
+            self._program_has_cachekey = any(item.section() and self._is_cachekey_section(item.section()) for item in program_items)
 
             for idx, item in enumerate(program_items):
                 start_length = len(self.output)
@@ -1003,7 +1004,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     # CACHEKEY: collected while visiting, emitted after the last REMAP rule set.
 
-    def _visit_cachekey_section(self, ctx) -> None:
+    def _visit_cachekey_section(self, ctx: hrw4uParser.SectionContext) -> None:
         if self._cachekey is not None:
             with self.trap(ctx):
                 raise SymbolResolutionError("CACHEKEY", "CACHEKEY may only appear once")
@@ -1011,26 +1012,23 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._cachekey = cachekey_section.CacheKeySection()
         self._cachekey_items(ctx.sectionBody())
         self._cachekey_sandbox_check(ctx)
-        base = self._cachekey.base
-        with self.trap(ctx):
-            cachekey.check_conflicts(cachekey_section.as_statements(base))
-            for branch in self._cachekey.chain:
-                with self.trap(branch.ctx):
-                    cachekey.check_conflicts(cachekey_section.as_statements(base + branch.entries))
+        for error in self._cachekey.conflicts():
+            with self.trap(error.statement.source or ctx):
+                raise error
 
-    def _cachekey_sandbox_check(self, ctx) -> None:
+    def _cachekey_sandbox_check(self, ctx: hrw4uParser.SectionContext) -> None:
         """The lowering writes run-plugin, and an else the source may lack: the policy covers both."""
         self._sandbox_check(
             ctx, lambda: self._sandbox.check_function("run-plugin"), note="CACHEKEY compiles to run-plugin cachekey.so"
         )
         if self._cachekey.adds_else:
             self._sandbox_check(
-                self._cachekey.chain[0].ctx,
+                self._cachekey.chain_start,
                 lambda: self._sandbox.check_language("else"),
                 note="CACHEKEY adds an else to an if/elif chain, so every request gets a key",
             )
 
-    def _cachekey_items(self, items) -> None:
+    def _cachekey_items(self, items: Sequence[hrw4uParser.SectionBodyContext | hrw4uParser.BlockItemContext]) -> None:
         """Collect section or block items. Comments are dropped: the body folds into flags."""
         for item in items:
             if item.conditional():
@@ -1040,21 +1038,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 with self.trap(item.statement()):
                     self._cachekey_statement(item.statement())
 
-    def _cachekey_chain(self, ctx) -> None:
+    def _cachekey_chain(self, ctx: hrw4uParser.ConditionalContext) -> None:
         if self._cachekey_branch is not None:
             raise SymbolResolutionError("if", "nested conditionals not allowed in CACHEKEY")
-        if self._cachekey.chain:
-            raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
-        arms = [("if", ctx.ifStatement()), *(("elif", arm) for arm in ctx.elifClause())]
+        arms = [(BranchKeyword.IF, ctx.ifStatement()), *((BranchKeyword.ELIF, arm) for arm in ctx.elifClause())]
         if ctx.elseClause():
-            arms.append(("else", ctx.elseClause()))
+            arms.append((BranchKeyword.ELSE, ctx.elseClause()))
         for keyword, arm in arms:
-            if keyword != "if":
-                self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword))
+            if keyword is not BranchKeyword.IF:
+                self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword.value))
             # Added before its condition renders, so a chain whose condition fails still counts as the one.
-            branch = cachekey_section.Branch(keyword, arm)
-            self._cachekey.chain.append(branch)
-            if keyword != "else":
+            branch = self._cachekey.add_branch(keyword, arm)
+            if keyword is not BranchKeyword.ELSE:
                 branch.cond_lines = self._render_condition(arm.condition())
             self._cachekey_branch = branch
             try:
@@ -1062,22 +1057,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             finally:
                 self._cachekey_branch = None
 
-    def _render_condition(self, cond_ctx) -> list[str]:
+    def _render_condition(self, cond_ctx: hrw4uParser.ConditionContext) -> list[str]:
         """Compile a condition at indent 0 into its own lines, off the main output."""
-        saved = self.output, self.stmt_indent, self.cond_indent
-        self.output, self.stmt_indent, self.cond_indent = [], 0, 0
-        try:
+        with self.detached_output() as lines:
             self.visit(cond_ctx)
-            return self.output
-        finally:
-            self.output, self.stmt_indent, self.cond_indent = saved
+        return lines
 
-    def _cachekey_statement(self, ctx) -> None:
+    def _cachekey_statement(self, ctx: hrw4uParser.StatementContext) -> None:
         """Add one CACHEKEY statement to the current branch, or to the base outside the chain.
 
         Expands procedure calls. Raises for anything that isn't a cache.* key statement.
         """
-        target = self._cachekey_branch.entries if self._cachekey_branch else self._cachekey.base
+        target = self._cachekey_branch.parts if self._cachekey_branch else self._cachekey.shared
         if ctx.BREAK():
             raise SymbolResolutionError(
                 "break", "operator 'break' not allowed in CACHEKEY: it would end the rule set before cachekey.so runs"
@@ -1091,7 +1082,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 return
             if cachekey.is_key_name(func):
                 values = ctx.functionCall().argumentList().value() if ctx.functionCall().argumentList() else []
-                target.append(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values]))
+                target.statements.append(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values], ctx))
                 return
             raise SymbolResolutionError(func, f"operator '{func}' not allowed in CACHEKEY")
         if ctx.lhs is None:
@@ -1099,19 +1090,19 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return
         lhs = ctx.lhs.text
         if ctx.EQUAL() and cachekey.is_key_name(lhs):
-            target.append(cachekey.parse_assignment(lhs, self._cachekey_arg(ctx.value())))
+            target.statements.append(cachekey.parse_assignment(lhs, self._cachekey_arg(ctx.value()), ctx))
             return
-        if ctx.PLUSEQUAL() and lhs == cachekey.KEY_EXPR:
+        if ctx.PLUSEQUAL() and lhs == cachekey.KEY_NAME:
             value = ctx.value()
             self._check_not_bare_param(value)
             if value.str_ is None:
                 raise SymbolResolutionError(lhs, "cache.key += takes a quoted string")
-            target.append(self._cachekey.new_key_part(self._substitute_strings(value.getText(), ctx)))
+            target.add_computed(self._cachekey.new_key_part(self._substitute_strings(value.getText(), ctx)))
             return
         op = lhs if ctx.EQUAL() else f"{lhs} +="
         raise SymbolResolutionError(lhs, f"operator '{op}' not allowed in CACHEKEY")
 
-    def _cachekey_arg(self, value) -> str:
+    def _cachekey_arg(self, value: hrw4uParser.ValueContext) -> str:
         """Source text of a value in a cache.* call or assignment, with $params substituted in a string.
 
         Raises for a bare $param (see _check_not_bare_param). Any other value is returned as
@@ -1123,33 +1114,38 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return value.getText()
 
     @staticmethod
-    def _check_not_bare_param(value) -> None:
+    def _check_not_bare_param(value: hrw4uParser.ValueContext) -> None:
         """Raise for a bare $param in CACHEKEY: its binding has no quotes, so it can't be a string."""
         if value.paramRef():
             name = value.paramRef().IDENT().getText()
             raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be quoted here: write \"${name}\"")
 
     @staticmethod
-    def _is_cachekey_section(section_ctx) -> bool:
+    def _is_cachekey_section(section_ctx: hrw4uParser.SectionContext) -> bool:
         return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY
 
-    def _check_outside_cachekey(self, ctx) -> None:
+    def _check_outside_cachekey(self, ctx: hrw4uParser.StatementContext) -> None:
         """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
 
         cache.* key operators belong in CACHEKEY. With a CACHEKEY section, a break in REMAP would
         skip it, and a hand-written run-plugin cachekey.so would set the key twice, the later
-        instance overriding the earlier. visitProgram sets self._has_cachekey before visiting any
-        section, so the answer holds wherever CACHEKEY sits.
+        instance overriding the earlier.
         """
         if ctx.BREAK():
-            if self.current_section is SectionType.REMAP and self._has_cachekey:
+            if self.current_section is SectionType.REMAP and self._program_has_cachekey:
                 raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
             return
         call = ctx.functionCall()
         name, args = self._parse_function_call(call) if call else (ctx.lhs.text if ctx.lhs else None, [])
         if name and cachekey.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
-        if call and name == "run-plugin" and self._has_cachekey and args and args[0].strip('"').rsplit("/", 1)[-1] == "cachekey.so":
+        if (
+            call
+            and name == "run-plugin"
+            and self._program_has_cachekey
+            and args
+            and args[0].strip('"').rsplit("/", 1)[-1] == "cachekey.so"
+        ):
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:

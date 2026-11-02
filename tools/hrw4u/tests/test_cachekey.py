@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pytest
 
-from hrw4u.cachekey import check_conflicts, merge, parse_assignment, parse_statement, render
+from hrw4u.cachekey import CacheKeyStatement, ConflictError, check_conflicts, merge, parse_assignment, parse_statement, render
 from hrw4u.errors import SymbolResolutionError
 
 
@@ -73,9 +73,17 @@ class TestCheckConflicts:
             ),
         ],
     )
-    def test_rejects(self, stmts: list, message: str) -> None:
+    def test_rejects(self, stmts: list[CacheKeyStatement], message: str) -> None:
         with pytest.raises(SymbolResolutionError, match=message):
             check_conflicts(stmts)
+
+    def test_names_the_later_statement(self) -> None:
+        keep = parse_statement("cache.url.query.keep", ['"a"'])
+        remove = parse_statement("cache.url.query.remove", ['"b"'])
+        for stmts, later in (([keep, remove], remove), ([remove, keep], keep)):
+            with pytest.raises(ConflictError) as error:
+                check_conflicts(stmts)
+            assert error.value.statement is later
 
     def test_compatible(self) -> None:
         check_conflicts(

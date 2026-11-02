@@ -188,6 +188,16 @@ class BaseHRWVisitor:
         return _Trap()
 
     @contextmanager
+    def detached_output(self):
+        """Collect output at indent 0 into a fresh list, leaving the main output untouched."""
+        saved = self.output, self.stmt_indent, self.cond_indent
+        self.output, self.stmt_indent, self.cond_indent = [], 0, 0
+        try:
+            yield self.output
+        finally:
+            self.output, self.stmt_indent, self.cond_indent = saved
+
+    @contextmanager
     def stmt_indented(self):
         self.stmt_indent += 1
         try:
