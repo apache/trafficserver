@@ -267,8 +267,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     @property
     def _read_section(self) -> SectionType | None:
-        # CACHEKEY runs at the end of REMAP, so it reads what REMAP reads.
-        return SectionType.REMAP if self.current_section is SectionType.CACHEKEY else self.current_section
+        # A section reads what its hook can read: CACHEKEY reads what REMAP reads.
+        return self.current_section and self.current_section.emits_as
 
     @staticmethod
     def _check_not_cache_url(name: str) -> None:

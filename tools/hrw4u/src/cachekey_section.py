@@ -28,15 +28,17 @@ from typing import Any, Final
 
 from hrw4u import cachekey
 from hrw4u.cachekey import CacheKeyStatement
+from hrw4u.common import SystemDefaults
 from hrw4u.errors import SymbolResolutionError
+from hrw4u.states import SectionType
 
 KEY_EXPR: Final[str] = "cache.key"
 # cachekey.so sorts --include-headers as strings, so the numbers are zero-padded.
 KEY_HEADER_FORMAT: Final[str] = "@Hrw4u-Key-{:02d}"
 MAX_KEY_PARTS: Final[int] = 99
 
-HOOK_LINE: Final[str] = "cond %{REMAP_PSEUDO_HOOK} [AND]"
-INDENT: Final[str] = "    "
+HOOK_LINE: Final[str] = f"cond %{{{SectionType.CACHEKEY.hook_name}}} [AND]"
+INDENT: Final[str] = " " * SystemDefaults.INDENT_SPACES
 
 
 def is_key_name(name: str) -> bool:

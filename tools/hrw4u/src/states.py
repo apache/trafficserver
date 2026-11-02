@@ -40,6 +40,11 @@ class SectionType(str, Enum):
     CACHEKEY = intern_section("CACHEKEY")
 
     @property
+    def emits_as(self) -> Self:
+        """The section whose hook runs this one's rules: REMAP for CACHEKEY, itself for the rest."""
+        return SectionType.REMAP if self is SectionType.CACHEKEY else self
+
+    @property
     def hook_name(self) -> str:
         hook_map = {
             SectionType.REMAP: intern_hook("REMAP_PSEUDO_HOOK"),
@@ -51,14 +56,13 @@ class SectionType(str, Enum):
             SectionType.TXN_START: intern_hook("TXN_START_HOOK"),
             SectionType.TXN_CLOSE: intern_hook("TXN_CLOSE_HOOK"),
             SectionType.VARS: intern_hook("VARS_SECTION"),
-            SectionType.CACHEKEY: intern_hook("REMAP_PSEUDO_HOOK"),
         }
-        return hook_map[self]
+        return hook_map[self.emits_as]
 
     @property
     def hook_note(self) -> str:
-        """Appended where the LSP shows the hook: CACHEKEY has no hook of its own."""
-        return ", after every REMAP rule" if self == SectionType.CACHEKEY else ""
+        """Appended where the LSP shows the hook, for a section with no hook of its own."""
+        return f", after every {self.emits_as.value} rule" if self.emits_as is not self else ""
 
     @property
     def lsp_description(self) -> str:
@@ -71,8 +75,7 @@ class SectionType(str, Enum):
     @classmethod
     def from_hook(cls, hook_name: str) -> Self:
         for section in cls:
-            # CACHEKEY shares REMAP's hook; u4wrh must read that hook back as REMAP.
-            if section.hook_name == hook_name and section is not SectionType.CACHEKEY:
+            if section.emits_as is section and section.hook_name == hook_name:
                 return section
         raise ValueError(f"No section found for hook '{hook_name}'")
 
