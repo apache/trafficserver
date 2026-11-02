@@ -442,6 +442,10 @@ A special section `VARS` is used to declare variables. There is no equivalent in
 `SESSION_VARS` declares session-scoped variables that persist across all
 transactions on the same client connection (session).
 
+The `CACHEKEY` section sets the cache key. It has no hook of its own: the
+compiler emits it on ``REMAP_PSEUDO_HOOK``, after every `REMAP` rule. See
+:ref:`hrw4u-cache-keys`.
+
 Variables and State Slots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -698,6 +702,119 @@ value:
    }
 
    inbound.req.X-Decoded-Path = "{inbound.url.path with NORM}";
+
+.. _hrw4u-cache-keys:
+
+Cache Keys
+----------
+
+The `CACHEKEY` section picks which parts of the request go into the cache key.
+The compiler lowers it to ``run-plugin "cachekey.so"`` with the matching
+:doc:`../plugins/cachekey.en` flags, so the plugin must be installed. For
+example::
+
+   CACHEKEY {
+       cache.url.query.remove("utm_source", "guid");
+       cache.key.headers.add("X-Region");
+       cache.key.cookies.add("session");
+   }
+
+compiles to::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+       run-plugin "cachekey.so" "--canonical-prefix=true" "--exclude-params=utm_source,guid" "--include-headers=X-Region" "--include-cookies=session"
+
+The section only writes the key. It can read the request in conditions, but
+holds only these statements, and procedures made of them:
+
+====================================== ======================================== =========================================
+HRW4U Statement                        cachekey.so Flag                         Description
+====================================== ======================================== =========================================
+cache.url.query.remove("a", "b")       --exclude-params=a,b                     Drop these query params from the key
+cache.url.query.keep("a", "b")         --include-params=a,b                     Keep only these query params
+cache.url.query = ""                   --remove-all-params=true                 Drop the whole query
+cache.url.query.sort()                 --sort-params=true                       Sort the query params
+cache.url.path = ""                    --remove-path=true                       Drop the path
+cache.url.pristine()                   --uri-type=pristine                      Start from the URL the client sent
+cache.key.headers.add("A", "B")        --include-headers=A,B                    Add these request headers
+cache.key.cookies.add("a", "b")        --include-cookies=a,b                    Add these cookies
+cache.key += "{...}"                   --include-headers=@Hrw4u-Key-N           Add a computed value
+====================================== ======================================== =========================================
+
+List arguments are static strings: one name per argument, with no ``{...}``
+values. Query param and cookie names are case-sensitive; header names are not.
+``keep()``, ``remove()`` and ``query = ""`` can't be combined. A missing or
+empty header, cookie, or ``cache.key +=`` value adds nothing to the key.
+
+``cache.key +=`` takes any string. The compiler sets the value into a numbered
+``@Hrw4u-Key-N`` header and adds that header to the key::
+
+   CACHEKEY {
+       cache.key += "{geo.COUNTRY}";
+   }
+
+compiles to::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+       set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
+       run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=@Hrw4u-Key-01"
+
+Keys that depend on the request
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One ``if``/``elif``/``else`` chain picks key parts by request. Statements
+outside the chain apply to every branch, wherever they sit. Each branch
+becomes its own ``run-plugin "cachekey.so"`` line with the shared parts plus
+its own. If the chain has no ``else``, the compiler adds one with the shared
+parts, so every request gets a key::
+
+   CACHEKEY {
+       cache.key.headers.add("X-Region");
+       if inbound.url.path ~ /^search/ {
+           cache.url.query.keep("q");
+       } elif inbound.url.path ~ /^api\// {
+           cache.url.query.sort();
+       }
+   }
+
+compiles to::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+   cond %{CLIENT-URL:PATH} /^search/
+       run-plugin "cachekey.so" "--canonical-prefix=true" "--include-params=q" "--include-headers=X-Region"
+   elif
+       cond %{CLIENT-URL:PATH} /^api\//
+           run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=X-Region"
+   else
+       run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-Region"
+
+Only the first ``cachekey.so`` to run sets the key, so the compiler allows one
+instance per request:
+
+- A rule has at most one `CACHEKEY` section, with at most one chain and no
+  nested ``if``.
+- `REMAP` can't use ``break`` when the rule has a `CACHEKEY` section: it
+  would skip the key.
+- A hand-written ``run-plugin("cachekey.so", ...)`` can't be combined with
+  `CACHEKEY`.
+- ``cache.url.*`` and ``cache.key.*`` fail to compile outside `CACHEKEY`.
+
+Because `CACHEKEY` runs after `REMAP`, make request changes in `REMAP`. The key
+and its conditions see headers and cookies as `REMAP` left them. To key on a
+computed value that other rules also need, set it into an ``@`` header in
+`REMAP` and add that header with ``cache.key.headers.add()``.
+
+To skip the cache entirely, call ``cache.bypass()`` in `REMAP`. It compiles to
+``set-config "proxy.config.http.cache.http" 0``::
+
+   REMAP {
+       if !inbound.req.X-Region {
+           cache.bypass();
+       }
+   }
+
+Under a sandbox policy, `CACHEKEY` needs ``run-plugin``, and ``else`` when the
+compiler adds one.
 
 Running and Debugging
 =====================

@@ -170,6 +170,26 @@ Use `set-body-from-file(path, content_type)` in `REMAP` or `SEND_RESPONSE` to
 load a local body when the rule configuration is loaded. Relative paths are
 resolved from the directory containing the rule file.
 
+### Cache keys
+
+A `CACHEKEY` section sets the cache key. It compiles to one
+`run-plugin "cachekey.so"` after every `REMAP` rule, and holds only
+`cache.url.*` and `cache.key.*` statements:
+
+```
+CACHEKEY {
+    cache.url.query.remove("utm_source", "guid");
+    cache.key.headers.add("X-Region");
+}
+```
+```
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    run-plugin "cachekey.so" "--canonical-prefix=true" "--exclude-params=utm_source,guid" "--include-headers=X-Region"
+```
+
+See "Cache Keys" in `doc/admin-guide/configuration/hrw4u.en.rst` for every
+statement, the if/elif/else chain, and the limits.
+
 ## Build System
 
 The project uses a hybrid build system:
