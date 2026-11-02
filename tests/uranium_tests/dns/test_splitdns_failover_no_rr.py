@@ -19,9 +19,12 @@ from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServe
 
 
 def configure_dns(services: ServiceFactory) -> tuple[DNSServer, DNSServer]:
-    """Create the dead primary and live secondary SplitDNS nameservers."""
+    """Create the primary and secondary SplitDNS nameservers.
+
+    :param services: Factory owning the test-local DNS services.
+    """
     records = {f"{host}.ts.a.o.": ["127.0.0.1"] for host in ("a", "b", "c")}
-    primary = services.dns("dead-primary")
+    primary = services.dns("primary")
     primary.add_records(records)
     secondary = services.dns("live-secondary")
     secondary.add_records(records)
@@ -29,7 +32,10 @@ def configure_dns(services: ServiceFactory) -> tuple[DNSServer, DNSServer]:
 
 
 def configure_origin(services: ServiceFactory) -> OriginServer:
-    """Create the origin response used by all three lookups."""
+    """Create the origin response used by all three lookups.
+
+    :param services: Factory owning the test-local origin service.
+    """
     origin = services.origin("origin")
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
@@ -39,7 +45,13 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
 
 def configure_ats(ats_factory: ATSFactory, primary: DNSServer, secondary: DNSServer, origin: OriginServer) -> ATS:
-    """Configure primary-secondary SplitDNS with a dead primary."""
+    """Configure primary-secondary SplitDNS with the primary and secondary nameservers.
+
+    :param ats_factory: Factory for the isolated Traffic Server process.
+    :param primary: Primary nameserver, which is initially not started.
+    :param secondary: Secondary nameserver used while the primary is unavailable.
+    :param origin: Origin server receiving the resolved requests.
+    """
     ats = ats_factory.create("ts", enable_cache=False)
     ats.records.update(
         {
@@ -56,14 +68,27 @@ def configure_ats(ats_factory: ATSFactory, primary: DNSServer, secondary: DNSSer
 
 
 def request(host: str, *, ats: ATS, curl: Curl) -> None:
-    """Resolve one host through SplitDNS and verify the origin response."""
+    """Resolve one host through SplitDNS and verify the origin response.
+
+    :param host: Short hostname used by the remap and DNS record.
+    :param ats: Traffic Server process under test.
+    :param curl: Curl command runner used to issue the request.
+    """
     result = curl.get(ats, f"/{host}/", options="--verbose")
     assert result.returncode == 0, result.output
     assert "HTTP/1.1 200 OK" in result.output
 
 
 def test_splitdns_failover_no_rr(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Primary-secondary SplitDNS fails over from an unavailable primary."""
+    """Primary-secondary SplitDNS fails over from an unavailable primary.
+
+    The primary nameserver is not started initially, so its port refuses
+    queries until the service is started.
+
+    :param ats_factory: Factory for the isolated Traffic Server process.
+    :param services: Factory owning the test-local DNS and origin services.
+    :param curl: Curl command runner used to issue the requests.
+    """
     primary, secondary = configure_dns(services)
     origin = configure_origin(services)
     ats = configure_ats(ats_factory, primary, secondary, origin)
