@@ -17,12 +17,7 @@
 
 find_package(Doxygen 1.9.7 REQUIRED COMPONENTS doxygen dot)
 find_package(Java REQUIRED COMPONENTS Runtime)
-find_file(
-  PLANTUML_JAR
-  NAMES plantuml.jar
-  PATHS /usr/share/java /usr/local/share/java
-  PATH_SUFFIXES plantuml REQUIRED
-)
+find_file(PLANTUML_JAR NAMES plantuml.jar PATHS /usr/share/java /usr/local/share/java PATH_SUFFIXES plantuml REQUIRED)
 
 # HTML and its graphs take most of the build time, while the documentation
 # warnings come from parsing the comments, so a check-only build generates

@@ -35,9 +35,6 @@ function(CHECK_OPENSSL_IS_AWSLC OUT_IS_AWSLC OUT_VERSION OPENSSL_INCLUDE_DIR)
   if(${${OUT_IS_AWSLC}})
     file(STRINGS "${OPENSSL_INCLUDE_DIR}/openssl/base.h" version_line REGEX "^#define AWSLC_API_VERSION [0-9]+")
     string(REGEX MATCH "[0-9]+" version ${version_line})
-    set(${OUT_VERSION}
-        ${version}
-        PARENT_SCOPE
-    )
+    set(${OUT_VERSION} ${version} PARENT_SCOPE)
   endif()
 endfunction()
