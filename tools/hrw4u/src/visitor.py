@@ -1139,13 +1139,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         name, args = self._parse_function_call(call) if call else (ctx.lhs.text if ctx.lhs else None, [])
         if name and cachekey.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
-        if (
-            call
-            and name == "run-plugin"
-            and self._program_has_cachekey
-            and args
-            and args[0].strip('"').rsplit("/", 1)[-1] == "cachekey.so"
-        ):
+        if call and name == "run-plugin" and self._program_has_cachekey and args and cachekey.is_plugin_path(args[0]):
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
 
     def _emit_cachekey(self) -> None:

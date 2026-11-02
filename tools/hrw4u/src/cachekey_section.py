@@ -64,7 +64,7 @@ class KeyParts:
 
     def add_computed(self, part: KeyPart) -> None:
         self.computed.append(part)
-        self.statements.append(CacheKeyStatement("cache.key.headers.add", (part.header,)))
+        self.statements.append(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (part.header,)))
 
     def __add__(self, other: KeyParts) -> KeyParts:
         return KeyParts(self.statements + other.statements, self.computed + other.computed)

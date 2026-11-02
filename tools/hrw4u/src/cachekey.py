@@ -32,6 +32,8 @@ from hrw4u.errors import SymbolResolutionError
 
 KEY_NAME: Final[str] = "cache.key"
 URL_PREFIX: Final[str] = "cache.url."
+HEADERS_ADD_NAME: Final[str] = "cache.key.headers.add"
+PLUGIN: Final[str] = "cachekey.so"
 CANONICAL_PREFIX: Final[str] = "--canonical-prefix=true"
 
 
@@ -41,6 +43,11 @@ def is_key_name(name: str) -> bool:
     cache() and cache.bypass() share the prefix but aren't key names.
     """
     return name == KEY_NAME or name.startswith((f"{KEY_NAME}.", URL_PREFIX))
+
+
+def is_plugin_path(path: str) -> bool:
+    """True if a run-plugin path names cachekey.so, bare or under a directory, quoted or not."""
+    return path.strip('"').rsplit("/", 1)[-1] == PLUGIN
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,7 +79,7 @@ CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
     "cache.url.query.sort":   CacheKeyFlag("--sort-params", "true"),
     "cache.url.query":        CacheKeyFlag("--remove-all-params", "true", assignment=True),
     "cache.url.path":         CacheKeyFlag("--remove-path", "true", assignment=True),
-    "cache.key.headers.add":  CacheKeyFlag("--include-headers", case_insensitive=True),
+    HEADERS_ADD_NAME:         CacheKeyFlag("--include-headers", case_insensitive=True),
     "cache.key.cookies.add":  CacheKeyFlag("--include-cookies"),
 }
 # yapf: enable
@@ -186,4 +193,4 @@ def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
 
 def render(flags: list[str]) -> str:
     """The run-plugin cachekey.so operator line for a merged flag list."""
-    return " ".join(['run-plugin "cachekey.so"', *(f'"{flag}"' for flag in flags)])
+    return " ".join([f'run-plugin "{PLUGIN}"', *(f'"{flag}"' for flag in flags)])
