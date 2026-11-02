@@ -1049,7 +1049,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword.value))
             # Added before its condition renders, so a chain whose condition fails still counts as the one.
             branch = self._cachekey.add_branch(keyword, arm)
-            if keyword is not BranchKeyword.ELSE:
+            if keyword.has_condition:
                 branch.cond_lines = self._render_condition(arm.condition())
             self._cachekey_branch = branch
             try:

@@ -82,6 +82,15 @@ class BranchKeyword(str, Enum):
     ELIF = "elif"
     ELSE = "else"
 
+    @property
+    def has_condition(self) -> bool:
+        return self is not BranchKeyword.ELSE
+
+    @property
+    def depth(self) -> int:
+        """The indent level of the arm's conditions and operators: header_rewrite nests an elif's one deeper."""
+        return 2 if self is BranchKeyword.ELIF else 1
+
 
 @dataclass(slots=True)
 class Branch:
@@ -127,7 +136,7 @@ class CacheKeySection:
     @property
     def adds_else(self) -> bool:
         """True if the chain has no else, so the lowering adds one that keys on the shared parts."""
-        return bool(self.chain) and self.chain[-1].keyword is not BranchKeyword.ELSE
+        return bool(self.chain) and self.chain[-1].keyword.has_condition
 
     def conflicts(self) -> list[ConflictError]:
         """The contradictions on each run-plugin line. A conflict in the shared parts is reported once, not per branch."""
@@ -152,8 +161,7 @@ class CacheKeySection:
         for branch in [*self.chain, Branch(BranchKeyword.ELSE)] if self.adds_else else self.chain:
             if branch.keyword is not BranchKeyword.IF:
                 lines.append(branch.keyword.value)
-            # header_rewrite nests an elif's conditions and operators one level deeper.
-            depth = 2 if branch.keyword is BranchKeyword.ELIF else 1
+            depth = branch.keyword.depth
             lines += [INDENT * (depth - 1) + line for line in branch.cond_lines]
             lines += (self.shared + branch.parts).plugin_lines(depth)
         return lines
