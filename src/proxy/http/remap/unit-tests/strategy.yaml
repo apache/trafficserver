@@ -25,7 +25,7 @@
 #
 # unit test strategy.yaml example
 #
-#include unit-tests/hosts.yaml
+#include hosts.yaml
 #
 strategies:
   - strategy: 'strategy-1'
