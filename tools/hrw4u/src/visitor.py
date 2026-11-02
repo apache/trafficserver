@@ -39,7 +39,7 @@ from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
 from hrw4u.sandbox import SandboxConfig, SandboxDenialError
 from hrw4u import cachekey
-from hrw4u import cachekey_section as ck
+from hrw4u import cachekey_section
 import hrw4u.types as types
 
 _regex_validator = Validator.regex_pattern()
@@ -97,10 +97,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._source_text: str = ""
         self._current_var_scope: types.VarScope = types.VarScope.TXN
 
-        self._cachekey: ck.CacheKeySection | None = None
+        self._cachekey: cachekey_section.CacheKeySection | None = None
         self._has_cachekey = False
-        self._cachekey_branch: ck.Branch | None = None
-        self._remap_end: int | None = None
+        self._cachekey_branch: cachekey_section.Branch | None = None
+        self._remap_end: int | None = None  # output index just past the last REMAP section's rules
 
     def _sandbox_check(self, ctx, check_fn, *, note: str | None = None) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
@@ -272,7 +272,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     @staticmethod
     def _check_not_cache_url(name: str) -> None:
-        if name.startswith("cache.url."):
+        if name.startswith(cachekey.URL_PREFIX):
             raise SymbolResolutionError(
                 name, "cache.url.* can't be read in a condition or a string: run-plugin cachekey.so has no %{CACHE-URL}"
             )
@@ -1011,15 +1011,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             with self.trap(ctx):
                 raise SymbolResolutionError("CACHEKEY", "CACHEKEY may only appear once")
             return
-        self._cachekey = ck.CacheKeySection()
+        self._cachekey = cachekey_section.CacheKeySection()
         self._cachekey_items(ctx.sectionBody())
         self._cachekey_sandbox_check(ctx)
         base = self._cachekey.base
         with self.trap(ctx):
-            cachekey.check_conflicts(ck.statements(base))
+            cachekey.check_conflicts(cachekey_section.as_statements(base))
             for branch in self._cachekey.chain:
                 with self.trap(branch.ctx):
-                    cachekey.check_conflicts(ck.statements(base + branch.entries))
+                    cachekey.check_conflicts(cachekey_section.as_statements(base + branch.entries))
 
     def _cachekey_sandbox_check(self, ctx) -> None:
         """The lowering writes run-plugin, and an else the source may lack: the policy covers both."""
@@ -1055,7 +1055,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             if keyword != "if":
                 self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword))
             # Added before its condition renders, so a chain whose condition fails still counts as the one.
-            branch = ck.Branch(keyword, arm)
+            branch = cachekey_section.Branch(keyword, arm)
             self._cachekey.chain.append(branch)
             if keyword != "else":
                 branch.cond_lines = self._render_condition(arm.condition())
@@ -1092,7 +1092,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 with self._proc_context(sig, bindings):
                     self._cachekey_items(sig.body_ctx.blockItem())
                 return
-            if ck.is_key_name(func):
+            if cachekey.is_key_name(func):
                 values = ctx.functionCall().argumentList().value() if ctx.functionCall().argumentList() else []
                 target.append(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values]))
                 return
@@ -1101,10 +1101,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             # Only reachable via parser error recovery, which already reported the error.
             return
         lhs = ctx.lhs.text
-        if ctx.EQUAL() and ck.is_key_name(lhs):
+        if ctx.EQUAL() and cachekey.is_key_name(lhs):
             target.append(cachekey.parse_assignment(lhs, self._cachekey_arg(ctx.value())))
             return
-        if ctx.PLUSEQUAL() and lhs == ck.KEY_EXPR:
+        if ctx.PLUSEQUAL() and lhs == cachekey.KEY_EXPR:
             value = ctx.value()
             self._check_not_bare_param(value)
             if value.str_ is None:
@@ -1150,7 +1150,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return
         call = ctx.functionCall()
         name, args = self._parse_function_call(call) if call else (ctx.lhs.text if ctx.lhs else None, [])
-        if name and ck.is_key_name(name):
+        if name and cachekey.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
         if call and name == "run-plugin" and self._has_cachekey and args and args[0].strip('"').rsplit("/", 1)[-1] == "cachekey.so":
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")

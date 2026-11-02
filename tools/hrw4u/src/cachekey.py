@@ -28,7 +28,14 @@ from typing import Final
 
 from hrw4u.errors import SymbolResolutionError
 
+KEY_EXPR: Final[str] = "cache.key"
+URL_PREFIX: Final[str] = "cache.url."
 CANONICAL_PREFIX: Final[str] = "--canonical-prefix=true"
+
+
+def is_key_name(name: str) -> bool:
+    """True for any cache.url.* or cache.key* name, known or not. cache() and cache.bypass() are not key names."""
+    return name == KEY_EXPR or name.startswith((f"{KEY_EXPR}.", URL_PREFIX))
 
 
 @dataclass(frozen=True, slots=True)

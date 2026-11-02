@@ -32,18 +32,12 @@ from hrw4u.common import SystemDefaults
 from hrw4u.errors import SymbolResolutionError
 from hrw4u.states import SectionType
 
-KEY_EXPR: Final[str] = "cache.key"
 # cachekey.so sorts --include-headers as strings, so the numbers are zero-padded.
 KEY_HEADER_FORMAT: Final[str] = "@Hrw4u-Key-{:02d}"
 MAX_KEY_PARTS: Final[int] = 99
 
 HOOK_LINE: Final[str] = f"cond %{{{SectionType.CACHEKEY.hook_name}}} [AND]"
 INDENT: Final[str] = " " * SystemDefaults.INDENT_SPACES
-
-
-def is_key_name(name: str) -> bool:
-    """True for any cache.url.* or cache.key* name, known or not. cache() and cache.bypass() are not key names."""
-    return name == KEY_EXPR or name.startswith(("cache.key.", "cache.url."))
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,7 +68,7 @@ class CacheKeySection:
     def new_key_part(self, value: str) -> KeyPart:
         """Number the next key part. Numbers run across the whole section, not per branch."""
         if self.key_part_count == MAX_KEY_PARTS:
-            raise SymbolResolutionError(KEY_EXPR, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
+            raise SymbolResolutionError(cachekey.KEY_EXPR, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
         self.key_part_count += 1
         return KeyPart(KEY_HEADER_FORMAT.format(self.key_part_count), value)
 
@@ -99,8 +93,8 @@ class CacheKeySection:
         return lines
 
 
-def statements(entries: list[Entry]) -> list[CacheKeyStatement]:
-    """The entries as core statements: a key part is one more --include-headers name."""
+def as_statements(entries: list[Entry]) -> list[CacheKeyStatement]:
+    """The entries as cachekey.py statements: a key part is one more --include-headers name."""
     return [
         CacheKeyStatement("cache.key.headers.add", (entry.header,)) if isinstance(entry, KeyPart) else entry for entry in entries
     ]
@@ -112,5 +106,5 @@ def _plugin_lines(entries: list[Entry], depth: int) -> list[str]:
     for entry in entries:
         if isinstance(entry, KeyPart):
             lines.append(f"{pad}set-header {entry.header} {entry.value}")
-    lines.append(pad + cachekey.render(cachekey.merge(statements(entries))))
+    lines.append(pad + cachekey.render(cachekey.merge(as_statements(entries))))
     return lines
