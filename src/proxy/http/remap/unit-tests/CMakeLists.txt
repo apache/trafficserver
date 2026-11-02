@@ -125,29 +125,35 @@ target_include_directories(test_PluginFactory PRIVATE ${PROJECT_SOURCE_DIR}/test
 
 target_link_libraries(
   test_PluginFactory
-  PRIVATE Catch2::Catch2WithMain
-          tscore
-          ts::tsapi
-          ts::configmanager
-          ts::hdrs
-          ts::proxy
-          ts::inkdns
-          ts::inkutils
-          ts::inknet
-          ts::inkevent
-          libswoc::libswoc
+  PRIVATE
+    Catch2::Catch2WithMain
+    tscore
+    ts::tsapi
+    ts::configmanager
+    ts::hdrs
+    ts::proxy
+    ts::inkdns
+    ts::inkutils
+    ts::inknet
+    ts::inkevent
+    libswoc::libswoc
 )
 
 if(NOT APPLE)
-  add_catch2_test(
-    NAME test_PluginFactory COMMAND $<TARGET_FILE:test_PluginFactory> ENVIRONMENT "${REMAP_DSO_TEST_ENVIRONMENT}"
+  add_catch2_test(NAME test_PluginFactory COMMAND $<TARGET_FILE:test_PluginFactory> ENVIRONMENT
+                  "${REMAP_DSO_TEST_ENVIRONMENT}"
   )
 endif()
 ### test_RemapPluginInfo ########################################################################
 
 add_executable(
-  test_RemapPluginInfo test_RemapPlugin.cc plugin_testing_common.cc ../PluginDso.cc ../RemapPluginInfo.cc
-                       ${PROJECT_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
+  test_RemapPluginInfo
+  test_RemapPlugin.cc
+  plugin_testing_common.cc
+  ../PluginDso.cc
+  ../RemapPluginInfo.cc
+  ${PROJECT_SOURCE_DIR}/src/iocore/net/libinknet_stub.cc
+  ${PROJECT_SOURCE_DIR}/src/api/APIHooks.cc
 )
 
 target_compile_definitions(test_RemapPluginInfo PRIVATE PLUGIN_DSO_TESTS)
@@ -160,22 +166,23 @@ target_include_directories(test_RemapPluginInfo PRIVATE ${PROJECT_SOURCE_DIR}/te
 
 target_link_libraries(
   test_RemapPluginInfo
-  PRIVATE Catch2::Catch2WithMain
-          tscore
-          ts::tsapi
-          ts::configmanager
-          ts::hdrs
-          ts::proxy
-          ts::inkdns
-          ts::inkutils
-          ts::inknet
-          ts::inkevent
-          libswoc::libswoc
+  PRIVATE
+    Catch2::Catch2WithMain
+    tscore
+    ts::tsapi
+    ts::configmanager
+    ts::hdrs
+    ts::proxy
+    ts::inkdns
+    ts::inkutils
+    ts::inknet
+    ts::inkevent
+    libswoc::libswoc
 )
 
 if(NOT APPLE)
-  add_catch2_test(
-    NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo> ENVIRONMENT "${REMAP_DSO_TEST_ENVIRONMENT}"
+  add_catch2_test(NAME test_RemapPluginInfo COMMAND $<TARGET_FILE:test_RemapPluginInfo> ENVIRONMENT
+                  "${REMAP_DSO_TEST_ENVIRONMENT}"
   )
 endif()
 ### test_NextHopStrategyFactory ########################################################################
@@ -200,13 +207,14 @@ target_include_directories(test_NextHopStrategyFactory PRIVATE ${PROJECT_SOURCE_
 
 target_link_libraries(
   test_NextHopStrategyFactory
-  PRIVATE Catch2::Catch2WithMain
-          ts::hdrs
-          ts::inkutils
-          tscore
-          libswoc::libswoc
-          yaml-cpp::yaml-cpp
-          configmanager
+  PRIVATE
+    Catch2::Catch2WithMain
+    ts::hdrs
+    ts::inkutils
+    tscore
+    libswoc::libswoc
+    yaml-cpp::yaml-cpp
+    configmanager
 )
 
 if(NOT APPLE)
@@ -235,14 +243,15 @@ target_include_directories(test_NextHopRoundRobin PRIVATE ${PROJECT_SOURCE_DIR}/
 
 target_link_libraries(
   test_NextHopRoundRobin
-  PRIVATE Catch2::Catch2WithMain
-          ts::hdrs
-          ts::inkevent
-          ts::inkutils
-          tscore
-          libswoc::libswoc
-          yaml-cpp::yaml-cpp
-          configmanager
+  PRIVATE
+    Catch2::Catch2WithMain
+    ts::hdrs
+    ts::inkevent
+    ts::inkutils
+    tscore
+    libswoc::libswoc
+    yaml-cpp::yaml-cpp
+    configmanager
 )
 
 if(NOT APPLE)
@@ -273,14 +282,15 @@ target_include_directories(test_NextHopConsistentHash PRIVATE ${PROJECT_SOURCE_D
 
 target_link_libraries(
   test_NextHopConsistentHash
-  PRIVATE Catch2::Catch2WithMain
-          tscore
-          ts::inkevent
-          ts::hdrs
-          ts::inkutils
-          libswoc::libswoc
-          yaml-cpp::yaml-cpp
-          configmanager
+  PRIVATE
+    Catch2::Catch2WithMain
+    tscore
+    ts::inkevent
+    ts::hdrs
+    ts::inkutils
+    libswoc::libswoc
+    yaml-cpp::yaml-cpp
+    configmanager
 )
 
 if(NOT APPLE)
@@ -294,15 +304,16 @@ add_executable(test_RemapRules "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_test
 
 target_link_libraries(
   test_RemapRules
-  PRIVATE Catch2::Catch2WithMain
-          ts::http
-          ts::hdrs # transitive
-          logging # transitive
-          ts::http_remap # transitive
-          ts::proxy
-          inkdns # transitive
-          ts::inknet
-          ts::jsonrpc_protocol
+  PRIVATE
+    Catch2::Catch2WithMain
+    ts::http
+    ts::hdrs # transitive
+    logging # transitive
+    ts::http_remap # transitive
+    ts::proxy
+    inkdns # transitive
+    ts::inknet
+    ts::jsonrpc_protocol
 )
 
 add_catch2_test(NAME test_RemapRules COMMAND $<TARGET_FILE:test_RemapRules>)
@@ -312,15 +323,16 @@ add_executable(test_RemapRulesYaml "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_
 
 target_link_libraries(
   test_RemapRulesYaml
-  PRIVATE Catch2::Catch2WithMain
-          ts::http
-          ts::hdrs # transitive
-          logging # transitive
-          ts::http_remap # transitive
-          ts::proxy
-          inkdns # transitive
-          ts::inknet
-          ts::jsonrpc_protocol
+  PRIVATE
+    Catch2::Catch2WithMain
+    ts::http
+    ts::hdrs # transitive
+    logging # transitive
+    ts::http_remap # transitive
+    ts::proxy
+    inkdns # transitive
+    ts::inknet
+    ts::jsonrpc_protocol
 )
 
 add_catch2_test(NAME test_RemapRulesYaml COMMAND $<TARGET_FILE:test_RemapRulesYaml>)

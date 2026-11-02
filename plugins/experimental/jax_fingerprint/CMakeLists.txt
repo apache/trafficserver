@@ -15,8 +15,7 @@
 #
 #######################
 
-set(ENABLE_JAX_METHODS
-    "ja3;ja4;ja4h"
+set(ENABLE_JAX_METHODS "ja3;ja4;ja4h"
     CACHE STRING "Semicolon-separated list of fingerprint methods to compile into jax_fingerprint"
 )
 

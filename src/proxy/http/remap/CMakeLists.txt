@@ -16,31 +16,28 @@
 #######################
 
 add_library(
-  http_remap STATIC
-  AclFiltering.cc
-  NextHopSelectionStrategy.cc
-  NextHopConsistentHash.cc
-  NextHopHealthStatus.cc
-  NextHopRoundRobin.cc
-  NextHopStrategyFactory.cc
-  RemapConfig.cc
-  RemapYamlConfig.cc
-  RemapPluginInfo.cc
-  PluginDso.cc
-  PluginFactory.cc
-  RemapPlugins.cc
-  RemapProcessor.cc
-  UrlMapping.cc
-  UrlMappingPathIndex.cc
-  UrlRewrite.cc
+  http_remap
+  STATIC
+    AclFiltering.cc
+    NextHopSelectionStrategy.cc
+    NextHopConsistentHash.cc
+    NextHopHealthStatus.cc
+    NextHopRoundRobin.cc
+    NextHopStrategyFactory.cc
+    RemapConfig.cc
+    RemapYamlConfig.cc
+    RemapPluginInfo.cc
+    PluginDso.cc
+    PluginFactory.cc
+    RemapPlugins.cc
+    RemapProcessor.cc
+    UrlMapping.cc
+    UrlMappingPathIndex.cc
+    UrlRewrite.cc
 )
 add_library(ts::http_remap ALIAS http_remap)
 
-target_link_libraries(
-  http_remap
-  PUBLIC ts::proxy ts::tscore
-  PRIVATE ts::inkevent ts::inkutils yaml-cpp::yaml-cpp
-)
+target_link_libraries(http_remap PUBLIC ts::proxy ts::tscore PRIVATE ts::inkevent ts::inkutils yaml-cpp::yaml-cpp)
 
 if(BUILD_TESTING)
   add_subdirectory(unit-tests)

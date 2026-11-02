@@ -18,30 +18,31 @@
 add_executable(traffic_server Crash.cc SocksProxy.cc traffic_server.cc RpcAdminPubHandlers.cc)
 target_link_libraries(
   traffic_server
-  PRIVATE ts::tscore
-          ts::tsapi
-          ts::overridable_txn_vars
-          ts::tsutil
-          ts::http
-          ts::http_remap
-          ts::http2
-          ts::logging
-          ts::hdrs
-          ts::diagsconfig
-          ts::inkutils
-          ts::inkdns
-          ts::inkhostdb
-          ts::inkcache
-          ts::aio
-          ts::proxy
-          ts::inknet
-          ts::records
-          ts::inkevent
-          libswoc::libswoc
-          ts::jsonrpc_protocol
-          ts::jsonrpc_server
-          ts::rpcpublichandlers
-          ts::configmanager
+  PRIVATE
+    ts::tscore
+    ts::tsapi
+    ts::overridable_txn_vars
+    ts::tsutil
+    ts::http
+    ts::http_remap
+    ts::http2
+    ts::logging
+    ts::hdrs
+    ts::diagsconfig
+    ts::inkutils
+    ts::inkdns
+    ts::inkhostdb
+    ts::inkcache
+    ts::aio
+    ts::proxy
+    ts::inknet
+    ts::records
+    ts::inkevent
+    libswoc::libswoc
+    ts::jsonrpc_protocol
+    ts::jsonrpc_server
+    ts::rpcpublichandlers
+    ts::configmanager
 )
 if(NOT APPLE)
   # Skipping apple because macOS doesn't seem to provide an equivalent option
