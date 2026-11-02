@@ -334,6 +334,8 @@ NetAccept::init_accept_loop()
 
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
+
+    a->owned_by_accept_thread = true;
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server.accept_addr));
     eventProcessor.spawn_thread(a, thr_name, stacksize);
     Dbg(dbg_ctl_iocore_net_accept_start, "Created accept thread #%d for port %d", i + 1,
@@ -404,6 +406,7 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
       Fatal("[NetAccept::accept_per_thread]:error listening on ports");
       return -1;
     }
+    owns_listen_socket = true;
   }
 
   SET_HANDLER(&NetAccept::acceptFastEvent);
@@ -438,14 +441,22 @@ NetAccept::init_accept_per_thread()
   SET_HANDLER(&NetAccept::accept_per_thread);
   n = eventProcessor.thread_group[ET_NET]._count;
 
+  // Gathered locally because clone() copies this acceptor, and a clone must not inherit the list.
+  std::vector<NetAccept *> clones;
+
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
     EThread   *t = eventProcessor.thread_group[ET_NET]._thread[i];
     a->mutex     = get_NetHandler(t)->mutex;
 
     a->uses_fast_accept = true;
+    a->accept_thread    = t;
+    if (a != this) {
+      clones.push_back(a);
+    }
     t->schedule_imm(a);
   }
+  per_thread_clones = std::move(clones);
 
   return true;
 }
@@ -455,17 +466,56 @@ NetAccept::stop_accept()
 {
   action_->cancel();
   server.close();
+}
 
-  // The retry timer dispatches into this acceptor, which the caller is about to delete. Cancel it under
-  // the mutex that serializes acceptFastEvent. Per-thread clones are not reachable from here; they notice the
-  // action is no longer listening and stand down on their own. Acceptors on a dedicated
-  // accept thread never arm the timer, and their mutex is held by the accept thread forever, so never wait on it.
-  if (uses_fast_accept && mutex != nullptr) {
-    SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-    if (refuse_retry != nullptr) {
-      refuse_retry->cancel(this);
-      refuse_retry = nullptr;
+namespace
+{
+/** Releases an acceptor's per-thread resources and deletes it on the thread that owns the acceptor's mutex. */
+class AcceptorReclaim : public Continuation
+{
+public:
+  AcceptorReclaim(NetAccept *na) : Continuation(na->mutex), _na(na) { SET_HANDLER(&AcceptorReclaim::reclaim); }
+
+private:
+  int
+  reclaim(int /* event */, void * /* data */)
+  {
+    if (_na->refuse_retry != nullptr) {
+      _na->refuse_retry->cancel(_na);
+      _na->refuse_retry = nullptr;
     }
+    // Skipped when already closed: the fd number may have been reused, and EventIO::stop() would deregister it.
+    if (_na->owns_listen_socket && _na->server.sock.is_ok()) {
+      _na->ep.stop();
+      _na->server.close();
+    }
+    delete _na;
+    delete this;
+    return EVENT_DONE;
+  }
+
+  NetAccept *_na;
+};
+} // namespace
+
+void
+NetAccept::retire()
+{
+  if (owned_by_accept_thread) {
+    return;
+  }
+
+  // Other acceptors that are not fast-accept never arm the timer, so there is nothing to cancel.
+  if (uses_fast_accept && accept_thread != nullptr && mutex != nullptr) {
+    // The clones are unreachable from the processor and may be idle, so they would otherwise keep their own listening
+    // sockets open until a connection happened to arrive.
+    for (auto *clone : per_thread_clones) {
+      clone->accept_thread->schedule_imm(new AcceptorReclaim(clone));
+    }
+    per_thread_clones.clear();
+    accept_thread->schedule_imm(new AcceptorReclaim(this));
+  } else {
+    delete this;
   }
 }
 
@@ -519,6 +569,12 @@ NetAccept::do_blocking_accept(EThread *t)
 
   int count              = 0;
   int additional_accepts = NetHandler::get_additional_accepts();
+
+  // stop_accept() cancelled the action; leave the loop so acceptLoopEvent() can delete this acceptor. Checked on every
+  // pass because the refusal and error paths below only sleep and return, and would otherwise never notice.
+  if (!action_->is_listening()) {
+    return -1;
+  }
 
   watchdog_apply_backlog(this);
 

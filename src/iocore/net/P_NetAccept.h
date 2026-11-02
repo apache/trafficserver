@@ -151,16 +151,43 @@ struct NetAccept : public Continuation {
   /** True only for acceptors driven by @c acceptFastEvent, the sole place @c refuse_retry is armed.
 
       Only these acceptors run on a shared NetHandler mutex that is released between events. An acceptor on a dedicated
-      accept thread holds that thread's mutex for the thread's lifetime, so @c stop_accept() must never wait on it.
+      accept thread holds that thread's mutex for the thread's lifetime, so @c retire() must never wait on it.
   */
   bool uses_fast_accept = false;
 
+  /** True for acceptors run by @c acceptLoopEvent on their own thread. That thread deletes the acceptor when it leaves its
+      loop, so @c retire() must leave it alone or the acceptor would be freed under a thread still using it.
+  */
+  bool owned_by_accept_thread = false;
+
+  /** True when this acceptor opened a listening socket of its own (@c proxy.config.exec_thread.listen), as opposed to
+      sharing the original's. Cancelling the shared action closes only the original's socket, so these must be
+      closed by their owning thread.
+  */
+  bool owns_listen_socket = false;
+
+  /** Per-thread copies made by @c init_accept_per_thread(), kept on the original so @c retire() can reach them. */
+  std::vector<NetAccept *> per_thread_clones;
+
+  /** Event thread whose NetHandler mutex serializes this acceptor, set alongside @c uses_fast_accept. */
+  EThread *accept_thread = nullptr;
+
   virtual NetProcessor *getNetProcessor() const;
 
-  virtual void       init_accept(EThread *t = nullptr);
-  bool               init_accept_loop();
-  bool               init_accept_per_thread();
-  virtual void       stop_accept();
+  virtual void init_accept(EThread *t = nullptr);
+  bool         init_accept_loop();
+  bool         init_accept_per_thread();
+  virtual void stop_accept();
+
+  /** Disposes of an acceptor already passed through @c stop_accept(), in place of @c delete.
+
+      Acceptors owned by a dedicated accept thread are not deleted here; that thread exits once it sees the
+      action cancelled.
+
+      The retry timer must be cancelled under the owning thread's mutex, and that thread may be wedged holding it, so the
+      caller must not wait. The cancel and the delete are handed to the owning thread instead.
+  */
+  void               retire();
   virtual NetAccept *clone() const;
 
   /** Listen without blocking.
