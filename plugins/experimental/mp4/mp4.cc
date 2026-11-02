@@ -123,6 +123,11 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   }
 
   buf_len = snprintf(buf, sizeof(buf), "%.*s%.*s", left, query, right, query + query_len - right);
+  if (buf_len < 0 || buf_len >= static_cast<int>(sizeof(buf))) {
+    // snprintf returns the length it would have written, so on truncation buf_len
+    // exceeds buf; using it as the copy length reads past the stack buffer.
+    return TSREMAP_NO_REMAP;
+  }
   TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, buf, buf_len);
 
   // remove Accept-Encoding
