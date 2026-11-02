@@ -655,8 +655,13 @@ def test_curl_accepts_seclevel_follows_the_active_tls_backend(
         ),
         pytest.param(
             "curl 0.0.0 (platform) libcurl/0.0.0 SecureTransport (LibreSSL/3.3.6) zlib/0.0.0",
+            False,
+            id="multissl-securetransport-active",
+        ),
+        pytest.param(
+            "curl 0.0.0 (platform) libcurl/0.0.0 (SecureTransport) OpenSSL/3.6.4 zlib/0.0.0",
             True,
-            id="multissl-old-libressl-inactive",
+            id="multissl-securetransport-inactive",
         ),
         pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 BoringSSL zlib/0.0.0", True, id="boringssl"),
     ],
@@ -664,7 +669,7 @@ def test_curl_accepts_seclevel_follows_the_active_tls_backend(
 def test_curl_supports_tls13_follows_the_active_tls_backend(
     monkeypatch: pytest.MonkeyPatch, version_line: str, expected: bool
 ) -> None:
-    """Report TLS 1.3 as missing only for an active OpenSSL before 1.1.1 or LibreSSL before 3.4.0.
+    """Report TLS 1.3 as missing for SecureTransport, OpenSSL before 1.1.1 and LibreSSL before 3.4.0.
 
     :param monkeypatch: Pytest fixture used to supply ``curl --version`` output.
     :param version_line: First line of the synthetic ``curl --version`` output.
