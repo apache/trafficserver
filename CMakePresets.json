@@ -251,7 +251,10 @@
       "name": "ci-fedora-urtest",
       "displayName": "CI Fedora Uranium tests",
       "description": "CI pipeline configuration for the ATS Uranium test suite",
-      "inherits": ["ci-fedora", "urtest"]
+      "inherits": ["ci-fedora", "urtest"],
+      "cacheVariables": {
+        "BUILD_TESTING": "OFF"
+      }
     },
     {
       "name": "ci-freebsd",
@@ -405,7 +408,8 @@
       "cacheVariables": {
         "ENABLE_URTEST": "ON",
         "ENABLE_EXAMPLE": "ON",
-        "ENABLE_CRIPTS": "ON"
+        "ENABLE_CRIPTS": "ON",
+        "BUILD_TESTING": "OFF"
       }
     },
     {
@@ -416,7 +420,8 @@
         "ENABLE_URTEST": "ON",
         "ENABLE_URTEST_UDS": "ON",
         "ENABLE_EXAMPLE": "ON",
-        "ENABLE_CRIPTS": "ON"
+        "ENABLE_CRIPTS": "ON",
+        "BUILD_TESTING": "OFF"
       }
     },
     {
@@ -478,7 +483,8 @@
       "inherits": ["branch-urtest"],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS_DEBUG": "--coverage",
-        "CMAKE_C_FLAGS_DEBUG": "--coverage"
+        "CMAKE_C_FLAGS_DEBUG": "--coverage",
+        "BUILD_TESTING": "ON"
       }
     }
   ],
