@@ -1,0 +1,9 @@
+REMAP {
+    if inbound.req.Authorization ~ /AWS\s([^:]+)/ {
+        inbound.req.@ClientID = "{capture.1}";
+    }
+}
+
+CACHEKEY {
+    cache.key.headers.add("@ClientID");
+}
