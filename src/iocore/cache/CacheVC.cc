@@ -854,8 +854,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       }
       earliest_key = key;
       auto result1 = _action.call_back(CACHE_EVENT_SCAN_OBJECT, vector.get(i));
-      // The handler may have cancelled the scan.
-      if (_action.cancelled) {
+      if (!result1) {
         goto Lcancel;
       }
       switch (*result1) {
@@ -984,8 +983,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (writer_lock_retry > SCAN_WRITER_LOCK_MAX_RETRY) {
     auto r = _action.call_back(CACHE_EVENT_SCAN_OPERATION_BLOCKED, nullptr);
     Dbg(dbg_ctl_cache_scan, "still haven't got the writer lock, asking user..");
-    // The handler may have cancelled the scan.
-    if (_action.cancelled) {
+    if (!r) {
       return free_CacheVC(this);
     }
     switch (*r) {
