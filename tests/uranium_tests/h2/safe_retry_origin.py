@@ -262,13 +262,8 @@ class RetryOrigin:
 
 
 def run_server(
-        mode: str,
-        port: int,
-        certificate: str,
-        private_key: str,
-        stop_file: str,
-        expected_attempts: int,
-        method: str = "POST") -> int:
+    mode: str, port: int, certificate: str, private_key: str, stop_file: str, expected_attempts: int, method: str = "POST"
+) -> int:
     """Serve until the client and retry-counter assertions finish.
 
     :param mode: HTTP/2 rejection or drain behavior.

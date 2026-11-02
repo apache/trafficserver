@@ -19,11 +19,11 @@ responding, and answers every later request with a 200.
 #  limitations under the License.
 
 import argparse
-from pathlib import Path
 import socket
 import ssl
 import sys
 import time
+from pathlib import Path
 
 
 def read_request(conn: socket.socket) -> tuple[str, bytes]:
@@ -107,7 +107,13 @@ def main() -> int:
                     if context:
                         if args.upload_log and body:
                             deadline = time.monotonic() + 5
-                            while '[tunnel_handler_post_server, VC_EVENT_WRITE_COMPLETE' not in args.upload_log.read_text():
+                            while True:
+                                try:
+                                    upload_log = args.upload_log.read_text()
+                                except OSError:
+                                    upload_log = ''
+                                if '[tunnel_handler_post_server, VC_EVENT_WRITE_COMPLETE' in upload_log:
+                                    break
                                 if time.monotonic() >= deadline:
                                     raise RuntimeError('ATS did not finish the request body tunnel')
                                 time.sleep(0.01)

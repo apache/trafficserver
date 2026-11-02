@@ -13,9 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Verify that ATS does not retry a QUERY after it sent the request and its
-content to an origin that then closed the connection. The request buffering
-setting does not change this."""
+"""Verify QUERY retry admission before sending and after not-processed signals."""
 
 import re
 import shlex
@@ -23,27 +21,33 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from tools.uranium.services import ATSFactory, Curl, ServiceFactory, wait_for_metric
 
 from ..h2.origin_test_helpers import configure_h2_origin, finish_origin
 
-TEST_DIRECTORY = Path(__file__).parent
 BODY = 'SELECT * FROM t WHERE a'
 
 
 @pytest.mark.parametrize('method,buffering', [('GET', False), ('QUERY', True), ('QUERY', False)])
 @pytest.mark.parametrize('failure', ['close', 'tls-read-error', 'tls-handshake-error'])
 def test_query_retry(
-        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, method: str, buffering: bool, failure: str) -> None:
-    """Retry GET after an origin closes, but never replay QUERY without content.
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, method: str, buffering: bool, failure: str
+) -> None:
+    """Retry GET across origin failures and QUERY only before sending.
+
+    A QUERY retry after upload requires both a not-processed signal and a
+    complete replayable body, as covered by test_query_not_processed_retry.
+    These HTTP/1 origin failures provide no such signal, so buffering alone
+    cannot admit a retry after upload.
 
     :param ats_factory: Proxy factory.
     :param services: Custom origin factory.
     :param curl: Transport-aware HTTP client.
-    :param method: Request method; GET is the safe retry control.
-    :param buffering: Whether ATS buffers the request content.
-    :param failure: Origin close, TLS read error, or TLS failure before sending.
+    :param method: GET without content as the retry control, or QUERY with content.
+    :param buffering: Whether ATS buffers QUERY content; this alone cannot admit
+        a retry after upload without a not-processed signal.
+    :param failure: Origin close or TLS read error after upload, or TLS handshake
+        failure before any request bytes are sent.
     """
     port = services.allocate_port()
     ats = ats_factory.create('ts')
@@ -58,13 +62,14 @@ def test_query_retry(
     origin = services.process('origin', command, ready_port=port)
     ats.records.update(
         {
-            'proxy.config.http.request_buffer_enabled': 1 if buffering else 0,
+            'proxy.config.http.request_buffer_enabled': int(buffering),
             'proxy.config.http.connect_attempts_max_retries': 3,
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'http|http_trans',
             'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
             'proxy.config.ssl.client.alpn_protocols': 'http/1.1',
-        })
+        }
+    )
     scheme = 'https' if tls else 'http'
     ats.remap_config.add_line(f'map / {scheme}://127.0.0.1:{port}/')
 
@@ -80,14 +85,8 @@ def test_query_retry(
 
     origin.start()
     ats.start()
-
-    content = f"--header 'Content-Type: application/sql' --data-binary {shlex.quote(BODY)} " if method == 'QUERY' else ''
-    result = curl.run_for(
-        ats,
-        f"--silent --max-time 30 --output /dev/null --write-out '%{{http_code}}\\n' --request {method} {content}"
-        f"http://127.0.0.1:{ats.http_port}/search",
-        timeout=40,
-    )
+    content = f"-H 'Content-Type: application/sql' --data-binary {shlex.quote(BODY)} " if method == 'QUERY' else ''
+    result = curl.get(ats, '/search', options=f"-s --max-time 30 -o /dev/null -w '%{{http_code}}' -X {method} {content}")
     assert result.returncode == 0, result.output
     assert result.stdout == ('502' if method == 'QUERY' and not before_request else '200'), result.output
     if method == 'QUERY':
@@ -99,7 +98,8 @@ def test_query_retry(
 @pytest.mark.parametrize('mode', ['rst', 'goaway'])
 @pytest.mark.parametrize('buffering', [False, True])
 def test_query_not_processed_retry(
-        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, mode: str, buffering: bool) -> None:
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, mode: str, buffering: bool
+) -> None:
     """Replay QUERY content only when the origin reports it was not processed.
 
     :param ats_factory: Proxy factory.
@@ -112,20 +112,34 @@ def test_query_not_processed_retry(
     ssl = Path(__file__).parents[2] / 'tools/ssl'
     port = services.allocate_port()
     ats = configure_h2_origin(
-        ats_factory, port, **{
+        ats_factory,
+        port,
+        **{
             'proxy.config.http.request_buffer_enabled': int(buffering),
             'proxy.config.http.connect_attempts_max_retries': 3,
-        })
+        },
+    )
     stop = ats.run_directory / 'stop-origin'
     origin = services.process(
-        'origin', [
-            sys.executable, directory / 'safe_retry_origin.py', mode,
-            str(port), ssl / 'server.pem', ssl / 'server.key', stop, '2' if buffering else '1', '--method', 'QUERY'
+        'origin',
+        [
+            sys.executable,
+            directory / 'safe_retry_origin.py',
+            mode,
+            str(port),
+            ssl / 'server.pem',
+            ssl / 'server.key',
+            stop,
+            '2' if buffering else '1',
+            '--method',
+            'QUERY',
         ],
-        ready_port=port)
+        ready_port=port,
+    )
     if buffering:
         origin.stdout.contains(
-            'retry_succeeded attempts=2 method=QUERY body=request-body', 'The admitted retry must replay the entire QUERY body.')
+            'retry_succeeded attempts=2 method=QUERY body=request-body', 'The admitted retry must replay the entire QUERY body.'
+        )
     else:
         origin.stdout.excludes('request_received attempt=2', 'An unbuffered QUERY must not be retried.')
     origin.start()
