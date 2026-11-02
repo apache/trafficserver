@@ -2271,6 +2271,16 @@ HttpSM::state_read_server_response_header(int event, void *data)
   return 0;
 }
 
+void
+HttpSM::update_server_request_header_bytes_written()
+{
+  if (server_entry && server_entry->write_vio && server_entry->vc_write_handler == &HttpSM::state_send_server_request_header) {
+    // The write VIO is reused for the body after header completion.
+    server_request_hdr_bytes_written =
+      std::max(server_request_hdr_bytes_written, std::min<int64_t>(server_request_hdr_bytes, server_entry->write_vio->ndone));
+  }
+}
+
 int
 HttpSM::state_send_server_request_header(int event, void *data)
 {
@@ -2278,6 +2288,7 @@ HttpSM::state_send_server_request_header(int event, void *data)
   ink_assert(server_entry->eos == false);
   ink_assert(server_entry->write_vio == (VIO *)data);
   STATE_ENTER(state_send_server_request_header, event);
+  this->update_server_request_header_bytes_written();
 
   int method;
 
@@ -6654,6 +6665,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   ink_assert(vio != nullptr);
 
   STATE_ENTER(handle_server_setup_error, event);
+  this->update_server_request_header_bytes_written();
 
   // If there is POST or PUT tunnel wait for the tunnel
   //  to figure out that things have gone to hell
@@ -6715,7 +6727,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   case VC_EVENT_ERROR:
     // A QUERY body may have been consumed before a TLS read error. Only an
     // admitted not-processed retry can rearm it after the request was sent.
-    if (t_state.method == HTTP_WKSIDX_QUERY && server_request_hdr_bytes > 0) {
+    if (t_state.method == HTTP_WKSIDX_QUERY && server_request_hdr_bytes_written > 0) {
       t_state.current.state = this->prepare_for_origin_retry() ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
     } else {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
@@ -7167,6 +7179,7 @@ void
 HttpSM::attach_server_session()
 {
   hsm_release_assert(server_entry == nullptr);
+  server_request_hdr_bytes_written = 0;
   // In the h1 only origin version, the transact_count was updated after making this assignment.
   // The SSN-TXN-COUNT option in header rewrite relies on this fact, so we decrement here so the
   // plugin API interface is consistent as we move to more protocols to origin
@@ -7284,6 +7297,8 @@ HttpSM::setup_server_send_request()
   hsm_release_assert(server_entry != nullptr);
   hsm_release_assert(server_txn != nullptr);
   hsm_release_assert(server_entry->vc == server_txn);
+
+  server_request_hdr_bytes_written = 0;
 
   // Send the request header
   server_entry->vc_write_handler = &HttpSM::state_send_server_request_header;
