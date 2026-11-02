@@ -175,12 +175,19 @@ Lerror:
 int
 get_listen_backlog()
 {
-  static const int backlog = []() {
-    int const somaxconn      = ats_tcp_somaxconn();
-    int const listen_backlog = RecGetRecordInt("proxy.config.net.listen_backlog").value_or(0);
-    return (0 < listen_backlog && listen_backlog <= 65535) ? std::min(listen_backlog, somaxconn) : somaxconn;
-  }();
-  return backlog;
+  int listen_backlog;
+
+  listen_backlog = RecGetRecordInt("proxy.config.net.listen_backlog").value_or(0);
+  return (0 < listen_backlog && listen_backlog <= 65535) ? listen_backlog : ats_tcp_somaxconn();
+}
+
+int
+get_watchdog_backlog_baseline()
+{
+  int const configured = get_listen_backlog();
+  auto      somaxconn  = ats_tcp_somaxconn_detected();
+
+  return somaxconn ? std::min(configured, *somaxconn) : configured;
 }
 
 int

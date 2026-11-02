@@ -319,13 +319,6 @@ private:
   void monitor_loop();
   /// @return The peak awake span across all watched threads since the previous scan.
   std::chrono::steady_clock::duration scan(std::chrono::steady_clock::time_point now);
-  /** @return Permille points to add to the backlog scale on this recovered scan.
-
-      @c proxy.config.exec_thread.watchdog.backlog_increase_permille of the scale currently in force,
-      attenuated by the headroom remaining to @c _trouble_scale, or unattenuated when there is no mark
-      to measure against or the scale is already above it.
-   */
-  int recovery_step_permille() const;
 };
 
 } // namespace Watchdog

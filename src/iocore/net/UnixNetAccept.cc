@@ -139,7 +139,7 @@ watchdog_apply_backlog(NetAccept *na)
     return;
   }
 
-  int const configured = get_listen_backlog();
+  int const configured = get_watchdog_backlog_baseline();
   int const target     = std::max(1, configured * want_permille / 1000);
 
   if (safe_listen(na->server.sock.get_fd(), target) < 0) {
@@ -442,6 +442,8 @@ NetAccept::init_accept_per_thread()
     NetAccept *a = (i < n - 1) ? clone() : this;
     EThread   *t = eventProcessor.thread_group[ET_NET]._thread[i];
     a->mutex     = get_NetHandler(t)->mutex;
+
+    a->uses_fast_accept = true;
     t->schedule_imm(a);
   }
 
@@ -455,10 +457,11 @@ NetAccept::stop_accept()
   server.close();
 
   // The retry timer dispatches into this acceptor, which the caller is about to delete. Cancel it under
-  // the mutex that serializes acceptFastEvent, and stop the handler from arming another.
-  if (mutex != nullptr) {
+  // the mutex that serializes acceptFastEvent. Per-thread clones are not reachable from here; they notice the
+  // action is no longer listening and stand down on their own. Acceptors on a dedicated
+  // accept thread never arm the timer, and their mutex is held by the accept thread forever, so never wait on it.
+  if (uses_fast_accept && mutex != nullptr) {
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
-    refuse_retry_stopped = true;
     if (refuse_retry != nullptr) {
       refuse_retry->cancel(this);
       refuse_retry = nullptr;
@@ -500,7 +503,7 @@ NetAccept::do_listen_impl(bool non_blocking)
   if (res == 0 && !opt.f_watchdog_exempt) {
     // Publish the baseline so the gauge reads the depth actually in force from startup, rather than
     // zero until the watchdog first resizes something.
-    Metrics::Gauge::store(net_rsb.watchdog_listen_backlog, get_listen_backlog());
+    Metrics::Gauge::store(net_rsb.watchdog_listen_backlog, get_watchdog_backlog_baseline());
   }
 
   return res;
@@ -694,6 +697,16 @@ NetAccept::acceptFastEvent(int event, void *ep)
     refuse_retry = nullptr;
   }
 
+  // Clones share action_ with the acceptor that stop_accept() closed, so this is how they learn the listen fd is gone.
+  // It may already belong to another connection, so neither touch it nor arm another retry.
+  if (!action_->is_listening()) {
+    if (refuse_retry != nullptr) {
+      refuse_retry->cancel(this);
+      refuse_retry = nullptr;
+    }
+    return EVENT_DONE;
+  }
+
   watchdog_apply_backlog(this);
 
   // See the equivalent comment in net_accept(). The listen fd here is registered edge triggered, so
@@ -702,7 +715,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   // so only arm the timer if one is not already pending.
   if (watchdog_should_refuse(this)) {
     Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
-    if (refuse_retry == nullptr && !refuse_retry_stopped) {
+    if (refuse_retry == nullptr && action_->is_listening()) {
       refuse_retry = t->schedule_in(this, HRTIME_MSECONDS(net_throttle_delay));
     }
     return EVENT_CONT;
@@ -719,7 +732,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
       watchdog_apply_backlog(this);
       if (watchdog_should_refuse(this)) {
         Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
-        if (refuse_retry == nullptr && !refuse_retry_stopped) {
+        if (refuse_retry == nullptr && action_->is_listening()) {
           refuse_retry = t->schedule_in(this, HRTIME_MSECONDS(net_throttle_delay));
         }
         goto Ldone;

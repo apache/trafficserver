@@ -24,6 +24,7 @@
 
 #include "iocore/eventsystem/Watchdog.h"
 #include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/WatchdogPolicy.h"
 #include "records/RecCore.h"
 #include "records/RecDefs.h"
 #include "tscore/Diags.h"
@@ -107,35 +108,6 @@ namespace
       1,310. The same 100 here readmits 131, and the step grows with the queue as it climbs out.
    */
   std::atomic<int32_t> backlog_increase_permille{100};
-
-  /// Most aggressive release deadband the retain knob will produce. See release_threshold().
-  constexpr int32_t min_release_permille = 500;
-
-  /** Peak awake span at or below which a scan counts as recovered, given an action @a threshold.
-
-      Every action engages at its own threshold but releases only here, so the two differ and the
-      band between them holds the current state - a Schmitt trigger rather than a bare comparison.
-      Without it a peak one millisecond under the threshold reads as full recovery when it is really
-      the boundary, which is exactly where the state chatters and where releasing lets the queue climb
-      back into the next step of load.
-
-      Derived from backlog_decrease_permille rather than from a knob of its own because it is the same
-      statement: retain 500 means halve the queue when saturated *and* wait for the peak to halve
-      before believing the recovery. Aggressive shedding and late release belong together.
-
-      Floored at @c min_release_permille so the coupling cannot make backpressure effectively
-      unreleasable - at retain 1 the threshold would be two milliseconds on a two second timeout,
-      which a merely busy server may never reach. Half the threshold is already far outside
-      measurement noise, so nothing is lost by refusing to go deeper; below the floor the knob keeps
-      sharpening the shed and stops affecting the release.
-   */
-  std::chrono::nanoseconds
-  release_threshold(std::chrono::milliseconds threshold)
-  {
-    int32_t const retain = std::max(min_release_permille, backlog_decrease_permille.load(std::memory_order_relaxed));
-    // Scaled in nanoseconds so a small timeout keeps its fractional-millisecond boundary.
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(threshold) * retain / 1000;
-  }
 
   int
   update_watchdog_mode(const char * /* name */, RecDataT /* type */, RecData data, void * /* cookie */)
@@ -394,52 +366,6 @@ Monitor::scan(std::chrono::steady_clock::time_point now)
   return peak;
 }
 
-int
-Monitor::recovery_step_permille() const
-{
-  int const rate = backlog_increase_permille.load(std::memory_order_relaxed);
-
-  // Proportional to the depth currently in force, so the step is a small number of connections while
-  // the queue is deep in the hole and grows as it climbs out - the absolute count admitted per scan
-  // is what re-saturates the threads, and a flat step in points of the baseline is the same count at
-  // every depth. The cap restates the invariant rather than binding: the scale is at most 1000, so
-  // the proportional value is at most the configured points, which it reaches only at full depth.
-  // The floor keeps the step positive against integer truncation - below a scale of 1000/rate the
-  // product truncates to zero, and a zero step would leave the queue stranded at that depth, because
-  // the caller only republishes when the value actually changes.
-  int const step = std::max(1, std::min(_backlog_scale * rate / 1000, rate));
-
-  // No mark yet - the first recovery of the process, or one that already climbed back to full depth.
-  // Nothing to attenuate against, so the proportional step stands.
-  if (_trouble_scale <= 0) {
-    return step;
-  }
-
-  // Past the mark already - it has been proven survivable since, so it carries no information about
-  // the rest of the climb. Full rate the rest of the way to 1000.
-  if (_backlog_scale >= _trouble_scale) {
-    return step;
-  }
-
-  // Within one full step of the mark: land exactly on it rather than tapering into it. The attenuated
-  // step goes to zero as the gap closes, and the one point floor above would otherwise turn the last
-  // stretch into a crawl of single-point scans - dozens of them at a large backlog - for no benefit,
-  // since the mark is a depth to sit at and reassess, not one to creep up on. Never returns more than
-  // @a step, because the branch condition is exactly that the remaining gap fits inside one, and @a
-  // step is itself bounded by the configured rate - so making the step proportional cannot turn this
-  // into an unbounded leap onto the mark.
-  if (_backlog_scale + step >= _trouble_scale) {
-    return _trouble_scale - _backlog_scale;
-  }
-
-  // Attenuate by the fraction of the way still to go, so the climb decelerates as it approaches the
-  // depth that last caused trouble instead of arriving there at full speed. Far below the mark this is
-  // ~1 and costs nothing. The floor keeps the step positive against integer truncation; the snap above
-  // is what stops it from being reached repeatedly.
-  int const headroom = _trouble_scale - _backlog_scale;
-  return std::max(1, step * headroom / _trouble_scale);
-}
-
 void
 Monitor::sync_state_gauges()
 {
@@ -487,126 +413,63 @@ Monitor::monitor_loop()
     // Re-read the mode every scan - it is reloadable, so it can change under us at any point.
     Mode const mode = current_mode.load(std::memory_order_relaxed);
 
-    // Each action engages on the first scan at or above its own threshold and releases only once the
-    // peak has fallen to the deadband below it (release_threshold()). A bare comparison against a
-    // single threshold would treat a peak one millisecond under it as full recovery, when it is really
-    // the boundary - the state chatters there, and releasing at that point lets the queue climb back
-    // just as the next step of load arrives. Between the two thresholds the current state simply holds.
-    bool const backpressure_mode = mode == Mode::BACKPRESSURE;
-    bool const saturated         = peak >= _shrink_timeout;
-    bool const recovered         = peak <= release_threshold(_shrink_timeout);
+    // The arithmetic lives in advance() so it can be exercised without a running monitor. This loop gathers
+    // its inputs, applies the result to the published atomics and metrics, and reports the edges. The refuse
+    // state is read back from the published atomic rather than mirrored in a member, because
+    // update_refuse_timeout() and update_watchdog_mode() also clear it - a local mirror would go stale against
+    // those and suppress the store that re-engages.
+    PolicyConfig config;
+    config.backpressure      = mode == Mode::BACKPRESSURE;
+    config.shrink_timeout    = _shrink_timeout;
+    config.refuse_timeout    = std::chrono::milliseconds{refuse_timeout_ms.load(std::memory_order_relaxed)};
+    config.decrease_permille = backlog_decrease_permille.load(std::memory_order_relaxed);
+    config.increase_permille = backlog_increase_permille.load(std::memory_order_relaxed);
+    config.min_permille      = backlog_min_permille.load(std::memory_order_relaxed);
+
+    PolicyState const  before{_shrink_engaged, accept_refuse_state.load(std::memory_order_relaxed), _backlog_scale, _trouble_scale};
+    auto const         result = advance(config, before, peak);
+    PolicyState const &after  = result.state;
 
     // Counted per saturated scan and deliberately independent of @c mode, so mode 0 - report only -
     // still gets a monotonic record of how often the threads crossed the shrink threshold. The engaged
     // counters below only move on a state edge, which says nothing about how long or how often, and
     // the max_awake_ms gauge can miss the crossing entirely between scrapes. Dividing this by the scan
-    // rate gives the fraction of time spent over the threshold.
-    if (saturated) {
+    // rate gives the fraction of time spent over the threshold. The refuse threshold is counted the same way.
+    if (result.saturated) {
       Metrics::Counter::increment(_shrink_exceeded_count);
     }
-
-    // Shrink stage state. Mode off releases now rather than waiting out the deadband - the point of
-    // turning it off is to stop throttling immediately.
-    bool const was_shrinking = _shrink_engaged;
-    if (!backpressure_mode) {
-      _shrink_engaged = false;
-    } else if (saturated) {
-      _shrink_engaged = true;
-    } else if (recovered) {
-      _shrink_engaged = false;
+    if (result.refuse_exceeded) {
+      Metrics::Counter::increment(_refuse_exceeded_count);
     }
-    // Otherwise inside the deadband: hold, neither engaging nor releasing.
 
-    if (_shrink_engaged != was_shrinking) {
-      Metrics::Gauge::store(_shrink_gauge, _shrink_engaged ? 1 : 0);
-      if (_shrink_engaged) {
+    _shrink_engaged = after.shrink_engaged;
+    _trouble_scale  = after.trouble_scale;
+
+    if (after.shrink_engaged != before.shrink_engaged) {
+      Metrics::Gauge::store(_shrink_gauge, after.shrink_engaged ? 1 : 0);
+      if (after.shrink_engaged) {
         Metrics::Counter::increment(_shrink_count);
-        // The depth still in force as this episode begins is, by construction, a depth that let in
-        // more than the threads could serve. Remember it as the mark that headroom-attenuated
-        // recovery slows down against. Captured before the decrease below touches _backlog_scale.
-        _trouble_scale = _backlog_scale;
       }
-      Dbg(dbg_ctl_watchdog, "backlog shrink -> %s - peak awake %lld ms, shrink timeout %lld ms", _shrink_engaged ? "on" : "off",
-          peak_ms, std::chrono::duration_cast<printable_milli>(_shrink_timeout).count());
+      Dbg(dbg_ctl_watchdog, "backlog shrink -> %s - peak awake %lld ms, shrink timeout %lld ms",
+          after.shrink_engaged ? "on" : "off", peak_ms, std::chrono::duration_cast<printable_milli>(_shrink_timeout).count());
     }
 
-    // Accept queue sizing. Multiplicative decrease on a saturated scan, proportional increase once
-    // released, and held steady inside the release deadband - a peak that has come down but not far
-    // enough is not evidence for shedding harder, and without the @a saturated term a long stay in the
-    // deadband would squeeze the queue toward the floor while it was recovering.
-    if (backpressure_mode) {
-      int const floor_permille = backlog_min_permille.load(std::memory_order_relaxed);
-      int       want_permille  = _backlog_scale;
-
-      if (_shrink_engaged && saturated) {
-        int const retain = backlog_decrease_permille.load(std::memory_order_relaxed);
-        // Integer truncation would stall the decrease entirely at small scales - 3 permille retained
-        // at 900 rounds back to 3 - so always give up at least one point while shrinking.
-        int const next = std::min(_backlog_scale * retain / 1000, _backlog_scale - 1);
-        want_permille  = std::max(floor_permille, next);
-      } else if (!_shrink_engaged) {
-        want_permille = std::min(1000, _backlog_scale + recovery_step_permille());
-      }
-
-      // Also compare against the published value: a config callback resets it without touching
-      // _backlog_scale, and the two must be reconciled even when the monitor's own scale is unchanged.
-      if (want_permille != _backlog_scale || want_permille != backlog_scale.load(std::memory_order_relaxed)) {
-        _backlog_scale = want_permille;
-        backlog_scale.store(want_permille, std::memory_order_relaxed);
-        Metrics::Gauge::store(_backlog_permille, want_permille);
-        Dbg(dbg_ctl_watchdog, "listen backlog scale -> %d permille - peak awake %lld ms", want_permille, peak_ms);
-      }
-
-      // Fully recovered - forget the mark so the next episode measures its own trouble depth rather
-      // than throttling recovery against a stale one.
-      if (_backlog_scale >= 1000) {
-        _trouble_scale = 0;
-      }
-    } else if (_backlog_scale != 1000) {
-      // Mode turned off while the queues were reduced.
-      _backlog_scale = 1000;
-      _trouble_scale = 0;
-      backlog_scale.store(1000, std::memory_order_relaxed);
-      Metrics::Gauge::store(_backlog_permille, 1000);
+    // Also compare against the published value: a config callback resets it without touching
+    // _backlog_scale, and the two must be reconciled even when the monitor's own scale is unchanged.
+    if (after.scale != before.scale || after.scale != backlog_scale.load(std::memory_order_relaxed)) {
+      _backlog_scale = after.scale;
+      backlog_scale.store(after.scale, std::memory_order_relaxed);
+      Metrics::Gauge::store(_backlog_permille, after.scale);
+      Dbg(dbg_ctl_watchdog, "listen backlog scale -> %d permille - peak awake %lld ms", after.scale, peak_ms);
     }
 
-    // Refuse stage: stop draining the listen sockets entirely. Its own threshold on the same peak,
-    // with no dependence on the shrink stage in either direction - the two can be engaged together,
-    // in which case the queue is both bounded and not being drained.
-    //
-    // The current state is read back from the published atomic rather than mirrored in a member,
-    // because update_refuse_timeout() and update_watchdog_mode() also clear it - a local mirror would
-    // go stale against those and suppress the store that re-engages.
-    {
-      auto const refuse_timeout  = std::chrono::milliseconds{refuse_timeout_ms.load(std::memory_order_relaxed)};
-      bool const refuse_exceeded = refuse_timeout.count() > 0 && peak >= refuse_timeout;
-      bool const now_refusing    = accept_refuse_state.load(std::memory_order_relaxed);
-      bool       want_refuse     = now_refusing;
-
-      // Counted per scan over the threshold and deliberately independent of @c mode, so mode 0 -
-      // report only - still gets a monotonic record of how often the threads reached the depth at
-      // which accepts would have stopped. See the equivalent counter for the shrink threshold above.
-      if (refuse_exceeded) {
-        Metrics::Counter::increment(_refuse_exceeded_count);
+    if (after.refuse != before.refuse) {
+      accept_refuse_state.store(after.refuse, std::memory_order_relaxed);
+      if (after.refuse) {
+        Metrics::Counter::increment(_refuse_count);
       }
-
-      if (!backpressure_mode || refuse_timeout.count() == 0) {
-        want_refuse = false;
-      } else if (refuse_exceeded) {
-        want_refuse = true;
-      } else if (peak <= release_threshold(refuse_timeout)) {
-        want_refuse = false;
-      }
-      // Otherwise inside this threshold's deadband: hold.
-
-      if (want_refuse != now_refusing) {
-        accept_refuse_state.store(want_refuse, std::memory_order_relaxed);
-        if (want_refuse) {
-          Metrics::Counter::increment(_refuse_count);
-        }
-        Dbg(dbg_ctl_watchdog, "accept refuse -> %s - peak awake %lld ms, refuse timeout %lld ms", want_refuse ? "on" : "off",
-            peak_ms, static_cast<long long>(refuse_timeout.count()));
-      }
+      Dbg(dbg_ctl_watchdog, "accept refuse -> %s - peak awake %lld ms, refuse timeout %lld ms", after.refuse ? "on" : "off",
+          peak_ms, static_cast<long long>(config.refuse_timeout.count()));
     }
 
     sync_state_gauges();

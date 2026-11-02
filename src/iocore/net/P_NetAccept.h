@@ -148,8 +148,12 @@ struct NetAccept : public Continuation {
   */
   Event *refuse_retry = nullptr;
 
-  /// Set by @c stop_accept() so no refusal retry is armed once the acceptor is on its way to deletion.
-  bool refuse_retry_stopped = false;
+  /** True only for acceptors driven by @c acceptFastEvent, the sole place @c refuse_retry is armed.
+
+      Only these acceptors run on a shared NetHandler mutex that is released between events. An acceptor on a dedicated
+      accept thread holds that thread's mutex for the thread's lifetime, so @c stop_accept() must never wait on it.
+  */
+  bool uses_fast_accept = false;
 
   virtual NetProcessor *getNetProcessor() const;
 
