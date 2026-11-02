@@ -65,6 +65,15 @@ def test_valid_inputs_write_nothing_to_stderr(tmp_path: Path) -> None:
 
 
 @pytest.mark.cachekey
+@pytest.mark.invalid
+@pytest.mark.parametrize("section", ["CACHEKEY", "REMAP"])
+def test_empty_section_fails_to_parse(section: str) -> None:
+    result = subprocess.run([sys.executable, "scripts/hrw4u"], input=f"{section} {{\n}}\n", capture_output=True, text=True)
+    assert result.returncode != 0
+    assert "mismatched input '}'" in result.stderr
+
+
+@pytest.mark.cachekey
 def test_remap_hook_still_reads_back_as_remap() -> None:
     assert SectionType.CACHEKEY.hook_name == SectionType.REMAP.hook_name
     assert SectionType.from_hook("REMAP_PSEUDO_HOOK") is SectionType.REMAP

@@ -1,2 +1,0 @@
-cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true"

@@ -837,9 +837,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             valid_sections = [s.value for s in SectionType]
             raise ValueError(f"Invalid section name: '{section_name}'. Valid sections: {', '.join(valid_sections)}")
 
-        if not ctx.sectionBody() and self.current_section is not SectionType.CACHEKEY:
-            raise SymbolResolutionError(section_name, f"{section_name} section is empty; only CACHEKEY may be empty")
-
         hook = self._cached_hook_mapping(section_name)
         self.debug(f"`{section_name}' -> `{hook}'")
         return hook
