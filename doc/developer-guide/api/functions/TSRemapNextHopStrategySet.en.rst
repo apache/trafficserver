@@ -48,8 +48,8 @@ factory is checked, so a handle obtained while loading a different rule
 of the same configuration is accepted.
 
 This function may ONLY be called during TSRemapNewInstance. A call made
-outside of remap rule initialization has no effect and is logged to
-``diags.log`` the first time it occurs.
+outside of remap rule initialization has no effect and is logged to ``diags.log``
+at most once per :ts:cv:`proxy.config.log.throttling_interval_msec`.
 
 .. note::
 

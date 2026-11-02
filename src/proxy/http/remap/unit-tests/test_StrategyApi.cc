@@ -256,3 +256,49 @@ SCENARIO("TSHttpTxnNextHopStrategy Set and Get on a transaction", "[strategy][ap
     }
   }
 }
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+SCENARIO("Deprecated 10.2 next hop strategy API", "[strategy][api]")
+{
+  REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
+
+  GIVEN("A plugin written against the 10.2 API")
+  {
+    auto *const   factory = new NextHopStrategyFactory(TS_SRC_DIR "/strategy.yaml");
+    TxnRemapScope scope{test_sm(), factory};
+    auto const    txnp = reinterpret_cast<TSHttpTxn>(&scope.sm);
+
+    REQUIRE(factory->strategies_loaded);
+
+    THEN("lookup, set, get and name behave as their replacements")
+    {
+      void const *const strategy = TSHttpTxnNextHopNamedStrategyGet(txnp, "strategy-1");
+      REQUIRE(strategy != nullptr);
+      CHECK(strategy == TSHttpTxnNextHopStrategyFind(txnp, "strategy-1"));
+      CHECK(TSHttpTxnNextHopNamedStrategyGet(txnp, "no-such-strategy") == nullptr);
+
+      TSHttpTxnNextHopStrategySet(txnp, strategy);
+      void const *const current = TSHttpTxnNextHopStrategyGet(txnp);
+      CHECK(current == strategy);
+      CHECK(TSHttpNextHopStrategyNameGet(current) == std::string("strategy-1"));
+      CHECK(TSHttpNextHopStrategyNameGet(nullptr) == nullptr);
+
+      TSHttpTxnNextHopStrategySet(txnp, nullptr);
+      CHECK(TSHttpTxnNextHopStrategyGet(txnp) == nullptr);
+    }
+
+    THEN("the deprecated Set rejects a foreign handle")
+    {
+      NextHopStrategyFactory other(TS_SRC_DIR "/strategy.yaml");
+      void const *const      foreign = other.strategyInstance("strategy-1");
+      REQUIRE(foreign != nullptr);
+
+      TSHttpTxnNextHopStrategySet(txnp, foreign);
+      CHECK(TSHttpTxnNextHopStrategyGet(txnp) == nullptr);
+    }
+  }
+}
+
+#pragma GCC diagnostic pop

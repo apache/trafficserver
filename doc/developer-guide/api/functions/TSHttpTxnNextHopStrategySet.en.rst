@@ -47,6 +47,11 @@ strategy, but if a stale handle's address has been reused by a strategy
 of the current configuration, that strategy is used. Plugins must
 re-obtain strategy handles after a configuration reload.
 
+An accepted strategy stays valid for the rest of the transaction, even if
+remap later selects a different rewrite table (e.g. a virtual host table
+or one from a configuration reload): the transaction keeps the
+configuration that owns the strategy alive.
+
 Plugins can get the transaction's active strategy with
 :func:`TSHttpTxnNextHopStrategyGet`, or look up a strategy by name with
 :func:`TSHttpTxnNextHopStrategyFind`, which uses the transaction's
@@ -56,8 +61,21 @@ NextHopStrategyFactory strategy database.
 
    This strategy pointer must not be freed and the contents must not
    be changed.
-   Strategy pointers held by plugins will become invalid when ATS
-   configs are reloaded and should be reset with :func:`TSRemapNewInstance`
+   Strategy pointers held by plugins become invalid when ATS configs
+   are reloaded and must be re-obtained during :func:`TSRemapNewInstance`
+
+Deprecated
+==========
+
+.. function:: void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy)
+
+   .. deprecated:: 11.0.0
+      Pass a :type:`TSStrategy` instead. This 10.2 signature will be
+      removed in a future major release.
+
+   Forwards to the :type:`TSStrategy` overload, so the same check
+   applies. A ``nullptr`` argument selects a non-deprecated overload;
+   pass ``nullptr`` rather than ``NULL`` or ``0``, which are ambiguous.
 
 See Also
 ========

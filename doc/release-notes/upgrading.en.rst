@@ -82,12 +82,16 @@ that call resolved to is gone.
 
 The next hop strategy API added in 10.2 now uses the opaque
 :cpp:type:`TSStrategy` handle instead of ``void const *``, and two functions are
-renamed. Plugins built against 10.2 must be updated and rebuilt:
+renamed. The 10.2 functions are deprecated but still provided, so plugins built
+against 10.2 keep working; they will be removed in a future major release:
 
-* ``TSHttpTxnNextHopNamedStrategyGet`` is now :cpp:func:`TSHttpTxnNextHopStrategyFind`.
-* ``TSHttpNextHopStrategyNameGet`` is now :cpp:func:`TSNextHopStrategyNameGet`.
-* :cpp:func:`TSHttpTxnNextHopStrategySet` takes a :cpp:type:`TSStrategy`, and
-  :cpp:func:`TSHttpTxnNextHopStrategyGet` returns one.
+* :cpp:func:`TSHttpTxnNextHopNamedStrategyGet` is replaced by :cpp:func:`TSHttpTxnNextHopStrategyFind`.
+* :cpp:func:`TSHttpNextHopStrategyNameGet` is replaced by :cpp:func:`TSNextHopStrategyNameGet`.
+* :cpp:func:`TSHttpTxnNextHopStrategySet` takes a :cpp:type:`TSStrategy`; the
+  ``void const *`` overload is deprecated. Clear the strategy with ``nullptr``,
+  since ``NULL`` or ``0`` is ambiguous between the overloads.
+* :cpp:func:`TSHttpTxnNextHopStrategyGet` returns a :cpp:type:`TSStrategy`,
+  which still converts implicitly to ``void const *``.
 
 :cpp:func:`TSHttpTxnNextHopStrategySet` now normally rejects a handle that is
 not a strategy of the transaction's configuration, such as one cached across a

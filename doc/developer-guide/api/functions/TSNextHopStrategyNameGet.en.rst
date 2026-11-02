@@ -33,15 +33,26 @@ Synopsis
 Description
 ===========
 
-Gets the name associated with the provided strategy pointer.
-This may be nullptr which indicates that parent.config is in use.
+Gets the name of :arg:`strategy`. Returns nullptr if :arg:`strategy` is
+nullptr, i.e. no strategy is set and parent.config is in use.
 
 .. note::
 
    This returned pointer must not be freed and the contents must not
    be changed.
-   Strategy pointers held by plugins will become invalid when ATS
-   configs are reloaded and should be reset with :func:`TSRemapNewInstance`
+   Strategy pointers held by plugins become invalid when ATS configs
+   are reloaded and must be re-obtained during :func:`TSRemapNewInstance`
+
+Deprecated
+==========
+
+.. function:: char const *TSHttpNextHopStrategyNameGet(void const *strategy)
+
+   .. deprecated:: 11.0.0
+      Use :func:`TSNextHopStrategyNameGet`. This 10.2 name will be
+      removed in a future major release.
+
+   Forwards to :func:`TSNextHopStrategyNameGet`.
 
 See Also
 ========

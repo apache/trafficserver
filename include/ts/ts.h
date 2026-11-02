@@ -33,6 +33,7 @@
 #error "Must compile ATS plugin code with C++ version 17 or later."
 #endif
 
+#include <cstddef>
 #include <type_traits>
 #include <string_view>
 #include <vector>
@@ -1804,12 +1805,9 @@ void TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy strategy);
 TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp);
 
 /**
-    Returns either null pointer or null terminated pointer to name.
+    Returns the strategy's name, or nullptr if strategy is nullptr (no
+    strategy is set, so parent.config is in use).
     DO NOT FREE.
-
-    This value may be a nullptr due to:
-      - parent proxying not enabled
-      - no parent selection strategy (using parent.config)
 
     @param[in] strategy Next hop strategy whose name to get.
 
@@ -1824,7 +1822,7 @@ char const *TSNextHopStrategyNameGet(TSStrategy strategy);
     Returns nullptr if no strategy is found with the given name, or if the
     call is made outside of remap rule initialization (e.g. from a
     globally loaded plugin). A call outside of remap rule initialization
-    is logged the first time it occurs.
+    is logged, at most once per log throttling interval.
     This uses the NextHopStrategyFactory of the remap config being loaded.
 
     @param name of the strategy to look up; must not be nullptr (asserts).
@@ -1839,7 +1837,7 @@ TSStrategy TSRemapNextHopStrategyFind(const char *name);
 
     Returns nullptr if no strategy is assigned to the rule, or if the call
     is made outside of remap rule initialization. A call outside of remap
-    rule initialization is logged the first time it occurs.
+    rule initialization is logged, at most once per log throttling interval.
 
  */
 TSStrategy TSRemapNextHopStrategyGet();
@@ -1856,12 +1854,32 @@ TSStrategy TSRemapNextHopStrategyGet();
     which rule obtained the handle.
     Passing nullptr clears the rule's strategy so parent.config is used.
     A call outside of remap rule initialization has no effect and is
-    logged the first time it occurs.
+    logged, at most once per log throttling interval.
 
     @param handle to the strategy to set.
 
  */
 void TSRemapNextHopStrategySet(TSStrategy strategy);
+
+/**
+    Clears the transaction's next hop strategy so parent.config is used.
+    Selects this overload for a nullptr argument, which would otherwise be
+    ambiguous with the deprecated void const * overload.
+ */
+inline void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, std::nullptr_t)
+{
+  TSHttpTxnNextHopStrategySet(txnp, static_cast<TSStrategy>(nullptr));
+}
+
+/*
+  The 10.2 next hop strategy API, kept so plugins built against 10.2 still
+  compile and load. These forward to their replacements and will be removed
+  in a future major release.
+ */
+[[deprecated("Use TSHttpTxnNextHopStrategyFind")]] void const *TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name);
+[[deprecated("Use TSNextHopStrategyNameGet")]] char const     *TSHttpNextHopStrategyNameGet(void const *strategy);
+[[deprecated("Pass a TSStrategy")]] void                       TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy);
 
 /**
     Sets the parent proxy name and port. The string hostname is copied
