@@ -22,6 +22,7 @@ import socket
 import sys
 import struct
 import ssl
+import time
 
 VERSION_2_SIGNATURE = b'\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A'
 
@@ -39,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("protocol_version", type=int, choices=[1, 2], help="the proxy protocol version(either 1 or 2).")
     parser.add_argument("--addressless", action="store_true", help="Send a PROXY header without source or destination addresses.")
     parser.add_argument("--https", action="store_true", help="Send https data after the PROXY message.")
+    parser.add_argument("--delay", type=float, default=0.0, help="Seconds between connecting and sending the PROXY message.")
     return parser.parse_args()
 
 
@@ -143,6 +145,7 @@ def main() -> None:
     """Open and HTTP(S) connection with a Proxy Protocol header."""
     args = parse_args()
     with socket.create_connection((args.server_address, args.server_port)) as sock:
+        time.sleep(args.delay)
         # send the PROXY header
         send_proxy_header(
             sock, args.proxy_src_ip, args.proxy_src_port, args.proxy_dest_ip, args.proxy_dest_port, args.protocol_version,

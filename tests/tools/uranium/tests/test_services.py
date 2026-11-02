@@ -637,3 +637,44 @@ def test_curl_accepts_seclevel_follows_the_active_tls_backend(
     monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
 
     assert Curl.accepts_seclevel() is expected
+
+
+@pytest.mark.parametrize(
+    ("version_line", "expected"),
+    [
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/3.6.4 zlib/0.0.0", True, id="openssl"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/1.1.1w zlib/0.0.0", True, id="openssl-1.1.1"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/1.1.0l zlib/0.0.0", False, id="openssl-1.1.0"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 LibreSSL/3.4.0 zlib/0.0.0", True, id="libressl-3.4"),
+        pytest.param(
+            "curl 0.0.0 (platform) libcurl/0.0.0 (SecureTransport) LibreSSL/3.3.6 zlib/0.0.0",
+            False,
+            id="multissl-old-libressl-active"),
+        pytest.param(
+            "curl 0.0.0 (platform) libcurl/0.0.0 SecureTransport (LibreSSL/3.3.6) zlib/0.0.0",
+            True,
+            id="multissl-old-libressl-inactive"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 BoringSSL zlib/0.0.0", True, id="boringssl"),
+    ],
+)
+def test_curl_supports_tls13_follows_the_active_tls_backend(
+        monkeypatch: pytest.MonkeyPatch, version_line: str, expected: bool) -> None:
+    """Report TLS 1.3 as missing only for an active OpenSSL before 1.1.1 or LibreSSL before 3.4.0.
+
+    :param monkeypatch: Pytest fixture used to supply ``curl --version`` output.
+    :param version_line: First line of the synthetic ``curl --version`` output.
+    :param expected: Whether curl should be able to negotiate TLS 1.3.
+    """
+
+    def run(command: tuple[str, ...], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        """Return the synthetic version output.
+
+        :param command: Tokenized command passed to subprocess.
+        :param kwargs: Subprocess execution options.
+        """
+
+        return subprocess.CompletedProcess(command, 0, f"{version_line}\nFeatures: HTTP2 SSL\n", "")
+
+    monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
+
+    assert Curl.supports_tls13() is expected
