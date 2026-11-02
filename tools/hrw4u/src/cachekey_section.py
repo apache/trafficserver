@@ -60,53 +60,42 @@ Entry = CacheKeyStatement | KeyPart
 @dataclass(slots=True)
 class Branch:
     keyword: str  # "if", "elif" or "else"
-    cond_lines: list[str]  # rendered at indent 0; empty for "else"
-    ctx: Any = None
+    ctx: Any = None  # parse node, for error locations; None for the added else
+    cond_lines: list[str] = field(default_factory=list)  # rendered at indent 0; empty for "else"
     entries: list[Entry] = field(default_factory=list)
 
 
 @dataclass(slots=True)
 class CacheKeySection:
     base: list[Entry] = field(default_factory=list)
-    chain: list[Branch] | None = None
-    key_parts: int = 0
+    chain: list[Branch] = field(default_factory=list)
+    key_part_count: int = 0
 
     def new_key_part(self, value: str) -> KeyPart:
-        if self.key_parts == MAX_KEY_PARTS:
+        """Number the next key part. Numbers run across the whole section, not per branch."""
+        if self.key_part_count == MAX_KEY_PARTS:
             raise SymbolResolutionError(KEY_EXPR, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
-        self.key_parts += 1
-        return KeyPart(KEY_HEADER_FORMAT.format(self.key_parts), value)
+        self.key_part_count += 1
+        return KeyPart(KEY_HEADER_FORMAT.format(self.key_part_count), value)
 
     @property
     def adds_else(self) -> bool:
         """True if the chain has no else, so the lowering adds one that keys on the base parts."""
         return bool(self.chain) and self.chain[-1].keyword != "else"
 
-    def branches(self) -> list[Branch]:
-        """The chain, closed with an else when it lacks one, so every request gets a key."""
-        chain = list(self.chain or [])
-        if self.adds_else:
-            chain.append(Branch("else", []))
-        return chain
-
     def render(self) -> list[str]:
-        lines = [HOOK_LINE]
-        branches = self.branches()
-        if not branches:
-            return lines + _plugin_lines(self.base, 1)
+        """The rule set: one run-plugin cachekey.so per branch, each with the base parts plus its own."""
+        if not self.chain:
+            return [HOOK_LINE, *_plugin_lines(self.base, 1)]
 
-        for branch in branches:
-            entries = self.base + branch.entries
-            if branch.keyword == "if":
-                lines += branch.cond_lines
-                lines += _plugin_lines(entries, 1)
-            elif branch.keyword == "elif":
-                lines.append("elif")
-                lines += [INDENT + line for line in branch.cond_lines]
-                lines += _plugin_lines(entries, 2)
-            else:
-                lines.append("else")
-                lines += _plugin_lines(entries, 1)
+        lines = [HOOK_LINE]
+        for branch in [*self.chain, Branch("else")] if self.adds_else else self.chain:
+            if branch.keyword != "if":
+                lines.append(branch.keyword)
+            # header_rewrite nests an elif's conditions and operators one level deeper.
+            depth = 2 if branch.keyword == "elif" else 1
+            lines += [INDENT * (depth - 1) + line for line in branch.cond_lines]
+            lines += _plugin_lines(self.base + branch.entries, depth)
         return lines
 
 

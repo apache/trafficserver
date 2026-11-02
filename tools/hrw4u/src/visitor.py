@@ -1017,7 +1017,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         base = self._cachekey.base
         with self.trap(ctx):
             cachekey.check_conflicts(ck.statements(base))
-            for branch in self._cachekey.chain or []:
+            for branch in self._cachekey.chain:
                 with self.trap(branch.ctx):
                     cachekey.check_conflicts(ck.statements(base + branch.entries))
 
@@ -1046,18 +1046,19 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def _cachekey_chain(self, ctx) -> None:
         if self._cachekey_branch is not None:
             raise SymbolResolutionError("if", "nested conditionals not allowed in CACHEKEY")
-        if self._cachekey.chain is not None:
+        if self._cachekey.chain:
             raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
-        self._cachekey.chain = []
         arms = [("if", ctx.ifStatement()), *(("elif", arm) for arm in ctx.elifClause())]
         if ctx.elseClause():
             arms.append(("else", ctx.elseClause()))
         for keyword, arm in arms:
             if keyword != "if":
                 self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword))
-            cond_lines = self._render_condition(arm.condition()) if keyword != "else" else []
-            branch = ck.Branch(keyword, cond_lines, arm)
+            # Added before its condition renders, so a chain whose condition fails still counts as the one.
+            branch = ck.Branch(keyword, arm)
             self._cachekey.chain.append(branch)
+            if keyword != "else":
+                branch.cond_lines = self._render_condition(arm.condition())
             self._cachekey_branch = branch
             try:
                 self._cachekey_items(arm.block().blockItem())
