@@ -347,6 +347,8 @@ public:
   // Keeps t_state.http_config_param alive for the transaction when HttpSM::init() acquired it.
   std::shared_ptr<ConfigInfo>   _http_config_lease;
   Ptr<VirtualHostConfig::Entry> m_virtualhost_entry;
+  // Pins the table owning a plugin-set next_hop_strategy, since m_remap can be replaced by remap.
+  std::shared_ptr<UrlRewrite> m_strategy_owner;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *

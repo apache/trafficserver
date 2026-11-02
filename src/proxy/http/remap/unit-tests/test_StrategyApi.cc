@@ -187,6 +187,7 @@ struct TxnRemapScope {
   ~TxnRemapScope()
   {
     sm.t_state.next_hop_strategy = nullptr;
+    sm.m_strategy_owner.reset();
     sm.m_remap.reset();
     sm.magic = HttpSmMagic_t::DEAD;
   }
@@ -237,6 +238,21 @@ SCENARIO("TSHttpTxnNextHopStrategy Set and Get on a transaction", "[strategy][ap
 
       TSHttpTxnNextHopStrategySet(txnp, nullptr);
       CHECK(TSHttpTxnNextHopStrategyGet(txnp) == nullptr);
+    }
+
+    THEN("the owning table outlives a remap table swap until the strategy is cleared")
+    {
+      std::weak_ptr<UrlRewrite> const owner = scope.sm.m_remap;
+
+      TSHttpTxnNextHopStrategySet(txnp, s1);
+      scope.sm.m_remap = std::make_shared<UrlRewrite>();
+
+      CHECK_FALSE(owner.expired());
+      CHECK(TSHttpTxnNextHopStrategyGet(txnp) == s1);
+      CHECK(TSNextHopStrategyNameGet(s1) == std::string("strategy-1"));
+
+      TSHttpTxnNextHopStrategySet(txnp, nullptr);
+      CHECK(owner.expired());
     }
   }
 }
