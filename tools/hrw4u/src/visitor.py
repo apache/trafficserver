@@ -812,9 +812,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             hook = None
             with self.trap(ctx):
                 hook = self._prepare_section(ctx)
-                if not ctx.sectionBody() and self.current_section is not SectionType.CACHEKEY:
-                    hook = None
-                    raise SymbolResolutionError(ctx.name.text, f"{ctx.name.text} section is empty; only CACHEKEY may be empty")
             if not hook:
                 return
             if self.current_section is SectionType.CACHEKEY:
@@ -839,6 +836,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         except ValueError:
             valid_sections = [s.value for s in SectionType]
             raise ValueError(f"Invalid section name: '{section_name}'. Valid sections: {', '.join(valid_sections)}")
+
+        if not ctx.sectionBody() and self.current_section is not SectionType.CACHEKEY:
+            raise SymbolResolutionError(section_name, f"{section_name} section is empty; only CACHEKEY may be empty")
 
         hook = self._cached_hook_mapping(section_name)
         self.debug(f"`{section_name}' -> `{hook}'")
