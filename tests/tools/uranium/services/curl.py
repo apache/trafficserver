@@ -94,10 +94,13 @@ class Curl:
 
         OpenSSL added TLS 1.3 in 1.1.1. LibreSSL hides ``TLS1_3_VERSION``
         before 3.4.0, so a curl built against an older release, such as the
-        one macOS ships, lacks it. Other backends are assumed capable.
+        one macOS ships, lacks it. Apple's SecureTransport stops at TLS 1.2.
+        Other backends are assumed capable.
         """
 
         libraries = Curl._active_libraries()
+        if "SecureTransport" in libraries:
+            return False
         if "OpenSSL" in libraries:
             return version_tuple(libraries["OpenSSL"]) >= (1, 1, 1)
         if "LibreSSL" in libraries:

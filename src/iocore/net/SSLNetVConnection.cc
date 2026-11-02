@@ -1638,13 +1638,13 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
         if (total_written > 0) {
           vio.ndone += total_written;
           if (vio.ntodo() != 0) {
-            return SSL_WAIT_FOR_HOOK;
+            return SSL_HANDSHAKE_WANT_WRITE;
           }
         }
 
         if (r < 0) {
           if (r == -EAGAIN || r == -ENOTCONN || -r == EINPROGRESS) {
-            return SSL_WAIT_FOR_HOOK;
+            return SSL_HANDSHAKE_WANT_WRITE;
           } else {
             return EVENT_ERROR;
           }
