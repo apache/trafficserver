@@ -7072,8 +7072,10 @@ HttpTransact::is_request_retryable(State *s)
   // HttpSM::prepare_for_origin_retry.
   // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry
   bool const retry_only_before_sending = !HttpTransactHeaders::is_method_safe(s->method) || s->method == HTTP_WKSIDX_QUERY;
+  bool const request_bytes_sent        = s->method == HTTP_WKSIDX_QUERY ? s->state_machine->server_request_hdr_bytes_written > 0 :
+                                                                          s->state_machine->server_request_hdr_bytes > 0;
 
-  if (retry_only_before_sending && s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0) {
+  if (retry_only_before_sending && s->current.state != CONNECTION_ERROR && request_bytes_sent) {
     return false;
   }
 
