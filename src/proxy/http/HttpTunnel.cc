@@ -1225,10 +1225,11 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       } else {
         // Either the VC needs no write to end an empty body, or its stream has
         // already sent END_STREAM or been reset, so it refuses the write. Unlike a
-        // refused cache write this is no error: the second, empty pass over a
-        // buffered request body reaches a stream the first pass already ended and
-        // waits on this event, and a reset reaches HttpSM through the response
-        // read already under way.
+        // refused cache write this is not an error. A request with Content-Length: 0
+        // went out with END_STREAM on HEADERS even when its client still sends an
+        // empty DATA frame, and the second, empty pass over a buffered request body
+        // reaches a stream the first pass already ended; both wait on this event. A
+        // reset reaches HttpSM through the response read already under way.
         if (c->write_empty_body) {
           Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] consumer '%s' cannot be written, completing without a write", sm->sm_id, c->name);
         }
