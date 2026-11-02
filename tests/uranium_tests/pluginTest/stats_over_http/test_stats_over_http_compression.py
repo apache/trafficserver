@@ -37,7 +37,7 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "test_metrics",
+            "proxy.config.diags.debug.tags": "test_metrics|stats_over_http",
             "proxy.config.dump_mem_info_frequency": 1
         })
     ats.start()
@@ -53,10 +53,23 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
                 ]).run()
             assert result.returncode == 0, result.output
             assert "Verified 10000 test metrics" in result.stdout
-    baseline = ats.run_directory / "cont_baseline"
-    result = services.process("count-before",
-                              [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
+    # Two records by name, with gzip accepted.  The response holds only the samples of the named records that exist.
+    result = services.process(
+        "records", [
+            sys.executable, directory / "fetch_stats.py",
+            str(ats.http_port), "prometheus", "--encoding=gzip", "--record=plugin.test_metrics.gauge_0",
+            "--record=plugin.test_metrics.gauge_9999", "--record=no.such.record"
+        ]).run()
     assert result.returncode == 0, result.output
+    assert "Families: ['plugin_test_metrics_gauge_0', 'plugin_test_metrics_gauge_9999']" in result.stdout, result.stdout
+    # The continuation count comes from the freelist dump, which has no
+    # INKContAllocator rows when allocations go straight to malloc.
+    count_continuations = not ats.has_feature("TS_USE_MALLOC_ALLOCATOR")
+    baseline = ats.run_directory / "cont_baseline"
+    if count_continuations:
+        result = services.process(
+            "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
+        assert result.returncode == 0, result.output
     result = services.process(
         "reject", [sys.executable, directory / "fetch_stats.py",
                    str(ats.http_port), "json", "--reject", "--encoding=gzip"]).run()
@@ -69,9 +82,10 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
             [sys.executable, directory / "fetch_stats.py",
              str(ats.http_port), "prometheus", "--reset", *arguments]).run()
         assert result.returncode == 0, result.output
-    result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
-    assert result.returncode == 0, result.output
-    assert "no more than the baseline" in result.stdout
+    if count_continuations:
+        result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
+        assert result.returncode == 0, result.output
+        assert "no more than the baseline" in result.stdout
     result = services.process(
         "after-aborts",
         [sys.executable, directory / "fetch_stats.py",
@@ -79,9 +93,10 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
     assert result.returncode == 0, result.output
     assert "Verified 10000 test metrics" in result.stdout
     ats.stop()
-    assert "Created 10000 metrics" in ats.traffic_out.read_text(errors="replace")
+    traffic_out = ats.traffic_out.read_text(errors="replace")
+    assert "Created 10000 metrics" in traffic_out
+    assert "Intercept finished on TS_EVENT_NET_ACCEPT_FAILED" in traffic_out, "The rejected request should release its intercept."
+    assert re.search("Intercept finished on .*TS_EVENT_(VCONN_EOS|ERROR)", traffic_out), \
+        "A reset client connection should release its intercept."
     diags = ats.diags_log.read_text(errors="replace")
-    assert not re.search(r"ERROR: (?!\[stats_over_http\] stats_process_(read|write): Received TS_EVENT_)", diags), diags
-    assert not re.search("FATAL:|Unrecognized configuration value", diags), diags
-    assert "Received TS_EVENT_NET_ACCEPT_FAILED" in diags
-    assert "stats_process_write: Received TS_EVENT_ERROR" in diags
+    assert not re.search("ERROR:|FATAL:|Unrecognized configuration value", diags), diags
