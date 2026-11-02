@@ -13,7 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Verify QUERY content is not lost by retrying after an origin closes."""
+"""Verify QUERY retry admission before sending and after not-processed signals."""
 
 from pathlib import Path
 import re
@@ -33,14 +33,21 @@ BODY = 'SELECT * FROM t WHERE a'
 @pytest.mark.parametrize('failure', ['close', 'tls-read-error', 'tls-handshake-error'])
 def test_query_retry(
         ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, method: str, buffering: bool, failure: str) -> None:
-    """Retry GET after an origin closes, but never replay QUERY without content.
+    """Retry GET across origin failures and QUERY only before sending.
+
+    A QUERY retry after upload requires both a not-processed signal and a
+    complete replayable body, as covered by test_query_not_processed_retry.
+    These HTTP/1 origin failures provide no such signal, so buffering alone
+    cannot admit a retry after upload.
 
     :param ats_factory: Proxy factory.
     :param services: Custom origin factory.
     :param curl: Transport-aware HTTP client.
-    :param method: Request method; GET is the safe retry control.
-    :param buffering: Whether ATS buffers the request content.
-    :param failure: Origin close, TLS read error, or TLS failure before sending.
+    :param method: GET without content as the retry control, or QUERY with content.
+    :param buffering: Whether ATS buffers QUERY content; this alone cannot admit
+        a retry after upload without a not-processed signal.
+    :param failure: Origin close or TLS read error after upload, or TLS handshake
+        failure before any request bytes are sent.
     """
     port = services.allocate_port()
     ats = ats_factory.create('ts')

@@ -107,7 +107,13 @@ def main() -> int:
                     if context:
                         if args.upload_log and body:
                             deadline = time.monotonic() + 5
-                            while '[tunnel_handler_post_server, VC_EVENT_WRITE_COMPLETE' not in args.upload_log.read_text():
+                            while True:
+                                try:
+                                    upload_log = args.upload_log.read_text()
+                                except OSError:
+                                    upload_log = ''
+                                if '[tunnel_handler_post_server, VC_EVENT_WRITE_COMPLETE' in upload_log:
+                                    break
                                 if time.monotonic() >= deadline:
                                     raise RuntimeError('ATS did not finish the request body tunnel')
                                 time.sleep(0.01)
