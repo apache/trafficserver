@@ -39,7 +39,7 @@ the call was made outside of remap rule initialization.
 
 This function may ONLY be called during TSRemapNewInstance. A call
 made outside of remap rule initialization is logged to ``diags.log``
-the first time it occurs.
+at most once per :ts:cv:`proxy.config.log.throttling_interval_msec`.
 
 .. note::
 

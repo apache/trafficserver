@@ -5527,17 +5527,6 @@ TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy stratptr)
   sm->m_strategy_owner          = sm->m_remap;
 }
 
-namespace
-{
-void
-log_outside_remap_init(char const *func, char const *outcome, std::atomic<bool> &logged)
-{
-  if (!logged.exchange(true, std::memory_order_relaxed)) {
-    TSError("%s: must be called during remap plugin initialization (no loading remap rule); %s", func, outcome);
-  }
-}
-} // namespace
-
 TSStrategy
 TSRemapNextHopStrategyFind(const char *name)
 {
@@ -5545,8 +5534,8 @@ TSRemapNextHopStrategyFind(const char *name)
 
   auto const um = url_mapping::loading_instance();
   if (um == nullptr) {
-    static std::atomic<bool> logged{false};
-    log_outside_remap_init(__func__, "returning nullptr", logged);
+    SiteThrottledError("%s: must be called during remap plugin initialization (no loading remap rule); returning nullptr",
+                       __func__);
     return nullptr;
   }
 
@@ -5563,8 +5552,7 @@ TSRemapNextHopStrategySet(TSStrategy strategy)
 {
   auto const um = url_mapping::loading_instance();
   if (um == nullptr) {
-    static std::atomic<bool> logged{false};
-    log_outside_remap_init(__func__, "ignoring", logged);
+    SiteThrottledError("%s: must be called during remap plugin initialization (no loading remap rule); ignoring", __func__);
     return;
   }
 
@@ -5587,8 +5575,8 @@ TSRemapNextHopStrategyGet()
 {
   auto const um = url_mapping::loading_instance();
   if (um == nullptr) {
-    static std::atomic<bool> logged{false};
-    log_outside_remap_init(__func__, "returning nullptr", logged);
+    SiteThrottledError("%s: must be called during remap plugin initialization (no loading remap rule); returning nullptr",
+                       __func__);
     return nullptr;
   }
   return reinterpret_cast<TSStrategy>(um->strategy);
@@ -5602,6 +5590,24 @@ TSNextHopStrategyNameGet(TSStrategy stratptr)
   }
   auto const *const strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
   return strategy->strategy_name.c_str();
+}
+
+void const *
+TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+{
+  return TSHttpTxnNextHopStrategyFind(txnp, name);
+}
+
+char const *
+TSHttpNextHopStrategyNameGet(void const *strategy)
+{
+  return TSNextHopStrategyNameGet(reinterpret_cast<TSStrategy>(const_cast<void *>(strategy)));
+}
+
+void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy)
+{
+  TSHttpTxnNextHopStrategySet(txnp, reinterpret_cast<TSStrategy>(const_cast<void *>(strategy)));
 }
 
 TSReturnCode

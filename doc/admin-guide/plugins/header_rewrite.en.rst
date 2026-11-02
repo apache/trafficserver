@@ -1374,9 +1374,10 @@ to compute it, e.g. ``set-next-hop-strategy %{CLIENT-HEADER:X-Strategy}``.
 A literal name in a remap rule is resolved once, when the rule is loaded;
 if it cannot be resolved, an error is logged at load time and the
 operator is disabled for that rule. A computed name, or any name in a
-global configuration, is looked up on each transaction. The first lookup
-failure of a rule is logged as an error; later failures of that rule are
-logged only with the ``header_rewrite`` debug tag.
+global configuration, is looked up on each transaction. Lookup failures
+of a rule are logged as an error at most once a minute, with a count of
+the failures suppressed since the previous error; the suppressed failures
+are logged with the ``header_rewrite`` debug tag.
 
 This operator can be used in the ``READ_REQUEST_HDR_HOOK`` of a global
 configuration or the ``REMAP_PSEUDO_HOOK`` of a remap rule. Note that for

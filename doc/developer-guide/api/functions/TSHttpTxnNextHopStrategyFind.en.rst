@@ -50,8 +50,19 @@ NextHopStrategyFactory associated with the current configuration.
 
    This returned pointer must not be freed and the contents must not
    be changed.
-   Strategy pointers held by plugins will become invalid when ATS
-   configs are reloaded and should be reset with :func:`TSRemapNewInstance`
+   Strategy pointers held by plugins become invalid when ATS configs
+   are reloaded and must be re-obtained during :func:`TSRemapNewInstance`
+
+Deprecated
+==========
+
+.. function:: void const *TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+
+   .. deprecated:: 11.0.0
+      Use :func:`TSHttpTxnNextHopStrategyFind`. This 10.2 name will be
+      removed in a future major release.
+
+   Forwards to :func:`TSHttpTxnNextHopStrategyFind`.
 
 See Also
 ========

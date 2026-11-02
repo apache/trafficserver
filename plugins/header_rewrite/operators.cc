@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <algorithm>
+#include <cinttypes>
 #include <iomanip>
 #include <stdexcept>
 #include <system_error>
@@ -1744,6 +1745,22 @@ OperatorSetNextHopStrategy::initialize_hooks()
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
+void
+OperatorSetNextHopStrategy::log_lookup_failure(std::string const &name) const
+{
+  constexpr TSHRTime interval = TS_HRTIME_SECONDS(60);
+  TSHRTime const     now      = TShrtime();
+  TSHRTime           next     = _next_error.load(std::memory_order_relaxed);
+
+  if (now >= next && _next_error.compare_exchange_strong(next, now + interval, std::memory_order_relaxed)) {
+    uint64_t const suppressed = _suppressed_errors.exchange(0, std::memory_order_relaxed);
+    TSError("[%s] Failed to get strategy '%s' (%" PRIu64 " similar errors suppressed)", PLUGIN_NAME, name.c_str(), suppressed);
+  } else {
+    _suppressed_errors.fetch_add(1, std::memory_order_relaxed);
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Failed to get strategy '%s'", name.c_str());
+  }
+}
+
 bool
 OperatorSetNextHopStrategy::exec(const Resources &res) const
 {
@@ -1778,12 +1795,7 @@ OperatorSetNextHopStrategy::exec(const Resources &res) const
     // Global configuration or an expanded name: resolve per transaction.
     strategy = TSHttpTxnNextHopStrategyFind(txnp, name.c_str());
     if (nullptr == strategy) {
-      if (!_lookup_failed.exchange(true)) {
-        TSError("[%s] Failed to get strategy '%s' (further failures of this rule are logged at debug level only)", PLUGIN_NAME,
-                name.c_str());
-      } else {
-        Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Failed to get strategy '%s'", name.c_str());
-      }
+      log_lookup_failure(name);
       return true;
     }
   }
