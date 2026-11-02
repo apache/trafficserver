@@ -569,12 +569,14 @@ public:
   // cannot carry another request.
   //
   // The flag is set under forwards_client_request_body(), the predicate that starts the
-  // body tunnel once the request head is written.  Two paths still test has_request_body()
-  // alone, so for a TRACE or a plugin-supplied body they can disagree with this flag: the
-  // body tunnel started after a 100 Continue, and the chunked Transfer-Encoding that
-  // attach_server_session() appends.  The plugin-supplied body behind
-  // api_server_request_body_set needs no debt: it is written into the same buffer as the
-  // request head, so WRITE_COMPLETE already means it went out in full.
+  // body tunnel once the request head is written.  Other paths test has_request_body()
+  // without its TRACE and plugin-body checks, among them the body tunnel started after a
+  // 100 Continue and the chunked Transfer-Encoding that attach_server_session() appends.
+  // For a TRACE or a plugin-supplied body those can leave the origin expecting body bytes
+  // while this flag is clear, and nothing then keeps the connection out of the pool.  The
+  // plugin-supplied body behind api_server_request_body_set needs no debt of its own: it is
+  // written into the same buffer as the request head, so WRITE_COMPLETE already means it
+  // went out in full.
   bool server_owed_request_body = false;
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls

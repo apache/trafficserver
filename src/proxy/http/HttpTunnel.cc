@@ -1226,7 +1226,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         // Either the VC needs no write to end an empty body, or its stream has
         // already sent END_STREAM or been reset, so it refuses the write. Unlike a
         // refused cache write this is not an error. A request with Content-Length: 0
-        // went out with END_STREAM on HEADERS even when its client still sends an
+        // goes out with END_STREAM on HEADERS even when its client then sends an
         // empty DATA frame, and the second, empty pass over a buffered request body
         // reaches a stream the first pass already ended; both wait on this event. A
         // reset reaches HttpSM through the response read already under way.
