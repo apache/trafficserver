@@ -107,6 +107,7 @@ Metrics
 * Added ``proxy.process.ssl.group.user_agent.P-224``
 * Added ``proxy.process.ssl.group.user_agent.X448``
 * Added ``proxy.process.ssl.group.user_agent.X25519MLKEM768``
+* Added ``proxy.process.http.query_requests``
 * Added :ts:stat:`proxy.process.net.per_client.connections_exempt_currently_open`
 * :ts:stat:`proxy.process.net.per_client.connections_exempt_in` now counts
   connections from exempt addresses when
@@ -183,6 +184,13 @@ Features
 * Add an optional ``avg_obj_size`` to ``storage.yaml`` to control the directory
   entry sizing.
 * The ``proxy.config.http.cache.post_method`` is now an overridable config.
+* The HTTP ``QUERY`` method
+  (`draft-ietf-httpbis-safe-method-w-body <https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/>`_)
+  is now a well-known method. It can be named in :file:`ip_allow.yaml` and
+  :file:`remap.config` ACLs, it is reported by
+  ``proxy.process.http.query_requests``, and like the other content-carrying
+  methods an HTTP/1.1 ``QUERY`` requires a ``Content-Length`` or
+  ``Transfer-Encoding: chunked``.
 * Defer deleting the copied plugin shared object file to startup to make it
   easier to debug crashes in plugins.
 

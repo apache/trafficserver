@@ -2714,7 +2714,8 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
       // explicit zero length and no end stream flag, causing the request to
       // fail. We emulate chromium behaviour here prevent such RSTs. Transfer-encoding
       // implies there’s a body, regardless of whether it is chunked or not.
-      bool    content_method       = method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT;
+      bool content_method =
+        method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_QUERY;
       bool    is_transfer_encoded  = send_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING);
       bool    has_content_header   = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH);
       bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;

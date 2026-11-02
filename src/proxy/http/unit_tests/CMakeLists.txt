@@ -25,11 +25,14 @@ add_executable(
   test_ForwardedConfig.cc
   test_HttpConfig.cc
   test_HttpSessionManager.cc
+  test_HttpSM.cc
   test_HttpTransact.cc
   test_HttpTransactHeaders.cc
   test_HttpUserAgent.cc
   test_PreWarm.cc
 )
+
+target_include_directories(test_http PRIVATE "${PROJECT_SOURCE_DIR}/src/iocore/net")
 
 target_link_libraries(
   test_http
