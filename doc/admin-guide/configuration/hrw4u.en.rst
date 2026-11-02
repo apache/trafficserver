@@ -738,7 +738,7 @@ cache.url.path = ""                    --remove-path=true                       
 cache.url.pristine()                   --uri-type=pristine                      Start from the URL the client sent
 cache.key.headers.add("A", "B")        --include-headers=A,B                    Add these request headers
 cache.key.cookies.add("a", "b")        --include-cookies=a,b                    Add these cookies
-cache.key += "{...}"                   --include-headers=@Hrw4u-Key-N           Add a computed value
+cache.key += "{...}"                   --include-headers=@Hrw4u-Key-NN          Add a computed value
 ====================================== ======================================== =========================================
 
 List arguments are static strings: one name per argument, with no ``{...}``
@@ -747,7 +747,7 @@ values. Query param and cookie names are case-sensitive; header names are not.
 empty header, cookie, or ``cache.key +=`` value adds nothing to the key.
 
 ``cache.key +=`` takes any string. The compiler sets the value into a numbered
-``@Hrw4u-Key-N`` header and adds that header to the key::
+``@Hrw4u-Key-NN`` header and adds that header to the key::
 
    CACHEKEY {
        cache.key += "{geo.COUNTRY}";
@@ -758,6 +758,8 @@ compiles to::
    cond %{REMAP_PSEUDO_HOOK} [AND]
        set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
        run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=@Hrw4u-Key-01"
+
+A `CACHEKEY` section allows at most 99 ``cache.key +=`` values.
 
 Keys that depend on the request
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
