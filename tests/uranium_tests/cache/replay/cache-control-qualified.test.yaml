@@ -1,0 +1,192 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Verify that qualified private and no-cache directives, such as
+# private="X-User-Token", are honored rather than ignored as malformed.
+#
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Test that qualified private and no-cache directives prevent reuse of cached responses'
+
+  dns:
+    name: 'dns-cc-qualified'
+
+  server:
+    name: 'server-cc-qualified'
+
+  client:
+    name: 'client-cc-qualified'
+
+  ats:
+    name: 'ts-cc-qualified'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.insert_age_in_response: 0
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  #############################################################################
+  # Qualified private: the second user must not receive the first user's token.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /qualified-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, qualified-private-user-a]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'private="X-User-Token", max-age=600']
+        - [X-User-Token, user-a]
+      content:
+        encoding: plain
+        data: user-a
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-User-Token, { value: user-a, as: equal }]
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /qualified-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, qualified-private-user-b]
+
+    proxy-request:
+      url: /qualified-private
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'private="X-User-Token", max-age=600']
+        - [X-User-Token, user-b]
+      content:
+        encoding: plain
+        data: user-b
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, { value: miss, as: equal }]
+        - [X-User-Token, { value: user-b, as: equal }]
+      content:
+        encoding: plain
+        data: user-b
+        verify: { as: equal }
+
+  #############################################################################
+  # Qualified no-cache: the cached response must be revalidated before reuse.
+  # The lookup status stays hit-fresh when no-cache forces the revalidation, so
+  # the second user's token is what shows that the origin was consulted.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /qualified-no-cache
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, qualified-no-cache-user-a]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'no-cache="X-User-Token", max-age=600']
+        - [X-User-Token, user-a]
+      content:
+        encoding: plain
+        data: user-a
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-User-Token, { value: user-a, as: equal }]
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /qualified-no-cache
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, qualified-no-cache-user-b]
+
+    proxy-request:
+      url: /qualified-no-cache
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'no-cache="X-User-Token", max-age=600']
+        - [X-User-Token, user-b]
+      content:
+        encoding: plain
+        data: user-b
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-User-Token, { value: user-b, as: equal }]
+      content:
+        encoding: plain
+        data: user-b
+        verify: { as: equal }

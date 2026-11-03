@@ -3970,6 +3970,25 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
                 csv_value_mask                         = 0;
                 m_cooked_stuff.m_cache_control.m_mask &= ~mask;
               }
+            } else if (c < e && *c == '=') {
+              // RFC 9111, Section 5.2: cache-directive = token [ "=" ( token / quoted-string ) ].
+              // Skip the argument, such as the field names of a qualified private or no-cache.
+              // The CSV iterator strips the closing quote, so tolerate its absence.
+              ++c;
+              if (c < e && *c == '"') {
+                for (++c; c < e && *c != '"'; ++c) {
+                  if (*c == '\\' && c + 1 < e) {
+                    ++c;
+                  }
+                }
+                if (c < e) {
+                  ++c;
+                }
+              } else {
+                while (c < e && ParseRules::is_token(*c)) {
+                  ++c;
+                }
+              }
             }
 
             // Detect whether there is any more non-whitespace content after the
