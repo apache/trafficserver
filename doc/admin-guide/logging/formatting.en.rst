@@ -744,11 +744,12 @@ cthb   Client Request Total TLS handshake bytes (received + sent). This is the
                       on a TLS connection, including reused connections.
 pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
                       was over SSL or not.
-pqssr  Proxy Request  1 if the connection from |TS| to the origin resumed a TLS
-                      session from the origin session cache (see
+pqssr  Proxy Request  0 if the connection from |TS| to the origin did a full TLS
+                      handshake because no cached session was offered or the
+                      origin declined it. 1 if it resumed a TLS session from
+                      the origin session cache (see
                       :ts:cv:`proxy.config.ssl.origin_session_cache.enabled`),
-                      avoiding a full TLS handshake. 0 if no cached session was
-                      offered or the origin declined it.
+                      avoiding a full TLS handshake.
 pscert Proxy Request  1 if origin requested certificate from |TS| during TLS
                       handshake but no client certificate was defined. 2 if origin
                       requested certificate from |TS| during TLS handshake and a
