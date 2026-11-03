@@ -421,7 +421,10 @@ def test_abuse_shield_combined_rule(ats_factory: ATSFactory, services: ServiceFa
     origin.start()
     harness.start(ats)
     flood = ats.run_shell(f"seq 1 30 | xargs -P 30 -I {{}} curl --max-time 5 -k -s https://127.0.0.1:{ats.https_port}/")
-    assert flood.returncode == 123, flood.output
+    # Every flood handshake can pass VCONN_START before the rule trips, so none of them need be blocked.
+    assert flood.returncode in (0, 123), flood.output
+    blocked = curl.run(f"--insecure --silent --output /dev/null --max-time 2 https://127.0.0.1:{ats.https_port}/")
+    assert blocked.returncode in (28, 35, 52, 55, 56), blocked.output
     wait_for_file_lines(ats.diags_log, r'Rule "combined_abuse" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
