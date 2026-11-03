@@ -431,6 +431,78 @@ private:
   std::shared_ptr<Storage> _storage;
 
 public:
+  /** Per-thread accumulation of counter increments.
+
+      Counters are summed by every thread that serves transactions, so incrementing the shared atomic
+      directly makes every thread write the same cache lines. A thread that owns a table adds into it
+      instead and periodically applies the sums with one atomic add per counter it touched. Readers
+      still read only the shared atomics, which lag by at most the owning thread's flush interval.
+
+      Gauges are not deferred: their current value is used for decisions, such as connection limits.
+   */
+  class ThreadDeferredCounters
+  {
+  public:
+    /// Adds @a val to @a metric's pending sum. Returns false if the table has no room for @a metric,
+    /// in which case the caller must apply the increment itself.
+    bool
+    add(AtomicType *metric, int64_t val)
+    {
+      size_t slot = (reinterpret_cast<uintptr_t>(metric) >> 3) * 0x9E3779B97F4A7C15ULL >> (64 - SLOT_BITS);
+
+      for (size_t probe = 0; probe < MAX_PROBES; ++probe, slot = (slot + 1) & (SLOTS - 1)) {
+        Slot &s = _slots[slot];
+        if (s.metric == metric) {
+          s.delta += val;
+          return true;
+        }
+        if (s.metric == nullptr) {
+          s.metric               = metric;
+          s.delta                = val;
+          _dirty[_dirty_count++] = static_cast<uint16_t>(slot);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    /// Applies every pending sum to its shared atomic and empties the table.
+    void flush();
+
+    bool
+    pending() const
+    {
+      return _dirty_count > 0;
+    }
+
+  private:
+    static constexpr size_t SLOT_BITS  = 9;
+    static constexpr size_t SLOTS      = size_t{1} << SLOT_BITS;
+    static constexpr size_t MAX_PROBES = 16;
+
+    struct Slot {
+      AtomicType *metric = nullptr;
+      int64_t     delta  = 0;
+    };
+
+    std::array<Slot, SLOTS>     _slots{};
+    std::array<uint16_t, SLOTS> _dirty{};
+    size_t                      _dirty_count = 0;
+  };
+
+  /// Defer counter increments made on the calling thread until flush_thread_counters().
+  static void enable_thread_counter_deferral();
+  /// Apply the calling thread's deferred counter increments, if any.
+  static void
+  flush_thread_counters()
+  {
+    if (_thread_counters != nullptr && _thread_counters->pending()) {
+      _thread_counters->flush();
+    }
+  }
+  /// Apply the calling thread's deferred increments and increment directly from now on.
+  static void disable_thread_counter_deferral();
+
   // These are sort of factory classes, using the Metrics singleton for all storage etc.
   class Gauge
   {
@@ -624,6 +696,9 @@ public:
     increment(AtomicType *metric, uint64_t val = 1)
     {
       debug_assert(metric);
+      if (_thread_counters != nullptr && _thread_counters->add(metric, static_cast<int64_t>(val))) {
+        return;
+      }
       metric->_value.fetch_add(val, MEMORY_ORDER);
     }
 
@@ -742,6 +817,9 @@ public:
     static void update_derived();
   };
 
+private:
+  /// The calling thread's deferred counter table, or nullptr if it increments directly.
+  static inline thread_local ThreadDeferredCounters *_thread_counters = nullptr;
 }; // class Metrics
 
 } // namespace ts

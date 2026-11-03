@@ -33,6 +33,37 @@
 namespace ts
 {
 
+void
+Metrics::ThreadDeferredCounters::flush()
+{
+  for (size_t i = 0; i < _dirty_count; ++i) {
+    Slot &s = _slots[_dirty[i]];
+    if (s.delta != 0) {
+      s.metric->_value.fetch_add(s.delta, MEMORY_ORDER);
+    }
+    s = Slot{};
+  }
+  _dirty_count = 0;
+}
+
+void
+Metrics::enable_thread_counter_deferral()
+{
+  if (_thread_counters == nullptr) {
+    _thread_counters = new ThreadDeferredCounters;
+  }
+}
+
+void
+Metrics::disable_thread_counter_deferral()
+{
+  if (_thread_counters != nullptr) {
+    _thread_counters->flush();
+    delete _thread_counters;
+    _thread_counters = nullptr;
+  }
+}
+
 Metrics &
 Metrics::instance()
 {

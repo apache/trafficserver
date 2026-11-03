@@ -36,6 +36,7 @@
 #include "iocore/eventsystem/Lock.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_atomic.h"
+#include "tsutil/Metrics.h"
 
 #if HAVE_EVENTFD
 #include <sys/eventfd.h>
@@ -55,9 +56,10 @@ char const *const EThread::Metrics::Slice::STAT_NAME[] = {
   "proxy.process.eventloop.io.wait.max", "proxy.process.eventloop.io.work.max",
 };
 
-int              thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
-int              loop_time_update_probability  = 10;
-const ink_hrtime DELAY_FOR_RETRY               = HRTIME_MSECONDS(10);
+int              thread_max_heartbeat_mseconds       = THREAD_MAX_HEARTBEAT_MSECONDS;
+int              thread_deferred_counter_interval_ms = 0;
+int              loop_time_update_probability        = 10;
+const ink_hrtime DELAY_FOR_RETRY                     = HRTIME_MSECONDS(10);
 
 // To define a class inherits from Thread:
 //   1) Define an independent thread_local static member
@@ -248,6 +250,12 @@ EThread::execute_regular()
 
   Metrics::Slice *current_slice{nullptr};
 
+  ink_hrtime const counter_flush_interval = HRTIME_MSECONDS(thread_deferred_counter_interval_ms);
+  ink_hrtime       last_counter_flush     = loop_start_time;
+  if (counter_flush_interval > 0) {
+    ts::Metrics::enable_thread_counter_deferral();
+  }
+
   // give priority to immediate events
   while (!TSSystemState::is_event_system_shut_down()) {
     current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES;
@@ -263,6 +271,13 @@ EThread::execute_regular()
 
     EventStatistics statistics = fire_ready_events(loop_start_time);
     ink_hrtime      sleep_time = get_sleep_time(statistics.event_time, current_slice);
+
+    // Flush before a sleep that would outlast the interval too, so an idle thread's counters are current.
+    if (counter_flush_interval > 0 &&
+        (statistics.event_time - last_counter_flush >= counter_flush_interval || sleep_time >= counter_flush_interval)) {
+      ts::Metrics::flush_thread_counters();
+      last_counter_flush = statistics.event_time;
+    }
 
     // drained the queue by this point
     ink_hrtime post_drain  = statistics.event_time;
@@ -286,6 +301,8 @@ EThread::execute_regular()
     current_slice->record_event_count(statistics.ev_count);
     current_slice->record_drain_queue(drain_queue);
   }
+
+  ts::Metrics::disable_thread_counter_deferral();
 }
 
 EThread::EventStatistics
