@@ -79,9 +79,11 @@ SSL/TLS
 
    The number of inbound TLS handshakes whose raw ClientHello extensions could
    not be parsed, since statistics collection began. Only OpenSSL builds parse
-   the raw ClientHello. For these handshakes,
-   ``TSClientHello::get_extension_types()`` falls back to the extensions OpenSSL
-   recognizes.
+   the raw ClientHello. OpenSSL rejects such malformed ClientHellos too, most of
+   them before any plugin sees the ClientHello, so these handshakes do not
+   complete and this counter does not indicate missing fingerprints. If a plugin
+   does see one, ``TSClientHello::get_extension_types()`` falls back to the
+   extensions OpenSSL recognizes.
 
 .. ts:stat:: global proxy.process.ssl.ssl_error_ssl integer
    :type: counter

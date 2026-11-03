@@ -44,9 +44,9 @@ def test_jax_fingerprint_raw_extensions(ats_factory: ATSFactory, services: Servi
              services.resolve_path("chrome_client_hello.py"), "--fragment-size",
              str(size),
              str(ats.https_port)])
-        client.stdout.contains(f"Expected JA4: {fingerprint}", "The client must receive a ServerHello with the expected JA4.")
         result = client.run()
         assert result.returncode == 0, result.output
+        assert f"Expected JA4: {fingerprint}" in result.output, f"chrome_client_hello.py no longer computes {fingerprint}.\n{result.output}"
     wait_for_file_lines(ats.traffic_out, f"Fingerprint: {fingerprint}", 2)
     result = ats.traffic_ctl("metric", "get", "proxy.process.ssl.client_hello_raw_parse_failure")
     assert result.returncode == 0, result.output
