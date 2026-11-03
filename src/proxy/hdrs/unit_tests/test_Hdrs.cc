@@ -3196,6 +3196,19 @@ parse_response(HTTPHdr &hdr, std::string_view text)
   REQUIRE(hdr.parse_resp(&parser, &start, end, true) == ParseResult::DONE);
   http_parser_clear(&parser);
 }
+
+struct BareCRLineTest {
+  std::string_view raw_line_suffix_before_lf;
+  std::string_view normalized_field;
+};
+
+static const std::vector<BareCRLineTest> bare_cr_line_tests = {
+  {"\r\r\r\r"sv, "Extra-CRs: \r\n"sv   },
+  {"\r \r"sv,    "Extra-CRs: \r\n"sv   },
+  {"\r\r \r"sv,  "Extra-CRs: \r\n"sv   },
+  {"bar\r \r"sv, "Extra-CRs: bar\r\n"sv},
+  {"\r\t\r"sv,   "Extra-CRs: \r\n"sv   },
+};
 } // anonymous namespace
 
 TEST_CASE("HTTPHdrImpl::recompute_wks_indices rebuilds from the stored strings", "[proxy][hdrtest][wks]")
@@ -3376,25 +3389,15 @@ TEST_CASE("HTTP parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
 
 TEST_CASE("HTTP request parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
 {
-  struct Test {
-    std::string_view raw_value;
-    std::string_view normalized_field;
-  };
-
-  // The four-CR case from #13595 produces the maximum raw-print pad and is rejected by the
-  // existing pad-size limit alone. These smaller pads exercise the parser check independently.
-  static const std::vector<Test> tests = {
-    {"\r \r\n"sv,    "Extra-CRs: \r\n"sv   },
-    {"\r\r \r\n"sv,  "Extra-CRs: \r\n"sv   },
-    {"bar\r \r\n"sv, "Extra-CRs: bar\r\n"sv},
-    {"\r\t\r\n"sv,   "Extra-CRs: \r\n"sv   },
-  };
-
-  auto test = GENERATE(from_range(tests));
-  CAPTURE(test.raw_value);
+  // Four CRs followed by LF recreate #12195. This gives a pad of 7, the largest the
+  // 3-bit field allows, so raw copying is still eligible. With five or more CRs, the
+  // pad limit alone forces a rebuild; the smaller cases below test the parser check.
+  auto test = GENERATE(from_range(bare_cr_line_tests));
+  CAPTURE(test.raw_line_suffix_before_lf);
 
   std::string message  = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: ";
-  message             += test.raw_value;
+  message             += test.raw_line_suffix_before_lf;
+  message             += '\n';
   message             += "\r\n";
 
   HTTPParser parser;
@@ -3415,7 +3418,8 @@ TEST_CASE("HTTP request parser normalizes bare carriage returns in header line e
 
   CHECK(serialized.find(test.normalized_field) != std::string::npos);
   std::string raw_field  = "Extra-CRs: ";
-  raw_field             += test.raw_value;
+  raw_field             += test.raw_line_suffix_before_lf;
+  raw_field             += '\n';
   CHECK(serialized.find(raw_field) == std::string::npos);
 
   req_hdr.destroy();
@@ -3423,7 +3427,12 @@ TEST_CASE("HTTP request parser normalizes bare carriage returns in header line e
 
 TEST_CASE("HTTP response parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
 {
-  constexpr std::string_view message = "HTTP/1.1 200 OK\r\nExtra-CRs: bar\r \r\n\r\n"sv;
+  auto test = GENERATE(from_range(bare_cr_line_tests));
+  CAPTURE(test.raw_line_suffix_before_lf);
+  std::string message  = "HTTP/1.1 200 OK\r\nExtra-CRs: ";
+  message             += test.raw_line_suffix_before_lf;
+  message             += '\n';
+  message             += "\r\n";
 
   HTTPParser parser;
   http_parser_init(&parser);
@@ -3441,8 +3450,11 @@ TEST_CASE("HTTP response parser normalizes bare carriage returns in header line 
   resp_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
   serialized.resize(static_cast<size_t>(index));
 
-  CHECK(serialized.find("Extra-CRs: bar\r\n") != std::string::npos);
-  CHECK(serialized.find("Extra-CRs: bar\r \r\n") == std::string::npos);
+  CHECK(serialized.find(test.normalized_field) != std::string::npos);
+  std::string raw_field  = "Extra-CRs: ";
+  raw_field             += test.raw_line_suffix_before_lf;
+  raw_field             += '\n';
+  CHECK(serialized.find(raw_field) == std::string::npos);
 
   resp_hdr.destroy();
 }
