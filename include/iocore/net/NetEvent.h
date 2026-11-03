@@ -253,6 +253,12 @@ NetEvent::has_error() const
 inline void
 NetEvent::set_error_from_socket()
 {
-  socklen_t errlen = sizeof(error);
-  getsockopt(this->get_fd(), SOL_SOCKET, SO_ERROR, (void *)&error, &errlen);
+  int       socket_error = 0;
+  socklen_t errlen       = sizeof(socket_error);
+
+  // Reading SO_ERROR clears it, and kqueue reports a socket error on each
+  // registered filter, so a later event in the same poll reads 0.
+  if (getsockopt(this->get_fd(), SOL_SOCKET, SO_ERROR, &socket_error, &errlen) == 0 && socket_error != 0) {
+    error = socket_error;
+  }
 }
