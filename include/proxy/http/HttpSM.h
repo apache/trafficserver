@@ -296,6 +296,14 @@ public:
   bool is_private() const;
   bool is_redirect_required();
 
+  /// Whether the client request body goes to the origin after the request header,
+  /// through the request body tunnel. True when the client's request carries a
+  /// body, even one that turns out empty: for HTTP/1 a positive Content-Length or
+  /// chunked encoding, for HTTP/2 a stream the client did not end on HEADERS.
+  /// False when a plugin sets the origin request body, which replaces the
+  /// client's and goes out with the header, and for TRACE.
+  bool forwards_client_request_body() const;
+
   /// Get the protocol stack for the inbound (client, user agent) connection.
   /// @arg result [out] Array to store the results
   /// @arg n [in] Size of the array @a result.
@@ -560,12 +568,15 @@ public:
   // origin's parser is mid-message and is still waiting for body bytes, so the connection
   // cannot carry another request.
   //
-  // The set side uses the same has_request_body() predicate that governs tunnel setup, so
-  // the two cannot diverge.  attach_server_session() appends its chunked Transfer-Encoding
-  // under that same predicate, so an outbound-only body cannot arise there.  The one
-  // outbound body not covered is the plugin-supplied one behind api_server_request_body_set,
-  // and that needs no debt: it is written into the same buffer as the request head, so
-  // WRITE_COMPLETE already means it went out in full.
+  // The flag is set under forwards_client_request_body(), the predicate that starts the
+  // body tunnel once the request head is written.  Other paths test has_request_body()
+  // without its TRACE and plugin-body checks, among them the body tunnel started after a
+  // 100 Continue and the chunked Transfer-Encoding that attach_server_session() appends.
+  // For a TRACE or a plugin-supplied body those can leave the origin expecting body bytes
+  // while this flag is clear, and nothing then keeps the connection out of the pool.  The
+  // plugin-supplied body behind api_server_request_body_set needs no debt of its own: it is
+  // written into the same buffer as the request head, so WRITE_COMPLETE already means it
+  // went out in full.
   bool server_owed_request_body = false;
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
