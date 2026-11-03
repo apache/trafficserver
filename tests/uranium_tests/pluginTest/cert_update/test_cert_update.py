@@ -121,6 +121,21 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
         _update_count += 1
         wait_for_file_lines(_ats.traffic_out, "Successfully updated", _update_count, timeout=10)
 
+    def reject_no_cn_certificate() -> None:
+        """Reject a certificate without commonName without stopping ATS."""
+
+        no_cn_key = _ats.ssl_directory / "no-cn.key"
+        no_cn_certificate = _ats.ssl_directory / "no-cn.crt"
+        no_cn_pem = _ats.ssl_directory / "no-cn.pem"
+        result = _ats.run_shell(
+            f"openssl req -x509 -newkey rsa:2048 -nodes -keyout {no_cn_key} "
+            f"-out {no_cn_certificate} -subj /O=NoCN -days 1 >/dev/null 2>&1 && "
+            f"cat {no_cn_key} {no_cn_certificate} > {no_cn_pem} && "
+            f"traffic_ctl plugin msg cert_update.server {no_cn_pem}")
+        assert result.returncode == 0, result.output
+        wait_for_file_lines(_ats.traffic_out, r"Failed to update server cert with .*no-cn.pem", 1, timeout=10)
+        assert _ats.is_running
+
     def openssl_server(name: str, trusted_client: Path) -> ProcessService:
         """Create a one-shot TLS origin that requires an ATS client certificate.
 
@@ -178,6 +193,7 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
     _ats.start()
     assert "alice@bar.com" in inbound_request()
     update_certificate("server", _ats.ssl_directory / "server2.pem")
+    reject_no_cn_certificate()
     assert "bob@bar.com" in inbound_request()
 
     assert "alice.com" in outbound_request(openssl_server("s_server_before", SSL_DIRECTORY / "client1.pem"))
