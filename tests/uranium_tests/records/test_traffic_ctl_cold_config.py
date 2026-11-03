@@ -176,3 +176,28 @@ def test_traffic_ctl_cold_config(ats_factory: ATSFactory) -> None:
     _ats.environment["TS_RECORD_YAML"] = str(destination)
     traffic_ctl("config", "set", "proxy.config.cache.limits.http.max_alts", "3", "-c", _ats=_ats)
     assert yaml.safe_load(destination.read_text()) == {"records": {"cache": {"limits": {"http": {"max_alts": 3}}}}}
+
+    # A "--" is the way to pass a value that starts with '-'. The option scan of every enclosing
+    # command covers the whole rest of the command line, so the escape has to be honoured there
+    # too, or a value spelled like a global option (-f, -h) or like an option of config set itself
+    # (-t) is taken as that option instead of reaching the record. -h is the worst case: it prints
+    # the help and exits 0, so the record is never set but a script sees success.
+    for value in ("-f", "-h", "-t"):
+        escaped = _ats.config_directory / f"escaped_{value[1:]}_records.yaml"
+        result = traffic_ctl("config", "set", "-c", str(escaped), "proxy.config.diags.debug.tags", "--", value, _ats=_ats)
+        assert "argument(s) expected by" not in result.output, result.output
+        assert "Usage: traffic_ctl" not in result.output, result.output
+        result = traffic_ctl("config", "get", "proxy.config.diags.debug.tags", "-c", str(escaped), _ats=_ats)
+        assert f"proxy.config.diags.debug.tags: {value}" in result.stdout.splitlines(), result.output
+
+    # -w is the global --watch wherever a global option can be written, so a -w N after the record
+    # names is that option and its value, not two more names to look up.
+    watch_records = _ats.config_directory / "watch_records.yaml"
+    traffic_ctl("config", "set", "-c", str(watch_records), "proxy.config.diags.debug.tags", "plain", _ats=_ats)
+    for arguments in (
+        ("config", "get", "proxy.config.diags.debug.tags", "-c", str(watch_records), "-w", "5"),
+        ("-w", "5", "config", "get", "proxy.config.diags.debug.tags", "-c", str(watch_records)),
+    ):
+        result = traffic_ctl(*arguments, _ats=_ats)
+        assert "proxy.config.diags.debug.tags: plain" in result.stdout.splitlines(), result.output
+        assert "not found" not in result.output, result.output
