@@ -1572,6 +1572,8 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.allocator.iobuf_chunk_sizes", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.allocator.iobuf_thread_cache_size", RECD_INT, "524288", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
 
   // Controls for TLS ASYN_JOBS and engine loading
   {RECT_CONFIG, "proxy.config.ssl.async.handshake.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL},

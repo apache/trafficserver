@@ -6860,6 +6860,17 @@ Sockets
    on your configured RAM cache size.  On a running system, you can send SIGUSR1 to the ATS process to have it
    log the allocator statistics and see how many of each buffer size have been allocated.
 
+.. ts:cv:: CONFIG proxy.config.allocator.iobuf_thread_cache_size INT 524288
+
+   The maximum number of bytes of free IO buffer blocks each thread keeps for reuse, per buffer
+   size, for the ``4k``, ``8k``, ``16k`` and ``32k`` sizes. Freeing and reallocating these blocks
+   on the same thread then avoids the allocator's shared freelist, which all threads contend on.
+   A thread holds at most 512 blocks of any one size; a size that fits fewer than two blocks in
+   the budget is not cached. When a thread exceeds the limit, it returns blocks to the shared
+   freelist until a quarter of the limit remains. Set to ``0`` to disable these caches.
+
+   With the default, each thread can hold up to 2MB of free IO buffer blocks.
+
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 
    Configures the max IOBuffer Block index used for various SSL Operations
