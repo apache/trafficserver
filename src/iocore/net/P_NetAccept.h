@@ -160,6 +160,17 @@ struct NetAccept : public Continuation {
   */
   bool owned_by_accept_thread = false;
 
+  /** Two-party handoff that decides who deletes an @c owned_by_accept_thread acceptor registered in @c naVec.
+
+      Both the accept thread (on leaving its loop) and the stopping thread (in @c retire(), after it has finished with the
+      acceptor) call @c release_dedicated(); the second caller deletes, so neither has to wait on the other. Null for the extra
+      accept-thread copies, which nothing else references and which delete themselves.
+  */
+  std::shared_ptr<std::atomic<int>> dedicated_release;
+
+  /** Called once by each of the two parties; deletes this acceptor on the second call. Do not touch the acceptor afterwards. */
+  void release_dedicated();
+
   /** True when this acceptor opened a listening socket of its own (@c proxy.config.exec_thread.listen), as opposed to
       sharing the original's. Cancelling the shared action closes only the original's socket, so these must be
       closed by their owning thread.
@@ -181,8 +192,8 @@ struct NetAccept : public Continuation {
 
   /** Disposes of an acceptor already passed through @c stop_accept(), in place of @c delete.
 
-      Acceptors owned by a dedicated accept thread are not deleted here; that thread exits once it sees the
-      action cancelled.
+      Acceptors owned by a dedicated accept thread are released through @c release_dedicated(): that thread exits once it
+      sees the action cancelled, and whichever of it and this call finishes second deletes the acceptor.
 
       The retry timer must be cancelled under the owning thread's mutex, and that thread may be wedged holding it, so the
       caller must not wait. The cancel and the delete are handed to the owning thread instead.

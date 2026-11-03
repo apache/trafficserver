@@ -515,10 +515,12 @@ Thread Variables
    fraction in force is published as ``proxy.process.watchdog.listen_backlog_permille`` and the
    absolute depth as ``proxy.process.net.watchdog_listen_backlog``.
 
-   Accepting continues throughout. A bounded accept queue only drains as fast as |TS|
-   calls ``accept()``, so the kernel ends up admitting new connections at approximately the
+   Accepting continues throughout. A bounded accept queue only drains as fast as the acceptors
+   that read it call ``accept()``, so the kernel ends up admitting new connections at approximately the
    rate |TS| can actually serve - a closed loop that needs no per-connection decision and costs
-   nothing per connection. It also keeps working when no event thread is scheduled at all, which
+   nothing per connection. With :ts:cv:`proxy.config.accept_threads` ``0`` every event thread accepts, so
+   the queue drains at the combined rate of the threads that are keeping up and a single stalled
+   thread does not hold it back. It also keeps working when no event thread is scheduled at all, which
    a userspace refusal cannot. The connections shed this way are not refused, though - see
    *What shed clients see* below.
 
@@ -536,6 +538,21 @@ Thread Variables
    once the threads recover sees no error whatsoever. That is the advantage over
    :ts:cv:`proxy.config.net.connections_throttle`, where a shed connection is still accepted
    and closed.
+
+   The decision to stop reading accepts is **global**, not per thread. It is made from the peak awake
+   span across all event threads, and every acceptor consults that one value. With
+   :ts:cv:`proxy.config.accept_threads` ``0``, where each event thread accepts for itself, one stalled
+   thread therefore makes *every* thread stop accepting, including those that are idle and could have
+   served the connections. Only the loopback companion listener, which is exempt, keeps accepting.
+
+   Choose the action to match the accept configuration:
+
+   - With dedicated accept threads (:ts:cv:`proxy.config.accept_threads` greater than ``0``), either
+     action is suitable. The accept threads are not the ones being saturated, so pausing them keeps new
+     work off the event threads, and shrinking the queue lets them keep draining at a bounded rate.
+   - With :ts:cv:`proxy.config.accept_threads` ``0``, prefer shrinking the accept queues. Threads that are
+     keeping up continue to accept, so a stalled thread does not stall admission. Use stopping accepts
+     only if halting every thread on one thread's stall is what you want.
 
    Set the refuse threshold *above* the shrink threshold if you use both: the cheap,
    self-limiting control then acts first, and the blunt one only at a depth of saturation where

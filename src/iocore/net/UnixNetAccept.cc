@@ -336,6 +336,8 @@ NetAccept::init_accept_loop()
     NetAccept *a = (i < n - 1) ? clone() : this;
 
     a->owned_by_accept_thread = true;
+    // Only the original is reachable from naVec, so only it has a second party to hand off to.
+    a->dedicated_release = (a == this) ? std::make_shared<std::atomic<int>>(0) : nullptr;
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server.accept_addr));
     eventProcessor.spawn_thread(a, thr_name, stacksize);
     Dbg(dbg_ctl_iocore_net_accept_start, "Created accept thread #%d for port %d", i + 1,
@@ -502,6 +504,8 @@ void
 NetAccept::retire()
 {
   if (owned_by_accept_thread) {
+    // The accept thread may already have left its loop; it only frees the acceptor once this call has also finished.
+    release_dedicated();
     return;
   }
 
@@ -784,6 +788,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
   }
 
   do {
+    // stop_accept() can close the shared listen fd between passes of this loop.
+    if (!action_->is_listening()) {
+      goto Lstopped;
+    }
     if (count > 0) {
       watchdog_apply_backlog(this);
       if (watchdog_should_refuse(this)) {
@@ -859,9 +867,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
         check_transient_accept_error(res);
         goto Ldone;
       }
-      if (action_->is_listening()) {
-        action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
+      // A failure caused by stop_accept() closing the fd under this pass is shutdown, not an accept error.
+      if (!action_->is_listening()) {
+        goto Lstopped;
       }
+      action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
       goto Lerror;
     }
 
@@ -915,12 +925,27 @@ Ldone:
   }
   return EVENT_CONT;
 
+Lstopped:
+  if (refuse_retry != nullptr) {
+    refuse_retry->cancel(this);
+    refuse_retry = nullptr;
+  }
+  return EVENT_DONE;
+
 Lerror:
+  // retire() reaches every fast-accept acceptor through naVec or per_thread_clones and deletes it via AcceptorReclaim, so
+  // deleting here would free it twice. Only the socket this acceptor opened itself is closed; the shared one is not ours.
   action_->cancel();
-  server.close();
+  if (refuse_retry != nullptr) {
+    refuse_retry->cancel(this);
+    refuse_retry = nullptr;
+  }
+  if (owns_listen_socket && server.sock.is_ok()) {
+    this->ep.stop();
+    server.close();
+  }
   e->cancel();
   Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
-  delete this;
   return EVENT_DONE;
 }
 
@@ -938,8 +963,22 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   // Don't think this ever happens ...
   action_->cancel();
   Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
-  delete this;
+  release_dedicated();
   return EVENT_DONE;
+}
+
+void
+NetAccept::release_dedicated()
+{
+  if (!dedicated_release) {
+    delete this;
+    return;
+  }
+  // Copied out because the shared state must outlive the delete when this call is the second one.
+  auto state = dedicated_release;
+  if (state->fetch_add(1, std::memory_order_acq_rel) == 1) {
+    delete this;
+  }
 }
 
 //

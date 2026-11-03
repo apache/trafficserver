@@ -38,6 +38,10 @@ char const PLUGIN_NAME[]  = "watchdog_stall";
 char const STALL_HEADER[] = "X-Stall-Ms";
 char const BODY[]         = "ok\n";
 
+// The error path discards a plugin-set status below 400 and answers 500, so the reply must be a 4xx to survive. 418 is
+// used because no real response from the proxy would carry it, which lets tests tell this reply from an actual error.
+constexpr auto SERVED_STATUS = static_cast<TSHttpStatus>(418);
+
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
 int
@@ -77,7 +81,7 @@ handle_read_request(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     }
   }
 
-  TSHttpTxnStatusSet(txnp, TS_HTTP_STATUS_OK);
+  TSHttpTxnStatusSet(txnp, SERVED_STATUS);
   TSHttpTxnErrorBodySet(txnp, TSstrdup(BODY), sizeof(BODY) - 1, TSstrdup("text/plain"));
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
   return 0;

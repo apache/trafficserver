@@ -13,12 +13,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""A second exit signal must not schedule a second graceful shutdown."""
 """Watchdog accept backpressure: shrink, refuse, the loopback exemption, recovery and a clean drain."""
 import shlex
-import shutil
 import signal
-import subprocess
+import socket
+import struct
 import sys
 import threading
 import time
@@ -29,16 +28,25 @@ import pytest
 from tools.uranium.services import ATS, Curl
 
 LISTEN_BACKLOG = 128
-STALL_MS = 3000
+STALL_MS = 6000
 
 REFUSE_GAUGE = "proxy.process.watchdog.accept_refuse"
 REFUSED = "proxy.process.net.watchdog_accepts_refused"
 TOTAL_ACCEPTS = "proxy.process.tcp.total_accepts"
 
+# What watchdog_stall.so answers with; see the plugin for why it is not a 200.
+SERVED = "418"
+
 pytestmark = pytest.mark.skipif(
-    not sys.platform.startswith("linux") or shutil.which("ss") is None,
-    reason="needs Linux: 127.0.0.2 as a second loopback address and ss for the accept queue limit",
+    not sys.platform.startswith("linux"),
+    reason="needs Linux: 127.0.0.2 as a second loopback address and sock_diag for the accept queue limit",
 )
+
+SOCK_DIAG_BY_FAMILY = 20
+NLM_F_REQUEST_DUMP = 0x1 | 0x300
+NLMSG_DONE = 3
+NLMSG_ERROR = 2
+TCP_LISTEN_MASK = 1 << 10
 
 
 def metric(ats: ATS, name: str) -> int:
@@ -82,18 +90,58 @@ def request(curl: Curl, address: str, port: int, *, max_time: float, stall_ms: i
     return result.returncode, result.stdout.strip()
 
 
+def listener_queue_limits(port: int, *, loopback: bool = False) -> list[int]:
+    """Accept queue limits of the TCP listeners on a port, read from the kernel's sock_diag interface.
+
+    This is the figure ss prints as Send-Q for a listener. It is read directly so the test does not need iproute.
+
+    :param port: Proxy port.
+    :param loopback: Whether to report the 127.0.0.0/8 companion listener instead of the wildcard ones.
+    :return: One limit per matching listener.
+    """
+    limits = []
+    for family in (socket.AF_INET, socket.AF_INET6):
+        with socket.socket(socket.AF_NETLINK, socket.SOCK_RAW, 4) as nl:  # NETLINK_SOCK_DIAG
+            request = struct.pack("=BBBBI", family, socket.IPPROTO_TCP, 0, 0, TCP_LISTEN_MASK) + bytes(48)
+            nl.send(struct.pack("=IHHII", 16 + len(request), SOCK_DIAG_BY_FAMILY, NLM_F_REQUEST_DUMP, 1, 0) + request)
+            done = False
+            while not done:
+                data = nl.recv(65536)
+                offset = 0
+                while offset + 16 <= len(data):
+                    length, kind = struct.unpack_from("=IH", data, offset)
+                    if kind in (NLMSG_DONE, NLMSG_ERROR):
+                        done = True
+                        break
+                    body = offset + 16
+                    sport = struct.unpack_from("!H", data, body + 4)[0]
+                    is_loopback = family == socket.AF_INET and data[body + 8] == 127
+                    if sport == port and is_loopback == loopback:
+                        limits.append(struct.unpack_from("=I", data, body + 60)[0])
+                    offset += (length + 3) & ~3
+    return limits
+
+
 def wildcard_queue_limits(port: int) -> list[int]:
-    """Accept queue limits (ss Send-Q) of the listeners that are not the loopback companion.
+    """Accept queue limits of the listeners that are not the loopback companion.
 
     :param port: Proxy port.
     """
-    output = subprocess.run(["ss", "-ltnH", f"sport = :{port}"], capture_output=True, text=True, check=True).stdout
-    limits = []
-    for line in output.splitlines():
-        fields = line.split()
-        if len(fields) >= 4 and not fields[3].startswith("127."):
-            limits.append(int(fields[2]))
-    return limits
+    return listener_queue_limits(port)
+
+
+def open_held_connection(address: str, port: int) -> socket.socket:
+    """Connect and send a request, returning the socket so the caller can see whether it is ever answered.
+
+    The kernel completes the handshake from its own accept queue, so this succeeds even while the proxy is not accepting.
+
+    :param address: Loopback address to connect to.
+    :param port: Proxy port.
+    :return: The connected socket, with its request already written.
+    """
+    conn = socket.create_connection((address, port), timeout=3)
+    conn.sendall(f"GET / HTTP/1.1\r\nHost: {address}:{port}\r\nConnection: close\r\n\r\n".encode())
+    return conn
 
 
 def stall_one_thread(curl: Curl, port: int) -> threading.Thread:
@@ -134,8 +182,8 @@ def test_accept_backpressure(ats: ATS, curl: Curl, accept_threads: int) -> None:
     port = ats.http_port
 
     # Healthy: both addresses are served, nothing is refused, and the queue is at its configured depth.
-    assert request(curl, "127.0.0.1", port, max_time=5) == (0, "200")
-    assert request(curl, "127.0.0.2", port, max_time=5) == (0, "200")
+    assert request(curl, "127.0.0.1", port, max_time=5) == (0, SERVED)
+    assert request(curl, "127.0.0.2", port, max_time=5) == (0, SERVED)
     assert metric(ats, REFUSE_GAUGE) == 0
     assert metric(ats, REFUSED) == 0
     assert set(wildcard_queue_limits(port)) == {LISTEN_BACKLOG}
@@ -144,15 +192,21 @@ def test_accept_backpressure(ats: ATS, curl: Curl, accept_threads: int) -> None:
     stalled = stall_one_thread(curl, port)
     wait_for(lambda: metric(ats, REFUSE_GAUGE) == 1, 10, "refuse to engage")
 
-    # The wildcard listener is held: the connect is not accepted, so total_accepts does not move and curl times out.
+    # The wildcard listener is held: a connection already sitting in its queue is not answered while refuse is engaged.
+    held = open_held_connection("127.0.0.2", port)
+    held.settimeout(1)
+    with pytest.raises(socket.timeout):
+        held.recv(1)
+
+    # A new connect is not accepted either, so total_accepts does not move and curl times out.
     accepts_before = metric(ats, TOTAL_ACCEPTS)
     code, status = request(curl, "127.0.0.2", port, max_time=1.5)
-    assert code == 28 and status != "200", (code, status)
+    assert code == 28 and status != SERVED, (code, status)
     assert metric(ats, REFUSED) > 0
     assert metric(ats, TOTAL_ACCEPTS) == accepts_before
 
     # The exempt loopback listener is still served while the wildcard one is held.
-    assert request(curl, "127.0.0.1", port, max_time=5) == (0, "200")
+    assert request(curl, "127.0.0.1", port, max_time=5) == (0, SERVED)
     assert metric(ats, TOTAL_ACCEPTS) > accepts_before
 
     # Shrink has reduced the kernel's queue limit on the held listeners.
@@ -162,11 +216,16 @@ def test_accept_backpressure(ats: ATS, curl: Curl, accept_threads: int) -> None:
     # the queue limit climbs back to its configured depth.
     stalled.join()
     wait_for(lambda: metric(ats, REFUSE_GAUGE) == 0, 15, "refuse to release")
-    assert request(curl, "127.0.0.2", port, max_time=5) == (0, "200")
+
+    # The connection that waited out the stall is served rather than reset: a held client sees no error.
+    held.settimeout(10)
+    assert held.recv(64).startswith(f"HTTP/1.1 {SERVED}".encode())
+    held.close()
+    assert request(curl, "127.0.0.2", port, max_time=5) == (0, SERVED)
 
     refused = metric(ats, REFUSED)
     for _ in range(5):
-        assert request(curl, "127.0.0.2", port, max_time=5) == (0, "200")
+        assert request(curl, "127.0.0.2", port, max_time=5) == (0, SERVED)
     assert metric(ats, REFUSED) == refused
 
     def queue_restored() -> bool:
@@ -180,12 +239,13 @@ def test_accept_backpressure(ats: ATS, curl: Curl, accept_threads: int) -> None:
     wait_for(lambda: metric(ats, REFUSE_GAUGE) == 1, 10, "refuse to engage again")
     request(curl, "127.0.0.2", port, max_time=1)
     ats.send_signal(signal.SIGTERM)
-    time.sleep(0.5)
+    wait_for(
+        lambda: not listener_queue_limits(port) and not listener_queue_limits(port, loopback=True), 10, "every listener to close")
 
-    # Every listener is closed now. No acceptor may keep running its retry timer and counting refusals, or touch
-    # a descriptor number that the process has since reused.
+    # No acceptor may keep running its retry timer and counting refusals, or touch a descriptor number that the process
+    # has since reused. Several retry periods pass in the window, so a surviving timer would show.
     refused = metric(ats, REFUSED)
-    time.sleep(1.5)
+    time.sleep(1)
     assert metric(ats, REFUSED) == refused
 
     stalled.join()
