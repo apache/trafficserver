@@ -23,6 +23,7 @@
 #include <catch2/reporters/catch_reporter_event_listener.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
 #include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <catch2/internal/catch_context.hpp>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -101,17 +102,20 @@ public:
     if (!_registered) {
       return;
     }
-    // Non-fatal assertions throughout: this runs during stack unwinding when a SECTION failed,
-    // and a fatal one would abort instead of reporting. The try/catch is for the same reason --
-    // taking the dispatcher lock or building the diagnostic can throw, and an exception escaping
-    // a destructor ends the whole test binary rather than the one assertion.
+    // Nothing may leave this destructor: it runs during stack unwinding when a SECTION failed, and
+    // an exception escaping it ends the whole test binary. Even CHECK throws once Catch2 aborts the
+    // run (-a, -x N), after it has recorded the failure.
     try {
       INFO("handler: " << _name);
       CHECK(rpc::test_remove_handler(_name));
     } catch (std::exception const &ex) {
-      FAIL_CHECK("exception while removing handler '" << _name << "': " << ex.what());
+      // CHECK catches what test_remove_handler throws, so this is INFO or Catch2 itself failing.
+      try {
+        FAIL_CHECK("exception while removing handler '" << _name << "': " << ex.what());
+      } catch (...) {
+      }
     } catch (...) {
-      FAIL_CHECK("unknown exception while removing handler '" << _name << "'");
+      // Only Catch2's abort gets here, and CHECK has already recorded the failure.
     }
   }
 
@@ -711,6 +715,18 @@ TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
       REQUIRE(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
     }());
   }
+}
+
+// Fails on purpose, so the guard's CHECK throws into its catch (...); see test_jsonrpcserver.guard_abort.
+TEST_CASE("ScopedMethodHandler reports a failed removal when Catch2 aborts", "[.][guard_abort]")
+{
+  if (std::getenv("RPC_TEST_GUARD_ABORT") == nullptr || Catch::getCurrentContext().getConfig()->abortAfter() != 1) {
+    SKIP("run by ctest as test_jsonrpcserver.guard_abort");
+  }
+
+  ScopedMethodHandler handler{"guard_abort_handler", &do_nothing};
+  REQUIRE(handler.registered());
+  REQUIRE(rpc::test_remove_handler("guard_abort_handler"));
 }
 
 // Enable toggle
