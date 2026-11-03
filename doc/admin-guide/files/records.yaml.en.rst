@@ -2490,6 +2490,10 @@ Origin Server Connect Attempts
    Frequency of alerts
       See :ts:cv:`proxy.config.http.per_server.connection.alert_delay`.
 
+   When transactions wait on the same new connection to a possibly multiplexed (HTTP/2) upstream,
+   the connection is counted once, under the group and per-server configuration of the transaction
+   that opened it. Overrides from the transactions that joined it do not apply to that connection.
+
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.match STRING both
    :reloadable:
    :overridable:
