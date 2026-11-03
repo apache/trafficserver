@@ -52,6 +52,8 @@ def test_compress_transform_cache_write(ats_factory: ATSFactory, services: Servi
     ats = ats_factory.create("ts", enable_cache=True)
     if not ats.plugin_exists("compress.so"):
         pytest.skip("compress.so is required")
+    if not ats.has_feature("TS_HAS_BROTLI"):
+        pytest.skip("compress.so with brotli support is required")
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -60,6 +62,10 @@ def test_compress_transform_cache_write(ats_factory: ATSFactory, services: Servi
             # for the transform tunnel to complete first.
             "proxy.config.http.cache.max_open_read_retries": 5,
             "proxy.config.http.cache.open_read_retry_time": 100,
+            # compress.so adds Vary: Accept-Encoding to the identity response.
+            # Let the br requests use that stored object, so that the transform
+            # reads from the cache.
+            "proxy.config.http.cache.ignore_accept_encoding_mismatch": 1,
         })
     config = directory / "etc" / "cache-true-transform-write.config"
     ats.copy_to_config(config)
@@ -68,19 +74,24 @@ def test_compress_transform_cache_write(ats_factory: ATSFactory, services: Servi
     ats.start()
 
     def fetch(url: str, accept_encoding: str | None) -> tuple[str, str]:
-        """Return the status code and Content-Encoding curl saw, or 000."""
+        """Return the status code and Content-Encoding of a completed transfer.
+
+        A transfer that curl did not complete, for example after a timeout or
+        a truncated body, returns the curl exit code as the status.
+        """
         header = f"--header 'Accept-Encoding: {accept_encoding}' " if accept_encoding else ""
         result = curl.run_for(
             ats, f"--http1.1 --silent --output /dev/null --max-time {CLIENT_MAX_TIME} {header}"
             f"--write-out '%{{http_code}} %header{{content-encoding}}' {url}",
             timeout=CLIENT_MAX_TIME + 5)
+        if result.returncode != 0:
+            return f"curl exit {result.returncode}", ""
         status, _, encoding = result.stdout.strip().partition(" ")
         return status, encoding
 
     probe = f"http://127.0.0.1:{ats.http_port}/probe.json"
     assert fetch(probe, None) == ("200", "")
-    if fetch(probe, "br") != ("200", "br"):
-        pytest.skip("compress.so was built without brotli")
+    assert fetch(probe, "br") == ("200", "br")
 
     stalled = []
     with ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:

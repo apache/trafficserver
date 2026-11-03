@@ -1392,6 +1392,11 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
       c = tunnel.get_consumer(t_info->vc);
       ink_assert(c != nullptr);
     }
+    // The tunnel can complete while the cache write for the transformed copy
+    // is still open (see state_cache_open_write). On this error path the
+    // transformed copy is not stored, so cancel that open write. Otherwise its
+    // callback arrives after the error response has started.
+    pending_action = nullptr;
     vc_table.cleanup_entry(t_info->entry);
     t_info->entry = nullptr;
     // In Case 1: error due to transform write, and when the tunnel
