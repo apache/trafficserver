@@ -390,10 +390,6 @@ msgstr ""
 msgid ":ts:cv:`proxy.config.http.global_user_agent_header`"
 msgstr ""
 
-#: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:146
-msgid ":ts:cv:`proxy.config.http.slow.log.threshold`"
-msgstr ""
-
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:147
 #, fuzzy
 msgid ":ts:cv:`proxy.config.http.cache.generation`"

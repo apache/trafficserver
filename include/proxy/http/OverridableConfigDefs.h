@@ -192,7 +192,6 @@
   X(HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED,         post_check_content_length_enabled,          "proxy.config.http.post.check.content_length.enabled",            INT,    GENERIC) \
   X(HTTP_GLOBAL_USER_AGENT_HEADER,                  global_user_agent_header,                   "proxy.config.http.global_user_agent_header",                     STRING, GENERIC) \
   X(HTTP_AUTH_SERVER_SESSION_PRIVATE,               auth_server_session_private,                "proxy.config.http.auth_server_session_private",                  INT,    GENERIC) \
-  X(HTTP_SLOW_LOG_THRESHOLD,                        slow_log_threshold,                         "proxy.config.http.slow.log.threshold",                           INT,    GENERIC) \
   X(HTTP_CACHE_GENERATION,                          cache_generation_number,                    "proxy.config.http.cache.generation",                             INT,    GENERIC) \
   X(BODY_FACTORY_TEMPLATE_BASE,                     body_factory_template_base,                 "proxy.config.body_factory.template_base",                        STRING, GENERIC) \
   X(HTTP_CACHE_OPEN_WRITE_FAIL_ACTION,              cache_open_write_fail_action,               "proxy.config.http.cache.open_write_fail_action",                 INT,    GENERIC) \

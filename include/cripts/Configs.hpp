@@ -280,24 +280,6 @@ private:
     public:
       Server_Session_Sharing server_session_sharing;
 
-    private:
-      class Slow
-      {
-      private:
-        class Log
-        {
-        public:
-          cripts::IntConfig threshold{"proxy.config.http.slow.log.threshold"};
-        }; // End class Log
-
-      public:
-        Log log;
-
-      }; // End class Slow
-
-    public:
-      Slow slow;
-
       cripts::IntConfig transaction_active_timeout_in{"proxy.config.http.transaction_active_timeout_in"};
       cripts::IntConfig transaction_active_timeout_out{"proxy.config.http.transaction_active_timeout_out"};
       cripts::IntConfig transaction_no_activity_timeout_in{"proxy.config.http.transaction_no_activity_timeout_in"};
