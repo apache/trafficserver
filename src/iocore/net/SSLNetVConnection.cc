@@ -353,7 +353,7 @@ SSLNetVConnection::read_raw_data()
     }
   }
 
-  if (!this->haveCheckedProxyProtocol) {
+  if (!this->haveCheckedProxyProtocol && r > 0) {
     // The PROXY Protocol, by spec, is designed to require only the first TCP packet of bytes
     // because it is under typical MTU. So we only need to perform the following inspection on the
     // first packet.
