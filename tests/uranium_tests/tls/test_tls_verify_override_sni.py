@@ -56,7 +56,7 @@ def configure_origin(services: ServiceFactory, name: str, host: str) -> OriginSe
     )
     origin.add_response(
         {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
-        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"},
     )
     return origin
 

@@ -28,9 +28,9 @@
  * the asynchronous job
  */
 
-/* TLS_USE_TLS_ASYNC defined in ink_config.h */
+/* TLS_USE_TLS_ASYNC and HAVE_ENGINE_GET_DEFAULT_RSA defined in ink_config.h */
 #include "tscore/ink_config.h"
-#if TS_USE_TLS_ASYNC
+#if TS_USE_TLS_ASYNC && HAVE_ENGINE_GET_DEFAULT_RSA
 
 #include <stdio.h>
 #include <string.h>
@@ -171,8 +171,8 @@ async_destroy(ENGINE *e)
 static void
 wait_cleanup(ASYNC_WAIT_CTX *ctx, const void *key, OSSL_ASYNC_FD readfd, void *pvwritefd)
 {
-  OSSL_ASYNC_FD *pwritefd  = (OSSL_ASYNC_FD *)pvwritefd;
-  OSSL_ASYNC_FD  writefd_v = *pwritefd;
+  OSSL_ASYNC_FD *pwritefd = (OSSL_ASYNC_FD *)pvwritefd;
+  OSSL_ASYNC_FD writefd_v = *pwritefd;
   close(readfd);
   close(writefd_v);
   OPENSSL_free(pwritefd);
@@ -321,4 +321,4 @@ async_rsa_finish(RSA *rsa)
 {
   return RSA_meth_get_finish(RSA_PKCS1_OpenSSL())(rsa);
 }
-#endif /* TS_USE_TLS_ASYNC */
+#endif /* TS_USE_TLS_ASYNC && HAVE_ENGINE_GET_DEFAULT_RSA */

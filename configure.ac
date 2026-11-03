@@ -1364,7 +1364,12 @@ AC_CHECK_FUNCS([ \
   SSL_SESSION_dup \
   BIO_get_ex_data \
   BIO_set_ex_data \
+  ENGINE_get_default_RSA \
+  ENGINE_load_private_key \
 ])
+# OpenSSL 4 removed the ENGINE API, leaving deprecated stubs in its headers, so
+# the ENGINE functions above are checked by linking. ENGINE_load_dynamic is not
+# checked because it is a macro in OpenSSL 1.1 and 3.
 
 TS_CHECK_BIO_GET_EX_NEW_INDEX
 
