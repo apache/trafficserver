@@ -239,6 +239,13 @@ struct HttpTunnelConsumer {
   bool        write_success = false;
   const char *name          = nullptr;
 
+  /** Give this consumer a zero length write when it has nothing to write,
+      instead of completing it without one.  HttpSM sets this for an origin
+      whose request body ends with the frame that finishes a write, so that
+      write is what ends the request.
+  */
+  bool write_empty_body = false;
+
   /** Check if this consumer is downstream from @a vc.
       @return @c true if any producer in the tunnel eventually feeds
       data to this consumer.
