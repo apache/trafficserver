@@ -17,17 +17,22 @@
 from pathlib import Path
 import sys
 
+import pytest
+
 from tools.uranium.services import ATS, ATSFactory, Curl, ProcessService, ServiceFactory
 
 TOOLS_DIRECTORY = Path(__file__).parents[2] / "tools"
-BODY = "close-delimited body"
+BODY = "origin response body"
+CURLE_PARTIAL_FILE = 18
+CURLE_GOT_NOTHING = 52
 
 
-def configure_origin(services: ServiceFactory, *, _port: int) -> ProcessService:
-    """Serve a close-delimited TLS response and close without close_notify.
+def configure_origin(services: ServiceFactory, *, _port: int, _framing: tuple[str, ...]) -> ProcessService:
+    """Serve one TLS response and close without close_notify.
 
     :param services: Factory owning support services and their cleanup.
     :param _port: Port the origin listens on.
+    :param _framing: mock_origin.py options that frame or truncate the response.
     """
 
     return services.process(
@@ -43,7 +48,7 @@ def configure_origin(services: ServiceFactory, *, _port: int) -> ProcessService:
             "Connection: close",
             "--body",
             BODY,
-            "--close-delimited",
+            *_framing,
         ),
         ready_port=_port,
     )
@@ -67,20 +72,35 @@ def configure_ats(ats_factory: ATSFactory, *, _port: int) -> ATS:
     return ats
 
 
-def test_tls_origin_close_without_notify(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A close-delimited TLS origin response that ends without close_notify reaches the client whole.
+@pytest.mark.parametrize(
+    ("framing", "complete"),
+    [
+        pytest.param(("--close-delimited",), True, id="close-delimited"),
+        pytest.param(("--truncate", "5"), False, id="truncated-content-length"),
+        pytest.param(("--chunked", "--truncate", "5"), False, id="truncated-chunked"),
+    ],
+)
+def test_tls_origin_close_without_notify(
+        framing: tuple[str, ...], complete: bool, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """An origin close without close_notify completes a close-delimited body and fails a truncated one promptly.
 
+    :param framing: mock_origin.py options that frame or truncate the response.
+    :param complete: Whether the response's framing is satisfied when the origin closes.
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
     :param curl: Transport-aware curl command runner.
     """
     _port = services.allocate_port()
-    _origin = configure_origin(services, _port=_port)
+    _origin = configure_origin(services, _port=_port, _framing=framing)
     _ats = configure_ats(ats_factory, _port=_port)
 
     _origin.start()
     _ats.start()
     result = curl.run_for(_ats, f"--silent --show-error --max-time 10 http://127.0.0.1:{_ats.http_port}/")
-    assert result.returncode == 0, result.output
-    assert result.stdout == BODY
+    if complete:
+        assert result.returncode == 0, result.output
+        assert result.stdout == BODY
+    else:
+        # ATS sends nothing when it sees the truncation before writing the header, else a partial body.
+        assert result.returncode in (CURLE_GOT_NOTHING, CURLE_PARTIAL_FILE), result.output
     _origin.wait(timeout=5)

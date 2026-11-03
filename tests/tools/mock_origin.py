@@ -11,8 +11,8 @@ Python tool that:
     a configurable response.
   - Drains remaining request data after responding so that ATS does not see
     a connection reset while still forwarding a POST body (avoids HTTP/2 502).
-  - Supports Content-Length, chunked and close-delimited bodies, TLS, and
-    arbitrary response delays.
+  - Supports Content-Length, chunked, close-delimited and truncated bodies,
+    TLS, and arbitrary response delays.
 
 Usage examples mapping to the original shell scripts:
 
@@ -96,6 +96,8 @@ def serve_one(args):
     response = build_response(args)
     context = None
 
+    if args.truncate:
+        response = response[:-args.truncate]
     if args.tls:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(*args.tls)
@@ -140,8 +142,8 @@ def serve_one(args):
         except ConnectionError:
             pass
 
-        if args.close_delimited:
-            # ATS waits for this close to end the body, so there is nothing to drain.
+        if args.close_delimited or args.truncate:
+            # ATS still expects body bytes, so it never closes first and there is nothing to drain.
             conn.close()
             break
 
@@ -178,6 +180,7 @@ def main():
     parser.add_argument('--delay', '-d', type=float, default=0, help='Seconds to delay before sending response')
     parser.add_argument(
         '--close-delimited', action='store_true', help='Omit Content-Length and end the body by closing, with no TLS close_notify')
+    parser.add_argument('--truncate', type=int, default=0, metavar='N', help='Drop the last N bytes of the response, then close')
     parser.add_argument('--tls', nargs=2, metavar=('CERT', 'KEY'), help='Serve TLS with this certificate and key')
 
     args = parser.parse_args()
