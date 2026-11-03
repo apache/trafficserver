@@ -39,7 +39,7 @@ def configure_ats(
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_cache=_enable_cache)
+    ats = ats_factory.create("ts", enable_cache=_enable_cache, disable_log_checks=True)
     plugin = context.runtime.resolve_artifact(
         context.test_directory,
         "{AtsBuildUraniumTestsDir}/pluginTest/tsapi/.libs/test_TSHttpTxnServerAddrSet_retry.so",

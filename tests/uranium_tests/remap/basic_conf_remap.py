@@ -49,15 +49,16 @@ def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl
         )
         return origin
 
-    def configure_ats(name: str, filename: str, content: str) -> ATS:
+    def configure_ats(name: str, filename: str, content: str, disable_log_checks: bool = False) -> ATS:
         """Create one ATS instance with a conf_remap override file.
 
         :param name: Unique service or case name within this test.
         :param filename: Filename used by this test step.
         :param content: Content used by this test step.
+        :param disable_log_checks: Whether ERROR diagnostics are expected.
         """
 
-        ats = ats_factory.create(name)
+        ats = ats_factory.create(name, disable_log_checks=disable_log_checks)
         if not ats.plugin_exists("conf_remap.so"):
             pytest.skip("conf_remap.so is required")
         ats.records.update(
@@ -97,7 +98,7 @@ def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl
         :param warning: Warning used by this test step.
         """
 
-        ats = configure_ats(name, filename, content)
+        ats = configure_ats(name, filename, content, disable_log_checks=bool(warning))
         ats.start()
         result = curl.get(ats, "/test", headers={"Host": "www.testexample.com"}, options=f"--verbose")
         assert result.returncode == 0, result.output
@@ -115,7 +116,7 @@ def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl
         :param diagnostic: Diagnostic used by this test step.
         """
 
-        ats = configure_ats(name, filename, content)
+        ats = configure_ats(name, filename, content, disable_log_checks=True)
         ats.expect_start_failure(diagnostic, 33)
         ats.start()
 

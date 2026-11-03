@@ -90,20 +90,23 @@ class RecordTriggeredReloadContinuation;
 class ConfigContext
 {
 public:
-  ConfigContext();
+  ConfigContext() = default;
 
   explicit ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description = "", std::string_view filename = "");
 
-  ~ConfigContext();
+  ~ConfigContext() = default;
 
   // Copy only - move is intentionally suppressed.
-  // ConfigContext holds a weak_ptr (cheap to copy) and a YAML::Node (ref-counted).
+  // ConfigContext holds a weak_ptr to the task and a shared_ptr to the RPC-supplied
+  // YAML and reload directives, so a copy is at most two reference-count increments.
+  // Keep it that small: it is passed by value everywhere (see the size check in
+  // ConfigContext.cc).
   // Suppressing move ensures that std::move(ctx) silently copies, keeping the
   // original valid. This is critical for execute_reload()'s post-handler check:
   // if a handler defers work (e.g. LogConfig), the original ctx must remain
   // valid so is_terminal() can detect the non-terminal state and emit a warning.
-  ConfigContext(ConfigContext const &);
-  ConfigContext &operator=(ConfigContext const &);
+  ConfigContext(ConfigContext const &)            = default;
+  ConfigContext &operator=(ConfigContext const &) = default;
 
   /// Check if this context wraps a live task.
   /// Returns false for default-constructed or dedup-rejected contexts.
@@ -186,7 +189,9 @@ public:
   /// @code
   ///   if (auto yaml = ctx.supplied_yaml()) { /* use yaml node */ }
   /// @endcode
-  /// @return copy of the supplied YAML node (cheap - YAML::Node is internally reference-counted).
+  /// @return a handle on the supplied YAML node, or a new Undefined node on each call when
+  ///         none was supplied. YAML::Node is reference-counted: copies and dependents of
+  ///         this context share the node, so a write through it is seen by all of them.
   [[nodiscard]] YAML::Node supplied_yaml() const;
 
   /// Get reload directives extracted from the _reload key.
@@ -198,7 +203,9 @@ public:
   /// @code
   ///   if (auto directives = ctx.reload_directives()) { /* use directives */ }
   /// @endcode
-  /// @return copy of the directives YAML node (cheap - YAML::Node is internally reference-counted).
+  /// @return a handle on the directives YAML node, or a new Undefined node on each call when
+  ///         none were provided. YAML::Node is reference-counted: copies and dependents of
+  ///         this context share the node, so a write through it is seen by all of them.
   [[nodiscard]] YAML::Node reload_directives() const;
 
 private:
@@ -213,9 +220,12 @@ private:
   /// Set reload directives. Only ConfigRegistry should call this during reload setup.
   void set_reload_directives(YAML::Node node);
 
+  /// Supplied YAML and reload directives. Copies and dependents of this context share
+  /// it; the setters replace it instead of changing it. Defined in ConfigContext.cc.
+  struct Payload;
+
   std::weak_ptr<ConfigReloadTask> _task;
-  YAML::Node                      _supplied_yaml{YAML::NodeType::Undefined};
-  YAML::Node                      _reload_directives{YAML::NodeType::Undefined};
+  std::shared_ptr<Payload const>  _payload; ///< null when nothing was supplied
 
   friend class ReloadCoordinator;
   friend class config::ConfigRegistry;

@@ -24,18 +24,29 @@
  * This plugin is for TESTING ONLY - do not use in production!
  *
  * When a request contains the header "X-Crash-Test: now", this plugin
- * will dereference a null pointer, causing a SIGSEGV.
+ * will dereference a null pointer, causing a SIGSEGV. When the header value
+ * is "throw", it throws a std::runtime_error out of the hook instead, which
+ * nothing catches.
  */
 
 #include <ts/ts.h>
 #include <cstring>
 #include <cstdlib>
+#include <stdexcept>
 
 #define PLUGIN_NAME "crash_test"
 
 namespace
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
+
+// Kept out of line so this frame, and its name, shows up in the crash log
+// backtrace of the thread that threw.
+[[gnu::noinline]] void
+crash_test_throw()
+{
+  throw std::runtime_error("crash_test throw");
+}
 
 int
 handle_read_request(TSCont /* contp */, TSEvent event, void *edata)
@@ -66,6 +77,10 @@ handle_read_request(TSCont /* contp */, TSEvent event, void *edata)
       // Intentionally crash by dereferencing a null pointer.
       volatile int *null_ptr = nullptr;
       *null_ptr              = 42;
+      TSNote("This should never be reached.");
+    } else if (value != nullptr && value_len == 5 && strncmp(value, "throw", 5) == 0) {
+      TSNote("Received throw trigger header - throwing now!");
+      crash_test_throw();
       TSNote("This should never be reached.");
     }
 

@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import re
 import time
 
 import pytest
@@ -58,21 +59,25 @@ def tls_hook_configure_ats(
     return ats
 
 
-def tls_hook_request(*, _ats: ATS, _curl: Curl) -> None:
+def tls_hook_request(*, _ats: ATS, _curl: Curl, disable_tls_13: bool) -> None:
     """Send the common TLS request through ATS.
 
     :param _ats: Test-local ats configured by the test.
     :param _curl: Test-local curl configured by the test.
+    :param disable_tls_13: Require TLS 1.2 when TLS 1.3 is disabled.
     """
 
     result = _curl.run_for(
         _ats,
         (
-            f"--insecure --header 'host:example.com:{_ats.https_port}' --header 'uuid: tls-hook' "
+            f"--verbose --insecure --header 'host:example.com:{_ats.https_port}' --header 'uuid: tls-hook' "
             f"'https://127.0.0.1:{_ats.https_port}/'"),
         timeout=15,
     )
     assert result.returncode == 0, result.output
+    if disable_tls_13:
+        assert "SSL connection using TLSv1.2" in result.stderr, result.output
+        assert "SSL connection using TLSv1.3" not in result.stderr, result.output
 
 
 def tls_hook_verify_hook_diagnostics(*, _ats: ATS, _gold_file: Path) -> None:
@@ -86,31 +91,18 @@ def tls_hook_verify_hook_diagnostics(*, _ats: ATS, _gold_file: Path) -> None:
     error: AssertionError | None = None
     while time.monotonic() < deadline:
         output = _ats.traffic_out.read_text(errors="replace")
-        outbound_expectations = {
-            "ts-out-start-close-2.gold": (
-                "Outbound start callback 0",
-                "Outbound close callback 0",
-                "Outbound close callback 1",
-            ),
-            "ts-out-delay-start-2.gold": (
-                "Outbound delay start callback 0",
-                "Outbound delay start callback 1",
-            ),
-            "ts-close-out-close.gold": (
-                "Outbound close callback",
-                "Close callback 0",
-                "Close callback 1",
-            ),
-        }
-        if expected := outbound_expectations.get(_gold_file.name):
-            positions = [output.find(expression) for expression in expected]
-            if all(position >= 0 for position in positions) and positions == sorted(positions):
-                return
-            error = AssertionError(f"Expected ordered TLS hook diagnostics {expected!r}:\n{output}")
-            time.sleep(0.1)
-            continue
         try:
             assert_matches_gold(output, _gold_file)
+            callbacks = re.findall(r"\(ssl_hook_test\) ([^\n]*?callback [0-9]+) ", _gold_file.read_text())
+            for callback in set(callbacks):
+                count = output.count(callback + " ")
+                expected = callbacks.count(callback)
+                if callback.startswith("Pre accept"):
+                    # A readiness TCP probe can trigger preaccept without a handshake,
+                    # as allowed by the original AuTest's one-or-two count check.
+                    assert expected <= count <= 2 * expected, output
+                else:
+                    assert count == expected, output
             return
         except AssertionError as current_error:
             error = current_error
@@ -164,7 +156,7 @@ def test_tls_hook_combination(
 
     _origin.start()
     _ats.start()
-    tls_hook_request(_ats=_ats, _curl=curl)
+    tls_hook_request(_ats=_ats, _curl=curl, disable_tls_13=disable_tls_13)
     tls_hook_verify_hook_diagnostics(_ats=_ats, _gold_file=_gold_file)
 
 

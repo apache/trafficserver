@@ -24,6 +24,20 @@ from tools.uranium.services import ATS, ATSFactory
 TEST_DIRECTORY = Path(__file__).parent
 
 
+def prohibited_ciphers(ats: ATS) -> tuple[str, str]:
+    """Return a non-ephemeral AEAD and an ephemeral CBC suite that HTTP/2 prohibits.
+
+    BoringSSL has no SHA-256 CBC suites, so its ephemeral CBC suite is the
+    SHA-1 one.
+
+    :param ats: Traffic Server whose TLS library must offer the suites.
+    """
+
+    if "BoringSSL" in ats.tls_library():
+        return "AES128-GCM-SHA256", "ECDHE-RSA-AES128-SHA"
+    return "AES128-GCM-SHA256", "ECDHE-RSA-AES128-SHA256"
+
+
 def configure_ats(ats_factory: ATSFactory) -> ATS:
     """Offer one permitted and two prohibited HTTP/2 cipher suites.
 
@@ -31,6 +45,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     """
 
     ats = ats_factory.create("ts", enable_tls=True)
+    # BoringSSL rejects the whole list if it contains an @SECLEVEL directive.
+    seclevel = "" if "BoringSSL" in ats.tls_library() else ":@SECLEVEL=0"
     ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
     ats.ssl_multicert_config.add_lines(
         (
@@ -43,9 +59,7 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
         {
             "proxy.config.ssl.server.version.min": 2,
             "proxy.config.ssl.server.version.max": 2,
-            "proxy.config.ssl.server.cipher_suite":
-                ("ECDHE-RSA-AES128-GCM-SHA256:AES128-GCM-SHA256:"
-                 "ECDHE-RSA-AES128-SHA256:@SECLEVEL=0"),
+            "proxy.config.ssl.server.cipher_suite": ":".join(("ECDHE-RSA-AES128-GCM-SHA256", *prohibited_ciphers(ats))) + seclevel,
         })
     return ats
 
@@ -82,7 +96,7 @@ def test_tls_h2_cipher_suite(ats_factory: ATSFactory) -> None:
     _ats.start()
     allowed = run_client("ECDHE-RSA-AES128-GCM-SHA256", _ats=_ats)
     assert "ALPN protocol: h2" in allowed
-    for cipher in ("AES128-GCM-SHA256", "ECDHE-RSA-AES128-SHA256"):
+    for cipher in prohibited_ciphers(_ats):
         prohibited = run_client(cipher, send_request=True, _ats=_ats)
         assert "ALPN protocol: http/1.1" in prohibited
         assert "HTTP/1.1 404" in prohibited

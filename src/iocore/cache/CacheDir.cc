@@ -375,15 +375,16 @@ Directory::cleanup(StripeSM *stripe)
   CHECK_DIR(d);
 }
 
+/**
+  Recovery only: cacheInitialized() stores the gauges afterwards, so debiting them here would be overwritten.
+ */
 void
 Directory::clear_range(off_t start, off_t end, StripeSM *stripe)
 {
   for (off_t i = 0; i < this->entries(); i++) {
     Dir *e = dir_index(stripe, i);
     if (dir_offset(e) >= static_cast<int64_t>(start) && dir_offset(e) < static_cast<int64_t>(end)) {
-      ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
-      ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
-      dir_set_offset(e, 0); // delete
+      dir_set_offset(e, 0);
     }
   }
   this->cleanup(stripe);

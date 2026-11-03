@@ -152,6 +152,35 @@ def make_headers(scenario: str) -> bytes:
     return encoder.encode(headers)
 
 
+def send_request(tls_socket: socket.socket, scenario: str) -> None:
+    """Finish SETTINGS before sending a potentially connection-fatal request.
+
+    :param tls_socket: Connected TLS socket with HTTP/2 negotiated.
+    :param scenario: Key in SCENARIOS describing the request frames.
+    """
+
+    tls_socket.sendall(H2_PREFACE + make_frame(TYPE_SETTINGS, 0, 0))
+    received_settings = False
+    received_ack = False
+    while not (received_settings and received_ack):
+        frame = read_frame(tls_socket)
+        if frame is None or frame["type"] == TYPE_GOAWAY:
+            raise RuntimeError("Connection closed during the SETTINGS handshake")
+        if frame["type"] == TYPE_SETTINGS:
+            if frame["flags"] & FLAG_ACK:
+                received_ack = True
+            else:
+                tls_socket.sendall(make_frame(TYPE_SETTINGS, FLAG_ACK, 0))
+                received_settings = True
+
+    # A separate TLS write after malformed DATA can race ATS closing the
+    # connection. Submit all request frames together, then only read the reply.
+    request = make_frame(TYPE_HEADERS, FLAG_END_HEADERS, 1, make_headers(scenario))
+    for data_flags, data_payload in SCENARIOS[scenario][1]:
+        request += make_frame(TYPE_DATA, data_flags, 1, data_payload)
+    tls_socket.sendall(request)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("port", type=int, help="TLS port to connect to")
@@ -160,24 +189,10 @@ def main() -> int:
 
     tls_socket = connect_socket(args.port)
     decoder = hpack.Decoder()
-    _, data_frames, expectation = SCENARIOS[args.scenario]
+    _, _, expectation = SCENARIOS[args.scenario]
     rejection_expected = expectation == EXPECT_REJECTED
-    # Send the whole request in one write. ATS may reject the first DATA frame and
-    # close the connection before a later frame arrives, and a write after that
-    # close would fail before the GOAWAY explaining the rejection is read.
-    request = [
-        H2_PREFACE,
-        make_frame(TYPE_SETTINGS, 0, 0),
-        make_frame(TYPE_HEADERS, FLAG_END_HEADERS, 1, make_headers(args.scenario)),
-    ]
-    request += [make_frame(TYPE_DATA, data_flags, 1, data_payload) for data_flags, data_payload in data_frames]
     try:
-        try:
-            tls_socket.sendall(b"".join(request))
-        except (ConnectionError, ssl.SSLError):
-            if not rejection_expected:
-                raise
-            # The rejection may already be waiting to be read.
+        send_request(tls_socket, args.scenario)
 
         while True:
             frame = read_frame(tls_socket)

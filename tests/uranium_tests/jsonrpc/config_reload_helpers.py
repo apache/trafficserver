@@ -17,6 +17,7 @@
 
 from typing import Any
 import json
+import os
 import time
 
 from tools.uranium.services import ATS, CommandResult
@@ -78,8 +79,74 @@ def wait_for_status(
     while time.monotonic() < deadline:
         result = ats.traffic_ctl("config", "status", "-t", token, *extra_arguments)
         output = result.output
-        if result.returncode == 0 and "in_progress" not in output and all(fragment in output for fragment in contains) and all(
-                fragment not in output for fragment in excludes):
+        if result.returncode == 0 and root_task_status(ats, token) in TERMINAL_STATUSES and all(
+                fragment in output for fragment in contains) and all(fragment not in output for fragment in excludes):
             return output
         time.sleep(0.2)
     raise AssertionError(f"Reload {token!r} did not reach the expected status:\n{output}")
+
+
+TERMINAL_STATUSES = frozenset(("success", "fail", "timeout"))
+
+
+def root_task_status(ats: ATS, token: str) -> str | None:
+    """Return the status of one reload's root task, or None if it is unknown.
+
+    :param ats: Running Traffic Server instance.
+    :param token: Reload token supplied to ``traffic_ctl``.
+    """
+
+    response = rpc(ats, "get_reload_config_status", {"token": token})
+    tasks = response.get("result", {}).get("tasks", [])
+    return tasks[0].get("status") if tasks else None
+
+
+def wait_for_reload(ats: ATS, token: str, timeout: float = 30, *, after_log: str | None = None) -> str:
+    """Wait for one reload's root task to finish and return its status.
+
+    A root task that already succeeded returns to ``in_progress`` when a
+    handler reserves a late subtask, so callers expecting one should pass the
+    diagnostic that reports the reservation as @a after_log.
+
+    :param ats: Running Traffic Server instance.
+    :param token: Reload token supplied to ``traffic_ctl``.
+    :param timeout: Maximum number of seconds to wait.
+    :param after_log: traffic.out text that must appear before the root status is trusted.
+    """
+
+    deadline = time.monotonic() + timeout
+    status = None
+    while after_log is not None and after_log not in ats.traffic_out.read_text(errors="replace"):
+        if time.monotonic() >= deadline:
+            raise AssertionError(f"Reload {token!r} never logged {after_log!r}")
+        time.sleep(0.2)
+    while time.monotonic() < deadline:
+        status = root_task_status(ats, token)
+        if status in TERMINAL_STATUSES:
+            return status
+        time.sleep(0.2)
+    raise AssertionError(f"Reload {token!r} did not finish; root task status is {status!r}")
+
+
+def reload_task_statuses(ats: ATS, token: str) -> dict[str, str]:
+    """Map every task in one reload's tree to its reported status.
+
+    Tasks are keyed by description and by the basename of their filename, so
+    either ``virtualhost`` or ``sni.yaml`` style names can be looked up.
+
+    :param ats: Running Traffic Server instance.
+    :param token: Reload token supplied to ``traffic_ctl``.
+    """
+
+    response = rpc(ats, "get_reload_config_status", {"token": token})
+    assert "error" not in response, response
+    statuses: dict[str, str] = {}
+    pending = list(response.get("result", {}).get("tasks", [])[:1])
+    while pending:
+        task = pending.pop()
+        for field in ("description", "filename"):
+            value = task.get(field)
+            if value and value != "<none>":
+                statuses.setdefault(os.path.basename(value), task.get("status", "unknown"))
+        pending.extend(task.get("sub_tasks", []))
+    return statuses

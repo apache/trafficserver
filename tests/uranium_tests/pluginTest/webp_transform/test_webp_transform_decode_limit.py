@@ -64,7 +64,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_cache=False)
+    ats = ats_factory.create("ts", enable_cache=False, disable_log_checks=True)
     if not ats.plugin_exists("webp_transform.so"):
         pytest.skip("webp_transform.so is required")
     ats.plugin_config.add_line("webp_transform.so convert_to_jpeg")

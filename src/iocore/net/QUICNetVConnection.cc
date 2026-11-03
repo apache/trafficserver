@@ -190,6 +190,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     _unschedule_packet_write_ready();
     this->_propagate_event(event);
     this->closed = 1;
+    this->rearm_timer();
     break;
   default:
     QUICConDebug("Unhandled event: %d", event);
@@ -231,6 +232,7 @@ QUICNetVConnection::state_established(int event, Event *data)
     _unschedule_packet_write_ready();
     this->_propagate_event(event);
     this->closed = 1;
+    this->rearm_timer();
     break;
   default:
     QUICConDebug("Unhandled event: %d", event);

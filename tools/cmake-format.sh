@@ -24,6 +24,9 @@
 # https://github.com/cheshirekow/cmake_format/tags
 CMAKE_FORMAT_VERSION="0.6.13"
 VERSION="0.6.13"
+# cmakelang is unmaintained and fails under Python 3.15+, where re.Scanner no
+# longer accepts capturing groups.
+CMAKE_FORMAT_PYTHON="<3.15"
 
 function cmake_vendorlib_grep() {
   grep -E "CMakeLists.txt|.cmake$" | grep -vE "lib/(Catch2|fastlz|highway|ls-hpack|swoc|yamlcpp)" || true
@@ -38,7 +41,7 @@ function main() {
     exit 1
   fi
 
-  ver=$(uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format --version 2>&1)
+  ver=$(uv tool run --quiet --python "${CMAKE_FORMAT_PYTHON}" --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format --version 2>&1)
   if [ "$ver" != "$VERSION" ]
   then
       echo "Wrong version of cmake-format!"
@@ -67,7 +70,7 @@ function main() {
   # after this we assume was modified by cmake-format.
   start_time_file=${tmp_dir}/format_start.$$
   touch ${start_time_file}
-  uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format -i $(cat ${files})
+  uv tool run --quiet --python "${CMAKE_FORMAT_PYTHON}" --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format -i $(cat ${files})
   find $(cat ${files}) -newer ${start_time_file}
 
   rm -rf ${tmp_dir}

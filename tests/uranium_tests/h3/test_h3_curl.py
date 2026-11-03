@@ -128,7 +128,7 @@ def test_h3_curl(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) 
     assert f"size_download={len(H3_CURL__response_body)}" in result.stdout
     assert "http_version=3" in result.stdout
     assert body.read_text() == H3_CURL__response_body
-    content = wait_for_file_lines(_ats.log_directory / "h3_access.log", r"c_alpn=h3", 1, timeout=10)
+    content = wait_for_file_lines(_ats.log_directory / "h3_access.log", r"c_alpn=h3", 1)
     assert re.search(
         r"c_alpn=h3 client_version=http/3 c_ssl_version=[^ ]+ c_method=GET "
         r"c_url=https://foo\.com:[0-9]+/h3-curl",

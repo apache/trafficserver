@@ -93,7 +93,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ats")
+    ats = ats_factory.create("ats", disable_log_checks=True)
     required = ("slice.so", "cache_range_requests.so", "xdebug.so")
     if not all(ats.plugin_exists(plugin) for plugin in required):
         pytest.skip("slice.so, cache_range_requests.so, and xdebug.so are required")

@@ -115,15 +115,24 @@ sessions:
               - [uuid, at-header-global-client]
 
         proxy-request:
-          method: "GET"
-          url: *global_path
+          method: GET
+          url:
+          - - path
+            - value: /global
+              as: equal
+          - - query
+            - as: absent
           headers:
             fields:
-              - [*global_request_probe, {as: absent}]
-              - [*global_request_extra, {as: absent}]
-              - [*request_added, {as: absent}]
-              - [X-Normal, {value: keep-me, as: equal}]
-
+            - - '@Client-Test'
+              - as: absent
+            - - '@Client-Extra'
+              - as: absent
+            - - '@Plugin-Request'
+              - as: absent
+            - - X-Normal
+              - value: keep-me
+                as: equal
         server-response:
           status: 200
           reason: "OK"
@@ -153,14 +162,22 @@ sessions:
               - [uuid, at-header-remap-client]
 
         proxy-request:
-          method: "GET"
-          url: *remap_path
+          method: GET
+          url:
+          - - path
+            - value: /remap
+              as: equal
+          - - query
+            - as: absent
           headers:
             fields:
-              - [*remap_request_probe, {as: absent}]
-              - [*request_added, {as: absent}]
-              - [X-Normal, {value: keep-me, as: equal}]
-
+            - - '@Client-Remap-Test'
+              - as: absent
+            - - '@Plugin-Request'
+              - as: absent
+            - - X-Normal
+              - value: keep-me
+                as: equal
         server-response:
           status: 200
           reason: "OK"

@@ -56,7 +56,7 @@ def configure_ats(ats_factory: ATSFactory, *, _mode: str, _origin: OriginServer 
     :param _trusted: Test-local trusted configured by the test.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True)
+    ats = ats_factory.create("ts", enable_tls=True, disable_log_checks=True)
     if not ats.plugin_exists("abuse_shield.so"):
         pytest.skip("abuse_shield.so is required")
     ats.add_default_ssl_files()

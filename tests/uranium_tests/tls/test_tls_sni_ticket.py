@@ -168,7 +168,7 @@ def test_tls_sni_ticket(ats_factory: ATSFactory, services: ServiceFactory) -> No
     assert "TLSv1.2" in disabled12
 
     enabled13 = tls13_messages(_enabled, "tickets-on.com")
-    expected_tickets = 0 if "BoringSSL" in version else 3
+    expected_tickets = 0 if "BoringSSL" in _enabled.tls_library() else 3
     assert enabled13.count("NewSessionTicket") == expected_tickets
     disabled13 = tls13_messages(_disabled, "tickets-off.com")
     assert "NewSessionTicket" not in disabled13

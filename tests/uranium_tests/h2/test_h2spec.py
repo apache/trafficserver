@@ -40,7 +40,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False, disable_log_checks=True)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     ats.records.update(
         {

@@ -57,8 +57,15 @@ def continuation_configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServe
     :param _protocol: Test-local protocol configured by the test.
     """
 
-    enable_tls = _protocol == "h2"
-    ats = _ats_factory.create("ts", enable_tls=enable_tls, enable_cache=False)
+    enable_tls = _protocol.startswith("h2")
+    ats = _ats_factory.create(
+        "ts",
+        enable_tls=enable_tls,
+        enable_cache=False,
+        enable_proxy_protocol=_protocol == "h2-proxy",
+        enable_proxy_protocol_cp_src=_protocol == "h2-proxy")
+    if _protocol == "h2-proxy":
+        ats.records.update({"proxy.config.http.proxy_protocol_allowlist": "127.0.0.1"})
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -69,7 +76,8 @@ def continuation_configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServe
             } if enable_tls else {}),
         })
     ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{_plugin}")
-    ats.plugin_config.add_line(_plugin)
+    arguments = " --check-addresses" if _plugin == "ssntxnorder_verify.so" and enable_tls else ""
+    ats.plugin_config.add_line(_plugin + arguments)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -83,15 +91,20 @@ def continuation_run_clients(*, _ats: ATS, _curl: Curl, _protocol: str, _request
     :param _request_count: Test-local request count configured by the test.
     """
 
-    if _protocol == "h2" and not _curl.supports("http2"):
+    if _protocol.startswith("h2") and not _curl.supports("http2"):
         pytest.skip("curl HTTP/2 support is required")
-    if _protocol == "h2" and _curl.uses_uds:
+    if _protocol.startswith("h2") and _curl.uses_uds:
         pytest.skip("HTTP/2 continuation coverage requires a TCP listener")
 
-    url = (f"https://127.0.0.1:{_ats.https_port}/" if _protocol == "h2" else f"http://127.0.0.1:{_ats.http_port}/")
+    port = _ats.proxy_protocol_https_port if _protocol == "h2-proxy" else _ats.https_port
+    url = (f"https://127.0.0.1:{port}/" if _protocol.startswith("h2") else f"http://127.0.0.1:{_ats.http_port}/")
     options = ["--silent", "--show-error", "--header", "Connection: close"]
-    if _protocol == "h2":
+    if _protocol.startswith("h2"):
         options.extend(["--insecure", "--http2"])
+    if _protocol == "h2-proxy":
+        if "--haproxy-clientip" not in _curl.run_for(_ats, "--help all").stdout:
+            pytest.skip("curl --haproxy-clientip support is required")
+        options.extend(["--haproxy-clientip", "192.0.2.7"])
 
     def request(_index: int) -> None:
         """Request.
@@ -225,7 +238,7 @@ def test_double_continuation_counts(
     assert metrics["continuations_verify.txn.close.1"] == request_count
 
 
-@pytest.mark.parametrize("protocol", ["http1", "h2"])
+@pytest.mark.parametrize("protocol", ["http1", "h2", "h2-proxy"])
 def test_continuation_open_close_order(
     ats_factory: ATSFactory,
     services: ServiceFactory,
@@ -248,6 +261,8 @@ def test_continuation_open_close_order(
     continuation_wait_for_metric("ssntxnorder_verify.test.done", _ats=_ats)
     metrics = continuation_metrics("ssntxnorder_verify", _ats=_ats)
     assert metrics["ssntxnorder_verify.err"] == 0
+    if protocol.startswith("h2"):
+        assert metrics["ssntxnorder_verify.ssn.addresses"] == metrics["ssntxnorder_verify.ssn.close"]
     for scope in ("ssn", "txn"):
         assert metrics[f"ssntxnorder_verify.{scope}.start"] > 0
         assert metrics[f"ssntxnorder_verify.{scope}.start"] == metrics[f"ssntxnorder_verify.{scope}.close"]

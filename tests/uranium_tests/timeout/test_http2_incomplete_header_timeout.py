@@ -78,7 +78,7 @@ def configure_ats(ats_factory: ATSFactory, *, _case: IncompleteHeaderCase, _orig
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False, disable_log_checks=_case.expect_timeout)
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,

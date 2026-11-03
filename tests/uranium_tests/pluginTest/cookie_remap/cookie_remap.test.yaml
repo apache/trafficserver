@@ -75,6 +75,11 @@ urtest:
     - name: "collapse-remapped-slashes"
       client: {process_config: {keys: "collapse-remapped"}}
       ats:
+        # Proxy Verifier misparses :// within a query as a URL scheme.
+        # Verify the complete received request line instead.
+        file_checks:
+          - path: '{ATS_ROOT}/../cookie-remap-origin/cookie-remap-origin.stdout'
+            contains: '^GET /i/like/cheetos\?\.done=http://finance\.yahoo\.com HTTP/1\.1$'
         template_to_config_dir: ["configs/collapseconfig.txt"]
         remap_config:
           - "map http://www.example.com/magic http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam={CONFIG_DIR}/collapseconfig.txt"
@@ -82,6 +87,9 @@ urtest:
     - name: "collapse-preremap-slashes"
       client: {process_config: {keys: "collapse-preremap"}}
       ats:
+        file_checks:
+          - path: '{ATS_ROOT}/../cookie-remap-origin/cookie-remap-origin.stdout'
+            contains: '^GET /i/like/cheetos\?\.done=http://finance\.yahoo\.com HTTP/1\.1$'
         template_to_config_dir: ["configs/pcollapseconfig.txt"]
         remap_config:
           - "map http://www.example.com/orig_path http://shouldnothit.com/magic @plugin=cookie_remap.so @pparam={CONFIG_DIR}/pcollapseconfig.txt"
@@ -157,7 +165,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=value]]}
-        proxy-request: {url: /cookieexists}
+        proxy-request:
+          url:
+            - [path, {value: "/cookieexists", as: equal}]
+            - [query, {as: absent}]
         server-response: &ok
           status: 200
           headers: {fields: [[Content-Length, 0], [Connection, close]]}
@@ -169,7 +180,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, breadcrumb=etc]]}
-        proxy-request: {url: /cookiedoesntexist}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiedoesntexist", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -179,7 +193,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com]]}
-        proxy-request: {url: /cookiedoesntexist}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiedoesntexist", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -189,7 +206,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=etc]]}
-        proxy-request: {url: /cookieexists}
+        proxy-request:
+          url:
+            - [path, {value: "/cookieexists", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -199,7 +219,10 @@ sessions:
           url: /magic?a=1&b=2&c=3
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=magic]]}
-        proxy-request: {url: "/cookiematches?a=1&b=2&c=3"}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiematches", as: equal}]
+            - [query, {value: "a=1&b=2&c=3", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -209,7 +232,10 @@ sessions:
           url: /magic?a=1&b=2&c=3
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=magit]]}
-        proxy-request: {url: "/cookiedoesntmatch?a=1&b=2&c=3"}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiedoesntmatch", as: equal}]
+            - [query, {value: "a=1&b=2&c=3", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -219,7 +245,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=333]]}
-        proxy-request: {url: /cookiematches}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiematches", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -229,7 +258,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=etc]]}
-        proxy-request: {url: /cookiedoesntmatch}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiedoesntmatch", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -239,7 +271,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, "fpbeta=abcd icecream=donteat"]]}
-        proxy-request: {url: /cookiematches}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiematches", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -249,7 +284,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=somethingelse]]}
-        proxy-request: {url: /cookiedoesntmatch}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiedoesntmatch", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -259,7 +297,10 @@ sessions:
           url: /magic/thisispartofthepath
           version: "1.1"
           headers: {fields: [[Host, www.example.com]]}
-        proxy-request: {url: /cookiematches}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiematches", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -269,7 +310,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=etc]]}
-        proxy-request: {url: /cookiedoesntmatch}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiedoesntmatch", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -279,7 +323,6 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com]]}
-        proxy-request: {url: "/i/like/cheetos?.done=http://finance.yahoo.com"}
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -289,7 +332,6 @@ sessions:
           url: /orig_path
           version: "1.1"
           headers: {fields: [[Host, www.example.com]]}
-        proxy-request: {url: "/i/like/cheetos?.done=http://finance.yahoo.com"}
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -299,7 +341,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=abcd]]}
-        proxy-request: {url: "/photos/search?query=magic"}
+        proxy-request:
+          url:
+            - [path, {value: "/photos/search", as: equal}]
+            - [query, {value: "query=magic", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -309,7 +354,10 @@ sessions:
           url: /magic/theunmatchedpath
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, oxalpha=3333]]}
-        proxy-request: {url: "/photos/search?query=/theunmatchedpath"}
+        proxy-request:
+          url:
+            - [path, {value: "/photos/search", as: equal}]
+            - [query, {value: "query=/theunmatchedpath", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -320,7 +368,9 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, acgamma=value]]}
         proxy-request:
-          url: "/photos/search/cr_substitutions?query=%28http%3A%2F%2Fshouldnothit%2Ecom%2Fmagic"
+          url:
+            - [path, {value: "/photos/search/cr_substitutions", as: equal}]
+            - [query, {value: "query=%28http%3A%2F%2Fshouldnothit%2Ecom%2Fmagic", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -330,7 +380,10 @@ sessions:
           url: /magic/foobar
           version: "1.1"
           headers: {fields: [[Host, www.example.com]]}
-        proxy-request: {url: /photos/search/magic/foobar}
+        proxy-request:
+          url:
+            - [path, {value: "/photos/search/magic/foobar", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -340,7 +393,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=abcd]]}
-        proxy-request: {url: "/photos/search?query=magic"}
+        proxy-request:
+          url:
+            - [path, {value: "/photos/search", as: equal}]
+            - [query, {value: "query=magic", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -350,7 +406,10 @@ sessions:
           url: /magic/theunmatchedpath
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, oxalpha=3333]]}
-        proxy-request: {url: "/photos/search?query=/theunmatchedpath"}
+        proxy-request:
+          url:
+            - [path, {value: "/photos/search", as: equal}]
+            - [query, {value: "query=/theunmatchedpath", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -361,7 +420,9 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, acgamma=value]]}
         proxy-request:
-          url: "/photos/search/cr_substitutions?query=%28http%3A%2F%2Fwww%2Eexample%2Ecom%2Fmagic"
+          url:
+            - [path, {value: "/photos/search/cr_substitutions", as: equal}]
+            - [query, {value: "query=%28http%3A%2F%2Fwww%2Eexample%2Ecom%2Fmagic", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -371,7 +432,10 @@ sessions:
           url: /magic/foobar
           version: "1.1"
           headers: {fields: [[Host, www.example.com]]}
-        proxy-request: {url: /photos/search/magic/foobar}
+        proxy-request:
+          url:
+            - [path, {value: "/photos/search/magic/foobar", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -381,7 +445,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=ilove-oreos-chipsahoy-icecream]]}
-        proxy-request: {url: "/regexmatches?cookies=oreos-chipsahoy-icecream"}
+        proxy-request:
+          url:
+            - [path, {value: "/regexmatches", as: equal}]
+            - [query, {value: "cookies=oreos-chipsahoy-icecream", as: equal}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -391,7 +458,10 @@ sessions:
           url: /magic
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, fpbeta=etc]]}
-        proxy-request: {url: /regexdoesntmatch}
+        proxy-request:
+          url:
+            - [path, {value: "/regexdoesntmatch", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -419,7 +489,10 @@ sessions:
           url: /
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, "fpbeta=a=1&b=2&c=3"]]}
-        proxy-request: {url: /cookiematches}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiematches", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -429,7 +502,10 @@ sessions:
           url: /
           version: "1.1"
           headers: {fields: [[Host, www.example.com], [Cookie, "fpbeta=a=1&b=2&c=4"]]}
-        proxy-request: {url: /cookiedoesntmatch}
+        proxy-request:
+          url:
+            - [path, {value: "/cookiedoesntmatch", as: equal}]
+            - [query, {as: absent}]
         server-response: *ok
         proxy-response: *proxy-ok
 
@@ -440,7 +516,8 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, example.com], [Cookie, SessionID=333]]}
         proxy-request:
-          url: /app/test
+          url:
+            - [path, {value: /app/test, as: equal}]
           headers: {fields: [[Host, {value: canary.com, as: contains}]]}
         server-response: *ok
         proxy-response: *proxy-ok
@@ -452,7 +529,8 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, example.com]]}
         proxy-request:
-          url: /app/test
+          url:
+            - [path, {value: /app/test, as: equal}]
           headers: {fields: [[Host, {value: example.com, as: equal}]]}
         server-response: *ok
         proxy-response: *proxy-ok
@@ -464,7 +542,8 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, example.com], [Cookie, SessionID=333]]}
         proxy-request:
-          url: /app/test
+          url:
+            - [path, {value: /app/test, as: equal}]
           headers: {fields: [[Host, {value: example.com, as: equal}]]}
         server-response: *ok
         proxy-response: *proxy-ok
@@ -476,7 +555,8 @@ sessions:
           version: "1.1"
           headers: {fields: [[Host, example.com]]}
         proxy-request:
-          url: /app/test
+          url:
+            - [path, {value: /app/test, as: equal}]
           headers: {fields: [[Host, {value: example.com, as: equal}]]}
         server-response: *ok
         proxy-response: *proxy-ok

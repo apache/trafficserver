@@ -76,7 +76,7 @@ blib/**
 **/systemtap/**
 **/swoc/**
 **/highway/**
-tests/uranium_tests/autest-site/min_cfg
+tests/tools/uranium/min_cfg
 tests/uranium_tests/h2/rules/huge_resp_hdrs.conf
 tools/http_load/**
 **/clang-tidy.conf

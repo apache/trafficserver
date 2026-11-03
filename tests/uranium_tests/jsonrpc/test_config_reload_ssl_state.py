@@ -26,7 +26,7 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True)
+    ats = ats_factory.create("ts", enable_tls=True, disable_log_checks=True)
     ats.add_default_ssl_files()
     ats.records.update(
         {

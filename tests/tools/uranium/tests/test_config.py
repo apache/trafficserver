@@ -111,6 +111,14 @@ def test_all_bespoke_tests_are_available_to_pytest() -> None:
     assert not missing, f"Native modules without pytest entry points: {missing}"
 
 
+def test_no_autest_files_remain() -> None:
+    """Reject AuTest files, which pytest would silently skip."""
+
+    uranium_tests = Path(__file__).parents[3] / "uranium_tests"
+    leftovers = [str(path.relative_to(uranium_tests)) for path in uranium_tests.rglob("*.test.py")]
+    assert not leftovers, f"AuTest files under uranium_tests: {leftovers}"
+
+
 def test_curl_call_sites_use_shell_style_strings() -> None:
     """Keep native curl calls on the readable string-based API."""
 

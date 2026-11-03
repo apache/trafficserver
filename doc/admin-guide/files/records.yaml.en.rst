@@ -530,6 +530,9 @@ Network
    handled. This should be tuned according to your memory size, and expected
    work load.  If this is set to 0, the throttling logic is disabled.
 
+   See :ts:cv:`proxy.config.http.per_client.connection.exempt_list` for a way to
+   accept client connections from some addresses when |TS| is at this limit.
+
 .. ts:cv:: CONFIG proxy.config.net.max_connections_in INT 30000
 
    The total number of client requests that |TS| can handle simultaneously.
@@ -565,6 +568,20 @@ Network
    for example, to allow any number of incoming connections from within
    an organization's network without blocking them due to the per client
    connection max feature.
+
+   |TS| also accepts connections from these addresses when it is at
+   :ts:cv:`proxy.config.net.connections_throttle`. These connections still
+   count in :ts:stat:`proxy.process.net.connections_currently_open`, so they
+   take up room under that limit for other clients. A network in this list
+   that opens many connections can take |TS| past the limit and use up the
+   file descriptors that the limit protects.
+   :ts:stat:`proxy.process.net.per_client.connections_exempt_currently_open`
+   shows how many of the open connections are from addresses in this list.
+
+   While memory use is more than :ts:cv:`proxy.config.memory.max_usage`, |TS|
+   refuses new client connections from all addresses, including the addresses
+   in this list. |TS| compares the list with the peer address of the socket,
+   not with an address from a PROXY protocol header.
 
    This configuration is reloadable via :program:`traffic_ctl config reload`.
 
@@ -629,9 +646,46 @@ Network
 
 .. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
 
-   How frequent (in seconds) to check for inactive connections. If you deal
-   with a lot of concurrent connections, increasing this setting can reduce
-   pressure on the system.
+   How frequent (in seconds) to check for inactive connections. This is the
+   resolution of the inactivity and active timeouts: a timeout fires on the
+   first check at or after its deadline, so raising this value makes timeouts
+   correspondingly coarser.
+
+   Raising it does not reduce load at high connection counts. The cost of a
+   check is proportional to the number of connections whose deadline has come
+   due, not to the number of connections open, so there is little to gain here
+   and timeout accuracy to lose.
+
+.. ts:cv:: CONFIG proxy.config.net.inactivity_cop_budget INT 4096
+   :reloadable:
+
+   The maximum number of connections one inactivity check may time out before
+   yielding. A check also yields after examining 16 times this many
+   connections, since a connection whose deadline has moved out is re-armed
+   without being timed out. Anything still due is retired a millisecond later
+   rather than waiting for the next check, so this bounds the length of a single
+   check and not how much work a check may eventually retire.
+
+   This is a latency control, not a throughput one. The check runs on an event
+   thread, so a check that closes N connections delays that thread's poll loop
+   for as long as those N closes take, and unrelated connections on that thread
+   wait. Because reaping idle connections is low priority work, trading a longer
+   total reap for smaller slices is usually worthwhile on a busy system: lowering
+   this value smooths the spikes a correlated wave of timeouts would otherwise
+   put on the event loop.
+
+   To choose a value, watch :ts:stat:`proxy.process.net.inactivity_cop_pass_max_us`,
+   which reports the longest check observed. Divide
+   :ts:stat:`proxy.process.net.inactivity_cop_pass_time_us` by
+   :ts:stat:`proxy.process.net.inactivity_cop_fired` for the average cost of one
+   close, and multiply by this setting to estimate the worst case a full budget
+   permits. A steadily climbing
+   :ts:stat:`proxy.process.net.inactivity_cop_budget_exhausted` means checks are
+   consistently hitting the limit, which is expected and harmless when the value
+   is deliberately low, but indicates timeouts firing late if it is not.
+
+   The value must be between 1 and 1048576. A budget of zero would stop the
+   check from examining anything at all, and connections would never time out.
 
 .. ts:cv:: CONFIG proxy.config.incoming_ip_to_bind STRING 0.0.0.0 [::]
 

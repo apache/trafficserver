@@ -33,7 +33,7 @@ def invalid_flow_control_policy_configure_ats(ats_factory: ATSFactory, *, _case:
     """
 
     direction = "out" if _case == "out-h2" else "in"
-    ats = ats_factory.create(f"invalid-policy-{_case}", enable_tls=True)
+    ats = ats_factory.create(f"invalid-policy-{_case}", enable_tls=True, disable_log_checks=True)
     ats.add_default_ssl_files()
     ats.records.update(
         {
@@ -63,7 +63,7 @@ def dynamic_window_settings_cap_configure_ats(ats_factory: ATSFactory, *, _serve
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("settings-cap-ats", enable_tls=True, enable_cache=False)
+    ats = ats_factory.create("settings-cap-ats", enable_tls=True, enable_cache=False, disable_log_checks=True)
     ats.add_default_ssl_files()
     ats.records.update(
         {

@@ -140,3 +140,59 @@ sessions:
         fields:
         - [ Content-Length, { value: 24, as: equal } ]
 
+# Test 4: UTF-8 response body with two-, three-, and four-byte characters.
+- transactions:
+  - client-request:
+      method: GET
+      url: /with/utf8/body
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ uuid, 5 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, "text/plain; charset=utf-8" ]
+        - [ Content-Length, 17 ]
+        - [ Connection, close ]
+      content:
+        data: "café 中文 😀"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 17, as: equal } ]
+
+# Test 5: A second body mixing UTF-8 and JSON escapes must remain independent.
+- transactions:
+  - client-request:
+      method: GET
+      url: /with/utf8/escaped/body
+      version: 1.1
+      headers:
+        fields:
+        - [ Host, www.notls.com ]
+        - [ uuid, 6 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, "text/plain; charset=utf-8" ]
+        - [ Content-Length, 22 ]
+        - [ Connection, close ]
+      content:
+        data: "中文 \"café\" \\ 😀\n"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: 22, as: equal } ]
+

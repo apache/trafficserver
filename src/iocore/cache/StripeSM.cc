@@ -1439,5 +1439,8 @@ StripeSM::close_write(CacheVC *cont)
 void
 StripeSM::recompute_hit_evacuate_window()
 {
-  this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
+  // data_blocks counts STORE_BLOCK_SIZE blocks; directory offsets count CACHE_BLOCK_SIZE blocks.
+  off_t data_cblocks = this->data_blocks * (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE);
+
+  this->hit_evacuate_window = (data_cblocks * cache_config_hit_evacuate_percent) / 100;
 }

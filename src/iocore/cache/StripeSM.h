@@ -116,7 +116,9 @@ public:
   CryptoHash hash_id;
   int        fd{-1};
 
-  int hit_evacuate_window{};
+  // In CACHE_BLOCK_SIZE units, like the directory offsets it is compared with. Not an int: on
+  // a stripe of a few TiB this exceeds INT_MAX.
+  off_t hit_evacuate_window{};
 
   off_t       recover_pos      = 0;
   off_t       prev_recover_pos = 0;
@@ -341,12 +343,14 @@ StripeSM::get_pending_writers()
 inline int
 StripeSM::within_hit_evacuate_window(Dir const *xdir) const
 {
-  off_t oft       = dir_offset(xdir) - 1;
-  off_t write_off = (directory.header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
-  off_t delta     = oft - write_off;
+  off_t oft          = dir_offset(xdir) - 1;
+  off_t write_off    = (directory.header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
+  off_t delta        = oft - write_off;
+  off_t data_cblocks = data_blocks * (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE);
+
   if (delta >= 0) {
     return delta < hit_evacuate_window;
   } else {
-    return -delta > (data_blocks - hit_evacuate_window) && -delta < data_blocks;
+    return -delta > (data_cblocks - hit_evacuate_window) && -delta < data_cblocks;
   }
 }

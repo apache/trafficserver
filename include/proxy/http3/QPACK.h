@@ -83,6 +83,10 @@ public:
   static size_t estimate_header_block_size(const HTTPHdr &header_set);
 
 private:
+  // Lets test_QPACK.cc reach the arena and the encoder stream handler, to check that
+  // the arena gets back what QPACK allocates out of it.
+  friend struct QPACKTestAccess;
+
   struct Header {
     Header(const char *n, const char *v) : name(n), value(v), name_len(strlen(name)), value_len(strlen(value)) {}
     const char  *name;

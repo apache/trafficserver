@@ -20,6 +20,8 @@ import time
 
 from tools.uranium.services import ATS, ATSFactory
 
+from .config_reload_helpers import reload_task_statuses, wait_for_reload
+
 
 def test_config_reload_failures(ats_factory: ATSFactory) -> None:
     """A failed reload subtask is reported and does not prevent recovery.
@@ -35,6 +37,8 @@ def test_config_reload_failures(ats_factory: ATSFactory) -> None:
 
         ats = ats_factory.create("ts", enable_tls=True)
         ats.add_default_ssl_files()
+        ats.allow_errors(r"ERROR: failed to load certificate secret for /nonexistent/bad\.pem")
+        ats.allow_errors(r"ERROR: \(ssl\) .*/ssl_multicert\.yaml failed to load")
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -64,7 +68,12 @@ def test_config_reload_failures(ats_factory: ATSFactory) -> None:
                     "    ssl_cert_name: /nonexistent/bad.pem",
                     "    ssl_key_name: /nonexistent/bad.key",
                 ])
-        ats.write_config_file("ssl_multicert.yaml", "ssl_multicert:\n" + "\n".join(entries) + "\n")
+        content = "ssl_multicert:\n" + "\n".join(entries) + "\n"
+        path = ats.config_directory / "ssl_multicert.yaml"
+        if path.exists():
+            path.write_text(content)
+        else:
+            ats.write_config_file("ssl_multicert.yaml", content)
 
     def rpc(method: str, params: object | None = None) -> dict[str, Any]:
         """Invoke one JSON-RPC method and decode its response.
@@ -132,7 +141,15 @@ def test_config_reload_failures(ats_factory: ATSFactory) -> None:
     assert errors, response
     assert "6011" in str(errors), errors
 
-    time.sleep(2)
+    write_multicert(_ats, valid=False)
     response = reload(force=True)
     assert "error" not in response, response
-    assert response["result"].get("token"), response
+    token = response["result"]["token"]
+    assert wait_for_reload(_ats, token) == "fail"
+    statuses = reload_task_statuses(_ats, token)
+    assert statuses.get("ssl_multicert.yaml") == "fail", statuses
+
+    write_multicert(_ats, valid=True)
+    response = reload(force=True)
+    assert "error" not in response, response
+    assert wait_for_reload(_ats, response["result"]["token"]) == "success"

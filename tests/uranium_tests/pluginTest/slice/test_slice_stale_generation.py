@@ -119,7 +119,14 @@ def slice_hierarchy_configure_parent(*, _ats_factory: ATSFactory, _dns: DNSServe
     return parent
 
 
-def slice_hierarchy_configure_child(label: str, *, _ats_factory: ATSFactory, _dns: DNSServer, _name: str, _parent: ATS) -> ATS:
+def slice_hierarchy_configure_child(
+        label: str,
+        *,
+        _ats_factory: ATSFactory,
+        _dns: DNSServer,
+        _name: str,
+        _parent: ATS,
+        disable_log_checks: bool = False) -> ATS:
     """Configure a child that slices requests and forwards blocks to the parent.
 
     :param _ats_factory: Test-local ats factory configured by the test.
@@ -127,9 +134,10 @@ def slice_hierarchy_configure_child(label: str, *, _ats_factory: ATSFactory, _dn
     :param _name: Test-local name configured by the test.
     :param _parent: Test-local parent configured by the test.
     :param label: Label used by this test step.
+    :param disable_log_checks: Permit the slice errors a generation mismatch logs.
     """
 
-    child = _ats_factory.create(f"{label}-{_name}")
+    child = _ats_factory.create(f"{label}-{_name}", disable_log_checks=disable_log_checks)
     child.remap_config.add_line(slice_hierarchy_slice_remap("http://slice/", "http://origin.test/"))
     child.parent_config.add_line(f"dest_domain=. parent=127.0.0.1:{_parent.http_port} round_robin=consistent_hash go_direct=false")
     child.plugin_config.add_line("xdebug.so --enable=x-cache")
@@ -199,13 +207,9 @@ def slice_mixed_generation_assert_mismatch_diagnostics(ats: ATS, *, both_blocks:
     :param both_blocks: Both blocks used by this test step.
     """
 
-    content = wait_for_file_lines(ats.diags_log, "Mismatch/Bad block Content-Range", 1)
-    assert 'blk_range="16-31"' in content
-    assert 'etag_got="%22v1%22"' in content
+    wait_for_file_lines(ats.diags_log, r'Mismatch/Bad block Content-Range.*blk_range="16-31".*etag_got="%22v1%22"', 1)
     if both_blocks:
-        content = wait_for_file_lines(ats.diags_log, "Mismatch/Bad block Content-Range", 2)
-        assert 'blk_range="0-15"' in content
-        assert 'etag_got="%22v2%22"' in content
+        wait_for_file_lines(ats.diags_log, r'Mismatch/Bad block Content-Range.*blk_range="0-15".*etag_got="%22v2%22"', 1)
 
 
 def test_slice_stale_generation(ats_factory: ATSFactory, services: ServiceFactory) -> None:
@@ -244,8 +248,10 @@ def test_slice_mixed_generation(ats_factory: ATSFactory, services: ServiceFactor
     _dns = slice_hierarchy_configure_dns(_name=name, _services=services)
     _origin = slice_hierarchy_configure_origin(_name=name, _services=services)
     _parent = slice_hierarchy_configure_parent(_ats_factory=ats_factory, _dns=_dns, _name=name, _origin=_origin)
-    _child = slice_hierarchy_configure_child("child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent)
-    _cold_child = slice_hierarchy_configure_child("cold-child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent)
+    _child = slice_hierarchy_configure_child(
+        "child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent, disable_log_checks=True)
+    _cold_child = slice_hierarchy_configure_child(
+        "cold-child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent, disable_log_checks=True)
 
     slice_hierarchy_start_hierarchy(_child=_child, _dns=_dns, _origin=_origin, _parent=_parent)
     fill = slice_hierarchy_configure_client("fill-interior", _child=_child, _name=name, _services=services).run()
@@ -256,10 +262,10 @@ def test_slice_mixed_generation(ats_factory: ATSFactory, services: ServiceFactor
     # As in the original scenario, the abort may reach the client before
     # or after the response header. Neither permits a complete response.
     assert re.search(
-        r"Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE|"
-        r"Content-Length body underrun for key mixed",
+        r"(?:Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE"
+        r"|Content-Length body underrun for key mixed:)",
         mixed.output,
-    )
+    ), mixed.output
     assert "Failed HTTP/1 transaction with key: mixed" in mixed.output
     slice_mixed_generation_assert_mismatch_diagnostics(_child, both_blocks=True)
 

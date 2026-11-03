@@ -65,6 +65,23 @@ Metrics
   Sessions are bound to the policy that issued them, so an out-of-scope session
   completes a full handshake rather than reaching this counter, which is normally
   zero.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_visited`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_budget_exhausted`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_passes`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_fired`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_pass_time_us`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_pass_max_us`.
+
+Performance
+-----------
+
+* Connection timeouts are now dispatched from a per-thread timer wheel instead
+  of a once-per-second walk of every open connection, so the cost of a timeout
+  check scales with the number of deadlines that have come due rather than with
+  the number of connections open. See :ref:`developer-doc-net-timeouts`.
+
+  This changes how :ts:cv:`proxy.config.net.inactivity_check_frequency` should
+  be tuned; see :ref:`upgrading` if you have raised it from the default.
 
 Plugins
 -------
@@ -90,6 +107,10 @@ Metrics
 * Added ``proxy.process.ssl.group.user_agent.P-224``
 * Added ``proxy.process.ssl.group.user_agent.X448``
 * Added ``proxy.process.ssl.group.user_agent.X25519MLKEM768``
+* Added :ts:stat:`proxy.process.net.per_client.connections_exempt_currently_open`
+* :ts:stat:`proxy.process.net.per_client.connections_exempt_in` now counts
+  connections from exempt addresses when
+  :ts:cv:`proxy.config.net.per_client.max_connections_in` is 0.
 
 Plugins
 -------
@@ -176,6 +197,8 @@ Configuration
   control.
 * The ``ssl_multicert.config`` file has been replaced with :file:`ssl_multicert.yaml`.
   Use ``traffic_ctl config convert ssl_multicert`` to convert existing configuration files.
+* :ts:cv:`proxy.config.http.per_client.connection.exempt_list` now also
+  exempts client connections from :ts:cv:`proxy.config.net.connections_throttle`.
 
 
 

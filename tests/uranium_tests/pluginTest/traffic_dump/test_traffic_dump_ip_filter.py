@@ -38,16 +38,23 @@ def configure_server(services: ServiceFactory) -> VerifierServer:
     return services.verifier_server("server", TRAFFIC_DUMP_IP_FILTER__server_replay)
 
 
-def configure_case(ats_factory: ATSFactory, name: str, ip_filter: str, *, _server: VerifierServer) -> tuple[ATS, Path]:
+def configure_case(
+        ats_factory: ATSFactory,
+        name: str,
+        ip_filter: str,
+        *,
+        _server: VerifierServer,
+        disable_log_checks: bool = False) -> tuple[ATS, Path]:
     """Configure one ATS instance with @a ip_filter.
 
     :param _server: Test-local server configured by the test.
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param name: Unique service or case name within this test.
     :param ip_filter: Ip filter used by this test step.
+    :param disable_log_checks: Whether ERROR diagnostics are expected.
     """
 
-    ats = ats_factory.create(name)
+    ats = ats_factory.create(name, disable_log_checks=disable_log_checks)
     ats.records.update({
         "proxy.config.diags.debug.enabled": 1,
         "proxy.config.diags.debug.tags": "traffic_dump",
@@ -82,7 +89,7 @@ def test_traffic_dump_ip_filter(ats_factory: ATSFactory, services: ServiceFactor
     _cases = [
         configure_case(ats_factory, "ts1", "127.0.0.1", _server=_server),
         configure_case(ats_factory, "ts2", "1.2.3.4", _server=_server),
-        configure_case(ats_factory, "ts3", "this_is_not_a_valid_ip_string", _server=_server),
+        configure_case(ats_factory, "ts3", "this_is_not_a_valid_ip_string", _server=_server, disable_log_checks=True),
     ]
     if not _cases[0][0].plugin_exists("traffic_dump.so"):
         pytest.skip("traffic_dump.so is required")

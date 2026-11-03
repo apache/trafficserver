@@ -63,7 +63,7 @@ def configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> ATS:
     :param _origin: Test-local origin configured by the test.
     """
 
-    ats = _ats_factory.create("ats", enable_tls=True, enable_cache=False)
+    ats = _ats_factory.create("ats", enable_tls=True, enable_cache=False, disable_log_checks=True)
     if not ats.plugin_exists("url_sig.so"):
         pytest.skip("url_sig.so is not installed")
     ats.add_default_ssl_files()
@@ -150,6 +150,14 @@ def request_cases(*, _origin: OriginServer) -> tuple[UrlCase, ...]:
         UrlCase(
             "non-pristine-sha1",
             f"http://one.two.three/{dynamic_path}{sign(payload, 'dqsgopTSM_doT6iAysasQVUKaPykyb6e')}",
+            "200 OK",
+        ))
+    no_parts_path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=0&S="
+    no_parts_payload = "?E=33046618506&A=1&K=7&P=0&S="
+    cases.append(
+        UrlCase(
+            "non-pristine-sha1-no-parts",
+            f"http://one.two.three/{no_parts_path}{sign(no_parts_payload, 'dqsgopTSM_doT6iAysasQVUKaPykyb6e')}",
             "200 OK",
         ))
     cases.extend(

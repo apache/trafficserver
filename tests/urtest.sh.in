@@ -31,5 +31,5 @@ exec python3 "@CMAKE_CURRENT_SOURCE_DIR@/tools/uranium/runner.py" configured \
   "--verifier-bin=@PROXY_VERIFIER_PATH@" \
   "--sandbox=@URTEST_SANDBOX@" \
   "--project-directory=@CMAKE_CURRENT_BINARY_DIR@" \
-  "${curl_uds_argument[@]}" \
+  ${curl_uds_argument[@]+"${curl_uds_argument[@]}"} \
   -- @URTEST_OPTIONS@ "$@"

@@ -99,10 +99,10 @@ AIOCallback::io_complete(int event, void *data)
 
     // Take this lock in-line because we want to stop other I/O operations on this disk ASAP
     SCOPED_MUTEX_LOCK(lock, aio_err_callback->mutex, this_ethread());
-    err_op->action.continuation->handleEvent(EVENT_NONE, err_op);
+    err_op->action.call_back(EVENT_NONE, err_op);
   }
-  if (!action.cancelled && action.continuation) {
-    action.continuation->handleEvent(AIO_EVENT_DONE, this);
+  if (action.continuation) {
+    action.call_back(AIO_EVENT_DONE, this);
   }
   if (should_delete_self) {
     delete this;

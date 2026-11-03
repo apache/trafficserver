@@ -39,16 +39,13 @@ Plugin::Remap::Create(const std::string &tag, const std::string &plugin, const c
                       const cripts::string &to_url, const Plugin::Options &options)
 {
   Plugin::Remap          inst;
-  int                    argc = options.size() + 1;
-  const char           **argv = new const char *[argc];
   const swoc::file::path path(plugin);
 
   // Remap plugins expect the first two arguments to be the from and to URLs.
-  argv[0] = from_url.c_str();
-  argv[1] = to_url.c_str();
+  std::vector<const char *> argv{from_url.c_str(), to_url.c_str()};
 
-  for (unsigned i = 0; i < options.size(); ++i) {
-    argv[i + 2] = options[i].c_str();
+  for (const auto &option : options) {
+    argv.push_back(option.c_str());
   }
 
   std::string error;
@@ -60,10 +57,9 @@ Plugin::Remap::Create(const std::string &tag, const std::string &plugin, const c
     elevate_access = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    inst._plugin = gPluginFactory.getRemapPlugin(path, argc, const_cast<char **>(argv), error, isPluginDynamicReloadEnabled());
+    inst._plugin = gPluginFactory.getRemapPlugin(path, static_cast<int>(argv.size()), const_cast<char **>(argv.data()), error,
+                                                 isPluginDynamicReloadEnabled());
   } // done elevating access
-
-  delete[] argv;
 
   if (!inst._plugin) {
     TSError("[%s] Unable to load plugin '%s': %s", tag.c_str(), plugin.c_str(), error.c_str());

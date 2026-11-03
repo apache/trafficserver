@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import re
 import shutil
 
 import pytest
@@ -73,7 +74,8 @@ def run_http2_case(*, _ats: ATS, _curl: Curl) -> None:
         pytest.skip("curl with HTTP/2 support is required")
     result = _curl.run(f"--insecure --http2 --verbose --output /dev/null 'https://127.0.0.1:{_ats.https_port}/'",)
     assert result.returncode == 0, result.output
-    assert "ALPN: server accepted h2" in result.output
+    # curl before 7.82 reports "ALPN, server accepted to use h2".
+    assert re.search(r"ALPN(: server accepted|, server accepted to use) h2", result.output), result.output
     assert "HTTP/2 404" in result.output
 
 
