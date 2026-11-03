@@ -71,7 +71,9 @@
   cost is that a per-connection exemption is impossible: a peer address is not knowable until after
   the connection has been accepted.  Local connections are protected instead by giving loopback its
   own listen socket - see `start_loopback_companion_acceptor` in HttpProxyServerMain.cc - and marking
-  only that acceptor exempt via @c AcceptOptions::f_watchdog_exempt.
+  only that acceptor exempt via @c AcceptOptions::f_watchdog_exempt.  A port the operator explicitly bound to
+  a loopback address is likewise exempt, via @c AcceptOptions::f_watchdog_local_only, which leaves its
+  listener topology alone.
 
   Neither action refuses anything.  On Linux a full accept queue silently drops the SYN - no SYN-ACK,
   no RST - so a shed client's `connect` hangs while it retransmits with exponential backoff (1s, 2s,

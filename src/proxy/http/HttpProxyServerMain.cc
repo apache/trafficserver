@@ -154,6 +154,9 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 
     if (port->m_inbound_ip.isValid()) {
       net.local_ip = port->m_inbound_ip;
+      // An explicit loopback bind is the operator's local-only port, and local health checks must keep working. Unix
+      // domain ports are not covered: they never reach this branch.
+      net.f_watchdog_local_only = port->m_inbound_ip.isLoopback();
     } else if (AF_INET6 == port->m_family && HttpConfig::m_master.inbound.has_ip6()) {
       net.local_ip = HttpConfig::m_master.inbound.ip6().network_order();
     } else if (AF_INET == port->m_family && HttpConfig::m_master.inbound.has_ip4()) {

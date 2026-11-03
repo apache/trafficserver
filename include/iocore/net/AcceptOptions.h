@@ -105,6 +105,14 @@ struct AcceptOptions {
   */
   bool f_watchdog_exempt = false;
 
+  /** Exempt this listener from watchdog accept backpressure without changing its listener topology.
+
+      Set on ports the operator explicitly bound to a loopback address (@c ip-in=127.0.0.1, @c ip-in=::1). Unlike
+      @c f_watchdog_exempt it does not alter how the listener is built, so such a port keeps the per-thread or
+      accept-thread model it was configured with. Unix domain ports are never marked.
+  */
+  bool f_watchdog_local_only = false;
+
   /** Set @c SO_REUSEPORT on the listen socket even when not listening per thread.
 
       Required on both sockets when two listeners overlap on the same port - a wildcard bind plus a

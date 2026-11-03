@@ -90,6 +90,16 @@ count_client_connection(UnixNetVConnection *vc, bool exempt)
   }
 }
 
+/** Whether @a na is outside watchdog backpressure, either as a loopback companion or as a port the operator bound to loopback.
+
+    Deliberately not folded into @c f_watchdog_exempt, which also selects the listener topology.
+*/
+bool
+watchdog_exempt(NetAccept const *na)
+{
+  return na->opt.f_watchdog_exempt || na->opt.f_watchdog_local_only;
+}
+
 /** Whether this acceptor should leave the connections queued on its listen socket for now.
  *
  * True while the peak awake span has reached
@@ -100,10 +110,10 @@ count_client_connection(UnixNetVConnection *vc, bool exempt)
  * near the rate we can actually serve. Both can be in force at once, in which case the queue is
  * bounded and nothing is draining it.
  *
- * A listener marked @c f_watchdog_exempt is never subject to backpressure. Those are the loopback
- * companion listeners opened alongside each proxy port, so local connections keep getting a
- * truthful answer about the proxy however far behind the event threads are. The volume of local
- * connections is small against the inbound load that caused the saturation.
+ * A listener marked @c f_watchdog_exempt or @c f_watchdog_local_only is never subject to backpressure. Those are the
+ * loopback companion listeners opened alongside each proxy port and the ports explicitly bound to loopback, so local
+ * connections keep getting a truthful answer about the proxy however far behind the event threads are. The volume of
+ * local connections is small against the inbound load that caused the saturation.
  *
  * @param[in] na The acceptor.
  *
@@ -112,7 +122,7 @@ count_client_connection(UnixNetVConnection *vc, bool exempt)
 bool
 watchdog_should_refuse(NetAccept *na)
 {
-  return !na->opt.f_watchdog_exempt && Watchdog::accept_refuse();
+  return !watchdog_exempt(na) && Watchdog::accept_refuse();
 }
 
 /** Resize @a na's kernel accept queue to the depth the watchdog is currently asking for.
@@ -134,7 +144,7 @@ void
 watchdog_apply_backlog(NetAccept *na)
 {
   int want_permille = 1000;
-  if (!na->opt.f_watchdog_exempt) {
+  if (!watchdog_exempt(na)) {
     want_permille = Watchdog::backlog_scale_permille();
   }
 
@@ -330,8 +340,9 @@ NetAccept::init_accept_loop()
   // A thread parked inside accept() cannot see refuse engage, so the next connection after it did would be accepted
   // and served. Waiting in poll() instead keeps the decision in front of every accept4, as on the event thread
   // paths; the socket is made non-blocking so a sibling that wins the connection leaves this one with EAGAIN rather
-  // than parked.
-  if (!opt.f_watchdog_exempt && RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_shrink_ms").value_or(0) > 0) {
+  // than parked. Exempt listeners need it too: close() does not wake a thread parked in accept(), so without the poll
+  // timeout their socket would stay listening after stop_accept().
+  if (RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_shrink_ms").value_or(0) > 0) {
     int const flags = fcntl(server.sock.get_fd(), F_GETFL);
     if (flags >= 0 && fcntl(server.sock.get_fd(), F_SETFL, flags | O_NONBLOCK) == 0) {
       poll_before_accept = true;
