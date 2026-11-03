@@ -34,6 +34,9 @@ KEY_NAME: Final[str] = "cache.key"
 URL_PREFIX: Final[str] = "cache.url."
 HEADERS_ADD_NAME: Final[str] = "cache.key.headers.add"
 PLUGIN: Final[str] = "cachekey.so"
+# Consistent-hash parent selection hashes the parent selection URL if a plugin set one,
+# so setting it from the same flags keeps a remap's parents when it moves to CACHEKEY.
+KEY_TYPE_FLAG: Final[str] = "--key-type=cache_key,parent_selection_url"
 
 
 def is_key_name(name: str) -> bool:
@@ -225,7 +228,7 @@ def _as_written(stmt: CacheKeyStatement) -> str:
 
 
 def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
-    """Merge statements into one cachekey.so flag list, in table order.
+    """Merge statements into one cachekey.so flag list: KEY_TYPE_FLAG, then the rest in table order.
 
     Expects check_conflicts to have passed, so a single-valued flag has one value.
     """
@@ -236,7 +239,7 @@ def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
         for item in stmt.items:
             items.setdefault(item.lower() if case_insensitive else item, item)
 
-    flags = []
+    flags = [KEY_TYPE_FLAG]
     for name, flag in CACHEKEY_STATEMENTS.items():
         if name in ordered_items:
             value = flag.fixed_value if flag.is_switch else ",".join(ordered_items[name].values())

@@ -73,7 +73,7 @@ class SectionType(str, Enum):
         if self == SectionType.VARS:
             return "This section declares variables that can be used throughout the configuration."
         if self == SectionType.CACHEKEY:
-            return "This section sets the cache key parts. It is emitted after every `REMAP` rule, as `run-plugin cachekey.so`."
+            return "This section sets the cache key and parent selection URL, as `run-plugin cachekey.so` after every `REMAP` rule."
         return f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS."
 
     @classmethod

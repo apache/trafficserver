@@ -3,4 +3,4 @@ cond %{CLIENT-HEADER:Authorization} /AWS\s([^:]+)/
     set-header @ClientID "%{LAST-CAPTURE:1}"
 
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--include-headers=@ClientID"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=@ClientID"

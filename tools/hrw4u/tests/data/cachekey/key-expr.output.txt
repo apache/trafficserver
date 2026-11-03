@@ -2,7 +2,7 @@ cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{CLIENT-HEADER:Host} ="a.example.com"
     set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
     set-header @Hrw4u-Key-02 "%{CLIENT-HEADER:X-Tenant}-%{METHOD}"
-    run-plugin "cachekey.so" "--include-headers=X-A,@Hrw4u-Key-01,@Hrw4u-Key-02"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=X-A,@Hrw4u-Key-01,@Hrw4u-Key-02"
 else
     set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
-    run-plugin "cachekey.so" "--include-headers=X-A,@Hrw4u-Key-01"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=X-A,@Hrw4u-Key-01"

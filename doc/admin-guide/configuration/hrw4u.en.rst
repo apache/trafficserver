@@ -442,9 +442,9 @@ A special section `VARS` is used to declare variables. There is no equivalent in
 `SESSION_VARS` declares session-scoped variables that persist across all
 transactions on the same client connection (session).
 
-The `CACHEKEY` section sets the cache key. It has no hook of its own: the
-compiler emits it on ``REMAP_PSEUDO_HOOK``, after every `REMAP` rule. See
-:ref:`hrw4u-cache-keys`.
+The `CACHEKEY` section sets the cache key and the parent selection URL. It has
+no hook of its own: the compiler emits it on ``REMAP_PSEUDO_HOOK``, after every
+`REMAP` rule. See :ref:`hrw4u-cache-keys`.
 
 Variables and State Slots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -722,7 +722,15 @@ example::
 compiles to::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
-       run-plugin "cachekey.so" "--exclude-params=utm_source,guid" "--include-headers=X-Region" "--include-cookies=session"
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--exclude-params=utm_source,guid" "--include-headers=X-Region" "--include-cookies=session"
+
+Every line starts with ``--key-type=cache_key,parent_selection_url``, so the
+same statements set both the cache key and the parent selection URL, even in a
+branch with no statements. Consistent-hash parent selection hashes the parent
+selection URL when a plugin sets one, so the parent follows the cache key. This
+differs from cachekey.so's own default, ``--key-type=cache_key`` only: a rule
+moved from a hand-written ``cachekey.so`` line without ``--key-type`` keeps its
+cache key, but consistent-hash parent selection may pick different parents.
 
 The section only writes the key. It can read the request in conditions, but
 holds only these statements, and procedures made of them:
@@ -767,7 +775,7 @@ compiles to::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
        set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
-       run-plugin "cachekey.so" "--include-headers=@Hrw4u-Key-01"
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=@Hrw4u-Key-01"
 
 A `CACHEKEY` section allows at most 99 ``cache.key +=`` values.
 
@@ -793,12 +801,12 @@ compiles to::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-URL:PATH} /^search/
-       run-plugin "cachekey.so" "--include-params=q" "--include-headers=X-Region"
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-params=q" "--include-headers=X-Region"
    elif
        cond %{CLIENT-URL:PATH} /^api\//
-           run-plugin "cachekey.so" "--sort-params=true" "--include-headers=X-Region"
+           run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--sort-params=true" "--include-headers=X-Region"
    else
-       run-plugin "cachekey.so" "--include-headers=X-Region"
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=X-Region"
 
 Only the first ``cachekey.so`` to run sets the key, so the compiler allows one
 instance per request:

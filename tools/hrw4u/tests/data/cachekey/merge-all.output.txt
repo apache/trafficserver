@@ -1,2 +1,2 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--uri-type=pristine" "--exclude-params=guid" "--sort-params=true" "--remove-path=true" "--include-headers=X-A" "--include-cookies=session"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--uri-type=pristine" "--exclude-params=guid" "--sort-params=true" "--remove-path=true" "--include-headers=X-A" "--include-cookies=session"

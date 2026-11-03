@@ -18,7 +18,16 @@ from __future__ import annotations
 
 import pytest
 
-from hrw4u.cachekey import CacheKeyStatement, ConflictError, check_conflicts, merge, parse_assignment, parse_statement, render
+from hrw4u.cachekey import (
+    KEY_TYPE_FLAG,
+    CacheKeyStatement,
+    ConflictError,
+    check_conflicts,
+    merge,
+    parse_assignment,
+    parse_statement,
+    render,
+)
 from hrw4u.errors import SymbolResolutionError
 
 
@@ -35,13 +44,13 @@ class TestParseAssignment:
         ],
     )
     def test_flag(self, lhs: str, flag: str) -> None:
-        assert merge([parse_assignment(lhs, '""')]) == [flag]
+        assert merge([parse_assignment(lhs, '""')]) == [KEY_TYPE_FLAG, flag]
 
     @pytest.mark.parametrize("value", ["assets.example.com", "assets.example.com/443", "a,b", "v2"])
     def test_prefix(self, value: str) -> None:
         stmt = parse_assignment("cache.key.prefix", f'"{value}"')
         assert stmt.items == (value,)
-        assert merge([stmt]) == [f"--static-prefix={value}"]
+        assert merge([stmt]) == [KEY_TYPE_FLAG, f"--static-prefix={value}"]
 
     @pytest.mark.parametrize(
         "lhs,rhs,message",
@@ -131,8 +140,11 @@ class TestCheckConflicts:
 
 
 class TestMerge:
-    def test_no_statements_has_no_flags(self) -> None:
-        assert merge([]) == []
+    def test_no_statements_sets_only_the_key_types(self) -> None:
+        assert merge([]) == ["--key-type=cache_key,parent_selection_url"]
+
+    def test_key_types_come_first(self) -> None:
+        assert flags(("cache.url.pristine", []))[0] == KEY_TYPE_FLAG
 
     @pytest.mark.parametrize(
         "name,args,flag",
@@ -147,28 +159,29 @@ class TestMerge:
         ],
     )
     def test_one_statement(self, name: str, args: list[str], flag: str) -> None:
-        assert flags((name, args)) == [flag]
+        assert flags((name, args)) == [KEY_TYPE_FLAG, flag]
 
     def test_repeats_merge_dedupe_and_keep_first_seen_order(self) -> None:
         assert flags(
             ("cache.key.headers.add", ['"B"', '"A"']),
             ("cache.key.headers.add", ['"A"', '"C"']),
-        ) == ["--include-headers=B,A,C"]
+        ) == [KEY_TYPE_FLAG, "--include-headers=B,A,C"]
 
     def test_header_names_dedupe_ignoring_case_and_keep_first_spelling(self) -> None:
         assert flags(
             ("cache.key.headers.add", ['"X-A"', '"x-a"']),
             ("cache.key.headers.add", ['"X-B"', '"x-b"']),
-        ) == ["--include-headers=X-A,X-B"]
+        ) == [KEY_TYPE_FLAG, "--include-headers=X-A,X-B"]
 
     def test_cookie_names_keep_case(self) -> None:
-        assert flags(("cache.key.cookies.add", ['"c"', '"C"'])) == ["--include-cookies=c,C"]
+        assert flags(("cache.key.cookies.add", ['"c"', '"C"'])) == [KEY_TYPE_FLAG, "--include-cookies=c,C"]
 
     def test_repeated_flag_statement_is_a_no_op(self) -> None:
-        assert flags(("cache.url.pristine", []), ("cache.url.pristine", [])) == ["--uri-type=pristine"]
+        assert flags(("cache.url.pristine", []), ("cache.url.pristine", [])) == [KEY_TYPE_FLAG, "--uri-type=pristine"]
 
     def test_table_order_not_source_order(self) -> None:
         expected = [
+            KEY_TYPE_FLAG,
             "--static-prefix=p",
             "--canonical-prefix=true",
             "--uri-type=pristine",
@@ -221,6 +234,7 @@ class TestMerge:
             ("cache.key.headers.add", ['"X-Region"', '"@Geo-Country"']),
             ("cache.key.cookies.add", ['"session"', '"locale"', '"theme"', '"variant"']),
         ) == [
+            KEY_TYPE_FLAG,
             "--uri-type=pristine",
             "--exclude-params=utm_source,guid,utm_medium,utm_campaign,utm_term,client_id,ref,token,ts",
             "--include-headers=X-Region,@Geo-Country",
@@ -237,6 +251,9 @@ class TestRender:
 
     def test_no_flags(self) -> None:
         assert render([]) == 'run-plugin "cachekey.so"'
+
+    def test_no_statements(self) -> None:
+        assert render(merge([])) == 'run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url"'
 
 
 class TestParseStatementErrors:
