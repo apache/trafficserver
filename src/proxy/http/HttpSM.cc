@@ -1172,7 +1172,11 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       _netvc_reader      = _netvc_read_buffer->alloc_reader();
 
       // Wait for write readiness to verify that the nonblocking TCP connection
-      // completed before reporting a successful tunnel to the client.
+      // completed before reporting a successful tunnel to the client. For a
+      // TLS origin, the zero-byte read lets incoming handshake data drive the
+      // handshake, and signals VC_EVENT_READ_COMPLETE when it completes; on a
+      // plain connection it does nothing.
+      _netvc->do_io_read(this, 0, _netvc_read_buffer);
       _netvc->do_io_write(this, 1, _netvc_reader);
       _netvc->set_inactivity_timeout(get_server_connect_timeout());
       return 0;
@@ -1184,6 +1188,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE: {
     if (netvc == nullptr) {
       netvc = _netvc;
+      netvc->do_io_read(nullptr, 0, nullptr);
       netvc->do_io_write(nullptr, 0, nullptr);
       free_MIOBuffer(_netvc_read_buffer);
       _netvc             = nullptr;
@@ -1219,6 +1224,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
         t_state.set_connect_fail(_netvc->lerrno);
       }
+      _netvc->do_io_read(nullptr, 0, nullptr);
       _netvc->do_io_write(nullptr, 0, nullptr);
       _netvc->do_io_close();
       _netvc = nullptr;
