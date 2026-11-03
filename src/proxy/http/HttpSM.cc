@@ -329,7 +329,7 @@ HttpSM::init(bool from_early_data)
 
   t_state.http_config_param = HttpConfig::acquire();
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
-  m_remap = rewrite_table.load(std::memory_order_acquire);
+  m_remap = rewrite_table.load_leased();
 
   // Simply point to the global config for the time being, no need to copy this
   // entire struct if nothing is going to change it.
@@ -4816,7 +4816,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (!ret && virtualhost_remap) {
     SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
     // May be null once shutdown has cleared the table; setup_for_remap() handles that.
-    m_remap = rewrite_table.load(std::memory_order_acquire);
+    m_remap = rewrite_table.load_leased();
     ret     = remapProcessor.setup_for_remap(&t_state, m_remap.get());
   }
 
