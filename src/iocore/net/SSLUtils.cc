@@ -251,6 +251,12 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     // Renegotiation carries a new ClientHello, whose SNI actions must still run.
     TLSBasicSupport *tbs = TLSBasicSupport::getInstance(s);
     if (tbs == nullptr || !tbs->is_tls_handshake_complete()) {
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+      // The pass that paused returned before binding, so this connection has not been bound yet.
+      if (!bind_session_id_context_to_verify_scope(s)) {
+        return CLIENT_HELLO_ERROR;
+      }
+#endif
       return CLIENT_HELLO_SUCCESS;
     }
   }
@@ -271,12 +277,12 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   }
 
   if (es) {
-    if (es->finished_client_hello_hooks()) {
-      return CLIENT_HELLO_SUCCESS;
-    }
-    bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
-    if (!reenabled) {
-      return CLIENT_HELLO_RETRY;
+    // A renegotiation reaches here with the hooks already finished; it still needs its own bind.
+    if (!es->finished_client_hello_hooks()) {
+      bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+      if (!reenabled) {
+        return CLIENT_HELLO_RETRY;
+      }
     }
   } else {
     Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
