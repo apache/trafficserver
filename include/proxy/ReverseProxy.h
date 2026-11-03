@@ -43,14 +43,14 @@
 #include "proxy/http/remap/UrlMapping.h"
 #include "mgmt/config/ConfigContext.h"
 
-#include "tsutil/AtomicSharedPtr.h"
+#include "tsutil/ThreadLeasedSharedPtr.h"
 
 #define EMPTY_PORT_MAPPING (int32_t) ~0
 
 class url_mapping;
 struct host_hdr_info;
 
-extern AtomicSharedPtr<UrlRewrite> rewrite_table;
+extern ThreadLeasedSharedPtr<UrlRewrite> rewrite_table;
 
 // Wrap a freshly built table in a shared_ptr with the standard UrlRewrite deleter.
 std::shared_ptr<UrlRewrite> make_managed_url_rewrite(std::unique_ptr<UrlRewrite> table);
