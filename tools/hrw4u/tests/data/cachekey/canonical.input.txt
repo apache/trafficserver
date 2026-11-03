@@ -1,0 +1,4 @@
+CACHEKEY {
+    cache.url.canonical();
+    cache.url.pristine();
+}

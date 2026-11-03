@@ -34,7 +34,6 @@ KEY_NAME: Final[str] = "cache.key"
 URL_PREFIX: Final[str] = "cache.url."
 HEADERS_ADD_NAME: Final[str] = "cache.key.headers.add"
 PLUGIN: Final[str] = "cachekey.so"
-CANONICAL_PREFIX: Final[str] = "--canonical-prefix=true"
 
 
 def is_key_name(name: str) -> bool:
@@ -54,25 +53,33 @@ def is_plugin_path(path: str) -> bool:
 class CacheKeyFlag:
     """How one cache.* statement lowers to a cachekey.so flag.
 
-    option is the flag name. A flag with a fixed_value is a switch; one without
-    takes the statement's names as a comma-separated list.
+    option is the flag name. A flag with a fixed_value is a switch. One without
+    takes the assigned string if it is an assignment, else the statement's names
+    as a comma-separated list.
     """
 
     option: str
     fixed_value: str | None = None
-    # Written as `<name> = ""`, routed like any assignment, not a call.
+    # Written as `<name> = "..."`, routed like any assignment, not a call.
     assignment: bool = False
     # cachekey.so looks the names up ignoring case, so a second spelling would add the same value twice.
     case_insensitive: bool = False
 
     @property
-    def takes_list(self) -> bool:
-        return self.fixed_value is None
+    def is_switch(self) -> bool:
+        return self.fixed_value is not None
+
+    @property
+    def takes_value(self) -> bool:
+        """True for an assignment whose string is the flag value, so one run-plugin line holds one."""
+        return self.assignment and not self.is_switch
 
 
 # Table order is the order of the flags on the run-plugin line.
 # yapf: disable
 CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
+    "cache.key.prefix":       CacheKeyFlag("--static-prefix", assignment=True),
+    "cache.url.canonical":    CacheKeyFlag("--canonical-prefix", "true"),
     "cache.url.pristine":     CacheKeyFlag("--uri-type", "pristine"),
     "cache.url.query.remove": CacheKeyFlag("--exclude-params"),
     "cache.url.query.keep":   CacheKeyFlag("--include-params"),
@@ -102,9 +109,21 @@ def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None
     flag = CACHEKEY_STATEMENTS.get(lhs)
     if flag is None or not flag.assignment:
         raise SymbolResolutionError(lhs, f"Unknown cache key assignment: '{lhs}'")
-    if rhs != '""':
-        raise SymbolResolutionError(lhs, f'{lhs} can only be set to ""')
-    return CacheKeyStatement(lhs, source=source)
+    if flag.is_switch:
+        if rhs != '""':
+            raise SymbolResolutionError(lhs, f'{lhs} can only be set to ""')
+        return CacheKeyStatement(lhs, source=source)
+
+    value = _unquote(rhs)
+    if value is None:
+        raise SymbolResolutionError(lhs, f"{lhs} must be set to a quoted string")
+    if "{" in value:
+        raise SymbolResolutionError(lhs, f"{lhs} must be static: plugin flags can't hold {{...}} values")
+    if not value:
+        raise SymbolResolutionError(lhs, f"{lhs} can't be empty")
+    if problem := _mangles_flag(value):
+        raise SymbolResolutionError(lhs, f'{lhs} value "{value}" {problem}')
+    return CacheKeyStatement(lhs, (value,), source)
 
 
 def parse_statement(name: str, args: list[str], source: ParserRuleContext | None = None) -> CacheKeyStatement:
@@ -113,7 +132,7 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
     if flag is None or flag.assignment:
         raise SymbolResolutionError(name, f"Unknown cache key statement: '{name}'")
 
-    if not flag.takes_list:
+    if flag.is_switch:
         if args:
             raise SymbolResolutionError(name, f"{name}() takes no arguments")
         return CacheKeyStatement(name, source=source)
@@ -122,9 +141,9 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
         raise SymbolResolutionError(name, f"{name}() takes at least one string argument")
     items = []
     for arg in args:
-        if len(arg) < 2 or not (arg.startswith('"') and arg.endswith('"')):
+        item = _unquote(arg)
+        if item is None:
             raise SymbolResolutionError(name, f"{name}() arguments must be quoted strings")
-        item = arg[1:-1]
         # cachekey.so reads its flags once, at config load.
         if "{" in item:
             raise SymbolResolutionError(name, f"{name}() arguments must be static: plugin flags can't hold {{...}} values")
@@ -133,13 +152,29 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
         # The flag value is comma-separated, so a comma would split one name into two.
         if "," in item:
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a comma: pass each name as its own argument")
-        if any(c.isspace() for c in item):
-            raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains whitespace")
-        # No header, cookie, or param name holds these; they would only mangle the quoted flag.
-        if '"' in item or "\\" in item:
-            raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a quote or backslash")
+        if problem := _mangles_flag(item):
+            raise SymbolResolutionError(name, f"{name}() name \"{item}\" {problem}")
         items.append(item)
     return CacheKeyStatement(name, tuple(items), source)
+
+
+def _unquote(arg: str) -> str | None:
+    """arg without its quotes, or None if it isn't a quoted string."""
+    if len(arg) < 2 or not (arg.startswith('"') and arg.endswith('"')):
+        return None
+    return arg[1:-1]
+
+
+def _mangles_flag(item: str) -> str | None:
+    """Why item can't sit in a quoted run-plugin flag, or None if it can.
+
+    No header, cookie, param name, or prefix holds these; they would only mangle the flag.
+    """
+    if any(c.isspace() for c in item):
+        return "contains whitespace"
+    if '"' in item or "\\" in item:
+        return "contains a quote or backslash"
+    return None
 
 
 # Each pair contradicts itself on one run-plugin line: cachekey.so drops or skews one side.
@@ -147,6 +182,8 @@ CONFLICTS: Final[tuple[tuple[str, str], ...]] = (
     ("cache.url.query.keep", "cache.url.query.remove"),
     ("cache.url.query", "cache.url.query.keep"),
     ("cache.url.query", "cache.url.query.remove"),
+    # With a canonical prefix, cachekey.so appends the static prefix without its separator.
+    ("cache.url.canonical", "cache.key.prefix"),
 )
 
 
@@ -156,26 +193,42 @@ class ConflictError(SymbolResolutionError):
     statement is the later of the two, the one to point the error at.
     """
 
-    def __init__(self, first: str, second: str, statement: CacheKeyStatement) -> None:
-        super().__init__(first, f"{_as_written(first)} and {_as_written(second)} can't be used together")
+    def __init__(self, first: CacheKeyStatement, second: CacheKeyStatement, statement: CacheKeyStatement) -> None:
+        super().__init__(first.name, f"{_as_written(first)} and {_as_written(second)} can't be used together")
         self.statement = statement
 
 
 def check_conflicts(statements: Sequence[CacheKeyStatement]) -> None:
-    """Raise ConflictError if statements that lower to one run-plugin contradict each other."""
+    """Raise ConflictError if statements that lower to one run-plugin contradict each other.
+
+    That covers the CONFLICTS pairs and two different values for one single-valued flag.
+    """
+    first_value: dict[str, CacheKeyStatement] = {}
+    for stmt in statements:
+        if CACHEKEY_STATEMENTS[stmt.name].takes_value:
+            first = first_value.setdefault(stmt.name, stmt)
+            if first.items != stmt.items:
+                raise ConflictError(first, stmt, stmt)
+
     last_seen = {stmt.name: (index, stmt) for index, stmt in enumerate(statements)}
     for first, second in CONFLICTS:
         if first in last_seen and second in last_seen:
             _, later = max(last_seen[first], last_seen[second], key=lambda seen: seen[0])
-            raise ConflictError(first, second, later)
+            raise ConflictError(last_seen[first][1], last_seen[second][1], later)
 
 
-def _as_written(name: str) -> str:
-    return f'{name} = ""' if CACHEKEY_STATEMENTS[name].assignment else f"{name}()"
+def _as_written(stmt: CacheKeyStatement) -> str:
+    flag = CACHEKEY_STATEMENTS[stmt.name]
+    if flag.takes_value:
+        return f'{stmt.name} = "{stmt.items[0]}"'
+    return f'{stmt.name} = ""' if flag.assignment else f"{stmt.name}()"
 
 
 def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
-    """Merge statements into one cachekey.so flag list, in table order."""
+    """Merge statements into one cachekey.so flag list, in table order.
+
+    Expects check_conflicts to have passed, so a single-valued flag has one value.
+    """
     ordered_items: dict[str, dict[str, str]] = {}
     for stmt in statements:
         items = ordered_items.setdefault(stmt.name, {})
@@ -183,10 +236,10 @@ def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
         for item in stmt.items:
             items.setdefault(item.lower() if case_insensitive else item, item)
 
-    flags = [CANONICAL_PREFIX]
+    flags = []
     for name, flag in CACHEKEY_STATEMENTS.items():
         if name in ordered_items:
-            value = ",".join(ordered_items[name].values()) if flag.takes_list else flag.fixed_value
+            value = flag.fixed_value if flag.is_switch else ",".join(ordered_items[name].values())
             flags.append(f"{flag.option}={value}")
     return flags
 

@@ -184,7 +184,7 @@ CACHEKEY {
 ```
 ```
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--exclude-params=utm_source,guid" "--include-headers=X-Region"
+    run-plugin "cachekey.so" "--exclude-params=utm_source,guid" "--include-headers=X-Region"
 ```
 
 See "Cache Keys" in `doc/admin-guide/configuration/hrw4u.en.rst` for every

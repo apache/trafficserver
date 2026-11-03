@@ -1,2 +1,2 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true"
+    run-plugin "cachekey.so" "--sort-params=true"

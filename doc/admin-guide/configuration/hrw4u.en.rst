@@ -722,7 +722,7 @@ example::
 compiles to::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
-       run-plugin "cachekey.so" "--canonical-prefix=true" "--exclude-params=utm_source,guid" "--include-headers=X-Region" "--include-cookies=session"
+       run-plugin "cachekey.so" "--exclude-params=utm_source,guid" "--include-headers=X-Region" "--include-cookies=session"
 
 The section only writes the key. It can read the request in conditions, but
 holds only these statements, and procedures made of them:
@@ -736,15 +736,25 @@ cache.url.query = ""                   --remove-all-params=true                 
 cache.url.query.sort()                 --sort-params=true                       Sort the query params
 cache.url.path = ""                    --remove-path=true                       Drop the path
 cache.url.pristine()                   --uri-type=pristine                      Start from the URL the client sent
+cache.url.canonical()                  --canonical-prefix=true                  Start the key with scheme://host:port
+cache.key.prefix = "p"                 --static-prefix=p                        Start the key with p, not host and port
 cache.key.headers.add("A", "B")        --include-headers=A,B                    Add these request headers
 cache.key.cookies.add("a", "b")        --include-cookies=a,b                    Add these cookies
 cache.key += "{...}"                   --include-headers=@Hrw4u-Key-NN          Add a computed value
 ====================================== ======================================== =========================================
 
-List arguments are static strings: one name per argument, with no ``{...}``
-values. Query param and cookie names are case-sensitive; header names are not.
-``keep()``, ``remove()`` and ``query = ""`` can't be combined. A missing or
-empty header, cookie, or ``cache.key +=`` value adds nothing to the key.
+The key starts with cachekey.so's default prefix, ``/host/port``, so a rule
+moved from a hand-written ``cachekey.so`` keeps its key.
+``cache.url.canonical()`` makes it ``scheme://host:port``.
+``cache.key.prefix`` replaces it with a fixed string, so several hosts can
+share cache entries. The two can't be combined. A branch takes one prefix
+value.
+
+List arguments and ``cache.key.prefix`` are static strings, with no ``{...}``
+values. Lists take one name per argument. Query param and cookie names are
+case-sensitive; header names are not. ``keep()``, ``remove()`` and
+``query = ""`` can't be combined. A missing or empty header, cookie, or
+``cache.key +=`` value adds nothing to the key.
 
 ``cache.key +=`` takes any string. The compiler sets the value into a numbered
 ``@Hrw4u-Key-NN`` header and adds that header to the key::
@@ -757,7 +767,7 @@ compiles to::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
        set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
-       run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=@Hrw4u-Key-01"
+       run-plugin "cachekey.so" "--include-headers=@Hrw4u-Key-01"
 
 A `CACHEKEY` section allows at most 99 ``cache.key +=`` values.
 
@@ -783,12 +793,12 @@ compiles to::
 
    cond %{REMAP_PSEUDO_HOOK} [AND]
    cond %{CLIENT-URL:PATH} /^search/
-       run-plugin "cachekey.so" "--canonical-prefix=true" "--include-params=q" "--include-headers=X-Region"
+       run-plugin "cachekey.so" "--include-params=q" "--include-headers=X-Region"
    elif
        cond %{CLIENT-URL:PATH} /^api\//
-           run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=X-Region"
+           run-plugin "cachekey.so" "--sort-params=true" "--include-headers=X-Region"
    else
-       run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-Region"
+       run-plugin "cachekey.so" "--include-headers=X-Region"
 
 Only the first ``cachekey.so`` to run sets the key, so the compiler allows one
 instance per request:

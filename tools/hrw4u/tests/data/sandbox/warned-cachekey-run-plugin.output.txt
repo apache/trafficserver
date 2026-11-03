@@ -1,2 +1,2 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-Foo"
+    run-plugin "cachekey.so" "--include-headers=X-Foo"

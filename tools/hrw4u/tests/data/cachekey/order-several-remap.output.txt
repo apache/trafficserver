@@ -8,4 +8,4 @@ cond %{REMAP_PSEUDO_HOOK} [AND]
     set-header X-C "1"
 
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-headers=X-A,X-C"
+    run-plugin "cachekey.so" "--include-headers=X-A,X-C"

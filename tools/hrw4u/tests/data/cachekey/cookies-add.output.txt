@@ -1,2 +1,2 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--include-cookies=session,locale,theme,variant"
+    run-plugin "cachekey.so" "--include-cookies=session,locale,theme,variant"

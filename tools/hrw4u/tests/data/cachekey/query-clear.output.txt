@@ -1,2 +1,2 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--remove-all-params=true"
+    run-plugin "cachekey.so" "--remove-all-params=true"

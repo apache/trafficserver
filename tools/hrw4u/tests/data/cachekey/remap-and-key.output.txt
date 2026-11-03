@@ -26,4 +26,4 @@ cond %{CLIENT-HEADER:X-Region} /vip$/
     set-config "proxy.config.http.cache.http" 0
 
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--uri-type=pristine" "--exclude-params=utm_source,guid,utm_medium,utm_campaign,utm_term,client_id,ref,token,ts" "--include-headers=X-Region,@Geo-Country" "--include-cookies=session,locale,theme,variant"
+    run-plugin "cachekey.so" "--uri-type=pristine" "--exclude-params=utm_source,guid,utm_medium,utm_campaign,utm_term,client_id,ref,token,ts" "--include-headers=X-Region,@Geo-Country" "--include-cookies=session,locale,theme,variant"

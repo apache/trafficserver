@@ -35,7 +35,13 @@ class TestParseAssignment:
         ],
     )
     def test_flag(self, lhs: str, flag: str) -> None:
-        assert merge([parse_assignment(lhs, '""')]) == ["--canonical-prefix=true", flag]
+        assert merge([parse_assignment(lhs, '""')]) == [flag]
+
+    @pytest.mark.parametrize("value", ["assets.example.com", "assets.example.com/443", "a,b", "v2"])
+    def test_prefix(self, value: str) -> None:
+        stmt = parse_assignment("cache.key.prefix", f'"{value}"')
+        assert stmt.items == (value,)
+        assert merge([stmt]) == [f"--static-prefix={value}"]
 
     @pytest.mark.parametrize(
         "lhs,rhs,message",
@@ -44,6 +50,14 @@ class TestParseAssignment:
             ("cache.url.path", '"/x"', 'can only be set to ""'),
             ("cache.url.query", "x", 'can only be set to ""'),
             ("cache.url.pristine", '""', "Unknown cache key assignment"),
+            ("cache.url.canonical", '""', "Unknown cache key assignment"),
+            ("cache.key.prefix", '""', "can't be empty"),
+            ("cache.key.prefix", "x", "must be set to a quoted string"),
+            ("cache.key.prefix", "42", "must be set to a quoted string"),
+            ("cache.key.prefix", '"{inbound.req.Host}"', "must be static"),
+            ("cache.key.prefix", '"%{CLIENT-HEADER:Host}"', "must be static"),
+            ("cache.key.prefix", '"a b"', "contains whitespace"),
+            ("cache.key.prefix", '"a\\"b"', "contains a quote or backslash"),
         ],
     )
     def test_rejects(self, lhs: str, rhs: str, message: str) -> None:
@@ -53,6 +67,10 @@ class TestParseAssignment:
     def test_assignment_name_is_not_a_statement(self) -> None:
         with pytest.raises(SymbolResolutionError, match="Unknown cache key statement"):
             parse_statement("cache.url.query", [])
+
+    def test_prefix_is_not_a_statement(self) -> None:
+        with pytest.raises(SymbolResolutionError, match="Unknown cache key statement"):
+            parse_statement("cache.key.prefix", ['"a"'])
 
 
 class TestCheckConflicts:
@@ -70,6 +88,14 @@ class TestCheckConflicts:
             (
                 [parse_statement("cache.url.query.remove", ['"a"']), parse_assignment("cache.url.query", '""')],
                 r'cache.url.query = "" and cache.url.query.remove\(\)',
+            ),
+            (
+                [parse_statement("cache.url.canonical", []), parse_assignment("cache.key.prefix", '"a"')],
+                r'cache.url.canonical\(\) and cache.key.prefix = "a"',
+            ),
+            (
+                [parse_assignment("cache.key.prefix", '"a"'), parse_assignment("cache.key.prefix", '"b"')],
+                r'cache.key.prefix = "a" and cache.key.prefix = "b"',
             ),
         ],
     )
@@ -94,14 +120,24 @@ class TestCheckConflicts:
             ]
         )
 
+    def test_same_prefix_twice(self) -> None:
+        check_conflicts([parse_assignment("cache.key.prefix", '"a"'), parse_assignment("cache.key.prefix", '"a"')])
+
+    def test_names_the_second_prefix(self) -> None:
+        second = parse_assignment("cache.key.prefix", '"b"')
+        with pytest.raises(ConflictError) as error:
+            check_conflicts([parse_assignment("cache.key.prefix", '"a"'), second])
+        assert error.value.statement is second
+
 
 class TestMerge:
-    def test_no_statements_still_has_canonical_prefix(self) -> None:
-        assert merge([]) == ["--canonical-prefix=true"]
+    def test_no_statements_has_no_flags(self) -> None:
+        assert merge([]) == []
 
     @pytest.mark.parametrize(
         "name,args,flag",
         [
+            ("cache.url.canonical", [], "--canonical-prefix=true"),
             ("cache.url.pristine", [], "--uri-type=pristine"),
             ("cache.url.query.remove", ['"a"', '"b"'], "--exclude-params=a,b"),
             ("cache.url.query.keep", ['"a"', '"b"'], "--include-params=a,b"),
@@ -111,28 +147,29 @@ class TestMerge:
         ],
     )
     def test_one_statement(self, name: str, args: list[str], flag: str) -> None:
-        assert flags((name, args)) == ["--canonical-prefix=true", flag]
+        assert flags((name, args)) == [flag]
 
     def test_repeats_merge_dedupe_and_keep_first_seen_order(self) -> None:
         assert flags(
             ("cache.key.headers.add", ['"B"', '"A"']),
             ("cache.key.headers.add", ['"A"', '"C"']),
-        ) == ["--canonical-prefix=true", "--include-headers=B,A,C"]
+        ) == ["--include-headers=B,A,C"]
 
     def test_header_names_dedupe_ignoring_case_and_keep_first_spelling(self) -> None:
         assert flags(
             ("cache.key.headers.add", ['"X-A"', '"x-a"']),
             ("cache.key.headers.add", ['"X-B"', '"x-b"']),
-        ) == ["--canonical-prefix=true", "--include-headers=X-A,X-B"]
+        ) == ["--include-headers=X-A,X-B"]
 
     def test_cookie_names_keep_case(self) -> None:
-        assert flags(("cache.key.cookies.add", ['"c"', '"C"'])) == ["--canonical-prefix=true", "--include-cookies=c,C"]
+        assert flags(("cache.key.cookies.add", ['"c"', '"C"'])) == ["--include-cookies=c,C"]
 
     def test_repeated_flag_statement_is_a_no_op(self) -> None:
-        assert flags(("cache.url.pristine", []), ("cache.url.pristine", [])) == ["--canonical-prefix=true", "--uri-type=pristine"]
+        assert flags(("cache.url.pristine", []), ("cache.url.pristine", [])) == ["--uri-type=pristine"]
 
     def test_table_order_not_source_order(self) -> None:
         expected = [
+            "--static-prefix=p",
             "--canonical-prefix=true",
             "--uri-type=pristine",
             "--exclude-params=q",
@@ -147,6 +184,8 @@ class TestMerge:
                 [
                     parse_statement("cache.key.cookies.add", ['"c"']),
                     parse_assignment("cache.url.path", '""'),
+                    parse_statement("cache.url.canonical", []),
+                    parse_assignment("cache.key.prefix", '"p"'),
                 ]
                 + [
                     parse_statement(name, args)
@@ -182,7 +221,6 @@ class TestMerge:
             ("cache.key.headers.add", ['"X-Region"', '"@Geo-Country"']),
             ("cache.key.cookies.add", ['"session"', '"locale"', '"theme"', '"variant"']),
         ) == [
-            "--canonical-prefix=true",
             "--uri-type=pristine",
             "--exclude-params=utm_source,guid,utm_medium,utm_campaign,utm_term,client_id,ref,token,ts",
             "--include-headers=X-Region,@Geo-Country",
@@ -193,9 +231,12 @@ class TestMerge:
 class TestRender:
     def test_quotes_each_flag(self) -> None:
         assert (
-            render(["--canonical-prefix=true", "--uri-type=pristine"])
-            == 'run-plugin "cachekey.so" "--canonical-prefix=true" "--uri-type=pristine"'
+            render(["--static-prefix=a", "--uri-type=pristine"])
+            == 'run-plugin "cachekey.so" "--static-prefix=a" "--uri-type=pristine"'
         )
+
+    def test_no_flags(self) -> None:
+        assert render([]) == 'run-plugin "cachekey.so"'
 
 
 class TestParseStatementErrors:
@@ -205,6 +246,7 @@ class TestParseStatementErrors:
             ("cache.url.bogus", [], "Unknown cache key statement"),
             ("cache.url.pristine", ['"x"'], "takes no arguments"),
             ("cache.url.query.sort", ['"x"'], "takes no arguments"),
+            ("cache.url.canonical", ['"x"'], "takes no arguments"),
             ("cache.key.headers.add", [], "takes at least one string argument"),
             ("cache.key.headers.add", ["X-Foo"], "must be quoted strings"),
             ("cache.key.headers.add", ['"a"', "42"], "must be quoted strings"),

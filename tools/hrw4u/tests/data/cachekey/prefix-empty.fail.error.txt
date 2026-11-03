@@ -1,0 +1,1 @@
+tests/data/cachekey/prefix-empty.fail.input.txt:2:4: error: cache.key.prefix can't be empty

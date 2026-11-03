@@ -29,9 +29,9 @@ cond %{CLIENT-HEADER:@Geo-Country} ="" [NOT]
 cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{CLIENT-HEADER:Host} ="api.shows.example.com" [AND]
 cond %{CLIENT-URL:PATH} /^v1\/catalog\/[^\/]+\/shows\/[^\/]+\/episodes/
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,@App-Token,@Partner-Token,@Device-Token,@SID" "--include-cookies=session,theme,locale,market,variant"
+    run-plugin "cachekey.so" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,@App-Token,@Partner-Token,@Device-Token,@SID" "--include-cookies=session,theme,locale,market,variant"
 elif
     cond %{CLIENT-HEADER:Host} /^api(-beta)?\.(songs|shows|videos|media)\.example\.com$/
-        run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,X-Experiment,@App-Token,@Partner-Token,@Device-Token,@SID" "--include-cookies=session,theme,locale,market,variant,ab_group"
+        run-plugin "cachekey.so" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,X-Experiment,@App-Token,@Partner-Token,@Device-Token,@SID" "--include-cookies=session,theme,locale,market,variant,ab_group"
 else
-    run-plugin "cachekey.so" "--canonical-prefix=true" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,X-Experiment" "--include-cookies=session,theme,locale,market,ab_group"
+    run-plugin "cachekey.so" "--sort-params=true" "--include-headers=User-Country,Origin,@User-Id,@Geo-Country,X-Experiment" "--include-cookies=session,theme,locale,market,ab_group"

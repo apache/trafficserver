@@ -86,5 +86,5 @@ def test_u4wrh_reads_cachekey_output_as_a_raw_run_plugin_in_remap() -> None:
     tree = u4wrhParser(CommonTokenStream(u4wrhLexer(InputStream(text)))).program()
     hrw4u = "\n".join(HRWInverseVisitor().visit(tree))
     assert hrw4u.startswith("REMAP {")
-    assert 'run-plugin("cachekey.so", "--canonical-prefix=true", "--include-headers=X-Region");' in hrw4u
+    assert 'run-plugin("cachekey.so", "--include-headers=X-Region");' in hrw4u
     assert "CACHEKEY" not in hrw4u
