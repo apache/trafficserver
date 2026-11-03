@@ -33,6 +33,9 @@
 #include "tscore/ink_inet.h"
 #include "tscore/ink_defs.h"
 
+#include <fcntl.h>
+#include <poll.h>
+
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
 namespace
@@ -323,6 +326,20 @@ NetAccept::init_accept_loop()
   if (do_blocking_listen()) {
     return false;
   }
+
+  // A thread parked inside accept() cannot see refuse engage, so the next connection after it did would be accepted
+  // and served. Waiting in poll() instead keeps the decision in front of every accept4, as on the event thread
+  // paths; the socket is made non-blocking so a sibling that wins the connection leaves this one with EAGAIN rather
+  // than parked.
+  if (!opt.f_watchdog_exempt && RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_shrink_ms").value_or(0) > 0) {
+    int const flags = fcntl(server.sock.get_fd(), F_GETFL);
+    if (flags >= 0 && fcntl(server.sock.get_fd(), F_SETFL, flags | O_NONBLOCK) == 0) {
+      poll_before_accept = true;
+    } else {
+      Warning("watchdog could not make the listen socket on port %d non-blocking: %s; accept refusal may lag on this port",
+              ats_ip_port_host_order(&server.accept_addr), strerror(errno));
+    }
+  }
   stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
 
@@ -602,7 +619,27 @@ NetAccept::do_blocking_accept(EThread *t)
       }
     }
 
+    // Only an idle pass needs to wait. Once something has been accepted the queue is drained directly, and the
+    // refuse check above has already run ahead of this accept4.
+    if (poll_before_accept && count == 0) {
+      pollfd pfd{server.sock.get_fd(), POLLIN, 0};
+
+      // Times out so a cancelled action and a refuse that engaged while idle are noticed by the next pass.
+      if (poll(&pfd, 1, net_throttle_delay) <= 0) {
+        return 0;
+      }
+      watchdog_apply_backlog(this);
+      if (watchdog_should_refuse(this)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        safe_delay(net_throttle_delay);
+        return 0;
+      }
+    }
+
     if ((res = server.accept(&con)) < 0) {
+      if (res == -EAGAIN && poll_before_accept) {
+        return 0; // a sibling accept thread took the connection
+      }
       int seriousness = accept_error_seriousness(res);
       switch (seriousness) {
       case 0:

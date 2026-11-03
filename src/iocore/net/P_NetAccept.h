@@ -180,6 +180,11 @@ struct NetAccept : public Continuation {
   /** Per-thread copies made by @c init_accept_per_thread(), kept on the original so @c retire() can reach them. */
   std::vector<NetAccept *> per_thread_clones;
 
+  /** True for dedicated accept threads that wait in @c poll before each @c accept4 so that watchdog refusal is evaluated
+      immediately ahead of it. Set only when the watchdog is enabled; the listen socket is then non-blocking.
+  */
+  bool poll_before_accept = false;
+
   /** Event thread whose NetHandler mutex serializes this acceptor, set alongside @c uses_fast_accept. */
   EThread *accept_thread = nullptr;
 

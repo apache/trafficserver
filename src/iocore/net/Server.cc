@@ -156,19 +156,22 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   return 0;
 
 Lerror:
+  // close() below can overwrite errno, so keep the failing call's value for the report.
+  int const saved_errno = errno;
+
   if (sock.is_ok()) {
     close();
   }
 
   if (opt.f_non_fatal_listen) {
     // A supplementary listener. Losing it degrades behavior but must not take the proxy down.
-    Warning("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
-            prot == IPPROTO_MPTCP, errno, strerror(errno), res);
+    Warning("Could not set up listener on port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
+            prot == IPPROTO_MPTCP, saved_errno, strerror(saved_errno), res);
     return res;
   }
 
   Fatal("Could not bind or listen to port %d, mptcp enabled: %d (error: %d) %s %d", ats_ip_port_host_order(&addr),
-        prot == IPPROTO_MPTCP, errno, strerror(errno), res);
+        prot == IPPROTO_MPTCP, saved_errno, strerror(saved_errno), res);
   return res;
 }
 

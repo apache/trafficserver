@@ -477,6 +477,12 @@ Monitor::monitor_loop()
     std::this_thread::sleep_for(sleep_time);
   }
 
+  // A legacy monitor never created the metrics below, so the null pointers must not reach a store.
+  if (_legacy) {
+    Dbg(dbg_ctl_watchdog, "Stopping watchdog");
+    return;
+  }
+
   if (accept_refuse_state.load(std::memory_order_relaxed) || _backlog_scale != 1000) {
     accept_refuse_state.store(false, std::memory_order_relaxed);
     backlog_scale.store(1000, std::memory_order_relaxed);
