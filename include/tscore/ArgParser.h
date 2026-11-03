@@ -234,13 +234,41 @@ public:
     void output_command(std::ostream &out, std::string const &prefix) const;
     // Helper method for ArgParser::help_message
     void output_option() const;
+    /** What one pass over the command line saw, for the check ArgParser::parse() makes once
+        the pass has succeeded.
+    */
+    struct ParseTrace {
+      // A command the pass dispatched, with the position of its name on the command line
+      struct Dispatch {
+        Command const *command;
+        int            pos;
+      };
+      // A token starting with '-', at @a pos on the command line, that the pass took as a value of
+      // @a option, an option of @a owner
+      struct Value {
+        Command const *owner;
+        Option const  *option;
+        int            pos;
+      };
+      // The position on the command line of each token still in args, kept in step with it.
+      // The default command ArgParser::parse() inserts is not on the command line (-1).
+      std::vector<int> pos;
+      // The commands dispatched, outermost first
+      std::vector<Dispatch> dispatched;
+      std::vector<Value>    values;
+      // Start a pass over a command line of @a size tokens, with the default command's name
+      // inserted after the program name when @a with_default is set
+      void start(int size, bool with_default);
+      // Remove the tokens [first, last) from @a args, and their positions with them
+      void erase(AP_StrVec &args, unsigned first, unsigned last);
+    };
     // Helper method for ArgParser::parse
-    bool parse(Arguments &ret, AP_StrVec &args);
+    bool parse(Arguments &ret, AP_StrVec &args, ParseTrace &trace);
     // The help & version messages
     void help_message(std::string_view err = "") const;
     void version_message() const;
     // Helper method for parse()
-    void append_option_data(Arguments &ret, AP_StrVec &args, int index);
+    void append_option_data(Arguments &ret, AP_StrVec &args, int index, ParseTrace &trace);
     /** Helper method to collect the values of an option or command into @a ret.
         @param env_value The current value of the option's declared environment variable, or
         empty when none is declared or it is currently unset. A missing value is reported
@@ -250,9 +278,11 @@ public:
         AT_MOST_ONE_ARG_N, which fills immediately instead since repetition of that arity is
         refused outright elsewhere. The caller resolves the variable once every occurrence has
         been seen, so the result does not depend on the order occurrences appear in.
+        @param option The option the values are for, as registered on this command, or @c nullptr
+        for the command's own arguments. Only an option's values are recorded in @a trace.
     */
     std::string handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index,
-                            std::string const &env_value, bool &was_bare) const;
+                            std::string const &env_value, bool &was_bare, ParseTrace &trace, Option const *option = nullptr) const;
     // Whether @a token names an option registered on this command
     bool is_registered_option(std::string const &token) const;
     // Helper method to validate mutually exclusive groups
