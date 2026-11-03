@@ -83,10 +83,11 @@ template <> struct default_delete<SSL_CTX> {
 } // namespace std
 
 /// Name aliases for unique pts to openSSL objects
-using scoped_X509     = std::unique_ptr<X509>;
-using scoped_X509_REQ = std::unique_ptr<X509_REQ>;
-using scoped_EVP_PKEY = std::unique_ptr<EVP_PKEY>;
-using scoped_SSL_CTX  = std::unique_ptr<SSL_CTX>;
+using scoped_X509      = std::unique_ptr<X509>;
+using scoped_X509_REQ  = std::unique_ptr<X509_REQ>;
+using scoped_EVP_PKEY  = std::unique_ptr<EVP_PKEY>;
+using scoped_SSL_CTX   = std::unique_ptr<SSL_CTX>;
+using scoped_X509_NAME = std::unique_ptr<X509_NAME, decltype(&X509_NAME_free)>;
 
 class SslLRUList
 {
@@ -355,19 +356,26 @@ static scoped_X509_REQ
 mkcsr(const char *cn)
 {
   TSDebug(PLUGIN_NAME, "Entering mkcsr()...");
-  X509_NAME *n;
   scoped_X509_REQ req;
   req.reset(X509_REQ_new());
 
   /// Set X509 version
   X509_REQ_set_version(req.get(), 1);
 
-  /// Get handle to subject name
-  n = X509_REQ_get_subject_name(req.get());
+  /// Copy the subject name: OpenSSL 4 returns it as const.
+  scoped_X509_NAME n{X509_NAME_dup(X509_REQ_get_subject_name(req.get())), X509_NAME_free};
+  if (n == nullptr) {
+    TSError("[%s] mkcsr(): Failed to duplicate subject name.", PLUGIN_NAME);
+    return nullptr;
+  }
 
   /// Set common name field
-  if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)cn, -1, -1, 0) != 1) {
+  if (X509_NAME_add_entry_by_txt(n.get(), "CN", MBSTRING_ASC, (unsigned char *)cn, -1, -1, 0) != 1) {
     TSError("[%s] mkcsr(): Failed to add entry.", PLUGIN_NAME);
+    return nullptr;
+  }
+  if (X509_REQ_set_subject_name(req.get(), n.get()) != 1) {
+    TSError("[%s] mkcsr(): Failed to set subject name.", PLUGIN_NAME);
     return nullptr;
   }
   /// Set Traffic Server public key
@@ -388,7 +396,7 @@ static scoped_X509
 mkcrt(X509_REQ *req, int serial)
 {
   TSDebug(PLUGIN_NAME, "Entering mkcrt()...");
-  X509_NAME *subj, *tmpsubj;
+  X509_NAME *tmpsubj;
   scoped_EVP_PKEY pktmp;
   scoped_X509 cert;
 
@@ -414,7 +422,7 @@ mkcrt(X509_REQ *req, int serial)
   X509_gmtime_adj(X509_get_notAfter(cert.get()), static_cast<long>(3650) * 24 * 3600);
 
   /// Get a handle to csr subject name
-  subj = X509_REQ_get_subject_name(req);
+  auto *subj = X509_REQ_get_subject_name(req);
   if ((tmpsubj = X509_NAME_dup(subj)) == nullptr) {
     TSDebug(PLUGIN_NAME, "mkcrt(): Failed to duplicate subject name.");
     return nullptr;

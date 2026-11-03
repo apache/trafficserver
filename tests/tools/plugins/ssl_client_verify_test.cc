@@ -53,7 +53,7 @@ check_names(X509 *cert)
   bool retval = false;
 
   // Check the common name
-  X509_NAME *subject = X509_get_subject_name(cert);
+  auto *subject = X509_get_subject_name(cert);
   if (subject) {
     int pos = -1;
     for (; !retval;) {
@@ -62,8 +62,8 @@ check_names(X509 *cert)
         break;
       }
 
-      X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
+      const X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
+      const ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
 #if OPENSSL_VERSION_NUMBER >= 0x010100000
       char *subj_name = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
 #else

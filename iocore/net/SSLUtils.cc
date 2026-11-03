@@ -63,7 +63,9 @@
 #include <openssl/conf.h>
 #include <openssl/dh.h>
 #include <openssl/ec.h>
+#if HAVE_ENGINE_GET_DEFAULT_RSA
 #include <openssl/engine.h>
+#endif
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -957,7 +959,7 @@ void
 SSLPostConfigInitialize()
 {
   if (SSLConfigParams::engine_conf_file) {
-#ifndef OPENSSL_IS_BORINGSSL
+#if HAVE_ENGINE_GET_DEFAULT_RSA
     ENGINE_load_dynamic();
 #endif
 
@@ -1035,7 +1037,7 @@ static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const char *keyPath, const char *secret_data, int secret_data_len)
 {
   EVP_PKEY *pkey = nullptr;
-#ifndef OPENSSL_IS_BORINGSSL
+#if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
   ENGINE *e = ENGINE_get_default_RSA();
   if (e != nullptr) {
     pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
@@ -1128,7 +1130,7 @@ SSLMultiCertConfigLoader::check_server_cert_now(X509 *cert, const char *certname
 } /* CheckServerCertNow() */
 
 static char *
-asn1_strdup(ASN1_STRING *s)
+asn1_strdup(const ASN1_STRING *s)
 {
   // Make sure we have an 8-bit encoding.
   ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
@@ -2515,10 +2517,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     std::set<std::string> name_set;
     // Grub through the names in the certs
-    X509_NAME *subject = nullptr;
-
     // Insert a key for the subject CN.
-    subject = X509_get_subject_name(cert);
+    auto *subject = X509_get_subject_name(cert);
     ats_scoped_str subj_name;
     if (subject) {
       int pos = -1;
@@ -2528,9 +2528,9 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
           break;
         }
 
-        X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-        ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
-        subj_name          = asn1_strdup(cn);
+        const X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
+        const ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
+        subj_name                = asn1_strdup(cn);
 
         Debug("ssl_load", "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);
         name_set.insert(subj_name.get());

@@ -35,6 +35,8 @@ def configure_engine(ats_factory: ATSFactory, services: ServiceFactory) -> tuple
     match = re.search(r"OpenSSL (\d+)\.(\d+)\.(\d+)", version)
     if not match or tuple(map(int, match.groups())) < (1, 1, 1):
         pytest.skip("The async engine requires OpenSSL 1.1.1 or newer")
+    if int(match.group(1)) >= 4:
+        pytest.skip("OpenSSL 4 removed the ENGINE API that the async engine uses")
     origin = services.origin("origin")
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n"}, {
