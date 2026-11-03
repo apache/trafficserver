@@ -227,6 +227,36 @@ TEST_CASE("Removing a rule releases obsolete debt", "[abuse_shield][table]")
   CHECK(table.process_event(swoc::IPAddr{"192.0.2.2"}, 100));
 }
 
+TEST_CASE("Pruning a tracker keeps only the buckets of rules that limit its metric", "[abuse_shield][table]")
+{
+  Rule requests;
+  requests.name                = "requests";
+  requests.filter.max_req_rate = 10;
+  Rule connections;
+  connections.name                 = "connections";
+  connections.filter.max_conn_rate = 10;
+  std::vector<Rule> const rules{requests, connections};
+
+  TxnTable table(2);
+  for (auto const *addr : {"192.0.2.1", "192.0.2.2"}) {
+    auto data = table.process_event(swoc::IPAddr{addr});
+    REQUIRE(data);
+    data->consume("requests", 10, 10);
+    data->consume("connections", 10, 10);
+    data->consume("removed", 10, 10);
+  }
+
+  // Only the request rule sets a request rate, so each entry loses both the
+  // connection rule's bucket and the bucket of the rule no longer configured.
+  CHECK(prune_tracker_buckets(table, rules, RateMetric::REQUEST) == 4);
+  CHECK(prune_tracker_buckets(table, rules, RateMetric::REQUEST) == 0);
+  for (auto const &data : table.data_snapshot()) {
+    CHECK(data->buckets.tokens("requests") > 0);
+    CHECK(data->buckets.tokens("connections") == 0);
+    CHECK(data->buckets.tokens("removed") == 0);
+  }
+}
+
 TEST_CASE("BlockedIpTable preserves capacity expiry and maximum extension", "[abuse_shield][blocking]")
 {
   BlockedIpTable table(1);

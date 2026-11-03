@@ -32,9 +32,12 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "swoc/swoc_ip.h"
 #include "tsutil/UdiTable.h"
+
+#include "config.h"
 
 namespace abuse_shield
 {
@@ -259,5 +262,30 @@ struct DebtAwareEviction {
 using TxnTable  = ts::UdiTable<swoc::IPAddr, TxnData, std::hash<swoc::IPAddr>, DebtAwareEviction>;
 using ConnTable = ts::UdiTable<swoc::IPAddr, ConnData, std::hash<swoc::IPAddr>, DebtAwareEviction>;
 using H2Table   = ts::UdiTable<swoc::IPAddr, H2Data, std::hash<swoc::IPAddr>, DebtAwareEviction>;
+
+/** Remove from every entry of @a table the buckets of rules that no longer
+ * set a rate for @a metric in @a rules.
+ *
+ * The plugin's maintenance pass calls this for each tracker. It makes no TS API
+ * calls, so the unit tests and benchmarks run the same code.
+ *
+ * @return The number of buckets removed.
+ */
+template <typename Table>
+size_t
+prune_tracker_buckets(Table &table, const std::vector<Rule> &rules, RateMetric metric)
+{
+  std::unordered_set<std::string> names;
+  for (const auto &rule : rules) {
+    if (metric_rate(rule.filter, metric) > 0) {
+      names.insert(rule.name);
+    }
+  }
+  size_t removed = 0;
+  for (const auto &data : table.data_snapshot()) {
+    removed += data->buckets.prune(names);
+  }
+  return removed;
+}
 
 } // namespace abuse_shield
