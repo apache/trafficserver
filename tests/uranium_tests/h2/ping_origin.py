@@ -43,6 +43,7 @@ def serve_connection(tls_socket: ssl.SSLSocket, ping_count: int, lifecycle: Orig
         except TimeoutError:
             continue
         if not data:
+            print(f"peer_eof ping_acks={acks}", flush=True)
             return
 
         for event in connection.receive_data(data):
@@ -83,8 +84,9 @@ def run_server(port: int, certificate: str, private_key: str, ping_count: int, s
             plain_socket.settimeout(5)
             try:
                 tls_socket = context.wrap_socket(plain_socket, server_side=True)
-            except (ssl.SSLError, TimeoutError):
-                # Ignore readiness probes and peers that never finish TLS.
+            except (ssl.SSLError, TimeoutError) as error:
+                # Readiness probes never finish TLS, so this is not a failure on its own.
+                print(f"tls_not_established {error!r}", flush=True)
                 plain_socket.close()
                 continue
             with tls_socket:

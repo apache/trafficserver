@@ -6086,7 +6086,7 @@ HTTP/2 Configuration
 
    Specifies how many PING frames |TS| receives per minute at maximum on an
    inbound connection.
-   Clients exceeding this limit will be immediately disconnected with an error
+   Clients exceeding this limit are immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
    Any negative value configures no limit to the number of PING frames received.
    Outbound connections use
@@ -6097,11 +6097,14 @@ HTTP/2 Configuration
 
    Specifies how many PING frames |TS| receives per minute at maximum on an
    outbound connection.
-   Origins exceeding this limit are disconnected with an error code of
-   ENHANCE_YOUR_CALM, which fails any request in flight on that connection.
-   An origin may send PING frames to measure round-trip time or to check that
-   the connection still works, at a rate that a limit chosen for clients would
-   reject, so this limit is separate from
+   Origins exceeding this limit are immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM, which resets every stream on that connection. A
+   response already in progress is cut off, and a request still waiting for its
+   response fails unless |TS| can retry it (see
+   :ts:cv:`proxy.config.http.connect_attempts_max_retries`).
+   Origins may send PING frames to measure round-trip time or to check that the
+   connection still works, often faster than a limit sized for clients allows,
+   so this limit is set separately from
    :ts:cv:`proxy.config.http2.max_ping_frames_per_minute`.
    Any negative value configures no limit to the number of PING frames received.
 

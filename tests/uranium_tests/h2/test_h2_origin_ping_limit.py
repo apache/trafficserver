@@ -29,7 +29,8 @@ CASES = [
             "proxy.config.http2.max_ping_frames_per_minute": 5,
             "proxy.config.http2.max_ping_frames_per_minute_out": 1000
         },
-        10,
+        # Above the default too, so an origin left at the default would be closed.
+        100,
         True,
         False,
         id="origin-limit-above-client-limit"),
@@ -42,7 +43,8 @@ CASES = [
         False,
         True,
         id="origin-limit-below-client-limit"),
-    pytest.param({}, 61, True, True, id="defaults"),
+    pytest.param({}, 60, False, False, id="defaults-at-limit"),
+    pytest.param({}, 61, True, True, id="defaults-over-limit"),
 ]
 
 
@@ -94,13 +96,13 @@ def test_h2_origin_ping_limit(
         "client-get",
         [sys.executable, directory / "ping_client.py", str(ats.https_port), "0"]).run(timeout=30)
     assert result.returncode == 0, result.output
-    origin_output = origin.wait_for_output(r"^(peer_goaway|ping_acks=)", timeout=15)
+    origin_output = origin.wait_for_output(r"^(peer_goaway|peer_eof|ping_acks=)", timeout=15)
     assert origin_output.count("request_received") == 1, origin_output
     if origin_closed:
         assert f"peer_goaway error={ENHANCE_YOUR_CALM}" in origin_output, origin_output
         assert "client_status=502" in result.stdout, result.output
     else:
-        assert f"ping_acks={ping_count}" in origin_output, origin_output
+        assert re.search(f"^ping_acks={ping_count}$", origin_output, re.MULTILINE), origin_output
         assert "client_status=200" in result.stdout, result.output
 
     wait_for_metric(ats, "proxy.process.http2.max_ping_frames_per_minute_exceeded", int(client_closed) + int(origin_closed))
@@ -108,5 +110,6 @@ def test_h2_origin_ping_limit(
     finish_origin(services, origin, stop)
     ats.stop()
     diags = ats.diags_log.read_text(errors="replace")
+    # Each closed connection logs its ENHANCE_YOUR_CALM error; any other ERROR fails the test.
     assert not re.search("ERROR:(?! HTTP/2 connection error code=0x0b.*recv ping too frequent PING frame)", diags), diags
     assert not re.search("FATAL:|Unrecognized configuration value", diags), diags
