@@ -28,6 +28,8 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
+#include <new>
 #include <vector>
 
 namespace
@@ -110,6 +112,20 @@ parse(std::vector<uint8_t> const &msg, bool expect_success = true)
   REQUIRE(TLSSNISupport::parse_client_hello_extension_types(msg.data(), msg.size(), types.data(), types.size()) == count);
   return types;
 }
+
+class RecycledTLSSNISupport : public TLSSNISupport
+{
+public:
+  using TLSSNISupport::_clear;
+  using TLSSNISupport::_get_raw_extension_types;
+
+protected:
+  in_port_t
+  _get_local_port() override
+  {
+    return 0;
+  }
+};
 
 } // namespace
 
@@ -244,4 +260,40 @@ TEST_CASE("Raw ClientHello extension types beyond a short buffer are counted", "
   std::array<int, 2> types{};
   CHECK(TLSSNISupport::parse_client_hello_extension_types(msg.data(), msg.size(), types.data(), types.size()) == 3);
   CHECK(types == std::array<int, 2>{0x000A, 0x000B});
+}
+
+TEST_CASE("_clear() releases the raw extension list of a recycled connection", "[TLSSNISupport]")
+{
+  // More than the 32 extensions the fixed buffer holds, so the list is on the heap.
+  std::vector<Extension> extensions;
+  for (uint16_t i = 0; i < 40; ++i) {
+    extensions.push_back({static_cast<uint16_t>(0x0100 + i), {}});
+  }
+  auto const msg = make_handshake_message(make_client_hello_body(extensions));
+  REQUIRE(parse(msg).size() == 40);
+
+  // Recycle the object the way ClassAllocator<SSLNetVConnection, false> does: clear(),
+  // no destructor, then placement new over the same memory. LeakSanitizer reports
+  // the heap list if _clear() does not release it.
+  void *storage = ::operator new(sizeof(RecycledTLSSNISupport), std::align_val_t{alignof(RecycledTLSSNISupport)});
+  auto *snis    = ::new (storage) RecycledTLSSNISupport;
+  for (int i = 0; i < 4; ++i) {
+    snis->on_client_hello_message(msg.data(), msg.size());
+
+    size_t     count = 0;
+    auto const types = snis->_get_raw_extension_types(count);
+    REQUIRE(types != nullptr);
+    REQUIRE(count == extensions.size());
+    for (size_t j = 0; j < count; ++j) {
+      CHECK(types[j] == extensions[j].type);
+    }
+
+    snis->_clear();
+    size_t cleared_count = 0;
+    CHECK(snis->_get_raw_extension_types(cleared_count) == nullptr);
+    CHECK(cleared_count == 0);
+    snis = ::new (storage) RecycledTLSSNISupport;
+  }
+  std::destroy_at(snis);
+  ::operator delete(storage, std::align_val_t{alignof(RecycledTLSSNISupport)});
 }
