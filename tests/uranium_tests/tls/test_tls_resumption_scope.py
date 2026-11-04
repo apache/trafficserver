@@ -162,15 +162,21 @@ def test_tls_resume_cross_sni(ats_factory: ATSFactory, services: ServiceFactory)
     assert_resumed(connect(ats, "ALPHA.EXAMPLE.COM", session))
 
 
+@pytest.mark.parametrize("paused_client_hello", (False, True), ids=("no-hook", "paused-client-hello"))
 @pytest.mark.parametrize("different_ca", (False, True), ids=("verify-client-scope", "verify-client-ca-scope"))
-def test_tls_ticket_verify_client_scope(ats_factory: ATSFactory, services: ServiceFactory, different_ca: bool) -> None:
+def test_tls_ticket_verify_client_scope(
+        ats_factory: ATSFactory, services: ServiceFactory, different_ca: bool, paused_client_hello: bool) -> None:
     """Refuse cross-policy tickets but resume valid same-policy sessions.
 
     :param ats_factory: Proxy factory.
     :param services: Origin factory.
     :param different_ca: Use two STRICT tenants with different CAs instead of NONE and STRICT.
+    :param paused_client_hello: Load a ClientHello hook that reenables later, so the callback retries.
     """
     ats = configure_ticket_proxy(ats_factory, services)
+    if paused_client_hello:
+        ats.copy_custom_plugin("{ATS_TEST_PLUGINS_DIR}/ssl_hook_test.so")
+        ats.plugin_config.add_line("ssl_hook_test.so -client_hello=1")
     if different_ca:
         first, second, cert = "aaa.example.com", "bbb.example.com", "aaa-signed"
         ats.write_config_file(
