@@ -302,6 +302,11 @@ Configuration Changes
 ---------------------
 The following :file:`records.yaml` changes have been made:
 
+- :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` now applies only to inbound connections.
+  Outbound HTTP/2 connections use the new
+  :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out`, which has the same default of ``60``.
+  If you changed it to accommodate your origins, set the new record to the same value.
+
 - The addresses in :ts:cv:`proxy.config.http.per_client.connection.exempt_list` are now also
   exempt from :ts:cv:`proxy.config.net.connections_throttle`. If you already use this list for the
   per-client limit, those addresses can now also connect when ATS is at the connection limit, and

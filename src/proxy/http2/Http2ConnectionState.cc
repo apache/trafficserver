@@ -1513,11 +1513,12 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
                                   configured_settings.get(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE));
 
   configured_max_settings_frames_per_minute     = Http2::max_settings_frames_per_minute;
-  configured_max_ping_frames_per_minute         = Http2::max_ping_frames_per_minute;
   configured_max_priority_frames_per_minute     = Http2::max_priority_frames_per_minute;
   configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
   configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
   configured_max_empty_frames_per_minute        = Http2::max_empty_frames_per_minute;
+  configured_max_ping_frames_per_minute =
+    session->is_outbound() ? Http2::max_ping_frames_per_minute_out : Http2::max_ping_frames_per_minute;
 
   HttpConfigParams *http_config = HttpConfig::acquire();
   if (http_config) {
