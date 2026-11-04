@@ -982,8 +982,13 @@ Lstopped:
 
 Lerror:
   // retire() reaches every fast-accept acceptor through naVec or per_thread_clones and deletes it via AcceptorReclaim, so
-  // deleting here would free it twice. Only the socket this acceptor opened itself is closed; the shared one is not ours.
-  action_->cancel();
+  // deleting here would free it twice.
+  //
+  // The action is shared by every clone. An acceptor with its own listen socket closes only that socket: cancelling the action
+  // would make the siblings stop accepting while their sockets stay in the SO_REUSEPORT group, leaving clients queued on them.
+  if (!owns_listen_socket) {
+    action_->cancel();
+  }
   if (refuse_retry != nullptr) {
     refuse_retry->cancel(this);
     refuse_retry = nullptr;
