@@ -184,6 +184,18 @@ protected:
 
   void _clear();
 
+  /** The extension types recorded from the raw ClientHello, in wire order.
+   *
+   * @param[out] count The number of recorded extension types.
+   * @return The recorded extension types, or nullptr if none are recorded.
+   */
+  const int *
+  _get_raw_extension_types(size_t &count) const
+  {
+    count = _raw_extension_count;
+    return _raw_extension_types;
+  }
+
 private:
   static int _ex_data_index;
 
