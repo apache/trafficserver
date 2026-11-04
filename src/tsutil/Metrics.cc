@@ -39,7 +39,7 @@ Metrics::ThreadDeferredCounters::flush()
   for (size_t i = 0; i < _dirty_count; ++i) {
     Slot &s = _slots[_dirty[i]];
     if (s.delta != 0) {
-      s.metric->_value.fetch_add(s.delta, MEMORY_ORDER);
+      s.metric->_value.fetch_add(static_cast<int64_t>(s.delta), MEMORY_ORDER);
     }
     s = Slot{};
   }

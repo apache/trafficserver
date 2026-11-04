@@ -272,9 +272,8 @@ EThread::execute_regular()
     EventStatistics statistics = fire_ready_events(loop_start_time);
     ink_hrtime      sleep_time = get_sleep_time(statistics.event_time, current_slice);
 
-    // Flush before a sleep that would outlast the interval too, so an idle thread's counters are current.
-    if (counter_flush_interval > 0 &&
-        (statistics.event_time - last_counter_flush >= counter_flush_interval || sleep_time >= counter_flush_interval)) {
+    // A thread that is about to block flushes in its tail handler instead, so idle threads' counters are current.
+    if (counter_flush_interval > 0 && statistics.event_time - last_counter_flush >= counter_flush_interval) {
       ts::Metrics::flush_thread_counters();
       last_counter_flush = statistics.event_time;
     }
@@ -303,6 +302,16 @@ EThread::execute_regular()
   }
 
   ts::Metrics::disable_thread_counter_deferral();
+}
+
+int
+EThread::DefaultTailHandler::waitForActivity(ink_hrtime timeout)
+{
+  if (timeout > 0) {
+    ts::Metrics::flush_thread_counters();
+  }
+  _q.wait(ink_get_hrtime() + timeout);
+  return 0;
 }
 
 EThread::EventStatistics

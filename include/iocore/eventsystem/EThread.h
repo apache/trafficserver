@@ -566,12 +566,7 @@ private:
   {
     explicit DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
 
-    int
-    waitForActivity(ink_hrtime timeout) override
-    {
-      _q.wait(ink_get_hrtime() + timeout);
-      return 0;
-    }
+    int waitForActivity(ink_hrtime timeout) override;
     void
     signalActivity() override
     {

@@ -446,7 +446,7 @@ public:
     /// Adds @a val to @a metric's pending sum. Returns false if the table has no room for @a metric,
     /// in which case the caller must apply the increment itself.
     bool
-    add(AtomicType *metric, int64_t val)
+    add(AtomicType *metric, uint64_t val)
     {
       size_t slot = (reinterpret_cast<uintptr_t>(metric) >> 3) * 0x9E3779B97F4A7C15ULL >> (64 - SLOT_BITS);
 
@@ -480,9 +480,10 @@ public:
     static constexpr size_t SLOTS      = size_t{1} << SLOT_BITS;
     static constexpr size_t MAX_PROBES = 16;
 
+    // Summed unsigned so that sums wrap the same way the shared atomic's fetch_add does.
     struct Slot {
       AtomicType *metric = nullptr;
-      int64_t     delta  = 0;
+      uint64_t    delta  = 0;
     };
 
     std::array<Slot, SLOTS>     _slots{};
@@ -696,7 +697,7 @@ public:
     increment(AtomicType *metric, uint64_t val = 1)
     {
       debug_assert(metric);
-      if (_thread_counters != nullptr && _thread_counters->add(metric, static_cast<int64_t>(val))) {
+      if (_thread_counters != nullptr && _thread_counters->add(metric, val)) {
         return;
       }
       metric->_value.fetch_add(val, MEMORY_ORDER);
