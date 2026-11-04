@@ -287,6 +287,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   if (!cont || !header_block) {
     return -1;
   }
+  ink_assert(thread == this_ethread());
 
   if (this->_invalid) {
     this->_report(thread, cont, stream_id, QPACK_EVENT_DECODE_FAILED, nullptr);

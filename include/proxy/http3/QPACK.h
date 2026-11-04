@@ -67,7 +67,8 @@ public:
   /*
    * This will emit either of two events below, on @a thread:
    * - QPACK_EVENT_DECODE_COMPLETE (the event's cookie is &hdr)
-   * - QPACK_EVENT_DECODE_FAILED (the event's cookie is nullptr)
+   * - QPACK_EVENT_DECODE_FAILED (the event's cookie is &hdr, or nullptr if the
+   *   decoder had already failed)
    *
    * @a thread has to be the thread decode() is called on: QPACK keeps the
    * results it has not delivered yet on a list that only that thread touches.

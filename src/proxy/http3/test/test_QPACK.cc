@@ -285,7 +285,13 @@ run_on_event_thread(std::function<int()> call)
   auto result = std::make_shared<Result>();
 
   eventProcessor.all_ethreads[0]->schedule_imm(new Call(std::move(call), result));
-  REQUIRE(wait_for(result->done));
+  if (!wait_for(result->done)) {
+    // The queued call still refers to the caller's locals, so unwinding past
+    // them would let it run on freed stack. A stuck event thread spoils every
+    // later test anyway.
+    std::fprintf(stderr, "event thread stalled\n");
+    std::abort();
+  }
   return result->value;
 }
 
