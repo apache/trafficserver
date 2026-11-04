@@ -6084,9 +6084,31 @@ HTTP/2 Configuration
 .. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
    :reloadable:
 
-   Specifies how many number of PING frames |TS| receives for a minute at maximum.
-   Clients exceeded this limit will be immediately disconnected with an error
+   Specifies how many PING frames |TS| receives per minute at maximum on an
+   inbound connection.
+   Clients exceeding this limit are immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of PING frames received.
+   Outbound connections use
+   :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out` instead.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute_out INT 300
+   :reloadable:
+
+   Specifies how many PING frames |TS| receives per minute at maximum on an
+   outbound connection.
+   Origins exceeding this limit are immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM, which ends every stream on that connection. A
+   response already in progress is cut off, and a request still waiting for its
+   response fails unless |TS| can retry it: the request must be safe to resend,
+   such as a ``GET``, and
+   :ts:cv:`proxy.config.http.connect_attempts_max_retries` must allow another
+   attempt.
+   Origins may send PING frames to measure round-trip time or to check that the
+   connection still works, often faster than a limit sized for clients allows,
+   so this limit is set separately from
+   :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` and has a higher
+   default.
    Any negative value configures no limit to the number of PING frames received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_priority_frames_per_minute INT 120

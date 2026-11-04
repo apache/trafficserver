@@ -444,6 +444,7 @@ public:
   static int32_t  max_settings_per_minute;
   static int32_t  max_settings_frames_per_minute;
   static int32_t  max_ping_frames_per_minute;
+  static int32_t  max_ping_frames_per_minute_out;
   static int32_t  max_priority_frames_per_minute;
   static int32_t  max_rst_stream_frames_per_minute;
   static int32_t  max_continuation_frames_per_minute;
