@@ -26,6 +26,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
@@ -94,12 +95,19 @@ make_handshake_message(std::vector<uint8_t> const &body)
   return msg;
 }
 
+// Parses @a msg the way on_client_hello_message() does when the extensions do
+// not fit its fixed buffer: count first, then parse into exact storage.
 std::vector<int>
 parse(std::vector<uint8_t> const &msg, bool expect_success = true)
 {
-  std::vector<int> types{-1};
-  bool const       parsed = TLSSNISupport::parse_client_hello_extension_types(msg.data(), msg.size(), types);
-  REQUIRE(parsed == expect_success);
+  auto const count = TLSSNISupport::parse_client_hello_extension_types(msg.data(), msg.size(), nullptr, 0);
+  REQUIRE(count.has_value() == expect_success);
+  if (!count) {
+    return {};
+  }
+
+  std::vector<int> types(*count);
+  REQUIRE(TLSSNISupport::parse_client_hello_extension_types(msg.data(), msg.size(), types.data(), types.size()) == count);
   return types;
 }
 
@@ -223,4 +231,17 @@ TEST_CASE("Malformed raw ClientHellos are rejected", "[TLSSNISupport]")
     body[block_len_offset + 1]    = static_cast<uint8_t>(block_len);
     CHECK(parse(make_handshake_message(body), false).empty());
   }
+}
+
+TEST_CASE("Raw ClientHello extension types beyond a short buffer are counted", "[TLSSNISupport]")
+{
+  auto const msg = make_handshake_message(make_client_hello_body({
+    {0x000A, {}},
+    {0x000B, {}},
+    {0x000D, {}},
+  }));
+
+  std::array<int, 2> types{};
+  CHECK(TLSSNISupport::parse_client_hello_extension_types(msg.data(), msg.size(), types.data(), types.size()) == 3);
+  CHECK(types == std::array<int, 2>{0x000A, 0x000B});
 }

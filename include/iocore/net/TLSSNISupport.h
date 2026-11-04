@@ -30,12 +30,12 @@
 #include <netinet/in.h>
 #include <openssl/ssl.h>
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <memory>
 #include <optional>
-#include <vector>
 
 class TLSSNISupport
 {
@@ -127,14 +127,20 @@ public:
    */
   void on_client_hello_message(const uint8_t *msg, size_t len);
 
-  /** Parse the extension types of a raw ClientHello handshake message.
+  /** Validate a raw ClientHello handshake message and count its extension types.
+   *
+   * The whole message is validated even when @a capacity is too small to hold
+   * every extension type, so a caller can size exact storage from the count
+   * and parse again.
    *
    * @param[in] msg The full handshake message, including its four byte header.
    * @param[in] len The length of @a msg in bytes.
-   * @param[out] types The extension types, in wire order.
-   * @return true if @a msg is a well formed ClientHello, false otherwise.
+   * @param[out] types Receives the first @a capacity extension types, in wire order. May be null if @a capacity is 0.
+   * @param[in] capacity The number of entries @a types can hold.
+   * @return The number of extensions in the ClientHello, or std::nullopt if
+   *   @a msg is not a well formed ClientHello.
    */
-  static bool parse_client_hello_extension_types(const uint8_t *msg, size_t len, std::vector<int> &types);
+  static std::optional<size_t> parse_client_hello_extension_types(const uint8_t *msg, size_t len, int *types, size_t capacity);
 
   /** Process the servername extension when a client uses one in the TLS handshake.
    *
@@ -191,8 +197,17 @@ private:
   void         _set_sni_server_name_buffer(std::string_view name);
   ClientHello *_ch = nullptr;
 
+  void _reset_raw_extension_types();
+
   // Extension types from the raw ClientHello, used where the TLS library's
-  // parsed ClientHello omits extensions it doesn't recognize.
-  std::vector<int> _raw_extension_types;
-  bool             _has_raw_extension_types = false;
+  // parsed ClientHello omits extensions it doesn't recognize. They are held in
+  // the fixed buffer unless the ClientHello has more extensions than it holds,
+  // so the common handshake does not allocate.
+  static constexpr size_t MAX_EXTENSIONS_FOR_FAST_PATH = 32;
+
+  // The recorded extension types, or nullptr if none have been recorded.
+  int                                          *_raw_extension_types = nullptr;
+  size_t                                        _raw_extension_count = 0;
+  std::array<int, MAX_EXTENSIONS_FOR_FAST_PATH> _fast_raw_extension_storage;
+  std::unique_ptr<int[]>                        _slow_raw_extension_storage;
 };
