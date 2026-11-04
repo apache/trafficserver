@@ -99,7 +99,7 @@ public:
     Mutex that the @c Thread holds on its own behalf.
 
     Non-null and unchanged from construction until destruction; do not
-    assign to it. Once construction completes, the @c Thread holds this
+    assign to it. Once construction completes, this object must hold this
     mutex until destruction, so a lock taken on the OS thread this
     @c Thread represents always succeeds immediately. Any object that
     adopts this mutex as its own lock can therefore be locked, and its
@@ -107,6 +107,10 @@ public:
 
     @note Do not lock it from any other thread. A try-lock always
           fails, and a blocking lock is undefined.
+
+
+    @note The @c Thread base class itself does not take the mutex; it
+          must be held by a subclass to satisfy locking requirements.
 
     @par Thread Safety
     Reading or copying the @c Ptr is safe from any thread.
