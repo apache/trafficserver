@@ -45,9 +45,11 @@ Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPAC
 
 Http3HeaderVIOAdaptor::~Http3HeaderVIOAdaptor()
 {
-  // QPACK reports a decode to this adaptor through the event queue, and that
-  // report may still be queued.
-  this->_qpack->cancel(this->_stream_id);
+  // QPACK may still hold this adaptor and its header, for a decode that is
+  // blocked or whose result is still in the event queue.
+  if (this->_qpack != nullptr) {
+    this->_qpack->cancel(this->_stream_id);
+  }
   this->_header.destroy();
 }
 

@@ -159,10 +159,13 @@ QPACK::QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_t
 
 QPACK::~QPACK()
 {
-  // A result already queued still reaches its continuation; it just has no
-  // QPACK to take itself off the list of anymore.
-  for (DecodeReport *r = this->_pending_reports.take_head(); r != nullptr; r = this->_pending_reports.take_head()) {
-    r->detach();
+  // Every caller cancels its stream before its QPACK goes away, so anything
+  // left here belongs to a caller that may already be gone.
+  while (DecodeReport *r = this->_pending_reports.take_head()) {
+    r->withdraw();
+  }
+  while (DecodeRequest *r = this->_blocked_list.take_head()) {
+    delete r;
   }
   free_MIOBuffer(_encoder_stream_sending_instructions);
   free_MIOBuffer(_decoder_stream_sending_instructions);
@@ -351,13 +354,16 @@ QPACK::DecodeReport::DecodeReport(QPACK *qpack, Continuation *continuation, uint
 }
 
 int
-QPACK::DecodeReport::deliver(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
+QPACK::DecodeReport::deliver(int /* event ATS_UNUSED */, Event *data)
 {
+  // Off the list before the handler runs: the handler may destroy its owner,
+  // which cancels this stream, or the session that owns this QPACK.
   if (this->_qpack != nullptr) {
     this->_qpack->_pending_reports.erase(this);
   }
   if (this->_continuation != nullptr) {
-    this->_continuation->handleEvent(this->_event, this->_hdr);
+    data->cookie = this->_hdr;
+    this->_continuation->handleEvent(this->_event, data);
   }
   delete this;
   return EVENT_DONE;
@@ -366,6 +372,8 @@ QPACK::DecodeReport::deliver(int /* event ATS_UNUSED */, Event * /* data ATS_UNU
 void
 QPACK::_report(EThread *thread, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr)
 {
+  ink_assert(thread == this_ethread());
+
   auto *report = new DecodeReport(this, continuation, stream_id, event, hdr);
 
   this->_pending_reports.append(report);

@@ -65,19 +65,23 @@ public:
   int encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, uint64_t &header_block_len);
 
   /*
-   * This will emit either of two events below:
-   * - QPACK_EVENT_DECODE_COMPLETE (Data: *HTTPHdr)
-   * - QPACK_EVENT_DECODE_FAILED (Data: nullptr)
+   * This will emit either of two events below, on @a thread:
+   * - QPACK_EVENT_DECODE_COMPLETE (the event's cookie is &hdr)
+   * - QPACK_EVENT_DECODE_FAILED (the event's cookie is nullptr)
+   *
+   * @a thread has to be the thread decode() is called on: QPACK keeps the
+   * results it has not delivered yet on a list that only that thread touches.
    */
   int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
              EThread *thread = this_ethread());
 
   /*
-   * Stops reporting on the decodes for @a stream_id. A blocked decode is
-   * dropped, and a result that has not been delivered yet never will be.
-   * Call this before the continuation given to decode() goes away.
+   * Stops reporting on the decodes for @a stream_id: a blocked decode is
+   * dropped, and a result still in the event queue is never delivered. Call
+   * this, on the thread given to decode(), before the continuation or the
+   * HTTPHdr given to decode() goes away. It sends nothing to the peer.
    *
-   * Returns the number of decodes dropped.
+   * Returns the number of blocked decodes and queued results dropped.
    */
   int cancel(uint64_t stream_id);
 
@@ -218,17 +222,12 @@ private:
       return this->_stream_id;
     }
 
+    // For a report taken off QPACK's list: it still runs, but delivers nothing.
     void
     withdraw()
     {
       this->_continuation = nullptr;
       this->_qpack        = nullptr;
-    }
-
-    void
-    detach()
-    {
-      this->_qpack = nullptr;
     }
 
     class Linkage
@@ -247,11 +246,12 @@ private:
     };
 
   private:
-    QPACK        *_qpack;
-    Continuation *_continuation;
-    uint64_t      _stream_id;
-    int           _event;
-    HTTPHdr      *_hdr;
+    // Set exactly while this report is on _qpack->_pending_reports.
+    QPACK         *_qpack;
+    Continuation  *_continuation;
+    const uint64_t _stream_id;
+    const int      _event;
+    HTTPHdr *const _hdr;
 
     DecodeReport *_next = nullptr;
     DecodeReport *_prev = nullptr;
