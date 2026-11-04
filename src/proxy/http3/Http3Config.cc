@@ -87,6 +87,12 @@ ts::Http3Config::reconfigure()
   ts::Http3Config::_config_id = configProcessor.set(ts::Http3Config::_config_id, params);
 }
 
+unsigned
+ts::Http3Config::config_id()
+{
+  return ts::Http3Config::_config_id;
+}
+
 ts::Http3ConfigParams *
 ts::Http3Config::acquire()
 {

@@ -1017,6 +1017,8 @@ private:
 class HttpConfig
 {
 public:
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<HttpConfig, HttpConfigParams>;
 
   static void startup();

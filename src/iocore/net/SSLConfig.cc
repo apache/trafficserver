@@ -670,6 +670,12 @@ SSLConfig::reconfigure(ConfigContext ctx)
   ctx.complete("SSLConfig reloaded");
 }
 
+unsigned
+SSLConfig::config_id()
+{
+  return configids[get_config_index()];
+}
+
 SSLConfigParams *
 SSLConfig::acquire()
 {
@@ -758,6 +764,12 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
   }
 
   return retStatus;
+}
+
+unsigned
+SSLCertificateConfig::config_id()
+{
+  return configid;
 }
 
 SSLCertLookup *

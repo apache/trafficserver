@@ -168,6 +168,12 @@ QUICTokenKeyConfig::reconfigure(ConfigContext ctx)
   return true;
 }
 
+unsigned
+QUICTokenKeyConfig::config_id()
+{
+  return _config_id;
+}
+
 QUICTokenKeyConfigParams *
 QUICTokenKeyConfig::acquire()
 {
@@ -628,6 +634,12 @@ QUICConfig::reconfigure(ConfigContext ctx)
 
   QUICConnectionId::SCID_LEN = params->scid_len();
   ctx.complete("QUICConfig reloaded");
+}
+
+unsigned
+QUICConfig::config_id()
+{
+  return _config_id;
 }
 
 QUICConfigParams *
