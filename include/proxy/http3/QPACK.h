@@ -72,6 +72,13 @@ public:
   int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
              EThread *thread = this_ethread());
 
+  /*
+   * Stops reporting on the decodes for @a stream_id. A blocked decode is
+   * dropped, and a result that has not been delivered yet never will be.
+   * Call this before the continuation given to decode() goes away.
+   *
+   * Returns the number of decodes dropped.
+   */
   int cancel(uint64_t stream_id);
 
   void set_encoder_stream(QUICStreamId id);
@@ -193,6 +200,63 @@ private:
     DecodeRequest *_prev = nullptr;
   };
 
+  /*
+   * Carries one decode result to the continuation it is for. QPACK schedules
+   * this instead of that continuation, and keeps it listed until it runs, so
+   * that cancel() can withdraw a result still waiting in the event queue.
+   */
+  class DecodeReport : public Continuation
+  {
+  public:
+    DecodeReport(QPACK *qpack, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr);
+
+    int deliver(int event, Event *data);
+
+    uint64_t
+    stream_id() const
+    {
+      return this->_stream_id;
+    }
+
+    void
+    withdraw()
+    {
+      this->_continuation = nullptr;
+      this->_qpack        = nullptr;
+    }
+
+    void
+    detach()
+    {
+      this->_qpack = nullptr;
+    }
+
+    class Linkage
+    {
+    public:
+      static DecodeReport *&
+      next_ptr(DecodeReport *t)
+      {
+        return t->_next;
+      }
+      static DecodeReport *&
+      prev_ptr(DecodeReport *t)
+      {
+        return t->_prev;
+      }
+    };
+
+  private:
+    QPACK        *_qpack;
+    Continuation *_continuation;
+    uint64_t      _stream_id;
+    int           _event;
+    HTTPHdr      *_hdr;
+
+    DecodeReport *_next = nullptr;
+    DecodeReport *_prev = nullptr;
+  };
+
   struct EntryReference {
     uint16_t smallest;
     uint16_t largest;
@@ -214,6 +278,9 @@ private:
 
   swoc::IntrusiveDList<DecodeRequest::Linkage> _blocked_list;
   bool                                         _add_to_blocked_list(DecodeRequest *decode_request);
+
+  swoc::IntrusiveDList<DecodeReport::Linkage> _pending_reports;
+  void _report(EThread *thread, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr);
 
   uint16_t _largest_known_received_index = 0;
   void     _update_largest_known_received_index_by_insert_count(uint16_t insert_count);

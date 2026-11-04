@@ -22,6 +22,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdio>
@@ -29,6 +30,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <new>
 #include <thread>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
@@ -1050,4 +1052,166 @@ TEST_CASE("Insert With Name Reference to an entry the insert evicts", "[qpack-en
   CHECK(hdr.field_find(second) != nullptr);
 
   hdr.destroy();
+}
+
+/** Stands in for a decode's continuation once that continuation is gone.
+ *
+ * QPACK keeps a plain pointer to the continuation a decode reports to. Freeing
+ * that continuation would hide a late report unless the test runs under ASAN,
+ * so the tests below destroy it in place and build one of these at the same
+ * address. Any report QPACK still delivers to that address is counted here.
+ */
+class TestQPACKTripwire : public Continuation
+{
+public:
+  explicit TestQPACKTripwire(std::atomic<int> &hits) : Continuation(), _hits(hits)
+  {
+    SET_HANDLER(&TestQPACKTripwire::event_handler);
+  }
+
+  int
+  event_handler(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
+  {
+    ++this->_hits;
+    return 0;
+  }
+
+private:
+  std::atomic<int> &_hits;
+};
+
+/** A decode whose continuation goes away before the decode reports.
+ *
+ * Shared with the event thread so that a report delivered after the test has
+ * stopped waiting still lands in live memory.
+ */
+struct TestQPACKAbandonedDecode {
+  TestQPACKFixture fixture;
+  alignas(TestQPACKEventHandler) unsigned char storage[std::max(sizeof(TestQPACKEventHandler), sizeof(TestQPACKTripwire))];
+  std::atomic<int>  late_reports{0};
+  std::atomic<int>  decode_result{0};
+  std::atomic<bool> done{false};
+};
+
+/** Decode, optionally cancel, then replace the continuation with a tripwire.
+ *
+ * Everything runs on one event thread, so nothing QPACK schedules runs until
+ * this handler returns. When @a unblock_len is not zero, encoder stream
+ * instructions are fed after the swap, which resumes a decode that was blocked
+ * on them. The check runs in a later event, queued behind any report the decode
+ * or the resumed decode scheduled.
+ */
+class TestQPACKAbandonDriver : public Continuation
+{
+public:
+  TestQPACKAbandonDriver(std::shared_ptr<TestQPACKAbandonedDecode> state, const uint8_t *header_block, size_t header_block_len,
+                         bool cancel, const uint8_t *unblock = nullptr, size_t unblock_len = 0)
+    : Continuation(new_ProxyMutex()),
+      _state(std::move(state)),
+      _header_block(header_block),
+      _header_block_len(header_block_len),
+      _cancel(cancel),
+      _unblock(unblock),
+      _unblock_len(unblock_len)
+  {
+    SET_HANDLER(&TestQPACKAbandonDriver::drive);
+  }
+
+  int
+  drive(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
+  {
+    if (this->_checked) {
+      this->_state->done = true;
+      delete this;
+      return 0;
+    }
+
+    QPACK &qpack   = this->_state->fixture.qpack;
+    auto  *handler = new (this->_state->storage) TestQPACKEventHandler();
+
+    this->_state->decode_result =
+      qpack.decode(1, this->_header_block, this->_header_block_len, this->_state->fixture.hdr, handler, this_ethread());
+    if (this->_cancel) {
+      qpack.cancel(1);
+    }
+    handler->~TestQPACKEventHandler();
+    new (this->_state->storage) TestQPACKTripwire(this->_state->late_reports);
+
+    if (this->_unblock_len > 0) {
+      QPACKTestAccess::read_encoder_stream(qpack, this->_unblock, this->_unblock_len);
+    }
+
+    this->_checked = true;
+    this_ethread()->schedule_imm(this);
+    return 0;
+  }
+
+private:
+  std::shared_ptr<TestQPACKAbandonedDecode> _state;
+  const uint8_t                            *_header_block;
+  size_t                                    _header_block_len;
+  bool                                      _cancel;
+  const uint8_t                            *_unblock;
+  size_t                                    _unblock_len;
+  bool                                      _checked = false;
+};
+
+TEST_CASE("A cancelled decode does not report to its continuation", "[qpack-cancel]")
+{
+  // Required Insert Count 0, Delta Base 0, then :method GET from the static table.
+  static const uint8_t header_block[] = {0x00, 0x00, 0xd1};
+
+  SECTION("without a cancel the report reaches the continuation's address")
+  {
+    // This is what the tripwire is for: it has to see a report that is not
+    // cancelled, or the checks below would pass however QPACK behaves.
+    auto state = std::make_shared<TestQPACKAbandonedDecode>();
+
+    eventProcessor.all_ethreads[0]->schedule_imm(new TestQPACKAbandonDriver(state, header_block, sizeof(header_block), false));
+    REQUIRE(wait_for(state->done));
+    CHECK(state->decode_result == 0);
+    CHECK(state->late_reports == 1);
+  }
+
+  SECTION("a decode that completed at once")
+  {
+    auto state = std::make_shared<TestQPACKAbandonedDecode>();
+
+    eventProcessor.all_ethreads[0]->schedule_imm(new TestQPACKAbandonDriver(state, header_block, sizeof(header_block), true));
+    REQUIRE(wait_for(state->done));
+    CHECK(state->decode_result == 0);
+    CHECK(state->late_reports == 0);
+  }
+}
+
+TEST_CASE("A cancelled blocked decode gives up its blocked stream slot", "[qpack-cancel]")
+{
+  // Required Insert Count 2 with nothing inserted blocks the decode. The
+  // fixture's decoder allows one blocked stream, so a second blocked stream is
+  // refused while the first still holds the slot.
+  static const uint8_t blocked_header_block[] = {0x02, 0x00, 0x80};
+
+  auto                  fixture = std::make_shared<TestQPACKFixture>();
+  TestQPACKEventHandler second_handler;
+  HTTPHdr               second_hdr;
+
+  second_hdr.create(HTTPType::REQUEST);
+  REQUIRE(fixture->qpack.decode(1, blocked_header_block, sizeof(blocked_header_block), fixture->hdr, &fixture->event_handler,
+                                eventProcessor.all_ethreads[0]) == 1);
+
+  SECTION("without a cancel the slot stays taken")
+  {
+    CHECK(fixture->qpack.decode(5, blocked_header_block, sizeof(blocked_header_block), second_hdr, &second_handler,
+                                eventProcessor.all_ethreads[0]) == -2);
+  }
+
+  SECTION("a cancel frees the slot")
+  {
+    fixture->qpack.cancel(1);
+    CHECK(fixture->qpack.decode(5, blocked_header_block, sizeof(blocked_header_block), second_hdr, &second_handler,
+                                eventProcessor.all_ethreads[0]) == 1);
+    fixture->qpack.cancel(5);
+  }
+
+  second_hdr.destroy();
 }
