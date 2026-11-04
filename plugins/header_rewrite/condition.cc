@@ -165,5 +165,7 @@ Condition::initialize(Parser &p)
   }
 
   _cond_op = parse_matcher_op(p.get_arg());
-  p.validate_mods();
+  if (!p.validate_mods()) {
+    throw std::runtime_error("unknown modifier(s)");
+  }
 }

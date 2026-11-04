@@ -90,6 +90,12 @@ def test_header_rewrite_bad_set_body(ats_factory: ATSFactory) -> None:
         (
             "invalid-body-mime", [hook, "  set-body Sorry not-a-mime-type"], r"Content-Type must be a MIME type containing '/'",
             None, None),
+        (
+            "duplicate-modifiers", [hook, "  cond %{CLIENT-HEADER:foo} =bar [AND,AND]",
+                                    "  set-header X-Test yes"], r"Duplicate modifier", None, None),
+        (
+            "condition-without-operator", [hook, "  cond %{CLIENT-HEADER:foo} =bar"],
+            r"conditions without operators are not allowed", None, None),
     )
     for name, rules, marker, records, files in cases:
         verify_failure(configure_failure(name, rules, marker, records, files, _ats_factory=ats_factory))
