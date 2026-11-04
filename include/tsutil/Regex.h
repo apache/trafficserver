@@ -115,10 +115,15 @@ public:
 
   /// uses pcre2_match_context_copy for a deep copy.
   RegexMatchContext(RegexMatchContext const &orig);
+  /// Replaces this object's settings with a copy of those of @a orig, or with none if
+  /// @a orig holds none. If PCRE2 cannot allocate the copy, this object keeps its own.
   RegexMatchContext &operator=(RegexMatchContext const &orig);
 
-  RegexMatchContext(RegexMatchContext &&)            = default;
-  RegexMatchContext &operator=(RegexMatchContext &&) = default;
+  /// Steals the context. A moved-from object holds nothing and frees nothing.
+  /// These cannot be defaulted: _match_context wraps a bare void* that the destructor
+  /// frees, so a defaulted move copies the pointer and both ends free it.
+  RegexMatchContext(RegexMatchContext &&that) noexcept;
+  RegexMatchContext &operator=(RegexMatchContext &&that) noexcept;
 
   /** Limits the amount of backtracking that can take place.
    * Any regex exec call that fails will return PCRE2_ERROR_MATCHLIMIT(-47)
