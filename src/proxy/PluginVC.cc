@@ -469,7 +469,7 @@ PluginVC::transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, 
 
   // Attribute the bytes moved across this intercept to the owning plugin.
   if (core_obj->_bytes != nullptr && total_added > 0) {
-    core_obj->_bytes->increment(total_added);
+    ts::Metrics::Counter::increment(core_obj->_bytes, total_added);
   }
 
   return total_added;
@@ -572,7 +572,7 @@ PluginVC::process_write_side()
 
   // Count a write-side pass for the owning plugin only when data actually moved to the peer.
   if (core_obj->_transfers != nullptr && added > 0) {
-    core_obj->_transfers->increment(1);
+    ts::Metrics::Counter::increment(core_obj->_transfers);
   }
 
   write_state.vio.ndone            += added;
