@@ -38,7 +38,11 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "test_metrics|stats_over_http",
-            "proxy.config.dump_mem_info_frequency": 1
+            "proxy.config.dump_mem_info_frequency": 1,
+            # Over loopback the kernel lets Traffic Server's socket to the client buffer a few megabytes, which is
+            # more than the whole prometheus body, so the intercept can finish its write before the reset arrives.
+            # A small send buffer keeps most of the body in the intercept, where only the reset can release it.
+            "proxy.config.net.sock_send_buffer_size_in": 16384,
         })
     ats.start()
     encodings = ["gzip", "deflate"]
