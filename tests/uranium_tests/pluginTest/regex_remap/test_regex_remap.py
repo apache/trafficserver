@@ -18,6 +18,7 @@
 import json
 import shlex
 import os
+import re
 import time
 from typing import Any
 
@@ -165,10 +166,13 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
     assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output
     output = _request(f"http://example.three{path}", "smoke", _ats=_ats, _curl=_curl)
     assert "HTTP/1.1 200 OK" in output and "Content-Length: 6128" in output
-    for transaction in (long_match, short_match):
-        output = _request(
-            transaction["client-request"]["url"], transaction["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
-        assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
+    # The shared 1 MiB JIT stack lets the historical 3 KB URL match.
+    output = _request(
+        long_match["client-request"]["url"], long_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
+    assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output
+    output = _request(
+        short_match["client-request"]["url"], short_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
+    assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
     wait_for_file_lines(_ats.diags_log, r"ERROR: .regex_remap. Bad regular expression result -47", 1)
 
 
@@ -235,3 +239,7 @@ def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     run_matching_checks(_ats=_ats, _curl=_curl, _transactions=_transactions)
     reload_rules(_ats=_ats)
     run_generation_checks(_ats=_ats, _curl=_curl)
+    _ats.stop()
+    log = _ats.diags_log.read_text(errors="replace")
+    assert not re.search(r'ERROR: (?!\[regex_remap\] Bad regular expression result -47 .* from "\^/match_limit/)', log), log
+    assert not re.search(r"FATAL:|Unrecognized configuration value", log), log
