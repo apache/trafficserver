@@ -63,6 +63,10 @@ struct TrustedRPK {
   /// The raw public key the next hop presented (DER SubjectPublicKeyInfo), whether or not it matched,
   /// so origin session reuse can check it against the set in force at that time.
   SSLRPKUtils::TrustedKey peer_key;
+  /// A failure PERMISSIVE only warned about before the pin decision. x509_verify_rpk() replaces the store
+  /// context's error with X509_V_ERR_RPK_UNTRUSTED for that decision, and a matching pin restores this one, so
+  /// the verify result still shows the handshake did not pass every check.
+  int warned_error = X509_V_OK;
 };
 
 void
@@ -192,16 +196,21 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     // x509_verify_rpk() in crypto/x509/x509_vfy.c may first invoke this callback for a key below the
     // security level, which verifyServerPolicy treats like any other failed check, without calling the hook.
     // Only the invocation that follows, with X509_V_ERR_RPK_UNTRUSTED preset since no DANE is
-    // configured, is the pin decision, and on a match that preset error is cleared so it does not
-    // survive into SSL_get_verify_result() for a properly pinned connection.
+    // configured, is the pin decision. Whatever PERMISSIVE continues past is left in the verify result,
+    // which origin_rpk_pin_matches() reads, also for a resumed session, to keep ENFORCED requests off
+    // this connection.
     if (err != X509_V_ERR_RPK_UNTRUSTED) {
       warn_origin_rpk_rejected(enforce_mode, netvc, err);
+      if (TrustedRPK *holder = ssl_get_trusted_rpk_holder(ssl); holder != nullptr && !enforce_mode) {
+        holder->warned_error = err;
+      }
       return !enforce_mode;
     }
     bool const pin_ok = ssl_pin_peer_rpk(ssl, peer_rpk);
     Dbg(dbg_ctl_ssl_verify, "Origin authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (pin_ok) {
-      X509_STORE_CTX_set_error(ctx, X509_V_OK);
+      // A match implies the holder exists. Its warned error is X509_V_OK when nothing failed earlier.
+      X509_STORE_CTX_set_error(ctx, ssl_get_trusted_rpk_holder(ssl)->warned_error);
     } else {
       warn_origin_rpk_mismatch(enforce_mode, netvc);
       if (!enforce_mode) {
@@ -221,6 +230,9 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     if (tbs->verify_certificate(nullptr) == 1) {
       Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check for %s. Action=%s",
               netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
+      if (!enforce_mode) {
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
+      }
       return !enforce_mode;
     }
     return pin_ok || !enforce_mode;
@@ -304,6 +316,21 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
 }
 
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+/** Continue a PERMISSIVE handshake past a failure it only warned about, keeping the failure in the verify result.
+
+    ssl_verify_ok would record X509_V_OK. Under SSL_VERIFY_NONE the library instead continues past
+    ssl_verify_invalid and records X509_V_ERR_APPLICATION_VERIFICATION, which origin_rpk_pin_matches()
+    reads, also for a resumed session, to keep ENFORCED requests off this connection. SSL_set_verify()
+    leaves the custom callback installed, and the library reads the mode only after this callback returns;
+    were that to change, the failure would become fatal rather than accepted.
+ */
+static enum ssl_verify_result_t
+continue_past_warned_failure(SSL *ssl)
+{
+  SSL_set_verify(ssl, SSL_VERIFY_NONE, nullptr);
+  return ssl_verify_invalid;
+}
+
 // BoringSSL rejects raw public keys outright unless a custom verify callback is installed, and
 // SSL_set_custom_verify() displaces SSL_set_verify() (and with it BoringSSL's automatic chain
 // verification) for the whole connection. So this callback owns both cases: pin the peer's raw
@@ -347,11 +374,14 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
         *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
         return ssl_verify_invalid;
       }
-      return ssl_verify_ok;
+      return continue_past_warned_failure(ssl);
     }
-    if (!pin_ok && enforce_mode) {
-      *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
-      return ssl_verify_invalid;
+    if (!pin_ok) {
+      if (enforce_mode) {
+        *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+        return ssl_verify_invalid;
+      }
+      return continue_past_warned_failure(ssl);
     }
     return ssl_verify_ok;
   }
@@ -556,12 +586,13 @@ origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] 
     return true;
   }
 
+  // A handshake PERMISSIVE carried past a failed check leaves a verify result other than X509_V_OK, which
+  // a resumed session carries over, so such a connection never passes, even after its key joins the set.
   // The key itself is checked rather than the identity of the set it was pinned against, so a key a
-  // rotated set still trusts keeps its connections, and one accepted only under PERMISSIVE does not
-  // pass for pinned.
+  // rotated set still trusts keeps its connections.
   auto const &trusted = origin_trusted_rpk(txn_rpk_name, txn_ca_path, nps, ssl_config).keys;
 
-  return holder != nullptr && !holder->peer_key.empty() && trusted != nullptr &&
+  return holder != nullptr && !holder->peer_key.empty() && SSL_get_verify_result(ssl) == X509_V_OK && trusted != nullptr &&
          SSLRPKUtils::pinnedKeyMatches(holder->peer_key.data(), static_cast<int>(holder->peer_key.size()), *trusted);
 #else
   return false;
