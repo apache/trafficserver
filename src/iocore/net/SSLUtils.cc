@@ -357,7 +357,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
         X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
   }
 
-  if (tbs->verify_certificate(ctx) == 1) { // hook moved the handshake state to terminal
+  if (tbs->verify_certificate(ctx) == 1) { // a plugin rejected the certificate
     Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
     return false;
   }
