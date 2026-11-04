@@ -26,6 +26,7 @@
 #include "tsutil/ThreadLeasedSharedPtr.h"
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -129,35 +130,50 @@ TEST_CASE("ThreadLeasedSharedPtr readers see whole values during replacement", "
 
   std::atomic<bool> stop{false};
   std::atomic<int>  bad_reads{0};
-  std::atomic<int>  reads{0};
+  std::atomic<int>  started{0};
 
   std::vector<std::thread> readers;
   for (int i = 0; i < READERS; ++i) {
     readers.emplace_back([&] {
-      int last = 0;
+      // Holding the previous value across loads keeps the thread's lease live, so unchanged
+      // generations take the cached path while the writer replaces values.
+      std::shared_ptr<Tracked> v    = ptr.load_leased();
+      int                      last = v ? v->value : 0;
+      started.fetch_add(1);
       while (!stop.load(std::memory_order_relaxed)) {
-        auto v = ptr.load_leased();
+        v = ptr.load_leased();
         // Values are stored in increasing order, so a reader must never see one go backwards.
         if (!v || v->value < last) {
           bad_reads.fetch_add(1);
         } else {
           last = v->value;
         }
-        reads.fetch_add(1, std::memory_order_relaxed);
       }
     });
   }
 
+  auto const stop_readers = [&] {
+    stop.store(true);
+    for (auto &t : readers) {
+      t.join();
+    }
+  };
+
+  auto const deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (started.load() < READERS && std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::yield();
+  }
+  if (started.load() < READERS) {
+    stop_readers();
+  }
+  REQUIRE(started.load() == READERS);
+
   for (int i = 1; i <= STORES; ++i) {
     ptr.store(std::make_shared<Tracked>(i, destroyed));
   }
-  stop.store(true);
-  for (auto &t : readers) {
-    t.join();
-  }
+  stop_readers();
 
   CHECK(bad_reads.load() == 0);
-  CHECK(reads.load() > 0);
   // Every replaced value is released once readers finish; only the last stored one remains.
   CHECK(destroyed.load() == STORES);
   CHECK(ptr.load_leased()->value == STORES);
