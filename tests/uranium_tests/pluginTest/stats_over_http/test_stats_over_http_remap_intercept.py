@@ -64,9 +64,9 @@ def test_stats_over_http_remap_intercept(ats_factory: ATSFactory, services: Serv
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "stats_over_http",
             "proxy.config.dump_mem_info_frequency": 1,
-            # Over loopback the kernel lets Traffic Server's socket to the client buffer a few megabytes, which is
-            # more than the whole prometheus body, so the intercept can finish its write before the reset arrives.
-            # A small send buffer keeps most of the body in the intercept, where only the reset can release it.
+            # Linux lets a loopback socket buffer a few megabytes, more than the whole prometheus body, so without a
+            # small send buffer the intercept can finish its write before the client's reset arrives and never log the
+            # EOS or ERROR that the test looks for.  On macOS the buffer stays well under the body size either way.
             "proxy.config.net.sock_send_buffer_size_in": 16384,
         })
     # A remap rule matches a path prefix, so the prometheus_v2 rule comes before the prometheus rule.

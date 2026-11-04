@@ -125,8 +125,8 @@ def fetch_records(args: argparse.Namespace) -> int:
 
 def reset_after_first_byte(args: argparse.Namespace) -> int:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # A small receive window, with the small send buffer that the tests give Traffic Server, keeps most of the
-    # body in the intercept when the client goes away.
+    # A small receive window, with the small proxy.config.net.sock_send_buffer_size_in that the --reset callers
+    # set, keeps most of the body in the intercept when the client goes away.
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
     sock.settimeout(60)
     sock.connect(('127.0.0.1', args.port))
