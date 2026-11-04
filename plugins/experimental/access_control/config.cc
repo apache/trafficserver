@@ -187,6 +187,7 @@ AccessControlConfig::init(int argc, char *argv[])
     {const_cast<char *>("use-redirects"),                 optional_argument, nullptr, 'n'},
     {const_cast<char *>("include-uri-paths-file"),        optional_argument, nullptr, 'o'},
     {const_cast<char *>("exclude-uri-paths-file"),        optional_argument, nullptr, 'p'},
+    {const_cast<char *>("enforce-scope"),                 optional_argument, nullptr, 'q'},
     {nullptr,                                             0,                 nullptr, 0  }
   };
 
@@ -275,6 +276,10 @@ AccessControlConfig::init(int argc, char *argv[])
         status = false;
       }
       break;
+    case 'q': /* enforce-scope */
+    {
+      _enforceScope = ::isTrue(optarg);
+    } break;
 
     default: {
       status = false;

@@ -420,10 +420,7 @@ contHandleAccessControl(const TSCont contp, TSEvent event, void *edata)
 
           TSHandleMLocRelease(serverRespBufp, TS_NULL_MLOC, serverRespHdrLoc);
         } else {
-          int   len;
-          char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
-          AccessControlError("failed to retrieve server response header for request url:%.*s",
-                             (len ? len : static_cast<int>(UNKNOWN.size())), (url ? url : UNKNOWN.data()));
+          AccessControlDebug("no server response header available; skipping origin access token handling");
         }
 
         TSHandleMLocRelease(clientRespBufp, TS_NULL_MLOC, clientRespHdrLoc);
@@ -529,12 +526,31 @@ enforceAccessControl(TSHttpTxn txnp, TSRemapRequestInfo *rri, AccessControlConfi
           remapStatus =
             handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);
         } else {
-          /* Valid token, if configured extract the token subject to a header,
-           * only if we can trust it - token is valid to prevent using it by mistake */
-          if (!config->_extrSubHdrName.empty()) {
-            String sub(token->getSubject());
-            setHeader(rri->requestBufp, rri->requestHdrp, config->_extrSubHdrName.c_str(), config->_extrSubHdrName.size(),
-                      sub.c_str(), sub.size());
+          bool inScope = true;
+          if (config->_enforceScope) {
+            int                   pathLen = 0;
+            const char           *path    = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &pathLen);
+            StringView            reqPath(path ? path : "", pathLen);
+            ScopeValidationResult scopeResult = validateScopeDetailed(reqPath, token->getScope());
+            if (scopeResult != ScopeValidationResult::IN_SCOPE) {
+              inScope = false;
+              if (scopeResult == ScopeValidationResult::INVALID_SCOPE) {
+                data->_vaState = INVALID_SCOPE;
+              } else {
+                data->_vaState = OUT_OF_SCOPE;
+              }
+              remapStatus =
+                handleInvalidToken(txnp, data, reject, accessTokenStateToHttpStatus(data->_vaState, config), data->_vaState);
+            }
+          }
+          if (inScope) {
+            /* Valid token and in-scope, if configured extract the token subject to a header,
+             * only if we can trust it - token is valid to prevent using it by mistake */
+            if (!config->_extrSubHdrName.empty()) {
+              String sub(token->getSubject());
+              setHeader(rri->requestBufp, rri->requestHdrp, config->_extrSubHdrName.c_str(), config->_extrSubHdrName.size(),
+                        sub.c_str(), sub.size());
+            }
           }
         }
         /* If configure extract the UA token id into a header likely for debugging,
