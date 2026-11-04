@@ -25,6 +25,7 @@
 
 #include <openssl/ssl.h>
 #include <memory>
+#include <vector>
 #include "tscore/ink_config.h"
 
 enum class SNIRoutingType {
@@ -64,3 +65,12 @@ struct SSLMultiCertConfigParams;
 
 using shared_SSLMultiCertConfigParams = std::shared_ptr<SSLMultiCertConfigParams>;
 using shared_SSL_CTX                  = std::shared_ptr<SSL_CTX>;
+
+namespace SSLRPKUtils
+{
+/// One trusted peer key, DER-encoded as a SubjectPublicKeyInfo.
+using TrustedKey = std::vector<unsigned char>;
+/// The keys a peer is allowed to present; more than one so a key can be rotated.
+using TrustedKeySet = std::vector<TrustedKey>;
+
+} // namespace SSLRPKUtils

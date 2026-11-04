@@ -37,6 +37,7 @@
 #include "swoc/IntrusiveHashMap.h"
 
 #include <atomic>
+#include <string_view>
 #include <vector>
 
 class ProxyTransaction;
@@ -70,6 +71,25 @@ public:
   int         eventHandler(int event, void *data);
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
+  /** @return true if a session established with @a session_sni may carry a request whose outbound
+      SNI is @a proposed_sni.
+
+      @a session_sni comes from TLSSNISupport and is "" rather than nullptr when the connection sent
+      no name, so a session established without an SNI matches an empty @a proposed_sni.
+      A nullptr @a session_sni is treated the same as "".
+   */
+  static bool sni_matches(std::string_view proposed_sni, const char *session_sni);
+  /** @return true if a pooled raw public key session may carry @a sm's request.
+
+      Only a pinned key set can vouch for such a session, so this checks the key the origin
+      presented on it against the set @a sm's own connection would pin, under @a sm's policy, rather
+      than inferring a match from a name. Under ENFORCED the key must also have been recorded, which
+      a connection opened under DISABLED never does.
+
+      @param sm The transaction looking for a session.
+      @param netvc A pooled origin connection for which origin_presented_raw_public_key() is true.
+   */
+  static bool validate_pinned_origin(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
   void        removeSession(PoolableSession *ssn);
   void        addSession(PoolableSession *ssn);

@@ -37,7 +37,10 @@ public:
   static void                  bind(SSL *ssl, TLSCertSwitchSupport *tcss);
   static void                  unbind(SSL *ssl);
 
-  int selectCertificate(SSL *ssl, SSLCertContextType ctxType);
+  // `servername`, if given, is used instead of SSL_get_servername() -- for callers running before
+  // the ClientHello's server_name extension has been parsed by the normal extension pipeline (e.g.
+  // OpenSSL's SSL_client_hello_cb), where SSL_get_servername() does not yet return anything.
+  int selectCertificate(SSL *ssl, SSLCertContextType ctxType, const char *servername = nullptr);
 
 protected:
   void _clear();

@@ -67,6 +67,8 @@ struct SSLMultiCertConfigParams {
   ats_scoped_str       ocsp_response;          ///< prefetched OCSP response
   ats_scoped_str       dialog;                 ///< Private key dialog
   ats_scoped_str       servername;             ///< Destination server
+  bool                 rpk_enabled = false;    ///< Offer RFC 7250 raw public keys from this entry's cert/key alongside X.509
+  ats_scoped_str       client_rpk_ca;          ///< Trusted client raw public keys (PEM, one or more) for inbound mTLS pinning
   SSLCertContextOption opt;                    ///< SSLCertContext special handling option
 };
 
@@ -126,7 +128,10 @@ struct SSLCertLookup : public ConfigInfo {
   std::unique_ptr<SSLContextStorage> ssl_storage;
   std::unique_ptr<SSLContextStorage> ec_storage;
 
-  bool     is_valid        = true;
+  bool is_valid = true;
+  /// Some entry offers or pins RFC 7250 raw public keys, so on OpenSSL certificate selection has to
+  /// run before the library negotiates certificate types.
+  bool     has_raw_public_keys = false;
   unsigned user_cert_count = 0; ///< Count of certificate-bearing entries successfully loaded by the last load(). Tunnel-only and
                                 ///< bootstrap entries are not counted.
 
