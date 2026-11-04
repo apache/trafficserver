@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <optional>
 #include <string_view>
 #include <sys/un.h>
 
@@ -150,6 +151,12 @@ union IpEndpoint {
 
 /** Return the detected maximum listen(2) backlog for TCP. */
 int ats_tcp_somaxconn();
+
+/** Return the system's maximum listen(2) backlog, or nothing if it could not be read or is out of range.
+
+    Unlike @c ats_tcp_somaxconn(), this never substitutes a default, so a caller can tell a real limit from a guess.
+*/
+std::optional<int> ats_tcp_somaxconn_detected();
 
 /** Parse a string for pieces of an IP address.
 

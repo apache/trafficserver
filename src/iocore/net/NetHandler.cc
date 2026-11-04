@@ -471,7 +471,12 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   // Polling event by PollCont
   PollCont  *p        = get_PollCont(this->thread);
   ink_hrtime pre_poll = ink_get_hrtime();
-  p->do_poll(timeout);
+  {
+    // Only do_poll blocks. Everything else in this function - the enabled list, dispatching ready
+    // descriptors below, the ready list - is work the event loop is awake for.
+    Watchdog::SleepScope sleep_scope{this->thread->heartbeat_state};
+    p->do_poll(timeout);
+  }
   ink_hrtime post_poll = ink_get_hrtime();
   ink_hrtime poll_time = post_poll - pre_poll;
 

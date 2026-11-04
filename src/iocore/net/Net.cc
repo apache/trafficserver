@@ -131,6 +131,8 @@ register_net_stats()
   net_rsb.socks_connections_successful     = Metrics::Counter::createPtr("proxy.process.socks.connections_successful");
   net_rsb.socks_connections_unsuccessful   = Metrics::Counter::createPtr("proxy.process.socks.connections_unsuccessful");
   net_rsb.tcp_accept                       = Metrics::Counter::createPtr("proxy.process.tcp.total_accepts");
+  net_rsb.watchdog_accepts_refused         = Metrics::Counter::createPtr("proxy.process.net.watchdog_accepts_refused");
+  net_rsb.watchdog_listen_backlog          = Metrics::Gauge::createPtr("proxy.process.net.watchdog_listen_backlog");
   net_rsb.write_bytes                      = Metrics::Counter::createPtr("proxy.process.net.write_bytes");
   net_rsb.write_bytes_count                = Metrics::Counter::createPtr("proxy.process.net.write_bytes_count");
   net_rsb.connection_tracker_table_size    = Metrics::Gauge::createPtr("proxy.process.net.connection_tracker_table_size");

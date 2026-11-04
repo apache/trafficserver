@@ -56,3 +56,13 @@ struct Server {
 
   Server() { ink_zero(accept_addr); }
 };
+
+/** The listen backlog: @c proxy.config.net.listen_backlog, or @c somaxconn when unset or out of range. */
+int get_listen_backlog();
+
+/** The depth the watchdog scales its accept queue resizing against.
+
+  The kernel caps a listen socket's accept queue at @c min(backlog, somaxconn), so the baseline is capped the same
+  way, but only when @c somaxconn was actually read. Where it could not be, the configured value is used as is.
+*/
+int get_watchdog_backlog_baseline();

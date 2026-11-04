@@ -44,6 +44,7 @@
 #include "Server.h"
 
 #include <atomic>
+#include <memory>
 #include <vector>
 
 struct NetAccept;
@@ -130,12 +131,79 @@ struct NetAccept : public Continuation {
   HttpProxyPort *proxyPort = nullptr;
   AcceptOptions  opt;
 
+  /** Listen backlog scale currently applied to @a server, in permille.
+
+      Tracks @c Watchdog::backlog_scale_permille() so the accept paths can re-listen only on a change rather
+      than on every pass. Shared by acceptors cloned onto one listening socket, so whichever of them
+      resizes it is seen by the rest; an acceptor that opens its own socket gets its own value (see
+      @c accept_per_thread). The watchdog publishes the target and never touches the socket itself,
+      which keeps it clear of the event system's locks.
+  */
+  std::shared_ptr<std::atomic<int>> applied_backlog_permille = std::make_shared<std::atomic<int>>(1000);
+
+  /** Pending retry timer for an @c acceptFastEvent pass that refused under watchdog backpressure.
+
+      Every arrival on the edge-triggered listen fd wakes the acceptor, so without this each refused
+      pass would start its own timer chain. At most one is kept outstanding per acceptor.
+  */
+  Event *refuse_retry = nullptr;
+
+  /** True only for acceptors driven by @c acceptFastEvent, the sole place @c refuse_retry is armed.
+
+      Only these acceptors run on a shared NetHandler mutex that is released between events. An acceptor on a dedicated
+      accept thread holds that thread's mutex for the thread's lifetime, so @c retire() must never wait on it.
+  */
+  bool uses_fast_accept = false;
+
+  /** True for acceptors run by @c acceptLoopEvent on their own thread. That thread deletes the acceptor when it leaves its
+      loop, so @c retire() must leave it alone or the acceptor would be freed under a thread still using it.
+  */
+  bool owned_by_accept_thread = false;
+
+  /** Two-party handoff that decides who deletes an @c owned_by_accept_thread acceptor registered in @c naVec.
+
+      Both the accept thread (on leaving its loop) and the stopping thread (in @c retire(), after it has finished with the
+      acceptor) call @c release_dedicated(); the second caller deletes, so neither has to wait on the other. Null for the extra
+      accept-thread copies, which nothing else references and which delete themselves.
+  */
+  std::shared_ptr<std::atomic<int>> dedicated_release;
+
+  /** Called once by each of the two parties; deletes this acceptor on the second call. Do not touch the acceptor afterwards. */
+  void release_dedicated();
+
+  /** True when this acceptor opened a listening socket of its own (@c proxy.config.exec_thread.listen), as opposed to
+      sharing the original's. Cancelling the shared action closes only the original's socket, so these must be
+      closed by their owning thread.
+  */
+  bool owns_listen_socket = false;
+
+  /** Per-thread copies made by @c init_accept_per_thread(), kept on the original so @c retire() can reach them. */
+  std::vector<NetAccept *> per_thread_clones;
+
+  /** True for dedicated accept threads that wait in @c poll before each @c accept4 so that watchdog refusal is evaluated
+      immediately ahead of it. Set only when the watchdog is enabled; the listen socket is then non-blocking.
+  */
+  bool poll_before_accept = false;
+
+  /** Event thread whose NetHandler mutex serializes this acceptor, set alongside @c uses_fast_accept. */
+  EThread *accept_thread = nullptr;
+
   virtual NetProcessor *getNetProcessor() const;
 
-  virtual void       init_accept(EThread *t = nullptr);
-  void               init_accept_loop();
-  void               init_accept_per_thread();
-  virtual void       stop_accept();
+  virtual void init_accept(EThread *t = nullptr);
+  bool         init_accept_loop();
+  bool         init_accept_per_thread();
+  virtual void stop_accept();
+
+  /** Disposes of an acceptor already passed through @c stop_accept(), in place of @c delete.
+
+      Acceptors owned by a dedicated accept thread are released through @c release_dedicated(): that thread exits once it
+      sees the action cancelled, and whichever of it and this call finishes second deletes the acceptor.
+
+      The retry timer must be cancelled under the owning thread's mutex, and that thread may be wedged holding it, so the
+      caller must not wait. The cancel and the delete are handed to the owning thread instead.
+  */
+  void               retire();
   virtual NetAccept *clone() const;
 
   /** Listen without blocking.

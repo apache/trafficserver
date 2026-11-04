@@ -622,8 +622,8 @@ ats_ip_check_characters(std::string_view text)
   return found_hex && !found_colon ? AF_UNSPEC : found_colon ? AF_INET6 : AF_INET;
 }
 
-int
-ats_tcp_somaxconn()
+std::optional<int>
+ats_tcp_somaxconn_detected()
 {
   int value = 0;
 
@@ -640,13 +640,19 @@ ats_tcp_somaxconn()
   }
 #endif
 
-  // Default to the compatible value we used before detection. SOMAXCONN is the right
-  // macro to use, but most systems set this to 128, which is just too small.
   if (value <= 0 || value > 65535) {
-    value = 1024;
+    return std::nullopt;
   }
 
   return value;
+}
+
+int
+ats_tcp_somaxconn()
+{
+  // Default to the compatible value we used before detection. SOMAXCONN is the right
+  // macro to use, but most systems set this to 128, which is just too small.
+  return ats_tcp_somaxconn_detected().value_or(1024);
 }
 
 namespace swoc
