@@ -107,7 +107,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("private_key")
     parser.add_argument("ping_count", type=int)
     parser.add_argument("stop_file")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.ping_count < 1:
+        parser.error("ping_count must be positive")
+    return args
 
 
 def main() -> int:

@@ -29,8 +29,8 @@ CASES = [
             "proxy.config.http2.max_ping_frames_per_minute": 5,
             "proxy.config.http2.max_ping_frames_per_minute_out": 1000
         },
-        # Above the default too, so an origin left at the default would be closed.
-        100,
+        # Above the 300 default too, so the case fails if ATS ignores the _out record.
+        400,
         True,
         False,
         id="origin-limit-above-client-limit"),
@@ -43,8 +43,10 @@ CASES = [
         False,
         True,
         id="origin-limit-below-client-limit"),
-    pytest.param({}, 60, False, False, id="defaults-at-limit"),
-    pytest.param({}, 61, True, True, id="defaults-over-limit"),
+    pytest.param({}, 60, False, False, id="client-default-at-limit"),
+    pytest.param({}, 61, True, False, id="client-default-over-limit"),
+    pytest.param({}, 300, True, False, id="origin-default-at-limit"),
+    pytest.param({}, 301, True, True, id="origin-default-over-limit"),
 ]
 
 
@@ -54,12 +56,12 @@ def test_h2_origin_ping_limit(
         origin_closed: bool) -> None:
     """Send the same PING burst from a client and from an origin and check which side ATS closes.
 
-    :param ats_factory: Proxy factory.
-    :param services: Custom origin and client factory.
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Runs the PING origin and both client connections.
     :param records: PING limits under test.
     :param ping_count: PING frames each peer sends in one burst.
-    :param client_closed: Whether the client burst should exceed its limit.
-    :param origin_closed: Whether the origin burst should exceed its limit.
+    :param client_closed: Whether ATS should close the client connection with ENHANCE_YOUR_CALM.
+    :param origin_closed: Whether ATS should close the origin connection with ENHANCE_YOUR_CALM.
     """
     directory = Path(__file__).parent
     port = services.allocate_port()
