@@ -286,7 +286,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     return false;
   }
   if (tbs->verify_certificate(ctx) == 1) {
-    // Verify server hook failed and set the status to SSL_HANDSHAKE_ERROR
+    // A TS_EVENT_SSL_VERIFY_SERVER plugin rejected the certificate.
     unsigned char *sni_name;
     char           buff[INET6_ADDRSTRLEN];
     if (netvc->options.sni_servername) {
