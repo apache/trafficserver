@@ -26,7 +26,6 @@
 #include "iocore/net/NetHandler.h"
 #include "P_UnixPollDescriptor.h"
 #include "P_Net.h"
-#include "tsutil/Metrics.h"
 
 namespace
 {
@@ -84,10 +83,6 @@ PollCont::do_poll(ink_hrtime timeout)
     } else {
       poll_timeout = EThread::default_wait_interval_ms;
     }
-  }
-  // Publish this thread's deferred counters before it may block.
-  if (poll_timeout != 0) {
-    ts::Metrics::flush_thread_counters();
   }
 // wait for fd's to trigger, or don't wait if timeout is 0
 #if TS_USE_EPOLL
