@@ -745,8 +745,10 @@ QUICNetVConnection::_process_openssl_streams()
     SSL        *stream_ssl = stream_it->second;
     QUICStream *stream     = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
     if (stream == nullptr) {
-      // The application has deleted this stream, so OpenSSL's side of it is no longer needed. Holding
-      // it until the connection closes makes every later pass here walk every stream ever opened.
+      // Keeping a deleted stream's SSL object would make every later pass here walk every stream the
+      // connection has ever opened. The application deletes a stream only once each direction it has
+      // is done (the peer's FIN read, ours handed to OpenSSL), and SSL_free does not reset a stream
+      // part that was already concluded, so OpenSSL still delivers what it has buffered.
       SSL_free(stream_ssl);
       this->_openssl_streams.erase(stream_it);
       continue;
