@@ -272,9 +272,6 @@ records:
     server_session_sharing:
       match: both
       pool: thread
-    slow:
-      log:
-        threshold: 0
     strict_uri_parsing: 2
     transaction_active_timeout_in: 900
     transaction_active_timeout_out: 0
@@ -289,10 +286,6 @@ records:
   http2:
     accept_no_activity_timeout: 120
     active_timeout_in: 0
-    connection:
-      slow:
-        log:
-          threshold: 0
     default_buffer_water_mark: -1
     header_table_size: 4096
     header_table_size_limit: 65536
@@ -310,10 +303,6 @@ records:
     min_concurrent_streams_in: 10
     no_activity_timeout_in: 120
     push_diary_size: 256
-    stream:
-      slow:
-        log:
-          threshold: 0
     stream_error_rate_threshold: 0.1
     stream_error_sampling_threshold: 10
     stream_priority_enabled: 0

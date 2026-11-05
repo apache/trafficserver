@@ -90,14 +90,6 @@ Http2CommonSession::common_free(ProxySession *ssn)
   ink_release_assert(ssn->is_active() == false);
 
   this->_milestones.mark(Http2SsnMilestone::CLOSE);
-  ink_hrtime total_time = this->_milestones.elapsed(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE);
-
-  // Slow Log
-  if (Http2::con_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::con_slow_log_threshold) < total_time) {
-    Error("[%" PRIu64 "] Slow H2 Connection: open: %" PRIu64 " close: %.3f", ssn->connection_id(),
-          ink_hrtime_to_msec(this->_milestones[Http2SsnMilestone::OPEN]),
-          this->_milestones.difference_sec(Http2SsnMilestone::OPEN, Http2SsnMilestone::CLOSE));
-  }
 
   // Update stats on how we died.  May want to eliminate this.  Was useful for
   // tracking down which cases we were having problems cleaning up.  But for general

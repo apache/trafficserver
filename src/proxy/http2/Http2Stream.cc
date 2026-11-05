@@ -100,13 +100,9 @@ Http2Stream::~Http2Stream()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
-  uint64_t cid = 0;
-
   if (_registered_stream) {
     // Safe to initiate SSN_CLOSE if this is the last stream
     if (_proxy_ssn) {
-      cid = _proxy_ssn->connection_id();
-
       SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
       Http2ConnectionState &connection_state = this->get_connection_state();
 
@@ -130,26 +126,6 @@ Http2Stream::~Http2Stream()
 
   ink_hrtime total_time = this->_milestones.elapsed(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE);
   Metrics::Counter::increment(http2_rsb.total_transactions_time, total_time);
-
-  // Slow Log
-  if (Http2::stream_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::stream_slow_log_threshold) < total_time) {
-    Error("[%" PRIu64 "] [%" PRIu32 "] [%" PRId64 "] Slow H2 Stream: "
-          "open: %" PRIu64 " "
-          "dec_hdrs: %.3f "
-          "txn: %.3f "
-          "enc_hdrs: %.3f "
-          "tx_hdrs: %.3f "
-          "tx_data: %.3f "
-          "close: %.3f",
-          cid, static_cast<uint32_t>(this->_id), this->_http_sm_id,
-          ink_hrtime_to_msec(this->_milestones[Http2StreamMilestone::OPEN]),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_DECODE_HEADERS),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TXN),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_ENCODE_HEADERS),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_HEADERS_FRAMES),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_DATA_FRAMES),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE));
-  }
 
   _receive_header.destroy();
   _send_header.destroy();

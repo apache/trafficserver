@@ -144,11 +144,6 @@ records:
 ##############################################################################
     server_ports: 8080 8080:ipv6
 
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-slow-log-threshold
-    slow:
-      log:
-        threshold: 0
-
 ##############################################################################
 # HTTP connection timeouts (secs). Docs:
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#http-connection-timeouts
