@@ -300,6 +300,19 @@ Plugins
 
 Configuration Changes
 ---------------------
+:file:`cache.yaml` is now the default file selected by
+``proxy.config.cache.control.filename``. Existing deployments that provide
+only :file:`cache.config` must either retain the legacy file by setting that
+record to ``cache.config`` or convert the file:
+
+.. code-block:: bash
+
+   traffic_ctl config convert cache cache.config cache.yaml
+
+Review overlapping rules before deploying a conversion. Legacy
+:file:`cache.config` combines actions from every matching rule, while
+:file:`cache.yaml` applies only the first matching rule.
+
 The following :file:`records.yaml` changes have been made:
 
 - :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` now applies only to inbound connections.
