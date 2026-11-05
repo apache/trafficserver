@@ -3207,7 +3207,8 @@ checkHttpTxnNextHopStrategySetGet(SocketTest *test, void *data)
     SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategySet", "TestCase1", TC_PASS, "ok");
   } else {
     test->test_next_hop_strategy_get = false;
-    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategySet", "TestCase1", TC_FAIL, "Invalid handle accepted [got '%p']", strategy);
+    SDK_RPRINT(test->regtest, "TSHttpTxnNextHopStrategySet", "TestCase1", TC_FAIL, "Invalid handle accepted [got '%p']",
+               static_cast<void const *>(strategy));
   }
 
   return TS_EVENT_CONTINUE;
