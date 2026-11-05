@@ -207,17 +207,12 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
     }
     // Parsed once here rather than re-parsed from disk on every outbound handshake to this next
     // hop; also fails the config load now rather than at handshake time if the keys are unreadable.
-    auto trusted = std::make_shared<SSLRPKUtils::TrustedKeySet>();
-    if (!SSLRPKUtils::loadTrustedKeys(nps.prop.verify_server_rpk_ca_file.c_str(), *trusted)) {
+    // The digest identifies the pinned set in the origin session cache key, so a resumption cannot
+    // inherit the authentication of a set that has since been replaced.
+    if (!SSLRPKUtils::loadTrustedKeyFile(nps.prop.verify_server_rpk_ca_file.c_str(), nps.prop.verify_server_rpk_ca,
+                                         nps.prop.verify_server_rpk_ca_digest)) {
       return false;
     }
-    // Taken once here for the same reason: it identifies the pinned set in the origin session cache
-    // key, so a resumption cannot inherit the authentication of a set that has since been replaced.
-    nps.prop.verify_server_rpk_ca_digest = SSLRPKUtils::digestTrustedKeys(*trusted);
-    if (nps.prop.verify_server_rpk_ca_digest.empty()) {
-      return false;
-    }
-    nps.prop.verify_server_rpk_ca = std::move(trusted);
   }
 #endif
 

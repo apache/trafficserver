@@ -23,6 +23,7 @@
 
 #include <openssl/evp.h>
 
+#include <memory>
 #include <string>
 
 #include "iocore/net/SSLTypes.h"
@@ -63,5 +64,12 @@ bool pinnedKeyMatches(EVP_PKEY *pkey, const TrustedKeySet &trusted);
     @return a hex digest, or an empty string if @a keys is empty or the digest could not be taken.
 */
 std::string digestTrustedKeys(const TrustedKeySet &keys);
+
+/** Load the trusted key file at @a path for pinning, together with the digest that identifies it.
+
+    @a keys and @a digest are left unchanged on failure, which is logged.
+    @return true if the file held at least one key and its digest could be taken.
+*/
+bool loadTrustedKeyFile(const char *path, std::shared_ptr<const TrustedKeySet> &keys, std::string &digest);
 
 } // namespace SSLRPKUtils

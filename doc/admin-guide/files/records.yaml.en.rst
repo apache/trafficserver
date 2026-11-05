@@ -5520,6 +5520,30 @@ Client-Related Configuration
    Specifies the location of the certificate authority file against
    which the origin server will be verified.
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.CA.rpk.filename STRING NULL
+   :reloadable:
+
+   The PEM file containing the raw public key(s) (RFC 7250) that an origin server is trusted to
+   present, for every origin that has no ``verify_server_rpk_ca`` of its own in :file:`sni.yaml`. It
+   is the raw public key counterpart of :ts:cv:`proxy.config.ssl.client.CA.cert.filename`, and a
+   relative path is resolved against :ts:cv:`proxy.config.ssl.client.CA.cert.path`. The file may
+   contain more than one key concatenated together, which allows an "old" and a "new" key to be
+   trusted at the same time during a planned key rotation.
+
+   When this is set, |TS| accepts a raw public key from an origin in place of a certificate and
+   checks the key against this set. :ts:cv:`proxy.config.ssl.client.verify.server.policy` governs a
+   key outside the set as it does a failed certificate check. A raw public key carries no name, so
+   the ``NAME`` check of :ts:cv:`proxy.config.ssl.client.verify.server.properties` has nothing to
+   act on: any key in this set authenticates every origin whose :file:`sni.yaml` entry does not set
+   ``verify_server_rpk_ca``.
+   Pin keys per origin in :file:`sni.yaml` where that is too broad. See ``verify_server_rpk_ca`` in
+   :file:`sni.yaml` for how the set applies to connections taken from the session pool.
+   If the file cannot be loaded, the failure is reported, a reload is marked failed, and no raw
+   public key is trusted through this setting until the file loads.
+
+   Only available in builds linked against a TLS library with RFC 7250 support. If this is set on a
+   build without that support, |TS| logs a warning and ignores it.
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.sni_policy STRING NULL
    :overridable:
 

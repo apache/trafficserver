@@ -520,6 +520,15 @@ resolve_verify_server_policy(YamlSNIConfig::Policy txn_policy, const NextHopProp
   return params->verifyServerPolicy;
 }
 
+OriginTrustedRPK
+origin_trusted_rpk(const NextHopProperty *nps, const SSLConfigParams *params)
+{
+  if (nps != nullptr && nps->verify_server_rpk_ca != nullptr) {
+    return {nps->verify_server_rpk_ca, nps->verify_server_rpk_ca_digest};
+  }
+  return {params->clientRPKCA, params->clientRPKCADigest};
+}
+
 bool
 origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] std::string_view property_key,
                        [[maybe_unused]] YamlSNIConfig::Policy txn_policy)
@@ -544,9 +553,10 @@ origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] 
   // The key itself is checked rather than the identity of the set it was pinned against, so a key a
   // rotated set still trusts keeps its connections, and one accepted only under PERMISSIVE does not
   // pass for pinned.
-  return holder != nullptr && !holder->peer_key.empty() && nps != nullptr && nps->verify_server_rpk_ca != nullptr &&
-         SSLRPKUtils::pinnedKeyMatches(holder->peer_key.data(), static_cast<int>(holder->peer_key.size()),
-                                       *nps->verify_server_rpk_ca);
+  auto const &trusted = origin_trusted_rpk(nps, ssl_config).keys;
+
+  return holder != nullptr && !holder->peer_key.empty() && trusted != nullptr &&
+         SSLRPKUtils::pinnedKeyMatches(holder->peer_key.data(), static_cast<int>(holder->peer_key.size()), *trusted);
 #else
   return false;
 #endif
@@ -674,7 +684,7 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils
 
   if (trusted_key_set != nullptr) {
     // ssl_server_rpk_ex_free() releases this holder (and, via it, the shared TrustedKeySet from
-    // the SNI config the caller parsed it from) when ssl is freed.
+    // the configuration the caller selected it from) when ssl is freed.
     auto *holder = new TrustedRPK{std::move(trusted_key_set), std::string{trusted_key_digest}, {}};
     if (!SSL_set_ex_data(ssl, ssl_server_rpk_index, holder)) {
       delete holder;
@@ -733,7 +743,7 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils
   // BoringSSL rejects raw public keys unless a custom verify callback is installed, and this
   // displaces the SSL_set_verify()/verify_callback() pair the caller already set for this
   // connection. Only next hops actually prepared to accept/pin an RPK server key take this path
-  // -- an offer-only connection (client_rpk_enabled with no verify_server_rpk_ca) never advertises RPK
+  // -- an offer-only connection (client_rpk_enabled with no keys to pin) never advertises RPK
   // acceptance above, so the peer will always present X.509 and the classic callback suffices.
   if (has_trusted_keys) {
     SSL_set_custom_verify(ssl, SSL_VERIFY_PEER, ssl_client_custom_verify_callback);

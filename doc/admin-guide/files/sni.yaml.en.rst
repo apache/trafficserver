@@ -280,8 +280,9 @@ verify_server_rpk_ca                     Outbound  The file containing the raw p
                                                    Keys are compared in their encoded form, so EC keys must be written with uncompressed
                                                    points, which is what ``openssl pkey -pubout`` produces by default.
 
-                                                   If this is relative, it is relative to the path in
-                                                   :ts:cv:`proxy.config.ssl.client.CA.cert.path`.
+                                                   A relative path is resolved against
+                                                   :ts:cv:`proxy.config.ssl.client.CA.cert.path`. When this is not set,
+                                                   :ts:cv:`proxy.config.ssl.client.CA.rpk.filename` applies, if set.
 
                                                    Raw public keys have no certificate chain, issuer, or subject alternative name, so
                                                    when the next hop authenticates with one, |TS| checks the offered key against this
@@ -461,30 +462,30 @@ In addition ``verify_server_properties`` specifies what |TS| will check when per
   Verify both the signature and the SNI in the origin certificate.
 
 
-If ``verify_server_rpk_ca`` is set and the next hop authenticates with a raw public key rather than a
-certificate, neither the certificate chain check nor ``verify_server_properties``'s :code:`NAME`
-check has anything to act on -- a raw public key has no issuer or subject alternative name -- so
-``verify_server_rpk_ca`` (matching the offered key against a configured trusted set) takes the place of
-both. ``verify_server_policy`` still governs whether
-a key that is not in the trusted set is fatal, exactly as for a failed certificate check. Since
-raw public keys are negotiated alongside X.509 rather than instead of it, this only applies when
-the next hop actually offers one; a next hop that does not support RFC 7250 falls back to a normal
-certificate exchange, and the usual certificate checks apply.
+If ``verify_server_rpk_ca`` or :ts:cv:`proxy.config.ssl.client.CA.rpk.filename` is set and the next
+hop authenticates with a raw public key rather than a certificate, neither the certificate chain
+check nor ``verify_server_properties``'s :code:`NAME` check has anything to act on -- a raw public
+key has no issuer or subject alternative name -- so matching the offered key against the set that
+applies (``verify_server_rpk_ca`` if set, else the record) takes the place of both.
+``verify_server_policy`` still governs whether a key that is not in the trusted set is fatal,
+exactly as for a failed certificate check. Since raw public keys are negotiated alongside X.509
+rather than instead of it, this only applies when the next hop actually offers one; a next hop that
+does not support RFC 7250 falls back to a normal certificate exchange, and the usual certificate
+checks apply.
 
-Replacing the file named by ``verify_server_rpk_ca`` and running :option:`traffic_ctl config reload`
-takes effect for requests that follow. An origin connection taken from the session pool, or an
-HTTP/2 connection shared with requests that waited for it to open, carries a request verified under
-:code:`ENFORCED` only while the set that request would pin still contains the key the connection
-presented. Adding a key for rotation keeps existing connections, while removing a key retires the
-connections that presented it. Such a connection accepted under :code:`PERMISSIVE` with a key
-outside the set, or opened under :code:`DISABLED`, never carries a request verified under
-:code:`ENFORCED`. A request verified under :code:`PERMISSIVE` would accept the key in a new
-handshake anyway, so it may use the connection either way. These checks do not cover a server
-session kept with its client connection, such as a private session, or an HTTP/1.1 connection handed
-to a request that waited for it to open; both are reused as they are for a certificate. Cached TLS
-sessions are keyed on the whole set, so any change to it makes the next connection to that next hop
-a full handshake. Requests already in progress on an existing connection are not
-interrupted.
+Replacing either file and running :option:`traffic_ctl config reload` takes effect for requests that
+follow. An origin connection taken from the session pool, or an HTTP/2 connection shared with
+requests that waited for it to open, carries a request verified under :code:`ENFORCED` only while
+the set that request would pin still contains the key the connection presented. Adding a key for
+rotation keeps existing connections, while removing a key retires the connections that presented it.
+Such a connection accepted under :code:`PERMISSIVE` with a key outside the set, or opened under
+:code:`DISABLED`, never carries a request verified under :code:`ENFORCED`. A request verified under
+:code:`PERMISSIVE` would accept the key in a new handshake anyway, so it may use the connection
+either way. These checks do not cover a server session kept with its client connection, such as a
+private session, or an HTTP/1.1 connection handed to a request that waited for it to open; both are
+reused as they are for a certificate. Cached TLS sessions are keyed on the whole set, so any change
+to it makes the next connection to that next hop a full handshake. Requests already in progress on
+an existing connection are not interrupted.
 
 If ``tunnel_route`` is specified, none of the certificate verification will be done because the TLS
 negotiation will be tunneled to the upstream target, making those values irrelevant for that
