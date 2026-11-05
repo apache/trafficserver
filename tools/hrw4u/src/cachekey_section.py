@@ -17,8 +17,9 @@
 """The CACHEKEY section: its collected body and its lowering to REMAP rules.
 
 The visitor collects the section into a CacheKeySection. render() turns it into
-one rule set on REMAP_PSEUDO_HOOK with one run-plugin cachekey.so per branch.
-The branches are exclusive, so exactly one cachekey.so instance runs per request.
+rule sets on REMAP_PSEUDO_HOOK: one per presence check, then one with one
+run-plugin cachekey.so per branch. The branches are exclusive, so exactly one
+cachekey.so instance runs per request.
 """
 
 from __future__ import annotations
@@ -77,6 +78,25 @@ class KeyParts:
         return lines
 
 
+@dataclass(frozen=True, slots=True)
+class PresenceCheck:
+    """One name a cache.key.*.exists statement tests, set into its @ header before the chain runs."""
+
+    statement: CacheKeyStatement
+    name: str
+
+    @property
+    def presence(self) -> cachekey.Presence:
+        return cachekey.PRESENCE_STATEMENTS[self.statement.name]
+
+    @property
+    def header(self) -> str:
+        return self.presence.header(self.name)
+
+    def rule_lines(self) -> list[str]:
+        return [HOOK_LINE, self.presence.cond_line(self.name), f'{INDENT}set-header {self.header} "1"']
+
+
 class BranchKeyword(str, Enum):
     IF = "if"
     ELIF = "elif"
@@ -106,12 +126,15 @@ class Branch:
 class CacheKeySection:
     """The collected CACHEKEY section: parts every request keys on, and at most one chain.
 
-    shared holds the statements outside the chain, wherever they sit.
+    shared holds the statements outside the chain, wherever they sit. presence holds
+    each tested name once, keyed by its header lowercased, wherever it is tested:
+    setting a header no branch keys on is harmless, so the checks run outside the chain.
     """
 
     shared: KeyParts = field(default_factory=KeyParts)
     chain: list[Branch] = field(default_factory=list)
     key_part_count: int = 0
+    presence: dict[str, PresenceCheck] = field(default_factory=dict)
 
     def new_key_part(self, value: str) -> KeyPart:
         """Number the next key part. Numbers run across the whole section, not per branch."""
@@ -119,6 +142,23 @@ class CacheKeySection:
             raise SymbolResolutionError(cachekey.KEY_NAME, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
         self.key_part_count += 1
         return KeyPart(KEY_HEADER_FORMAT.format(self.key_part_count), value)
+
+    def add_presence(self, statement: CacheKeyStatement, target: KeyParts) -> None:
+        """Test each name in a cache.key.*.exists statement, and key target on its header.
+
+        Raises if two names need one header: header names ignore case, cookie names don't.
+        """
+        for name in statement.items:
+            check = PresenceCheck(statement, name)
+            first = self.presence.setdefault(check.header.lower(), check)
+            # The prefixes differ, so a clash is two spellings of one name in one statement kind.
+            if first.name != name and not check.presence.case_insensitive:
+                raise SymbolResolutionError(
+                    statement.name,
+                    f'{statement.name}("{name}") and {first.statement.name}("{first.name}") '
+                    f"need the same header, {check.header}: header names ignore case",
+                )
+            target.statements.append(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (first.header,), statement.source))
 
     def add_branch(self, keyword: BranchKeyword, ctx: ParserRuleContext) -> Branch:
         """Append an arm to the chain. Raises on an if when the section already has a chain."""
@@ -153,11 +193,12 @@ class CacheKeySection:
         return errors
 
     def render(self) -> list[str]:
-        """The rule set: one run-plugin cachekey.so per branch, each with the shared parts plus its own."""
+        """The presence rule sets, then one run-plugin cachekey.so per branch, each with the shared parts plus its own."""
+        lines = [line for check in self.presence.values() for line in [*check.rule_lines(), ""]]
         if not self.chain:
-            return [HOOK_LINE, *self.shared.plugin_lines(1)]
+            return [*lines, HOOK_LINE, *self.shared.plugin_lines(1)]
 
-        lines = [HOOK_LINE]
+        lines.append(HOOK_LINE)
         for branch in [*self.chain, Branch(BranchKeyword.ELSE)] if self.adds_else else self.chain:
             if branch.keyword is not BranchKeyword.IF:
                 lines.append(branch.keyword.value)

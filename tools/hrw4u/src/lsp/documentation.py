@@ -1055,6 +1055,45 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
         ],
         examples=["cache.key.cookies.add(\"session\", \"locale\");"],
     ),
+    "cache.key.headers.exists": FunctionDoc(
+        name="Cache Key Header Presence",
+        category="Cache Key Statement",
+        description=(
+            "Keys on whether each named request header is present, not on its value. "
+            "An empty header counts as absent. The compiler sets @Hrw4u-Header-<name> to \"1\" "
+            "when the header is present, and keys on that header."
+        ),
+        syntax="cache.key.headers.exists(\"H1\", \"H2\")",
+        maps_to="set-header @Hrw4u-Header-H1 \"1\" if H1 is present; cachekey.so --include-headers=@Hrw4u-Header-H1",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc(
+                "names", "string", "One or more header names, each its own argument, case-insensitive. Static: no {...} values."
+            )
+        ],
+        examples=["cache.key.headers.exists(\"X-User-Id\");"],
+    ),
+    "cache.key.cookies.exists": FunctionDoc(
+        name="Cache Key Cookie Presence",
+        category="Cache Key Statement",
+        description=(
+            "Keys on whether each named cookie is present, not on its value. "
+            "An empty cookie (name=) counts as absent. The compiler sets @Hrw4u-Cookie-<name> to \"1\" "
+            "when the cookie is present, and keys on that header."
+        ),
+        syntax="cache.key.cookies.exists(\"c1\", \"c2\")",
+        maps_to="set-header @Hrw4u-Cookie-c1 \"1\" if c1 is present; cachekey.so --include-headers=@Hrw4u-Cookie-c1",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc(
+                "names",
+                "string",
+                "One or more cookie names, each its own argument. Two names that differ only in case are an error. "
+                "Static: no {...} values.",
+            )
+        ],
+        examples=["cache.key.cookies.exists(\"session\");"],
+    ),
     "cache.key": FunctionDoc(
         name="Cache Key",
         category="Cache Key Assignment",

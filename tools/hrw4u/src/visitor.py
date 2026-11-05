@@ -1082,7 +1082,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 return
             if cachekey.is_key_name(func):
                 values = ctx.functionCall().argumentList().value() if ctx.functionCall().argumentList() else []
-                target.statements.append(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values], ctx))
+                statement = cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values], ctx)
+                if func in cachekey.PRESENCE_STATEMENTS:
+                    self._cachekey.add_presence(statement, target)
+                else:
+                    target.statements.append(statement)
                 return
             raise SymbolResolutionError(func, f"operator '{func}' not allowed in CACHEKEY")
         if ctx.lhs is None:

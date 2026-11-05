@@ -22,6 +22,7 @@ and where the run-plugin rule is emitted, is up to the visitor.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from collections.abc import Iterable, Sequence
 from typing import Final
@@ -96,6 +97,40 @@ CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
 
 
 @dataclass(frozen=True, slots=True)
+class Presence:
+    """How a cache.key.*.exists statement keys on a name being present, not on its value.
+
+    cachekey.so only copies values, so the lowering sets an @ header to "1" when
+    the name is present and keys on that header. The header is named after the
+    name, not numbered, so editing other statements never changes the key.
+    """
+
+    header_prefix: str
+    condition: str  # format string for the header_rewrite condition that reads the name
+    # Header names ignore case, so two spellings test one header. Cookie names don't.
+    case_insensitive: bool = False
+
+    def header(self, name: str) -> str:
+        return f"{self.header_prefix}{name}"
+
+    def cond_line(self, name: str) -> str:
+        """Matches what `if inbound.req.X` or `if inbound.cookie.X` compiles to: an empty value counts as absent."""
+        return f'cond {self.condition.format(name)} ="" [NOT]'
+
+
+# yapf: disable
+PRESENCE_STATEMENTS: Final[dict[str, Presence]] = {
+    "cache.key.headers.exists": Presence("@Hrw4u-Header-", "%{{CLIENT-HEADER:{}}}", case_insensitive=True),
+    "cache.key.cookies.exists": Presence("@Hrw4u-Cookie-", "%{{COOKIE:{}}}"),
+}
+# yapf: enable
+
+# RFC 9110 token characters, less %, which header_rewrite reads as the start of a %{...} expansion.
+# The name ends up in a header name, so it has to be one.
+_HEADER_NAME: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9!#$&'*+.^_`|~-]+")
+
+
+@dataclass(frozen=True, slots=True)
 class CacheKeyStatement:
     """One validated cache.* statement: its table name and the names it lists, unquoted.
 
@@ -130,12 +165,12 @@ def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None
 
 
 def parse_statement(name: str, args: list[str], source: ParserRuleContext | None = None) -> CacheKeyStatement:
-    """Validate one statement. args are the raw argument texts, quotes included."""
+    """Validate one statement, a flag or a presence one. args are the raw argument texts, quotes included."""
     flag = CACHEKEY_STATEMENTS.get(name)
-    if flag is None or flag.assignment:
+    if (flag is None or flag.assignment) and name not in PRESENCE_STATEMENTS:
         raise SymbolResolutionError(name, f"Unknown cache key statement: '{name}'")
 
-    if flag.is_switch:
+    if flag is not None and flag.is_switch:
         if args:
             raise SymbolResolutionError(name, f"{name}() takes no arguments")
         return CacheKeyStatement(name, source=source)
@@ -157,6 +192,8 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a comma: pass each name as its own argument")
         if problem := _mangles_flag(item):
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" {problem}")
+        if name in PRESENCE_STATEMENTS and not _HEADER_NAME.fullmatch(item):
+            raise SymbolResolutionError(name, f"{name}() name \"{item}\" is not a valid header name")
         items.append(item)
     return CacheKeyStatement(name, tuple(items), source)
 
