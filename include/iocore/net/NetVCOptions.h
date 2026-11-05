@@ -186,6 +186,10 @@ struct NetVCOptions {
    * Directory containing CA certs for verifying origin's cert
    */
   const char *ssl_client_ca_cert_path = nullptr;
+  /*
+   * File of raw public keys for verifying origin's key, when a transaction overrides the global set
+   */
+  const char *ssl_client_ca_rpk_name = nullptr;
 
   bool tls_upstream = false;
 

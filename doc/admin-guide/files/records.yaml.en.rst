@@ -5497,6 +5497,40 @@ Client-Related Configuration
    Specifies the location of the certificate authority file against
    which the origin server will be verified.
 
+.. ts:cv:: CONFIG proxy.config.ssl.client.CA.rpk.filename STRING NULL
+   :reloadable:
+   :overridable:
+
+   The PEM file containing the raw public key(s) (RFC 7250) that an origin server is trusted to
+   present. It is the raw public key counterpart of
+   :ts:cv:`proxy.config.ssl.client.CA.cert.filename`, and a relative path is resolved against
+   :ts:cv:`proxy.config.ssl.client.CA.cert.path`. The file may contain more than one key
+   concatenated together, which allows an "old" and a "new" key to be trusted at the same time
+   during a planned key rotation.
+
+   Like the other outbound settings, a per-transaction override of this variable, for example with
+   :ref:`admin-plugins-conf-remap`, takes precedence over ``verify_server_rpk_ca`` in the origin's
+   :file:`sni.yaml` entry, which takes precedence over the global value. A relative path in an
+   override is resolved against the transaction's :ts:cv:`proxy.config.ssl.client.CA.cert.path`.
+   The file an override names is read the first time a transaction names it, and is read again
+   only after something else causes the TLS configuration to reload; replacing the file alone does
+   not. If it cannot be loaded, an error is logged and no raw public key is trusted through it.
+
+   When a set applies, |TS| accepts a raw public key from an origin in place of a certificate and
+   checks the key against that set. :ts:cv:`proxy.config.ssl.client.verify.server.policy` governs a
+   key outside the set as it does a failed certificate check. A raw public key carries no name, so
+   the ``NAME`` check of :ts:cv:`proxy.config.ssl.client.verify.server.properties` has nothing to
+   act on: any key in the global set authenticates every origin that has neither an override nor a
+   ``verify_server_rpk_ca`` of its own. Pin keys per origin in :file:`sni.yaml`, or per transaction,
+   where that is too broad. See ``verify_server_rpk_ca`` in :file:`sni.yaml` for how the set applies
+   to connections taken from the session pool.
+   If the global file cannot be loaded, the failure is reported, a reload is marked failed, and no
+   raw public key is trusted through the global value until the file loads.
+
+   Only available in builds linked against a TLS library with RFC 7250 support. If the global value
+   is set on a build without that support, |TS| logs a warning and ignores it; a per-transaction
+   override is ignored there without a warning.
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.sni_policy STRING NULL
    :overridable:
 

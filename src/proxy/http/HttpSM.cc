@@ -6211,6 +6211,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   opt.ssl_client_private_key_name = t_state.txn_conf->ssl_client_private_key_filename;
   opt.ssl_client_ca_cert_name     = t_state.txn_conf->ssl_client_ca_cert_filename;
   opt.ssl_client_ca_cert_path     = t_state.txn_conf->ssl_client_ca_cert_path;
+  opt.ssl_client_ca_rpk_name      = t_state.txn_conf->ssl_client_ca_rpk_filename;
   if (is_private()) {
     // If the connection to origin is private, don't try to negotiate the higher overhead H2
     opt.alpn_protocols_array_size = -1;
