@@ -44,6 +44,7 @@
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "records/RecHttp.h"
 #include "tsutil/Convert.h"
+#include "tsutil/PostScript.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/ink_config.h"
 #include "tscore/SimpleTokenizer.h"
@@ -522,8 +523,20 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   }
 
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
-  if (snis) {
-    snis->on_client_hello(ch);
+  if (snis == nullptr) {
+    // This error suggests either of these:
+    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
+    // 2) Call back on stale netvc
+    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
+    return CLIENT_HELLO_ERROR;
+  }
+
+  snis->on_client_hello(ch);
+  ts::PostScript clear_client_hello([snis]() -> void { snis->clear_client_hello(); });
+
+  // When a delayed ClientHello hook reenables, the TLS library calls back again for the remaining
+  // hooks, and the SNI actions and any certificate context selection have already run.
+  if (es == nullptr || !es->resuming_client_hello_hooks()) {
     int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
       return CLIENT_HELLO_ERROR;
@@ -561,22 +574,19 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
       }
     }
 #endif
-  } else {
-    // This error suggests either of these:
-    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
-    // 2) Call back on stale netvc
-    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
-    return CLIENT_HELLO_ERROR;
   }
 
   if (es) {
     if (es->finished_client_hello_hooks()) {
       return CLIENT_HELLO_SUCCESS;
     }
-    bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
-    if (!reenabled) {
-      return CLIENT_HELLO_RETRY;
-    }
+    // Hooks that reenable from within their invocation leave the rest to run here.
+    do {
+      bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+      if (!reenabled) {
+        return CLIENT_HELLO_RETRY;
+      }
+    } while (es->resuming_client_hello_hooks());
   } else {
     Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
     return CLIENT_HELLO_ERROR;
