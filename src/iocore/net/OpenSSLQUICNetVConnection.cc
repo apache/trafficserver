@@ -188,7 +188,7 @@ QUICNetVConnection::set_local_addr()
 void
 QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
 {
-  QUICConDebug("Free connection");
+  QUICConDebug("Free connection, %zu stream objects still held", this->_openssl_streams.size());
 
   this->_unschedule_openssl_event();
 
@@ -745,6 +745,10 @@ QUICNetVConnection::_process_openssl_streams()
     SSL        *stream_ssl = stream_it->second;
     QUICStream *stream     = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
     if (stream == nullptr) {
+      // The application has deleted this stream, so OpenSSL's side of it is no longer needed. Holding
+      // it until the connection closes makes every later pass here walk every stream ever opened.
+      SSL_free(stream_ssl);
+      this->_openssl_streams.erase(stream_it);
       continue;
     }
 
