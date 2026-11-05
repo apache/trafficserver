@@ -5518,8 +5518,10 @@ TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy stratptr)
   // handles not owned by this transaction's factory (e.g. cached across a reload).
   auto const candidate = reinterpret_cast<NextHopSelectionStrategy *>(stratptr);
   if (sm->m_remap == nullptr || sm->m_remap->strategyFactory == nullptr || !sm->m_remap->strategyFactory->contains(candidate)) {
-    SiteThrottledError("%s: strategy %p is not present in the live strategy factory; ignoring", __func__, stratptr);
-    Dbg(dbg_ctl_parent_select, "%s: strategy %p is not present in the live strategy factory; ignoring", __func__, stratptr);
+    SiteThrottledError("%s: strategy %p is not present in the live strategy factory; ignoring", __func__,
+                       static_cast<void const *>(stratptr));
+    Dbg(dbg_ctl_parent_select, "%s: strategy %p is not present in the live strategy factory; ignoring", __func__,
+        static_cast<void const *>(stratptr));
     return;
   }
 
@@ -5563,7 +5565,8 @@ TSRemapNextHopStrategySet(TSStrategy strategy)
 
   auto const candidate = reinterpret_cast<NextHopSelectionStrategy *>(strategy);
   if (um->strategyFactory == nullptr || !um->strategyFactory->contains(candidate)) {
-    TSError("%s: strategy %p is not present in the loading strategy factory; ignoring", __func__, strategy);
+    TSError("%s: strategy %p is not present in the loading strategy factory; ignoring", __func__,
+            static_cast<void const *>(strategy));
     return;
   }
 

@@ -26,6 +26,7 @@
 #include "ts_lua_http_txn_info.h"
 
 #include <atomic>
+#include <cinttypes>
 
 enum TSLuaCacheLookupResult {
   TS_LUA_CACHE_LOOKUP_MISS,
