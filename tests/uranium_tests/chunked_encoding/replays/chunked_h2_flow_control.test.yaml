@@ -76,8 +76,14 @@ urtest:
       # with the proxy-response size assertion below (which only passes if
       # the producer was re-enabled), this covers both the throttle and the
       # unwind paths.
+      #
+      # traffic_ctl reads traffic_manager's copy of the metric, which can trail
+      # traffic_server by up to two five-second intervals by default: the
+      # raw-stat sync, then the remote sync that pushes to traffic_manager.
       - metric: proxy.process.http.tunnel.chunked_throttle
         value: '[1-9][0-9]*'
+        delay: 0
+        timeout: 60
 
 sessions:
 
