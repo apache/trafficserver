@@ -17,6 +17,8 @@
 from pathlib import Path
 import re
 
+import pytest
+
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 TEST_DIRECTORY = Path(__file__).parent
@@ -112,3 +114,79 @@ def test_tls_hooks_verify(ats_factory: ATSFactory, services: ServiceFactory, cur
             expression = rf"Server verify callback {callback} [\da-fx]+? - event is good SNI={hostname} {outcome}"
             assert re.search(expression, traffic_out), traffic_out
     assert "Server verify callback SNI APIs match=true" in traffic_out
+
+
+@pytest.mark.parametrize("origin_alpn", ("http/1.1", "h2,http/1.1"), ids=("http1", "h2"))
+@pytest.mark.parametrize("tls_version", ("1.3", "1.2"))
+@pytest.mark.parametrize("policy", ("PERMISSIVE", "ENFORCED"))
+def test_tls_hooks_verify_rejection_with_tls_origin(
+        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, policy: str, tls_version: str, origin_alpn: str) -> None:
+    """A SERVER_VERIFY_HOOK rejection fails the origin handshake under ENFORCED, and under PERMISSIVE lets it complete.
+
+    The origin is another Traffic Server, which also accepts HTTP/2. When HTTP/2 is offered, the request
+    reaches it only if the negotiated protocol was recorded when the handshake completed. ssl_verify_test
+    rejects every connection that sends no SNI, as one toward an IP literal does.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param policy: proxy.config.ssl.client.verify.server.policy toward the origin.
+    :param tls_version: The TLS version the hop to the origin is held to.
+    :param origin_alpn: Protocols offered to the origin.
+    """
+    origin = services.origin("server")
+    origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+        {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "body": "origin response"
+        },
+    )
+
+    tls_origin = ats_factory.create("tls_origin", enable_tls=True, enable_cache=False)
+    tls_origin.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+    tls_origin.set_ssl_multicert_yaml(
+        {"ssl_multicert": [{
+            "dest_ip": "*",
+            "ssl_cert_name": "server.pem",
+            "ssl_key_name": "server.key"
+        }]})
+    tls_origin.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
+
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+    ats.set_ssl_multicert_yaml({"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"}]})
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_verify_test",
+            "proxy.config.ssl.client.verify.server.policy": policy,
+            "proxy.config.ssl.client.verify.server.properties": "NONE",
+            "proxy.config.ssl.client.version.max": 2 if tls_version == "1.2" else 3,
+            "proxy.config.ssl.client.alpn_protocols": origin_alpn,
+            # A retried connection would otherwise resume the session the first one cached, and a
+            # resumed handshake runs no verify hook.
+            "proxy.config.ssl.origin_session_cache.enabled": 0,
+        })
+    ats.remap_config.add_line(f"map / https://127.0.0.1:{tls_origin.https_port}")
+    ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_verify_test.so")
+    ats.plugin_config.add_line("ssl_verify_test.so -count=1")
+
+    origin.start()
+    tls_origin.start()
+    ats.start()
+    result = curl.run(f"-k https://127.0.0.1:{ats.https_port}/", timeout=30)
+    h2_metric = ats.traffic_ctl("metric", "get", "proxy.process.http2.total_server_connections")
+    assert h2_metric.returncode == 0, h2_metric.output
+    ats.stop()
+
+    assert result.returncode == 0, result.output
+    action = "Continue" if policy == "PERMISSIVE" else "Terminate"
+    assert f"plugin failed the origin certificate check for 127.0.0.1.  Action={action}" in ats.diags_log.read_text(
+        errors="replace"), "the hook must have rejected the origin"
+    if policy == "PERMISSIVE":
+        assert "origin response" in result.output, "the request should be served over the handshake PERMISSIVE continued"
+        if origin_alpn.startswith("h2"):
+            assert int(h2_metric.stdout.split()[-1]) > 0, "the request should go to the origin over the HTTP/2 it negotiated"
+    else:
+        assert "origin response" not in result.output, "ENFORCED must refuse the origin the hook rejected"
