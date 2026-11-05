@@ -27,7 +27,7 @@ namespace
 
 namespace detail
 {
-// The first two are essentially taken from our sslheaders plugin, for compatiblity.
+// The first two are essentially taken from our sslheaders plugin, for compatibility.
 void
 CertBase::Certificate::_load() const
 {
