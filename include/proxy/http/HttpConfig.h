@@ -158,6 +158,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *cache_open_write_begin_time;
   Metrics::Counter::AtomicType *cache_open_write_end_time;
   Metrics::Counter::AtomicType *cache_open_write_fail_count;
+  Metrics::Counter::AtomicType *cache_open_write_deferred;
   Metrics::Counter::AtomicType *cache_read_error;
   Metrics::Counter::AtomicType *cache_read_errors;
   Metrics::Counter::AtomicType *cache_updates;
@@ -642,10 +643,11 @@ struct OverridableHttpConfigParams {
 
   MgmtByte cache_open_write_fail_action = 0;
 
-  ////////////////////////////////////////////////
-  // Defer cache open write until response hdrs //
-  ////////////////////////////////////////////////
+  // Every miss goes to the origin before taking the cache write lock.
   MgmtByte cache_defer_write_on_miss = 0;
+
+  // Seconds a URL whose last origin response was uncacheable skips the write lock on a miss; 0 turns it off.
+  MgmtInt cache_remember_uncacheable = 10;
 
   ////////////////////////
   // Check Post request //

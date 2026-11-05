@@ -880,6 +880,26 @@ The defaults are such that the feature is disabled and every connection is
 allowed to go to origin without artificial delay. When enabled, you will try
 ``max_open_read_retries`` times, each with an ``open_read_retry_time`` timeout.
 
+Uncacheable Objects
+-------------------
+
+Every cache miss takes a write lock on the object before it contacts the origin,
+so that the requests behind it can wait for one fetch instead of each making
+their own. When the origin's response cannot be stored, that wait buys nothing:
+the first request gives the lock up once the response headers arrive, and until
+then the requests behind it sleep on the retry timers above and on
+:ts:cv:`proxy.config.cache.read_while_writer_retry.delay`. Under load, requests
+for an uncacheable object effectively take turns.
+
+:ts:cv:`proxy.config.http.cache.remember_uncacheable` (default 10 seconds) breaks
+the turns. Once an object's response has proven uncacheable, misses on that object
+go to the origin without the write lock for that long, renewed by every further
+uncacheable response to a plain ``GET`` miss, and take the lock only if a response
+turns out to be cacheable after all. Requests for every other object are collapsed
+as before, and a stored response clears the memory for its object.
+:ts:cv:`proxy.config.http.cache.defer_write_on_miss` applies the same treatment to
+every miss, for traffic that is mostly unique or mostly uncacheable.
+
 Open Write Fail Action
 ----------------------
 

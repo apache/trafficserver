@@ -3948,6 +3948,48 @@ Dynamic Content & Content Negotiation
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
     set to ``5`` or ``6``.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.remember_uncacheable INT 10
+   :reloadable:
+   :overridable:
+   :units: seconds
+
+    How long to remember that a URL's last origin response could not be stored because of the
+    response itself: its ``Cache-Control`` directives, a missing validator or any other property
+    of the response. A cache miss on a remembered URL goes to the origin without first taking
+    the cache write lock, and takes the lock only if the response turns out to be cacheable
+    after all. The URL is forgotten once a response for it is stored. Every further uncacheable
+    response to a plain ``GET`` miss renews the memory; error responses, range requests, other
+    methods, and responses kept out of the cache by the request, a plugin or a cache rule do
+    not. ``0`` or less turns the memory off.
+
+    Without this, every miss takes the write lock before contacting the origin so that
+    concurrent requests for the same URL wait for one origin fetch. For a URL whose responses
+    cannot be stored that wait buys nothing: the losers of the lock and the requests reading
+    behind the writer sleep on retry timers
+    (:ts:cv:`proxy.config.http.cache.open_read_retry_time`,
+    :ts:cv:`proxy.config.cache.read_while_writer_retry.delay`) until the writer gives the lock
+    up or their retries run out. Requests for a remembered URL skip the lock and the waits.
+    Requests for any other URL are collapsed as before, so a cacheable URL that becomes popular
+    still costs one origin fetch. The cost of remembering is that a response that becomes
+    cacheable while its URL is remembered is stored by the first request that sees it but is
+    not collapsed, and a miss on a remembered URL is never subject to
+    :ts:cv:`proxy.config.http.cache.open_write_fail_action`: if it takes the lock late and
+    loses it, it serves the response it already has. The memory holds at most 65,536 URLs and a
+    newer URL can displace an older one.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.defer_write_on_miss INT 0
+   :reloadable:
+   :overridable:
+
+    When set to ``1``, every cache miss goes to the origin without first taking the cache write
+    lock, as :ts:cv:`proxy.config.http.cache.remember_uncacheable` does for URLs known to be
+    uncacheable. The lock is taken once the response headers show that the response is
+    cacheable. Concurrent misses for the same URL are then not collapsed onto one origin
+    fetch: each one fetches from the origin until the first response is in the cache, and a
+    miss that loses the late lock serves its response rather than apply
+    :ts:cv:`proxy.config.http.cache.open_write_fail_action`. Suited to traffic that is mostly
+    unique or mostly uncacheable.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
    :overridable:

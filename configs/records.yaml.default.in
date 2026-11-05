@@ -86,11 +86,11 @@ records:
 # https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-cache-when-to-revalidate
       when_to_revalidate: 0
 
-# Defer cache open write until response headers are received.
-# Improves performance for non-cacheable responses but may affect
-# read-while-write and request coalescing for popular uncached URLs.
-# 0 - disabled (default, safe), 1 - enabled
+# https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-cache-defer-write-on-miss
       defer_write_on_miss: 0
+
+# https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-cache-remember-uncacheable
+      remember_uncacheable: 10
 
 ##############################################################################
 # Origin server connect attempts. Docs:

@@ -1,0 +1,236 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# A URL that answered no-store is remembered: later misses on it go to the
+# origin without taking the cache write lock, so concurrent requests do not
+# wait on each other. A cacheable URL is still collapsed and served from cache.
+#
+# The same sessions run twice. With the memory on, the overlapping no-store
+# requests neither lose the write lock nor wait behind a writer. With it off,
+# the third request waits behind the second as a busy reader and then loses
+# the lock, which is what every request did before.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Misses on a URL that just answered no-store skip the cache write lock'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+    # The sessions below overlap on purpose.
+    process_config:
+      run_parallel: true
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+  variants:
+    # The first /nostore request takes the write lock and learns that the
+    # response cannot be stored. The two that follow it overlap on a slow
+    # origin; neither takes the lock, so the third neither loses it nor waits
+    # behind the second as a busy reader. The two /cacheable requests check
+    # that collapsing and caching still work.
+    - name: memo-on
+      ats:
+        records_config:
+          proxy.config.http.cache.remember_uncacheable: 60
+        metric_checks:
+          - metric: proxy.process.http.cache_open_write_deferred
+            value: 2
+          - metric: proxy.process.http.cache_open_write_fail_count
+            value: 0
+          - metric: proxy.process.cache.read_busy.failure
+            value: 0
+          - metric: proxy.process.http.cache_hit_fresh
+            value: 1
+        log_validation:
+          traffic_out:
+            excludes:
+              - expression: "retrying cache open write|retrying cache open read"
+                description: "No request waits on a cache lock retry timer"
+
+    # Every miss takes the lock before the origin. The third /nostore request
+    # finds the second writing, retries the read until its retries run out,
+    # then loses the write lock.
+    - name: memo-off
+      ats:
+        records_config:
+          proxy.config.http.cache.remember_uncacheable: 0
+        metric_checks:
+          - metric: proxy.process.http.cache_open_write_deferred
+            value: 0
+          - metric: proxy.process.http.cache_open_write_fail_count
+            value: 1
+          - metric: proxy.process.cache.read_busy.failure
+            value: 1
+          - metric: proxy.process.http.cache_hit_fresh
+            value: 1
+        log_validation:
+          traffic_out:
+            excludes: []
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /nostore
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, nostore-first]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+- transactions:
+  - client-request:
+      delay: 200ms
+      method: GET
+      url: /nostore
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, nostore-second]
+
+    server-response:
+      delay: 2s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+- transactions:
+  - client-request:
+      delay: 400ms
+      method: GET
+      url: /nostore
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, nostore-third]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, third]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: third, as: equal}]
+
+- transactions:
+  - client-request:
+      delay: 3s
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, cacheable-first]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, cacheable-origin]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: cacheable-origin, as: equal}]
+
+  - client-request:
+      delay: 300ms
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, cacheable-second]
+
+    # Must not reach the origin.
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: cacheable-origin, as: equal}]

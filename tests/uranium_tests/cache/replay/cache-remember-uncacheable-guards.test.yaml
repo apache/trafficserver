@@ -1,0 +1,361 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Only the origin's response may mark a URL as uncacheable. A response that
+# went unstored because the client said no-store, because the request was a
+# Range request, because a plugin refused the store, or because the origin
+# answered an error leaves no memory: the next plain GET on the same URL takes
+# the write lock as any miss does, stores the response, and the one after it
+# is a hit. The sessions run one after another.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Client, Range, plugin and error reasons for not storing do not mark a URL uncacheable'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    copy_to_config_dir:
+      - 'cache-remember-server-no-store.conf'
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.remember_uncacheable: 60
+      # Off by default, so a client no-store would otherwise be ignored and the response stored.
+      proxy.config.http.cache.ignore_client_no_cache: 0
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+      # Same origin URL, so the same cache key, with a plugin refusing the store.
+      - from: "http://plugin.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: header_rewrite.so
+            args: ['cache-remember-server-no-store.conf']
+
+    # Four URLs, each: an unstored response for a reason that is not the
+    # origin's, a plain GET that must take the lock and store, and a hit.
+    metric_checks:
+      - metric: proxy.process.http.cache_open_write_deferred
+        value: 0
+      - metric: proxy.process.http.cache_hit_fresh
+        value: 4
+        delay: 0
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /client-no-store
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Cache-Control, no-store]
+        - [uuid, client-no-store-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+  - client-request:
+      delay: 200ms
+      method: GET
+      url: /client-no-store
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, client-no-store-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /client-no-store
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, client-no-store-third]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /range
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Range, bytes=0-1]
+        - [uuid, range-first]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Length, "2"]
+        - [Content-Range, bytes 0-1/3]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xx
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+  - client-request:
+      delay: 200ms
+      method: GET
+      url: /range
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, range-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /range
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, range-third]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /plugin
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, plugin.example.com]
+        - [uuid, plugin-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+  - client-request:
+      delay: 200ms
+      method: GET
+      url: /plugin
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, plugin-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /plugin
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, plugin-third]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /error
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, error-first]
+    server-response:
+      status: 503
+      reason: Service Unavailable
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 503
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+  - client-request:
+      delay: 200ms
+      method: GET
+      url: /error
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, error-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /error
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, error-third]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]

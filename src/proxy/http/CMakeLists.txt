@@ -21,6 +21,7 @@ add_library(
     HttpSessionAccept.cc
     HttpBodyFactory.cc
     HttpCacheSM.cc
+    UncacheableKeyMemo.cc
     Http1ClientSession.cc
     Http1ClientTransaction.cc
     Http1ServerTransaction.cc

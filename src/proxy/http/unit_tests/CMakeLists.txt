@@ -31,6 +31,7 @@ add_executable(
   test_HttpUserAgent.cc
   test_PreWarm.cc
   test_ServerSessionPool.cc
+  test_UncacheableKeyMemo.cc
 )
 
 target_include_directories(test_http PRIVATE "${PROJECT_SOURCE_DIR}/src/iocore/net")

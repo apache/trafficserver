@@ -1,0 +1,237 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# With defer_write_on_miss on, every miss goes to the origin before taking the
+# cache write lock. A cacheable response is then stored and the next request
+# hits; a no-store response is not stored; a miss that loses the lock after
+# its response arrived serves that response uncached, and the URL is stored
+# by the next miss instead. The sessions run one after another.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'defer_write_on_miss takes the cache write lock after the response headers'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    copy_to_config_dir:
+      - 'cache-write-lock-fail-write.conf'
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.defer_write_on_miss: 1
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: header_rewrite.so
+            args: ['cache-write-lock-fail-write.conf']
+
+    # Deferred: both /cacheable misses are one (the second is a hit), both
+    # /nostore requests, and both /lost misses. The first /lost miss is denied
+    # the lock by the X-Fail-Cache-Write rule.
+    metric_checks:
+      - metric: proxy.process.http.cache_open_write_deferred
+        value: 5
+      - metric: proxy.process.http.cache_open_write_fail_count
+        value: 1
+        delay: 0
+      - metric: proxy.process.http.cache_hit_fresh
+        value: 2
+        delay: 0
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, cacheable-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, cacheable-second]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /nostore
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, nostore-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /nostore
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, nostore-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [X-Fail-Cache-Write, "1"]
+        - [uuid, lost-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-third]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]

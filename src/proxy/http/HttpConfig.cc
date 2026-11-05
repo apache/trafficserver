@@ -298,6 +298,7 @@ register_stat_callbacks()
   http_rsb.cache_open_write_begin_time       = Metrics::Counter::createPtr("proxy.process.http.milestone.cache_open_write_begin");
   http_rsb.cache_open_write_end_time         = Metrics::Counter::createPtr("proxy.process.http.milestone.cache_open_write_end");
   http_rsb.cache_open_write_fail_count       = Metrics::Counter::createPtr("proxy.process.http.cache_open_write_fail_count");
+  http_rsb.cache_open_write_deferred         = Metrics::Counter::createPtr("proxy.process.http.cache_open_write_deferred");
   http_rsb.cache_read_error                  = Metrics::Counter::createPtr("proxy.process.http.cache_read_error");
   http_rsb.cache_read_errors                 = Metrics::Counter::createPtr("proxy.process.http.cache_read_errors");
   http_rsb.cache_updates                     = Metrics::Counter::createPtr("proxy.process.http.cache_updates");
@@ -1159,6 +1160,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
   HttpEstablishStaticConfigByte(c.oride.cache_defer_write_on_miss, "proxy.config.http.cache.defer_write_on_miss");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_remember_uncacheable, "proxy.config.http.cache.remember_uncacheable");
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
@@ -1514,7 +1516,8 @@ HttpConfig::reconfigure()
               params->oride.max_cache_open_write_retries);
     }
   }
-  params->oride.cache_defer_write_on_miss = m_master.oride.cache_defer_write_on_miss;
+  params->oride.cache_defer_write_on_miss  = m_master.oride.cache_defer_write_on_miss;
+  params->oride.cache_remember_uncacheable = m_master.oride.cache_remember_uncacheable;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->max_post_size                  = m_master.max_post_size;

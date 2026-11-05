@@ -1,0 +1,192 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# A remembered URL is forgotten in two ways. /flip answers no-store once and
+# then becomes cacheable: the next miss skips the write lock but still stores
+# the cacheable response, and the request after that is a hit. /expire answers
+# no-store and is asked again after the memory has lapsed: that miss takes the
+# write lock as a plain miss would. On an unchanged build the counter is absent,
+# so this file documents the memory's lifecycle rather than catching the old wait.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'A URL remembered as uncacheable is stored once it is cacheable, and forgotten after the configured time'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.remember_uncacheable: 2
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+    # Only the second /flip request skips the write lock: the first /flip and
+    # /expire requests are plain misses, and the second /expire request comes
+    # after the two second memory has lapsed. The sessions run one after another.
+    metric_checks:
+      - metric: proxy.process.http.cache_open_write_deferred
+        value: 1
+      - metric: proxy.process.http.cache_hit_fresh
+        value: 1
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-nostore]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, flip-nostore]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: flip-nostore, as: equal}]
+
+  - client-request:
+      delay: 200ms
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-cacheable]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, flip-cacheable]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: flip-cacheable, as: equal}]
+
+  - client-request:
+      delay: 300ms
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-hit]
+
+    # Must not reach the origin.
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: flip-cacheable, as: equal}]
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /expire
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, expire-first]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, expire-first]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: expire-first, as: equal}]
+
+  - client-request:
+      delay: 3s
+      method: GET
+      url: /expire
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, expire-second]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, expire-second]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: expire-second, as: equal}]

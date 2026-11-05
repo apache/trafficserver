@@ -8985,6 +8985,8 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   }
 
   t_state.redirect_info.redirect_in_process = true;
+  // The redirect leg decides afresh whether to take the cache write lock before the origin.
+  t_state.cache_open_write_deferred = false;
 
   // set the passed in location url and parse it
   URL redirectUrl;
