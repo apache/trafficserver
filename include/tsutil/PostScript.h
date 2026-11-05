@@ -3,7 +3,7 @@
    Generic "guard" class templates.  The destructor calls a function object with arbitrary parameters.  This utility is
    available in both the core and plugins.
 
-   @section license License
+   @par License
 
    Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

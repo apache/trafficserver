@@ -56,7 +56,7 @@ Request::Request(void *hdr_buf, void *hdr_loc)
   LOG_DEBUG("Initialized request object %p with hdr_buf=%p and hdr_loc=%p", this, hdr_buf, hdr_loc);
 }
 
-Request::Request(const string &url_str, HttpMethod method, HttpVersion version)
+Request::Request(const std::string &url_str, HttpMethod method, HttpVersion version)
 {
   state_               = std::make_unique<RequestState>();
   state_->method_      = method;

@@ -93,3 +93,23 @@ machine, you may access the HTML documentation files directly without the need
 for a full-fledged web server, as all necessary resources (CSS, Javascript, and
 images) are referenced using relative paths and there are no server-side scripts
 necessary to render the documentation.
+
+Building the API reference
+==========================
+
+The Doxygen API reference is built separately from the Sphinx documentation.
+It requires Doxygen 1.9.7 or newer, Graphviz, a Java runtime, and PlantUML,
+and is disabled by default::
+
+    cmake -B build -DENABLE_DOXYGEN=ON
+    cmake --build build --target doxygen
+
+If PlantUML is installed outside the standard Java share directories, pass
+``-DPLANTUML_JAR=/path/to/plantuml.jar`` when configuring.
+
+The target generates HTML in ``build/doc/doxygen/html/`` and XML in
+``build/doc/doxygen/xml/``. Documentation warnings fail the build. The target
+documents ATS headers and core sources, using the configured QUIC backend and
+excluding tests and obsolete sources. It runs only when explicitly requested;
+enabling it does not add it to the default build. Builds with
+``ENABLE_DOXYGEN=OFF`` do not require the Doxygen documentation dependencies.
