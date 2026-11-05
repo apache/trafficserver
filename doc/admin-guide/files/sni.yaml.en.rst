@@ -274,7 +274,7 @@ client_rpk_enabled                       Outbound  Set to :code:`true` to offer 
                                                    (OpenSSL 3.2 or later, or a sufficiently recent BoringSSL). If this key is set on a
                                                    build without that support, |TS| logs a warning and ignores it.
 
-server_rpk_ca                            Outbound  The file containing the raw public key(s) (RFC 7250) that this next hop is trusted
+verify_server_rpk_ca                     Outbound  The file containing the raw public key(s) (RFC 7250) that this next hop is trusted
                                                    to present, PEM-encoded. The file may contain more than one key concatenated together,
                                                    which allows an "old" and "new" key to both be trusted during a planned key rotation.
                                                    Keys are compared in their encoded form, so EC keys must be written with uncompressed
@@ -461,17 +461,17 @@ In addition ``verify_server_properties`` specifies what |TS| will check when per
   Verify both the signature and the SNI in the origin certificate.
 
 
-If ``server_rpk_ca`` is set and the next hop authenticates with a raw public key rather than a
+If ``verify_server_rpk_ca`` is set and the next hop authenticates with a raw public key rather than a
 certificate, neither the certificate chain check nor ``verify_server_properties``'s :code:`NAME`
 check has anything to act on -- a raw public key has no issuer or subject alternative name -- so
-``server_rpk_ca`` (matching the offered key against a configured trusted set) takes the place of
+``verify_server_rpk_ca`` (matching the offered key against a configured trusted set) takes the place of
 both. ``verify_server_policy`` still governs whether
 a key that is not in the trusted set is fatal, exactly as for a failed certificate check. Since
 raw public keys are negotiated alongside X.509 rather than instead of it, this only applies when
 the next hop actually offers one; a next hop that does not support RFC 7250 falls back to a normal
 certificate exchange, and the usual certificate checks apply.
 
-Replacing the file named by ``server_rpk_ca`` and running :option:`traffic_ctl config reload`
+Replacing the file named by ``verify_server_rpk_ca`` and running :option:`traffic_ctl config reload`
 takes effect for requests that follow. An origin connection taken from the session pool, or an
 HTTP/2 connection shared with requests that waited for it to open, carries a request verified under
 :code:`ENFORCED` only while the set that request would pin still contains the key the connection
@@ -511,7 +511,7 @@ the expected state throughout a rolling upgrade of that next hop, not a failure.
    sni:
    - fqdn: parent.example.com
      client_rpk_enabled: true
-     server_rpk_ca: parent-rpk-trusted.pem
+     verify_server_rpk_ca: parent-rpk-trusted.pem
      verify_server_policy: ENFORCED
 
 Require client certificate verification for ``foo.com`` and any server name ending with ``.yahoo.com``. Therefore, client
