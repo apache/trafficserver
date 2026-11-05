@@ -38,6 +38,7 @@
 #include <catch2/generators/catch_generators.hpp>
 
 #include "iocore/net/YamlSNIConfig.h"
+#include "tscore/ink_config.h"
 
 static void
 check_port_range(const YamlSNIConfig::Item &item, in_port_t min_expected, in_port_t max_expected)
@@ -127,7 +128,43 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
     auto const &item{conf.items[12]};
     CHECK_FALSE(item.client_rpk_enabled);
     CHECK(item.verify_server_rpk_ca.empty());
+    CHECK(item.verify_client_rpk_ca.empty());
   }
+}
+
+TEST_CASE("YamlSNIConfig parses verify_client_rpk_ca with verify_client")
+{
+  // Kept out of sni_conf_test.yaml, which SNIConfigParams tests also load: SNIConfigParams loads the
+  // key file, as it does for verify_server_rpk_ca, and a unit test can't stage it.
+  YamlSNIConfig conf{};
+  swoc::Errata  zret{conf.loader(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test_rpk_client.yaml")};
+
+#if TS_USE_RPK
+  REQUIRE(zret.is_ok());
+  REQUIRE(conf.items.size() == 1);
+  CHECK(conf.items[0].verify_client_level == 2);
+  CHECK(conf.items[0].verify_client_rpk_ca == "client-rpk.pem");
+#else
+  // Ignoring the key would leave the entry trusting the global client CA, so a build that cannot
+  // pin raw public keys refuses it.
+  std::stringstream errorstream;
+
+  errorstream << zret;
+  CHECK(
+    errorstream.str() ==
+    "Error: exception - yaml-cpp: error at line 20, column 25: verify_client_rpk_ca requires RFC 7250 raw public key support\n");
+#endif
+}
+
+TEST_CASE("YamlSNIConfig refuses verify_client_rpk_ca without verify_client")
+{
+  YamlSNIConfig     conf{};
+  swoc::Errata      zret{conf.loader(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test_rpk_without_verify_client.yaml")};
+  std::stringstream errorstream;
+
+  errorstream << zret;
+  CHECK(errorstream.str() ==
+        "Error: exception - yaml-cpp: error at line 19, column 25: verify_client_rpk_ca requires verify_client\n");
 }
 
 TEST_CASE("YamlConfig handles bad ports appropriately.")

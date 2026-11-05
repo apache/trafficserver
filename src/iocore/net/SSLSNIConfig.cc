@@ -46,6 +46,7 @@
 #include <utility>
 #include <algorithm>
 #include <functional>
+#include <string>
 #include <utility>
 
 namespace
@@ -122,6 +123,28 @@ SNIConfigParams::get_property_config(std::string_view servername) const
   return nps;
 }
 
+/// Load the client raw public keys @a item's verify_client_rpk_ca names, for its verify_client action.
+static bool
+load_verify_client_rpk_ca(YamlSNIConfig::Item &item)
+{
+  if (item.verify_client_rpk_ca.empty()) {
+    return true;
+  }
+#if TS_USE_RPK
+  SSLConfig::scoped_config params;
+  std::string const        path = Layout::get()->relative_to(params->serverCACertPath, item.verify_client_rpk_ca.data());
+
+  // Watched so that replacing the file in place is picked up by a configuration reload, which is
+  // the only point the set is re-read.
+  if (SSLConfigParams::load_ssl_file_cb != nullptr) {
+    SSLConfigParams::load_ssl_file_cb(path.c_str());
+  }
+  return SSLRPKUtils::loadTrustedKeyFile(path.c_str(), item.verify_client_rpk_keys, item.verify_client_rpk_digest);
+#else
+  return true;
+#endif
+}
+
 bool
 SNIConfigParams::load_sni_config()
 {
@@ -154,6 +177,9 @@ SNIConfigParams::load_sni_config()
     element->inbound_port_ranges = item.inbound_port_ranges;
     element->rank                = count++;
 
+    if (!load_verify_client_rpk_ca(item)) {
+      return false;
+    }
     item.populate_sni_actions(element->actions);
     if (!set_next_hop_properties(item)) {
       return false;

@@ -508,6 +508,14 @@ SSLConfigParams::initialize(ConfigContext ctx)
                                          serverCACertPath != nullptr ? serverCACertPath : "", clientCADigestFailed);
   }
 
+  {
+    std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys;
+    std::string                                       digest;
+
+    load_trusted_rpk_file(ctx, "proxy.config.ssl.CA.rpk.filename", serverCACertPath, keys, digest);
+    serverClientTrust = keys != nullptr ? make_ptr(new ClientTrust(std::move(keys), std::move(digest), true)) : Ptr<ClientTrust>{};
+  }
+
   // SSL session cache configurations
   ssl_origin_session_cache      = RecGetRecordInt("proxy.config.ssl.origin_session_cache.enabled").value_or(0);
   ssl_origin_session_cache_size = RecGetRecordInt("proxy.config.ssl.origin_session_cache.size").value_or(0);

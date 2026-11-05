@@ -164,9 +164,45 @@ verify_client_ca_certs                   Inbound   Specifies an alternate set of
                                                    are ``file`` and ``dir``.  The value for ``file`` must be a file path for a file
                                                    containing CA certs.  The value for ``dir`` must be a file path for an OpenSSL
                                                    X509 hashed directory containing CA certs.  If a given file path does not begin
-                                                   with ``/`` , it must be relative to the |TS| configuration directory.
+                                                   with ``/`` , it must be relative to the |TS| configuration directory. This differs
+                                                   from ``verify_client_rpk_ca`` in the same entry, which resolves a relative path
+                                                   against :ts:cv:`proxy.config.ssl.CA.cert.path`.
                                                    ``verify_client_ca_certs`` can only be used with capabilities provided by
                                                    OpenSSL 1.0.2 or later.
+
+                                                   Setting this or ``verify_client_rpk_ca`` replaces both global trust settings,
+                                                   :ts:cv:`proxy.config.ssl.CA.cert.filename` and
+                                                   :ts:cv:`proxy.config.ssl.CA.rpk.filename`, for this entry: a client can then
+                                                   authenticate only with a credential the entry names. If only this key is set, no
+                                                   raw public key is accepted.
+
+verify_client_rpk_ca                     Inbound   The PEM file containing the raw public key(s) (`RFC 7250
+                                                   <https://www.rfc-editor.org/rfc/rfc7250>`_) that a client is trusted to present,
+                                                   in place of :ts:cv:`proxy.config.ssl.CA.rpk.filename`. It is the raw public key
+                                                   counterpart of ``verify_client_ca_certs``, but a relative path is resolved
+                                                   against :ts:cv:`proxy.config.ssl.CA.cert.path`, as for the global record, not
+                                                   against the configuration directory as for ``verify_client_ca_certs``. The file
+                                                   may contain more than one key concatenated together, which allows an "old" and a
+                                                   "new" key to be trusted at the same time during a planned key rotation. It
+                                                   requires ``verify_client`` in the same entry, which decides whether a client
+                                                   credential is requested at all. As with ``verify_client_ca_certs``, it replaces
+                                                   both global trust settings for this entry, so if only this key is set, no X.509
+                                                   client certificate is accepted.
+
+                                                   A client that authenticates with a raw public key has no certificate chain to
+                                                   verify, so the trusted set takes the place of the certificate checks. A key
+                                                   outside the set is always fatal to the connection, as a failed certificate check
+                                                   is. Replacing the contents of the file and running :option:`traffic_ctl config
+                                                   reload` takes effect for new handshakes, and a TLS session a client
+                                                   authenticated under the old set cannot be resumed under the new one.
+
+                                                   A ``verify_client`` action does not reach an HTTP/3 connection, so neither this
+                                                   nor ``verify_client_ca_certs`` applies there; see
+                                                   :ts:cv:`proxy.config.ssl.CA.rpk.filename` for what does.
+
+                                                   Only available in builds linked against a TLS library with RFC 7250 support.
+                                                   On a build without that support, setting this key is a configuration error,
+                                                   since ignoring it would leave the global client CA trusted for this entry.
 
 server_cipher_suite                      Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.cipher_suite`
                                                    :file:`records.yaml` configuration. See the

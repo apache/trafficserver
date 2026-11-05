@@ -45,10 +45,12 @@
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "mgmt/config/ConfigContext.h"
+#include "tscore/Ptr.h"
 
 #include <openssl/rand.h>
 #include <atomic>
 
+struct ClientTrust;
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
 
@@ -107,6 +109,9 @@ struct SSLConfigParams : public ConfigInfo {
   long                    ssl_ctx_options;
   long                    ssl_client_ctx_options;
 
+  /// The trust a connection gets when no sni.yaml verify_client action names its own: the raw public
+  /// keys proxy.config.ssl.CA.rpk.filename names. Null if that is unset or could not be loaded.
+  Ptr<ClientTrust> serverClientTrust;
   /// The raw public keys a next hop is trusted to present when its sni.yaml entry names none, from
   /// proxy.config.ssl.client.CA.rpk.filename; nullptr if that is unset or could not be loaded.
   std::shared_ptr<const SSLRPKUtils::TrustedKeySet> clientRPKCA;
