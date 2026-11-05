@@ -68,7 +68,6 @@ struct SSLMultiCertConfigParams {
   ats_scoped_str       dialog;                 ///< Private key dialog
   ats_scoped_str       servername;             ///< Destination server
   bool                 rpk_enabled = false;    ///< Offer RFC 7250 raw public keys from this entry's cert/key alongside X.509
-  ats_scoped_str       client_rpk_ca;          ///< Trusted client raw public keys (PEM, one or more) for inbound mTLS pinning
   SSLCertContextOption opt;                    ///< SSLCertContext special handling option
 };
 

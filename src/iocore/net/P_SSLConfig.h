@@ -103,6 +103,12 @@ struct SSLConfigParams : public ConfigInfo {
   long                    ssl_ctx_options;
   long                    ssl_client_ctx_options;
 
+  /// The raw public keys a client is trusted to present when no sni.yaml verify_client_rpk_ca covers
+  /// its connection, from proxy.config.ssl.CA.rpk.filename; nullptr if that is unset or could not be
+  /// loaded.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> serverRPKCA;
+  /// Identifies serverRPKCA in the session id context.
+  std::string serverRPKCADigest;
   /// The raw public keys a next hop is trusted to present when its sni.yaml entry names none, from
   /// proxy.config.ssl.client.CA.rpk.filename; nullptr if that is unset or could not be loaded.
   std::shared_ptr<const SSLRPKUtils::TrustedKeySet> clientRPKCA;

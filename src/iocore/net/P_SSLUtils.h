@@ -88,6 +88,17 @@ SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 void setClientCertLevel(SSL *ssl, uint8_t certLevel);
 void setClientCertCACerts(SSL *ssl, const char *file, const char *dir);
 
+/** Attach client trust specific to @a ssl's connection, in place of the global settings and of any
+    trust attached earlier.
+
+    @param rpk_keys The raw public keys a client may present, or nullptr to accept none.
+    @param rpk_digest Identifies @a rpk_keys in the connection's session id context.
+    @param x509 Whether an X.509 client certificate may authenticate at all.
+    @return false if the trust could not be attached, or raw public keys were given to a build
+      without raw public key support.
+ */
+bool setClientTrust(SSL *ssl, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> rpk_keys, std::string_view rpk_digest, bool x509);
+
 /** Digest the client CA scope named by @a file and @a dir, for the session id context.
 
     @return The digest, or no value when neither location is set. A set location that cannot be read

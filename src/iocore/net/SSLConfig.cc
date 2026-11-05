@@ -506,6 +506,8 @@ SSLConfigParams::initialize(ConfigContext ctx)
                                          serverCACertPath != nullptr ? serverCACertPath : "", clientCADigestFailed);
   }
 
+  load_trusted_rpk_file(ctx, "proxy.config.ssl.CA.rpk.filename", serverCACertPath, serverRPKCA, serverRPKCADigest);
+
   // SSL session cache configurations
   ssl_origin_session_cache      = RecGetRecordInt("proxy.config.ssl.origin_session_cache.enabled").value_or(0);
   ssl_origin_session_cache_size = RecGetRecordInt("proxy.config.ssl.origin_session_cache.size").value_or(0);
