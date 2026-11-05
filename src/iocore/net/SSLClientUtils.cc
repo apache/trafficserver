@@ -544,8 +544,9 @@ origin_rpk_pin_matches([[maybe_unused]] NetVConnection *netvc, [[maybe_unused]] 
   // The key itself is checked rather than the identity of the set it was pinned against, so a key a
   // rotated set still trusts keeps its connections, and one accepted only under PERMISSIVE does not
   // pass for pinned.
-  return holder != nullptr && !holder->peer_key.empty() && nps != nullptr && nps->server_rpk_ca != nullptr &&
-         SSLRPKUtils::pinnedKeyMatches(holder->peer_key.data(), static_cast<int>(holder->peer_key.size()), *nps->server_rpk_ca);
+  return holder != nullptr && !holder->peer_key.empty() && nps != nullptr && nps->verify_server_rpk_ca != nullptr &&
+         SSLRPKUtils::pinnedKeyMatches(holder->peer_key.data(), static_cast<int>(holder->peer_key.size()),
+                                       *nps->verify_server_rpk_ca);
 #else
   return false;
 #endif
@@ -732,7 +733,7 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils
   // BoringSSL rejects raw public keys unless a custom verify callback is installed, and this
   // displaces the SSL_set_verify()/verify_callback() pair the caller already set for this
   // connection. Only next hops actually prepared to accept/pin an RPK server key take this path
-  // -- an offer-only connection (client_rpk_enabled with no server_rpk_ca) never advertises RPK
+  // -- an offer-only connection (client_rpk_enabled with no verify_server_rpk_ca) never advertises RPK
   // acceptance above, so the peer will always present X.509 and the classic callback suffices.
   if (has_trusted_keys) {
     SSL_set_custom_verify(ssl, SSL_VERIFY_PEER, ssl_client_custom_verify_callback);

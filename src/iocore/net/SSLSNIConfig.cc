@@ -197,27 +197,27 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
   }
 
 #if TS_USE_RPK
-  if (!item.server_rpk_ca.empty()) {
+  if (!item.verify_server_rpk_ca.empty()) {
     SSLConfig::scoped_config params;
-    nps.prop.server_rpk_ca_file = Layout::get()->relative_to(params->clientCACertPath, item.server_rpk_ca.data());
+    nps.prop.verify_server_rpk_ca_file = Layout::get()->relative_to(params->clientCACertPath, item.verify_server_rpk_ca.data());
     // Watched so that replacing the file in place is picked up by a configuration reload, which is
     // the only point the set below is re-read.
     if (SSLConfigParams::load_ssl_file_cb != nullptr) {
-      SSLConfigParams::load_ssl_file_cb(nps.prop.server_rpk_ca_file.c_str());
+      SSLConfigParams::load_ssl_file_cb(nps.prop.verify_server_rpk_ca_file.c_str());
     }
     // Parsed once here rather than re-parsed from disk on every outbound handshake to this next
     // hop; also fails the config load now rather than at handshake time if the keys are unreadable.
     auto trusted = std::make_shared<SSLRPKUtils::TrustedKeySet>();
-    if (!SSLRPKUtils::loadTrustedKeys(nps.prop.server_rpk_ca_file.c_str(), *trusted)) {
+    if (!SSLRPKUtils::loadTrustedKeys(nps.prop.verify_server_rpk_ca_file.c_str(), *trusted)) {
       return false;
     }
     // Taken once here for the same reason: it identifies the pinned set in the origin session cache
     // key, so a resumption cannot inherit the authentication of a set that has since been replaced.
-    nps.prop.server_rpk_ca_digest = SSLRPKUtils::digestTrustedKeys(*trusted);
-    if (nps.prop.server_rpk_ca_digest.empty()) {
+    nps.prop.verify_server_rpk_ca_digest = SSLRPKUtils::digestTrustedKeys(*trusted);
+    if (nps.prop.verify_server_rpk_ca_digest.empty()) {
       return false;
     }
-    nps.prop.server_rpk_ca = std::move(trusted);
+    nps.prop.verify_server_rpk_ca = std::move(trusted);
   }
 #endif
 

@@ -54,12 +54,12 @@ struct NextHopProperty {
   std::string client_key_file;            // full path to client key file for lookup
   bool        client_rpk_enabled = false; // offer an RFC 7250 raw public key (derived from the configured client
                                           // cert/key) alongside X.509 when connecting to this next hop
-  std::string server_rpk_ca_file;         // full path to the PEM of trusted next-hop raw public keys to pin against
+  std::string verify_server_rpk_ca_file;  // full path to the PEM of trusted next-hop raw public keys to pin against
   // Parsed once at config load rather than re-parsed from disk on every outbound handshake to
   // this next hop.
-  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> server_rpk_ca;
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> verify_server_rpk_ca;
   // Identity of the set above, so a cached origin session cannot be resumed under a different one.
-  std::string             server_rpk_ca_digest;
+  std::string             verify_server_rpk_ca_digest;
   YamlSNIConfig::Policy   verify_server_policy     = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
   YamlSNIConfig::Property verify_server_properties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
 };

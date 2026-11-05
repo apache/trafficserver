@@ -170,7 +170,7 @@ def configure_edge(
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param name: Unique ATS name within the test.
     :param parent: Parent the edge forwards to.
-    :param pin_file: Trusted parent raw public keys (sni.yaml server_rpk_ca), or None for no pin.
+    :param pin_file: Trusted parent raw public keys (sni.yaml verify_server_rpk_ca), or None for no pin.
     :param policy: proxy.config.ssl.client.verify.server.policy toward the parent.
     :param offer_client_rpk: Offer a raw public key derived from server.pem/server.key, the same
         identity the edge serves inbound, as the edge's client credential toward the parent.
@@ -222,7 +222,7 @@ def configure_edge(
     if pin_file is not None or offer_client_rpk or offer_client_x509 or offer_client_rpk_without_key:
         sni_lines = ["sni:", "- fqdn: 127.0.0.1"]
         if pin_file is not None:
-            sni_lines.append(f"  server_rpk_ca: {ats.ssl_directory / pin_file}")
+            sni_lines.append(f"  verify_server_rpk_ca: {ats.ssl_directory / pin_file}")
         if offer_client_rpk:
             sni_lines += [
                 "  client_cert: server.pem",
