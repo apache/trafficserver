@@ -2,7 +2,7 @@
 
   Powerful and easy-to-use command line parsing for ATS
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -117,8 +117,7 @@ public:
   // Print all we have in the parsed data to the console
   void show_all_configuration() const;
   /** Invoke the function associated with the parsed command.
-      @return The return value of the executed command (int).
-  */
+   */
   void invoke();
   // return true if there is any function to invoke
   bool has_action() const;
@@ -183,12 +182,21 @@ public:
 
     /** Create a mutually exclusive group of options
         @param group_name Identifier for the group
+        @param[in] required Whether exactly one option in the group must be supplied.
+        @param[in] description Description displayed in help output.
         @return The Command object for chaining.
     */
     Command &add_mutex_group(std::string const &group_name, bool required = false, std::string const &description = "");
 
     /** Add an option to a mutually exclusive group
         @param group_name The group to add the option to
+        @param[in] long_option Long option name.
+        @param[in] short_option Short option name.
+        @param[in] description Description displayed in help output.
+        @param[in] envvar Environment variable supplying the option value.
+        @param[in] arg_num Number of arguments accepted by the option.
+        @param[in] default_value Value used when the option is absent.
+        @param[in] key Key used to retrieve the parsed option value.
         @return The Command object for chaining.
     */
     Command &add_option_to_group(std::string const &group_name, std::string const &long_option, std::string const &short_option,
@@ -270,16 +278,27 @@ public:
     // Helper method for parse()
     void append_option_data(Arguments &ret, AP_StrVec &args, int index, ParseTrace &trace);
     /** Helper method to collect the values of an option or command into @a ret.
-        @param env_value The current value of the option's declared environment variable, or
+        @param[in,out] ret The parsed arguments, which receive the values collected for @a name.
+        @param[in,out] args The remaining command line tokens; the occurrence and its values are
+        erased from it.
+        @param[in] name The key under which the values are stored in @a ret.
+        @param[in] arg_num The number of values the option or command takes, or one of the
+        variable arity markers such as @c MORE_THAN_ONE_ARG_N.
+        @param[in,out] index The position in @a args of the occurrence; moved back so that the
+        caller's increment visits the token that followed the consumed values.
+        @param[in] env_value The current value of the option's declared environment variable, or
         empty when none is declared or it is currently unset. A missing value is reported
         immediately whenever this is empty, matching behaviour with no variable support at all.
-        @param was_bare Set to @c true when @a env_value is non-empty and the occurrence just
+        @param[out] was_bare Set to @c true when @a env_value is non-empty and the occurrence just
         parsed had no value at all; left @c false otherwise, including for @c
         AT_MOST_ONE_ARG_N, which fills immediately instead since repetition of that arity is
         refused outright elsewhere. The caller resolves the variable once every occurrence has
         been seen, so the result does not depend on the order occurrences appear in.
-        @param option The option the values are for, as registered on this command, or @c nullptr
+        @param[in,out] trace What this pass has seen; the positions of erased tokens are erased
+        with them, and an option's values are recorded.
+        @param[in] option The option the values are for, as registered on this command, or @c nullptr
         for the command's own arguments. Only an option's values are recorded in @a trace.
+        @return A usage error message, or empty if the values were collected.
     */
     std::string handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index,
                             std::string const &env_value, bool &was_bare, ParseTrace &trace, Option const *option = nullptr) const;
@@ -347,12 +366,21 @@ public:
 
   /** Create a mutually exclusive group of options
       @param group_name Identifier for the group
+      @param[in] required Whether exactly one option in the group must be supplied.
+      @param[in] description Description displayed in help output.
       @return The Command object for chaining.
   */
   Command &add_mutex_group(std::string const &group_name, bool required = false, std::string const &description = "");
 
   /** Add an option to a mutually exclusive group
       @param group_name The group to add the option to
+      @param[in] long_option Long option name.
+      @param[in] short_option Short option name.
+      @param[in] description Description displayed in help output.
+      @param[in] envvar Environment variable supplying the option value.
+      @param[in] arg_num Number of arguments accepted by the option.
+      @param[in] default_value Value used when the option is absent.
+      @param[in] key Key used to retrieve the parsed option value.
       @return The Command object for chaining.
   */
   Command &add_option_to_group(std::string const &group_name, std::string const &long_option, std::string const &short_option,

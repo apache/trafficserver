@@ -30,6 +30,7 @@
 
 #include "iocore/net/SSLSNIConfig.h"
 #include "records/RecCore.h"
+#include "../P_SSLClientUtils.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -254,6 +255,20 @@ TEST_CASE("SNIConfig reconfigure callback is invoked")
   SNIConfig::set_on_reconfigure_callback(set_result);
   SNIConfig::reconfigure();
   CHECK(result == 42);
+}
+
+TEST_CASE("next_hop_property_key selects by the SNI a connection would send")
+{
+  IpEndpoint addr;
+  char       buffer[INET6_ADDRSTRLEN];
+
+  REQUIRE(ats_ip_pton("192.0.2.7:443", &addr) == 0);
+
+  CHECK(next_hop_property_key("origin.example.com", &addr.sa, buffer) == "origin.example.com");
+  // No SNI is sent without a name, so the entry is selected by the peer address instead.
+  CHECK(next_hop_property_key("", &addr.sa, buffer) == "192.0.2.7");
+  // An IP literal is never sent as an SNI either, and the address it names may not be the peer's.
+  CHECK(next_hop_property_key("198.51.100.1", &addr.sa, buffer) == "192.0.2.7");
 }
 
 TEST_CASE("SNIConfig handles high-bit bytes while normalizing server names")

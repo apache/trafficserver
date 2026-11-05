@@ -2,7 +2,7 @@
 
   Meta programming support utilities.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.
   See the NOTICE file distributed with this work for additional information regarding copyright
@@ -71,7 +71,12 @@ namespace meta
    */
 
   /// Case hierarchy.
-  template <unsigned N> struct CaseTag : public CaseTag<N - 1> {
+  template <unsigned N>
+  struct CaseTag
+#ifndef DOXYGEN
+    : public CaseTag<N - 1>
+#endif
+  {
     constexpr CaseTag() {}
     static constexpr unsigned value = N;
   };

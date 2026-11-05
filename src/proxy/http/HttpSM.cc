@@ -2,7 +2,7 @@
 
   HTTP state machine
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1172,7 +1172,11 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       _netvc_reader      = _netvc_read_buffer->alloc_reader();
 
       // Wait for write readiness to verify that the nonblocking TCP connection
-      // completed before reporting a successful tunnel to the client.
+      // completed before reporting a successful tunnel to the client. For a
+      // TLS origin, the zero-byte read lets incoming handshake data drive the
+      // handshake, and signals VC_EVENT_READ_COMPLETE when it completes; on a
+      // plain connection it does nothing.
+      _netvc->do_io_read(this, 0, _netvc_read_buffer);
       _netvc->do_io_write(this, 1, _netvc_reader);
       _netvc->set_inactivity_timeout(get_server_connect_timeout());
       return 0;
@@ -1184,6 +1188,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE: {
     if (netvc == nullptr) {
       netvc = _netvc;
+      netvc->do_io_read(nullptr, 0, nullptr);
       netvc->do_io_write(nullptr, 0, nullptr);
       free_MIOBuffer(_netvc_read_buffer);
       _netvc             = nullptr;
@@ -1219,6 +1224,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
         t_state.set_connect_fail(_netvc->lerrno);
       }
+      _netvc->do_io_read(nullptr, 0, nullptr);
       _netvc->do_io_write(nullptr, 0, nullptr);
       _netvc->do_io_close();
       _netvc = nullptr;
@@ -4958,7 +4964,7 @@ HttpSM::track_connect_fail() const
   // Excludes two cases:
   // - Reused keep-alive connection: there is a known race between ATS reusing and the origin closing it.
   // - Multiplexed origins (HTTP/2): stream-level failure does not indicate a connection failure.
-  if (policy >= 4) {
+  if (policy >= 4 && server_txn != nullptr) {
     bool multiplexed = false;
     auto ssn         = server_txn->get_proxy_ssn();
     if (ssn != nullptr) {
@@ -5634,26 +5640,41 @@ HttpSM::send_origin_throttled_response()
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
+/// @return the policy a proxy.config.ssl.client.verify.server.policy value names, or UNSET if none.
+static YamlSNIConfig::Policy
+parse_verify_server_policy(const char *value, bool warn_if_invalid)
+{
+  if (value == nullptr) {
+    return YamlSNIConfig::Policy::UNSET;
+  }
+  if (strcmp(value, "DISABLED") == 0) {
+    return YamlSNIConfig::Policy::DISABLED;
+  }
+  if (strcmp(value, "PERMISSIVE") == 0) {
+    return YamlSNIConfig::Policy::PERMISSIVE;
+  }
+  if (strcmp(value, "ENFORCED") == 0) {
+    return YamlSNIConfig::Policy::ENFORCED;
+  }
+  if (warn_if_invalid) {
+    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+            value);
+  }
+  return YamlSNIConfig::Policy::UNSET;
+}
+
+YamlSNIConfig::Policy
+HttpSM::get_outbound_verify_server_policy() const
+{
+  // Already warned about when the connection that set it up was opened.
+  return parse_verify_server_policy(t_state.txn_conf->ssl_client_verify_server_policy, false);
+}
+
 static void
 set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
 {
-  char *verify_server = nullptr;
-  if (txn_conf->ssl_client_verify_server_policy == nullptr) {
-    opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-  } else {
-    verify_server = txn_conf->ssl_client_verify_server_policy;
-    if (strcmp(verify_server, "DISABLED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
-    } else if (strcmp(verify_server, "ENFORCED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
-    } else {
-      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
-              verify_server);
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-    }
-  }
+  char *verify_server    = nullptr;
+  opt.verifyServerPolicy = parse_verify_server_policy(txn_conf->ssl_client_verify_server_policy, true);
   if (txn_conf->ssl_client_verify_server_properties == nullptr) {
     opt.verifyServerProperties = YamlSNIConfig::Property::UNSET;
   } else {

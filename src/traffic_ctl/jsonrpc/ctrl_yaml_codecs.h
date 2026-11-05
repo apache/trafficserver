@@ -1,5 +1,5 @@
 /**
-  @section license License
+  @par License
 
   traffic_ctl yaml codecs.
 

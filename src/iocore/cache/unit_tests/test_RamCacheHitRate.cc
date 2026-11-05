@@ -261,6 +261,9 @@ mixed_size_hit_rates(RamCache *cache, std::vector<int> const &samples)
       }
     }
   }
+  if (bytes == 0) {
+    return {};
+  }
   return {static_cast<double>(hits) / (samples.size() - half), static_cast<double>(hit_bytes) / bytes};
 }
 

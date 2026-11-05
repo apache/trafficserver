@@ -16,5 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-printf GET / HTTP/1.1
-sleep 11
+exec 3<>/dev/tcp/127.0.0.1/$1
+if [ "$2" = incomplete-request ]
+then
+  printf 'GET / HTTP/1.1' >&3
+fi
+cat <&3

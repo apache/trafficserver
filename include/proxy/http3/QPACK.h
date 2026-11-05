@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -24,6 +24,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 
 #include "swoc/IntrusiveDList.h"
 
@@ -98,7 +99,7 @@ private:
   class StaticTable
   {
   public:
-    static const XpackLookupResult lookup(uint16_t index, const char **name, size_t *name_len, const char **value,
+    static const XpackLookupResult lookup(uint64_t index, const char **name, size_t *name_len, const char **value,
                                           size_t *value_len);
     static const XpackLookupResult lookup(const char *name, size_t name_len, const char *value, size_t value_len);
 
@@ -197,12 +198,13 @@ private:
     uint16_t largest;
   };
 
-  XpackDynamicTable                         _dynamic_table;
-  std::map<uint64_t, struct EntryReference> _references;
-  uint32_t                                  _max_field_section_size = 0;
-  uint32_t                                  _header_field_max_size  = 0;
-  uint16_t                                  _max_table_size         = 0;
-  uint16_t                                  _max_blocking_streams   = 0;
+  std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
+  XpackDynamicTable                                             _dynamic_table;
+  std::map<uint64_t, struct EntryReference>                     _references;
+  uint32_t                                                      _max_field_section_size = 0;
+  uint32_t                                                      _header_field_max_size  = 0;
+  uint16_t                                                      _max_table_size         = 0;
+  uint16_t                                                      _max_blocking_streams   = 0;
 
   Continuation *_event_handler = nullptr;
   void          _resume_decode();
@@ -220,7 +222,7 @@ private:
   void _update_reference_counts(uint64_t stream_id);
 
   // Encoder Stream
-  int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
+  int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint64_t &index, Arena &arena, char **value,
                                  size_t &value_len);
   int _read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, size_t &name_len, char **value,
                                     size_t &value_len);
