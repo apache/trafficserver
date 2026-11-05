@@ -50,6 +50,9 @@ RemapPlugins::run_plugin(RemapPluginInst *plugin)
   // Read-only URL's (TSMLoc's to the SDK)
   rri.mapFromUrl = reinterpret_cast<TSMLoc>(map_from->m_url_impl);
   rri.mapToUrl   = reinterpret_cast<TSMLoc>(map_to->m_url_impl);
+
+  // A previous plugin in the chain may have modified or replaced the URL object.
+  _request_url   = _request_header->url_get();
   rri.requestUrl = reinterpret_cast<TSMLoc>(_request_url->m_url_impl);
 
   rri.redirect = 0;
@@ -72,6 +75,7 @@ RemapPlugins::run_plugin(RemapPluginInst *plugin)
 
   // First step after plugin remap must be "redirect url" check
   if ((TSREMAP_DID_REMAP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) && rri.redirect) {
+    _request_url       = _request_header->url_get();
     _s->remap_redirect = _request_url->string_get(nullptr);
   }
 
