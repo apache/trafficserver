@@ -25,8 +25,11 @@
 #include "iocore/net/QUICSupport.h"
 
 #include "proxy/http3/Http3.h"
+#include "proxy/http3/Http3Config.h"
 #include "proxy/http3/Http3Types.h"
 #include "proxy/http/HttpConfig.h"
+
+#include <algorithm>
 
 //
 // HQSession
@@ -206,10 +209,16 @@ Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
     HttpConfig::release(http_config);
   }
 
-  this->_local_qpack  = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
-                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
-  this->_remote_qpack = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
-                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
+  ts::Http3Config::scoped_config h3_params;
+
+  this->_local_qpack = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
+                                 HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
+  // The decoder enforces the limits that Http3SettingsFramer advertises to the peer. QPACK holds the table capacity and the
+  // blocked stream count in 16 bits, so larger configured values are clamped rather than truncated.
+  uint16_t const max_table_size       = std::min<uint32_t>(h3_params->header_table_size(), UINT16_MAX);
+  uint16_t const max_blocking_streams = std::min<uint32_t>(h3_params->qpack_blocked_streams(), UINT16_MAX);
+  this->_remote_qpack =
+    new QPACK(qc, h3_params->max_field_section_size(), max_table_size, max_blocking_streams, header_field_max_size);
 }
 
 Http3Session::~Http3Session()

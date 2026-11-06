@@ -74,7 +74,11 @@ Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame, Htt
     // Decoding is blocked.
     Dbg(dbg_ctl_http3, "Decoding is blocked. DecodeRequest is scheduled");
   } else if (res < 0) {
+    // decode() fails up front on an invalid Required Insert Count, on more blocked streams than we allow, or once the
+    // encoder stream has failed. RFC 9204 Sections 2.1.2 and 4.5.1.1 make the first two connection errors of this type.
     Dbg(dbg_ctl_http3, "Error on decoding header (%d)", res);
+    return std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::QPACK_DECOMPRESSION_FAILED,
+                                        "header block could not be decoded");
   } else {
     ink_abort("should not be here");
   }
@@ -100,11 +104,24 @@ Http3HeaderVIOAdaptor::event_handler(int event, Event * /* data ATS_UNUSED */)
     break;
   case QPACK_EVENT_DECODE_FAILED:
     Dbg(dbg_ctl_v_http3, "%s (%d)", "QPACK_EVENT_DECODE_FAILED", event);
-    // FIXME: handle error
+    this->_on_qpack_decode_failed(Http3ErrorCode::QPACK_DECOMPRESSION_FAILED);
+    break;
+  case QPACK_EVENT_DECODE_FIELD_SECTION_TOO_LARGE:
+    // The peer sent more than the SETTINGS_MAX_FIELD_SECTION_SIZE we advertised.
+    Dbg(dbg_ctl_v_http3, "%s (%d)", "QPACK_EVENT_DECODE_FIELD_SECTION_TOO_LARGE", event);
+    this->_on_qpack_decode_failed(Http3ErrorCode::H3_EXCESSIVE_LOAD);
     break;
   }
 
   return EVENT_DONE;
+}
+
+void
+Http3HeaderVIOAdaptor::_on_qpack_decode_failed(Http3ErrorCode error_code)
+{
+  if (auto *transaction = dynamic_cast<Http3Transaction *>(this->_txn); transaction != nullptr) {
+    transaction->on_header_decode_failed(error_code);
+  }
 }
 
 int
