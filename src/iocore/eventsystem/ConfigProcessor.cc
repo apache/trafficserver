@@ -127,6 +127,8 @@ public:
 ConfigProcessor::ConfigProcessor()
 {
   // release_stale_pins() runs only between events, which is what makes get_pinned() results safe to use.
+  ink_assert(ethread_loop_hooks.start == nullptr && ethread_loop_hooks.between_events == nullptr &&
+             ethread_loop_hooks.stop == nullptr);
   ethread_loop_hooks = {&ConfigProcessor::enable_thread_pins, &ConfigProcessor::release_stale_pins,
                         &ConfigProcessor::disable_thread_pins};
 }
@@ -236,6 +238,7 @@ struct ConfigProcessor::ThreadPins {
 
   std::array<Pin, MAX_CONFIGS> pins;
   // Slots this thread has pinned at some point, so the per-loop sweep skips the rest.
+  static_assert(MAX_CONFIGS <= 256, "slot indices in used are stored as uint8_t");
   std::array<uint8_t, MAX_CONFIGS> used{};
   size_t                           used_count = 0;
 };
