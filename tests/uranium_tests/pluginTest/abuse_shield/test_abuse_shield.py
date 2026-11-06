@@ -95,7 +95,10 @@ class AbuseShieldHarness:
             ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}/")
         ats.write_config_file("abuse_shield.yaml", config)
         if jax:
-            ats.plugin_config.add_line("jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints")
+            ats.write_config_file(
+                "jax_fingerprint.yaml",
+                "jax_fingerprint:\n  fingerprints:\n    - method: JA3\n      export: abuse_shield.fingerprints\n")
+            ats.plugin_config.add_line("jax_fingerprint.so jax_fingerprint.yaml")
         ats.plugin_config.add_line("abuse_shield.so abuse_shield.yaml")
         return ats
 
