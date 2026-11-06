@@ -1,0 +1,91 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Verify remap request URL updates across chained plugins, conditions, and redirects"
+  requires: {plugins: [header_rewrite.so]}
+  server: {name: "server"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    process_config: {enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "header_rewrite|url_rewrite"
+    inline_config_files:
+      first.conf: |
+        cond %{CLIENT-HEADER:X-Set-Url} ="1"
+          set-destination URL "http://127.0.0.1:{SERVER_HTTP_PORT}/new/?utm=drop&keep=yes"
+        cond %{URL:PATH} ="new/"
+          set-header X-Matched "1"
+        cond %{CLIENT-HEADER:X-Redirect} ="1"
+          set-redirect 302 "http://redirect.ex/%{URL:PATH}"
+      second.conf: |
+        rm-destination QUERY "utm"
+    remap_config:
+      - "map http://test.ex/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=header_rewrite.so @pparam={CONFIG_DIR}/first.conf @plugin=header_rewrite.so @pparam={CONFIG_DIR}/second.conf"
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, "1"]]}}
+        client-request:
+          method: GET
+          url: /old?a=1
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, test.ex]
+              - [X-Set-Url, "1"]
+        proxy-request:
+          method: GET
+          url:
+            - [path, {value: "/new/", as: equal}]
+            - [query, {value: "keep=yes", as: equal}]
+          headers:
+            fields:
+              - [X-Matched, {value: "1", as: equal}]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, 0]
+        proxy-response:
+          status: 200
+
+      - all: {headers: {fields: [[uuid, "2"]]}}
+        client-request:
+          method: GET
+          url: /old
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, test.ex]
+              - [X-Set-Url, "1"]
+              - [X-Redirect, "1"]
+        proxy-request:
+          expect: absent
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Content-Length, 0]
+        proxy-response:
+          status: 302
+          headers:
+            fields:
+              - [Location, {value: "http://redirect.ex/new/", as: equal}]

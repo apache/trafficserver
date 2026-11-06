@@ -606,8 +606,15 @@ OperatorSetRedirect::exec(const Resources &res) const
     TSMLoc    url_loc;
     if (remap) {
       // Handle when called from remap plugin.
-      bufp    = res._rri->requestBufp;
-      url_loc = res._rri->requestUrl;
+      bufp = res._rri->requestBufp;
+      if (res.changed_url) {
+        if (TS_SUCCESS != TSHttpHdrUrlGet(res._rri->requestBufp, res._rri->requestHdrp, &url_loc)) {
+          Dbg(pi_dbg_ctl, "Could not get request URL");
+          return false;
+        }
+      } else {
+        url_loc = res._rri->requestUrl;
+      }
     } else {
       // Handle when not called from remap plugin.
       bufp = res.client_bufp;
