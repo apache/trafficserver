@@ -40,6 +40,15 @@ namespace
 DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 #endif
 
+// SSLNetVCAccess() only finds an SSLNetVConnection. QUICNetVConnection binds
+// TLSSNISupport but not that slot, so reach the NetVConnection through
+// TLSSNISupport, which both bind.
+NetVConnection *
+sni_netvc(SSL &ssl)
+{
+  return dynamic_cast<NetVConnection *>(TLSSNISupport::getInstance(&ssl));
+}
+
 } // end anonymous namespace
 
 int
@@ -185,9 +194,15 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
   auto snis      = TLSSNISupport::getInstance(&ssl);
   auto tuns      = TLSTunnelSupport::getInstance(&ssl);
   auto alpns     = ALPNSupport::getInstance(&ssl);
-  auto ssl_netvc = SSLNetVCAccess(&ssl);
+  auto ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
 
-  if (snis == nullptr || tuns == nullptr || alpns == nullptr || ssl_netvc == nullptr) {
+  if (ssl_netvc == nullptr) {
+    // Only an SSLNetVConnection can be tunnelled, so refuse rather than serve the name here.
+    Dbg(dbg_ctl_ssl_sni, "routing to %s needs an SSLNetVConnection - denying connection", destination.c_str());
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+
+  if (tuns == nullptr || alpns == nullptr) {
     return SSL_TLSEXT_ERR_OK;
   }
 
@@ -299,10 +314,19 @@ int
 VerifyClient::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
   auto snis   = TLSSNISupport::getInstance(&ssl);
-  auto ssl_vc = SSLNetVCAccess(&ssl);
+  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
 
-  if (snis == nullptr || ssl_vc == nullptr) {
-    return SSL_TLSEXT_ERR_OK;
+  if (ssl_vc == nullptr) {
+    // The CA override is kept on the SSLNetVConnection for the certificate callback, and
+    // ssl_verify_client_callback() looks the connection up with SSLNetVCAccess(), so a client
+    // certificate can't be checked as configured on any other connection. Refuse rather than let the
+    // default verification stand in. NONE needs neither.
+    if (this->mode == 0) {
+      setClientCertLevel(&ssl, 0);
+      return SSL_TLSEXT_ERR_OK;
+    }
+    Dbg(dbg_ctl_ssl_sni, "verify_client %d needs an SSLNetVConnection - denying connection", this->mode);
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
   }
 
   const char *servername = snis->get_sni_server_name();
@@ -415,22 +439,27 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
     return SSL_TLSEXT_ERR_OK;
   }
 
-  auto            ssl_vc    = SSLNetVCAccess(&ssl);
+  auto netvc = sni_netvc(ssl);
+  if (netvc == nullptr) {
+    Dbg(dbg_ctl_ssl_sni, "no connection to check the ip_allow for %s - denying connection", server_name.c_str());
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+
   const sockaddr *client_ip = nullptr;
   for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
     if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
-      client_ip = ssl_vc->get_effective_remote_addr();
+      client_ip = netvc->get_effective_remote_addr();
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
-               ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      if (sockaddr const *proxy_ip = ssl_vc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+               netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      if (sockaddr const *proxy_ip = netvc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
         client_ip = proxy_ip;
         break;
       }
     }
   }
   if (client_ip == nullptr) {
-    client_ip = ssl_vc->get_remote_addr();
+    client_ip = netvc->get_remote_addr();
   }
   swoc::IPAddr ip = swoc::IPAddr(client_ip);
 
