@@ -24,6 +24,7 @@
 #pragma once
 
 #include <atomic>
+#include <memory>
 
 #include "iocore/eventsystem/EventProcessor.h"
 #include "iocore/eventsystem/Tasks.h"
@@ -35,10 +36,13 @@ class ProxyMutex;
 
 using ConfigInfo = RefCountObjInHeap;
 
+class ConfigProcessor;
+extern ConfigProcessor configProcessor;
+
 class ConfigProcessor
 {
 public:
-  ConfigProcessor() = default;
+  ConfigProcessor();
 
   enum {
     // The number of seconds to wait before garbage collecting stale ConfigInfo objects. There's
@@ -46,9 +50,25 @@ public:
     CONFIG_PROCESSOR_RELEASE_SECS = 60
   };
 
+  /** The current configuration of @a ClassType for the life of one scope.
+
+      On a thread with pins this takes no reference, so it must stay on the stack of the event
+      handler that created it; see get_pinned().
+   */
   template <typename ClassType, typename ConfigType> struct scoped_config {
-    scoped_config() : ptr(ClassType::acquire()) {}
-    ~scoped_config() { ClassType::release(ptr); }
+    scoped_config()
+      : pinned(thread_pins_enabled()),
+        ptr(pinned ? static_cast<ConfigType *>(configProcessor.get_pinned(ClassType::config_id())) : ClassType::acquire())
+    {
+    }
+    ~scoped_config()
+    {
+      if (!pinned) {
+        ClassType::release(ptr);
+      }
+    }
+    scoped_config(const scoped_config &)            = delete;
+    scoped_config &operator=(const scoped_config &) = delete;
     operator bool() const { return ptr != nullptr; }
     operator const ConfigType *() const { return ptr; }
     const ConfigType *
@@ -58,6 +78,7 @@ public:
     }
 
   private:
+    bool        pinned;
     ConfigType *ptr;
   };
 
@@ -65,9 +86,49 @@ public:
   ConfigInfo  *get(unsigned int id);
   void         release(unsigned int id, ConfigInfo *data);
 
+  /** The current configuration in slot @a id, without taking a reference.
+
+      The calling thread keeps it alive until the thread next runs release_stale_pins(), which the
+      event loop does only between events, so the result must not be kept past the current event.
+      Requires thread_pins_enabled().
+   */
+  ConfigInfo *get_pinned(unsigned int id);
+
+  /** The current configuration in slot @a id, kept alive by the returned handle on any thread.
+
+      On a thread with pins, copies of the handle count against that thread's pin rather than the
+      configuration's refcount, which every thread shares.
+   */
+  std::shared_ptr<ConfigInfo> get_leased(unsigned int id);
+
+  static bool
+  thread_pins_enabled()
+  {
+    return _thread_pins != nullptr;
+  }
+  /// Let the calling thread pin configurations. It must then call release_stale_pins() between events.
+  static void enable_thread_pins();
+  /// Release the calling thread's pins on configurations that set() has replaced since they were pinned.
+  static void release_stale_pins();
+  /// Release all of the calling thread's pins and stop pinning.
+  static void disable_thread_pins();
+
 public:
   std::atomic<ConfigInfo *> infos[MAX_CONFIGS] = {nullptr};
   std::atomic<int>          ninfos{0};
-};
 
-extern ConfigProcessor configProcessor;
+private:
+  struct ThreadPins;
+
+  /// The calling thread's pin on slot @a id, refreshed if set() replaced the configuration.
+  std::shared_ptr<ConfigInfo> &_pin(unsigned int id);
+
+  // Bumped by set() and read by every pinned or leased get, so each slot's counter has a cache line to itself.
+  struct alignas(64) Generation {
+    std::atomic<uint64_t> value{0};
+  };
+
+  Generation _generations[MAX_CONFIGS];
+
+  static inline thread_local ThreadPins *_thread_pins = nullptr;
+};

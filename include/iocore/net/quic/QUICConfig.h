@@ -69,6 +69,8 @@ public:
   static QUICTokenKeyConfigParams *acquire();
   static void                      release(QUICTokenKeyConfigParams *params);
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<QUICTokenKeyConfig, QUICTokenKeyConfigParams>;
 
 private:
@@ -203,6 +205,8 @@ public:
   static QUICConfigParams *acquire();
   static void              release(QUICConfigParams *params);
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<QUICConfig, QUICConfigParams>;
 
 private:

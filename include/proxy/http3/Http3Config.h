@@ -57,6 +57,8 @@ public:
   static Http3ConfigParams *acquire();
   static void               release(Http3ConfigParams *params);
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<Http3Config, Http3ConfigParams>;
 
 private:

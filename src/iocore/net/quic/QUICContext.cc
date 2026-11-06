@@ -31,9 +31,3 @@ QUICContext::connection_info() const
 {
   return _connection_info;
 }
-
-QUICConfig::scoped_config
-QUICContext::config() const
-{
-  return _config;
-}

@@ -213,8 +213,7 @@ protected:
   }
 
 private:
-  SSL                      *_ssl;
-  QUICConfig::scoped_config _quic_config;
+  SSL *_ssl;
 
   QUICConnectionId _peer_quic_connection_id     = QUICConnectionId::ZERO(); // dst cid in local
   QUICConnectionId _peer_old_quic_connection_id = QUICConnectionId::ZERO(); // dst previous cid in local

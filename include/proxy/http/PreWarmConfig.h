@@ -39,6 +39,8 @@ struct PreWarmConfigParams : public ConfigInfo {
 class PreWarmConfig
 {
 public:
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<PreWarmConfig, PreWarmConfigParams>;
 
   static void startup();
