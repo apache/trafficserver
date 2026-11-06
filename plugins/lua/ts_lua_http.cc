@@ -25,6 +25,9 @@
 #include "ts_lua_http_milestone.h"
 #include "ts_lua_http_txn_info.h"
 
+#include <atomic>
+#include <cinttypes>
+
 enum TSLuaCacheLookupResult {
   TS_LUA_CACHE_LOOKUP_MISS,
   TS_LUA_CACHE_LOOKUP_HIT_STALE,
@@ -535,9 +538,9 @@ ts_lua_http_get_next_hop_strategy(lua_State *L)
 
   GET_HTTP_CONTEXT(http_ctx, L);
 
-  void const *const stratptr = TSHttpTxnNextHopStrategyGet(http_ctx->txnp);
+  TSStrategy const stratptr = TSHttpTxnNextHopStrategyGet(http_ctx->txnp);
   if (nullptr != stratptr) {
-    name = TSHttpNextHopStrategyNameGet(stratptr);
+    name = TSNextHopStrategyNameGet(stratptr);
   }
 
   if (name == nullptr) {
@@ -548,6 +551,31 @@ ts_lua_http_get_next_hop_strategy(lua_State *L)
 
   return 1;
 }
+
+namespace
+{
+// A script naming a missing strategy fails on every transaction, so emit at most one error per interval.
+constexpr TSHRTime    strategy_error_interval = TS_HRTIME_SECONDS(60);
+std::atomic<TSHRTime> next_strategy_error{0};
+std::atomic<uint64_t> suppressed_strategy_errors{0};
+
+void
+log_strategy_lookup_failure(char const *name)
+{
+  TSHRTime const now  = TShrtime();
+  TSHRTime       next = next_strategy_error.load(std::memory_order_relaxed);
+
+  if (now >= next && next_strategy_error.compare_exchange_strong(next, now + strategy_error_interval, std::memory_order_relaxed)) {
+    uint64_t const suppressed = suppressed_strategy_errors.exchange(0, std::memory_order_relaxed);
+    TSError("[ts_lua][ts_lua_http_set_next_hop_strategy] Failed get next hop strategy name '%s' (%" PRIu64
+            " similar errors suppressed)",
+            name, suppressed);
+  } else {
+    suppressed_strategy_errors.fetch_add(1, std::memory_order_relaxed);
+    Dbg(dbg_ctl, "Failed get next hop strategy name '%s'", name);
+  }
+}
+} // namespace
 
 static int
 ts_lua_http_set_next_hop_strategy(lua_State *L)
@@ -569,9 +597,9 @@ ts_lua_http_set_next_hop_strategy(lua_State *L)
       Dbg(dbg_ctl, "Clearning strategy (use parent.config)");
       TSHttpTxnNextHopStrategySet(http_ctx->txnp, nullptr);
     } else {
-      void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(http_ctx->txnp, name);
+      TSStrategy const stratptr = TSHttpTxnNextHopStrategyFind(http_ctx->txnp, name);
       if (nullptr == stratptr) {
-        TSError("[ts_lua][%s] Failed get next hop strategy name '%s'", __FUNCTION__, name);
+        log_strategy_lookup_failure(name);
       } else {
         TSHttpTxnNextHopStrategySet(http_ctx->txnp, stratptr);
       }

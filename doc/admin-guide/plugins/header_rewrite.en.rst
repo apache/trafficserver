@@ -1369,6 +1369,31 @@ the matching strategy specified in `strategies.yaml`
 Setting to "null" removes the current strategy which will fall back
 to other methods (ie: parent.config or remap to url).
 
+``<name>`` may be a literal strategy name or use `String concatenations`_
+to compute it, e.g. ``set-next-hop-strategy %{CLIENT-HEADER:X-Strategy}``.
+A literal name in a remap rule is resolved once, when the rule is loaded;
+if it cannot be resolved, an error is logged at load time and the
+operator is disabled for that rule. A computed name, or any name in a
+global configuration, is looked up on each transaction. Lookup failures
+of a rule are logged as an error at most once a minute, with a count of
+the failures suppressed since the previous error; the suppressed failures
+are logged with the ``header_rewrite`` debug tag.
+
+This operator can be used in the ``READ_REQUEST_HDR_HOOK`` of a global
+configuration or the ``REMAP_PSEUDO_HOOK`` of a remap rule. Note that for
+remapped requests the mapping's own strategy is applied after
+``READ_REQUEST_HDR``, so a remap rule's strategy takes precedence over one
+set globally at that hook.
+
+.. note::
+
+   A name computed from client input, such as a request header, lets
+   clients choose among every strategy in ``strategies.yaml``. Guard such
+   rules with conditions that only accept the intended values, e.g.::
+
+      cond %{CLIENT-HEADER:X-Strategy} /^(edge|shield)$/
+      set-next-hop-strategy %{CLIENT-HEADER:X-Strategy}
+
 set-redirect
 ~~~~~~~~~~~~
 ::
