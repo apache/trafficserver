@@ -28,7 +28,10 @@
 #include "iocore/net/YamlSNIConfig.h"
 #include "tscore/ink_inet.h"
 
+#include <memory>
 #include <string>
+#include <string_view>
+#include <utility>
 #include "swoc/TextView.h"
 #include <vector>
 
@@ -209,9 +212,18 @@ class VerifyClient : public ActionItem
   uint8_t     mode;
   std::string ca_file;
   std::string ca_dir;
+  /// The client raw public keys the connection pins in place of those proxy.config.ssl.CA.rpk.filename
+  /// names, or nullptr if this entry names none.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> rpk_keys;
+  /// Identifies rpk_keys in the session id context.
+  std::string rpk_digest;
 
 public:
-  VerifyClient(uint8_t param, std::string_view file, std::string_view dir) : mode(param), ca_file(file), ca_dir(dir) {}
+  VerifyClient(uint8_t param, std::string_view file, std::string_view dir,
+               std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys = nullptr, std::string_view digest = {})
+    : mode(param), ca_file(file), ca_dir(dir), rpk_keys(std::move(keys)), rpk_digest(digest)
+  {
+  }
   VerifyClient(const char *param, std::string_view file, std::string_view dir) : VerifyClient(atoi(param), file, dir) {}
   ~VerifyClient() override;
 

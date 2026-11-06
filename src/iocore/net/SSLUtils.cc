@@ -122,25 +122,32 @@ track_client_ca_bundle(const char *file)
 }
 
 #if TS_USE_RPK
-/// The client raw public keys a multicert entry trusts, as loaded from ssl_client_rpk_ca_name.
-struct TrustedClientRPK {
-  SSLRPKUtils::TrustedKeySet keys;
-  /// Identifies @a keys in the session id context, taken once when the entry loaded.
-  std::string digest;
+/// The client credentials a connection trusts beyond the global X.509 settings: those of the sni.yaml
+/// verify_client action that covered it, or else the raw public keys proxy.config.ssl.CA.rpk.filename
+/// names.
+struct ClientTrust {
+  /// The raw public keys a client may present, or nullptr if the connection accepts none.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> rpk_keys;
+  /// Identifies rpk_keys in the session id context, taken once when the set was loaded.
+  std::string rpk_digest;
+  /// Whether an X.509 client certificate may authenticate at all. False where a host names only raw
+  /// public keys; that set then replaces proxy.config.ssl.CA.cert.filename as well.
+  bool x509 = true;
 };
 
-// SSL_CTX-level ex_data index holding this context's TrustedClientRPK, so the verify callbacks can
-// reach it without needing a per-connection back-reference to the SSLMultiCertConfigParams that
-// built the context.
-static int ssl_client_rpk_ca_index = -1;
+// SSL-level ex_data index holding the connection's ClientTrust. The ClientTrust is chosen at the
+// ClientHello, after the SNI actions run, so the certificate type negotiation, the verify callbacks
+// and the session id context all see the same one, even if the configuration is reloaded during the
+// handshake.
+static int ssl_client_trust_index = -1;
 
 static void
-ssl_client_rpk_ca_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
+ssl_client_trust_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  delete static_cast<TrustedClientRPK *>(ptr);
+  delete static_cast<ClientTrust *>(ptr);
 }
 
-/// Report a client raw public key that matched none of the keys its entry trusts. Any client can
+/// Report a client raw public key that matched none of the keys its connection trusts. Any client can
 /// trigger this, so it is throttled.
 static void
 warn_client_rpk_mismatch(const char *servername)
@@ -150,13 +157,90 @@ warn_client_rpk_mismatch(const char *servername)
   log_msg.warning(MakeSourceLocation(), "client raw public key did not match any trusted key for %s", servername);
 }
 
-/// @return the client raw public keys @a ctx's entry trusts, or nullptr if it pins none.
-static TrustedClientRPK const *
-trusted_client_rpk(SSL_CTX *ctx)
+/// @return the client credentials @a ssl's connection trusts beyond the global X.509 settings, or
+/// nullptr if only the global X.509 trust applies and no raw public key is accepted.
+static ClientTrust const *
+client_trust(const SSL *ssl)
 {
-  return static_cast<TrustedClientRPK const *>(SSL_CTX_get_ex_data(ctx, ssl_client_rpk_ca_index));
+  if (ssl_client_trust_index < 0) {
+    return nullptr;
+  }
+  return static_cast<ClientTrust const *>(SSL_get_ex_data(ssl, ssl_client_trust_index));
+}
+
+/// @return the raw public keys a client of @a ssl's connection may present, or nullptr if it may present none.
+static SSLRPKUtils::TrustedKeySet const *
+trusted_client_rpk(const SSL *ssl)
+{
+  auto const *trust = client_trust(ssl);
+
+  return trust != nullptr ? trust->rpk_keys.get() : nullptr;
+}
+
+/// Drop the client trust @a ssl's connection was given. @return false if it could not be dropped.
+static bool
+clear_client_trust(SSL *ssl)
+{
+  auto *trust = client_trust(ssl);
+
+  if (trust == nullptr) {
+    return true;
+  }
+  if (!SSL_set_ex_data(ssl, ssl_client_trust_index, nullptr)) {
+    SSLError("failed to drop the client trust of the connection");
+    return false;
+  }
+  delete trust;
+  return true;
+}
+
+/// For a connection that no sni.yaml verify_client action gave its own trust, pin client raw public
+/// keys against those proxy.config.ssl.CA.rpk.filename names, as an X.509 client certificate falls
+/// back to proxy.config.ssl.CA.cert.filename. @return false if the set could not be attached.
+static bool
+pin_client_rpk_to_global_set(SSL *ssl)
+{
+  // Nothing is attached where no client credential is requested, which spares the allocation.
+  if (client_trust(ssl) != nullptr || (SSL_get_verify_mode(ssl) & SSL_VERIFY_PEER) == 0) {
+    return true;
+  }
+
+  SSLConfig::scoped_config params;
+
+  if (params->serverRPKCA == nullptr) {
+    return true;
+  }
+  return setClientTrust(ssl, params->serverRPKCA, params->serverRPKCADigest, true);
 }
 #endif
+
+bool
+setClientTrust([[maybe_unused]] SSL *ssl, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> rpk_keys,
+               [[maybe_unused]] std::string_view rpk_digest, [[maybe_unused]] bool x509)
+{
+#if TS_USE_RPK
+  if (ssl_client_trust_index < 0) {
+    SSLError("failed to reserve an ex_data index for the client trust of a connection");
+    return false;
+  }
+
+  auto  holder   = std::make_unique<ClientTrust>(ClientTrust{std::move(rpk_keys), std::string{rpk_digest}, x509});
+  auto *replaced = static_cast<ClientTrust *>(SSL_get_ex_data(ssl, ssl_client_trust_index));
+
+  if (!SSL_set_ex_data(ssl, ssl_client_trust_index, holder.get())) {
+    SSLError("failed to attach the client trust to the connection");
+    return false;
+  }
+  // ssl_client_trust_ex_free() releases the holder when ssl is freed; a holder this one replaces is
+  // released here.
+  holder.release();
+  delete replaced;
+  return true;
+#else
+  // Without raw public key support there is nothing beyond the X.509 trust to record.
+  return rpk_keys == nullptr;
+#endif
+}
 
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
 // SSL-level, owning: the store setClientCertCACerts() built and also handed to
@@ -331,8 +415,8 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
       Dbg(dbg_ctl_ssl_verify, "client raw public key rejected: %s", X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
       return preverify_ok;
     }
-    auto const *trusted = trusted_client_rpk(SSL_get_SSL_CTX(ssl));
-    bool        pin_ok  = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, trusted->keys);
+    auto const *trusted = trusted_client_rpk(ssl);
+    bool        pin_ok  = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
     Dbg(dbg_ctl_ssl_verify, "Client authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (pin_ok) {
       X509_STORE_CTX_set_error(ctx, X509_V_OK);
@@ -345,6 +429,16 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
       return false;
     }
     return pin_ok;
+  }
+#endif
+
+#if TS_USE_RPK
+  if (auto const *trust = client_trust(ssl); trust != nullptr && !trust->x509) {
+    // Worded as in ssl_custom_verify_client_callback(), so the refusal reads the same on both TLS
+    // libraries.
+    Dbg(dbg_ctl_ssl_verify, "client certificate refused: %s trusts only raw public keys", servername);
+    X509_STORE_CTX_set_error(ctx, X509_V_ERR_APPLICATION_VERIFICATION);
+    return false;
   }
 #endif
 
@@ -366,16 +460,17 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 static bool bind_session_id_context_to_verify_scope(SSL *ssl);
 
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-// BoringSSL's SSL_CTX_set_custom_verify(), required to accept a client raw public key, replaces its
-// automatic X.509 chain verification entirely -- unlike the classic SSL_CTX_set_verify(),
+// BoringSSL's SSL_set_custom_verify(), required to accept a client raw public key, replaces its
+// automatic X.509 chain verification entirely -- unlike the classic SSL_set_verify(),
 // which only lets ssl_verify_client_callback() observe/override a chain the library already
 // validated. For the X.509 fallback case (the client didn't offer an RPK this time), this
 // callback must therefore redo that validation manually via the legacy X509_STORE_CTX API,
-// against the same certificate store _setup_client_cert_verification() configured on this ctx.
+// against the store a verify_client action installed, else the one _setup_client_cert_verification()
+// configured on the ctx.
 static enum ssl_verify_result_t
 ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
 {
-  Dbg(dbg_ctl_ssl_verify, "Callback: custom verify client cert (RPK-enabled ctx)");
+  Dbg(dbg_ctl_ssl_verify, "Callback: custom verify client cert (raw public keys pinned)");
   TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
   if (tbs == nullptr) {
     Dbg(dbg_ctl_ssl_verify, "ssl_custom_verify_client_callback call back on stale netvc");
@@ -392,8 +487,8 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
 
   if (SSL_get_peer_cert_type(ssl) == TLSEXT_cert_type_rpk) {
     EVP_PKEY   *peer_rpk = SSL_get0_peer_rpk(ssl);
-    auto const *trusted  = trusted_client_rpk(ctx);
-    bool        pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, trusted->keys);
+    auto const *trusted  = trusted_client_rpk(ssl);
+    bool        pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
     Dbg(dbg_ctl_ssl_verify, "Client authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (!pin_ok) {
       warn_client_rpk_mismatch(servername);
@@ -425,6 +520,13 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     return ssl_verify_invalid;
   }
   X509 *leaf = sk_X509_value(chain, 0);
+
+  if (auto const *trust = client_trust(ssl); trust != nullptr && !trust->x509) {
+    Dbg(dbg_ctl_ssl_verify, "client certificate refused: %s trusts only raw public keys", servername);
+    // The alert OpenSSL sends for X509_V_ERR_APPLICATION_VERIFICATION, which the classic callback sets.
+    *out_alert = SSL_AD_HANDSHAKE_FAILURE;
+    return ssl_verify_invalid;
+  }
 
   // A per-SNI verify_client action may have pinned a CA file/dir onto this connection via
   // setClientCertCACerts(), which BoringSSL exposes no getter for. Use the store it stashed rather
@@ -537,10 +639,24 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   // When a delayed ClientHello hook reenables, the TLS library calls back again for the remaining
   // hooks, and the SNI actions and any certificate context selection have already run.
   if (es == nullptr || !es->resuming_client_hello_hooks()) {
+#if TS_USE_RPK
+    // A renegotiation may name another host, so its trust is chosen afresh, as the verify_client
+    // action resets the client CA, rather than kept from the handshake before. Whether a credential
+    // is requested again is up to the verify mode.
+    if (TLSBasicSupport *tbs = TLSBasicSupport::getInstance(s);
+        tbs != nullptr && tbs->is_tls_handshake_complete() && !clear_client_trust(s)) {
+      return CLIENT_HELLO_ERROR;
+    }
+#endif
     int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
       return CLIENT_HELLO_ERROR;
     }
+#if TS_USE_RPK
+    if (!pin_client_rpk_to_global_set(s)) {
+      return CLIENT_HELLO_ERROR;
+    }
+#endif
 #if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
     // OpenSSL negotiates RFC 7250 certificate types in tls_early_post_process_client_hello(), before
     // the certificate callback runs, from the lists the SSL copied out of the default "*" context at
@@ -553,8 +669,8 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
       if (tcss->selectCertificate(s, SSLCertContextType::GENERIC, snis->get_sni_server_name()) != 1) {
         return CLIENT_HELLO_ERROR;
       }
-      // Copied from the matched context in both directions. An entry without a list leaves the
-      // library default in place, under which the peer's certificate type preference is ignored.
+      // Copied from the matched context. An entry without a list leaves the library default in
+      // place, under which the peer's certificate type preference is ignored.
       SSL_CTX       *matched_ctx   = SSL_get_SSL_CTX(s);
       unsigned char *cert_type     = nullptr;
       size_t         cert_type_len = 0;
@@ -564,12 +680,30 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
         SSLError("failed to apply the matched entry's server cert type negotiation");
         return CLIENT_HELLO_ERROR;
       }
+    }
+    // A client raw public key is accepted only on a connection that pins some, which is decided
+    // above; the list is set either way, since a renegotiation can follow a handshake that pinned keys.
+    // The ClientHello extensions are parsed after this callback returns, so the setting takes effect
+    // then. OpenSSL lets the client's preference order decide, so where a certificate is required and
+    // X.509 is not trusted, only raw public keys are offered; otherwise a client preferring X.509 would
+    // negotiate a type that is then refused. Where a certificate is optional, X.509 stays offered, so
+    // such a client can still go without one, as on BoringSSL.
+    {
+      static const unsigned char rpk_or_x509[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
+      static const unsigned char rpk_only[]    = {TLSEXT_cert_type_rpk};
+      auto const                *trust         = client_trust(s);
+      bool const                 required      = (SSL_get_verify_mode(s) & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0;
+      bool                       ok            = true;
 
-      cert_type     = nullptr;
-      cert_type_len = 0;
-      if (!SSL_CTX_get0_client_cert_type(matched_ctx, &cert_type, &cert_type_len) ||
-          !SSL_set1_client_cert_type(s, cert_type, cert_type_len)) {
-        SSLError("failed to apply the matched entry's client cert type acceptance");
+      if (trust == nullptr || trust->rpk_keys == nullptr) {
+        ok = SSL_set1_client_cert_type(s, nullptr, 0);
+      } else if (trust->x509 || !required) {
+        ok = SSL_set1_client_cert_type(s, rpk_or_x509, sizeof(rpk_or_x509));
+      } else {
+        ok = SSL_set1_client_cert_type(s, rpk_only, sizeof(rpk_only));
+      }
+      if (!ok) {
+        SSLError("failed to set the accepted client cert types");
         return CLIENT_HELLO_ERROR;
       }
     }
@@ -694,27 +828,26 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
   if (retval == 1) {
-    // SSL_set_SSL_CTX() above duplicates the cert/credential list, but not accepted_peer_cert_types
-    // or the custom_verify callback, which were cached from the default "*" ctx at SSL_new().
-    SSL_CTX    *matched_ctx = SSL_get_SSL_CTX(ssl);
-    auto const *trusted     = trusted_client_rpk(matched_ctx);
+    // Whether the connection pins client raw public keys was decided when its ClientHello was
+    // processed. Accepting a raw public key requires the custom verify callback, the only callback
+    // that can see it.
     // Per-connection, not per-ctx: a verify_client SNI action has already run and may have
     // overridden the mode this connection inherited.
     int const mode = SSL_get_verify_mode(ssl);
-    if (trusted != nullptr) {
+    if (trusted_client_rpk(ssl) != nullptr) {
       static const unsigned char accepted_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
       if (!SSL_set1_accepted_peer_cert_types(ssl, accepted_types, sizeof(accepted_types))) {
-        SSLError("failed to reapply RPK client cert type acceptance for the matched entry");
+        SSLError("failed to enable RPK client cert type acceptance");
         retval = 0;
       } else {
         SSL_set_custom_verify(ssl, mode, ssl_custom_verify_client_callback);
       }
     } else {
       // SSL_set_verify() leaves custom_verify_callback alone, and that takes precedence when set,
-      // so an RPK-enabled default ctx has to be undone explicitly.
+      // so whatever the connection inherited is reset explicitly.
       static const unsigned char x509_only[] = {TLSEXT_cert_type_x509};
       if (!SSL_set1_accepted_peer_cert_types(ssl, x509_only, sizeof(x509_only))) {
-        SSLError("failed to reset client cert type acceptance for the matched entry");
+        SSLError("failed to reset client cert type acceptance");
         retval = 0;
       } else {
         SSL_set_custom_verify(ssl, mode, nullptr);
@@ -1276,8 +1409,7 @@ SSLInitializeLibrary()
   ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
 
 #if TS_USE_RPK
-  ssl_client_rpk_ca_index =
-    SSL_CTX_get_ex_new_index(0, (void *)"Trusted client raw public keys", nullptr, nullptr, ssl_client_rpk_ca_ex_free);
+  ssl_client_trust_index = SSL_get_ex_new_index(0, (void *)"Client trust", nullptr, nullptr, ssl_client_trust_ex_free);
   ssl_client_rpk_initialize();
 #endif
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
@@ -1545,7 +1677,8 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
 
   Dbg(dbg_ctl_ssl_load, "setting cert level to %d", server_verify_client);
   // Only the mode matters here. ssl_cert_callback() runs after this and picks the classic or
-  // custom_verify callback from the entry it actually matched, which this early is not yet known.
+  // custom_verify callback by whether the connection pins client raw public keys, which this early
+  // is not yet decided.
   SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
@@ -1604,6 +1737,14 @@ bind_session_id_context_to_verify_scope(SSL *ssl)
     if ((verify_mode & SSL_VERIFY_PEER) == 0) {
       return true;
     }
+#if TS_USE_RPK
+    // A host that trusts only raw public keys accepts no certificate, whichever CA is configured, so
+    // a session that a certificate authenticated under another configuration must not resume here.
+    if (auto const *trust = client_trust(ssl); trust != nullptr && !trust->x509) {
+      update_sv("no X.509");
+      return true;
+    }
+#endif
     // A store that was selected but could not be digested must not resolve to some other scope.
     if (tbs->verify_scope_digest_failed()) {
       return false;
@@ -1645,12 +1786,11 @@ bind_session_id_context_to_verify_scope(SSL *ssl)
   }
 
 #if TS_USE_RPK
-  // Pinned client raw public keys are trust anchors as well, and only the matched entry carries
-  // them. Digested where the entry loaded them, so replacing the file retires the sessions they
-  // verified.
+  // Pinned client raw public keys are trust anchors as well. Digested where the set was loaded, so
+  // replacing the file retires the sessions the old set verified.
   if ((verify_mode & SSL_VERIFY_PEER) != 0) {
-    if (auto const *trusted = trusted_client_rpk(SSL_get_SSL_CTX(ssl)); trusted != nullptr) {
-      update_sv(trusted->digest);
+    if (auto const *trust = client_trust(ssl); trust != nullptr && trust->rpk_keys != nullptr) {
+      update_sv(trust->rpk_digest);
     }
   }
 #endif
@@ -2072,18 +2212,9 @@ SSLMultiCertConfigLoader::_setup_client_cert_verification(SSL_CTX *ctx)
       Error("illegal client certification level %d in %s", server_verify_client, ts::filename::RECORDS);
     }
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
-#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-    // On BoringSSL only a custom_verify callback can see a client raw public key, and it takes precedence
-    // over the classic one when both are set. Entries that configured ssl_client_rpk_ca_name (via
-    // the ex_data load_certs() attached) take that path; everything else keeps classic verify.
-    if (SSL_CTX_get_ex_data(ctx, ssl_client_rpk_ca_index) != nullptr) {
-      SSL_CTX_set_custom_verify(ctx, server_verify_client, ssl_custom_verify_client_callback);
-    } else {
-      SSL_CTX_set_verify(ctx, server_verify_client, ssl_verify_client_callback);
-    }
-#else
+    // On BoringSSL, ssl_cert_callback() replaces this with the custom verify callback on a connection
+    // that pins client raw public keys, since only that callback can see one.
     SSL_CTX_set_verify(ctx, server_verify_client, ssl_verify_client_callback);
-#endif
   }
   return true;
 }
@@ -2271,7 +2402,7 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   // without the lock, allowing parallel cert loading across threads.
   std::lock_guard<std::mutex> lock(_loader_mutex);
 
-  if (sslMultCertSettings && (sslMultCertSettings->rpk_enabled || sslMultCertSettings->client_rpk_ca)) {
+  if (sslMultCertSettings && sslMultCertSettings->rpk_enabled) {
     lookup->has_raw_public_keys = true;
   }
 
@@ -2597,9 +2728,6 @@ SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCer
     }
     if (item.ssl_rpk_enabled.has_value()) {
       sslMultiCertSettings->rpk_enabled = item.ssl_rpk_enabled.value() != 0;
-    }
-    if (!item.ssl_client_rpk_ca_name.empty()) {
-      sslMultiCertSettings->client_rpk_ca = ats_strdup(item.ssl_client_rpk_ca_name.c_str());
     }
     if (item.action == "tunnel") {
       sslMultiCertSettings->opt = SSLCertContextOption::OPT_TUNNEL;
@@ -3087,50 +3215,6 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
     SSL_CREDENTIAL_free(cred);
 #else
     Warning("ssl_rpk_enabled is set, but this build has no RFC 7250 raw public key support; ignoring");
-#endif
-  }
-
-  if (sslMultCertSettings->client_rpk_ca) {
-#if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE || HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-    if (ssl_client_rpk_ca_index < 0) {
-      SSLError("failed to reserve an ex_data index for trusted client raw public keys");
-      return false;
-    }
-    std::string completeClientRPKCAPath(Layout::relative_to(params->serverCACertPath, sslMultCertSettings->client_rpk_ca.get()));
-    // Read only as contexts are built, the same as a client CA bundle.
-    track_client_ca_bundle(completeClientRPKCAPath.c_str());
-    auto trusted = std::make_unique<TrustedClientRPK>();
-    if (!SSLRPKUtils::loadTrustedKeys(completeClientRPKCAPath.c_str(), trusted->keys)) {
-      SSLError("failed to load trusted client raw public keys from %s", completeClientRPKCAPath.c_str());
-      return false;
-    }
-    trusted->digest = SSLRPKUtils::digestTrustedKeys(trusted->keys);
-    if (trusted->digest.empty()) {
-      SSLError("failed to digest trusted client raw public keys from %s", completeClientRPKCAPath.c_str());
-      return false;
-    }
-    // ssl_client_rpk_ca_ex_free() releases `trusted` when ctx is freed.
-    if (!SSL_CTX_set_ex_data(ctx, ssl_client_rpk_ca_index, trusted.get())) {
-      SSLError("failed to attach the trusted client raw public keys from %s to the context", completeClientRPKCAPath.c_str());
-      return false;
-    }
-    trusted.release();
-
-#if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
-    static const unsigned char client_cert_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
-    if (!SSL_CTX_set1_client_cert_type(ctx, client_cert_types, sizeof(client_cert_types))) {
-      SSLError("failed to enable RPK client cert type acceptance");
-      return false;
-    }
-#else
-    static const unsigned char accepted_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
-    if (!SSL_CTX_set1_accepted_peer_cert_types(ctx, accepted_types, sizeof(accepted_types))) {
-      SSLError("failed to enable RPK client cert type acceptance");
-      return false;
-    }
-#endif
-#else
-    Warning("ssl_client_rpk_ca_name is set, but this build has no RFC 7250 raw public key support; ignoring");
 #endif
   }
 

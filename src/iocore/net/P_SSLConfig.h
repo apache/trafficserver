@@ -30,11 +30,14 @@
  ****************************************************************************/
 #pragma once
 
+#include <memory>
 #include <optional>
+#include <string>
 
 #include "P_SSLSecret.h"
 #include "SSLSessionCache.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/net/SSLTypes.h"
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "mgmt/config/ConfigContext.h"
@@ -99,6 +102,18 @@ struct SSLConfigParams : public ConfigInfo {
   int                     client_verify_depth;
   long                    ssl_ctx_options;
   long                    ssl_client_ctx_options;
+
+  /// The raw public keys a client is trusted to present when no sni.yaml verify_client_rpk_ca covers
+  /// its connection, from proxy.config.ssl.CA.rpk.filename; nullptr if that is unset or could not be
+  /// loaded.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> serverRPKCA;
+  /// Identifies serverRPKCA in the session id context.
+  std::string serverRPKCADigest;
+  /// The raw public keys a next hop is trusted to present when its sni.yaml entry names none, from
+  /// proxy.config.ssl.client.CA.rpk.filename; nullptr if that is unset or could not be loaded.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> clientRPKCA;
+  /// Identifies clientRPKCA in the origin session cache key.
+  std::string clientRPKCADigest;
 
   unsigned char alpn_protocols_array[MAX_ALPN_STRING];
   int           alpn_protocols_array_size = 0;
