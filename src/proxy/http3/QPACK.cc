@@ -291,7 +291,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   if (this->_decode_thread == nullptr) {
     this->_decode_thread = thread;
   }
-  ink_assert(thread == this->_decode_thread);
+  ink_release_assert(thread == this->_decode_thread);
 
   if (this->_invalid) {
     this->_report(thread, cont, stream_id, QPACK_EVENT_DECODE_FAILED, nullptr);
@@ -327,7 +327,7 @@ int
 QPACK::cancel(uint64_t stream_id)
 {
   // From any other thread this would race the decoding thread over both lists.
-  ink_assert(this->_decode_thread == nullptr || this->_decode_thread == this_ethread());
+  ink_release_assert(this->_decode_thread == nullptr || this->_decode_thread == this_ethread());
 
   int dropped = 0;
 

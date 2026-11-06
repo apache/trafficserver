@@ -72,7 +72,7 @@ public:
    *   decoder had already failed)
    *
    * Every decode() and cancel() on one QPACK has to run on the same thread:
-   * QPACK keeps the results it has not delivered yet on a list that only that
+   * QPACK keeps the decodes it has not reported yet on lists that only that
    * thread touches.
    */
   int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont);
