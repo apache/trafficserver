@@ -164,10 +164,8 @@ public:
     }
   };
 
-  void        PerformACLFiltering(HttpTransact::State *s, const url_mapping *const mapping);
-  void        PrintStore(const MappingsStore &store) const;
-  std::string PrintRemapHits();
-  std::string PrintRemapHitsStore(MappingsStore &store);
+  void PerformACLFiltering(HttpTransact::State *s, const url_mapping *const mapping);
+  void PrintStore(const MappingsStore &store) const;
 
   void
   DestroyStore(MappingsStore &store)
