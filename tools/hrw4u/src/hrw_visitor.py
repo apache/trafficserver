@@ -66,13 +66,10 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
         return self.symbol_resolver.parse_percent_block(pct_text)
 
     @lru_cache(maxsize=256)
-    def _cached_symbol_to_ident(self, pct_text: str, section_name: str) -> tuple[str, str]:
+    def _cached_symbol_to_ident(self, pct_text: str, section_name: str) -> tuple[str, bool]:
         """Cache expensive symbol resolution operations."""
-        try:
-            section = SectionType(section_name)
-            return self.symbol_resolver.percent_to_ident_or_func(pct_text, section)
-        except (ValueError, SymbolResolutionError):
-            return pct_text, ""
+        section = SectionType(section_name)
+        return self.symbol_resolver.percent_to_ident_or_func(pct_text, section)
 
     #
     # Helpers
