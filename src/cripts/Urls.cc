@@ -53,7 +53,6 @@ Url::Scheme::operator=(cripts::string_view scheme)
   TSUrlSchemeSet(_owner->_bufp, _owner->_urlp, scheme.data(), scheme.size());
   _owner->_modified = true;
   Reset();
-  _loaded = false;
 
   return *this;
 }
@@ -82,7 +81,6 @@ Url::Host::operator=(cripts::string_view host)
   TSUrlHostSet(_owner->_bufp, _owner->_urlp, host.data(), host.size());
   _owner->_modified = true;
   Reset();
-  _loaded = false;
 
   return *this;
 }
@@ -161,7 +159,6 @@ Url::Path::operator=(cripts::string_view path)
   TSUrlPathSet(_owner->_bufp, _owner->_urlp, path.data(), path.size());
   _owner->_modified = true;
   Reset();
-  _loaded = false;
 
   return *this;
 }
@@ -307,7 +304,6 @@ Url::Query::operator=(cripts::string_view query)
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
   _owner->_modified = true;
   Reset();
-  _loaded = false;
 
   return *this;
 }
@@ -367,6 +363,7 @@ Url::Query::Erase(cripts::string_view param)
 
     if (s.ordered.size() == 0) {
       Reset();
+      _loaded = true; // Until Flush(), the URL still has the erased query; don't read it back.
       // After Reset() the state is gone; re-create it just so _modified can be tracked.
       _ensure_state().modified = true;
     } else {
@@ -401,6 +398,7 @@ Url::Query::Erase(std::initializer_list<cripts::string_view> list, bool keep)
     }
     if (s.ordered.size() == 0) {
       Reset();
+      _loaded = true; // Until Flush(), the URL still has the erased query; don't read it back.
     }
   } else {
     for (auto &it : list) {

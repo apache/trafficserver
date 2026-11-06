@@ -63,3 +63,97 @@ TEST_CASE("Url: whole component assignment reaches the core", "[cripts][Urls]")
   CHECK(str(url.path) == "z");
   CHECK(str(url.query) == "q=9");
 }
+
+TEST_CASE("Url: the cache URL reads every component again in the next hook", "[cripts][Urls]")
+{
+  Txn  txn{ABSOLUTE_REQUEST};
+  auto context = txn.context();
+
+  // Both hooks run before the cache lookup, where the cache URL is a copy of the client URL.
+  context->state.hook = TS_HTTP_READ_REQUEST_HDR_HOOK;
+
+  {
+    borrow url = cripts::Cache::URL::Get();
+
+    CHECK(str(url.scheme) == "http");
+    CHECK(str(url.host) == "example.com");
+    CHECK(integer(url.port) == 8080);
+    CHECK(str(url.path) == "a/b/c");
+    CHECK(str(url.query) == "x=1&y=2");
+  }
+
+  // Remap rewrites the client URL between the two hooks.
+  txn.client_url().scheme_set("https");
+  txn.client_url().host_set("other.example");
+  txn.client_url().port_set(8443);
+  txn.client_url().path_set("d");
+  txn.client_url().query_set("z=3");
+
+  context->reset();
+  context->state.hook = TS_HTTP_POST_REMAP_HOOK;
+
+  borrow url = cripts::Cache::URL::Get();
+
+  CHECK(str(url.scheme) == "https");
+  CHECK(str(url.host) == "other.example");
+  CHECK(integer(url.port) == 8443);
+  CHECK(str(url.path) == "d");
+  CHECK(str(url.query) == "z=3");
+}
+
+TEST_CASE("Url: the client URL reads every component again in the next hook", "[cripts][Urls]")
+{
+  Txn  txn{ABSOLUTE_REQUEST};
+  auto context = txn.context();
+
+  context->state.hook = TS_HTTP_READ_REQUEST_HDR_HOOK;
+
+  {
+    borrow url = cripts::Client::URL::Get();
+
+    CHECK(str(url.scheme) == "http");
+    CHECK(str(url.host) == "example.com");
+    CHECK(integer(url.port) == 8080);
+    CHECK(str(url.path) == "a/b/c");
+    CHECK(str(url.query) == "x=1&y=2");
+  }
+
+  // Remap rewrites the client URL between the two hooks.
+  txn.client_url().scheme_set("https");
+  txn.client_url().host_set("other.example");
+  txn.client_url().port_set(8443);
+  txn.client_url().path_set("d");
+  txn.client_url().query_set("z=3");
+
+  context->reset();
+  context->state.hook = TS_HTTP_POST_REMAP_HOOK;
+
+  borrow url = cripts::Client::URL::Get();
+
+  CHECK(str(url.scheme) == "https");
+  CHECK(str(url.host) == "other.example");
+  CHECK(integer(url.port) == 8443);
+  CHECK(str(url.path) == "d");
+  CHECK(str(url.query) == "z=3");
+}
+
+TEST_CASE("Url: erasing every query parameter reads an empty query", "[cripts][Urls]")
+{
+  Txn  txn{ABSOLUTE_REQUEST};
+  auto context = txn.context();
+
+  borrow url = cripts::Client::URL::Get();
+
+  SECTION("by name")
+  {
+    url.query.Erase("x");
+    url.query.Erase("y");
+    CHECK(str(url.query).empty());
+  }
+
+  SECTION("keeping none of them")
+  {
+    url.query.Erase({"z"}, true);
+    CHECK(str(url.query).empty());
+  }
+}

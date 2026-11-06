@@ -68,6 +68,7 @@ class Url
     Reset()
     {
       _data.clear();
+      _loaded = false;
     }
 
     cripts::string_view::const_pointer
@@ -609,10 +610,8 @@ public:
       TSHandleMLocRelease(_bufp, TS_NULL_MLOC, _urlp);
       _urlp = nullptr;
       _bufp = nullptr;
-
-      query.Reset();
-      path.Reset();
     }
+    _reset_components();
     _initialized = false;
     _modified    = false;
   }
@@ -671,6 +670,17 @@ protected:
   {
     _initialized = true;
     _modified    = false;
+  }
+
+  // Components cache what they read, which the core may have changed since.
+  void
+  _reset_components()
+  {
+    scheme.Reset();
+    host.Reset();
+    port.Reset();
+    path.Reset();
+    query.Reset();
   }
 
   TSMBuffer            _bufp        = nullptr; // These two gets setup via initializing, to appropriate headers
@@ -735,8 +745,7 @@ namespace Client
         _owns_urlp   = false;
         _initialized = false;
       }
-      path.Reset();
-      query.Reset();
+      super_type::_reset_components();
       _modified = false;
     }
 
