@@ -30,14 +30,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: bogus\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "success!"
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: bogus\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "success!"},
     )
     return origin
 
@@ -58,10 +52,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     )
     for hostname in ("passphrase", "passphrase2"):
         ats.remap_config.add_line(f"map https://{hostname}:{ats.https_port}/ http://127.0.0.1:{_origin.port}")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "ssl_load|http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_load|http",
+        }
+    )
     ats.ssl_multicert_config.add_lines(multicert("passphrase"))
     return ats
 
@@ -93,7 +89,8 @@ def request(hostname: str, *, _ats: ATS, _curl: Curl) -> None:
         _ats,
         (
             f"--verbose --cacert '{str(TEST_DIRECTORY / 'ssl' / 'signer.pem')}' --resolve "
-            f"'{hostname}:{_ats.https_port}:127.0.0.1' 'https://{hostname}:{_ats.https_port}/'"),
+            f"'{hostname}:{_ats.https_port}:127.0.0.1' 'https://{hostname}:{_ats.https_port}/'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert "200" in result.stderr

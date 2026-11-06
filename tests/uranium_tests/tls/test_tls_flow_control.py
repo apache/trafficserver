@@ -36,10 +36,10 @@ def configure_server(services: ServiceFactory) -> OriginServer:
     server.add_response(
         {"headers": "GET /obj HTTP/1.1\r\nHost: ex.test\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                    f"Content-Length: {TLS_FLOW_CONTROL__body_length}\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                f"Content-Length: {TLS_FLOW_CONTROL__body_length}\r\n\r\n"
+            ),
             "body": "x" * TLS_FLOW_CONTROL__body_length,
         },
     )
@@ -62,13 +62,15 @@ def configure_ats(ats_factory: ATSFactory, *, _server: OriginServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.http.flow_control.enabled": 1,
             "proxy.config.http.flow_control.high_water": TLS_FLOW_CONTROL__high_water,
             "proxy.config.http.flow_control.low_water": TLS_FLOW_CONTROL__low_water,
-        })
+        }
+    )
     return ats
 
 

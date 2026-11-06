@@ -62,7 +62,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _server: Verifier
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://backend.server.com:{_server.http_port}")
     return ats
 

@@ -56,24 +56,23 @@ def curl_connect_configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServe
             "proxy.config.http.server_ports": str(ats.http_port),
             "proxy.config.http.connect_ports": str(_origin.port),
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map http://foo.com/ http://127.0.0.1:{_origin.port}/")
     ats.allow_private_connect()
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [{
-                            "name": "common",
-                            "format": '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>',
-                        }],
-                    "logs": [{
-                        "filename": "access",
-                        "format": "common"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "common",
+                        "format": '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>',
+                    }
+                ],
+                "logs": [{"filename": "access", "format": "common"}],
+            }
+        }
+    )
     return ats
 
 
@@ -111,14 +110,16 @@ def verifier_connect_configure_ats(ats_factory: ATSFactory, suffix: str, *, _ser
             "proxy.config.diags.debug.tags": tags,
             "proxy.config.http.server_ports": server_ports,
             "proxy.config.http.connect_ports": str(_server.http_port),
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}/")
     ats.allow_private_connect()
     return ats
 
 
 def verifier_connect_configure_client(
-        services: ServiceFactory, suffix: str, *, _ats: ATS, _replay: Path, _use_http2: bool) -> ProcessService:
+    services: ServiceFactory, suffix: str, *, _ats: ATS, _replay: Path, _use_http2: bool
+) -> ProcessService:
     """Create the verifier client for the selected inbound protocol.
 
     :param _ats: Test-local ats configured by the test.

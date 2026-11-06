@@ -65,7 +65,8 @@ def run_remap_reload(ats_factory: ATSFactory, services: ServiceFactory, *, use_y
                     "  - type: map",
                     f"    from: {{url: 'http://{host}.ex'}}",
                     f"    to: {{url: 'http://{host}.ex:{_origin.http_port}'}}",
-                ])
+                ]
+            )
         return lines
 
     def configure_ats(ats_factory: ATSFactory) -> ATS:
@@ -82,7 +83,8 @@ def run_remap_reload(ats_factory: ATSFactory, services: ServiceFactory, *, use_y
                 "proxy.config.dns.resolv_conf": "NULL",
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "remap|config|file|rpc",
-            })
+            }
+        )
         hosts = ("alpha", "bravo", "charlie", "delta")
         (ats.remap_yaml if use_yaml else ats.remap_config).add_lines(yaml_rules(hosts) if use_yaml else classic_rules(hosts))
         return ats

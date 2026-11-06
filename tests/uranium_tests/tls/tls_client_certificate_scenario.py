@@ -63,10 +63,7 @@ def run_tls_client_certificate(
             ssl=True,
             clientcert=SSL_DIRECTORY / certificate,
             clientkey=SSL_DIRECTORY / ("signed-bar.key" if "bar" in certificate else "signed-foo.key"),
-            options={
-                "--clientCA": SSL_DIRECTORY / client_ca,
-                "--clientverify": ""
-            },
+            options={"--clientCA": SSL_DIRECTORY / client_ca, "--clientverify": ""},
         )
         if respond:
             for host in ("example.com", "bar.com"):
@@ -123,13 +120,15 @@ def run_tls_client_certificate(
                 "proxy.config.url_remap.pristine_host_hdr": 1,
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
                 "proxy.config.log.max_secs_per_buffer": 1,
-            })
+            }
+        )
         if not wildcard_matrix:
             ats.records.update(
                 {
                     "proxy.config.ssl.client.cert.filename": "signed-foo.pem",
                     "proxy.config.ssl.client.private_key.filename": "signed-foo.key",
-                })
+                }
+            )
         if use_secret_plugin:
             ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_secret_load_test.so")
             ats.plugin_config.add_line("ssl_secret_load_test.so")
@@ -139,19 +138,12 @@ def run_tls_client_certificate(
         if not use_secret_plugin:
             ats.set_logging_yaml(
                 {
-                    "logging":
-                        {
-                            "formats": [{
-                                "name": "testformat",
-                                "format": "%<pssc> %<pquc> %<pscert> %<cscert>"
-                            }],
-                            "logs": [{
-                                "mode": "ascii",
-                                "format": "testformat",
-                                "filename": "squid"
-                            }],
-                        }
-                })
+                    "logging": {
+                        "formats": [{"name": "testformat", "format": "%<pssc> %<pquc> %<pscert> %<cscert>"}],
+                        "logs": [{"mode": "ascii", "format": "testformat", "filename": "squid"}],
+                    }
+                }
+            )
         return ats
 
     def initial_sni(ats: ATS) -> str:
@@ -165,7 +157,8 @@ def run_tls_client_certificate(
                 "sni:\n"
                 "  - fqdn: bar.com\n"
                 f"    client_cert: {certificate_reference(ats, 'signed2-bar.pem')}\n"
-                f"    client_key: {certificate_reference(ats, 'signed-bar.key')}\n")
+                f"    client_key: {certificate_reference(ats, 'signed-bar.key')}\n"
+            )
         return (
             "sni:\n"
             "  - fqdn: bob.bar.com\n"
@@ -178,7 +171,8 @@ def run_tls_client_certificate(
             f"    client_key: {certificate_reference(ats, 'signed-bar.key')}\n"
             "  - fqdn: foo.com\n"
             f"    client_cert: {certificate_reference(ats, 'signed2-foo.pem')}\n"
-            f"    client_key: {certificate_reference(ats, 'signed-foo.key')}\n")
+            f"    client_key: {certificate_reference(ats, 'signed-foo.key')}\n"
+        )
 
     def request(host: str, path: str, succeeds: bool) -> None:
         """Send one request and verify whether the outbound handshake succeeded.
@@ -207,7 +201,8 @@ def run_tls_client_certificate(
             "sni:\n"
             "  - fqdn: bar.com\n"
             f"    client_cert: {certificate_reference(_ats, bar_certificate)}\n"
-            f"    client_key: {certificate_reference(_ats, 'signed-bar.key')}\n")
+            f"    client_key: {certificate_reference(_ats, 'signed-bar.key')}\n"
+        )
         result = _ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
         assert result.returncode == 0, result.output
 
@@ -219,7 +214,6 @@ def run_tls_client_certificate(
     _second.start()
     _ats.start()
     if wildcard_matrix:
-
         cases = (
             ("bob.bar.com", "/case1", True),
             ("bob.bar.com", "/case2", False),
@@ -233,7 +227,6 @@ def run_tls_client_certificate(
         for host, path, succeeds in cases:
             request(host, path, succeeds)
     else:
-
         request("example.com", "/case1", True)
         request("example.com", "/case2", False)
         request("bar.com", "/case2", True)
@@ -258,7 +251,6 @@ def run_tls_client_certificate(
         request("example.com", "/case1", True)
         request("example.com", "/case2", False)
     if not use_secret_plugin:
-
         line_count = 8 if wildcard_matrix else 12
         content = wait_for_file_lines(_ats.log_directory / "squid.log", r"^[0-9]+ ", line_count)
         gold = "proxycert2-accesslog.gold" if wildcard_matrix else "proxycert-accesslog.gold"

@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Plugin-list output preserves its JSON structure for empty and populated lists."""
+
 import json
 import pytest
 from tools.uranium.services import ATS
@@ -35,17 +36,16 @@ def test_traffic_ctl_plugin_output(ats: ATS, populated: bool) -> None:
     ats.start()
     result = ats.traffic_ctl("-f", "json", "plugin", "list")
     assert result.returncode == 0, result.output
-    plugins = [
-        {
-            "path": name,
-            "enabled": "true",
-            "status": "loaded",
-            "index": str(index)
-        } for index, name in enumerate(("xdebug.so", "stats_over_http.so"), 1)
-    ] if populated else []
+    plugins = (
+        [
+            {"path": name, "enabled": "true", "status": "loaded", "index": str(index)}
+            for index, name in enumerate(("xdebug.so", "stats_over_http.so"), 1)
+        ]
+        if populated
+        else []
+    )
     assert json.loads(result.stdout)["result"] == {"data": {"source": "plugin.config", "plugins": plugins}}
     result = ats.traffic_ctl("plugin", "list")
     assert result.returncode == 0, result.output
-    for text in (["source: plugin.config", "xdebug.so", "stats_over_http.so", "loaded"]
-                 if populated else ["source: plugin.config"]):
+    for text in ["source: plugin.config", "xdebug.so", "stats_over_http.so", "loaded"] if populated else ["source: plugin.config"]:
         assert text in result.stdout

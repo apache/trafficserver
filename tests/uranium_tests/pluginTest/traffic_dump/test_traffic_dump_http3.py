@@ -62,7 +62,8 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -75,30 +76,32 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.http.host_sni_policy": 2,
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map https://www.client_only_tls.com/ http://127.0.0.1:{_server.http_port}",
             f"map https://www.tls.com/ https://127.0.0.1:{_server.https_port}",
             f"map / http://127.0.0.1:{_server.http_port}",
-        ))
+        )
+    )
     ats.plugin_config.add_line(
         f'traffic_dump.so --logdir {ats.log_directory} --sample 1 --limit 1000000000 '
-        '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"')
+        '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"'
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
+            "logging": {
+                "formats": [
+                    {
                         "name": "basic",
                         "format": "%<cluc>: Read result: %<crc>:%<crsc>:%<chm>, Write result: %<cwr>",
-                    }],
-                    "logs": [{
-                        "filename": "transactions",
-                        "format": "basic"
-                    }],
-                }
-        })
+                    }
+                ],
+                "logs": [{"filename": "transactions", "format": "basic"}],
+            }
+        }
+    )
     return ats
 
 

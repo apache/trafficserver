@@ -34,8 +34,11 @@ def test_traffic_ctl_json_null(ats: ATS) -> None:
         document = json.loads(result.stdout)
         if arguments == ("hostdb", "status"):
             assert document["partitions"] == [], document
-    for method, params in (("get_hostdb_status", {"hostname": ""}), ("admin_plugin_get_list", None), ("show_registered_handlers",
-                                                                                                      None)):
+    for method, params in (
+        ("get_hostdb_status", {"hostname": ""}),
+        ("admin_plugin_get_list", None),
+        ("show_registered_handlers", None),
+    ):
         request = {"jsonrpc": "2.0", "id": "1", "method": method}
         if params is not None:
             request["params"] = params

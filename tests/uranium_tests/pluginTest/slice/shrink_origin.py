@@ -44,7 +44,6 @@ lock = threading.Lock()
 
 
 class ShrinkHandler(http.server.BaseHTTPRequestHandler):
-
     def do_GET(self):
         if self.path == '/ruok':
             self.send_response(200)

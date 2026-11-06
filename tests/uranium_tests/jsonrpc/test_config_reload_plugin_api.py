@@ -33,7 +33,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc|config|config.reload|cfg_plugin_test",
-        })
+        }
+    )
     ats.write_config_file("cfg_plugin_test.conf", "greeting: hello\n")
     ats.write_config_file("cfg_plugin_companion.conf", "companion: data\n")
     ats.copy_custom_plugin("plugins/.libs/cfg_plugin_test.so")
@@ -56,12 +57,8 @@ def reload(token: str, config: dict[str, object], *, force: bool = False, _ats: 
         "admin_config_reload",
         {
             "token": token,
-            "configs": {
-                "cfg_plugin_test": config
-            },
-            **({
-                "force": True
-            } if force else {}),
+            "configs": {"cfg_plugin_test": config},
+            **({"force": True} if force else {}),
         },
     )
     assert "error" not in response, response
@@ -126,11 +123,11 @@ def test_config_reload_plugin_api(ats_factory: ATSFactory) -> None:
 
     diagnostics = wait_for_file_lines(_ats.diags_log, r"Config reload \[core-check\]", 1)
     for fragment in (
-            "Config reload [rpc-greet] completed",
-            "Config reload [rpc-fail] finished with failures",
-            "Config reload [rpc-subtask] completed",
-            "Config reload [rpc-subtask-fail] finished with failures",
-            "Config reload [core-check] completed",
+        "Config reload [rpc-greet] completed",
+        "Config reload [rpc-fail] finished with failures",
+        "Config reload [rpc-subtask] completed",
+        "Config reload [rpc-subtask-fail] finished with failures",
+        "Config reload [core-check] completed",
     ):
         assert fragment in diagnostics
     assert "ignoring transition from" not in diagnostics
