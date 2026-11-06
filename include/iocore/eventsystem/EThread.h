@@ -743,3 +743,5 @@ EThread::free_event(Event *e)
 }
 
 extern int thread_max_heartbeat_mseconds;
+/// How often a regular EThread applies its deferred counter increments; zero increments directly.
+extern int thread_deferred_counter_interval_ms;

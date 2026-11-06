@@ -42,7 +42,7 @@ void
 PluginThreadContext::countInvocation()
 {
   if (_invocations != nullptr) {
-    _invocations->increment(1);
+    ts::Metrics::Counter::increment(_invocations);
   }
 }
 
