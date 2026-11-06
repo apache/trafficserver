@@ -76,10 +76,14 @@ def test_stats_over_http_remap_intercept(ats_factory: ATSFactory, services: Serv
         fetch(services, ats, f"fetch-{stats_format}", stats_format)
 
     client = directory / "fetch_stats.py"
+    # The continuation count comes from the freelist dump, which has no
+    # INKContAllocator rows when allocations go straight to malloc.
+    count_continuations = not ats.has_feature("TS_USE_MALLOC_ALLOCATOR")
     baseline = ats.run_directory / "cont_baseline"
-    result = services.process("count-before",
-                              [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
-    assert result.returncode == 0, result.output
+    if count_continuations:
+        result = services.process(
+            "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
+        assert result.returncode == 0, result.output
 
     fetch(services, ats, "fetch-again", "prometheus")
     for name, option, status in [("head", "--head", 200), ("post", "--post", 405), ("reject", "--reject", 406)]:
@@ -89,9 +93,10 @@ def test_stats_over_http_remap_intercept(ats_factory: ATSFactory, services: Serv
     result = services.process("reset", [sys.executable, client, str(ats.http_port), "prometheus", "--reset"]).run()
     assert result.returncode == 0, result.output
 
-    result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
-    assert result.returncode == 0, result.output
-    assert "no more than the baseline" in result.stdout, "The requests should release their continuations."
+    if count_continuations:
+        result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
+        assert result.returncode == 0, result.output
+        assert "no more than the baseline" in result.stdout, "The requests should release their continuations."
 
     fetch(services, ats, "fetch-after-aborts", "json")
     wait_for_file_lines(ats.traffic_out, "Intercept finished on TS_EVENT_NET_ACCEPT_FAILED", 1)
