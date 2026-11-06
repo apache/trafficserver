@@ -65,21 +65,22 @@ public:
   int encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, uint64_t &header_block_len);
 
   /*
-   * This will emit either of two events below, on @a thread:
+   * This will emit either of two events below, on the thread decode() is
+   * called on:
    * - QPACK_EVENT_DECODE_COMPLETE (the event's cookie is &hdr)
    * - QPACK_EVENT_DECODE_FAILED (the event's cookie is &hdr, or nullptr if the
    *   decoder had already failed)
    *
-   * @a thread has to be the thread decode() is called on: QPACK keeps the
-   * results it has not delivered yet on a list that only that thread touches.
+   * Every decode() and cancel() on one QPACK has to run on the same thread:
+   * QPACK keeps the results it has not delivered yet on a list that only that
+   * thread touches.
    */
-  int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
-             EThread *thread = this_ethread());
+  int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont);
 
   /*
    * Stops reporting on the decodes for @a stream_id: a blocked decode is
    * dropped, and a result still in the event queue is never delivered. Call
-   * this, on the thread given to decode(), before the continuation or the
+   * this, on the thread decode() runs on, before the continuation or the
    * HTTPHdr given to decode() goes away. It sends nothing to the peer.
    *
    * Returns the number of blocked decodes and queued results dropped.
@@ -282,6 +283,10 @@ private:
 
   swoc::IntrusiveDList<DecodeReport::Linkage> _pending_reports;
   void _report(EThread *thread, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr);
+
+  // The thread the first decode() ran on. _blocked_list and _pending_reports
+  // are only safe to touch from it.
+  EThread *_decode_thread = nullptr;
 
   uint16_t _largest_known_received_index = 0;
   void     _update_largest_known_received_index_by_insert_count(uint16_t insert_count);

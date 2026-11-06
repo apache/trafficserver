@@ -281,13 +281,17 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
 }
 
 int
-QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
-              EThread *thread)
+QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont)
 {
   if (!cont || !header_block) {
     return -1;
   }
-  ink_assert(thread == this_ethread());
+
+  EThread *thread = this_ethread();
+  if (this->_decode_thread == nullptr) {
+    this->_decode_thread = thread;
+  }
+  ink_assert(thread == this->_decode_thread);
 
   if (this->_invalid) {
     this->_report(thread, cont, stream_id, QPACK_EVENT_DECODE_FAILED, nullptr);
@@ -322,6 +326,9 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
 int
 QPACK::cancel(uint64_t stream_id)
 {
+  // From any other thread this would race the decoding thread over both lists.
+  ink_assert(this->_decode_thread == nullptr || this->_decode_thread == this_ethread());
+
   int dropped = 0;
 
   for (DecodeReport *r = this->_pending_reports.head(); r != nullptr;) {

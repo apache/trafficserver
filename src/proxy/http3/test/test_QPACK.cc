@@ -205,9 +205,9 @@ public:
       return 0;
     }
 
-    this->_fixture->decode_result = this->_fixture->qpack.decode(
-      1, this->_header_block, this->_header_block_len, this->_fixture->hdr, &this->_fixture->event_handler, this_ethread());
-    this->_fixture->done = true;
+    this->_fixture->decode_result = this->_fixture->qpack.decode(1, this->_header_block, this->_header_block_len,
+                                                                 this->_fixture->hdr, &this->_fixture->event_handler);
+    this->_fixture->done          = true;
 
     // Nothing else is scheduled for this continuation, so it can retire here
     // rather than outliving the test on the stack.
