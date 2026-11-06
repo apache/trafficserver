@@ -121,10 +121,14 @@ def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceF
         "fetch-before", [sys.executable, directory / "fetch_stats.py",
                          str(ats.http_port), "json", f"--count={METRIC_COUNT}"]).run()
     assert result.returncode == 0, result.output
+    # The continuation count comes from the freelist dump, which has no
+    # INKContAllocator rows when allocations go straight to malloc.
+    count_continuations = not ats.has_feature("TS_USE_MALLOC_ALLOCATOR")
     baseline = ats.run_directory / "cont_baseline"
-    result = services.process("count-before",
-                              [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
-    assert result.returncode == 0, result.output
+    if count_continuations:
+        result = services.process(
+            "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
+        assert result.returncode == 0, result.output
 
     # Answer concurrent requests from one render.
     run(services, ats, "concurrent", "/metrics/concurrent")
@@ -146,10 +150,11 @@ def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceF
     for scenario in ["global-timeout", "global-handover", "global-fresh"]:
         run(services, ats_global, scenario, extra=[f"--wait-timeout-ms={GLOBAL_WAIT_TIMEOUT_MS}"])
 
-    result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
-    assert result.returncode == 0, result.output
-    assert "no more than the baseline" in result.stdout, \
-        "The requests, renders and watchdogs should release their continuations."
+    if count_continuations:
+        result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
+        assert result.returncode == 0, result.output
+        assert "no more than the baseline" in result.stdout, \
+            "The requests, renders and watchdogs should release their continuations."
 
     for process in (ats, ats_global):
         result = process.traffic_ctl("metric", "get", "plugin.stats_over_http.waiter_timeouts")
