@@ -35,6 +35,10 @@ namespace
 {
 DbgCtl dbg_ctl_qpack{"qpack"};
 
+// RFC 9114 Section 4.2.2: a field counts toward the field section size as its name and value lengths plus 32 octets, so the
+// limit also bounds the number of fields, including ones with an empty value.
+constexpr uint32_t FIELD_SIZE_OVERHEAD = 32;
+
 } // end anonymous namespace
 
 // qpack-05 Appendix A.
@@ -949,7 +953,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
   pos        += ret;
   remain_len -= ret;
 
-  uint32_t decoded_header_list_size = 0;
+  uint64_t decoded_header_list_size = 0;
 
   // Decode Instructions
   while (pos < header_block + header_block_len) {
@@ -971,7 +975,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
       break;
     }
 
-    decoded_header_list_size += header_len;
+    decoded_header_list_size += header_len + FIELD_SIZE_OVERHEAD;
     if (decoded_header_list_size > this->_max_field_section_size) {
       ret = -2;
       break;
