@@ -738,6 +738,60 @@ TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const char *val
 TSReturnCode TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, size_t *length,
                                    const unsigned char *map);
 
+/// Request double-quoted attribute escaping in TSStringHtmlEscape().
+constexpr bool TS_HTML_ESCAPE_USE_ATTRIBUTE_MODE = true;
+
+/**
+   Escape a UTF-8 string for inclusion in HTML, storing the escaped string in
+   the destination buffer. The output is NUL-terminated. The length parameter
+   is set to the escaped string length, excluding the terminating NUL, or zero
+   if escaping fails.
+
+   This follows the HTML fragment serialization escaping algorithm. Ampersand,
+   less-than, greater-than, and U+00A0 NO-BREAK SPACE characters are always
+   escaped. Double quotes are also escaped when @a use_attribute_mode is @c true.
+
+   @param[in] str string buffer to escape.
+   @param[in] str_len length of the string buffer, or -1 if @a str is
+     NUL-terminated.
+   @param[out] dst destination buffer. This must not overlap @a str.
+   @param[in] dst_size size of the destination buffer, including space for the
+     terminating NUL.
+   @param[out] length amount of data written to the destination buffer,
+     excluding the terminating NUL. This may be @c nullptr.
+   @param[in] use_attribute_mode whether to escape for a double-quoted HTML
+     attribute value.
+
+   @return @c TS_SUCCESS on success, @c TS_ERROR if @a str_len is less than
+     -1, the output length overflows, or @a dst is too small.
+ */
+TSReturnCode TSStringHtmlEscape(const char *str, int str_len, char *dst, size_t dst_size, size_t *length, bool use_attribute_mode);
+
+/**
+   Unescape the HTML character references emitted by TSStringHtmlEscape(),
+   storing the resulting UTF-8 string in the destination buffer. The output is
+   NUL-terminated. The length parameter is set to the unescaped string length,
+   excluding the terminating NUL, or zero if unescaping fails.
+
+   The character references @c &amp;, @c &nbsp;, @c &lt;, @c &gt;, and
+   @c &quot; are replaced by their corresponding characters. Other character
+   references are preserved. Unescaping is performed once, so an unescaped
+   character reference is not unescaped again.
+
+   @param[in] str string buffer to unescape.
+   @param[in] str_len length of the string buffer, or -1 if @a str is
+     NUL-terminated.
+   @param[out] dst destination buffer. This must not overlap @a str.
+   @param[in] dst_size size of the destination buffer, including space for the
+     terminating NUL.
+   @param[out] length amount of data written to the destination buffer,
+     excluding the terminating NUL. This may be @c nullptr.
+
+   @return @c TS_SUCCESS on success, @c TS_ERROR if @a str_len is less than
+     -1 or @a dst is too small.
+ */
+TSReturnCode TSStringHtmlUnescape(const char *str, int str_len, char *dst, size_t dst_size, size_t *length);
+
 /**
    Similar to TSStringPercentEncode(), but works on a URL object.
 
