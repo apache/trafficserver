@@ -104,6 +104,25 @@ A ``--`` now protects the token after it at every level of the command line, so 
 like a global option reaches the command that asked for it: ``traffic_ctl config set NAME -- -f``
 sets the record to ``-f`` instead of failing on ``--format``.
 
+Log Timestamps
+--------------
+
+:file:`diags.log`, :file:`traffic.out` and :file:`error.log` now stamp each line
+in one format, ISO 8601 in UTC with milliseconds, so lines can be matched
+across these logs and across hosts in different time zones. Scripts that parse
+these timestamps must be updated:
+
+====================================== ========================= ==============================
+Log                                    Before (local time)       Now (UTC)
+====================================== ========================= ==============================
+:file:`diags.log`, :file:`traffic.out` ``[Oct  8 18:58:01.123]`` ``[2026-10-08T18:58:01.123Z]``
+:file:`error.log`                      ``20261008.18h58m01s``    ``2026-10-08T18:58:01.123Z``
+====================================== ========================= ==============================
+
+Plugin text logs created by :func:`TSTextLogObjectCreate` with
+``TS_LOG_MODE_ADD_TIMESTAMP`` use the same format as :file:`error.log`. The
+names of rolled log files are unchanged.
+
 Security Hardening
 ------------------
 

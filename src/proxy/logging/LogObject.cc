@@ -29,6 +29,7 @@
 #include "iocore/eventsystem/Freer.h"
 #include "tscore/ink_platform.h"
 #include "tscore/CryptoHash.h"
+#include "tsutil/ts_iso8601.h"
 #include "proxy/logging/LogUtils.h"
 #include "proxy/logging/LogField.h"
 #include "proxy/logging/LogObject.h"
@@ -37,6 +38,7 @@
 #include "proxy/logging/Log.h"
 
 #include <algorithm>
+#include <chrono>
 #include <vector>
 #include <thread>
 #include <map>
@@ -465,7 +467,7 @@ LogObject::va_log(LogAccess *lad, const char *fmt, va_list ap)
   len = 0;
 
   if (this->m_flags & LOG_OBJECT_FMT_TIMESTAMP) {
-    len = LogUtils::timestamp_to_str(LogUtils::timestamp(), entry, MAX_ENTRY);
+    len = ts::format_iso8601_utc(std::chrono::system_clock::now(), entry, MAX_ENTRY);
     if (unlikely(len <= 0 || len >= MAX_ENTRY)) {
       return Log::FAIL;
     }
