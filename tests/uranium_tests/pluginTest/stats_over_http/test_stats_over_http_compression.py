@@ -42,7 +42,8 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
             # Over loopback, Linux autotunes the send buffer of the socket to the client to a few megabytes, more than the
             # whole prometheus body, so the intercept can finish its write before the client's reset arrives and never log
             # the EOS or ERROR that the test looks for.  This record sets SO_SNDBUF, which fixes the size and turns the
-            # autotuning off.  The kernel doubles the value, so the socket holds 32 KB, well under the 1.6 MB body or the 134 KB of it gzipped.
+            # autotuning off.  The kernel doubles the value, so the socket holds 32 KB, well under the 1.6 MB body or the
+            # 134 KB of it gzipped.
             "proxy.config.net.sock_send_buffer_size_in": 16384,
         })
     ats.start()
