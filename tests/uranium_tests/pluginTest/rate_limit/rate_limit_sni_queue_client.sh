@@ -54,11 +54,12 @@ run_for() {
 # 1. Holder: hold the single slot. Its stdin is a FIFO kept open on fd 3, so we end the
 #    holder deterministically in step 4 (closing fd 3 -> EOF -> clean TLS close -> FIN).
 fifo_dir="$(mktemp -d "${TMPDIR:-/tmp}/rl_holder.XXXXXX")"
+# The holder opens the FIFO in its own process, so removing it before that happens leaves no holder.
+trap 'rm -rf "$fifo_dir"' EXIT
 fifo="${fifo_dir}/fifo"
 mkfifo "$fifo"
 ${OSSL} <"$fifo" >/dev/null 2>&1 &
 exec 3<>"$fifo"
-rm -rf "$fifo_dir"
 sleep 3 # let the holder reserve the one slot
 
 # 2. One queued connection: enqueues because the slot is full, then closes while still parked
