@@ -424,6 +424,11 @@ SSLConfigParams::initialize(ConfigContext ctx)
   ssl_client_ctx_options |= SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION;
 #endif
 
+// Origins often skip close_notify, which BIO_s_fastopen hid from OpenSSL before 4.0; keep it a clean close.
+#ifdef SSL_OP_IGNORE_UNEXPECTED_EOF
+  ssl_client_ctx_options |= SSL_OP_IGNORE_UNEXPECTED_EOF;
+#endif
+
   server_max_early_data          = RecGetRecordInt("proxy.config.ssl.server.max_early_data").value_or(0);
   server_allow_early_data_params = RecGetRecordInt("proxy.config.ssl.server.allow_early_data_params").value_or(0);
 

@@ -11,8 +11,8 @@ Python tool that:
     a configurable response.
   - Drains remaining request data after responding so that ATS does not see
     a connection reset while still forwarding a POST body (avoids HTTP/2 502).
-  - Supports Content-Length bodies, chunked transfer encoding, and arbitrary
-    response delays.
+  - Supports Content-Length, chunked, close-delimited and truncated bodies,
+    TLS, and arbitrary response delays.
 
 Usage examples mapping to the original shell scripts:
 
@@ -46,6 +46,7 @@ Usage examples mapping to the original shell scripts:
 
 import argparse
 import socket
+import ssl
 import sys
 import time
 
@@ -77,7 +78,7 @@ def build_response(args):
         terminator = b'0\r\n\r\n'
         return status_line + headers + chunk + terminator
     else:
-        headers = f'Content-Length: {len(body)}\r\n'.encode()
+        headers = b'' if args.close_delimited else f'Content-Length: {len(body)}\r\n'.encode()
         for h in (args.header or []):
             headers += h.encode() + b'\r\n'
         headers += b'\r\n'
@@ -93,9 +94,23 @@ def serve_one(args):
     sock.listen(1)
 
     response = build_response(args)
+    context = None
+
+    if args.truncate:
+        response = response[:-args.truncate]
+    if args.tls:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        context.load_cert_chain(*args.tls)
 
     while True:
         conn, addr = sock.accept()
+        if context is not None:
+            try:
+                conn = context.wrap_socket(conn, server_side=True)
+            except OSError:
+                # Readiness probes disconnect without a handshake.
+                conn.close()
+                continue
         data = b''
         try:
             while True:
@@ -126,6 +141,11 @@ def serve_one(args):
             conn.sendall(response)
         except ConnectionError:
             pass
+
+        if args.close_delimited or args.truncate:
+            # ATS still expects body bytes, so it never closes first and there is nothing to drain.
+            conn.close()
+            break
 
         # Drain remaining request data (e.g. a large POST body that is still
         # being forwarded by ATS).  Closing without draining causes a TCP RST
@@ -158,6 +178,10 @@ def main():
     parser.add_argument('--body-size', type=int, default=0, help='Generate N bytes of filler body data')
     parser.add_argument('--chunked', action='store_true', help='Use chunked transfer encoding')
     parser.add_argument('--delay', '-d', type=float, default=0, help='Seconds to delay before sending response')
+    parser.add_argument(
+        '--close-delimited', action='store_true', help='Omit Content-Length and end the body by closing, with no TLS close_notify')
+    parser.add_argument('--truncate', type=int, default=0, metavar='N', help='Drop the last N bytes of the response, then close')
+    parser.add_argument('--tls', nargs=2, metavar=('CERT', 'KEY'), help='Serve TLS with this certificate and key')
 
     args = parser.parse_args()
     serve_one(args)
