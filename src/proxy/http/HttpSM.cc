@@ -2110,7 +2110,6 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
   switch (event) {
   case VC_EVENT_EOS:
-    log_server_close_with_origin(t_state, "Server closed connection while reading response header.");
     server_entry->eos = true;
     // If we have received any bytes for this transaction do not retry
     if (server_response_hdr_bytes > 0) {
@@ -2155,6 +2154,12 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.hdr_info.server_response.parse_resp(&http_parser, server_txn->get_remote_reader(), &bytes_used, server_entry->eos);
 
   server_response_hdr_bytes += bytes_used;
+
+  // The origin closed before sending a complete header. An empty response at
+  // EOS parses as DONE, so check for zero header bytes too.
+  if (server_entry->eos && (state != ParseResult::DONE || server_response_hdr_bytes == 0)) {
+    log_server_close_with_origin(t_state, "Server closed connection while reading response header.");
+  }
 
   // Don't allow HTTP 0.9 (unparsable headers) on resued connections.
   // And don't allow empty headers from closed connections
