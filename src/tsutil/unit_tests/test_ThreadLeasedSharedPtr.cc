@@ -163,10 +163,12 @@ TEST_CASE("ThreadLeasedSharedPtr readers see whole values during replacement", "
   while (started.load() < READERS && std::chrono::steady_clock::now() < deadline) {
     std::this_thread::yield();
   }
-  if (started.load() < READERS) {
+  // Joining the readers lets every one of them reach started, so decide before cleaning up.
+  bool const readers_started = started.load() == READERS;
+  if (!readers_started) {
     stop_readers();
   }
-  REQUIRE(started.load() == READERS);
+  REQUIRE(readers_started);
 
   for (int i = 1; i <= STORES; ++i) {
     ptr.store(std::make_shared<Tracked>(i, destroyed));
