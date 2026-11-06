@@ -426,8 +426,8 @@ class ATS:
         if self._process is None or self._process._process is None or self._process.return_code is not None:
             return
         self._exit_was_expected = True
-        os.killpg(self._process._process.pid, signal.SIGKILL)
-        self._process._process.wait(timeout=5)
+        if self._process.signal_group(signal.SIGKILL):
+            self._process._process.wait(timeout=5)
         self._process._close_streams()
 
     def send_signal(self, signal_number: int) -> None:

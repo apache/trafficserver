@@ -80,7 +80,9 @@ def test_tls_hooks_cert_resume(ats_factory: ATSFactory, services: ServiceFactory
     ats.set_ssl_multicert_yaml({"ssl_multicert": multicert})
     origin.start()
     ats.start()
-    cases = [("--tls-max 1.2", False), ("--tlsv1.3", False)]
+    cases = [("--tls-max 1.2", False)]
+    if curl.supports_tls13():
+        cases.append(("--tlsv1.3", False))
     if mode == "verify":
         cases.append(("--tls-max 1.2", True))
     for version, authenticated in cases:

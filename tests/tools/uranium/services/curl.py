@@ -60,23 +60,52 @@ class Curl:
         return feature.lower() in (result.stdout + result.stderr).lower()
 
     @staticmethod
+    def _active_libraries() -> dict[str, str]:
+        """Return the libraries on curl's version line, mapped from name to version.
+
+        A curl built with several TLS backends lists the inactive ones in
+        parentheses, so they are left out.
+        """
+
+        result = subprocess.run(("curl", "--version"), capture_output=True, text=True, check=False)
+        components = result.stdout.partition("\n")[0].split()
+        return {
+            name: version
+            for name, _, version in (component.partition("/") for component in components if not component.startswith("("))
+        }
+
+    @staticmethod
     def accepts_seclevel() -> bool:
         """Return whether curl's TLS library accepts an @SECLEVEL directive in ``--ciphers``.
 
         OpenSSL 1.1.0 and later, and its quictls fork, accept the directive.
         BoringSSL rejects the whole cipher list, so curl fails before the
-        TLS handshake. A curl built with several TLS backends lists the
-        inactive ones in parentheses, so only the active backend counts.
+        TLS handshake.
         """
 
-        result = subprocess.run(("curl", "--version"), capture_output=True, text=True, check=False)
-        for component in result.stdout.partition("\n")[0].split():
-            name, _, version = component.partition("/")
-            if name == "quictls":
-                return True
-            if name == "OpenSSL":
-                return version_tuple(version) >= (1, 1, 0)
-        return False
+        libraries = Curl._active_libraries()
+        if "quictls" in libraries:
+            return True
+        return "OpenSSL" in libraries and version_tuple(libraries["OpenSSL"]) >= (1, 1, 0)
+
+    @staticmethod
+    def supports_tls13() -> bool:
+        """Return whether curl can negotiate TLS 1.3 rather than fail ``--tlsv1.3`` with exit status 4.
+
+        OpenSSL added TLS 1.3 in 1.1.1. LibreSSL hides ``TLS1_3_VERSION``
+        before 3.4.0, so a curl built against an older release, such as the
+        one macOS ships, lacks it. Apple's SecureTransport stops at TLS 1.2.
+        Other backends are assumed capable.
+        """
+
+        libraries = Curl._active_libraries()
+        if "SecureTransport" in libraries:
+            return False
+        if "OpenSSL" in libraries:
+            return version_tuple(libraries["OpenSSL"]) >= (1, 1, 1)
+        if "LibreSSL" in libraries:
+            return version_tuple(libraries["LibreSSL"]) >= (3, 4, 0)
+        return True
 
     def get(
         self,
