@@ -21,7 +21,7 @@
   limitations under the License.
  */
 
-#include <ctime>
+#include <chrono>
 #include <mutex>
 #include <map>
 #include <cstring>
@@ -33,6 +33,7 @@
 
 #include "tsutil/ts_diag_levels.h"
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/ts_iso8601.h"
 #include "tsutil/DbgCtl.h"
 #include "tsutil/Assert.h"
 
@@ -304,13 +305,9 @@ struct DiagTimestamp {
 swoc::BufferWriter &
 bwformat(swoc::BufferWriter &w, [[maybe_unused]] swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
 {
-  auto                        epoch = std::chrono::system_clock::to_time_t(ts.ts);
-  swoc::LocalBufferWriter<48> lw;
+  char buf[ts::ISO8601_TIMESTAMP_LEN + 1];
 
-  ctime_r(&epoch, lw.aux_data());
-  lw.commit(19); // keep only leading text.
-  lw.print(".{:03}", std::chrono::time_point_cast<std::chrono::milliseconds>(ts.ts).time_since_epoch().count() % 1000);
-  w.write(lw.view().substr(4));
+  w.write(buf, ts::format_iso8601_utc(ts.ts, buf, sizeof(buf)));
 
   return w;
 }
