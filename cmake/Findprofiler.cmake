@@ -29,11 +29,7 @@
 #
 
 find_library(profiler_LIBRARY NAMES profiler)
-find_path(
-  profiler_INCLUDE_DIR
-  NAMES profiler.h
-  PATH_SUFFIXES gperftools
-)
+find_path(profiler_INCLUDE_DIR NAMES profiler.h PATH_SUFFIXES gperftools)
 
 mark_as_advanced(profiler_FOUND profiler_LIBRARY profiler_INCLUDE_DIR)
 
