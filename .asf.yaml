@@ -59,6 +59,7 @@ github:
           - Format
           - Debian
           - Docs
+          - Doxygen
           - Fedora
           - RAT
           - Ubuntu
