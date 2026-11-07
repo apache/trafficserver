@@ -22,6 +22,7 @@
  */
 
 #include "P_SSLCertLookup.h"
+#include "P_QUICNetVConnection.h"
 #include "P_SSLConfig.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 #include "iocore/net/TLSSNISupport.h"
@@ -237,6 +238,16 @@ servername_from_client_hello(SSL *ssl)
 int
 quic_client_hello_callback(SSL *ssl, int *, void *)
 {
+  // OpenSSL can process the ClientHello before SSL_accept_connection() hands the connection to ATS.
+  // Retry once the QUIC NetVC exists so that it can run the ClientHello hooks.
+  auto *vc = dynamic_cast<QUICNetVConnection *>(TLSEventSupport::getInstance(ssl));
+  if (vc == nullptr) {
+    return SSL_CLIENT_HELLO_RETRY;
+  }
+  if (int const result = vc->run_client_hello_hooks(ssl); result != SSL_CLIENT_HELLO_SUCCESS) {
+    return result;
+  }
+
   auto const servername = servername_from_client_hello(ssl);
   remember_quic_sni(ssl, servername);
 
