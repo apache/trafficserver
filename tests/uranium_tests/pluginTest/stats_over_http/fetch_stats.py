@@ -124,8 +124,13 @@ def fetch_records(args: argparse.Namespace) -> int:
 
 
 def reset_after_first_byte(args: argparse.Namespace) -> int:
+    '''Reset the connection after the first response byte.
+
+    The caller must give Traffic Server a small proxy.config.net.sock_send_buffer_size_in.  Otherwise the kernel can take
+    the whole body before the reset arrives, and the intercept finishes on WRITE_COMPLETE instead of EOS or ERROR.
+    '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # A small receive window keeps most of the body in Traffic Server when the client goes away.
+    # A small receive window keeps the client from taking more than a few KB of the body.
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
     sock.settimeout(60)
     sock.connect(('127.0.0.1', args.port))
