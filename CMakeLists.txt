@@ -159,6 +159,7 @@ option(ENABLE_MALLOC_ALLOCATOR "Use direct malloc allocator over freelist alloca
 option(ENABLE_ALLOCATOR_METRICS "Enable metrics for Allocators (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
 option(ENABLE_DOXYGEN "Build Doxygen API documentation (default OFF)")
+option(DOXYGEN_CHECK_ONLY "Have the doxygen target check documentation without generating HTML (default OFF)")
 option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
 if(ENABLE_DISK_FAILURE_TESTS)
   add_compile_definitions("AIO_FAULT_INJECTION")
