@@ -113,3 +113,8 @@ documents ATS headers and core sources, using the configured QUIC backend and
 excluding tests and obsolete sources. It runs only when explicitly requested;
 enabling it does not add it to the default build. Builds with
 ``ENABLE_DOXYGEN=OFF`` do not require the Doxygen documentation dependencies.
+
+To check the documentation comments without producing the HTML reference,
+also pass ``-DDOXYGEN_CHECK_ONLY=ON``. The target then generates only the XML,
+which is much faster and reports the same comment warnings, but it does not
+render graphs, so errors in ``\dot`` blocks are not reported.
