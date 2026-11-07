@@ -16,49 +16,39 @@
 #  limitations under the License.
 #
 
-# I had to disable this on RHEL7, because libunwind is not properly built for -fPIE it seems
 %if %{?fedora}0 > 0  || %{?rhel}0 >= 80
 %define _hardened_build 1
 %endif
 
 # This can be overridden via command line option, e.g.  --define "release 12"
 %{!?release: %define release 1}
+%{!?_unitdir: %define _unitdir /usr/lib/systemd/system}
 
-Summary:	Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache
-Name:		trafficserver
-Version:	10.0.0
-Release:	%{release}%{?dist}
-License:	Apache Software License 2.0 (AL2)
-Group:		System Environment/Daemons
-URL:		https://trafficserver.apache.org/
+Summary:    Apache Traffic Server, a reverse, forward and transparent HTTP proxy cache
+Name:        trafficserver
+Version:    10.0.0
+Release:    %{release}%{?dist}
+License:    Apache-2.0
+Group:        System Environment/Daemons
+URL:        https://trafficserver.apache.org/
 
-Source0:	http://www.apache.org/dist/%{name}/%{name}-%{version}.tar.bz2
+Source0:    https://downloads.apache.org/trafficserver/%{name}-%{version}.tar.bz2
 
-BuildRequires:	expat-devel hwloc-devel openssl-devel pcre-devel zlib-devel xz-devel
-BuildRequires:  libzstd-devel lz4-devel
-BuildRequires:  libcurl-devel ncurses-devel
-BuildRequires:	gcc gcc-c++ perl-ExtUtils-MakeMaker
-BuildRequires:  libcap-devel
+BuildRequires:    cmake >= 3.20 ninja-build gcc gcc-c++
+BuildRequires:    hwloc-devel openssl-devel pcre2-devel zlib-devel xz-devel
+BuildRequires:    libzstd-devel lz4-devel libcurl-devel ncurses-devel libcap-devel
+BuildRequires:    pkgconfig systemd-rpm-macros
 
-Requires:	expat hwloc openssl pcre zlib xz libcurl ncurses pkgconfig
-Requires:	libcap
+Requires:    hwloc openssl pcre2 zlib xz libcurl ncurses pkgconfig libcap
+Requires:    libzstd lz4 systemd
+Requires(postun): systemd
 
-# Can't seem to use libunwind on RHEL7 or older
 %if %{?fedora}0 > 0  || %{?rhel}0 >= 80
 BuildRequires:  libunwind-devel
-%else
-%define DISABLE_UNWIND "--disable-unwind"
-%endif
-
-%if %{?fedora}0 > 0  || %{?rhel}0 >= 70
-Requires:	systemd
-Requires(postun): systemd
-%else
-Requires:	initscripts
 %endif
 
 %description
-Apache Traffic Server is an OpenSource HTTP / HTTPS / HTTP/2 / QUIC reverse,
+Apache Traffic Server is an OpenSource HTTP / HTTPS / HTTP/2 / HTTP/3 reverse,
 forward and transparent proxy and cache.
 
 %package devel
@@ -67,44 +57,41 @@ Group: Development/Libraries
 Requires: trafficserver = %{version}-%{release}
 
 %description devel
-Include files and various tools for ATS developers.
-
-%package perl
-Summary: ATS management Perl bindings
-Group: Development/Libraries
-Requires: trafficserver = %{version}-%{release}
-
-%description perl
-This package contains some Perl APIs for talking to the ATS management port.
+Include files and libraries for ATS developers.
 
 %prep
-
 %setup -q
 
 %build
-%configure \
-  --enable-layout=Gentoo \
-  --libdir=%{_libdir}/trafficserver \
-  --libexecdir=%{_libdir}/trafficserver/plugins \
-  --sysconfdir=%{_sysconfdir}/trafficserver \
-  --enable-experimental-plugins \
-  --with-user=ats --with-group=ats \
-  %{DISABLE_UNWIND} \
-  --disable-silent-rules
+%cmake -B "%{_vpath_builddir}" -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_INSTALL_SYSCONFDIR=%{_sysconfdir}/trafficserver \
+  -DCMAKE_INSTALL_LIBDIR=%{_libdir}/trafficserver \
+  -DCMAKE_INSTALL_LIBEXECDIR=%{_libdir}/trafficserver/plugins \
+  -DCMAKE_INSTALL_RUNSTATEDIR=/run/trafficserver \
+  -DCMAKE_INSTALL_LOGDIR=%{_localstatedir}/log/trafficserver \
+  -DCMAKE_INSTALL_CACHEDIR=%{_localstatedir}/cache/trafficserver \
+  -DBUILD_EXPERIMENTAL_PLUGINS=ON \
+  -DWITH_USER=ats \
+  -DWITH_GROUP=ats
 
-make %{?_smp_mflags} V=1
+%cmake_build
 
 %install
-rm -rf %{buildroot}
-make DESTDIR=%{buildroot} install
+%cmake_install
 
-%if %{?fedora}0 > 0 || %{?rhel}0 >= 70
-mkdir -p %{buildroot}/lib/systemd/system
-cp rc/trafficserver.service %{buildroot}/lib/systemd/system
-%else
-mkdir -p %{buildroot}/etc/init.d
-mv %{buildroot}%{_bindir}/trafficserver %{buildroot}/etc/init.d
-%endif
+mkdir -p %{buildroot}%{_unitdir}
+if [ -f "%{_vpath_builddir}/rc/trafficserver.service" ]; then
+    install -m 0644 "%{_vpath_builddir}/rc/trafficserver.service" %{buildroot}%{_unitdir}/trafficserver.service
+elif [ -f "%{__cmake_builddir}/rc/trafficserver.service" ]; then
+    install -m 0644 "%{__cmake_builddir}/rc/trafficserver.service" %{buildroot}%{_unitdir}/trafficserver.service
+elif [ -f "build/rc/trafficserver.service" ]; then
+    install -m 0644 "build/rc/trafficserver.service" %{buildroot}%{_unitdir}/trafficserver.service
+fi
+
+mkdir -p %{buildroot}/run/trafficserver
+mkdir -p %{buildroot}%{_localstatedir}/log/trafficserver
+mkdir -p %{buildroot}%{_localstatedir}/cache/trafficserver
 
 # Remove libtool archives and static libs
 find %{buildroot} -type f -name "*.la" -delete
@@ -114,78 +101,55 @@ find %{buildroot} -type f -name "*.in" -delete
 find %{buildroot} -type f -name ".packlist" -delete
 find %{buildroot} -type f -name "plugin_*.so" -delete
 
-
-# ToDo: Why is the Perl stuff ending up in the wrong place ??
-mkdir -p %{buildroot}%{_datadir}/perl5
-mv %{buildroot}/usr/lib/perl5/* %{buildroot}%{_datadir}/perl5
-
-mkdir -p %{buildroot}/run/trafficserver
-
-mkdir -p %{buildroot}%{_datadir}/pkgconfig
-mv %{buildroot}%{_libdir}/trafficserver/pkgconfig/trafficserver.pc %{buildroot}%{_datadir}/pkgconfig
-
 %post
 /sbin/ldconfig
-%if %{?fedora}0 > 0 || %{?rhel}0 >= 70
 %systemd_post trafficserver.service
-%endif
 
-# These UID/GIDs are retained from the upstream Fedora .spec, not sure if there's a registry for these?
 %pre
 getent group ats >/dev/null || groupadd -r ats -g 176 &>/dev/null
 getent passwd ats >/dev/null || useradd -r -u 176 -g ats -d / -s /sbin/nologin -c "Apache Traffic Server" ats &>/dev/null
 
 %preun
-%if %{?fedora}0 > 0 || %{?rhel}0 >= 70
 %systemd_preun trafficserver.service
-%endif
 
 %postun
 /sbin/ldconfig
-
-%if %{?fedora}0 > 0 || %{?rhel}0 >= 70
 %systemd_postun_with_restart trafficserver.service
-%endif
 
 %files
 %defattr(-, root, root, -)
 %{!?_licensedir:%global license %%doc}
 %license LICENSE
 %doc README CHANGELOG* NOTICE STATUS
-%config(noreplace) /etc/trafficserver/*
+%dir %{_sysconfdir}/trafficserver
+%config(noreplace) %{_sysconfdir}/trafficserver/*
 %{_bindir}/traffic*
-%{_bindir}/tspush
 %dir %{_libdir}/trafficserver
 %dir %{_libdir}/trafficserver/plugins
-%{_libdir}/trafficserver/libts*.so*
+%{_libdir}/trafficserver/lib*.so*
 %{_libdir}/trafficserver/plugins/*.so
-
-%if %{?fedora}0 > 0 || %{?rhel}0 >= 70
-/lib/systemd/system/trafficserver.service
-%else
-%config(noreplace) /etc/init.d/trafficserver
-%endif
+%{_unitdir}/trafficserver.service
 
 # Change the default file and directory permissions
-%attr(0755, ats, ats) %dir /etc/trafficserver
-%attr(0755, ats, ats) %dir /var/log/trafficserver
+%attr(0755, ats, ats) %dir %{_sysconfdir}/trafficserver
+%attr(0755, ats, ats) %dir %{_localstatedir}/log/trafficserver
 %attr(0755, ats, ats) %dir /run/trafficserver
-%attr(0755, ats, ats) %dir /var/cache/trafficserver
-%attr(0644, ats, ats) /etc/trafficserver/*.config
-%attr(0644, ats, ats) /etc/trafficserver/*.yaml
-
-%files perl
-%defattr(-,root,root,-)
-%{_mandir}/man3/*
-%{_datadir}/perl5/Apache/*
+%attr(0755, ats, ats) %dir %{_localstatedir}/cache/trafficserver
+%attr(0644, ats, ats) %config(noreplace) %{_sysconfdir}/trafficserver/*.config
+%attr(0644, ats, ats) %config(noreplace) %{_sysconfdir}/trafficserver/*.yaml
 
 %files devel
 %defattr(-,root,root,-)
-%{_includedir}/ts
-%{_includedir}/tscpp
-%{_datadir}/pkgconfig/trafficserver.pc
+%{_includedir}/*
 
 %changelog
+* Tue Nov 03 2026 Apache Traffic Server Contributors <dev@trafficserver.apache.org> - 10.0.0-1
+- Modernize build system to CMake (#12028)
+- Update dependencies: PCRE2, CMake 3.20+, ninja-build
+- Drop obsolete Autotools flags and Gentoo layout
+- Remove deprecated Perl sub-package
+- Fix systemd unit installation for CMake out-of-source builds
+
 * Wed Sep 19 2018 Bryan Call <bcall@apache.org> - 8.0.0-1
 - Changed the owner of the configuration files to ats
 - Include files for the C++ APIs moved
