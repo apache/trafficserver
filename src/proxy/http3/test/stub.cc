@@ -39,7 +39,7 @@ QPACK::update_max_blocking_streams(uint16_t /* max_blocking_streams ATS_UNUSED *
 
 #include "proxy/http3/Http3Session.h"
 QPACK *
-Http3Session::remote_qpack()
+Http3Session::local_qpack()
 {
   return nullptr;
 }
