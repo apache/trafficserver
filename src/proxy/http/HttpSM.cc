@@ -1398,6 +1398,11 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
       c = tunnel.get_consumer(t_info->vc);
       ink_assert(c != nullptr);
     }
+    // The tunnel can complete while the cache write for the transformed copy
+    // is still open (see state_cache_open_write). On this error path the
+    // transformed copy is not stored, so cancel that open write. Otherwise its
+    // callback arrives after the error response has started.
+    pending_action = nullptr;
     vc_table.cleanup_entry(t_info->entry);
     t_info->entry = nullptr;
     // In Case 1: error due to transform write, and when the tunnel
@@ -2619,6 +2624,17 @@ HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(state_cache_open_write, event);
 
+  // The tunnel that feeds the response transform can complete while the cache
+  // write for the transformed copy is still open. This event does not come from
+  // the cache, so the open write is still pending. Do not touch pending_action
+  // here: an assignment cancels the pending open write, its callback is then
+  // dropped, and the transaction stalls until the client times out.
+  if (event == HTTP_TUNNEL_EVENT_DONE) {
+    ink_release_assert(t_state.next_action == HttpTransact::StateMachineAction_t::CACHE_ISSUE_WRITE_TRANSFORM);
+    state_common_wait_for_transform_read(&transform_info, &HttpSM::tunnel_handler, event, data);
+    return 0;
+  }
+
   // The cache action has already delivered this callback, so drop it before any
   // thread adjustment below can assign over it. Assigning to pending_action
   // cancels whatever it holds, and canceling the cache SM's reusable captive
@@ -2704,19 +2720,6 @@ HttpSM::state_cache_open_write(int event, void *data)
     t_state.cache_info.write_lock_state  = HttpTransact::CacheWriteLock_t::READ_RETRY;
     break;
 
-  case HTTP_TUNNEL_EVENT_DONE:
-    // In the case where we have issued a cache write for the
-    //  transformed copy, the tunnel from the origin server to
-    //  the transform may complete while we are waiting for
-    //  the cache write.  If this is the case, forward the event
-    //  to the transform read state as it will know how to
-    //  handle it
-    if (t_state.next_action == HttpTransact::StateMachineAction_t::CACHE_ISSUE_WRITE_TRANSFORM) {
-      state_common_wait_for_transform_read(&transform_info, &HttpSM::tunnel_handler, event, data);
-
-      return 0;
-    }
-  // Fallthrough
   default:
     ink_release_assert(0);
   }
