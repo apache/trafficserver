@@ -61,6 +61,13 @@ urtest:
     log_validation:
       error_log:
         gold_file: "gold/connect_down_policy_4_error_log.gold"
+        contains:
+          - expression: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z CONNECT'
+            description: error.log lines start with an ISO 8601 UTC stamp
+      diags_log:
+        contains:
+          - expression: '^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]\s'
+            description: diags.log lines start with an ISO 8601 UTC stamp
 
 sessions:
 - transactions:
