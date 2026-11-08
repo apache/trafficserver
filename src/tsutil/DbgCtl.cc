@@ -303,11 +303,11 @@ struct DiagTimestamp {
 };
 
 swoc::BufferWriter &
-bwformat(swoc::BufferWriter &w, [[maybe_unused]] swoc::bwf::Spec const &spec, DiagTimestamp const &ts)
+bwformat(swoc::BufferWriter &w, [[maybe_unused]] swoc::bwf::Spec const &spec, DiagTimestamp const &stamp)
 {
   char buf[ts::ISO8601_TIMESTAMP_LEN + 1];
 
-  w.write(buf, ts::format_iso8601_utc(ts.ts, buf, sizeof(buf)));
+  w.write(buf, ts::format_iso8601_utc(stamp.ts, buf, sizeof(buf)));
 
   return w;
 }
