@@ -32,8 +32,6 @@ namespace ts
 size_t
 format_iso8601_utc(std::chrono::system_clock::time_point tp, char *buf, size_t size)
 {
-  static constexpr size_t DATE_TIME_LEN = sizeof("YYYY-MM-DDTHH:MM:SS") - 1;
-
   if (size <= ISO8601_TIMESTAMP_LEN) {
     return 0;
   }
@@ -48,12 +46,16 @@ format_iso8601_utc(std::chrono::system_clock::time_point tp, char *buf, size_t s
     return 0;
   }
 
-  // A year outside four digits would make the output longer than ISO8601_TIMESTAMP_LEN.
-  if (strftime(buf, size, "%Y-%m-%dT%H:%M:%S", &utc) != DATE_TIME_LEN) {
+  int year = utc.tm_year + 1900;
+
+  // The format has room for exactly four year digits.
+  if (year < 0 || year > 9999) {
     return 0;
   }
 
-  snprintf(buf + DATE_TIME_LEN, size - DATE_TIME_LEN, ".%03dZ", static_cast<int>(ms));
+  // Built from the fields rather than with strftime, because %Y does not zero pad years before 1000 in every C library.
+  snprintf(buf, size, "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", year, utc.tm_mon + 1, utc.tm_mday, utc.tm_hour, utc.tm_min, utc.tm_sec,
+           static_cast<int>(ms));
 
   return ISO8601_TIMESTAMP_LEN;
 }

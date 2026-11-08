@@ -67,6 +67,19 @@ TEST_CASE("ISO 8601 UTC timestamps", "[iso8601]")
     REQUIRE(format(-1) == "1969-12-31T23:59:59.999Z");
   }
 
+  SECTION("years are zero padded to four digits")
+  {
+    REQUIRE(format(-30'627'458'703'211) == "0999-06-15T12:34:56.789Z");
+  }
+
+  SECTION("years outside 0000-9999 are rejected")
+  {
+    REQUIRE(format(-62'167'219'200'000) == "0000-01-01T00:00:00.000Z");
+    REQUIRE(format(-62'167'219'200'001).empty());
+    REQUIRE(format(253'402'300'799'999) == "9999-12-31T23:59:59.999Z");
+    REQUIRE(format(253'402'300'800'000).empty());
+  }
+
   SECTION("NUL terminated")
   {
     char buf[ts::ISO8601_TIMESTAMP_LEN + 1];

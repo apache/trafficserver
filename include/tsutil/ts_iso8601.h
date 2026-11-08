@@ -41,7 +41,7 @@ inline constexpr size_t ISO8601_TIMESTAMP_LEN = 24;
  * @param buf Destination buffer.
  * @param size Size of @a buf, which must be greater than @c ISO8601_TIMESTAMP_LEN.
  * @return The number of characters written, not counting the NUL, or 0 if @a buf is too small or
- * the year is outside 0000-9999.
+ * the year in UTC is outside 0000-9999.
  */
 size_t format_iso8601_utc(std::chrono::system_clock::time_point tp, char *buf, size_t size);
 
