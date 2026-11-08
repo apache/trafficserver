@@ -120,7 +120,7 @@ Log                                    Before (local time)       Now (UTC)
 :file:`error.log`                      ``20261008.11h58m01s``    ``2026-10-08T18:58:01.123Z``
 ====================================== ========================= ==============================
 
-Plugin text logs created by :func:`TSTextLogObjectCreate` with
+Plugin text logs created by :cpp:func:`TSTextLogObjectCreate` with
 ``TS_LOG_MODE_ADD_TIMESTAMP`` use the same format as :file:`error.log`. The
 names of rolled log files are unchanged and still use local time, even though
 the lines inside them are now in UTC.
