@@ -18,8 +18,8 @@ from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory, wait_f
 
 
 def configure_ats(
-        suffix: str, system_destination: str, custom_destination: str, *, _ats_factory: ATSFactory,
-        _services: ServiceFactory) -> ATS:
+    suffix: str, system_destination: str, custom_destination: str, *, _ats_factory: ATSFactory, _services: ServiceFactory
+) -> ATS:
     """Configure system logs, a sentinel log, and one custom log.
 
     :param suffix: Unique suffix for the Traffic Server process name.
@@ -36,7 +36,8 @@ def configure_ats(
         f"ts-{suffix}",
         disable_log_checks=system_destination in ("stdout", "stderr"),
         capture_traffic_out=system_destination not in ("stdout", "stderr"),
-        command="traffic_manager")
+        command="traffic_manager",
+    )
     closed_port = _services.allocate_port()
     ats.records.update(
         {
@@ -44,38 +45,32 @@ def configure_ats(
             "proxy.config.diags.debug.tags": "log",
             "proxy.config.log.periodic_tasks_interval": 1,
             "proxy.config.log.max_secs_per_buffer": 1,
-            "proxy.node.config.manager_log_filename":
-                (system_destination.replace("diags", "manager") if system_destination.endswith(".log") else system_destination),
+            "proxy.node.config.manager_log_filename": (
+                system_destination.replace("diags", "manager") if system_destination.endswith(".log") else system_destination
+            ),
             "proxy.config.diags.logfile.filename": system_destination,
-            "proxy.config.error.logfile.filename":
-                (system_destination.replace("diags", "error") if system_destination.endswith(".log") else system_destination),
-        })
+            "proxy.config.error.logfile.filename": (
+                system_destination.replace("diags", "error") if system_destination.endswith(".log") else system_destination
+            ),
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map /server/down http://127.0.0.1:{closed_port}",
             "map / https://trafficserver.apache.org @action=deny",
-        ))
+        )
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "url_and_return_code",
-                        "format": "%<cqu>: %<pssc>"
-                    }],
-                    "logs":
-                        [
-                            {
-                                "filename": "sentinel",
-                                "format": "url_and_return_code"
-                            },
-                            {
-                                "filename": custom_destination,
-                                "format": "url_and_return_code"
-                            },
-                        ],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "url_and_return_code", "format": "%<cqu>: %<pssc>"}],
+                "logs": [
+                    {"filename": "sentinel", "format": "url_and_return_code"},
+                    {"filename": custom_destination, "format": "url_and_return_code"},
+                ],
+            }
+        }
+    )
     return ats
 
 
@@ -90,9 +85,7 @@ def send_traffic(ats: ATS, *, _curl: Curl) -> None:
     ats.start()
     result = _curl.run_for(
         ats,
-        (
-            f"'http://127.0.0.1:{ats.http_port}/some/path' --verbose --next "
-            f"'http://127.0.0.1:{ats.http_port}/server/down' --verbose"),
+        (f"'http://127.0.0.1:{ats.http_port}/some/path' --verbose --next 'http://127.0.0.1:{ats.http_port}/server/down' --verbose"),
     )
     assert result.returncode == 0, result.output
     wait_for_file_lines(ats.log_directory / "sentinel.log", r"^http://127\.0\.0\.1:\d+/: 502$", 1)
@@ -114,7 +107,8 @@ def assert_logs(ats: ATS, system_destination: str, custom_destination: str) -> N
         manager_content = system_content
     else:
         manager_content = wait_for_file_lines(
-            ats.log_directory / system_destination.replace("diags", "manager"), "Launching ts process", 1)
+            ats.log_directory / system_destination.replace("diags", "manager"), "Launching ts process", 1
+        )
         system_content = wait_for_file_lines(
             ats.log_directory / system_destination,
             "logging.yaml finished loading",
@@ -143,8 +137,14 @@ def assert_logs(ats: ATS, system_destination: str, custom_destination: str) -> N
 
 
 def run_case(
-        suffix: str, system_destination: str, custom_destination: str, *, _ats_factory: ATSFactory, _curl: Curl,
-        _services: ServiceFactory) -> None:
+    suffix: str,
+    system_destination: str,
+    custom_destination: str,
+    *,
+    _ats_factory: ATSFactory,
+    _curl: Curl,
+    _services: ServiceFactory,
+) -> None:
     """Run and verify one destination combination.
 
     :param suffix: Unique suffix for the Traffic Server process name.

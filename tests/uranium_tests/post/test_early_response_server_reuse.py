@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Exercise the 9.2 origin early-response release paths."""
+
 import re
 import sys
 from pathlib import Path
@@ -38,7 +39,8 @@ def test_early_response_server_reuse(ats: ATS, services: ServiceFactory) -> None
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.exec_thread.limit": 1,
             "proxy.config.exec_thread.autoconfig": 0,
-        })
+        }
+    )
     origin.start()
     ats.start()
     for scenario, expected in (

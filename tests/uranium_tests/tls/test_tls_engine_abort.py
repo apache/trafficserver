@@ -36,7 +36,8 @@ def test_tls_engine_abort(ats_factory: ATSFactory, services: ServiceFactory, cur
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "ssl",
-        })
+        }
+    )
     origin.start()
     ats.start()
     aborted = ats.run(sys.executable, Path(__file__).with_name("tls_engine_abort.py"), str(ats.https_port), "30", timeout=60)
@@ -46,7 +47,8 @@ def test_tls_engine_abort(ats_factory: ATSFactory, services: ServiceFactory, cur
     # from the healthy request below.
     wait_for_file_lines(ats.traffic_out, "Send signal to ", 1)
     result = curl.run_for(
-        ats, f"--insecure --verbose --header uuid:basic --header host:example.com https://127.0.0.1:{ats.https_port}/", timeout=30)
+        ats, f"--insecure --verbose --header uuid:basic --header host:example.com https://127.0.0.1:{ats.https_port}/", timeout=30
+    )
     assert result.returncode == 0, result.output
     assert re.search(r"HTTP/(2|1\.1) 200", result.stderr), result.output
     assert result.stdout == "ok", result.output

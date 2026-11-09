@@ -27,10 +27,7 @@ import socket
 import sys
 import threading
 
-EARLY_RESPONSE = (b'HTTP/1.1 420 Be Calm\r\n'
-                  b'Content-Length: 0\r\n'
-                  b'Connection: keep-alive\r\n'
-                  b'\r\n')
+EARLY_RESPONSE = b'HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n'
 
 # Cacheable but immediately stale, so the next request for it revalidates.
 CACHEABLE_BODY = b'cached-body\n'
@@ -40,14 +37,16 @@ CACHEABLE_RESPONSE = (
     b'Last-Modified: Fri, 08 Aug 2025 08:08:08 GMT\r\n'
     b'Content-Length: ' + str(len(CACHEABLE_BODY)).encode() + b'\r\n'
     b'Connection: keep-alive\r\n'
-    b'\r\n' + CACHEABLE_BODY)
+    b'\r\n' + CACHEABLE_BODY
+)
 
 EARLY_NOT_MODIFIED = (
     b'HTTP/1.1 304 Not Modified\r\n'
     b'Cache-Control: max-age=0\r\n'
     b'Last-Modified: Fri, 08 Aug 2025 08:08:08 GMT\r\n'
     b'Connection: keep-alive\r\n'
-    b'\r\n')
+    b'\r\n'
+)
 
 REQUEST_LINE = re.compile(rb'^[A-Z]+ \S+ HTTP/1\.[01]\r?$', re.MULTILINE)
 
@@ -143,7 +142,8 @@ def serve(conn: socket.socket, conn_id: int) -> None:
                     b'Content-Length: 0\r\n'
                     b'Connection: keep-alive\r\n'
                     b'X-Origin-Conn: ' + str(conn_id).encode() + b'\r\n'
-                    b'\r\n')
+                    b'\r\n'
+                )
 
 
 def main() -> int:

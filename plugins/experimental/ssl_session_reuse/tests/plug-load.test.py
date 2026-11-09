@@ -36,10 +36,12 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 
 # add response to the server dictionary
 server.addResponse("sessionfile.log", request_header, response_header)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': f'{pluginName}',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': f'{pluginName}',
+    }
+)
 
 ts.Disk.plugin_config.AddLine(f'# {path}/{pluginName}.so {configFile}')
 ts.Disk.remap_config.AddLine(f'map http://www.example.com http://127.0.0.1:{server.Variables.Port}')

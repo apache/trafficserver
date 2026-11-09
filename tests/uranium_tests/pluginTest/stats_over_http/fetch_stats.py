@@ -115,7 +115,8 @@ def main() -> int:
     parser.add_argument('--count', type=int, default=0, help='the --count given to test_metrics.so')
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
-        '--reset', action='store_true', help='reset the connection after the first response byte instead of verifying the body')
+        '--reset', action='store_true', help='reset the connection after the first response byte instead of verifying the body'
+    )
     mode.add_argument('--reject', action='store_true', help='send a request that Traffic Server rejects with a 406')
     args = parser.parse_args()
     if args.reset:

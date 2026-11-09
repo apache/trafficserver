@@ -48,7 +48,7 @@ def queue_body(connection: H2Connection, stream_id: int, path: str) -> None:
     frame_size = connection.max_outbound_frame_size
     for offset in range(0, len(body), frame_size):
         last = offset + frame_size >= len(body)
-        connection.send_data(stream_id, body[offset:offset + frame_size], end_stream=last and path == "/data-end-stream")
+        connection.send_data(stream_id, body[offset : offset + frame_size], end_stream=last and path == "/data-end-stream")
     if path == "/empty-end-stream":
         connection.end_stream(stream_id)
     elif path == "/trailers":

@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Retain all three release-branch ACL tables and the PROXY address case."""
+
 from pathlib import Path
 import pytest
 from tools.uranium.services import ATSFactory, ServiceFactory
@@ -29,7 +30,8 @@ ACL_CASES = [
         "@action=allow @src_ip=1.2.3.4 @method=GET @method=POST",
         expected_responses=(200, 200, 403, 403, 403),
         deactivate_ip_allow=True,
-        proxy_protocol=True),
+        proxy_protocol=True,
+    ),
     *combination_acl_cases(all_acl_combination_tests, prefix="combination"),
     *combination_acl_cases(all_deactivate_ip_allow_tests, prefix="deactivate"),
     *combination_acl_cases(named_filter_combination_tests, prefix="named"),

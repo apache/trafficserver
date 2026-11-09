@@ -46,10 +46,7 @@ def configure_origin(services: ServiceFactory, name: str, host: str, body: str) 
     origin = services.origin(name, ssl=True)
     origin.add_response(
         {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": body
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
     )
     return origin
 
@@ -75,16 +72,19 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
     """
 
     dns = services.dns("dns")
-    dns.add_records({
-        "localhost": ["127.0.0.1"],
-        "one.testmatch": ["127.0.0.1"],
-        "two.example.one": ["127.0.0.1"],
-    })
+    dns.add_records(
+        {
+            "localhost": ["127.0.0.1"],
+            "one.testmatch": ["127.0.0.1"],
+            "two.example.one": ["127.0.0.1"],
+        }
+    )
     return dns
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _dns: DNSServer, _server_bar: OriginServer, _server_foo: OriginServer, _split_port: int) -> ATS:
+    ats_factory: ATSFactory, *, _dns: DNSServer, _server_bar: OriginServer, _server_foo: OriginServer, _split_port: int
+) -> ATS:
     """Configure SNI tunnel routes and the dynamic-port restrictions.
 
     :param _dns: Test-local dns configured by the test.
@@ -106,15 +106,13 @@ def configure_ats(
         SSL_DIRECTORY / "signer.key",
     )
     ats.set_ssl_multicert_yaml(
-        {"ssl_multicert": [{
-            "dest_ip": "*",
-            "ssl_cert_name": "signed-foo.pem",
-            "ssl_key_name": "signed-foo.key"
-        }]})
+        {"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "signed-foo.pem", "ssl_key_name": "signed-foo.key"}]}
+    )
     ats.records.update(
         {
-            "proxy.config.http.connect_ports":
-                (f"{ats.https_port} {_server_foo.https_port} {_server_bar.https_port} {_split_port}"),
+            "proxy.config.http.connect_ports": (
+                f"{ats.https_port} {_server_foo.https_port} {_server_bar.https_port} {_split_port}"
+            ),
             "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
             "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
             "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
@@ -125,10 +123,12 @@ def configure_ats(
             "proxy.config.diags.debug.tags": "http|ssl|proxyprotocol",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.allow_private_connect()
     ats.write_config_file(
-        "sni.yaml", initial_sni_document(ats, _server_bar=_server_bar, _server_foo=_server_foo, _split_port=_split_port))
+        "sni.yaml", initial_sni_document(ats, _server_bar=_server_bar, _server_foo=_server_foo, _split_port=_split_port)
+    )
     return ats
 
 
@@ -154,7 +154,8 @@ def initial_sni_document(ats: ATS, *, _server_bar: OriginServer, _server_foo: Or
         "  - fqdn: '*.ok.*.com'\n"
         f"    tunnel_route: $2.example.$1:{_server_foo.https_port}\n"
         "  - fqdn: ''\n"
-        f"    tunnel_route: localhost:{_server_bar.https_port}\n")
+        f"    tunnel_route: localhost:{_server_bar.https_port}\n"
+    )
 
 
 def curl_request(host: str, *, expected: int = 0, use_address: bool = False, _ats: ATS, _curl: Curl) -> str:
@@ -238,9 +239,8 @@ def reload_sni_policy(*, _ats: ATS, _server_bar: OriginServer) -> None:
     """
 
     (_ats.config_directory / "sni.yaml").write_text(
-        "sni:\n"
-        "  - fqdn: bar.com\n"
-        f"    tunnel_route: localhost:{_server_bar.https_port}\n")
+        f"sni:\n  - fqdn: bar.com\n    tunnel_route: localhost:{_server_bar.https_port}\n"
+    )
     result = _ats.reload_config(r"sni\.yaml finished loading")
     assert result.returncode == 0, result.output
 

@@ -103,7 +103,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('server_crt', metavar='server-crt', type=argparse.FileType('rb'), help="The public TLS certificate to use.")
     parser.add_argument('server_key', metavar='server-key', type=argparse.FileType('rb'), help="The private TLS key to use.")
     parser.add_argument(
-        'num_expected_messages', metavar='num-expected-messages', type=int, help="The number of expected messages from the client.")
+        'num_expected_messages', metavar='num-expected-messages', type=int, help="The number of expected messages from the client."
+    )
     return parser.parse_args()
 
 

@@ -79,9 +79,15 @@ def test_distribution_replaces_configured_launcher(tmp_path: Path) -> None:
     (tmp_path / "urtest.sh").write_text(launcher.read_text())
     result = subprocess.run(
         [
-            make, "-f",
-            str(test_root / "Makefile.am"), "-I",
-            str(test_root), "dist-hook", f"top_srcdir={test_root.parent}", f"srcdir={test_root}", f"distdir={distribution}"
+            make,
+            "-f",
+            str(test_root / "Makefile.am"),
+            "-I",
+            str(test_root),
+            "dist-hook",
+            f"top_srcdir={test_root.parent}",
+            f"srcdir={test_root}",
+            f"distdir={distribution}",
         ],
         cwd=tmp_path,
         capture_output=True,
@@ -114,7 +120,8 @@ def test_autotools_distribution_preserves_source_launcher(tmp_path: Path, in_tre
     configuration = configuration.split("# -----------------------------------------------------------------------------", 1)[0]
     (source / "configure.ac").write_text(
         'AC_INIT([uranium-launcher-test], [1])\nAM_INIT_AUTOMAKE([foreign])\n'
-        'AC_CONFIG_SRCDIR([tests/urtest.sh])\nAC_CONFIG_FILES([Makefile tests/Makefile])\n' + configuration + '\nAC_OUTPUT\n')
+        'AC_CONFIG_SRCDIR([tests/urtest.sh])\nAC_CONFIG_FILES([Makefile tests/Makefile])\n' + configuration + '\nAC_OUTPUT\n'
+    )
     (source / "Makefile.am").write_text("SUBDIRS = tests\n")
     rules = (test_root / "Makefile.am").read_text().split(".PHONY: urtest urtest-replay", 1)[1]
     (source_tests / "Makefile.am").write_text(".PHONY: urtest urtest-replay" + rules.split("include uranium_dist.inc", 1)[0])

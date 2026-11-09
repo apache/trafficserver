@@ -126,7 +126,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             if owner := sandbox_owners.get(name):
                 message = (
                     f"Uranium sandbox name {name!r} is shared by {owner.nodeid} and {item.nodeid}. "
-                    "Give these tests distinct names so they cannot overwrite each other's artifacts.")
+                    "Give these tests distinct names so they cannot overwrite each other's artifacts."
+                )
                 print(message, file=sys.stderr, flush=True)
                 # A UsageError raised in an xdist worker crashes the controller, so fail the items instead.
                 if not hasattr(config, "workerinput"):
@@ -405,8 +406,9 @@ def services(procedural_context: ProceduralContext) -> Iterator[ServiceFactory]:
         factory.close()
 
 
-def _partition_items(items: list[pytest.Item], predicate: Callable[[pytest.Item],
-                                                                   bool]) -> tuple[list[pytest.Item], list[pytest.Item]]:
+def _partition_items(
+    items: list[pytest.Item], predicate: Callable[[pytest.Item], bool]
+) -> tuple[list[pytest.Item], list[pytest.Item]]:
     """Split collected items while preserving their order."""
 
     selected = []

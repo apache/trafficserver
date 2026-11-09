@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Verify incoming Proxy Protocol v1 on TCP and TLS listeners."""
+
 import json
 import subprocess
 from pathlib import Path
@@ -45,7 +46,8 @@ def test_proxy_protocol(ats_factory: ATSFactory, services: ServiceFactory, curl:
             "proxy.config.http.insert_forwarded": "for|proto",
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "proxyprotocol",
-        })
+        }
+    )
     origin.start()
     ats.start()
     for index, scheme, port in ((0, "http", ats.http_port), (1, "https", ats.https_port)):

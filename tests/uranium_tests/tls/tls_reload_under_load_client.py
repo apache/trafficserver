@@ -50,7 +50,6 @@ def make_context() -> ssl.SSLContext:
 
 
 class Stats:
-
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.ok = 0
@@ -61,8 +60,8 @@ class Stats:
 
 
 def worker(
-        args: argparse.Namespace, stats: Stats, stop: threading.Event, reload_started: threading.Event,
-        reload_settled: threading.Event) -> None:
+    args: argparse.Namespace, stats: Stats, stop: threading.Event, reload_started: threading.Event, reload_settled: threading.Event
+) -> None:
     ctx = make_context()
     while not stop.is_set():
         try:
@@ -70,8 +69,7 @@ def worker(
                 with ctx.wrap_socket(sock, server_hostname=args.sni) as ssock:
                     der = ssock.getpeercert(binary_form=True)
                     fp = hashlib.sha256(der).hexdigest()[:16] if der else "none"
-                    request = (f"GET / HTTP/1.1\r\nHost: {args.sni}\r\n"
-                               "Connection: close\r\n\r\n").encode()
+                    request = (f"GET / HTTP/1.1\r\nHost: {args.sni}\r\nConnection: close\r\n\r\n").encode()
                     ssock.sendall(request)
                     resp = ssock.recv(256)
             if not resp.startswith(b"HTTP/1."):
@@ -164,7 +162,8 @@ def main() -> int:
     cert_changed = int(pre_fp != "none" and post_fp != "none" and pre_fp != post_fp)
 
     passed = (
-        reload_error == "" and reloads_done == args.reloads and stats.fail == 0 and stats.ok >= args.min_ok and cert_changed == 1)
+        reload_error == "" and reloads_done == args.reloads and stats.fail == 0 and stats.ok >= args.min_ok and cert_changed == 1
+    )
 
     print(f"HANDSHAKES_OK={stats.ok}")
     print(f"FAILURES={stats.fail}")

@@ -60,12 +60,14 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, cache_mode: int, ticket
             "proxy.config.ssl.session_cache.timeout": 0,
             "proxy.config.ssl.session_cache.auto_clear": 1,
             "proxy.config.ssl.server.session_ticket.enable": int(tickets),
-        })
+        }
+    )
     return ats
 
 
 def connection_sequence(
-        ats: ATS, name: str, protocol: str, *, expect_resumable: bool, no_ticket: bool, _session_directory: Path) -> str:
+    ats: ATS, name: str, protocol: str, *, expect_resumable: bool, no_ticket: bool, _session_directory: Path
+) -> str:
     """Create one session and attempt five resumptions.
 
     :param _session_directory: Test-local session directory configured by the test.
@@ -82,10 +84,12 @@ def connection_sequence(
         version_option += " -no_ticket"
     first = (
         f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client "
-        f"-connect 127.0.0.1:{ats.https_port} -sess_out {shlex.quote(str(session))} {version_option}")
+        f"-connect 127.0.0.1:{ats.https_port} -sess_out {shlex.quote(str(session))} {version_option}"
+    )
     resumed = (
         f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client "
-        f"-connect 127.0.0.1:{ats.https_port} -sess_in {shlex.quote(str(session))} {version_option}")
+        f"-connect 127.0.0.1:{ats.https_port} -sess_in {shlex.quote(str(session))} {version_option}"
+    )
     first_result = ats.run_shell(first, timeout=30)
     assert first_result.returncode == 0, first_result.output
     if expect_resumable:
@@ -94,9 +98,7 @@ def connection_sequence(
     elif session.is_file():
         followup = resumed
     else:
-        followup = (
-            f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client "
-            f"-connect 127.0.0.1:{ats.https_port} {version_option}")
+        followup = f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -connect 127.0.0.1:{ats.https_port} {version_option}"
     result = ats.run_shell(" && ".join([followup] * 5), timeout=60)
     assert result.returncode == 0, result.output
     output = first_result.output + result.output
@@ -121,11 +123,14 @@ def test_tls_session_reuse(ats_factory: ATSFactory, services: ServiceFactory) ->
     _tickets.start()
     _disabled.start()
     enabled_first = connection_sequence(
-        _enabled, "sess1", "TLSv1.2", expect_resumable=True, no_ticket=True, _session_directory=_session_directory)
+        _enabled, "sess1", "TLSv1.2", expect_resumable=True, no_ticket=True, _session_directory=_session_directory
+    )
     enabled_second = connection_sequence(
-        _tickets, "sess2", "TLSv1.2", expect_resumable=True, no_ticket=False, _session_directory=_session_directory)
+        _tickets, "sess2", "TLSv1.2", expect_resumable=True, no_ticket=False, _session_directory=_session_directory
+    )
     assert enabled_first.count("Reused, TLSv1.2") == 5
     assert enabled_second.count("Reused, TLSv1.2") == 5
     disabled_tls12 = connection_sequence(
-        _disabled, "sess3", "TLSv1.2", expect_resumable=False, no_ticket=True, _session_directory=_session_directory)
+        _disabled, "sess3", "TLSv1.2", expect_resumable=False, no_ticket=True, _session_directory=_session_directory
+    )
     assert "Reused" not in disabled_tls12

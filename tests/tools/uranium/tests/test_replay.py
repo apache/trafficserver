@@ -81,8 +81,9 @@ def test_tls_certificate_paths_use_the_sandbox(tmp_path: Path, custom_multicert:
     assert records["ssl"]["server"]["cert"]["path"] == str(paths["ssl"])
     assert records["ssl"]["server"]["private_key"]["path"] == str(paths["ssl"])
     if custom_multicert:
-        assert (paths["config"] /
-                "ssl_multicert.config").read_text() == ("dest_ip=* ssl_cert_name=custom.pem ssl_key_name=custom.key\n")
+        assert (paths["config"] / "ssl_multicert.config").read_text() == (
+            "dest_ip=* ssl_cert_name=custom.pem ssl_key_name=custom.key\n"
+        )
     else:
         assert (paths["ssl"] / "server.pem").read_text() == "test TLS material"
 
@@ -102,7 +103,8 @@ def test_metric_check_retries_until_the_value_matches(monkeypatch: pytest.Monkey
         [
             subprocess.CompletedProcess([], 0, "proxy.process.test 1\n", ""),
             subprocess.CompletedProcess([], 0, "proxy.process.test 2\n", ""),
-        ])
+        ]
+    )
     calls = []
 
     def read_metric(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:

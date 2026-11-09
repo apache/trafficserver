@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Classic 9.2 ACL tables and their independent pytest lifecycles."""
+
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,6 +25,7 @@ from tools.uranium.services import ATSFactory, ServiceFactory
 @dataclass(frozen=True)
 class AclCase:
     """One independent ACL configuration and its expected statuses."""
+
     name: str
     ip_allow: str
     inline: str = ""
@@ -47,8 +49,14 @@ def combination_acl_cases(records: Sequence[Mapping[str, object]], *, prefix: st
             named = (("acl", str(record["named_acl"])),) if record["named_acl"] else ()
         cases.append(
             AclCase(
-                f"{prefix}-{index}", str(record["ip_allow"]), str(record.get("inline", "")), named,
-                (record["GET response"], record["POST response"]), bool(record.get("deactivate_ip_allow", False))))
+                f"{prefix}-{index}",
+                str(record["ip_allow"]),
+                str(record.get("inline", "")),
+                named,
+                (record["GET response"], record["POST response"]),
+                bool(record.get("deactivate_ip_allow", False)),
+            )
+        )
     return cases
 
 
@@ -80,7 +88,8 @@ def run_remap_acl(ats_factory: ATSFactory, services: ServiceFactory, case: AclCa
             "proxy.config.http.push_method_enabled": 1,
             "proxy.config.http.connect_ports": origin.http_port,
             "proxy.config.acl.subjects": "PROXY,PEER",
-        })
+        }
+    )
     ats.ip_allow_config.add_lines(case.ip_allow)
     if case.deactivate_ip_allow:
         ats.remap_config.add_line(".deactivatefilter ip_allow")
@@ -97,7 +106,8 @@ def run_remap_acl(ats_factory: ATSFactory, services: ServiceFactory, case: AclCa
         replay,
         http_ports=[ats.proxy_protocol_port if case.proxy_protocol else ats.http_port],
         return_code=1 if rejected else 0,
-        allow_errors=rejected)
+        allow_errors=rejected,
+    )
     result = client.run()
     if rejected:
         assert result.returncode == 1, result.output

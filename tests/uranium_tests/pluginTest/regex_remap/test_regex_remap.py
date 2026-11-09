@@ -55,10 +55,10 @@ def configure_server(*, _services: ServiceFactory, _transactions: list[dict[str,
         origin.add_response(
             {"headers": f"GET / HTTP/1.1\r\nHost: example.one\r\nuuid: {uuid}\r\n\r\n"},
             {
-                "headers":
-                    (
-                        f"HTTP/1.1 {response['status']} {response['reason']}\r\n"
-                        f"uuid: {response_uuid}\r\nContent-Length: 6128\r\nConnection: close\r\n\r\n"),
+                "headers": (
+                    f"HTTP/1.1 {response['status']} {response['reason']}\r\n"
+                    f"uuid: {response_uuid}\r\nContent-Length: 6128\r\nConnection: close\r\n\r\n"
+                ),
                 "body": "x" * 6128,
             },
         )
@@ -91,24 +91,25 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
         (
             "# second regex_remap configuration\n"
             "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ "
-            f"http://127.0.0.1:{_origin.port}\n"),
+            f"http://127.0.0.1:{_origin.port}\n"
+        ),
     )
     ats.remap_config.add_lines(
         (
-            f"map http://example.one/ http://127.0.0.1:{_origin.port}/ "
-            "@plugin=regex_remap.so @pparam=regex_remap.conf",
+            f"map http://example.one/ http://127.0.0.1:{_origin.port}/ @plugin=regex_remap.so @pparam=regex_remap.conf",
             f"map http://example.two/ http://127.0.0.1:{_origin.port}/ "
             "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine",
-            "map http://example.three/ http://wrong.com/ "
-            "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine",
-        ))
+            "map http://example.three/ http://wrong.com/ @plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine",
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http|regex_remap",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     return ats
 
 
@@ -159,7 +160,8 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
     assert "HTTP/1.1 200 OK" in output and "Content-Length: 6128" in output
     for transaction in (long_match,):
         output = _request(
-            transaction["client-request"]["url"], transaction["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
+            transaction["client-request"]["url"], transaction["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl
+        )
         assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
     wait_for_file_lines(_ats.diags_log, r"ERROR: .regex_remap. Bad regular expression result -21", 1)
 
