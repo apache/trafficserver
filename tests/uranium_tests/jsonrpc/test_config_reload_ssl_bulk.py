@@ -136,11 +136,13 @@ def test_config_reload_ssl_bulk(ats_factory: ATSFactory) -> None:
         "[Err]",
         "cert-05",
         "ssl_multicert.yaml failed to load",
+        return_code=2,
     )
     require_command(
         _ats.traffic_ctl("config", "status", "-t", "ssl-bulk-partial", "--min-level", "warning"),
         "[Err]",
         excludes=("[Note]",),
+        return_code=2,
     )
 
     recover_certificates(_ats=_ats)
