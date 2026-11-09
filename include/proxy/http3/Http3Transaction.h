@@ -169,6 +169,11 @@ private:
   Http3DataFramer           _data_framer;
   Http3HeaderVIOAdaptor     _header_handler;
   Http3StreamDataVIOAdaptor _data_handler;
+
+  // Set when the request header block finished decoding after its frame was
+  // consumed, so the next READ_READY must signal the reader even though it
+  // finds no new bytes on the stream.
+  bool _header_decoded_unsignaled = false;
 };
 
 /**

@@ -76,6 +76,8 @@ public:
   bool                              is_bidirectional() const;
   bool                              has_no_more_data() const;
   bool                              has_data_to_send();
+  /// Whether the FIN that ends this stream's send side has been handed to the transport.
+  bool is_fin_sent() const;
 
   QUICOffset final_offset() const;
 
