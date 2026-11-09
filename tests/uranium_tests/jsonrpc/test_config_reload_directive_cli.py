@@ -78,7 +78,8 @@ CONFIG_RELOAD_DIRECTIVE_CLI__cases = (
     # off the line before the command's name, and for the global -w.
     CommandCase(("config", "reload", "-f", "-m"), ("'-m' is an option of reload, not a value of --format",), return_code=64),
     CommandCase(
-        ("-f", "json", "config", "reload", "-f", "-m"), ("'-m' is an option of reload, not a value of --format",), return_code=64),
+        ("-f", "json", "config", "reload", "-f", "-m"), ("'-m' is an option of reload, not a value of --format",), return_code=64
+    ),
     CommandCase(("config", "reload", "-w", "-m"), ("'-m' is an option of reload, not a value of --watch",), return_code=64),
 )
 
