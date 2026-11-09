@@ -19,7 +19,6 @@
 
 #include <algorithm>
 
-#include "swoc/MemSpan.h"
 #include "swoc/TextView.h"
 #include "swoc/Vectray.h"
 
@@ -50,12 +49,8 @@ sort_query(std::string_view query)
     }
   }
 
-  // Vectray::end() spans all N inline slots, not just the filled ones, so bound ranges by size().
-  // Built after the last push_back: a later push can move the storage and leave this span dangling.
-  swoc::MemSpan<std::string_view> filled(params.begin(), params.size());
-
   // Used instead of std::stable_sort, which heap-allocates a buffer on every call in libstdc++.
-  std::sort(filled.begin(), filled.end(), [](std::string_view a, std::string_view b) {
+  std::sort(params.begin(), params.end(), [](std::string_view a, std::string_view b) {
     auto an = param_name(a);
     auto bn = param_name(b);
 
@@ -66,7 +61,7 @@ sort_query(std::string_view query)
   std::string result;
   result.reserve(query.size()); // never longer than query
 
-  for (const auto &param : filled) {
+  for (const auto &param : params) {
     if (!result.empty()) {
       result += '&';
     }
