@@ -53,7 +53,8 @@ def run_openssl_cases(*, _ats: ATS) -> None:
     require_output(invalid, "No ALPN negotiated")
 
     http1 = _ats.run_shell(
-        f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -alpn http/1.1 -connect 127.0.0.1:{port}")
+        f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -alpn http/1.1 -connect 127.0.0.1:{port}"
+    )
     assert http1.returncode == 0, http1.output
     require_output(http1, "ALPN protocol: http/1.1", "HTTP/1.1 400 Host Header Required")
 
@@ -71,7 +72,9 @@ def run_http2_case(*, _ats: ATS, _curl: Curl) -> None:
 
     if not _curl.supports("http2"):
         pytest.skip("curl with HTTP/2 support is required")
-    result = _curl.run(f"--insecure --http2 --verbose --output /dev/null 'https://127.0.0.1:{_ats.https_port}/'",)
+    result = _curl.run(
+        f"--insecure --http2 --verbose --output /dev/null 'https://127.0.0.1:{_ats.https_port}/'",
+    )
     assert result.returncode == 0, result.output
     assert "ALPN: server accepted h2" in result.output
     assert "HTTP/2 404" in result.output

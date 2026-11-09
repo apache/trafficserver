@@ -88,10 +88,7 @@ def body_carrying(method: str, path: str) -> bytes:
     :param path: Request target.
     :return: The request head bytes.
     '''
-    return (f'{method} {path} HTTP/1.1\r\n'
-            f'Host: example.com\r\n'
-            f'Content-Length: {DECLARED_BODY_LENGTH}\r\n'
-            f'\r\n').encode()
+    return (f'{method} {path} HTTP/1.1\r\nHost: example.com\r\nContent-Length: {DECLARED_BODY_LENGTH}\r\n\r\n').encode()
 
 
 def main() -> int:

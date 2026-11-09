@@ -54,23 +54,23 @@ def curl_connect_configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServe
             "proxy.config.http.server_ports": str(ats.http_port),
             "proxy.config.http.connect_ports": str(_origin.port),
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map http://foo.com/ http://127.0.0.1:{_origin.port}/")
     ats.allow_private_connect()
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
+            "logging": {
+                "formats": [
+                    {
                         "name": "common",
                         "format": '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl>',
-                    }],
-                    "logs": [{
-                        "filename": "access",
-                        "format": "common"
-                    }],
-                }
-        })
+                    }
+                ],
+                "logs": [{"filename": "access", "format": "common"}],
+            }
+        }
+    )
     return ats
 
 

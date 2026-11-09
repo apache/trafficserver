@@ -32,26 +32,18 @@ import socket
 import sys
 import threading
 
-EARLY_RESPONSE = (b'HTTP/1.1 420 Be Calm\r\n'
-                  b'Content-Length: 0\r\n'
-                  b'Connection: keep-alive\r\n'
-                  b'\r\n')
+EARLY_RESPONSE = b'HTTP/1.1 420 Be Calm\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n'
 
 CONTINUE_RESPONSE = b'HTTP/1.1 100 Continue\r\n\r\n'
 
 # A 1xx that is neither 100 nor 103.  ATS dispatches those as final responses, so an origin
 # that sends one before reading the body is owed that body for good.
-INTERIM_RESPONSE = (b'HTTP/1.1 199 Hold On\r\n'
-                    b'Content-Length: 0\r\n'
-                    b'Connection: keep-alive\r\n'
-                    b'\r\n')
+INTERIM_RESPONSE = b'HTTP/1.1 199 Hold On\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n'
 
 # 103 is one of the two statuses that leave the exchange in progress, so it must not be
 # taken as evidence the declared body is never coming.  Carries keep-alive, because the
 # point of the scenario using it is that the connection stays reusable.
-EARLY_HINTS_RESPONSE = (b'HTTP/1.1 103 Early Hints\r\n'
-                        b'Link: </style.css>; rel=preload\r\n'
-                        b'\r\n')
+EARLY_HINTS_RESPONSE = b'HTTP/1.1 103 Early Hints\r\nLink: </style.css>; rel=preload\r\n\r\n'
 
 REQUEST_LINE = re.compile(rb'[A-Z]+ \S+ HTTP/1\.[01]\r?\n')
 
@@ -180,24 +172,15 @@ def serve(conn: socket.socket, conn_id: int) -> None:
                 conn.sendall(EARLY_HINTS_RESPONSE)
                 received = read_body(conn, declared)
                 print(f'CONN {conn_id} BODY-COMPLETE {received} of {declared}', flush=True)
-                conn.sendall(b'HTTP/1.1 200 OK\r\n'
-                             b'Content-Length: 0\r\n'
-                             b'Connection: keep-alive\r\n'
-                             b'\r\n')
+                conn.sendall(b'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n')
             elif target == '/complete':
                 # Behave the way an ordinary Expect: 100-continue POST expects.
                 conn.sendall(CONTINUE_RESPONSE)
                 received = read_body(conn, declared)
                 print(f'CONN {conn_id} BODY-COMPLETE {received} of {declared}', flush=True)
-                conn.sendall(b'HTTP/1.1 200 OK\r\n'
-                             b'Content-Length: 0\r\n'
-                             b'Connection: keep-alive\r\n'
-                             b'\r\n')
+                conn.sendall(b'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n')
             else:
-                conn.sendall(b'HTTP/1.1 200 OK\r\n'
-                             b'Content-Length: 0\r\n'
-                             b'Connection: keep-alive\r\n'
-                             b'\r\n')
+                conn.sendall(b'HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n')
 
 
 def main() -> int:

@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Exercise the original simple prefetch sequence."""
+
 from pathlib import Path
 
 import pytest
@@ -31,10 +32,12 @@ def test_prefetch_simple(ats_factory: ATSFactory, services: ServiceFactory, curl
     origin = services.origin("origin")
     for number in range(1, 5):
         origin.add_response(
-            {"headers": f"GET /texts/demo-{number}.txt HTTP/1.1\r\nHost: does.not.matter\r\n\r\n"}, {
+            {"headers": f"GET /texts/demo-{number}.txt HTTP/1.1\r\nHost: does.not.matter\r\n\r\n"},
+            {
                 "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=85000\r\n\r\n",
-                "body": f"This is the body for demo-{number}.txt.\n"
-            })
+                "body": f"This is the body for demo-{number}.txt.\n",
+            },
+        )
     dns = services.dns("dns", default="127.0.0.1")
     ats = ats_factory.create("ts")
     if not all(ats.plugin_exists(plugin) for plugin in ("cachekey.so", "prefetch.so")):
@@ -45,12 +48,14 @@ def test_prefetch_simple(ats_factory: ATSFactory, services: ServiceFactory, curl
             "proxy.config.diags.debug.tags": "http|dns|prefetch",
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.remap_config.add_line(
         f"map http://domain.in http://127.0.0.1:{origin.port} "
         "@plugin=cachekey.so @pparam=--remove-all-params=true "
         "@plugin=prefetch.so @pparam=--front=true @pparam=--fetch-policy=simple "
-        r"@pparam=--fetch-path-pattern=/(.*-)(\d+)(.*)/$1{$2+1}$3/ @pparam=--fetch-count=3")
+        r"@pparam=--fetch-path-pattern=/(.*-)(\d+)(.*)/$1{$2+1}$3/ @pparam=--fetch-count=3"
+    )
     origin.start()
     dns.start()
     ats.start()

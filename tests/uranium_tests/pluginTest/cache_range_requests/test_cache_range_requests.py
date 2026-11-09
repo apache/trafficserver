@@ -54,10 +54,7 @@ def add_response(
         fields.extend(("Accept-Ranges: bytes", f"Content-Range: bytes {content_range}"))
     origin.add_response(
         {"headers": f"GET /path HTTP/1.1\r\nHost: www.example.com\r\n{uuid_line}\r\n"},
-        {
-            "headers": "\r\n".join(fields) + "\r\n\r\n",
-            "body": body
-        },
+        {"headers": "\r\n".join(fields) + "\r\n\r\n", "body": body},
     )
 
 
@@ -105,24 +102,21 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             f"map http://www.longkey.com {origin} @plugin=cache_range_requests.so",
             f"map http://parentselect {origin} @plugin=cache_range_requests.so @pparam=--ps-cachekey",
             f"map http://psd {origin} @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url",
-        ))
+        )
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-parentselection-key")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "cache_range_requests|http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "cache_range_requests|http",
+        }
+    )
     return ats
 
 
 def request(
-        host: str,
-        path: str,
-        *,
-        byte_range: str | None = None,
-        uuid: str | None = None,
-        debug: str = "x-cache",
-        _ats: ATS,
-        _curl: Curl) -> CommandResult:
+    host: str, path: str, *, byte_range: str | None = None, uuid: str | None = None, debug: str = "x-cache", _ats: ATS, _curl: Curl
+) -> CommandResult:
     """Issue a proxied range request and return its complete result.
 
     :param _ats: Test-local ats configured by the test.
@@ -228,14 +222,17 @@ def test_cache_range_requests(ats_factory: ATSFactory, services: ServiceFactory)
     assert "200 OK" in full_range.stdout and "X-Cache: miss" in full_range.stdout
     assert "Content-Range:" not in full_range.stdout
     parent = request(
-        "parentselect", "/path", byte_range="1-10", uuid="pselect", debug="x-parentselection-key", _ats=_ats, _curl=_curl)
+        "parentselect", "/path", byte_range="1-10", uuid="pselect", debug="x-parentselection-key", _ats=_ats, _curl=_curl
+    )
     assert re.search(r"X-ParentSelection-Key: .*-bytes=", parent.stdout), parent.output
     ordinary = request(
-        "www.example.com", "/path", byte_range="7-15", uuid="inner", debug="x-parentselection-key", _ats=_ats, _curl=_curl)
+        "www.example.com", "/path", byte_range="7-15", uuid="inner", debug="x-parentselection-key", _ats=_ats, _curl=_curl
+    )
     assert "X-ParentSelection-Key" not in ordinary.stdout
     deprecated = request("psd", "/path", byte_range="1-10", uuid="pselect", debug="x-parentselection-key", _ats=_ats, _curl=_curl)
     assert re.search(r"X-ParentSelection-Key: .*-bytes=", deprecated.stdout), deprecated.output
     long_key = request(
-        "www.longkey.com", f"/{CACHE_RANGE_REQUESTS_LONG_PATH}", byte_range="0-17", uuid="long_key", _ats=_ats, _curl=_curl)
+        "www.longkey.com", f"/{CACHE_RANGE_REQUESTS_LONG_PATH}", byte_range="0-17", uuid="long_key", _ats=_ats, _curl=_curl
+    )
     assert long_key.returncode == 0 and "206" in long_key.stdout
     assert "disabling cache for this transaction" not in _ats.diags_log.read_text(errors="replace")

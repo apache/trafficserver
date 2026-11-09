@@ -53,7 +53,8 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
 
         ats = ats_factory.create("ts", enable_tls=True, command="traffic_manager")
         ats.allow_errors(
-            r"ERROR: (?:SSL::\d+:error:.*PEM|SSLCreateClientContext\(\): failed to load client certificate: .*/client1\.pem)")
+            r"ERROR: (?:SSL::\d+:error:.*PEM|SSLCreateClientContext\(\): failed to load client certificate: .*/client1\.pem)"
+        )
         ats.copy_to_ssl(
             SSL_DIRECTORY / "server1.pem",
             SSL_DIRECTORY / "server2.pem",
@@ -71,24 +72,25 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
                 "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
                 "proxy.config.url_remap.pristine_host_hdr": 1,
-            })
+            }
+        )
         ats.ssl_multicert_config.add_lines(
             (
                 "ssl_multicert:",
                 '  - dest_ip: "*"',
                 "    ssl_cert_name: server1.pem",
                 "    ssl_key_name: server1.pem",
-            ))
+            )
+        )
         ats.remap_config.add_lines(
             (
                 f"map https://bar.com http://127.0.0.1:{_origin.http_port}",
                 f"map https://foo.com https://127.0.0.1:{_openssl_port}",
-            ))
+            )
+        )
         ats.write_config_file(
             "sni.yaml",
-            "sni:\n"
-            '  - fqdn: "*foo.com"\n'
-            '    client_cert: "client1.pem"\n',
+            "sni:\n  - fqdn: \"*foo.com\"\n    client_cert: \"client1.pem\"\n",
         )
         ats.plugin_config.add_line("cert_update.so")
         return ats
@@ -98,8 +100,7 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
 
         result = curl.run_for(
             _ats,
-            (f"--verbose --insecure --resolve 'bar.com:{_ats.https_port}:127.0.0.1' "
-             f"'https://bar.com:{_ats.https_port}/'"),
+            (f"--verbose --insecure --resolve 'bar.com:{_ats.https_port}:127.0.0.1' 'https://bar.com:{_ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         return result.stderr

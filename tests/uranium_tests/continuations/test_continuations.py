@@ -64,10 +64,9 @@ def continuation_configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServe
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": _plugin.removesuffix(".so"),
             "proxy.config.cache.enable_read_while_writer": 0,
-            **({
-                "proxy.config.http2.zombie_debug_timeout_in": 10
-            } if enable_tls else {}),
-        })
+            **({"proxy.config.http2.zombie_debug_timeout_in": 10} if enable_tls else {}),
+        }
+    )
     ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{_plugin}")
     arguments = " --check-addresses" if _protocol == "h2" and _plugin == "ssntxnorder_verify.so" else ""
     ats.plugin_config.add_line(_plugin + arguments)
@@ -90,7 +89,7 @@ def continuation_run_clients(*, _ats: ATS, _curl: Curl, _protocol: str, _request
     if _protocol == "h2" and _curl.uses_uds:
         pytest.skip("HTTP/2 continuation coverage requires a TCP listener")
 
-    url = (f"https://{_hostname}:{_ats.https_port}/" if _protocol == "h2" else f"http://127.0.0.1:{_ats.http_port}/")
+    url = f"https://{_hostname}:{_ats.https_port}/" if _protocol == "h2" else f"http://127.0.0.1:{_ats.http_port}/"
     options = ["--silent", "--show-error"]
     if _protocol == "h2":
         options.extend(["--insecure", "--http2"])
@@ -143,13 +142,8 @@ def continuation_metrics(prefix: str, *, _ats: ATS) -> dict[str, int]:
 
 
 def continuation_run_traffic(
-        *,
-        _ats: ATS,
-        _curl: Curl,
-        _origin: OriginServer,
-        _protocol: str,
-        _request_count: int,
-        _hostname: str = "127.0.0.1") -> None:
+    *, _ats: ATS, _curl: Curl, _origin: OriginServer, _protocol: str, _request_count: int, _hostname: str = "127.0.0.1"
+) -> None:
     """Start the topology, issue traffic, and flush plugin metrics.
 
     :param _ats: Test-local ats configured by the test.
@@ -179,7 +173,8 @@ def session_id_configure_ats(*, _ats: ATS, _origin: OriginServer) -> None:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "session_id_verify",
             "proxy.config.cache.enable_read_while_writer": 0,
-        })
+        }
+    )
     _ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/continuations/plugins/.libs/session_id_verify.so")
     _ats.plugin_config.add_line("session_id_verify.so")
     _ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
@@ -260,7 +255,8 @@ def test_continuation_open_close_order(
         _ats.records.update({"proxy.config.diags.debug.enabled": 0})
 
     continuation_run_traffic(
-        _ats=_ats, _curl=curl, _origin=_origin, _protocol=protocol, _request_count=request_count, _hostname="oc.test")
+        _ats=_ats, _curl=curl, _origin=_origin, _protocol=protocol, _request_count=request_count, _hostname="oc.test"
+    )
     continuation_wait_for_metric("ssntxnorder_verify.test.done", _ats=_ats)
     metrics = continuation_metrics("ssntxnorder_verify", _ats=_ats)
     assert metrics["ssntxnorder_verify.err"] == 0
@@ -294,7 +290,8 @@ def test_session_ids_are_unique(ats_factory: ATSFactory, services: ServiceFactor
         f"http://127.0.0.1:{_ats.http_port}/",
         count,
         _ats=_ats,
-        _curl=curl)
+        _curl=curl,
+    )
     expected = count
     if not curl.uses_uds:
         session_id_run_requests(
@@ -302,7 +299,8 @@ def test_session_ids_are_unique(ats_factory: ATSFactory, services: ServiceFactor
             f"https://127.0.0.1:{_ats.https_port}/",
             count,
             _ats=_ats,
-            _curl=curl)
+            _curl=curl,
+        )
         expected += count
     session_ids = re.findall(r"session id: ([^\n]+)", _ats.traffic_out.read_text(errors="replace"))
     assert len(session_ids) == expected

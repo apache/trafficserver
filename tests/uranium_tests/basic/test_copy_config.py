@@ -24,9 +24,11 @@ def test_explicit_listener_configuration(ats_factory: ATSFactory, curl: Curl) ->
     :param curl: Transport-aware curl command runner.
     """
     _first = ats_factory.create("ts1")
-    _first.records.update({
-        "proxy.config.http.server_ports": f"{_first.http_port} {_first.uds_path}",
-    })
+    _first.records.update(
+        {
+            "proxy.config.http.server_ports": f"{_first.http_port} {_first.uds_path}",
+        }
+    )
     _second = ats_factory.create("ts2")
     _second.records.update({"proxy.config.http.server_ports": str(_second.http_port)})
     _first.start()

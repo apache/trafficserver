@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Keep the same origin session across independently connected clients."""
+
 from pathlib import Path
 from tools.uranium.services import ATS, Curl, ServiceFactory, assert_matches_gold
 
@@ -29,7 +30,8 @@ def test_header_rewrite_cond_ssn_txn_count(ats: ATS, services: ServiceFactory, c
     for path, connection in (("hello", ""), ("world", "Connection: close\r\n")):
         origin.add_response(
             {"headers": f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
-            {"headers": f"HTTP/1.1 200 OK\r\nServer: microserver\r\n{connection}Content-Length: 0\r\n\r\n"})
+            {"headers": f"HTTP/1.1 200 OK\r\nServer: microserver\r\n{connection}Content-Length: 0\r\n\r\n"},
+        )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -37,11 +39,13 @@ def test_header_rewrite_cond_ssn_txn_count(ats: ATS, services: ServiceFactory, c
             "proxy.config.http.auth_server_session_private": 1,
             "proxy.config.http.server_session_sharing.pool": "global",
             "proxy.config.http.server_session_sharing.match": "both",
-        })
+        }
+    )
     ats.copy_to_config("rules/rule_set_header_after_ssn_txn_count.conf")
     ats.remap_config.add_line(
         f"map / http://127.0.0.1:{origin.port} @plugin=header_rewrite.so "
-        f"@pparam={ats.config_directory}/rule_set_header_after_ssn_txn_count.conf")
+        f"@pparam={ats.config_directory}/rule_set_header_after_ssn_txn_count.conf"
+    )
     origin.start()
     ats.start()
     output = ""

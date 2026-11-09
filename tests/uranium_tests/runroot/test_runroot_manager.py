@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Check that traffic_manager propagates an external runroot descriptor."""
+
 import os
 import pwd
 import subprocess
@@ -32,7 +33,8 @@ def test_runroot_manager(procedural_context: ProceduralContext, services: Servic
     descriptor.mkdir()
     binary = procedural_context.runtime.ats_bin
     result = subprocess.run(
-        [binary / "traffic_layout", "init", "--path", root, "--absolute"], capture_output=True, text=True, check=False, timeout=60)
+        [binary / "traffic_layout", "init", "--path", root, "--absolute"], capture_output=True, text=True, check=False, timeout=60
+    )
     assert result.returncode == 0, result.stdout + result.stderr
     (root / "runroot.yaml").rename(descriptor / "runroot.yaml")
     assert (descriptor / "runroot.yaml").is_file()

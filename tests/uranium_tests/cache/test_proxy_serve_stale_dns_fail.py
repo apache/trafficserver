@@ -39,7 +39,8 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
             "proxy.config.http.cache.max_stale_age": 10,
             "proxy.config.http.parent_proxy.self_detect": 0,
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
-        })
+        }
+    )
     child.parent_config.add_line(f"dest_domain=. parent=localhost:{parent.http_port} round_robin=consistent_hash go_direct=false")
     child.remap_config.add_line(f"map http://localhost:{child.http_port} {_SERVER_NAME}")
     parent.records.update(
@@ -48,18 +49,20 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
             "proxy.config.url_remap.pristine_host_hdr": 1,
             "proxy.config.http.cache.max_stale_age": 10,
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
-        })
+        }
+    )
     parent.remap_config.add_lines(
         [
             f"map http://localhost:{parent.http_port} {_SERVER_NAME}",
             f"map {_SERVER_NAME} {_SERVER_NAME}",
-        ])
+        ]
+    )
     dns.start()
     parent.start()
     child.start()
     stale_5 = (
-        "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\n"
-        "Cache-Control: public, max-age=5\n\nCACHED")
+        "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=5\n\nCACHED"
+    )
     stale_10 = stale_5.replace("max-age=5", "max-age=10")
     script = (
         f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{child.http_port}";'
@@ -68,7 +71,8 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
         f"sleep 17; {{curl}} -s -v http://localhost:{child.http_port};"
         f'{{curl_base}} -X PUSH -d "{stale_5}" "http://localhost:{parent.http_port}";'
         f"sleep 7; {{curl_base}} -s -v http://localhost:{parent.http_port};"
-        f"sleep 17; {{curl_base}} -s -v http://localhost:{parent.http_port};")
+        f"sleep 17; {{curl_base}} -s -v http://localhost:{parent.http_port};"
+    )
     result = curl.run_script(child, script, timeout=70)
 
     assert result.returncode == 0, result.output

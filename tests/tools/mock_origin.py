@@ -64,13 +64,13 @@ def build_response(args):
         while offset < args.body_size:
             offset += FILLER_LINE_WIDTH
             lines.append(f'{offset:07d}\n'.encode())
-        body = b''.join(lines)[:args.body_size]
+        body = b''.join(lines)[: args.body_size]
 
     status_line = f'HTTP/1.1 {args.status} {args.reason}\r\n'.encode()
 
     if args.chunked:
         headers = b'Transfer-Encoding: chunked\r\n'
-        for h in (args.header or []):
+        for h in args.header or []:
             headers += h.encode() + b'\r\n'
         headers += b'\r\n'
         chunk = f'{len(body):X}\r\n'.encode() + body + b'\r\n'
@@ -78,7 +78,7 @@ def build_response(args):
         return status_line + headers + chunk + terminator
     else:
         headers = f'Content-Length: {len(body)}\r\n'.encode()
-        for h in (args.header or []):
+        for h in args.header or []:
             headers += h.encode() + b'\r\n'
         headers += b'\r\n'
         return status_line + headers + body
@@ -147,7 +147,8 @@ def main():
     parser = argparse.ArgumentParser(
         description='Mock origin server for ATS autests. '
         'Listens on PORT, serves one HTTP transaction, then exits. '
-        'Compatible with When.PortOpen() readiness probes.')
+        'Compatible with When.PortOpen() readiness probes.'
+    )
 
     parser.add_argument('port', type=int, help='TCP port to listen on')
     parser.add_argument('--output', '-o', help='Write received request data to FILE')

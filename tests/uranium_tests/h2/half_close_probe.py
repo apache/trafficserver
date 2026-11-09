@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Keep a locally half-closed origin session alive during subsequent lookups."""
+
 import concurrent.futures
 import http.client
 from pathlib import Path
@@ -130,7 +131,7 @@ def client(port: int, stop: str, traffic_out: str) -> None:
     closed = re.search(r"\[(\d+)\] session half-close local", log)
     assert closed, "Must exercise local half-close"
     session = closed.group(1)
-    later = log[closed.end():]
+    later = log[closed.end() :]
     assert re.search(rf"\[{session}\] \[\d+\] Delete stream", later), "Must release the held stream"
     assert not re.search(rf"\[{session}\] \[add session\]", later), "Half-closed session reentered the pool"
     print("half_close follow-on requests succeeded")

@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Preserve the raw request matrix for X-Cache-Info and X-Effective-URL."""
+
 import sys
 from pathlib import Path
 
@@ -35,7 +36,8 @@ def test_xdebug_headers(ats_factory: ATSFactory, services: ServiceFactory, scena
     for path in ("/argh", "/two/argh"):
         origin.add_response(
             {"headers": f"GET {path} HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"})
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
     ats = ats_factory.create("ts")
     if not ats.plugin_exists("xdebug.so"):
         pytest.skip("xdebug.so is required")
@@ -51,7 +53,11 @@ def test_xdebug_headers(ats_factory: ATSFactory, services: ServiceFactory, scena
     for name in ("none", "one", "two", "three"):
         result = ats.run(
             sys.executable,
-            Path(__file__).parents[3] / "tools/tcp_client.py", "127.0.0.1", str(ats.http_port), directory / f"{name}.in")
+            Path(__file__).parents[3] / "tools/tcp_client.py",
+            "127.0.0.1",
+            str(ats.http_port),
+            directory / f"{name}.in",
+        )
         assert result.returncode == 0, result.output
         output += result.output + "======\n"
     output = output.replace(f":{origin.port}", ":SERVER_PORT")

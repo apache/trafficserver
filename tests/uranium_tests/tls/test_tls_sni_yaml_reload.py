@@ -60,7 +60,8 @@ def test_tls_sni_yaml_reload(ats_factory: ATSFactory, services: ServiceFactory, 
             f"  http2: {http2}\n"
             f"  client_cert: {_ats.ssl_directory}/signed-{suffix}.pem\n"
             f"  client_key: {_ats.ssl_directory}/signed-{suffix}.key\n"
-            "  verify_client: STRICT\n")
+            "  verify_client: STRICT\n"
+        )
 
     def configure_ats(ats_factory: ATSFactory) -> ATS:
         """Configure the initial valid SNI policy and trust store.
@@ -83,7 +84,8 @@ def test_tls_sni_yaml_reload(ats_factory: ATSFactory, services: ServiceFactory, 
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "ssl|http",
                 "proxy.config.diags.output.debug": "L",
-            })
+            }
+        )
         ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
         ats.ssl_multicert_config.add_lines(
             (
@@ -91,7 +93,8 @@ def test_tls_sni_yaml_reload(ats_factory: ATSFactory, services: ServiceFactory, 
                 '  - dest_ip: "*"',
                 "    ssl_cert_name: server.pem",
                 "    ssl_key_name: server.key",
-            ))
+            )
+        )
         ats.write_config_file("sni.yaml", sni_document(valid=True))
         return ats
 
@@ -108,7 +111,8 @@ def test_tls_sni_yaml_reload(ats_factory: ATSFactory, services: ServiceFactory, 
                 f"--tls-max 1.2 --silent --verbose --insecure --cert '{str(TEST_DIRECTORY / 'ssl' / certificate)}' "
                 f"--key '{str(TEST_DIRECTORY / 'ssl' / key)}' --resolve "
                 f"'{__hostname}:{_ats.https_port}:127.0.0.1' "
-                f"'https://{__hostname}:{_ats.https_port}'"),
+                f"'https://{__hostname}:{_ats.https_port}'"
+            ),
         )
         assert result.returncode == 0, result.output
         return result.output

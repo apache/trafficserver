@@ -56,7 +56,8 @@ def http2_tls_configure_ats(ats_factory: ATSFactory, name: str, *, _origin: Orig
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http2.active_timeout_in": 3,
             "proxy.config.http2.max_concurrent_streams_in": 65535,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -85,10 +86,7 @@ def http2_curl_configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("origin-curl")
     for path, body in (("/postchunked", HTTP2_CURL_SMALL_BODY), ("/bigpostchunked", HTTP2_CURL_LARGE_BODY)):
         origin.add_response(
-            {
-                "headers": f"POST {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                "body": body
-            },
+            {"headers": f"POST {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": body},
             {
                 "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n",
                 "body": "0123456789",
@@ -121,7 +119,8 @@ def http2_curl_configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) 
             f"map /huge_resp_hdrs http://127.0.0.1:{_origin.port}/huge_resp_hdrs "
             f"@plugin=header_rewrite.so @pparam={ats.config_directory / 'huge_resp_hdrs.conf'}",
             f"map / http://127.0.0.1:{_origin.port}",
-        ))
+        )
+    )
     return ats
 
 
@@ -138,7 +137,8 @@ def http2_curl_post(path: str, data: str, *, _ats: ATS, _curl: Curl) -> None:
         _ats,
         (
             f"--silent --show-error --insecure --header 'Transfer-Encoding: chunked' --data-binary '{data}' "
-            f"'https://127.0.0.1:{_ats.https_port}{path}'"),
+            f"'https://127.0.0.1:{_ats.https_port}{path}'"
+        ),
         timeout=30,
     )
     assert result.returncode == 0, result.output

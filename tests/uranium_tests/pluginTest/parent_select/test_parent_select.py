@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Consistent-hash parent selection, optional schemes, and peer rings."""
+
 from pathlib import Path
 import re
 import pytest
@@ -37,10 +38,12 @@ def test_parent_select(ats_factory: ATSFactory, services: ServiceFactory, curl: 
     count = 16 if peer_mode else 32
     for i in range(count):
         origin.add_response(
-            {"headers": f"GET /obj{i} HTTP/1.1\r\nHost: does.not.matter\r\n\r\n"}, {
+            {"headers": f"GET /obj{i} HTTP/1.1\r\nHost: does.not.matter\r\n\r\n"},
+            {
                 "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
-                "body": "This is the body.\n"
-            })
+                "body": "This is the body.\n",
+            },
+        )
     dns = services.dns("dns")
     upstream = [ats_factory.create(f"ts_upstream{i}" if peer_mode else f"ts_nh{i}") for i in range(6 if peer_mode else 8)]
     peers = [ats_factory.create(f"ts_peer{i}") for i in range(8)] if peer_mode else [ats_factory.create("ts")]
@@ -53,7 +56,8 @@ def test_parent_select(ats_factory: ATSFactory, services: ServiceFactory, curl: 
                 "proxy.config.diags.debug.tags": "http|dns|parent|next_hop|host_statuses|hostdb|cachekey|pparent_select",
                 "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
                 "proxy.config.dns.resolv_conf": "NULL",
-            })
+            }
+        )
     for i, proxy in enumerate(upstream):
         dns.add_records({f"ts_upstream{i}" if peer_mode else f"next_hop{i}": ["127.0.0.1"]})
         proxy.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
@@ -68,7 +72,8 @@ def test_parent_select(ats_factory: ATSFactory, services: ServiceFactory, curl: 
                 "proxy.config.http.no_dns_just_forward_to_parent": 0 if direct else 1,
                 "proxy.config.http.parent_proxy.mark_down_hostdb": 0,
                 "proxy.config.http.parent_proxy.self_detect": int(peer_mode),
-            })
+            }
+        )
         targets = peers if peer_mode else upstream
         group = []
         for j, target in enumerate(targets):
@@ -80,15 +85,10 @@ def test_parent_select(ats_factory: ATSFactory, services: ServiceFactory, curl: 
         if peer_mode and not direct:
             groups.append(
                 [
-                    {
-                        "host": f"ts_upstream{j}",
-                        "protocol": [{
-                            "scheme": "http",
-                            "port": target.http_port
-                        }],
-                        "weight": 1.0
-                    } for j, target in enumerate(upstream)
-                ])
+                    {"host": f"ts_upstream{j}", "protocol": [{"scheme": "http", "port": target.http_port}], "weight": 1.0}
+                    for j, target in enumerate(upstream)
+                ]
+            )
         strategy = {
             "strategy": "the-strategy",
             "policy": "consistent_hash",
@@ -111,21 +111,23 @@ def test_parent_select(ats_factory: ATSFactory, services: ServiceFactory, curl: 
         elif peer_mode:
             suffix += " @plugin=cachekey.so @pparam=--uri-type=remap @pparam=--capture-prefix=/(.*):(.*)/$1/"
             proxy.remap_config.add_lines(
-                ["map http://dummy.com http://not_used" + suffix, "map http://not_used http://also_not_used" + suffix])
+                ["map http://dummy.com http://not_used" + suffix, "map http://not_used http://also_not_used" + suffix]
+            )
         else:
             proxy.remap_config.add_line("map http://dummy.com http://not_used" + suffix)
     origin.start()
     dns.start()
     for proxy in upstream + peers:
         proxy.start()
-    for multiplier in ((1, 3) if peer_mode else (1,)):
+    for multiplier in (1, 3) if peer_mode else (1,):
         for i in range(count):
             proxy = peers[(i * multiplier) % len(peers)]
             host = f"ts_upstream0:{upstream[0].http_port}" if direct else "dummy.com"
             result = curl.run_for(proxy, f"--verbose --proxy 127.0.0.1:{proxy.http_port} http://{host}/obj{i}")
             assert result.returncode == 0, result.output
             assert_matches_gold(
-                result.stdout, directory / ("peer2.body.gold" if direct else "peer.body.gold" if peer_mode else "body.gold"))
+                result.stdout, directory / ("peer2.body.gold" if direct else "peer.body.gold" if peer_mode else "body.gold")
+            )
     for proxy in peers + upstream:
         proxy.stop()
     output = ""

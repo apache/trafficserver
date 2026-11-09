@@ -49,7 +49,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, allow_loopback: bool = 
             "proxy.config.diags.debug.tags": "http|ip-allow",
             "proxy.config.http.connect_ports": str(_origin.https_port),
             "proxy.config.url_remap.remap_required": 0,
-        })
+        }
+    )
     if allow_loopback:
         ats.ip_allow_config.add_lines(
             (
@@ -78,7 +79,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, allow_loopback: bool = 
                 "      - ::ffff:0:0/96",
                 "    action: deny",
                 "    methods: CONNECT",
-            ))
+            )
+        )
     return ats
 
 
@@ -96,12 +98,11 @@ def configure_sni_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http|ip-allow|ssl|sni",
             "proxy.config.http.connect_ports": str(_origin.https_port),
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
-        "sni:\n"
-        "  - fqdn: sni-denied.example.com\n"
-        f"    tunnel_route: 127.0.0.1:{_origin.https_port}\n",
+        f"sni:\n  - fqdn: sni-denied.example.com\n    tunnel_route: 127.0.0.1:{_origin.https_port}\n",
     )
     return ats
 
@@ -118,7 +119,8 @@ def connect(ats: ATS, url: str, *, _curl: Curl) -> CommandResult:
         ats,
         (
             f"--silent --insecure --noproxy does-not-match --proxy 'http://127.0.0.1:{ats.http_port}' --output "
-            f"/dev/null --write-out 'http_code=%{{http_code}} http_connect=%{{http_connect}}\n' '{url}'"),
+            f"/dev/null --write-out 'http_code=%{{http_code}} http_connect=%{{http_connect}}\n' '{url}'"
+        ),
     )
 
 
@@ -157,7 +159,8 @@ def verify_sni_denial(*, _curl: Curl, _sni: ATS) -> None:
         _sni,
         (
             f"--silent --insecure --verbose --resolve 'sni-denied.example.com:{_sni.https_port}:127.0.0.1' "
-            f"'https://sni-denied.example.com:{_sni.https_port}/'"),
+            f"'https://sni-denied.example.com:{_sni.https_port}/'"
+        ),
     )
     assert result.returncode in (35, 52, 56), result.output
     wait_for_file_lines(_sni.diags_log, r"server '127\.0\.0\.1.*' prohibited by ip-allow policy", 1)

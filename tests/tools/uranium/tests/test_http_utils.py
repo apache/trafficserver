@@ -22,12 +22,14 @@ from tools.http_utils import drain_socket
 
 
 @pytest.mark.parametrize(
-    "remaining, received, chunks", [
+    "remaining, received, chunks",
+    [
         (0, b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n", []),
         (0, b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc", []),
         (3, b"", [b"a", b"bc"]),
         (-1, b"", [b"3\r\nabc\r\n", b"0\r\n\r\n"]),
-    ])
+    ],
+)
 def test_drain_stops_at_message_end(remaining: int, received: bytes, chunks: list[bytes]) -> None:
     """A completed response must not wait for a persistent socket to close.
 

@@ -56,10 +56,12 @@ def pipelined_requests_configure_ats(ats_factory: ATSFactory, *, _buffer_request
 
     ats = ats_factory.create("ts", enable_cache=False)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin_port}")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http|ip_allow",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|ip_allow",
+        }
+    )
     if _buffer_requests:
         ats.records.update({"proxy.config.http.request_buffer_enabled": 1})
     ats.write_config_file("ip_allow.yaml", IP_ALLOW_CONTENT)
@@ -126,10 +128,12 @@ def request_framing_configure_ats(ats_factory: ATSFactory, *, _origin_port: int)
 
     ats = ats_factory.create("ts", enable_cache=False)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin_port}/")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+        }
+    )
     return ats
 
 

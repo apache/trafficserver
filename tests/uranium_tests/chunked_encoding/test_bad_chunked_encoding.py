@@ -31,10 +31,7 @@ def unsupported_transfer_encoding_configure_origin(services: ServiceFactory) -> 
 
     origin = services.origin("server")
     origin.add_response(
-        {
-            "headers": "POST /case1 HTTP/1.1\r\nHost: www.example.com\r\nuuid:1\r\n\r\n",
-            "body": "stuff"
-        },
+        {"headers": "POST /case1 HTTP/1.1\r\nHost: www.example.com\r\nuuid:1\r\n\r\n", "body": "stuff"},
         {
             "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
             "body": "more stuff",
@@ -92,13 +89,15 @@ def verifier_chunk_error_configure_ats(ats_factory: ATSFactory, suffix: str, *, 
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}/")
     return ats
 
 
 def verifier_chunk_error_configure_client(
-        services: ServiceFactory, suffix: str, *, _ats: ATS, _malformed: bool, _replay: Path) -> ProcessService:
+    services: ServiceFactory, suffix: str, *, _ats: ATS, _malformed: bool, _replay: Path
+) -> ProcessService:
     """Create the verifier client with the expected aggregate return code.
 
     :param _ats: Test-local ats configured by the test.
