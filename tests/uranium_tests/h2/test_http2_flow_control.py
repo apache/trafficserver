@@ -58,10 +58,12 @@ def test_closed_stream_flow_control(ats_factory: ATSFactory, services: ServiceFa
     server = services.httpbin("closed-stream-origin")
     ats = ats_factory.create("closed-stream-ats", enable_tls=True, enable_cache=False)
     ats.add_default_ssl_files()
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http2",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http2",
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{server.port}")
     server.start()
     ats.start()

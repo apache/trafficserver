@@ -41,13 +41,15 @@ def configure_proxy(ats_factory: ATSFactory, services: ServiceFactory, replay: s
             "proxy.config.proxy_name": "test.proxy.test",
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "jax_fingerprint",
-        })
+        }
+    )
     for host in ("jax.server.test", "jax-filtered.server.test"):
         ats.remap_config.add_line(f"map https://{host} https://jax.backend.test:{origin.https_port}")
     if replay == "jax_fingerprint_remap_reload.replay.yaml":
         ats.remap_config.add_line(
             f"map http://jax.server.test http://jax.backend.test:{origin.http_port} "
-            "@plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml")
+            "@plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml"
+        )
         ats.write_config_file("jax_fingerprint_remap.yaml", config_text({"method": "JA4H", "header": "x-jax-initial"}))
     dns.start()
     origin.start()
@@ -89,7 +91,7 @@ def test_jax_fingerprint_reload(ats_factory: ATSFactory, services: ServiceFactor
         "standalone": True,
         "header": "x-jax",
         "via_header": "x-jax-via",
-        "servernames": ["jax.server.test"]
+        "servernames": ["jax.server.test"],
     }
     ats.write_config_file("jax_fingerprint.yaml", config_text(fingerprint))
     ats.write_config_file("jax_fingerprint_ja4h.yaml", config_text({"method": "JA4H", "standalone": True, "header": "x-ja4h"}))

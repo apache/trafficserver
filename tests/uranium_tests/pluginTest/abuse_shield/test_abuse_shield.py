@@ -95,7 +95,8 @@ class AbuseShieldHarness:
         if jax:
             ats.write_config_file(
                 "jax_fingerprint.yaml",
-                "jax_fingerprint:\n  fingerprints:\n    - method: JA3\n      export: abuse_shield.fingerprints\n")
+                "jax_fingerprint:\n  fingerprints:\n    - method: JA3\n      export: abuse_shield.fingerprints\n",
+            )
             ats.plugin_config.add_line("jax_fingerprint.so jax_fingerprint.yaml")
         ats.plugin_config.add_line("abuse_shield.so abuse_shield.yaml")
         return ats

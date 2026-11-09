@@ -51,7 +51,8 @@ def test_per_server_connect_retry(ats_factory: ATSFactory, services: ServiceFact
             "proxy.config.http.per_server.connection.max": 1,
             "proxy.config.http.per_server.connection.metric_enabled": 1,
             "proxy.config.http.per_server.connection.match": "port",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{closed_port}")
     ats.start()
 

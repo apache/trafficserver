@@ -125,7 +125,9 @@ def test_jax_fingerprint_invalid_config(ats_factory: ATSFactory, name: str, conf
     failed = r"Failed to load configuration from .*jax_fingerprint\.yaml"
     context_error = (
         re.escape("'jax_fingerprint' must be a map containing 'fingerprints'")
-        if name == "Reject duplicate fingerprints lists" else r"invalid fingerprint entry at line \d+")
+        if name == "Reject duplicate fingerprints lists"
+        else r"invalid fingerprint entry at line \d+"
+    )
     config_path = re.escape(f"{ats.config_directory / 'jax_fingerprint.yaml'}")
     for expression in (expected_error, failed, f"{config_path}: {context_error}"):
         ats.allow_errors(expression)
@@ -162,11 +164,16 @@ def test_jax_fingerprint_remap_servernames_requires_standalone(ats_factory: ATSF
         pytest.skip("jax_fingerprint.so is required")
     ats.write_config_file("jax_fingerprint_remap.yaml", REMAP_VALID_CONFIG)
     ats.remap_config.add_line(
-        "map http://jax.server.test http://127.0.0.1:1 @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml")
+        "map http://jax.server.test http://127.0.0.1:1 @plugin=jax_fingerprint.so @pparam=jax_fingerprint_remap.yaml"
+    )
     expected_error = r"'servernames' requires 'standalone' for a remap instance"
     failed = r"remap\.config failed to load"
-    for expression in (expected_error, failed, r"Failed to load configuration from .*jax_fingerprint_remap\.yaml",
-                       r"invalid fingerprint entry at line 4"):
+    for expression in (
+        expected_error,
+        failed,
+        r"Failed to load configuration from .*jax_fingerprint_remap\.yaml",
+        r"invalid fingerprint entry at line 4",
+    ):
         ats.allow_errors(expression)
     ats.start()
     remap_yaml = ats.config_directory / "jax_fingerprint_remap.yaml"
