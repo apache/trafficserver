@@ -49,6 +49,10 @@ Http3FrameCollector::on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, s
       nwritten += len;
       Dbg(dbg_ctl_http3, "[TX] [%" PRIu64 "] | %s size=%zu", stream_id, Http3DebugNames::frame_type(frame->type()), len);
     }
+    if (auto error = g->take_error(); error) {
+      all_done = false;
+      return error;
+    }
 
     all_done &= g->is_done();
   }

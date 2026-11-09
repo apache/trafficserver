@@ -31,4 +31,12 @@ public:
   virtual ~Http3FrameGenerator(){};
   virtual Http3FrameUPtr generate_frame() = 0;
   virtual bool           is_done() const  = 0;
+
+  // Hands over the error that stopped generate_frame() from producing a frame, or nullptr if there is none. An error is
+  // handed over only once.
+  virtual Http3ErrorUPtr
+  take_error()
+  {
+    return nullptr;
+  }
 };
