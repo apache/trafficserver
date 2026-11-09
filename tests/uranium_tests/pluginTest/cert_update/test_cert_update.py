@@ -69,14 +69,16 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
                 "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
                 "proxy.config.url_remap.pristine_host_hdr": 1,
-            })
+            }
+        )
         ats.ssl_multicert_config.add_lines(
             (
                 "ssl_multicert:",
                 '  - dest_ip: "*"',
                 "    ssl_cert_name: server1.pem",
                 "    ssl_key_name: server1.pem",
-            ))
+            )
+        )
         ats.remap_config.add_lines(
             (
                 f"map https://bar.com http://127.0.0.1:{_origin.http_port}",
@@ -87,12 +89,11 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
                 "@plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=client1.pem "
                 "@pparam=proxy.config.ssl.client.CA.cert.filename=server2.pem",
                 f"map https://foo.com https://127.0.0.1:{_openssl_port}",
-            ))
+            )
+        )
         ats.write_config_file(
             "sni.yaml",
-            "sni:\n"
-            '  - fqdn: "*foo.com"\n'
-            '    client_cert: "client1.pem"\n',
+            "sni:\n  - fqdn: \"*foo.com\"\n    client_cert: \"client1.pem\"\n",
         )
         ats.plugin_config.add_line("cert_update.so")
         return ats
@@ -102,8 +103,7 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
 
         result = curl.run_for(
             _ats,
-            (f"--verbose --insecure --resolve 'bar.com:{_ats.https_port}:127.0.0.1' "
-             f"'https://bar.com:{_ats.https_port}/'"),
+            (f"--verbose --insecure --resolve 'bar.com:{_ats.https_port}:127.0.0.1' 'https://bar.com:{_ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         return result.stderr
@@ -131,7 +131,8 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
             f"openssl req -x509 -newkey rsa:2048 -nodes -keyout {no_cn_key} "
             f"-out {no_cn_certificate} -subj /O=NoCN -days 1 >/dev/null 2>&1 && "
             f"cat {no_cn_key} {no_cn_certificate} > {no_cn_pem} && "
-            f"traffic_ctl plugin msg cert_update.server {no_cn_pem}")
+            f"traffic_ctl plugin msg cert_update.server {no_cn_pem}"
+        )
         assert result.returncode == 0, result.output
         wait_for_file_lines(_ats.traffic_out, r"Failed to update server cert with .*no-cn.pem", 1, timeout=10)
         assert _ats.is_running
@@ -198,7 +199,8 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
 
     assert "alice.com" in outbound_request(openssl_server("s_server_before", SSL_DIRECTORY / "client1.pem"))
     assert "alice.com" in outbound_request(
-        openssl_server("s_server_override_before", SSL_DIRECTORY / "client1.pem"), "/override-ca")
+        openssl_server("s_server_override_before", SSL_DIRECTORY / "client1.pem"), "/override-ca"
+    )
     (_ats.ssl_directory / "client2.pem").replace(_ats.ssl_directory / "client1.pem")
     update_certificate("client", _ats.ssl_directory / "client1.pem")
     assert "bob.com" in outbound_request(openssl_server("s_server_after", SSL_DIRECTORY / "client2.pem"))

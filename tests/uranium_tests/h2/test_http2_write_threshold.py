@@ -55,7 +55,8 @@ def configure_server(services: ServiceFactory, *, _server_port: int, _write_time
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _dns: DNSServer, _server_port: int, _write_threshold: float, _write_timeout: int) -> ATS:
+    ats_factory: ATSFactory, *, _dns: DNSServer, _server_port: int, _write_threshold: float, _write_timeout: int
+) -> ATS:
     """Configure outbound H2 and the selected write thresholds.
 
     :param _dns: Test-local dns configured by the test.
@@ -73,7 +74,8 @@ def configure_ats(
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map / https://example.com:{_server_port}/")
     ats.records.update(
         {
@@ -86,7 +88,8 @@ def configure_ats(
             "proxy.config.http2.write_time_threshold": _write_timeout,
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http",
-        })
+        }
+    )
     return ats
 
 
@@ -123,7 +126,8 @@ def test_http2_write_threshold(ats_factory: ATSFactory, services: ServiceFactory
     _dns = configure_dns(services)
     _server = configure_server(services, _server_port=_server_port, _write_timeout=write_timeout)
     _ats = configure_ats(
-        ats_factory, _dns=_dns, _server_port=_server_port, _write_threshold=write_threshold, _write_timeout=write_timeout)
+        ats_factory, _dns=_dns, _server_port=_server_port, _write_threshold=write_threshold, _write_timeout=write_timeout
+    )
     _client = configure_client(services, _ats=_ats, _write_timeout=write_timeout)
 
     _dns.start()

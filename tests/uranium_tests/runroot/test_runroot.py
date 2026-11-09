@@ -25,12 +25,13 @@ from tools.uranium.services import ProceduralContext
 
 
 def run(
-        *arguments: str | Path,
-        cwd: Path | None = None,
-        environment: dict[str, str] | None = None,
-        expected_return_codes: tuple[int, ...] = (0,),
-        _directory: Path,
-        _traffic_layout: Path) -> subprocess.CompletedProcess[str]:
+    *arguments: str | Path,
+    cwd: Path | None = None,
+    environment: dict[str, str] | None = None,
+    expected_return_codes: tuple[int, ...] = (0,),
+    _directory: Path,
+    _traffic_layout: Path,
+) -> subprocess.CompletedProcess[str]:
     """Run traffic_layout and return its captured output.
 
     :param _directory: Test-local directory configured by the test.
@@ -205,8 +206,9 @@ def test_runroot_use(procedural_context: ProceduralContext) -> None:
 
     environment = os.environ.copy()
     environment["TS_RUNROOT"] = str(second)
-    assert f"PREFIX: {second}" in run(
-        "info", environment=environment, _directory=_directory, _traffic_layout=_traffic_layout).stdout
+    assert (
+        f"PREFIX: {second}" in run("info", environment=environment, _directory=_directory, _traffic_layout=_traffic_layout).stdout
+    )
 
 
 def test_runroot_verify(procedural_context: ProceduralContext) -> None:
@@ -232,7 +234,8 @@ def test_runroot_verify(procedural_context: ProceduralContext) -> None:
         runroot_yaml.read_text().replace(
             f"runtimedir: {_layout['RUNTIMEDIR']}",
             "runtimedir: ./var/trafficserver",
-        ))
+        )
+    )
     # Initialization copies files as the invoking user, including any
     # existing installed logs. Verify that user's permissions unchanged.
     username = pwd.getpwuid(os.getuid()).pw_name
@@ -265,6 +268,7 @@ def test_runroot_verify(procedural_context: ProceduralContext) -> None:
         username,
         expected_return_codes=(70,),
         _directory=_directory,
-        _traffic_layout=_traffic_layout)
+        _traffic_layout=_traffic_layout,
+    )
     assert "Write permission failed" in failed.stdout
     assert str(inaccessible) in failed.stdout

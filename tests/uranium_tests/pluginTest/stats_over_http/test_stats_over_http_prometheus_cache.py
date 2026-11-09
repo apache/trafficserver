@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Render Prometheus stats from the cache as metrics appear and change."""
+
 import sys
 from pathlib import Path
 import pytest
@@ -31,15 +32,16 @@ ENDPOINTS: list[tuple[str, bool, bool]] = [
 
 
 def scrape(
-        services: ServiceFactory,
-        ats: ATS,
-        name: str,
-        path: str,
-        help_lines: bool,
-        expect: list[str],
-        families: list[str],
-        wait: bool = False,
-        concurrency: int = 1) -> None:
+    services: ServiceFactory,
+    ats: ATS,
+    name: str,
+    path: str,
+    help_lines: bool,
+    expect: list[str],
+    families: list[str],
+    wait: bool = False,
+    concurrency: int = 1,
+) -> None:
     """Scrape one endpoint and check its samples and families.
 
     :param services: Scrape client factory.
@@ -55,7 +57,9 @@ def scrape(
     arguments = [
         sys.executable,
         Path(__file__).parent / "check_prometheus.py",
-        str(ats.http_port), path, f"--concurrency={concurrency}"
+        str(ats.http_port),
+        path,
+        f"--concurrency={concurrency}",
     ]
     arguments += ["--help-lines"] if help_lines else []
     arguments += ["--wait"] if wait else []
@@ -80,11 +84,14 @@ def test_stats_over_http_prometheus_cache(ats_factory: ATSFactory, services: Ser
         [
             "test_metrics.so --count=2000 plugin.test_metrics.requests.get=1 plugin.test_metrics.queue=4",
             "stats_over_http.so --no-prometheus-help _stats",
-        ])
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "test_metrics|stats_over_http",
-    })
+        ]
+    )
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "test_metrics|stats_over_http",
+        }
+    )
     for path, options in [
         ("help/v2", "--format=prometheus_v2"),
         ("help/v1", "--format=prometheus"),
@@ -92,8 +99,8 @@ def test_stats_over_http_prometheus_cache(ats_factory: ATSFactory, services: Ser
         ("nohelp/v1", "--format=prometheus @pparam=--no-prometheus-help"),
     ]:
         ats.remap_config.add_line(
-            f"map http://127.0.0.1:{ats.http_port}/metrics/{path} http://127.0.0.1/"
-            f" @plugin=stats_over_http.so @pparam={options}")
+            f"map http://127.0.0.1:{ats.http_port}/metrics/{path} http://127.0.0.1/ @plugin=stats_over_http.so @pparam={options}"
+        )
     ats.start()
 
     # The first metrics.
@@ -115,8 +122,9 @@ def test_stats_over_http_prometheus_cache(ats_factory: ATSFactory, services: Ser
     for i, (path, help_lines, v2) in enumerate(ENDPOINTS):
         if v2:
             expect = [
-                'plugin_test_metrics_requests{method="get"} -5', 'plugin_test_metrics_requests{method="post"} 2',
-                "plugin_test_metrics_late 7"
+                'plugin_test_metrics_requests{method="get"} -5',
+                'plugin_test_metrics_requests{method="post"} 2',
+                "plugin_test_metrics_late 7",
             ]
             families = ["plugin_test_metrics_requests=2"]
         else:
@@ -137,12 +145,16 @@ def test_stats_over_http_prometheus_cache(ats_factory: ATSFactory, services: Ser
     # The remap rules reuse a render for 1 s, but a request with records[] gets its own render.  The plugin's count of
     # renders changes with each render, so two responses in a row differ.
     result = services.process(
-        "records", [
+        "records",
+        [
             sys.executable,
             Path(__file__).parent / "check_prometheus.py",
-            str(ats.http_port), "/metrics/nohelp/v1?records%5B%5D=plugin.stats_over_http.renders", "--fresh",
-            "--family=plugin_stats_over_http_renders=1"
-        ]).run()
+            str(ats.http_port),
+            "/metrics/nohelp/v1?records%5B%5D=plugin.stats_over_http.renders",
+            "--fresh",
+            "--family=plugin_stats_over_http_renders=1",
+        ],
+    ).run()
     assert result.returncode == 0, result.output
     assert "Verified 1 families and 1 samples" in result.stdout, "The response should hold only the sample of the named record."
 
@@ -160,20 +172,25 @@ def test_stats_over_http_records_unlisted(ats_factory: ATSFactory, services: Ser
         pytest.skip("stats_over_http.so is required")
     ats.copy_custom_plugin("{ATS_TEST_PLUGINS_DIR}/test_metrics.so")
     ats.plugin_config.add_lines(["test_metrics.so --count=10", "stats_over_http.so --no-prometheus-help _stats"])
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "test_metrics|stats_over_http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "test_metrics|stats_over_http",
+        }
+    )
     ats.start()
 
     def records(name: str, samples: int) -> None:
         result = services.process(
-            name, [
+            name,
+            [
                 sys.executable,
                 Path(__file__).parent / "check_prometheus.py",
-                str(ats.http_port), "/_stats/prometheus?records%5B%5D=plugin.test_metrics.gauge_5",
-                f"--family=plugin_test_metrics_gauge_5={samples}"
-            ]).run()
+                str(ats.http_port),
+                "/_stats/prometheus?records%5B%5D=plugin.test_metrics.gauge_5",
+                f"--family=plugin_test_metrics_gauge_5={samples}",
+            ],
+        ).run()
         assert result.returncode == 0, result.output
         assert f"and {samples} samples" in result.stdout, result.stdout
 

@@ -34,10 +34,12 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     if not ats.plugin_exists("stats_over_http.so"):
         pytest.skip("stats_over_http.so is not installed")
     ats.plugin_config.add_line("stats_over_http.so _stats")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "stats_over_http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "stats_over_http",
+        }
+    )
     return ats
 
 
@@ -88,7 +90,8 @@ def verify_prometheus_v2(output: str, *, parsed: bool = False) -> None:
         f'proxy_process_http_requests{suffix}{{direction="incoming"}}',
         f"proxy_process_http_completed_requests{suffix}",
         f'proxy_process_http_disallowed_continue{suffix}{{method="post",status="100"}}'
-        if parsed else 'proxy_process_http_disallowed_continue{method="post", status="100"}',
+        if parsed
+        else 'proxy_process_http_disallowed_continue{method="post", status="100"}',
         'proxy_process_cache_volume_lookup_active{volume="0"}',
         'proxy_process_eventloop_count{le="',
     )
@@ -97,11 +100,11 @@ def verify_prometheus_v2(output: str, *, parsed: bool = False) -> None:
     assert 'method="completed"' not in output
     if parsed:
         for expression in (
-                '# TYPE proxy_process_http_responses counter',
-                'proxy_process_http_responses_total{direction="incoming"}',
-                'proxy_process_http_responses_total{status="2xx"}',
-                'proxy_process_http_cache_ims_total{result="miss"}',
-                'proxy_process_cache_volume_lookup_success_total{volume="0"}',
+            '# TYPE proxy_process_http_responses counter',
+            'proxy_process_http_responses_total{direction="incoming"}',
+            'proxy_process_http_responses_total{status="2xx"}',
+            'proxy_process_http_cache_ims_total{result="miss"}',
+            'proxy_process_cache_volume_lookup_success_total{volume="0"}',
         ):
             assert expression in output
 
@@ -160,5 +163,6 @@ def test_stats_over_http(ats_factory: ATSFactory, services: ServiceFactory, curl
 
     verify_prometheus_v1(parse_metrics("/_stats/prometheus", _ats=_ats, _services=services), parsed=True)
     parsed_v2 = parse_metrics(
-        "/_stats/prometheus_v2", "--validate-v2-format", "--strict-family-metadata", _ats=_ats, _services=services)
+        "/_stats/prometheus_v2", "--validate-v2-format", "--strict-family-metadata", _ats=_ats, _services=services
+    )
     verify_prometheus_v2(parsed_v2, parsed=True)

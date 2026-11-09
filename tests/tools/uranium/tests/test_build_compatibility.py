@@ -28,7 +28,8 @@ SOURCE_ROOT = Path(__file__).parents[4]
 
 @pytest.mark.parametrize("suffix", ["", "_UDS"])
 @pytest.mark.parametrize(
-    "old,new,expected", [(None, None, "OFF"), ("OFF", None, "OFF"), ("ON", None, "ON"), ("OFF", "ON", "ON"), ("ON", "OFF", "ON")])
+    "old,new,expected", [(None, None, "OFF"), ("OFF", None, "OFF"), ("ON", None, "ON"), ("OFF", "ON", "ON"), ("ON", "OFF", "ON")]
+)
 def test_deprecated_cmake_options(tmp_path: Path, suffix: str, old: str | None, new: str | None, expected: str) -> None:
     """Migrate old entries once, including over cached Uranium defaults.
 
@@ -48,7 +49,8 @@ def test_deprecated_cmake_options(tmp_path: Path, suffix: str, old: str | None, 
         f'if(NOT "${{ENABLE_URTEST{suffix}}}" STREQUAL "{expected}")\n'
         '  message(FATAL_ERROR "Unexpected Uranium option value")\nendif()\n'
         f'if(DEFINED ENABLE_AUTEST{suffix})\n'
-        '  message(FATAL_ERROR "Deprecated option survived migration")\nendif()\n')
+        '  message(FATAL_ERROR "Deprecated option survived migration")\nendif()\n'
+    )
     command = [cmake]
     if old is not None:
         command.append(f"-DENABLE_AUTEST{suffix}:BOOL={old}")
@@ -80,7 +82,8 @@ def test_deprecated_cmake_strings(tmp_path: Path, suffix: str, value: str, new: 
         configured + f'set(AUTEST_{suffix} "{value}" CACHE STRING "")\n'
         f'include("{SOURCE_ROOT / "cmake/UraniumOptions.cmake"}")\n'
         f'if(NOT "${{URTEST_{suffix}}}" STREQUAL "{expected}" OR DEFINED AUTEST_{suffix})\n'
-        '  message(FATAL_ERROR "String migration failed")\nendif()\n')
+        '  message(FATAL_ERROR "String migration failed")\nendif()\n'
+    )
     result = subprocess.run([cmake, "-P", str(script)], capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
 
@@ -111,7 +114,8 @@ def test_existing_autest_build_configures(tmp_path: Path, case: str) -> None:
         f'set(ENABLE_AUTEST {old} CACHE BOOL "")\n'
         'set(ENABLE_AUTEST_UDS OFF CACHE BOOL "")\n'
         'set(AUTEST_SANDBOX "/tmp/ats-compatibility-sandbox" CACHE STRING "")\n'
-        'set(AUTEST_OPTIONS "-v -n 8" CACHE STRING "")\n')
+        'set(AUTEST_OPTIONS "-v -n 8" CACHE STRING "")\n'
+    )
     requested = ["-DENABLE_URTEST:BOOL=OFF"] if case == "old-on" else ["-DENABLE_URTEST:BOOL=ON"]
     if case == "old-on-new-uds":
         requested.append("-DENABLE_URTEST_UDS:BOOL=ON")
@@ -121,11 +125,11 @@ def test_existing_autest_build_configures(tmp_path: Path, case: str) -> None:
         sandbox, options = "/tmp/ats-explicit-sandbox", "-q -k basic"
         requested.extend([f"-DURTEST_SANDBOX:STRING={sandbox}", f"-DURTEST_OPTIONS:STRING={options}"])
     seeded = subprocess.run(
-        [*command, "-UENABLE_URTEST*", "-UURTEST_*", "-UENABLE_AUTEST*", "-UAUTEST_*", "-C",
-         str(seed), *requested],
+        [*command, "-UENABLE_URTEST*", "-UURTEST_*", "-UENABLE_AUTEST*", "-UAUTEST_*", "-C", str(seed), *requested],
         capture_output=True,
         text=True,
-        timeout=180)
+        timeout=180,
+    )
     assert seeded.returncode == 0, seeded.stdout + seeded.stderr
     cache = (build / "CMakeCache.txt").read_text()
     assert "ENABLE_URTEST:BOOL=ON" in cache

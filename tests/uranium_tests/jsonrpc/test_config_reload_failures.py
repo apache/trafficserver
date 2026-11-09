@@ -46,7 +46,8 @@ def test_config_reload_failures(ats_factory: ATSFactory) -> None:
                 "proxy.config.diags.debug.tags": "config|ssl|ip_allow",
                 "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
                 "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
-            })
+            }
+        )
         write_multicert(ats, valid=True)
         return ats
 
@@ -68,7 +69,8 @@ def test_config_reload_failures(ats_factory: ATSFactory) -> None:
                     "  - dest_ip: 1.2.3.4",
                     "    ssl_cert_name: /nonexistent/bad.pem",
                     "    ssl_key_name: /nonexistent/bad.key",
-                ])
+                ]
+            )
         content = multicert_text(["ssl_multicert:", *entries])
         path = ats.config_directory / "ssl_multicert.config"
         if path.exists():
@@ -121,20 +123,17 @@ def test_config_reload_failures(ats_factory: ATSFactory) -> None:
     response = rpc(
         "admin_config_reload",
         {
-            "configs":
-                {
-                    "ssl_multicert":
+            "configs": {
+                "ssl_multicert": {
+                    "ssl_multicert": [
                         {
-                            "ssl_multicert":
-                                [
-                                    {
-                                        "dest_ip": "*",
-                                        "ssl_cert_name": "/nonexistent/bad.pem",
-                                        "ssl_key_name": "/nonexistent/bad.key",
-                                    }
-                                ]
+                            "dest_ip": "*",
+                            "ssl_cert_name": "/nonexistent/bad.pem",
+                            "ssl_key_name": "/nonexistent/bad.key",
                         }
+                    ]
                 }
+            }
         },
     )
     assert "error" not in response, response

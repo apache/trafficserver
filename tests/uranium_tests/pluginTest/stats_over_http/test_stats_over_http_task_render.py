@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Render stats on a task thread while requests wait for the render."""
+
 import re
 import shutil
 import sys
@@ -39,8 +40,13 @@ def run(services: ServiceFactory, ats: ATS, scenario: str, path: str = "/", extr
     command = [
         sys.executable,
         Path(__file__).parent / "task_render.py",
-        str(ats.http_port), ats.traffic_out, scenario, f"--path={path}", f"--count={METRIC_COUNT}",
-        f"--remap-config={ats.remap_config.path}", *(extra or [])
+        str(ats.http_port),
+        ats.traffic_out,
+        scenario,
+        f"--path={path}",
+        f"--count={METRIC_COUNT}",
+        f"--remap-config={ats.remap_config.path}",
+        *(extra or []),
     ]
     result = services.process(scenario, command, environment=ats.environment).run()
     assert result.returncode == 0, result.output
@@ -53,10 +59,10 @@ def check_task_thread_renders(ats: ATS) -> None:
     :param ats: The stopped ATS.
     """
     output = ats.traffic_out.read_text(errors="replace")
-    assert re.search(r"\[ET_TASK \d+\] .*Rendered stats instance", output), \
-        f"{ats.name} should render the stats on a task thread."
-    assert not re.search(r"^\[[^\]]*\] (?!\[ET_TASK \d+\] ).*Rendered stats instance", output, re.MULTILINE), \
+    assert re.search(r"\[ET_TASK \d+\] .*Rendered stats instance", output), f"{ats.name} should render the stats on a task thread."
+    assert not re.search(r"^\[[^\]]*\] (?!\[ET_TASK \d+\] ).*Rendered stats instance", output, re.MULTILINE), (
         f"{ats.name} should render the stats only on a task thread."
+    )
 
 
 def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -84,7 +90,8 @@ def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceF
             "proxy.config.dump_mem_info_frequency": 1,
             # A stalled render holds one task thread.  More threads make it likely that a remap reload runs on another.
             "proxy.config.task_threads": 4,
-        })
+        }
+    )
     rules = {
         "concurrent": "@pparam=--format=prometheus",
         "reuse": f"@pparam=--format=json @pparam=--max-age-ms={REUSE_MAX_AGE_MS}",
@@ -94,11 +101,13 @@ def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceF
     }
     for name, options in rules.items():
         ats.remap_config.add_line(
-            f"map http://127.0.0.1:{ats.http_port}/metrics/{name} http://127.0.0.1/ @plugin=stats_over_http.so {options}")
+            f"map http://127.0.0.1:{ats.http_port}/metrics/{name} http://127.0.0.1/ @plugin=stats_over_http.so {options}"
+        )
     # The reset scenario expects the intercept to finish before the render, which needs allow_half_open=0.
     ats.remap_config.add_line(
         f"map http://127.0.0.1:{ats.http_port}/metrics/reset http://127.0.0.1/"
-        " @plugin=conf_remap.so @pparam=proxy.config.http.allow_half_open=0 @plugin=stats_over_http.so @pparam=--format=json")
+        " @plugin=conf_remap.so @pparam=proxy.config.http.allow_half_open=0 @plugin=stats_over_http.so @pparam=--format=json"
+    )
 
     # A process loads the global plugin once, so the global plugin with a short wait timeout needs a process of its own.
     # With one task thread, a held task can delay a render.
@@ -108,22 +117,25 @@ def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceF
         [
             f"test_metrics.so --count={METRIC_COUNT}",
             f"stats_over_http.so --max-age-ms=0 --wait-timeout-ms={GLOBAL_WAIT_TIMEOUT_MS} _stats",
-        ])
+        ]
+    )
     ats_global.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "stats_over_http|test_metrics",
             "proxy.config.task_threads": 1,
-        })
+        }
+    )
 
     ats.start()
     result = services.process(
-        "fetch-before", [sys.executable, directory / "fetch_stats.py",
-                         str(ats.http_port), "json", f"--count={METRIC_COUNT}"]).run()
+        "fetch-before", [sys.executable, directory / "fetch_stats.py", str(ats.http_port), "json", f"--count={METRIC_COUNT}"]
+    ).run()
     assert result.returncode == 0, result.output
     baseline = ats.run_directory / "cont_baseline"
-    result = services.process("count-before",
-                              [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
+    result = services.process(
+        "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]
+    ).run()
     assert result.returncode == 0, result.output
 
     # Answer concurrent requests from one render.
@@ -148,14 +160,14 @@ def test_stats_over_http_task_render(ats_factory: ATSFactory, services: ServiceF
 
     result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
     assert result.returncode == 0, result.output
-    assert "no more than the baseline" in result.stdout, \
-        "The requests, renders and watchdogs should release their continuations."
+    assert "no more than the baseline" in result.stdout, "The requests, renders and watchdogs should release their continuations."
 
     for process in (ats, ats_global):
         result = process.traffic_ctl("metric", "get", "plugin.stats_over_http.waiter_timeouts")
         assert result.returncode == 0, result.output
-        assert re.search(r"^plugin\.stats_over_http\.waiter_timeouts\s+[1-9][0-9]*$", result.output, re.MULTILINE), \
+        assert re.search(r"^plugin\.stats_over_http\.waiter_timeouts\s+[1-9][0-9]*$", result.output, re.MULTILINE), (
             f"{process.name} should count the requests that timed out waiting for a render."
+        )
 
     ats.stop()
     ats_global.stop()

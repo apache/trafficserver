@@ -36,22 +36,23 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer) -> ATS:
     ats = ats_factory.create("ts", enable_cache=False)
     ats.write_config_file(
         "test.inc",
-        "map http://example.two/ http://yada.com/ "
-        "@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1\n",
+        "map http://example.two/ http://yada.com/ @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1\n",
     )
     ats.remap_config.add_lines(
         (
             "map http://example.one/ http://yada.com/",
             ".include test.inc",
             "map http://example.three/ http://yada.com/",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "regex_remap|url_rewrite|plugin_factory",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     return ats
 
 

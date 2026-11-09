@@ -35,12 +35,13 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
     """Inverse visitor for converting ATS configuration back to HRW4U format."""
 
     def __init__(
-            self,
-            filename: str = SystemDefaults.DEFAULT_FILENAME,
-            section_label: SectionType = SectionType.REMAP,
-            debug: bool = SystemDefaults.DEFAULT_DEBUG,
-            error_collector=None,
-            preserve_comments: bool = True) -> None:
+        self,
+        filename: str = SystemDefaults.DEFAULT_FILENAME,
+        section_label: SectionType = SectionType.REMAP,
+        debug: bool = SystemDefaults.DEFAULT_DEBUG,
+        error_collector=None,
+        preserve_comments: bool = True,
+    ) -> None:
 
         super().__init__(filename=filename, debug=debug, error_collector=error_collector)
 
@@ -315,13 +316,13 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                     self.debug(f"comparison -> {result}")
                     return result
 
-                case _ if (set_ctx := comparison.set_()):
+                case _ if set_ctx := comparison.set_():
                     set_text = self.symbol_resolver.convert_set_to_brackets(set_ctx.getText())
                     result = f"{lhs_expr} in {set_text}"
                     self.debug(f"comparison -> {result}")
                     return result
 
-                case _ if (iprange_ctx := comparison.iprange()):
+                case _ if iprange_ctx := comparison.iprange():
                     iprange_text = self.symbol_resolver.format_iprange(iprange_ctx.getText())
                     result = f"{lhs_expr} in {iprange_text}"
                     self.debug(f"comparison -> {result}")
@@ -404,9 +405,9 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
             relocated_lines = None
             relocated_if_depth = 0
             if self._if_depth > 0 and self._pre_section_if_start is not None:
-                relocated_lines = self.output[self._pre_section_if_start:]
+                relocated_lines = self.output[self._pre_section_if_start :]
                 relocated_if_depth = self._if_depth
-                self.output = self.output[:self._pre_section_if_start]
+                self.output = self.output[: self._pre_section_if_start]
                 self.stmt_indent -= self._if_depth
                 self._if_depth = 0
                 self._pre_section_if_start = None

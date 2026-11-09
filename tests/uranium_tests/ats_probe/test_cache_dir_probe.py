@@ -34,25 +34,15 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
+        {"headers": "GET /cacheable HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n", "body": ""},
         {
-            "headers": "GET /cacheable HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": ("HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=120\r\n"
-                        "Content-Length: 5\r\n\r\n"),
+            "headers": ("HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=120\r\nContent-Length: 5\r\n\r\n"),
             "body": "hello",
         },
     )
     origin.add_response(
-        {
-            "headers": "PURGE /cacheable HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "PURGE /cacheable HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -72,7 +62,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.tags": "http|cache",
             "proxy.config.http.cache.required_headers": 0,
             "proxy.config.admin.user_id": "#-1",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 

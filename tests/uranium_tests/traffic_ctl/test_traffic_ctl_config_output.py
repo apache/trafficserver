@@ -34,7 +34,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc",
             "proxy.config.diags.debug.throttling_interval_msec": 0,
-        })
+        }
+    )
     return ats
 
 
@@ -91,7 +92,8 @@ def verify_get_match_diff_and_describe(*, _ats: ATS, _gold: Path) -> None:
         "get",
         "proxy.config.diags.debug.tags",
         "--default",
-        _ats=_ats)
+        _ats=_ats,
+    )
     assert_gold("t2_yaml.gold", "config", "get", "proxy.config.diags.debug.tags", "--records", "--default", _ats=_ats, _gold=_gold)
     assert_gold(
         "t3_yaml.gold",
@@ -103,7 +105,8 @@ def verify_get_match_diff_and_describe(*, _ats: ATS, _gold: Path) -> None:
         "--records",
         "--default",
         _ats=_ats,
-        _gold=_gold)
+        _gold=_gold,
+    )
     assert_gold("match.gold", "config", "match", "threads", "--default", _ats=_ats, _gold=_gold)
     assert_gold("t4_yaml.gold", "config", "match", "diags.logfile", "--records", _ats=_ats, _gold=_gold)
     result = command("config", "diff", _ats=_ats)
@@ -157,7 +160,8 @@ def verify_reset(*, _ats: ATS) -> None:
 
     reset_message = (
         "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync "
-        "configuration, restart is not required")
+        "configuration, restart is not required"
+    )
     assert_text(reset_message, "config", "reset", "proxy.config.diags.debug.tags", _ats=_ats)
     assert_debug_tags("http|dns", _ats=_ats)
 

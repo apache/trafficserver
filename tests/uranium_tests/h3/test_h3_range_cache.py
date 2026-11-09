@@ -36,10 +36,10 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin.add_response(
         {"headers": "GET /h3-range-cache HTTP/1.1\r\nHost: localhost\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: public, max-age=60\r\n"
-                    f"Content-Length: {len(H3_RANGE_CACHE__response_body)}\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: public, max-age=60\r\n"
+                f"Content-Length: {len(H3_RANGE_CACHE__response_body)}\r\n\r\n"
+            ),
             "body": H3_RANGE_CACHE__response_body,
         },
     )
@@ -62,13 +62,15 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "quic|http3|http",
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -88,7 +90,8 @@ def request(output: str, *extra: str, _ats: ATS, _curl: Curl) -> str:
             f"--silent --show-error --fail --ipv4 --http3-only --insecure --resolve "
             f"'range.example.com:{_ats.https_port}:127.0.0.1' {shlex.join(extra)} --output '{output}' "
             f"--write-out '\nhttp_code=%{{http_code}}\nsize_download=%{{size_download}}\n' "
-            f"'https://range.example.com:{_ats.https_port}/h3-range-cache'"),
+            f"'https://range.example.com:{_ats.https_port}/h3-range-cache'"
+        ),
         timeout=30,
     )
     assert result.returncode == 0, result.output

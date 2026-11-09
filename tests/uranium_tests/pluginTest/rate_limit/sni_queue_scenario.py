@@ -57,10 +57,12 @@ def run_rate_limit_sni(
         config = ["selector:", "  - sni: rate.limited.com", "    limit: 1", *queue_lines]
         ats.write_config_file("rate_limit.config", "\n".join(config) + "\n")
         ats.plugin_config.add_line(f"rate_limit.so {ats.config_directory}/rate_limit.config")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "rate_limit",
-        })
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rate_limit",
+            }
+        )
         return ats
 
     def configure_client(services: ServiceFactory) -> ProcessService:

@@ -260,7 +260,8 @@ class TestCreateParseTreeErrors:
             hrw4uParser,
             "test",
             collect_errors=True,
-            max_errors=10)
+            max_errors=10,
+        )
         assert ec is not None
         assert ec.has_errors()
 
@@ -299,7 +300,6 @@ class TestGenerateOutput:
         """Visitor that raises should collect error when error_collector is present."""
 
         class BrokenVisitor:
-
             def __init__(self, **kw):
                 pass
 
