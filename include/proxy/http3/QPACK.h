@@ -65,13 +65,26 @@ public:
   int encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, uint64_t &header_block_len);
 
   /*
-   * This will emit either of two events below:
-   * - QPACK_EVENT_DECODE_COMPLETE (Data: *HTTPHdr)
-   * - QPACK_EVENT_DECODE_FAILED (Data: nullptr)
+   * This will emit either of two events below, on the thread decode() is
+   * called on:
+   * - QPACK_EVENT_DECODE_COMPLETE (the event's cookie is &hdr)
+   * - QPACK_EVENT_DECODE_FAILED (the event's cookie is &hdr, or nullptr if the
+   *   decoder had already failed)
+   *
+   * Every decode() and cancel() on one QPACK has to run on the same thread:
+   * QPACK keeps the decodes it has not reported yet on lists that only that
+   * thread touches.
    */
-  int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
-             EThread *thread = this_ethread());
+  int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont);
 
+  /*
+   * Stops reporting on the decodes for @a stream_id: a blocked decode is
+   * dropped, and a result still in the event queue is never delivered. Call
+   * this, on the thread decode() runs on, before the continuation or the
+   * HTTPHdr given to decode() goes away. It sends nothing to the peer.
+   *
+   * Returns the number of blocked decodes and queued results dropped.
+   */
   int cancel(uint64_t stream_id);
 
   void set_encoder_stream(QUICStreamId id);
@@ -193,6 +206,59 @@ private:
     DecodeRequest *_prev = nullptr;
   };
 
+  /*
+   * Carries one decode result to the continuation it is for. QPACK schedules
+   * this instead of that continuation, and keeps it listed until it runs, so
+   * that cancel() can withdraw a result still waiting in the event queue.
+   */
+  class DecodeReport : public Continuation
+  {
+  public:
+    DecodeReport(QPACK *qpack, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr);
+
+    int deliver(int event, Event *data);
+
+    uint64_t
+    stream_id() const
+    {
+      return this->_stream_id;
+    }
+
+    // For a report taken off QPACK's list: it still runs, but delivers nothing.
+    void
+    withdraw()
+    {
+      this->_continuation = nullptr;
+      this->_qpack        = nullptr;
+    }
+
+    class Linkage
+    {
+    public:
+      static DecodeReport *&
+      next_ptr(DecodeReport *t)
+      {
+        return t->_next;
+      }
+      static DecodeReport *&
+      prev_ptr(DecodeReport *t)
+      {
+        return t->_prev;
+      }
+    };
+
+  private:
+    // Set exactly while this report is on _qpack->_pending_reports.
+    QPACK         *_qpack;
+    Continuation  *_continuation;
+    const uint64_t _stream_id;
+    const int      _event;
+    HTTPHdr *const _hdr;
+
+    DecodeReport *_next = nullptr;
+    DecodeReport *_prev = nullptr;
+  };
+
   struct EntryReference {
     uint16_t smallest;
     uint16_t largest;
@@ -214,6 +280,13 @@ private:
 
   swoc::IntrusiveDList<DecodeRequest::Linkage> _blocked_list;
   bool                                         _add_to_blocked_list(DecodeRequest *decode_request);
+
+  swoc::IntrusiveDList<DecodeReport::Linkage> _pending_reports;
+  void _report(EThread *thread, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr);
+
+  // The thread the first decode() ran on. _blocked_list and _pending_reports
+  // are only safe to touch from it.
+  EThread *_decode_thread = nullptr;
 
   uint16_t _largest_known_received_index = 0;
   void     _update_largest_known_received_index_by_insert_count(uint16_t insert_count);
