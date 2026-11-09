@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Serve Prometheus stats named by a rules file, and load the file again after a change and a reload."""
+
 import json
 import os
 import re
@@ -38,10 +39,12 @@ def create_ats(ats_factory: ATSFactory, name: str) -> ATS:
         pytest.skip("stats_over_http.so is required")
     ats.copy_custom_plugin("{ATS_TEST_PLUGINS_DIR}/test_metrics.so")
     ats.plugin_config.add_line(f"test_metrics.so {TEST_METRICS}")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "stats_over_http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "stats_over_http",
+        }
+    )
     ats.write_config_file("rules.yaml", (RULES / "labels.yaml").read_text())
     return ats
 
@@ -64,7 +67,8 @@ def scrape(
     status: int = 200,
     wait: bool = False,
     path: str = "/metrics",
-    options: tuple[str, ...] = ()) -> None:
+    options: tuple[str, ...] = (),
+) -> None:
     """Scrape a path and check the response.
 
     :param services: Scrape client factory.
@@ -79,7 +83,10 @@ def scrape(
     arguments = [
         sys.executable,
         Path(__file__).parent / "check_prometheus.py",
-        str(ats.http_port), path, f"--status={status}", *options
+        str(ats.http_port),
+        path,
+        f"--status={status}",
+        *options,
     ]
     arguments += ["--wait"] if wait else []
     arguments += [f"--expect={line}" for line in expect]
@@ -138,7 +145,8 @@ def test_stats_over_http_prometheus_rules_reload(ats_factory: ATSFactory, servic
             " @plugin=stats_over_http.so @pparam=--config=labels.yaml",
             f"map http://127.0.0.1:{ats.http_port}/settings http://127.0.0.1/"
             " @plugin=stats_over_http.so @pparam=--config=settings.yaml",
-        ])
+        ]
+    )
     # The broken rules files below make the plugin and the remap reload log errors.
     ats.allow_errors(r"has no capture group")
     ats.allow_errors(r"remap\.config failed to load")
@@ -149,12 +157,15 @@ def test_stats_over_http_prometheus_rules_reload(ats_factory: ATSFactory, servic
     # sample and, because it is not a real record, no further walk.
     for name in ("string-first", "string-again"):
         result = services.process(
-            name, [
+            name,
+            [
                 sys.executable,
                 Path(__file__).parent / "check_prometheus.py",
-                str(ats.http_port), "/labels?records%5B%5D=proxy.process.version.server.short&records%5B%5D=no.such.record",
-                "--family=proxy_process_version_server_short=1"
-            ]).run()
+                str(ats.http_port),
+                "/labels?records%5B%5D=proxy.process.version.server.short&records%5B%5D=no.such.record",
+                "--family=proxy_process_version_server_short=1",
+            ],
+        ).run()
         assert result.returncode == 0, result.output
         assert "Verified 1 families and 1 samples" in result.stdout, "The response should hold only the string metric."
 
@@ -186,13 +197,17 @@ def test_stats_over_http_prometheus_rules_reload(ats_factory: ATSFactory, servic
     walks = ats.traffic_out.read_text(errors="replace").count("Walking every record for a request with records[]")
     assert walks == 1, f"Only the first request for the string metric should walk every record, not {walks}."
     diags = ats.diags_log.read_text(errors="replace")
-    assert re.search(r"rules\.yaml: line 20: prometheus\.rules\.match: .* has no capture group", diags), \
+    assert re.search(r"rules\.yaml: line 20: prometheus\.rules\.match: .* has no capture group", diags), (
         "The plugin should log the error in the rules file."
+    )
     assert re.search(
         r"Writing plugin\.test_metrics\.requests\.post with the labels \(method\) of plugin_test_metrics_requests instead"
-        r" of its own labels \(verb\)", diags), "The plugin should log the relabeled sample."
-    assert re.search(r"labels\.yaml: line 20: prometheus\.rules\.match: .* has no capture group", diags), \
+        r" of its own labels \(verb\)",
+        diags,
+    ), "The plugin should log the relabeled sample."
+    assert re.search(r"labels\.yaml: line 20: prometheus\.rules\.match: .* has no capture group", diags), (
         "The failed reload should log the error in the rules file."
+    )
     assert "FATAL:" not in diags, diags
     assert "Unrecognized configuration value" not in diags, diags
 
@@ -217,7 +232,8 @@ def test_stats_over_http_prometheus_rules_reload_yaml(ats_factory: ATSFactory, s
             "        params:",
             "          - --config=rules.yaml",
             "          - --on-config-error=503",
-        ])
+        ]
+    )
     ats.start()
 
     scrape(services, ats, "rules", LABELED)
@@ -226,5 +242,6 @@ def test_stats_over_http_prometheus_rules_reload_yaml(ats_factory: ATSFactory, s
     scrape(services, ats, "after-reload", ['plugin_test_metrics_requests{verb="get"} 7'], wait=True)
 
     ats.stop()
-    assert re.search(r"remap\.yaml finished loading", ats.diags_log.read_text(errors="replace")), \
+    assert re.search(r"remap\.yaml finished loading", ats.diags_log.read_text(errors="replace")), (
         "Traffic Server should load remap.yaml."
+    )

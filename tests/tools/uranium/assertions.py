@@ -53,5 +53,6 @@ def assert_matches_gold(actual: str | Path, expected: Path) -> None:
     pattern = "\\A" + ".*?".join(re.escape(part) for part in re.split(r"(?:\{\}|``)", expected_text)) + "\\Z"
     if re.match(pattern, actual_text, re.DOTALL) is None:
         difference = "".join(
-            difflib.unified_diff(expected_text.splitlines(True), actual_text.splitlines(True), str(expected), actual_name))
+            difflib.unified_diff(expected_text.splitlines(True), actual_text.splitlines(True), str(expected), actual_name)
+        )
         raise AssertionError(f"Output did not match gold file:\n{difference}")

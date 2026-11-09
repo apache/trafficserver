@@ -46,7 +46,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _forward_port: in
             "proxy.config.url_remap.pristine_host_hdr": 1,
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.allow_private_connect()
     ats.write_config_file(
         "sni.yaml",

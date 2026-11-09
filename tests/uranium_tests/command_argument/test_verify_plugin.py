@@ -71,7 +71,8 @@ def test_verify_global_plugin(ats_factory: ATSFactory) -> None:
     verify(None, return_code=1, diagnostic=r"requires a plugin SO file path argument", _ats=_ats, _command=command)
     verify("/this/file/does/not/exist.so", return_code=1, diagnostic=r"No such file or directory", _ats=_ats, _command=command)
     verify(
-        "missing_ts_plugin_init.so", return_code=1, diagnostic=r"unable to find TSPluginInit function", _ats=_ats, _command=command)
+        "missing_ts_plugin_init.so", return_code=1, diagnostic=r"unable to find TSPluginInit function", _ats=_ats, _command=command
+    )
     verify("conf_remap_stripped.so", return_code=1, diagnostic=r"unable to find TSPluginInit function", _ats=_ats, _command=command)
     verify("ssl_hook_test.so", return_code=0, diagnostic=r"verifying plugin .* Success", _ats=_ats, _command=command)
     verify("missing_mangled_definition.so", return_code=1, diagnostic=r"unable to load", _ats=_ats, _command=command)
@@ -89,10 +90,7 @@ def test_verify_remap_plugin(ats_factory: ATSFactory) -> None:
     verify(None, return_code=1, diagnostic=r"requires a plugin SO file path argument", _ats=_ats, _command=command)
     verify("/this/file/does/not/exist.so", return_code=1, diagnostic=r"No such file or directory", _ats=_ats, _command=command)
     verify(
-        "missing_ts_plugin_init.so",
-        return_code=1,
-        diagnostic=r"missing required function TSRemapInit",
-        _ats=_ats,
-        _command=command)
+        "missing_ts_plugin_init.so", return_code=1, diagnostic=r"missing required function TSRemapInit", _ats=_ats, _command=command
+    )
     verify("ssl_hook_test.so", return_code=1, diagnostic=r"missing required function TSRemapInit", _ats=_ats, _command=command)
     verify("conf_remap_stripped.so", return_code=0, diagnostic=r"verifying plugin .* Success", _ats=_ats, _command=command)

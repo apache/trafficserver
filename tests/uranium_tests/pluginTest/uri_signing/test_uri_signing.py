@@ -23,21 +23,15 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
 
 GOOD_TOKEN = (
-    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9."
-    "eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9."
-    "zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY")
-EXPIRED_TOKEN = (
-    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9."
-    "eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9."
-    "GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8")
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"
+)
+EXPIRED_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjF9.GkdlOPHQc6BqS4Q6x79GeYuVFO2zuGbaPZZsJfD6ir8"
 SECOND_KEY_TOKEN = (
-    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9."
-    "eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9."
-    "ozH4sNwgcOlTZT0l4RQlVCH_osxz9yI1HCBesEv-jYg")
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJpc3N1ZXIiLCJleHAiOjE5MjMwNTYwODR9.ozH4sNwgcOlTZT0l4RQlVCH_osxz9yI1HCBesEv-jYg"
+)
 MISSING_ISS_TOKEN = (
-    "ewogICJ0eXAiOiAiSldUIiwKICAiYWxnIjogIkhTMjU2Igp9."
-    "ewogICJleHAiOiAxOTIzMDU2MDg0Cn0."
-    "zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY")
+    "ewogICJ0eXAiOiAiSldUIiwKICAiYWxnIjogIkhTMjU2Igp9.ewogICJleHAiOiAxOTIzMDU2MDg0Cn0.zw_wFQ-wvrWmfPLGj3hAUWn-GOHkiJZi2but4KV0paY"
+)
 
 
 @dataclass(frozen=True)
@@ -63,10 +57,7 @@ def configure_server(*, _services: ServiceFactory) -> OriginServer:
     )
     origin.add_response(
         {"headers": "GET /someasset.ts HTTP/1.1\r\nHost: somehost\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "somebody"
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "somebody"},
     )
     origin.add_response(
         {"headers": "GET /crossdomain.xml HTTP/1.1\r\nHost: somehost\r\n\r\n"},
@@ -88,14 +79,16 @@ def configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> ATS:
     ats = _ats_factory.create("ats", enable_cache=False)
     if not ats.plugin_exists("uri_signing.so"):
         pytest.skip("uri_signing.so is not installed")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "uri_signing|http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "uri_signing|http",
+        }
+    )
     ats.copy_to_config("config.json", "run_sign.sh", "signer.json")
     ats.remap_config.add_line(
-        f"map http://somehost/ http://127.0.0.1:{_origin.port}/ "
-        f"@plugin=uri_signing.so @pparam={ats.config_directory}/config.json")
+        f"map http://somehost/ http://127.0.0.1:{_origin.port}/ @plugin=uri_signing.so @pparam={ats.config_directory}/config.json"
+    )
     return ats
 
 

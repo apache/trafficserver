@@ -43,38 +43,44 @@ if [ ! -x "$FORMAT" ]; then
     exit 1
 fi
 
-# Check for uv which is required for yapf and cmake-format.
+# Check for uv which is required for Ruff and cmake-format.
 if ! command -v uv &> /dev/null; then
     echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
 fi
 
 # Get version variables from the formatting scripts.
-source "$GIT_TOP/tools/yapf.sh"
+source "$GIT_TOP/tools/ruff.sh"
 source "$GIT_TOP/tools/cmake-format.sh"
 
 # Where to store the patch
 clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
-yapf_patch_file=$(mktemp -t yapf.XXXXXXXXXX)
+ruff_patch_file=$(mktemp -t ruff.XXXXXXXXXX)
+ruff_error_file=$(mktemp -t ruff-error.XXXXXXXXXX)
 cmake_format_patch_file=$(mktemp -t cmake-format.XXXXXXXXXX)
-trap "rm -f $clang_patch_file $yapf_patch_file $cmake_format_patch_file" 0 1 2 3 5 15
+trap "rm -f $clang_patch_file $ruff_patch_file $ruff_error_file $cmake_format_patch_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
-REPO_ROOT=$(cd $(dirname $0)/../.. && git rev-parse --show-toplevel)
-YAPF_CONFIG=${REPO_ROOT}/.style.yapf
+REPO_ROOT=${GIT_TOP}
+RUFF_CONFIG=${REPO_ROOT}/ruff.toml
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Catch2|fastlz|highway|ls-hpack|swoc|yamlcpp)" |  while read file; do
     case "$file" in
     *.cc | *.c | *.h | *.h.in | *.cript)
         ${FORMAT} "$file" | diff -u "$file" - >>"$clang_patch_file"
         ;;
     # Keep this list of Python extensions the same with the list of
-    # extensions searched for in the tools/yapf.sh script.
+    # extensions searched for in the tools/ruff.sh script.
     *.py | *.cli.ext | *.test.ext)
-        uv tool run --quiet yapf@${YAPF_VERSION} \
-            --style ${YAPF_CONFIG} \
-            --parallel \
+        uv tool run --quiet ruff@${RUFF_VERSION} format \
+            --config "${RUFF_CONFIG}" \
             --diff \
-            "$file" >>"$yapf_patch_file"
+            --quiet \
+            "$file" >>"$ruff_patch_file"
+        ruff_status=$?
+        if [ "${ruff_status}" -gt 1 ]; then
+            echo "Ruff failed while checking ${file}." >&2
+            echo "${file}" >>"$ruff_error_file"
+        fi
         ;;
     esac
 done
@@ -95,14 +101,14 @@ else
     echo
 fi
 
-if [ -s "$yapf_patch_file" ]; then
-    echo "The commit is not accepted because yapf reports issues with it."
+if [ -s "$ruff_patch_file" ] || [ -s "$ruff_error_file" ]; then
+    echo "The commit is not accepted because Ruff reports issues with it."
     echo "The easiest way to fix this is to run:"
     echo
     echo "    $ cmake --build <build_dir> --target format"
     exit 1
 else
-    echo "This commit complies with the current yapf formatting rules."
+    echo "This commit complies with the current Ruff formatting rules."
     echo
 fi
 

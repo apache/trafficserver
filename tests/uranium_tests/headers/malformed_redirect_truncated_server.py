@@ -30,51 +30,34 @@ LOCATION = b'Location: http://www.example.com/elsewhere\r\n'
 # here for the other reason this file reads the socket directly, which is to pin
 # what happens to the connection a refused response arrived on.
 RESPONSES = {
-
     # The fields that arrived are all there is. This is the shape a genuinely
     # broken origin produces, and it must still get its redirect through.
     '/truncated-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 0\r\n'),
-
     # The same early close, but the fields that did arrive disagree about the
     # body length. Running out of header does not make the framing trustworthy.
-    '/truncated-conflicting-cl-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\n'
-                                      b'Content-Length: 11\r\n'),
-
+    '/truncated-conflicting-cl-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\nContent-Length: 11\r\n'),
     # Transfer-Encoding supersedes Content-Length, so the body boundary is
     # unambiguous once Content-Length is dropped.
-    '/truncated-te-cl-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Transfer-Encoding: chunked\r\n'
-                             b'Content-Length: 5\r\n'),
-
+    '/truncated-te-cl-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Transfer-Encoding: chunked\r\nContent-Length: 5\r\n'),
     # Two Content-Length fields that agree. They mean one body length, so
     # exactly one of them should survive.
-    '/truncated-dup-cl-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\n'
-                              b'Content-Length: 5\r\n'),
-
+    '/truncated-dup-cl-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\nContent-Length: 5\r\n'),
     # Ambiguous framing on a connection the origin leaves open, so a proxy that
     # returned this connection to its pool would carry the unread remainder of
     # the body into whatever response came next on it.
-    '/pooled-conflicting-cl-302':
-        (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\n'
-         b'Content-Length: 11\r\n'
-         b'\r\n'
-         b'hello world'),
-
+    '/pooled-conflicting-cl-302': (
+        b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\nContent-Length: 11\r\n\r\nhello world'
+    ),
     # A redirect with nothing wrong with it, used to show the connection the
     # refused response arrived on did not poison the next one.
-    '/well-formed-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\n'
-                         b'Connection: close\r\n'
-                         b'\r\n'
-                         b'hello'),
+    '/well-formed-302': (b'HTTP/1.1 302 Found\r\n' + LOCATION + b'Content-Length: 5\r\nConnection: close\r\n\r\nhello'),
 }
 
 # Paths whose response deliberately leaves the connection open, so the test can
 # tell whether the proxy reuses a connection that still has unread bytes on it.
 KEEP_ALIVE_PATHS = frozenset({'/pooled-conflicting-cl-302'})
 
-NOT_FOUND = (b'HTTP/1.1 404 Not Found\r\n'
-             b'Content-Length: 0\r\n'
-             b'Connection: close\r\n'
-             b'\r\n')
+NOT_FOUND = b'HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'
 
 
 def parse_args() -> argparse.Namespace:

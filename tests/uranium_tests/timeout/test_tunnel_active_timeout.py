@@ -38,14 +38,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin", ssl=True)
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: server\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "hello"
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: server\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "hello"},
     )
     return origin
 
@@ -66,23 +60,18 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.http.connect_ports": str(_origin.https_port),
             "proxy.config.http.transaction_active_timeout_in": 2,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / https://127.0.0.1:{_origin.https_port}")
     ats.allow_private_connect()
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "custom",
-                        "format": "%<crc> %<pssc> %<cqhm>"
-                    }],
-                    "logs": [{
-                        "filename": "squid.log",
-                        "format": "custom"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "custom", "format": "%<crc> %<pssc> %<cqhm>"}],
+                "logs": [{"filename": "squid.log", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 

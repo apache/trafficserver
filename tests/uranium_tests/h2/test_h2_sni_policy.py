@@ -29,14 +29,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -59,18 +53,24 @@ def configure_ats(ats_factory: ATSFactory, accept_threads: int, *, _origin: Orig
             "proxy.config.diags.debug.tags": "http|ssl",
             "proxy.config.url_remap.pristine_host_hdr": 1,
             "proxy.config.accept_threads": accept_threads,
-        })
+        }
+    )
     if _sni_enables_h2:
-        ats.records.update({
-            "proxy.config.http.server_ports": f"{ats.https_port}:ssl:proto=http {ats.http_port}",
-        })
+        ats.records.update(
+            {
+                "proxy.config.http.server_ports": f"{ats.https_port}:ssl:proto=http {ats.http_port}",
+            }
+        )
     state = "on" if _sni_enables_h2 else "off"
-    ats.write_config_file("sni.yaml", f'''sni:
+    ats.write_config_file(
+        "sni.yaml",
+        f'''sni:
 - fqdn: bar.com
   http2: {state}
 - fqdn: "*.foo.com"
   http2: {state}
-''')
+''',
+    )
     return ats
 
 
@@ -85,9 +85,7 @@ def request(hostname: str, expects_h2: bool, *, _ats: ATS, _curl: Curl) -> None:
 
     result = _curl.run_for(
         _ats,
-        (
-            f"--verbose --insecure --ipv4 --resolve '{hostname}:{_ats.https_port}:127.0.0.1' "
-            f"'https://{hostname}:{_ats.https_port}/'"),
+        (f"--verbose --insecure --ipv4 --resolve '{hostname}:{_ats.https_port}:127.0.0.1' 'https://{hostname}:{_ats.https_port}/'"),
         timeout=10,
     )
     assert result.returncode == 0, result.output

@@ -54,13 +54,15 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.server.version.min": 2,
             "proxy.config.ssl.server.version.max": 2,
             "proxy.config.ssl.server.cipher_suite": ":".join(("ECDHE-RSA-AES128-GCM-SHA256", *prohibited_ciphers(ats))) + seclevel,
-        })
+        }
+    )
     return ats
 
 
@@ -79,7 +81,8 @@ def run_client(cipher: str, *, send_request: bool = False, _ats: ATS) -> str:
         arguments = "-ign_eof "
     result = _ats.run_shell(
         f"{prefix}openssl s_client {arguments}-tls1_2 -cipher {cipher} "
-        f"-alpn h2,http/1.1 -connect 127.0.0.1:{_ats.https_port}" + ("" if send_request else " </dev/null"))
+        f"-alpn h2,http/1.1 -connect 127.0.0.1:{_ats.https_port}" + ("" if send_request else " </dev/null")
+    )
     assert result.returncode == 0, result.output
     return result.output
 

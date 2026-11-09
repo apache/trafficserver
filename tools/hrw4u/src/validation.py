@@ -24,7 +24,6 @@ from hrw4u.common import RegexPatterns
 
 
 class ValidatorChain:
-
     def __init__(self, funcs: list[Callable[[list[str]], None]] | None = None) -> None:
         self._validators: list[Callable[[list[str]], None]] = funcs or []
 
@@ -118,7 +117,8 @@ class Validator:
         def validator(args: list[str]) -> None:
             if not minimum <= len(args) <= maximum:
                 raise SymbolResolutionError(
-                    str(args), f"Invalid number of arguments (expected {minimum}-{maximum}, got {len(args)})")
+                    str(args), f"Invalid number of arguments (expected {minimum}-{maximum}, got {len(args)})"
+                )
 
         return ValidatorChain([validator])
 
@@ -166,7 +166,8 @@ class Validator:
             if (value.startswith('"') and value.endswith('"')) or Validator._SIMPLE_TOKEN_RE.fullmatch(value):
                 return
             raise SymbolResolutionError(
-                value, "Value must be quoted unless it is a simple token (letters, digits, underscore, dash)")
+                value, "Value must be quoted unless it is a simple token (letters, digits, underscore, dash)"
+            )
 
         return validator
 
@@ -252,7 +253,8 @@ class Validator:
 
     @staticmethod
     def normalize_arg_at(
-        index: int, normalize_func: Callable[[str], str] = lambda x: x.strip().strip('"').upper()) -> Callable[[list[str]], None]:
+        index: int, normalize_func: Callable[[str], str] = lambda x: x.strip().strip('"').upper()
+    ) -> Callable[[list[str]], None]:
         """Normalizes argument at specified index using the provided normalization function."""
 
         def validator(args: list[str]) -> None:
@@ -276,7 +278,8 @@ class Validator:
                     if value not in allowed_values:
                         raise SymbolResolutionError(
                             value,
-                            f"Invalid value '{value}' for field '{field}'. Must be one of: {', '.join(sorted(allowed_values))}")
+                            f"Invalid value '{value}' for field '{field}'. Must be one of: {', '.join(sorted(allowed_values))}",
+                        )
                 else:
                     raise SymbolResolutionError(field, f"Unknown field '{field}' for conditional validation")
 

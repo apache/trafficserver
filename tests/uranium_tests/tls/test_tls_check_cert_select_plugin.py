@@ -88,7 +88,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.tags": "ssl_secret_load_test|ssl",
@@ -99,7 +100,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     return ats
 
 
@@ -118,11 +120,13 @@ def request(hostname: str, ca_file: str | None = None, expected_code: int = 0, *
         arguments.append("--insecure")
     else:
         arguments.extend(("--cacert", str(SSL_DIRECTORY / ca_file)))
-    arguments.extend((
-        "--resolve",
-        f"{hostname}:{_ats.https_port}:127.0.0.1",
-        f"https://{hostname}:{_ats.https_port}",
-    ))
+    arguments.extend(
+        (
+            "--resolve",
+            f"{hostname}:{_ats.https_port}:127.0.0.1",
+            f"https://{hostname}:{_ats.https_port}",
+        )
+    )
     result = _curl.run_for(
         _ats,
         shlex.join(arguments),

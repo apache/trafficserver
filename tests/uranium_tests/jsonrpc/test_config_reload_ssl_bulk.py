@@ -37,14 +37,16 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "config.reload",
-        })
+        }
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.write_config_file("sni.yaml", 'sni:\n- fqdn: "*.example.com"\n  verify_client: NONE\n')
     ats.parent_config.add_line("# empty")
     ats.cache_config.add_line("# empty")
@@ -63,7 +65,8 @@ def install_bulk_config(*, _ats: ATS) -> None:
     for index in range(1, NUM_CERTS + 1):
         commands.append(
             f'cp "{ssl_dir / "server.pem"}" "{ssl_dir / f"cert-{index:02d}.pem"}" '
-            f'&& cp "{ssl_dir / "server.key"}" "{ssl_dir / f"cert-{index:02d}.key"}"')
+            f'&& cp "{ssl_dir / "server.key"}" "{ssl_dir / f"cert-{index:02d}.key"}"'
+        )
         lines.extend((f"  - ssl_cert_name: cert-{index:02d}.pem", f"    ssl_key_name: cert-{index:02d}.key"))
     multicert = _ats.config_directory / "ssl_multicert.yaml"
     document = "\n".join(lines) + "\n"
@@ -88,7 +91,8 @@ def break_certificates(*, _ats: ATS) -> None:
         f'&& cp "{ssl_dir / "cert-01.key"}" "{ssl_dir / "cert-13.key"}" '
         f'&& touch "{ssl_dir / "cert-13.pem"}" '
         f'&& rm -f "{ssl_dir / "cert-17.pem"}" '
-        f'&& touch "{multicert}" "{sni}" && traffic_ctl config reload -t ssl-bulk-partial')
+        f'&& touch "{multicert}" "{sni}" && traffic_ctl config reload -t ssl-bulk-partial'
+    )
     require_command(_ats.run_shell(command))
 
 
@@ -101,10 +105,10 @@ def recover_certificates(*, _ats: ATS) -> None:
     ssl_dir = _ats.ssl_directory
     commands = [
         f'cp "{ssl_dir / "server.pem"}" "{ssl_dir / f"cert-{index:02d}.pem"}" '
-        f'&& cp "{ssl_dir / "server.key"}" "{ssl_dir / f"cert-{index:02d}.key"}"' for index in BAD_CERTS
+        f'&& cp "{ssl_dir / "server.key"}" "{ssl_dir / f"cert-{index:02d}.key"}"'
+        for index in BAD_CERTS
     ]
-    commands.append(f'touch "{_ats.config_directory / "ssl_multicert.yaml"}" '
-                    f'"{_ats.config_directory / "sni.yaml"}"')
+    commands.append(f'touch "{_ats.config_directory / "ssl_multicert.yaml"}" "{_ats.config_directory / "sni.yaml"}"')
     commands.append("traffic_ctl config reload -t ssl-bulk-recover")
     require_command(_ats.run_shell(" && ".join(commands)))
 

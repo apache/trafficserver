@@ -28,10 +28,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("server")
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "curl test"
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "curl test"},
     )
     return origin
 
@@ -54,7 +51,8 @@ def configure_tls_origin(ats_factory: ATSFactory, name: str, origin: OriginServe
             "proxy.config.http.cache.http": 0,
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.ssl.server.session_ticket.enable": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.http_port}")
     return ats
 
@@ -80,25 +78,27 @@ def configure_proxy(ats_factory: ATSFactory, *, _ts_a: ATS, _ts_b: ATS) -> ATS:
             # Every request needs its own origin handshake.
             "proxy.config.http.keep_alive_enabled_out": 0,
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
-    ats.remap_config.add_lines((
-        f"map /a https://127.0.0.1:{_ts_a.https_port}",
-        f"map /b https://127.0.0.1:{_ts_b.https_port}",
-    ))
+        }
+    )
+    ats.remap_config.add_lines(
+        (
+            f"map /a https://127.0.0.1:{_ts_a.https_port}",
+            f"map /b https://127.0.0.1:{_ts_b.https_port}",
+        )
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
+            "logging": {
+                "formats": [
+                    {
                         "name": "reuse",
                         "format": "%<cquup> pqssr=%<pqssr>",
-                    }],
-                    "logs": [{
-                        "filename": "reuse",
-                        "format": "reuse"
-                    }],
-                }
-        })
+                    }
+                ],
+                "logs": [{"filename": "reuse", "format": "reuse"}],
+            }
+        }
+    )
     return ats
 
 

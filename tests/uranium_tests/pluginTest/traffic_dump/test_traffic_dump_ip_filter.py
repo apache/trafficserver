@@ -39,12 +39,8 @@ def configure_server(services: ServiceFactory) -> VerifierServer:
 
 
 def configure_case(
-        ats_factory: ATSFactory,
-        name: str,
-        ip_filter: str,
-        *,
-        _server: VerifierServer,
-        disable_log_checks: bool = False) -> tuple[ATS, Path]:
+    ats_factory: ATSFactory, name: str, ip_filter: str, *, _server: VerifierServer, disable_log_checks: bool = False
+) -> tuple[ATS, Path]:
     """Configure one ATS instance with @a ip_filter.
 
     :param _server: Test-local server configured by the test.
@@ -55,10 +51,12 @@ def configure_case(
     """
 
     ats = ats_factory.create(name, disable_log_checks=disable_log_checks)
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "traffic_dump",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "traffic_dump",
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}")
     ats.plugin_config.add_line(f"traffic_dump.so --logdir {ats.log_directory} --sample 1 --limit 1000000000 -4 {ip_filter}")
     return ats, ats.log_directory / "127" / "0000000000000000"
@@ -73,7 +71,8 @@ def run_client(ats: ATS, number: int, *, _services: ServiceFactory) -> ProcessSe
     """
 
     client = _services.verifier_client(
-        f"client{number}", TRAFFIC_DUMP_IP_FILTER__client_replay, http_ports=[ats.http_port], keys="1")
+        f"client{number}", TRAFFIC_DUMP_IP_FILTER__client_replay, http_ports=[ats.http_port], keys="1"
+    )
     result = client.run()
     assert result.returncode == 0, result.output
     return client
@@ -124,4 +123,5 @@ def test_traffic_dump_ip_filter(ats_factory: ATSFactory, services: ServiceFactor
     time.sleep(0.5)
     assert not invalid_dump.exists()
     assert "Problems parsing IP filter address argument: this_is_not_a_valid_ip_string" in invalid.diags_log.read_text(
-        errors="replace")
+        errors="replace"
+    )

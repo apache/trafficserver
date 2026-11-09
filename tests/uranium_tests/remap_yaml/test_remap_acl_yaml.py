@@ -33,8 +33,10 @@ from uranium_tests.remap_yaml.deactivate_ip_allow_yaml import all_deactivate_ip_
 
 TEST_DIRECTORY = Path(__file__).parent
 ACL_CASES = (
-    standard_acl_cases(use_yaml=True) + combination_acl_cases(all_acl_combination_tests_yaml, prefix="combination") +
-    combination_acl_cases(all_deactivate_ip_allow_tests_yaml, prefix="deactivate"))
+    standard_acl_cases(use_yaml=True)
+    + combination_acl_cases(all_acl_combination_tests_yaml, prefix="combination")
+    + combination_acl_cases(all_deactivate_ip_allow_tests_yaml, prefix="deactivate")
+)
 
 
 @pytest.mark.parametrize("case", ACL_CASES, ids=lambda case: case.name)

@@ -27,14 +27,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin", delay=8)
     origin.add_response(
-        {
-            "headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""},
         "sessionfile.log",
     )
     return origin
@@ -48,10 +42,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     """
 
     ats = ats_factory.create("ts", enable_tls=True)
-    ats.records.update({
-        "proxy.config.url_remap.remap_required": 1,
-        "proxy.config.http.transaction_no_activity_timeout_out": 2,
-    })
+    ats.records.update(
+        {
+            "proxy.config.url_remap.remap_required": 1,
+            "proxy.config.http.transaction_no_activity_timeout_out": 2,
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     return ats
 
