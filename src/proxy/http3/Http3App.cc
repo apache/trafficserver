@@ -369,11 +369,13 @@ Http3App::_handle_uni_stream_on_write_ready(int /* event */, VIO *vio)
   }
 
   switch (it->second) {
-  case Http3StreamType::CONTROL:
+  case Http3StreamType::CONTROL: {
+    bool wrote = false;
     if (!this->_is_control_stream_initialized) {
       uint8_t buf[] = {static_cast<uint8_t>(it->second)};
       vio->get_writer()->write(buf, sizeof(uint8_t));
       this->_is_control_stream_initialized = true;
+      wrote                                = true;
     } else {
       size_t nwritten = 0;
       bool   all_done = false;
@@ -382,8 +384,14 @@ Http3App::_handle_uni_stream_on_write_ready(int /* event */, VIO *vio)
       if (all_done) {
         vio->done();
       }
+      wrote = nwritten > 0;
+    }
+    // The QUIC connection sends only when told that a stream has data.
+    if (wrote) {
+      vio->reenable();
     }
     break;
+  }
   case Http3StreamType::QPACK_ENCODER:
   case Http3StreamType::QPACK_DECODER: {
     this->_set_qpack_stream(it->second, adapter);

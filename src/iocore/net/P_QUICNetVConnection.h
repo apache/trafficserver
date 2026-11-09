@@ -258,7 +258,16 @@ private:
   void _schedule_closing_event();
 
   void _handle_read_ready();
+#if TS_HAS_QUICHE
+  /** Hands pending stream data to quiche and sends the packets quiche produces.
+   *
+   * @return true if any packet was sent, in which case quiche may have more to send than
+   * this pass's send quantum and stream budgets allowed.
+   */
+  bool _handle_write_ready();
+#else
   void _handle_write_ready();
+#endif
   void _handle_interval();
 
 #if TS_HAS_OPENSSL_QUIC

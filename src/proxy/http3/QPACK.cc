@@ -1237,15 +1237,22 @@ int
 QPACK::_on_write_ready(VIO *vio)
 {
   QUICStreamId stream_id = static_cast<QUICStreamVCAdapter *>(vio->vc_server)->stream().id();
+  int          written   = 0;
 
   if (stream_id == this->_decoder_stream_id) {
-    return this->_on_decoder_write_ready(*vio->get_writer());
+    written = this->_on_decoder_write_ready(*vio->get_writer());
   } else if (stream_id == this->_encoder_stream_id) {
-    return this->_on_encoder_write_ready(*vio->get_writer());
+    written = this->_on_encoder_write_ready(*vio->get_writer());
   } else {
     ink_assert(!"The stream ID must match either decoder stream id or decoder stream id");
     return EVENT_DONE;
   }
+
+  // The QUIC connection sends only when told that a stream has data.
+  if (written > 0) {
+    vio->reenable();
+  }
+  return written;
 }
 
 int

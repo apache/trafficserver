@@ -175,9 +175,13 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
-    this->_handle_write_ready();
-    // Reschedule WRITE_READY
-    this->_schedule_packet_write_ready(true);
+    // Sending is driven by stream updates, received packets, quiche timeouts, and closes,
+    // each of which schedules a write. Only a pass that sent something is followed up,
+    // since the send quantum or the stream budgets may have left data behind; a pass that
+    // sent nothing ends the chain so that an idle connection stops waking up.
+    if (this->_handle_write_ready()) {
+      this->_schedule_packet_write_ready(true);
+    }
     break;
   case EVENT_INTERVAL:
     this->_close_quiche_timeout(data);
@@ -217,9 +221,13 @@ QUICNetVConnection::state_established(int event, Event *data)
     break;
   case QUIC_EVENT_PACKET_WRITE_READY:
     this->_close_packet_write_ready(data);
-    this->_handle_write_ready();
-    // Reschedule WRITE_READY
-    this->_schedule_packet_write_ready(true);
+    // Sending is driven by stream updates, received packets, quiche timeouts, and closes,
+    // each of which schedules a write. Only a pass that sent something is followed up,
+    // since the send quantum or the stream budgets may have left data behind; a pass that
+    // sent nothing ends the chain so that an idle connection stops waking up.
+    if (this->_handle_write_ready()) {
+      this->_schedule_packet_write_ready(true);
+    }
     break;
   case EVENT_INTERVAL:
     this->_close_quiche_timeout(data);
@@ -688,9 +696,13 @@ QUICNetVConnection::_handle_read_ready()
     stream->receive_data(*this);
   }
   quiche_stream_iter_free(readable);
+
+  // The received packets may need ACKs, or may have granted flow control credit or
+  // congestion window to data that is waiting.
+  this->_schedule_packet_write_ready();
 }
 
-void
+bool
 QUICNetVConnection::_handle_write_ready()
 {
   if (quiche_conn_is_established(this->_quiche_con)) {
@@ -762,6 +774,8 @@ QUICNetVConnection::_handle_write_ready()
     this->_packet_handler->send_packet(this->_udp_con, this->con.addr, udp_payload, segment_size, &send_at_hint);
     this->netActivity();
   }
+
+  return written > 0;
 }
 
 void
@@ -772,8 +786,9 @@ QUICNetVConnection::_handle_interval()
   if (quiche_conn_is_closed(this->_quiche_con)) {
     this->_schedule_closing_event();
   } else {
-    // Just schedule timeout event again if the connection is still open
+    // A fired timer can leave probes, ACKs, or a CONNECTION_CLOSE for quiche to send.
     this->_schedule_quiche_timeout();
+    this->_schedule_packet_write_ready();
   }
 }
 

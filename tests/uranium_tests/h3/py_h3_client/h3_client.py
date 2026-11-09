@@ -112,7 +112,12 @@ class H3ClientProtocol(QuicConnectionProtocol):
         if waiter is not None and not waiter.done():
             waiter.set_result(self._responses[stream_id])
 
-    async def request(self, authority: str, request_case: RequestCase) -> ResponseState:
+    async def request(self, authority: str, request_case: RequestCase, body_delay: float = 0) -> ResponseState:
+        """Send one request and wait for its response.
+
+        :param body_delay: Seconds to hold the request stream open between the
+            headers and the body.
+        """
         stream_id = self._quic.get_next_available_stream_id()
         waiter: asyncio.Future[ResponseState] = asyncio.get_running_loop().create_future()
         self._waiters[stream_id] = waiter
@@ -139,6 +144,9 @@ class H3ClientProtocol(QuicConnectionProtocol):
         request_body = generated_body(request_case.request_size)
         self._http.send_headers(stream_id, headers, end_stream=not request_body)
         if request_body:
+            if body_delay > 0:
+                self.transmit()
+                await asyncio.sleep(body_delay)
             self._http.send_data(stream_id, request_body, end_stream=True)
         self.transmit()
 
