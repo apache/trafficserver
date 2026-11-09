@@ -56,6 +56,9 @@ public:
   bool               is_no_plugin_tunnel = false;
 
 private:
+  /// Return the connection-tracker reservation, if any, and stop tracking.
+  void release_outbound_connection_tracking();
+
   std::shared_ptr<ConnectionTracker::Group> _conn_track_group;
   MIOBuffer                                *_netvc_read_buffer = nullptr;
   IOBufferReader                           *_netvc_reader      = nullptr;
