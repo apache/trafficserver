@@ -9142,7 +9142,7 @@ REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int /* level */, int
 
   // Verify gauge behavior.
   const char gauge_name[] = "regression.test.gauge";
-  int gauge_id = TSStatCreate(gauge_name, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  int        gauge_id     = TSStatCreate(gauge_name, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
   box.check(gauge_id != TS_ERROR, "TSStatCreate(%s) failed with %d", gauge_name, gauge_id);
 

@@ -6890,7 +6890,8 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 
 /************************   REC Stats API    **************************/
 int
-TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence /* persist ATS_UNUSED */, TSStatSync /* sync ATS_UNUSED */)
+TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence /* persist ATS_UNUSED */,
+             TSStatSync /* sync ATS_UNUSED */)
 {
   int id;
 
