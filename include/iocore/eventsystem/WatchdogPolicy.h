@@ -5,7 +5,7 @@
   `Watchdog::Monitor` feeds each scan's peak awake span through advance() and applies the result. Keeping
   the arithmetic here lets it be exercised directly, without a running monitor.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

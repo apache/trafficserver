@@ -114,13 +114,14 @@ class Sema:
     """
 
     def __init__(
-            self,
-            *,
-            debug: bool = SystemDefaults.DEFAULT_DEBUG,
-            error_collector: ErrorCollector | None = None,
-            preserve_comments: bool = True,
-            proc_search_paths: list[Path] | None = None,
-            sandbox: SandboxConfig | None = None) -> None:
+        self,
+        *,
+        debug: bool = SystemDefaults.DEFAULT_DEBUG,
+        error_collector: ErrorCollector | None = None,
+        preserve_comments: bool = True,
+        proc_search_paths: list[Path] | None = None,
+        sandbox: SandboxConfig | None = None,
+    ) -> None:
         self.error_collector = error_collector
         self.preserve_comments = preserve_comments
         self.source_map = SourceMap()
@@ -374,7 +375,8 @@ class Sema:
             # Only an unqualified name can be a variable; a dotted or qualified one keeps the resolver's error.
             if '.' not in name and ':' not in name:
                 error = SymbolResolutionError(
-                    "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section.")
+                    "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section."
+                )
                 if suggestions := self.symbol_resolver.get_variable_suggestions(name, self._section):
                     error.add_symbol_suggestion(suggestions)
                 raise error from None
@@ -407,7 +409,8 @@ class Sema:
                 variant = ir.OpVariant.SET
 
             return ir.SetOp(
-                key=found.key, entry=found.entry, qualifier=found.qualifier, value=value, variant=variant, span=node.span)
+                key=found.key, entry=found.entry, qualifier=found.qualifier, value=value, variant=variant, span=node.span
+            )
         return None
 
     def _statement_call(self, node: ast.FunctionCall) -> ir.Stmt | None:
@@ -459,7 +462,7 @@ class Sema:
                 raise ValueError(f"procedure '{sig.name}': expected {expected} arg(s), got {len(args)}")
 
             bindings = dict(zip((p.name for p in sig.params), args))
-            for param in sig.params[len(args):]:
+            for param in sig.params[len(args) :]:
                 bindings[param.name] = self._default_text(param.default, call.span)
             return bindings
         return None
@@ -516,8 +519,12 @@ class Sema:
                         replace(
                             arm,
                             condition=self._substitute_cond(arm.condition, sub_value),
-                            body=tuple(self._substitute(b, bindings) for b in arm.body)) for arm in node.elif_branches),
-                    else_body=tuple(self._substitute(b, bindings) for b in node.else_body))
+                            body=tuple(self._substitute(b, bindings) for b in arm.body),
+                        )
+                        for arm in node.elif_branches
+                    ),
+                    else_body=tuple(self._substitute(b, bindings) for b in node.else_body),
+                )
         return node
 
     def _substitute_cond(self, node: ast.ConditionExpr, sub_value: Callable) -> ast.ConditionExpr:
@@ -526,7 +533,8 @@ class Sema:
                 return replace(node, right=sub_value(node.right))
             case ast.LogicalOp():
                 return replace(
-                    node, left=self._substitute_cond(node.left, sub_value), right=self._substitute_cond(node.right, sub_value))
+                    node, left=self._substitute_cond(node.left, sub_value), right=self._substitute_cond(node.right, sub_value)
+                )
             case ast.NotOp():
                 return replace(node, operand=self._substitute_cond(node.operand, sub_value))
             case ast.Group():
@@ -567,7 +575,7 @@ class Sema:
         pos = 0
         for m in RegexPatterns.SUBSTITUTE_PATTERN.finditer(inner):
             if m.start() > pos:
-                parts.append(inner[pos:m.start()])
+                parts.append(inner[pos : m.start()])
             parts.append(self._template_part(m, span, literal.written or inner))
             pos = m.end()
         if pos < len(inner):

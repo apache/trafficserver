@@ -30,14 +30,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -61,7 +55,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, busy: bool, _origin: Or
     ats.plugin_config.add_line(f"tslua.so --states=2 {ats.config_directory}/global_shutdown.lua")
     ats.remap_config.add_line(
         f"map http://remap.example.com/ http://127.0.0.1:{_origin.port}/ "
-        f"@plugin=tslua.so @pparam=--states=1 @pparam={ats.config_directory}/remap_shutdown.lua")
+        f"@plugin=tslua.so @pparam=--states=1 @pparam={ats.config_directory}/remap_shutdown.lua"
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     ats.records.update(
         {
@@ -71,7 +66,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, busy: bool, _origin: Or
             "proxy.config.plugin.dynamic_reload_mode": 0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ts_lua",
-        })
+        }
+    )
     return ats
 
 
@@ -101,8 +97,13 @@ def test_lua_global_shutdown(ats_factory: ATSFactory, services: ServiceFactory, 
             client = services.process(
                 "shutdown-race",
                 (
-                    sys.executable, directory / "shutdown_race_client.py", "127.0.0.1", str(ats.http_port), str(
-                        ats.run_directory), ats.name),
+                    sys.executable,
+                    directory / "shutdown_race_client.py",
+                    "127.0.0.1",
+                    str(ats.http_port),
+                    str(ats.run_directory),
+                    ats.name,
+                ),
                 environment={"PYTHONPATH": str(directory.parents[1] / "logging")},
             )
             result = client.run(timeout=45)
@@ -114,8 +115,11 @@ def test_lua_global_shutdown(ats_factory: ATSFactory, services: ServiceFactory, 
         assert "shutdown barrier acquired" in output
         assert "__shutdown__ called for state 0" in output
         assert "do_remap called" in output
-        for forbidden in ("__shutdown__ overlapped an active Lua state", "do_global_read_request ran after __shutdown__",
-                          "do_remap ran after __shutdown__"):
+        for forbidden in (
+            "__shutdown__ overlapped an active Lua state",
+            "do_global_read_request ran after __shutdown__",
+            "do_remap ran after __shutdown__",
+        ):
             assert forbidden not in output, output
         assert "skipping __shutdown__" not in ats.diags_log.read_text(errors="replace")
     output = _ats.traffic_out.read_text(errors="replace")

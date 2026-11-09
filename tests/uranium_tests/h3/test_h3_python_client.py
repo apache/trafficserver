@@ -34,7 +34,8 @@ def configure_server(services: ServiceFactory) -> VerifierServer:
     """
 
     return services.verifier_server(
-        "server-python-h3-client", H3_PYTHON_CLIENT__replay, verbose=False, other_args="--poll-timeout 30000")
+        "server-python-h3-client", H3_PYTHON_CLIENT__replay, verbose=False, other_args="--poll-timeout 30000"
+    )
 
 
 def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
@@ -53,7 +54,8 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -62,25 +64,22 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.quic.initial_max_stream_data_bidi_remote_in": 1000000,
             "proxy.config.quic.max_send_udp_payload_size_in": 1200,
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "h3_python_access",
-                                "format": "c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>",
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "h3_python_access",
-                        "format": "h3_python_access"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "h3_python_access",
+                        "format": "c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>",
+                    }
+                ],
+                "logs": [{"filename": "h3_python_access", "format": "h3_python_access"}],
+            }
+        }
+    )
     return ats
 
 

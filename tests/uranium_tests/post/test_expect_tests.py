@@ -59,7 +59,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: Verifier
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.http.send_100_continue_response": 1,
-        })
+        }
+    )
     return ats
 
 

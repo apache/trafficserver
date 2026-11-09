@@ -41,22 +41,18 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
                 "body": "",
             },
             {
-                "headers":
-                    (
-                        "HTTP/1.1 206 Partial Content\r\nConnection: close\r\nCache-Control: max-age=600\r\n"
-                        "Content-Range: bytes 0-4/10\r\nContent-Length: 5\r\n\r\n"),
+                "headers": (
+                    "HTTP/1.1 206 Partial Content\r\nConnection: close\r\nCache-Control: max-age=600\r\n"
+                    "Content-Range: bytes 0-4/10\r\nContent-Length: 5\r\n\r\n"
+                ),
                 "body": "hello",
             },
         )
     for path, host in (("allowed", "allowed.example"), ("above-threshold", "above-threshold.example")):
         origin.add_response(
+            {"headers": f"GET /{path} HTTP/1.1\r\nHost: {host}\r\nAccept: */*\r\n\r\n", "body": ""},
             {
-                "headers": f"GET /{path} HTTP/1.1\r\nHost: {host}\r\nAccept: */*\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": ("HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=600\r\n"
-                            "Content-Length: 10\r\n\r\n"),
+                "headers": ("HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=600\r\nContent-Length: 10\r\n\r\n"),
                 "body": "hellohello",
             },
         )
@@ -74,10 +70,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     ats = ats_factory.create("ts")
     if not ats.plugin_exists("background_fetch.so"):
         pytest.skip("background_fetch.so is required")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "background_fetch",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "background_fetch",
+        }
+    )
     ats.write_config_file("background_fetch_small.config", "exclude Content-Length <1000\n")
     ats.write_config_file("background_fetch_above_threshold.config", "exclude Content-Length >1000\n")
     ats.write_config_file("background_fetch_wildcard.config", "exclude X-Skip-Bg *\n")
@@ -88,9 +86,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
         ("above-threshold.example", " @pparam=background_fetch_above_threshold.config"),
     )
     for hostname, parameter in mappings:
-        ats.remap_config.add_line(
-            f"map http://{hostname}/ http://127.0.0.1:{_origin.port}/ "
-            f"@plugin=background_fetch.so{parameter}")
+        ats.remap_config.add_line(f"map http://{hostname}/ http://127.0.0.1:{_origin.port}/ @plugin=background_fetch.so{parameter}")
     return ats
 
 

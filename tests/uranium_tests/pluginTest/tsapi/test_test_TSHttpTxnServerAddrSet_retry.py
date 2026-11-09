@@ -29,7 +29,8 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
 
 
 def configure_ats(
-        context: ProceduralContext, ats_factory: ATSFactory, *, _bogus_port: int, _dns: DNSServer, _enable_cache: bool) -> ATS:
+    context: ProceduralContext, ats_factory: ATSFactory, *, _bogus_port: int, _dns: DNSServer, _enable_cache: bool
+) -> ATS:
     """Load the test plugin and permit several connection retries.
 
     :param _bogus_port: Test-local bogus port configured by the test.
@@ -54,7 +55,8 @@ def configure_ats(
             "proxy.config.diags.debug.tags": "http|dns|test_TSHttpTxnServerAddrSet_retry",
             "proxy.config.http.connect_attempts_max_retries": 3,
             "proxy.config.http.connect_attempts_timeout": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://non.existent.server.com:{_bogus_port}")
     return ats
 

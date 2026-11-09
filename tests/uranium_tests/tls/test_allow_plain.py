@@ -42,19 +42,22 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.http.server_ports": f"{ats.https_port}:ssl:allow-plain",
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "ssl|http",
-        })
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map / http://127.0.0.1:{_server.http_port}",
             f"map /post http://127.0.0.1:{_server.http_port}/post",
-        ))
+        )
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     return ats
 
 
@@ -75,15 +78,15 @@ def test_allow_plain(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
         _ats,
         (
             f"--output /dev/null --insecure --verbose --header 'uuid: get' --ipv4 --http1.1 --resolve '{resolve}' "
-            f"'https://www.example.com:{_ats.https_port}/'"),
+            f"'https://www.example.com:{_ats.https_port}/'"
+        ),
     )
     assert tls.returncode == 0, tls.output
     assert "TLS" in tls.stderr
 
     plain = curl.run_for(
         _ats,
-        (f"--verbose --ipv4 --http1.1 --header 'uuid: get' --resolve '{resolve}' "
-         f"'http://www.example.com:{_ats.https_port}'"),
+        (f"--verbose --ipv4 --http1.1 --header 'uuid: get' --resolve '{resolve}' 'http://www.example.com:{_ats.https_port}'"),
     )
     assert plain.returncode == 0, plain.output
     assert "TLS" not in plain.stderr
@@ -95,7 +98,8 @@ def test_allow_plain(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
         (
             f"--verbose --data '@{body}' --header 'uuid: post' --ipv4 --http1.1 --resolve '{resolve}' "
             f"'http://www.example.com:{_ats.https_port}/post' "
-            f"'http://www.example.com:{_ats.https_port}/post'"),
+            f"'http://www.example.com:{_ats.https_port}/post'"
+        ),
     )
     assert post.returncode == 0, post.output
     assert "TLS" not in post.stderr

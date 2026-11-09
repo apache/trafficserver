@@ -52,7 +52,8 @@ def configure_ats(ats_factory: ATSFactory, *, _httpbin: HttpBinServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.http.insert_request_via_str": 1,
@@ -60,24 +61,21 @@ def configure_ats(ats_factory: ATSFactory, *, _httpbin: HttpBinServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "access",
-                                "format": "[%<cqtn>] %<cqhm> %<pqu> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>",
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "access",
-                        "format": "access"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "access",
+                        "format": "[%<cqtn>] %<cqhm> %<pqu> %<cqpv> %<cqssv> %<cqssc> %<crc> %<pssc> %<pscl>",
+                    }
+                ],
+                "logs": [{"filename": "access", "format": "access"}],
+            }
+        }
+    )
     return ats
 
 
@@ -93,8 +91,7 @@ def request(path: str, *arguments: str, _ats: ATS, _curl: Curl) -> CommandResult
 
     result = _curl.run_for(
         _ats,
-        (f"--verbose --silent --insecure --http2 {shlex.join(arguments)} "
-         f"'https://127.0.0.1:{_ats.https_port}{path}'"),
+        (f"--verbose --silent --insecure --http2 {shlex.join(arguments)} 'https://127.0.0.1:{_ats.https_port}{path}'"),
     )
     assert result.returncode == 0, result.output
     assert "HTTP/2 200" in result.stderr

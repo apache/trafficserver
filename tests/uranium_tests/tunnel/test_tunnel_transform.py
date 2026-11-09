@@ -62,21 +62,21 @@ def test_tunnel_transform(ats_factory: ATSFactory, services: ServiceFactory, cur
             {
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
                 "proxy.config.http.connect_ports": str(_origin.https_port),
-            })
+            }
+        )
         ats.ssl_multicert_config.add_lines(
             (
                 "ssl_multicert:",
                 '  - dest_ip: "*"',
                 "    ssl_cert_name: server.pem",
                 "    ssl_key_name: server.key",
-            ))
+            )
+        )
         # An address, since HostDB does not read /etc/hosts and CI resolvers
         # need not answer for localhost.
         ats.write_config_file(
             "sni.yaml",
-            "sni:\n"
-            "  - fqdn: tunnel-test\n"
-            f"    tunnel_route: 127.0.0.1:{_origin.https_port}\n",
+            f"sni:\n  - fqdn: tunnel-test\n    tunnel_route: 127.0.0.1:{_origin.https_port}\n",
         )
         ats.allow_private_connect()
         return ats
@@ -139,7 +139,8 @@ def test_tunnel_transform(ats_factory: ATSFactory, services: ServiceFactory, cur
         _ats,
         (
             f"--insecure --http1.1 --header 'Connection: close' --verbose --silent --resolve "
-            f"'tunnel-test:{_proxy_port}:127.0.0.1' 'https://tunnel-test:{_proxy_port}/'"),
+            f"'tunnel-test:{_proxy_port}:127.0.0.1' 'https://tunnel-test:{_proxy_port}/'"
+        ),
     )
     assert result.returncode == 0, result.output
     proxy_result = _proxy.wait(timeout=10)

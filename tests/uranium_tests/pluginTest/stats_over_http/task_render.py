@@ -74,7 +74,6 @@ class Log:
 
 
 class Client:
-
     def __init__(self, args: argparse.Namespace):
         self.args = args
 
@@ -121,7 +120,8 @@ class Client:
         subprocess.run(
             ['traffic_ctl', 'config', 'reload', '--monitor', '--initial-wait=0.1', '--refresh-int=0.1', '--timeout=60s'],
             check=True,
-            capture_output=True)
+            capture_output=True,
+        )
 
 
 def concurrent(client: Client) -> None:
@@ -260,8 +260,8 @@ def reload_loop(client: Client) -> None:
         raise Failure(f'{len(errors)} of {len(errors) + len(statuses)} requests failed, the first: {errors[0]}')
     if len(instances) < 2 or not released:
         raise Failure(
-            f'The reloads should replace the rendering instance: {len(instances)} instances rendered, '
-            f'{len(released)} released')
+            f'The reloads should replace the rendering instance: {len(instances)} instances rendered, {len(released)} released'
+        )
     print(f'{len(statuses)} requests during {client.args.reloads} reloads, {len(instances)} instances rendered')
 
 
@@ -303,7 +303,8 @@ def global_timeout(client: Client) -> None:
         raise Failure(f'The 503 arrived after {elapsed:.2f} s, before the wait timeout')
     instance = log.wait_for(WAITING)['instance']
     log.wait_for(
-        rf'Answering 1 requests with a 503 after {client.args.wait_timeout_ms} ms without a render of stats instance {instance}')
+        rf'Answering 1 requests with a 503 after {client.args.wait_timeout_ms} ms without a render of stats instance {instance}'
+    )
     log.wait_for(rendered(instance, '0'))
     client.verify('/_stats/json', 'json')
     print(f'The watchdog answered after {elapsed:.2f} s, and the next request got the stats')
@@ -381,10 +382,19 @@ def main() -> int:
     parser.add_argument(
         'scenario',
         choices=[
-            'concurrent', 'reuse', 'reset', 'close', 'timeout-reload', 'reload-loop', 'global', 'global-timeout', 'global-handover',
-            'global-fresh'
+            'concurrent',
+            'reuse',
+            'reset',
+            'close',
+            'timeout-reload',
+            'reload-loop',
+            'global',
+            'global-timeout',
+            'global-handover',
+            'global-fresh',
         ],
-        help='what to run')
+        help='what to run',
+    )
     parser.add_argument('--path', default='/', help='the path of the remap rule')
     parser.add_argument('--count', type=int, required=True, help='the --count given to test_metrics.so')
     parser.add_argument('--requests', type=int, default=50, help='the number of concurrent requests')

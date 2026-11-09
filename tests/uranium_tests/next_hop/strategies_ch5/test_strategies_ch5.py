@@ -64,7 +64,8 @@ def configure_next_hop(ats_factory: ATSFactory, index: int, *, _dns: DNSServer, 
             "proxy.config.diags.debug.tags": "http|dns",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     remap = f"map / http://127.0.0.1:{_origin.port}"
     if index < NUM_HOSTS - HOSTS_PER_RING:
         if not ats.plugin_exists("header_rewrite.so"):
@@ -98,7 +99,8 @@ def configure_front_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _next_hops:
             "proxy.config.http.parent_proxy.mark_down_hostdb": 0,
             "proxy.config.http.down_server.cache_time": 1,
             "proxy.config.http.parent_proxy.self_detect": 0,
-        })
+        }
+    )
     lines = ["groups:"]
     index = 0
     for ring in range(NUM_RINGS):
@@ -112,7 +114,8 @@ def configure_front_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _next_hops:
                     "        - scheme: http",
                     f"          port: {next_hop.http_port}",
                     "      weight: 1.0",
-                ))
+                )
+            )
             index += 1
     lines.extend(
         (
@@ -131,7 +134,8 @@ def configure_front_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _next_hops:
             "      max_unavailable_retries: 5",
             "      markdown_codes: [502]",
             "    groups:",
-        ))
+        )
+    )
     lines.extend(f"      - *g{ring}" for ring in range(NUM_RINGS))
     ats.write_config_file("strategies.yaml", "\n".join(lines) + "\n")
     ats.remap_config.add_line("map http://dummy.com http://not_used @strategy=the-strategy")

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -188,7 +188,7 @@ public:
    *
    * On failure any previously compiled pattern is left in place and remains usable.
    */
-  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, uint32_t flags = 0);
 
   /** Compile the @a pattern into a regular expression that drives a policy decision.
    *
@@ -203,7 +203,7 @@ public:
    *
    * @internal A distinct overload for the same ABI reason as the two-argument form.
    */
-  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags, std::string_view policy_gate);
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, uint32_t flags, std::string_view policy_gate);
 
   /** Process-wide anchoring policy for policy-gate patterns.
    *
@@ -294,7 +294,7 @@ public:
 
   /** Error string for exec failure.
    *
-   * @param int return code from exec call.
+   * @param[in] rc Return code from exec call.
    */
   static std::string get_error_string(int rc);
 

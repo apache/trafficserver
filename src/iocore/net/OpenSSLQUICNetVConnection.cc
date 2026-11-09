@@ -2,7 +2,7 @@
 
   OpenSSL native QUIC NetVConnection support.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -987,6 +987,18 @@ QUICNetVConnection::_get_tls_group() const
   } else {
     return SSLGetGroupName(this->_ssl);
   }
+}
+
+std::string
+QUICNetVConnection::_get_tls_offered_signature_algorithms() const
+{
+  return SSLGetOfferedSignatureAlgorithms(this->_ssl);
+}
+
+std::string
+QUICNetVConnection::_get_tls_negotiated_signature_algorithm() const
+{
+  return SSLGetNegotiatedSignatureAlgorithm(this->_ssl);
 }
 
 int

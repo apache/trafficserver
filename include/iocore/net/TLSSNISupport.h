@@ -3,7 +3,7 @@
   TLSSNISupport implements common methods and members to
   support protocols for Server Name Indication
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -105,6 +105,10 @@ public:
    * This is for client-side connections.
    */
   void on_client_hello(ClientHello &client_hello);
+
+  /** Forget the CLIENT_HELLO passed to on_client_hello(), which is only valid during the ClientHello callback.
+   */
+  void clear_client_hello();
 
   /** Process the servername extension when a client uses one in the TLS handshake.
    *

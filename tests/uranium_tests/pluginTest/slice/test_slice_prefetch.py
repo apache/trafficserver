@@ -49,15 +49,14 @@ def configure_server(services: ServiceFactory) -> OriginServer:
             requested_end = begin + block_size - 1
             end = min(requested_end, length - 1)
             origin.add_response(
-                {"headers": ("GET /path HTTP/1.1\r\nHost: *\r\nAccept: */*\r\n"
-                             f"Range: bytes={begin}-{requested_end}\r\n\r\n")},
+                {"headers": (f"GET /path HTTP/1.1\r\nHost: *\r\nAccept: */*\r\nRange: bytes={begin}-{requested_end}\r\n\r\n")},
                 {
-                    "headers":
-                        (
-                            "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\n"
-                            "Cache-Control: public, max-age=5\r\n"
-                            f"Content-Range: bytes {begin}-{end}/{length}\r\nConnection: close\r\n\r\n"),
-                    "body": SLICE_PREFETCH_BODY[begin:end + 1],
+                    "headers": (
+                        "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\n"
+                        "Cache-Control: public, max-age=5\r\n"
+                        f"Content-Range: bytes {begin}-{end}/{length}\r\nConnection: close\r\n\r\n"
+                    ),
+                    "body": SLICE_PREFETCH_BODY[begin : end + 1],
                 },
             )
     return origin
@@ -82,30 +81,25 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             f"map http://sliceprefetchbytes2/ http://127.0.0.1:{_origin.port} "
             "@plugin=slice.so @pparam=--blockbytes-test=5 @pparam=--prefetch-count=3 "
             "@plugin=cache_range_requests.so",
-        ))
+        )
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "cache",
-                        "format": "%<{Content-Range}psh> %<{X-Cache}psh>"
-                    }],
-                    "logs": [{
-                        "filename": "cache",
-                        "format": "cache",
-                        "mode": "ascii"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "cache", "format": "%<{Content-Range}psh> %<{X-Cache}psh>"}],
+                "logs": [{"filename": "cache", "format": "cache", "mode": "ascii"}],
+            }
+        }
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "slice|cache_range_requests|xdebug",
             "proxy.config.http.allow_half_open": 0,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     return ats
 
 

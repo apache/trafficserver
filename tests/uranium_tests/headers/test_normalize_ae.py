@@ -74,7 +74,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, normalize_ae: int | Non
     for mode in range(6):
         ats.remap_config.add_line(
             f"map http://www.ae-{mode}.com http://127.0.0.1:{_origin.http_port} "
-            f"@plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae={mode}")
+            f"@plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae={mode}"
+        )
     return ats
 
 

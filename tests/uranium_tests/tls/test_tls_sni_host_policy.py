@@ -57,7 +57,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.ssl.TLSv1_3.enabled": 0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     ats.write_config_file(
         "sni.yaml",
@@ -100,7 +101,8 @@ def request(sni: str, host: str, *, certificate: bool = False, path: str = "/cas
             "--resolve",
             f"{sni}:{_ats.https_port}:127.0.0.1",
             f"https://{sni}:{_ats.https_port}{path}",
-        ))
+        )
+    )
     return _curl.run_for(
         _ats,
         shlex.join(arguments),
@@ -151,12 +153,12 @@ def verify_diagnostics(*, _ats: ATS) -> None:
 
     diagnostics = _ats.diags_log.read_text(errors="replace")
     for expression in (
-            "SNI/hostname mismatch sni=dave host=bob action=terminate",
-            "SNI/hostname mismatch sni=ellen host=Boblite action=continue",
-            "SNI/hostname mismatch sni=bob.bar.com host=bob action=terminate",
-            "SNI/hostname mismatch sni=bob host=bob.bar.com action=terminate",
-            "SNI/hostname mismatch sni=bob host=dave.bob action=terminate",
-            "SNI/hostname mismatch sni=dave.bob host=bob action=terminate",
+        "SNI/hostname mismatch sni=dave host=bob action=terminate",
+        "SNI/hostname mismatch sni=ellen host=Boblite action=continue",
+        "SNI/hostname mismatch sni=bob.bar.com host=bob action=terminate",
+        "SNI/hostname mismatch sni=bob host=bob.bar.com action=terminate",
+        "SNI/hostname mismatch sni=bob host=dave.bob action=terminate",
+        "SNI/hostname mismatch sni=dave.bob host=bob action=terminate",
     ):
         assert expression in diagnostics
     assert "SNI/hostname mismatch sni=ellen host=fran" not in diagnostics

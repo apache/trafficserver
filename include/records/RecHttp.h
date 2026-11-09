@@ -2,7 +2,7 @@
 
   HTTP configuration support.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -384,7 +384,7 @@ public:
 
   /// Load default value if @a ports is empty.
   /// @return @c true if the default was needed / loaded.
-  static bool loadDefaultIfEmpty(std::vector<self> &ports ///< Load target.
+  static bool loadDefaultIfEmpty(std::vector<HttpProxyPort> &ports ///< Load target.
   );
 
   /// Load default value into the global set if it is empty.

@@ -16,7 +16,7 @@
 
 # Used by: global JA3 servernames test.
 #
-# The plugin is loaded globally with --servernames jax.server.test.
+# The plugin is loaded globally with servernames [jax.server.test].
 # In handle_client_hello, if the incoming SNI is not in the allowlist the
 # plugin calls TSVConnReenable and returns immediately.  No JAxContext is
 # ever created for that vconn, so handle_read_request_hdr returns early

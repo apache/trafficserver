@@ -44,37 +44,35 @@ def configure_ats(ats_factory: ATSFactory, *, _httpbin: HttpBinServer) -> ATS:
 
     ats = ats_factory.create("ts", enable_tls=True)
     ats.add_default_ssl_files()
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "snowflake|http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "snowflake|http",
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{_httpbin.port}/ip",
             f"map https://127.0.0.1:{ats.https_port} http://127.0.0.1:{_httpbin.port}/ip",
             f"map https://reallyreallyreallyreallylong.com http://127.0.0.1:{_httpbin.port}/ip",
-        ))
+        )
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "custom",
-                        "format": "%<psfid> %<ccid> %<ctid> %<cssn>"
-                    }],
-                    "logs": [{
-                        "filename": "test_new_log_flds",
-                        "format": "custom"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "custom", "format": "%<psfid> %<ccid> %<ctid> %<cssn>"}],
+                "logs": [{"filename": "test_new_log_flds", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 
@@ -124,7 +122,8 @@ def test_new_log_flds(ats_factory: ATSFactory, services: ServiceFactory, curl: C
             f"{hostname}:{_ats.https_port}:127.0.0.1",
             f"https://{hostname}:{_ats.https_port}",
             _ats=_ats,
-            _curl=curl)
+            _curl=curl,
+        )
         expected_lines = 7
 
     log_path = _ats.log_directory / "test_new_log_flds.log"

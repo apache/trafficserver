@@ -17,6 +17,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 '''
+
 """Verify incomplete sessions do not prevent valid sessions from being written."""
 import importlib.util
 import json
@@ -37,30 +38,12 @@ INVALID_SESSIONS = {
     "empty": {},
     "list": [1],
     "string": "abc",
-    "missing_timestamp": {
-        "transactions": []
-    },
-    "legacy_timestamp": {
-        "start-time": 123,
-        "transactions": []
-    },
-    "zero_timestamp": {
-        "connection-time": 0,
-        "transactions": []
-    },
-    "zero_timestamp_with_fallback": {
-        "connection-time": 0,
-        "start-time": 123,
-        "transactions": []
-    },
-    "connection_timestamp": {
-        "connection-time": 123,
-        "transactions": []
-    },
-    "string_timestamp": {
-        "connection-time": "not-a-number",
-        "transactions": []
-    },
+    "missing_timestamp": {"transactions": []},
+    "legacy_timestamp": {"start-time": 123, "transactions": []},
+    "zero_timestamp": {"connection-time": 0, "transactions": []},
+    "zero_timestamp_with_fallback": {"connection-time": 0, "start-time": 123, "transactions": []},
+    "connection_timestamp": {"connection-time": 123, "transactions": []},
+    "string_timestamp": {"connection-time": "not-a-number", "transactions": []},
 }
 
 
@@ -68,21 +51,12 @@ def valid_session(url: str) -> dict:
     """Create a complete transaction served locally by the proxy."""
     return {
         "connection-time": 123,
-        "transactions":
-            [
-                {
-                    "client-request": {
-                        "method": "GET",
-                        "url": url,
-                        "headers": {
-                            "fields": [["Host", "example.test"]]
-                        }
-                    },
-                    "proxy-response": {
-                        "status": 200
-                    },
-                }
-            ],
+        "transactions": [
+            {
+                "client-request": {"method": "GET", "url": url, "headers": {"fields": [["Host", "example.test"]]}},
+                "proxy-response": {"status": 200},
+            }
+        ],
     }
 
 
@@ -97,7 +71,6 @@ def write_input(root: Path, sessions: list) -> tuple[Path, Path]:
 
 
 class PostProcessTest(unittest.TestCase):
-
     def assert_valid_sessions(self, output_dir: Path) -> None:
         files = list(output_dir.glob("*.json"))
         self.assertEqual(len(files), 1)
@@ -133,12 +106,11 @@ class PostProcessTest(unittest.TestCase):
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
                 input_dir, output_dir = write_input(Path(temp), [valid_session("/before"), invalid, valid_session("/after")])
                 result = subprocess.run(
-                    [sys.executable, str(SCRIPT),
-                     str(input_dir.parent),
-                     str(output_dir), "-j", "1", "--debug"],
+                    [sys.executable, str(SCRIPT), str(input_dir.parent), str(output_dir), "-j", "1", "--debug"],
                     capture_output=True,
                     text=True,
-                    timeout=15)
+                    timeout=15,
+                )
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertNotIn("Exception in thread", result.stderr)
                 self.assertNotIn("Traceback", result.stderr)
