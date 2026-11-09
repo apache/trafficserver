@@ -32,6 +32,7 @@
 
 #include <array>
 #include <memory>
+#include <vector>
 
 ConfigProcessor configProcessor;
 
@@ -241,6 +242,8 @@ struct ConfigProcessor::ThreadPins {
   static_assert(MAX_CONFIGS <= 256, "slot indices in used are stored as uint8_t");
   std::array<uint8_t, MAX_CONFIGS> used{};
   size_t                           used_count = 0;
+  // Pins replaced during the current event, which earlier pinned reads in that event may still use.
+  std::vector<std::shared_ptr<ConfigInfo>> displaced;
 };
 
 std::shared_ptr<ConfigInfo> &
@@ -255,9 +258,10 @@ ConfigProcessor::_pin(unsigned int id)
       pin.listed                                     = true;
       _thread_pins->used[_thread_pins->used_count++] = static_cast<uint8_t>(idx);
     }
-    // A scope in the current event may still use the replaced configuration, but set() keeps its own
-    // reference for the release timeout, so dropping the pin here cannot free it.
-    pin.config.reset();
+    // set()'s own reference may expire before the event ends, so the sweep releases the old pin.
+    if (pin.config) {
+      _thread_pins->displaced.push_back(std::move(pin.config));
+    }
     if (ConfigInfo *info = get(id); info != nullptr) {
       // This thread's one reference; handles copied from the pin share it.
       pin.config = std::shared_ptr<ConfigInfo>(info, [this, id](ConfigInfo *i) { release(id, i); });
@@ -307,6 +311,7 @@ ConfigProcessor::release_stale_pins()
   if (_thread_pins == nullptr) {
     return;
   }
+  _thread_pins->displaced.clear();
   for (size_t i = 0; i < _thread_pins->used_count; ++i) {
     unsigned int const idx = _thread_pins->used[i];
     auto              &pin = _thread_pins->pins[idx];

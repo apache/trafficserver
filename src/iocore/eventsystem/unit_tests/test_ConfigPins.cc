@@ -136,6 +136,28 @@ TEST_CASE("ConfigProcessor pins and leases", "[iocore][config]")
     CHECK(wait_for_destroyed(before + 1, std::chrono::seconds(5)) == before + 1);
   }
 
+  SECTION("a pinned read stays valid for the event after the processor's delayed reference expires")
+  {
+    auto *held = static_cast<TestConfig *>(configProcessor.get_pinned(id));
+
+    configProcessor.set(id, new TestConfig(2), 1);
+    // Simulate an event that outlasts the release timeout: only this thread's pin is left.
+    auto const until = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (refcount(held) > 1 && std::chrono::steady_clock::now() < until) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    REQUIRE(refcount(held) == 1);
+
+    int const before = destroyed.load();
+    CHECK(static_cast<TestConfig *>(configProcessor.get_pinned(id))->value == 2);
+    // A dropped last reference is destroyed on another thread, so give it time to run.
+    CHECK(wait_for_destroyed(before + 1, std::chrono::milliseconds(200)) == before);
+    CHECK(held->value == 1);
+
+    ConfigProcessor::release_stale_pins();
+    CHECK(wait_for_destroyed(before + 1, std::chrono::seconds(5)) == before + 1);
+  }
+
   SECTION("threads without pins use the shared refcount")
   {
     ConfigInfo *current = configProcessor.get_pinned(id);
