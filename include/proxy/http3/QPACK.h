@@ -23,7 +23,9 @@
 
 #pragma once
 
+#include <cstring>
 #include <map>
+#include <memory>
 #include <unordered_map>
 
 #include "swoc/IntrusiveDList.h"
@@ -129,10 +131,12 @@ private:
         _thread(thread),
         _continuation(continuation),
         _stream_id(stream_id),
-        _header_block(header_block),
+        _header_block(new uint8_t[header_block_len]),
         _header_block_len(header_block_len),
         _hdr(hdr)
     {
+      // The caller's buffer belongs to the HEADERS frame, which can be freed or reused before the request is unblocked.
+      memcpy(this->_header_block.get(), header_block, header_block_len);
     }
 
     uint16_t
@@ -162,7 +166,7 @@ private:
     const uint8_t *
     header_block() const
     {
-      return this->_header_block;
+      return this->_header_block.get();
     }
 
     size_t
@@ -193,13 +197,13 @@ private:
     };
 
   private:
-    uint16_t       _largest_reference;
-    EThread       *_thread;
-    Continuation  *_continuation;
-    uint64_t       _stream_id;
-    const uint8_t *_header_block;
-    size_t         _header_block_len;
-    HTTPHdr       &_hdr;
+    uint16_t                   _largest_reference;
+    EThread                   *_thread;
+    Continuation              *_continuation;
+    uint64_t                   _stream_id;
+    std::unique_ptr<uint8_t[]> _header_block;
+    size_t                     _header_block_len;
+    HTTPHdr                   &_hdr;
 
     // For IntrusiveDList support
     DecodeRequest *_next = nullptr;

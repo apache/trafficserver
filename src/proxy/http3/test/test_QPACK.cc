@@ -1435,3 +1435,37 @@ TEST_CASE("An invalid encoder stream instruction fails blocked decodes", "[qpack
   qpack.reset();
   hdr.destroy();
 }
+
+// The HEADERS frame that carried a blocked header block can be freed or reused before the decode is unblocked, so the decode
+// has to work from its own copy.
+TEST_CASE("A blocked decode does not depend on the caller's header block", "[qpack-blocked]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  auto header_block = std::make_unique<uint8_t[]>(3);
+
+  header_block[0] = 0x01; // Required Insert Count 1.
+  header_block[1] = 0x00; // Delta Base 0.
+  header_block[2] = 0x80; // Indexed Field Line, dynamic, relative index 0.
+
+  REQUIRE(decode_on_event_thread(*qpack, 1, header_block.get(), 3, hdr, &event_handler) == 1);
+  header_block.reset();
+
+  std::vector<uint8_t> instructions;
+
+  append_insert_without_name_ref_empty_value(instructions, "first");
+  append_insert_without_name_ref_empty_value(instructions, "second");
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+  REQUIRE(event_handler.wait_for_events(1));
+  CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+  CHECK(hdr.field_find("second") != nullptr);
+
+  qpack.reset();
+  hdr.destroy();
+}
