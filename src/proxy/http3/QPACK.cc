@@ -170,6 +170,14 @@ QPACK::QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_t
 
 QPACK::~QPACK()
 {
+  // Every caller cancels its stream before its QPACK goes away, so anything
+  // left here belongs to a caller that may already be gone.
+  while (DecodeReport *r = this->_pending_reports.take_head()) {
+    r->withdraw();
+  }
+  while (DecodeRequest *r = this->_blocked_list.take_head()) {
+    delete r;
+  }
   free_MIOBuffer(_encoder_stream_sending_instructions);
   free_MIOBuffer(_decoder_stream_sending_instructions);
 }
@@ -308,15 +316,20 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
 }
 
 int
-QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
-              EThread *thread)
+QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont)
 {
   if (!cont || !header_block) {
     return -1;
   }
 
+  EThread *thread = this_ethread();
+  if (this->_decode_thread == nullptr) {
+    this->_decode_thread = thread;
+  }
+  ink_release_assert(thread == this->_decode_thread);
+
   if (this->_invalid) {
-    thread->schedule_imm(cont, QPACK_EVENT_DECODE_FAILED, nullptr);
+    this->_report(thread, cont, stream_id, QPACK_EVENT_DECODE_FAILED, nullptr);
     return -1;
   }
 
@@ -343,6 +356,71 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   this->_decode(thread, cont, stream_id, header_block, header_block_len, hdr);
 
   return 0;
+}
+
+int
+QPACK::cancel(uint64_t stream_id)
+{
+  // From any other thread this would race the decoding thread over both lists.
+  ink_release_assert(this->_decode_thread == nullptr || this->_decode_thread == this_ethread());
+
+  int dropped = 0;
+
+  for (DecodeReport *r = this->_pending_reports.head(); r != nullptr;) {
+    DecodeReport *next = DecodeReport::Linkage::next_ptr(r);
+    if (r->stream_id() == stream_id) {
+      // The report is still in the event queue and frees itself when it runs.
+      this->_pending_reports.erase(r);
+      r->withdraw();
+      ++dropped;
+    }
+    r = next;
+  }
+
+  for (DecodeRequest *r = this->_blocked_list.head(); r != nullptr;) {
+    DecodeRequest *next = DecodeRequest::Linkage::next_ptr(r);
+    if (r->stream_id() == stream_id) {
+      this->_blocked_list.erase(r);
+      delete r;
+      ++dropped;
+    }
+    r = next;
+  }
+
+  return dropped;
+}
+
+QPACK::DecodeReport::DecodeReport(QPACK *qpack, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr)
+  : Continuation(continuation->mutex), _qpack(qpack), _continuation(continuation), _stream_id(stream_id), _event(event), _hdr(hdr)
+{
+  SET_HANDLER(&QPACK::DecodeReport::deliver);
+}
+
+int
+QPACK::DecodeReport::deliver(int /* event ATS_UNUSED */, Event *data)
+{
+  // Off the list before the handler runs: the handler may destroy its owner,
+  // which cancels this stream, or the session that owns this QPACK.
+  if (this->_qpack != nullptr) {
+    this->_qpack->_pending_reports.erase(this);
+  }
+  if (this->_continuation != nullptr) {
+    data->cookie = this->_hdr;
+    this->_continuation->handleEvent(this->_event, data);
+  }
+  delete this;
+  return EVENT_DONE;
+}
+
+void
+QPACK::_report(EThread *thread, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr)
+{
+  ink_assert(thread == this_ethread());
+
+  auto *report = new DecodeReport(this, continuation, stream_id, event, hdr);
+
+  this->_pending_reports.append(report);
+  thread->schedule_imm(report);
 }
 
 void
@@ -1057,7 +1135,7 @@ QPACK::_decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const u
     event = QPACK_EVENT_DECODE_COMPLETE;
     this->_write_header_acknowledgement(stream_id);
   }
-  ethread->schedule_imm(cont, event, &hdr);
+  this->_report(ethread, cont, stream_id, event, &hdr);
 }
 
 bool
@@ -1126,7 +1204,7 @@ QPACK::_abort_decode()
   DecodeRequest *r = this->_blocked_list.head();
   while (r) {
     if (this->_largest_known_received_index >= r->largest_reference()) {
-      r->thread()->schedule_imm(r->continuation(), QPACK_EVENT_DECODE_FAILED, nullptr);
+      this->_report(r->thread(), r->continuation(), r->stream_id(), QPACK_EVENT_DECODE_FAILED, nullptr);
       DecodeRequest *tmp = r;
       r                  = DecodeRequest::Linkage::next_ptr(r);
       this->_blocked_list.erase(tmp);
