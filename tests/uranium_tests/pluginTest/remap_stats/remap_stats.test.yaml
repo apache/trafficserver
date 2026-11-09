@@ -33,7 +33,6 @@ urtest:
       proxy.config.http.transaction_no_activity_timeout_out: 2
       proxy.config.http.connect_attempts_timeout: 2
     metric_checks:
-      # Raw-stat and manager synchronization each default to five seconds.
       # Preserve the original test's 60-second polling window.
       - {metric: plugin.remap_stats.one.status_2xx, value: "1", delay: 0, timeout: 60}
       - {metric: plugin.remap_stats.two.status_4xx, value: "1", delay: 0, timeout: 60}

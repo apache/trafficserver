@@ -235,6 +235,13 @@ class ReplayTest:
 
         records: dict[str, Any] = {
             "config_update_interval_ms": 20,
+            # Traffic Server sums per-thread raw stats every 5 seconds by
+            # default and then waits up to another 5 seconds to push them to
+            # traffic_manager, which answers traffic_ctl. Sum them quickly so a
+            # new value goes out with the next push. The push interval stays
+            # at its default: lowering it broke reload tests such as
+            # tls_verify4.
+            "raw_stat_sync_interval_ms": 100,
             "http":
                 {
                     "server_ports":

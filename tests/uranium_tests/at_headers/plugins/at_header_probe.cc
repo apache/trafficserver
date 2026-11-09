@@ -19,12 +19,32 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 
+#include <pthread.h>
+#include <sys/types.h>
+
 #include <cinttypes>
 #include <cstdio>
 #include <cstring>
 #include <string>
 
-struct RecRawStatBlock;
+// These mirror the layouts in lib/records/I_RecDefs.h, which this probe does
+// not include, so it can read the synced totals under the lock that raw stat
+// syncs take.
+struct RecRawStat {
+  int64_t sum;
+  int64_t count;
+  int64_t last_sum;
+  int64_t last_count;
+  uint32_t version;
+};
+
+struct RecRawStatBlock {
+  off_t ethr_stat_offset;
+  RecRawStat **global;
+  int num_stats;
+  int max_stats;
+  pthread_mutex_t mutex;
+};
 
 enum RecErrT {
   REC_ERR_FAIL = -1,
@@ -96,6 +116,26 @@ has_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string const &name)
   return true;
 }
 
+// Returns the number of increments to a raw stat, including those not yet
+// synced. RecGetRawStatSum adds the live per-thread counters to the synced
+// sum, but per-thread counters are never reset, so the synced sum already
+// holds the per-thread total recorded at the last sync. Subtracting that
+// recorded total counts each increment once. Holding the block's lock keeps a
+// concurrent sync from updating the synced sum and recorded total between the
+// reads.
+int64_t
+current_stat_sum(RecRawStatBlock *rsb, int id)
+{
+  int64_t synced_plus_live = 0;
+
+  pthread_mutex_lock(&rsb->mutex);
+  RecGetRawStatSum(rsb, id, &synced_plus_live);
+  int64_t const value = synced_plus_live - rsb->global[id]->last_sum;
+  pthread_mutex_unlock(&rsb->mutex);
+
+  return value;
+}
+
 bool
 set_counter_header(TSMBuffer bufp, TSMLoc hdr_loc, char const *metric_name, char const *header_name)
 {
@@ -108,7 +148,7 @@ set_counter_header(TSMBuffer bufp, TSMLoc hdr_loc, char const *metric_name, char
     return false;
   }
 
-  RecGetRawStatSum(http_rsb, stat_id, &value);
+  value = current_stat_sum(http_rsb, stat_id);
 
   if (std::snprintf(value_buffer, sizeof(value_buffer), "%" PRId64, static_cast<int64_t>(value)) < 0) {
     TSError("[%s] failed to format stat value", PLUGIN_NAME);
