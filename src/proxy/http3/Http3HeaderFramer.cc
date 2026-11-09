@@ -59,13 +59,15 @@ Http3HeaderFramer::generate_frame()
 
   ink_assert(!this->_transaction->is_response_header_sent());
 
-  if (!this->_header_block) {
+  if (!this->_header_block && !this->_encode_failed) {
     // this->_header_block will be filled if it is ready
     this->_generate_header_block();
   }
 
   if (this->_header_block) {
-    uint64_t len = std::min(this->_header_block_len - this->_header_block_wrote, UINT64_C(64 * 1024));
+    // HTTP/3 has no CONTINUATION frame, so the whole field section has to go in a single HEADERS frame (RFC 9114,
+    // Section 4.1).
+    uint64_t len = this->_header_block_len - this->_header_block_wrote;
 
     Http3FrameUPtr frame = Http3FrameFactory::create_headers_frame(this->_header_block_reader, len);
 
@@ -89,6 +91,12 @@ Http3HeaderFramer::is_done() const
   return this->_sent_all_data;
 }
 
+Http3ErrorUPtr
+Http3HeaderFramer::take_error()
+{
+  return std::move(this->_error);
+}
+
 void
 Http3HeaderFramer::reset()
 {
@@ -103,6 +111,8 @@ Http3HeaderFramer::reset()
   this->_header_block_wrote      = 0;
   this->_sent_all_data           = false;
   this->_is_current_header_final = false;
+  this->_encode_failed           = false;
+  this->_error.reset();
 
   http_parser_clear(&this->_http_parser);
   http_parser_init(&this->_http_parser);
@@ -139,7 +149,17 @@ Http3HeaderFramer::_generate_header_block()
     this->_header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     this->_header_block_reader = this->_header_block->alloc_reader();
 
-    this->_qpack->encode(this->_stream_id, this->_header, this->_header_block, this->_header_block_len);
+    if (this->_qpack->encode(this->_stream_id, this->_header, this->_header_block, this->_header_block_len) < 0) {
+      // A HEADERS frame without a complete encoded field section cannot be decoded by the peer, so send none
+      Dbg(dbg_ctl_http3_trans, "Failed to encode header block on stream %" PRIu64, this->_stream_id);
+      free_MIOBuffer(this->_header_block);
+      this->_header_block        = nullptr;
+      this->_header_block_reader = nullptr;
+      this->_header_block_len    = 0;
+      this->_encode_failed       = true;
+      this->_error               = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_INTERNAL_ERROR,
+                                                                "failed to encode header block");
+    }
     break;
   }
   case ParseResult::CONT:
