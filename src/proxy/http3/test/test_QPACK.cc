@@ -1355,3 +1355,83 @@ TEST_CASE("A cancelled blocked decode gives up its blocked stream slot", "[qpack
   fixture.reset();
   second_hdr.destroy();
 }
+
+// Feeds encoder stream instructions on the event thread, where a decode they unblock or fail reports its result.
+static void
+read_encoder_stream_on_event_thread(QPACK &qpack, const uint8_t *instructions, size_t len)
+{
+  run_on_event_thread([&] {
+    QPACKTestAccess::read_encoder_stream(qpack, instructions, len);
+    return 0;
+  });
+}
+
+// A header block that references entries the encoder stream has not inserted yet waits for them, then decodes.
+TEST_CASE("A blocked decode resumes once the encoder stream inserts what it references", "[qpack-blocked]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  // Required Insert Count 1, Delta Base 0, Indexed Field Line on the dynamic table at relative index 0.
+  const uint8_t header_block[] = {0x01, 0x00, 0x80};
+
+  REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 1);
+
+  std::vector<uint8_t> instructions;
+
+  append_insert_without_name_ref_empty_value(instructions, "first");
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+  SECTION("an insert short of what the block references leaves it blocked")
+  {
+    // Queued behind any result the insert could have scheduled.
+    run_on_event_thread([] { return 0; });
+    CHECK(event_handler.events_seen() == 0);
+  }
+
+  SECTION("the insert that completes what the block references resumes it")
+  {
+    instructions.clear();
+    append_insert_without_name_ref_empty_value(instructions, "second");
+    read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(hdr.field_find("second") != nullptr);
+  }
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// A decoder that rejects an encoder stream instruction can never insert what a blocked decode is waiting for, so the blocked
+// decode has to fail instead of waiting forever.
+TEST_CASE("An invalid encoder stream instruction fails blocked decodes", "[qpack-blocked]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  // Required Insert Count 1, Delta Base 0, Indexed Field Line on the dynamic table at relative index 0.
+  const uint8_t header_block[] = {0x01, 0x00, 0x80};
+
+  REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 1);
+
+  // Insert With Name Reference, static, index 100, one past the end of the static table.
+  const uint8_t insert_with_name_ref[] = {0xff, 0x25, 0x01, 'x'};
+
+  read_encoder_stream_on_event_thread(*qpack, insert_with_name_ref, sizeof(insert_with_name_ref));
+
+  REQUIRE(event_handler.wait_for_events(1));
+  CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
+
+  qpack.reset();
+  hdr.destroy();
+}

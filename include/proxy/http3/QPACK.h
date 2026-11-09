@@ -273,8 +273,10 @@ private:
   uint16_t                                                      _max_blocking_streams   = 0;
 
   Continuation *_event_handler = nullptr;
-  void          _resume_decode();
-  void          _abort_decode();
+  // Whether a header block whose prefix names @a largest_reference references dynamic table entries not yet inserted.
+  bool _is_blocked(uint16_t largest_reference) const;
+  void _resume_decode();
+  void _abort_decode();
 
   bool _invalid = false;
 

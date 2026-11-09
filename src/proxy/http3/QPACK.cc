@@ -340,7 +340,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   }
   uint16_t largest_reference = tmp;
 
-  if (largest_reference != 0 && (this->_dynamic_table.is_empty() || this->_dynamic_table.largest_index() < largest_reference)) {
+  if (this->_is_blocked(largest_reference)) {
     // Blocked
     auto *decode_request = new DecodeRequest(largest_reference, thread, cont, stream_id, header_block, header_block_len, hdr);
 
@@ -1179,12 +1179,18 @@ QPACK::_update_reference_counts(uint64_t stream_id)
   }
 }
 
+bool
+QPACK::_is_blocked(uint16_t largest_reference) const
+{
+  return largest_reference != 0 && (this->_dynamic_table.is_empty() || this->_dynamic_table.largest_index() < largest_reference);
+}
+
 void
 QPACK::_resume_decode()
 {
   DecodeRequest *r = this->_blocked_list.head();
   while (r) {
-    if (this->_largest_known_received_index >= r->largest_reference()) {
+    if (!this->_is_blocked(r->largest_reference())) {
       this->_decode(r->thread(), r->continuation(), r->stream_id(), r->header_block(), r->header_block_len(), r->hdr());
       DecodeRequest *tmp = r;
       r                  = DecodeRequest::Linkage::next_ptr(r);
@@ -1201,17 +1207,10 @@ QPACK::_abort_decode()
 {
   this->_invalid = true;
 
-  DecodeRequest *r = this->_blocked_list.head();
-  while (r) {
-    if (this->_largest_known_received_index >= r->largest_reference()) {
-      this->_report(r->thread(), r->continuation(), r->stream_id(), QPACK_EVENT_DECODE_FAILED, nullptr);
-      DecodeRequest *tmp = r;
-      r                  = DecodeRequest::Linkage::next_ptr(r);
-      this->_blocked_list.erase(tmp);
-      delete tmp;
-    } else {
-      r = DecodeRequest::Linkage::next_ptr(r);
-    }
+  // An invalid decoder never inserts another entry, so every blocked decode fails now rather than waiting forever.
+  while (DecodeRequest *r = this->_blocked_list.take_head()) {
+    this->_report(r->thread(), r->continuation(), r->stream_id(), QPACK_EVENT_DECODE_FAILED, nullptr);
+    delete r;
   }
 }
 
