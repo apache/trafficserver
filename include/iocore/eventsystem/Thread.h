@@ -108,7 +108,6 @@ public:
     @note Do not lock it from any other thread. A try-lock always
           fails, and a blocking lock is undefined.
 
-
     @note The @c Thread base class itself does not take the mutex; it
           must be held by a subclass to satisfy locking requirements.
 
