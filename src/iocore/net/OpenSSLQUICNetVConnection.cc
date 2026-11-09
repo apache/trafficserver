@@ -52,6 +52,10 @@ constexpr ink_hrtime OPENSSL_QUIC_EVENT_INTERVAL = HRTIME_MSECONDS(2);
 DbgCtl dbg_ctl_quic_net{"quic_net"};
 DbgCtl dbg_ctl_v_quic_net{"v_quic_net"};
 
+// Most data one stream may have in OpenSSL at once, counting both data not yet
+// sent and data sent but not yet acknowledged.
+constexpr uint64_t OPENSSL_QUIC_MAX_STREAM_SEND_BUFFER = 1024 * 1024;
+
 class OpenSSLQUICStreamManager : public QUICStreamManager
 {
 public:
@@ -893,12 +897,23 @@ QUICNetVConnection::stream_write_capacity(QUICStreamId stream_id)
     return -1;
   }
 
-  uint64_t avail = 0;
-  if (SSL_get_stream_write_buf_avail(it->second, &avail) == 1) {
-    return std::min<uint64_t>(avail, 16 * 1024);
+  // OpenSSL starts a stream's send buffer small and grows it only when one write
+  // offers more than the buffer has free. The buffer keeps data until the peer
+  // acknowledges it, so offering no more than the free room would leave the stream
+  // with one initial buffer in flight per round trip. Offer up to a fixed amount
+  // per stream instead; OpenSSL takes less if the peer's flow control allows less.
+  uint64_t size = 0;
+  uint64_t used = 0;
+  if (SSL_get_stream_write_buf_size(it->second, &size) != 1 || SSL_get_stream_write_buf_used(it->second, &used) != 1) {
+    return 0;
   }
 
-  return 0;
+  // OpenSSL frees the send buffer once the peer has acknowledged everything up to the FIN.
+  if (size == 0 || used >= OPENSSL_QUIC_MAX_STREAM_SEND_BUFFER) {
+    return 0;
+  }
+
+  return OPENSSL_QUIC_MAX_STREAM_SEND_BUFFER - used;
 }
 
 int64_t
@@ -921,6 +936,11 @@ QUICNetVConnection::write_stream(QUICStreamId stream_id, uint8_t const *buf, siz
   size_t         written_len = 0;
   const uint64_t flags       = fin ? SSL_WRITE_FLAG_CONCLUDE : 0;
   if (SSL_write_ex2(it->second, buf, len, flags, &written_len) == 1) {
+    if (dbg_ctl_v_quic_net.on()) {
+      uint64_t used = 0;
+      SSL_get_stream_write_buf_used(it->second, &used);
+      QUICConVDebug("stream %" PRIu64 ": OpenSSL holds %" PRIu64 " bytes to send or to be acknowledged", stream_id, used);
+    }
     return written_len;
   }
 
