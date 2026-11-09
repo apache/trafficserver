@@ -791,7 +791,7 @@ TEST_CASE("encode() keeps every field of a header set larger than one buffer blo
 
   HTTPHdr decoded;
   decoded.create(HTTPType::RESPONSE);
-  REQUIRE(decoder->decode(1, block.data(), block.size(), decoded, handler.get(), eventProcessor.all_ethreads[0]) == 0);
+  REQUIRE(decode_on_event_thread(*decoder, 1, block.data(), block.size(), decoded, handler.get()) == 0);
   sleep(1);
   REQUIRE(handler->last_event() == QPACK_EVENT_DECODE_COMPLETE);
 
