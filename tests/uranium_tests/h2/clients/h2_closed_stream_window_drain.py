@@ -123,7 +123,7 @@ class Http2Client:
 
     @staticmethod
     def _make_frame(frame_type: int, flags: int = 0, stream_id: int = 0, payload: bytes = b'') -> bytes:
-        return len(payload).to_bytes(3, 'big') + bytes([frame_type, flags]) + (stream_id & 0x7fffffff).to_bytes(4, 'big') + payload
+        return len(payload).to_bytes(3, 'big') + bytes([frame_type, flags]) + (stream_id & 0x7FFFFFFF).to_bytes(4, 'big') + payload
 
     def _send_frame(self, frame_type: int, flags: int = 0, stream_id: int = 0, payload: bytes = b'') -> None:
         self._sock.sendall(self._make_frame(frame_type, flags, stream_id, payload))
@@ -144,14 +144,14 @@ class Http2Client:
         length = int.from_bytes(header[0:3], 'big')
         frame_type = header[3]
         flags = header[4]
-        stream_id = int.from_bytes(header[5:9], 'big') & 0x7fffffff
+        stream_id = int.from_bytes(header[5:9], 'big') & 0x7FFFFFFF
         payload = self._read_exact(length)
         return frame_type, flags, stream_id, payload
 
     def _handle_frame(self, frame: Frame) -> None:
         frame_type, flags, stream_id, payload = frame
         if frame_type == FRAME_TYPE_WINDOW_UPDATE and stream_id == CONNECTION_STREAM_ID:
-            increment = int.from_bytes(payload[0:4], 'big') & 0x7fffffff
+            increment = int.from_bytes(payload[0:4], 'big') & 0x7FFFFFFF
             self._send_window += increment
             self._window_update_count += 1
             self._window_update_total += increment
@@ -168,8 +168,8 @@ class Http2Client:
             if len(payload) % 6 != 0:
                 raise RuntimeError(f'SETTINGS payload length {len(payload)} is not a multiple of 6')
             for offset in range(0, len(payload), 6):
-                identifier = int.from_bytes(payload[offset:offset + 2], 'big')
-                value = int.from_bytes(payload[offset + 2:offset + 6], 'big')
+                identifier = int.from_bytes(payload[offset : offset + 2], 'big')
+                value = int.from_bytes(payload[offset + 2 : offset + 6], 'big')
                 if identifier == SETTINGS_MAX_FRAME_SIZE:
                     self._max_frame_size = value
             self._send_frame(FRAME_TYPE_SETTINGS, FLAG_ACK)
@@ -181,7 +181,7 @@ class Http2Client:
             block = payload
             if padded:
                 pad_length = block[0]
-                block = block[1:len(block) - pad_length]
+                block = block[1 : len(block) - pad_length]
             if priority:
                 block = block[5:]
             for name, value in self._decoder.decode(block):
@@ -224,7 +224,7 @@ class Http2Client:
         while offset < len(payload):
             self._wait_for_send_window()
             chunk_size = min(self._max_frame_size, self._send_window, len(payload) - offset)
-            chunk = payload[offset:offset + chunk_size]
+            chunk = payload[offset : offset + chunk_size]
             offset += chunk_size
             flags = FLAG_END_STREAM if (end_stream and offset == len(payload)) else 0
             self._send_frame(FRAME_TYPE_DATA, flags, stream_id, chunk)
@@ -269,11 +269,13 @@ def run(port: int) -> int:
             return 1
         print(
             f'closed-stream DATA sent={CLOSED_STREAM_DATA_TOTAL} '
-            f'window_updates={client.window_update_count} credited={client.window_update_total}')
+            f'window_updates={client.window_update_count} credited={client.window_update_total}'
+        )
 
         # Stream 3: the connection must still be usable for a request with a body.
         client.send_request_headers(
-            PROBE_STREAM_ID, 'POST', '/post', False, [('content-length', str(len(PROBE_BODY))), ('uuid', 'closed-stream-window-3')])
+            PROBE_STREAM_ID, 'POST', '/post', False, [('content-length', str(len(PROBE_BODY))), ('uuid', 'closed-stream-window-3')]
+        )
         try:
             client.send_data(PROBE_STREAM_ID, PROBE_BODY, True)
         except WindowDrained as exc:

@@ -48,11 +48,17 @@ def test_tls_signature_algorithms(ats_factory: ATSFactory, services: ServiceFact
         ("tls13-resumed", "-tls1_3", "rsa_pss_rsae_sha256:rsa_pkcs1_sha256", f"-sess_in {tls13_session}"),
         ("tls13-ecdsa", "-tls1_3", "ecdsa_secp256r1_sha256", ""),
         (
-            "tls12-ecdsa-ticket-full", "-tls1_2", "ecdsa_secp256r1_sha256",
-            f"-cipher ECDHE-ECDSA-AES128-GCM-SHA256 -sess_out {ec_session}"),
+            "tls12-ecdsa-ticket-full",
+            "-tls1_2",
+            "ecdsa_secp256r1_sha256",
+            f"-cipher ECDHE-ECDSA-AES128-GCM-SHA256 -sess_out {ec_session}",
+        ),
         (
-            "tls12-ecdsa-ticket-resumed", "-tls1_2", "ecdsa_secp256r1_sha256",
-            f"-cipher ECDHE-ECDSA-AES128-GCM-SHA256 -sess_in {ec_session}"),
+            "tls12-ecdsa-ticket-resumed",
+            "-tls1_2",
+            "ecdsa_secp256r1_sha256",
+            f"-cipher ECDHE-ECDSA-AES128-GCM-SHA256 -sess_in {ec_session}",
+        ),
     ]
     if has_brainpool:
         cases.append(("tls13-ecdsa-disambiguation", "-tls1_3", "ecdsa_secp256r1_sha256:ecdsa_brainpoolP256r1tls13_sha256", ""))
@@ -60,44 +66,51 @@ def test_tls_signature_algorithms(ats_factory: ATSFactory, services: ServiceFact
         [
             ("tls13-rsa-disambiguation", "-tls1_3", "rsa_pss_rsae_sha256:rsa_pss_pss_sha256", ""),
             ("tls12-static-rsa", "-tls1_2", "rsa_pkcs1_sha256", "-cipher AES128-GCM-SHA256"),
-        ])
+        ]
+    )
     for path, _, _, _ in cases:
         origin.add_response(
             {"headers": f"GET /{path} HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n"},
             {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"},
         )
     ats.copy_to_ssl(
-        *(TEST_DIRECTORY / "ssl" / filename for filename in ("server.pem", "server.key", "signed-foo-ec.pem", "signed-foo-ec.key")))
+        *(TEST_DIRECTORY / "ssl" / filename for filename in ("server.pem", "server.key", "signed-foo-ec.pem", "signed-foo-ec.key"))
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: signed-foo-ec.pem,server.pem",
             "    ssl_key_name: signed-foo-ec.key,server.key",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
     ats.records.update(
         {
             "proxy.config.ssl.server.session_ticket.enable": 1,
             "proxy.config.ssl.server.session_ticket.number": 2,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.write_config_file(
-        "logging.yaml", """logging:
+        "logging.yaml",
+        """logging:
   formats:
     - name: tls_signature_algorithms
       format: '%<cqup> %<cqssv> %<cqssig> %<cqssin> %<cqssr> %<cqssrt>'
   logs:
     - filename: tls_signature_algorithms
       format: tls_signature_algorithms
-""")
+""",
+    )
     origin.start()
     ats.start()
     for path, tls_option, sigalgs, session_option in cases:
         request = f"GET /{path} HTTP/1.1\\r\\nHost: example.com\\r\\nConnection: close\\r\\n\\r\\n"
         result = ats.run_shell(
             f"printf '%b' {shlex.quote(request)} | openssl s_client -quiet -connect 127.0.0.1:{ats.https_port} "
-            f"-servername example.com {tls_option} -sigalgs {sigalgs} {session_option}")
+            f"-servername example.com {tls_option} -sigalgs {sigalgs} {session_option}"
+        )
         assert result.returncode == 0, result.output
         assert "200 OK" in result.stdout, result.output
     log = wait_for_file_lines(ats.log_directory / "tls_signature_algorithms.log", r"^tls", len(cases))

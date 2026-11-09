@@ -23,7 +23,8 @@ from tools.uranium.services import ATSFactory, Curl, ServiceFactory, wait_for_fi
 
 @pytest.mark.parametrize("delayed_hooks", [1, 2], ids=["one-delayed-hook", "two-delayed-hooks"])
 def test_client_hello_read_after_delayed_hook(
-        ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, delayed_hooks: int) -> None:
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, delayed_hooks: int
+) -> None:
     """A ClientHello hook after an asynchronously reenabled one can still read the ClientHello.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
@@ -44,7 +45,8 @@ def test_client_hello_read_after_delayed_hook(
             "proxy.config.diags.debug.tags": "ssl_hook_test|jax_fingerprint",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map https://example.com:{ats.https_port} https://127.0.0.1:{origin.https_port}")
     ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_hook_test.so")
     # The delayed hooks come first, so the fingerprint hook runs after the handshake resumes.
@@ -58,7 +60,8 @@ def test_client_hello_read_after_delayed_hook(
         (
             f"--verbose --insecure --http1.1 --header 'host:example.com:{ats.https_port}' "
             "--header 'uuid: client-hello-reader' "
-            f"'https://127.0.0.1:{ats.https_port}/'"),
+            f"'https://127.0.0.1:{ats.https_port}/'"
+        ),
         timeout=15,
     )
     assert result.returncode == 0, result.output
