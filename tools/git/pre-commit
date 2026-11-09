@@ -42,37 +42,42 @@ if [ ! -x "$FORMAT" ]; then
     exit 1
 fi
 
-source "$GIT_TOP/tools/yapf.sh"
-if [ ! -d ${YAPF_VENV} ]
-then
-    echo "Run \"make yaf\""
+# Check for uv which is required for Ruff.
+if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
     exit 1
 fi
-source ${AUTOPEP8_VENV}/bin/activate
 
+# Get the version variable from the formatting script.
+source "$GIT_TOP/tools/ruff.sh"
 
 # Where to store the patch
 clang_patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
-yapf_patch_file=$(mktemp -t yapf.XXXXXXXXXX)
-trap "rm -f $clang_patch_file $yapf_patch_file" 0 1 2 3 5 15
+ruff_patch_file=$(mktemp -t ruff.XXXXXXXXXX)
+ruff_error_file=$(mktemp -t ruff-error.XXXXXXXXXX)
+trap "rm -f $clang_patch_file $ruff_patch_file $ruff_error_file" 0 1 2 3 5 15
 
 # Loop over all files that are changed, and produce a diff file
-source ${YAPF_VENV}/bin/activate
-REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
-YAPF_CONFIG=${REPO_ROOT}/.style.yapf
+REPO_ROOT=${GIT_TOP}
+RUFF_CONFIG=${REPO_ROOT}/ruff.toml
 git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/yamlcpp" | while read file; do
     case "$file" in
 	*.cc | *.c | *.h | *.h.in)
 	    ${FORMAT} "$file" | diff -u "$file" - >> "$clang_patch_file"
 	    ;;
         # Keep this list of Python extensions the same with the list of
-        # extensions searched for in the toosl/yapf.sh script.
+        # extensions searched for in the tools/ruff.sh script.
         *.py | *.cli.ext | *.test.ext)
-            yapf \
-                --style ${YAPF_CONFIG} \
-                --parallel \
+            uv tool run --quiet ruff@${RUFF_VERSION} format \
+                --config "${RUFF_CONFIG}" \
                 --diff \
-                "$file" >>"$yapf_patch_file"
+                --quiet \
+                "$file" >>"$ruff_patch_file"
+            ruff_status=$?
+            if [ "${ruff_status}" -gt 1 ]; then
+                echo "Ruff failed while checking ${file}." >&2
+                echo "${file}" >>"$ruff_error_file"
+            fi
             ;;
     esac
 done
@@ -88,18 +93,17 @@ else
     echo
 fi
 
-if [ -s "$yapf_patch_file" ]; then
-    echo "The commit is not accepted because yapf reports issues with it."
+if [ -s "$ruff_patch_file" ] || [ -s "$ruff_error_file" ]; then
+    echo "The commit is not accepted because Ruff reports issues with it."
     echo "The easiest way to fix this is to run:"
     echo
-    echo "    $ make yapf"
+    echo "    $ make ruff"
     exit 1
 else
-    echo "This commit complies with the current yapf formatting rules."
+    echo "This commit complies with the current Ruff formatting rules."
     echo
 fi
 
 # Cleanup before exit
-deactivate
-rm -f "$clang_patch_file" "$yapf_patch_file"
+rm -f "$clang_patch_file" "$ruff_patch_file" "$ruff_error_file"
 exit 0
