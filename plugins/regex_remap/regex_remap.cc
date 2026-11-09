@@ -307,7 +307,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
       _lowercase_substitutions = true;
     } else if (opt.compare(start, 8, "strategy") == 0) {
       _has_strategy  = true;
-      _strategy_name = opt_val;
+      _strategy_name = std::move(opt_val);
     } else if (opt_val.size() <= 0) {
       // All other options have a required value
       TSError("[%s] Malformed options: %s", PLUGIN_NAME, opt.c_str());

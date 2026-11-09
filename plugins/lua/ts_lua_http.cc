@@ -594,7 +594,7 @@ ts_lua_http_set_next_hop_strategy(lua_State *L)
 
     name = luaL_checklstring(L, 1, &name_len);
     if (0 == name_len || "null" == std::string_view(name)) {
-      Dbg(dbg_ctl, "Clearning strategy (use parent.config)");
+      Dbg(dbg_ctl, "Clearing strategy (use parent.config)");
       TSHttpTxnNextHopStrategySet(http_ctx->txnp, nullptr);
     } else {
       TSStrategy const stratptr = TSHttpTxnNextHopStrategyFind(http_ctx->txnp, name);
