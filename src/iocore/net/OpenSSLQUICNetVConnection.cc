@@ -47,8 +47,6 @@
 
 namespace
 {
-constexpr ink_hrtime OPENSSL_QUIC_EVENT_INTERVAL = HRTIME_MSECONDS(2);
-
 DbgCtl dbg_ctl_quic_net{"quic_net"};
 DbgCtl dbg_ctl_v_quic_net{"v_quic_net"};
 
@@ -256,10 +254,10 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->_handle_openssl_events();
   }
 
+  // There is no periodic tick: the listener schedules this connection when OpenSSL has
+  // something for it, and stream updates schedule it when there is data to send.
   if (this->closed != 1 && this->_openssl_connection_closed()) {
     this->_schedule_closing_event();
-  } else if (this->closed != 1) {
-    this->_schedule_openssl_event();
   }
 
   return EVENT_DONE;
@@ -297,10 +295,10 @@ QUICNetVConnection::state_established(int event, Event *data)
     break;
   }
 
+  // There is no periodic tick: the listener schedules this connection when OpenSSL has
+  // something for it, and stream updates schedule it when there is data to send.
   if (this->closed != 1 && this->_openssl_connection_closed()) {
     this->_schedule_closing_event();
-  } else if (this->closed != 1) {
-    this->_schedule_openssl_event();
   }
 
   return EVENT_DONE;
@@ -379,7 +377,7 @@ QUICNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 {
   auto vio            = super::do_io_write(c, nbytes, buf);
   this->write.enabled = 1;
-  this->_schedule_openssl_event(false);
+  this->_schedule_openssl_event();
   return vio;
 }
 
@@ -431,7 +429,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   }
 
   action_.continuation->handleEvent(NET_EVENT_ACCEPT, this);
-  this->_schedule_openssl_event(false);
+  this->_schedule_openssl_event();
 
   return EVENT_DONE;
 }
@@ -554,7 +552,7 @@ QUICNetVConnection::negotiated_application_name() const
 void
 QUICNetVConnection::on_stream_updated()
 {
-  this->_schedule_openssl_event(false);
+  this->_schedule_openssl_event();
 }
 
 bool
@@ -620,9 +618,9 @@ QUICNetVConnection::_unbindSSLObject()
 }
 
 void
-QUICNetVConnection::_schedule_packet_write_ready(bool delay)
+QUICNetVConnection::_schedule_packet_write_ready(bool /* delay ATS_UNUSED */)
 {
-  this->_schedule_openssl_event(delay);
+  this->_schedule_openssl_event();
 }
 
 void
@@ -763,20 +761,69 @@ QUICNetVConnection::_process_openssl_streams()
 }
 
 void
-QUICNetVConnection::_schedule_openssl_event(bool delay)
+QUICNetVConnection::_schedule_openssl_event()
 {
-  if (!delay && this->_packet_write_ready != nullptr) {
-    this->_packet_write_ready->cancel();
-    this->_packet_write_ready = nullptr;
+  if (this->_packet_write_ready == nullptr && this->thread != nullptr) {
+    this->_packet_write_ready = this->thread->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY);
+  }
+}
+
+void
+QUICNetVConnection::schedule_if_openssl_events_pending()
+{
+  // A connection without a stream manager has not run acceptEvent() yet, and an event
+  // scheduled now would be handled by acceptEvent() instead of by a state handler.
+  if (this->_ssl == nullptr || this->_stream_manager == nullptr || this->closed == 1 || this->_packet_write_ready != nullptr) {
+    return;
   }
 
-  if (this->_packet_write_ready == nullptr && this->thread != nullptr) {
-    if (delay) {
-      this->_packet_write_ready = this->thread->schedule_in(this, OPENSSL_QUIC_EVENT_INTERVAL);
-    } else {
-      this->_packet_write_ready = this->thread->schedule_imm(this, QUIC_EVENT_PACKET_WRITE_READY);
+  if (this->_has_openssl_events()) {
+    this->_schedule_openssl_event();
+  }
+}
+
+bool
+QUICNetVConnection::_has_openssl_events()
+{
+  if (!this->_handshake_completed || !this->_application_started) {
+    return SSL_is_init_finished(this->_ssl) || this->_openssl_connection_closed();
+  }
+
+  this->_openssl_poll_items.clear();
+  this->_openssl_poll_items.push_back({SSL_as_poll_descriptor(this->_ssl), SSL_POLL_EVENT_EC | SSL_POLL_EVENT_IS, 0});
+
+  for (auto const &[stream_id, stream_ssl] : this->_openssl_streams) {
+    QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
+    if (stream == nullptr) {
+      continue;
+    }
+
+    uint64_t events      = 0;
+    int      stream_type = SSL_get_stream_type(stream_ssl);
+    // OpenSSL keeps reporting a stream readable after its FIN has been read.
+    if ((stream_type & SSL_STREAM_TYPE_READ) != 0 && !stream->has_no_more_data()) {
+      events |= SSL_POLL_EVENT_R | SSL_POLL_EVENT_ER;
+    }
+    // Almost every open stream can take more data, so writability only matters for a stream
+    // whose data is waiting on flow control or buffer space.
+    if ((stream_type & SSL_STREAM_TYPE_WRITE) != 0 && stream->has_data_to_send()) {
+      events |= SSL_POLL_EVENT_W;
+    }
+    if (events != 0) {
+      this->_openssl_poll_items.push_back({SSL_as_poll_descriptor(stream_ssl), events, 0});
     }
   }
+
+  struct timeval no_wait      = {0, 0};
+  size_t         result_count = 0;
+  if (SSL_poll(this->_openssl_poll_items.data(), this->_openssl_poll_items.size(), sizeof(SSL_POLL_ITEM), &no_wait,
+               SSL_POLL_FLAG_NO_HANDLE_EVENTS, &result_count) != 1) {
+    QUICConDebug("SSL_poll failed: %s", ERR_error_string(ERR_peek_error(), nullptr));
+    // Let the connection find out for itself what went wrong.
+    return true;
+  }
+
+  return result_count > 0;
 }
 
 void

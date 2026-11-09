@@ -61,7 +61,8 @@ def configure_ats(ats_factory: ATSFactory, *, server: VerifierServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -70,7 +71,8 @@ def configure_ats(ats_factory: ATSFactory, *, server: VerifierServer) -> ATS:
             "proxy.config.quic.server.stateless_retry_enabled": 0,
             # Keep the connection open through the idle period.
             "proxy.config.quic.no_activity_timeout_in": 30000,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}")
     return ats
 
@@ -105,8 +107,8 @@ def test_h3_idle_write_ready(ats_factory: ATSFactory, services: ServiceFactory) 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
     """
-    if not ats_factory.has_feature("TS_HAS_QUICHE"):
-        pytest.skip("Only the quiche QUIC backend sends without polling")
+    if not ats_factory.has_feature("TS_USE_QUIC"):
+        pytest.skip("Traffic Server was built without QUIC support")
     server = configure_server(services)
     ats = configure_ats(ats_factory, server=server)
     client = configure_client(services, ats=ats)
@@ -122,4 +124,5 @@ def test_h3_idle_write_ready(ats_factory: ATSFactory, services: ServiceFactory) 
     assert write_ready_events > 0, "v_http3 debug output was not captured"
     assert write_ready_events <= MAX_WRITE_READY_EVENTS, (
         f"{write_ready_events} stream WRITE_READY events with a request stream idle for {IDLE_SECONDS}s; "
-        "the QUIC connection is polling for writes while idle")
+        "the QUIC connection is polling for writes while idle"
+    )

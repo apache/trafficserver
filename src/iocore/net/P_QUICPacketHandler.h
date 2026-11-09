@@ -30,6 +30,8 @@
 
 #if TS_HAS_OPENSSL_QUIC
 #include <openssl/ssl.h>
+
+#include <unordered_set>
 #elif TS_HAS_QUICHE
 #include <quiche.h>
 #endif
@@ -54,6 +56,14 @@ protected:
   virtual Continuation *_get_continuation() = 0;
 
   virtual void _recv_packet(int event, UDPPacket *udpPacket) = 0;
+
+#if TS_HAS_OPENSSL_QUIC
+  /** Stops tracking @a conn, which is closing and may be freed at any time after this returns. */
+  virtual void
+  _forget_connection(QUICNetVConnection * /* conn ATS_UNUSED */)
+  {
+  }
+#endif
 };
 
 class QUICPacketHandlerIn : public NetAccept, public QUICPacketHandler
@@ -80,6 +90,10 @@ private:
 #if TS_HAS_OPENSSL_QUIC
   SSL   *_listener = nullptr;
   Event *_event    = nullptr;
+
+  /// The open connections accepted on this listener. They share its OpenSSL reactor, so
+  /// servicing the listener is what receives their packets and runs their QUIC timers.
+  std::unordered_set<QUICNetVConnection *> _connections;
 #elif TS_HAS_QUICHE
   QUICConnectionTable &_ctable;
   quiche_config       &_quiche_config;
@@ -91,6 +105,7 @@ private:
   bool _start_listener();
   void _service_listener();
   void _schedule_event();
+  void _forget_connection(QUICNetVConnection *conn) override;
 #endif
 };
 

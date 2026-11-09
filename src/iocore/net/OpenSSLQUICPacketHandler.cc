@@ -399,6 +399,8 @@ QUICPacketHandler::~QUICPacketHandler()
 void
 QUICPacketHandler::close_connection(QUICNetVConnection *conn)
 {
+  this->_forget_connection(conn);
+
   int isin = ink_atomic_swap(&conn->in_closed_queue, 1);
   if (!isin) {
     this->_closed_con_collector->closedQueue.push(conn);
@@ -601,8 +603,22 @@ QUICPacketHandlerIn::_service_listener()
     vc->set_context(NET_VCONNECTION_IN);
     vc->options.ip_proto  = NetVCOptions::USE_UDP;
     vc->options.ip_family = this->server.accept_addr.sa.sa_family;
+    this->_connections.insert(vc);
     this_ethread()->schedule_imm(vc, EVENT_NONE, nullptr);
   }
+
+  // Handling the listener's events received the packets of, and ran the timers for, every
+  // connection accepted on it. Only the connections that now have something to act on are
+  // woken, so that idle connections cost nothing between packets.
+  for (QUICNetVConnection *vc : this->_connections) {
+    vc->schedule_if_openssl_events_pending();
+  }
+}
+
+void
+QUICPacketHandlerIn::_forget_connection(QUICNetVConnection *conn)
+{
+  this->_connections.erase(conn);
 }
 
 void

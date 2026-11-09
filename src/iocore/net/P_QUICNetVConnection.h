@@ -53,6 +53,7 @@
 #include <openssl/ssl.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #if TS_HAS_QUICHE
 #include <quiche.h>
@@ -84,6 +85,13 @@ public:
   void                    init(SSL *ssl, QUICPacketHandler *packet_handler);
   void                    set_quic_endpoints(IpEndpoint const &local, IpEndpoint const &remote);
   QUICConnectionErrorUPtr create_openssl_stream(uint64_t flags, QUICStreamId &new_stream_id);
+
+  /** Schedules this connection to run if OpenSSL has something for it to act on.
+   *
+   * The listener that accepted this connection calls this after handling its events, since
+   * that is when this connection's packets are received and its QUIC timers run.
+   */
+  void schedule_if_openssl_events_pending();
 #elif TS_HAS_QUICHE
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
@@ -274,9 +282,17 @@ private:
   void _handle_openssl_events();
   void _accept_openssl_streams();
   void _process_openssl_streams();
-  void _schedule_openssl_event(bool delay = true);
+  void _schedule_openssl_event();
   void _unschedule_openssl_event();
   bool _openssl_connection_closed() const;
+
+  /** Whether the handshake finished, the connection closed, a peer opened a stream, a stream
+   * has data or a FIN to read, or a stream that has data to send can take more of it.
+   */
+  bool _has_openssl_events();
+
+  /// Reused by _has_openssl_events() so that checking an idle connection does not allocate.
+  std::vector<SSL_POLL_ITEM> _openssl_poll_items;
 #endif
 
   void _propagate_event(int event);
