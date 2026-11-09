@@ -1856,7 +1856,7 @@ TSStrategy TSRemapNextHopStrategyGet();
     A call outside of remap rule initialization has no effect and is
     logged, at most once per log throttling interval.
 
-    @param handle to the strategy to set.
+    @param[in] strategy Next hop strategy to set, or nullptr to clear.
 
  */
 void TSRemapNextHopStrategySet(TSStrategy strategy);
