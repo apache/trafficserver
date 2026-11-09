@@ -35,10 +35,12 @@
 #include "tsutil/PostScript.h"
 
 #include <cstdio>
+#include <cstring>
 #include <string>
 
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 // Required by main.h
@@ -114,6 +116,44 @@ control_stripe_count()
   const uint32_t count = static_cast<cache_shm::CacheShmControl *>(addr)->stripe_count;
   munmap(addr, cache_shm::CONTROL_SIZE);
   return count;
+}
+
+// Stands in for another local account planting a segment under our name: the bytes we left behind, in an object other
+// users may write. A fresh object, because macOS allows one ftruncate per shm object and refuses fchmod on it.
+bool
+replant_open_to_others(const std::string &name, std::size_t size)
+{
+  std::string bytes(size, '\0');
+  int         fd = shm_open(name.c_str(), O_RDONLY, 0);
+  if (fd < 0) {
+    return false;
+  }
+  void *addr = mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
+  close(fd);
+  if (addr == MAP_FAILED) {
+    return false;
+  }
+  std::memcpy(bytes.data(), addr, size);
+  munmap(addr, size);
+
+  shm_unlink(name.c_str());
+  const mode_t old_mask = umask(0);
+  fd                    = shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0666);
+  umask(old_mask);
+  if (fd < 0) {
+    return false;
+  }
+  bool ok = ftruncate(fd, static_cast<off_t>(size)) == 0;
+  if (ok) {
+    addr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    ok   = addr != MAP_FAILED;
+    if (ok) {
+      std::memcpy(addr, bytes.data(), size);
+      munmap(addr, size);
+    }
+  }
+  close(fd);
+  return ok;
 }
 
 // Reaches the protected gate StripeSM::init() consults before fast-attaching.
@@ -240,6 +280,63 @@ TEST_CASE("An untrusted stripe entry is recreated instead of attached", "[cache]
   // otherwise leak a slot per restart, and both segments would be mapped at once.
   CHECK(control_stripe_count() == count_before);
   CHECK(!stripe_marked_untrusted(0));
+  CacheShm::detach_stripe(fresh);
+
+  unlink_test_segments();
+}
+
+// Every gate on the control segment is a value its writer chooses, so one that other users can write proves nothing about
+// who wrote it.
+TEST_CASE("A control segment other users can write is not attached", "[cache][shm]")
+{
+  unlink_test_segments();
+  if (!enable_shm()) {
+    WARN("shm unavailable in this environment; skipping");
+    unlink_test_segments();
+    return;
+  }
+
+  // A clean run leaves a control segment that passes every other gate.
+  CacheShm::mark_clean_shutdown();
+  CacheShm::release_for_test();
+  const std::string prefix = cache_shm::normalize_name_prefix(test_prefix_word());
+  REQUIRE(replant_open_to_others(cache_shm::control_segment_name(prefix), cache_shm::CONTROL_SIZE));
+
+  CHECK_FALSE(enable_shm());
+
+  unlink_test_segments();
+}
+
+// _shm_directory_is_valid() checks the directory once, at attach. Anyone else holding a writable mapping can rewrite its
+// links and offsets afterwards, so the stripe segment must be ours even when the control segment is.
+TEST_CASE("A stripe segment other users can write is recreated instead of attached", "[cache][shm]")
+{
+  unlink_test_segments();
+  if (!enable_shm()) {
+    WARN("shm unavailable in this environment; skipping");
+    unlink_test_segments();
+    return;
+  }
+
+  constexpr std::size_t dir_size = 8192;
+  constexpr const char *key      = " 0:99";
+  constexpr char        sentinel = 0x5a;
+
+  char *first = CacheShm::attach_or_create_stripe(key, dir_size);
+  REQUIRE(first != nullptr);
+  first[0] = sentinel;
+  CacheShm::mark_clean_shutdown();
+  CacheShm::detach_stripe(first);
+  CacheShm::release_for_test();
+
+  const std::string prefix = cache_shm::normalize_name_prefix(test_prefix_word());
+  REQUIRE(replant_open_to_others(cache_shm::stripe_segment_name(prefix, 0), dir_size));
+
+  REQUIRE(enable_shm());
+  REQUIRE(CacheShm::mode() == CacheShm::Mode::AttachExisting);
+  char *fresh = CacheShm::attach_or_create_stripe(key, dir_size);
+  REQUIRE(fresh != nullptr);
+  CHECK(fresh[0] == 0);
   CacheShm::detach_stripe(fresh);
 
   unlink_test_segments();
