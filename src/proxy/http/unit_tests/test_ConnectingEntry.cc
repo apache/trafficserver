@@ -123,6 +123,28 @@ TEST_CASE("ConnectingEntry destructor releases exactly one reservation", "[Conne
   other->release();
 }
 
+// A failed connect returns the reservation before its transactions retry, then deletes the entry.
+TEST_CASE("ConnectingEntry releases the outbound reservation before deletion", "[ConnectingEntry]")
+{
+  auto group = reserved_group("192.0.2.12:80");
+  auto other = reserved_group("192.0.2.12:80");
+
+  REQUIRE(group->_count == 2);
+
+  auto *entry = new ConnectingEntry();
+
+  entry->enable_outbound_connection_tracking(group);
+  entry->release_outbound_connection_tracking();
+  CHECK(other->_count == 1);
+
+  entry->release_outbound_connection_tracking();
+  delete entry;
+  CHECK(other->_count == 1);
+  CHECK(in_outbound_table(other));
+
+  other->release();
+}
+
 // With connection tracking off, HttpSM still hands the entry its (empty) group; deleting it must not touch the tracker.
 TEST_CASE("ConnectingEntry destructor without connection tracking", "[ConnectingEntry]")
 {
