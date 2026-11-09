@@ -27,6 +27,12 @@
 #include "iocore/net/quic/QUICTransportParameters.h"
 #include "iocore/net/quic/QUICStream.h"
 #include "iocore/net/quic/QUICStreamManager.h"
+#include "tsutil/DbgCtl.h"
+
+namespace
+{
+DbgCtl dbg_ctl{"quic_stream"};
+} // end anonymous namespace
 
 QUICStreamManager::QUICStreamManager(QUICContext *context, QUICApplicationMap *app_map) : _context(context), _app_map(app_map) {}
 
@@ -106,6 +112,7 @@ QUICStreamManager::create_stream(QUICStreamId stream_id, QUICConnectionError & /
 {
   QUICStream *stream = new QUICStream(this->_context->connection_info(), stream_id);
   this->stream_list.push(stream);
+  Dbg(dbg_ctl, "created stream %" PRIu64, stream_id);
 
   QUICApplication *application = this->_app_map->get(stream_id);
   application->on_stream_open(*stream);
@@ -158,6 +165,7 @@ QUICStreamManager::delete_stream(QUICStreamId stream_id)
 
   stream_list.remove(stream);
   delete stream;
+  Dbg(dbg_ctl, "deleted stream %" PRIu64, stream_id);
 
   return nullptr;
 }

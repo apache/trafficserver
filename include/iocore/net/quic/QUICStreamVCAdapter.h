@@ -50,8 +50,9 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  // Helpers to check VIO states
+  // Helpers to check VIO states. A stream can be deleted once it is neither readable nor writable.
   bool is_readable();
+  /// Whether the send side still has a FIN to deliver.
   bool is_writable();
   void mark_stream_closed();
   bool is_stream_closed() const;

@@ -209,9 +209,9 @@ def quic_configuration(server_name: str) -> QuicConfiguration:
     return configuration
 
 
-async def connect_h3(host: str, port: int, server_name: str):
-    """Open an HTTP/3 connection using the test protocol."""
-    return connect(host, port, configuration=quic_configuration(server_name), create_protocol=H3ClientProtocol)
+async def connect_h3(host: str, port: int, server_name: str, protocol: type[H3ClientProtocol] = H3ClientProtocol):
+    """Open an HTTP/3 connection using the test protocol or a subclass of it."""
+    return connect(host, port, configuration=quic_configuration(server_name), create_protocol=protocol)
 
 
 def verify_response(request_case: RequestCase, response: ResponseState) -> None:

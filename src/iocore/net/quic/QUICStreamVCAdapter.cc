@@ -377,7 +377,7 @@ QUICStreamVCAdapter::is_readable()
 bool
 QUICStreamVCAdapter::is_writable()
 {
-  return this->stream().direction() != QUICStreamDirection::RECEIVE;
+  return this->stream().direction() != QUICStreamDirection::RECEIVE && !this->stream().is_fin_sent();
 }
 
 void
