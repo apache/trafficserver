@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Watchdog accept backpressure: shrink, refuse, the loopback exemption, recovery and a clean drain."""
+
 import shlex
 import signal
 import socket
@@ -175,7 +176,8 @@ def test_accept_backpressure(ats: ATS, curl: Curl, accept_threads: int) -> None:
             "proxy.config.net.listen_backlog": LISTEN_BACKLOG,
             "proxy.config.restart.stop_listening": 1,
             "proxy.config.stop.shutdown_timeout": 10,
-        })
+        }
+    )
     ats.copy_custom_plugin("{AtsTestPluginsDir}/watchdog_stall.so")
     ats.plugin_config.add_line("watchdog_stall.so")
     ats.start()
@@ -240,7 +242,8 @@ def test_accept_backpressure(ats: ATS, curl: Curl, accept_threads: int) -> None:
     request(curl, "127.0.0.2", port, max_time=1)
     ats.send_signal(signal.SIGTERM)
     wait_for(
-        lambda: not listener_queue_limits(port) and not listener_queue_limits(port, loopback=True), 10, "every listener to close")
+        lambda: not listener_queue_limits(port) and not listener_queue_limits(port, loopback=True), 10, "every listener to close"
+    )
 
     # No acceptor may keep running its retry timer and counting refusals, or touch a descriptor number that the process
     # has since reused. Several retry periods pass in the window, so a surviving timer would show.

@@ -1,0 +1,330 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Verify that a malformed private directive, such as one next to a
+# semicolon instead of a comma, still prevents a shared cache from serving
+# one user's response to another, and that a malformed must-revalidate does
+# not make an otherwise uncacheable response cacheable.
+#
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Test that malformed restrictive Cache-Control directives still prevent caching'
+
+  dns:
+    name: 'dns-cc-malformed-restrictive'
+
+  server:
+    name: 'server-cc-malformed-restrictive'
+
+  client:
+    name: 'client-cc-malformed-restrictive'
+
+  ats:
+    name: 'ts-cc-malformed-restrictive'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.insert_age_in_response: 0
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  #############################################################################
+  # Malformed private: a semicolon separator must not drop the restriction.
+  # Expires gives the response a lifetime even though max-age is ignored.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /semicolon-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, semicolon-private-user-a]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'private; max-age=600']
+        - [Expires, 'Fri, 01 Jan 2100 00:00:00 GMT']
+        - [X-User-Token, user-a]
+      content:
+        encoding: plain
+        data: user-a
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-User-Token, { value: user-a, as: equal }]
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /semicolon-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, semicolon-private-user-b]
+
+    proxy-request:
+      url: /semicolon-private
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'private; max-age=600']
+        - [Expires, 'Fri, 01 Jan 2100 00:00:00 GMT']
+        - [X-User-Token, user-b]
+      content:
+        encoding: plain
+        data: user-b
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, { value: miss, as: equal }]
+        - [X-User-Token, { value: user-b, as: equal }]
+      content:
+        encoding: plain
+        data: user-b
+        verify: { as: equal }
+
+  #############################################################################
+  # A private after a semicolon must be honored too, not only one at the
+  # start of the element.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /later-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, later-private-user-a]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'max-age=600; private']
+        - [Expires, 'Fri, 01 Jan 2100 00:00:00 GMT']
+        - [X-User-Token, user-a]
+      content:
+        encoding: plain
+        data: user-a
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-User-Token, { value: user-a, as: equal }]
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /later-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, later-private-user-b]
+
+    proxy-request:
+      url: /later-private
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'max-age=600; private']
+        - [Expires, 'Fri, 01 Jan 2100 00:00:00 GMT']
+        - [X-User-Token, user-b]
+      content:
+        encoding: plain
+        data: user-b
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, { value: miss, as: equal }]
+        - [X-User-Token, { value: user-b, as: equal }]
+      content:
+        encoding: plain
+        data: user-b
+        verify: { as: equal }
+
+  #############################################################################
+  # A private after an unknown directive, such as stale-while-revalidate,
+  # must be honored too.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /unknown-then-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, unknown-then-private-user-a]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'stale-while-revalidate=60; private']
+        - [Expires, 'Fri, 01 Jan 2100 00:00:00 GMT']
+        - [X-User-Token, user-a]
+      content:
+        encoding: plain
+        data: user-a
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-User-Token, { value: user-a, as: equal }]
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /unknown-then-private
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, unknown-then-private-user-b]
+
+    proxy-request:
+      url: /unknown-then-private
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "6"]
+        - [Cache-Control, 'stale-while-revalidate=60; private']
+        - [Expires, 'Fri, 01 Jan 2100 00:00:00 GMT']
+        - [X-User-Token, user-b]
+      content:
+        encoding: plain
+        data: user-b
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, { value: miss, as: equal }]
+        - [X-User-Token, { value: user-b, as: equal }]
+      content:
+        encoding: plain
+        data: user-b
+        verify: { as: equal }
+
+  #############################################################################
+  # A malformed must-revalidate must not make a redirect cacheable. Its
+  # max-age=0 is ignored, so keeping must-revalidate would give the 302 a
+  # heuristic lifetime.
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /redirect-must-revalidate
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, redirect-must-revalidate-1]
+
+    server-response:
+      status: 302
+      reason: Found
+      headers:
+        fields:
+        - [Content-Length, "0"]
+        - [Cache-Control, 'must-revalidate; max-age=0']
+        - [Location, 'http://www.example.com/first']
+
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [Location, { value: 'http://www.example.com/first', as: equal }]
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /redirect-must-revalidate
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, x-cache]
+        - [uuid, redirect-must-revalidate-2]
+
+    proxy-request:
+      url: /redirect-must-revalidate
+
+    server-response:
+      status: 302
+      reason: Found
+      headers:
+        fields:
+        - [Content-Length, "0"]
+        - [Cache-Control, 'must-revalidate; max-age=0']
+        - [Location, 'http://www.example.com/second']
+
+    proxy-response:
+      status: 302
+      headers:
+        fields:
+        - [X-Cache, { value: miss, as: equal }]
+        - [Location, { value: 'http://www.example.com/second', as: equal }]

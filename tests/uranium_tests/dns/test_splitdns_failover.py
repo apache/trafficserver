@@ -61,7 +61,8 @@ def configure_ats(ats_factory: ATSFactory, primary: DNSServer, secondary: DNSSer
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "dns|splitdns",
-        })
+        }
+    )
     ats.splitdns_config.add_line(f"dest_domain=ts.a.o named=\"127.0.0.1:{primary.port} 127.0.0.1:{secondary.port}\"")
     for host in ("a", "b", "c", "d"):
         ats.remap_config.add_line(f"map /{host}/ http://{host}.ts.a.o:{origin.port}/")

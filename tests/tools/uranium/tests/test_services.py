@@ -131,7 +131,8 @@ def test_procedural_sandbox_preserves_name_and_cleans_previous_run(tmp_path: Pat
         features={},
     )
     sandbox = runtime.item_sandbox(
-        "uranium_tests/cache/test_cache_shm_control_size_mismatch.py::test_cache_shm_control_size_mismatch")
+        "uranium_tests/cache/test_cache_shm_control_size_mismatch.py::test_cache_shm_control_size_mismatch"
+    )
     assert sandbox.name == "test_cache_shm_control_size_mismatch"
     runtime.prepare_sandbox(sandbox)
     (sandbox / "previous-run.log").write_text("old output")
@@ -264,8 +265,8 @@ def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeyp
     (tmp_path / ".port-counter").write_text("10000")
     manifest = tmp_path / "example.yaml"
     manifest.write_text(
-        "urtest:\n  description: example\n  server: {}\n  client: {}\n  ats: {}\n"
-        "  variants:\n    - name: one\n    - name: two\n")
+        "urtest:\n  description: example\n  server: {}\n  client: {}\n  ats: {}\n  variants:\n    - name: one\n    - name: two\n"
+    )
     context = ProceduralContext.create(runtime, "native-test", manifest)
     live = context.run_directory / "live-service"
     live.mkdir()
@@ -609,15 +610,16 @@ def test_curl_parses_a_shell_style_argument_string(monkeypatch: pytest.MonkeyPat
         pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/1.0.2k zlib/0.0.0", False, id="old-openssl"),
         pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 BoringSSL zlib/0.0.0", False, id="boringssl"),
         pytest.param(
-            "curl 0.0.0 (platform) libcurl/0.0.0 (SecureTransport) LibreSSL/0.0.0 zlib/0.0.0", False,
-            id="multissl-libressl-active"),
+            "curl 0.0.0 (platform) libcurl/0.0.0 (SecureTransport) LibreSSL/0.0.0 zlib/0.0.0", False, id="multissl-libressl-active"
+        ),
         pytest.param(
-            "curl 0.0.0 (platform) libcurl/0.0.0 SecureTransport (OpenSSL/3.0.0) zlib/0.0.0", False,
-            id="multissl-openssl-inactive"),
+            "curl 0.0.0 (platform) libcurl/0.0.0 SecureTransport (OpenSSL/3.0.0) zlib/0.0.0", False, id="multissl-openssl-inactive"
+        ),
     ],
 )
 def test_curl_accepts_seclevel_follows_the_active_tls_backend(
-        monkeypatch: pytest.MonkeyPatch, version_line: str, expected: bool) -> None:
+    monkeypatch: pytest.MonkeyPatch, version_line: str, expected: bool
+) -> None:
     """Accept @SECLEVEL only when curl's active TLS backend is OpenSSL 1.1.0+ or quictls.
 
     :param monkeypatch: Pytest fixture used to supply ``curl --version`` output.

@@ -54,7 +54,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
@@ -62,7 +63,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.ssl.server.cipher_suite": ("ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"),
             "proxy.config.diags.debug.tags": "ssl",
             "proxy.config.diags.debug.enabled": 1,
-        })
+        }
+    )
     return ats
 
 
@@ -73,7 +75,7 @@ def certificate_prefix(name: str) -> str:
     """
 
     content = (SSL_DIRECTORY / name).read_text()
-    return content[:content.index("END CERTIFICATE-----")]
+    return content[: content.index("END CERTIFICATE-----")]
 
 
 def handshake(hostname: str, *, rsa_only: bool = False, _ats: ATS) -> str:
@@ -87,7 +89,8 @@ def handshake(hostname: str, *, rsa_only: bool = False, _ats: ATS) -> str:
     cipher = " -cipher ECDHE-RSA-AES128-GCM-SHA256" if rsa_only else ""
     script = (
         f"printf 'foo\\n' | openssl s_client -tls1_2 -servername {shlex.quote(hostname)}"
-        f"{cipher} -connect 127.0.0.1:{_ats.https_port}")
+        f"{cipher} -connect 127.0.0.1:{_ats.https_port}"
+    )
     result = _ats.run_shell(script)
     assert result.returncode == 0, result.output
     return result.output

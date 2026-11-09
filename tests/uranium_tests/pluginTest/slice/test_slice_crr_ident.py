@@ -42,17 +42,16 @@ def test_slice_crr_ident(ats_factory: ATSFactory, services: ServiceFactory) -> N
         for index, (byte_range, content_range, body) in enumerate((("0-2", "0-2/5", bodies[0]), ("3-5", "3-4/5", bodies[1]))):
             _origin.add_response(
                 {
-                    "headers":
-                        (
-                            f"GET /plain HTTP/1.1\r\nHost: www.example.com\r\n"
-                            f"UID: {uid} {index}\r\nRange: bytes={byte_range}\r\n\r\n")
+                    "headers": (
+                        f"GET /plain HTTP/1.1\r\nHost: www.example.com\r\nUID: {uid} {index}\r\nRange: bytes={byte_range}\r\n\r\n"
+                    )
                 },
                 {
-                    "headers":
-                        (
-                            "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\n"
-                            f"Cache-Control: max-age={max_age}\r\nConnection: close\r\n"
-                            f'Content-Range: bytes {content_range}\r\nEtag: "{etag}"\r\n\r\n'),
+                    "headers": (
+                        "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\n"
+                        f"Cache-Control: max-age={max_age}\r\nConnection: close\r\n"
+                        f'Content-Range: bytes {content_range}\r\nEtag: "{etag}"\r\n\r\n'
+                    ),
                     "body": body,
                 },
             )
@@ -67,10 +66,7 @@ def test_slice_crr_ident(ats_factory: ATSFactory, services: ServiceFactory) -> N
         add_asset("chg", "chg", 60, ("AAA", "bb"))
         origin.add_response(
             {"headers": "GET /404.txt HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n",
-                "body": "Not Found"
-            },
+            {"headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n", "body": "Not Found"},
         )
         return origin
 
@@ -94,7 +90,9 @@ def test_slice_crr_ident(ats_factory: ATSFactory, services: ServiceFactory) -> N
                     "cond %{SEND_REQUEST_HDR_HOOK}",
                     'cond %{HEADER:Range} ="bytes=3-5" [AND]',
                     "set-header UID %{CLIENT-HEADER:UID} 1",
-                )) + "\n",
+                )
+            )
+            + "\n",
         )
         ats.remap_config.add_lines(
             (
@@ -103,35 +101,33 @@ def test_slice_crr_ident(ats_factory: ATSFactory, services: ServiceFactory) -> N
                 f"map http://crr/ http://127.0.0.1:{_origin.port}/ "
                 "@plugin=cache_range_requests.so @pparam=--consider-ims @pparam=--consider-ident "
                 "@plugin=header_rewrite.so @pparam=hdr_rw.conf",
-            ))
+            )
+        )
         ats.plugin_config.add_line("xdebug.so --enable=x-cache")
         ats.set_logging_yaml(
             {
-                "logging":
-                    {
-                        "formats":
-                            [
-                                {
-                                    "name": "custom",
-                                    "format":
-                                        (
-                                            "cpuup=%<cquup> sssc=%<sssc> pssc=%<pssc> phr=%<phr> "
-                                            "range=::%<{Range}cqh>:: x-crr-ident=::%<{X-Crr-Ident}cqh>:: "
-                                            "uid=::%<{UID}pqh>:: crc=%<crc>"),
-                                }
-                            ],
-                        "logs": [{
-                            "filename": "transaction",
-                            "format": "custom"
-                        }],
-                    }
-            })
+                "logging": {
+                    "formats": [
+                        {
+                            "name": "custom",
+                            "format": (
+                                "cpuup=%<cquup> sssc=%<sssc> pssc=%<pssc> phr=%<phr> "
+                                "range=::%<{Range}cqh>:: x-crr-ident=::%<{X-Crr-Ident}cqh>:: "
+                                "uid=::%<{UID}pqh>:: crc=%<crc>"
+                            ),
+                        }
+                    ],
+                    "logs": [{"filename": "transaction", "format": "custom"}],
+                }
+            }
+        )
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "cache_range_requests|header_rewrite|slice|log",
                 "proxy.config.log.max_secs_per_buffer": 1,
-            })
+            }
+        )
         return ats
 
     def request(host: str, path: str, *, uid: str | None = None) -> str:

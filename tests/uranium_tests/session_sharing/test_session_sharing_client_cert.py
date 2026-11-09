@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Pooled TLS origin connections must not cross client-certificate identities."""
+
 from pathlib import Path
 import pytest
 from tools.uranium.services import ATSFactory, ServiceFactory, Curl
@@ -34,7 +35,8 @@ def test_session_sharing_client_cert(ats_factory: ATSFactory, services: ServiceF
     origin = services.origin("origin", ssl=True, options=options)
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
-        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nContent-Length: 0\r\n\r\n"})
+        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nContent-Length: 0\r\n\r\n"},
+    )
     ats = ats_factory.create("ts")
     if not ats.plugin_exists("conf_remap.so"):
         pytest.skip("conf_remap.so is required")
@@ -52,7 +54,8 @@ def test_session_sharing_client_cert(ats_factory: ATSFactory, services: ServiceF
             "proxy.config.http.server_session_sharing.pool": "global",
             "proxy.config.ssl.client.cert.path": str(ats.ssl_directory),
             "proxy.config.ssl.client.verify.server.policy": "DISABLED",
-        })
+        }
+    )
     origin.start()
     ats.start()
     for path in ("one", "one" if case == "same-cert" else "two"):

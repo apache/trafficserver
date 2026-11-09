@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Default RSA and EC certificate selection is independent of config order."""
+
 import sys
 from pathlib import Path
 import pytest
@@ -43,7 +44,7 @@ def test_tls_dual_cert_default(ats_factory: ATSFactory, services: ServiceFactory
     result = services.verifier_client("client", replay, https_ports=[ats.https_port]).run()
     assert result.returncode == 0, result.output
     result = services.process(
-        "certificate-probe", [sys.executable, directory / "tls_dual_cert_default_client.py",
-                              str(ats.https_port)]).run()
+        "certificate-probe", [sys.executable, directory / "tls_dual_cert_default_client.py", str(ats.https_port)]
+    ).run()
     assert result.returncode == 0, result.output
     assert "PASS: 12 certificate selections" in result.stdout

@@ -67,7 +67,8 @@ def handle_connection(conn: socket.socket) -> None:
             b'Content-Type: application/javascript\r\n'
             b'Cache-Control: public, max-age=3600\r\n'
             b'Content-Length: ' + str(ADVERTISED_LENGTH).encode() + b'\r\n'
-            b'\r\n')
+            b'\r\n'
+        )
         time.sleep(STALL_SECONDS if path.startswith(b'/stall/') else CLOSE_DELAY_SECONDS)
     except Exception as e:
         print(f'Error handling connection: {e}', file=sys.stderr)

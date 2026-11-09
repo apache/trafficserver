@@ -24,6 +24,14 @@ find_file(
   PATH_SUFFIXES plantuml REQUIRED
 )
 
+# HTML and its graphs take most of the build time, while the documentation
+# warnings come from parsing the comments, so a check-only build generates
+# just the XML. Graphviz then never runs, so \dot syntax goes unchecked.
+set(DOXYGEN_GENERATE_HTML YES)
+if(DOXYGEN_CHECK_ONLY)
+  set(DOXYGEN_GENERATE_HTML NO)
+endif()
+
 set(DOXYGEN_HAS_OPENSSL_QUIC 0)
 set(DOXYGEN_HAS_QUICHE 0)
 if(TS_HAS_OPENSSL_QUIC)

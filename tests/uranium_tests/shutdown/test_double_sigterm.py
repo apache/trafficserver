@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """A second exit signal must not schedule a second graceful shutdown."""
+
 import signal
 import time
 from tools.uranium.services import ATS, wait_for_file_lines
@@ -25,11 +26,8 @@ def test_double_sigterm(ats: ATS) -> None:
     :param ats: Proxy whose expected exit is explicitly awaited.
     """
     ats.records.update(
-        {
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "server",
-            "proxy.config.stop.shutdown_timeout": 3
-        })
+        {"proxy.config.diags.debug.enabled": 1, "proxy.config.diags.debug.tags": "server", "proxy.config.stop.shutdown_timeout": 3}
+    )
     ats.start()
     ats.send_signal(signal.SIGTERM)
     wait_for_file_lines(ats.traffic_out, "received exit signal, shutting down in 3secs", 1)

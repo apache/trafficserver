@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Limit PING frames from origins independently of PING frames from clients."""
+
 import re
 import sys
 from pathlib import Path
@@ -25,24 +26,20 @@ ENHANCE_YOUR_CALM = 11
 
 CASES = [
     pytest.param(
-        {
-            "proxy.config.http2.max_ping_frames_per_minute": 5,
-            "proxy.config.http2.max_ping_frames_per_minute_out": 1000
-        },
+        {"proxy.config.http2.max_ping_frames_per_minute": 5, "proxy.config.http2.max_ping_frames_per_minute_out": 1000},
         # Above the 300 default too, so the case fails if ATS ignores the _out record.
         400,
         True,
         False,
-        id="origin-limit-above-client-limit"),
+        id="origin-limit-above-client-limit",
+    ),
     pytest.param(
-        {
-            "proxy.config.http2.max_ping_frames_per_minute": 1000,
-            "proxy.config.http2.max_ping_frames_per_minute_out": 5
-        },
+        {"proxy.config.http2.max_ping_frames_per_minute": 1000, "proxy.config.http2.max_ping_frames_per_minute_out": 5},
         10,
         False,
         True,
-        id="origin-limit-below-client-limit"),
+        id="origin-limit-below-client-limit",
+    ),
     pytest.param({}, 60, False, False, id="client-default-at-limit"),
     pytest.param({}, 61, True, False, id="client-default-over-limit"),
     pytest.param({}, 300, True, False, id="origin-default-at-limit"),
@@ -52,8 +49,13 @@ CASES = [
 
 @pytest.mark.parametrize("records,ping_count,client_closed,origin_closed", CASES)
 def test_h2_origin_ping_limit(
-        ats_factory: ATSFactory, services: ServiceFactory, records: dict[str, int], ping_count: int, client_closed: bool,
-        origin_closed: bool) -> None:
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    records: dict[str, int],
+    ping_count: int,
+    client_closed: bool,
+    origin_closed: bool,
+) -> None:
     """Send the same PING burst from a client and from an origin and check which side ATS closes.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
@@ -73,30 +75,30 @@ def test_h2_origin_ping_limit(
             # A retry would open a second origin session and send a second burst.
             "proxy.config.http.connect_attempts_max_retries": 0,
             **records,
-        })
+        },
+    )
     stop = ats.run_directory / "stop-origin"
     ssl = Path(__file__).parents[2] / "tools/ssl"
     origin = services.process(
         "origin",
-        [sys.executable, directory / "ping_origin.py",
-         str(port), ssl / "server.pem", ssl / "server.key",
-         str(ping_count), stop],
-        ready_port=port)
+        [sys.executable, directory / "ping_origin.py", str(port), ssl / "server.pem", ssl / "server.key", str(ping_count), stop],
+        ready_port=port,
+    )
     origin.start()
     ats.start()
 
     result = services.process(
-        "client-pings", [sys.executable, directory / "ping_client.py",
-                         str(ats.https_port), str(ping_count)]).run(timeout=30)
+        "client-pings", [sys.executable, directory / "ping_client.py", str(ats.https_port), str(ping_count)]
+    ).run(timeout=30)
     assert result.returncode == 0, result.output
     if client_closed:
         assert f"client_goaway error={ENHANCE_YOUR_CALM}" in result.stdout, result.output
     else:
         assert f"client_ping_acks={ping_count}" in result.stdout, result.output
 
-    result = services.process(
-        "client-get",
-        [sys.executable, directory / "ping_client.py", str(ats.https_port), "0"]).run(timeout=30)
+    result = services.process("client-get", [sys.executable, directory / "ping_client.py", str(ats.https_port), "0"]).run(
+        timeout=30
+    )
     assert result.returncode == 0, result.output
     origin_output = origin.wait_for_output(r"^(peer_goaway|peer_eof|ping_acks=)", timeout=15)
     assert origin_output.count("request_received") == 1, origin_output

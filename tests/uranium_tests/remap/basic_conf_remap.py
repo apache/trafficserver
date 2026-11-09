@@ -28,7 +28,7 @@ def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl
     :param use_yaml: Use yaml used by this test step.
     """
 
-    __INVALID_RECORD = ("'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden")
+    __INVALID_RECORD = "'proxy.config.plugin.dynamic_reload_mode' is not a configuration variable or cannot be overridden"
 
     def configure_origin(services: ServiceFactory) -> OriginServer:
         """Create the origin used by each successfully configured ATS.
@@ -38,14 +38,8 @@ def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl
 
         origin = services.origin("origin")
         origin.add_response(
-            {
-                "headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": ""
-            },
+            {"headers": "GET /test HTTP/1.1\r\nHost: www.testexample.com\r\n\r\n", "body": ""},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""},
         )
         return origin
 
@@ -68,7 +62,8 @@ def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl
                 "proxy.config.dns.resolv_conf": "NULL",
                 "proxy.config.http.referer_filter": 1,
                 "proxy.config.url_remap.pristine_host_hdr": 0,
-            })
+            }
+        )
         ats.write_config_file(filename, content)
         parameter = ats.config_directory / filename
         if use_yaml:
@@ -82,11 +77,12 @@ def run_basic_conf_remap(ats_factory: ATSFactory, services: ServiceFactory, curl
                     "      - name: conf_remap.so",
                     "        params:",
                     f"          - {parameter}",
-                ])
+                ]
+            )
         else:
             ats.remap_config.add_line(
-                f"map http://www.testexample.com/ http://127.0.0.1:{_origin.port} "
-                f"@plugin=conf_remap.so @pparam={parameter}")
+                f"map http://www.testexample.com/ http://127.0.0.1:{_origin.port} @plugin=conf_remap.so @pparam={parameter}"
+            )
         return ats
 
     def run_success(name: str, filename: str, content: str, warning: str = "") -> None:

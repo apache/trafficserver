@@ -41,10 +41,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("origin", delay=3)
     for path, body in (("slow", "SLOW"), ("fast", "FAST")):
         origin.add_response(
-            {
-                "headers": f"GET /{path} HTTP/1.1\r\nHost: limit.example.com\r\n\r\n",
-                "body": ""
-            },
+            {"headers": f"GET /{path} HTTP/1.1\r\nHost: limit.example.com\r\n\r\n", "body": ""},
             {
                 "headers": f"HTTP/1.1 200 OK\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n",
                 "body": body,
@@ -69,18 +66,21 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.tags": "rate_limit",
             "proxy.config.http.insert_response_via_str": 0,
             "proxy.config.url_remap.remap_required": 1,
-        })
+        }
+    )
     common = f"http://127.0.0.1:{_origin.port}/ @plugin=rate_limit.so"
     ats.remap_config.add_line(
         f"map http://limit.example.com/ {common} @pparam=--limit @pparam=1 @pparam=--queue @pparam=0 "
-        "@pparam=--error @pparam=429 @pparam=--retry @pparam=1")
+        "@pparam=--error @pparam=429 @pparam=--retry @pparam=1"
+    )
     ats.remap_config.add_line(
         f"map http://queued.example.com/ {common} @pparam=--limit @pparam=1 @pparam=--queue @pparam=5 "
-        "@pparam=--maxage @pparam=10000 @pparam=--error @pparam=429")
+        "@pparam=--maxage @pparam=10000 @pparam=--error @pparam=429"
+    )
     for hostname in ("limit-a.example.com", "limit-b.example.com"):
         ats.remap_config.add_line(
-            f"map http://{hostname}/ {common} @pparam=--limit @pparam=1 @pparam=--queue @pparam=0 "
-            "@pparam=--error @pparam=429")
+            f"map http://{hostname}/ {common} @pparam=--limit @pparam=1 @pparam=--queue @pparam=0 @pparam=--error @pparam=429"
+        )
     return ats
 
 

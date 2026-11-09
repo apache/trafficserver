@@ -36,7 +36,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc|filemanager|http|cache",
             "proxy.config.jsonrpc.filename": "jsonrpc.yaml",
-        })
+        }
+    )
     ats.storage_config.add_lines(
         [
             "cache:",
@@ -44,7 +45,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "    - name: disk-1",
             f"      path: {ats.storage_directory}",
             "      size: 512M",
-        ])
+        ]
+    )
     return ats
 
 
@@ -73,14 +75,15 @@ def load_request(name: str, context: dict[str, str] | None = None, *, _test_dire
 
 
 def invoke(
-        request_name: str,
-        *,
-        context: dict[str, str] | None = None,
-        params_schema: str | None = None,
-        result_schema: str | None = None,
-        _ats: ATS,
-        _schema_directory: Path,
-        _test_directory: Path) -> dict[str, Any]:
+    request_name: str,
+    *,
+    context: dict[str, str] | None = None,
+    params_schema: str | None = None,
+    result_schema: str | None = None,
+    _ats: ATS,
+    _schema_directory: Path,
+    _test_directory: Path,
+) -> dict[str, Any]:
     """Validate, send, and validate one API exchange.
 
     :param _ats: Test-local ats configured by the test.
@@ -122,30 +125,32 @@ def check_records(*, _ats: ATS, _schema_directory: Path, _test_directory: Path) 
         params_schema="admin_lookup_records_params_schema.json",
         _ats=_ats,
         _schema_directory=_schema_directory,
-        _test_directory=_test_directory)
+        _test_directory=_test_directory,
+    )
     invoke(
-        "admin_lookup_records_req_invalid_rec.json",
-        _ats=_ats,
-        _schema_directory=_schema_directory,
-        _test_directory=_test_directory)
+        "admin_lookup_records_req_invalid_rec.json", _ats=_ats, _schema_directory=_schema_directory, _test_directory=_test_directory
+    )
     invoke(
         "admin_lookup_records_req_1.json",
         context=record,
         _ats=_ats,
         _schema_directory=_schema_directory,
-        _test_directory=_test_directory)
+        _test_directory=_test_directory,
+    )
     invoke(
         "admin_lookup_records_req_multiple.json",
         context=record,
         _ats=_ats,
         _schema_directory=_schema_directory,
-        _test_directory=_test_directory)
+        _test_directory=_test_directory,
+    )
     invoke(
         "admin_lookup_records_req_metric.json",
         context={"record_name_regex": "proxy.process.http.total_client_connections_ipv4*"},
         _ats=_ats,
         _schema_directory=_schema_directory,
-        _test_directory=_test_directory)
+        _test_directory=_test_directory,
+    )
     invoke(
         "admin_config_set_records_req.json",
         context={
@@ -154,7 +159,8 @@ def check_records(*, _ats: ATS, _schema_directory: Path, _test_directory: Path) 
         },
         _ats=_ats,
         _schema_directory=_schema_directory,
-        _test_directory=_test_directory)
+        _test_directory=_test_directory,
+    )
 
 
 def check_host_and_drain(*, _ats: ATS, _schema_directory: Path, _test_directory: Path) -> None:
@@ -168,20 +174,19 @@ def check_host_and_drain(*, _ats: ATS, _schema_directory: Path, _test_directory:
     for operation in ("up", "down"):
         invoke(
             "admin_host_set_status_req.json",
-            context={
-                "operation": operation,
-                "host": "my.test.host.trafficserver.com"
-            },
+            context={"operation": operation, "host": "my.test.host.trafficserver.com"},
             _ats=_ats,
             _schema_directory=_schema_directory,
-            _test_directory=_test_directory)
+            _test_directory=_test_directory,
+        )
     for method in ("admin_server_start_drain", "admin_server_start_drain", "admin_server_stop_drain"):
         invoke(
             "method_call_no_params.json",
             context={"method": method},
             _ats=_ats,
             _schema_directory=_schema_directory,
-            _test_directory=_test_directory)
+            _test_directory=_test_directory,
+        )
 
 
 def check_storage_and_plugin_message(*, _ats: ATS, _schema_directory: Path, _test_directory: Path) -> None:
@@ -196,19 +201,18 @@ def check_storage_and_plugin_message(*, _ats: ATS, _schema_directory: Path, _tes
     for method in ("admin_storage_get_device_status", "admin_storage_set_device_offline"):
         invoke(
             "admin_storage_x_device_status_req.json",
-            context={
-                "method": method,
-                "device": device
-            },
+            context={"method": method, "device": device},
             _ats=_ats,
             _schema_directory=_schema_directory,
-            _test_directory=_test_directory)
+            _test_directory=_test_directory,
+        )
     invoke(
         "admin_plugin_send_basic_msg_req.json",
         result_schema="success_response_schema.json",
         _ats=_ats,
         _schema_directory=_schema_directory,
-        _test_directory=_test_directory)
+        _test_directory=_test_directory,
+    )
 
 
 def test_jsonrpc_api_schema(ats_factory: ATSFactory) -> None:

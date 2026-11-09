@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Exercise nested half-close while dechunking a backpressured response."""
+
 import sys
 from pathlib import Path
 import pytest
@@ -32,9 +33,9 @@ def test_dechunk_post_half_close(ats_factory: ATSFactory, services: ServiceFacto
     port = services.allocate_port()
     origin = services.process(
         "origin",
-        [sys.executable, directory / "dechunk_post_half_close_origin.py",
-         str(port), "--body-size", "24000", "--hold", "0.5"],
-        ready_port=port)
+        [sys.executable, directory / "dechunk_post_half_close_origin.py", str(port), "--body-size", "24000", "--hold", "0.5"],
+        ready_port=port,
+    )
     ats = ats_factory.create("ts")
     ats.records.update(
         {
@@ -44,7 +45,8 @@ def test_dechunk_post_half_close(ats_factory: ATSFactory, services: ServiceFacto
             "proxy.config.http.default_buffer_water_mark": 1,
             "proxy.config.http.default_buffer_size": 8,
             "proxy.config.net.sock_send_buffer_size_in": 4096,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{port}/")
     origin.start()
     ats.start()
@@ -60,7 +62,8 @@ def test_dechunk_post_half_close(ats_factory: ATSFactory, services: ServiceFacto
         "512",
         "--interval",
         "0.02",
-        timeout=90)
+        timeout=90,
+    )
     assert result.returncode == 0, result.output
     assert "status: HTTP/1.1 200" in result.stdout, result.output
     assert "body bytes: 24000" in result.stdout, result.output

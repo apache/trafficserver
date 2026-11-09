@@ -46,8 +46,10 @@ def main() -> int:
                     connection.ping(index.to_bytes(8, "big"))
             else:
                 connection.send_headers(
-                    1, [(":method", "GET"), (":scheme", "https"), (":authority", "ping.example.com"), (":path", "/")],
-                    end_stream=True)
+                    1,
+                    [(":method", "GET"), (":scheme", "https"), (":authority", "ping.example.com"), (":path", "/")],
+                    end_stream=True,
+                )
             tls.sendall(connection.data_to_send())
             acks = 0
             status = None

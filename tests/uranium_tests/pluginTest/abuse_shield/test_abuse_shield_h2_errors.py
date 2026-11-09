@@ -34,14 +34,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "POST / HTTP/1.1\r\nHost: localhost\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n",
-            "body": "OK"
-        },
+        {"headers": "POST / HTTP/1.1\r\nHost: localhost\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n", "body": "OK"},
     )
     return origin
 
