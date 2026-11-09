@@ -2078,7 +2078,7 @@ get_connection_tracker_info
 Description
 ~~~~~~~~~~~
 
-Get inbound and outbound connection tracking data from |TS|.
+Get inbound and outbound connection tracking data from |TS|. The inbound table only lists clients while the per client limit is set.
 
 Parameters
 ~~~~~~~~~~
