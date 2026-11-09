@@ -107,7 +107,9 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   Http2StreamDebug(this->session, id, "Received DATA frame, flags: %d", frame.header().flags);
 
-  // Update connection window size, before any stream specific handling
+  // Update connection window size, before any stream specific handling. RFC
+  // 9113 section 6.9 requires accounting for every flow-controlled frame
+  // against the connection window, even one that is in error.
   this->decrement_local_rwnd(payload_length);
 
   if (this->get_zombie_event()) {
@@ -125,6 +127,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   Http2Stream *stream = this->find_stream(id);
   if (stream == nullptr) {
     if (this->is_valid_streamid(id)) {
+      this->_top_up_window_after_discard(payload_length);
       // This error occurs fairly often, and is probably innocuous (SM initiates the shutdown)
       if (this->session->is_outbound()) {
         this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
@@ -140,6 +143,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED ||
       stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
+    this->_top_up_window_after_discard(payload_length);
     this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
@@ -149,6 +153,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   // the recipient MUST respond with a stream error of type STREAM_CLOSED.
   if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_OPEN &&
       stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
                       "recv data stream closed");
   }
@@ -169,10 +174,12 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
     stream->receive_end_stream = true;
     if (!stream->change_state(frame.header().type, frame.header().flags)) {
+      this->_top_up_window_after_discard(payload_length);
       this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
     if (!stream->payload_length_is_valid()) {
+      this->_top_up_window_after_discard(payload_length);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
     }
@@ -216,6 +223,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
                       "recv data this->local_rwnd < payload_length");
   }
   if (stream->get_local_rwnd() < payload_length) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                       "recv data stream->local_rwnd < payload_length");
   }
@@ -233,6 +241,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   MIOBuffer *writer = stream->read_vio_writer();
   if (writer == nullptr) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "no writer");
   }
 
@@ -253,6 +262,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
     unsigned int num_written = writer->write(myreader, read_len);
     if (num_written != read_len) {
       myreader->writer()->dealloc_reader(myreader);
+      this->_top_up_window_after_discard(payload_length);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "Write mismatch");
     }
     myreader->consume(num_written);
@@ -2159,6 +2169,14 @@ Http2ConnectionState::restart_streams()
 
     ++starting_point;
   }
+}
+
+void
+Http2ConnectionState::_top_up_window_after_discard(uint32_t discarded_length)
+{
+  Http2StreamDebug(this->session, HTTP2_CONNECTION_CONTROL_STREAM, "Discarded DATA payload_length=%" PRIu32 " rwnd con=%zd",
+                   discarded_length, this->get_local_rwnd());
+  this->restart_receiving(nullptr);
 }
 
 void
