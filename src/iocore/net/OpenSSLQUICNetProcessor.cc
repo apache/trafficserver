@@ -119,7 +119,16 @@ QUICNetProcessor::main_accept(Continuation *cont, SOCKET fd, AcceptOptions const
   ats_ip_copy(&na->server.accept_addr, &accept_ip);
 
   na->action_ = new NetAcceptAction(cont, &na->server);
-  na->init_accept();
+
+  // Every connection is served on the thread of the listener that accepted it, because it shares that
+  // listener's OpenSSL reactor. One listener per net thread is therefore the only way to spread QUIC
+  // connections over the net threads. An inherited descriptor is the one socket there is for the port.
+  bool const per_thread = RecGetRecordInt("proxy.config.quic.server.listen_per_thread").value_or(1) != 0;
+  if (per_thread && fd == ts::NO_FD) {
+    static_cast<QUICPacketHandlerIn *>(na)->init_accept_per_thread_listeners();
+  } else {
+    na->init_accept();
+  }
 
   return na->action_.get();
 }

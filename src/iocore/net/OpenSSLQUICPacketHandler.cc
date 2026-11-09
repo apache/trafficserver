@@ -38,6 +38,7 @@
 
 #include <cerrno>
 #include <algorithm>
+#include <vector>
 
 namespace
 {
@@ -464,17 +465,66 @@ QUICPacketHandlerIn::acceptEvent(int /* event ATS_UNUSED */, void * /* data ATS_
 void
 QUICPacketHandlerIn::init_accept(EThread *t)
 {
-  SET_HANDLER(&QUICPacketHandlerIn::acceptEvent);
-
   if (t == nullptr) {
     t = eventProcessor.assign_thread(ET_NET);
   }
 
+  // A lone acceptor hands every connection to the session acceptor on this one thread, so the session
+  // acceptor can borrow the thread's mutex.
   if (!this->action_->continuation->mutex) {
     this->action_->continuation->mutex = t->mutex;
     this->action_->mutex               = t->mutex;
   }
 
+  this->_schedule_on(t);
+}
+
+void
+QUICPacketHandlerIn::init_accept_per_thread_listeners()
+{
+  auto const &net_threads = eventProcessor.thread_group[ET_NET];
+
+  // Every socket is bound before any acceptor runs. The kernel picks a socket for a datagram by hashing
+  // over however many sockets are bound at that moment, so a connection established while the group
+  // was still growing could have its later datagrams sent to a listener that does not know it.
+  std::vector<QUICPacketHandlerIn *> acceptors;
+  for (int i = 0; i < net_threads._count; ++i) {
+    auto *a = (i == 0) ? this : static_cast<QUICPacketHandlerIn *>(this->clone());
+    if (a != this) {
+      ats_ip_copy(&a->server.accept_addr, &this->server.accept_addr);
+      a->action_ = this->action_;
+    }
+    a->_per_thread = true;
+
+    if (!a->_start_listener()) {
+      if (a != this) {
+        a->server.close();
+        delete a;
+      }
+      // The listeners already started still serve the port between them.
+      break;
+    }
+    acceptors.push_back(a);
+  }
+
+  Dbg(dbg_ctl_openssl_quic, "accepting OpenSSL QUIC connections on %zu of %d net threads", acceptors.size(), net_threads._count);
+
+  // Each acceptor hands its connections to the session acceptor on its own thread. Continuation::handleEvent()
+  // requires the caller to hold the continuation's mutex, and each net thread holds its own mutex for good,
+  // so lending the session acceptor one thread's mutex would abort the first call from any other thread.
+  // The session acceptor's mutex is left unset instead, as TCP per-thread accept leaves it. Nothing then
+  // serializes those calls, which is safe because the QUIC session acceptors keep no state that changes
+  // after startup: they read the protocol set and options fixed when the port was opened and create a
+  // new session for each connection.
+  for (size_t i = 0; i < acceptors.size(); ++i) {
+    acceptors[i]->_schedule_on(net_threads._thread[i]);
+  }
+}
+
+void
+QUICPacketHandlerIn::_schedule_on(EThread *t)
+{
+  SET_HANDLER(&QUICPacketHandlerIn::acceptEvent);
   this->mutex = get_NetHandler(t)->mutex;
   t->schedule_imm(this);
 }
@@ -503,6 +553,19 @@ QUICPacketHandlerIn::_start_listener()
     if (this->server.accept_addr.sa.sa_family == AF_INET6 && this->server.sock.enable_option(IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
       Error("failed to set IPV6_V6ONLY on OpenSSL QUIC socket: %s", strerror(errno));
       return false;
+    }
+    if (this->_per_thread) {
+      if (this->server.sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
+        Error("failed to set SO_REUSEPORT on OpenSSL QUIC socket: %s", strerror(errno));
+        return false;
+      }
+#ifdef SO_REUSEPORT_LB
+      // Where it exists, SO_REUSEPORT alone does not spread datagrams over the group.
+      if (this->server.sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
+        Error("failed to set SO_REUSEPORT_LB on OpenSSL QUIC socket: %s", strerror(errno));
+        return false;
+      }
+#endif
     }
     if (this->server.sock.enable_option(SOL_SOCKET, SO_REUSEADDR) < 0) {
       Error("failed to set SO_REUSEADDR on OpenSSL QUIC socket: %s", strerror(errno));

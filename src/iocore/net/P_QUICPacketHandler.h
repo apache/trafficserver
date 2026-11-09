@@ -72,6 +72,16 @@ public:
   int           acceptEvent(int event, void *e) override;
   void          init_accept(EThread *t) override;
 
+#if TS_HAS_OPENSSL_QUIC
+  /** Accepts on every net thread, each with its own copy of this acceptor, UDP socket and OpenSSL listener.
+   *
+   * Every socket is bound to the port with SO_REUSEPORT, so the kernel spreads incoming datagrams over
+   * them by a hash of the addresses and ports, and each connection is served on the thread whose
+   * listener accepted it.
+   */
+  void init_accept_per_thread_listeners();
+#endif
+
 protected:
   // QUICPacketHandler
   Continuation *_get_continuation() override;
@@ -80,6 +90,9 @@ private:
 #if TS_HAS_OPENSSL_QUIC
   SSL   *_listener = nullptr;
   Event *_event    = nullptr;
+
+  /// Whether this is one of the per-thread acceptors that share the port.
+  bool _per_thread = false;
 #elif TS_HAS_QUICHE
   QUICConnectionTable &_ctable;
   quiche_config       &_quiche_config;
@@ -89,6 +102,7 @@ private:
 
 #if TS_HAS_OPENSSL_QUIC
   bool _start_listener();
+  void _schedule_on(EThread *t);
   void _service_listener();
   void _schedule_event();
 #endif
