@@ -444,7 +444,7 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.max_secs_per_buffer",
     "proxy.config.log.max_space_mb_for_logs",
     "proxy.config.log.max_space_mb_headroom",
-    "proxy.config.log.error_log_filename",
+    "proxy.config.error.logfile.filename",
     "proxy.config.log.logfile_perm",
     "proxy.config.log.hostname",
     "proxy.config.log.logfile_dir",
