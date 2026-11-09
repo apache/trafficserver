@@ -983,7 +983,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   if (writer_lock_retry > SCAN_WRITER_LOCK_MAX_RETRY) {
     auto r = _action.call_back(CACHE_EVENT_SCAN_OPERATION_BLOCKED, nullptr);
     Dbg(dbg_ctl_cache_scan, "still haven't got the writer lock, asking user..");
-    if (!r) {
+    if (!r || _action.cancelled) {
       return free_CacheVC(this);
     }
     switch (*r) {
