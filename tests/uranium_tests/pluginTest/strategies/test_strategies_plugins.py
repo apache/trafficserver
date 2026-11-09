@@ -44,7 +44,7 @@ MAPPINGS = (
 EXPECTED_ERRORS = (
     r"\[header_rewrite\] Failed to resolve strategy 'nemo' while loading the remap rule",
     r"\[regex_remap\] Unable to resolve strategy: 'nemo'",
-    r"\[ts_lua\]\[ts_lua_http_set_next_hop_strategy\] Failed get next hop strategy name 'nemo'",
+    r"\[ts_lua\]\[ts_lua_http_set_next_hop_strategy\] Failed to get next hop strategy name 'nemo'",
 )
 
 

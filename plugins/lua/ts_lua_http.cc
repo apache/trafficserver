@@ -567,12 +567,12 @@ log_strategy_lookup_failure(char const *name)
 
   if (now >= next && next_strategy_error.compare_exchange_strong(next, now + strategy_error_interval, std::memory_order_relaxed)) {
     uint64_t const suppressed = suppressed_strategy_errors.exchange(0, std::memory_order_relaxed);
-    TSError("[ts_lua][ts_lua_http_set_next_hop_strategy] Failed get next hop strategy name '%s' (%" PRIu64
+    TSError("[ts_lua][ts_lua_http_set_next_hop_strategy] Failed to get next hop strategy name '%s' (%" PRIu64
             " similar errors suppressed)",
             name, suppressed);
   } else {
     suppressed_strategy_errors.fetch_add(1, std::memory_order_relaxed);
-    Dbg(dbg_ctl, "Failed get next hop strategy name '%s'", name);
+    Dbg(dbg_ctl, "Failed to get next hop strategy name '%s'", name);
   }
 }
 } // namespace

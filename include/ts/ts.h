@@ -1766,7 +1766,7 @@ char *TSHttpTxnErrorBodyGet(TSHttpTxn txnp, size_t *buflength, char **mimetype);
     It's preferable to retrieve strategies during TSRemapNewInstance.
 
     @param txnp HTTP transaction which holds the strategy table.
-    @param name of the strategy to look up.
+    @param name of the strategy to look up; must not be nullptr.
 
  */
 TSStrategy TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name);
