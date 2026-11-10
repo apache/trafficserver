@@ -6453,9 +6453,13 @@ removed in the future without prior notice.
 
    This bounds how much data, not yet sent or not yet acknowledged, one connection
    holds at once, which would otherwise grow with the number of streams the client
-   opens. It is not a hard bound on memory: a send buffer OpenSSL has grown keeps its
-   size after the client acknowledges the data, until its stream ends, so a
-   connection whose busy streams stay open can keep up to about
+   opens. It does not bound the memory allocated for the connection's send buffers,
+   which can be larger: |TS| counts what OpenSSL reports as used in each stream's
+   send buffer, not the size OpenSSL has allocated for it (see
+   `SSL_get_stream_write_buf_used and SSL_get_stream_write_buf_size
+   <https://docs.openssl.org/3.5/man3/SSL_get_value_uint/>`_). A buffer OpenSSL has
+   grown keeps its size after the client acknowledges the data, until its stream
+   ends, so a connection whose busy streams stay open can keep up to about
    :ts:cv:`proxy.config.quic.max_stream_send_buffer` of buffer for each of them. A
    lower value saves memory; a value below the per-stream limit times the number of
    busy streams on a connection lowers their combined rate. Each stream that has data
