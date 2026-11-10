@@ -201,22 +201,16 @@ produce_features(bool json)
     // and PCRE2_CONFIG_JIT alone is exactly the misleading answer described above. This
     // tree supports those versions; Rocky 8.10, for one, ships PCRE2 10.32.
     //
-    // Instead, JIT compile a real pattern and see whether a JIT block came back, which
-    // is what the unit tests already do per pattern in pattern_has_jit(). A hardened
-    // runtime fails the compile and reports a zero JIT size, and the feature correctly
-    // reads false.
+    // Instead, JIT compile a real pattern, as pattern_has_jit() in the unit tests does.
+    // A hardened runtime fails that compile, and the feature correctly reads false.
     {
       int         errnum    = 0;
       PCRE2_SIZE  erroffset = 0;
       pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>("a"), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
 
       if (code != nullptr) {
-        size_t jit_size = 0;
-
-        pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
-        pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+        has_jit = pcre2_jit_compile(code, PCRE2_JIT_COMPLETE) == 0;
         pcre2_code_free(code);
-        has_jit = jit_size > 0;
       }
       // A pattern as trivial as "a" failing to compile means the library is unusable,
       // and reporting no JIT is the right answer in that case too.
