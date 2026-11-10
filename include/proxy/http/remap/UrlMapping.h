@@ -95,8 +95,7 @@ public:
     return _plugin_inst_list.size();
   }
 
-  void        Print() const;
-  std::string PrintRemapHitCount() const;
+  void Print() const;
 
   int               from_path_len = 0;
   URL               fromURL;
@@ -115,9 +114,7 @@ public:
   bool              ip_allow_check_enabled_p = false;
   acl_filter_rule  *filter                   = nullptr; // acl filtering (linked list of rules)
   LINK(url_mapping, link);                              // For use with the main Queue linked list holding all the mapping
-  NextHopSelectionStrategy      *strategy = nullptr;
-  std::string                    remapKey;
-  std::atomic<uint64_t>          _hitCount       = 0; // counter can overflow
+  NextHopSelectionStrategy      *strategy        = nullptr;
   std::atomic<CacheHostRecord *> volume_host_rec = nullptr;
 
   CacheHostRecord *
@@ -149,24 +146,6 @@ public:
   setRank(int rank)
   {
     _rank = rank;
-  }
-
-  void
-  setRemapKey()
-  {
-    remapKey = fromURL.string_get_ref();
-  }
-
-  const std::string &
-  getRemapKey()
-  {
-    return remapKey;
-  }
-
-  void
-  incrementCount()
-  {
-    _hitCount++;
   }
 
   bool initVolumeHostRec(char *errbuf, size_t errbufsize);

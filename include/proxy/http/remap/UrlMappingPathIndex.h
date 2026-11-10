@@ -38,7 +38,6 @@ public:
   bool         Insert(url_mapping *mapping);
   url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
   void         Print() const;
-  std::string  PrintUrlMappingPathIndex() const;
 
   // Apply a function to each url_mapping in this index.
   // Note: Trie only exposes const_iterator, so const_cast is required.
