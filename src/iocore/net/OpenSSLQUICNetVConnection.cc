@@ -49,6 +49,10 @@ namespace
 {
 constexpr ink_hrtime OPENSSL_QUIC_EVENT_INTERVAL = HRTIME_MSECONDS(2);
 
+// The least a stream's share of the connection send limit can fall to, so that a connection
+// with many streams still hands OpenSSL each one's data in useful amounts.
+constexpr uint64_t OPENSSL_MIN_STREAM_SEND_SHARE = 16 * 1024;
+
 DbgCtl dbg_ctl_quic_net{"quic_net"};
 DbgCtl dbg_ctl_v_quic_net{"v_quic_net"};
 
@@ -121,6 +125,7 @@ QUICNetVConnection::init(SSL *ssl, QUICPacketHandler *packet_handler)
   this->_max_stream_send_buffer     = params->max_stream_send_buffer();
   this->_max_connection_send_buffer = params->max_connection_send_buffer();
   this->_openssl_send_buffered      = 0;
+  this->_openssl_streams_with_data  = 0;
 
   this->_bindSSLObject();
   if (auto const servername = quic_sni_server_name(ssl); !servername.empty()) {
@@ -762,6 +767,8 @@ QUICNetVConnection::_process_openssl_streams()
     }
   }
 
+  this->_openssl_streams_with_data = streams_with_data;
+
   for (QUICStreamId stream_id : drained_ids) {
     SSL_free(this->_openssl_streams[stream_id]);
     this->_openssl_streams.erase(stream_id);
@@ -978,7 +985,14 @@ QUICNetVConnection::stream_write_capacity(QUICStreamId stream_id)
     return 0;
   }
 
-  uint64_t const stream_room     = used < this->_max_stream_send_buffer ? this->_max_stream_send_buffer - used : 0;
+  // Once the connection limit binds, room frees a little at a time as the peer acknowledges
+  // data, and every pass offers it to the streams in the same order. Holding each stream with
+  // data to an equal share of the limit leaves that room to the streams below their share, so
+  // no stream can take it all while another waits.
+  uint64_t const share = std::max(this->_max_connection_send_buffer / std::max<uint64_t>(this->_openssl_streams_with_data, 1),
+                                  OPENSSL_MIN_STREAM_SEND_SHARE);
+  uint64_t const stream_limit    = std::min(this->_max_stream_send_buffer, share);
+  uint64_t const stream_room     = used < stream_limit ? stream_limit - used : 0;
   uint64_t const connection_room = this->_openssl_send_buffered < this->_max_connection_send_buffer ?
                                      this->_max_connection_send_buffer - this->_openssl_send_buffered :
                                      0;

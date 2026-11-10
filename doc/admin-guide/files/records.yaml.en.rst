@@ -6454,7 +6454,9 @@ removed in the future without prior notice.
    This bounds the memory one connection's send buffers can take, which would
    otherwise grow with the number of streams the client opens. A lower value saves
    memory; a value below the per-stream limit times the number of busy streams on
-   a connection lowers their combined rate.
+   a connection lowers their combined rate. The streams that have data to send
+   split this limit equally, each getting at least 16 KB, so one stream cannot take
+   the room another needs.
 
 .. ts:cv:: CONFIG proxy.config.quic.disable_http_0_9 INT 1
 
