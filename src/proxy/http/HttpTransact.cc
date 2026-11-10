@@ -548,13 +548,20 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
   }
 }
 
+// A QUERY gets here only when ATS did a cache lookup for it, which needs
+// proxy.config.http.cache.query_method.
+inline static bool
+is_method_conditionalizable(int method)
+{
+  return method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_QUERY;
+}
+
 inline static bool
 is_request_conditional(HTTPHdr *header)
 {
   uint64_t mask = (MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
                    MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
-  return (header->presence(mask) &&
-          (header->method_get_wksidx() == HTTP_WKSIDX_GET || header->method_get_wksidx() == HTTP_WKSIDX_HEAD));
+  return header->presence(mask) && is_method_conditionalizable(header->method_get_wksidx());
 }
 
 static inline bool
@@ -920,14 +927,6 @@ does_method_require_cache_copy_deletion(const OverridableHttpConfigParams *http_
   return ((method != HTTP_WKSIDX_GET) &&
           (method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUT ||
            (http_config_param->cache_post_method != 1 && method == HTTP_WKSIDX_POST)));
-}
-
-// A QUERY gets here only when ATS did a cache lookup for it, which needs
-// proxy.config.http.cache.query_method.
-inline static bool
-is_method_conditionalizable(int method)
-{
-  return method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_QUERY;
 }
 
 inline static bool
