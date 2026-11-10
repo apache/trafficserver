@@ -1,5 +1,5 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
 cond %{CLIENT-URL:PATH} /^search/
-    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-params=term,media" "--sort-params=true"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-params=q,page" "--sort-params=true"
 else
     run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url"

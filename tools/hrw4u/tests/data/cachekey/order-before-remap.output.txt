@@ -1,12 +1,8 @@
 cond %{REMAP_PSEUDO_HOOK} [AND]
-    rm-header @Geo-Country
+    set-header @X-A "1"
 
 cond %{REMAP_PSEUDO_HOOK} [AND]
-cond %{GEO:COUNTRY} ("CN","RU")
-    set-header @Geo-Country "%{GEO:COUNTRY}"
-
-cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=@Geo-Country"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=@X-A"
 
 cond %{SEND_RESPONSE_HDR_HOOK} [AND]
-    set-header X-Cache-Debug "1"
+    set-header X-B "1"

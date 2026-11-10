@@ -1,0 +1,9 @@
+REMAP {
+    if inbound.req.X-A == "" {
+        cache.bypass();
+    }
+}
+
+CACHEKEY {
+    cache.key.headers.add("X-A");
+}

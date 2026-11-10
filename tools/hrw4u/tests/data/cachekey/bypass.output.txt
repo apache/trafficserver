@@ -1,0 +1,6 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-A} =""
+    set-config "proxy.config.http.cache.http" 0
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=X-A"

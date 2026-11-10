@@ -1,12 +1,7 @@
 CACHEKEY {
-    cache.key.cookies.add("session", "locale");
-    cache.key.headers.add("Origin");
-    if inbound.req.Host ~ /^(music|video)\.example\.com$/ {
-        cache.key.cookies.add("theme");
-        cache.key.headers.exists("X-User-Id", "X-Media-Token", "X-Music-Token");
-    } elif inbound.url.path ~ /^\/v1\/episodes\// {
-        cache.key.headers.exists("X-User-Id", "X-Media-Token");
+    if inbound.req.Host == "a.example.com" {
+        cache.key.headers.exists("X-A", "X-B");
     } else {
-        cache.key.headers.exists("X-User-Id");
+        cache.key.headers.exists("X-A");
     }
 }

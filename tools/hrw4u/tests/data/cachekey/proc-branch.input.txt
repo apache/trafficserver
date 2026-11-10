@@ -1,5 +1,5 @@
 procedure local::search-key() {
-    cache.url.query.keep("term", "media");
+    cache.url.query.keep("q", "page");
     cache.url.query.sort();
 }
 
