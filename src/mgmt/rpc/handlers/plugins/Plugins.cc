@@ -79,7 +79,8 @@ plugin_send_basic_msg(std::string_view const & /* id ATS_UNUSED */, YAML::Node c
 
     while (hook) {
       TSPluginMsg tmp(msg); // Just to make sure plugins don't mess this up for others.
-      hook->invoke(TS_EVENT_LIFECYCLE_MSG, &tmp);
+      // This runs on the RPC thread, so an event thread may hold the plugin's mutex. Wait for it rather than abort.
+      hook->blocking_invoke(TS_EVENT_LIFECYCLE_MSG, &tmp);
       hook = hook->next();
     }
   } catch (std::exception const &ex) {
