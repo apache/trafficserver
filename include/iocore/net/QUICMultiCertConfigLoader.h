@@ -37,6 +37,8 @@ public:
   static SSLCertLookup *acquire();
   static void           release(SSLCertLookup *lookup);
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<QUICCertConfig, SSLCertLookup>;
 
 private:

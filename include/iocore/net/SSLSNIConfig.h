@@ -112,6 +112,8 @@ private:
 class SNIConfig
 {
 public:
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<SNIConfig, SNIConfigParams>;
 
   static void startup();

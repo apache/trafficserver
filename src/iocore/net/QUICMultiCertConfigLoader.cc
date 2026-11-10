@@ -74,6 +74,12 @@ QUICCertConfig::reconfigure(ConfigContext ctx)
   }
 }
 
+unsigned
+QUICCertConfig::config_id()
+{
+  return _config_id;
+}
+
 SSLCertLookup *
 QUICCertConfig::acquire()
 {

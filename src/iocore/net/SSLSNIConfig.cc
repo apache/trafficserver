@@ -338,6 +338,12 @@ SNIConfig::reconfigure(ConfigContext ctx)
   return retStatus ? 1 : 0;
 }
 
+unsigned
+SNIConfig::config_id()
+{
+  return _configid;
+}
+
 SNIConfigParams *
 SNIConfig::acquire()
 {

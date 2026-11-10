@@ -30,6 +30,10 @@
 #include "tscore/TestBox.h"
 #endif
 
+#include <array>
+#include <memory>
+#include <vector>
+
 ConfigProcessor configProcessor;
 
 namespace
@@ -121,6 +125,15 @@ public:
   ConfigInfo  *m_info;
 };
 
+ConfigProcessor::ConfigProcessor()
+{
+  // release_stale_pins() runs only between events, which is what makes get_pinned() results safe to use.
+  ink_assert(ethread_loop_hooks.start == nullptr && ethread_loop_hooks.between_events == nullptr &&
+             ethread_loop_hooks.stop == nullptr);
+  ethread_loop_hooks = {&ConfigProcessor::enable_thread_pins, &ConfigProcessor::release_stale_pins,
+                        &ConfigProcessor::disable_thread_pins};
+}
+
 unsigned int
 ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
 {
@@ -151,6 +164,7 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
 
   idx      = id - 1;
   old_info = infos[idx].exchange(info);
+  _generations[idx].value.fetch_add(1, std::memory_order_release);
 
   Dbg(dbg_ctl_config, "Set for slot %d %p was %p with ref count %d", id, info, old_info, old_info ? old_info->refcount() : 0);
 
@@ -214,6 +228,104 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
       destroy_config(id, info);
     }
   }
+}
+
+struct ConfigProcessor::ThreadPins {
+  struct Pin {
+    uint64_t                    generation = 0;
+    std::shared_ptr<ConfigInfo> config;
+    bool                        listed = false;
+  };
+
+  std::array<Pin, MAX_CONFIGS> pins;
+  // Slots this thread has pinned at some point, so the per-loop sweep skips the rest.
+  static_assert(MAX_CONFIGS <= 256, "slot indices in used are stored as uint8_t");
+  std::array<uint8_t, MAX_CONFIGS> used{};
+  size_t                           used_count = 0;
+  // Pins replaced during the current event, which earlier pinned reads in that event may still use.
+  std::vector<std::shared_ptr<ConfigInfo>> displaced;
+};
+
+std::shared_ptr<ConfigInfo> &
+ConfigProcessor::_pin(unsigned int id)
+{
+  unsigned int const idx        = id - 1;
+  auto              &pin        = _thread_pins->pins[idx];
+  uint64_t const     generation = _generations[idx].value.load(std::memory_order_acquire);
+
+  if (!pin.config || pin.generation != generation) {
+    if (!pin.listed) {
+      pin.listed                                     = true;
+      _thread_pins->used[_thread_pins->used_count++] = static_cast<uint8_t>(idx);
+    }
+    // set()'s own reference may expire before the event ends, so the sweep releases the old pin.
+    if (pin.config) {
+      _thread_pins->displaced.push_back(std::move(pin.config));
+    }
+    if (ConfigInfo *info = get(id); info != nullptr) {
+      // This thread's one reference; handles copied from the pin share it.
+      pin.config = std::shared_ptr<ConfigInfo>(info, [this, id](ConfigInfo *i) { release(id, i); });
+    }
+    pin.generation = generation;
+  }
+  return pin.config;
+}
+
+ConfigInfo *
+ConfigProcessor::get_pinned(unsigned int id)
+{
+  ink_assert(_thread_pins != nullptr);
+  if (id == 0 || id > MAX_CONFIGS) {
+    return nullptr;
+  }
+  return _pin(id).get();
+}
+
+std::shared_ptr<ConfigInfo>
+ConfigProcessor::get_leased(unsigned int id)
+{
+  if (id == 0 || id > MAX_CONFIGS) {
+    return nullptr;
+  }
+  if (_thread_pins != nullptr) {
+    return _pin(id);
+  }
+  ConfigInfo *info = get(id);
+  if (info == nullptr) {
+    return nullptr;
+  }
+  return std::shared_ptr<ConfigInfo>(info, [this, id](ConfigInfo *i) { release(id, i); });
+}
+
+void
+ConfigProcessor::enable_thread_pins()
+{
+  if (_thread_pins == nullptr) {
+    _thread_pins = new ThreadPins;
+  }
+}
+
+void
+ConfigProcessor::release_stale_pins()
+{
+  if (_thread_pins == nullptr) {
+    return;
+  }
+  _thread_pins->displaced.clear();
+  for (size_t i = 0; i < _thread_pins->used_count; ++i) {
+    unsigned int const idx = _thread_pins->used[i];
+    auto              &pin = _thread_pins->pins[idx];
+    if (pin.config && pin.generation != configProcessor._generations[idx].value.load(std::memory_order_acquire)) {
+      pin.config.reset();
+    }
+  }
+}
+
+void
+ConfigProcessor::disable_thread_pins()
+{
+  delete _thread_pins;
+  _thread_pins = nullptr;
 }
 
 #if TS_HAS_TESTS

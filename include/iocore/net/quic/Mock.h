@@ -463,14 +463,8 @@ public:
   {
     return _info.get();
   }
-  virtual QUICConfig::scoped_config
-  config() const override
-  {
-    return _config;
-  }
 
 private:
-  QUICConfig::scoped_config                   _config;
   std::unique_ptr<QUICConnectionInfoProvider> _info;
 };
 

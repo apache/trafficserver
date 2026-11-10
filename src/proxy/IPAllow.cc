@@ -148,6 +148,12 @@ IpAllow::reconfigure(ConfigContext ctx)
   CfgLoadComplete(ctx, "%s finished loading", ts::filename::IP_ALLOW);
 }
 
+unsigned
+IpAllow::config_id()
+{
+  return configid;
+}
+
 IpAllow *
 IpAllow::acquire()
 {

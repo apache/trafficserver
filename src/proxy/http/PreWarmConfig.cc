@@ -61,6 +61,12 @@ PreWarmConfig::reconfigure(ConfigContext ctx)
   ctx.complete("PreWarm config published");
 }
 
+unsigned
+PreWarmConfig::config_id()
+{
+  return _config_id;
+}
+
 PreWarmConfigParams *
 PreWarmConfig::acquire()
 {

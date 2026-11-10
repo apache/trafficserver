@@ -56,8 +56,9 @@ char const *const EThread::Metrics::Slice::STAT_NAME[] = {
 };
 
 int              thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
-int              loop_time_update_probability  = 10;
-const ink_hrtime DELAY_FOR_RETRY               = HRTIME_MSECONDS(10);
+EThreadLoopHooks ethread_loop_hooks;
+int              loop_time_update_probability = 10;
+const ink_hrtime DELAY_FOR_RETRY              = HRTIME_MSECONDS(10);
 
 // To define a class inherits from Thread:
 //   1) Define an independent thread_local static member
@@ -255,6 +256,10 @@ EThread::execute_regular()
 
   Metrics::Slice *current_slice{nullptr};
 
+  if (ethread_loop_hooks.start != nullptr) {
+    ethread_loop_hooks.start();
+  }
+
   // give priority to immediate events
   while (!TSSystemState::is_event_system_shut_down()) {
     nq_count = 0; // count # of elements put on negative queue.
@@ -300,6 +305,10 @@ EThread::execute_regular()
       }
     }
 
+    if (ethread_loop_hooks.between_events != nullptr) {
+      ethread_loop_hooks.between_events();
+    }
+
     next_time             = EventQueue.earliest_timeout();
     ink_hrtime sleep_time = next_time - event_time;
     if (sleep_time > 0) {
@@ -342,6 +351,10 @@ EThread::execute_regular()
     metrics.record_loop_time(delta);
     current_slice->record_event_count(ev_count);
     current_slice->record_drain_queue(drain_queue);
+  }
+
+  if (ethread_loop_hooks.stop != nullptr) {
+    ethread_loop_hooks.stop();
   }
 }
 
