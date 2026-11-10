@@ -36,7 +36,8 @@ REGEX_REMAP_UPDATED_RULE = "^/cache-generation$ https://updated.example/ @status
 # redirects, and this check fails.
 JIT_STACK_EXHAUSTING_QUERY_LENGTH = 64000
 
-ALPHA_BRAVO_RESOURCE_ERROR = r'ERROR: \[regex_remap\] Bad regular expression result -(?:46|47|53|63) .*"\^/alpha/bravo/'
+# Only a JIT build runs the exhaustion check, and the JIT reports the stack bound as -46.
+ALPHA_BRAVO_RESOURCE_ERROR = r'ERROR: \[regex_remap\] Bad regular expression result -46 .* from "\^/alpha/bravo/'
 
 REGEX_REMAP_ORIGINAL_RULES = (
     "# regex_remap configuration",
@@ -281,6 +282,6 @@ def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     _ats.stop()
     log = _ats.diags_log.read_text(errors="replace")
     match_limit_error = r'\[regex_remap\] Bad regular expression result -47 .* from "\^/match_limit/'
-    alpha_bravo_error = r'\[regex_remap\] Bad regular expression result -(?:46|47|53|63) .* from "\^/alpha/bravo/'
+    alpha_bravo_error = r'\[regex_remap\] Bad regular expression result -46 .* from "\^/alpha/bravo/'
     assert not re.search(rf"ERROR: (?!{match_limit_error}|{alpha_bravo_error})", log), log
     assert not re.search(r"FATAL:|Unrecognized configuration value", log), log
