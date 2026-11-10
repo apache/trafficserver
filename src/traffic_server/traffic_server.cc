@@ -2298,7 +2298,7 @@ mgmt_lifecycle_msg_callback(ts::MemSpan<void> span)
     msg.data_size = payload.len;
     while (hook) {
       TSPluginMsg tmp(msg); // Just to make sure plugins don't mess this up for others.
-      // This runs on the process manager thread, so an event thread may hold the plugin's mutex. Wait for it rather than abort.
+      // This runs on the process manager thread, so another thread may hold the continuation's mutex. Wait rather than abort.
       hook->blocking_invoke(TS_EVENT_LIFECYCLE_MSG, &tmp);
       hook = hook->next();
     }
