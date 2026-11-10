@@ -40,6 +40,7 @@
 #include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/net/TLSSNISupport.h"
 #include "ts/ats_probe.h"
+#include "tscore/ink_inet.h"
 #include <iterator>
 #include <optional>
 #include <string_view>
@@ -185,6 +186,12 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
 bool
 ServerSessionPool::sni_matches(std::string_view proposed_sni, const char *session_sni)
 {
+  IpEndpoint ip;
+  // NetVCOptions::set_sni_servername() drops IP literals because RFC 6066 only permits DNS names
+  // in the SNI host_name field. Match the request against the name actually sent on the session.
+  if (!proposed_sni.empty() && ats_ip_pton(proposed_sni, &ip) == 0) {
+    proposed_sni = {};
+  }
   // A plain comparison, because get_sni_server_name() yields "" rather than nullptr when the
   // connection sent no name, and a session that sent none must be reusable by a request whose
   // outbound SNI is empty.

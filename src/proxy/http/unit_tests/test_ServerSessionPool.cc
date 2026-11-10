@@ -42,6 +42,13 @@ TEST_CASE("ServerSessionPool matches when neither side sends an SNI", "[session_
   CHECK(ServerSessionPool::sni_matches("", ""));
 }
 
+TEST_CASE("ServerSessionPool treats IP literals as absent SNI", "[session_pool]")
+{
+  // NetVCOptions::set_sni_servername() does not send IP literals in the SNI extension.
+  CHECK(ServerSessionPool::sni_matches("192.0.2.1", ""));
+  CHECK(ServerSessionPool::sni_matches("[2001:db8::1]", nullptr));
+}
+
 TEST_CASE("ServerSessionPool refuses a one-sided SNI", "[session_pool]")
 {
   // Reuse in either direction would send a name the session was not established with, or drop one it
