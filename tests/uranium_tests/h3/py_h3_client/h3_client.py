@@ -298,10 +298,22 @@ async def async_main() -> None:
     parser.add_argument("--addr", required=True, help="ATS HTTP/3 address in host:port form")
     parser.add_argument("--authority", required=True, help="HTTP/3 request authority")
     parser.add_argument("--server-name", required=True, help="TLS SNI server name")
+    parser.add_argument(
+        "--sequential-requests",
+        type=int,
+        default=0,
+        help="Only send this many small GETs, one after another, on one connection",
+    )
     args = parser.parse_args()
 
     host, port_text = args.addr.rsplit(":", 1)
     port = int(port_text)
+
+    if args.sequential_requests > 0:
+        small_get = RequestCase("py-get-small", b"GET", "/py-get-small", response_size=100)
+        await run_requests(host, port, args.authority, args.server_name, [small_get] * args.sequential_requests)
+        print(f"completed {args.sequential_requests} sequential HTTP/3 requests")
+        return
 
     sequential_cases = [
         RequestCase("py-get-empty", b"GET", "/py-get-empty"),
