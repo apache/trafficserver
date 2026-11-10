@@ -288,3 +288,57 @@ sessions:
 
     server-response:
       <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-0 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-1 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-2 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-3 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-late ]
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-stream-limit-0 ]
+
+    server-response:
+      <<: *generated_1m_response

@@ -47,6 +47,19 @@ LIMIT_SLACK = 16 * 1024
 # transaction; eight of them are twice the connection limit.
 UNACKNOWLEDGED_BODY_SIZE = 524288
 UNACKNOWLEDGED_STREAMS = 8
+# How many of those responses must have gone into OpenSSL whole. The connection limit holds
+# four, so three is a margin for a slow run, and still more than any one stream in flight.
+WHOLE_UNACKNOWLEDGED_RESPONSES = 3
+
+SEND_BUFFER_BODY_SIZE = 1048576
+# A quarter of the response, so a stream that ignored the limit would show it clearly.
+SMALL_STREAM_SEND_BUFFER = 262144
+
+# Small enough that a few 1 MB responses fill it many times over.
+SHARED_CONNECTION_SEND_BUFFER = 262144
+SHARED_STREAMS = 4
+
+CANNOT_WRITE_LINE = r"stream {stream}: cannot write, the sending side is reset or the connection is closed"
 
 WRITE_LINE = re.compile(
     r"\[(?P<cid>[^]]+)\] stream (?P<stream>[0-9]+): OpenSSL holds (?P<used>[0-9]+) bytes to send or to be acknowledged "
@@ -82,15 +95,15 @@ def grown_streams(writes: list[StreamWrite]) -> dict[tuple[str, int], tuple[int,
     return {stream: (first[stream], largest[stream]) for stream in first if largest[stream] > first[stream]}
 
 
-def read_settled(path: Path, timeout: float = 15) -> str:
-    """Read traffic.out once ATS has stopped adding write lines to it."""
+def read_settled(path: Path, timeout: float = 15, line: re.Pattern[str] = WRITE_LINE) -> str:
+    """Read traffic.out once ATS has stopped adding lines that match ``line`` to it."""
     deadline = time.monotonic() + timeout
     content = path.read_text(errors="replace")
-    count = len(WRITE_LINE.findall(content))
+    count = len(line.findall(content))
     while time.monotonic() < deadline:
         time.sleep(1)
         content = path.read_text(errors="replace")
-        latest = len(WRITE_LINE.findall(content))
+        latest = len(line.findall(content))
         if latest == count:
             return content
         count = latest
@@ -120,13 +133,22 @@ def require_openssl_quic(ats_factory: ATSFactory) -> None:
         pytest.skip("ATS was built without the OpenSSL QUIC backend")
 
 
-def configure_ats(ats_factory: ATSFactory, name: str, server: VerifierServer, remap: str) -> ATS:
+def configure_ats(
+    ats_factory: ATSFactory,
+    name: str,
+    server: VerifierServer,
+    remap: str,
+    max_stream_send_buffer: int = MAX_STREAM_SEND_BUFFER,
+    max_connection_send_buffer: int = MAX_CONNECTION_SEND_BUFFER,
+) -> ATS:
     """Configure HTTP/3 with quic_net debugging on, so each stream write logs what OpenSSL holds.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param name: Unique Traffic Server name within the scenario.
     :param server: The origin.
     :param remap: The remap rule's source URL.
+    :param max_stream_send_buffer: The per-stream send limit.
+    :param max_connection_send_buffer: The per-connection send limit.
     """
 
     ats = ats_factory.create(name, enable_tls=True, enable_quic=True, enable_cache=False)
@@ -145,8 +167,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, server: VerifierServer, re
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "quic_net|v_quic_net",
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-            "proxy.config.quic.max_stream_send_buffer": MAX_STREAM_SEND_BUFFER,
-            "proxy.config.quic.max_connection_send_buffer": MAX_CONNECTION_SEND_BUFFER,
+            "proxy.config.quic.max_stream_send_buffer": max_stream_send_buffer,
+            "proxy.config.quic.max_connection_send_buffer": max_connection_send_buffer,
         }
     )
     ats.remap_config.add_line(f"map {remap} http://127.0.0.1:{server.http_port}/")
@@ -180,12 +202,17 @@ def aioquic_client(services: ServiceFactory, ats: ATS, scenario: str, *options: 
     )
 
 
-def run_aioquic_scenario(ats_factory: ATSFactory, services: ServiceFactory, scenario: str, *options: str) -> tuple[ATS, str]:
-    """Start an origin and ATS, run one aioquic scenario to completion, and return ATS and the client's output."""
+def run_aioquic_scenario(
+    ats_factory: ATSFactory, services: ServiceFactory, scenario: str, *options: str, **limits: int
+) -> tuple[ATS, str]:
+    """Start an origin and ATS, run one aioquic scenario to completion, and return ATS and the client's output.
+
+    :param limits: configure_ats() send limit arguments.
+    """
     server = services.verifier_server(
         f"server-{scenario}", H3_SEND_BUFFER_ORIGIN__replay, verbose=False, other_args="--poll-timeout 30000"
     )
-    ats = configure_ats(ats_factory, f"ts-{scenario}", server, "/")
+    ats = configure_ats(ats_factory, f"ts-{scenario}", server, "/", **limits)
     client = aioquic_client(services, ats, scenario, *options)
 
     server.start()
@@ -274,6 +301,74 @@ def test_h3_stream_send_buffer_connection_limit(ats_factory: ATSFactory, service
     )
 
 
+def test_h3_stream_send_buffer_stream_limit(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """OpenSSL never holds more than the stream limit for one stream, even when the response and every window are larger.
+
+    The client acknowledges nothing, so OpenSSL keeps all that ATS hands it, and the stream
+    flow control window and the connection limit both exceed the response. Only the stream
+    limit stops ATS from handing over the whole response.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    require_openssl_quic(ats_factory)
+    ats, stdout = run_aioquic_scenario(
+        ats_factory, services, "send-buffer-stream-limit", max_stream_send_buffer=SMALL_STREAM_SEND_BUFFER
+    )
+    assert "sent 1 requests" in stdout, stdout
+
+    writes = stream_writes(read_settled(ats.traffic_out))
+    assert writes, "expected write lines for the response stream"
+    most_held = max(write.used for write in writes)
+    assert most_held <= SMALL_STREAM_SEND_BUFFER + LIMIT_SLACK, (
+        f"OpenSSL held {most_held} bytes for one stream, more than the {SMALL_STREAM_SEND_BUFFER}-byte stream limit"
+    )
+    assert most_held >= SMALL_STREAM_SEND_BUFFER - LIMIT_SLACK, (
+        f"OpenSSL held at most {most_held} bytes for the stream, so the {SMALL_STREAM_SEND_BUFFER}-byte stream limit was never reached"
+    )
+
+
+def test_h3_stream_send_buffer_connection_limit_is_shared(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Once the connection limit binds, every stream with data gets a share of the room that frees, a later one included.
+
+    The client grows its connection flow control window by a little at a time, so data leaves
+    OpenSSL much more slowly than ATS can hand it over and OpenSSL frees room only as each
+    grant is used and acknowledged. If that room always went to the same stream, the large
+    responses would arrive one after another and the small one would wait behind them.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    require_openssl_quic(ats_factory)
+    _, stdout = run_aioquic_scenario(
+        ats_factory,
+        services,
+        "send-buffer-shared",
+        "--streams",
+        str(SHARED_STREAMS),
+        max_connection_send_buffer=SHARED_CONNECTION_SEND_BUFFER,
+    )
+    assert "ok send-buffer-shared-late\n" in stdout, stdout
+    assert len(re.findall(r"^ok send-buffer-shared-[0-9]+$", stdout, re.MULTILINE)) == SHARED_STREAMS, stdout
+
+    def large_bytes(when: str) -> dict[int, int]:
+        match = re.search(rf"^when {when}.* had ((?:[0-9]+=[0-9]+ ?)+)$", stdout, re.MULTILINE)
+        assert match, stdout
+        return {int(stream): int(size) for stream, size in (pair.split("=") for pair in match[1].split())}
+
+    at_late = large_bytes("the small response completed")
+    assert all(size < SEND_BUFFER_BODY_SIZE for size in at_late.values()), (
+        f"the small response completed only after a large one had: body bytes per large stream {at_late}"
+    )
+
+    first = re.search(r"^when the first large response completed, on stream ([0-9]+),", stdout, re.MULTILINE)
+    assert first, stdout
+    others = {stream: size for stream, size in large_bytes("the first large response completed").items() if stream != int(first[1])}
+    assert min(others.values()) >= SEND_BUFFER_BODY_SIZE // 2, (
+        f"when stream {first[1]} completed, another large response had less than half of its body: {others}"
+    )
+
+
 def test_h3_stream_send_buffer_stop_sending(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """After a client cancels a 1 MB response partway through, ATS stops writing to that stream and the connection carries the next request.
 
@@ -288,13 +383,16 @@ def test_h3_stream_send_buffer_stop_sending(ats_factory: ATSFactory, services: S
     assert match, stdout
     stream_id = match[1]
 
-    # OpenSSL resets the sending side when STOP_SENDING arrives, and ATS sees that before
-    # it tries another write.
-    content = wait_for_file_lines(
-        ats.traffic_out, rf"stream {stream_id}: cannot write, the sending side is reset or the connection is closed", 1
-    )
+    # OpenSSL resets the sending side when STOP_SENDING arrives. ATS can be partway through a
+    # write when OpenSSL processes it, so one write may fail; after that ATS sees the reset and
+    # leaves the stream alone.
+    cannot_write = re.compile(CANNOT_WRITE_LINE.format(stream=stream_id))
+    wait_for_file_lines(ats.traffic_out, cannot_write.pattern, 1)
+    content = read_settled(ats.traffic_out, line=cannot_write)
     failed_writes = re.findall(rf"Failed to write [0-9]+ bytes on QUIC stream {stream_id}:", content)
     assert len(failed_writes) <= 1, f"ATS kept writing to cancelled stream {stream_id}: {len(failed_writes)} failed writes"
+    resets_seen = len(cannot_write.findall(content))
+    assert resets_seen == 1, f"ATS went back to cancelled stream {stream_id} after seeing the reset: {resets_seen} times"
 
 
 def test_h3_stream_send_buffer_connection_limit_counts_finished_streams(ats_factory: ATSFactory, services: ServiceFactory) -> None:
@@ -316,9 +414,10 @@ def test_h3_stream_send_buffer_connection_limit_counts_finished_streams(ats_fact
     held: dict[tuple[str, int], int] = {}
     for write in stream_writes(read_settled(ats.traffic_out)):
         held[write.stream] = max(held.get(write.stream, 0), write.used)
-    assert max(held.values(), default=0) >= UNACKNOWLEDGED_BODY_SIZE, (
-        f"no stream got its whole {UNACKNOWLEDGED_BODY_SIZE}-byte response into OpenSSL, so no transaction finished; "
-        f"most held for one stream: {max(held.values(), default=0)}"
+    whole = sum(1 for size in held.values() if size >= UNACKNOWLEDGED_BODY_SIZE)
+    assert whole >= WHOLE_UNACKNOWLEDGED_RESPONSES, (
+        f"only {whole} streams got their whole {UNACKNOWLEDGED_BODY_SIZE}-byte response into OpenSSL, fewer than "
+        f"{WHOLE_UNACKNOWLEDGED_RESPONSES}, so too few finished transactions were counted; held per stream: {sorted(held.values())}"
     )
     total = sum(held.values())
     assert total <= MAX_CONNECTION_SEND_BUFFER + LIMIT_SLACK, (

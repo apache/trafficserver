@@ -49,7 +49,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, { value: "1048576", as: equal } ]
-      # The generated body counts up in eight-byte hex tokens, so the response
-      # ends with these two only if all of it arrived in order.
+      # The generated body counts up in eight-byte hex tokens and these are its
+      # last two, so the check fails if the end of the body is missing.
       content:
         verify: { value: "001fffe 001ffff ", as: contains }
