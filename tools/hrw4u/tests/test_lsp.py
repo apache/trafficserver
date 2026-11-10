@@ -29,6 +29,7 @@ import queue
 from dataclasses import dataclass
 from collections import deque
 import os
+import urllib.parse
 import lsp_asserts
 
 
@@ -46,8 +47,9 @@ class LSPTestCase:
 class LSPClient:
     """LSP client for tests"""
 
-    def __init__(self, server_command: list[str]) -> None:
+    def __init__(self, server_command: list[str], init_options: dict[str, Any] | None = None) -> None:
         self.server_command = server_command
+        self.init_options = init_options
         self.process = None
         self.request_id = 1
         self.response_queue = queue.Queue()
@@ -163,6 +165,8 @@ class LSPClient:
                 },
             },
         }
+        if self.init_options:
+            init_message["params"]["initializationOptions"] = self.init_options
 
         self.send_message(init_message)
         self.request_id += 1
@@ -252,6 +256,20 @@ class LSPClient:
         self.request_id += 1
 
         self.send_message(hover_message)
+        return self.wait_for_response(expect_id=expected_id, timeout=2.0)
+
+    def request_definition(self, uri: str, line: int, character: int) -> dict[str, Any] | None:
+        definition_message = {
+            "jsonrpc": "2.0",
+            "id": self.request_id,
+            "method": "textDocument/definition",
+            "params": {"textDocument": {"uri": uri}, "position": {"line": line, "character": character}},
+        }
+
+        expected_id = self.request_id
+        self.request_id += 1
+
+        self.send_message(definition_message)
         return self.wait_for_response(expect_id=expected_id, timeout=2.0)
 
     def stop_server(self) -> None:
@@ -710,3 +728,68 @@ def test_sandbox_allowed_content_has_no_denial(sandbox_lsp_client) -> None:
 
     sandbox_errors = [d for d in diagnostics if "denied by sandbox policy" in d.get("message", "")]
     assert not sandbox_errors, f"Expected no sandbox denials, got: {sandbox_errors}"
+
+
+# ---------------------------------------------------------------------------
+# Procedure LSP tests
+# ---------------------------------------------------------------------------
+
+PROCS_DIR = Path(__file__).parent / "data" / "procedures" / "procs"
+LOCAL_PROC = 'procedure local::tag($k, $v = "dflt") {\n    inbound.req.X-Tag = "$k$v";\n}\n\nREMAP {\n    local::tag("k");\n}\n'
+
+
+@pytest.fixture(scope="module")
+def procedures_lsp_client():
+    """LSP client whose procedures path holds the shared test library."""
+    lsp_script = Path(__file__).parent.parent / "scripts" / "hrw4u-lsp"
+    if not lsp_script.exists():
+        pytest.skip("hrw4u-lsp script not found - run 'make' first")
+
+    client = LSPClient([str(lsp_script)], init_options={"proceduresPath": str(PROCS_DIR)})
+    client.start_server()
+    yield client
+    client.stop_server()
+
+
+def test_procedure_hover_shows_signature_with_defaults(procedures_lsp_client) -> None:
+    uri = "file:///test_proc_hover.hrw4u"
+    procedures_lsp_client.open_document(uri, 'use test::set-cache\n\nREMAP {\n    test::set-cache();\n}\n')
+
+    response = procedures_lsp_client.request_hover(uri, 3, 10)
+
+    content = lsp_asserts.assert_hover_contents(response, "**procedure test::set-cache**($ttl = 300)", "procedure hover")
+    assert "set-cache.hrw4u" in content
+
+
+@pytest.mark.parametrize("line,character", [pytest.param(5, 8, id="call"), pytest.param(0, 14, id="declaration")])
+def test_procedure_hover_lists_every_parameter(procedures_lsp_client, line, character) -> None:
+    uri = f"file:///test_proc_hover_local_{line}.hrw4u"
+    procedures_lsp_client.open_document(uri, LOCAL_PROC)
+
+    response = procedures_lsp_client.request_hover(uri, line, character)
+
+    lsp_asserts.assert_hover_contents(response, '**procedure local::tag**($k, $v = "dflt")', "local procedure hover")
+
+
+def test_procedure_definition_opens_the_used_file(procedures_lsp_client) -> None:
+    """`test::add-origin` is the second declaration in its file, so the jump must land on its line."""
+    uri = "file:///test_proc_definition.hrw4u"
+    procedures_lsp_client.open_document(uri, 'use test::TagAndOrigin\n\nREMAP {\n    test::add-origin("h");\n}\n')
+
+    response = procedures_lsp_client.request_definition(uri, 3, 10)
+
+    location = lsp_asserts.assert_definition_location(response, "used procedure definition")
+    assert urllib.parse.unquote(location["uri"]) == "file://" + str(PROCS_DIR / "test" / "TagAndOrigin.hrw4u")
+    assert location["range"]["start"]["line"] == 4
+
+
+@pytest.mark.parametrize("line,character", [pytest.param(6, 8, id="call"), pytest.param(1, 14, id="declaration")])
+def test_procedure_definition_finds_a_local_declaration(procedures_lsp_client, line, character) -> None:
+    uri = f"file:///test_proc_definition_local_{line}.hrw4u"
+    procedures_lsp_client.open_document(uri, "# leading comment\n" + LOCAL_PROC)
+
+    response = procedures_lsp_client.request_definition(uri, line, character)
+
+    location = lsp_asserts.assert_definition_location(response, "local procedure definition")
+    assert location["uri"] == uri
+    assert location["range"]["start"]["line"] == 1
