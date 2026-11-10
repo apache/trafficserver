@@ -47,8 +47,8 @@ LIMIT_SLACK = 16 * 1024
 # transaction; eight of them are twice the connection limit.
 UNACKNOWLEDGED_BODY_SIZE = 524288
 UNACKNOWLEDGED_STREAMS = 8
-# How many of those responses must have gone into OpenSSL whole. The connection limit holds
-# four, so three is a margin for a slow run, and still more than any one stream in flight.
+# How many of those responses must have gone into OpenSSL whole. Three of them and their
+# HTTP/3 framing fit under the connection limit, and a fourth fills what is left.
 WHOLE_UNACKNOWLEDGED_RESPONSES = 3
 
 SEND_BUFFER_BODY_SIZE = 1048576
