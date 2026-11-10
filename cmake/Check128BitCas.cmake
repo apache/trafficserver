@@ -86,20 +86,13 @@ if(NOT TS_HAS_128BIT_CAS)
   endif()
 endif()
 
-set(TS_NEEDS_MCX16_FOR_CAS
-    ${NEED_MCX16}
-    CACHE BOOL "Whether -mcx16 is needed to compile CAS"
-)
+set(TS_NEEDS_MCX16_FOR_CAS ${NEED_MCX16} CACHE BOOL "Whether -mcx16 is needed to compile CAS")
 
-set(TS_HAS_128BIT_CAS_LIBATOMIC
-    ${USE_LIBATOMIC_CAS}
+set(TS_HAS_128BIT_CAS_LIBATOMIC ${USE_LIBATOMIC_CAS}
     CACHE BOOL "Whether 128-bit CAS uses the __atomic builtins as a fallback"
 )
 
-set(TS_NEEDS_LIBATOMIC_FOR_CAS
-    ${NEED_LIBATOMIC}
-    CACHE BOOL "Whether libatomic is needed to link CAS"
-)
+set(TS_NEEDS_LIBATOMIC_FOR_CAS ${NEED_LIBATOMIC} CACHE BOOL "Whether libatomic is needed to link CAS")
 
 unset(CHECK_PROGRAM)
 unset(CHECK_PROGRAM_ATOMIC)
