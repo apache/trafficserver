@@ -342,3 +342,39 @@ sessions:
 
     server-response:
       <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-0 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-1 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-2 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-live ]
+
+    server-response:
+      <<: *generated_1m_response

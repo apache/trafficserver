@@ -468,6 +468,39 @@ async def run_send_buffer_unacknowledged(
         print(f"sent {streams} requests and acknowledged no response data")
 
 
+async def run_send_buffer_reset_share(host: str, port: int, authority: str, server_name: str, streams: int, wait: float) -> None:
+    """Cancel several 1 MB responses, then request another without acknowledging any of its data.
+
+    OpenSSL keeps all that ATS hands it for the last stream, so what it holds shows the share
+    of the connection limit that stream got while the cancelled ones were still open.
+    """
+    async with await connect_h3(
+        host, port, server_name, max_data=16 * SEND_BUFFER_BODY_SIZE, max_stream_data=2 * SEND_BUFFER_BODY_SIZE
+    ) as client:
+        cancelled = [
+            await client.start_request(
+                authority,
+                RequestCase(f"send-buffer-reset-share-{index}", b"GET", "/send-buffer", response_size=SEND_BUFFER_BODY_SIZE),
+            )
+            for index in range(streams)
+        ]
+        for stream_id, response in cancelled:
+            await client.wait_for_body_bytes(stream_id, 16 * 1024)
+            client.stop_sending(stream_id)
+            with contextlib.suppress(asyncio.CancelledError):
+                await response
+        # Give ATS time to see the resets before the next request.
+        await asyncio.sleep(0.5)
+
+        client.stop_acknowledging()
+        live = RequestCase("send-buffer-reset-share-live", b"GET", "/send-buffer", response_size=SEND_BUFFER_BODY_SIZE)
+        live_id, response = await client.start_request(authority, live)
+        await asyncio.sleep(wait)
+        response.cancel()
+        await asyncio.gather(response, return_exceptions=True)
+        print(f"cancelled {streams} responses, then requested stream {live_id}")
+
+
 async def run_send_buffer_shared(
     host: str, port: int, authority: str, server_name: str, streams: int, credit: int, interval: float
 ) -> None:
@@ -544,6 +577,7 @@ async def async_main() -> None:
             "send-buffer-unacknowledged",
             "send-buffer-stream-limit",
             "send-buffer-shared",
+            "send-buffer-reset-share",
         ),
         default="interop",
         help="Which checks to run",
@@ -556,14 +590,16 @@ async def async_main() -> None:
         help="Stream flow control window; send-buffer-windows takes it more than once",
     )
     parser.add_argument(
-        "--streams", type=int, default=8, help="Concurrent requests for send-buffer-concurrent, -unacknowledged and -shared"
+        "--streams", type=int, default=8, help="Requests for send-buffer-concurrent, -unacknowledged, -shared and -reset-share"
     )
     parser.add_argument(
         "--credit", type=int, default=32768, help="Bytes send-buffer-shared adds to the connection window each time"
     )
     parser.add_argument("--interval", type=float, default=0.02, help="Seconds between send-buffer-shared window updates")
     parser.add_argument("--spacing", type=float, default=0.25, help="Seconds between send-buffer-unacknowledged requests")
-    parser.add_argument("--wait", type=float, default=2.0, help="Seconds send-buffer-unacknowledged waits after its last request")
+    parser.add_argument(
+        "--wait", type=float, default=2.0, help="Seconds send-buffer-unacknowledged and -reset-share wait after their last request"
+    )
     args = parser.parse_args()
 
     host, port_text = args.addr.rsplit(":", 1)
@@ -604,6 +640,10 @@ async def async_main() -> None:
             body_size=SEND_BUFFER_BODY_SIZE,
         )
         print("completed send-buffer-stream-limit")
+        return
+    if args.scenario == "send-buffer-reset-share":
+        await run_send_buffer_reset_share(host, port, args.authority, args.server_name, args.streams, args.wait)
+        print("completed send-buffer-reset-share")
         return
     if args.scenario == "send-buffer-shared":
         await run_send_buffer_shared(host, port, args.authority, args.server_name, args.streams, args.credit, args.interval)

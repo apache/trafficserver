@@ -47,8 +47,10 @@ LIMIT_SLACK = 16 * 1024
 # transaction; eight of them are twice the connection limit.
 UNACKNOWLEDGED_BODY_SIZE = 524288
 UNACKNOWLEDGED_STREAMS = 8
-# How many of those responses must have gone into OpenSSL whole. Three of them and their
-# HTTP/3 framing fit under the connection limit, and a fourth fills what is left.
+# How many of those responses must have gone into OpenSSL whole, which takes more than the
+# body: what OpenSSL holds includes the HTTP/3 framing. Three of them fit under the
+# connection limit, and a fourth fills what is left. Four streams sharing the limit at once
+# hold 524288 each, no more, so a whole response means its transaction finished.
 WHOLE_UNACKNOWLEDGED_RESPONSES = 3
 
 SEND_BUFFER_BODY_SIZE = 1048576
@@ -58,6 +60,10 @@ SMALL_STREAM_SEND_BUFFER = 262144
 # Small enough that a few 1 MB responses fill it many times over.
 SHARED_CONNECTION_SEND_BUFFER = 262144
 SHARED_STREAMS = 4
+
+# Enough cancelled streams that counting them among the streams with data would cut a live
+# stream's share of the connection limit to a quarter.
+RESET_STREAMS = 3
 
 CANNOT_WRITE_LINE = r"stream {stream}: cannot write, the sending side is reset or the connection is closed"
 
@@ -369,6 +375,41 @@ def test_h3_stream_send_buffer_connection_limit_is_shared(ats_factory: ATSFactor
     )
 
 
+def test_h3_stream_send_buffer_reset_streams_leave_the_share(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Streams the client cancelled take no part of the connection limit from a stream still sending.
+
+    The client cancels three 1 MB responses with STOP_SENDING, then requests a fourth and
+    acknowledges nothing from then on, so OpenSSL keeps all that ATS hands it for that stream.
+    The cancelled streams still have response data on the HTTP/3 side but can take no more,
+    so the live stream's share is the whole connection limit.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    require_openssl_quic(ats_factory)
+    ats, stdout = run_aioquic_scenario(
+        ats_factory,
+        services,
+        "send-buffer-reset-share",
+        "--streams",
+        str(RESET_STREAMS),
+        max_connection_send_buffer=SHARED_CONNECTION_SEND_BUFFER,
+    )
+    match = re.search(rf"^cancelled {RESET_STREAMS} responses, then requested stream ([0-9]+)$", stdout, re.MULTILINE)
+    assert match, stdout
+    live = int(match[1])
+
+    held = [write.used for write in stream_writes(read_settled(ats.traffic_out)) if write.stream[1] == live]
+    assert held, f"expected write lines for stream {live}"
+    assert max(held) >= SHARED_CONNECTION_SEND_BUFFER - LIMIT_SLACK, (
+        f"OpenSSL held at most {max(held)} bytes for stream {live}, short of the {SHARED_CONNECTION_SEND_BUFFER}-byte "
+        f"connection limit that was all its own, so the cancelled streams still took part of it"
+    )
+    assert max(held) <= SHARED_CONNECTION_SEND_BUFFER + LIMIT_SLACK, (
+        f"OpenSSL held {max(held)} bytes for stream {live}, more than the {SHARED_CONNECTION_SEND_BUFFER}-byte connection limit"
+    )
+
+
 def test_h3_stream_send_buffer_stop_sending(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """After a client cancels a 1 MB response partway through, ATS stops writing to that stream and the connection carries the next request.
 
@@ -414,7 +455,7 @@ def test_h3_stream_send_buffer_connection_limit_counts_finished_streams(ats_fact
     held: dict[tuple[str, int], int] = {}
     for write in stream_writes(read_settled(ats.traffic_out)):
         held[write.stream] = max(held.get(write.stream, 0), write.used)
-    whole = sum(1 for size in held.values() if size >= UNACKNOWLEDGED_BODY_SIZE)
+    whole = sum(1 for size in held.values() if size > UNACKNOWLEDGED_BODY_SIZE)
     assert whole >= WHOLE_UNACKNOWLEDGED_RESPONSES, (
         f"only {whole} streams got their whole {UNACKNOWLEDGED_BODY_SIZE}-byte response into OpenSSL, fewer than "
         f"{WHOLE_UNACKNOWLEDGED_RESPONSES}, so too few finished transactions were counted; held per stream: {sorted(held.values())}"
