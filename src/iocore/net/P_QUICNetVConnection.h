@@ -250,8 +250,9 @@ private:
   // What OpenSSL holds for all of this connection's streams, draining ones included: measured
   // at the start of each pass over the streams and raised by every write during the pass.
   uint64_t _openssl_send_buffered = 0;
-  // How many streams had data to send at the start of the last pass; they split the
-  // connection limit between them.
+  // How many streams that OpenSSL can still write to had data to send at the start of the
+  // pass, leaving out streams whose sending side was reset or whose connection closed. They
+  // split the connection limit between them. Valid only during a pass.
   size_t _openssl_streams_with_data = 0;
 #elif TS_HAS_QUICHE
   UDPConnection *_udp_con    = nullptr;

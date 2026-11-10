@@ -50,7 +50,8 @@ namespace
 constexpr ink_hrtime OPENSSL_QUIC_EVENT_INTERVAL = HRTIME_MSECONDS(2);
 
 // The least a stream's share of the connection send limit can fall to, so that a connection
-// with many streams still hands OpenSSL each one's data in useful amounts.
+// with many streams still hands OpenSSL each one's data in useful amounts. Past this floor
+// the shares add up to more than the limit, which then decides alone, in pass order.
 constexpr uint64_t OPENSSL_MIN_STREAM_SEND_SHARE = 16 * 1024;
 
 DbgCtl dbg_ctl_quic_net{"quic_net"};
@@ -813,8 +814,8 @@ QUICNetVConnection::_process_openssl_streams()
     if ((stream_type & SSL_STREAM_TYPE_READ) != 0) {
       stream->receive_data(*this);
     }
-    // OpenSSL takes nothing more for a stream whose sending side was reset, so trying again
-    // on every pass would only fail again.
+    // OpenSSL takes nothing more for a stream whose sending side was reset or whose
+    // connection closed, so trying again on every pass would only fail again.
     if (this->_openssl_write_closed_streams.count(stream_id) != 0) {
       continue;
     }
