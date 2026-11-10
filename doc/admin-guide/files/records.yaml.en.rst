@@ -4586,34 +4586,6 @@ Logging Configuration
    summary log message for that interval until the message is emitted again
    outside of the throttled interval.
 
-.. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
-   :reloadable:
-   :units: milliseconds
-
-   If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
-   completion will cause its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile.name>`. This is identifying data about the transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
-
-.. ts:cv:: CONFIG proxy.config.http2.connection.slow.log.threshold INT 0
-   :reloadable:
-   :units: milliseconds
-
-   If set to a non-zero value :arg:`N` then any HTTP/2 connection
-   that takes longer than :arg:`N` milliseconds from open to close will cause
-   its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile.name>`. This is identifying data about the
-   transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
-
-.. ts:cv:: CONFIG proxy.config.http2.stream.slow.log.threshold INT 0
-   :reloadable:
-   :units: milliseconds
-
-   If set to a non-zero value :arg:`N` then any HTTP/2 stream
-   that takes longer than :arg:`N` milliseconds from open to close will cause
-   its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile.name>`. This is identifying data about the
-   transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
-
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
    :deprecated:

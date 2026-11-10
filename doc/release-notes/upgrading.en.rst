@@ -65,6 +65,11 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+The overridable configuration key ``TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD`` and the
+Lua configuration key ``TS_LUA_CONFIG_HTTP_SLOW_LOG_THRESHOLD`` are gone. A
+plugin naming the first no longer compiles, and a Lua script naming the second
+fails when it runs.
+
 ``RegexMatchContext``, in the installed ``tsutil/Regex.h``, is removed. A match
 limit is now passed to ``Regex::exec`` as a ``Regex::Options`` value, in which a
 zero field means the shared default:
@@ -301,6 +306,41 @@ Plugins
 Configuration Changes
 ---------------------
 The following :file:`records.yaml` changes have been made:
+
+- The slow log feature has been removed, and the following settings are removed:
+
+  * ``proxy.config.http.slow.log.threshold``
+  * ``proxy.config.http2.connection.slow.log.threshold``
+  * ``proxy.config.http2.stream.slow.log.threshold``
+
+  The 10.x default :file:`records.yaml` shipped with ``slow.log.threshold: 0``
+  (the default since ATS 10.2.x), so most existing installations still carry
+  it. With these settings removed, :program:`traffic_server` starts on such a
+  file and prints an ``Ignoring field ... Not registered`` warning, but
+  ``traffic_server -C verify_config`` exits ``2`` until the configuration block
+  is deleted.
+
+  To log slow requests instead, configure a filter in :file:`logging.yaml` on
+  ``%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_SM_START}msdms>`` plus milestone
+  fields, for example:
+
+  .. code-block:: yaml
+
+     logging:
+       filters:
+         - name: slowlog
+           action: accept
+           condition: '%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_SM_START}msdms GTE 100'
+
+       formats:
+         - name: "slowlog"
+           format: '[%<cruuid>] client_ip: %<chi>:%<chp> protocol: %<cqpv> url: %<cquc> status: %<pssc> X-ID: %<{X-Id}cqh> bytes=%<pscl> client state: %<cfsc> server state: %<sssc> tls_handshake: %<{TS_MILESTONE_TLS_HANDSHAKE_END-TS_MILESTONE_TLS_HANDSHAKE_START}msdms> ua_begin: %<{TS_MILESTONE_UA_BEGIN-TS_MILESTONE_SM_START}msdms> ua_first_read: %<{TS_MILESTONE_UA_FIRST_READ-TS_MILESTONE_SM_START}msdms> ua_read_header_done: %<{TS_MILESTONE_UA_READ_HEADER_DONE-TS_MILESTONE_SM_START}msdms> cache_open_read_begin: %<{TS_MILESTONE_CACHE_OPEN_READ_BEGIN-TS_MILESTONE_SM_START}msdms> cache_open_read_end: %<{TS_MILESTONE_CACHE_OPEN_READ_END-TS_MILESTONE_SM_START}msdms> cache_open_write_begin: %<{TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN-TS_MILESTONE_SM_START}msdms> cache_open_write_end: %<{TS_MILESTONE_CACHE_OPEN_WRITE_END-TS_MILESTONE_SM_START}msdms> dns_lookup_begin: %<{TS_MILESTONE_DNS_LOOKUP_BEGIN-TS_MILESTONE_SM_START}msdms> dns_lookup_end: %<{TS_MILESTONE_DNS_LOOKUP_END-TS_MILESTONE_SM_START}msdms> server_connect: %<{TS_MILESTONE_SERVER_CONNECT-TS_MILESTONE_SM_START}msdms> server_connect_end: %<{TS_MILESTONE_SERVER_CONNECT_END-TS_MILESTONE_SM_START}msdms> server_first_read: %<{TS_MILESTONE_SERVER_FIRST_READ-TS_MILESTONE_SM_START}msdms> server_read_header_done: %<{TS_MILESTONE_SERVER_READ_HEADER_DONE-TS_MILESTONE_SM_START}msdms> server_close: %<{TS_MILESTONE_SERVER_CLOSE-TS_MILESTONE_SM_START}msdms> ua_write: %<{TS_MILESTONE_UA_BEGIN_WRITE-TS_MILESTONE_SM_START}msdms> ua_close: %<{TS_MILESTONE_UA_CLOSE-TS_MILESTONE_SM_START}msdms> sm_finish: %<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_SM_START}msdms> plugin_active: %<{TS_MILESTONE_PLUGIN_ACTIVE-TS_MILESTONE_SM_START}msdms> plugin_total: %<{TS_MILESTONE_PLUGIN_TOTAL-TS_MILESTONE_SM_START}msdms>'
+
+       logs:
+         - filename: slowlog
+           format: slowlog
+           filters:
+             - slowlog
 
 - :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` now applies only to inbound connections.
   Outbound HTTP/2 connections use the new

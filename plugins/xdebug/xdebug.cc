@@ -317,9 +317,8 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
   TSMLoc   dst = TS_NULL_MLOC;
   TSHRTime epoch;
 
-  // TS_MILESTONE_SM_START is stamped when the HTTP transaction is born. The slow
-  // log feature publishes the other times as seconds relative to this epoch. Let's
-  // do the same.
+  // TS_MILESTONE_SM_START is stamped when the HTTP transaction is born.
+  // Milestones are reported as seconds since TS_MILESTONE_SM_START.
   TSHttpTxnMilestoneGet(txn, TS_MILESTONE_SM_START, &epoch);
 
   // Create a new response header field.

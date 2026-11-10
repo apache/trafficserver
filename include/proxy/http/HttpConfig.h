@@ -769,7 +769,6 @@ struct OverridableHttpConfigParams {
 
   MgmtInt default_buffer_size_index = 8;
   MgmtInt default_buffer_water_mark = 32768;
-  MgmtInt slow_log_threshold        = 0;
 
   ConnectionTracker::TxnConfig connection_tracker_config;
 
