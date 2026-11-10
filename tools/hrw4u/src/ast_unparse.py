@@ -58,7 +58,7 @@ def _braced(header: str, lines: list[str]) -> str:
 
 
 def _proc_param(p: ProcParam) -> str:
-    return f"${p.name}" if p.default is None else f"${p.name}={_value(p.default)}"
+    return f"${p.name}" if p.default is None else f"${p.name}={unparse_value(p.default)}"
 
 
 def _var_item(node: VarDecl | Comment) -> str:
@@ -82,7 +82,7 @@ def _body_item(node: BodyNode) -> list[str]:
         case FunctionCall():
             return [f"{_call(node)};"]
         case Assignment():
-            return [f"{node.name} {node.operator} {_value(node.value)};"]
+            return [f"{node.name} {node.operator} {unparse_value(node.value)};"]
         case IfBlock():
             return _if_block(node)
     raise ValueError(f"unparse: unhandled body node {type(node).__name__}")
@@ -103,7 +103,7 @@ def _nested(body: tuple[BodyNode, ...]) -> list[str]:
 
 
 def _call(node: FunctionCall) -> str:
-    return f"{node.name}({', '.join(_value(a) for a in node.args)})"
+    return f"{node.name}({', '.join(unparse_value(a) for a in node.args)})"
 
 
 def _condition(node: ConditionExpr) -> str:
@@ -128,10 +128,11 @@ def _condition(node: ConditionExpr) -> str:
 def _comparison(node: Comparison) -> str:
     left = node.left.raw if isinstance(node.left, IdentValue) else _call(node.left)
     mods = f" with {', '.join(node.modifiers)}" if node.modifiers else ""
-    return f"{left} {node.operator} {_value(node.right)}{mods}"
+    return f"{left} {node.operator} {unparse_value(node.right)}{mods}"
 
 
-def _value(v: ValueExpr | RegexValue | SetValue) -> str:
+def unparse_value(v: ValueExpr | RegexValue | SetValue) -> str:
+    """Returns the hrw4u source spelling of a value, quotes and delimiters included."""
     match v:
         case LiteralStringValue():
             return f'"{v.raw}"'
@@ -143,4 +144,4 @@ def _value(v: ValueExpr | RegexValue | SetValue) -> str:
             return v.raw
         case SetValue():
             return f"[{v.raw}]"
-    raise ValueError(f"unparse: unhandled value {type(v).__name__}")
+    raise ValueError(f"unparse_value: unhandled value {type(v).__name__}")
