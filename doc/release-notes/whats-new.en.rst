@@ -100,8 +100,9 @@ Plugins
 TS API
 ------
 
-* Add ``TSVConnProtocolStackContains`` to check the protocols of a net
-  virtual connection, such as whether it is QUIC, before there is a session.
+* Add ``TSVConnProtocolStackGet`` and ``TSVConnProtocolStackContains`` to get
+  or check the protocols of a net virtual connection, such as whether it is
+  QUIC, before there is a session.
 
 
 What's New in ATS v10.1
