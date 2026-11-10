@@ -6451,14 +6451,18 @@ removed in the future without prior notice.
    :ts:cv:`proxy.config.quic.max_stream_send_buffer`. It applies to the OpenSSL QUIC
    backend only.
 
-   This bounds the memory one connection's send buffers can take, which would
-   otherwise grow with the number of streams the client opens. A lower value saves
-   memory; a value below the per-stream limit times the number of busy streams on
-   a connection lowers their combined rate. Each stream that has data to send may
-   hold at most an equal share of this limit, but not below 16 KB, so one stream
-   cannot take the room another needs. With more streams than this limit divided by
-   16 KB, the shares add up to more than the limit, and the limit alone decides how
-   much each stream gets, in the order |TS| visits them.
+   This bounds how much data, not yet sent or not yet acknowledged, one connection
+   holds at once, which would otherwise grow with the number of streams the client
+   opens. It is not a hard bound on memory: a send buffer OpenSSL has grown keeps its
+   size after the client acknowledges the data, until its stream ends, so a
+   connection whose busy streams stay open can keep up to about
+   :ts:cv:`proxy.config.quic.max_stream_send_buffer` of buffer for each of them. A
+   lower value saves memory; a value below the per-stream limit times the number of
+   busy streams on a connection lowers their combined rate. Each stream that has data
+   to send may hold at most an equal share of this limit, but not below 16 KB, so one
+   stream cannot take the room another needs. With more streams than this limit
+   divided by 16 KB, the shares add up to more than the limit, and the limit alone
+   decides how much each stream gets, in the order |TS| visits them.
 
 .. ts:cv:: CONFIG proxy.config.quic.disable_http_0_9 INT 1
 
