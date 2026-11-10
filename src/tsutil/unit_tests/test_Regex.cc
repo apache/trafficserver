@@ -1747,7 +1747,7 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   // assertion above also holds with no JIT stack assigned. 10,000 is seven
   // times over the fallback's bound and four times under the 1MiB stack's. Neither
   // bound pins 1MiB itself; this case only requires a maximum between roughly
-  // 240KiB and 6MiB.
+  // 240KB and 6MB.
   std::string smaller{"/alpha/bravo/?"};
   smaller.append(10000, 'x');
 
@@ -1775,10 +1775,11 @@ stack_hungry_subject(int thread_index)
   return subject;
 }
 
-// One pass of the three matches a thread with a reachable match limit performs in the
-// concurrency case: a hit that must yield the same three captures, a miss that must stay a
-// miss, and a deep subject that overruns PCRE2's 32KiB fallback stack. Returns false on the first disagreement, so a caller
-// counts rounds that went wrong rather than individual assertions.
+// One pass of the three matches a thread whose match limit is never reached performs in
+// the concurrency case: a hit that must yield the same three captures, a miss that must
+// stay a miss, and a deep subject that overruns PCRE2's 32KiB fallback stack. Returns
+// false on the first disagreement, so a caller counts rounds that went wrong rather than
+// individual assertions.
 bool
 concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
                        std::string const &deep, Regex::Options const &opts)
@@ -1804,6 +1805,9 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
 
 // The hit takes more than one match limit step on either engine, so a limit of 1 stops it.
 constexpr uint32_t HIT_STOPPING_MATCH_LIMIT = 1;
+
+// Far above what any match in the concurrency case takes, while still a non-default option.
+constexpr uint32_t NEVER_REACHED_MATCH_LIMIT = 100000000;
 
 // The round a thread whose limit is HIT_STOPPING_MATCH_LIMIT performs instead: the hit
 // must stop at the limit.
@@ -1864,7 +1868,7 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
       if (limited) {
         opts.match_limit = HIT_STOPPING_MATCH_LIMIT;
       } else if ((i % 4) == 0) {
-        opts.match_limit = 100000000;
+        opts.match_limit = NEVER_REACHED_MATCH_LIMIT;
       }
 
       for (int n = 0; n < ITERATIONS; ++n) {

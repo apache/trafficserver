@@ -131,8 +131,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
             # Room for the JIT stack exhaustion request. request_line_max_size keeps its
-            # 65,535 default: a debug build asserts in http_parser_parse_req on a longer
-            # request line before that limit is checked.
+            # 65,535 default: a debug build asserts in http_parser_parse_req on a request
+            # line of 65,535 bytes or more before that limit is checked.
             "proxy.config.http.request_header_max_size": 131072,
         }
     )
