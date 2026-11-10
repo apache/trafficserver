@@ -6244,12 +6244,13 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.server.listen_per_thread INT 1
 
    With OpenSSL's QUIC, a connection is served on the net thread whose listener
-   accepted it. When this is ``1``, each QUIC port gets one UDP socket and QUIC
-   listener per net thread, all bound to the port with ``SO_REUSEPORT``, and the
-   kernel spreads incoming datagrams over the sockets by a hash of the client and
-   server addresses and ports. When it is ``0``, one socket and one net thread
-   serve every QUIC connection on the port. A port given an inherited ``fd``
-   always has one socket. quiche ignores this setting.
+   accepted it. When this is ``1``, on Linux and FreeBSD, each QUIC port gets one
+   UDP socket and QUIC listener per net thread, all bound to the port with
+   ``SO_REUSEPORT``, and the kernel spreads incoming datagrams over the sockets by
+   a hash of the client and server addresses and ports. When it is ``0``, on other
+   platforms, or when a socket cannot share the port, one socket and one net
+   thread serve every QUIC connection on the port. A port given an inherited
+   ``fd`` always has one socket. quiche ignores this setting.
 
    OpenSSL's QUIC does not support connection migration: it asks clients not to
    migrate and keeps sending to the address a connection started from. A client
@@ -6258,9 +6259,11 @@ removed in the future without prior notice.
    its datagrams usually reach a listener that does not know the connection and
    are dropped.
 
-   With per-thread listeners, a second process that also sets ``SO_REUSEPORT``,
-   such as a second |TS| started by mistake, binds the port and takes part of its
-   traffic instead of failing to start.
+   With either setting, another process that also sets ``SO_REUSEADDR`` can bind
+   the port. With per-thread listeners, a process of the same user that sets
+   ``SO_REUSEPORT`` also joins the group of sockets on the port and changes how
+   datagrams are spread over them, so established connections can land on
+   sockets that do not know them.
 
 .. ts:cv:: CONFIG proxy.config.quic.server.token_key.filename STRING NULL
    :reloadable:

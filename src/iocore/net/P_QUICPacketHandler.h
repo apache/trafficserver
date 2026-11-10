@@ -73,11 +73,11 @@ public:
   void          init_accept(EThread *t) override;
 
 #if TS_HAS_OPENSSL_QUIC
-  /** Accepts on every net thread, each with its own copy of this acceptor, UDP socket and OpenSSL listener.
+  /** Accepts on each net thread whose listener starts, each with its own copy of this acceptor, UDP socket and
+   * OpenSSL listener.
    *
-   * Every socket is bound to the port with SO_REUSEPORT, so the kernel spreads incoming datagrams over
-   * them by a hash of the addresses and ports, and each connection is served on the thread whose
-   * listener accepted it.
+   * On Linux and FreeBSD the sockets share the port, and the kernel spreads incoming datagrams over them by a hash of
+   * the addresses and ports. Elsewhere, or when a socket cannot share the port, one listener serves the port.
    */
   void init_accept_per_thread_listeners();
 #endif
@@ -87,12 +87,12 @@ protected:
   Continuation *_get_continuation() override;
 
 private:
+  /// How _start_listener() went; port_not_shared means the socket could not share the port with other net threads.
+  enum class Listen { started, port_not_shared, failed };
+
 #if TS_HAS_OPENSSL_QUIC
   SSL   *_listener = nullptr;
   Event *_event    = nullptr;
-
-  /// Whether this is one of the per-thread acceptors that share the port.
-  bool _per_thread = false;
 #elif TS_HAS_QUICHE
   QUICConnectionTable &_ctable;
   quiche_config       &_quiche_config;
@@ -101,10 +101,15 @@ private:
   void _recv_packet(int event, UDPPacket *udpPacket) override;
 
 #if TS_HAS_OPENSSL_QUIC
-  bool _start_listener();
-  void _schedule_on(EThread *t);
-  void _service_listener();
-  void _schedule_event();
+  /** Opens the socket unless there is one, and starts the OpenSSL listener on it.
+   *
+   * @param net_thread Index of the net thread this listener is for when each net thread has one, which makes the
+   *        socket share the port; -1 for a port's only listener.
+   */
+  Listen _start_listener(int net_thread = -1);
+  void   _schedule_on(EThread *t);
+  void   _service_listener();
+  void   _schedule_event();
 #endif
 };
 
