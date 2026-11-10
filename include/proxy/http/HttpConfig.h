@@ -651,6 +651,13 @@ struct OverridableHttpConfigParams {
 
   MgmtByte cache_post_method = 0;
 
+  //////////////////////////////////////////////////////////////
+  // Cache responses to the QUERY method. The request content  //
+  // is folded into the cache key, so this requires buffering  //
+  // the full request body before the cache lookup.            //
+  //////////////////////////////////////////////////////////////
+  MgmtByte cache_query_method = 0;
+
   ////////////////////////////////////////////////
   // Buffer post body before connecting servers //
   ////////////////////////////////////////////////

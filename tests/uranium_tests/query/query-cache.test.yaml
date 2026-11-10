@@ -1,0 +1,578 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Verify QUERY caching keys on the request content'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.query_method: 1
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  # First QUERY for body A: a miss that gets written to cache.
+  - client-request:
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, body-a-first]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-a"
+
+    proxy-response:
+      status: 200
+
+  # The same URL and the same body is a cache hit: the origin is not consulted,
+  # and the first response body comes back.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, body-a-second]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-a", as: equal}
+
+  # The same URL with a different body is a different resource, so it must miss
+  # and reach the origin rather than serve the entry cached for body A.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, body-b-first]
+      content:
+        data: "select-b"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-b"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-b", as: equal}
+
+  # Body B is now cached under its own key, and body A's entry is undisturbed.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, body-b-second]
+      content:
+        data: "select-b"
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-b", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, body-a-third]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-a", as: equal}
+
+  # A GET for the same URL must not be answered from a cached QUERY response.
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, get-same-url]
+
+    proxy-request:
+      method: GET
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "10"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "get-answer"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "get-answer", as: equal}
+
+  # Without explicit freshness information a QUERY response is not cached, so
+  # the second request has to reach the origin.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /nofresh
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, nofresh-first]
+      content:
+        data: "select-c"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Last-Modified, "Tue, 08 Nov 2016 22:00:00 GMT"]
+      content:
+        data: "answer-c"
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /nofresh
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, nofresh-second]
+      content:
+        data: "select-c"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Last-Modified, "Tue, 08 Nov 2016 22:00:00 GMT"]
+      content:
+        data: "answer-d"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-d", as: equal}
+
+  # The same content with a different Content-Type is a different query, so
+  # it must not get the entry for application/sql.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/jsonpath]
+        - [Content-Length, "8"]
+        - [uuid, body-a-other-type]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-j"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-j", as: equal}
+
+  # Cache-Control: public gives no lifetime, so ATS does not cache the response.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /public
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, public-first]
+      content:
+        data: "select-p"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "public"]
+        - [Last-Modified, "Tue, 08 Nov 2016 22:00:00 GMT"]
+      content:
+        data: "answer-p"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-p", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /public
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, public-second]
+      content:
+        data: "select-p"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "public"]
+        - [Last-Modified, "Tue, 08 Nov 2016 22:00:00 GMT"]
+      content:
+        data: "answer-q"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-q", as: equal}
+
+  # Content larger than proxy.config.http.post_copy_size cannot be part of the
+  # cache key. ATS sends the request to the origin and does not cache the response.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /large
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "3000"]
+        - [uuid, large-first]
+      content:
+        size: 3000
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-l"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-l", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /large
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "3000"]
+        - [uuid, large-second]
+      content:
+        size: 3000
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-m"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-m", as: equal}
+
+  # Chunked content has no Content-Length, so ATS does not use the cache.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /chunked
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Transfer-Encoding, chunked]
+        - [uuid, chunked-first]
+      content:
+        data: "select-k"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-k"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-k", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /chunked
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Transfer-Encoding, chunked]
+        - [uuid, chunked-second]
+      content:
+        data: "select-k"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-n"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-n", as: equal}
+
+  # A QUERY without content has no digest for the cache key. It must go to the
+  # origin, and it must not replace the cached GET response for the same URL.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "0"]
+        - [uuid, empty-query]
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "12"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "empty-answer"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "empty-answer", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, get-after-empty-query]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "get-answer", as: equal}
