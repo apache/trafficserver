@@ -227,6 +227,38 @@ TEST_CASE("QUICStream::send_data sends the FIN with the last byte after the last
   CHECK(io.fins_accepted == 1);
 }
 
+TEST_CASE("QUICStream::send_data caps a carried-over pending block to the stream's current write capacity")
+{
+  constexpr size_t   body_size = 100 * 1024;
+  QUICStream         stream(nullptr, 0);
+  BudgetTestAdapter  adapter(stream, body_size);
+  BudgetTestStreamIO io;
+
+  stream.set_io_adapter(&adapter);
+
+  // The whole body fits the stream's room, but the stream takes only part of it, so the
+  // rest of the block, FIN included, waits for the next event.
+  io.write_capacity = body_size;
+  io.accept_up_to   = 40 * 1024;
+  REQUIRE(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 40 * 1024);
+
+  // Other streams have used most of the connection's room since then.
+  io.write_capacity = 10 * 1024;
+  io.accept_up_to   = std::numeric_limits<size_t>::max();
+  CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 10 * 1024);
+  CHECK(io.last_requested_len == 10 * 1024);
+  CHECK_FALSE(io.last_fin);
+  CHECK(io.fins_accepted == 0);
+
+  // Once there is room again, the rest goes with the FIN.
+  io.write_capacity = std::numeric_limits<int64_t>::max();
+  CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 50 * 1024);
+  CHECK(io.last_fin);
+  CHECK(io.fins_accepted == 1);
+  CHECK(io.total_accepted == body_size);
+  CHECK_FALSE(stream.has_data_to_send());
+}
+
 TEST_CASE("QUICStream::compute_fair_send_budget")
 {
   SECTION("No contention (0 or 1 writable streams) returns the max budget")
