@@ -259,6 +259,38 @@ TEST_CASE("QUICStream::send_data caps a carried-over pending block to the stream
   CHECK_FALSE(stream.has_data_to_send());
 }
 
+TEST_CASE("QUICStream::send_data withholds the FIN when the capacity drops to one byte before a retry")
+{
+  // The configured send limits are ATS policy: OpenSSL grows its buffer to take whatever
+  // it is offered, so only send_data() can hold a retry to the capacity.
+  constexpr size_t   body_size = 32 * 1024;
+  constexpr size_t   budget    = 256 * 1024;
+  QUICStream         stream(nullptr, 0);
+  BudgetTestAdapter  adapter(stream, body_size);
+  BudgetTestStreamIO io;
+
+  stream.set_io_adapter(&adapter);
+
+  // The whole body is the final block; the stream takes half of it.
+  io.accept_up_to = 16 * 1024;
+  REQUIRE(stream.send_data(io, budget) == 16 * 1024);
+
+  // One byte of room is left when the rest is retried, though the stream would take it all.
+  io.write_capacity = 1;
+  io.accept_up_to   = std::numeric_limits<size_t>::max();
+  CHECK(stream.send_data(io, budget) == 1);
+  CHECK(io.last_requested_len == 1);
+  CHECK_FALSE(io.last_fin);
+  CHECK(io.fins_accepted == 0);
+  CHECK(stream.has_data_to_send());
+
+  io.write_capacity = std::numeric_limits<int64_t>::max();
+  CHECK(stream.send_data(io, budget) == 16 * 1024 - 1);
+  CHECK(io.last_fin);
+  CHECK(io.fins_accepted == 1);
+  CHECK(io.total_accepted == body_size);
+}
+
 TEST_CASE("QUICStream::compute_fair_send_budget")
 {
   SECTION("No contention (0 or 1 writable streams) returns the max budget")
