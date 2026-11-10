@@ -162,6 +162,10 @@ QPACK::QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_t
 {
   SET_HANDLER(&QPACK::event_handler);
 
+  // max_table_size only bounds the table. Its capacity starts at zero and changes only through Set Dynamic Table Capacity
+  // (RFC 9204 Section 3.2.3), so neither side may insert before the encoder sends one.
+  this->_dynamic_table.update_maximum_size(0);
+
   this->_encoder_stream_sending_instructions        = new_MIOBuffer(BUFFER_SIZE_INDEX_1K);
   this->_decoder_stream_sending_instructions        = new_MIOBuffer(BUFFER_SIZE_INDEX_1K);
   this->_encoder_stream_sending_instructions_reader = this->_encoder_stream_sending_instructions->alloc_reader();
@@ -258,12 +262,12 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
 
   uint16_t base_index = this->_largest_known_received_index;
 
-  // Compress headers and record the largest reference
-  uint16_t       referred_index     = 0;
-  uint16_t       largest_reference  = 0;
-  uint16_t       smallest_reference = 0;
-  IOBufferBlock *compressed_headers = new_IOBufferBlock();
-  IOBufferBlock *current_block      = compressed_headers;
+  // Compress headers and record the Required Insert Count they need
+  uint16_t       field_insert_count    = 0;
+  uint16_t       required_insert_count = 0;
+  uint16_t       smallest_reference    = 0;
+  IOBufferBlock *compressed_headers    = new_IOBufferBlock();
+  IOBufferBlock *current_block         = compressed_headers;
   compressed_headers->alloc(BUFFER_SIZE_INDEX_2K);
 
   for (auto &field : header_set) {
@@ -288,21 +292,21 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
       current_block = next_block;
     }
 
-    int ret            = this->_encode_header(field, base_index, current_block, referred_index);
-    largest_reference  = std::max(largest_reference, referred_index);
-    smallest_reference = std::min(smallest_reference, referred_index);
+    int ret               = this->_encode_header(field, base_index, current_block, field_insert_count);
+    required_insert_count = std::max(required_insert_count, field_insert_count);
+    smallest_reference    = std::min(smallest_reference, field_insert_count);
     if (ret < 0) {
       compressed_headers->free();
       return ret;
     }
   }
-  struct EntryReference eref = {smallest_reference, largest_reference};
+  struct EntryReference eref = {smallest_reference, required_insert_count};
   this->_references.emplace(stream_id, eref);
 
   // Make an IOBufferBlock for Header Data Prefix
   IOBufferBlock *header_data_prefix = new_IOBufferBlock();
   header_data_prefix->alloc(BUFFER_SIZE_INDEX_128);
-  this->_encode_prefix(largest_reference, base_index, header_data_prefix);
+  this->_encode_prefix(required_insert_count, base_index, header_data_prefix);
 
   header_block->append_block(header_data_prefix);
   header_block_len += header_data_prefix->size();
@@ -333,16 +337,16 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
     return -1;
   }
 
-  uint64_t tmp = 0;
-  int64_t  ret = xpack_decode_integer(tmp, header_block, header_block + header_block_len, 8);
-  if (ret < 0 || tmp > 0xFFFF) {
+  uint64_t encoded_insert_count  = 0;
+  uint32_t required_insert_count = 0;
+  int64_t  ret                   = xpack_decode_integer(encoded_insert_count, header_block, header_block + header_block_len, 8);
+  if (ret < 0 || this->_decode_required_insert_count(encoded_insert_count, required_insert_count) < 0) {
     return -1;
   }
-  uint16_t largest_reference = tmp;
 
-  if (this->_is_blocked(largest_reference)) {
+  if (this->_is_blocked(required_insert_count)) {
     // Blocked
-    auto *decode_request = new DecodeRequest(largest_reference, thread, cont, stream_id, header_block, header_block_len, hdr);
+    auto *decode_request = new DecodeRequest(required_insert_count, thread, cont, stream_id, header_block, header_block_len, hdr);
 
     if (this->_add_to_blocked_list(decode_request)) {
       return 1;
@@ -353,7 +357,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
     }
   }
 
-  this->_decode(thread, cont, stream_id, header_block, header_block_len, hdr);
+  this->_decode(thread, cont, stream_id, required_insert_count, header_block, header_block_len, hdr);
 
   return 0;
 }
@@ -453,39 +457,94 @@ QPACK::update_max_blocking_streams(uint16_t max_blocking_streams)
   this->_max_blocking_streams = max_blocking_streams;
 }
 
-int
-QPACK::_encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferBlock *prefix)
+uint32_t
+QPACK::_max_entries() const
 {
+  return this->_max_table_size / 32;
+}
+
+int
+QPACK::_decode_required_insert_count(uint64_t encoded_insert_count, uint32_t &required_insert_count) const
+{
+  // RFC 9204 Section 4.5.1.1.
+  if (encoded_insert_count == 0) {
+    required_insert_count = 0;
+    return 0;
+  }
+
+  uint64_t const full_range = 2 * static_cast<uint64_t>(this->_max_entries());
+  if (encoded_insert_count > full_range) {
+    return -1;
+  }
+
+  uint64_t const max_value   = this->_dynamic_table.entries_inserted() + static_cast<uint64_t>(this->_max_entries());
+  uint64_t const max_wrapped = (max_value / full_range) * full_range;
+  uint64_t       count       = max_wrapped + encoded_insert_count - 1;
+
+  if (count > max_value) {
+    if (count <= full_range) {
+      return -1;
+    }
+    count -= full_range;
+  }
+  if (count == 0 || count > UINT32_MAX) {
+    return -1;
+  }
+
+  required_insert_count = static_cast<uint32_t>(count);
+  return 0;
+}
+
+int
+QPACK::_encode_prefix(uint16_t required_insert_count, uint16_t base, IOBufferBlock *prefix)
+{
+  // RFC 9204 Section 4.5.1. A block that references no dynamic table entry has no use for Base.
+  uint64_t encoded_insert_count = 0;
+  if (required_insert_count != 0) {
+    uint32_t const max_entries = this->_max_entries();
+    if (max_entries == 0) {
+      return -1;
+    }
+    encoded_insert_count = (required_insert_count % (2 * max_entries)) + 1;
+  } else {
+    base = 0;
+  }
+
   int ret;
   if ((ret = xpack_encode_integer(reinterpret_cast<uint8_t *>(prefix->end()),
-                                  reinterpret_cast<uint8_t *>(prefix->end() + prefix->write_avail()), largest_reference, 8)) < 0) {
+                                  reinterpret_cast<uint8_t *>(prefix->end() + prefix->write_avail()), encoded_insert_count, 8)) <
+      0) {
     return -1;
   }
   prefix->fill(ret);
 
-  uint16_t delta;
+  uint16_t delta_base;
   prefix->end()[0] = 0x0;
-  if (base_index < largest_reference) {
+  if (base < required_insert_count) {
     prefix->end()[0] |= 0x80;
-    delta             = largest_reference - base_index;
+    delta_base        = required_insert_count - base - 1;
   } else {
-    delta = base_index - largest_reference;
+    delta_base = base - required_insert_count;
   }
 
   if ((ret = xpack_encode_integer(reinterpret_cast<uint8_t *>(prefix->end()),
-                                  reinterpret_cast<uint8_t *>(prefix->end() + prefix->write_avail()), delta, 7)) < 0) {
+                                  reinterpret_cast<uint8_t *>(prefix->end() + prefix->write_avail()), delta_base, 7)) < 0) {
     return -2;
   }
   prefix->fill(ret);
 
-  QPACKDebug("Encoded Header Data Prefix: largest_ref=%d, base_index=%d, delta=%d", largest_reference, base_index, delta);
+  QPACKDebug("Encoded Header Data Prefix: required_insert_count=%d, base=%d, delta_base=%d", required_insert_count, base,
+             delta_base);
 
   return 0;
 }
 
 int
-QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock *compressed_header, uint16_t &referred_index)
+QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock *compressed_header,
+                      uint16_t &required_insert_count)
 {
+  required_insert_count = 0;
+
   auto  name{field.name_get()};
   char *lowered_name = this->_arena.str_store(name.data(), name.length());
   ts::ascii::tolower_inplace(lowered_name, name.length());
@@ -582,7 +641,6 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     ret = this->_encode_indexed_header_field(lookup_result_static.index, base_index, false, compressed_header);
     QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_static.index,
                base_index, false);
-    referred_index = 0;
   } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::EXACT) {
     if (lookup_result_dynamic.index < this->_largest_known_received_index) {
       ret = this->_encode_indexed_header_field(lookup_result_dynamic.index, base_index, true, compressed_header);
@@ -596,7 +654,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     }
     if (ret == 0) {
       this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
-      referred_index = lookup_result_dynamic.index;
+      required_insert_count = lookup_result_dynamic.index + 1;
     }
   } else if (lookup_result_static.match_type == XpackLookupResult::MatchType::NAME) {
     ret = this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value.data(),
@@ -604,9 +662,8 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     QPACKDebug(
       "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
       lookup_result_static.index, base_index, false, static_cast<int>(value.length()), value.data(), never_index);
-    referred_index = 0;
   } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::NAME) {
-    if (lookup_result_dynamic.index <= this->_largest_known_received_index) {
+    if (lookup_result_dynamic.index < this->_largest_known_received_index) {
       ret = this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value.data(),
                                                              value.length(), never_index, compressed_header);
       QPACKDebug(
@@ -620,7 +677,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
     }
     if (ret == 0) {
       this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
-      referred_index = lookup_result_dynamic.index;
+      required_insert_count = lookup_result_dynamic.index + 1;
     }
   } else {
     ret = this->_encode_literal_header_field_without_name_ref(lowered_name, name.length(), value.data(), value.length(),
@@ -828,7 +885,8 @@ QPACK::_encode_literal_header_field_with_postbase_name_ref(uint16_t index, uint1
 }
 
 int
-QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len)
+QPACK::_decode_indexed_header_field(uint32_t base, uint32_t required_insert_count, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                    uint32_t &header_len)
 {
   // Read index field
   int      len = 0;
@@ -849,8 +907,11 @@ QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size
   if (buf[0] & 0x40) { // Static table
     result = StaticTable::lookup(index, &name, &name_len, &value, &value_len);
   } else { // Dynamic table
-    result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_relative_index(base_index, index), &name, &name_len,
-                                         &value, &value_len);
+    uint32_t absolute_index;
+    if (!_calc_absolute_index_from_relative_index(base, required_insert_count, index, absolute_index)) {
+      return -1;
+    }
+    result = this->_dynamic_table.lookup(absolute_index, &name, &name_len, &value, &value_len);
   }
   if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
@@ -860,15 +921,15 @@ QPACK::_decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size
   this->_attach_header(hdr, name, name_len, value, value_len, false);
   header_len = name_len + value_len;
 
-  QPACKDebug("Decoded Indexed Header Field: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index, result.index,
+  QPACKDebug("Decoded Indexed Header Field: base=%u, abs_index=%d, name=%.*s, value=%.*s", base, result.index,
              static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   return len;
 }
 
 int
-QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                  uint32_t &header_len)
+QPACK::_decode_literal_header_field_with_name_ref(uint32_t base, uint32_t required_insert_count, const uint8_t *buf, size_t buf_len,
+                                                  HTTPHdr &hdr, uint32_t &header_len)
 {
   int read_len = 0;
 
@@ -896,8 +957,11 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   if (buf[0] & 0x10) { // Static table
     result = StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
   } else { // Dynamic table
-    result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_relative_index(base_index, index), &name, &name_len,
-                                         &dummy, &dummy_len);
+    uint32_t absolute_index;
+    if (!_calc_absolute_index_from_relative_index(base, required_insert_count, index, absolute_index)) {
+      return -1;
+    }
+    result = this->_dynamic_table.lookup(absolute_index, &name, &name_len, &dummy, &dummy_len);
   }
   if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
@@ -915,8 +979,8 @@ QPACK::_decode_literal_header_field_with_name_ref(int16_t base_index, const uint
   this->_attach_header(hdr, name, name_len, value, value_len, never_index);
   header_len = name_len + value_len;
 
-  QPACKDebug("Decoded Literal Header Field With Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
-             result.index, static_cast<int>(name_len), name, static_cast<int>(value_len), value);
+  QPACKDebug("Decoded Literal Header Field With Name Ref: base=%u, abs_index=%d, name=%.*s, value=%.*s", base, result.index,
+             static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   this->_arena.str_free(value);
 
@@ -966,8 +1030,8 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
 }
 
 int
-QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                        uint32_t &header_len)
+QPACK::_decode_indexed_header_field_with_postbase_index(uint32_t base, uint32_t required_insert_count, const uint8_t *buf,
+                                                        size_t buf_len, HTTPHdr &hdr, uint32_t &header_len)
 {
   // Read index field
   int      len = 0;
@@ -985,8 +1049,11 @@ QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, cons
   size_t            value_len = 0;
   XpackLookupResult result;
 
-  result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_postbase_index(base_index, index), &name, &name_len, &value,
-                                       &value_len);
+  uint32_t absolute_index;
+  if (!_calc_absolute_index_from_postbase_index(base, required_insert_count, index, absolute_index)) {
+    return -1;
+  }
+  result = this->_dynamic_table.lookup(absolute_index, &name, &name_len, &value, &value_len);
   if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
   }
@@ -995,15 +1062,15 @@ QPACK::_decode_indexed_header_field_with_postbase_index(int16_t base_index, cons
   this->_attach_header(hdr, name, name_len, value, value_len, false);
   header_len = name_len + value_len;
 
-  QPACKDebug("Decoded Indexed Header Field With Postbase Index: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
-             result.index, static_cast<int>(name_len), name, static_cast<int>(value_len), value);
+  QPACKDebug("Decoded Indexed Header Field With Postbase Index: base=%u, abs_index=%d, name=%.*s, value=%.*s", base, result.index,
+             static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   return len;
 }
 
 int
-QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                           uint32_t &header_len)
+QPACK::_decode_literal_header_field_with_postbase_name_ref(uint32_t base, uint32_t required_insert_count, const uint8_t *buf,
+                                                           size_t buf_len, HTTPHdr &hdr, uint32_t &header_len)
 {
   int read_len = 0;
 
@@ -1028,8 +1095,11 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   size_t            dummy_len = 0;
   XpackLookupResult result;
 
-  result = this->_dynamic_table.lookup(this->_calc_absolute_index_from_postbase_index(base_index, index), &name, &name_len, &dummy,
-                                       &dummy_len);
+  uint32_t absolute_index;
+  if (!_calc_absolute_index_from_postbase_index(base, required_insert_count, index, absolute_index)) {
+    return -1;
+  }
+  result = this->_dynamic_table.lookup(absolute_index, &name, &name_len, &dummy, &dummy_len);
   if (result.match_type != XpackLookupResult::MatchType::EXACT) {
     return -1;
   }
@@ -1046,8 +1116,8 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
   this->_attach_header(hdr, name, name_len, value, value_len, never_index);
   header_len = name_len + value_len;
 
-  QPACKDebug("Decoded Literal Header Field With Postbase Name Ref: base_index=%d, abs_index=%d, name=%.*s, value=%.*s", base_index,
-             static_cast<uint16_t>(index), static_cast<int>(name_len), name, static_cast<int>(value_len), value);
+  QPACKDebug("Decoded Literal Header Field With Postbase Name Ref: base=%u, abs_index=%u, name=%.*s, value=%.*s", base,
+             absolute_index, static_cast<int>(name_len), name, static_cast<int>(value_len), value);
 
   this->_arena.str_free(value);
 
@@ -1055,34 +1125,39 @@ QPACK::_decode_literal_header_field_with_postbase_name_ref(int16_t base_index, c
 }
 
 int
-QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr)
+QPACK::_decode_header(uint32_t required_insert_count, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr)
 {
   const uint8_t *pos        = header_block;
   size_t         remain_len = header_block_len;
   int64_t        ret;
 
-  // Decode Header Data Prefix
-  uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, pos, pos + remain_len, 8)) < 0 || tmp > 0xFFFF) {
+  // Decode Header Data Prefix. decode() has already reconstructed the Required Insert Count from the first integer, against
+  // the Insert Count when the block arrived, so it is only skipped here.
+  uint64_t encoded_insert_count;
+  if ((ret = xpack_decode_integer(encoded_insert_count, pos, pos + remain_len, 8)) < 0) {
     return -1;
   }
-  pos                        += ret;
-  remain_len                 -= ret;
-  uint16_t largest_reference  = tmp;
+  pos        += ret;
+  remain_len -= ret;
 
-  uint64_t delta_base_index;
-  uint16_t base_index;
-  if ((ret = xpack_decode_integer(delta_base_index, pos, pos + remain_len, 7)) < 0 || delta_base_index > 0xFFFF) {
+  uint64_t delta_base;
+  if (remain_len == 0 || (ret = xpack_decode_integer(delta_base, pos, pos + remain_len, 7)) < 0) {
     return -2;
   }
 
+  // RFC 9204 Section 4.5.1.2.
+  uint64_t base;
   if (pos[0] & 0x80) {
-    if (delta_base_index == 0) {
+    // Base would be negative.
+    if (required_insert_count <= delta_base) {
       return -3;
     }
-    base_index = largest_reference - delta_base_index;
+    base = required_insert_count - delta_base - 1;
   } else {
-    base_index = largest_reference + delta_base_index;
+    base = required_insert_count + delta_base;
+    if (base > UINT32_MAX) {
+      return -3;
+    }
   }
   pos        += ret;
   remain_len -= ret;
@@ -1094,15 +1169,16 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
     uint32_t header_len = 0;
 
     if (pos[0] & 0x80) { // Index Header Field
-      ret = this->_decode_indexed_header_field(base_index, pos, remain_len, hdr, header_len);
+      ret = this->_decode_indexed_header_field(base, required_insert_count, pos, remain_len, hdr, header_len);
     } else if (pos[0] & 0x40) { // Literal Header Field With Name Reference
-      ret = this->_decode_literal_header_field_with_name_ref(base_index, pos, remain_len, hdr, header_len);
+      ret = this->_decode_literal_header_field_with_name_ref(base, required_insert_count, pos, remain_len, hdr, header_len);
     } else if (pos[0] & 0x20) { // Literal Header Field Without Name Reference
       ret = this->_decode_literal_header_field_without_name_ref(pos, remain_len, hdr, header_len);
     } else if (pos[0] & 0x10) { // Indexed Header Field With Post-Base Index
-      ret = this->_decode_indexed_header_field_with_postbase_index(base_index, pos, remain_len, hdr, header_len);
+      ret = this->_decode_indexed_header_field_with_postbase_index(base, required_insert_count, pos, remain_len, hdr, header_len);
     } else { // Literal Header Field With Post-Base Name Reference
-      ret = this->_decode_literal_header_field_with_postbase_name_ref(base_index, pos, remain_len, hdr, header_len);
+      ret =
+        this->_decode_literal_header_field_with_postbase_name_ref(base, required_insert_count, pos, remain_len, hdr, header_len);
     }
 
     if (ret < 0) {
@@ -1123,17 +1199,21 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
 }
 
 void
-QPACK::_decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const uint8_t *header_block, size_t header_block_len,
-               HTTPHdr &hdr)
+QPACK::_decode(EThread *ethread, Continuation *cont, uint64_t stream_id, uint32_t required_insert_count,
+               const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr)
 {
   int event;
-  int res = this->_decode_header(header_block, header_block_len, hdr);
+  int res = this->_decode_header(required_insert_count, header_block, header_block_len, hdr);
   if (res < 0) {
     event = QPACK_EVENT_DECODE_FAILED;
     QPACKDebug("decoding header failed (%d)", res);
   } else {
     event = QPACK_EVENT_DECODE_COMPLETE;
-    this->_write_header_acknowledgement(stream_id);
+    // Only a block that references the dynamic table is acknowledged (RFC 9204 Section 4.4.1). The encoder tracks nothing for
+    // the others, and treats an acknowledgement it has nothing outstanding for as an error.
+    if (required_insert_count != 0) {
+      this->_write_header_acknowledgement(stream_id);
+    }
   }
   this->_report(ethread, cont, stream_id, event, &hdr);
 }
@@ -1180,9 +1260,10 @@ QPACK::_update_reference_counts(uint64_t stream_id)
 }
 
 bool
-QPACK::_is_blocked(uint16_t largest_reference) const
+QPACK::_is_blocked(uint32_t required_insert_count) const
 {
-  return largest_reference != 0 && (this->_dynamic_table.is_empty() || this->_dynamic_table.largest_index() < largest_reference);
+  // RFC 9204 Section 2.2.1.
+  return this->_dynamic_table.entries_inserted() < required_insert_count;
 }
 
 void
@@ -1190,8 +1271,9 @@ QPACK::_resume_decode()
 {
   DecodeRequest *r = this->_blocked_list.head();
   while (r) {
-    if (!this->_is_blocked(r->largest_reference())) {
-      this->_decode(r->thread(), r->continuation(), r->stream_id(), r->header_block(), r->header_block_len(), r->hdr());
+    if (!this->_is_blocked(r->required_insert_count())) {
+      this->_decode(r->thread(), r->continuation(), r->stream_id(), r->required_insert_count(), r->header_block(),
+                    r->header_block_len(), r->hdr());
       DecodeRequest *tmp = r;
       r                  = DecodeRequest::Linkage::next_ptr(r);
       this->_blocked_list.erase(tmp);
@@ -1312,18 +1394,25 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
         this->_abort_decode();
         return EVENT_DONE;
       }
+      XpackLookupResult inserted;
       if (is_static) {
-        this->_dynamic_table.insert_entry(name, name_len, value, value_len);
+        inserted = this->_dynamic_table.insert_entry(name, name_len, value, value_len);
       } else {
         // The referenced name lives in the dynamic table's storage, which this
         // insert may evict and overwrite (RFC 9204 Section 3.2.2), so copy it.
         char *owned_name = this->_arena.str_store(name, name_len);
 
-        this->_dynamic_table.insert_entry(owned_name, name_len, value, value_len);
+        inserted = this->_dynamic_table.insert_entry(owned_name, name_len, value, value_len);
         // Free in reverse allocation order so Arena can rewind both entries.
         this->_arena.str_free(owned_name);
       }
       this->_arena.str_free(value);
+      // An entry that does not fit the table's capacity is an encoder stream error (RFC 9204 Section 3.2.2). Going on without
+      // it would shift every later absolute index away from the encoder's.
+      if (inserted.match_type == XpackLookupResult::MatchType::NONE) {
+        this->_abort_decode();
+        return EVENT_DONE;
+      }
     } else if (buf & 0x40) { // Insert Without Name Reference
       char  *name;
       size_t name_len;
@@ -1335,10 +1424,14 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
       }
       QPACKDebug("Received Insert Without Name Ref: name=%.*s, value=%.*s", static_cast<int>(name_len), name,
                  static_cast<int>(value_len), value);
-      this->_dynamic_table.insert_entry(name, name_len, value, value_len);
+      XpackLookupResult inserted = this->_dynamic_table.insert_entry(name, name_len, value, value_len);
       // Free in reverse allocation order so Arena can rewind both entries.
       this->_arena.str_free(value);
       this->_arena.str_free(name);
+      if (inserted.match_type == XpackLookupResult::MatchType::NONE) {
+        this->_abort_decode();
+        return EVENT_DONE;
+      }
     } else if (buf & 0x20) { // Dynamic Table Size Update
       uint16_t max_size;
       if (this->_read_dynamic_table_size_update(reader, max_size) < 0) {
@@ -1346,7 +1439,11 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
         return EVENT_DONE;
       }
       QPACKDebug("Received Dynamic Table Size Update: max_size=%d", max_size);
-      this->_dynamic_table.update_maximum_size(max_size);
+      // RFC 9204 Section 4.3.1 bounds the capacity by the maximum this decoder advertised.
+      if (max_size > this->_max_table_size || !this->_dynamic_table.update_maximum_size(max_size)) {
+        this->_abort_decode();
+        return EVENT_DONE;
+      }
     } else { // Duplicates
       uint16_t index;
       if (this->_read_duplicate(reader, index) < 0) {
@@ -1354,7 +1451,13 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
         return EVENT_DONE;
       }
       QPACKDebug("Received Duplicate: index=%d", index);
-      this->_dynamic_table.duplicate_entry(index);
+      // The index is relative to the Insert Count (RFC 9204 Section 4.3.4), and has to name an entry still in the table.
+      if (index >= this->_dynamic_table.count() ||
+          this->_dynamic_table.duplicate_entry(this->_dynamic_table.largest_index() - index).match_type ==
+            XpackLookupResult::MatchType::NONE) {
+        this->_abort_decode();
+        return EVENT_DONE;
+      }
     }
 
     this->_resume_decode();
@@ -1428,28 +1531,38 @@ QPACK::StaticTable::lookup(const char *name, size_t name_len, const char *value,
   return {candidate_index, match_type};
 }
 
-uint16_t
-QPACK::_calc_absolute_index_from_relative_index(uint16_t base_index, uint16_t relative_index)
+bool
+QPACK::_calc_absolute_index_from_relative_index(uint32_t base, uint32_t required_insert_count, uint64_t relative_index,
+                                                uint32_t &absolute_index)
 {
-  return base_index - relative_index;
+  if (relative_index >= base) {
+    return false;
+  }
+  absolute_index = base - 1 - static_cast<uint32_t>(relative_index);
+  return absolute_index < required_insert_count;
+}
+
+bool
+QPACK::_calc_absolute_index_from_postbase_index(uint32_t base, uint32_t required_insert_count, uint64_t postbase_index,
+                                                uint32_t &absolute_index)
+{
+  if (base >= required_insert_count || postbase_index >= required_insert_count - base) {
+    return false;
+  }
+  absolute_index = base + static_cast<uint32_t>(postbase_index);
+  return true;
 }
 
 uint16_t
-QPACK::_calc_absolute_index_from_postbase_index(uint16_t base_index, uint16_t postbase_index)
+QPACK::_calc_relative_index_from_absolute_index(uint16_t base, uint16_t absolute_index)
 {
-  return base_index + postbase_index + 1;
+  return base - 1 - absolute_index;
 }
 
 uint16_t
-QPACK::_calc_relative_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index)
+QPACK::_calc_postbase_index_from_absolute_index(uint16_t base, uint16_t absolute_index)
 {
-  return base_index - absolute_index;
-}
-
-uint16_t
-QPACK::_calc_postbase_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index)
-{
-  return absolute_index - base_index - 1;
+  return absolute_index - base;
 }
 
 void
@@ -1610,7 +1723,7 @@ QPACK::_write_table_state_synchronize(uint16_t insert_count)
 
   // Finalize and Schedule to send
   instruction->fill(written);
-  this->_encoder_stream_sending_instructions->append_block(instruction);
+  this->_decoder_stream_sending_instructions->append_block(instruction);
 
   return 0;
 }
@@ -1638,7 +1751,7 @@ QPACK::_write_header_acknowledgement(uint64_t stream_id)
 
   // Finalize and Schedule to send
   instruction->fill(written);
-  this->_encoder_stream_sending_instructions->append_block(instruction);
+  this->_decoder_stream_sending_instructions->append_block(instruction);
 
   return 0;
 }
@@ -1666,7 +1779,7 @@ QPACK::_write_stream_cancellation(uint64_t stream_id)
 
   // Finalize and Schedule to send
   instruction->fill(written);
-  this->_encoder_stream_sending_instructions->append_block(instruction);
+  this->_decoder_stream_sending_instructions->append_block(instruction);
 
   return 0;
 }

@@ -28,9 +28,11 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <initializer_list>
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <vector>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
@@ -633,7 +635,7 @@ TEST_CASE("Decoding out-of-range static table indexes fails", "[qpack-decode]")
     0x00, // Required Insert Count.
     0x00, // Delta Base.
     0xff, // Indexed static field with an extended 6-bit index.
-    0x25, // Index 100.
+    0x24, // Index 99, one past the end of the 99-entry static table.
   };
 
   CHECK(decode_on_event_thread(qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 0);
@@ -647,7 +649,7 @@ TEST_CASE("An out-of-range encoder stream name reference invalidates the decoder
 {
   static const uint8_t insert_with_name_ref[] = {
     0xff, // Insert With Name Reference, static, with an extended 6-bit index.
-    0x25, // Index 100, one past the end of the static table.
+    0x24, // Index 99, one past the end of the 99-entry static table.
     0x01, // A one byte, unencoded value follows.
     'x',
   };
@@ -892,6 +894,30 @@ struct QPACKTestAccess {
     qpack._on_encoder_stream_read_ready(*reader);
     free_MIOBuffer(buffer);
   }
+
+  // The instructions QPACK has queued for its decoder stream that the stream has not taken yet.
+  static std::vector<uint8_t>
+  queued_decoder_stream_instructions(QPACK &qpack)
+  {
+    return queued(*qpack._decoder_stream_sending_instructions_reader);
+  }
+
+  // The instructions QPACK has queued for its encoder stream that the stream has not taken yet.
+  static std::vector<uint8_t>
+  queued_encoder_stream_instructions(QPACK &qpack)
+  {
+    return queued(*qpack._encoder_stream_sending_instructions_reader);
+  }
+
+private:
+  static std::vector<uint8_t>
+  queued(IOBufferReader &reader)
+  {
+    std::vector<uint8_t> bytes(reader.read_avail());
+
+    reader.memcpy(bytes.data(), bytes.size());
+    return bytes;
+  }
 };
 
 // Decodes one Literal Header Field Without Name Reference. That is the field
@@ -1019,23 +1045,40 @@ append_insert_without_name_ref(std::vector<uint8_t> &instructions, std::string_v
   instructions.insert(instructions.end(), value.begin(), value.end());
 }
 
+// Appends a Set Dynamic Table Capacity: 001 <Capacity (5+)>. The table starts at capacity 0 (RFC 9204 Section 3.2.3), so an
+// encoder stream has to send this before its first insert.
+static void
+append_set_dynamic_table_capacity(std::vector<uint8_t> &instructions, uint64_t capacity)
+{
+  uint8_t buf[16];
+
+  buf[0]   = 0x20;
+  auto len = xpack_encode_integer(buf, buf + sizeof(buf), capacity, 5);
+
+  REQUIRE(len > 0);
+  instructions.insert(instructions.end(), buf, buf + len);
+}
+
 // Insert Without Name Reference on the encoder stream allocates the name and the
 // value out of QPACK's per-connection arena, and has to give both back once the
 // entry is in the dynamic table, or when the value fails to decode.
 TEST_CASE("Insert Without Name Reference on the encoder stream", "[qpack-encoder-stream]")
 {
-  constexpr int INSERTS = 200;
+  constexpr int      INSERTS  = 200;
+  constexpr uint16_t CAPACITY = 16384;
 
   QUICApplicationDriver driver;
   TestQPACKEventHandler event_handler;
   // Room in the dynamic table for every insert below.
-  auto qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 16384, 0, MAX_FIELD_SIZE);
+  auto qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, CAPACITY, 0, MAX_FIELD_SIZE);
 
   QPACKTestAccess::skip_first_block(*qpack);
   void *water_level = QPACKTestAccess::water_level(*qpack);
 
   // Distinct names and values so a decoded field tells which insert it came from.
   std::vector<uint8_t> instructions;
+
+  append_set_dynamic_table_capacity(instructions, CAPACITY);
   for (int i = 0; i < INSERTS; ++i) {
     char name[8];
     char value[8];
@@ -1048,15 +1091,16 @@ TEST_CASE("Insert Without Name Reference on the encoder stream", "[qpack-encoder
   QPACKTestAccess::read_encoder_stream(*qpack, instructions.data(), instructions.size());
   CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
 
-  // Required Insert Count, which this decoder takes as the absolute index of the
-  // largest entry referenced, then Delta Base 0, then two Indexed Field Lines on
-  // the dynamic table: relative index 0 is the last insert and relative index
-  // INSERTS - 1 is the first.
-  uint8_t  header_block[16] = {0};
-  uint8_t *p                = header_block;
-  uint8_t *end              = header_block + sizeof(header_block);
+  // Required Insert Count INSERTS, encoded modulo twice the table's maximum
+  // entries (RFC 9204 Section 4.5.1.1), then Delta Base 0 for a Base of INSERTS,
+  // then two Indexed Field Lines on the dynamic table: relative index 0 is the
+  // last insert and relative index INSERTS - 1 is the first.
+  constexpr uint64_t MAX_ENTRIES      = CAPACITY / 32;
+  uint8_t            header_block[16] = {0};
+  uint8_t           *p                = header_block;
+  uint8_t           *end              = header_block + sizeof(header_block);
 
-  p    += xpack_encode_integer(p, end, INSERTS - 1, 8);
+  p    += xpack_encode_integer(p, end, INSERTS % (2 * MAX_ENTRIES) + 1, 8);
   *p++  = 0x00;
   *p    = 0x80;
   p    += xpack_encode_integer(p, end, 0, 6);
@@ -1151,6 +1195,7 @@ TEST_CASE("Insert With Name Reference to an entry the insert evicts", "[qpack-en
   // absolute index 0 would resolve to the long evicted first entry instead.
   std::vector<uint8_t> instructions;
 
+  append_set_dynamic_table_capacity(instructions, 128);
   append_insert_without_name_ref_empty_value(instructions, first);
   append_insert_without_name_ref_empty_value(instructions, second);
   instructions.push_back(0x80); // Insert With Name Reference, dynamic, relative index 0.
@@ -1158,10 +1203,10 @@ TEST_CASE("Insert With Name Reference to an entry the insert evicts", "[qpack-en
 
   QPACKTestAccess::read_encoder_stream(*qpack, instructions.data(), instructions.size());
 
-  // Required Insert Count, which this decoder takes as the absolute index of the
-  // largest entry referenced, Delta Base 0, then an Indexed Field Line on the
-  // dynamic table at relative index 0, the third insert.
-  const uint8_t header_block[] = {0x02, 0x00, 0x80};
+  // Required Insert Count 3, encoded as 3 mod 8 + 1 for a table of at most four
+  // entries, Delta Base 0, then an Indexed Field Line on the dynamic table at
+  // relative index 0, the third insert.
+  const uint8_t header_block[] = {0x04, 0x00, 0x80};
 
   HTTPHdr hdr;
   hdr.create(HTTPType::REQUEST);
@@ -1220,8 +1265,8 @@ public:
   {
     // Required Insert Count 0, Delta Base 0, then :method GET from the static table.
     static const uint8_t header_block[] = {0x00, 0x00, 0xd1};
-    // Insert With Name Reference to static index 100, one past the end of the table.
-    static const uint8_t bad_insert[] = {0xff, 0x25, 0x01, 'x'};
+    // Insert With Name Reference to static index 99, one past the end of the 99-entry table.
+    static const uint8_t bad_insert[] = {0xff, 0x24, 0x01, 'x'};
 
     TestQPACKCancelCase &s     = *this->_state;
     QPACK               &qpack = s.fixture.qpack;
@@ -1323,10 +1368,10 @@ TEST_CASE("cancel() withdraws a stream's queued decode result", "[qpack-cancel]"
 
 TEST_CASE("A cancelled blocked decode gives up its blocked stream slot", "[qpack-cancel]")
 {
-  // A Required Insert Count of 2, which this decoder takes as the absolute
-  // index of the largest entry referenced, blocks the decode while nothing is
-  // inserted. The fixture's decoder allows one blocked stream, so a second
-  // blocked stream is refused while the first still holds the slot.
+  // Required Insert Count 1, Delta Base 0, then an Indexed Field Line on the
+  // dynamic table at relative index 0, which blocks while nothing is inserted.
+  // The fixture's decoder allows one blocked stream, so a second blocked stream
+  // is refused while the first still holds the slot.
   static const uint8_t blocked_header_block[] = {0x02, 0x00, 0x80};
 
   auto                  fixture = std::make_shared<TestQPACKFixture>();
@@ -1366,8 +1411,86 @@ read_encoder_stream_on_event_thread(QPACK &qpack, const uint8_t *instructions, s
   });
 }
 
-// A header block that references entries the encoder stream has not inserted yet waits for them, then decodes.
+// Builds encoder stream instructions that set the capacity of a table of at most four entries, then insert one entry with an
+// empty value for each of @a names.
+static std::vector<uint8_t>
+inserts_into_128_byte_table(std::initializer_list<std::string_view> names, bool set_capacity = true)
+{
+  std::vector<uint8_t> instructions;
+
+  if (set_capacity) {
+    append_set_dynamic_table_capacity(instructions, 128);
+  }
+  for (auto name : names) {
+    append_insert_without_name_ref_empty_value(instructions, name);
+  }
+  return instructions;
+}
+
+// Runs nothing on the event thread, so that any result an earlier call there scheduled has been delivered once it returns.
+static void
+drain_event_thread()
+{
+  run_on_event_thread([] { return 0; });
+}
+
+// A header block that references entries the encoder stream has not inserted yet waits until the Insert Count reaches its
+// Required Insert Count (RFC 9204 Section 2.2.1), then decodes.
 TEST_CASE("A blocked decode resumes once the encoder stream inserts what it references", "[qpack-blocked]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  // At most four entries, so an encoded Required Insert Count is the count mod 8, plus 1.
+  auto    qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  SECTION("a block that needs one insert decodes after it")
+  {
+    // Required Insert Count 1, Delta Base 0, Indexed Field Line on the dynamic table at relative index 0.
+    const uint8_t header_block[] = {0x02, 0x00, 0x80};
+
+    REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 1);
+
+    auto instructions = inserts_into_128_byte_table({"first"});
+
+    read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(hdr.field_find("first") != nullptr);
+  }
+
+  SECTION("a block that needs two inserts stays blocked after the first and decodes after the second")
+  {
+    // Required Insert Count 2, Delta Base 0, Indexed Field Line on the dynamic table at relative index 0.
+    const uint8_t header_block[] = {0x03, 0x00, 0x80};
+
+    REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 1);
+
+    auto instructions = inserts_into_128_byte_table({"first"});
+
+    read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+    drain_event_thread();
+    CHECK(event_handler.events_seen() == 0);
+
+    instructions = inserts_into_128_byte_table({"second"}, false);
+    read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(hdr.field_find("second") != nullptr);
+    CHECK(hdr.field_find("first") == nullptr);
+  }
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// An encoded Required Insert Count no conformant encoder could have sent is an error (RFC 9204 Section 4.5.1.1), not a reason
+// to wait for more inserts.
+TEST_CASE("A header block with an impossible Required Insert Count fails at once", "[qpack-blocked]")
 {
   QUICApplicationDriver driver;
   TestQPACKEventHandler event_handler;
@@ -1376,33 +1499,73 @@ TEST_CASE("A blocked decode resumes once the encoder stream inserts what it refe
 
   hdr.create(HTTPType::REQUEST);
 
-  // Required Insert Count 1, Delta Base 0, Indexed Field Line on the dynamic table at relative index 0.
+  // An encoded 1 reconstructs to a Required Insert Count of 0 while fewer than four entries have been inserted.
   const uint8_t header_block[] = {0x01, 0x00, 0x80};
 
-  REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 1);
-
-  std::vector<uint8_t> instructions;
-
-  append_insert_without_name_ref_empty_value(instructions, "first");
-  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
-
-  SECTION("an insert short of what the block references leaves it blocked")
+  SECTION("with nothing inserted")
   {
-    // Queued behind any result the insert could have scheduled.
-    run_on_event_thread([] { return 0; });
-    CHECK(event_handler.events_seen() == 0);
+    CHECK(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) < 0);
   }
 
-  SECTION("the insert that completes what the block references resumes it")
+  SECTION("with one entry inserted")
   {
-    instructions.clear();
-    append_insert_without_name_ref_empty_value(instructions, "second");
+    auto instructions = inserts_into_128_byte_table({"first"});
+
     read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
-
-    REQUIRE(event_handler.wait_for_events(1));
-    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
-    CHECK(hdr.field_find("second") != nullptr);
+    CHECK(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) < 0);
   }
+
+  // Nothing waits on the encoder stream for the block, so it never decodes later either.
+  auto instructions = inserts_into_128_byte_table({"second"});
+
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+  drain_event_thread();
+  CHECK(event_handler.events_seen() == 0);
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// The example of RFC 9204 Appendix B.2: a header block that references two entries through post-base indices before the
+// encoder stream has inserted either.
+TEST_CASE("The RFC 9204 Appendix B.2 header block decodes once both of its entries are inserted", "[qpack-blocked]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 220, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  // Required Insert Count 2, Base 0, then Indexed Field Lines with post-base indices 0 and 1.
+  const uint8_t header_block[] = {0x03, 0x81, 0x10, 0x11};
+
+  REQUIRE(decode_on_event_thread(*qpack, 4, header_block, sizeof(header_block), hdr, &event_handler) == 1);
+
+  // Set Dynamic Table Capacity 220, then Insert With Name Reference to static :authority.
+  const uint8_t insert_authority[] = {0x3f, 0xbd, 0x01, 0xc0, 0x0f, 'w', 'w', 'w', '.', 'e',
+                                      'x',  'a',  'm',  'p',  'l',  'e', '.', 'c', 'o', 'm'};
+  // Insert With Name Reference to static :path.
+  const uint8_t insert_path[] = {0xc1, 0x0c, '/', 's', 'a', 'm', 'p', 'l', 'e', '/', 'p', 'a', 't', 'h'};
+
+  read_encoder_stream_on_event_thread(*qpack, insert_authority, sizeof(insert_authority));
+  drain_event_thread();
+  CHECK(event_handler.events_seen() == 0);
+
+  read_encoder_stream_on_event_thread(*qpack, insert_path, sizeof(insert_path));
+
+  REQUIRE(event_handler.wait_for_events(1));
+  CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
+  MIMEField *authority = hdr.field_find(":authority");
+
+  REQUIRE(authority != nullptr);
+  CHECK(authority->value_get() == "www.example.com");
+
+  MIMEField *path = hdr.field_find(":path");
+
+  REQUIRE(path != nullptr);
+  CHECK(path->value_get() == "/sample/path");
 
   qpack.reset();
   hdr.destroy();
@@ -1420,14 +1583,51 @@ TEST_CASE("An invalid encoder stream instruction fails blocked decodes", "[qpack
   hdr.create(HTTPType::REQUEST);
 
   // Required Insert Count 1, Delta Base 0, Indexed Field Line on the dynamic table at relative index 0.
-  const uint8_t header_block[] = {0x01, 0x00, 0x80};
+  const uint8_t header_block[] = {0x02, 0x00, 0x80};
 
   REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 1);
 
-  // Insert With Name Reference, static, index 100, one past the end of the static table.
-  const uint8_t insert_with_name_ref[] = {0xff, 0x25, 0x01, 'x'};
+  // Insert With Name Reference, static, index 99, one past the end of the 99-entry static table.
+  const uint8_t insert_with_name_ref[] = {0xff, 0x24, 0x01, 'x'};
 
   read_encoder_stream_on_event_thread(*qpack, insert_with_name_ref, sizeof(insert_with_name_ref));
+
+  REQUIRE(event_handler.wait_for_events(1));
+  CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// RFC 9204 Section 3.2.3 starts the table at capacity 0, so an insert before any Set Dynamic Table Capacity does not fit and
+// is an encoder stream error. So is a capacity above the maximum the decoder advertised (Section 4.3.1).
+TEST_CASE("Inserts have to fit the capacity the encoder stream set", "[qpack-encoder-stream]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  // Required Insert Count 1, Delta Base 0, Indexed Field Line on the dynamic table at relative index 0.
+  const uint8_t header_block[] = {0x02, 0x00, 0x80};
+
+  REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 1);
+
+  std::vector<uint8_t> instructions;
+
+  SECTION("an insert before any capacity is set")
+  {
+    instructions = inserts_into_128_byte_table({"first"}, false);
+  }
+
+  SECTION("a capacity above the advertised maximum")
+  {
+    append_set_dynamic_table_capacity(instructions, 129);
+  }
+
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
 
   REQUIRE(event_handler.wait_for_events(1));
   CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
@@ -1449,22 +1649,226 @@ TEST_CASE("A blocked decode does not depend on the caller's header block", "[qpa
 
   auto header_block = std::make_unique<uint8_t[]>(3);
 
-  header_block[0] = 0x01; // Required Insert Count 1.
+  header_block[0] = 0x03; // Required Insert Count 2.
   header_block[1] = 0x00; // Delta Base 0.
   header_block[2] = 0x80; // Indexed Field Line, dynamic, relative index 0.
 
   REQUIRE(decode_on_event_thread(*qpack, 1, header_block.get(), 3, hdr, &event_handler) == 1);
   header_block.reset();
 
-  std::vector<uint8_t> instructions;
+  auto instructions = inserts_into_128_byte_table({"first", "second"});
 
-  append_insert_without_name_ref_empty_value(instructions, "first");
-  append_insert_without_name_ref_empty_value(instructions, "second");
   read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
 
   REQUIRE(event_handler.wait_for_events(1));
   CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
   CHECK(hdr.field_find("second") != nullptr);
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// Decodes @a header_block on stream 1, which must not block, and returns the event its result is reported with.
+static int
+decode_unblocked(QPACK &qpack, const std::vector<uint8_t> &header_block, HTTPHdr &hdr, TestQPACKEventHandler &event_handler)
+{
+  int const events_seen = event_handler.events_seen();
+
+  REQUIRE(decode_on_event_thread(qpack, 1, header_block.data(), header_block.size(), hdr, &event_handler) == 0);
+  REQUIRE(event_handler.wait_for_events(events_seen + 1));
+  return event_handler.last_event();
+}
+
+// The prefix carries the Required Insert Count modulo twice the table's maximum entries (RFC 9204 Section 4.5.1.1). Once more
+// entries than that have been inserted, the decoder has to unwrap it against its own Insert Count.
+TEST_CASE("A wrapped Required Insert Count resolves against the Insert Count", "[qpack-required-insert-count]")
+{
+  // More than twice the four entries a 128 byte table holds at most.
+  constexpr int INSERTS = 12;
+
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  std::vector<uint8_t> instructions;
+
+  append_set_dynamic_table_capacity(instructions, 128);
+  for (int i = 0; i < INSERTS; ++i) {
+    char name[8];
+
+    snprintf(name, sizeof(name), "n%02d", i);
+    append_insert_without_name_ref_empty_value(instructions, name);
+  }
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+  // Required Insert Count 12, encoded as 12 mod 8 + 1, Delta Base 0, then Indexed Field Lines on the dynamic table at relative
+  // indices 0 and 1, the last two inserts.
+  CHECK(decode_unblocked(*qpack, {0x05, 0x00, 0x80, 0x81}, hdr, event_handler) == QPACK_EVENT_DECODE_COMPLETE);
+  CHECK(hdr.field_find("n11") != nullptr);
+  CHECK(hdr.field_find("n10") != nullptr);
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// With Sign 1, Base is the Required Insert Count minus Delta Base minus 1 (RFC 9204 Section 4.5.1.2), so a Delta Base as large
+// as the Required Insert Count would make Base negative.
+TEST_CASE("A negative Delta Base has to leave Base at zero or above", "[qpack-required-insert-count]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  auto instructions = inserts_into_128_byte_table({"first"});
+
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+  SECTION("a Delta Base one less than the Required Insert Count makes Base 0")
+  {
+    // Required Insert Count 1, Sign 1 and Delta Base 0, then an Indexed Field Line with post-base index 0, the first insert.
+    CHECK(decode_unblocked(*qpack, {0x02, 0x80, 0x10}, hdr, event_handler) == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(hdr.field_find("first") != nullptr);
+  }
+
+  SECTION("a Delta Base equal to the Required Insert Count fails")
+  {
+    // Required Insert Count 1, Sign 1 and Delta Base 1. The static :method GET that follows is only reached if the prefix is
+    // accepted.
+    CHECK(decode_unblocked(*qpack, {0x02, 0x81, 0xd1}, hdr, event_handler) == QPACK_EVENT_DECODE_FAILED);
+  }
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// Every dynamic table reference has to name an entry below the Required Insert Count (RFC 9204 Section 2.2.3), even one the
+// table already holds.
+TEST_CASE("A reference at or above the Required Insert Count fails", "[qpack-required-insert-count]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  // Both entries are in the table, but every header block below has a Required Insert Count of 1, so only the first may be
+  // referenced.
+  auto instructions = inserts_into_128_byte_table({"first", "second"});
+
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+  SECTION("a relative index below it decodes")
+  {
+    // Required Insert Count 1, Sign 0 and Delta Base 1 for a Base of 2, then relative index 1, absolute index 0.
+    CHECK(decode_unblocked(*qpack, {0x02, 0x01, 0x81}, hdr, event_handler) == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(hdr.field_find("first") != nullptr);
+  }
+
+  SECTION("a relative index at it fails")
+  {
+    // Base 2 as above, then relative index 0, absolute index 1.
+    CHECK(decode_unblocked(*qpack, {0x02, 0x01, 0x80}, hdr, event_handler) == QPACK_EVENT_DECODE_FAILED);
+  }
+
+  SECTION("a post-base index below it decodes")
+  {
+    // Required Insert Count 1, Sign 1 and Delta Base 0 for a Base of 0, then post-base index 0, absolute index 0.
+    CHECK(decode_unblocked(*qpack, {0x02, 0x80, 0x10}, hdr, event_handler) == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(hdr.field_find("first") != nullptr);
+  }
+
+  SECTION("a post-base index at it fails")
+  {
+    // Base 0 as above, then post-base index 1, absolute index 1.
+    CHECK(decode_unblocked(*qpack, {0x02, 0x80, 0x11}, hdr, event_handler) == QPACK_EVENT_DECODE_FAILED);
+  }
+
+  CHECK(hdr.field_find("second") == nullptr);
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// Duplicate names the entry to copy by its index relative to the Insert Count (RFC 9204 Section 4.3.4), so only a Duplicate of
+// an entry older than the newest tells a relative index from an absolute one.
+TEST_CASE("Duplicate copies the entry its relative index names", "[qpack-encoder-stream]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  std::vector<uint8_t> instructions;
+
+  append_set_dynamic_table_capacity(instructions, 128);
+  append_insert_without_name_ref(instructions, "a", "1");
+  append_insert_without_name_ref(instructions, "b", "2");
+  instructions.push_back(0x01); // Duplicate relative index 1, the "a" entry.
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+  // Required Insert Count 3, encoded as 3 mod 8 + 1, Delta Base 0, then relative index 0, the copy.
+  CHECK(decode_unblocked(*qpack, {0x04, 0x00, 0x80}, hdr, event_handler) == QPACK_EVENT_DECODE_COMPLETE);
+
+  MIMEField *copy = hdr.field_find("a");
+
+  REQUIRE(copy != nullptr);
+  CHECK(copy->value_get() == "1");
+  CHECK(hdr.field_find("b") == nullptr);
+
+  qpack.reset();
+  hdr.destroy();
+}
+
+// A Section Acknowledgment goes on the decoder stream, and only for a field section that references the dynamic table (RFC
+// 9204 Section 4.4.1).
+TEST_CASE("Only a header block with a non-zero Required Insert Count is acknowledged", "[qpack-decoder-stream]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 1, MAX_FIELD_SIZE);
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  auto instructions = inserts_into_128_byte_table({"first"});
+
+  read_encoder_stream_on_event_thread(*qpack, instructions.data(), instructions.size());
+
+  std::vector<uint8_t> expected_decoder_stream;
+
+  SECTION("Required Insert Count 0")
+  {
+    // Required Insert Count 0, Delta Base 0, then the static :method GET.
+    CHECK(decode_unblocked(*qpack, {0x00, 0x00, 0xd1}, hdr, event_handler) == QPACK_EVENT_DECODE_COMPLETE);
+  }
+
+  SECTION("Required Insert Count 1")
+  {
+    // Required Insert Count 1, Delta Base 0, then relative index 0, the first insert.
+    CHECK(decode_unblocked(*qpack, {0x02, 0x00, 0x80}, hdr, event_handler) == QPACK_EVENT_DECODE_COMPLETE);
+    // Section Acknowledgment for stream 1.
+    expected_decoder_stream = {0x81};
+  }
+
+  std::vector<uint8_t> decoder_stream;
+  std::vector<uint8_t> encoder_stream;
+
+  run_on_event_thread([&] {
+    decoder_stream = QPACKTestAccess::queued_decoder_stream_instructions(*qpack);
+    encoder_stream = QPACKTestAccess::queued_encoder_stream_instructions(*qpack);
+    return 0;
+  });
+  CHECK(decoder_stream == expected_decoder_stream);
+  CHECK(encoder_stream.empty());
 
   qpack.reset();
   hdr.destroy();
