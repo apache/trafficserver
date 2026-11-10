@@ -237,6 +237,9 @@ private:
   // Streams the application has deleted whose SSL objects stay in _openssl_streams until
   // OpenSSL holds nothing more for them.
   std::unordered_set<QUICStreamId> _openssl_draining_streams;
+  // Streams whose sending side was reset, or whose connection closed: ATS offers them no
+  // more data, though the application may still have some.
+  std::unordered_set<QUICStreamId> _openssl_write_closed_streams;
   std::string                      _cid_text;
   std::string                      _negotiated_alpn;
 
@@ -281,6 +284,7 @@ private:
   void     _accept_openssl_streams();
   void     _process_openssl_streams();
   uint64_t _openssl_stream_held(QUICStreamId stream_id, SSL *stream_ssl);
+  bool     _openssl_stream_write_closed(QUICStreamId stream_id, SSL *stream_ssl);
   void     _schedule_openssl_event(bool delay = true);
   void     _unschedule_openssl_event();
   bool     _openssl_connection_closed() const;

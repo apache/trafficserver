@@ -206,6 +206,7 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
   }
   this->_openssl_streams.clear();
   this->_openssl_draining_streams.clear();
+  this->_openssl_write_closed_streams.clear();
 
   if (this->_ssl != nullptr) {
     this->_unbindSSLObject();
@@ -762,7 +763,7 @@ QUICNetVConnection::_process_openssl_streams()
     this->_openssl_send_buffered += this->_openssl_stream_held(stream_id, stream_ssl);
 
     QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
-    if (stream != nullptr && stream->has_data_to_send()) {
+    if (stream != nullptr && stream->has_data_to_send() && !this->_openssl_stream_write_closed(stream_id, stream_ssl)) {
       ++streams_with_data;
     }
   }
@@ -790,6 +791,7 @@ QUICNetVConnection::_process_openssl_streams()
     SSL        *stream_ssl = stream_it->second;
     QUICStream *stream     = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
     if (stream == nullptr) {
+      this->_openssl_write_closed_streams.erase(stream_id);
       // The application deletes a stream only once each direction it has is done (the peer's
       // FIN read, ours handed to OpenSSL), and SSL_free does not reset a stream part that was
       // already concluded, so OpenSSL still delivers what it has buffered. Until it has, the
@@ -808,6 +810,11 @@ QUICNetVConnection::_process_openssl_streams()
     if ((stream_type & SSL_STREAM_TYPE_READ) != 0) {
       stream->receive_data(*this);
     }
+    // OpenSSL takes nothing more for a stream whose sending side was reset, so trying again
+    // on every pass would only fail again.
+    if (this->_openssl_write_closed_streams.count(stream_id) != 0) {
+      continue;
+    }
     if ((stream_type & SSL_STREAM_TYPE_WRITE) != 0 || stream->has_data_to_send()) {
       if (static_cast<size_t>(stream->send_data(*this, budget)) >= budget && stream->has_data_to_send()) {
         more_to_send = true;
@@ -820,6 +827,24 @@ QUICNetVConnection::_process_openssl_streams()
   if (more_to_send) {
     this->_schedule_packet_write_ready();
   }
+}
+
+bool
+QUICNetVConnection::_openssl_stream_write_closed(QUICStreamId stream_id, SSL *stream_ssl)
+{
+  if (this->_openssl_write_closed_streams.count(stream_id) != 0) {
+    return true;
+  }
+
+  int const state = SSL_get_stream_write_state(stream_ssl);
+  if (state != SSL_STREAM_STATE_RESET_LOCAL && state != SSL_STREAM_STATE_RESET_REMOTE && state != SSL_STREAM_STATE_CONN_CLOSED) {
+    return false;
+  }
+
+  QUICConDebug("stream %" PRIu64 ": cannot write, the sending side is reset or the connection is closed (state %d)", stream_id,
+               state);
+  this->_openssl_write_closed_streams.insert(stream_id);
+  return true;
 }
 
 uint64_t
@@ -974,15 +999,10 @@ QUICNetVConnection::stream_write_capacity(QUICStreamId stream_id)
   }
 
   // OpenSSL frees the send buffer once the peer has acknowledged everything up to the
-  // FIN, and when the sending side is reset. Either way nothing more can be written.
+  // FIN, and when the sending side is reset. Either way nothing more can be written. A
+  // write can process incoming packets, so the reset may arrive partway through a pass.
   if (size == 0) {
-    int const state = SSL_get_stream_write_state(it->second);
-    if (state == SSL_STREAM_STATE_RESET_LOCAL || state == SSL_STREAM_STATE_RESET_REMOTE || state == SSL_STREAM_STATE_CONN_CLOSED) {
-      QUICConDebug("stream %" PRIu64 ": cannot write, the sending side is reset or the connection is closed (state %d)", stream_id,
-                   state);
-      return -1;
-    }
-    return 0;
+    return this->_openssl_stream_write_closed(stream_id, it->second) ? -1 : 0;
   }
 
   // Once the connection limit binds, room frees a little at a time as the peer acknowledges
