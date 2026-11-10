@@ -104,7 +104,7 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
         pytest.skip("regex_remap.so is not installed")
     ats.allow_errors(
         r'ERROR: \[regex_remap\] Bad regular expression result '
-        r'(?:-(?:46|47|53|63) .* from "\^/alpha/bravo/|-47 .* from "\^/match_limit/)'
+        r'(?:-46 .* from "\^/alpha/bravo/|-47 .* from "\^/match_limit/)'
     )
     ats.write_config_file("regex_remap.conf", "\n".join(REGEX_REMAP_ORIGINAL_RULES) + "\n")
     ats.write_config_file(

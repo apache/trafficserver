@@ -1793,7 +1793,8 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
     return false;
   }
 
-  // Overruns the 32KiB fallback stack, so matching the whole subject shows a larger one ran.
+  // On a JIT build this overruns the 32KiB fallback stack, so matching the whole subject
+  // shows the thread's own stack ran.
   RegexMatches deep_matches;
   if (re_deep.exec(deep, deep_matches, 0, opts) <= 0 || deep_matches[0].size() != deep.size()) {
     return false;
@@ -1819,7 +1820,7 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
 // stacks are distinct, but it does not prove that they are: one stack shared by all eight
 // corrupts a result only when two deep matches touch the same frames at once, which the
 // barrier invites but cannot force. With one JIT stack shared by every thread, the case
-// misses that more often when the barrier is taken out. An oracle would need a thread
+// misses the corruption more often when the barrier is taken out. An oracle would need a thread
 // paused inside a match, which the public API does not offer.
 // ThreadSanitizer does not see those writes either, because they come from sljit code.
 TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
