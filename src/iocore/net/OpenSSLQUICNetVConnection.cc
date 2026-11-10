@@ -771,8 +771,10 @@ QUICNetVConnection::_process_openssl_streams()
   this->_openssl_streams_with_data = streams_with_data;
 
   for (QUICStreamId stream_id : drained_ids) {
-    SSL_free(this->_openssl_streams[stream_id]);
-    this->_openssl_streams.erase(stream_id);
+    if (auto it = this->_openssl_streams.find(stream_id); it != this->_openssl_streams.end()) {
+      SSL_free(it->second);
+      this->_openssl_streams.erase(it);
+    }
     this->_openssl_draining_streams.erase(stream_id);
   }
 

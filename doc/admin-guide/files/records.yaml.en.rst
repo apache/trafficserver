@@ -6431,7 +6431,7 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.max_stream_send_buffer INT 1048576
    :units: bytes
 
-   The most response data, in bytes, that |TS| hands the OpenSSL QUIC stack for one
+   The most stream data, in bytes, that |TS| hands the OpenSSL QUIC stack for one
    stream at a time. The count covers data not yet sent and data sent but not yet
    acknowledged by the client. It applies to the OpenSSL QUIC backend only.
 
@@ -6446,7 +6446,7 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.max_connection_send_buffer INT 4194304
    :units: bytes
 
-   The most response data, in bytes, that |TS| hands the OpenSSL QUIC stack for all
+   The most stream data, in bytes, that |TS| hands the OpenSSL QUIC stack for all
    the streams of one connection together, counted the same way as
    :ts:cv:`proxy.config.quic.max_stream_send_buffer`. It applies to the OpenSSL QUIC
    backend only.
