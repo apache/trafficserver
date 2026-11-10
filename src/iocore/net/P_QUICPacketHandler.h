@@ -103,7 +103,7 @@ private:
 #if TS_HAS_OPENSSL_QUIC
   /** Opens the socket unless there is one, and starts the OpenSSL listener on it.
    *
-   * @param net_thread Index of the net thread this listener is for when each net thread has one, which makes the
+   * @param [in] net_thread Index of the net thread this listener is for when each net thread has one, which makes the
    *        socket share the port; -1 for a port's only listener.
    */
   Listen _start_listener(int net_thread = -1);

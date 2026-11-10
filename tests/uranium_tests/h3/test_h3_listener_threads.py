@@ -262,4 +262,4 @@ def test_h3_port_without_listener(ats_factory: ATSFactory, services: ServiceFact
     )
     diags = _ats.diags_log.read_text(errors="replace")
     assert "one OpenSSL QUIC listener serves" not in diags
-    assert not re.search(r"listening on \S+ on \d+ of \d+ net threads", diags)
+    assert not re.search(r"only \d+ of \d+ net threads accept HTTP/3 connections", diags)

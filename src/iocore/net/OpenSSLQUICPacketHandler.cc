@@ -522,8 +522,9 @@ QUICPacketHandlerIn::init_accept_per_thread_listeners()
     return;
   }
   if (acceptors.size() < static_cast<size_t>(net_threads._count)) {
-    Warning("HTTP/3 port %d: listening on %s on %zu of %d net threads", this->opt.local_port, addr, acceptors.size(),
-            net_threads._count);
+    Warning("HTTP/3 port %d: the OpenSSL QUIC listener for net thread %zu on %s failed to start (see the error above), so only "
+            "%zu of %d net threads accept HTTP/3 connections on this port",
+            this->opt.local_port, acceptors.size(), addr, acceptors.size(), net_threads._count);
   }
   Dbg(dbg_ctl_openssl_quic, "accepting OpenSSL QUIC connections on %zu of %d net threads", acceptors.size(), net_threads._count);
 
