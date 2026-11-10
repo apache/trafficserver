@@ -1,0 +1,9 @@
+REMAP {
+    if inbound.req.Authorization ~ /^Bearer / {
+        inbound.req.@Signed-In = "yes";
+    }
+}
+
+CACHEKEY {
+    cache.key.headers.exists("@Signed-In", "Signed-In");
+}

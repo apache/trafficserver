@@ -109,9 +109,20 @@ class Presence:
     condition: str  # format string for the header_rewrite condition that reads the name
     # Header names ignore case, so two spellings test one header. Cookie names don't.
     case_insensitive: bool = False
+    # Set for names that can be @ headers. An @ can't sit inside a header name, and
+    # its own prefix keeps @X's header apart from the one for a client header X.
+    internal_prefix: str | None = None
 
     def header(self, name: str) -> str:
+        if self.internal_prefix and name.startswith("@"):
+            return f"{self.internal_prefix}{name[1:]}"
         return f"{self.header_prefix}{name}"
+
+    def is_valid_name(self, name: str) -> bool:
+        """The name, less an internal name's @, has to be a token: it ends up in a header name."""
+        if self.internal_prefix and name.startswith("@"):
+            name = name[1:]
+        return _HEADER_NAME.fullmatch(name) is not None
 
     def cond_line(self, name: str) -> str:
         """Matches what `if inbound.req.X` or `if inbound.cookie.X` compiles to: an empty value counts as absent."""
@@ -120,7 +131,7 @@ class Presence:
 
 # yapf: disable
 PRESENCE_STATEMENTS: Final[dict[str, Presence]] = {
-    "cache.key.headers.exists": Presence("@Hrw4u-Header-", "%{{CLIENT-HEADER:{}}}", case_insensitive=True),
+    "cache.key.headers.exists": Presence("@Hrw4u-Header-", "%{{CLIENT-HEADER:{}}}", case_insensitive=True, internal_prefix="@Hrw4u-Internal-"),
     "cache.key.cookies.exists": Presence("@Hrw4u-Cookie-", "%{{COOKIE:{}}}"),
 }
 # yapf: enable
@@ -192,7 +203,7 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a comma: pass each name as its own argument")
         if problem := _mangles_flag(item):
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" {problem}")
-        if name in PRESENCE_STATEMENTS and not _HEADER_NAME.fullmatch(item):
+        if name in PRESENCE_STATEMENTS and not PRESENCE_STATEMENTS[name].is_valid_name(item):
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" is not a valid header name")
         items.append(item)
     return CacheKeyStatement(name, tuple(items), source)

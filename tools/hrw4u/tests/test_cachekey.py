@@ -282,7 +282,10 @@ class TestParseStatementErrors:
             ("cache.key.headers.exists", [], "takes at least one string argument"),
             ("cache.key.cookies.exists", ['"{inbound.req.X}"'], "static"),
             ("cache.key.headers.exists", ['"X:Y"'], "not a valid header name"),
-            ("cache.key.headers.exists", ['"@X"'], "not a valid header name"),
+            ("cache.key.headers.exists", ['"@"'], "not a valid header name"),
+            ("cache.key.headers.exists", ['"@@X"'], "not a valid header name"),
+            ("cache.key.headers.exists", ['"X@Y"'], "not a valid header name"),
+            ("cache.key.cookies.exists", ['"@x"'], "not a valid header name"),
             ("cache.key.cookies.exists", ['"a%b"'], "not a valid header name"),
             ("cache.key.cookies.exists", ['"a=b"'], "not a valid header name"),
         ],
@@ -308,6 +311,12 @@ class TestPresence:
         presence = PRESENCE_STATEMENTS[name]
         assert presence.header("X-Id") == header
         assert presence.cond_line("X-Id") == cond
+
+    def test_internal_header(self) -> None:
+        presence = PRESENCE_STATEMENTS["cache.key.headers.exists"]
+        assert parse_statement("cache.key.headers.exists", ['"@X-Id"']).items == ("@X-Id",)
+        assert presence.header("@X-Id") == "@Hrw4u-Internal-X-Id"
+        assert presence.cond_line("@X-Id") == 'cond %{CLIENT-HEADER:@X-Id} ="" [NOT]'
 
     def test_no_flag_of_its_own(self) -> None:
         assert not set(PRESENCE_STATEMENTS) & set(CACHEKEY_STATEMENTS)
