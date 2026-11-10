@@ -142,6 +142,32 @@ TEST_CASE("Header: the next hook sees the current headers", "[cripts][Headers]")
   CHECK(str(cripts::Client::Request::Get()["X-Foo"]) == "changed");
 }
 
+TEST_CASE("Header: client response status and fields", "[cripts][Headers]")
+{
+  Txn txn{REQUEST};
+
+  cripts_test::parse_response(txn.headers().client_response,
+                              "HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nX-Cache: miss\r\n\r\n");
+
+  auto context = txn.context();
+
+  context->state.hook = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
+
+  borrow resp = cripts::Client::Response::Get();
+
+  CHECK(integer(resp.status) == 503);
+  CHECK(str(resp["X-Cache"]) == "miss");
+
+  resp.status     = 200;
+  resp["X-Cache"] = "hit";
+
+  auto &core = txn.headers().client_response;
+
+  CHECK(static_cast<int>(core.status_get()) == 200);
+  CHECK(core.value_get("X-Cache"sv) == "hit");
+  CHECK(txn.sm().t_state.http_return_code == HTTPStatus::NONE);
+}
+
 TEST_CASE("Header: server response status", "[cripts][Headers]")
 {
   Txn txn{REQUEST};
