@@ -2,7 +2,7 @@
 
   traffic_ctl
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -21,6 +21,9 @@
   limitations under the License.
  */
 
+#include <cstdio>
+#include <exception>
+
 #include <iostream>
 #include <csignal>
 
@@ -29,6 +32,7 @@
 #include "tscore/ArgParser.h"
 #include "tscore/ink_assert.h"
 #include "tscore/signals.h"
+#include "tscore/Demangle.h"
 
 #include "CtrlCommands.h"
 #include "CacheShmCommand.h"
@@ -65,7 +69,7 @@ signal_register_handler(int signal_num, signal_handler_t handle_signal)
 
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   ts::ArgParser parser;
 
   std::unique_ptr<CtrlCommand> command;
@@ -173,8 +177,9 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--data", "-d", "Inline config data (@file, @- for stdin, or yaml string)", "", MORE_THAN_ZERO_ARG_N, "")
     .add_option("--directive", "-D", "Pass a reload directive to a config handler (format: config_key.directive_key=value)", "",
                 MORE_THAN_ZERO_ARG_N, "")
+    // No short form: -w is the global --watch.
     .add_option(
-      "--initial-wait", "-w",
+      "--initial-wait", "",
       "Initial wait before first poll, giving the server time to schedule all handlers (seconds). Accepts fractional values", "", 1,
       "2")
     .add_option("--timeout", "-T",
@@ -418,4 +423,7 @@ main([[maybe_unused]] int argc, const char **argv)
   }
 
   return App_Exit_Status_Code;
+} catch (...) {
+  fprintf(stderr, "traffic_ctl: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
+  return CTRL_EX_ERROR;
 }

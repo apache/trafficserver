@@ -87,6 +87,8 @@ urtest:
       client:
         process_config: {keys: "lua-debug-tags"}
       ats:
+        records_config:
+          proxy.config.diags.debug.tags: "foo|ts_lua"
         copy_to_config_dir: ["tags.lua"]
         remap_config:
           - "map http://test/ http://127.0.0.1/ @plugin=tslua.so @pparam={CONFIG_DIR}/tags.lua"
@@ -151,7 +153,7 @@ sessions:
           content: {data: "AAAA", size: 4}
         proxy-response:
           status: 200
-          content: {data: "AAAA", size: 4}
+          content: {data: "AAAA", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-remap-after-hook]]}}
         client-request:
@@ -167,8 +169,8 @@ sessions:
           status: 200
           headers:
             fields:
-              - [Remap-From-Host, www.example.com]
-              - [Hook-From-Host, "<nil>"]
+              - [Remap-From-Host, {value: www.example.com, as: equal}]
+              - [Hook-From-Host, {value: "<nil>", as: equal}]
 
       - all: {headers: {fields: [[uuid, lua-fetch-outer]]}}
         client-request:
@@ -184,8 +186,8 @@ sessions:
           status: 200
           headers:
             fields:
-              - [Sub-Status, "200"]
-              - [Sub-Body-Len, "5"]
+              - [Sub-Status, {value: "200", as: equal}]
+              - [Sub-Body-Len, {value: "5", as: equal}]
 
       - all: {headers: {fields: [[uuid, lua-fetch-inner]]}}
         client-request:
@@ -212,40 +214,40 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: "test1test2", size: 10}
+          content: {data: "test1test2", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-verified-v4]]}}
         client-request:
           method: GET
           url: /
           version: "1.1"
-          headers: {fields: [[Host, example.com], [X-Real-IP, 192.0.2.100]]}
+          headers: {fields: [[Host, example.com], [X-Real-IP, 192.0.2.100], [Connection, close]]}
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: "initial:nil;set:success;get:192.0.2.100:2;", size: 42}
+          content: {data: "initial:nil;set:success;get:192.0.2.100:2;", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-verified-v6]]}}
         client-request:
           method: GET
           url: /
           version: "1.1"
-          headers: {fields: [[Host, example.com], [X-Real-IP-V6, "2001:db8::1"]]}
+          headers: {fields: [[Host, example.com], [X-Real-IP-V6, "2001:db8::1"], [Connection, close]]}
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: "initial:nil;setv6:success;getv6:2001:db8::1:10;", size: 47}
+          content: {data: "initial:nil;setv6:success;getv6:2001:db8::1:10;", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-verified-invalid]]}}
         client-request:
           method: GET
           url: /
           version: "1.1"
-          headers: {fields: [[Host, example.com], [X-Invalid-IP, not.a.valid.ip]]}
+          headers: {fields: [[Host, example.com], [X-Invalid-IP, not.a.valid.ip], [Connection, close]]}
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: "initial:nil;invalid:rejected;", size: 29}
+          content: {data: "initial:nil;invalid:rejected;", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-verified-both]]}}
         client-request:
@@ -257,12 +259,13 @@ sessions:
               - [Host, example.com]
               - [X-Real-IP, 203.0.113.42]
               - [X-Real-IP-V6, "2001:db8::42"]
+              - [Connection, close]
         server-response: {status: 599}
         proxy-response:
           status: 200
           content:
             data: "initial:nil;set:success;get:203.0.113.42:2;setv6:success;getv6:2001:db8::42:10;"
-            size: 79
+            verify: {as: equal}
 
       - all: {headers: {fields: [[uuid, lua-debug-tags]]}}
         client-request:
@@ -273,7 +276,7 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: " default foo ts_lua", size: 19}
+          content: {data: " default foo ts_lua", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-states-stats]]}}
         client-request:
@@ -284,7 +287,7 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: "Hello, World", size: 12}
+          content: {data: "Hello, World", verify: {as: equal}}
 
   - protocol:
       stack: http
@@ -305,7 +308,7 @@ sessions:
           content: {data: "TEST", size: 4}
         proxy-response:
           status: 200
-          content: {data: "TEST", size: 4}
+          content: {data: "TEST", verify: {as: equal}}
 
   - protocol: {stack: http}
     transactions:
@@ -321,4 +324,4 @@ sessions:
           content: {data: "TEST", size: 4}
         proxy-response:
           status: 200
-          content: {data: "TEST", size: 4}
+          content: {data: "TEST", verify: {as: equal}}

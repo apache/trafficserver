@@ -15,6 +15,8 @@
 #  limitations under the License.
 
 from dataclasses import dataclass
+import errno
+import os
 import shlex
 
 import pytest
@@ -38,16 +40,21 @@ class TimeoutCase:
         return f"/{self.method.lower()}_{delay}_blocked"
 
 
+# ATS uses strerror() of the connect errno as the 502 reason phrase, and its
+# wording differs between C libraries.
+_CONNECT_TIMEOUT_STATUS = f"HTTP/1.1 502 {os.strerror(errno.ETIMEDOUT)}"
+
 CASES = (
-    TimeoutCase("POST", 3, 0, "HTTP/1.1 502 Connection timed out"),
+    TimeoutCase("POST", 3, 0, _CONNECT_TIMEOUT_STATUS),
     TimeoutCase("POST", 0, 6, "504 Connection Timed Out"),
-    TimeoutCase("GET", 3, 0, "HTTP/1.1 502 Connection timed out"),
+    TimeoutCase("GET", 3, 0, _CONNECT_TIMEOUT_STATUS),
     TimeoutCase("GET", 0, 6, "504 Connection Timed Out"),
 )
 
 
 def configure_origin(
-        context: ProceduralContext, services: ServiceFactory, *, _case: TimeoutCase, _origin_port: int) -> ProcessService:
+    context: ProceduralContext, services: ServiceFactory, *, _case: TimeoutCase, _origin_port: int
+) -> ProcessService:
     """Start the compiled TLS server with the requested delay points.
 
     :param _case: Test-local case configured by the test.
@@ -89,7 +96,8 @@ def configure_ats(ats_factory: ATSFactory, *, _case: TimeoutCase, _origin_port: 
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http|ssl",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map {_case.path} https://127.0.0.1:{_origin_port}")
     return ats
 

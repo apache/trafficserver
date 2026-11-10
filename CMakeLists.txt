@@ -158,6 +158,8 @@ option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_MALLOC_ALLOCATOR "Use direct malloc allocator over freelist allocator (default OFF)")
 option(ENABLE_ALLOCATOR_METRICS "Enable metrics for Allocators (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
+option(ENABLE_DOXYGEN "Build Doxygen API documentation (default OFF)")
+option(DOXYGEN_CHECK_ONLY "Have the doxygen target check documentation without generating HTML (default OFF)")
 option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
 if(ENABLE_DISK_FAILURE_TESTS)
   add_compile_definitions("AIO_FAULT_INJECTION")
@@ -714,6 +716,8 @@ check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_CLIENT_HELLO_CB)
 check_symbol_exists(SSL_CTX_set_select_certificate_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB)
+check_symbol_exists(SSL_CTX_set1_server_cert_type "openssl/ssl.h" HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE)
+check_symbol_exists(SSL_CREDENTIAL_new_raw_public_key "openssl/ssl.h" HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY)
 check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)
 check_symbol_exists(SSL_get_shared_curve "openssl/ssl.h" HAVE_SSL_GET_SHARED_CURVE)
 check_symbol_exists(SSL_get_curve_name "openssl/ssl.h" HAVE_SSL_GET_CURVE_NAME)
@@ -723,6 +727,20 @@ check_symbol_exists(SSL_CTX_get0_implemented_groups "openssl/ssl.h" HAVE_SSL_CTX
 check_symbol_exists(SSL_get_group_id "openssl/ssl.h" HAVE_SSL_GET_GROUP_ID)
 check_symbol_exists(SSL_get_group_name "openssl/ssl.h" HAVE_SSL_GET_GROUP_NAME)
 check_symbol_exists(SSL_group_to_name "openssl/ssl.h" HAVE_SSL_GROUP_TO_NAME)
+check_symbol_exists(SSL_get_sigalgs "openssl/ssl.h" HAVE_SSL_GET_SIGALGS)
+check_symbol_exists(SSL_get_shared_sigalgs "openssl/ssl.h" HAVE_SSL_GET_SHARED_SIGALGS)
+check_symbol_exists(SSL_get0_peer_verify_algorithms "openssl/ssl.h" HAVE_SSL_GET0_PEER_VERIFY_ALGORITHMS)
+check_symbol_exists(SSL_get_signature_algorithm_used "openssl/ssl.h" HAVE_SSL_GET_SIGNATURE_ALGORITHM_USED)
+check_cxx_source_compiles(
+  "#include <openssl/ssl.h>
+  int main() {
+    SSL *ssl = nullptr;
+    int digest = 0;
+    int type = 0;
+    return SSL_get_signature_nid(ssl, &digest) + SSL_get_signature_type_nid(ssl, &type);
+  }"
+  HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS
+)
 check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
 check_symbol_exists(SSL_read_early_data "openssl/ssl.h" HAVE_SSL_READ_EARLY_DATA)
 check_symbol_exists(SSL_write_early_data "openssl/ssl.h" HAVE_SSL_WRITE_EARLY_DATA)
@@ -751,6 +769,12 @@ if(HAVE_SSL_CTX_SET_CLIENT_HELLO_CB OR HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB)
   set(TS_USE_HELLO_CB TRUE)
 else()
   set(TS_USE_HELLO_CB FALSE)
+endif()
+
+if(HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE OR HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY)
+  set(TS_USE_RPK TRUE)
+else()
+  set(TS_USE_RPK FALSE)
 endif()
 
 if(HAVE_SSL_SET_MAX_EARLY_DATA
@@ -1021,6 +1045,9 @@ if(ENABLE_DOCS)
   )
   add_subdirectory(doc)
 endif()
+if(ENABLE_DOXYGEN)
+  include(cmake/Doxygen.cmake)
+endif()
 add_subdirectory(rc)
 
 if(ENABLE_BENCHMARKS)
@@ -1069,10 +1096,10 @@ add_custom_target(
 )
 
 add_custom_target(
-  yapf
-  ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
+  ruff
+  ${CMAKE_SOURCE_DIR}/tools/ruff.sh ${CMAKE_SOURCE_DIR}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "formatting python files"
+  COMMENT "formatting Python files"
   VERBATIM
 )
 
@@ -1095,7 +1122,7 @@ add_custom_target(
 # Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format yapf cmake-format whitespace-format
+  DEPENDS clang-format ruff cmake-format whitespace-format
   COMMENT "formatting all files"
 )
 

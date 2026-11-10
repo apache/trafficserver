@@ -78,13 +78,14 @@ def configure_ats(ats_factory: ATSFactory, *, _case: IncompleteHeaderCase, _orig
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False, disable_log_checks=_case.expect_timeout)
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http2",
             "proxy.config.http2.incomplete_header_timeout_in": _case.timeout,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
     return ats
 

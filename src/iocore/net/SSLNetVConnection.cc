@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1063,6 +1063,9 @@ SSLNetVConnection::free_thread(EThread *t)
   if (con.sock.is_ok()) {
     release_inbound_connection_tracking();
     Metrics::Gauge::decrement(net_rsb.connections_currently_open);
+    if (is_client_exempt()) {
+      Metrics::Gauge::decrement(net_rsb.per_client_connections_exempt_currently_open);
+    }
   }
   con.close();
 
@@ -1190,12 +1193,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       // Making the check here instead of later, so we only
       // do this setting immediately after we create the SSL object
       SNIConfig::scoped_config sniParam;
-      const char              *serverKey = this->options.sni_servername;
-      if (!serverKey) {
-        ats_ip_ntop(this->get_remote_addr(), buff, INET6_ADDRSTRLEN);
-        serverKey = buff;
-      }
-      auto           nps       = sniParam->get_property_config(serverKey);
+      const char              *sni = this->options.sni_servername;
+      auto nps = sniParam->get_property_config(next_hop_property_key(sni != nullptr ? sni : "", this->get_remote_addr(), buff));
       shared_SSL_CTX sharedCTX = nullptr;
       SSL_CTX       *clientCTX = nullptr;
       std::string    caCertPathStorage;
@@ -1242,13 +1241,7 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
         clientCTX = sharedCTX.get();
       }
 
-      if (options.verifyServerPolicy != YamlSNIConfig::Policy::UNSET) {
-        // Stay with conf-override version as the highest priority
-      } else if (nps && nps->verify_server_policy != YamlSNIConfig::Policy::UNSET) {
-        options.verifyServerPolicy = nps->verify_server_policy;
-      } else {
-        options.verifyServerPolicy = params->verifyServerPolicy;
-      }
+      options.verifyServerPolicy = resolve_verify_server_policy(options.verifyServerPolicy, nps, params);
 
       if (options.verifyServerProperties != YamlSNIConfig::Property::UNSET) {
         // Stay with conf-override version as the highest priority
@@ -1280,6 +1273,18 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       }
 
       SSL_set_verify(this->ssl, SSL_VERIFY_PEER, verify_callback);
+
+#if TS_USE_RPK
+      // Offer and/or pin RFC 7250 raw public keys when this next hop is configured for them.
+      // Both are advertised alongside X.509, so a next hop that doesn't (yet) support RPK -- a
+      // normal state during a rolling upgrade -- negotiates down to a certificate exchange.
+      if (nps && (nps->client_rpk_enabled || nps->server_rpk_ca)) {
+        if (!ssl_client_setup_rpk(this->ssl, nps->client_rpk_enabled, nps->server_rpk_ca, nps->server_rpk_ca_digest)) {
+          SSLErrorVC(this, "failed to configure raw public keys for the outbound connection");
+          return EVENT_ERROR;
+        }
+      }
+#endif
 
       // SNI
       ats_scoped_str &tlsext_host_name = this->options.sni_hostname ? this->options.sni_hostname : this->options.sni_servername;
@@ -1349,8 +1354,9 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   bool const in_client_hello =
     this->get_handshake_hook_state() == TLSEventSupport::SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO;
   // We only feed CLIENT_HELLO bytes into our temporary buffers. If we are past
-  // the CLIENT_HELLO, then no need to buffer.
-  if (in_client_hello && this->handShakeReader) {
+  // the CLIENT_HELLO, then no need to buffer. A delayed ClientHello hook resumes
+  // with the TLS library already holding the whole CLIENT_HELLO.
+  if (in_client_hello && !this->resuming_client_hello_hooks() && this->handShakeReader) {
     if (BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) { // No more data in the buffer
                                                           // Is this the first read?
 #if TS_USE_TLS_ASYNC
@@ -1449,8 +1455,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // the session lookup.
     if (SSL_session_reused(ssl)) {
       int verify_mode = SSL_get_verify_mode(ssl);
+      // A raw public key is a client's credential as much as a certificate is, and both TLS
+      // libraries restore it with the session.
+      bool peer_credential = this->peer_provided_cert();
+#if TS_USE_RPK
+      peer_credential = peer_credential || SSL_get0_peer_rpk(ssl) != nullptr;
+#endif
 
-      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !this->peer_provided_cert()) {
+      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !peer_credential) {
         static LogMessage log_msg{IS_THROTTLED};
         Metrics::Counter::increment(ssl_rsb.user_agent_resumed_cert_rejected);
         log_msg.warning(MakeSourceLocation(), "rejecting a resumed TLS session that does not satisfy verify_client");
@@ -1786,15 +1798,18 @@ SSLNetVConnection::reenable(int event)
     sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ERROR;
   }
 
+  // The ClientHello is only readable during the TLS library's ClientHello callback, which
+  // the resumed handshake calls again to run the remaining ClientHello hooks.
+  if (this->get_handshake_hook_state() == TLSEventSupport::SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE) {
+    this->resume_tls_event();
+    this->readReschedule(nh);
+    return;
+  }
+
   this->resume_tls_event();
 
-  // Reenabling from the handshake callback
-  //
-  // Originally, we would wait for the callback to go again to execute additional
-  // hooks, but since the callbacks are associated with the context and the context
-  // can be replaced by the plugin, it didn't seem reasonable to assume that the
-  // callback would be executed again.  So we walk through the rest of the hooks
-  // here in the reenable.
+  // The handshake callbacks of the other stages are associated with the context, which a plugin
+  // can replace, so the library may not call them again. Walk the rest of those hooks here.
   if (this->invoke_tls_event() == 2) {
     this->write.triggered = true;
     this->write.enabled   = true;
@@ -2028,6 +2043,10 @@ SSLNetVConnection::_beReadyToTransferData()
     if (this->write.vio.ntodo() <= 0) {
       this->readSignalDone(VC_EVENT_WRITE_COMPLETE, nh);
     }
+  } else if (ret == SSL_WAIT_FOR_HOOK && this->is_invoked_state()) {
+    // A plugin holds the handshake, and reenable() resumes it. Rescheduling
+    // here can put this VC straight back on the write ready list being
+    // drained, spinning the thread.
   } else {
     this->writeReschedule(nh);
   }
@@ -2228,6 +2247,10 @@ SSLNetVConnection::_migrateFromSSL()
   // Create new VC:
   UnixNetVConnection *newvc = static_cast<UnixNetVConnection *>(unix_netProcessor.allocate_vc(t));
   ink_assert(newvc != nullptr);
+  if (newvc != nullptr) {
+    // Before populate() gives the socket to the new VC, which updates the exempt gauge when it is freed.
+    newvc->set_client_exempt(is_client_exempt());
+  }
   if (newvc != nullptr && newvc->populate(hold_con, this->read.vio.cont, nullptr) != EVENT_DONE) {
     newvc->do_io_close();
     Dbg(dbg_ctl_ssl, "Failed to populate unixvc for allow-plain");
@@ -2271,6 +2294,18 @@ SSLNetVConnection::_get_tls_group() const
   } else {
     return SSLGetGroupName(ssl);
   }
+}
+
+std::string
+SSLNetVConnection::_get_tls_offered_signature_algorithms() const
+{
+  return SSLGetOfferedSignatureAlgorithms(ssl);
+}
+
+std::string
+SSLNetVConnection::_get_tls_negotiated_signature_algorithm() const
+{
+  return SSLGetNegotiatedSignatureAlgorithm(ssl);
 }
 
 int
@@ -2449,7 +2484,14 @@ SSLNetVConnection::_ssl_connect()
     if (SSL_session_reused(ssl)) {
       Metrics::Counter::increment(ssl_rsb.origin_session_reused_count);
       Dbg(dbg_ctl_ssl_origin_session_cache, "reused session to origin server");
+#if TS_USE_RPK
+      origin_rpk_record_resumed_peer_key(ssl);
+#endif
     } else {
+      // The origin can decline an offered session, so the resumption state and
+      // the cached curve and group recorded at lookup do not describe this
+      // full handshake.
+      TLSSessionResumptionSupport::clear();
       Dbg(dbg_ctl_ssl_origin_session_cache, "new session to origin server");
     }
     return SSL_ERROR_NONE;

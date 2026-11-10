@@ -29,7 +29,19 @@ sessions:
         - [Host, www.example.com]
         - [Connection, close]
     proxy-request:
-      <<: *request
+      method: GET
+      version: '1.1'
+      url:
+      - - path
+        - value: /one
+          as: equal
+      - - query
+        - as: absent
+      headers:
+        fields:
+        - - Host
+          - value: www.example.com
+            as: equal
     server-response: &response
       status: 200
       reason: OK
@@ -44,8 +56,19 @@ sessions:
       <<: *request
       url: /two
     proxy-request:
-      <<: *request
-      url: /two
+      method: GET
+      version: '1.1'
+      url:
+      - - path
+        - value: /two
+          as: equal
+      - - query
+        - as: absent
+      headers:
+        fields:
+        - - Host
+          - value: www.example.com
+            as: equal
     server-response:
       <<: *response
     proxy-response: {status: 200}
@@ -55,8 +78,19 @@ sessions:
       <<: *request
       url: /three
     proxy-request:
-      <<: *request
-      url: /three
+      method: GET
+      version: '1.1'
+      url:
+      - - path
+        - value: /three
+          as: equal
+      - - query
+        - as: absent
+      headers:
+        fields:
+        - - Host
+          - value: www.example.com
+            as: equal
     server-response:
       <<: *response
       headers:

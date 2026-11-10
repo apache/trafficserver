@@ -34,14 +34,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "POST / HTTP/1.1\r\nHost: localhost\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n",
-            "body": "OK"
-        },
+        {"headers": "POST / HTTP/1.1\r\nHost: localhost\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n", "body": "OK"},
     )
     return origin
 
@@ -56,7 +50,7 @@ def configure_ats(ats_factory: ATSFactory, *, _mode: str, _origin: OriginServer 
     :param _trusted: Test-local trusted configured by the test.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True)
+    ats = ats_factory.create("ts", enable_tls=True, disable_log_checks=True)
     if not ats.plugin_exists("abuse_shield.so"):
         pytest.skip("abuse_shield.so is required")
     ats.add_default_ssl_files()

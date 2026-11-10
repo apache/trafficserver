@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -34,6 +34,13 @@ const static int XPACK_ERROR_SIZE_EXCEEDED_ERROR = -2;
 int64_t xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value, uint8_t n);
 int64_t xpack_decode_integer(uint64_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n);
 int64_t xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len, uint8_t n = 7);
+
+/** Decode a string literal ([RFC 7541] 5.2) into @a arena.
+ *
+ * @a max_string_len bounds the encoded length, so a huffman-coded string may decode to more than that.
+ * @a str and @a str_length are written only on success, and the caller releases @a str with Arena::str_free(). A failure
+ * writes neither and leaves the caller nothing to release.
+ */
 int64_t xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end,
                             uint64_t max_string_len, uint8_t n = 7);
 
@@ -210,7 +217,7 @@ public:
                                  size_t *value_len) const;
   const XpackLookupResult lookup(const char *name, size_t name_len, const char *value, size_t value_len) const;
   const XpackLookupResult lookup(const std::string_view name, const std::string_view value) const;
-  const XpackLookupResult lookup_relative(uint32_t relative_index, const char **name, size_t *name_len, const char **value,
+  const XpackLookupResult lookup_relative(uint64_t relative_index, const char **name, size_t *name_len, const char **value,
                                           size_t *value_len) const;
   const XpackLookupResult lookup_relative(const char *name, size_t name_len, const char *value, size_t value_len) const;
   const XpackLookupResult lookup_relative(const std::string_view name, const std::string_view value) const;

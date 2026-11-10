@@ -49,15 +49,12 @@ class AbuseShieldHarness:
 
         origin = self._services.origin("origin")
         origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n", "body": ""},
             {
-                "headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\nServer: origin\r\nCache-Control: max-age=300\r\n"
-                        "Connection: close\r\nContent-Length: 2\r\n\r\n"),
+                "headers": (
+                    "HTTP/1.1 200 OK\r\nServer: origin\r\nCache-Control: max-age=300\r\n"
+                    "Connection: close\r\nContent-Length: 2\r\n\r\n"
+                ),
                 "body": "OK",
             },
         )
@@ -79,7 +76,7 @@ class AbuseShieldHarness:
         :param jax: Whether to load and export JA3 fingerprints.
         """
 
-        ats = self._ats_factory.create("ts", enable_tls=tls, enable_cache=True)
+        ats = self._ats_factory.create("ts", enable_tls=tls, enable_cache=True, disable_log_checks=True)
         if not ats.plugin_exists("abuse_shield.so"):
             pytest.skip("abuse_shield.so is required")
         if jax and not ats.plugin_exists("jax_fingerprint.so"):
@@ -90,12 +87,17 @@ class AbuseShieldHarness:
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "abuse_shield|jax_fingerprint" if jax else "abuse_shield",
-            })
+            }
+        )
         if origin is not None:
             ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}/")
         ats.write_config_file("abuse_shield.yaml", config)
         if jax:
-            ats.plugin_config.add_line("jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints")
+            ats.write_config_file(
+                "jax_fingerprint.yaml",
+                "jax_fingerprint:\n  fingerprints:\n    - method: JA3\n      export: abuse_shield.fingerprints\n",
+            )
+            ats.plugin_config.add_line("jax_fingerprint.so jax_fingerprint.yaml")
         ats.plugin_config.add_line("abuse_shield.so abuse_shield.yaml")
         return ats
 
@@ -198,7 +200,8 @@ def test_abuse_shield_messages(ats_factory: ATSFactory, services: ServiceFactory
         "rules:\n"
         "  - {name: test_h2_error_rule, filter: {max_h2_error_rate: 5}, action: [log, block]}\n"
         "  - {name: test_request_rule, filter: {max_req_rate: 10}, action: [log, block, close]}\n"
-        "enabled: true\n")
+        "enabled: true\n"
+    )
     ats = harness.ats(config)
     ats.write_config_file("abuse_shield_trusted.yaml", trusted)
     config_path = ats.config_directory / "abuse_shield.yaml"
@@ -256,10 +259,10 @@ def test_abuse_shield_request_rates(ats_factory: ATSFactory, services: ServiceFa
 
 
 def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """Idle TLS connections trigger blocking before ClientHello.
+    """A TLS connection burst triggers blocking before ServerHello.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
-    :param services: Factory for the idle-connection helper.
+    :param services: Factory for the TLS connection flood helper.
     :param curl: Curl command runner.
     """
 
@@ -267,12 +270,21 @@ def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: Service
     ats = harness.ats(
         "global:\n  ip_tracking: {slots: 1000}\n  blocking: {duration_seconds: 60}\n"
         "rules:\n  - {name: conn_rate_flood, filter: {max_conn_rate: 5}, action: [log, block]}\n"
-        "enabled: true\n")
+        "enabled: true\n"
+    )
     harness.start(ats)
-    harness.helper("idle-client", "idle_connections.py", "--port", str(ats.https_port), "--count", "30")
+    harness.helper("flood-client", "tls_connection_flood.py", "--port", str(ats.https_port), "--count", "30")
     wait_for_file_lines(ats.diags_log, r'Rule "conn_rate_flood" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
+    ats.stop()
+    diagnostics = ats.diags_log.read_text(errors="replace")
+    # The log action deliberately emits an ERROR for this rule match.
+    assert not re.search(
+        r'ERROR:(?! \[abuse_shield\] Rule "conn_rate_flood" matched for IP=127\.0\.0\.1 actions=\[log,block\] )'
+        r"|FATAL:|Unrecognized configuration value",
+        diagnostics,
+    ), diagnostics
 
 
 def test_abuse_shield_rate_limited_ips(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -388,7 +400,8 @@ def test_abuse_shield_block_expiration(ats_factory: ATSFactory, services: Servic
     assert before.returncode == 0, before.output
     for _ in range(2):
         recovered = curl.run(
-            f'--insecure --silent --output /dev/null --write-out "%{{http_code}}" https://127.0.0.1:{ats.https_port}/')
+            f'--insecure --silent --output /dev/null --write-out "%{{http_code}}" https://127.0.0.1:{ats.https_port}/'
+        )
         assert recovered.returncode == 0, recovered.output
         assert recovered.stdout == "200", recovered.output
     after = ats.traffic_ctl("metric", "get", "abuse_shield.actions.blocked")
@@ -415,7 +428,10 @@ def test_abuse_shield_combined_rule(ats_factory: ATSFactory, services: ServiceFa
     origin.start()
     harness.start(ats)
     flood = ats.run_shell(f"seq 1 30 | xargs -P 30 -I {{}} curl --max-time 5 -k -s https://127.0.0.1:{ats.https_port}/")
-    assert flood.returncode == 123, flood.output
+    # Every flood handshake can pass VCONN_START before the rule trips, so none of them need be blocked.
+    assert flood.returncode in (0, 123), flood.output
+    blocked = curl.run(f"--insecure --silent --output /dev/null --max-time 2 https://127.0.0.1:{ats.https_port}/")
+    assert blocked.returncode in (28, 35, 52, 55, 56), blocked.output
     wait_for_file_lines(ats.diags_log, r'Rule "combined_abuse" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")

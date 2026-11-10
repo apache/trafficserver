@@ -66,34 +66,29 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "  - ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
             '    dest_ip: "*"',
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "quic|http3",
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "h3_access",
-                                "format":
-                                    (
-                                        "c_alpn=%<cqssa> client_version=%<cqpv> c_ssl_version=%<cqssv> "
-                                        "c_method=%<cqhm> c_url=%<cquuc>"),
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "h3_access",
-                        "format": "h3_access"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "h3_access",
+                        "format": ("c_alpn=%<cqssa> client_version=%<cqpv> c_ssl_version=%<cqssv> c_method=%<cqhm> c_url=%<cquuc>"),
+                    }
+                ],
+                "logs": [{"filename": "h3_access", "format": "h3_access"}],
+            }
+        }
+    )
     return ats
 
 
@@ -121,14 +116,15 @@ def test_h3_curl(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) 
             f"--silent --show-error --fail --ipv4 --http3-only --insecure --resolve "
             f"'foo.com:{_ats.https_port}:127.0.0.1' --output '{str(body)}' --write-out "
             f"'\nhttp_version=%{{http_version}}\nsize_download=%{{size_download}}\n' "
-            f"'https://foo.com:{_ats.https_port}/h3-curl'"),
+            f"'https://foo.com:{_ats.https_port}/h3-curl'"
+        ),
         timeout=30,
     )
     assert result.returncode == 0, result.output
     assert f"size_download={len(H3_CURL__response_body)}" in result.stdout
     assert "http_version=3" in result.stdout
     assert body.read_text() == H3_CURL__response_body
-    content = wait_for_file_lines(_ats.log_directory / "h3_access.log", r"c_alpn=h3", 1, timeout=10)
+    content = wait_for_file_lines(_ats.log_directory / "h3_access.log", r"c_alpn=h3", 1)
     assert re.search(
         r"c_alpn=h3 client_version=http/3 c_ssl_version=[^ ]+ c_method=GET "
         r"c_url=https://foo\.com:[0-9]+/h3-curl",

@@ -16,9 +16,9 @@
 """Verify regex_remap matching and compiled-rule generation sharing."""
 
 import json
+import shlex
 import os
 import re
-import shlex
 import time
 from typing import Any
 
@@ -71,10 +71,10 @@ def configure_server(*, _services: ServiceFactory, _transactions: list[dict[str,
         origin.add_response(
             {"headers": f"GET / HTTP/1.1\r\nHost: example.one\r\nuuid: {uuid}\r\n\r\n"},
             {
-                "headers":
-                    (
-                        f"HTTP/1.1 {response['status']} {response['reason']}\r\n"
-                        f"uuid: {response_uuid}\r\nContent-Length: 6128\r\nConnection: close\r\n\r\n"),
+                "headers": (
+                    f"HTTP/1.1 {response['status']} {response['reason']}\r\n"
+                    f"uuid: {response_uuid}\r\nContent-Length: 6128\r\nConnection: close\r\n\r\n"
+                ),
                 "body": "x" * 6128,
             },
         )
@@ -101,23 +101,27 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
     ats = ats_factory.create("ats", enable_cache=False)
     if not ats.plugin_exists("regex_remap.so"):
         pytest.skip("regex_remap.so is not installed")
+    ats.allow_errors(
+        r'ERROR: \[regex_remap\] Bad regular expression result '
+        r'(?:-(?:46|47|53|63) .* from "\^/alpha/bravo/|-47 .* from "\^/match_limit/)'
+    )
     ats.write_config_file("regex_remap.conf", "\n".join(REGEX_REMAP_ORIGINAL_RULES) + "\n")
     ats.write_config_file(
         "regex_remap2.conf",
         (
             "# second regex_remap configuration\n"
             "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ "
-            f"http://127.0.0.1:{_origin.port}\n"),
+            f"http://127.0.0.1:{_origin.port}\n"
+        ),
     )
     ats.remap_config.add_lines(
         (
-            f"map http://example.one/ http://127.0.0.1:{_origin.port}/ "
-            "@plugin=regex_remap.so @pparam=regex_remap.conf",
+            f"map http://example.one/ http://127.0.0.1:{_origin.port}/ @plugin=regex_remap.so @pparam=regex_remap.conf",
             f"map http://example.two/ http://127.0.0.1:{_origin.port}/ "
             "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine",
-            "map http://example.three/ http://wrong.com/ "
-            "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine",
-        ))
+            "map http://example.three/ http://wrong.com/ @plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine",
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -128,7 +132,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             # to match: http_parser_parse_req asserts on a request line of 65,535 bytes or
             # more before it can reject one, so that is the real ceiling.
             "proxy.config.http.request_header_max_size": 131072,
-        })
+        }
+    )
     return ats
 
 
@@ -177,16 +182,14 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
     assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output
     output = _request(f"http://example.three{path}", "smoke", _ats=_ats, _curl=_curl)
     assert "HTTP/1.1 200 OK" in output and "Content-Length: 6128" in output
-    # A 3 KB query backtracks once per character. That exhausts the 32 KiB stack PCRE2
-    # falls back to when a match context carries none, which would skip the rule. The
-    # plugin's context resolves a 1 MiB per thread stack, so the rule matches and the
-    # redirect fires. Without a JIT the interpreter matches it on the heap, so this
-    # holds either way.
+    # The shared 1 MiB JIT stack lets the historical 3 KB URL match.
     output = _request(
-        long_match["client-request"]["url"], long_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
-    assert "HTTP/1.1 301" in output and "Location: https://redirect.com/" in output, output
+        long_match["client-request"]["url"], long_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl
+    )
+    assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output
     output = _request(
-        short_match["client-request"]["url"], short_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl)
+        short_match["client-request"]["url"], short_match["client-request"]["headers"]["fields"][1][1], _ats=_ats, _curl=_curl
+    )
     assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
     wait_for_file_lines(_ats.diags_log, r"ERROR: .regex_remap. Bad regular expression result -47", 1)
     if _ats.has_feature("TS_HAS_PCRE2_JIT"):
@@ -275,3 +278,8 @@ def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     run_matching_checks(_ats=_ats, _curl=_curl, _transactions=_transactions)
     reload_rules(_ats=_ats)
     run_generation_checks(_ats=_ats, _curl=_curl)
+    _ats.stop()
+    log = _ats.diags_log.read_text(errors="replace")
+    expected_errors = r'\[regex_remap\] Bad regular expression result (?:-47 .* from "\^/match_limit/|-(?:46|47|53|63) .* from "\^/alpha/bravo/)'
+    assert not re.search(rf"ERROR: (?!{expected_errors})", log), log
+    assert not re.search(r"FATAL:|Unrecognized configuration value", log), log

@@ -316,6 +316,23 @@ TEST_CASE("Cache-Control Malformed Cooking", "[proxy][hdrutils]")
     // Empty and missing values
     {"empty max-age value alone",
      "Cache-Control: max-age=\r\n\r\n"},
+
+    // Malformed revalidation directives are not kept, since they would mark the response cacheable.
+    {"must-revalidate with a semicolon separator",
+     "Cache-Control: must-revalidate; max-age=0\r\n\r\n"},
+
+    {"proxy-revalidate with a semicolon separator",
+     "Cache-Control: proxy-revalidate; max-age=0\r\n\r\n"},
+
+    {"restrictive directive name inside a longer token",
+     "Cache-Control: max-age=600; x-no-store-private\r\n\r\n"},
+
+    {"unknown directive followed by a semicolon and max-age",
+     "Cache-Control: x-ext; max-age=600\r\n\r\n"},
+
+    // A well-formed extension argument that names a restrictive directive is not that directive.
+    {"extension directive whose argument is private",
+     "Cache-Control: x-custom=private\r\n\r\n"},
   };
   // clang-format on
 
@@ -529,6 +546,98 @@ TEST_CASE("Cache-Control Valid Cooking", "[proxy][hdrutils]")
      "Cache-Control: max-age=-1\r\n\r\n",
      MIME_COOKED_MASK_CC_MAX_AGE,
      -1, 0, 0, 0},
+
+    // Qualified directives (RFC 9111, Sections 5.2.2.4 and 5.2.2.7)
+    {"qualified private with max-age",
+     "Cache-Control: private=\"X-User-Token\", max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"qualified private with a field-name list",
+     "Cache-Control: max-age=600, private=\"X-User-Token, Set-Cookie\"\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"qualified private in token form",
+     "Cache-Control: private=X-User-Token, max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"qualified no-cache with s-maxage",
+     "Cache-Control: no-cache=\"Set-Cookie\", s-maxage=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_S_MAXAGE,
+     0, 600, 0, 0},
+
+    {"qualified no-cache with an escaped quote",
+     "Cache-Control: no-cache=\"a\\\"b\", max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    // Malformed restrictive directives are kept rather than ignored.
+    {"private with a semicolon separator",
+     "Cache-Control: private; max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
+
+    {"no-store with trailing garbage",
+     "Cache-Control: no-store garbage, max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"no-cache with a space before the equals sign",
+     "Cache-Control: no-cache =\"Set-Cookie\", max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"private after a semicolon",
+     "Cache-Control: max-age=600; private\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
+
+    {"no-store after a semicolon",
+     "Cache-Control: s-maxage=60; no-store\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_STORE,
+     0, 0, 0, 0},
+
+    {"private after public with a semicolon",
+     "Cache-Control: public; private\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
+
+    {"no-cache after a malformed max-age",
+     "Cache-Control: max-age= 600 no-cache, s-maxage=60\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_S_MAXAGE,
+     0, 60, 0, 0},
+
+    {"private after an unknown directive with a value",
+     "Cache-Control: stale-while-revalidate=60; private\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
+
+    {"private after an unknown directive",
+     "Cache-Control: immutable; private\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
+
+    {"no-store after an extension directive",
+     "Cache-Control: x-ext; no-store\r\n\r\n",
+     MIME_COOKED_MASK_CC_NO_STORE,
+     0, 0, 0, 0},
+
+    {"private after an extension directive, then max-age",
+     "Cache-Control: x-custom; private, max-age=600\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE | MIME_COOKED_MASK_CC_MAX_AGE,
+     600, 0, 0, 0},
+
+    {"private after a quoted extension argument",
+     "Cache-Control: x-ext=\"a, b\"; private\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
+
+    {"private after a leading semicolon",
+     "Cache-Control: ; private\r\n\r\n",
+     MIME_COOKED_MASK_CC_PRIVATE,
+     0, 0, 0, 0},
   };
   // clang-format on
 

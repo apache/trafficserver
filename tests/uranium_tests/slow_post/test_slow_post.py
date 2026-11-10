@@ -34,26 +34,15 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n", "body": ""},
     )
     origin.add_response(
         {
-            "headers":
-                ("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n"
-                 "Host: www.example.com\r\nConnection: keep-alive\r\n\r\n"),
+            "headers": ("POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nHost: www.example.com\r\nConnection: keep-alive\r\n\r\n"),
             "body": "a\r\na\r\na\r\n\r\n",
         },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -75,7 +64,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http.per_server.connection.max": SLOW_POST__origin_connection_limit,
-        })
+        }
+    )
     return ats
 
 

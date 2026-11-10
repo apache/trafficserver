@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -47,6 +47,7 @@
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
+#include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/TLSTunnelSupport.h"
 
 #include "tscore/History.h"
@@ -215,6 +216,8 @@ public:
   HttpCacheSM     &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
   std::string_view get_outbound_sni() const;
   std::string_view get_outbound_cert() const;
+  /// @return the transaction's own proxy.config.ssl.client.verify.server.policy, or UNSET if it sets none.
+  YamlSNIConfig::Policy get_outbound_verify_server_policy() const;
   /// Return the name used by outbound TLS certificate name verification. This
   /// usually matches @c get_outbound_sni() above, but adds fallbacks for reuse
   /// checks that run after the original NetVCOptions are no longer being
@@ -295,6 +298,14 @@ public:
 
   bool is_private() const;
   bool is_redirect_required();
+
+  /// Whether the client request body goes to the origin after the request header,
+  /// through the request body tunnel. True when the client's request carries a
+  /// body, even one that turns out empty: for HTTP/1 a positive Content-Length or
+  /// chunked encoding, for HTTP/2 a stream the client did not end on HEADERS.
+  /// False when a plugin sets the origin request body, which replaces the
+  /// client's and goes out with the header, and for TRACE.
+  bool forwards_client_request_body() const;
 
   /// Get the protocol stack for the inbound (client, user agent) connection.
   /// @arg result [out] Array to store the results
@@ -560,12 +571,15 @@ public:
   // origin's parser is mid-message and is still waiting for body bytes, so the connection
   // cannot carry another request.
   //
-  // The set side uses the same has_request_body() predicate that governs tunnel setup, so
-  // the two cannot diverge.  attach_server_session() appends its chunked Transfer-Encoding
-  // under that same predicate, so an outbound-only body cannot arise there.  The one
-  // outbound body not covered is the plugin-supplied one behind api_server_request_body_set,
-  // and that needs no debt: it is written into the same buffer as the request head, so
-  // WRITE_COMPLETE already means it went out in full.
+  // The flag is set under forwards_client_request_body(), the predicate that starts the
+  // body tunnel once the request head is written.  Other paths test has_request_body()
+  // without its TRACE and plugin-body checks, among them the body tunnel started after a
+  // 100 Continue and the chunked Transfer-Encoding that attach_server_session() appends.
+  // For a TRACE or a plugin-supplied body those can leave the origin expecting body bytes
+  // while this flag is clear, and nothing then keeps the connection out of the pool.  The
+  // plugin-supplied body behind api_server_request_body_set needs no debt of its own: it is
+  // written into the same buffer as the request head, so WRITE_COMPLETE already means it
+  // went out in full.
   bool server_owed_request_body = false;
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls

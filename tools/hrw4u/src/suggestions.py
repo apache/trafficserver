@@ -24,7 +24,6 @@ import hrw4u.tables as tables
 
 
 class SuggestionEngine:
-
     def __init__(self, similarity_threshold: float = 70.0, max_suggestions: int = 2):
         self.similarity_threshold = similarity_threshold
         self.max_suggestions = max_suggestions
@@ -34,6 +33,7 @@ class SuggestionEngine:
 
         try:
             from hrw4u.lsp.documentation import LSP_NAMESPACE_DOCUMENTATION, LSP_SUB_NAMESPACE_DOCUMENTATION
+
             symbols.update(LSP_NAMESPACE_DOCUMENTATION.keys())
             symbols.update(LSP_SUB_NAMESPACE_DOCUMENTATION.keys())
         except ImportError:
@@ -73,10 +73,11 @@ class SuggestionEngine:
             'assignment': self._assignment_symbols,
             'condition': self._condition_symbols,
             'function': self._function_symbols,
-            'statement_function': self._statement_function_symbols
+            'statement_function': self._statement_function_symbols,
         }.get(
             context_type,
-            self._assignment_symbols | self._condition_symbols | self._function_symbols | self._statement_function_symbols)
+            self._assignment_symbols | self._condition_symbols | self._function_symbols | self._statement_function_symbols,
+        )
 
         if section and context_type in ['assignment', 'condition']:
             return {s for s in symbols if self._is_symbol_valid_in_section(s, section, context_type)}
@@ -95,27 +96,18 @@ class SuggestionEngine:
         return True
 
     def get_suggestions(
-            self,
-            input_symbol: str,
-            context_type: str,
-            section: SectionType | None = None,
-            declared_vars: list[str] | None = None) -> list[str]:
+        self, input_symbol: str, context_type: str, section: SectionType | None = None, declared_vars: list[str] | None = None
+    ) -> list[str]:
         return [match[0] for match in self._get_suggestions_with_scores(input_symbol, context_type, section, declared_vars)]
 
     def get_detailed_suggestions(
-            self,
-            input_symbol: str,
-            context_type: str,
-            section: SectionType | None = None,
-            declared_vars: list[str] | None = None) -> list[tuple[str, float]]:
+        self, input_symbol: str, context_type: str, section: SectionType | None = None, declared_vars: list[str] | None = None
+    ) -> list[tuple[str, float]]:
         return self._get_suggestions_with_scores(input_symbol, context_type, section, declared_vars)
 
     def _get_suggestions_with_scores(
-            self,
-            input_symbol: str,
-            context_type: str,
-            section: SectionType | None = None,
-            declared_vars: list[str] | None = None) -> list[tuple[str, float]]:
+        self, input_symbol: str, context_type: str, section: SectionType | None = None, declared_vars: list[str] | None = None
+    ) -> list[tuple[str, float]]:
         candidates = list(self._get_contextual_symbols(context_type, section))
 
         if declared_vars and context_type == 'condition':
@@ -124,10 +116,12 @@ class SuggestionEngine:
             return []
 
         matches = process.extract(
-            input_symbol.lower(), [c.lower() for c in candidates],
+            input_symbol.lower(),
+            [c.lower() for c in candidates],
             scorer=fuzz.ratio,
             limit=self.max_suggestions,
-            score_cutoff=self.similarity_threshold)
+            score_cutoff=self.similarity_threshold,
+        )
 
         candidate_map = {c.lower(): c for c in candidates}
         results = [(candidate_map[match[0]], match[1]) for match in matches]
@@ -147,11 +141,11 @@ class SuggestionEngine:
             candidate_parts = candidate_base.split('.')
 
             if len(candidate_parts) <= len(input_parts):
-                input_prefix = '.'.join(input_parts[:len(candidate_parts)])
+                input_prefix = '.'.join(input_parts[: len(candidate_parts)])
                 similarity = fuzz.ratio(input_prefix.lower(), candidate_base.lower())
 
                 if similarity >= self.similarity_threshold:
                     best_matches.append((candidate_base, similarity))
 
         best_matches.sort(key=lambda x: x[1], reverse=True)
-        return [match[0] for match in best_matches[:self.max_suggestions]]
+        return [match[0] for match in best_matches[: self.max_suggestions]]

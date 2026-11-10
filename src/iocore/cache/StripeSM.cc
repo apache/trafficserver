@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -277,6 +277,10 @@ StripeSM::handle_dir_read(int event, void *data)
     Note("clearing cache directory '%s'", hash_text.get());
     clear_dir_aio();
     return EVENT_DONE;
+  }
+  // A directory torn by a crash can pass the magic and sync-serial checks yet hold links recovery cannot clean safely.
+  if (int cleared = directory.clear_corrupt_segments(); cleared > 0) {
+    Warning("cleared %d of %d cache directory segments with corrupt links on '%s'", cleared, directory.segments, hash_text.get());
   }
   CHECK_DIR(this);
 
@@ -1439,5 +1443,8 @@ StripeSM::close_write(CacheVC *cont)
 void
 StripeSM::recompute_hit_evacuate_window()
 {
-  this->hit_evacuate_window = (this->data_blocks * cache_config_hit_evacuate_percent) / 100;
+  // data_blocks counts STORE_BLOCK_SIZE blocks; directory offsets count CACHE_BLOCK_SIZE blocks.
+  off_t data_cblocks = this->data_blocks * (STORE_BLOCK_SIZE / CACHE_BLOCK_SIZE);
+
+  this->hit_evacuate_window = (data_cblocks * cache_config_hit_evacuate_percent) / 100;
 }

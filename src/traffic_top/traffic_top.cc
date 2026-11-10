@@ -2,7 +2,7 @@
 
     Main file for the traffic_top application.
 
-    @section license License
+    @par License
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -20,6 +20,8 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 */
+
+#include <cstdio>
 
 #include "tscore/ink_config.h"
 #include <map>
@@ -57,6 +59,7 @@
 #include "tscore/ink_args.h"
 #include "tscore/Version.h"
 #include "tscore/runroot.h"
+#include "tscore/Demangle.h"
 
 using namespace std;
 
@@ -372,13 +375,30 @@ main_stats_page(Stats &stats)
   makeTable(62, 17, server2, stats);
 }
 
-enum class HostStatus { UP, DOWN };
+enum class TopHostStatus { UP, DOWN };
 char reconnecting_animation[4] = {'|', '/', '-', '\\'};
 
 //----------------------------------------------------------------------------
+namespace
+{
+/// Whether initscr() has run, so an exception handler knows if the terminal
+/// needs putting back. X/Open Curses does not define endwin() before a
+/// successful initscr(); ncurses returns ERR, but do not rely on that.
+bool curses_started = false;
+
+void
+restore_terminal()
+{
+  if (curses_started) {
+    endwin();
+    curses_started = false;
+  }
+}
+} // namespace
+
 int
 main([[maybe_unused]] int argc, const char **argv)
-{
+try {
   static const char USAGE[] = "Usage: traffic_top [-s seconds]";
 
   int   sleep_time = 6; // In seconds
@@ -403,15 +423,16 @@ main([[maybe_unused]] int argc, const char **argv)
     usage(argument_descriptions, countof(argument_descriptions), USAGE);
   }
 
-  HostStatus host_status{HostStatus::DOWN};
-  Stats      stats;
+  TopHostStatus host_status{TopHostStatus::DOWN};
+  Stats         stats;
   if (stats.getStats()) {
-    host_status = HostStatus::UP;
+    host_status = TopHostStatus::UP;
   }
 
   const string &host = stats.getHost();
 
   initscr();
+  curses_started = true;
   curs_set(0);
 
   start_color(); /* Start color functionality	*/
@@ -446,7 +467,7 @@ main([[maybe_unused]] int argc, const char **argv)
     stats.getStat("version", version);
 
     std::string hh;
-    if (host_status == HostStatus::DOWN) {
+    if (host_status == TopHostStatus::DOWN) {
       hh.append("connecting ");
       hh.append(1, reconnecting_animation[animation_index % 4]);
       ++animation_index;
@@ -486,12 +507,16 @@ main([[maybe_unused]] int argc, const char **argv)
     case 'a':
       absolute = stats.toggleAbsolute();
     }
-    host_status = !stats.getStats() ? HostStatus::DOWN : HostStatus::UP;
+    host_status = !stats.getStats() ? TopHostStatus::DOWN : TopHostStatus::UP;
     clear();
   }
 
 quit:
-  endwin();
+  restore_terminal();
 
   return 0;
+} catch (...) {
+  restore_terminal();
+  fprintf(stderr, "traffic_top: terminating on an unhandled %s\n", ts::describe_current_exception().c_str());
+  return 1;
 }

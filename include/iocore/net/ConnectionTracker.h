@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -214,6 +214,7 @@ public:
      * @param min_keep_alive The minimum number of origin keep alive connections to maintain.
      * @param metric_enabled Whether the transaction creating this group wants per server metrics.
      * @param metric_aggregate What that transaction wants published, see @c MetricAggregate.
+     * @param[in] direction Whether the connection group is inbound or outbound.
      */
     Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive, int metric_enabled = 0,
           MetricAggregate metric_aggregate = AGGREGATE_NONE);
@@ -263,15 +264,9 @@ public:
     std::shared_ptr<Group> _g;                 ///< Active group for this transaction.
     bool                   _reserved_p{false}; ///< Set if a connection slot has been reserved.
     bool                   _queued_p{false};   ///< Set if the connection is delayed / queued.
-    bool                   _exempt_p{false};   ///< Set if the peer is in the connection exempt list.
 
     /// Check if tracking is active.
     bool is_active() const;
-
-    /// Whether this group is in the connection max exempt list.
-    /// @return @c true if this group should not be blocked due to
-    /// proxy.config.net.per_client.max_connections_in.
-    bool is_exempt() const;
 
     /// Reserve a connection.
     /// @return the number of tracked connections.
@@ -299,7 +294,7 @@ public:
     /** Generate a Warning that a connection was blocked.
      *
      * @param max_connections The maximum configured number of connections for the group.
-     * @param sm_id ID to display in Warning.
+     * @param[in] id ID to display in Warning.
      * @param count Count value to display in Warning.
      * @param addr IP address of the upstream.
      * @param debug_tag Tag to use for the debug message. If no debug message should be generated set this to @c nullptr.
@@ -312,6 +307,14 @@ public:
    * @return A @c Group for the arguments, existing if possible and created if not.
    */
   static TxnState obtain_inbound(IpEndpoint const &addr);
+
+  /** Whether client connections from @a addr are exempt from proxy.config.net.connections_throttle and
+   * proxy.config.net.per_client.max_connections_in.
+   *
+   * @param addr The peer address of the client socket, not an address from a PROXY protocol header.
+   * @return @c true if @a addr is in the client exempt list.
+   */
+  static bool is_client_exempt(IpEndpoint const &addr);
 
   /** Get or create the @c Group for the specified outbound session properties.
    * @param txn_cnf The transaction local configuration.
@@ -364,7 +367,7 @@ public:
    * This sets up the global configuration and any configuration update callbacks needed. It is presumed
    * the caller has set up the actual storage where the global configuration data is stored.
    *
-   * @param config The storage for the global configuration data.
+   * @param[in,out] global The storage for the global configuration data.
    * @param txn The storage for the default per transaction data.
    * @param config_cb The callback to invoke when a configuration is updated.
    */
@@ -449,7 +452,7 @@ protected:
 
   /// Internal implementation class instance.
   struct TableSingleton {
-    friend ConnectionTracker::Group;
+    friend struct ConnectionTracker::Group;
     std::unordered_map<Group::Key, std::shared_ptr<Group>, GroupMapHelper, GroupMapHelper>
                _table; ///< Hash table of connection groups.
     std::mutex _mutex; ///< Lock for insert, delete, and find.
@@ -530,12 +533,6 @@ inline bool
 ConnectionTracker::TxnState::is_active() const
 {
   return nullptr != _g;
-}
-
-inline bool
-ConnectionTracker::TxnState::is_exempt() const
-{
-  return _exempt_p;
 }
 
 inline int

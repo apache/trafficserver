@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -209,9 +209,10 @@ ats_ip_pton(const std::string_view &src, sockaddr *ip)
         ats_ip4_set(ip, addr4.s_addr);
       }
     }
-    // If we had a successful conversion, set the port.
+    // If we had a successful conversion, set the port. @a port is all digits but is not
+    // NUL terminated, so parse it with a bounded decimal conversion.
     if (ats_is_ip(ip)) {
-      ats_ip_port_cast(ip) = port.empty() ? 0 : htons(atoi(port.data()));
+      ats_ip_port_cast(ip) = port.empty() ? 0 : htons(static_cast<in_port_t>(swoc::svtoi(port, nullptr, 10)));
     }
   }
 
@@ -621,8 +622,8 @@ ats_ip_check_characters(std::string_view text)
   return found_hex && !found_colon ? AF_UNSPEC : found_colon ? AF_INET6 : AF_INET;
 }
 
-int
-ats_tcp_somaxconn()
+std::optional<int>
+ats_tcp_somaxconn_detected()
 {
   int value = 0;
 
@@ -639,13 +640,19 @@ ats_tcp_somaxconn()
   }
 #endif
 
-  // Default to the compatible value we used before detection. SOMAXCONN is the right
-  // macro to use, but most systems set this to 128, which is just too small.
   if (value <= 0 || value > 65535) {
-    value = 1024;
+    return std::nullopt;
   }
 
   return value;
+}
+
+int
+ats_tcp_somaxconn()
+{
+  // Default to the compatible value we used before detection. SOMAXCONN is the right
+  // macro to use, but most systems set this to 128, which is just too small.
+  return ats_tcp_somaxconn_detected().value_or(1024);
 }
 
 namespace swoc

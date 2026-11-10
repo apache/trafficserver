@@ -26,6 +26,7 @@ add_library(
   EventIO.cc
   YamlSNIConfig.cc
   Net.cc
+  NetEvent.cc
   NetHandler.cc
   NetVCOptions.cc
   NetAcceptEventIO.cc
@@ -47,6 +48,7 @@ add_library(
   SSLNetVConnection.cc
   SSLNextProtocolAccept.cc
   SSLNextProtocolSet.cc
+  SSLRPKUtils.cc
   SSLSNIConfig.cc
   SSLStats.cc
   SSLSessionCache.cc
@@ -149,12 +151,16 @@ if(BUILD_TESTING)
     unit_tests/test_ProxyProtocol.cc
     unit_tests/test_SSLCertLookup.cc
     unit_tests/test_SSLNetVConnectionAsyncEp.cc
+    unit_tests/test_SSLRPKUtils.cc
     unit_tests/test_SSLSecret.cc
     unit_tests/test_SSLSNIConfig.cc
+    unit_tests/test_SSLUtils.cc
+    unit_tests/test_UnixNetVConnectionTimeouts.cc
     unit_tests/test_YamlSNIConfig.cc
     unit_tests/test_OCSPStapling.cc
     unit_tests/unit_test_main.cc
     unit_tests/benchmark_TLSCertCompression.cc
+    unit_tests/benchmark_InactivityCop.cc
   )
   if(SSLLIB_IS_AT_LEAST_OPENSSL3)
     target_sources(test_net PRIVATE unit_tests/test_SSLDHParams.cc)

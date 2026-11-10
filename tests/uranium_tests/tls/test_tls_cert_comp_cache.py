@@ -52,7 +52,8 @@ def configure_mid(suffix: str, server: VerifierServer, cache_enabled: bool, *, _
             "proxy.config.ssl.server.session_ticket.enable": 0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl_cert_compress",
-        })
+        }
+    )
     return ats
 
 
@@ -74,7 +75,8 @@ def configure_edge(suffix: str, mid: ATS, *, _ats_factory: ATSFactory) -> ATS:
             "proxy.config.http.keep_alive_enabled_out": 0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl_cert_compress",
-        })
+        }
+    )
     return ats
 
 

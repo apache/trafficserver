@@ -190,6 +190,8 @@ TEST_CASE("SSLMultiCertParser handles all YAML entry fields", "[ssl_multicert][p
     action: tunnel
     ssl_ticket_enabled: 1
     ssl_ticket_number: 5
+    ssl_rpk_enabled: 1
+    ssl_client_rpk_ca_name: client_rpk.pem
 )";
 
   auto result = parse_content(FULL_YAML, "config.yaml");
@@ -209,6 +211,9 @@ TEST_CASE("SSLMultiCertParser handles all YAML entry fields", "[ssl_multicert][p
   CHECK(entry.ssl_ticket_enabled.value() == 1);
   REQUIRE(entry.ssl_ticket_number.has_value());
   CHECK(entry.ssl_ticket_number.value() == 5);
+  REQUIRE(entry.ssl_rpk_enabled.has_value());
+  CHECK(entry.ssl_rpk_enabled.value() == 1);
+  CHECK(entry.ssl_client_rpk_ca_name == "client_rpk.pem");
 }
 
 TEST_CASE("SSLMultiCertMarshaller produces valid YAML", "[ssl_multicert][marshaller][yaml]")
@@ -222,9 +227,11 @@ TEST_CASE("SSLMultiCertMarshaller produces valid YAML", "[ssl_multicert][marshal
   config.push_back(std::move(entry1));
 
   SSLMultiCertEntry entry2;
-  entry2.ssl_cert_name      = "another.pem";
-  entry2.dest_ip            = "[::1]:8443";
-  entry2.ssl_ticket_enabled = 1;
+  entry2.ssl_cert_name          = "another.pem";
+  entry2.dest_ip                = "[::1]:8443";
+  entry2.ssl_ticket_enabled     = 1;
+  entry2.ssl_rpk_enabled        = 1;
+  entry2.ssl_client_rpk_ca_name = "client_rpk.pem";
   config.push_back(std::move(entry2));
 
   SSLMultiCertMarshaller marshaller;
@@ -237,6 +244,8 @@ TEST_CASE("SSLMultiCertMarshaller produces valid YAML", "[ssl_multicert][marshal
     CHECK(yaml.find("ssl_key_name: server.key") != std::string::npos);
     CHECK(yaml.find("ssl_cert_name: another.pem") != std::string::npos);
     CHECK(yaml.find("ssl_ticket_enabled: 1") != std::string::npos);
+    CHECK(yaml.find("ssl_rpk_enabled: 1") != std::string::npos);
+    CHECK(yaml.find("ssl_client_rpk_ca_name: client_rpk.pem") != std::string::npos);
   }
 
   SECTION("YAML can be re-parsed")
@@ -246,6 +255,10 @@ TEST_CASE("SSLMultiCertMarshaller produces valid YAML", "[ssl_multicert][marshal
     REQUIRE(result.value.size() == 2);
     CHECK(result.value[0].ssl_cert_name == "server.pem");
     CHECK(result.value[1].ssl_cert_name == "another.pem");
+    CHECK_FALSE(result.value[0].ssl_rpk_enabled.has_value());
+    REQUIRE(result.value[1].ssl_rpk_enabled.has_value());
+    CHECK(result.value[1].ssl_rpk_enabled.value() == 1);
+    CHECK(result.value[1].ssl_client_rpk_ca_name == "client_rpk.pem");
   }
 }
 
@@ -415,7 +428,8 @@ TEST_CASE("Legacy parser handles all field types", "[ssl_multicert][parser][lega
 {
   static constexpr char FULL_LEGACY[] = "ssl_cert_name=cert.pem dest_ip=192.168.1.1 ssl_key_name=key.pem ssl_ca_name=ca.pem "
                                         "ssl_ocsp_name=ocsp.der ssl_key_dialog=builtin dest_fqdn=example.com action=tunnel "
-                                        "ssl_ticket_enabled=1 ssl_ticket_number=5";
+                                        "ssl_ticket_enabled=1 ssl_ticket_number=5 ssl_rpk_enabled=1 "
+                                        "ssl_client_rpk_ca_name=client_rpk.pem";
 
   auto result = parse_content(FULL_LEGACY, "test.config");
   REQUIRE(result.ok());
@@ -434,6 +448,9 @@ TEST_CASE("Legacy parser handles all field types", "[ssl_multicert][parser][lega
   CHECK(entry.ssl_ticket_enabled.value() == 1);
   REQUIRE(entry.ssl_ticket_number.has_value());
   CHECK(entry.ssl_ticket_number.value() == 5);
+  REQUIRE(entry.ssl_rpk_enabled.has_value());
+  CHECK(entry.ssl_rpk_enabled.value() == 1);
+  CHECK(entry.ssl_client_rpk_ca_name == "client_rpk.pem");
 }
 
 TEST_CASE("Legacy parser handles dual certificates", "[ssl_multicert][parser][legacy][dual-cert]")

@@ -23,8 +23,13 @@ REPLAY_FILE = Path(__file__).parent / "tls_sni_with_port.replay.yaml"
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _ports: tuple[int, ...], _server_one: VerifierServer, _server_three: VerifierServer,
-        _server_two: VerifierServer) -> ATS:
+    ats_factory: ATSFactory,
+    *,
+    _ports: tuple[int, ...],
+    _server_one: VerifierServer,
+    _server_three: VerifierServer,
+    _server_two: VerifierServer,
+) -> ATS:
     """Configure one unmapped listener and three port-aware SNI listeners.
 
     :param _ports: Test-local ports configured by the test.
@@ -42,20 +47,23 @@ def configure_ats(
             "proxy.config.http.server_ports": (f"{port_one}:ssl {port_two}:ssl {port_three}:ssl {port_unmapped}:ssl"),
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "dns|http|ssl|sni",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server_three.http_port}")
     ats.allow_private_connect(("CONNECT", "GET"))
+    # Addresses, since HostDB does not read /etc/hosts and CI resolvers need
+    # not answer for localhost.
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
         "  - fqdn: yay.example.com\n"
         f"    inbound_port_ranges: {port_one}-{port_one}\n"
-        f"    tunnel_route: localhost:{_server_one.https_port}\n"
+        f"    tunnel_route: 127.0.0.1:{_server_one.https_port}\n"
         "  - fqdn: yay.example.com\n"
         "    inbound_port_ranges:\n"
         f"      - {port_two}\n"
         f"      - {port_three}\n"
-        f"    tunnel_route: localhost:{_server_two.https_port}\n",
+        f"    tunnel_route: 127.0.0.1:{_server_two.https_port}\n",
     )
     return ats
 

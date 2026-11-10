@@ -2,7 +2,7 @@
 
   HTTP state machine
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1172,7 +1172,11 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       _netvc_reader      = _netvc_read_buffer->alloc_reader();
 
       // Wait for write readiness to verify that the nonblocking TCP connection
-      // completed before reporting a successful tunnel to the client.
+      // completed before reporting a successful tunnel to the client. For a
+      // TLS origin, the zero-byte read lets incoming handshake data drive the
+      // handshake, and signals VC_EVENT_READ_COMPLETE when it completes; on a
+      // plain connection it does nothing.
+      _netvc->do_io_read(this, 0, _netvc_read_buffer);
       _netvc->do_io_write(this, 1, _netvc_reader);
       _netvc->set_inactivity_timeout(get_server_connect_timeout());
       return 0;
@@ -1184,6 +1188,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE: {
     if (netvc == nullptr) {
       netvc = _netvc;
+      netvc->do_io_read(nullptr, 0, nullptr);
       netvc->do_io_write(nullptr, 0, nullptr);
       free_MIOBuffer(_netvc_read_buffer);
       _netvc             = nullptr;
@@ -1219,6 +1224,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
         t_state.set_connect_fail(_netvc->lerrno);
       }
+      _netvc->do_io_read(nullptr, 0, nullptr);
       _netvc->do_io_write(nullptr, 0, nullptr);
       _netvc->do_io_close();
       _netvc = nullptr;
@@ -1335,7 +1341,8 @@ int
 HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHandler tunnel_handler, int event, void *data)
 {
   STATE_ENTER(state_common_wait_for_transform_read, event);
-  HttpTunnelConsumer *c = nullptr;
+  HttpTunnelConsumer *c                = nullptr;
+  bool                transform_closed = false;
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE:
@@ -1361,13 +1368,22 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
         //   handler to clean this mess up
         ink_assert(t_info == &post_transform_info);
         return (this->*tunnel_handler)(event, data);
-      } else {
+      } else if (c->write_success) {
         // On the response side, we just forward as much
         //   as we can of truncated documents so
         //   just don't cache the result
         ink_assert(t_info == &transform_info);
         t_state.api_info.cache_transformed = false;
         return 0;
+      }
+      // The tunnel aborted and closed the transform before the
+      //   transform signaled TRANSFORM_READ_READY, so it never
+      //   will. Fall through to the error case so the client gets
+      //   an error response instead of waiting forever.
+      ink_assert(t_info == &transform_info);
+      transform_closed = true;
+      if (c->producer->vc_type == HttpTunnelType_t::HTTP_SERVER) {
+        t_state.http_return_code = HTTPStatus::BAD_GATEWAY;
       }
     } else {
       // Case 3 - wait for transform read ready
@@ -1384,10 +1400,11 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     }
     vc_table.cleanup_entry(t_info->entry);
     t_info->entry = nullptr;
-    // In Case 1: error due to transform write,
-    // we need to keep the original t_info->vc for transform_cleanup()
-    // to skip do_io_close(); otherwise, set it to NULL.
-    if (c->handler_state != HTTP_SM_TRANSFORM_FAIL) {
+    // In Case 1: error due to transform write, and when the tunnel
+    // already closed the transform, we need to keep the original
+    // t_info->vc for transform_cleanup() to skip do_io_close();
+    // otherwise, set it to NULL.
+    if (c->handler_state != HTTP_SM_TRANSFORM_FAIL && !transform_closed) {
       t_info->vc = nullptr;
     }
     if (c->producer->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
@@ -2011,6 +2028,12 @@ HttpSM::state_http_server_open(int event, void *data)
   case NET_EVENT_OPEN_FAILED: {
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     t_state.outbound_conn_track_state.clear();
+    if (event == NET_EVENT_OPEN_FAILED && data != nullptr) {
+      int const lerrno = -static_cast<int>(reinterpret_cast<intptr_t>(data));
+
+      t_state.current.server->connect_result = lerrno;
+      t_state.cause_of_death_errno           = lerrno;
+    }
     if (_netvc != nullptr) {
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
         t_state.set_connect_fail(_netvc->lerrno);
@@ -2261,8 +2284,6 @@ HttpSM::state_send_server_request_header(int event, void *data)
   ink_assert(server_entry->write_vio == (VIO *)data);
   STATE_ENTER(state_send_server_request_header, event);
 
-  int method;
-
   switch (event) {
   case VC_EVENT_WRITE_READY:
     server_entry->write_vio->reenable();
@@ -2274,14 +2295,12 @@ HttpSM::state_send_server_request_header(int event, void *data)
     if (server_entry->write_buffer) {
       free_MIOBuffer(server_entry->write_buffer);
       server_entry->write_buffer = nullptr;
-      method                     = t_state.hdr_info.server_request.method_get_wksidx();
-      if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
-          _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                          t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
-        // The origin has now been told to expect a body.  Record that it is owed those
-        // bytes, whether or not a tunnel to deliver them is started below.  When the
-        // client asked for a 100 Continue the body is withheld until the origin sends
-        // one, so there is no tunnel to infer this from.
+      if (forwards_client_request_body()) {
+        // The client's body, possibly empty, follows the request header.  Record
+        // that the origin is owed it, whether or not a tunnel to deliver it is
+        // started below.  When the client asked for a 100 Continue the body is
+        // withheld until the origin sends one, so there is no tunnel to infer
+        // this from.
         server_owed_request_body = true;
         if (post_transform_info.vc) {
           setup_transform_to_server_transfer();
@@ -4945,7 +4964,7 @@ HttpSM::track_connect_fail() const
   // Excludes two cases:
   // - Reused keep-alive connection: there is a known race between ATS reusing and the origin closing it.
   // - Multiplexed origins (HTTP/2): stream-level failure does not indicate a connection failure.
-  if (policy >= 4) {
+  if (policy >= 4 && server_txn != nullptr) {
     bool multiplexed = false;
     auto ssn         = server_txn->get_proxy_ssn();
     if (ssn != nullptr) {
@@ -5621,26 +5640,41 @@ HttpSM::send_origin_throttled_response()
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
+/// @return the policy a proxy.config.ssl.client.verify.server.policy value names, or UNSET if none.
+static YamlSNIConfig::Policy
+parse_verify_server_policy(const char *value, bool warn_if_invalid)
+{
+  if (value == nullptr) {
+    return YamlSNIConfig::Policy::UNSET;
+  }
+  if (strcmp(value, "DISABLED") == 0) {
+    return YamlSNIConfig::Policy::DISABLED;
+  }
+  if (strcmp(value, "PERMISSIVE") == 0) {
+    return YamlSNIConfig::Policy::PERMISSIVE;
+  }
+  if (strcmp(value, "ENFORCED") == 0) {
+    return YamlSNIConfig::Policy::ENFORCED;
+  }
+  if (warn_if_invalid) {
+    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+            value);
+  }
+  return YamlSNIConfig::Policy::UNSET;
+}
+
+YamlSNIConfig::Policy
+HttpSM::get_outbound_verify_server_policy() const
+{
+  // Already warned about when the connection that set it up was opened.
+  return parse_verify_server_policy(t_state.txn_conf->ssl_client_verify_server_policy, false);
+}
+
 static void
 set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
 {
-  char *verify_server = nullptr;
-  if (txn_conf->ssl_client_verify_server_policy == nullptr) {
-    opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-  } else {
-    verify_server = txn_conf->ssl_client_verify_server_policy;
-    if (strcmp(verify_server, "DISABLED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
-    } else if (strcmp(verify_server, "ENFORCED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
-    } else {
-      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
-              verify_server);
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-    }
-  }
+  char *verify_server    = nullptr;
+  opt.verifyServerPolicy = parse_verify_server_policy(txn_conf->ssl_client_verify_server_policy, true);
   if (txn_conf->ssl_client_verify_server_properties == nullptr) {
     opt.verifyServerProperties = YamlSNIConfig::Property::UNSET;
   } else {
@@ -6196,7 +6230,9 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       new_entry->sni                 = this->get_outbound_sni();
       new_entry->cert_name           = this->get_outbound_cert();
       new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HttpPluginTunnel_t::NONE;
-      new_entry->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
+      if (t_state.outbound_conn_track_state.is_active()) {
+        new_entry->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
+      }
       this->t_state.set_connect_fail(EIO);
       new_entry->connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));
@@ -6914,22 +6950,30 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
                         HttpTunnelType_t::TRANSFORM, "post transform");
     post_transform_info.entry->in_tunnel = true;
     break;
-  case HttpVC_t::SERVER_VC:
+  case HttpVC_t::SERVER_VC: {
+    HttpTunnelConsumer *c;
     // YTS Team, yamsat Plugin
     // When redirect in process is true and redirection is enabled
     // add http server as the consumer
     if (post_redirect) {
       chunked = false;
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_for_partial_post);
-      tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server,
-                          HttpTunnelType_t::HTTP_SERVER, "redirect http server post");
+      c = tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server,
+                              HttpTunnelType_t::HTTP_SERVER, "redirect http server post");
     } else {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-      tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server, HttpTunnelType_t::HTTP_SERVER,
-                          "http server post");
+      c = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server,
+                              HttpTunnelType_t::HTTP_SERVER, "http server post");
     }
+    // An HTTP/1 request body ends where its framing says. An HTTP/2 one ends with
+    // END_STREAM, which the stream sends on the DATA frame that finishes a write,
+    // so an empty body still needs a write or the origin waits for the rest.
+    // Only an HTTP/1 origin transaction supports chunked encoding, so that is
+    // what tells the two apart here.
+    c->write_empty_body     = !server_txn->is_chunked_encoding_supported();
     server_entry->in_tunnel = true;
     break;
+  }
   default:
     ink_release_assert(0);
     break;
@@ -9226,6 +9270,14 @@ HttpSM::set_server_session_private(bool private_session)
     return true;
   }
   return false;
+}
+
+bool
+HttpSM::forwards_client_request_body() const
+{
+  return !t_state.api_server_request_body_set && t_state.hdr_info.server_request.method_get_wksidx() != HTTP_WKSIDX_TRACE &&
+         _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                         t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED);
 }
 
 bool

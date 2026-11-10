@@ -33,7 +33,7 @@ function post_remap()
     local res = ts.fetch(url, {
         method  = 'GET',
         cliaddr = '[::1]:33333',
-        header  = { ['Host'] = ts.ctx['host'] },
+        header  = { ['Host'] = ts.ctx['host'], ['uuid'] = 'lua-fetch-inner' },
     })
     if res then
         ts.ctx['fetch_status']   = res.status

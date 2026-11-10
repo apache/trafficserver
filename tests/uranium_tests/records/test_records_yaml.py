@@ -28,7 +28,8 @@ def configure_unregistered_records(*, _ats_factory: ATSFactory) -> ATS:
 
     ats = _ats_factory.create("unregistered", disable_log_checks=True)
     ats.write_config_file(
-        "records.yaml", """records:
+        "records.yaml",
+        """records:
   config_update_interval_ms: 20
   http:
     server_ports: '{ATS_HTTP_PORT}'
@@ -52,7 +53,8 @@ def configure_unregistered_records(*, _ats_factory: ATSFactory) -> ATS:
   cache:
     ram_cache:
       size: 30G
-""")
+""",
+    )
     return ats
 
 
@@ -75,10 +77,15 @@ def verify_unregistered_records(*, _ats_factory: ATSFactory) -> None:
     assert "Ignoring field 'field2' [proxy.config.test.not_registered.field2]" in output
 
     result = ats.rpc(
-        Request.admin_lookup_records([{
-            "record_name_regex": "proxy.config.test.not_registered.field",
-            "rec_types": ["1", "16"],
-        }]))
+        Request.admin_lookup_records(
+            [
+                {
+                    "record_name_regex": "proxy.config.test.not_registered.field",
+                    "rec_types": ["1", "16"],
+                }
+            ]
+        )
+    )
     assert result.returncode == 0, result.output
     response = json.loads(result.stdout)
     records = response["result"]["recordList"]
@@ -97,10 +104,12 @@ def verify_multiple_documents(*, _ats_factory: ATSFactory) -> None:
     """
 
     ats = _ats_factory.create("documents")
-    ats.append_records_document({
-        "proxy.config.diags.debug.enabled": 0,
-        "proxy.config.diags.debug.tags": "rpc|rec",
-    })
+    ats.append_records_document(
+        {
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "rpc|rec",
+        }
+    )
     ats.append_records_document({"proxy.config.diags.debug.tags": "filemanager"})
     ats.append_records_document(
         {
@@ -108,7 +117,8 @@ def verify_multiple_documents(*, _ats_factory: ATSFactory) -> None:
             "proxy.config.dns.nameservers": None,
             "proxy.config.dns.local_ipv6": None,
             "proxy.config.ssl.client.cert.filename": None,
-        })
+        }
+    )
     ats.start()
 
     result = ats.traffic_ctl(
@@ -125,10 +135,10 @@ def verify_multiple_documents(*, _ats_factory: ATSFactory) -> None:
     assert "proxy.config.diags.debug.enabled: 0" in result.stdout
     assert "proxy.config.diags.debug.tags: filemanager" in result.stdout
     for record in (
-            "proxy.config.dns.resolv_conf",
-            "proxy.config.dns.local_ipv6",
-            "proxy.config.dns.nameservers",
-            "proxy.config.ssl.client.cert.filename",
+        "proxy.config.dns.resolv_conf",
+        "proxy.config.dns.local_ipv6",
+        "proxy.config.dns.nameservers",
+        "proxy.config.ssl.client.cert.filename",
     ):
         assert f"{record}: null" in result.stdout
 

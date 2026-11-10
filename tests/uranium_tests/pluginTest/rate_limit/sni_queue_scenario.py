@@ -57,10 +57,12 @@ def run_rate_limit_sni(
         config = ["selector:", "  - sni: rate.limited.com", "    limit: 1", *queue_lines]
         ats.write_config_file("rate_limit.config", "\n".join(config) + "\n")
         ats.plugin_config.add_line(f"rate_limit.so {ats.config_directory}/rate_limit.config")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "rate_limit",
-        })
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rate_limit",
+            }
+        )
         return ats
 
     def configure_client(services: ServiceFactory) -> ProcessService:
@@ -95,6 +97,11 @@ def run_rate_limit_sni(
         if client_script == "rate_limit_sni_expiry_client.sh":
             assert "Queueing the VC" in traffic_out, traffic_out
             assert "Queued VC is too old" in traffic_out, traffic_out
+        if client_script == "rate_limit_sni_queue_client.sh":
+            assert "Queueing the VC" in traffic_out, traffic_out
+            assert "Enabling queued VC" in traffic_out, traffic_out
+            assert "Rejecting connection" not in traffic_out, traffic_out
+            assert re.search(r"Releasing a slot, active entities == [0-9]{4,}", traffic_out) is None, traffic_out
         assert re.search(failure_expression, traffic_out) is None, traffic_out
 
     _ats = configure_ats(ats_factory)

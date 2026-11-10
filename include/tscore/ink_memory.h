@@ -2,7 +2,7 @@
 
   Memory allocation routines for libts.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -596,7 +596,7 @@ public:
 /** Combine two strings as file paths.
      Trailing and leading separators for @a lhs and @a rhs respectively
      are handled to yield exactly one separator.
-     @return A newly @x ats_malloc string of the combined paths.
+     @return A newly @c ats_malloc string of the combined paths.
 */
 inline char *
 path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)

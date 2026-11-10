@@ -113,8 +113,14 @@ the test. Follow the surrounding directory layout and update asset paths.
   or permitted connection reuse alongside forbidden reuse. A failed request
   alone may only prove the test setup is broken.
 - Keep default ATS log validation unless the test intentionally produces errors.
-  If replacing it, allow only the expected errors and retain checks for unrelated
-  failures; do not blanket-disable diagnostics to get a pass.
+  Both replay tests and `ATS.close()` in procedural tests fail on `ERROR:`,
+  `FATAL:` or `Unrecognized configuration value` in diags.log, as AuTest's
+  `MakeATSProcess` did. An AuTest that set `disable_log_checks` maps to
+  `ats_factory.create(..., disable_log_checks=True)` or the replay
+  `process_config`; `FATAL:` still fails a procedural test unless it uses
+  `expect_start_failure()`. Relax only the cases the original relaxed. An
+  original that excluded all but specific errors maps to `ats.allow_errors()`;
+  do not blanket-disable diagnostics to get a pass.
 - Preserve real implementations of intentionally disabled diagnostic tests with
   `@pytest.mark.manual` or `urtest.manual`, runnable with `--run-manual`.
   Keep capability-based skips distinct from manual selection.

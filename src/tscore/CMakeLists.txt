@@ -35,6 +35,7 @@ add_library(
   ConsistentHash.cc
   ContFlags.cc
   CryptoHash.cc
+  Demangle.cc
   Diags.cc
   Encoding.cc
   EventNotify.cc
@@ -158,6 +159,7 @@ if(BUILD_TESTING)
     test_tscore
     unit_tests/test_ArgParser.cc
     unit_tests/test_CryptoHash.cc
+    unit_tests/test_Demangle.cc
     unit_tests/test_Encoding.cc
     unit_tests/test_FrequencyCounter.cc
     unit_tests/test_HashAlgorithms.cc
@@ -176,6 +178,7 @@ if(BUILD_TESTING)
     unit_tests/test_Random.cc
     unit_tests/test_SnowflakeID.cc
     unit_tests/test_Throttler.cc
+    unit_tests/test_TimerWheel.cc
     unit_tests/test_Tokenizer.cc
     unit_tests/test_arena.cc
     unit_tests/test_ink_base64.cc

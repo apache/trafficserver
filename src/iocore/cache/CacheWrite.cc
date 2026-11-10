@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -794,8 +794,8 @@ CacheVC::openWriteStartBegin(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED
   if (((err = stripe->open_write_lock(this, false, 1)) > 0)) {
     ts::Metrics::Counter::increment(cache_rsb.status[op_type].failure);
     ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.status[op_type].failure);
-    free_CacheVC(this);
     _action.continuation->handleEvent(CACHE_EVENT_OPEN_WRITE_FAILED, reinterpret_cast<void *>(-err));
+    free_CacheVC(this);
     return EVENT_DONE;
   }
   if (err < 0) {

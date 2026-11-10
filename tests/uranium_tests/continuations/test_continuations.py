@@ -57,19 +57,27 @@ def continuation_configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServe
     :param _protocol: Test-local protocol configured by the test.
     """
 
-    enable_tls = _protocol == "h2"
-    ats = _ats_factory.create("ts", enable_tls=enable_tls, enable_cache=False)
+    enable_tls = _protocol.startswith("h2")
+    ats = _ats_factory.create(
+        "ts",
+        enable_tls=enable_tls,
+        enable_cache=False,
+        enable_proxy_protocol=_protocol == "h2-proxy",
+        enable_proxy_protocol_cp_src=_protocol == "h2-proxy",
+    )
+    if _protocol == "h2-proxy":
+        ats.records.update({"proxy.config.http.proxy_protocol_allowlist": "127.0.0.1"})
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": _plugin.removesuffix(".so"),
             "proxy.config.cache.enable_read_while_writer": 0,
-            **({
-                "proxy.config.http2.max_concurrent_streams_in": 65535
-            } if enable_tls else {}),
-        })
+            **({"proxy.config.http2.max_concurrent_streams_in": 65535} if enable_tls else {}),
+        }
+    )
     ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{_plugin}")
-    ats.plugin_config.add_line(_plugin)
+    arguments = " --check-addresses" if _plugin == "ssntxnorder_verify.so" and enable_tls else ""
+    ats.plugin_config.add_line(_plugin + arguments)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -83,15 +91,20 @@ def continuation_run_clients(*, _ats: ATS, _curl: Curl, _protocol: str, _request
     :param _request_count: Test-local request count configured by the test.
     """
 
-    if _protocol == "h2" and not _curl.supports("http2"):
+    if _protocol.startswith("h2") and not _curl.supports("http2"):
         pytest.skip("curl HTTP/2 support is required")
-    if _protocol == "h2" and _curl.uses_uds:
+    if _protocol.startswith("h2") and _curl.uses_uds:
         pytest.skip("HTTP/2 continuation coverage requires a TCP listener")
 
-    url = (f"https://127.0.0.1:{_ats.https_port}/" if _protocol == "h2" else f"http://127.0.0.1:{_ats.http_port}/")
+    port = _ats.proxy_protocol_https_port if _protocol == "h2-proxy" else _ats.https_port
+    url = f"https://127.0.0.1:{port}/" if _protocol.startswith("h2") else f"http://127.0.0.1:{_ats.http_port}/"
     options = ["--silent", "--show-error", "--header", "Connection: close"]
-    if _protocol == "h2":
+    if _protocol.startswith("h2"):
         options.extend(["--insecure", "--http2"])
+    if _protocol == "h2-proxy":
+        if "--haproxy-clientip" not in _curl.run_for(_ats, "--help all").stdout:
+            pytest.skip("curl --haproxy-clientip support is required")
+        options.extend(["--haproxy-clientip", "192.0.2.7"])
 
     def request(_index: int) -> None:
         """Request.
@@ -166,7 +179,8 @@ def session_id_configure_ats(*, _ats: ATS, _origin: OriginServer) -> None:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "session_id_verify",
             "proxy.config.cache.enable_read_while_writer": 0,
-        })
+        }
+    )
     _ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/continuations/plugins/.libs/session_id_verify.so")
     _ats.plugin_config.add_line("session_id_verify.so")
     _ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
@@ -225,7 +239,7 @@ def test_double_continuation_counts(
     assert metrics["continuations_verify.txn.close.1"] == request_count
 
 
-@pytest.mark.parametrize("protocol", ["http1", "h2"])
+@pytest.mark.parametrize("protocol", ["http1", "h2", "h2-proxy"])
 def test_continuation_open_close_order(
     ats_factory: ATSFactory,
     services: ServiceFactory,
@@ -248,6 +262,8 @@ def test_continuation_open_close_order(
     continuation_wait_for_metric("ssntxnorder_verify.test.done", _ats=_ats)
     metrics = continuation_metrics("ssntxnorder_verify", _ats=_ats)
     assert metrics["ssntxnorder_verify.err"] == 0
+    if protocol.startswith("h2"):
+        assert metrics["ssntxnorder_verify.ssn.addresses"] == metrics["ssntxnorder_verify.ssn.close"]
     for scope in ("ssn", "txn"):
         assert metrics[f"ssntxnorder_verify.{scope}.start"] > 0
         assert metrics[f"ssntxnorder_verify.{scope}.start"] == metrics[f"ssntxnorder_verify.{scope}.close"]
@@ -276,7 +292,8 @@ def test_session_ids_are_unique(ats_factory: ATSFactory, services: ServiceFactor
         f"http://127.0.0.1:{_ats.http_port}/",
         count,
         _ats=_ats,
-        _curl=curl)
+        _curl=curl,
+    )
     expected = count
     if not curl.uses_uds:
         session_id_run_requests(
@@ -284,7 +301,8 @@ def test_session_ids_are_unique(ats_factory: ATSFactory, services: ServiceFactor
             f"https://127.0.0.1:{_ats.https_port}/",
             count,
             _ats=_ats,
-            _curl=curl)
+            _curl=curl,
+        )
         expected += count
     session_ids = re.findall(r"session id: ([^\n]+)", _ats.traffic_out.read_text(errors="replace"))
     assert len(session_ids) == expected

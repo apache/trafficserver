@@ -111,9 +111,13 @@ changing a staged object alone does not reload a running server.
 
 Start origins and DNS before ATS when the scenario requires them. Factories
 stop their processes during teardown, even after an assertion fails. Unexpected
-ATS exits, fatal diagnostics, and missing diagnostic output fail teardown.
-Use ``ATS.wait()`` for intentional one-shot exits and
-``ATS.expect_start_failure()`` for an expected startup failure.
+ATS exits, missing diagnostic output, and ``FATAL:``, ``ERROR:`` or
+``Unrecognized configuration value`` lines in diags.log fail teardown.
+``ATS.allow_errors(expression)`` accepts the ``ERROR:`` lines a test produces
+deliberately, and ``disable_log_checks=True`` accepts every error and
+unrecognized value. Use ``ATS.wait()`` for intentional one-shot exits and
+``ATS.expect_start_failure()`` for an expected startup failure, which skips
+the diagnostic checks.
 
 A service's ``run()`` waits for a one-shot command; ``start()`` launches a
 long-lived process. Check command results explicitly, or register stream

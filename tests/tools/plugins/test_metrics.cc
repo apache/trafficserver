@@ -2,10 +2,20 @@
 
   Create metrics for tests.
 
-  Usage: test_metrics.so [--count=N] [NAME=VALUE ...]
+  Usage: test_metrics.so [--count=N] [--counter=NAME=VALUE ...] [NAME=VALUE ...]
 
   --count=N creates the gauges plugin.test_metrics.gauge_<i> with the value i, for i from 0 to N - 1.  NAME=VALUE creates
-  the gauge NAME with the signed value VALUE.
+  the gauge NAME with the signed value VALUE.  --counter=NAME=VALUE creates the counter NAME with the unsigned 64-bit value
+  VALUE.
+
+  Plugin messages (traffic_ctl plugin msg TAG ARG):
+
+    test_metrics NAME=VALUE    creates the gauge NAME, or sets it if it exists.
+    test_metrics.unlist NAME   unlists the metric NAME, so a scrape leaves it out, as ATS does when a mode changes.
+    test_metrics.relist NAME   lists the metric NAME again.
+    test_metrics.stall MS      holds the lock of the string metrics for MS milliseconds.  A TSRecordDump that reaches the
+                               string metrics in that time waits, so a test can slow down a render of the stats.
+    test_metrics.hold_task MS  queues a task that keeps a task thread busy for MS milliseconds.
 
   @section license License
 
@@ -26,17 +36,26 @@
   limitations under the License.
  */
 
+#include <chrono>
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <thread>
 
 #include <swoc/TextView.h>
 #include <ts/ts.h>
+#include <tsutil/Metrics.h>
 
 namespace
 {
-constexpr char             PLUGIN_NAME[] = "test_metrics";
-constexpr std::string_view COUNT_OPTION  = "--count=";
+constexpr char             PLUGIN_NAME[]  = "test_metrics";
+constexpr std::string_view COUNT_OPTION   = "--count=";
+constexpr std::string_view COUNTER_OPTION = "--counter=";
+constexpr char             USAGE[]        = "Usage: test_metrics.so [--count=N] [--counter=NAME=VALUE ...] [NAME=VALUE ...]";
+constexpr std::string_view STALL_TAG      = "test_metrics.stall";
+constexpr std::string_view HOLD_TASK_TAG  = "test_metrics.hold_task";
+constexpr std::string_view UNLIST_TAG     = "test_metrics.unlist";
+constexpr std::string_view RELIST_TAG     = "test_metrics.relist";
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
@@ -51,6 +70,97 @@ create_gauge(const std::string &name, int64_t value)
   }
   TSStatIntSet(id, value);
   return true;
+}
+
+// TSStatCreate creates only gauges, so a counter comes from ts::Metrics.
+bool
+create_counter(std::string_view spec)
+{
+  swoc::TextView       value{spec};
+  swoc::TextView const name = value.split_prefix_at('=');
+
+  if (name.empty()) {
+    TSError("[%s] %s", PLUGIN_NAME, USAGE);
+    return false;
+  }
+  ts::Metrics::Counter::increment(ts::Metrics::Counter::createPtr(name), swoc::svtou(value, nullptr, 10));
+  return true;
+}
+
+bool
+assign_gauge(std::string_view arg)
+{
+  swoc::TextView       value{arg};
+  swoc::TextView const name = value.split_prefix_at('=');
+
+  if (name.empty()) {
+    TSError("[%s] %s", PLUGIN_NAME, USAGE);
+    return false;
+  }
+  return create_gauge(std::string{name}, swoc::svtoi(value, nullptr, 10));
+}
+
+// TSRecordDump holds the lock of the string metrics while it passes them to its callback, so sleeping in the
+// callback stalls every other TSRecordDump when it reaches the string metrics.
+void
+stall_on_strings(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* registered ATS_UNUSED */, const char * /* name */,
+                 TSRecordDataType data_type, TSRecordData * /* datum ATS_UNUSED */)
+{
+  auto &stall = *static_cast<std::chrono::milliseconds *>(edata);
+
+  if (data_type == TS_RECORDDATATYPE_STRING && stall.count() > 0) {
+    Dbg(dbg_ctl, "Stalling record dumps for %lld ms", static_cast<long long>(stall.count()));
+    std::this_thread::sleep_for(stall);
+    stall = std::chrono::milliseconds{0};
+    Dbg(dbg_ctl, "Stopped stalling record dumps");
+  }
+}
+
+int
+hold_task(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  auto *hold = static_cast<std::chrono::milliseconds *>(TSContDataGet(contp));
+
+  Dbg(dbg_ctl, "Holding a task thread for %lld ms", static_cast<long long>(hold->count()));
+  std::this_thread::sleep_for(*hold);
+  Dbg(dbg_ctl, "Released the task thread");
+  delete hold;
+  TSContDestroy(contp);
+  return 0;
+}
+
+int
+handle_message(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void *edata)
+{
+  auto const            *msg = static_cast<const TSPluginMsg *>(edata);
+  std::string_view const tag{msg->tag};
+  std::string_view const arg{static_cast<const char *>(msg->data), msg->data_size};
+
+  if (tag == PLUGIN_NAME) {
+    if (assign_gauge(arg)) {
+      Dbg(dbg_ctl, "Assigned %.*s", static_cast<int>(arg.size()), arg.data());
+    }
+  } else if (tag == STALL_TAG) {
+    std::chrono::milliseconds stall{swoc::svtoi(arg, nullptr, 10)};
+
+    std::thread([stall]() mutable { TSRecordDump(TS_RECORDTYPE_PLUGIN, stall_on_strings, &stall); }).detach();
+  } else if (tag == HOLD_TASK_TAG) {
+    long long const ms    = swoc::svtoi(arg, nullptr, 10);
+    TSCont          contp = TSContCreate(hold_task, TSMutexCreate());
+
+    TSContDataSet(contp, new std::chrono::milliseconds{ms});
+    TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_TASK);
+    Dbg(dbg_ctl, "Queued a task that holds a task thread for %lld ms", ms);
+  } else if (tag == UNLIST_TAG) {
+    if (ts::Metrics::instance().unlist(arg)) {
+      Dbg(dbg_ctl, "Unlisted %.*s", static_cast<int>(arg.size()), arg.data());
+    }
+  } else if (tag == RELIST_TAG) {
+    if (ts::Metrics::instance().relist(arg)) {
+      Dbg(dbg_ctl, "Relisted %.*s", static_cast<int>(arg.size()), arg.data());
+    }
+  }
+  return 0;
 }
 } // namespace
 
@@ -79,12 +189,13 @@ TSPluginInit(int argc, const char *argv[])
       for (long n = 0; n < count; ++n) {
         created += create_gauge("plugin.test_metrics.gauge_" + std::to_string(n), n);
       }
-    } else if (auto const eq = arg.find('='); eq != std::string_view::npos && eq > 0) {
-      created += create_gauge(std::string{arg.substr(0, eq)}, swoc::svtoi(arg.substr(eq + 1), nullptr, 10));
+    } else if (arg.starts_with(COUNTER_OPTION)) {
+      created += create_counter(arg.substr(COUNTER_OPTION.size()));
     } else {
-      TSError("[%s] Usage: %s.so [--count=N] [NAME=VALUE ...]", PLUGIN_NAME, PLUGIN_NAME);
+      created += assign_gauge(arg);
     }
   }
 
   Dbg(dbg_ctl, "Created %d metrics", created);
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(handle_message, TSMutexCreate()));
 }

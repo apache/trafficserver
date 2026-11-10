@@ -21,8 +21,8 @@ tls_multicert:
     ssl_cert_name: signed-foo-ec.pem,signed-foo.pem
     ssl_key_name: signed-foo-ec.key,signed-foo.key
   - dest_ip: ""
-    ssl_cert_name: signed-san-ec.pem,signed-san.pem
-    ssl_key_name: signed-san-ec.key,signed-san.key
+    ssl_cert_name: signed-san.pem,signed-san-ec.pem
+    ssl_key_name: signed-san.key,signed-san-ec.key
 
 sessions:
   - protocol:

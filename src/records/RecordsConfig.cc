@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -834,6 +834,8 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.net.inactivity_check_frequency", RECD_INT, "1", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.net.inactivity_cop_budget", RECD_INT, "4096", RECU_DYNAMIC, RR_NULL, RECC_INT, "[1-1048576]", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.net.event_period", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.net.accept_period", RECD_INT, "10", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
@@ -1419,6 +1421,8 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http2.max_ping_frames_per_minute", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.http2.max_ping_frames_per_minute_out", RECD_INT, "300", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.http2.max_priority_frames_per_minute", RECD_INT, "120", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.max_rst_stream_frames_per_minute", RECD_INT, "200", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
@@ -1605,6 +1609,17 @@ static constexpr RecordElement RecordsConfig[] =
   //#
   //###########
   {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_ms", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-10000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_shrink_ms", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT,
+   "[0-10000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.mode", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.timeout_refuse_ms", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT,
+   "[0-10000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.backlog_min_permille", RECD_INT, "50", RECU_DYNAMIC, RR_NULL, RECC_INT,
+   "[1-1000]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.backlog_decrease_permille", RECD_INT, "500", RECU_DYNAMIC, RR_NULL,
+   RECC_INT, "[1-999]", RECA_NULL},
+  {RECT_CONFIG, "proxy.config.exec_thread.watchdog.backlog_increase_permille", RECD_INT, "100", RECU_DYNAMIC, RR_NULL,
+   RECC_INT, "[1-1000]", RECA_NULL},
 
   //###########
   //#

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -100,50 +100,22 @@ private:
   _MatchDataPtr _match_data;
 };
 
-/// @brief Wrapper for PCRE2 match context
-///
-/// @internal This instance is not tied to any Regex and can be used with one of the Regex::exec overloads.
-class RegexMatchContext
-{
-  friend class Regex;
-
-public:
-  /** Construct a new RegexMatchContext object.
-   */
-  RegexMatchContext();
-  ~RegexMatchContext();
-
-  /// uses pcre2_match_context_copy for a deep copy.
-  RegexMatchContext(RegexMatchContext const &orig);
-  /// Replaces this object's settings with a copy of those of @a orig, or with none if
-  /// @a orig holds none. If PCRE2 cannot allocate the copy, this object keeps its own.
-  RegexMatchContext &operator=(RegexMatchContext const &orig);
-
-  /// Steals the context. A moved-from object holds nothing and frees nothing.
-  /// These cannot be defaulted: _match_context wraps a bare void* that the destructor
-  /// frees, so a defaulted move copies the pointer and both ends free it.
-  RegexMatchContext(RegexMatchContext &&that) noexcept;
-  RegexMatchContext &operator=(RegexMatchContext &&that) noexcept;
-
-  /** Limits the amount of backtracking that can take place.
-   * Any regex exec call that fails will return PCRE2_ERROR_MATCHLIMIT(-47)
-   */
-  void set_match_limit(uint32_t limit);
-
-private:
-  /// @internal This wraps a void* so to avoid requiring a pcre2 include.
-  struct _MatchContext;
-  struct _MatchContextPtr {
-    void *_ptr = nullptr;
-  };
-
-  _MatchContextPtr _match_context;
-};
-
 /// @brief Wrapper for PCRE2 regular expression.
 class Regex
 {
 public:
+  /// @brief Per call adjustments to the shared match configuration.
+  ///
+  /// Each field's zero value means "use the shared default", so a default constructed @c Options matches exactly like an
+  /// @c exec call without one.
+  struct Options {
+    /// Limits the amount of backtracking that can take place. An @c exec that exceeds it returns
+    /// PCRE2_ERROR_MATCHLIMIT (-47).
+    uint32_t match_limit = 0;
+
+    bool operator==(Options const &) const = default;
+  };
+
   Regex() = default;
   /** Deep copy constructor.
    *
@@ -216,7 +188,7 @@ public:
    *
    * On failure any previously compiled pattern is left in place and remains usable.
    */
-  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, uint32_t flags = 0);
 
   /** Compile the @a pattern into a regular expression that drives a policy decision.
    *
@@ -231,7 +203,7 @@ public:
    *
    * @internal A distinct overload for the same ABI reason as the two-argument form.
    */
-  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags, std::string_view policy_gate);
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, uint32_t flags, std::string_view policy_gate);
 
   /** Process-wide anchoring policy for policy-gate patterns.
    *
@@ -293,9 +265,6 @@ public:
    * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
-   *
-   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
-   * be a multiple of 3 and at least three times the number of desired capture groups.
    */
   int exec(std::string_view subject, RegexMatches &matches) const;
 
@@ -304,20 +273,28 @@ public:
    * @param subject String to match against.
    * @param matches Place to store the capture groups.
    * @param flags Match flags (e.g., RE_NOTEMPTY).
-   * @param optional context Match context (set matching limits).
    * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
-   *
-   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
-   * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags,
-           RegexMatchContext const *const matchContext = nullptr) const;
+  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const;
+
+  /** Execute the regular expression.
+   *
+   * @param subject String to match against.
+   * @param matches Place to store the capture groups.
+   * @param flags Match flags (e.g., RE_NOTEMPTY).
+   * @param opts Adjustments to the shared match configuration, such as a match limit.
+   * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
+   * PCRE2_ERROR_NOMEMORY if @a opts is not the default and the match context it needs could not be allocated.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   */
+  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Options const &opts) const;
 
   /** Error string for exec failure.
    *
-   * @param int return code from exec call.
+   * @param[in] rc Return code from exec call.
    */
   static std::string get_error_string(int rc);
 

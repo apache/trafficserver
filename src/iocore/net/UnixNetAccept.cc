@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -25,11 +25,16 @@
 #include "P_Net.h"
 #include "P_UnixNet.h"
 #include "P_UnixNetVConnection.h"
+#include "iocore/eventsystem/Watchdog.h"
 #include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/NetHandler.h"
+#include "records/RecHttp.h"
 #include "tscore/TSSystemState.h"
 #include "tscore/ink_inet.h"
 #include "tscore/ink_defs.h"
+
+#include <fcntl.h>
+#include <poll.h>
 
 using NetAcceptHandler = int (NetAccept::*)(int, void *);
 
@@ -44,24 +49,19 @@ DbgCtl dbg_ctl_iocore_net_accept{"iocore_net_accept"};
 /** Check and handle if the number of client connections exceeds the configured max.
  *
  * @param[in] addr The client address of the new incoming connection.
+ * @param[in] exempt Whether @a addr is in the client exempt list, which the per client limit does not apply to.
  * @param[out] conn_track_group The connection tracker group associated with the
  * new incoming connection if connections are being tracked.
  *
  * @return true if the connection should be accepted, false otherwise.
  */
 bool
-handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<ConnectionTracker::Group> &conn_track_group)
+handle_max_client_connections(IpEndpoint const &addr, bool exempt, std::shared_ptr<ConnectionTracker::Group> &conn_track_group)
 {
   int const client_max = NetHandler::get_per_client_max_connections_in();
-  if (client_max > 0) {
-    auto inbound_tracker = ConnectionTracker::obtain_inbound(addr);
-    if (inbound_tracker.is_exempt()) {
-      // The user configured connections like this to not be tracked. Simply exempt it.
-      Metrics::Counter::increment(net_rsb.per_client_connections_exempt_in);
-      Dbg(dbg_ctl_iocore_net_accepts, "Ignoring client connection counting for an incoming address in the exempt list.");
-      return true;
-    }
-    auto const tracked_count = inbound_tracker.reserve();
+  if (client_max > 0 && !exempt) {
+    auto       inbound_tracker = ConnectionTracker::obtain_inbound(addr);
+    auto const tracked_count   = inbound_tracker.reserve();
     if (tracked_count > client_max) {
       // close the connection as we are in per client connection throttle state
       inbound_tracker.release();
@@ -75,6 +75,104 @@ handle_max_client_connections(IpEndpoint const &addr, std::shared_ptr<Connection
     conn_track_group = inbound_tracker.drop();
   }
   return true;
+}
+
+/// Count an accepted client connection, and whether it is from the client exempt list.
+void
+count_client_connection(UnixNetVConnection *vc, bool exempt)
+{
+  Metrics::Gauge::increment(net_rsb.connections_currently_open);
+  vc->set_client_exempt(exempt);
+  if (exempt) {
+    Metrics::Counter::increment(net_rsb.per_client_connections_exempt_in);
+    Metrics::Gauge::increment(net_rsb.per_client_connections_exempt_currently_open);
+    Dbg(dbg_ctl_iocore_net_accepts, "Accepted a client connection from an address in the exempt list.");
+  }
+}
+
+/** Whether @a na is outside watchdog backpressure, either as a loopback companion or as a port the operator bound to loopback.
+
+    Deliberately not folded into @c f_watchdog_exempt, which also selects the listener topology.
+*/
+bool
+watchdog_exempt(NetAccept const *na)
+{
+  return na->opt.f_watchdog_exempt || na->opt.f_watchdog_local_only;
+}
+
+/** Whether this acceptor should leave the connections queued on its listen socket for now.
+ *
+ * True while the peak awake span has reached
+ * @c proxy.config.exec_thread.watchdog.timeout_refuse_ms, where the queued connections cost nothing at
+ * all and the threads may yet catch up and serve them. Independent of the accept queue shrink, which
+ * has its own threshold (see @c watchdog_apply_backlog) and lets the *kernel* shed while ATS keeps
+ * accepting - a bounded queue only drains as fast as we call @c accept4, which is what keeps inflow
+ * near the rate we can actually serve. Both can be in force at once, in which case the queue is
+ * bounded and nothing is draining it.
+ *
+ * A listener marked @c f_watchdog_exempt or @c f_watchdog_local_only is never subject to backpressure. Those are the
+ * loopback companion listeners opened alongside each proxy port and the ports explicitly bound to loopback, so local
+ * connections keep getting a truthful answer about the proxy however far behind the event threads are. The volume of
+ * local connections is small against the inbound load that caused the saturation.
+ *
+ * @param[in] na The acceptor.
+ *
+ * @return true if the caller should not drain its listen socket on this pass.
+ */
+bool
+watchdog_should_refuse(NetAccept *na)
+{
+  return !watchdog_exempt(na) && Watchdog::accept_refuse();
+}
+
+/** Resize @a na's kernel accept queue to the depth the watchdog is currently asking for.
+ *
+ * Calling @c listen again on a listening socket updates its backlog. Shrinking it does not evict
+ * connections already queued - they drain normally - but it does stop the kernel admitting more until
+ * the depth falls back under the new limit, which is the backpressure we want. The kernel then sheds on
+ * our behalf at no per-connection cost to ATS, and keeps doing so even when no ATS thread is scheduled
+ * to run an accept loop. On Linux that means silently dropping new SYNs rather than refusing them, so
+ * shed clients retransmit with backoff instead of seeing an error.
+ *
+ * Called at the top of each accept pass rather than from the monitor thread: the monitor has no access
+ * to the listen descriptors without taking @c naVecMutex, and it is deliberately kept clear of every
+ * event system lock. One syscall per acceptor per transition, none in the steady state.
+ *
+ * @param[in,out] na The acceptor whose listen socket should be resized.
+ */
+void
+watchdog_apply_backlog(NetAccept *na)
+{
+  int want_permille = 1000;
+  if (!watchdog_exempt(na)) {
+    want_permille = Watchdog::backlog_scale_permille();
+  }
+
+  if (!na->server.sock.is_ok() || want_permille == na->applied_backlog_permille->load(std::memory_order_relaxed)) {
+    return;
+  }
+
+  int const configured = get_watchdog_backlog_baseline();
+  int const target     = std::max(1, configured * want_permille / 1000);
+
+  if (safe_listen(na->server.sock.get_fd(), target) < 0) {
+    // Report and give up on this acceptor rather than retrying every pass. Losing the resize means
+    // this listener keeps its previous queue depth, which is a degradation and not a failure.
+    Warning("watchdog could not resize listen backlog on port %d to %d (%d permille of %d): %s",
+            ats_ip_port_host_order(&na->server.accept_addr), target, want_permille, configured, strerror(errno));
+    na->applied_backlog_permille->store(want_permille, std::memory_order_relaxed);
+    return;
+  }
+
+  Dbg(dbg_ctl_iocore_net_accept, "resized listen backlog on port %d to %d (%d permille of %d)",
+      ats_ip_port_host_order(&na->server.accept_addr), target, want_permille, configured);
+  na->applied_backlog_permille->store(want_permille, std::memory_order_relaxed);
+
+  // The absolute depth now in force, for operators who cannot derive it from the percentage alone -
+  // when proxy.config.net.listen_backlog is -1 the baseline is the resolved somaxconn, which is not
+  // readable from configuration. Every non-exempt acceptor resizes to the same target, so whichever
+  // writes last writes the same value.
+  Metrics::Gauge::store(net_rsb.watchdog_listen_backlog, target);
 }
 
 } // end anonymous namespace
@@ -99,6 +197,17 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 
   int additional_accepts = NetHandler::get_additional_accepts();
 
+  watchdog_apply_backlog(na);
+
+  if (watchdog_should_refuse(na)) {
+    // The queued connections are left in the kernel accept queue and cost us nothing at all. This
+    // continuation is scheduled on a period, so the next tick picks them up once the threads recover.
+    // Nothing here is charged to the event loop, which is what distinguishes leaving them queued from
+    // proxy.config.net.connections_throttle, where a shed connection is still accepted and closed.
+    Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+    return 0;
+  }
+
   if (!blockable) {
     if (!MUTEX_TAKE_TRY_LOCK(na->action_->mutex, e->ethread)) {
       return 0;
@@ -108,6 +217,16 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
+    if (count > 0) {
+      // Re-check mid-drain: with an unbounded accept limit a sustained arrival rate could otherwise
+      // keep this loop running across watchdog transitions. Ldone releases the try-lock taken above.
+      watchdog_apply_backlog(na);
+      if (watchdog_should_refuse(na)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        goto Ldone;
+      }
+    }
+
     if ((res = na->server.accept(&con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE) {
         goto Ldone;
@@ -123,10 +242,12 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       count = res;
       goto Ldone;
     }
+
     Metrics::Counter::increment(net_rsb.tcp_accept);
 
+    bool const                                exempt = ConnectionTracker::is_client_exempt(con.addr);
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
-    if (!handle_max_client_connections(con.addr, conn_track_group)) {
+    if (!handle_max_client_connections(con.addr, exempt, conn_track_group)) {
       con.close();
       continue;
     }
@@ -138,7 +259,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
-    Metrics::Gauge::increment(net_rsb.connections_currently_open);
+    count_client_connection(vc, exempt);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -206,14 +327,29 @@ getNetAccept(int ID)
 // Initialize the NetAccept for execution in its own thread.
 // This should be done for low latency, high connection rate sockets.
 //
-void
+bool
 NetAccept::init_accept_loop()
 {
   int    i, n;
   char   thr_name[MAX_THREAD_NAME_LENGTH];
   size_t stacksize;
   if (do_blocking_listen()) {
-    return;
+    return false;
+  }
+
+  // A thread parked inside accept() cannot see refuse engage, so the next connection after it did would be accepted
+  // and served. Waiting in poll() instead keeps the decision in front of every accept4, as on the event thread
+  // paths; the socket is made non-blocking so a sibling that wins the connection leaves this one with EAGAIN rather
+  // than parked. Exempt listeners need it too: close() does not wake a thread parked in accept(), so without the poll
+  // timeout their socket would stay listening after stop_accept().
+  if (RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_shrink_ms").value_or(0) > 0) {
+    int const flags = fcntl(server.sock.get_fd(), F_GETFL);
+    if (flags >= 0 && fcntl(server.sock.get_fd(), F_SETFL, flags | O_NONBLOCK) == 0) {
+      poll_before_accept = true;
+    } else {
+      Warning("watchdog could not make the listen socket on port %d non-blocking: %s; accept refusal may lag on this port",
+              ats_ip_port_host_order(&server.accept_addr), strerror(errno));
+    }
   }
   stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
   SET_CONTINUATION_HANDLER(this, &NetAccept::acceptLoopEvent);
@@ -226,11 +362,17 @@ NetAccept::init_accept_loop()
 
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
+
+    a->owned_by_accept_thread = true;
+    // Only the original is reachable from naVec, so only it has a second party to hand off to.
+    a->dedicated_release = (a == this) ? std::make_shared<std::atomic<int>>(0) : nullptr;
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ACCEPT %d:%d]", i, ats_ip_port_host_order(&server.accept_addr));
     eventProcessor.spawn_thread(a, thr_name, stacksize);
     Dbg(dbg_ctl_iocore_net_accept_start, "Created accept thread #%d for port %d", i + 1,
         ats_ip_port_host_order(&server.accept_addr));
   }
+
+  return true;
 }
 
 //
@@ -267,16 +409,34 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
   int listen_per_thread = 0;
   listen_per_thread     = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
 
-  if (listen_per_thread == 1) {
+  // The watchdog-exempt loopback listener does not follow proxy.config.exec_thread.listen, and instead
+  // always shares one socket across every thread.
+  //
+  // Per-thread listeners exist to remove contention on a single accept queue, which matters at
+  // high connection rates. This listener sees only a low volume of local connections, so there is no
+  // contention to remove - and the SO_REUSEPORT group it would join
+  // selects a socket by hashing the connection's four-tuple, which is blind to what the owning thread
+  // is doing. A connection could then be steered to a thread that is mid-stall while every other thread
+  // sits idle, which is precisely the failure the exemption exists to prevent.
+  //
+  // One shared socket registered in every thread's poll set behaves the opposite way: EPOLLEXCLUSIVE
+  // wakes a single thread that is currently blocked in the poll, and a thread that is behind on work
+  // is not blocked in the poll, so it is not a candidate. The connection lands on a thread that is
+  // demonstrably free, and is served there.
+  if (listen_per_thread == 1 && !opt.f_watchdog_exempt) {
     if (ats_is_unix(server.accept_addr)) {
       auto id = this_ethread()->id;
       ats_unix_append_id(&server.accept_addr.sun, id);
     }
 
+    // This clone opens its own socket, so it must not share the resize state of the acceptor it was copied from.
+    applied_backlog_permille = std::make_shared<std::atomic<int>>(1000);
+
     if (do_listen()) {
       Fatal("[NetAccept::accept_per_thread]:error listening on ports");
       return -1;
     }
+    owns_listen_socket = true;
   }
 
   SET_HANDLER(&NetAccept::acceptFastEvent);
@@ -288,7 +448,7 @@ NetAccept::accept_per_thread(int /* event ATS_UNUSED */, void * /* ep ATS_UNUSED
   return 0;
 }
 
-void
+bool
 NetAccept::init_accept_per_thread()
 {
   int i, n;
@@ -296,22 +456,39 @@ NetAccept::init_accept_per_thread()
 
   listen_per_thread = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
 
-  if (listen_per_thread == 0) {
+  // The watchdog-exempt loopback listener deliberately ignores exec_thread.listen and always uses a
+  // single shared socket - see NetAccept::accept_per_thread() for why.
+  if (listen_per_thread == 0 || opt.f_watchdog_exempt) {
     if (do_listen()) {
+      if (opt.f_non_fatal_listen) {
+        return false;
+      }
       Fatal("[NetAccept::accept_per_thread]:error listenting on ports");
-      return;
+      return false;
     }
   }
 
   SET_HANDLER(&NetAccept::accept_per_thread);
   n = eventProcessor.thread_group[ET_NET]._count;
 
+  // Gathered locally because clone() copies this acceptor, and a clone must not inherit the list.
+  std::vector<NetAccept *> clones;
+
   for (i = 0; i < n; i++) {
     NetAccept *a = (i < n - 1) ? clone() : this;
     EThread   *t = eventProcessor.thread_group[ET_NET]._thread[i];
     a->mutex     = get_NetHandler(t)->mutex;
+
+    a->uses_fast_accept = true;
+    a->accept_thread    = t;
+    if (a != this) {
+      clones.push_back(a);
+    }
     t->schedule_imm(a);
   }
+  per_thread_clones = std::move(clones);
+
+  return true;
 }
 
 void
@@ -319,6 +496,59 @@ NetAccept::stop_accept()
 {
   action_->cancel();
   server.close();
+}
+
+namespace
+{
+/** Releases an acceptor's per-thread resources and deletes it on the thread that owns the acceptor's mutex. */
+class AcceptorReclaim : public Continuation
+{
+public:
+  AcceptorReclaim(NetAccept *na) : Continuation(na->mutex), _na(na) { SET_HANDLER(&AcceptorReclaim::reclaim); }
+
+private:
+  int
+  reclaim(int /* event */, void * /* data */)
+  {
+    if (_na->refuse_retry != nullptr) {
+      _na->refuse_retry->cancel(_na);
+      _na->refuse_retry = nullptr;
+    }
+    // Skipped when already closed: the fd number may have been reused, and EventIO::stop() would deregister it.
+    if (_na->owns_listen_socket && _na->server.sock.is_ok()) {
+      _na->ep.stop();
+      _na->server.close();
+    }
+    delete _na;
+    delete this;
+    return EVENT_DONE;
+  }
+
+  NetAccept *_na;
+};
+} // namespace
+
+void
+NetAccept::retire()
+{
+  if (owned_by_accept_thread) {
+    // The accept thread may already have left its loop; it only frees the acceptor once this call has also finished.
+    release_dedicated();
+    return;
+  }
+
+  // Other acceptors that are not fast-accept never arm the timer, so there is nothing to cancel.
+  if (uses_fast_accept && accept_thread != nullptr && mutex != nullptr) {
+    // The clones are unreachable from the processor and may be idle, so they would otherwise keep their own listening
+    // sockets open until a connection happened to arrive.
+    for (auto *clone : per_thread_clones) {
+      clone->accept_thread->schedule_imm(new AcceptorReclaim(clone));
+    }
+    per_thread_clones.clear();
+    accept_thread->schedule_imm(new AcceptorReclaim(this));
+  } else {
+    delete this;
+  }
 }
 
 int
@@ -352,6 +582,12 @@ NetAccept::do_listen_impl(bool non_blocking)
     }
   }
 
+  if (res == 0 && !opt.f_watchdog_exempt) {
+    // Publish the baseline so the gauge reads the depth actually in force from startup, rather than
+    // zero until the watchdog first resizes something.
+    Metrics::Gauge::store(net_rsb.watchdog_listen_backlog, get_watchdog_backlog_baseline());
+  }
+
   return res;
 }
 
@@ -366,10 +602,55 @@ NetAccept::do_blocking_accept(EThread *t)
   int count              = 0;
   int additional_accepts = NetHandler::get_additional_accepts();
 
+  // stop_accept() cancelled the action; leave the loop so acceptLoopEvent() can delete this acceptor. Checked on every
+  // pass because the refusal and error paths below only sleep and return, and would otherwise never notice.
+  if (!action_->is_listening()) {
+    return -1;
+  }
+
+  watchdog_apply_backlog(this);
+
+  if (watchdog_should_refuse(this)) {
+    // Dedicated accept thread - acceptLoopEvent calls straight back in, so sleep rather than spin
+    // while the connections wait in the kernel accept queue.
+    Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+    safe_delay(net_throttle_delay);
+    return 0;
+  }
+
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
+    if (count > 0) {
+      watchdog_apply_backlog(this);
+      if (watchdog_should_refuse(this)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        safe_delay(net_throttle_delay);
+        return 0;
+      }
+    }
+
+    // Only an idle pass needs to wait. Once something has been accepted the queue is drained directly, and the
+    // refuse check above has already run ahead of this accept4.
+    if (poll_before_accept && count == 0) {
+      pollfd pfd{server.sock.get_fd(), POLLIN, 0};
+
+      // Times out so a cancelled action and a refuse that engaged while idle are noticed by the next pass.
+      if (poll(&pfd, 1, net_throttle_delay) <= 0) {
+        return 0;
+      }
+      watchdog_apply_backlog(this);
+      if (watchdog_should_refuse(this)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        safe_delay(net_throttle_delay);
+        return 0;
+      }
+    }
+
     if ((res = server.accept(&con)) < 0) {
+      if (res == -EAGAIN && poll_before_accept) {
+        return 0; // a sibling accept thread took the connection
+      }
       int seriousness = accept_error_seriousness(res);
       switch (seriousness) {
       case 0:
@@ -395,8 +676,10 @@ NetAccept::do_blocking_accept(EThread *t)
         return -1;
       }
     }
+    bool const exempt = ConnectionTracker::is_client_exempt(con.addr);
+
     // check for throttle
-    if (check_net_throttle(ACCEPT)) {
+    if (check_net_accept_throttle(exempt)) {
       check_throttle_warning(ACCEPT);
       // close the connection as we are in throttle state
       con.close();
@@ -404,7 +687,7 @@ NetAccept::do_blocking_accept(EThread *t)
       continue;
     }
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
-    if (!handle_max_client_connections(con.addr, conn_track_group)) {
+    if (!handle_max_client_connections(con.addr, exempt, conn_track_group)) {
       con.close();
       continue;
     }
@@ -423,7 +706,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
-    Metrics::Gauge::increment(net_rsb.connections_currently_open);
+    count_client_connection(vc, exempt);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -518,7 +801,56 @@ NetAccept::acceptFastEvent(int event, void *ep)
   NetHandler         *h                  = get_NetHandler(t);
   int                 additional_accepts = NetHandler::get_additional_accepts();
 
+  if (e == refuse_retry) {
+    refuse_retry = nullptr;
+  }
+
+  // Clones share action_ with the acceptor that stop_accept() closed, so this is how they learn the listen fd is gone.
+  // It may already belong to another connection, so neither touch it nor arm another retry.
+  if (!action_->is_listening()) {
+    if (refuse_retry != nullptr) {
+      refuse_retry->cancel(this);
+      refuse_retry = nullptr;
+    }
+    return EVENT_DONE;
+  }
+
+  watchdog_apply_backlog(this);
+
+  // See the equivalent comment in net_accept(). The listen fd here is registered edge triggered, so
+  // refusing must come back on a timer: returning without draining would not produce another
+  // readiness event for the connections already queued. New arrivals still wake us while refusing,
+  // so only arm the timer if one is not already pending.
+  if (watchdog_should_refuse(this)) {
+    Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+    if (refuse_retry == nullptr && action_->is_listening()) {
+      refuse_retry = t->schedule_in(this, HRTIME_MSECONDS(net_throttle_delay));
+    }
+    return EVENT_CONT;
+  }
+
+  // An arrival beat the retry timer to it, so this pass does the drain the timer was armed for.
+  if (refuse_retry != nullptr) {
+    refuse_retry->cancel(this);
+    refuse_retry = nullptr;
+  }
+
   do {
+    // stop_accept() can close the shared listen fd between passes of this loop.
+    if (!action_->is_listening()) {
+      goto Lstopped;
+    }
+    if (count > 0) {
+      watchdog_apply_backlog(this);
+      if (watchdog_should_refuse(this)) {
+        Metrics::Counter::increment(net_rsb.watchdog_accepts_refused);
+        if (refuse_retry == nullptr && action_->is_listening()) {
+          refuse_retry = t->schedule_in(this, HRTIME_MSECONDS(net_throttle_delay));
+        }
+        goto Ldone;
+      }
+    }
+
     socklen_t  sz = sizeof(con.addr);
     UnixSocket sock{-1};
     if (int res{server.sock.accept4(&con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC)}; res >= 0) {
@@ -526,16 +858,19 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
     con.sock = sock;
     std::shared_ptr<ConnectionTracker::Group> conn_track_group;
+    bool                                      exempt = false;
 
     if (likely(sock.is_ok())) {
+      exempt = ConnectionTracker::is_client_exempt(con.addr);
+
       // check for throttle
-      if (check_net_throttle(ACCEPT)) {
+      if (check_net_accept_throttle(exempt)) {
         // close the connection as we are in throttle state
         con.close();
         Metrics::Counter::increment(net_rsb.connections_throttled_in);
         continue;
       }
-      if (!handle_max_client_connections(con.addr, conn_track_group)) {
+      if (!handle_max_client_connections(con.addr, exempt, conn_track_group)) {
         con.close();
         continue;
       }
@@ -580,9 +915,11 @@ NetAccept::acceptFastEvent(int event, void *ep)
         check_transient_accept_error(res);
         goto Ldone;
       }
-      if (action_->is_listening()) {
-        action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
+      // A failure caused by stop_accept() closing the fd under this pass is shutdown, not an accept error.
+      if (!action_->is_listening()) {
+        goto Lstopped;
       }
+      action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
       goto Lerror;
     }
 
@@ -591,7 +928,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
-    Metrics::Gauge::increment(net_rsb.connections_currently_open);
+    count_client_connection(vc, exempt);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->set_remote_addr(con.addr);
@@ -636,12 +973,32 @@ Ldone:
   }
   return EVENT_CONT;
 
+Lstopped:
+  if (refuse_retry != nullptr) {
+    refuse_retry->cancel(this);
+    refuse_retry = nullptr;
+  }
+  return EVENT_DONE;
+
 Lerror:
-  action_->cancel();
-  server.close();
+  // retire() reaches every fast-accept acceptor through naVec or per_thread_clones and deletes it via AcceptorReclaim, so
+  // deleting here would free it twice.
+  //
+  // The action is shared by every clone. An acceptor with its own listen socket closes only that socket: cancelling the action
+  // would make the siblings stop accepting while their sockets stay in the SO_REUSEPORT group, leaving clients queued on them.
+  if (!owns_listen_socket) {
+    action_->cancel();
+  }
+  if (refuse_retry != nullptr) {
+    refuse_retry->cancel(this);
+    refuse_retry = nullptr;
+  }
+  if (owns_listen_socket && server.sock.is_ok()) {
+    this->ep.stop();
+    server.close();
+  }
   e->cancel();
   Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
-  delete this;
   return EVENT_DONE;
 }
 
@@ -659,8 +1016,22 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   // Don't think this ever happens ...
   action_->cancel();
   Metrics::Gauge::decrement(net_rsb.accepts_currently_open);
-  delete this;
+  release_dedicated();
   return EVENT_DONE;
+}
+
+void
+NetAccept::release_dedicated()
+{
+  if (!dedicated_release) {
+    delete this;
+    return;
+  }
+  // Copied out because the shared state must outlive the delete when this call is the second one.
+  auto state = dedicated_release;
+  if (state->fetch_add(1, std::memory_order_acq_rel) == 1) {
+    delete this;
+  }
 }
 
 //

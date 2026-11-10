@@ -30,7 +30,7 @@ def overwide_webp() -> str:
     chunk = b"VP8L" + struct.pack("<I", len(payload)) + padded_payload
     body = b"WEBP" + chunk
     body = b"RIFF" + struct.pack("<I", len(body)) + body
-    assert all(value <= 0x7f for value in body)
+    assert all(value <= 0x7F for value in body)
     return body.decode("ascii")
 
 
@@ -43,14 +43,11 @@ def configure_origin(services: ServiceFactory, *, _body: str) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
+        {"headers": "GET /overwide.webp HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
         {
-            "headers": "GET /overwide.webp HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers":
-                ("HTTP/1.1 200 OK\r\nContent-Type: image/webp\r\n"
-                 f"Content-Length: {len(_body)}\r\nConnection: close\r\n\r\n"),
+            "headers": (
+                f"HTTP/1.1 200 OK\r\nContent-Type: image/webp\r\nContent-Length: {len(_body)}\r\nConnection: close\r\n\r\n"
+            ),
             "body": _body,
         },
     )
@@ -64,14 +61,16 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_cache=False)
+    ats = ats_factory.create("ts", enable_cache=False, disable_log_checks=True)
     if not ats.plugin_exists("webp_transform.so"):
         pytest.skip("webp_transform.so is required")
     ats.plugin_config.add_line("webp_transform.so convert_to_jpeg")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "webp_transform",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "webp_transform",
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     return ats
 

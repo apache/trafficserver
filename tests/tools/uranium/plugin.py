@@ -24,6 +24,7 @@ import os
 import shutil
 import sys
 import fcntl
+import zlib
 
 import pytest
 
@@ -73,6 +74,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "uranium_procedural: Uranium test written as a pytest function")
     config.addinivalue_line("markers", "manual: Uranium test run only when --run-manual is passed")
     config.addinivalue_line("markers", "serial: Uranium test that must run without parallel peers")
+    config.addinivalue_line("markers", "uranium_sandbox_collision: Uranium test whose sandbox name is not unique")
     if getattr(config.option, "numprocesses", None) and getattr(config.option, "dist", None) == "load":
         config.option.dist = "loadgroup"
 
@@ -105,6 +107,9 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     except BlockingIOError:
         lock.close()
         raise pytest.UsageError(f"Uranium sandbox is already in use: {directory}. Choose a different --sandbox.") from None
+    except OSError as error:
+        lock.close()
+        raise pytest.UsageError(f"Cannot lock Uranium sandbox {directory}: {error}. Choose a different --sandbox.") from None
     config.add_cleanup(lock.close)
     (directory / ".port-counter").write_text("10000")
 
@@ -113,19 +118,25 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     """Apply serial scheduling, UDS exclusions, and zero-based CI sharding."""
 
     _mark_manual_tests(items, enabled=config.getoption("run_manual"))
-    sandbox_owners: dict[str, str] = {}
+    sandbox_owners: dict[str, pytest.Item] = {}
     for item in items:
         if item.path.name.startswith("test_") and "uranium_tests" in item.path.parts:
             item.add_marker("uranium_procedural")
         if isinstance(item, ReplayItem) or item.get_closest_marker("uranium_procedural"):
             name = TestRuntime.sandbox_name(item.nodeid)
-            if name in sandbox_owners:
+            if owner := sandbox_owners.get(name):
                 message = (
-                    f"Uranium sandbox name {name!r} is shared by {sandbox_owners[name]} and {item.nodeid}. "
-                    "Give these tests distinct names so they cannot overwrite each other's artifacts.")
+                    f"Uranium sandbox name {name!r} is shared by {owner.nodeid} and {item.nodeid}. "
+                    "Give these tests distinct names so they cannot overwrite each other's artifacts."
+                )
                 print(message, file=sys.stderr, flush=True)
-                raise pytest.UsageError(message)
-            sandbox_owners[name] = item.nodeid
+                # A UsageError raised in an xdist worker crashes the controller, so fail the items instead.
+                if not hasattr(config, "workerinput"):
+                    raise pytest.UsageError(message)
+                for colliding in (owner, item):
+                    colliding.add_marker(pytest.mark.uranium_sandbox_collision(message))
+                continue
+            sandbox_owners[name] = item
         if _is_serial_test(Path(item.path)):
             item.add_marker("serial")
             item.add_marker(pytest.mark.xdist_group("ats_serial"))
@@ -147,12 +158,12 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     if shard_count is not None:
         if shard_count <= 0 or shard_index < 0 or shard_index >= shard_count:
             raise pytest.UsageError("ATS shard values must satisfy 0 <= index < count")
-        shard_nodeids = {
-            item.nodeid
-            for position, item in enumerate(sorted(selected, key=lambda candidate: candidate.nodeid))
-            if position % shard_count == shard_index
-        }
-        selected, rejected = _partition_items(selected, lambda item: item.nodeid in shard_nodeids)
+        # Hash the test id rather than its sorted position, so adding or
+        # removing a test never moves other tests to a different shard.
+        selected, rejected = _partition_items(
+            selected,
+            lambda item: zlib.crc32(item.nodeid.encode()) % shard_count == shard_index,
+        )
         deselected.extend(rejected)
 
     if deselected:
@@ -163,6 +174,16 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         key=lambda item: ("tls_conn_timeout" not in item.name, item.nodeid),
     )
     items[:] = regular_items + serial_items
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    """Fail tests whose sandbox would be shared with another collected test.
+
+    :param item: Pytest item about to run.
+    """
+
+    if marker := item.get_closest_marker("uranium_sandbox_collision"):
+        pytest.fail(marker.args[0], pytrace=False)
 
 
 @pytest.hookimpl(wrapper=True)
@@ -200,8 +221,7 @@ def _update_sandbox_retention(item: pytest.Item, report: pytest.TestReport) -> N
         return
 
     runtime = get_runtime(item.config)
-    sandbox = runtime.item_sandbox(item.spec.path, item.nodeid) if is_replay else runtime.procedural_sandbox(item.nodeid)
-    shutil.rmtree(sandbox, ignore_errors=True)
+    shutil.rmtree(runtime.item_sandbox(item.nodeid), ignore_errors=True)
 
 
 def _mark_manual_tests(items: Sequence[MarkableItem], *, enabled: bool) -> None:
@@ -387,8 +407,9 @@ def services(procedural_context: ProceduralContext) -> Iterator[ServiceFactory]:
         factory.close()
 
 
-def _partition_items(items: list[pytest.Item], predicate: Callable[[pytest.Item],
-                                                                   bool]) -> tuple[list[pytest.Item], list[pytest.Item]]:
+def _partition_items(
+    items: list[pytest.Item], predicate: Callable[[pytest.Item], bool]
+) -> tuple[list[pytest.Item], list[pytest.Item]]:
     """Split collected items while preserving their order."""
 
     selected = []

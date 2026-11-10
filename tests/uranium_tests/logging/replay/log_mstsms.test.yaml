@@ -37,7 +37,6 @@ urtest:
     file_checks:
       - path: "{LOG_DIR}/field-mstsms.log"
         line_count_min: 3
-        timeout: 10
         matches:
           - expression: '^mstsms:(?:[^,\n]*,){19}[^,\n]*\d$'
             min: 3

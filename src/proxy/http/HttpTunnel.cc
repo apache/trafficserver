@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1219,7 +1219,20 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         if (c->write_vio == nullptr) {
           consumer_handler(VC_EVENT_ERROR, c);
         }
+      } else if (c->write_empty_body && (c->write_vio = c->vc->do_io_write(this, 0, c->buffer_reader)) != nullptr) {
+        // The VC signals WRITE_COMPLETE once it has sent the frame that ends the body.
+        c->write_vio->reenable();
       } else {
+        // Either the VC needs no write to end an empty body, or its stream has
+        // already sent END_STREAM or been reset, so it refuses the write. Unlike a
+        // refused cache write this is not an error. A request with Content-Length: 0
+        // goes out with END_STREAM on HEADERS even when its client then sends an
+        // empty DATA frame, and the second, empty pass over a buffered request body
+        // reaches a stream the first pass already ended; both wait on this event. A
+        // reset reaches HttpSM through the response read already under way.
+        if (c->write_empty_body) {
+          Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] consumer '%s' cannot be written, completing without a write", sm->sm_id, c->name);
+        }
         c->write_vio = nullptr;
         consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }

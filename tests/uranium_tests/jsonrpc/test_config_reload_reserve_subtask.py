@@ -18,6 +18,8 @@ import time
 
 from tools.uranium.services import ATS, ATSFactory
 
+from .config_reload_helpers import wait_for_reload
+
 
 def configure_ats(ats_factory: ATSFactory) -> ATS:
     """Configure every reload handler involved in the race.
@@ -31,21 +33,24 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc|config|config.reload|filemanager",
-        })
+        }
+    )
     ats.write_config_file(
         "ip_allow.yaml",
-        "ip_allow:\n"
-        "  - apply: in\n"
-        "    ip_addrs: 0/0\n"
-        "    action: allow\n"
-        "    methods: ALL\n",
+        "ip_allow:\n  - apply: in\n    ip_addrs: 0/0\n    action: allow\n    methods: ALL\n",
     )
-    ats.set_logging_yaml({"logging": {
-        "formats": [{
-            "name": "reserve_test",
-            "format": "%<cqtq>",
-        }]
-    }})
+    ats.set_logging_yaml(
+        {
+            "logging": {
+                "formats": [
+                    {
+                        "name": "reserve_test",
+                        "format": "%<cqtq>",
+                    }
+                ]
+            }
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         'sni:\n  - fqdn: "*.example.com"\n    verify_client: NONE\n',
@@ -93,7 +98,7 @@ def reload_and_check_status(*, _ats: ATS) -> None:
 
     result = _ats.traffic_ctl("config", "reload", "-t", "reserve_subtask_test")
     assert result.returncode == 0, result.output
-    time.sleep(15)
+    assert wait_for_reload(_ats, "reserve_subtask_test", after_log="Reserved subtask") == "success"
     status = _ats.traffic_ctl("config", "status", "-t", "reserve_subtask_test")
     assert status.returncode == 0, status.output
     assert "success" in status.stdout

@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -23,6 +23,7 @@
 
 #include "P_SSLCertLookup.h"
 #include "P_SSLConfig.h"
+#include "P_SSLUtils.h"
 #include "iocore/net/QUICMultiCertConfigLoader.h"
 #include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/quic/QUICConfig.h"
@@ -277,6 +278,9 @@ QUICMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
   Dbg(dbg_ctl_quic, "installing OpenSSL QUIC cert callback on SSL_CTX %p", ctx);
   SSL_CTX_set_client_hello_cb(ctx, quic_client_hello_callback, nullptr);
   SSL_CTX_set_tlsext_servername_callback(ctx, quic_servername_callback);
+  // These replace ssl_client_hello_callback() and ssl_cert_callback() rather than wrapping them, so
+  // the certificate types negotiated for raw public keys stay those of the default entry the
+  // connection started on; see the ssl_multicert.yaml docs.
   SSL_CTX_set_cert_cb(
     ctx,
     [](SSL *ssl, void *) -> int {
@@ -348,10 +352,9 @@ QUICMultiCertConfigLoader::_set_cipher_suites_for_legacy_versions(SSL_CTX * /* c
 }
 
 bool
-QUICMultiCertConfigLoader::_set_info_callback(SSL_CTX * /* ctx ATS_UNUSED */)
+QUICMultiCertConfigLoader::_set_info_callback(SSL_CTX *ctx)
 {
-  // Disabled for now
-  // TODO Check if we need this for QUIC
+  SSL_CTX_set_info_callback(ctx, SSLHandshakeInfoCallback);
   return true;
 }
 

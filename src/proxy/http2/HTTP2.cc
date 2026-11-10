@@ -2,7 +2,7 @@
  *
  *  Fundamental HTTP/2 protocol definitions and parsers.
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -517,6 +517,7 @@ int32_t  Http2::max_settings_per_frame             = 16;
 int32_t  Http2::max_settings_per_minute            = 32;
 int32_t  Http2::max_settings_frames_per_minute     = 14;
 int32_t  Http2::max_ping_frames_per_minute         = 60;
+int32_t  Http2::max_ping_frames_per_minute_out     = 300;
 int32_t  Http2::max_priority_frames_per_minute     = 120;
 int32_t  Http2::max_rst_stream_frames_per_minute   = 200;
 int32_t  Http2::max_continuation_frames_per_minute = 120;
@@ -565,6 +566,7 @@ Http2::init()
   RecEstablishStaticConfigInt32(max_settings_per_minute, "proxy.config.http2.max_settings_per_minute");
   RecEstablishStaticConfigInt32(max_settings_frames_per_minute, "proxy.config.http2.max_settings_frames_per_minute");
   RecEstablishStaticConfigInt32(max_ping_frames_per_minute, "proxy.config.http2.max_ping_frames_per_minute");
+  RecEstablishStaticConfigInt32(max_ping_frames_per_minute_out, "proxy.config.http2.max_ping_frames_per_minute_out");
   RecEstablishStaticConfigInt32(max_priority_frames_per_minute, "proxy.config.http2.max_priority_frames_per_minute");
   RecEstablishStaticConfigInt32(max_rst_stream_frames_per_minute, "proxy.config.http2.max_rst_stream_frames_per_minute");
   RecEstablishStaticConfigInt32(max_continuation_frames_per_minute, "proxy.config.http2.max_continuation_frames_per_minute");

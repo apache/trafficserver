@@ -2,7 +2,7 @@
 
   Server side connection management.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -27,6 +27,10 @@
 #include "tsutil/DbgCtl.h"
 #include "proxy/http/ConnectingEntry.h"
 #include "proxy/http/HttpSM.h"
+#include "proxy/http/HttpSessionManager.h"
+
+#include <utility>
+#include <vector>
 
 namespace
 {
@@ -37,9 +41,8 @@ DbgCtl dbg_ctl_http_connect{"http_connect"};
 
 ConnectingEntry::~ConnectingEntry()
 {
-  if (_conn_track_group) {
-    _conn_track_group->release();
-  }
+  // coverity[exn_spec_violation] - release() throws only on a broken table mutex or a Dbg format error; terminate is fine
+  release_outbound_connection_tracking();
   if (_netvc_read_buffer != nullptr) {
     free_MIOBuffer(_netvc_read_buffer);
     _netvc_read_buffer = nullptr;
@@ -51,6 +54,26 @@ ConnectingEntry::enable_outbound_connection_tracking(std::shared_ptr<ConnectionT
 {
   ink_assert(!_conn_track_group);
   _conn_track_group = std::move(group);
+}
+
+void
+ConnectingEntry::release_outbound_connection_tracking()
+{
+  if (_conn_track_group) {
+    _conn_track_group->release();
+    _conn_track_group.reset();
+  }
+}
+
+void
+ConnectingEntry::_transfer_outbound_connection_tracking(PoolableSession &session)
+{
+  // HttpSM::create_server_session() installs a group only if the prime transaction still holds one. The creating
+  // transaction moved its reservation into this entry and joining transactions queue in add_to_existing_request()
+  // before they reserve, so the session has no group yet.
+  if (_conn_track_group) {
+    session.enable_outbound_connection_tracking(std::move(_conn_track_group));
+  }
 }
 
 int
@@ -95,41 +118,54 @@ ConnectingEntry::state_http_server_open(int event, void *data)
       auto prime_iter = connect_sms.rbegin();
       ink_release_assert(prime_iter != connect_sms.rend());
       PoolableSession *new_session = (*prime_iter)->create_server_session(*netvc, _netvc_read_buffer, _netvc_reader);
-      if (_conn_track_group) {
-        new_session->enable_outbound_connection_tracking(std::move(_conn_track_group));
-      }
-      netvc              = nullptr;
-      _netvc_read_buffer = nullptr;
+      netvc                        = nullptr;
+      _netvc_read_buffer           = nullptr;
 
       // Did we end up with a multiplexing session?
       int count = 0;
       if (new_session->is_multiplexing()) {
-        // Hand off to all queued up ConnectSM's.
-        bool session_handed_off = false;
-        while (!connect_sms.empty()) {
-          auto  entry      = connect_sms.begin();
-          auto  event      = CONNECT_EVENT_TXN;
-          void *event_data = new_session;
+        // Check every queued transaction against the certificate before handing any of them the session: those that
+        // fail retry inline on their own connections, and they must not find this connection's reservation still held
+        // by a session nobody will use.
+        std::vector<std::pair<HttpSM *, bool>> handoffs;
+        bool                                   session_handed_off = false;
+        NetVConnection                        *session_netvc      = new_session->get_netvc();
+        bool const                             raw_public_key     = origin_presented_raw_public_key(session_netvc);
+        handoffs.reserve(connect_sms.size());
+        for (HttpSM *sm : connect_sms) {
+          // Only a pinned key set can vouch for a raw public key origin, so a transaction joins this session only if
+          // validate_pinned_origin() accepts it for the transaction's own set and policy.
+          bool const verified = raw_public_key ?
+                                  ServerSessionPool::validate_pinned_origin(sm, session_netvc) :
+                                  validate_server_certificate_hostname(session_netvc, sm->get_outbound_sni_for_cert_verification());
+          handoffs.emplace_back(sm, verified);
+          session_handed_off = session_handed_off || verified;
+        }
+        connect_sms.clear();
 
-          if (!validate_server_certificate_hostname(new_session->get_netvc(), (*entry)->get_outbound_sni_for_cert_verification())) {
-            // Retry without joining another multiplexed connect queue so this
-            // transaction gets its own TLS handshake and certificate check.
-            event      = CONNECT_EVENT_DIRECT;
-            event_data = nullptr;
-          } else {
-            session_handed_off = true;
-          }
+        if (session_handed_off) {
+          _transfer_outbound_connection_tracking(*new_session);
+        } else {
+          release_outbound_connection_tracking();
+        }
+
+        // Hand off to all queued up ConnectSM's.
+        for (auto const &[sm, verified] : handoffs) {
+          // A transaction whose certificate check failed retries without joining another multiplexed connect queue so
+          // it gets its own TLS handshake and certificate check.
+          auto  event      = verified ? CONNECT_EVENT_TXN : CONNECT_EVENT_DIRECT;
+          void *event_data = verified ? new_session : nullptr;
 
           Dbg(dbg_ctl_http_connect, "ConnectingEntry Pass along %s %d",
               event == CONNECT_EVENT_TXN ? "CONNECT_EVENT_TXN" : "CONNECT_EVENT_DIRECT", count++);
-          SCOPED_MUTEX_LOCK(lock, (*entry)->mutex, this_ethread());
-          (*entry)->handleEvent(event, event_data);
-          connect_sms.erase(entry);
+          SCOPED_MUTEX_LOCK(lock, sm->mutex, this_ethread());
+          sm->handleEvent(event, event_data);
         }
         if (!session_handed_off) {
           new_session->do_io_close();
         }
       } else {
+        _transfer_outbound_connection_tracking(*new_session);
         // Hand off to one and tell all of the others to connect directly
         Dbg(dbg_ctl_http_connect, "ConnectingEntry send CONNECT_EVENT_TXN to first %d", count++);
         {
@@ -159,6 +195,8 @@ ConnectingEntry::state_http_server_open(int event, void *data)
   case NET_EVENT_OPEN_FAILED: {
     Dbg(dbg_ctl_http_connect, "Stop %zd state machines waiting for failed origin", connect_sms.size());
     this->remove_entry();
+    // The transactions may retry inline below, so the failed attempt's reservation must be returned first.
+    release_outbound_connection_tracking();
     int vc_provided_cert = 0;
     int lerrno           = EIO;
     if (netvc != nullptr) {

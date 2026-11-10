@@ -65,6 +65,21 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+``RegexMatchContext``, in the installed ``tsutil/Regex.h``, is removed. A match
+limit is now passed to ``Regex::exec`` as a ``Regex::Options`` value, in which a
+zero field means the shared default:
+
+.. code-block:: cpp
+
+    Regex::Options opts;
+    opts.match_limit = 1750;
+    int rc = regex.exec(subject, matches, flags, opts);
+
+Matches with options now use the shared match configuration, including its
+1 MiB JIT stack, rather than PCRE2's defaults. Plugins that call
+``Regex::exec(subject, matches, flags)`` must be recompiled, because the symbol
+that call resolved to is gone.
+
 traffic_ctl Changes
 -------------------
 
@@ -84,6 +99,10 @@ the default level, ``error``, the exit status only changes in these cases:
 Annotations that carry a severity are printed with it, for example ``- [3000] Warn: Server already
 draining.``, and a JSONRPC error ``data`` entry carries a ``severity`` field when its handler sets
 one, see :ref:`jsonrpc-node-errors-severity`.
+
+A ``--`` now protects the token after it at every level of the command line, so a value spelled
+like a global option reaches the command that asked for it: ``traffic_ctl config set NAME -- -f``
+sets the record to ``-f`` instead of failing on ``--format``.
 
 Security Hardening
 ------------------
@@ -279,6 +298,71 @@ Plugins
   :file:`sni.yaml` already require a whole-subject match and are unaffected by
   the setting (CVE-2026-22068).
 
+Configuration Changes
+---------------------
+The following :file:`records.yaml` changes have been made:
+
+- :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` now applies only to inbound connections.
+  Outbound HTTP/2 connections use the new
+  :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out`, which defaults to ``300``. Origin
+  connections now allow 300 PING frames a minute by default where they allowed 60, so a default
+  configuration closes fewer origin connections. If you set
+  :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` to anything other than the default,
+  origin connections no longer use that value and get ``300`` instead. That is stricter for
+  origins if you had set it negative (no limit) or above ``300``; set
+  :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out` as well to keep your limit for them.
+
+- The addresses in :ts:cv:`proxy.config.http.per_client.connection.exempt_list` are now also
+  exempt from :ts:cv:`proxy.config.net.connections_throttle`. If you already use this list for the
+  per-client limit, those addresses can now also connect when ATS is at the connection limit, and
+  they can take ATS past that limit. Review the list before you upgrade.
+
+:ts:cv:`proxy.config.net.inactivity_check_frequency` no longer trades load for
+timeout accuracy, and if you raised it you are now paying the accuracy for
+nothing.
+
+Connection timeouts used to be found by walking every open connection on a
+thread once per check, so the cost of a check grew with the number of
+connections open and checking less often genuinely reduced it — which is what
+the documentation for this setting previously advised. Timeouts are now held in
+a per-thread timer wheel, so a check costs what the deadlines that have come
+due cost, independent of how many connections are open.
+
+The setting still controls timeout resolution: a timeout fires on the first
+check at or after its deadline. So a value raised to relieve load now only
+delays timeouts by up to that interval. If you tuned it for that reason,
+returning it to the default of 1 costs nothing and restores accuracy.
+
+Plugins
+-------
+
+The :ref:`admin-plugins-stats-over-http` plugin prints gauge values as signed
+integers in its JSON, CSV and Prometheus output. Earlier versions printed a
+negative gauge as an unsigned value, for example ``18446744073709551574`` for
+``-42``, or ``9223372036854775767`` with ``--wrap-counters``. The
+``--wrap-counters`` option now applies only to counters.
+
+Two changes affect the Prometheus version 0.0.4 output of the plugin:
+
+* When two metric names map to the same Prometheus name, the plugin writes
+  them as one family: one ``# HELP`` and ``# TYPE`` block, then all of their
+  samples. Earlier versions wrote a separate block for each metric.
+* The plugin writes sample lines that are longer than 255 bytes. Earlier
+  versions left out such a sample, but wrote its ``# HELP`` and ``# TYPE``
+  lines.
+
+The plugin renders the statistics on a task thread. Each request waits for a
+render that starts after the request arrives. The ``--max-age-ms`` option lets
+a render also answer the requests that arrive up to that many milliseconds
+after it starts; the default is ``0`` for the global plugin and ``1000`` for a
+remap rule. When requests wait and no render finishes for ten seconds, the
+requests get a ``503`` response. The ``--wait-timeout-ms`` option sets this
+time.
+
+The plugin creates metrics of its own, such as
+``plugin.stats_over_http.requests`` and ``plugin.stats_over_http.renders``, so
+its output has more metrics than before, in each format.
+
 Upgrading to ATS v10.x
 ======================
 
@@ -411,6 +495,11 @@ The following :file:`records.yaml` changes have been made:
   ``HostDBInfo::State::SUSPECT`` state it actually applies to (a recovering origin allowed a limited probe budget after
   :ts:cv:`proxy.config.http.down_server.cache_time` elapses). When only the deprecated record is set, its value is mirrored
   forward to the new record and a warning is logged. When both are set, the new record wins.
+- The records.yaml entry ``proxy.config.exec_thread.watchdog.timeout_ms`` is now deprecated in favor of
+  :ts:cv:`proxy.config.exec_thread.watchdog.timeout_shrink_ms`. When only the deprecated record is set, the watchdog
+  behaves as before - it only logs a warning for each event loop iteration that runs past the timeout - and a
+  deprecation warning is logged. The new watchdog metrics and backpressure settings require
+  :ts:cv:`proxy.config.exec_thread.watchdog.timeout_shrink_ms`. When both are set, the new record wins.
 - The entry ``proxy.config.http.connect.dead.policy`` has been renamed to :ts:cv:`proxy.config.http.connect.down.policy`.
 - The records.yaml entry ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
   ``proxy.config.http.post_connect_attempts_timeout`` have been removed. Instead use

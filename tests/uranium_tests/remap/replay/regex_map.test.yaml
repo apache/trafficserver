@@ -60,10 +60,17 @@ sessions:
           headers: {fields: [[Host, zero.one.two.three.com]]}
         proxy-request:
           method: GET
-          url: /
+          url:
+          - - path
+            - value: /
+              as: equal
+          - - query
+            - as: absent
           headers:
             fields:
-              - [Host, {value: 'zero.reactivate.four.five.six.com', as: prefix}]
+            - - Host
+              - value: zero.reactivate.four.five.six.com
+                as: prefix
         server-response:
           status: 200
           headers: {fields: [[Content-Length, 0]]}

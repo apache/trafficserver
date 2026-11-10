@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1076,7 +1076,7 @@ mime_hdr_clone(MIMEHdrImpl *s_mh, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit
  * @a dest_ptr does to @a src_base.
  */
 static inline MIMEField *
-rebase(MIMEField *dest_ptr,  ///< Original pointer into @src_base memory.
+rebase(MIMEField *dest_ptr,  ///< Original pointer into @a src_base memory.
        void      *dest_base, ///< New base pointer.
        void      *src_base   ///< Original base pointer.
 )
@@ -2580,14 +2580,22 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       raw_print_field = false;
       // The fused scan hashed and validated the untrimmed name; recompute below.
       name_scan_stale = true;
-    } else if (parsed.suffix(2) != "\r\n" || (parsed.size() > 2 && parsed[parsed.size() - 3] == '\r')) {
-      // Do not preserve malformed line endings when forwarding the field.
-      raw_print_field = false;
     }
 
     // find value first
     field_value.ltrim_if(&ParseRules::is_ws);
     field_value.rtrim_if(&ParseRules::is_wslfcr);
+
+    if (raw_print_field) {
+      // Raw printing copies the original input bytes instead of re-serializing, so it would
+      // replay this line ending verbatim. Everything between the end of the trimmed value and
+      // the end of the line must be optional whitespace followed by exactly one CRLF; a bare
+      // CR in there is malformed (RFC 9112 section 2.2) and must not be forwarded.
+      TextView tail{field_value.data() + field_value.size(), parsed.data() + parsed.size()};
+      if (tail.suffix(2) != "\r\n" || tail.remove_suffix(2).find_first_of("\r\n") != TextView::npos) {
+        raw_print_field = false;
+      }
+    }
 
     // Make sure the name + value is not longer than configured max_hdr_field_size
     if (field_name.size() + field_value.size() > max_hdr_field_size) {
@@ -3838,6 +3846,71 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 //      detaching the field                           //
 ////////////////////////////////////////////////////////
 
+namespace
+{
+/** Find the no-cache, no-store and private directives named anywhere in a Cache-Control element.
+ *
+ * @param[in] s The start of the element.
+ * @param[in] e The end of the element.
+ * @return The cooked mask bits of the restrictive directives found.
+ */
+uint32_t
+restrictive_cc_directives_in(const char *s, const char *e)
+{
+  constexpr uint32_t restrictive_mask = MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE;
+  uint32_t           mask             = 0;
+
+  while (s < e) {
+    if (!ParseRules::is_token(*s)) {
+      ++s;
+      continue;
+    }
+    const char *token_start = s;
+    while (s < e && ParseRules::is_token(*s)) {
+      ++s;
+    }
+    const char *token_wks;
+    if (hdrtoken_tokenize(token_start, s - token_start, &token_wks) >= 0) {
+      mask |= hdrtoken_wks_to_prefix(token_wks)->wks_type_specific.u.cache_control.cc_mask & restrictive_mask;
+    }
+  }
+  return mask;
+}
+
+/** Skip the optional argument of a Cache-Control directive.
+ *
+ * RFC 9111, Section 5.2: cache-directive = token [ "=" ( token / quoted-string ) ].
+ * The CSV iterator strips the closing quote of a quoted-string, so its absence is tolerated.
+ *
+ * @param[in] c The position just after the directive name.
+ * @param[in] e The end of the element.
+ * @return The position just after the argument, or @a c if there is no argument.
+ */
+const char *
+skip_cc_argument(const char *c, const char *e)
+{
+  if (c >= e || *c != '=') {
+    return c;
+  }
+  ++c;
+  if (c < e && *c == '"') {
+    for (++c; c < e && *c != '"'; ++c) {
+      if (*c == '\\' && c + 1 < e) {
+        ++c;
+      }
+    }
+    if (c < e) {
+      ++c;
+    }
+  } else {
+    while (c < e && ParseRules::is_token(*c)) {
+      ++c;
+    }
+  }
+  return c;
+}
+} // namespace
+
 void
 MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std::string_view *targeted_headers,
                                     size_t targeted_headers_count)
@@ -3970,27 +4043,36 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
                 csv_value_mask                         = 0;
                 m_cooked_stuff.m_cache_control.m_mask &= ~mask;
               }
+            } else {
+              // Skip the argument, such as the field names of a qualified private or no-cache.
+              c = skip_cc_argument(c, e);
             }
+          } else {
+            // An unknown directive, such as an extension, is ignored along with its argument.
+            c = skip_cc_argument(c, e);
+          }
 
-            // Detect whether there is any more non-whitespace content after the
-            // directive. This indicates an unrecognized or malformed directive.
-            // This can happen, for instance, if the host uses semicolons
-            // instead of commas as separators which is against RFC 7234 (see
-            // issue #12029). Regardless of the cause, this means we need to
-            // ignore the directive and clear any mask bits we set from it.
-            while (c < e && ParseRules::is_ws(*c)) {
-              ++c;
-            }
-            if (c < e) {
-              // There's non-whitespace content that wasn't parsed. This means
-              // that we cannot really understand what this directive is.
-              // Per RFC 7234 Section 5.2: "A cache MUST ignore unrecognized cache
-              // directives."
-              if (csv_value_mask != 0) {
-                // Reverse the mask that we set above.
-                m_cooked_stuff.m_cache_control.m_mask &= ~csv_value_mask;
-              }
-            }
+          // Detect whether there is any more non-whitespace content after the
+          // directive. This indicates an unrecognized or malformed directive.
+          // This can happen, for instance, if the host uses semicolons
+          // instead of commas as separators which is against RFC 7234 (see
+          // issue #12029). Regardless of the cause, this means we need to
+          // ignore the directive and clear any mask bits we set from it,
+          // except for the restrictive directives handled below.
+          while (c < e && ParseRules::is_ws(*c)) {
+            ++c;
+          }
+          if (c < e) {
+            // There's non-whitespace content that wasn't parsed. This means
+            // that we cannot really understand what this directive is.
+            // Per RFC 9111 Section 5.2.3: "A cache MUST ignore unrecognized
+            // cache directives." A no-cache, no-store or private named
+            // anywhere in the element is kept, though: dropping it could
+            // expose a response that the origin meant to protect, such as
+            // with "private; max-age=600", "max-age=600; private" or
+            // "stale-while-revalidate=60; private".
+            m_cooked_stuff.m_cache_control.m_mask &= ~csv_value_mask;
+            m_cooked_stuff.m_cache_control.m_mask |= restrictive_cc_directives_in(s, e);
           }
         }
       }

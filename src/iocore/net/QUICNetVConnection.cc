@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -190,6 +190,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     _unschedule_packet_write_ready();
     this->_propagate_event(event);
     this->closed = 1;
+    this->rearm_timer();
     break;
   default:
     QUICConDebug("Unhandled event: %d", event);
@@ -231,6 +232,7 @@ QUICNetVConnection::state_established(int event, Event *data)
     _unschedule_packet_write_ready();
     this->_propagate_event(event);
     this->closed = 1;
+    this->rearm_timer();
     break;
   default:
     QUICConDebug("Unhandled event: %d", event);
@@ -901,6 +903,18 @@ QUICNetVConnection::_get_tls_group() const
   } else {
     return SSLGetGroupName(this->_ssl);
   }
+}
+
+std::string
+QUICNetVConnection::_get_tls_offered_signature_algorithms() const
+{
+  return SSLGetOfferedSignatureAlgorithms(this->_ssl);
+}
+
+std::string
+QUICNetVConnection::_get_tls_negotiated_signature_algorithm() const
+{
+  return SSLGetNegotiatedSignatureAlgorithm(this->_ssl);
 }
 
 int

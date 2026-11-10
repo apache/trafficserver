@@ -2,7 +2,7 @@
 
   Http2ConnectionState.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -107,7 +107,9 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   Http2StreamDebug(this->session, id, "Received DATA frame, flags: %d", frame.header().flags);
 
-  // Update connection window size, before any stream specific handling
+  // Update connection window size, before any stream specific handling. RFC
+  // 9113 section 6.9 requires accounting for every flow-controlled frame
+  // against the connection window, even one that is in error.
   this->decrement_local_rwnd(payload_length);
 
   if (this->get_zombie_event()) {
@@ -125,6 +127,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   Http2Stream *stream = this->find_stream(id);
   if (stream == nullptr) {
     if (this->is_valid_streamid(id)) {
+      this->_top_up_window_after_discard(payload_length);
       // This error occurs fairly often, and is probably innocuous (SM initiates the shutdown)
       if (this->session->is_outbound()) {
         this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
@@ -140,6 +143,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED ||
       stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
+    this->_top_up_window_after_discard(payload_length);
     this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
@@ -149,6 +153,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   // the recipient MUST respond with a stream error of type STREAM_CLOSED.
   if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_OPEN &&
       stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
                       "recv data stream closed");
   }
@@ -169,10 +174,12 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
     stream->receive_end_stream = true;
     if (!stream->change_state(frame.header().type, frame.header().flags)) {
+      this->_top_up_window_after_discard(payload_length);
       this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
     if (!stream->payload_length_is_valid()) {
+      this->_top_up_window_after_discard(payload_length);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
     }
@@ -216,6 +223,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
                       "recv data this->local_rwnd < payload_length");
   }
   if (stream->get_local_rwnd() < payload_length) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                       "recv data stream->local_rwnd < payload_length");
   }
@@ -233,6 +241,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   MIOBuffer *writer = stream->read_vio_writer();
   if (writer == nullptr) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "no writer");
   }
 
@@ -253,6 +262,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
     unsigned int num_written = writer->write(myreader, read_len);
     if (num_written != read_len) {
       myreader->writer()->dealloc_reader(myreader);
+      this->_top_up_window_after_discard(payload_length);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "Write mismatch");
     }
     myreader->consume(num_written);
@@ -1513,11 +1523,12 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
                                   configured_settings.get(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE));
 
   configured_max_settings_frames_per_minute     = Http2::max_settings_frames_per_minute;
-  configured_max_ping_frames_per_minute         = Http2::max_ping_frames_per_minute;
   configured_max_priority_frames_per_minute     = Http2::max_priority_frames_per_minute;
   configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
   configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
   configured_max_empty_frames_per_minute        = Http2::max_empty_frames_per_minute;
+  configured_max_ping_frames_per_minute =
+    session->is_outbound() ? Http2::max_ping_frames_per_minute_out : Http2::max_ping_frames_per_minute;
 
   HttpConfigParams *http_config = HttpConfig::acquire();
   if (http_config) {
@@ -2161,6 +2172,14 @@ Http2ConnectionState::restart_streams()
 }
 
 void
+Http2ConnectionState::_top_up_window_after_discard(uint32_t discarded_length)
+{
+  Http2StreamDebug(this->session, HTTP2_CONNECTION_CONTROL_STREAM, "Discarded DATA payload_length=%" PRIu32 " rwnd con=%zd",
+                   discarded_length, this->get_local_rwnd());
+  this->restart_receiving(nullptr);
+}
+
+void
 Http2ConnectionState::restart_receiving(Http2Stream *stream)
 {
   if (this->session->get_proxy_session()->is_peer_closed()) {
@@ -2701,48 +2720,35 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     return;
   }
 
-  // Send a HEADERS frame
+  if (stream->is_outbound_connection()) {
+    int method = send_hdr->method_get_wksidx();
+    stream->set_sent_request_method(method);
+
+    // When no body follows the request header nothing else is written to this
+    // stream, so END_STREAM has to go on HEADERS. A Content-Length, including the
+    // one HttpSM sets for a body a plugin supplies, says whether a body follows.
+    // Without one, a body follows only when HttpSM forwards the client's.
+    bool body_follows = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) ? send_hdr->get_content_length() > 0 :
+                                                                           stream->get_sm()->forwards_client_request_body();
+    if (!body_follows) {
+      Http2StreamDebug(session, stream->get_id(), "request END_STREAM");
+      flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
+      stream->send_end_stream  = true;
+    }
+  } else {
+    if ((send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) && send_hdr->get_content_length() == 0) ||
+        (!send_hdr->expect_final_response() && stream->is_write_vio_done())) {
+      Http2StreamDebug(session, stream->get_id(), "response END_STREAM");
+      flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
+      stream->send_end_stream  = true;
+    }
+  }
+
+  // CONTINUATION frames have no END_STREAM flag, so END_STREAM stays on HEADERS
+  // even when CONTINUATION frames carry the rest of the header block.
   if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length  = header_blocks_size;
     flags          |= HTTP2_FLAGS_HEADERS_END_HEADERS;
-    if (stream->is_outbound_connection()) { // Will be sending a request_header
-      int method = send_hdr->method_get_wksidx();
-      stream->set_sent_request_method(method);
-
-      // Set END_STREAM on request headers for POST, etc. methods combined with
-      // an explicit length 0. Some origins RST on request headers with
-      // explicit zero length and no end stream flag, causing the request to
-      // fail. We emulate chromium behaviour here prevent such RSTs. Transfer-encoding
-      // implies there’s a body, regardless of whether it is chunked or not.
-      bool    content_method       = method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT;
-      bool    is_transfer_encoded  = send_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING);
-      bool    has_content_header   = send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH);
-      bool    explicit_zero_length = has_content_header && send_hdr->get_content_length() == 0;
-      int64_t content_length       = has_content_header ? send_hdr->get_content_length() : 0L;
-      bool is_chunked = is_transfer_encoded && send_hdr->value_get(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) ==
-                                                 static_cast<std::string_view>(HTTP_VALUE_CHUNKED);
-
-      bool expect_content_stream =
-        is_transfer_encoded ||                                                        // transfer encoded content length is unknown
-        (!content_method && has_content_header && !explicit_zero_length) ||           // nonzero content with GET,etc
-        (content_method && !explicit_zero_length) ||                                  // content-length >0 or empty with POST etc
-        stream->get_sm()->get_ua_txn()->has_request_body(content_length, is_chunked); // request has a body
-
-      // send END_STREAM if we don't expect any content
-      if (!expect_content_stream) {
-        // TODO deal with the chunked encoding case
-        Http2StreamDebug(session, stream->get_id(), "request END_STREAM");
-        flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
-        stream->send_end_stream  = true;
-      }
-    } else {
-      if ((send_hdr->presence(MIME_PRESENCE_CONTENT_LENGTH) && send_hdr->get_content_length() == 0) ||
-          (!send_hdr->expect_final_response() && stream->is_write_vio_done())) {
-        Http2StreamDebug(session, stream->get_id(), "response END_STREAM");
-        flags                   |= HTTP2_FLAGS_HEADERS_END_STREAM;
-        stream->send_end_stream  = true;
-      }
-    }
     stream->mark_milestone(Http2StreamMilestone::START_TX_HEADERS_FRAMES);
   } else {
     payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);

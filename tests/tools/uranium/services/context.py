@@ -66,7 +66,7 @@ class ProceduralContext:
         :param use_uds: Whether curl clients should use ATS Unix sockets.
         """
 
-        run_directory = runtime.procedural_sandbox(node_name)
+        run_directory = runtime.item_sandbox(node_name)
         runtime.prepare_sandbox(run_directory)
         return cls(runtime, node_name, test_path, run_directory, use_uds)
 

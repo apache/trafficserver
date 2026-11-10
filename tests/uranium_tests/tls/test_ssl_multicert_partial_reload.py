@@ -44,13 +44,14 @@ def configure_origin(name: str, *, _services: ServiceFactory) -> OriginServer:
 
 
 def configure_ats(
-        name: str,
-        entries: Sequence[str],
-        *,
-        partial_reload: bool,
-        exit_on_load_fail: bool = False,
-        _ats_factory: ATSFactory,
-        _services: ServiceFactory) -> tuple[ATS, OriginServer]:
+    name: str,
+    entries: Sequence[str],
+    *,
+    partial_reload: bool,
+    exit_on_load_fail: bool = False,
+    _ats_factory: ATSFactory,
+    _services: ServiceFactory,
+) -> tuple[ATS, OriginServer]:
     """Configure one TLS proxy and its origin.
 
     :param name: Unique ATS process-name prefix.
@@ -72,7 +73,8 @@ def configure_ats(
             "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
             "proxy.config.ssl.server.multicert.exit_on_load_fail": int(exit_on_load_fail),
             "proxy.config.ssl.server.multicert.partial_reload": int(partial_reload),
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
     ats.ssl_multicert_config.add_lines(("ssl_multicert:", *entries))
     return ats, origin
@@ -140,6 +142,7 @@ def generate_rsa(ats: ATS, stem: str, common_name: str) -> None:
         f"/CN={common_name}",
     )
     assert result.returncode == 0, result.output
+    ats.chown_for_ats(ats.ssl_directory)
 
 
 def generate_ec(ats: ATS, stem: str, common_name: str) -> None:
@@ -170,6 +173,7 @@ def generate_ec(ats: ATS, stem: str, common_name: str) -> None:
         f"/CN={common_name}",
     )
     assert cert_result.returncode == 0, cert_result.output
+    ats.chown_for_ats(ats.ssl_directory)
 
 
 def reload(ats: ATS, token: str, expected: str) -> None:
@@ -187,14 +191,8 @@ def reload(ats: ATS, token: str, expected: str) -> None:
     expected_state = "fail" if expected == "failed" else expected
     while time.monotonic() < deadline:
         status = ats.rpc(
-            {
-                "jsonrpc": "2.0",
-                "id": "reload-status",
-                "method": "get_reload_config_status",
-                "params": {
-                    "token": token
-                }
-            })
+            {"jsonrpc": "2.0", "id": "reload-status", "method": "get_reload_config_status", "params": {"token": token}}
+        )
         assert status.returncode == 0, status.output
         latest = json.loads(status.stdout)
         assert "error" not in latest, latest
@@ -221,8 +219,7 @@ def request(ats: ATS, hostname: str, expected_common_name: str | None = None, *,
 
     result = _curl.run_for(
         ats,
-        f"--silent --verbose --insecure --resolve '{hostname}:{ats.https_port}:127.0.0.1' "
-        f"'https://{hostname}:{ats.https_port}/'",
+        f"--silent --verbose --insecure --resolve '{hostname}:{ats.https_port}:127.0.0.1' 'https://{hostname}:{ats.https_port}/'",
     )
     assert result.returncode == 0, result.output
     if expected_common_name:
@@ -315,7 +312,7 @@ def test_ssl_multicert_sni_only_reload(ats_factory: ATSFactory, services: Servic
     initial = named_entry("server.pem", "server.key")
     ats, origin = configure_ats("sni-only", initial, partial_reload=True, _ats_factory=ats_factory, _services=services)
     start(ats, origin)
-    request(ats, SSL_MULTICERT_PARTIAL_RELOAD__valid_sni, _curl=curl)
+    request(ats, "example.com", _curl=curl)
     generate_rsa(ats, "sni-new", "sni-c-new.example.com")
     write_entries(ats, (*bad_entry(), *named_entry("sni-new.pem", "sni-new.key")))
     reload(ats, "sni-only-mixed", "success")
@@ -463,7 +460,8 @@ def test_ssl_multicert_partial_reload_startup(
     name = "startup-exit" if exit_on_load_fail else "startup-continue"
     entries = (*default_entry(), *bad_entry())
     ats, _origin = configure_ats(
-        name, entries, partial_reload=True, exit_on_load_fail=exit_on_load_fail, _ats_factory=ats_factory, _services=services)
+        name, entries, partial_reload=True, exit_on_load_fail=exit_on_load_fail, _ats_factory=ats_factory, _services=services
+    )
     if exit_on_load_fail:
         ats.expect_start_failure("EMERGENCY: ", return_code=33)
     ats.start()

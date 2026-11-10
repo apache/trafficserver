@@ -130,8 +130,9 @@ def test_procedural_sandbox_preserves_name_and_cleans_previous_run(tmp_path: Pat
         layout={},
         features={},
     )
-    sandbox = runtime.procedural_sandbox(
-        "uranium_tests/cache/test_cache_shm_control_size_mismatch.py::test_cache_shm_control_size_mismatch")
+    sandbox = runtime.item_sandbox(
+        "uranium_tests/cache/test_cache_shm_control_size_mismatch.py::test_cache_shm_control_size_mismatch"
+    )
     assert sandbox.name == "test_cache_shm_control_size_mismatch"
     runtime.prepare_sandbox(sandbox)
     (sandbox / "previous-run.log").write_text("old output")
@@ -157,9 +158,8 @@ def test_replay_sandbox_identifies_test_and_avoids_name_collisions(tmp_path: Pat
         layout={},
         features={},
     )
-    replay = tmp_path / "tests" / "uranium_tests" / "cache" / "cache.test.yaml"
-    first = runtime.item_sandbox(replay, "uranium_tests/cache/cache.test.yaml::cache-default")
-    second = runtime.item_sandbox(replay, "uranium_tests/cache/cache.test.yaml::cache-tls")
+    first = runtime.item_sandbox("uranium_tests/cache/cache.test.yaml::cache-default")
+    second = runtime.item_sandbox("uranium_tests/cache/cache.test.yaml::cache-tls")
 
     assert first.parent == runtime.sandbox_root
     assert first.name == "cache-default"
@@ -265,8 +265,8 @@ def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeyp
     (tmp_path / ".port-counter").write_text("10000")
     manifest = tmp_path / "example.yaml"
     manifest.write_text(
-        "urtest:\n  description: example\n  server: {}\n  client: {}\n  ats: {}\n"
-        "  variants:\n    - name: one\n    - name: two\n")
+        "urtest:\n  description: example\n  server: {}\n  client: {}\n  ats: {}\n  variants:\n    - name: one\n    - name: two\n"
+    )
     context = ProceduralContext.create(runtime, "native-test", manifest)
     live = context.run_directory / "live-service"
     live.mkdir()
@@ -319,7 +319,11 @@ def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
     process = attach_process(ats)
 
     assert ats.http_port == 12345
-    assert ats.uds_path.endswith("/run/ats/runtime/ats.sock")
+    # A long tmp_path, such as under xdist with a deep TMP, moves the listener
+    # to the short directory that test_long_sandbox_uses_short_uds_path covers.
+    default_uds = ats._root / "runtime" / "ats.sock"
+    if len(os.fsencode(default_uds)) < 104:
+        assert ats.uds_path.endswith("/run/ats/runtime/ats.sock")
     assert not ats.is_running
 
     ats.records.update({"proxy.config.http.server_ports": "12345"})
@@ -430,8 +434,68 @@ def test_ats_checks_configured_diagnostic_destination(tmp_path: Path, destinatio
     attach_process(ats)
     ats.start()
     ats.diags_log.write_text("FATAL: diagnostic in the configured destination\n")
-    with pytest.raises(AssertionError, match="emitted a fatal diagnostic"):
+    with pytest.raises(AssertionError, match="unexpected 'FATAL:' diagnostic"):
         ats.close()
+
+
+@pytest.mark.parametrize("diagnostic", ["ERROR: unexpected failure", "Unrecognized configuration value 'x'"])
+def test_ats_rejects_error_diagnostics(tmp_path: Path, diagnostic: str) -> None:
+    """Errors in a procedural test's diags.log fail the test by default.
+
+    :param tmp_path: Temporary test tree.
+    :param diagnostic: Diagnostic line written to diags.log.
+    """
+
+    ats = ATS(make_context(tmp_path))
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.write_text(f"{diagnostic}\n")
+    with pytest.raises(AssertionError, match="emitted an unexpected"):
+        ats.close()
+
+
+def test_ats_disable_log_checks_allows_errors_but_not_fatal(tmp_path: Path) -> None:
+    """``disable_log_checks`` permits deliberate errors while still rejecting fatal diagnostics.
+
+    :param tmp_path: Temporary test tree.
+    """
+
+    ats = ATS(make_context(tmp_path), disable_log_checks=True)
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.write_text("ERROR: deliberate\nUnrecognized configuration value 'x'\n")
+    ats.close()
+
+    (tmp_path / "fatal").mkdir()
+    fatal = ATS(make_context(tmp_path / "fatal"), disable_log_checks=True)
+    attach_process(fatal)
+    fatal.start()
+    fatal.diags_log.write_text("FATAL: still fatal\n")
+    with pytest.raises(AssertionError, match="unexpected 'FATAL:' diagnostic"):
+        fatal.close()
+
+
+def test_ats_allow_errors_accepts_only_matching_errors(tmp_path: Path) -> None:
+    """Allowed errors pass, while any other error still fails the test.
+
+    :param tmp_path: Temporary test tree.
+    """
+
+    ats = ATS(make_context(tmp_path))
+    ats.allow_errors(r"ERROR: \[plugin\] deliberate")
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.write_text("ERROR: [plugin] deliberate failure\n")
+    ats.close()
+
+    (tmp_path / "other").mkdir()
+    other = ATS(make_context(tmp_path / "other"))
+    other.allow_errors(r"ERROR: \[plugin\] deliberate")
+    attach_process(other)
+    other.start()
+    other.diags_log.write_text("ERROR: [plugin] deliberate failure\nERROR: [plugin] unrelated\n")
+    with pytest.raises(AssertionError, match="unexpected 'ERROR:' diagnostic"):
+        other.close()
 
 
 def test_origin_healthcheck_has_a_distinct_header_lookup_key(tmp_path: Path) -> None:
@@ -536,3 +600,42 @@ def test_curl_parses_a_shell_style_argument_string(monkeypatch: pytest.MonkeyPat
         "http://example.test/path",
     )
     assert observed["shell"] is False
+
+
+@pytest.mark.parametrize(
+    ("version_line", "expected"),
+    [
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/3.6.4 zlib/0.0.0", True, id="openssl"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 quictls/0.0.0 nghttp3/0.0.0", True, id="quictls"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 OpenSSL/1.0.2k zlib/0.0.0", False, id="old-openssl"),
+        pytest.param("curl 0.0.0 (platform) libcurl/0.0.0 BoringSSL zlib/0.0.0", False, id="boringssl"),
+        pytest.param(
+            "curl 0.0.0 (platform) libcurl/0.0.0 (SecureTransport) LibreSSL/0.0.0 zlib/0.0.0", False, id="multissl-libressl-active"
+        ),
+        pytest.param(
+            "curl 0.0.0 (platform) libcurl/0.0.0 SecureTransport (OpenSSL/3.0.0) zlib/0.0.0", False, id="multissl-openssl-inactive"
+        ),
+    ],
+)
+def test_curl_accepts_seclevel_follows_the_active_tls_backend(
+    monkeypatch: pytest.MonkeyPatch, version_line: str, expected: bool
+) -> None:
+    """Accept @SECLEVEL only when curl's active TLS backend is OpenSSL 1.1.0+ or quictls.
+
+    :param monkeypatch: Pytest fixture used to supply ``curl --version`` output.
+    :param version_line: First line of the synthetic ``curl --version`` output.
+    :param expected: Whether the cipher directive should be accepted.
+    """
+
+    def run(command: tuple[str, ...], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        """Return the synthetic version output.
+
+        :param command: Tokenized command passed to subprocess.
+        :param kwargs: Subprocess execution options.
+        """
+
+        return subprocess.CompletedProcess(command, 0, f"{version_line}\nFeatures: HTTP2 SSL\n", "")
+
+    monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
+
+    assert Curl.accepts_seclevel() is expected

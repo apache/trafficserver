@@ -272,7 +272,7 @@ int
 ink_res_init(ink_res_state     statp,         ///< State object to update.
              IpEndpoint const *pHostList,     ///< Additional servers.
              size_t            pHostListSize, ///< # of entries in @a pHostList.
-             int               dnsSearch,     /// Option of search_default_domains.
+             int               dnsSearch,     ///< Option of search_default_domains.
              const char       *pDefDomain,    ///< Default domain (may be nullptr).
              const char       *pSearchList,   ///< Unknown
              const char       *pResolvConf    ///< Path to configuration file.

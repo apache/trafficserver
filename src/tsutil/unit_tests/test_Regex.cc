@@ -951,31 +951,66 @@ TEST_CASE("Regex back reference counting", "[libts][Regex][get_backref_max]")
   REQUIRE(r.get_backref_max() == item.backref_max);
 }
 
-struct match_context_test_t {
+struct options_test_t {
   std::string_view regex;
   std::string_view str;
   bool             valid;
   int32_t          rcode;
 };
 
-std::vector<match_context_test_t> match_context_test_data{
+std::vector<options_test_t> options_test_data{
   {{"abc"},                          {"abc"},          true,  1  },
   {{"abc"},                          {"a"},            true,  -1 },
   {{R"(^(\d{3})-(\d{3})-(\d{4})$)"}, {"123-456-7890"}, true,  -47},
   {{"(."},                           {"a"},            false, -51},
 };
 
-TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
+TEST_CASE("Regex::Options match limit", "[libts][Regex][Options]")
 {
-  RegexMatchContext match_context;
-  match_context.set_match_limit(2);
+  Regex::Options opts;
+  opts.match_limit = 2;
   RegexMatches matches;
 
-  auto item = GENERATE(from_range(match_context_test_data));
+  auto item = GENERATE(from_range(options_test_data));
   CAPTURE(item.regex, item.str, item.valid, item.rcode);
   Regex r;
   REQUIRE(r.compile(item.regex) == item.valid);
-  REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
+  REQUIRE(r.exec(item.str, matches, 0, opts) == item.rcode);
+}
+
+TEST_CASE("Regex::Options does not leak between calls", "[libts][Regex][Options]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(^(\d{3})-(\d{3})-(\d{4})$)"));
+
+  RegexMatches   matches;
+  Regex::Options limited;
+  limited.match_limit = 2;
+
+  REQUIRE(r.exec("123-456-7890", matches, 0, limited) == -47);
+  REQUIRE(r.exec("123-456-7890", matches, 0) == 4);
+  REQUIRE(r.exec("123-456-7890", matches, 0, Regex::Options{}) == 4);
+
+  Regex::Options generous;
+  generous.match_limit = 1000;
+  REQUIRE(r.exec("123-456-7890", matches, 0, generous) == 4);
+}
+
+TEST_CASE("Regex::Options keeps the shared JIT stack", "[libts][Regex][Options]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(^(?:(a)|b)*$)"));
+
+  std::string const subject(8000, 'a');
+  RegexMatches      matches;
+  Regex::Options    opts;
+  opts.match_limit = 100000000;
+
+  int const shared_rc = r.exec(subject, matches, 0);
+  int const opts_rc   = r.exec(subject, matches, 0, opts);
+  CAPTURE(shared_rc, opts_rc);
+  REQUIRE(opts_rc > 0);
+  REQUIRE(shared_rc == opts_rc);
 }
 
 TEST_CASE("Regex RE_FULL_MATCH rejects trailing content", "[libts][Regex][full_match]")
@@ -1686,130 +1721,6 @@ pattern_has_jit(char const *pattern)
 }
 } // namespace
 
-// A caller-supplied RegexMatchContext must behave like the shared context that
-// Regex::exec uses when none is supplied. A context built from scratch drops
-// everything the shared one configures, the JIT stack callback included, and a
-// match through it then runs on PCRE2's fallback 32KiB JIT stack instead of the
-// 1MiB one.
-TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexMatchContext]")
-{
-  // Quantified alternation of capture groups: every subject character pushes a
-  // backtracking frame, so the JIT stack size is what bounds this.
-  char const *const pattern = R"(^(?:(a)|(b))+$)";
-  if (!pattern_has_jit(pattern)) {
-    SKIP("PCRE2 has no JIT for this pattern, so the JIT stack is never consulted");
-  }
-
-  Regex re;
-  REQUIRE(re.compile(pattern));
-
-  // 40 bytes of JIT stack per subject character, so PCRE2's 32KiB fallback stops at
-  // 818 characters and the shared context's 1MiB stack at 26,213. 5,000 sits six
-  // times above the first and five times below the second, so a blank context and
-  // the shared one give different answers with margin either way.
-  std::string const subject(5000, 'a');
-
-  RegexMatches      shared_matches;
-  RegexMatchContext match_context;
-  RegexMatches      own_matches;
-
-  int const shared_rc = re.exec(subject, shared_matches);
-  int const own_rc    = re.exec(subject, own_matches, 0, &match_context);
-  CAPTURE(shared_rc, own_rc);
-
-  REQUIRE(shared_rc > 0);
-  REQUIRE(own_rc == shared_rc);
-
-  // The copy paths must carry the inherited configuration too. Building a blank
-  // context in either of them is the same defect, and nothing else here notices.
-  RegexMatchContext const copied{match_context};
-  RegexMatchContext       assigned;
-
-  assigned = match_context;
-
-  RegexMatches copied_matches;
-  RegexMatches assigned_matches;
-
-  REQUIRE(re.exec(subject, copied_matches, 0, &copied) == shared_rc);
-  REQUIRE(re.exec(subject, assigned_matches, 0, &assigned) == shared_rc);
-}
-
-// Ownership only, and deliberately not inside the case above.
-//
-// That case SKIPs when pattern_has_jit() is false, which is right for what it tests and
-// wrong for this: move construction and move assignment have nothing to do with the JIT,
-// and a double free matters as much on a PCRE2 without JIT, or on a hardened runtime
-// where JIT allocation fails, as anywhere else. Inside that case this coverage would
-// skip on exactly those builds and still report green.
-TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex][RegexMatchContext]")
-{
-  Regex re;
-
-  REQUIRE(re.compile("^(a+)(b+)$"));
-
-  std::string_view const subject{"aaabbb"};
-
-  auto matches_through = [&](RegexMatchContext const *ctx) {
-    RegexMatches m;
-    return re.exec(subject, m, 0, ctx);
-  };
-
-  // Baseline through a plain context, so a later mismatch means the move broke something
-  // rather than the pattern never having matched.
-  RegexMatchContext plain;
-  int const         expected = matches_through(&plain);
-
-  REQUIRE(expected > 0);
-
-  SECTION("move construction")
-  {
-    RegexMatchContext       donor;
-    RegexMatchContext const moved{std::move(donor)};
-
-    REQUIRE(matches_through(&moved) == expected);
-    // A double free aborts when donor and moved are both destroyed, so leaving this
-    // section is itself the second assertion.
-  }
-
-  SECTION("move assignment onto a destination that already holds a context")
-  {
-    // On an ordinary build the assertions below do not detect a dropped
-    // pcre2_match_context_free(old): removing that call leaves this section passing,
-    // because a leak has no observer here. The oracle for the leak is LeakSanitizer,
-    // which AddressSanitizer turns on by default on Linux but not on macOS.
-    //
-    // The section still earns its place: it is what gives LSan a move assignment onto a
-    // live context to observe, which no other case in this file produces. Without it
-    // the leak is unreachable and therefore undetectable anywhere.
-    RegexMatchContext destination;
-
-    REQUIRE(matches_through(&destination) == expected);
-
-    RegexMatchContext donor;
-
-    destination = std::move(donor);
-
-    REQUIRE(matches_through(&destination) == expected);
-  }
-
-  SECTION("self move assignment")
-  {
-    RegexMatchContext ctx;
-
-    // A match limit of one fails this match, so the result after the move shows whether
-    // ctx still holds its own context. Without the this != &that guard the operator frees
-    // the context and then nulls itself, and the match runs on PCRE2's defaults instead.
-    ctx.set_match_limit(1);
-    REQUIRE(matches_through(&ctx) == PCRE2_ERROR_MATCHLIMIT);
-
-    auto &alias = ctx;
-
-    ctx = std::move(alias);
-
-    REQUIRE(matches_through(&ctx) == PCRE2_ERROR_MATCHLIMIT);
-  }
-}
-
 // A pattern that backtracks once per character must fail cleanly rather than run
 // the thread out of stack. A regex engine that recurses on the machine stack crashes
 // the server on a long enough subject; PCRE2 must report an error instead.
@@ -1838,12 +1749,11 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   CAPTURE(rc);
 
   // Reaching this line at all is the crash assertion.
-  REQUIRE(rc < 0);
-  REQUIRE(rc != RE_ERROR_NOMATCH);
+  REQUIRE(rc == PCRE2_ERROR_JIT_STACKLIMIT);
 
   // The paired positive control, and the only part of this case that can tell a
   // 1MiB stack from PCRE2's 32KiB fallback: 256KiB overruns both bounds, so every
-  // assertion above also holds with the JIT stack callback deleted. 10,000 is seven
+  // assertion above also holds with no JIT stack assigned. 10,000 is seven
   // times over the fallback's bound and four times under the 1MiB stack's. Neither
   // bound pins 1MiB itself; the suite only requires a maximum in roughly
   // [240KB, 6MB].
@@ -1919,21 +1829,21 @@ stack_hungry_subject(int thread_index)
 // counts rounds that went wrong rather than individual assertions.
 bool
 concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
-                       std::string const &deep, RegexMatchContext const *const use)
+                       std::string const &deep, Regex::Options const &opts)
 {
   RegexMatches matches;
-  if (re_captures.exec(hit, matches, 0, use) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+  if (re_captures.exec(hit, matches, 0, opts) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
     return false;
   }
 
   RegexMatches no_matches;
-  if (re_captures.exec(miss, no_matches, 0, use) != RE_ERROR_NOMATCH) {
+  if (re_captures.exec(miss, no_matches, 0, opts) != RE_ERROR_NOMATCH) {
     return false;
   }
 
   // Needs the 1MiB stack, and must consume the whole subject to have used it.
   RegexMatches deep_matches;
-  if (re_deep.exec(deep, deep_matches, 0, use) <= 0 || deep_matches[0].size() != deep.size()) {
+  if (re_deep.exec(deep, deep_matches, 0, opts) <= 0 || deep_matches[0].size() != deep.size()) {
     return false;
   }
 
@@ -1943,22 +1853,21 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
 } // namespace
 
 // The header promises that exec() may be called concurrently on one instance. Every thread
-// must reach the same verdict, whether it matches through a caller-supplied context shared
-// by several threads or through the thread-global one.
+// must reach the same verdict, whether it matches with the default options or with options
+// of its own.
 //
 // The deep subjects are longer than PCRE2's 32KiB fallback stack can resolve, so on a JIT
-// build this also fails if the callback stops handing every thread a 1MiB stack: deleting
-// the callback, or returning null from it, turns every deep match here into
-// PCRE2_ERROR_JIT_STACKLIMIT. Without a JIT the interpreter resolves them either way, so
-// only the concurrency half of this case carries over to such a build.
+// build this also fails if a thread's match context loses its 1MiB JIT stack, whether that
+// is the shared context or the per thread copy that non-default options match through.
+// Without a JIT the interpreter resolves them either way, so only the concurrency half of
+// this case carries over to such a build.
 //
 // Every round starts at a barrier, so all eight threads are alive for the whole case and
 // each round's matches start together on every thread. The test is deterministic when the
 // stacks are distinct, but it does not prove that they are: one stack shared by all eight
 // corrupts a result only when two deep matches touch the same frames at once, which the
-// barrier invites but cannot force. With the callback returning one stack for every
-// thread, about 70 of 100 runs fail on arm64 macOS. An oracle would need a thread
-// paused inside a match, which the public API does not offer.
+// barrier invites but cannot force. An oracle would need a thread paused inside a match,
+// which the public API does not offer.
 // ThreadSanitizer does not see those writes either, because they come from sljit code.
 TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
 {
@@ -1977,23 +1886,23 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
   std::atomic<int> failures{0};
   RoundBarrier     round_start{THREADS};
 
-  // One caller-supplied context, built here and shared by half the threads. That is the
-  // production shape: regex_remap builds a context when it loads a rule and every net
-  // thread then matches through it.
-  RegexMatchContext shared_caller_context;
-
   std::vector<std::thread> threads;
   threads.reserve(THREADS);
   for (int i = 0; i < THREADS; ++i) {
     threads.emplace_back([&, i]() {
-      bool const                     use_caller_context = (i % 2) == 0;
-      RegexMatchContext const *const use                = use_caller_context ? &shared_caller_context : nullptr;
-      std::string const              deep               = stack_hungry_subject(i);
+      std::string const deep = stack_hungry_subject(i);
+      Regex::Options    opts;
+
+      // Half the threads take the per thread copy of the shared context that a
+      // non-default option selects. The limit is high enough never to be reached.
+      if ((i % 2) == 0) {
+        opts.match_limit = 100000000;
+      }
 
       for (int n = 0; n < ITERATIONS; ++n) {
         // Unconditional, so a failing round cannot leave the other threads waiting.
         round_start.arrive_and_wait();
-        if (!concurrent_match_round(re_captures, re_deep, hit, miss, deep, use)) {
+        if (!concurrent_match_round(re_captures, re_deep, hit, miss, deep, opts)) {
           ++failures;
         }
       }

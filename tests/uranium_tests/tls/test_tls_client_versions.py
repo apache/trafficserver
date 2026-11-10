@@ -25,11 +25,10 @@ from tools.uranium.services import ATS, ATSFactory, Curl
 TEST_DIRECTORY = Path(__file__).parent
 
 
-def configure_ats(ats_factory: ATSFactory, openssl_version: str) -> ATS:
+def configure_ats(ats_factory: ATSFactory) -> ATS:
     """Disable legacy TLS globally and enable it only for foo.com.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
-    :param openssl_version: Openssl version used by this test step.
     """
 
     ats = ats_factory.create("ts", enable_tls=True)
@@ -40,13 +39,17 @@ def configure_ats(ats_factory: ATSFactory, openssl_version: str) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     cipher_suite = (
         "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:"
         "ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:"
         "ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:"
-        "DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2")
-    version = re.search(r"\d+(?:\.\d+)+", openssl_version)
+        "DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2"
+    )
+    # BoringSSL reports itself as OpenSSL 1.1.1 and rejects the whole list if
+    # it contains an @SECLEVEL directive.
+    version = re.search(r"\d+(?:\.\d+)+", ats.tls_library())
     if version is not None and tuple(int(part) for part in version.group().split(".")) >= (3, 0, 0):
         cipher_suite += ":@SECLEVEL=0"
     ats.records.update(
@@ -57,7 +60,8 @@ def configure_ats(ats_factory: ATSFactory, openssl_version: str) -> ATS:
             "proxy.config.ssl.TLSv1_1": 0,
             "proxy.config.ssl.TLSv1_2": 1,
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n- fqdn: foo.com\n  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]\n",
@@ -75,12 +79,14 @@ def request(hostname: str, version: str, expected_code: int | None, *, _ats: ATS
     :param expected_code: Expected code for this case.
     """
 
+    ciphers = "DEFAULT@SECLEVEL=0" if _curl.accepts_seclevel() else "DEFAULT"
     result = _curl.run_for(
         _ats,
         (
-            f"--verbose --ciphers DEFAULT@SECLEVEL=0 --tls-max '{version}' "
+            f"--verbose --ciphers {ciphers} --tls-max '{version}' "
             f"'{'--tlsv1' if version == '1.0' else '--tlsv1.2'}' --resolve "
-            f"'{hostname}:{_ats.https_port}:127.0.0.1' --insecure 'https://{hostname}:{_ats.https_port}'"),
+            f"'{hostname}:{_ats.https_port}:127.0.0.1' --insecure 'https://{hostname}:{_ats.https_port}'"
+        ),
     )
     if expected_code is not None:
         assert result.returncode == expected_code, result.output
@@ -102,7 +108,7 @@ def test_tls_client_versions(ats_factory: ATSFactory, curl: Curl) -> None:
     if "TLSv1" not in subprocess.check_output(("openssl", "ciphers", "-v"), text=True):
         pytest.skip("legacy TLS support is required")
     _supports_tls_1_0 = "--tlsv1" in subprocess.check_output(("curl", "--help", "all"), text=True)
-    _ats = configure_ats(ats_factory, openssl)
+    _ats = configure_ats(ats_factory)
 
     _ats.start()
     request("foo.com", "1.2", 35, _ats=_ats, _curl=curl)

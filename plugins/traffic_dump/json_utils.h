@@ -62,11 +62,19 @@ std::string json_entry_array(std::string_view name, std::string_view value);
 
 /** Escape characters in a string as needed and return the resultant escaped string.
  *
+ * Escapes ASCII control characters, quotes, and backslashes. All other bytes
+ * are preserved, including invalid UTF-8. Valid UTF-8 input therefore produces
+ * valid JSON string content; arbitrary binary input is not guaranteed to do so.
+ * Consumers of binary dumps must preserve undecodable bytes, as post_process.py
+ * does with UTF-8 surrogateescape decoding and encoding.
+ *
  * @param[in] s The characters that need to be escaped.
  */
 std::string escape_json(std::string_view s);
 
 /** An escape_json overload for a char buffer.
+ *
+ * Has the same byte-preservation guarantees as the string_view overload.
  *
  * @param[in] buf The char buffer pointer with characters that need to be escaped.
  *

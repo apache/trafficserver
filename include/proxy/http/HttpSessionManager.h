@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -37,6 +37,7 @@
 #include "swoc/IntrusiveHashMap.h"
 
 #include <atomic>
+#include <string_view>
 #include <vector>
 
 class ProxyTransaction;
@@ -70,6 +71,25 @@ public:
   int         eventHandler(int event, void *data);
   static bool validate_host_sni(HttpSM *sm, NetVConnection *netvc);
   static bool validate_sni(HttpSM *sm, NetVConnection *netvc);
+  /** @return true if a session established with @a session_sni may carry a request whose outbound
+      SNI is @a proposed_sni.
+
+      @a session_sni comes from TLSSNISupport and is "" rather than nullptr when the connection sent
+      no name, so a session established without an SNI matches an empty @a proposed_sni.
+      A nullptr @a session_sni is treated the same as "".
+   */
+  static bool sni_matches(std::string_view proposed_sni, const char *session_sni);
+  /** @return true if a pooled raw public key session may carry @a sm's request.
+
+      Only a pinned key set can vouch for such a session, so this checks the key the origin
+      presented on it against the set @a sm's own connection would pin, under @a sm's policy, rather
+      than inferring a match from a name. Under ENFORCED the key must also have been recorded, which
+      a connection opened under DISABLED never does.
+
+      @param sm The transaction looking for a session.
+      @param netvc A pooled origin connection for which origin_presented_raw_public_key() is true.
+   */
+  static bool validate_pinned_origin(HttpSM *sm, NetVConnection *netvc);
   static bool validate_cert(HttpSM *sm, NetVConnection *netvc);
   void        removeSession(PoolableSession *ssn);
   void        addSession(PoolableSession *ssn);
@@ -89,14 +109,47 @@ public:
   static bool match(PoolableSession *ss, sockaddr const *addr, CryptoHash const &host_hash,
                     TSServerSessionSharingMatchMask match_style);
 
-  /** Get a session from the pool.
-
-      The session is selected based on @a match_style equivalently to @a match. If found the session
-      is removed from the pool.
-
-      @return A pointer to the session or @c NULL if not matching session was found.
-  */
-  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchMask match_style,
+  /** Search the pool for a server session compatible with the given address, hostname, and state machine.
+   *
+   * The selection criteria are controlled by @p match_style. At least one of
+   * @c TS_SERVER_SESSION_SHARING_MATCH_MASK_IP or @c TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY
+   * must be set for a match to be possible; if neither is set, @c HSMresult_t::NOT_FOUND is
+   * returned unconditionally.
+   *
+   * Regardless of @p match_style, a session that supports multiplexed streams is selected only if
+   * its origin certificate is valid for the host that @p sm would verify on a new connection.
+   *
+   * When a compatible session is found and does not support multiplexed streams, it is removed from
+   * the pool and ownership transfers to the caller. A session that supports multiplexed streams is
+   * not removed and remains available for subsequent acquisitions.
+   *
+   * @param[in]  addr           Remote address and port to match.
+   * @param[in]  hostname_hash  Hash of the target hostname, computed the same way as
+   *                            @c PoolableSession::hostname_hash.
+   * @param[in]  match_style    Bitmask of @c TSServerSessionSharingMatchMask values specifying which
+   *                            attributes must agree between the candidate session and the request.
+   * @param[in]  sm             The requesting HTTP state machine. Must be non-null unless no SNI,
+   *                            HOSTSNISYNC, or CERT bit is set in @p match_style and no session
+   *                            supporting multiplexed streams has been added to this pool; when
+   *                            non-null, @c t_state.txn_conf,
+   *                            @c t_state.scheme, and @c t_state.hdr_info.server_request must be
+   *                            initialized.
+   * @param[out] server_session Set to the matched session when @c HSMresult_t::DONE is returned;
+   *                            @c nullptr otherwise.
+   *
+   * @return @c HSMresult_t::DONE if a matching session was found;
+   *         @c HSMresult_t::NOT_FOUND otherwise.
+   *
+   * @pre  Called on an @c EThread.
+   *
+   * @post If the returned session was removed from the pool, @c http_rsb.pooled_server_connections
+   *       is decremented, and the caller must redirect the session's I/O away from this pool before
+   *       this pool can receive another event for it.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
+  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash, TSServerSessionSharingMatchMask match_style,
                              HttpSM *sm, PoolableSession *&server_session);
   /** Release a session to the pool.
 

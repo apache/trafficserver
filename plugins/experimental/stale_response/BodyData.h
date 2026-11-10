@@ -119,7 +119,8 @@ BodyData::removeChunk(uint32_t chunk)
   bool bGood = false;
   if (chunk < chunk_list.size() && !chunk_list[chunk].start.empty()) {
     bGood = true;
-    chunk_list[chunk].start.clear();
+    // Release the storage, not just the contents, so the memory is freed now.
+    std::vector<char>().swap(chunk_list[chunk].start);
   }
   return bGood;
 }

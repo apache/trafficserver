@@ -57,7 +57,8 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -70,14 +71,15 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.http.host_sni_policy": 2,
             "proxy.config.ssl.TLSv1_3.enabled": 0,
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}")
     ats.plugin_config.add_line(f"traffic_dump.so --logdir {ats.log_directory} --sample 1 --limit 1000000000 -b")
     return ats
 
 
 def run_traffic(*, _ats: ATS, _services: ServiceFactory) -> None:
-    """Replay the four HTTP/1 and HTTP/2 response cases.
+    """Replay the HTTP/1 and HTTP/2 response cases, including UTF-8 bodies.
 
     :param _ats: Test-local ats configured by the test.
     :param _services: Test-local services configured by the test.
@@ -128,6 +130,8 @@ def verify_dump(index: int, response_body: str | None = None, *, _ats: ATS, _dum
     ]
     if response_body is not None:
         arguments.extend(("--response_body", response_body))
+    if index == 3:
+        arguments.extend(("--client-tls-features", "version:TLSv1.2"))
     result = _ats.run(*arguments)
     assert result.returncode == 0, result.output
 
@@ -149,4 +153,6 @@ def test_traffic_dump_response_body(ats_factory: ATSFactory, services: ServiceFa
     verify_dump(1, "0000000 0000001 ", _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(2, '12"34', _ats=_ats, _dump_directory=_dump_directory)
     verify_dump(3, "0000000 0000001 0000002 ", _ats=_ats, _dump_directory=_dump_directory)
+    verify_dump(4, 'café 中文 😀', _ats=_ats, _dump_directory=_dump_directory)
+    verify_dump(5, '中文 "café" \\ 😀\n', _ats=_ats, _dump_directory=_dump_directory)
     assert "Dumping body bytes: true" in _ats.traffic_out.read_text(errors="replace")

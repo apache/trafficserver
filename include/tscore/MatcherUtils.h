@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -43,20 +43,20 @@ int unescapifyStr(char *buffer);
 /** Extract an IP range.
     @a min and @a max should be at least the size of @c sockaddr_in6 to hold
     an IP address.
-*/
+ */
 const char *ExtractIpRange(char *match_str, sockaddr *min, sockaddr *max);
 
 /// Convenience overload for IPv4.
-const char *ExtractIpRange(char      *match_str,
-                           in_addr_t *addr1, ///< [in,out] Returned address in host order.
-                           in_addr_t *addr2  ///< [in,out] Returned address in host order.
+const char *ExtractIpRange(char      *match_str, ///< [in] IP address or range to parse.
+                           in_addr_t *addr1,     ///< [in,out] Returned address in host order.
+                           in_addr_t *addr2      ///< [in,out] Returned address in host order.
 );
 
 /// Convenience overload for IPv6.
 inline const char *
-ExtractIpRange(char         *match_str,
-               sockaddr_in6 *addr1, ///< [in,out] Returned address in network order.
-               sockaddr_in6 *addr2  ///< [in,out] Returned address in network order.
+ExtractIpRange(char         *match_str, ///< [in] IP address or range to parse.
+               sockaddr_in6 *addr1,     ///< [in,out] Returned address in network order.
+               sockaddr_in6 *addr2      ///< [in,out] Returned address in network order.
 )
 {
   return ExtractIpRange(match_str, ats_ip_sa_cast(addr1), ats_ip_sa_cast(addr2));

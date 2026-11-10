@@ -54,15 +54,27 @@ def get_socket(port: int) -> socket.socket:
     return tls_socket
 
 
-def makerequest(port: int, path: str, delay: int) -> None:
-    """Establish an HTTP/2 connection and send a request.
+def makerequest(port: int, path: str, active_timeout: int, max_wait: int) -> None:
+    """Send a request, then wait for ATS to close the connection on its active timeout.
+
+    ATS enforces the active timeout from its InactivityCop, which looks at a
+    connection only once a second, so the close lands up to a second after the
+    timeout expires, and later still on a loaded machine. Rather than guess when
+    that is, wait for the close itself and check that it came no sooner than the
+    timeout and within max_wait seconds.
 
     :param port: The port to connect to.
     :param path: The path to request.
-    :param delay: The delay to wait between sending requests in a stream.
+    :param active_timeout: The proxy.config.http2.active_timeout_in ATS uses, in seconds.
+    :param max_wait: The number of seconds to wait for ATS to close the connection.
     """
 
     tls_socket = get_socket(port)
+
+    # ATS starts the active timeout when it reads the connection preface, which
+    # happens after this point, so it cannot close the connection any sooner
+    # than active_timeout seconds from now.
+    start = time.monotonic()
 
     h2_connection = h2.connection.H2Connection()
     h2_connection.initiate_connection()
@@ -78,54 +90,34 @@ def makerequest(port: int, path: str, delay: int) -> None:
     h2_connection.send_headers(1, headers, end_stream=True)
     tls_socket.sendall(h2_connection.data_to_send())
 
-    # delay, triggering ATS timeout.
-    time.sleep(delay)
-
-    # The following should fail due to the timeout.
+    # Read the response, then keep reading until ATS closes the connection.
+    closed = False
     try:
-        # Send a second request.
-        h2_connection.send_headers(3, headers, end_stream=True)
-        tls_socket.sendall(h2_connection.data_to_send())
-
-        response_stream_ended = False
-        body = b''
-        while not response_stream_ended:
-            # read raw data from the socket
-            data = tls_socket.recv(65536 * 1024)
-            if not data:
+        while True:
+            remaining = start + max_wait - time.monotonic()
+            if remaining <= 0:
                 break
-
-            # feed raw data into h2, and process resulting events
-            events = h2_connection.receive_data(data)
-            for event in events:
-                if isinstance(event, h2.events.ResponseReceived):
-                    # response headers received
-                    print("Response received:")
-                    for header in event.headers:
-                        print(f'  {header[0].decode()}: {header[1].decode()}')
+            tls_socket.settimeout(remaining)
+            data = tls_socket.recv(65536)
+            if not data:
+                closed = True
+                break
+            for event in h2_connection.receive_data(data):
                 if isinstance(event, h2.events.DataReceived):
-                    # update flow control so the server doesn't starve us
                     h2_connection.acknowledge_received_data(event.flow_controlled_length, event.stream_id)
-                    # more response body data received
-                    body += event.data
-                if isinstance(event, h2.events.StreamEnded):
-                    # response body completed, let's exit the loop
-                    response_stream_ended = True
-                    break
-            # send any pending data to the server
             tls_socket.sendall(h2_connection.data_to_send())
+    except socket.timeout:
+        pass
+    except (ConnectionError, ssl.SSLError):
+        closed = True
+    elapsed = time.monotonic() - start
+    tls_socket.close()
 
-        print(f"Response fully received: {len(body)} bytes")
-
-        body_str = body.decode('utf-8')
-
-        # tell the server we are closing the h2 connection
-        h2_connection.close_connection()
-        tls_socket.sendall(h2_connection.data_to_send())
-
-        # close the socket
-        tls_socket.close()
-    except Exception:
+    if not closed:
+        print(f"Connection still open after {max_wait} seconds")
+    elif elapsed < active_timeout:
+        print(f"Connection closed after {elapsed:.1f} seconds, before the {active_timeout} second active timeout")
+    else:
         print("CONNECTION_TIMEOUT")
 
 
@@ -133,10 +125,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("port", type=int, help="Port to use")
     parser.add_argument("path", help="The path to request")
-    parser.add_argument("delay", type=int, help="The number of seconds to delay betwen requests in a stream")
+    parser.add_argument("active_timeout", type=int, help="The active timeout ATS is configured with, in seconds")
+    parser.add_argument("--max_wait", type=int, default=15, help="The number of seconds to wait for ATS to close the connection")
     args = parser.parse_args()
 
-    makerequest(args.port, args.path, args.delay)
+    makerequest(args.port, args.path, args.active_timeout, args.max_wait)
 
 
 if __name__ == '__main__':

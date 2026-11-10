@@ -22,14 +22,18 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <chrono>
+#include <cerrno>
 #include <cstdarg>
+#include <cstdlib>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <system_error>
+
+#include <unistd.h>
 
 void
 TSError(const char *fmt, ...)
@@ -49,9 +53,14 @@ class TempConfig
 public:
   TempConfig()
   {
-    auto suffix = std::chrono::steady_clock::now().time_since_epoch().count();
-    dir_        = std::filesystem::temp_directory_path() / ("abuse_shield_config_test_" + std::to_string(suffix));
-    std::filesystem::create_directories(dir_);
+    auto  dir_template = (std::filesystem::temp_directory_path() / "abuse_shield_config_test_XXXXXX").string();
+    auto *created_dir  = mkdtemp(dir_template.data());
+
+    if (created_dir == nullptr) {
+      INFO(std::strerror(errno));
+      REQUIRE(created_dir != nullptr);
+    }
+    dir_ = created_dir;
   }
 
   ~TempConfig()

@@ -16,14 +16,14 @@
 
 # Used by: hybrid JA4 servernames test.
 #
-# The global plugin (no --standalone) is loaded with --method JA4
-# --servernames jax.server.test.  It registers SSL_CLIENT_HELLO_HOOK
+# The global plugin (not standalone) is loaded with method JA4 and
+# servernames [jax.server.test].  It registers SSL_CLIENT_HELLO_HOOK
 # and, for connections whose SNI is in the allowlist, stores a JAxContext
 # on the vconn user-arg slot.  For connections whose SNI is NOT in the
 # allowlist it calls TSVConnReenable and returns immediately -- no context
 # is ever created.
 #
-# Both remap rules carry the remap plugin (no --standalone).  TSRemapDoRemap
+# Both remap rules carry the remap plugin (not standalone).  TSRemapDoRemap
 # calls handle_read_request_hdr which looks for a JAxContext on the vconn:
 #   - jax.server.test (SNI in allowlist)     : context present → headers added
 #   - jax-filtered.server.test (SNI absent)  : context absent  → headers absent

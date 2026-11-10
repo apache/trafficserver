@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """TLS tickets must retain their SNI, verification policy, and trust scope."""
+
 import os
 import re
 import shlex
@@ -22,9 +23,11 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from tools.uranium.services import ATS, ATSFactory, ServiceFactory
+from tools.uranium.services import ATS, ATSFactory, ServiceFactory, wait_for_file_lines
 from tools.uranium.services import CommandResult
 from tools.uranium.utils import version_tuple
+
+from ..jsonrpc.config_reload_helpers import reload_task_statuses
 
 DIRECTORY = Path(__file__).parent
 SSL = DIRECTORY / "ssl"
@@ -42,13 +45,13 @@ def configure_ticket_proxy(ats_factory: ATSFactory, services: ServiceFactory) ->
         pytest.skip("OpenSSL 1.1.1 or newer is required")
     origin = services.origin("origin")
     origin.add_response(
-        {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"}, {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n",
-            "body": "hello"
-        })
+        {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n", "body": "hello"},
+    )
     ats = ats_factory.create("ts", enable_tls=True)
     ats.copy_to_ssl(
-        SSL / "server.pem", SSL / "server.key", SSL / "signer.pem", SSL / "aaa-ca.pem", SSL / "bbb-ca.pem", SSL / "intca-root.pem")
+        SSL / "server.pem", SSL / "server.key", SSL / "signer.pem", SSL / "aaa-ca.pem", SSL / "bbb-ca.pem", SSL / "intca-root.pem"
+    )
     ats.set_ssl_multicert_yaml({"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"}]})
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}/")
     ats.records.update(
@@ -59,9 +62,11 @@ def configure_ticket_proxy(ats_factory: ATSFactory, services: ServiceFactory) ->
             "proxy.config.ssl.TLSv1_2": 1,
             "proxy.config.ssl.TLSv1_3.enabled": 1,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.write_config_file(
-        "logging.yaml", """
+        "logging.yaml",
+        """
 logging:
   formats:
     - name: testformat
@@ -70,20 +75,22 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-""")
+""",
+    )
     origin.start()
     return ats
 
 
 def connect(
-        ats: ATS,
-        sni: str,
-        session: Path,
-        *,
-        save: bool = False,
-        version: str = "1.3",
-        certificate: str | None = None,
-        chain: str | None = None) -> CommandResult:
+    ats: ATS,
+    sni: str,
+    session: Path,
+    *,
+    save: bool = False,
+    version: str = "1.3",
+    certificate: str | None = None,
+    chain: str | None = None,
+) -> CommandResult:
     """Send one request while saving or offering a TLS session.
 
     :param ats: Running proxy.
@@ -96,9 +103,16 @@ def connect(
     """
     request = f"GET / HTTP/1.1\r\nHost: {sni}\r\nConnection: close\r\n\r\n"
     args = [
-        "openssl", "s_client", "-connect", f"127.0.0.1:{ats.https_port}", "-servername", sni, f"-tls1_{version[-1]}", "-ign_eof",
+        "openssl",
+        "s_client",
+        "-connect",
+        f"127.0.0.1:{ats.https_port}",
+        "-servername",
+        sni,
+        f"-tls1_{version[-1]}",
+        "-ign_eof",
         "-sess_out" if save else "-sess_in",
-        str(session)
+        str(session),
     ]
     if certificate:
         args += ["-cert", str(SSL / f"{certificate}.pem"), "-key", str(SSL / f"{certificate}.key")]
@@ -124,15 +138,19 @@ def assert_resumed(result: CommandResult, version: str = "1.3") -> None:
 
 
 def assert_access_counts(ats: ATS, counts: dict[str, int]) -> None:
-    """Flush logs and require exact successful-request counts per hostname.
+    """Wait for the access log, then require exact successful-request counts per hostname.
 
-    :param ats: Proxy to stop gracefully before examining its access log.
-    :param counts: Expected counts, including zero for forbidden hostnames.
+    ATS can exit on SIGTERM before it flushes a pending log buffer, so the log is
+    read while the proxy is still running.
+
+    :param ats: Proxy whose access log is examined.
+    :param counts: Expected counts; a zero count forbids any line for that hostname.
     """
-    ats.stop()
-    content = (ats.log_directory / "squid.log").read_text()
+    content = wait_for_file_lines(ats.log_directory / "squid.log", r"^200 ", sum(counts.values()))
     for host, count in counts.items():
         assert len(re.findall(rf"^200 {re.escape(host)}$", content, re.MULTILINE)) == count, content
+        if count == 0:
+            assert re.search(rf" {re.escape(host)}$", content, re.MULTILINE) is None, content
 
 
 def test_tls_resume_cross_sni(ats_factory: ATSFactory, services: ServiceFactory) -> None:
@@ -168,7 +186,8 @@ def test_tls_ticket_verify_client_scope(ats_factory: ATSFactory, services: Servi
     if different_ca:
         first, second, cert = "aaa.example.com", "bbb.example.com", "aaa-signed"
         ats.write_config_file(
-            "sni.yaml", f"""sni:
+            "sni.yaml",
+            f"""sni:
 - fqdn: {first}
   verify_client: STRICT
   verify_client_ca_certs:
@@ -177,17 +196,20 @@ def test_tls_ticket_verify_client_scope(ats_factory: ATSFactory, services: Servi
   verify_client: STRICT
   verify_client_ca_certs:
     file: {ats.ssl_directory}/bbb-ca.pem
-""")
+""",
+        )
     else:
         first, second, cert = "open.example.com", "strict.example.com", "signed-foo"
         ats.records.update({"proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem")})
         ats.write_config_file(
-            "sni.yaml", f"""sni:
+            "sni.yaml",
+            f"""sni:
 - fqdn: {first}
   verify_client: NONE
 - fqdn: {second}
   verify_client: STRICT
-""")
+""",
+        )
     ats.start()
     session = ats.run_directory / "cross-session"
     connect(ats, first, session, save=True, certificate=cert if different_ca else None)
@@ -222,6 +244,8 @@ def test_tls_resume_verify_level(ats_factory: ATSFactory, services: ServiceFacto
     (ats.config_directory / "sni.yaml").write_text(policy.replace("MODERATE", "STRICT"))
     result = ats.traffic_ctl("config", "reload", "-m", "-t", "verify-level", "-w", "1", "-r", "0.5", "-T", "30s")
     assert result.returncode == 0, result.output
+    statuses = reload_task_statuses(ats, "verify-level")
+    assert "sni.yaml" in statuses, statuses
     result = connect(ats, "level.example.com", session, certificate="aaa-signed")
     assert result.returncode == 0, result.output
     assert "Reused" not in result.output, result.output
@@ -260,6 +284,8 @@ def test_tls_resume_ca_replacement(ats_factory: ATSFactory, services: ServiceFac
         os.utime(bundle, (old_mtime + 2, old_mtime + 2))
         result = ats.traffic_ctl("config", "reload", "-m", "-t", "replace-ca", "-w", "1", "-r", "0.5", "-T", "30s")
         assert result.returncode == 0, result.output
+        statuses = reload_task_statuses(ats, "replace-ca")
+        assert "ssl_multicert.yaml" in statuses, statuses
     for version in versions:
         result = connect(ats, host, ats.run_directory / f"session-{version}", version=version, certificate=cert, chain=chain)
         assert f"New, TLSv{version}" in result.output, result.output

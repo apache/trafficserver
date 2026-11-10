@@ -52,13 +52,21 @@ sessions:
               - [uuid, crr-cachekey-global]
 
         proxy-request:
-          method: "GET"
-          url: "/path"
+          method: GET
+          url:
+          - - path
+            - value: /path
+              as: equal
+          - - query
+            - as: absent
           headers:
             fields:
-              - [Range, {value: "bytes=0-", as: equal}]
-              - [uuid, {value: crr-cachekey-global, as: equal}]
-
+            - - Range
+              - value: bytes=0-
+                as: equal
+            - - uuid
+              - value: crr-cachekey-global
+                as: equal
         server-response:
           status: 206
           reason: "Partial Content"
@@ -76,7 +84,13 @@ sessions:
           status: 206
           headers:
             fields:
-              - [X-Cache-Key, {value: "/foo/Range:bytes=0-/path", as: equal}]
-              - [Content-Length, {value: "18", as: equal}]
+            - - X-Cache-Key
+              - value: /foo/Range:bytes=0-/path
+                as: equal
+            - - Content-Length
+              - value: '18'
+                as: equal
           content:
-            data: "lets go surfin now"
+            data: lets go surfin now
+            verify:
+              as: equal

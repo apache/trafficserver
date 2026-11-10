@@ -2,7 +2,7 @@
 
   Common functions for HPACK and QPACK
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -29,6 +29,7 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
 #include "tsutil/LocalBuffer.h"
+#include <cinttypes>
 #include <cstdint>
 
 namespace
@@ -131,12 +132,14 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
   if (isHuffman) {
     // Allocate temporary area twice the size of before decoded data
     uint32_t const str_len = encoded_string_len * 2;
-    *str                   = arena.str_alloc(str_len);
+    char          *decoded = arena.str_alloc(str_len);
 
-    len = huffman_decode(*str, str_len, p, encoded_string_len);
+    len = huffman_decode(decoded, str_len, p, encoded_string_len);
     if (len < 0) {
+      arena.str_free(decoded);
       return XPACK_ERROR_COMPRESSION_ERROR;
     }
+    *str       = decoded;
     str_length = len;
   } else {
     *str = arena.str_alloc(encoded_string_len);
@@ -191,17 +194,14 @@ xpack_encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint64_t value,
 int64_t
 xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, uint64_t value_len, uint8_t n)
 {
-  uint8_t       *p           = buf_start;
-  constexpr bool use_huffman = true;
+  uint8_t *p = buf_start;
 
   uint32_t const                 max_expected_size = value_len * 4;
   ts::LocalBuffer<uint8_t, 4096> local_buffer(max_expected_size);
   uint8_t                       *data     = local_buffer.data();
   int64_t                        data_len = 0;
 
-  // TODO Choose whether to use Huffman encoding wisely
-  // cppcheck-suppress knownConditionTrueFalse; leaving "use_huffman" for wise huffman usage in the future
-  if (use_huffman && value_len) {
+  if (value_len) {
     data_len = huffman_encode(data, max_expected_size, reinterpret_cast<const uint8_t *>(value), value_len);
   }
 
@@ -209,8 +209,12 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
     return -1;
   }
 
+  // Only use Huffman if the encoded representation is smaller than the raw string.
+  const bool    use_huffman = (value_len == 0 || static_cast<uint64_t>(data_len) < value_len);
+  const int64_t payload_len = use_huffman ? data_len : static_cast<int64_t>(value_len);
+
   // Length
-  const int64_t len = xpack_encode_integer(p, buf_end, data_len, n);
+  const int64_t len = xpack_encode_integer(p, buf_end, payload_len, n);
   if (len == -1) {
     return -1;
   }
@@ -222,14 +226,14 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
   }
   p += len;
 
-  if (buf_end < p || buf_end - p < data_len) {
+  if (buf_end < p || buf_end - p < payload_len) {
     return -1;
   }
 
   // Value
-  if (data_len) {
-    memcpy(p, data, data_len);
-    p += data_len;
+  if (payload_len) {
+    memcpy(p, use_huffman ? data : reinterpret_cast<const uint8_t *>(value), payload_len);
+    p += payload_len;
   }
 
   return p - buf_start;
@@ -328,11 +332,18 @@ XpackDynamicTable::lookup(const std::string_view name, const std::string_view va
 }
 
 const XpackLookupResult
-XpackDynamicTable::lookup_relative(uint32_t relative_index, const char **name, size_t *name_len, const char **value,
+XpackDynamicTable::lookup_relative(uint64_t relative_index, const char **name, size_t *name_len, const char **value,
                                    size_t *value_len) const
 {
-  XPACKDbg("Lookup entry: rel_index=%u", relative_index);
-  return this->lookup(this->_entries[this->_entries_head].index - relative_index, name, name_len, value, value_len);
+  XPACKDbg("Lookup entry: rel_index=%" PRIu64, relative_index);
+
+  // Also covers the empty table, where there is no head entry to count back
+  // from and largest_index() may not be called.
+  if (relative_index >= this->count()) {
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
+  return this->lookup(this->largest_index() - static_cast<uint32_t>(relative_index), name, name_len, value, value_len);
 }
 
 const XpackLookupResult
