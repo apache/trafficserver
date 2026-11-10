@@ -71,7 +71,7 @@ watcher_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 // One continuation, one mutex, for both an event thread hook and the message
 // hook, the way a plugin that keeps shared state behind its mutex is written.
 static int
-shared_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
+shared_handler(TSCont contp, TSEvent event, void *edata)
 {
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
@@ -95,8 +95,13 @@ shared_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
   case TS_EVENT_LIFECYCLE_MSG:
     if (is_our_message(edata) && message_during_hold.exchange(false)) {
       TSDebug(PLUGIN_NAME, "message delivered after the hold");
-      TSStatIntIncrement(stat_delivered, 1);
+      // Raw stats sum only the event processor threads, and the message thread is not one of them.
+      TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
     }
+    break;
+
+  case TS_EVENT_IMMEDIATE:
+    TSStatIntIncrement(stat_delivered, 1);
     break;
 
   default:
