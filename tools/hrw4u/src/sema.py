@@ -132,6 +132,10 @@ class Sema:
         self._section: SectionType | None = None
         self.procs = ProcRegistry(source_map=self.source_map)
         self._proc_stack: list[str] = []
+        # Each call's inlined body, for expand(). Keyed by identity, holding the call so the id stays
+        # unique: one call in a procedure body expanded from two sections is two equal nodes whose
+        # bindings resolved separately.
+        self._expansions: dict[int, tuple[ast.FunctionCall, tuple[ast.BodyNode, ...]]] = {}
 
     def _report(self, span: ast.Span, exc: Exception, *, note: str | None = None) -> None:
         error = hrw4u_error_at(span, exc, self.source_map.line_at(span))
@@ -203,6 +207,53 @@ class Sema:
 
         return ir.Program(items=tuple(items))
 
+    def expand(self, tree: ast.HRW4UAST) -> ast.HRW4UAST:
+        """`tree` with each procedure call replaced by the body analyze() inlined for it, so the
+        program no longer needs a procedures path. `tree` must be the one analyze() was given, and
+        that run must have reported no errors: a call it failed to inline has no body to put here."""
+        body: list[ast.TopLevelNode] = []
+        for node in tree.body:
+            match node:
+                case ast.UseDirective() | ast.ProcedureDecl():
+                    pass
+                case ast.Comment() if not self.preserve_comments:
+                    pass
+                # A block left empty compiles to nothing, and the grammar rejects one, so it is dropped.
+                case ast.VarSection():
+                    items = node.items
+                    if not self.preserve_comments:
+                        items = tuple(d for d in items if not isinstance(d, ast.Comment))
+                    if items:
+                        body.append(replace(node, items=items))
+                case ast.Section():
+                    if section_body := self._expand_body(node.body):
+                        body.append(replace(node, body=section_body))
+                case _:
+                    body.append(node)
+        return ast.HRW4UAST(body=tuple(body))
+
+    def _expand_body(self, nodes: tuple[ast.BodyNode, ...]) -> tuple[ast.BodyNode, ...]:
+        out: list[ast.BodyNode] = []
+        for node in nodes:
+            match node:
+                case ast.Comment() if not self.preserve_comments:
+                    pass
+                case ast.FunctionCall() if self.procs.get(node.name) is not None:
+                    _, inlined = self._expansions[id(node)]
+                    out.extend(self._expand_body(inlined))
+                case ast.IfBlock():
+                    out.append(
+                        replace(
+                            node,
+                            body=self._expand_body(node.body),
+                            elif_branches=tuple(replace(arm, body=self._expand_body(arm.body)) for arm in node.elif_branches),
+                            else_body=self._expand_body(node.else_body),
+                        )
+                    )
+                case _:
+                    out.append(node)
+        return tuple(out)
+
     def _section_of(self, node: ast.Section) -> ir.ResolvedSection | None:
         with self.trap(node.span):
             if warning := self._sandbox.check_section(node.type):
@@ -243,6 +294,7 @@ class Sema:
                 with self._inlining(node) as inlined:
                     if inlined is None:
                         return
+                    self._expansions[id(node)] = (node, inlined)
                     # The first source item is resolved alone so that Inlined can say whether body[0] is it.
                     head, rest = self._body(inlined[:1]), self._body(inlined[1:])
                     opens_with_statement = bool(head) and not isinstance(head[0], (ir.CommentStmt, ir.Inlined))

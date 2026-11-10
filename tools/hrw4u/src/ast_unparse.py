@@ -28,7 +28,12 @@ INDENT = "    "
 
 
 def unparse(ast: HRW4UAST) -> str:
-    return "\n".join(_top_level(item) for item in ast.body) + "\n"
+    lines: list[str] = []
+    for i, item in enumerate(ast.body):
+        if i and isinstance(ast.body[i - 1], (ProcedureDecl, VarSection, Section)):
+            lines.append("")
+        lines.append(_top_level(item))
+    return "".join(f"{line}\n" for line in lines)
 
 
 def _top_level(node: TopLevelNode) -> str:
