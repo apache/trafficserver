@@ -271,8 +271,10 @@ def test_continuation_open_close_order(
 def test_plugin_msg_waits_for_held_mutex(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
     """A plugin message waits for a continuation mutex that an event thread holds.
 
-    The plugin's transaction hook holds its continuation's mutex until a message
-    for that continuation arrives, so the message thread finds the mutex taken.
+    The transaction hook holds the shared continuation's mutex until a watcher
+    continuation sees a message, then 5 s longer, so the message reaches the
+    shared continuation while its mutex is taken. The metric counts a message
+    that waited for the hook to release it.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -289,8 +291,9 @@ def test_plugin_msg_waits_for_held_mutex(ats_factory: ATSFactory, services: Serv
     with ThreadPoolExecutor(max_workers=1) as executor:
         request = executor.submit(curl.run_for, _ats, f"{shlex.join(options)} '{url}'", 60)
         # Messages sent before the hook takes the mutex are delivered at once,
-        # so keep sending until the held transaction finishes. Stop early if
-        # Traffic Server aborts, since traffic_manager then stops answering.
+        # so keep sending until the held transaction finishes. Stop at the
+        # first Fatal: the abort is the failure to report, and traffic_ctl can
+        # hang for its whole timeout while traffic_manager restarts the server.
         while not request.done() and "Fatal:" not in _ats.traffic_out.read_text(errors="replace"):
             _ats.traffic_ctl("plugin", "msg", "msg_held_mutex", "hold")
             time.sleep(0.2)

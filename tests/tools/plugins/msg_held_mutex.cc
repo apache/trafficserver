@@ -1,7 +1,7 @@
 /**
   @file
-  @brief Plugin that holds its continuation's mutex in a transaction hook while
-  a plugin message is delivered to the same continuation.
+  @brief Test plugin whose transaction hook holds a continuation's mutex while a
+  plugin message for that continuation arrives on the process manager thread.
 
   @section license License
 
@@ -23,7 +23,6 @@
 */
 #include <atomic>
 #include <chrono>
-#include <cstdlib>
 #include <cstring>
 #include <thread>
 #include <ts/ts.h>
@@ -39,12 +38,21 @@ static char support_email[] = "dev@trafficserver.apache.org";
 static constexpr auto MESSAGE_WAIT = std::chrono::seconds(20);
 
 // How long the hook keeps the mutex after the watcher sees a message. The
-// message thread goes straight from the watcher to the shared continuation, so
-// this only has to outlast that step.
-static constexpr auto HOLD_AFTER_MESSAGE = std::chrono::seconds(2);
+// process manager thread goes straight from the watcher to the shared
+// continuation, so this only has to outlast that step, with room for a loaded
+// host.
+static constexpr auto HOLD_AFTER_MESSAGE = std::chrono::seconds(5);
 
+// The state is built for one held transaction per traffic_server process.
+// Written by the transaction hook while it holds the shared mutex.
 static std::atomic<bool> hook_holds_mutex{false};
+// Set by the watcher on the process manager thread, read by the transaction
+// hook.
 static std::atomic<bool> message_during_hold{false};
+// Set by the transaction hook once it has kept the mutex for
+// HOLD_AFTER_MESSAGE, and consumed by the shared continuation's message
+// handler, so only a message that met the held mutex is counted.
+static std::atomic<bool> held_for_message{false};
 
 static int stat_delivered = -1;
 
@@ -57,13 +65,15 @@ is_our_message(void *edata)
 
 // This continuation has its own mutex and its message hook is added first, so
 // it sees each message before the shared continuation does, even while the
-// transaction hook holds the shared mutex.
+// transaction hook holds the shared mutex. Its flag tells the hook that the
+// process manager thread is walking the hook list and the shared continuation
+// is next.
 static int
 watcher_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   if (event == TS_EVENT_LIFECYCLE_MSG && is_our_message(edata) && hook_holds_mutex.load()) {
     TSDebug(PLUGIN_NAME, "message arrived while the transaction hook holds the shared mutex");
-    message_during_hold = true;
+    message_during_hold.store(true);
   }
   return 0;
 }
@@ -77,25 +87,30 @@ shared_handler(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_READ_REQUEST_HDR: {
     TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
 
-    hook_holds_mutex = true;
+    hook_holds_mutex.store(true);
     TSDebug(PLUGIN_NAME, "holding the shared mutex until a message arrives");
     auto const deadline = std::chrono::steady_clock::now() + MESSAGE_WAIT;
-    while (!message_during_hold && std::chrono::steady_clock::now() < deadline) {
+    while (!message_during_hold.load() && std::chrono::steady_clock::now() < deadline) {
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    if (message_during_hold) {
+    if (message_during_hold.load()) {
       std::this_thread::sleep_for(HOLD_AFTER_MESSAGE);
+      held_for_message.store(true);
+    } else {
+      TSError("[%s] no message arrived while the transaction hook held the shared mutex", PLUGIN_NAME);
     }
-    hook_holds_mutex = false;
+    hook_holds_mutex.store(false);
     TSDebug(PLUGIN_NAME, "releasing the shared mutex");
 
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   } break;
 
   case TS_EVENT_LIFECYCLE_MSG:
-    if (is_our_message(edata) && message_during_hold.exchange(false)) {
+    if (is_our_message(edata) && held_for_message.exchange(false)) {
       TSDebug(PLUGIN_NAME, "message delivered after the hold");
-      // Raw stats sum only the event processor threads, and the message thread is not one of them.
+      // Raw stats are per thread and summed only over the event processor
+      // threads, so an increment on the process manager thread is never
+      // counted.
       TSContScheduleOnPool(contp, 0, TS_THREAD_POOL_NET);
     }
     break;
@@ -125,13 +140,13 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */[])
   }
 
   stat_delivered = TSStatCreate(PLUGIN_NAME ".msg.delivered", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+  if (stat_delivered == TS_ERROR) {
+    TSError("[%s] could not create the delivery stat.", PLUGIN_NAME);
+    return;
+  }
 
   TSCont watcher = TSContCreate(watcher_handler, TSMutexCreate());
   TSCont shared  = TSContCreate(shared_handler, TSMutexCreate());
-  if (watcher == nullptr || shared == nullptr) {
-    TSError("[%s] could not create continuations.", PLUGIN_NAME);
-    std::abort();
-  }
 
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, watcher);
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, shared);
