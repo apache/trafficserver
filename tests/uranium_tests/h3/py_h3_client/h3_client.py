@@ -36,6 +36,7 @@ from aioquic.quic.events import ConnectionTerminated, QuicEvent, StreamDataRecei
 
 LARGE_BODY_SIZE = 300000
 SEND_BUFFER_BODY_SIZE = 1048576
+UNACKNOWLEDGED_BODY_SIZE = 524288
 H3_REQUEST_CANCELLED = 0x10C
 LARGE_BODY_SUFFIX = b"000927b "
 REUSED_HEADER_VALUE = b"stable-python-qpack-value"
@@ -178,6 +179,14 @@ class H3ClientProtocol(QuicConnectionProtocol):
             waiter.cancel()
         self._quic.stop_stream(stream_id, H3_REQUEST_CANCELLED)
         self.transmit()
+
+    def stop_acknowledging(self) -> None:
+        """Send no more ACK frames, so the server must keep everything it sends until the connection closes."""
+
+        def skip_ack(builder, space, now) -> None:
+            space.ack_at = None
+
+        self._quic._write_ack_frame = skip_ack
 
     async def wait_for_termination(self) -> ConnectionTerminated:
         return await asyncio.wait_for(self._terminated, timeout=5)
@@ -377,6 +386,31 @@ async def run_send_buffer_stop_sending(host: str, port: int, authority: str, ser
         print(f"ok {second.name}")
 
 
+async def run_send_buffer_unacknowledged(
+    host: str, port: int, authority: str, server_name: str, streams: int, spacing: float, wait: float
+) -> None:
+    """Request responses one after another on one connection without acknowledging any of the response data.
+
+    Each response fits under the stream limit, so ATS can finish it while OpenSSL still
+    holds all of it. The spacing gives ATS time to do that before the next request.
+    """
+    window = 4 * UNACKNOWLEDGED_BODY_SIZE
+    async with await connect_h3(host, port, server_name, max_data=streams * window, max_stream_data=window) as client:
+        client.stop_acknowledging()
+        requests = []
+        for index in range(streams):
+            request_case = RequestCase(
+                f"send-buffer-unacknowledged-{index}", b"GET", "/send-buffer", response_size=UNACKNOWLEDGED_BODY_SIZE
+            )
+            requests.append(asyncio.ensure_future(client.request(authority, request_case)))
+            await asyncio.sleep(spacing)
+        await asyncio.sleep(wait)
+        for request in requests:
+            request.cancel()
+        await asyncio.gather(*requests, return_exceptions=True)
+        print(f"sent {streams} requests and acknowledged no response data")
+
+
 async def async_main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--addr", required=True, help="ATS HTTP/3 address in host:port form")
@@ -390,7 +424,13 @@ async def async_main() -> None:
     )
     parser.add_argument(
         "--scenario",
-        choices=("interop", "send-buffer-windows", "send-buffer-concurrent", "send-buffer-stop-sending"),
+        choices=(
+            "interop",
+            "send-buffer-windows",
+            "send-buffer-concurrent",
+            "send-buffer-stop-sending",
+            "send-buffer-unacknowledged",
+        ),
         default="interop",
         help="Which checks to run",
     )
@@ -401,7 +441,9 @@ async def async_main() -> None:
         action="append",
         help="Stream flow control window; send-buffer-windows takes it more than once",
     )
-    parser.add_argument("--streams", type=int, default=8, help="Concurrent requests for send-buffer-concurrent")
+    parser.add_argument("--streams", type=int, default=8, help="Concurrent requests for send-buffer-concurrent and -unacknowledged")
+    parser.add_argument("--spacing", type=float, default=0.25, help="Seconds between send-buffer-unacknowledged requests")
+    parser.add_argument("--wait", type=float, default=2.0, help="Seconds send-buffer-unacknowledged waits after its last request")
     args = parser.parse_args()
 
     host, port_text = args.addr.rsplit(":", 1)
@@ -424,6 +466,10 @@ async def async_main() -> None:
     if args.scenario == "send-buffer-stop-sending":
         await run_send_buffer_stop_sending(host, port, args.authority, args.server_name)
         print("completed send-buffer-stop-sending")
+        return
+    if args.scenario == "send-buffer-unacknowledged":
+        await run_send_buffer_unacknowledged(host, port, args.authority, args.server_name, args.streams, args.spacing, args.wait)
+        print("completed send-buffer-unacknowledged")
         return
 
     sequential_cases = [

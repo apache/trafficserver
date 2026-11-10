@@ -34,6 +34,15 @@ meta:
         - [ Content-Length, "1048576" ]
       content:
         size: 1048576
+  - generated_512k_response: &generated_512k_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "524288" ]
+      content:
+        size: 524288
   - generated_100_response: &generated_100_response
       status: 200
       reason: OK
@@ -171,3 +180,111 @@ sessions:
 
     server-response:
       <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-0 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-1 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-2 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-3 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-4 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-5 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-6 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-7 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-8 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-9 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-10 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-11 ]
+
+    server-response:
+      <<: *generated_512k_response

@@ -43,6 +43,11 @@ MAX_CONNECTION_SEND_BUFFER = 2 * 1048576
 # about whether a limit holds rather than about exact byte counts.
 LIMIT_SLACK = 16 * 1024
 
+# Each response fits under the stream limit, so ATS can hand OpenSSL all of it and finish the
+# transaction; eight of them are twice the connection limit.
+UNACKNOWLEDGED_BODY_SIZE = 524288
+UNACKNOWLEDGED_STREAMS = 8
+
 WRITE_LINE = re.compile(
     r"\[(?P<cid>[^]]+)\] stream (?P<stream>[0-9]+): OpenSSL holds (?P<used>[0-9]+) bytes to send or to be acknowledged "
     r"in a (?P<size>[0-9]+)-byte buffer, (?P<connection>[0-9]+) for the connection"
@@ -290,3 +295,33 @@ def test_h3_stream_send_buffer_stop_sending(ats_factory: ATSFactory, services: S
     )
     failed_writes = re.findall(rf"Failed to write [0-9]+ bytes on QUIC stream {stream_id}:", content)
     assert len(failed_writes) <= 1, f"ATS kept writing to cancelled stream {stream_id}: {len(failed_writes)} failed writes"
+
+
+def test_h3_stream_send_buffer_connection_limit_counts_finished_streams(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A finished response still counts toward the connection limit while OpenSSL holds it unacknowledged.
+
+    The client acknowledges no response data, so OpenSSL keeps everything ATS hands it, and
+    what OpenSSL reports holding for each stream only grows. Their sum is what OpenSSL holds
+    for the connection, whatever ATS's own running total says.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    require_openssl_quic(ats_factory)
+    ats, stdout = run_aioquic_scenario(
+        ats_factory, services, "send-buffer-unacknowledged", "--streams", str(UNACKNOWLEDGED_STREAMS)
+    )
+    assert f"sent {UNACKNOWLEDGED_STREAMS} requests" in stdout, stdout
+
+    held: dict[tuple[str, int], int] = {}
+    for write in stream_writes(read_settled(ats.traffic_out)):
+        held[write.stream] = max(held.get(write.stream, 0), write.used)
+    assert max(held.values(), default=0) >= UNACKNOWLEDGED_BODY_SIZE, (
+        f"no stream got its whole {UNACKNOWLEDGED_BODY_SIZE}-byte response into OpenSSL, so no transaction finished; "
+        f"most held for one stream: {max(held.values(), default=0)}"
+    )
+    total = sum(held.values())
+    assert total <= MAX_CONNECTION_SEND_BUFFER + LIMIT_SLACK, (
+        f"OpenSSL holds {total} unacknowledged bytes across {len(held)} streams, more than the "
+        f"{MAX_CONNECTION_SEND_BUFFER}-byte connection limit"
+    )
