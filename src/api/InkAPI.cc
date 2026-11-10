@@ -9336,6 +9336,26 @@ TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp, const char *tag)
   return cs->protocol_contains(std::string_view{tag});
 }
 
+TSReturnCode
+TSVConnProtocolStackGet(TSVConn vconn, int count, const char **result, int *actual)
+{
+  sdk_assert(sdk_sanity_check_iocore_structure(vconn) == TS_SUCCESS);
+  sdk_assert(count == 0 || result != nullptr);
+  auto const *vc        = reinterpret_cast<NetVConnection *>(vconn);
+  int         new_count = 0;
+  if (count > 0) {
+    auto mem  = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * count));
+    new_count = vc->populate_protocol(mem, count);
+    for (int i = 0; i < new_count; ++i) {
+      result[i] = mem[i].data();
+    }
+  }
+  if (actual) {
+    *actual = new_count;
+  }
+  return TS_SUCCESS;
+}
+
 const char *
 TSVConnProtocolStackContains(TSVConn vconn, const char *tag)
 {

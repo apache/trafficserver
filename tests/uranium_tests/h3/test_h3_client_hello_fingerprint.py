@@ -180,6 +180,9 @@ def test_h3_delayed_client_hello_hook(ats_factory: ATSFactory, services: Service
     traffic_out = ats.traffic_out.read_text(errors="replace")
     hook_calls = re.findall(r"Client Hello callback [0-9]+ ssl_vc=\S+ - event is (\w+)", traffic_out)
     assert hook_calls == ["good"], hook_calls
+    assert re.search(r"Client Hello callback [0-9]+ protocol stack: quic,tls/1\.3,udp,ipv[46]$", traffic_out, re.MULTILINE), (
+        "TSVConnProtocolStackGet should report the QUIC transport during the handshake"
+    )
     # As over TCP, the ClientHello hooks run, and can hold the handshake, before it completes.
     reenabled = traffic_out.index("Callback reenable ssl_vc=")
     fingerprinted = traffic_out.index("Fingerprint: q13d")
