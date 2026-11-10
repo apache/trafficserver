@@ -529,8 +529,8 @@ QUICPacketHandlerIn::init_accept_per_thread_listeners()
 
   // Continuation::handleEvent() requires the caller to hold the continuation's mutex, and each net thread
   // holds its own for good, so a session acceptor called from every net thread cannot have one. As with
-  // TCP per-thread accept, its mutex stays unset: the QUIC session acceptors keep no state of their own,
-  // and the IP-allow configuration they read is a reference-counted snapshot.
+  // TCP per-thread accept, its mutex stays unset: the QUIC session acceptors hold only state fixed at
+  // startup, and the IP-allow configuration they read is a reference-counted snapshot.
   for (size_t i = 0; i < acceptors.size(); ++i) {
     acceptors[i]->_schedule_on(net_threads._thread[i]);
   }

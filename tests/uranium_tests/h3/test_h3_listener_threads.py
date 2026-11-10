@@ -229,24 +229,37 @@ def test_h3_stateless_retry_with_listener_threads(ats_factory: ATSFactory, servi
     assert LISTENERS_STARTED in _ats.traffic_out.read_text(errors="replace")
 
 
-def test_h3_port_without_listener(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """When no per-thread listener can bind the port, an error names the port and no listener starts.
+@pytest.mark.parametrize("listen_per_thread", [0, 1])
+def test_h3_port_without_listener(ats_factory: ATSFactory, services: ServiceFactory, listen_per_thread: int) -> None:
+    """When no listener can bind the port, an error names the port and its address.
 
-    A plain UDP socket bound to the port first, without SO_REUSEADDR or SO_REUSEPORT, makes the
-    first listener's bind fail.
+    A plain UDP socket bound to the wildcard address on the port first, without SO_REUSEADDR or
+    SO_REUSEPORT, makes the first listener's bind fail with EADDRINUSE on Linux and FreeBSD alike.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
+    :param listen_per_thread: Value for proxy.config.quic.server.listen_per_thread.
     """
 
     require_per_thread_listeners(ats_factory)
     _origin = configure_origin(services)
-    _ats = configure_ats(ats_factory, "ts-h3-no-listener", {}, _origin=_origin)
+    _ats = configure_ats(
+        ats_factory,
+        f"ts-h3-no-listener-{listen_per_thread}",
+        {"proxy.config.quic.server.listen_per_thread": listen_per_thread},
+        _origin=_origin,
+    )
     _ats.allow_errors(r"OpenSSL QUIC")
     port = _ats.https_port
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as holder:
-        holder.bind(("127.0.0.1", port))
+        holder.bind(("0.0.0.0", port))
         _origin.start()
         _ats.start()
         wait_for_file_lines(_ats.diags_log, rf"HTTP/3 port {port}: no OpenSSL QUIC listener started on 0\.0\.0\.0:{port}$", 1)
-    assert "accepting OpenSSL QUIC connections on" not in _ats.traffic_out.read_text(errors="replace")
+    for_thread = " for net thread 0" if listen_per_thread else ""
+    wait_for_file_lines(
+        _ats.diags_log, rf"failed to bind OpenSSL QUIC socket on 0\.0\.0\.0:{port}{for_thread}: Address already in use$", 1
+    )
+    diags = _ats.diags_log.read_text(errors="replace")
+    assert "one OpenSSL QUIC listener serves" not in diags
+    assert not re.search(r"listening on \S+ on \d+ of \d+ net threads", diags)

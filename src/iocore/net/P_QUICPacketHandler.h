@@ -107,7 +107,7 @@ private:
    *        socket share the port; -1 for a port's only listener.
    */
   Listen _start_listener(int net_thread = -1);
-  /// Logs that the port has no listener and closes its socket.
+  /// Logs that the port has no listener, closes its socket and frees its OpenSSL listener.
   void _stop_unstarted_listener();
   void _schedule_on(EThread *t);
   void _service_listener();
