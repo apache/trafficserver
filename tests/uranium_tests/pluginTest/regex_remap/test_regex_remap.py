@@ -280,6 +280,7 @@ def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     run_generation_checks(_ats=_ats, _curl=_curl)
     _ats.stop()
     log = _ats.diags_log.read_text(errors="replace")
-    expected_errors = r'\[regex_remap\] Bad regular expression result (?:-47 .* from "\^/match_limit/|-(?:46|47|53|63) .* from "\^/alpha/bravo/)'
-    assert not re.search(rf"ERROR: (?!{expected_errors})", log), log
+    match_limit_error = r'\[regex_remap\] Bad regular expression result -47 .* from "\^/match_limit/'
+    alpha_bravo_error = r'\[regex_remap\] Bad regular expression result -(?:46|47|53|63) .* from "\^/alpha/bravo/'
+    assert not re.search(rf"ERROR: (?!{match_limit_error}|{alpha_bravo_error})", log), log
     assert not re.search(r"FATAL:|Unrecognized configuration value", log), log
