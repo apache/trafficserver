@@ -20,10 +20,7 @@ foreach(suffix IN ITEMS "" "_UDS")
     set(deprecated_value "${ENABLE_AUTEST${suffix}}")
     message(DEPRECATION "ENABLE_AUTEST${suffix} is deprecated; use ENABLE_URTEST${suffix}")
     if(NOT DEFINED ENABLE_URTEST${suffix} OR deprecated_value)
-      set(ENABLE_URTEST${suffix}
-          "${deprecated_value}"
-          CACHE BOOL "Set up Uranium tests${suffix}" FORCE
-      )
+      set(ENABLE_URTEST${suffix} "${deprecated_value}" CACHE BOOL "Set up Uranium tests${suffix}" FORCE)
     endif()
     unset(ENABLE_AUTEST${suffix} CACHE)
     unset(ENABLE_AUTEST${suffix})
@@ -36,10 +33,7 @@ foreach(suffix IN ITEMS SANDBOX OPTIONS)
       if(suffix STREQUAL "OPTIONS" AND NOT "${AUTEST_OPTIONS}" STREQUAL "")
         message(STATUS "Migrating AUTEST_OPTIONS unchanged; use pytest arguments (for example -k, not AuTest's -f)")
       endif()
-      set(URTEST_${suffix}
-          "${AUTEST_${suffix}}"
-          CACHE STRING "Uranium test ${suffix}"
-      )
+      set(URTEST_${suffix} "${AUTEST_${suffix}}" CACHE STRING "Uranium test ${suffix}")
     endif()
     unset(AUTEST_${suffix} CACHE)
     unset(AUTEST_${suffix})

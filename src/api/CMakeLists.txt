@@ -31,7 +31,7 @@ endif()
 add_library(ts::tsapi ALIAS tsapi)
 
 set(TSAPI_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/include/ts/ts.h ${PROJECT_SOURCE_DIR}/include/ts/remap.h
-                         ${PROJECT_SOURCE_DIR}/include/ts/TsException.h ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
+    ${PROJECT_SOURCE_DIR}/include/ts/TsException.h ${PROJECT_BINARY_DIR}/include/ts/apidefs.h
 )
 
 # OpenSSL needs to be listed in before other libraries that can be found in the system default lib directory (See #11511)
@@ -43,22 +43,19 @@ set_target_properties(tsapi PROPERTIES PUBLIC_HEADER "${TSAPI_PUBLIC_HEADERS}")
 
 # Items common between api and other ts libraries
 add_library(
-  tsapibackend STATIC # need to fix circular dep to remove this
-  ConfigUpdateCbTable.cc # configmanager
-  InkContInternal.cc # proxy, http
-  InkVConnInternal.cc # proxy, http
-  APIHook.cc # iocore
-  APIHooks.cc # proxy
-  HttpAPIHooks.cc # proxy, cache
-  LifecycleAPIHooks.cc # proxy, http
-  HttpHookState.cc # proxy, http
+  tsapibackend
+  STATIC # need to fix circular dep to remove this
+    ConfigUpdateCbTable.cc # configmanager
+    InkContInternal.cc # proxy, http
+    InkVConnInternal.cc # proxy, http
+    APIHook.cc # iocore
+    APIHooks.cc # proxy
+    HttpAPIHooks.cc # proxy, cache
+    LifecycleAPIHooks.cc # proxy, http
+    HttpHookState.cc # proxy, http
 )
 add_library(ts::tsapibackend ALIAS tsapibackend)
-target_link_libraries(
-  tsapibackend
-  PUBLIC ts::inknet ts::http
-  PRIVATE ts::proxy ts::hdrs ts::tscore
-)
+target_link_libraries(tsapibackend PUBLIC ts::inknet ts::http PRIVATE ts::proxy ts::hdrs ts::tscore)
 
 install(
   TARGETS tsapi
@@ -75,31 +72,32 @@ if(BUILD_TESTING)
   add_executable(test_api unit_tests/test_HttpOverridableConfig.cc)
   target_link_libraries(
     test_api
-    PRIVATE Catch2::Catch2WithMain
-            ts::tscore
-            tsapi_objects
-            ts::overridable_txn_vars
-            ts::tsutil
-            ts::http
-            ts::http_remap
-            ts::http2
-            ts::logging
-            ts::hdrs
-            ts::diagsconfig
-            ts::inkutils
-            ts::inkdns
-            ts::inkhostdb
-            ts::inkcache
-            ts::aio
-            ts::proxy
-            ts::inknet
-            ts::records
-            ts::inkevent
-            libswoc::libswoc
-            ts::jsonrpc_protocol
-            ts::jsonrpc_server
-            ts::rpcpublichandlers
-            ts::configmanager
+    PRIVATE
+      Catch2::Catch2WithMain
+      ts::tscore
+      tsapi_objects
+      ts::overridable_txn_vars
+      ts::tsutil
+      ts::http
+      ts::http_remap
+      ts::http2
+      ts::logging
+      ts::hdrs
+      ts::diagsconfig
+      ts::inkutils
+      ts::inkdns
+      ts::inkhostdb
+      ts::inkcache
+      ts::aio
+      ts::proxy
+      ts::inknet
+      ts::records
+      ts::inkevent
+      libswoc::libswoc
+      ts::jsonrpc_protocol
+      ts::jsonrpc_server
+      ts::rpcpublichandlers
+      ts::configmanager
   )
   add_catch2_test(NAME test_api COMMAND test_api)
 endif()

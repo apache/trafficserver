@@ -48,8 +48,5 @@ function(CHECK_OPENSSL_HAS_QUIC_TLS_CBS OUT_VAR OPENSSL_INCLUDE_DIR)
   set(CMAKE_REQUIRED_LIBRARIES OpenSSL::SSL OpenSSL::Crypto)
   include(CheckCXXSourceCompiles)
   check_cxx_source_compiles("${CHECK_PROGRAM}" ${OUT_VAR})
-  set(${OUT_VAR}
-      ${${OUT_VAR}}
-      PARENT_SCOPE
-  )
+  set(${OUT_VAR} ${${OUT_VAR}} PARENT_SCOPE)
 endfunction()

@@ -16,27 +16,24 @@
 #######################
 
 add_library(
-  http2 STATIC
-  HPACK.cc
-  HTTP2.cc
-  Http2Frame.cc
-  Http2ClientSession.cc
-  Http2CommonSession.cc
-  Http2ConnectionState.cc
-  Http2DebugNames.cc
-  Http2Stream.cc
-  Http2SessionAccept.cc
-  Http2ServerSession.cc
+  http2
+  STATIC
+    HPACK.cc
+    HTTP2.cc
+    Http2Frame.cc
+    Http2ClientSession.cc
+    Http2CommonSession.cc
+    Http2ConnectionState.cc
+    Http2DebugNames.cc
+    Http2Stream.cc
+    Http2SessionAccept.cc
+    Http2ServerSession.cc
 )
 add_library(ts::http2 ALIAS http2)
 
 target_include_directories(http2 PRIVATE ${YAMLCPP_INCLUDE_DIR})
 
-target_link_libraries(
-  http2
-  PUBLIC ts::inkevent ts::proxy ts::tscore
-  PRIVATE ts::inkutils
-)
+target_link_libraries(http2 PUBLIC ts::inkevent ts::proxy ts::tscore PRIVATE ts::inkutils)
 
 if(BUILD_TESTING)
   add_executable(
