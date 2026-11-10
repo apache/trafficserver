@@ -793,3 +793,15 @@ def test_procedure_definition_finds_a_local_declaration(procedures_lsp_client, l
     location = lsp_asserts.assert_definition_location(response, "local procedure definition")
     assert location["uri"] == uri
     assert location["range"]["start"]["line"] == 1
+
+
+def test_procedure_error_is_diagnosed_at_the_call(procedures_lsp_client) -> None:
+    uri = "file:///test_proc_wrong_arity.hrw4u"
+    procedures_lsp_client.open_document(uri, 'use test::add-debug-header\n\nREMAP {\n    test::add-debug-header("a", "b");\n}\n')
+
+    diagnostics = procedures_lsp_client.wait_for_diagnostics(uri)
+
+    arity = [d for d in diagnostics if "expected 1 arg(s), got 2" in d["message"]]
+    assert len(arity) == 1, diagnostics
+    assert arity[0]["range"]["start"] == {"line": 3, "character": 4}
+    assert arity[0]["severity"] == 1
