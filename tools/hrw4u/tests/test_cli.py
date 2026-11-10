@@ -490,3 +490,36 @@ def test_cli_bulk_stop_on_error_keeps_the_pairs_before_it(tmp_path: Path) -> Non
     assert result.returncode != 0
     assert "X-Ok" in good_out.read_text()
     assert bad_out.read_text() == previous
+
+
+@pytest.fixture
+def arity_procedure(tmp_path: Path) -> Path:
+    """A procedures path holding `t::p`, which takes exactly one argument."""
+    procs = tmp_path / "procs"
+    (procs / "t").mkdir(parents=True)
+    (procs / "t" / "p.hrw4u").write_text("procedure t::p($a) {\n    inbound.req.X-A = $a;\n}\n")
+    return procs
+
+
+def test_cli_reports_a_procedure_error_at_the_call(arity_procedure: Path, tmp_path: Path) -> None:
+    """A procedure misuse is a mistake at the call, so that is the position and line the diagnostic shows."""
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::p\nREMAP {\n    t::p(\"1\", \"2\");\n}\n")
+
+    result = run_hrw4u(["--procedures-path", str(arity_procedure), str(main)])
+
+    assert result.returncode != 0
+    assert f"{main}:3:4: error: procedure 't::p': expected 1 arg(s), got 2" in result.stderr
+    assert "3 |     t::p(\"1\", \"2\");" in result.stderr
+    assert "Visitor error" not in result.stderr
+
+
+def test_cli_output_hrw4u_inlines_procedures(arity_procedure: Path, tmp_path: Path) -> None:
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::p\nREMAP {\n    t::p(\"v\");\n}\n")
+
+    result = run_hrw4u(["--procedures-path", str(arity_procedure), "--output", "hrw4u", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert "inbound.req.X-A = " in result.stdout
+    assert "t::p" not in result.stdout

@@ -285,9 +285,8 @@ def compile_to_conf(
 ) -> list[str]:
     """Run the hrw4u front end: CST -> AST -> resolved tree -> header_rewrite lines.
 
-    Not reachable from the CLI yet -- generate_output still routes through the CST
-    emitter. This is the single wiring both the switchover and the parity test use, so
-    the two cannot drift. A run that reported an error returns no lines: what the emitter
+    The single wiring both the CLI and the parity test use, so the two cannot drift. A
+    run that reported an error returns no lines: what the emitter
     renders around an unresolved node is not a configuration anyone asked for. That
     includes a syntax error already in `error_collector`, which stops the run before the
     front end, because the AST cannot be built from an error-recovered tree.
@@ -322,11 +321,14 @@ def generate_output(
     error_collector: ErrorCollector | None = None,
     extra_kwargs: dict[str, Any] | None = None,
     out: TextIO | None = None,
+    source_text: str = "",
+    compile_conf: Callable[..., list[str]] | None = None,
 ) -> bool:
     """Write the compiled output to `out`, and return True when the input had errors.
 
     `out` is a parameter so the caller, which owns the destination, can still decide
-    whether to keep the bytes.
+    whether to keep the bytes. `compile_conf`, when given, produces the default output
+    in place of `visitor_class`; `source_text` is the input it quotes in diagnostics.
     """
     out = sys.stdout if out is None else out
     if args.ast:
@@ -345,12 +347,13 @@ def generate_output(
             }
             if extra_kwargs:
                 kwargs.update(extra_kwargs)
-            visitor = visitor_class(**kwargs)
             try:
                 if getattr(args, 'output', None) == 'hrw4u':
-                    result = visitor.flatten(tree)
+                    result = visitor_class(**kwargs).flatten(tree)
+                elif compile_conf is not None:
+                    result = compile_conf(tree, source_text=source_text, **kwargs)
                 else:
-                    result = visitor.visit(tree)
+                    result = visitor_class(**kwargs).visit(tree)
                 if result:
                     print("\n".join(result), file=out)
             except Exception as e:
@@ -383,6 +386,7 @@ def run_main(
     add_args: Callable[[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup], None] | None = None,
     pre_process: Callable[[str, str, Any], str] | None = None,
     visitor_kwargs: Callable[[argparse.Namespace], dict[str, Any]] | None = None,
+    compile_conf: Callable[..., list[str]] | None = None,
 ) -> None:
     """
     Generic main function for hrw4u and u4wrh scripts with bulk compilation support.
@@ -398,6 +402,7 @@ def run_main(
         add_args: Optional callback to add extra arguments to the parser and output group
         pre_process: Optional callback(content, filename, args) -> content run before parsing
         visitor_kwargs: Optional callback(args) -> dict of extra kwargs for the visitor
+        compile_conf: Optional compiler for the default output, called like compile_to_conf
     """
     parser = argparse.ArgumentParser(
         description=description,
@@ -462,7 +467,18 @@ def run_main(
             content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format
         )
         buffer = io.StringIO()
-        failed = generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer)
+        failed = generate_output(
+            tree,
+            parser_obj,
+            visitor_class,
+            filename,
+            args,
+            error_collector,
+            extra_kwargs,
+            out=buffer,
+            source_text=content,
+            compile_conf=compile_conf,
+        )
         if not failed or (args.ast and buffer.getvalue()):
             sys.stdout.write(buffer.getvalue())
         if failed:
@@ -507,7 +523,16 @@ def run_main(
 
             buffer = io.StringIO()
             pair_failed = generate_output(
-                tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer
+                tree,
+                parser_obj,
+                visitor_class,
+                filename,
+                args,
+                error_collector,
+                extra_kwargs,
+                out=buffer,
+                source_text=content,
+                compile_conf=compile_conf,
             )
             failed |= pair_failed
 
@@ -548,7 +573,18 @@ def run_main(
 
             # These concatenate into one document, so a partial run is a config with a hole.
             buffer = io.StringIO()
-            failed |= generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer)
+            failed |= generate_output(
+                tree,
+                parser_obj,
+                visitor_class,
+                filename,
+                args,
+                error_collector,
+                extra_kwargs,
+                out=buffer,
+                source_text=content,
+                compile_conf=compile_conf,
+            )
             # Empty chunks hold their place, or `# ---` stops marking file boundaries.
             chunks.append(buffer.getvalue())
 

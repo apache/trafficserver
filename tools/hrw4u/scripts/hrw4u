@@ -28,7 +28,7 @@ from typing import Any
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
-from hrw4u.common import run_main
+from hrw4u.common import compile_to_conf, run_main
 from hrw4u.sandbox import SandboxConfig
 
 
@@ -78,6 +78,7 @@ def main() -> None:
         output_flag_help="Produce the HRW output (default)",
         add_args=_add_args,
         visitor_kwargs=_visitor_kwargs,
+        compile_conf=compile_to_conf,
     )
 
 
