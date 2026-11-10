@@ -1732,7 +1732,7 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   // This pattern starts failing at roughly 43KiB of subject against a 1MiB JIT
   // stack, measured identically on x86_64 and arm64. Smaller JIT frames get more
   // subject out of the same stack and so push that threshold up; 256KiB keeps a
-  // six times margin against that. Do not trim this to just above 43KiB.
+  // six times margin against that, where a subject just above 43KiB would not.
   std::string subject{"/alpha/bravo/?"};
   subject.append(256 * 1024, 'x');
 
@@ -1746,8 +1746,8 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   // 1MiB stack from PCRE2's 32KiB fallback: 256KiB overruns both bounds, so every
   // assertion above also holds with no JIT stack assigned. 10,000 is seven
   // times over the fallback's bound and four times under the 1MiB stack's. Neither
-  // bound pins 1MiB itself; the suite only requires a maximum in roughly
-  // [240KB, 6MB].
+  // bound pins 1MiB itself; this case only requires a maximum between roughly
+  // 240KiB and 6MiB.
   std::string smaller{"/alpha/bravo/?"};
   smaller.append(10000, 'x');
 
@@ -1793,8 +1793,7 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
     return false;
   }
 
-  // On a JIT build this overruns the 32KiB fallback stack, so matching the whole subject
-  // shows the thread's own stack ran.
+  // On a JIT build, matching all of it shows this thread's own stack ran.
   RegexMatches deep_matches;
   if (re_deep.exec(deep, deep_matches, 0, opts) <= 0 || deep_matches[0].size() != deep.size()) {
     return false;
@@ -1803,15 +1802,31 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
   return true;
 }
 
+// The hit takes more than one match limit step on either engine, 3 on the JIT and 6 on the
+// interpreter with PCRE2 10.47 and 10.49, so a limit of 1 stops it.
+constexpr uint32_t HIT_STOPPING_MATCH_LIMIT = 1;
+
+// The round a thread whose options carry HIT_STOPPING_MATCH_LIMIT performs instead.
+bool
+limited_match_round(Regex const &re_captures, std::string const &hit, Regex::Options const &opts)
+{
+  RegexMatches matches;
+  return re_captures.exec(hit, matches, 0, opts) == PCRE2_ERROR_MATCHLIMIT;
+}
+
 } // namespace
 
 // The header promises that exec() may be called concurrently on one instance. Every thread
-// must reach the same verdict, whether it matches with the default options or with options
-// of its own.
+// must reach the verdict its own options call for, whatever the other threads pass.
+//
+// Four threads match with the default options and two with a limit that is never reached;
+// both must match. The other two use a limit too small for the hit and must get
+// PCRE2_ERROR_MATCHLIMIT. A limit that reached another thread's match, in either direction,
+// fails the case.
 //
 // The deep subjects are longer than PCRE2's 32KiB fallback stack can resolve, so on a JIT
 // build this also fails if a thread's match context loses its 1MiB JIT stack, whether that
-// is the shared context or the per thread copy that non-default options match through.
+// is the thread's default context or the copy that non-default options match through.
 // Without a JIT the interpreter resolves them either way, so only the concurrency half of
 // this case carries over to such a build.
 //
@@ -1819,10 +1834,8 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
 // each round's matches start together on every thread. The test is deterministic when the
 // stacks are distinct, but it does not prove that they are: one stack shared by all eight
 // corrupts a result only when two deep matches touch the same frames at once, which the
-// barrier invites but cannot force. With one JIT stack shared by every thread, the case
-// misses the corruption more often when the barrier is taken out. An oracle would need a thread
-// paused inside a match, which the public API does not offer.
-// ThreadSanitizer does not see those writes either, because they come from sljit code.
+// barrier makes likely but cannot force. The same holds for a limit shared across threads.
+// ThreadSanitizer does not see the stack writes, because they come from sljit code.
 TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
 {
   Regex re_captures;
@@ -1847,16 +1860,19 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
       std::string const deep = stack_hungry_subject(i);
       Regex::Options    opts;
 
-      // Half the threads take the per thread copy of the shared context that a
-      // non-default option selects. The limit is high enough never to be reached.
-      if ((i % 2) == 0) {
+      if ((i % 4) == 0) {
         opts.match_limit = 100000000;
+      } else if ((i % 4) == 2) {
+        opts.match_limit = HIT_STOPPING_MATCH_LIMIT;
       }
 
       for (int n = 0; n < ITERATIONS; ++n) {
         // Unconditional, so a failing round cannot leave the other threads waiting.
         round_start.arrive_and_wait();
-        if (!concurrent_match_round(re_captures, re_deep, hit, miss, deep, opts)) {
+        bool const ok = opts.match_limit == HIT_STOPPING_MATCH_LIMIT ?
+                          limited_match_round(re_captures, hit, opts) :
+                          concurrent_match_round(re_captures, re_deep, hit, miss, deep, opts);
+        if (!ok) {
           ++failures;
         }
       }
