@@ -69,8 +69,14 @@ urtest:
     metric_checks:
       # The chunked-tunnel throttle must fire at least once: the chunked
       # output buffer crosses high_water before the consumer drains it.
+      #
+      # traffic_ctl reads traffic_manager's copy of the metric, which can trail
+      # traffic_server by up to two five-second intervals by default: the
+      # raw-stat sync, then the remote sync that pushes to traffic_manager.
       - metric: proxy.process.http.tunnel.chunked_throttle
         value: '[1-9][0-9]*'
+        delay: 0
+        timeout: 60
 
 sessions:
 - protocol:
