@@ -1741,7 +1741,6 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   int const    rc = re.exec(subject, matches);
   CAPTURE(rc);
 
-  // Reaching this line at all is the crash assertion.
   REQUIRE(rc == PCRE2_ERROR_JIT_STACKLIMIT);
 
   // The paired positive control, and the only part of this case that can tell a
