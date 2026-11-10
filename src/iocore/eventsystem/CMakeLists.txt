@@ -75,6 +75,10 @@ if(BUILD_TESTING)
   target_link_libraries(test_Action ts::inkevent configmanager Catch2::Catch2WithMain)
   add_catch2_test(NAME test_Action COMMAND test_Action)
 
+  add_executable(test_ConfigPins unit_tests/test_ConfigPins.cc)
+  target_link_libraries(test_ConfigPins ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_ConfigPins COMMAND test_ConfigPins)
+
   add_executable(test_Lock unit_tests/test_Lock.cc)
   target_link_libraries(test_Lock ts::inkevent configmanager Catch2::Catch2WithMain)
   add_catch2_test(NAME test_Lock COMMAND test_Lock)

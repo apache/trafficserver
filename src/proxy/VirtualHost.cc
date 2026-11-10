@@ -630,6 +630,12 @@ VirtualHost::reconfigure(std::string_view id, ConfigContext ctx)
   return 1;
 }
 
+unsigned
+VirtualHost::config_id()
+{
+  return _configid.load();
+}
+
 VirtualHostConfig *
 VirtualHost::acquire()
 {

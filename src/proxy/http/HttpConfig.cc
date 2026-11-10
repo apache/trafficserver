@@ -1603,6 +1603,12 @@ HttpConfig::reconfigure()
 //  HttpConfig::acquire()
 //
 ////////////////////////////////////////////////////////////////
+unsigned
+HttpConfig::config_id()
+{
+  return m_id;
+}
+
 HttpConfigParams *
 HttpConfig::acquire()
 {

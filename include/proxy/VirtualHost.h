@@ -125,6 +125,8 @@ private:
 class VirtualHost
 {
 public:
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<VirtualHost, VirtualHostConfig>;
 
   static void               startup();

@@ -35,12 +35,10 @@ public:
 
   virtual ~QUICContext(){};
   virtual QUICConnectionInfoProvider *connection_info() const;
-  virtual QUICConfig::scoped_config   config() const;
 
   // For Mock
   QUICContext() {}
 
 private:
-  QUICConfig::scoped_config   _config;
   QUICConnectionInfoProvider *_connection_info = nullptr;
 };

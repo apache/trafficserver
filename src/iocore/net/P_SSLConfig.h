@@ -220,6 +220,8 @@ struct SSLConfig {
   static int  get_config_index();
   static int  get_loading_config_index();
   static void commit_config_id();
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams>;
 
 private:
@@ -233,6 +235,8 @@ struct SSLCertificateConfig {
   static SSLCertLookup *acquire();
   static void           release(SSLCertLookup *params);
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<SSLCertificateConfig, SSLCertLookup>;
 
 private:
@@ -269,6 +273,12 @@ struct SSLTicketKeyConfig {
     }
   }
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned
+  config_id()
+  {
+    return configid;
+  }
   using scoped_config = ConfigProcessor::scoped_config<SSLTicketKeyConfig, SSLTicketParams>;
 
 private:
