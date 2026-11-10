@@ -268,6 +268,39 @@ def test_continuation_open_close_order(
     assert metrics["ssntxnorder_verify.txn.start"] == request_count
 
 
+def test_plugin_msg_waits_for_held_mutex(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A plugin message waits for a continuation mutex that an event thread holds.
+
+    The plugin's transaction hook holds its continuation's mutex until a message
+    for that continuation arrives, so the message thread finds the mutex taken.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+    plugin = "msg_held_mutex.so"
+    _origin = continuation_configure_origin(_services=services)
+    _ats = continuation_configure_ats(_ats_factory=ats_factory, _origin=_origin, _plugin=plugin, _protocol="http1")
+    _origin.start()
+    _ats.start()
+
+    options = ["--silent", "--show-error", "--fail", "--header", "Connection: close"]
+    url = f"http://127.0.0.1:{_ats.http_port}/"
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        request = executor.submit(curl.run_for, _ats, f"{shlex.join(options)} '{url}'", 60)
+        # Messages sent before the hook takes the mutex are delivered at once,
+        # so keep sending until the held transaction finishes. Stop early if
+        # Traffic Server aborts, since traffic_manager then stops answering.
+        while not request.done() and "Fatal:" not in _ats.traffic_out.read_text(errors="replace"):
+            _ats.traffic_ctl("plugin", "msg", "msg_held_mutex", "hold")
+            time.sleep(0.2)
+        result = request.result()
+    fatal = [line for line in _ats.traffic_out.read_text(errors="replace").splitlines() if "Fatal:" in line]
+    assert not fatal, "\n".join(fatal)
+    assert result.returncode == 0, result.output
+    continuation_wait_for_metric("msg_held_mutex.msg.delivered", _ats=_ats)
+
+
 def test_session_ids_are_unique(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
     """Session identifiers remain unique across HTTP/1 and HTTP/2.
 
