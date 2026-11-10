@@ -287,3 +287,359 @@ sessions:
       status: 200
       content:
         verify: {value: "answer-d", as: equal}
+
+  # The same content with a different Content-Type is a different query, so
+  # it must not get the entry for application/sql.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/jsonpath]
+        - [Content-Length, "8"]
+        - [uuid, body-a-other-type]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-j"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-j", as: equal}
+
+  # Cache-Control: public gives no lifetime, so ATS does not cache the response.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /public
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, public-first]
+      content:
+        data: "select-p"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "public"]
+        - [Last-Modified, "Tue, 08 Nov 2016 22:00:00 GMT"]
+      content:
+        data: "answer-p"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-p", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /public
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, public-second]
+      content:
+        data: "select-p"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "public"]
+        - [Last-Modified, "Tue, 08 Nov 2016 22:00:00 GMT"]
+      content:
+        data: "answer-q"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-q", as: equal}
+
+  # Content larger than proxy.config.http.post_copy_size cannot be part of the
+  # cache key. ATS sends the request to the origin and does not cache the response.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /large
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "3000"]
+        - [uuid, large-first]
+      content:
+        size: 3000
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-l"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-l", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /large
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "3000"]
+        - [uuid, large-second]
+      content:
+        size: 3000
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-m"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-m", as: equal}
+
+  # Chunked content has no Content-Length, so ATS does not use the cache.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /chunked
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Transfer-Encoding, chunked]
+        - [uuid, chunked-first]
+      content:
+        data: "select-k"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-k"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-k", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /chunked
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Transfer-Encoding, chunked]
+        - [uuid, chunked-second]
+      content:
+        data: "select-k"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-n"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-n", as: equal}
+
+  # A QUERY without content has no digest for the cache key. It must go to the
+  # origin, and it must not replace the cached GET response for the same URL.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "0"]
+        - [uuid, empty-query]
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "12"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "empty-answer"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "empty-answer", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, get-after-empty-query]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "get-answer", as: equal}
+
+  # A stale QUERY response is revalidated with a conditional QUERY.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /reval
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, reval-first]
+      content:
+        data: "select-r"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=1"]
+        - [ETag, '"v1"']
+      content:
+        data: "answer-r"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-r", as: equal}
+
+  - client-request:
+      delay: 2s
+      method: QUERY
+      url: /reval
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, reval-second]
+      content:
+        data: "select-r"
+
+    proxy-request:
+      method: QUERY
+      headers:
+        fields:
+        - [If-None-Match, {value: '"v1"', as: equal}]
+
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [Cache-Control, "max-age=300"]
+        - [ETag, '"v1"']
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-r", as: equal}

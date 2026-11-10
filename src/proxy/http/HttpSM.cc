@@ -891,19 +891,34 @@ HttpSM::wait_for_full_body()
 }
 
 // The content of a QUERY request is part of the resource it identifies, so it
-// has to take part in the cache key. The full body has been buffered by
-// wait_for_full_body() at this point, so digest it and hand the digest to
-// generate_cache_key().
+// has to take part in the cache key. wait_for_full_body() holds the full body
+// at this point. The digest also covers Content-Type and Content-Encoding,
+// because the same bytes are a different query under a different media type.
+// A chunked body gets no digest: its bytes here include the chunk framing.
 void
 HttpSM::compute_request_body_digest()
 {
   t_state.cache_info.request_body_digest_valid = false;
 
-  if (t_state.method != HTTP_WKSIDX_QUERY || t_state.txn_conf->cache_query_method != 1 || !this->_postbuf.is_valid()) {
+  if (t_state.method != HTTP_WKSIDX_QUERY || t_state.txn_conf->cache_query_method != 1 || !this->_postbuf.is_valid() ||
+      t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED) {
     return;
   }
 
-  CryptoContext   ctx;
+  CryptoContext ctx;
+
+  // Each value has its length before it, so that two different sets of values
+  // cannot give the same input to the hash.
+  auto update_with_length = [&ctx](std::string_view value) {
+    uint64_t const length = value.size();
+
+    ctx.update(&length, sizeof(length));
+    ctx.update(value.data(), static_cast<int>(value.size()));
+  };
+
+  update_with_length(t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE)));
+  update_with_length(t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_ENCODING)));
+
   IOBufferReader *reader = this->get_postbuf_clone_reader();
 
   for (int64_t avail = reader->block_read_avail(); avail > 0; avail = reader->block_read_avail()) {
@@ -915,15 +930,17 @@ HttpSM::compute_request_body_digest()
   ctx.finalize(t_state.cache_info.request_body_digest);
   t_state.cache_info.request_body_digest_valid = true;
 
-  SMDbg(dbg_ctl_http_cache_write, "request body digest folded into the cache key");
+  SMDbg(dbg_ctl_http_cache_write, "request body digest is ready for the cache key");
 }
 
 // Mixes the request body digest, when compute_request_body_digest() made one,
-// into a cache key that was built from the URL.
+// into a cache key that was built from the URL. The method check keeps the
+// digest out of the key after a redirect or a plugin changes the request to a
+// different method.
 void
 HttpSM::fold_request_body_digest(HttpCacheKey *key)
 {
-  if (t_state.cache_info.request_body_digest_valid) {
+  if (t_state.cache_info.request_body_digest_valid && t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_QUERY) {
     CryptoContext ctx;
 
     ctx.update(key->hash.u8, sizeof(key->hash.u8));

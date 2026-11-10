@@ -3149,23 +3149,28 @@ Cache Control
 
    Enables (``1``) or disables (``0``) caching of HTTP QUERY requests.
 
-   The content of a QUERY request is part of the resource it identifies, so
-   |TS| folds a digest of the request body into the cache key. This requires
-   the entire request body to be buffered before the cache lookup can happen,
-   the same buffering that :ts:cv:`proxy.config.http.request_buffer_enabled`
-   performs, and it is subject to :ts:cv:`proxy.config.http.post_copy_size`.
-   Requests with a body larger than that limit are not buffered and therefore
-   not cached.
+   The content of a QUERY request is part of the resource it identifies. Thus
+   the cache key includes a digest of the request content and of the
+   ``Content-Type`` and ``Content-Encoding`` request fields. |TS| holds the full
+   request content in memory before the cache lookup, as
+   :ts:cv:`proxy.config.http.request_buffer_enabled` does.
 
-   A QUERY response is only cached when it carries explicit freshness
-   information, either from the origin (``Cache-Control`` or ``Expires``) or
-   from a :file:`cache.config` ``ttl-in-cache`` rule. Heuristic freshness is
-   never applied to QUERY.
+   |TS| sends a QUERY request to the origin and does not use the cache when one
+   of these conditions is true:
 
-   Note that the digest covers the body bytes as they arrive on the wire. A
-   chunked request body therefore keys on its chunk framing, so the same
-   logical body sent with different chunk boundaries produces a cache miss
-   rather than a false hit.
+   - The request has no ``Content-Length``, for example because the content is
+     chunked.
+   - The content is empty.
+   - The content is larger than :ts:cv:`proxy.config.http.post_copy_size`.
+   - :ts:cv:`proxy.config.http.post_copy_size` is ``0``.
+
+   |TS| caches a QUERY response only when it has explicit freshness
+   information. This is ``max-age`` or ``s-maxage`` in ``Cache-Control``, an
+   ``Expires`` field, or a ``ttl-in-cache`` rule in :file:`cache.config`. |TS|
+   does not apply heuristic freshness to a QUERY response.
+
+   When a cached QUERY response is stale, |TS| sends a conditional QUERY to the
+   origin with the validators of the cached response.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.generation INT -1
    :reloadable:
