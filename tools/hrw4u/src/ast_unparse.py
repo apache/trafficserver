@@ -14,7 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Render an AST back to hrw4u source. Test-only; see test_ast_roundtrip.py for why.
+"""Render an AST back to hrw4u source.
 
 Whitespace is not reproduced: the emitter derives its own indentation and never reads the
 source's.
