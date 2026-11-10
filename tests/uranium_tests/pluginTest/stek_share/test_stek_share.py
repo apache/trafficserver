@@ -18,6 +18,7 @@
 from pathlib import Path
 import re
 import shlex
+import signal
 import time
 
 import pytest
@@ -48,6 +49,8 @@ STEK_SHARE__FOLLOWER_STEK = re.compile(
 )
 
 STEK_SHARE__LEADER_STEK = re.compile(r"Using (?:initial|new) STEK: ([0-9A-F]+)")
+
+STEK_SHARE__UPDATER_STOPPED = "Stopping STEK updater thread"
 
 
 def configure_origin(services: ServiceFactory) -> OriginServer:
@@ -244,8 +247,26 @@ def verify_shared_ticket(*, _ats_nodes: list[ATS], _session_file: Path) -> None:
     assert len(set(session_ids)) == 1, f"session IDs were not shared: {session_ids}"
 
 
+def verify_clean_shutdown(*, _ats_nodes: list[ATS]) -> None:
+    """Stop every node and confirm each exits cleanly after its STEK updater thread stops.
+
+    The updater sleeps up to ten seconds between key checks, so shutdown has to
+    wake it and wait for it. The updater is a detached thread, so joining it
+    instead makes ASAN builds abort with a nonzero exit status.
+
+    :param _ats_nodes: Test-local ats nodes configured by the test.
+    """
+
+    for ats in _ats_nodes:
+        ats.send_signal(signal.SIGTERM)
+    for ats in _ats_nodes:
+        ats.wait(timeout=10)
+    missing = [ats.name for ats in _ats_nodes if STEK_SHARE__UPDATER_STOPPED not in ats.traffic_out.read_text(errors="replace")]
+    assert not missing, f"exited before the STEK updater thread stopped: {missing}"
+
+
 def test_stek_share(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """All stek_share peers resume the same TLS session ticket.
+    """All stek_share peers resume the same TLS session ticket, then exit cleanly.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -262,3 +283,4 @@ def test_stek_share(ats_factory: ATSFactory, services: ServiceFactory, curl: Cur
     wait_for_cluster(_ats_nodes=_ats_nodes)
     verify_basic_request(_ats_nodes=_ats_nodes, _curl=curl)
     verify_shared_ticket(_ats_nodes=_ats_nodes, _session_file=_session_file)
+    verify_clean_shutdown(_ats_nodes=_ats_nodes)
