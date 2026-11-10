@@ -27,13 +27,20 @@ from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFacto
 
 TEST_DIRECTORY = Path(__file__).parent
 
-# Requests sent for each FIN ordering. Every one of them must be reclaimed, so a
-# handful is enough to show the pattern without slowing the test.
+# Requests sent for each sequential FIN ordering. Every one of them must be
+# reclaimed, so a handful is enough to show the pattern without slowing the test.
 REQUESTS_PER_ORDERING = 5
+
+# Requests whose FIN follows the headers by a few milliseconds. Only some of
+# them have the FIN handled in the same pass as the end of the response, so
+# enough are sent that a build which drops those transactions misses many.
+RACE_REQUESTS = 96
+
+ACCESS_LOG_NAME = "h3_stream_reclamation"
 
 
 def configure_ats(ats_factory: ATSFactory) -> ATS:
-    """Serve HTTP/3 from the generator plugin and log stream creation and deletion.
+    """Serve HTTP/3 from the generator plugin, log each request path, and log stream creation and deletion.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
@@ -47,14 +54,26 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "quic_stream|http3",
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-        })
+            "proxy.config.quic.initial_max_streams_bidi_in": 1000,
+            "proxy.config.log.max_secs_per_buffer": 1,
+        }
+    )
     ats.remap_config.add_line("map / http://127.0.0.1/ @plugin=generator.so")
+    ats.set_logging_yaml(
+        {
+            "logging": {
+                "formats": [{"name": "request_path", "format": "/%<cqup>"}],
+                "logs": [{"filename": ACCESS_LOG_NAME, "format": "request_path"}],
+            }
+        }
+    )
     return ats
 
 
@@ -78,17 +97,24 @@ def configure_client(services: ServiceFactory, *, _ats: ATS) -> ProcessService:
             "reclaim.example.com",
             "--count",
             str(REQUESTS_PER_ORDERING),
+            "--race-count",
+            str(RACE_REQUESTS),
+            "--access-log",
+            _ats.log_directory / f"{ACCESS_LOG_NAME}.log",
         ),
     )
 
 
 def test_h3_stream_reclamation(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Every request stream is deleted whether its FIN comes before or after the response.
+    """Every request is logged and its stream deleted, wherever its FIN falls relative to the response.
 
     When the response finishes before the request's FIN arrives, the stream is
     only reclaimable once that FIN is read. A stream that is not reclaimed then
     stays allocated until the connection closes, so a client that keeps one
-    connection open can grow it without bound.
+    connection open can grow it without bound. When the FIN is read in the same
+    pass as the end of the response, the stream must not be reclaimed before
+    the transaction learns that its response was sent, or the transaction never
+    finishes and the request is never logged.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -99,11 +125,14 @@ def test_h3_stream_reclamation(ats_factory: ATSFactory, services: ServiceFactory
     _client = configure_client(services, _ats=_ats)
 
     _ats.start()
-    result = _client.run(timeout=60)
+    result = _client.run(timeout=90)
     assert result.returncode == 0, result.output
 
+    unlogged = re.findall(r"^unlogged (\S+)$", result.stdout, re.MULTILINE)
+    assert not unlogged, f"{len(unlogged)} requests not logged while the connection was open: {', '.join(unlogged)}"
+
     streams = re.findall(r"^stream ([0-9]+) (\S+)$", result.stdout, re.MULTILINE)
-    assert len(streams) == 2 * REQUESTS_PER_ORDERING, result.output
+    assert len(streams) == 2 * REQUESTS_PER_ORDERING + RACE_REQUESTS, result.output
 
     # The client waited before closing, so a stream reclaimed while the
     # connection was open is already logged. Streams left at close are freed

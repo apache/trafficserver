@@ -141,6 +141,12 @@ Http3App::on_stream_close(QUICStream &stream)
 {
   QUICStreamId const stream_id = stream.id();
 
+  // The transaction can keep this stream's IOInfo alive after the QUICStream is deleted, and the
+  // adapter's queued events would then reach main_event_handler() and use the deleted stream.
+  if (auto it = this->_streams.find(stream_id); it != this->_streams.end()) {
+    it->second.adapter.cancel_pending_events();
+  }
+
   if (auto *txn = this->_ssn->get_transaction(stream_id); txn != nullptr) {
     SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
     txn->set_stream_cleanup([this, stream_id]() { this->_streams.erase(stream_id); });
@@ -351,8 +357,11 @@ Http3App::_handle_bidi_stream_on_read_complete(int event, VIO *vio)
 {
   this->_handle_bidi_stream_on_read_ready(event, vio);
 
+  // When the FIN is sent but its WRITE_COMPLETE has not run yet, deleting the stream here would
+  // cancel that event, and the transaction would never tell HttpSM its response was sent. The
+  // WRITE_COMPLETE handler deletes the stream instead.
   QUICStreamVCAdapter *adapter = static_cast<QUICStreamVCAdapter *>(vio->vc_server);
-  if (!adapter->is_writable()) {
+  if (!adapter->is_writable() && !adapter->has_pending_write_complete_event()) {
     this->_qc->stream_manager()->delete_stream(adapter->stream().id());
   }
 }

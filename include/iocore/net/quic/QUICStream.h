@@ -44,9 +44,11 @@ public:
 
   virtual ~QUICStreamIO() = default;
 
-  virtual int64_t read_stream(QUICStreamId stream_id, uint8_t *buf, size_t len, bool &fin, ErrorCode &error_code)       = 0;
-  virtual bool    stream_read_finished(QUICStreamId stream_id)                                                          = 0;
-  virtual int64_t stream_write_capacity(QUICStreamId stream_id)                                                         = 0;
+  virtual int64_t read_stream(QUICStreamId stream_id, uint8_t *buf, size_t len, bool &fin, ErrorCode &error_code) = 0;
+  virtual bool    stream_read_finished(QUICStreamId stream_id)                                                    = 0;
+  virtual int64_t stream_write_capacity(QUICStreamId stream_id)                                                   = 0;
+  /// Writes up to @a len bytes and returns how many were accepted. When @a fin is set, the FIN is
+  /// committed exactly when all @a len bytes are accepted; QUICStream::is_fin_sent() relies on this.
   virtual int64_t write_stream(QUICStreamId stream_id, uint8_t const *buf, size_t len, bool fin, ErrorCode &error_code) = 0;
 };
 
