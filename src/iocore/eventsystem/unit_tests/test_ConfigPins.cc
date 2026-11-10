@@ -68,21 +68,66 @@ struct TestConfigClass {
 };
 
 int
-refcount(ConfigInfo *config)
+refcount(ConfigInfo const *config)
 {
   return config->refcount();
+}
+
+/// What a scoped read sees. On a thread with pins it stays valid until that thread's next sweep.
+TestConfig const *
+scoped_read()
+{
+  TestConfigClass::scoped_config scoped;
+  return scoped;
+}
+
+/// Polls until @a done returns true or the deadline passes, and returns its last result.
+template <typename Predicate>
+bool
+wait_until(Predicate done, std::chrono::milliseconds deadline)
+{
+  auto const until = std::chrono::steady_clock::now() + deadline;
+  while (!done() && std::chrono::steady_clock::now() < until) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return done();
 }
 
 /// Polls until @a count objects have been destroyed or the deadline passes.
 int
 wait_for_destroyed(int count, std::chrono::milliseconds deadline)
 {
-  auto const until = std::chrono::steady_clock::now() + deadline;
-  while (destroyed.load() < count && std::chrono::steady_clock::now() < until) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
+  wait_until([count] { return destroyed.load() >= count; }, deadline);
   return destroyed.load();
 }
+
+/// Polls until @a config has no more than @a count references or the deadline passes.
+int
+wait_for_refcount(ConfigInfo const *config, int count, std::chrono::milliseconds deadline)
+{
+  wait_until([config, count] { return refcount(config) <= count; }, deadline);
+  return refcount(config);
+}
+
+/// Takes a scoped read on an event thread and does not read the slot again.
+struct PinProbe : Continuation {
+  std::atomic<bool> done{false};
+  std::atomic<bool> had_pins{false};
+
+  PinProbe() : Continuation(new_ProxyMutex()) { SET_HANDLER(&PinProbe::handle_event); }
+
+  int
+  handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+  {
+    had_pins = ConfigProcessor::thread_pins_enabled();
+    {
+      TestConfigClass::scoped_config scoped;
+      (void)scoped->value;
+    }
+    done = true;
+    return EVENT_DONE;
+  }
+};
 } // namespace
 
 TEST_CASE("ConfigProcessor pins and leases", "[iocore][config]")
@@ -94,15 +139,15 @@ TEST_CASE("ConfigProcessor pins and leases", "[iocore][config]")
 
   ConfigProcessor::enable_thread_pins();
 
-  SECTION("repeated pinned and scoped reads share one reference per thread")
+  SECTION("repeated scoped reads share one reference per thread")
   {
-    CHECK(configProcessor.get_pinned(id) == first);
+    CHECK(scoped_read() == first);
     CHECK(refcount(first) == baseline + 1);
     for (int i = 0; i < 10; ++i) {
       TestConfigClass::scoped_config scoped;
       CHECK(scoped->value == 1);
     }
-    CHECK(configProcessor.get_pinned(id) == first);
+    CHECK(scoped_read() == first);
     CHECK(refcount(first) == baseline + 1);
   }
 
@@ -114,42 +159,39 @@ TEST_CASE("ConfigProcessor pins and leases", "[iocore][config]")
     CHECK(refcount(first) == baseline + 1);
   }
 
-  SECTION("a replaced configuration is released by the sweep but kept alive by a lease")
+  SECTION("a lease keeps a replaced configuration alive after the thread moves on")
   {
-    auto lease = configProcessor.get_leased(id);
+    // Keeps the first configuration readable whenever the processor's delayed release runs.
+    ConfigInfo *guard = configProcessor.get(id);
+    auto        lease = configProcessor.get_leased(id);
 
-    auto *second = new TestConfig(2);
-    configProcessor.set(id, second, 1);
-    CHECK(static_cast<TestConfig *>(configProcessor.get_pinned(id))->value == 2);
-
+    configProcessor.set(id, new TestConfig(2), 1);
+    CHECK(scoped_read()->value == 2);
     ConfigProcessor::release_stale_pins();
-    // The processor still holds its reference for the release timeout, and the lease holds the thread's.
-    CHECK(refcount(first) == baseline + 1);
+
+    // Once the processor drops its reference, only the guard and the thread's reference, held by the lease, remain.
+    CHECK(wait_for_refcount(first, 2, std::chrono::seconds(5)) == 2);
     CHECK(lease.get() == first);
 
     // A lease released on another thread still releases the thread's reference.
     std::thread([&lease] { lease.reset(); }).join();
-    CHECK(refcount(first) == baseline);
+    CHECK(refcount(first) == 1);
 
-    // Once the processor drops its reference, nothing holds the first configuration.
     int const before = destroyed.load();
+    configProcessor.release(id, guard);
     CHECK(wait_for_destroyed(before + 1, std::chrono::seconds(5)) == before + 1);
   }
 
   SECTION("a pinned read stays valid for the event after the processor's delayed reference expires")
   {
-    auto *held = static_cast<TestConfig *>(configProcessor.get_pinned(id));
+    TestConfig const *held = scoped_read();
 
     configProcessor.set(id, new TestConfig(2), 1);
     // Simulate an event that outlasts the release timeout: only this thread's pin is left.
-    auto const until = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-    while (refcount(held) > 1 && std::chrono::steady_clock::now() < until) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    REQUIRE(refcount(held) == 1);
+    REQUIRE(wait_for_refcount(held, 1, std::chrono::seconds(5)) == 1);
 
     int const before = destroyed.load();
-    CHECK(static_cast<TestConfig *>(configProcessor.get_pinned(id))->value == 2);
+    CHECK(scoped_read()->value == 2);
     // A dropped last reference is destroyed on another thread, so give it time to run.
     CHECK(wait_for_destroyed(before + 1, std::chrono::milliseconds(200)) == before);
     CHECK(held->value == 1);
@@ -160,8 +202,8 @@ TEST_CASE("ConfigProcessor pins and leases", "[iocore][config]")
 
   SECTION("threads without pins use the shared refcount")
   {
-    ConfigInfo *current = configProcessor.get_pinned(id);
-    int const   pinned  = refcount(current);
+    TestConfig const *current = scoped_read();
+    int const         pinned  = refcount(current);
     std::thread([id, current, pinned] {
       CHECK_FALSE(ConfigProcessor::thread_pins_enabled());
       {
@@ -176,6 +218,23 @@ TEST_CASE("ConfigProcessor pins and leases", "[iocore][config]")
   }
 
   ConfigProcessor::disable_thread_pins();
+}
+
+TEST_CASE("an event thread releases a replaced config it does not read again", "[iocore][config]")
+{
+  auto *first         = new TestConfig(10);
+  TestConfigClass::id = configProcessor.set(0, first, 1);
+
+  PinProbe probe;
+  eventProcessor.schedule_imm(&probe, ET_CALL);
+  REQUIRE(wait_until([&probe] { return probe.done.load(); }, std::chrono::seconds(5)));
+  CHECK(probe.had_pins);
+  CHECK(refcount(first) == 2); // the processor and that thread's pin
+
+  // Only that thread's between-events sweep can drop its pin, since the probe never reads the slot again.
+  int const before = destroyed.load();
+  configProcessor.set(TestConfigClass::id, new TestConfig(11), 1);
+  CHECK(wait_for_destroyed(before + 1, std::chrono::seconds(10)) == before + 1);
 }
 
 struct ConfigPinsListener : Catch::EventListenerBase {

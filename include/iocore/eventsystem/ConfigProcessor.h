@@ -86,14 +86,6 @@ public:
   ConfigInfo  *get(unsigned int id);
   void         release(unsigned int id, ConfigInfo *data);
 
-  /** The current configuration in slot @a id, without taking a reference.
-
-      The calling thread keeps it alive until the thread next runs release_stale_pins(), which the
-      event loop does only between events, so the result must not be kept past the current event.
-      Requires thread_pins_enabled().
-   */
-  ConfigInfo *get_pinned(unsigned int id);
-
   /** The current configuration in slot @a id, kept alive by the returned handle on any thread.
 
       On a thread with pins, copies of the handle count against that thread's pin rather than the
@@ -119,6 +111,14 @@ public:
 
 private:
   struct ThreadPins;
+
+  /** The current configuration in slot @a id, without taking a reference.
+
+      The calling thread keeps it alive until the thread next runs release_stale_pins(), which the
+      event loop does only between events, so the result must not be kept past the current event.
+      Requires thread_pins_enabled(), which scoped_config checks before calling it.
+   */
+  ConfigInfo *get_pinned(unsigned int id);
 
   /// The calling thread's pin on slot @a id, refreshed if set() replaced the configuration.
   std::shared_ptr<ConfigInfo> &_pin(unsigned int id);

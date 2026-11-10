@@ -744,9 +744,11 @@ EThread::free_event(Event *e)
 
 extern int thread_max_heartbeat_mseconds;
 
-/// Per-thread work for components that regular EThreads should not link against directly. Each
-/// thread calls @a start when its loop begins, @a between_events after each round of events, while no
-/// event handler is running, and @a stop when its loop ends. Set before the event threads start.
+/// Per-thread work for components layered above the event loop, so EThread does not depend on them.
+/// Each thread calls @a start when its loop begins and @a stop when its loop ends. @a between_events
+/// runs on every loop iteration after the ready events fire and before the tail handler polls, which
+/// also dispatches network handlers, so no event or network handler is on the stack when it runs.
+/// Set before the event threads start.
 struct EThreadLoopHooks {
   void (*start)()          = nullptr;
   void (*between_events)() = nullptr;
