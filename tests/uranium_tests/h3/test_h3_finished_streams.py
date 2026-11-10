@@ -32,15 +32,24 @@ SEQUENTIAL_REQUESTS = 40
 # Four streams live as long as the connection: ATS's control stream and the
 # client's control, QPACK encoder and QPACK decoder streams. The fifth allows
 # for the last request stream, which the application may delete after the
-# final pass that would release it.
+# final pass that would release it. Draining streams are counted separately.
 MAX_STREAMS_HELD_AT_CLOSE = 5
+
+# A request stream the application has deleted stays, draining, until the
+# client has acknowledged everything ATS sent on it. The client sends one
+# request at a time, acknowledges each response about a millisecond after it
+# arrives, and closes the connection as soon as the last response is in. So at
+# close only the last response, and the one before it if that acknowledgment
+# has not been processed yet, can still be unacknowledged. A stream that was
+# never released once acknowledged would leave one draining stream per request.
+MAX_DRAINING_AT_CLOSE = 2
 
 # The free normally follows the client's CONNECTION_CLOSE at once. If that
 # packet is lost, the connection is freed only after the 30 second
 # no-activity timeout.
 FREE_CONNECTION_TIMEOUT = 45
 
-FREE_CONNECTION_LINE = r"Free connection, ([0-9]+) stream objects still held"
+FREE_CONNECTION_LINE = r"Free connection, ([0-9]+) stream objects still held, ([0-9]+) of them draining"
 
 
 def configure_server(services: ServiceFactory) -> VerifierServer:
@@ -126,8 +135,13 @@ def test_h3_finished_streams_released(ats_factory: ATSFactory, services: Service
     assert f"completed {SEQUENTIAL_REQUESTS} sequential HTTP/3 requests" in result.stdout
 
     content = wait_for_file_lines(_ats.traffic_out, FREE_CONNECTION_LINE, 1, timeout=FREE_CONNECTION_TIMEOUT)
-    most_held = max(int(count) for count in re.findall(FREE_CONNECTION_LINE, content))
-    assert most_held <= MAX_STREAMS_HELD_AT_CLOSE, (
-        f"a connection that served {SEQUENTIAL_REQUESTS} requests still held {most_held} stream objects "
-        f"when it was freed; expected at most {MAX_STREAMS_HELD_AT_CLOSE}"
-    )
+    for held_text, draining_text in re.findall(FREE_CONNECTION_LINE, content):
+        held, draining = int(held_text), int(draining_text)
+        assert held - draining <= MAX_STREAMS_HELD_AT_CLOSE, (
+            f"a connection that served {SEQUENTIAL_REQUESTS} requests still held {held - draining} stream objects "
+            f"besides {draining} draining ones when it was freed; expected at most {MAX_STREAMS_HELD_AT_CLOSE}"
+        )
+        assert draining <= MAX_DRAINING_AT_CLOSE, (
+            f"a connection that served {SEQUENTIAL_REQUESTS} requests still held {draining} draining streams "
+            f"when it was freed; expected at most {MAX_DRAINING_AT_CLOSE}"
+        )

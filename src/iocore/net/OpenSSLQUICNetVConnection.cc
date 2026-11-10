@@ -197,7 +197,8 @@ QUICNetVConnection::set_local_addr()
 void
 QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
 {
-  QUICConDebug("Free connection, %zu stream objects still held", this->_openssl_streams.size());
+  QUICConDebug("Free connection, %zu stream objects still held, %zu of them draining", this->_openssl_streams.size(),
+               this->_openssl_draining_streams.size());
 
   this->_unschedule_openssl_event();
 
