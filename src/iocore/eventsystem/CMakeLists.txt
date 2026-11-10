@@ -16,35 +16,38 @@
 #######################
 
 add_library(
-  inkevent STATIC
-  EventSystem.cc
-  IOBuffer.cc
-  Lock.cc
-  MIOBufferWriter.cc
-  PQ-List.cc
-  Processor.cc
-  ProtectedQueue.cc
-  ProxyAllocator.cc
-  Tasks.cc
-  Thread.cc
-  UnixEThread.cc
-  UnixEvent.cc
-  UnixEventProcessor.cc
-  UnixSocket.cc
-  ConfigProcessor.cc
-  RecRawStatsImpl.cc
-  RecProcess.cc
-  Watchdog.cc
-  VIO.cc
+  inkevent
+  STATIC
+    EventSystem.cc
+    IOBuffer.cc
+    Lock.cc
+    MIOBufferWriter.cc
+    PQ-List.cc
+    Processor.cc
+    ProtectedQueue.cc
+    ProxyAllocator.cc
+    Tasks.cc
+    Thread.cc
+    UnixEThread.cc
+    UnixEvent.cc
+    UnixEventProcessor.cc
+    UnixSocket.cc
+    ConfigProcessor.cc
+    RecRawStatsImpl.cc
+    RecProcess.cc
+    Watchdog.cc
+    VIO.cc
 )
 add_library(ts::inkevent ALIAS inkevent)
 
 target_link_libraries(
   inkevent
   PUBLIC ts::records ts::tscore
-  PRIVATE libswoc::libswoc resolv::resolv # transitive
-          tsutil # transitive
-          yaml-cpp::yaml-cpp # transitive
+  PRIVATE
+    libswoc::libswoc
+    resolv::resolv # transitive
+    tsutil # transitive
+    yaml-cpp::yaml-cpp # transitive
 )
 
 if(TS_USE_HWLOC)
