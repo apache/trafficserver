@@ -75,14 +75,16 @@ def create_ats(ats_factory: ATSFactory, *, origin: OriginServer, debug_tags: str
             "  - ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
             '    dest_ip: "*"',
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": debug_tags,
             "proxy.config.quic.server.stateless_retry_enabled": 0,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
     return ats
 
@@ -100,7 +102,8 @@ def request(ats: ATS, curl: Curl, *, protocol: str, path: str) -> None:
         (
             f"--silent --show-error --fail --ipv4 --insecure {protocol} "
             f"--resolve 'foo.com:{ats.https_port}:127.0.0.1' --output /dev/null "
-            f"'https://foo.com:{ats.https_port}{path}'"),
+            f"'https://foo.com:{ats.https_port}{path}'"
+        ),
         timeout=30,
     )
     assert result.returncode == 0, result.output
@@ -119,12 +122,14 @@ def test_h3_client_hello_fingerprint(ats_factory: ATSFactory, services: ServiceF
         ats_factory,
         origin=origin,
         debug_tags="jax_fingerprint|ja3_fingerprint|test",
-        plugins=("jax_fingerprint.so", "ja3_fingerprint.so"))
+        plugins=("jax_fingerprint.so", "ja3_fingerprint.so"),
+    )
     ats.plugin_config.add_lines(
         (
             "jax_fingerprint.so --method JA4 --standalone --log-filename jax_fingerprint",
             "ja3_fingerprint.so --ja3log",
-        ))
+        )
+    )
     # A global TS_HTTP_SSN_START_HOOK, whose callout used to crash on HTTP/3 sessions.
     ats.copy_custom_plugin("{AtsTestPluginsDir}/hook_add_plugin.so")
     ats.plugin_config.add_line("hook_add_plugin.so")
@@ -143,8 +148,9 @@ def test_h3_client_hello_fingerprint(ats_factory: ATSFactory, services: ServiceF
     assert len(re.findall(r"JA3: 771,[0-9-]+,[0-9-]+,[0-9-]+,[0-9-]*\tMD5: [0-9a-f]{32}$", ja3_log, re.MULTILINE)) == 2, ja3_log
 
     traffic_out = ats.traffic_out.read_text(errors="replace")
-    assert len(re.findall(r"globalHandler :: TS_EVENT_HTTP_SSN_START", traffic_out)) == 2, \
+    assert len(re.findall(r"globalHandler :: TS_EVENT_HTTP_SSN_START", traffic_out)) == 2, (
         "both sessions should run the TS_HTTP_SSN_START_HOOK"
+    )
 
 
 def test_h3_delayed_client_hello_hook(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -157,7 +163,8 @@ def test_h3_delayed_client_hello_hook(ats_factory: ATSFactory, services: Service
     require_h3(ats_factory, curl)
     origin = configure_origin(services)
     ats = create_ats(
-        ats_factory, origin=origin, debug_tags="quic_net|jax_fingerprint|ssl_hook_test", plugins=("jax_fingerprint.so",))
+        ats_factory, origin=origin, debug_tags="quic_net|jax_fingerprint|ssl_hook_test", plugins=("jax_fingerprint.so",)
+    )
     # A ClientHello hook that reenables the connection two seconds later, ahead of jax_fingerprint's.
     ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_hook_test.so")
     ats.plugin_config.add_line("ssl_hook_test.so -client_hello=1")
@@ -193,12 +200,14 @@ def test_h3_client_hello_hook_rejection(ats_factory: ATSFactory, services: Servi
     require_h3(ats_factory, curl)
     origin = configure_origin(services)
     ats = create_ats(
-        ats_factory, origin=origin, debug_tags="abuse_shield|jax_fingerprint", plugins=("jax_fingerprint.so", "abuse_shield.so"))
+        ats_factory, origin=origin, debug_tags="abuse_shield|jax_fingerprint", plugins=("jax_fingerprint.so", "abuse_shield.so")
+    )
     config = (
         "global:\n  ip_tracking: {slots: 1000}\n  log_interval_sec: 0\n"
         "  fingerprint_registry: abuse_shield.fingerprints\n"
         "rules:\n  - name: blocked_ja3\n    filter:\n      fingerprints:\n        JA3:\n"
-        '          - "JA3_HASH"\n    action: [log, close]\nenabled: true\n')
+        '          - "JA3_HASH"\n    action: [log, close]\nenabled: true\n'
+    )
     ats.write_config_file("abuse_shield.yaml", config.replace("JA3_HASH", "0" * 32))
     # abuse_shield logs the rejection it is configured to make as an error.
     ats.allow_errors(r'\[abuse_shield\] Rule "blocked_ja3" matched')
@@ -206,7 +215,8 @@ def test_h3_client_hello_hook_rejection(ats_factory: ATSFactory, services: Servi
         (
             "jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints",
             "abuse_shield.so abuse_shield.yaml",
-        ))
+        )
+    )
 
     origin.start()
     ats.start()
@@ -224,7 +234,8 @@ def test_h3_client_hello_hook_rejection(ats_factory: ATSFactory, services: Servi
         (
             "--silent --show-error --fail --ipv4 --insecure --http3-only "
             f"--resolve 'foo.com:{ats.https_port}:127.0.0.1' --output /dev/null "
-            f"'https://foo.com:{ats.https_port}/h3'"),
+            f"'https://foo.com:{ats.https_port}/h3'"
+        ),
         timeout=30,
     )
     assert result.returncode != 0, result.output
