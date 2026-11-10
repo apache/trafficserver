@@ -1690,12 +1690,12 @@ namespace
 {
 // Whether a match on this pattern runs JIT code. PCRE2 consults the JIT stack only
 // then, so a test about the stack must skip otherwise or it passes whether or not the
-// behaviour is present. pcre2_jit_compile() fails whenever it leaves the pattern
-// without JIT code: no JIT in this PCRE2, no executable memory, or an item the JIT does
-// not support. That makes it a per pattern answer for this host, which the library-wide
-// probes are not. A pattern starting with (*NO_JIT) gets no JIT code yet compiles
-// without error, so do not pass one. Call this from the test thread only; Catch2
-// assertions are not thread safe.
+// behaviour is present. pcre2_jit_compile() fails when PCRE2 has no JIT, cannot get
+// executable memory, or meets an item the JIT does not support, so its result is a per
+// pattern answer for this host, which the library-wide probes are not. The exception is
+// a pattern starting with (*NO_JIT), which compiles without error and gets no JIT code,
+// so do not pass one. Call this from the test thread only; Catch2 assertions are not
+// thread safe.
 bool
 pattern_has_jit(char const *pattern)
 {
@@ -1777,7 +1777,7 @@ stack_hungry_subject(int thread_index)
 
 // One pass of the three matches every thread in the concurrency case performs: a hit that
 // must yield the same three captures, a miss that must stay a miss, and a deep subject that
-// only resolves on the 1MiB stack. Returns false on the first disagreement, so a caller
+// overruns PCRE2's 32KiB fallback stack. Returns false on the first disagreement, so a caller
 // counts rounds that went wrong rather than individual assertions.
 bool
 concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
@@ -1793,7 +1793,7 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
     return false;
   }
 
-  // Needs the 1MiB stack, and must consume the whole subject to have used it.
+  // Overruns the 32KiB fallback stack, so matching the whole subject shows a larger one ran.
   RegexMatches deep_matches;
   if (re_deep.exec(deep, deep_matches, 0, opts) <= 0 || deep_matches[0].size() != deep.size()) {
     return false;
@@ -1818,9 +1818,9 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
 // each round's matches start together on every thread. The test is deterministic when the
 // stacks are distinct, but it does not prove that they are: one stack shared by all eight
 // corrupts a result only when two deep matches touch the same frames at once, which the
-// barrier invites but cannot force. With one JIT stack shared by every thread, 300 of 300
-// runs failed on x86_64 Linux, against 276 of 300 with the barrier taken out. An oracle
-// would need a thread paused inside a match, which the public API does not offer.
+// barrier invites but cannot force. With one JIT stack shared by every thread, the case
+// misses that more often when the barrier is taken out. An oracle would need a thread
+// paused inside a match, which the public API does not offer.
 // ThreadSanitizer does not see those writes either, because they come from sljit code.
 TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
 {
