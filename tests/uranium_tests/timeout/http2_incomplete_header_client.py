@@ -73,7 +73,7 @@ def make_frame(frame_type: int, flags: int = 0, stream_id: int = 0, payload: byt
     :param payload: The frame payload.
     :return: The serialized frame.
     '''
-    return (len(payload).to_bytes(3, 'big') + bytes([frame_type, flags]) + (stream_id & 0x7fffffff).to_bytes(4, 'big') + payload)
+    return len(payload).to_bytes(3, 'big') + bytes([frame_type, flags]) + (stream_id & 0x7FFFFFFF).to_bytes(4, 'big') + payload
 
 
 def read_exact(sock: ssl.SSLSocket, size: int) -> bytes:
@@ -104,7 +104,7 @@ def read_frame(sock: ssl.SSLSocket) -> Tuple[int, int, int, bytes]:
     length = int.from_bytes(header[0:3], 'big')
     frame_type = header[3]
     flags = header[4]
-    stream_id = int.from_bytes(header[5:9], 'big') & 0x7fffffff
+    stream_id = int.from_bytes(header[5:9], 'big') & 0x7FFFFFFF
     payload = read_exact(sock, length)
     return frame_type, flags, stream_id, payload
 
@@ -149,7 +149,8 @@ def request_block(path: str, uuid: str) -> bytes:
             (':authority', 'example.com'),
             (':path', path),
             ('uuid', uuid),
-        ])
+        ]
+    )
 
 
 def read_until_stream_ends(sock: ssl.SSLSocket, start: float) -> bool:
@@ -171,10 +172,9 @@ def read_until_stream_ends(sock: ssl.SSLSocket, start: float) -> bool:
         # is a connection level PROTOCOL_ERROR, which would mask the timeout
         # under test.
         if frame_type == FRAME_TYPE_GOAWAY:
-            last_stream_id = int.from_bytes(payload[0:4], 'big') & 0x7fffffff
+            last_stream_id = int.from_bytes(payload[0:4], 'big') & 0x7FFFFFFF
             error_code = int.from_bytes(payload[4:8], 'big')
-            print(f'GOAWAY error_code={error_code} last_stream_id={last_stream_id} '
-                  f'elapsed={time.monotonic() - start:.2f}')
+            print(f'GOAWAY error_code={error_code} last_stream_id={last_stream_id} elapsed={time.monotonic() - start:.2f}')
             return got_status
 
         if stream_id != STREAM_ID:
@@ -237,14 +237,14 @@ def run(args: argparse.Namespace) -> int:
         else:
             # Withholding END_HEADERS leaves ATS waiting for a CONTINUATION
             # frame, which is what incomplete_header_timeout_in bounds.
-            fragment = block[:len(block) // 2]
+            fragment = block[: len(block) // 2]
         start = time.monotonic()
         sock.sendall(make_frame(FRAME_TYPE_HEADERS, flags, STREAM_ID, fragment))
 
         if args.continuation_delay is not None:
             time.sleep(args.continuation_delay)
             print(f'sending CONTINUATION elapsed={time.monotonic() - start:.2f}')
-            sock.sendall(make_frame(FRAME_TYPE_CONTINUATION, FLAG_END_HEADERS, STREAM_ID, block[len(block) // 2:]))
+            sock.sendall(make_frame(FRAME_TYPE_CONTINUATION, FLAG_END_HEADERS, STREAM_ID, block[len(block) // 2 :]))
 
         try:
             got_status = read_until_stream_ends(sock, start)
@@ -270,12 +270,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--path', default='/incomplete', help='request :path')
     parser.add_argument('--uuid', default='incomplete_header', help='request uuid header')
     parser.add_argument(
-        '--end-headers', action='store_true', help='send the complete header block with END_HEADERS in a single HEADERS frame')
+        '--end-headers', action='store_true', help='send the complete header block with END_HEADERS in a single HEADERS frame'
+    )
     parser.add_argument(
         '--continuation-delay',
         type=float,
         default=None,
-        help='seconds after the HEADERS frame to send the END_HEADERS CONTINUATION frame; omit to never send it')
+        help='seconds after the HEADERS frame to send the END_HEADERS CONTINUATION frame; omit to never send it',
+    )
     parser.add_argument('--min-elapsed', type=float, default=None, help='fail if ATS ends the stream sooner than this')
     parser.add_argument('--max-elapsed', type=float, default=None, help='fail if ATS ends the stream later than this')
     parser.add_argument('--socket-timeout', type=float, default=60.0, help='socket timeout in seconds')

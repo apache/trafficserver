@@ -49,7 +49,8 @@ def configure_mid(algorithm: str, server: VerifierServer, *, _ats_factory: ATSFa
             "proxy.config.ssl.server.cert_compression.algorithms": algorithm,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl_cert_compress",
-        })
+        }
+    )
     return ats
 
 
@@ -70,7 +71,8 @@ def configure_edge(algorithm: str, mid: ATS, *, _ats_factory: ATSFactory) -> ATS
             "proxy.config.ssl.client.cert_compression.algorithms": algorithm,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl_cert_compress",
-        })
+        }
+    )
     return ats
 
 

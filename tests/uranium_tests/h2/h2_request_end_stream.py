@@ -104,16 +104,19 @@ def handle(ctx: ssl.SSLContext, conn: socket.socket, delay: float) -> None:
                     print(
                         f"origin: {method} {request['headers'][':path']} ended on {request['end']} "
                         f"with {request['bytes']} body bytes",
-                        flush=True)
+                        flush=True,
+                    )
                     body = b"ended"
                     h2c.send_headers(
-                        event.stream_id, [
+                        event.stream_id,
+                        [
                             (":status", "200"),
                             ("content-length", str(len(body))),
                             ("x-origin-method", method),
                             ("x-origin-body-bytes", str(request["bytes"])),
                             ("x-origin-end-frame", request["end"]),
-                        ])
+                        ],
+                    )
                     h2c.send_data(event.stream_id, body, end_stream=True)
             sock.sendall(h2c.data_to_send())
     except h2.exceptions.ProtocolError as e:
@@ -129,7 +132,8 @@ def handle(ctx: ssl.SSLContext, conn: socket.socket, delay: float) -> None:
 
 
 def check_origin_reply(
-        args: argparse.Namespace, status: int | None, fields: dict[str, str], response_body: bytes, forwarded: int) -> int:
+    args: argparse.Namespace, status: int | None, fields: dict[str, str], response_body: bytes, forwarded: int
+) -> int:
     """Check the reply the origin sent once it saw the request end, returning the exit status."""
     if status != 200:
         print(f"FAIL: expected status 200, got {status}")
@@ -202,7 +206,8 @@ def request(args: argparse.Namespace) -> int:
     print(
         f"{args.method} end={args.end} content-length={args.content_length} body={len(body)}: "
         f"status {status} in {time.monotonic() - start:.1f}s, origin saw {response_headers.get('x-origin-body-bytes')} "
-        f"body bytes and END_STREAM on {response_headers.get('x-origin-end-frame')}")
+        f"body bytes and END_STREAM on {response_headers.get('x-origin-end-frame')}"
+    )
     forwarded = len(body) if args.origin_body_bytes is None else args.origin_body_bytes
     return check_origin_reply(args, status, response_headers, response_body, forwarded)
 
@@ -243,7 +248,8 @@ def request_h1(args: argparse.Namespace) -> int:
     fields = {name.strip().lower(): value.strip() for name, _, value in (line.partition(":") for line in lines[1:])}
     print(
         f"HTTP/1.1 {args.method} {args.framing} body={len(body)}: status {status} in {time.monotonic() - start:.1f}s, "
-        f"origin saw {fields.get('x-origin-body-bytes')} body bytes and END_STREAM on {fields.get('x-origin-end-frame')}")
+        f"origin saw {fields.get('x-origin-body-bytes')} body bytes and END_STREAM on {fields.get('x-origin-end-frame')}"
+    )
     return check_origin_reply(args, status, fields, response_body, len(body))
 
 

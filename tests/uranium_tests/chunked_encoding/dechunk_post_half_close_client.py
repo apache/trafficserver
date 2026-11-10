@@ -47,11 +47,8 @@ def main():
 
     body = b"data" if args.method == "POST" else b""
     request = (
-        f"{args.method} /dechunk HTTP/1.1\r\n"
-        f"Host: www.example.com\r\n"
-        f"Content-Length: {len(body)}\r\n"
-        f"Connection: close\r\n"
-        f"\r\n").encode() + body
+        f"{args.method} /dechunk HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n"
+    ).encode() + body
     sock.sendall(request)
 
     time.sleep(args.stall)

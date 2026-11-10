@@ -36,7 +36,8 @@ def test_ssl_multicert_parallel_loading(ats_factory: ATSFactory, services: Servi
             "proxy.config.ssl.server.multicert.exit_on_load_fail": 0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl_load",
-        })
+        }
+    )
     for stem in ("signed-foo", "signed-bar", "signed-san", "signed-wild"):
         ats.copy_to_ssl(f"ssl/{stem}.pem", f"ssl/{stem}.key")
         ats.ssl_multicert_config.add_line(f"ssl_cert_name={stem}.pem ssl_key_name={stem}.key")
@@ -45,7 +46,8 @@ def test_ssl_multicert_parallel_loading(ats_factory: ATSFactory, services: Servi
         (
             "dest_ip=* ssl_cert_name=combo.pem",
             "ssl_cert_name=nonexistent.pem ssl_key_name=nonexistent.key",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.http_port}")
     origin.start()
     ats.start()
@@ -57,8 +59,7 @@ def test_ssl_multicert_parallel_loading(ats_factory: ATSFactory, services: Servi
     ):
         result = curl.run_for(
             ats,
-            f"--silent --verbose --insecure --resolve '{domain}:{ats.https_port}:127.0.0.1' "
-            f"'https://{domain}:{ats.https_port}/'",
+            f"--silent --verbose --insecure --resolve '{domain}:{ats.https_port}:127.0.0.1' 'https://{domain}:{ats.https_port}/'",
         )
         assert result.returncode == 0, result.output
         assert "Could Not Connect" not in result.stdout

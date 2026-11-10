@@ -21,19 +21,31 @@ from tools.uranium.config_formats import multicert_text, storage_text
 def test_multicert_structured_and_line_forms_agree() -> None:
     """Native and replay tests must configure the same TLS entries."""
     expected = 'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key\n'
-    assert multicert_text(
-        {"ssl_multicert": [{
-            "dest_ip": "*",
-            "ssl_cert_name": "server.pem",
-            "ssl_key_name": "server.key",
-        }]}) == expected
-    assert multicert_text(
-        [
-            "ssl_multicert:",
-            '  - dest_ip: "*"',
-            "    ssl_cert_name: server.pem",
-            "    ssl_key_name: server.key",
-        ]) == expected
+    assert (
+        multicert_text(
+            {
+                "ssl_multicert": [
+                    {
+                        "dest_ip": "*",
+                        "ssl_cert_name": "server.pem",
+                        "ssl_key_name": "server.key",
+                    }
+                ]
+            }
+        )
+        == expected
+    )
+    assert (
+        multicert_text(
+            [
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ]
+        )
+        == expected
+    )
     assert multicert_text([expected.rstrip()]) == expected
 
 
@@ -41,20 +53,11 @@ def test_storage_metadata_preserves_volume_options() -> None:
     """Keep cache allocation and per-volume behavior on the old file format."""
     storage, volumes = storage_text(
         {
-            "cache":
-                {
-                    "spans": [{
-                        "path": "storage",
-                        "size": "256M",
-                        "volume": 1
-                    }],
-                    "volumes": [{
-                        "id": 1,
-                        "scheme": "http",
-                        "size": "128M",
-                        "ram_cache": False
-                    }],
-                }
-        })
+            "cache": {
+                "spans": [{"path": "storage", "size": "256M", "volume": 1}],
+                "volumes": [{"id": 1, "scheme": "http", "size": "128M", "ram_cache": False}],
+            }
+        }
+    )
     assert storage == "storage 256M volume=1\n"
     assert volumes == "volume=1 scheme=http size=128 ramcache=false\n"

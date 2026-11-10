@@ -27,14 +27,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin", delay=8)
     origin.add_response(
-        {
-            "headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -48,10 +42,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
 
     enable_quic = ats_factory.has_feature("TS_USE_QUIC")
     ats = ats_factory.create("ts", enable_tls=True, enable_quic=enable_quic)
-    ats.records.update({
-        "proxy.config.url_remap.remap_required": 1,
-        "proxy.config.http.transaction_active_timeout_out": 2,
-    })
+    ats.records.update(
+        {
+            "proxy.config.url_remap.remap_required": 1,
+            "proxy.config.http.transaction_active_timeout_out": 2,
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     return ats
 
@@ -85,12 +81,16 @@ def test_active_timeout(ats_factory: ATSFactory, services: ServiceFactory, curl:
     if curl.uses_uds:
         return
     for protocol in ("--http1.1", "--http2"):
-        verify_timeout(curl.run(
-            f"--insecure --include '{protocol}' 'https://127.0.0.1:{_ats.https_port}/file'",
-            timeout=20,
-        ))
+        verify_timeout(
+            curl.run(
+                f"--insecure --include '{protocol}' 'https://127.0.0.1:{_ats.https_port}/file'",
+                timeout=20,
+            )
+        )
     if _ats.has_feature("TS_USE_QUIC") and curl.supports("http3"):
-        verify_timeout(curl.run(
-            f"--insecure --include --http3 'https://localhost:{_ats.https_port}/file'",
-            timeout=20,
-        ))
+        verify_timeout(
+            curl.run(
+                f"--insecure --include --http3 'https://localhost:{_ats.https_port}/file'",
+                timeout=20,
+            )
+        )

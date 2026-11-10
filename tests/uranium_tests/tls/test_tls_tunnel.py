@@ -49,17 +49,11 @@ def configure_origin(services: ServiceFactory, name: str, host: str, body: str) 
     origin = services.origin(name, ssl=True)
     origin.add_response(
         {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": body
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
     )
     origin.add_response(
         {"headers": "GET /proxy_protocol HTTP/1.1\r\nHost: proxy.protocol.port.com\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "pp ok"
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "pp ok"},
     )
     return origin
 
@@ -94,12 +88,14 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
             "backend.proxy.protocol.port.com": ["127.0.0.1"],
             "backend.wildcard.with.incoming.port.com": ["127.0.0.1"],
             "backend.wildcard.with.proxy.protocol.port.com": ["127.0.0.1"],
-        })
+        }
+    )
     return dns
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _dns: DNSServer, _server_bar: OriginServer, _server_foo: OriginServer, _split_port: int) -> ATS:
+    ats_factory: ATSFactory, *, _dns: DNSServer, _server_bar: OriginServer, _server_foo: OriginServer, _split_port: int
+) -> ATS:
     """Configure SNI tunnel routes and the dynamic-port restrictions.
 
     :param _dns: Test-local dns configured by the test.
@@ -121,11 +117,8 @@ def configure_ats(
         SSL_DIRECTORY / "signer.key",
     )
     ats.set_ssl_multicert_yaml(
-        {"ssl_multicert": [{
-            "dest_ip": "*",
-            "ssl_cert_name": "signed-foo.pem",
-            "ssl_key_name": "signed-foo.key"
-        }]})
+        {"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "signed-foo.pem", "ssl_key_name": "signed-foo.key"}]}
+    )
     ats.records.update(
         {
             "proxy.config.http.connect_ports": (f"{ats.https_port} {_server_foo.https_port} {_server_bar.https_port}"),
@@ -139,10 +132,12 @@ def configure_ats(
             "proxy.config.diags.debug.tags": "http|ssl|proxyprotocol",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.allow_private_connect()
     ats.write_config_file(
-        "sni.yaml", initial_sni_document(ats, _server_bar=_server_bar, _server_foo=_server_foo, _split_port=_split_port))
+        "sni.yaml", initial_sni_document(ats, _server_bar=_server_bar, _server_foo=_server_foo, _split_port=_split_port)
+    )
     return ats
 
 
@@ -178,7 +173,8 @@ def initial_sni_document(ats: ATS, *, _server_bar: OriginServer, _server_foo: Or
         "  - fqdn: '*.with.incoming.port.com'\n"
         "    tunnel_route: backend.$1.with.incoming.port.com:{inbound_local_port}\n"
         "  - fqdn: '*.with.proxy.protocol.port.com'\n"
-        "    tunnel_route: backend.$1.with.proxy.protocol.port.com:{proxy_protocol_port}\n")
+        "    tunnel_route: backend.$1.with.proxy.protocol.port.com:{proxy_protocol_port}\n"
+    )
 
 
 def curl_request(host: str, *, expected: int = 0, use_address: bool = False, _ats: ATS, _curl: Curl) -> str:
@@ -206,7 +202,8 @@ def curl_request(host: str, *, expected: int = 0, use_address: bool = False, _at
 
 
 def proxy_protocol_request(
-        name: str, sni: str, destination_port: int, expected: int, *, _ats: ATS, _services: ServiceFactory) -> str:
+    name: str, sni: str, destination_port: int, expected: int, *, _ats: ATS, _services: ServiceFactory
+) -> str:
     """Run the bespoke TLS client with a Proxy Protocol v2 destination port.
 
     :param _ats: Test-local ats configured by the test.
@@ -270,7 +267,8 @@ def assert_tunneled(output: str, body: str) -> None:
 
 
 def verify_initial_routes(
-        *, _ats: ATS, _curl: Curl, _server_foo: OriginServer, _server_forbidden: OriginServer, _services: ServiceFactory) -> None:
+    *, _ats: ATS, _curl: Curl, _server_foo: OriginServer, _server_forbidden: OriginServer, _services: ServiceFactory
+) -> None:
     """Verify literal, wildcard, substitution, empty-SNI, and dynamic-port routes.
 
     :param _ats: Test-local ats configured by the test.
@@ -291,20 +289,18 @@ def verify_initial_routes(
 
     curl_request("incoming.port.com", expected=35, _ats=_ats, _curl=_curl)
     allowed = proxy_protocol_request(
-        "proxy-protocol-allowed", "proxy.protocol.port.com", _server_foo.https_port, 0, _ats=_ats, _services=_services)
+        "proxy-protocol-allowed", "proxy.protocol.port.com", _server_foo.https_port, 0, _ats=_ats, _services=_services
+    )
     assert "HTTP/1.1 200 OK" in allowed
     rejected = proxy_protocol_request(
-        "proxy-protocol-rejected", "proxy.protocol.port.com", _server_forbidden.https_port, 1, _ats=_ats, _services=_services)
+        "proxy-protocol-rejected", "proxy.protocol.port.com", _server_forbidden.https_port, 1, _ats=_ats, _services=_services
+    )
     assert re.search(r"ssl\.SSL.*Error:.*EOF", rejected)
 
     curl_request("wildcard.with.incoming.port.com", expected=35, _ats=_ats, _curl=_curl)
     wildcard_allowed = proxy_protocol_request(
-        "wildcard-proxy-allowed",
-        "wildcard.with.proxy.protocol.port.com",
-        _server_foo.https_port,
-        0,
-        _ats=_ats,
-        _services=_services)
+        "wildcard-proxy-allowed", "wildcard.with.proxy.protocol.port.com", _server_foo.https_port, 0, _ats=_ats, _services=_services
+    )
     assert "HTTP/1.1 200 OK" in wildcard_allowed
     wildcard_rejected = proxy_protocol_request(
         "wildcard-proxy-rejected",
@@ -312,7 +308,8 @@ def verify_initial_routes(
         _server_forbidden.https_port,
         1,
         _ats=_ats,
-        _services=_services)
+        _services=_services,
+    )
     assert re.search(r"ssl\.SSL.*Error:.*EOF", wildcard_rejected)
 
 
@@ -324,9 +321,8 @@ def reload_sni_policy(*, _ats: ATS, _server_bar: OriginServer) -> None:
     """
 
     (_ats.config_directory / "sni.yaml").write_text(
-        "sni:\n"
-        "  - fqdn: bar.com\n"
-        f"    tunnel_route: localhost:{_server_bar.https_port}\n")
+        f"sni:\n  - fqdn: bar.com\n    tunnel_route: localhost:{_server_bar.https_port}\n"
+    )
     result = _ats.traffic_ctl("config", "reload", "-m", "-t", "tls-tunnel-reload", "-w", "0.1", "-r", "0.2", "-T", "30s")
     assert result.returncode == 0, result.output
 
@@ -344,7 +340,7 @@ def verify_logs_and_metrics(*, _ats: ATS, _server_foo: OriginServer, _server_for
     assert "HTTP/1.1 400 Cycle Detected" in output
     assert f"Rejected a tunnel to port {_server_forbidden.https_port} not in connect_ports" in output
     assert f"Destination now is [backend.wildcard.with.incoming.port.com:{_ats.https_port}]" in output
-    assert (f"Destination now is [backend.wildcard.with.proxy.protocol.port.com:{_server_foo.https_port}]" in output)
+    assert f"Destination now is [backend.wildcard.with.proxy.protocol.port.com:{_server_foo.https_port}]" in output
 
     names = [line.split()[0] for line in (TEST_DIRECTORY / "gold/tls-tunnel-metrics.gold").read_text().splitlines()]
     metrics = _ats.traffic_ctl("metric", "get", *names)

@@ -77,7 +77,8 @@ def test_compress_truncated_origin(ats_factory: ATSFactory, services: ServiceFac
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -85,7 +86,8 @@ def test_compress_truncated_origin(ats_factory: ATSFactory, services: ServiceFac
             "proxy.config.http.transaction_no_activity_timeout_out": SERVER_NO_ACTIVITY_TIMEOUT,
             "proxy.config.http.transaction_no_activity_timeout_in": CLIENT_NO_ACTIVITY_TIMEOUT,
             "proxy.config.http.connect_attempts_max_retries": 0,
-        })
+        }
+    )
     config = directory / "compress.config"
     ats.copy_to_config(config)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{port}/ @plugin=compress.so @pparam={ats.config_directory / config.name}")
@@ -100,7 +102,8 @@ def test_compress_truncated_origin(ats_factory: ATSFactory, services: ServiceFac
         ats,
         (
             f"--{protocol} --silent --insecure --output /dev/null --write-out '%{{http_code}}\\n' "
-            f"--max-time {CLIENT_MAX_TIME} --header 'Accept-Encoding: gzip' {url}"),
+            f"--max-time {CLIENT_MAX_TIME} --header 'Accept-Encoding: gzip' {url}"
+        ),
         timeout=CLIENT_MAX_TIME + 20,
     )
     assert "HTTP/2 unknown case" not in ats.diags_log.read_text(errors="replace")

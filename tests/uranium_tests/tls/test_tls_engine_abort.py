@@ -36,10 +36,10 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                    "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"
+            ),
             "body": "ok",
         },
     )
@@ -62,7 +62,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _plugin: Pa
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     ats.records.update(
         {
@@ -70,7 +71,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _plugin: Pa
             "proxy.config.ssl.async.handshake.enabled": 1,
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "ssl",
-        })
+        }
+    )
     ats.copy_custom_plugin(_plugin)
     ats.plugin_config.add_line("async_handshake.so -delay-ms=2000")
     return ats
@@ -122,8 +124,7 @@ def test_tls_engine_abort(ats_factory: ATSFactory, services: ServiceFactory, cur
 
     result = curl.run_for(
         _ats,
-        (f"--insecure --verbose --header uuid:basic --header host:example.com "
-         f"'https://127.0.0.1:{_ats.https_port}/'"),
+        (f"--insecure --verbose --header uuid:basic --header host:example.com 'https://127.0.0.1:{_ats.https_port}/'"),
         timeout=15,
     )
     assert result.returncode == 0, result.output

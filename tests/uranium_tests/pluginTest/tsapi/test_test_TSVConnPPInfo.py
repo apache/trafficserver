@@ -79,7 +79,8 @@ def test_test_TSVConnPPInfo(
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|proxyprotocol|test_TSVConnPPInfo",
-            })
+            }
+        )
         _plugin_log = ats.log_directory / "test_TSVConnPPInfo_plugin_log.txt"
         ats.set_environment("OUTPUT_FILE", str(_plugin_log))
         return ats
@@ -98,13 +99,18 @@ def test_test_TSVConnPPInfo(
     _origin.start()
     _ats.start()
     verify_request(
-        curl.run((f"--haproxy-protocol --haproxy-clientip 1.2.3.4 "
-                  f"'http://127.0.0.1:{_ats.proxy_protocol_port}/httpbin/get'"),))
+        curl.run(
+            (f"--haproxy-protocol --haproxy-clientip 1.2.3.4 'http://127.0.0.1:{_ats.proxy_protocol_port}/httpbin/get'"),
+        )
+    )
     verify_request(
         curl.run(
             (
                 f"--haproxy-protocol --haproxy-clientip 5.6.7.8 --insecure "
-                f"'https://127.0.0.1:{_ats.proxy_protocol_https_port}/httpbin/get'"),))
+                f"'https://127.0.0.1:{_ats.proxy_protocol_https_port}/httpbin/get'"
+            ),
+        )
+    )
     log = wait_for_file_lines(_plugin_log, r"PP Info Received", 2)
     assert log.startswith("Global: event=TS_EVENT_HTTP_SSN_START")
     assert re.search(r"PP Info Received:V1,P2,T1,SRC1\.2\.3\.4,DST(127\.0\.0\.1|1\.2\.3\.4)", log)

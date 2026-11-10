@@ -32,17 +32,24 @@ def configure_partition_server(ats_factory: ATSFactory, name: str) -> ATS:
     ats = ats_factory.create(name, enable_tls=True, enable_proxy_protocol=True)
     ats.records.update(
         {
-            "proxy.config.http.server_ports":
-                (
-                    f"{ats.http_port}:ipv4 {ats.https_port}:ssl:ipv4 {ats.ipv6_https_port}:ssl:ipv6 "
-                    f"{ats.proxy_protocol_https_port}:ssl:pp:ipv4")
-        })
+            "proxy.config.http.server_ports": (
+                f"{ats.http_port}:ipv4 {ats.https_port}:ssl:ipv4 {ats.ipv6_https_port}:ssl:ipv6 "
+                f"{ats.proxy_protocol_https_port}:ssl:pp:ipv4"
+            )
+        }
+    )
     ats.copy_to_ssl("ssl/server.pem", "ssl/server.key", "ssl/signed-foo.pem", "ssl/signed-foo.key", "ssl/signer.pem")
     ats.copy_to_config("file.ticket")
     entries = []
-    for destination, certificate in (("127.0.0.1", "server"), ("[::1]", "signed-foo"), ("192.0.2.1", "server"),
-                                     ("192.0.2.2", "signed-foo"), ("[2001:db8::1]", "server"), ("[2001:db8::2]",
-                                                                                                "signed-foo"), ("*", "server")):
+    for destination, certificate in (
+        ("127.0.0.1", "server"),
+        ("[::1]", "signed-foo"),
+        ("192.0.2.1", "server"),
+        ("192.0.2.2", "signed-foo"),
+        ("[2001:db8::1]", "server"),
+        ("[2001:db8::2]", "signed-foo"),
+        ("*", "server"),
+    ):
         entries.append({"dest_ip": destination, "ssl_cert_name": f"{certificate}.pem", "ssl_key_name": f"{certificate}.key"})
     ats.set_ssl_multicert_yaml({"ssl_multicert": entries})
     ats.records.update(
@@ -50,28 +57,23 @@ def configure_partition_server(ats_factory: ATSFactory, name: str) -> ATS:
             "proxy.config.ssl.server.session_ticket.enable": 1,
             "proxy.config.ssl.server.ticket_key.filename": str(ats.config_directory / "file.ticket"),
             "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1,::1",
-            "proxy.config.log.max_secs_per_buffer": 1
-        })
+            "proxy.config.log.max_secs_per_buffer": 1,
+        }
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "resumption",
-                        "format": "%<cqup> %<cqssr> %<cqssrt>"
-                    }],
-                    "logs": [{
-                        "mode": "ascii",
-                        "format": "resumption",
-                        "filename": "resumption"
-                    }]
-                }
-        })
+            "logging": {
+                "formats": [{"name": "resumption", "format": "%<cqup> %<cqssr> %<cqssrt>"}],
+                "logs": [{"mode": "ascii", "format": "resumption", "filename": "resumption"}],
+            }
+        }
+    )
     return ats
 
 
 @pytest.mark.parametrize(
-    "tls,case,resumed", [
+    "tls,case,resumed",
+    [
         ("1.3", "same", True),
         ("1.2", "same", True),
         ("1.3", "cross", False),
@@ -80,7 +82,8 @@ def configure_partition_server(ats_factory: ATSFactory, name: str) -> ATS:
         ("1.3", "proxy-cross", False),
         ("1.3", "proxy6-cross", False),
         ("1.3", "shared", True),
-    ])
+    ],
+)
 def test_tls_resume_cert_partition(
     ats_factory: ATSFactory,
     services: ServiceFactory,
@@ -105,14 +108,26 @@ def test_tls_resume_cert_partition(
     proxy = case.startswith("proxy")
     second_ip = "::1" if case == "cross" else "127.0.0.1"
     first_port = first.proxy_protocol_https_port if proxy else first.https_port
-    second_port = second.proxy_protocol_https_port if proxy else (
-        second.ipv6_https_port if second_ip == "::1" else second.https_port)
+    second_port = (
+        second.proxy_protocol_https_port if proxy else (second.ipv6_https_port if second_ip == "::1" else second.https_port)
+    )
     arguments = [
         sys.executable,
-        Path(__file__).with_name("tls_resume_cert_partition_client.py"), "--ca", first.ssl_directory / "server.pem", "--ca",
-        first.ssl_directory / "signer.pem", "--tls", tls, "--first", "127.0.0.1",
-        str(first_port), first_path, "--second", second_ip,
-        str(second_port), second_path
+        Path(__file__).with_name("tls_resume_cert_partition_client.py"),
+        "--ca",
+        first.ssl_directory / "server.pem",
+        "--ca",
+        first.ssl_directory / "signer.pem",
+        "--tls",
+        tls,
+        "--first",
+        "127.0.0.1",
+        str(first_port),
+        first_path,
+        "--second",
+        second_ip,
+        str(second_port),
+        second_path,
     ]
     if proxy:
         first_vip = "2001:db8::1" if case == "proxy6-cross" else "192.0.2.1"

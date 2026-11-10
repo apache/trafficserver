@@ -32,7 +32,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.cache.limits.http.max_alts": 5,
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http|dns",
-        })
+        }
+    )
     return ats
 
 
@@ -103,7 +104,8 @@ def test_traffic_ctl_cold_config(ats_factory: ATSFactory) -> None:
         str(records_file),
         "proxy.config.diags.debug.tags",
         "proxy.config.cache.limits.http.max_alts",
-        _ats=_ats)
+        _ats=_ats,
+    )
     assert "proxy.config.diags.debug.tags: http" in result.stdout
     assert "proxy.config.cache.limits.http.max_alts: 1" in result.stdout
 

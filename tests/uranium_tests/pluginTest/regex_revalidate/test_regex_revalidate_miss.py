@@ -45,9 +45,7 @@ def test_regex_revalidate_miss(ats_factory: ATSFactory, services: ServiceFactory
         origin.add_response(
             {"headers": "GET /path1 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
             {
-                "headers":
-                    ('HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "path1"\r\n'
-                     "Cache-Control: max-age=600,public\r\n\r\n"),
+                "headers": ('HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "path1"\r\nCache-Control: max-age=600,public\r\n\r\n'),
                 "body": "abc",
             },
         )
@@ -64,7 +62,8 @@ def test_regex_revalidate_miss(ats_factory: ATSFactory, services: ServiceFactory
             (
                 "xdebug.so --enable=x-cache",
                 "regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log -m reval",
-            ))
+            )
+        )
         ats.remap_config.add_line(f"map http://ats/ http://127.0.0.1:{_origin.port}")
         ats.records.update(
             {
@@ -74,7 +73,8 @@ def test_regex_revalidate_miss(ats_factory: ATSFactory, services: ServiceFactory
                 "proxy.config.http.response_via_str": 3,
                 "proxy.config.http.cache.http": 1,
                 "proxy.config.http.wait_for_cache": 1,
-            })
+            }
+        )
         return ats
 
     def rules_path() -> Path:
@@ -92,7 +92,8 @@ def test_regex_revalidate_miss(ats_factory: ATSFactory, services: ServiceFactory
             _ats,
             (
                 f"--silent --dump-header - --output /dev/null --proxy 'http://127.0.0.1:{_ats.http_port}' "
-                f"--header 'x-debug: x-cache' http://ats/path1"),
+                f"--header 'x-debug: x-cache' http://ats/path1"
+            ),
         )
         assert result.returncode == 0, result.output
         assert f"X-Cache: {expected_cache}" in result.stdout, result.output

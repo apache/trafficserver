@@ -39,7 +39,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.plugin.plugin_dir": "wrong_plugin",
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "config_value",
-        })
+        }
+    )
     ats.set_environment("PROXY_CONFIG_DIAGS_DEBUG_TAGS", "env_wins")
     ats.unset_environment(
         "PROXY_CONFIG_BIN_PATH",

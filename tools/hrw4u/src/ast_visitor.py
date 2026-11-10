@@ -85,7 +85,8 @@ class ASTVisitor(hrw4uVisitor):
 
     def _visit_var_decl(self, ctx) -> VarDecl:
         return VarDecl(
-            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, line=ctx.start.line)
+            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, line=ctx.start.line
+        )
 
     def _visit_body(self, items) -> list[BodyNode]:
         """Shared helper for sectionBody and blockItem lists."""
@@ -166,7 +167,8 @@ class ASTVisitor(hrw4uVisitor):
             elif_branches=tuple(elif_branches),
             else_body=else_body,
             has_else=else_clause is not None,
-            line=ctx.start.line)
+            line=ctx.start.line,
+        )
 
     def _visit_condition(self, ctx) -> ConditionExpr:
         return self._visit_expression(ctx.expression())

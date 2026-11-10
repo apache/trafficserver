@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """TLS tickets must retain their SNI, verification policy, and trust scope."""
+
 import os
 import re
 import shlex
@@ -44,13 +45,13 @@ def configure_ticket_proxy(ats_factory: ATSFactory, services: ServiceFactory) ->
         pytest.skip("OpenSSL 1.1.1 or newer is required")
     origin = services.origin("origin")
     origin.add_response(
-        {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"}, {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n",
-            "body": "hello"
-        })
+        {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n", "body": "hello"},
+    )
     ats = ats_factory.create("ts", enable_tls=True)
     ats.copy_to_ssl(
-        SSL / "server.pem", SSL / "server.key", SSL / "signer.pem", SSL / "aaa-ca.pem", SSL / "bbb-ca.pem", SSL / "intca-root.pem")
+        SSL / "server.pem", SSL / "server.key", SSL / "signer.pem", SSL / "aaa-ca.pem", SSL / "bbb-ca.pem", SSL / "intca-root.pem"
+    )
     ats.set_ssl_multicert_yaml({"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"}]})
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}/")
     ats.records.update(
@@ -61,9 +62,11 @@ def configure_ticket_proxy(ats_factory: ATSFactory, services: ServiceFactory) ->
             "proxy.config.ssl.TLSv1_2": 1,
             "proxy.config.ssl.TLSv1_3.enabled": 1,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.write_config_file(
-        "logging.yaml", """
+        "logging.yaml",
+        """
 logging:
   formats:
     - name: testformat
@@ -72,20 +75,22 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-""")
+""",
+    )
     origin.start()
     return ats
 
 
 def connect(
-        ats: ATS,
-        sni: str,
-        session: Path,
-        *,
-        save: bool = False,
-        version: str = "1.3",
-        certificate: str | None = None,
-        chain: str | None = None) -> CommandResult:
+    ats: ATS,
+    sni: str,
+    session: Path,
+    *,
+    save: bool = False,
+    version: str = "1.3",
+    certificate: str | None = None,
+    chain: str | None = None,
+) -> CommandResult:
     """Send one request while saving or offering a TLS session.
 
     :param ats: Running proxy.
@@ -98,9 +103,16 @@ def connect(
     """
     request = f"GET / HTTP/1.1\r\nHost: {sni}\r\nConnection: close\r\n\r\n"
     args = [
-        "openssl", "s_client", "-connect", f"127.0.0.1:{ats.https_port}", "-servername", sni, f"-tls1_{version[-1]}", "-ign_eof",
+        "openssl",
+        "s_client",
+        "-connect",
+        f"127.0.0.1:{ats.https_port}",
+        "-servername",
+        sni,
+        f"-tls1_{version[-1]}",
+        "-ign_eof",
         "-sess_out" if save else "-sess_in",
-        str(session)
+        str(session),
     ]
     if certificate:
         args += ["-cert", str(SSL / f"{certificate}.pem"), "-key", str(SSL / f"{certificate}.key")]
@@ -174,7 +186,8 @@ def test_tls_ticket_verify_client_scope(ats_factory: ATSFactory, services: Servi
     if different_ca:
         first, second, cert = "aaa.example.com", "bbb.example.com", "aaa-signed"
         ats.write_config_file(
-            "sni.yaml", f"""sni:
+            "sni.yaml",
+            f"""sni:
 - fqdn: {first}
   verify_client: STRICT
   verify_client_ca_certs:
@@ -183,17 +196,20 @@ def test_tls_ticket_verify_client_scope(ats_factory: ATSFactory, services: Servi
   verify_client: STRICT
   verify_client_ca_certs:
     file: {ats.ssl_directory}/bbb-ca.pem
-""")
+""",
+        )
     else:
         first, second, cert = "open.example.com", "strict.example.com", "signed-foo"
         ats.records.update({"proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem")})
         ats.write_config_file(
-            "sni.yaml", f"""sni:
+            "sni.yaml",
+            f"""sni:
 - fqdn: {first}
   verify_client: NONE
 - fqdn: {second}
   verify_client: STRICT
-""")
+""",
+        )
     ats.start()
     session = ats.run_directory / "cross-session"
     connect(ats, first, session, save=True, certificate=cert if different_ca else None)
