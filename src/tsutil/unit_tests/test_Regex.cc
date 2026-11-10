@@ -1689,8 +1689,8 @@ TEST_CASE("Regex copies answer the same as their original", "[libts][Regex][copy
 namespace
 {
 // Whether a match on this pattern runs JIT code. PCRE2 consults the JIT stack only
-// then, so a test about the stack must skip otherwise or it passes whether or not the
-// behaviour is present. pcre2_jit_compile() fails when PCRE2 has no JIT, cannot get
+// then, so a test about the stack must skip otherwise: without JIT code there is no
+// stack bound to assert on. pcre2_jit_compile() fails when PCRE2 has no JIT, cannot get
 // executable memory, or meets an item the JIT does not support, so its result is a per
 // pattern answer for this host, which the library-wide probes are not. The exception is
 // a pattern starting with (*NO_JIT), which compiles without error and gets no JIT code,
@@ -1732,7 +1732,7 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   // This pattern starts failing at roughly 43KiB of subject against a 1MiB JIT
   // stack, measured identically on x86_64 and arm64. Smaller JIT frames get more
   // subject out of the same stack and so push that threshold up; 256KiB keeps a
-  // six times margin against that, where a subject just above 43KiB would not.
+  // six times margin against that.
   std::string subject{"/alpha/bravo/?"};
   subject.append(256 * 1024, 'x');
 
@@ -1775,9 +1775,9 @@ stack_hungry_subject(int thread_index)
   return subject;
 }
 
-// One pass of the three matches every thread in the concurrency case performs: a hit that
-// must yield the same three captures, a miss that must stay a miss, and a deep subject that
-// overruns PCRE2's 32KiB fallback stack. Returns false on the first disagreement, so a caller
+// One pass of the three matches a thread with a reachable match limit performs in the
+// concurrency case: a hit that must yield the same three captures, a miss that must stay a
+// miss, and a deep subject that overruns PCRE2's 32KiB fallback stack. Returns false on the first disagreement, so a caller
 // counts rounds that went wrong rather than individual assertions.
 bool
 concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
@@ -1793,7 +1793,7 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
     return false;
   }
 
-  // On a JIT build, matching all of it shows this thread's own stack ran.
+  // On a JIT build, matching all of it shows a stack larger than the fallback ran.
   RegexMatches deep_matches;
   if (re_deep.exec(deep, deep_matches, 0, opts) <= 0 || deep_matches[0].size() != deep.size()) {
     return false;
@@ -1802,11 +1802,11 @@ concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::stri
   return true;
 }
 
-// The hit takes more than one match limit step on either engine, 3 on the JIT and 6 on the
-// interpreter with PCRE2 10.47 and 10.49, so a limit of 1 stops it.
+// The hit takes more than one match limit step on either engine, so a limit of 1 stops it.
 constexpr uint32_t HIT_STOPPING_MATCH_LIMIT = 1;
 
-// The round a thread whose options carry HIT_STOPPING_MATCH_LIMIT performs instead.
+// The round a thread whose limit is HIT_STOPPING_MATCH_LIMIT performs instead: the hit
+// must stop at the limit.
 bool
 limited_match_round(Regex const &re_captures, std::string const &hit, Regex::Options const &opts)
 {
@@ -1832,7 +1832,7 @@ limited_match_round(Regex const &re_captures, std::string const &hit, Regex::Opt
 //
 // Every round starts at a barrier, so all eight threads are alive for the whole case and
 // each round's matches start together on every thread. The test is deterministic when the
-// stacks are distinct, but it does not prove that they are: one stack shared by all eight
+// stacks are distinct, but it does not prove that they are: one stack shared by the threads
 // corrupts a result only when two deep matches touch the same frames at once, which the
 // barrier makes likely but cannot force. The same holds for a limit shared across threads.
 // ThreadSanitizer does not see the stack writes, because they come from sljit code.
@@ -1857,21 +1857,21 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
   threads.reserve(THREADS);
   for (int i = 0; i < THREADS; ++i) {
     threads.emplace_back([&, i]() {
-      std::string const deep = stack_hungry_subject(i);
+      std::string const deep    = stack_hungry_subject(i);
+      bool const        limited = (i % 4) == 2;
       Regex::Options    opts;
 
-      if ((i % 4) == 0) {
-        opts.match_limit = 100000000;
-      } else if ((i % 4) == 2) {
+      if (limited) {
         opts.match_limit = HIT_STOPPING_MATCH_LIMIT;
+      } else if ((i % 4) == 0) {
+        opts.match_limit = 100000000;
       }
 
       for (int n = 0; n < ITERATIONS; ++n) {
         // Unconditional, so a failing round cannot leave the other threads waiting.
         round_start.arrive_and_wait();
-        bool const ok = opts.match_limit == HIT_STOPPING_MATCH_LIMIT ?
-                          limited_match_round(re_captures, hit, opts) :
-                          concurrent_match_round(re_captures, re_deep, hit, miss, deep, opts);
+        bool const ok = limited ? limited_match_round(re_captures, hit, opts) :
+                                  concurrent_match_round(re_captures, re_deep, hit, miss, deep, opts);
         if (!ok) {
           ++failures;
         }

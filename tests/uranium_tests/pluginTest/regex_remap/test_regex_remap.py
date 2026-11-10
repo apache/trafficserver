@@ -31,9 +31,10 @@ REGEX_REMAP_UPDATED_RULE = "^/cache-generation$ https://updated.example/ @status
 # A query long enough to exhaust the 1 MiB per thread JIT stack on the redirect rule, which
 # backtracks once per subject character. Measured on arm64 with PCRE2 10.47 and on x86_64
 # with PCRE2 10.49, 43,672 characters after "action=newsfed;" match and 43,673 return -46
-# on both. The ceiling is the 65,535 byte request line the parser asserts on, so 64,000
-# sits near the top of a window that configuration cannot widen. Below the threshold the
-# rule matches and redirects, and the JIT half of this check fails.
+# on both. The ceiling is a 65,535 byte request line, request_line_max_size's default and
+# the length a debug build asserts on in http_parser_parse_req, so 64,000 sits near the top
+# of the window. Below the threshold the rule matches and redirects, and the JIT half of
+# this check fails.
 JIT_STACK_EXHAUSTING_QUERY_LENGTH = 64000
 
 # The error the exhaustion check expects on a JIT build, where PCRE2 reports the stack bound as -46.
@@ -130,8 +131,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
             # Room for the JIT stack exhaustion request. request_line_max_size keeps its
-            # 65,535 default because http_parser_parse_req asserts on a request line that
-            # long before it can reject one, so a larger value would not admit a longer line.
+            # 65,535 default: a debug build asserts in http_parser_parse_req on a longer
+            # request line before that limit is checked.
             "proxy.config.http.request_header_max_size": 131072,
         }
     )
@@ -197,13 +198,13 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
 
 
 def run_jit_stack_exhaustion_check(*, _ats: ATS, _curl: Curl) -> None:
-    """Verify a query past the JIT stack bound fails the rule without crashing ATS.
+    """Verify a query past the JIT stack bound is handled without crashing ATS.
 
-    Only the JIT engine has a stack to exhaust. The interpreter keeps its
-    backtracking frames on the heap, so without a JIT the rule matches this
-    subject and redirects. Each engine's outcome is asserted, so a
-    ``TS_HAS_PCRE2_JIT`` that does not describe the PCRE2 ATS runs on fails
-    here rather than skipping the check.
+    On a JIT build the rule fails with the stack limit error and the request
+    falls through to the origin. The interpreter keeps its backtracking frames
+    on the heap, so without a JIT the rule matches and redirects. Each engine's
+    outcome is asserted, so a ``TS_HAS_PCRE2_JIT`` that does not describe the
+    PCRE2 ATS runs on fails this check.
 
     :param _ats: Test-local ats configured by the test.
     :param _curl: Test-local curl configured by the test.
