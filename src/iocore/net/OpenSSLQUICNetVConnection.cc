@@ -200,6 +200,7 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
     SSL_free(stream_ssl);
   }
   this->_openssl_streams.clear();
+  this->_openssl_draining_streams.clear();
 
   if (this->_ssl != nullptr) {
     this->_unbindSSLObject();
@@ -736,26 +737,35 @@ QUICNetVConnection::_process_openssl_streams()
 {
   std::vector<QUICStreamId> stream_ids;
   stream_ids.reserve(this->_openssl_streams.size());
-  size_t streams_with_data     = 0;
-  this->_openssl_send_buffered = 0;
+  std::vector<QUICStreamId> drained_ids;
+  size_t                    streams_with_data = 0;
+  this->_openssl_send_buffered                = 0;
   for (auto const &[stream_id, stream_ssl] : this->_openssl_streams) {
+    if (this->_openssl_draining_streams.count(stream_id) != 0) {
+      uint64_t const held = this->_openssl_stream_held(stream_id, stream_ssl);
+      if (held == 0) {
+        drained_ids.push_back(stream_id);
+      }
+      this->_openssl_send_buffered += held;
+      continue;
+    }
+
     stream_ids.push_back(stream_id);
     if ((SSL_get_stream_type(stream_ssl) & SSL_STREAM_TYPE_WRITE) == 0) {
       continue;
     }
-
-    uint64_t used = 0;
-    if (SSL_get_stream_write_buf_used(stream_ssl, &used) == 1) {
-      this->_openssl_send_buffered += used;
-    } else {
-      unsigned long const error = ERR_get_error();
-      QUICConDebug("stream %" PRIu64 ": cannot read OpenSSL's send buffer use: %s", stream_id, ERR_error_string(error, nullptr));
-    }
+    this->_openssl_send_buffered += this->_openssl_stream_held(stream_id, stream_ssl);
 
     QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
     if (stream != nullptr && stream->has_data_to_send()) {
       ++streams_with_data;
     }
+  }
+
+  for (QUICStreamId stream_id : drained_ids) {
+    SSL_free(this->_openssl_streams[stream_id]);
+    this->_openssl_streams.erase(stream_id);
+    this->_openssl_draining_streams.erase(stream_id);
   }
 
   // Share one pass's sending among the streams that have data, so that a stream with a large
@@ -773,12 +783,17 @@ QUICNetVConnection::_process_openssl_streams()
     SSL        *stream_ssl = stream_it->second;
     QUICStream *stream     = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
     if (stream == nullptr) {
-      // Keeping a deleted stream's SSL object would make every later pass here walk every stream the
-      // connection has ever opened. The application deletes a stream only once each direction it has
-      // is done (the peer's FIN read, ours handed to OpenSSL), and SSL_free does not reset a stream
-      // part that was already concluded, so OpenSSL still delivers what it has buffered.
-      SSL_free(stream_ssl);
-      this->_openssl_streams.erase(stream_it);
+      // The application deletes a stream only once each direction it has is done (the peer's
+      // FIN read, ours handed to OpenSSL), and SSL_free does not reset a stream part that was
+      // already concluded, so OpenSSL still delivers what it has buffered. Until it has, the
+      // SSL object stays so that data counts toward the connection limit; keeping it any longer
+      // would make every later pass here walk every stream the connection has ever opened.
+      if ((SSL_get_stream_type(stream_ssl) & SSL_STREAM_TYPE_WRITE) != 0 && this->_openssl_stream_held(stream_id, stream_ssl) > 0) {
+        this->_openssl_draining_streams.insert(stream_id);
+      } else {
+        SSL_free(stream_ssl);
+        this->_openssl_streams.erase(stream_it);
+      }
       continue;
     }
 
@@ -798,6 +813,18 @@ QUICNetVConnection::_process_openssl_streams()
   if (more_to_send) {
     this->_schedule_packet_write_ready();
   }
+}
+
+uint64_t
+QUICNetVConnection::_openssl_stream_held(QUICStreamId stream_id, SSL *stream_ssl)
+{
+  uint64_t used = 0;
+  if (SSL_get_stream_write_buf_used(stream_ssl, &used) != 1) {
+    unsigned long const error = ERR_get_error();
+    QUICConDebug("stream %" PRIu64 ": cannot read OpenSSL's send buffer use: %s", stream_id, ERR_error_string(error, nullptr));
+    return 0;
+  }
+  return used;
 }
 
 void

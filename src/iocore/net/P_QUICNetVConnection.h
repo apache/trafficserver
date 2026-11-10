@@ -53,6 +53,7 @@
 #include <openssl/ssl.h>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #if TS_HAS_QUICHE
 #include <quiche.h>
@@ -233,6 +234,9 @@ private:
 
 #if TS_HAS_OPENSSL_QUIC
   std::unordered_map<QUICStreamId, SSL *> _openssl_streams;
+  // Streams the application has deleted whose SSL objects stay in _openssl_streams until
+  // OpenSSL holds nothing more for them.
+  std::unordered_set<QUICStreamId>        _openssl_draining_streams;
   std::string                             _cid_text;
   std::string                             _negotiated_alpn;
 
@@ -240,8 +244,8 @@ private:
   // data not yet sent and data sent but not yet acknowledged.
   uint64_t _max_stream_send_buffer     = 0;
   uint64_t _max_connection_send_buffer = 0;
-  // What OpenSSL holds for all of this connection's streams: measured at the start of each
-  // pass over the streams and raised by every write during the pass.
+  // What OpenSSL holds for all of this connection's streams, draining ones included: measured
+  // at the start of each pass over the streams and raised by every write during the pass.
   uint64_t _openssl_send_buffered = 0;
 #elif TS_HAS_QUICHE
   UDPConnection *_udp_con    = nullptr;
@@ -272,7 +276,8 @@ private:
 #if TS_HAS_OPENSSL_QUIC
   void _handle_openssl_events();
   void _accept_openssl_streams();
-  void _process_openssl_streams();
+  void     _process_openssl_streams();
+  uint64_t _openssl_stream_held(QUICStreamId stream_id, SSL *stream_ssl);
   void _schedule_openssl_event(bool delay = true);
   void _unschedule_openssl_event();
   bool _openssl_connection_closed() const;
