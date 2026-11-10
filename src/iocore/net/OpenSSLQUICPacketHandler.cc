@@ -456,6 +456,7 @@ QUICPacketHandlerIn::acceptEvent(int /* event ATS_UNUSED */, void * /* data ATS_
   }
 
   if (this->_listener == nullptr && this->_start_listener() != Listen::started) {
+    this->_stop_unstarted_listener();
     return EVENT_DONE;
   }
 
@@ -487,7 +488,9 @@ void
 QUICPacketHandlerIn::init_accept_per_thread_listeners()
 {
 #if defined(__linux__) || defined(SO_REUSEPORT_LB)
-  auto const &net_threads = eventProcessor.thread_group[ET_NET];
+  auto const         &net_threads = eventProcessor.thread_group[ET_NET];
+  ip_port_text_buffer addr;
+  ats_ip_nptop(&this->server.accept_addr, addr, sizeof(addr));
 
   // Every socket is bound before any acceptor runs. The kernel picks a socket for a datagram by hashing
   // over however many sockets are bound at that moment, so a connection established while the group
@@ -505,8 +508,8 @@ QUICPacketHandlerIn::init_accept_per_thread_listeners()
       a->server.close();
       delete a;
     } else if (result == Listen::port_not_shared) {
-      Warning("HTTP/3 port %d: one OpenSSL QUIC listener serves the port, because its socket cannot share the port",
-              this->opt.local_port);
+      Warning("HTTP/3 port %d: one OpenSSL QUIC listener serves %s, because its socket cannot share the port", this->opt.local_port,
+              addr);
       this->server.close();
       this->init_accept(nullptr);
       return;
@@ -515,20 +518,19 @@ QUICPacketHandlerIn::init_accept_per_thread_listeners()
   }
 
   if (acceptors.empty()) {
-    Error("HTTP/3 port %d: no OpenSSL QUIC listener started", this->opt.local_port);
-    this->server.close();
-    SSL_free(this->_listener);
-    this->_listener = nullptr;
+    this->_stop_unstarted_listener();
     return;
   }
   if (acceptors.size() < static_cast<size_t>(net_threads._count)) {
-    Warning("HTTP/3 port %d: listening on %zu of %d net threads", this->opt.local_port, acceptors.size(), net_threads._count);
+    Warning("HTTP/3 port %d: listening on %s on %zu of %d net threads", this->opt.local_port, addr, acceptors.size(),
+            net_threads._count);
   }
   Dbg(dbg_ctl_openssl_quic, "accepting OpenSSL QUIC connections on %zu of %d net threads", acceptors.size(), net_threads._count);
 
   // Continuation::handleEvent() requires the caller to hold the continuation's mutex, and each net thread
   // holds its own for good, so a session acceptor called from every net thread cannot have one. As with
-  // TCP per-thread accept, its mutex stays unset; the QUIC session acceptors read only state fixed at startup.
+  // TCP per-thread accept, its mutex stays unset: the QUIC session acceptors keep no state of their own,
+  // and the IP-allow configuration they read is a reference-counted snapshot.
   for (size_t i = 0; i < acceptors.size(); ++i) {
     acceptors[i]->_schedule_on(net_threads._thread[i]);
   }
@@ -539,6 +541,17 @@ QUICPacketHandlerIn::init_accept_per_thread_listeners()
        this->opt.local_port);
   this->init_accept(nullptr);
 #endif
+}
+
+void
+QUICPacketHandlerIn::_stop_unstarted_listener()
+{
+  ip_port_text_buffer addr;
+  Error("HTTP/3 port %d: no OpenSSL QUIC listener started on %s", this->opt.local_port,
+        ats_ip_nptop(&this->server.accept_addr, addr, sizeof(addr)));
+  this->server.close();
+  SSL_free(this->_listener);
+  this->_listener = nullptr;
 }
 
 void

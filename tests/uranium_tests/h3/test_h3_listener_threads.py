@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 import re
+import socket
 import sys
 import time
 from pathlib import Path
@@ -27,7 +28,8 @@ TEST_DIRECTORY = Path(__file__).parent
 NET_THREADS = 4
 # Each connection comes from its own UDP port, and the kernel picks a listener socket from a hash
 # of the addresses and ports. The chance that all of these connections hash to the same one of
-# NET_THREADS sockets is 4^-31, about one in 5 x 10^18.
+# NET_THREADS sockets is 4^-31, about one in 5 x 10^18, and the chance that the 2 * CONNECTIONS of
+# two rounds miss one of the sockets is about 4 x 10^-8.
 CONNECTIONS = 32
 REQUESTS_PER_CONNECTION = 4
 RESPONSE_SIZE = 16
@@ -35,6 +37,7 @@ RESPONSE_SIZE = 16
 BODY = "0000000 0000001 "
 
 ACCEPTED_RE = r"\[(ET_NET \d+)\] DIAG: .*\(http3\) \[[^]]*\] accepted connection from \S+"
+ALL_NET_THREADS = {f"ET_NET {i}" for i in range(NET_THREADS)}
 LISTENERS_STARTED = f"accepting OpenSSL QUIC connections on {NET_THREADS} of {NET_THREADS} net threads"
 LISTENER_FAILED_RE = r"failed to .*OpenSSL QUIC"
 
@@ -86,6 +89,18 @@ def configure_ats(ats_factory: ATSFactory, name: str, records: dict[str, int], *
     return ats
 
 
+def require_per_thread_listeners(ats_factory: ATSFactory) -> None:
+    """Skip unless this build and platform give each net thread its own QUIC listener.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    if not ats_factory.has_feature("TS_HAS_OPENSSL_QUIC"):
+        pytest.skip("Only the OpenSSL QUIC implementation has per-thread listeners")
+    if not (sys.platform == "linux" or sys.platform.startswith("freebsd")):
+        pytest.skip("Only Linux and FreeBSD spread a shared UDP port over its sockets")
+
+
 def start_ats(ats_factory: ATSFactory, services: ServiceFactory, name: str, records: dict[str, int]) -> ATS:
     """Start the origin and a Traffic Server instance in front of it.
 
@@ -95,10 +110,7 @@ def start_ats(ats_factory: ATSFactory, services: ServiceFactory, name: str, reco
     :param records: QUIC records to set on top of the defaults.
     """
 
-    if not ats_factory.has_feature("TS_HAS_OPENSSL_QUIC"):
-        pytest.skip("Only the OpenSSL QUIC implementation has per-thread listeners")
-    if sys.platform not in ("linux", "freebsd"):
-        pytest.skip("Only Linux and FreeBSD spread a shared UDP port over its sockets")
+    require_per_thread_listeners(ats_factory)
     _origin = configure_origin(services)
     _ats = configure_ats(ats_factory, name, records, _origin=_origin)
     _origin.start()
@@ -139,7 +151,7 @@ def run_connections(services: ServiceFactory, name: str, retried: int, *, _ats: 
     result = client.run(timeout=120)
     assert result.returncode == 0, result.output
     assert f"completed {REQUESTS_PER_CONNECTION} requests on each of {CONNECTIONS} HTTP/3 connections" in result.stdout
-    assert f"{retried} connections were retried" in result.stdout, result.stdout
+    assert f"{retried} connections were retried" in result.stdout.splitlines(), result.stdout
 
 
 def accepting_threads(connections: int, *, _ats: ATS) -> set[str]:
@@ -152,7 +164,7 @@ def accepting_threads(connections: int, *, _ats: ATS) -> set[str]:
     accepted = re.findall(ACCEPTED_RE, wait_for_file_lines(_ats.traffic_out, ACCEPTED_RE, connections))
     assert len(accepted) == connections, accepted
     threads = set(accepted)
-    assert threads <= {f"ET_NET {i}" for i in range(NET_THREADS)}, threads
+    assert threads <= ALL_NET_THREADS, threads
     assert not re.search(LISTENER_FAILED_RE, _ats.diags_log.read_text(errors="replace"))
     return threads
 
@@ -174,7 +186,7 @@ def test_h3_connections_spread_over_net_threads(ats_factory: ATSFactory, service
     # round's connections before the second round opens new ones.
     time.sleep(0.5)
     run_connections(services, "client-again", 0, _ats=_ats)
-    accepting_threads(2 * CONNECTIONS, _ats=_ats)
+    assert accepting_threads(2 * CONNECTIONS, _ats=_ats) == ALL_NET_THREADS
     assert _ats.is_running
 
 
@@ -214,3 +226,27 @@ def test_h3_stateless_retry_with_listener_threads(ats_factory: ATSFactory, servi
     run_connections(services, "client", CONNECTIONS if stateless_retry else 0, _ats=_ats)
     threads = accepting_threads(CONNECTIONS, _ats=_ats)
     assert len(threads) > 1, threads
+    assert LISTENERS_STARTED in _ats.traffic_out.read_text(errors="replace")
+
+
+def test_h3_port_without_listener(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """When no per-thread listener can bind the port, an error names the port and no listener starts.
+
+    A plain UDP socket bound to the port first, without SO_REUSEADDR or SO_REUSEPORT, makes the
+    first listener's bind fail.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+
+    require_per_thread_listeners(ats_factory)
+    _origin = configure_origin(services)
+    _ats = configure_ats(ats_factory, "ts-h3-no-listener", {}, _origin=_origin)
+    _ats.allow_errors(r"OpenSSL QUIC")
+    port = _ats.https_port
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as holder:
+        holder.bind(("127.0.0.1", port))
+        _origin.start()
+        _ats.start()
+        wait_for_file_lines(_ats.diags_log, rf"HTTP/3 port {port}: no OpenSSL QUIC listener started on 0\.0\.0\.0:{port}$", 1)
+    assert "accepting OpenSSL QUIC connections on" not in _ats.traffic_out.read_text(errors="replace")

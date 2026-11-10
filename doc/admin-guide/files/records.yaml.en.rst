@@ -6244,13 +6244,13 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.server.listen_per_thread INT 1
 
    With OpenSSL's QUIC, a connection is served on the net thread whose listener
-   accepted it. When this is ``1``, on Linux and FreeBSD, each QUIC port gets one
-   UDP socket and QUIC listener per net thread, all bound to the port with
-   ``SO_REUSEPORT``, and the kernel spreads incoming datagrams over the sockets by
-   a hash of the client and server addresses and ports. When it is ``0``, on other
-   platforms, or when a socket cannot share the port, one socket and one net
-   thread serve every QUIC connection on the port. A port given an inherited
-   ``fd`` always has one socket. quiche ignores this setting.
+   accepted it. When this is ``1``, on Linux and FreeBSD, each QUIC port gets
+   one UDP socket and QUIC listener per net thread, all bound to the port with
+   ``SO_REUSEPORT``, and the kernel spreads incoming datagrams over the sockets
+   by a hash of the client and server addresses and ports. When it is ``0``, on
+   other platforms, or when the first socket cannot share the port, one socket
+   and one net thread serve every QUIC connection on the port. A port given an
+   inherited ``fd`` always has one socket. quiche ignores this setting.
 
    OpenSSL's QUIC does not support connection migration: it asks clients not to
    migrate and keeps sending to the address a connection started from. A client

@@ -73,11 +73,11 @@ public:
   void          init_accept(EThread *t) override;
 
 #if TS_HAS_OPENSSL_QUIC
-  /** Accepts on each net thread whose listener starts, each with its own copy of this acceptor, UDP socket and
-   * OpenSSL listener.
+  /** Accepts on net threads 0..k-1, up to the first whose listener fails, each with its own copy of this acceptor, UDP
+   * socket and OpenSSL listener.
    *
    * On Linux and FreeBSD the sockets share the port, and the kernel spreads incoming datagrams over them by a hash of
-   * the addresses and ports. Elsewhere, or when a socket cannot share the port, one listener serves the port.
+   * the addresses and ports. Elsewhere, or when the first socket cannot share the port, one listener serves the port.
    */
   void init_accept_per_thread_listeners();
 #endif
@@ -107,9 +107,11 @@ private:
    *        socket share the port; -1 for a port's only listener.
    */
   Listen _start_listener(int net_thread = -1);
-  void   _schedule_on(EThread *t);
-  void   _service_listener();
-  void   _schedule_event();
+  /// Logs that the port has no listener and closes its socket.
+  void _stop_unstarted_listener();
+  void _schedule_on(EThread *t);
+  void _service_listener();
+  void _schedule_event();
 #endif
 };
 
