@@ -142,6 +142,27 @@ TEST_CASE("Header: the next hook sees the current headers", "[cripts][Headers]")
   CHECK(str(cripts::Client::Request::Get()["X-Foo"]) == "changed");
 }
 
+TEST_CASE("Header: server request fields", "[cripts][Headers]")
+{
+  Txn txn{REQUEST};
+
+  cripts_test::parse_request(txn.headers().server_request, "GET /a HTTP/1.1\r\nHost: origin.example\r\nX-Foo: bar\r\n\r\n");
+
+  auto context = txn.context();
+
+  context->state.hook = TS_HTTP_SEND_REQUEST_HDR_HOOK;
+
+  borrow req = cripts::Server::Request::Get();
+
+  CHECK(str(req["Host"]) == "origin.example");
+  CHECK(str(req["X-Foo"]) == "bar");
+
+  req["X-Foo"] = "baz";
+
+  CHECK(txn.headers().server_request.value_get("X-Foo"sv) == "baz");
+  CHECK(txn.client_request_field("X-Foo") == "bar");
+}
+
 TEST_CASE("Header: client response status and fields", "[cripts][Headers]")
 {
   Txn txn{REQUEST};
