@@ -1,5 +1,0 @@
-cond %{REMAP_PSEUDO_HOOK} [AND]
-    set-destination URL "http://origin.example.com/"
-
-cond %{REMAP_PSEUDO_HOOK} [AND]
-    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--uri-type=pristine"

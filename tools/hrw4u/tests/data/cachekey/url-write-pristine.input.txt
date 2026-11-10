@@ -1,7 +1,0 @@
-REMAP {
-    inbound.url.url = "http://origin.example.com/";
-}
-
-CACHEKEY {
-    cache.url.pristine();
-}
