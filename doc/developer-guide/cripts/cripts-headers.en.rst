@@ -121,6 +121,7 @@ Method                         Description
 ``cripts::Method::OPTIONS``    The OPTIONS method.
 ``cripts::Method::CONNECT``    The CONNECT method.
 ``cripts::Method::TRACE``      The TRACE method.
+``cripts::Method::QUERY``      The QUERY method.
 ============================   ======================================================================
 
 These symbols can be used to compare against the method in the request object. For example:
