@@ -1689,18 +1689,14 @@ TEST_CASE("Regex copies answer the same as their original", "[libts][Regex][copy
 
 namespace
 {
-/** Does PCRE2 have JIT code for this pattern?
- *
- * The two tests below are about the JIT stack, and PCRE2 consults it only when it
- * has JIT code to run. Without it both a blank context and the shared one take the
- * interpreter and return the same answer, so the tests would pass whether or not
- * the behaviour they describe is present. Ask PCRE2 rather than assume.
- *
- * This asks about one pattern, deliberately: PCRE2 declines some pattern items and
- * leaves PCRE2_INFO_JITSIZE at zero on a build whose JIT is otherwise fine, so the
- * library-wide probes (pcre2_config, PCRE2_JIT_TEST_ALLOC) answer a different
- * question. Call it from the test thread only; Catch2 assertions are not thread safe.
- */
+// Whether a match on this pattern runs JIT code. PCRE2 consults the JIT stack only
+// then, so a test about the stack must skip otherwise or it passes whether or not the
+// behaviour is present. pcre2_jit_compile() fails whenever it leaves the pattern
+// without JIT code: no JIT in this PCRE2, no executable memory, or an item the JIT does
+// not support. That makes it a per pattern answer for this host, which the library-wide
+// probes are not. A pattern starting with (*NO_JIT) gets no JIT code yet compiles
+// without error, so do not pass one. Call this from the test thread only; Catch2
+// assertions are not thread safe.
 bool
 pattern_has_jit(char const *pattern)
 {
@@ -1708,16 +1704,13 @@ pattern_has_jit(char const *pattern)
   PCRE2_SIZE  erroffset = 0;
   pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
 
-  // A pattern that will not compile is a broken test, not a build without a JIT.
-  // Reporting it as "no JIT" would turn a typo into a silent skip.
+  // A typo in a pattern must fail the test rather than turn into a SKIP.
   REQUIRE(code != nullptr);
 
-  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
-  size_t jit_size = 0;
+  int const rc = pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
 
-  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
   pcre2_code_free(code);
-  return jit_size > 0;
+  return rc == 0;
 }
 } // namespace
 
