@@ -235,6 +235,14 @@ private:
   std::unordered_map<QUICStreamId, SSL *> _openssl_streams;
   std::string                             _cid_text;
   std::string                             _negotiated_alpn;
+
+  // The most data OpenSSL may hold for one stream and for the whole connection, counting
+  // data not yet sent and data sent but not yet acknowledged.
+  uint64_t _max_stream_send_buffer     = 0;
+  uint64_t _max_connection_send_buffer = 0;
+  // What OpenSSL holds for all of this connection's streams: measured at the start of each
+  // pass over the streams and raised by every write during the pass.
+  uint64_t _openssl_send_buffered = 0;
 #elif TS_HAS_QUICHE
   UDPConnection *_udp_con    = nullptr;
   quiche_conn   *_quiche_con = nullptr;
