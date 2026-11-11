@@ -1777,18 +1777,26 @@ stack_hungry_subject(int thread_index)
   return subject;
 }
 
-// One pass of the three matches a thread whose match limit is never reached performs in
-// the concurrency case: a hit that must yield the same three captures, a miss that must
-// stay a miss, and a deep subject that overruns PCRE2's 32KiB fallback stack. Returns
-// false on the first disagreement, so a caller counts rounds that went wrong rather than
-// individual assertions.
+// How many times each round of the concurrency case matches the hit. A match limit that
+// leaks between threads shows only when one thread changes it between another thread
+// setting its own and matching, a window of a few nanoseconds on an optimized build, so
+// each round gives it many chances to land.
+constexpr int HITS_PER_ROUND = 64;
+
+// The matches each round of the concurrency case performs on a thread whose match limit is
+// never reached: HITS_PER_ROUND hits that must each yield the same three captures, a
+// miss that must stay a miss, and a deep subject that overruns PCRE2's 32KiB fallback
+// stack. Returns false on the first disagreement, so a caller counts rounds that went
+// wrong rather than individual assertions.
 bool
 concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
                        std::string const &deep, Regex::Options const &opts)
 {
-  RegexMatches matches;
-  if (re_captures.exec(hit, matches, 0, opts) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
-    return false;
+  for (int k = 0; k < HITS_PER_ROUND; ++k) {
+    RegexMatches matches;
+    if (re_captures.exec(hit, matches, 0, opts) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+      return false;
+    }
   }
 
   RegexMatches no_matches;
@@ -1811,13 +1819,18 @@ constexpr uint32_t HIT_STOPPING_MATCH_LIMIT = 1;
 // Far above what any match in the concurrency case takes, while still a non-default option.
 constexpr uint32_t NEVER_REACHED_MATCH_LIMIT = 100000000;
 
-// The round a thread whose limit is HIT_STOPPING_MATCH_LIMIT performs instead: the hit
-// must stop at the limit.
+// The round a thread whose limit is HIT_STOPPING_MATCH_LIMIT performs instead: each of
+// HITS_PER_ROUND hits must stop at the limit.
 bool
 limited_match_round(Regex const &re_captures, std::string const &hit, Regex::Options const &opts)
 {
-  RegexMatches matches;
-  return re_captures.exec(hit, matches, 0, opts) == PCRE2_ERROR_MATCHLIMIT;
+  for (int k = 0; k < HITS_PER_ROUND; ++k) {
+    RegexMatches matches;
+    if (re_captures.exec(hit, matches, 0, opts) != PCRE2_ERROR_MATCHLIMIT) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Holds each thread that calls arrive_and_wait() until the expected number of threads
