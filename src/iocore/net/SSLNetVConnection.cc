@@ -2316,6 +2316,8 @@ SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
   // We could pass a structure that has both a cert to verify and a NetVC.
   // It would allow us to remove confusing TSSslVerifyCTX and its internal implementation that are only available during a very
   // limited time.
+  SSLHandshakeStatus const status_before_hooks = this->sslHandshakeStatus;
+
   if (get_context() == NET_VCONNECTION_IN) {
     this->callHooks(TS_EVENT_SSL_VERIFY_CLIENT /* , ctx */);
   } else {
@@ -2323,6 +2325,10 @@ SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
   }
 
   if (this->sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+    // The rejection reaches the handshake through the verify callback, which fails it or, for an
+    // origin under PERMISSIVE, lets it continue. Left in place, the error status would mark a
+    // continuing handshake complete before it is, so the steps that run when it completes would be skipped.
+    this->sslHandshakeStatus = status_before_hooks;
     return 1;
   }
 
