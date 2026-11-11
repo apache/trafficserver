@@ -67,3 +67,17 @@ def version_tuple(value: str) -> tuple[int, ...]:
 
     match = re.search(r"\d+(?:\.\d+)+", value)
     return tuple(int(part) for part in match.group(0).split(".")) if match else ()
+
+
+def go_mod_version(go_mod: Path) -> tuple[int, ...]:
+    """Return the minimum Go version from a module's ``go`` directive.
+
+    :param go_mod: Path to the module's go.mod file.
+    :raises ValueError: If the file has no ``go`` directive with a version.
+    """
+
+    match = re.search(r"^go\s+(\S+)", go_mod.read_text(), re.MULTILINE)
+    version = version_tuple(match.group(1)) if match else ()
+    if not version:
+        raise ValueError(f"{go_mod} has no go directive with a version")
+    return version
