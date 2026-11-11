@@ -30,10 +30,11 @@ urtest:
     records_config:
       proxy.config.ssl.client.verify.server.policy: PERMISSIVE
       proxy.config.http.insert_age_in_response: 0
-      # No debug logging. The small-window variants move 120 KB bodies through
-      # a 10-byte window, and the "http" tags log every frame: about 500,000
-      # lines a run, which made the run four times slower. On a slow host that
-      # outlasted Proxy Verifier's 15 second wait for sixth-request.
+      # Leave debug logging off. The policy 1 and 2 variants push 120 KB bodies
+      # through a 10-byte window, and the "http" tag prefix also matches the
+      # http2 tags, which log every DATA and WINDOW_UPDATE frame. On a slow
+      # host that volume pushed sixth-request-cached past Proxy Verifier's
+      # dependency wait.
     remap_config:
       - "map / https://127.0.0.1:{SERVER_HTTPS_PORT}"
 
