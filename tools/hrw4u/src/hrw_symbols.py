@@ -241,7 +241,7 @@ class InverseSymbolResolver(SymbolResolverBase):
     def _handle_set_rm_operation(
         self, cmd: str, toks: list[str], prefix: str, qualifier: str, section: SectionType | None = None
     ) -> str:
-        qualifier = Validator.unquote_if_ident(qualifier)
+        qualifier = self._unquote_qualifier(prefix, qualifier, cmd, toks)
         if cmd.startswith("rm-"):
             return f'{prefix}{qualifier} = ""'
         if len(toks) < 3:
@@ -249,6 +249,26 @@ class InverseSymbolResolver(SymbolResolverBase):
         value = " ".join(toks[2:])
         value = self._rewrite_inline_percents(value, section)
         return f"{prefix}{qualifier} = {value}"
+
+    @staticmethod
+    def _unquote_qualifier(prefix: str, qualifier: str, cmd: str = "", toks: list[str] | None = None) -> str:
+        """Unquote qualifier when the inner value is a valid grammar IDENT.
+        Raises SymbolResolutionError if the unquoted form would collide with a
+        reserved exact-match operator key (e.g. inbound.resp.body would round-trip
+        to set-body, silently changing semantics). HRW4U has no syntax to escape
+        such qualifiers, so the inverse is lossy and surfaced as an error."""
+        unquoted = Validator.unquote_if_ident(qualifier)
+        if unquoted == qualifier:
+            return qualifier
+        composed = f"{prefix}{unquoted}"
+        if composed in tables.OPERATOR_MAP:
+            target = tables.OPERATOR_MAP[composed].target
+            line = " ".join(toks) if toks else f"{cmd} {qualifier}".strip()
+            raise SymbolResolutionError(
+                line,
+                f"cannot reverse {cmd or 'operator'} with qualifier {qualifier}: would collide with reserved {composed} ({target})",
+            )
+        return unquoted
 
     def _handle_operator_command(
         self, cmd: str, toks: list[str], lhs_key: str, uppercase: bool, section: SectionType | None

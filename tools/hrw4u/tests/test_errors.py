@@ -344,6 +344,53 @@ class TestValidatorChainUnits:
     def test_unquote_if_ident(self, value, expected):
         assert Validator.unquote_if_ident(value) == expected
 
+    @pytest.mark.parametrize(
+        "prefix,qualifier,expected",
+        [
+            # Normal unquote
+            ("inbound.req.", '"X-Foo"', "X-Foo"),
+            # body under a prefix with no collision: still unquote
+            ("inbound.req.", '"body"', "body"),
+            # Already bare: unchanged
+            ("inbound.resp.", "X-Foo", "X-Foo"),
+        ],
+    )
+    def test_unquote_qualifier_safe(self, prefix, qualifier, expected):
+        from u4wrh.hrw_symbols import InverseSymbolResolver
+
+        assert InverseSymbolResolver._unquote_qualifier(prefix, qualifier) == expected
+
+    def test_unquote_qualifier_collision_raises(self):
+        """Qualifier that would collide with a reserved exact-match operator key
+        (e.g. inbound.resp.body -> set-body) must raise rather than silently
+        change semantics on round-trip."""
+        from u4wrh.hrw_symbols import InverseSymbolResolver
+
+        with pytest.raises(SymbolResolutionError) as info:
+            InverseSymbolResolver._unquote_qualifier("inbound.resp.", '"body"', "set-header")
+        assert "set-body" in str(info.value)
+        assert "inbound.resp.body" in str(info.value)
+
+    def test_set_header_body_collision_errors_and_emits_comment(self):
+        """Full u4wrh pass on `set-header "body" "v"` must surface a transpile
+        error, drop the operator, and leave a `# skipped:` breadcrumb in
+        the output."""
+        from antlr4 import InputStream, CommonTokenStream
+        from u4wrh.hrw_visitor import HRWInverseVisitor
+        from u4wrh.u4wrhLexer import u4wrhLexer
+        from u4wrh.u4wrhParser import u4wrhParser
+
+        hrw = 'cond %{SEND_RESPONSE_HDR_HOOK}\n    set-header "body" "v"\n'
+        parser = u4wrhParser(CommonTokenStream(u4wrhLexer(InputStream(hrw))))
+        collector = ErrorCollector()
+        visitor = HRWInverseVisitor(filename="body-collision", error_collector=collector)
+        out = "\n".join(visitor.visit(parser.program()))
+
+        assert collector.has_errors(), f"expected collision error, got clean output:\n{out}"
+        assert "set-body" in collector.get_error_summary()
+        assert "# skipped:" in out
+        assert 'inbound.resp.body = "v"' not in out
+
 
 class TestPlainTextFormatterParity:
     """The plain formatter must preserve current CLI output byte-for-byte."""
