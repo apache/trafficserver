@@ -51,7 +51,7 @@ RemapPlugins::run_plugin(RemapPluginInst *plugin)
   rri.mapFromUrl = reinterpret_cast<TSMLoc>(map_from->m_url_impl);
   rri.mapToUrl   = reinterpret_cast<TSMLoc>(map_to->m_url_impl);
 
-  // A previous plugin in the chain may have modified or replaced the URL object.
+  // A previous plugin may have replaced the URL object, which frees the one cached here; url_get() picks up the current one.
   _request_url   = _request_header->url_get();
   rri.requestUrl = reinterpret_cast<TSMLoc>(_request_url->m_url_impl);
 

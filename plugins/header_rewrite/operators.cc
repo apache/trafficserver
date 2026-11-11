@@ -401,6 +401,9 @@ OperatorSetDestination::exec(const Resources &res) const
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
           const_cast<Resources &>(res).changed_url = true;
           res.reset_query_cache();
+          if (res._rri) {
+            TSHttpHdrUrlGet(bufp, res.hdr_loc, &res._rri->requestUrl);
+          }
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
           Dbg(pi_dbg_ctl, "Failed to set URL %s", value.c_str());
@@ -610,7 +613,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       if (res.changed_url) {
         if (TS_SUCCESS != TSHttpHdrUrlGet(res._rri->requestBufp, res._rri->requestHdrp, &url_loc)) {
           Dbg(pi_dbg_ctl, "Could not get request URL");
-          return false;
+          return true;
         }
       } else {
         url_loc = res._rri->requestUrl;
