@@ -175,9 +175,9 @@ ConfigContext::add_dependent_ctx(std::string_view description, std::string_view 
 void
 ConfigContext::set_supplied_yaml(YAML::Node node)
 {
-  // Build the new Payload as a value and allocate it once. Choosing between two
-  // make_shared() temporaries with ?: makes the Clang static analyzer report a
-  // false leak of the shared_ptr control block.
+  // Build the new Payload as a local value, then wrap it in one make_shared(). A ?:
+  // between two make_shared() temporaries makes the Clang static analyzer report a
+  // false cplusplus.NewDeleteLeaks on the shared_ptr control block.
   Payload next = _payload ? *_payload : Payload{};
   // emplace() copy-constructs the node; assigning into an engaged optional would write through.
   next.supplied_yaml.emplace(node); // YAML::Node has no move semantics; copy is cheap (ref-counted).
