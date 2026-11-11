@@ -313,10 +313,10 @@ The following :file:`records.yaml` changes have been made:
   * ``proxy.config.http2.connection.slow.log.threshold``
   * ``proxy.config.http2.stream.slow.log.threshold``
 
-  The 10.x default :file:`records.yaml` shipped with ``slow.log.threshold: 0``
-  (the default since ATS 10.2.x), so most existing installations still carry
-  it. With these settings removed, :program:`traffic_server` starts on such a
-  file and prints an ``Ignoring field ... Not registered`` warning, but
+  Every 10.x default :file:`records.yaml` sets ``proxy.config.http.slow.log.threshold: 0``,
+  so most existing installations still carry it. With these settings removed,
+  :program:`traffic_server` starts on such a file and prints an
+  ``Ignoring field ... Not registered`` warning, but
   ``traffic_server -C verify_config`` exits ``2`` until the configuration block
   is deleted.
 
@@ -330,7 +330,7 @@ The following :file:`records.yaml` changes have been made:
        filters:
          - name: slowlog
            action: accept
-           condition: '%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_SM_START}msdms GTE 100'
+           condition: '%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_SM_START}msdms> GTE 100'
 
        formats:
          - name: "slowlog"

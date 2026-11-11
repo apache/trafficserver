@@ -940,7 +940,9 @@ tts    Client Request          Same as ttms_, but in integer seconds (no
 
 .. note::
 
-   A full milestone report can be generated as a CSV string. Fields are:
+   A full milestone report can be generated as a CSV string. The first field is
+   the TLS handshake time, and the rest are milliseconds since
+   ``TS_MILESTONE_SM_START``, or ``-1`` when a milestone was never set. Fields are:
 
       1. tls_handshake
       2. ua_begin
