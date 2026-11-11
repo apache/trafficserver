@@ -87,8 +87,8 @@ def handshake(hostname: str, *, rsa_only: bool = False, _ats: ATS) -> str:
     """
 
     cipher = " -cipher ECDHE-RSA-AES128-GCM-SHA256" if rsa_only else ""
-    # Pin the subject format: by default OpenSSL 1.1.1 and 3.0 print "CN = <name>"
-    # and later releases print "CN=<name>". With RFC2253 every release prints "CN=<name>".
+    # Pin the name format: by default OpenSSL 1.1.1 and 3.0 print "CN = <name>" and
+    # OpenSSL 4.0 prints "CN=<name>". With -nameopt RFC2253 all three print "CN=<name>".
     script = (
         f"printf 'foo\\n' | openssl s_client -tls1_2 -nameopt RFC2253 -servername {shlex.quote(hostname)}"
         f"{cipher} -connect 127.0.0.1:{_ats.https_port}"

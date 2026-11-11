@@ -251,7 +251,8 @@ def run_tls_verify_override(
     else:
         raise AssertionError(f"Expected outbound TLS verification diagnostics:\n{diagnostics}")
 
-    # OpenSSL 3 hyphenates "self-signed"; BoringSSL and older OpenSSL do not.
+    # ATS logs the TLS library's wording: "self-signed certificate" on OpenSSL 3,
+    # "self signed certificate" on OpenSSL 1.1.1.
     assert re.search(r"Action=Continue Error=self[- ]signed certificate", diagnostics), diagnostics
     assert "SNI (bar.com) not in certificate. Action=Continue" in diagnostics
     assert "SNI (random.com) not in certificate. Action=Continue" in diagnostics
