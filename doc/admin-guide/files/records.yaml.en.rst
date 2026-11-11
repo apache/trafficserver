@@ -6428,7 +6428,7 @@ removed in the future without prior notice.
 
    Specified the maximum outgoing UDP payload size.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_send_buffer INT 1048576
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_send_buffer INT 262144
    :units: bytes
 
    The most stream data, in bytes, that |TS| hands the OpenSSL QUIC stack for one
@@ -6437,13 +6437,15 @@ removed in the future without prior notice.
 
    This trades throughput against memory. A stream cannot have more than this much
    data in flight, so it caps one stream's rate at about this value divided by the
-   round trip time: the default allows about 840 Mbps per stream at a 10 ms round
-   trip. OpenSSL grows a stream's send buffer to fit what it is given, up to its
-   own limit of 6 MB, and does not shrink it again until the stream ends, so each
-   busy stream can keep up to this much memory for its lifetime. See also
+   round trip time: the default allows about 210 Mbps per stream at a 10 ms round
+   trip and about 40 Mbps at 50 ms. OpenSSL grows a stream's send buffer to fit
+   what it is given, up to its own limit of 6 MB, and does not shrink it again
+   until the stream ends, so each busy stream can keep up to this much memory for
+   its lifetime. At 8192, the size OpenSSL starts every stream's send buffer at,
+   no buffer grows, at the cost of about 1.3 Mbps per stream at 50 ms. See also
    :ts:cv:`proxy.config.quic.max_connection_send_buffer`.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_connection_send_buffer INT 4194304
+.. ts:cv:: CONFIG proxy.config.quic.max_connection_send_buffer INT 1048576
    :units: bytes
 
    The most stream data, in bytes, that |TS| hands the OpenSSL QUIC stack for all

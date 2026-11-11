@@ -1547,9 +1547,9 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.quic.max_send_udp_payload_size_out", RECD_INT, "65527", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.max_stream_send_buffer", RECD_INT, "1048576", RECU_RESTART_TS, RR_NULL, RECC_INT, "[16384-6291456]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.max_stream_send_buffer", RECD_INT, "262144", RECU_RESTART_TS, RR_NULL, RECC_INT, "[8192-6291456]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.quic.max_connection_send_buffer", RECD_INT, "4194304", RECU_RESTART_TS, RR_NULL, RECC_INT, "[16384-1073741824]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.quic.max_connection_send_buffer", RECD_INT, "1048576", RECU_RESTART_TS, RR_NULL, RECC_INT, "[16384-1073741824]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.disable_http_0_9", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
   ,
