@@ -60,6 +60,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.diags.debug.tags": "ssl_sni",
         }
     )
+    # OpenSSL 1.1.1 matches group names case-sensitively and rejects
+    # "x25519", so use the canonical spelling.
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
@@ -68,7 +70,7 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
         "  valid_tls_versions_in: [ TLSv1_3 ]\n"
         "  server_TLSv1_3_cipher_suites: TLS_AES_256_GCM_SHA384\n"
         "- fqdn: bbb.com\n"
-        "  server_groups_list: x25519\n"
+        "  server_groups_list: X25519\n"
         "  valid_tls_versions_in: [ TLSv1_2 ]\n"
         "  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384\n"
         "- fqdn: ccc.com\n"
@@ -163,7 +165,7 @@ def test_tls_sni_groups(ats_factory: ATSFactory, curl: Curl) -> None:
     request("ccc.com", "--ciphers", "ECDHE-RSA-AES256-GCM-SHA384", _ats=_ats, _curl=curl)
 
     traffic_out = _ats.traffic_out.read_text(errors="replace")
-    assert "Setting groups list from server_groups_list to x25519" in traffic_out
+    assert "Setting groups list from server_groups_list to X25519" in traffic_out
     assert "ERROR: Invalid server_groups_list: ABC123" in _ats.diags_log.read_text(errors="replace")
 
     require_refused(s_client("aaa.com", "-tls1_2", _ats=_ats))
