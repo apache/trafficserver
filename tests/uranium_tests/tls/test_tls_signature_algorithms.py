@@ -119,4 +119,11 @@ def test_tls_signature_algorithms(ats_factory: ATSFactory, services: ServiceFact
     assert not re.search(r"ERROR:|FATAL:|Unrecognized configuration value", diagnostics), diagnostics
     log = (ats.log_directory / "tls_signature_algorithms.log").read_text(errors="replace")
     gold = "tls_signature_algorithms" if has_brainpool else "tls_signature_algorithms_no_brainpool"
-    assert_matches_gold(log, TEST_DIRECTORY / "gold" / f"{gold}.gold")
+    expected = TEST_DIRECTORY / "gold" / f"{gold}.gold"
+    if "BoringSSL" in ats.tls_library():
+        # BoringSSL has no call that reports the scheme the server signed
+        # with, so ATS logs %<cqssin> as "-" for every handshake.
+        lines = [line.split(" ") for line in expected.read_text().splitlines()]
+        expected = ats.run_directory / f"{gold}_boringssl.gold"
+        expected.write_text("".join(" ".join([*fields[:3], "-", *fields[4:]]) + "\n" for fields in lines))
+    assert_matches_gold(log, expected)
