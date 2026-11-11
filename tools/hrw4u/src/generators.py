@@ -117,7 +117,7 @@ class TableGenerator:
             reverse_map[name] = mapping
 
         # Add context type mappings
-        from hrw4u.tables import CONTEXT_TYPE_MAP, FALLBACK_TAG_MAP
+        from hrw4u.tables import BARE_TAG_MAP, CONTEXT_TYPE_MAP, FALLBACK_TAG_MAP
 
         reverse_map["CONTEXT_TYPE_MAP"] = CONTEXT_TYPE_MAP.copy()
 
