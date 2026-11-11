@@ -329,7 +329,8 @@ def compile_to_hrw4u(tree: Any, filename: str, source_text: str, **kwargs: Any) 
     if (analyzed := _analyze(tree, filename, source_text, **kwargs)) is None:
         return []
     sema, ast, _ = analyzed
-    return unparse(sema.expand(ast)).splitlines()
+    # Not splitlines(): a comment or string may hold U+2028 and other separators the grammar reads as text.
+    return unparse(sema.expand(ast)).split("\n")[:-1]
 
 
 def generate_output(

@@ -556,6 +556,17 @@ def test_cli_output_hrw4u_puts_a_trailing_comment_on_its_own_line(tmp_path: Path
     assert result.stdout == "REMAP {\n    inbound.req.X-A = \"1\";\n    # why\n}\n"
 
 
+def test_cli_output_hrw4u_keeps_a_unicode_line_separator_inside_a_comment(tmp_path: Path) -> None:
+    source = "# off\u2028REMAP { inbound.req.X-B = \"1\"; }\nREMAP {\n    inbound.req.X-A = \"1\";\n}\n"
+    main = tmp_path / "main.hrw4u"
+    main.write_text(source, encoding="utf-8")
+
+    result = run_hrw4u(["--output", "hrw4u", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == source
+
+
 def test_cli_output_hrw4u_no_comments_drops_procedure_comments(tmp_path: Path) -> None:
     procs = tmp_path / "procs"
     (procs / "t").mkdir(parents=True)
