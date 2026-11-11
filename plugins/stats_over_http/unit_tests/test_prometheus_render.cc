@@ -303,6 +303,8 @@ TEST_CASE("The records[] parameters of a query string", "[prometheus_render]")
   CHECK_FALSE(prometheus_record_filter("").has_value());
   CHECK_FALSE(prometheus_record_filter("format=prometheus&records=a&record[]=b&name[]=c").has_value());
   CHECK(prometheus_record_filter("records[]=b&records[]=a&records[]=b") == names{"a", "b"});
+  // A leading or doubled & makes an empty parameter, which names nothing, and a trailing & just ends the query.
+  CHECK(prometheus_record_filter("&records[]=a&&records[]=b&") == names{"a", "b"});
   // Prometheus encodes the brackets of the key.
   CHECK(prometheus_record_filter("records%5B%5D=proxy.process.a&x=1&records%5b%5d=c") == names{"c", "proxy.process.a"});
   CHECK(prometheus_record_filter("records[]=a%2Bb&records[]=c+d") == names{"a+b", "c d"});
