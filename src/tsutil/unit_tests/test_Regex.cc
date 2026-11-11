@@ -21,7 +21,9 @@
 */
 
 #include <atomic>
-#include <barrier>
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -1818,6 +1820,38 @@ limited_match_round(Regex const &re_captures, std::string const &hit, Regex::Opt
   return re_captures.exec(hit, matches, 0, opts) == PCRE2_ERROR_MATCHLIMIT;
 }
 
+// Holds each thread that calls arrive_and_wait() until the expected number of threads
+// have, then releases them together, and can be reused for the next round. It stands in
+// for std::barrier, which is missing from the libstdc++ before GCC 11 that some CI builds use.
+class RoundBarrier
+{
+public:
+  explicit RoundBarrier(int threads) : _threads(threads) {}
+
+  void
+  arrive_and_wait()
+  {
+    std::unique_lock lock{_mutex};
+    uint64_t const   round = _round;
+
+    if (++_arrived == _threads) {
+      _arrived = 0;
+      ++_round;
+      lock.unlock();
+      _released.notify_all();
+      return;
+    }
+    _released.wait(lock, [&] { return _round != round; });
+  }
+
+private:
+  std::mutex              _mutex;
+  std::condition_variable _released;
+  int const               _threads;     ///< Arrivals that complete a round.
+  int                     _arrived = 0; ///< Threads that have arrived in the current round.
+  uint64_t                _round   = 0; ///< Rounds completed, so a waiter can tell its round ended.
+};
+
 } // namespace
 
 // The header promises that exec() may be called concurrently on one instance. Every thread
@@ -1855,7 +1889,7 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
   std::string const miss{"/Alpha/xx/tail"};
 
   std::atomic<int> failures{0};
-  std::barrier<>   round_start{THREADS};
+  RoundBarrier     round_start{THREADS};
 
   std::vector<std::thread> threads;
   threads.reserve(THREADS);
