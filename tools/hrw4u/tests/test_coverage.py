@@ -401,6 +401,14 @@ class TestInverseSymbolResolver:
         with pytest.raises(SymbolResolutionError, match="Invalid index"):
             r.op_to_hrw4u("set-state-flag", ["abc", "true"], None, OperatorState())
 
+    @pytest.mark.parametrize("type_token", ["INT", "STRING", "FLOAT", "int", "Float"])
+    def test_op_to_hrw4u_set_config_rejects_type_hint(self, type_token):
+        r = self._resolver()
+        from hrw4u.states import OperatorState
+
+        with pytest.raises(SymbolResolutionError, match="set-config takes 2 arguments"):
+            r.op_to_hrw4u("set-config", ["proxy.config.http.cache.http", type_token, "0"], None, OperatorState())
+
     def test_parse_percent_block_invalid(self):
         r = self._resolver()
         tag, payload = r.parse_percent_block("not-a-percent")

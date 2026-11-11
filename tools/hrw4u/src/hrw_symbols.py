@@ -305,8 +305,9 @@ class InverseSymbolResolver(SymbolResolverBase):
             qargs = [qualifier, quoted_value]
         else:
             if name == "set-config" and len(args) == 3 and args[1].upper() in {"INT", "STRING", "FLOAT"}:
-                # strip HRW type hint; canonical HRW4U is 2-arg (type resolved via TSHttpTxnConfigFind)
-                args = [args[0], args[2]]
+                raise SymbolResolutionError(
+                    f"set-config {' '.join(args)}",
+                    f"HRW set-config takes 2 arguments (name, value); remove the '{args[1]}' type token from the source config")
             qargs = [self._rewrite_inline_percents(Validator.quote_if_needed(a), section) for a in args]
 
         return f"{name}({', '.join(qargs)})" if qargs else f"{name}()"

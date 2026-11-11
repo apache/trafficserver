@@ -1,3 +1,0 @@
-cond %{REMAP_PSEUDO_HOOK} [AND]
-cond %{TRUE}
-    set-config "proxy.config.http.cache.http" INT 0
