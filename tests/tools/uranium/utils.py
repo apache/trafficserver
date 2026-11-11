@@ -19,9 +19,11 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from pathlib import Path
+import os
 import re
 import shutil
 import socket
+import subprocess
 import sys
 
 
@@ -73,11 +75,37 @@ def go_mod_version(go_mod: Path) -> tuple[int, ...]:
     """Return the minimum Go version from a module's ``go`` directive.
 
     :param go_mod: Path to the module's go.mod file.
+    :raises OSError: If the file cannot be read.
     :raises ValueError: If the file has no ``go`` directive with a version.
     """
 
-    match = re.search(r"^go\s+(\S+)", go_mod.read_text(), re.MULTILINE)
+    match = re.search(r"^go[ \t]+(\S+)", go_mod.read_text(), re.MULTILINE)
     version = version_tuple(match.group(1)) if match else ()
     if not version:
         raise ValueError(f"{go_mod} has no go directive with a version")
     return version
+
+
+def go_toolchain_skip_reason(go_mod: Path) -> str | None:
+    """Return why the local Go toolchain cannot build a module, or None if it can.
+
+    The probe runs ``go version`` with ``GOTOOLCHAIN=local``, the setting the
+    Go test clients build with, so a toolchain switch in the environment
+    cannot report a newer Go than the build will use.
+
+    :param go_mod: Path to the module's go.mod file.
+    :raises ValueError: If go.mod has no ``go`` directive, or if ``go version``
+        prints no version number.
+    """
+
+    required = go_mod_version(go_mod)
+    needed = f"Go {'.'.join(map(str, required))} or newer is required by {go_mod.parent.name}/go.mod"
+    if shutil.which("go") is None:
+        return f"{needed}; go is not on PATH"
+    output = subprocess.check_output(("go", "version"), text=True, env={**os.environ, "GOTOOLCHAIN": "local"})
+    installed = version_tuple(output)
+    if not installed:
+        raise ValueError(f"cannot read a Go version from {output.strip()!r}")
+    if installed < required:
+        return f"{needed}; found Go {'.'.join(map(str, installed))}"
+    return None

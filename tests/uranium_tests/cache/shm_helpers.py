@@ -59,8 +59,9 @@ def configure_shm_ats(
     """Create one ATS instance using explicit cache spans and shm settings.
 
     Skip the calling test when ATS was built without cache shared memory
-    support. The build compiles the feature out when shm_open is not in libc,
-    as on glibc older than 2.34, where it lives in librt.
+    support (TS_USE_CACHE_SHM is 0): configured with ENABLE_CACHE_SHM=OFF, or
+    built where shm_open is not in libc, as on glibc older than 2.34, which
+    keeps shm_open in librt.
     """
 
     if not factory.has_feature("TS_USE_CACHE_SHM"):

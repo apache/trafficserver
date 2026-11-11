@@ -28,6 +28,9 @@ TEST_DIRECTORY = Path(__file__).parent
 def test_tls_signature_algorithms(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """Log offered and negotiated algorithms for full and resumed TLS handshakes.
 
+    On BoringSSL builds ATS cannot report the negotiated scheme, so the test
+    expects "-" for it there.
+
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning the HTTP origin.
     """
@@ -121,9 +124,12 @@ def test_tls_signature_algorithms(ats_factory: ATSFactory, services: ServiceFact
     gold = "tls_signature_algorithms" if has_brainpool else "tls_signature_algorithms_no_brainpool"
     expected = TEST_DIRECTORY / "gold" / f"{gold}.gold"
     if "BoringSSL" in ats.tls_library():
-        # BoringSSL has no call that reports the scheme the server signed
-        # with, so ATS logs %<cqssin> as "-" for every handshake.
-        lines = [line.split(" ") for line in expected.read_text().splitlines()]
+        # SSLGetNegotiatedSignatureAlgorithm has no BoringSSL path: BoringSSL
+        # lacks SSL_get_signature_algorithm_used and SSL_get_signature_type_nid,
+        # and its SSL_get_shared_sigalgs is a stub. ATS therefore logs
+        # %<cqssin>, the fourth column, as "-" for every handshake.
+        rows = [line.split(" ") for line in expected.read_text().splitlines()]
+        assert all(len(fields) == 6 for fields in rows), f"{expected} rows must have the six logged fields"
         expected = ats.run_directory / f"{gold}_boringssl.gold"
-        expected.write_text("".join(" ".join([*fields[:3], "-", *fields[4:]]) + "\n" for fields in lines))
+        expected.write_text("".join(" ".join([*fields[:3], "-", *fields[4:]]) + "\n" for fields in rows))
     assert_matches_gold(log, expected)
