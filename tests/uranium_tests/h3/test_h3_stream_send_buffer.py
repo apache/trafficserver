@@ -261,6 +261,47 @@ def test_h3_stream_send_buffer_grows(ats_factory: ATSFactory, services: ServiceF
     )
 
 
+def test_h3_stream_send_buffer_at_openssl_initial_size(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A stream limit of OpenSSL's initial buffer size keeps every stream's send buffer at that size.
+
+    ATS never offers a stream more than its buffer has free, so OpenSSL has no reason to grow it.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    require_openssl_quic(ats_factory)
+    server = services.verifier_server(
+        "server-h3-stream-send-buffer-initial", H3_LARGE_RESPONSE__replay, verbose=False, other_args="--poll-timeout 30000"
+    )
+    ats = configure_ats(
+        ats_factory,
+        "ts-h3-stream-send-buffer-initial",
+        server,
+        "https://example.com/",
+        max_stream_send_buffer=OPENSSL_INITIAL_STREAM_SEND_BUFFER,
+    )
+    client = services.verifier_client(
+        "client-h3-stream-send-buffer-initial",
+        H3_LARGE_RESPONSE__replay,
+        http3_ports=[ats.https_port],
+        verbose=False,
+        poll_timeout=30000,
+    )
+
+    server.start()
+    ats.start()
+    result = client.run(timeout=120)
+    assert result.returncode == 0, result.output
+
+    writes = stream_writes(read_settled(ats.traffic_out))
+    assert writes, "expected write lines for the response stream"
+    sizes = sorted({write.size for write in writes})
+    assert sizes == [OPENSSL_INITIAL_STREAM_SEND_BUFFER], (
+        f"OpenSSL send buffer sizes seen: {sizes}; a {OPENSSL_INITIAL_STREAM_SEND_BUFFER}-byte stream limit should keep "
+        f"every buffer at {OPENSSL_INITIAL_STREAM_SEND_BUFFER}. Grown streams: {grown_streams(writes)}"
+    )
+
+
 def test_h3_stream_send_buffer_small_flow_control_windows(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """A 1 MB response arrives intact through stream windows smaller than what ATS offers, and the connection stays usable.
 
