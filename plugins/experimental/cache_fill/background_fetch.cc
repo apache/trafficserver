@@ -267,11 +267,10 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
         inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sockaddress)->sin6_addr), buf, INET6_ADDRSTRLEN);
         Dbg(dbg_ctl, "Client IPv6 = %s", buf);
         break;
-      case AF_UNIX: {
-        const auto *unix_address = reinterpret_cast<const sockaddr_un *>(sockaddress);
-        Dbg(dbg_ctl, "Client Unix socket = %.*s", static_cast<int>(sizeof(unix_address->sun_path)), unix_address->sun_path);
+      case AF_UNIX:
+        // A client's end of a Unix socket is normally unbound, so it has no path to log.
+        Dbg(dbg_ctl, "Client is on a Unix domain socket");
         break;
-      }
       default:
         TSError("[%s] Unknown address family %d", PLUGIN_NAME, sockaddress->sa_family);
         break;
