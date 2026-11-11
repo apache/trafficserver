@@ -30,8 +30,10 @@ urtest:
     records_config:
       proxy.config.ssl.client.verify.server.policy: PERMISSIVE
       proxy.config.http.insert_age_in_response: 0
-      proxy.config.diags.debug.enabled: 3
-      proxy.config.diags.debug.tags: http
+      # No debug logging. The small-window variants move 120 KB bodies through
+      # a 10-byte window, and the "http" tags log every frame: about 500,000
+      # lines a run, which made the run four times slower. On a slow host that
+      # outlasted Proxy Verifier's 15 second wait for sixth-request.
     remap_config:
       - "map / https://127.0.0.1:{SERVER_HTTPS_PORT}"
 
