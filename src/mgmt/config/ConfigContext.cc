@@ -175,10 +175,13 @@ ConfigContext::add_dependent_ctx(std::string_view description, std::string_view 
 void
 ConfigContext::set_supplied_yaml(YAML::Node node)
 {
-  auto next = _payload ? std::make_shared<Payload>(*_payload) : std::make_shared<Payload>();
+  // Build the new Payload as a value and allocate it once. Choosing between two
+  // make_shared() temporaries with ?: makes the Clang static analyzer report a
+  // false leak of the shared_ptr control block.
+  Payload next = _payload ? *_payload : Payload{};
   // emplace() copy-constructs the node; assigning into an engaged optional would write through.
-  next->supplied_yaml.emplace(node); // YAML::Node has no move semantics; copy is cheap (ref-counted).
-  _payload = std::move(next);
+  next.supplied_yaml.emplace(node); // YAML::Node has no move semantics; copy is cheap (ref-counted).
+  _payload = std::make_shared<Payload const>(next);
 }
 
 void
@@ -203,9 +206,10 @@ ConfigContext::supplied_yaml() const
 void
 ConfigContext::set_reload_directives(YAML::Node node)
 {
-  auto next = _payload ? std::make_shared<Payload>(*_payload) : std::make_shared<Payload>();
-  next->reload_directives.emplace(node);
-  _payload = std::move(next);
+  // Built as a value for the same reason as in set_supplied_yaml().
+  Payload next = _payload ? *_payload : Payload{};
+  next.reload_directives.emplace(node);
+  _payload = std::make_shared<Payload const>(next);
 }
 
 YAML::Node
