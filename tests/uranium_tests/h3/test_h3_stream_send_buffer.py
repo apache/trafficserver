@@ -264,7 +264,8 @@ def test_h3_stream_send_buffer_grows(ats_factory: ATSFactory, services: ServiceF
 def test_h3_stream_send_buffer_at_openssl_initial_size(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """A stream limit of OpenSSL's initial buffer size keeps every stream's send buffer at that size.
 
-    ATS never offers a stream more than its buffer has free, so OpenSSL has no reason to grow it.
+    With the stream limit equal to the buffer size, ATS never offers more than the buffer has free,
+    so OpenSSL has no reason to grow it.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -293,8 +294,11 @@ def test_h3_stream_send_buffer_at_openssl_initial_size(ats_factory: ATSFactory, 
     result = client.run(timeout=120)
     assert result.returncode == 0, result.output
 
-    writes = stream_writes(read_settled(ats.traffic_out))
-    assert writes, "expected write lines for the response stream"
+    # HTTP/3's control and QPACK streams are unidirectional and log small writes too, so keep only
+    # request streams. Each write is at most one buffer, so the body alone needs this many.
+    writes = [write for write in stream_writes(read_settled(ats.traffic_out)) if write.stream[1] % 4 == 0]
+    fewest = SEND_BUFFER_BODY_SIZE // OPENSSL_INITIAL_STREAM_SEND_BUFFER
+    assert len(writes) >= fewest, f"expected at least {fewest} write lines for the response stream, saw {len(writes)}"
     sizes = sorted({write.size for write in writes})
     assert sizes == [OPENSSL_INITIAL_STREAM_SEND_BUFFER], (
         f"OpenSSL send buffer sizes seen: {sizes}; a {OPENSSL_INITIAL_STREAM_SEND_BUFFER}-byte stream limit should keep "

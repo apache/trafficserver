@@ -6441,8 +6441,9 @@ removed in the future without prior notice.
    trip and about 40 Mbps at 50 ms. OpenSSL grows a stream's send buffer to fit
    what it is given, up to its own limit of 6 MB, and does not shrink it again
    until the stream ends, so each busy stream can keep up to this much memory for
-   its lifetime. At 8192, the size OpenSSL starts every stream's send buffer at,
-   no buffer grows, at the cost of about 1.3 Mbps per stream at 50 ms. See also
+   its lifetime. Set to 8192, the size OpenSSL gives each new stream's send
+   buffer, no buffer grows, but one stream is capped at about 1.3 Mbps at a 50 ms
+   round trip. See also
    :ts:cv:`proxy.config.quic.max_connection_send_buffer`.
 
 .. ts:cv:: CONFIG proxy.config.quic.max_connection_send_buffer INT 1048576
@@ -6465,8 +6466,9 @@ removed in the future without prior notice.
    :ts:cv:`proxy.config.quic.max_stream_send_buffer` of buffer for each of them. A
    lower value saves memory; a value below the per-stream limit times the number of
    busy streams on a connection lowers their combined rate. Each stream that has data
-   to send may hold at most an equal share of this limit, but not below 16 KB, so one
-   stream cannot take the room another needs. With more streams than this limit
+   to send may hold at most an equal share of this limit, but not below 16 KB (or
+   the per-stream limit, if that is smaller), so one stream cannot take the room
+   another needs. With more streams than this limit
    divided by 16 KB, the shares add up to more than the limit, and the limit alone
    decides how much each stream gets, in the order |TS| visits them.
 
