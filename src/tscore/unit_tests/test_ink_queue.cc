@@ -84,22 +84,23 @@ TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[freelist][lsan]")
 TEST_CASE("Freelist", "[freelist]")
 {
   // There is no error reporting for this routine. The allocation
-  // is assumed to never fail.
-  InkFreeList *f{ink_freelist_create("test#1", sizeof(std::int32_t), 1, alignof(std::int32_t))};
+  // is assumed to never fail. Free cells hold the freelist's next pointer,
+  // so the cell type must be at least pointer-sized.
+  InkFreeList *f{ink_freelist_create("test#1", sizeof(std::intptr_t), 1, alignof(std::intptr_t))};
 
   SECTION("Freelist allocates aligned pointers")
   {
     void *addr{ink_freelist_new(f)};
 
-    CHECK(!(reinterpret_cast<std::uintptr_t>(addr) & (alignof(std::int32_t) - 1)));
+    CHECK(!(reinterpret_cast<std::uintptr_t>(addr) & (alignof(std::intptr_t) - 1)));
 
     ink_freelist_free(f, addr);
   }
 
   SECTION("Two new freelist allocations")
   {
-    std::int32_t *a{new (ink_freelist_new(f)) std::int32_t{1}};
-    std::int32_t *b{new (ink_freelist_new(f)) std::int32_t{2}};
+    std::intptr_t *a{new (ink_freelist_new(f)) std::intptr_t{1}};
+    std::intptr_t *b{new (ink_freelist_new(f)) std::intptr_t{2}};
 
     CHECK(((*a == 1) && (*b == 2)));
 
