@@ -50,9 +50,9 @@ public:
   }
 
   // TSThreadCreate starts its threads detached, so wait on each handle with
-  // TSThreadWait rather than pthread_join. The handles are never destroyed:
-  // a TSThread may only be destroyed on the thread that created it, and this
-  // runs on the shutdown hook's thread while the process is exiting.
+  // TSThreadWait rather than pthread_join. The handles are not destroyed: the
+  // process is exiting, and the thread can still touch its handle briefly
+  // after TSThreadWait returns.
   void
   terminate()
   {

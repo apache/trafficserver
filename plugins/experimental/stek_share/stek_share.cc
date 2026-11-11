@@ -93,7 +93,7 @@ shutdown_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata A
 {
   if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
     // Stop the updater before tearing raft down: it calls into the raft server
-    // and dereferences the state machine, which shutdown() and reset() clear.
+    // and dereferences the state machine, which shutdown() stops and reset() frees.
     plugin_threads.terminate();
     stek_share_server.raft_launcher.shutdown();
     stek_share_server.reset();

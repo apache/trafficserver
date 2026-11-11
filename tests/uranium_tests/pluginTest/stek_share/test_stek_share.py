@@ -248,11 +248,12 @@ def verify_shared_ticket(*, _ats_nodes: list[ATS], _session_file: Path) -> None:
 
 
 def verify_clean_shutdown(*, _ats_nodes: list[ATS]) -> None:
-    """Stop every node and confirm each exits cleanly after its STEK updater thread stops.
+    """Stop every node and confirm each exits cleanly and logs that its STEK updater stopped.
 
-    The updater sleeps up to ten seconds between key checks, so shutdown has to
-    wake it and wait for it. The updater is a detached thread, so joining it
-    instead makes ASAN builds abort with a nonzero exit status.
+    The updater sleeps up to ten seconds between key checks. A shutdown that
+    does not wait for it exits without the updater's stop message, and the
+    wait timeout matches that sleep, so a shutdown that does not wake it
+    tends to time out.
 
     :param _ats_nodes: Test-local ats nodes configured by the test.
     """
