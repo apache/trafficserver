@@ -87,8 +87,10 @@ def handshake(hostname: str, *, rsa_only: bool = False, _ats: ATS) -> str:
     """
 
     cipher = " -cipher ECDHE-RSA-AES128-GCM-SHA256" if rsa_only else ""
+    # Pin the subject format: OpenSSL 1.1.1 prints "CN = group.com" by default
+    # and OpenSSL 3 prints "CN=group.com". RFC2253 is "CN=group.com" in both.
     script = (
-        f"printf 'foo\\n' | openssl s_client -tls1_2 -servername {shlex.quote(hostname)}"
+        f"printf 'foo\\n' | openssl s_client -tls1_2 -nameopt RFC2253 -servername {shlex.quote(hostname)}"
         f"{cipher} -connect 127.0.0.1:{_ats.https_port}"
     )
     result = _ats.run_shell(script)
