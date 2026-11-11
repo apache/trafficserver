@@ -33,7 +33,7 @@ class Path : public std::filesystem::path
 public:
   using super_type::super_type;
 
-  self_type &Rebase();
+  self_type &Rebase() noexcept;
 };
 
 using Type = std::filesystem::file_type;

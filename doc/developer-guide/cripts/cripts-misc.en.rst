@@ -266,14 +266,15 @@ The ``cripts::File`` object encapsulates the common C++ files operations. For co
 and being such a common use case, reading a single line from a file is provided
 by the ``cripts::File::Line::Reader`` object.
 
-===============================   ===========================================================
-Function                          Description
-===============================   ===========================================================
-``cripts::File::Status()``        Returns file status information.
-``cripts::File::Path``            Represents a file system path.
-``cripts::File::Type``            File type enumeration (regular, directory, etc.).
-``cripts::File::Line::Reader``    Line-by-line file reader.
-===============================   ===========================================================
+==================================   ===========================================================
+Function                             Description
+==================================   ===========================================================
+``cripts::File::Status()``           Returns file status information.
+``cripts::File::Path``               Represents a file system path.
+``cripts::File::Path::Rebase()``     Resolves under the config directory, or clears the path.
+``cripts::File::Type``               File type enumeration (regular, directory, etc.).
+``cripts::File::Line::Reader``       Line-by-line file reader.
+==================================   ===========================================================
 
 Example usage:
 

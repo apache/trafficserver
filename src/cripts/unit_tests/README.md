@@ -17,7 +17,7 @@ Inside the `test_cripts` process, in order:
 ```
 test_cripts                 executable: main.cc, plus the core and tsapi_objects (the real TS API), symbols exported
   main()
-    1. set up the core: pfreelist off, Diags, http_init(), api_init()
+    1. set up the core: pfreelist off, Diags, a Layout, http_init(), api_init()
     2. dlopen("test_cripts_cases.so") ------------------+
     3. Catch::Session().run() runs the cases            |
                     ^                                   v
@@ -61,6 +61,8 @@ the configure if that ever changes, because a static Catch2 would silently run n
   allocations a thread, as on a net thread.
 - `Diags` writes to stderr, so `TSWarning()`, `TSError()` and `TSFatal()` from the code under test print their
   messages instead of crashing.
+- `Layout::create()` gives the core its directories, which `File::Path::Rebase()` resolves a name against. The cases
+  point it at a directory of their own through `PROXY_CONFIG_CONFIG_DIR`, so no installed configuration is read.
 - `http_init()` sets up the well-known header strings and the parser tables.
 - `api_init()` sets the API's well-known strings, such as `TS_HTTP_METHOD_GET`.
 

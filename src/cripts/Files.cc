@@ -32,11 +32,26 @@ File::Status(const File::Path &path)
 }
 
 File::Path &
-File::Path::Rebase()
+File::Path::Rebase() noexcept
 {
-  if (std::filesystem::status(*this).type() != std::filesystem::file_type::regular) {
-    auto config_dir = std::filesystem::canonical(RecConfigReadConfigDir());
-    auto rebased    = std::filesystem::weakly_canonical(config_dir / *this);
+  std::error_code ec;
+
+  // Not found from the working directory is the case Rebase resolves, so a failing status() only means "not regular".
+  if (std::filesystem::status(*this, ec).type() != std::filesystem::file_type::regular) {
+    auto                  configured_dir = RecConfigReadConfigDir();
+    auto                  config_dir     = std::filesystem::canonical(configured_dir, ec);
+    std::filesystem::path rebased;
+
+    if (!ec) {
+      rebased = std::filesystem::weakly_canonical(config_dir / *this, ec);
+    }
+
+    if (ec) {
+      TSError("[Cripts] File::Path::Rebase: cannot resolve '%s' under '%s': %s, clearing path", this->c_str(),
+              configured_dir.c_str(), ec.message().c_str());
+      static_cast<super_type &>(*this).clear();
+      return *this;
+    }
 
     if (auto mm = std::mismatch(config_dir.begin(), config_dir.end(), rebased.begin(), rebased.end());
         mm.first == config_dir.end()) {
