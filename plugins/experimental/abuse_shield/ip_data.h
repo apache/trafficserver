@@ -32,9 +32,12 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "swoc/swoc_ip.h"
 #include "tsutil/UdiTable.h"
+
+#include "config.h"
 
 namespace abuse_shield
 {
@@ -134,21 +137,32 @@ public:
    * fractions round down so any debt remains observable.
    */
   int32_t consume(int rate_per_sec, int burst_limit, std::optional<uint32_t> timestamp = std::nullopt);
-  int32_t tokens() const;
+
+  /** Report whole tokens as of @a timestamp without consuming any.
+   * Replenishment uses the rate and burst from the most recent consume, so
+   * debt from an IP that stopped sending, or from a removed rule, decays
+   * instead of persisting until the next consume.
+   */
+  int32_t tokens(std::optional<uint32_t> timestamp = std::nullopt) const;
 
 private:
   std::atomic<uint64_t> state_{0};
+  std::atomic<int32_t>  rate_per_sec_{0};
+  std::atomic<int32_t>  burst_limit_{0};
 };
 
 /** Per-rule token buckets for one IP and one metric. */
 class RuleBuckets
 {
 public:
-  int32_t consume(const std::string &rule_name, int rate_per_sec, int burst_limit);
-  bool    exceeded(const std::string &rule_name) const;
-  int32_t tokens(const std::string &rule_name) const;
-  bool    has_debt() const;
-  void    prune(const std::unordered_set<std::string> &active_rules);
+  int32_t consume(const std::string &rule_name, int rate_per_sec, int burst_limit,
+                  std::optional<uint32_t> timestamp = std::nullopt);
+  bool    exceeded(const std::string &rule_name, std::optional<uint32_t> timestamp = std::nullopt) const;
+  int32_t tokens(const std::string &rule_name, std::optional<uint32_t> timestamp = std::nullopt) const;
+  bool    has_debt(std::optional<uint32_t> timestamp = std::nullopt) const;
+  /// Remove buckets for rules not in @a active_rules.
+  /// @return The number of buckets removed.
+  size_t prune(const std::unordered_set<std::string> &active_rules);
 
 private:
   using BucketPtr = std::shared_ptr<TokenBucket>;
@@ -177,9 +191,9 @@ struct TxnData {
   }
 
   bool
-  is_evictable() const
+  is_evictable(std::optional<uint32_t> timestamp = std::nullopt) const
   {
-    return !buckets.has_debt();
+    return !buckets.has_debt(timestamp);
   }
 };
 
@@ -200,9 +214,9 @@ struct ConnData {
   }
 
   bool
-  is_evictable() const
+  is_evictable(std::optional<uint32_t> timestamp = std::nullopt) const
   {
-    return !buckets.has_debt();
+    return !buckets.has_debt(timestamp);
   }
 };
 
@@ -229,9 +243,9 @@ struct H2Data {
   }
 
   bool
-  is_evictable() const
+  is_evictable(std::optional<uint32_t> timestamp = std::nullopt) const
   {
-    return !buckets.has_debt();
+    return !buckets.has_debt(timestamp);
   }
 };
 
@@ -248,5 +262,30 @@ struct DebtAwareEviction {
 using TxnTable  = ts::UdiTable<swoc::IPAddr, TxnData, std::hash<swoc::IPAddr>, DebtAwareEviction>;
 using ConnTable = ts::UdiTable<swoc::IPAddr, ConnData, std::hash<swoc::IPAddr>, DebtAwareEviction>;
 using H2Table   = ts::UdiTable<swoc::IPAddr, H2Data, std::hash<swoc::IPAddr>, DebtAwareEviction>;
+
+/** Remove from every entry of @a table the buckets of rules that no longer
+ * set a rate for @a metric in @a rules.
+ *
+ * The plugin's maintenance pass calls this for each tracker. It makes no TS API
+ * calls, so the unit tests and benchmarks run the same code.
+ *
+ * @return The number of buckets removed.
+ */
+template <typename Table>
+size_t
+prune_tracker_buckets(Table &table, const std::vector<Rule> &rules, RateMetric metric)
+{
+  std::unordered_set<std::string> names;
+  for (const auto &rule : rules) {
+    if (metric_rate(rule.filter, metric) > 0) {
+      names.insert(rule.name);
+    }
+  }
+  size_t removed = 0;
+  for (const auto &data : table.data_snapshot()) {
+    removed += data->buckets.prune(names);
+  }
+  return removed;
+}
 
 } // namespace abuse_shield

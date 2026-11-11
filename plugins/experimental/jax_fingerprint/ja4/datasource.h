@@ -23,9 +23,11 @@
 #pragma once
 
 #include <string_view>
+#include <cstddef>
 #include <cstdint>
 
 constexpr uint16_t EXT_SNI{0x0};
+constexpr uint16_t EXT_SIGNATURE_ALGORITHMS{0xd};
 constexpr uint16_t EXT_ALPN{0x10};
 constexpr uint16_t EXT_SUPPORTED_VERSIONS{0x2b};
 
@@ -60,6 +62,18 @@ public:
 
 protected:
   bool _is_GREASE(uint16_t value);
+
+  /**
+   * Hash the sorted extensions followed by the signature algorithms as
+   * required for the c portion of the JA4 fingerprint.
+   *
+   * @param sorted_extensions Extensions sorted in ascending order, excluding
+   * GREASE, SNI, and ALPN.
+   * @param sig_algs The body of the signature_algorithms extension as sent on
+   * the wire, or nullptr if the extension is absent.
+   */
+  void _hash_extensions(unsigned char out[32], uint16_t const *sorted_extensions, int n_extensions, unsigned char const *sig_algs,
+                        size_t sig_algs_len);
 
   Protocol _protocol;
   int      _version      = 0;

@@ -93,6 +93,12 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
 
     header.setKeyVal(TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, data->m_hostname, data->m_hostlen);
 
+    // Slice never sends a request body on the internal connection. Drop any
+    // body-declaring fields so the internal transaction does not wait for a
+    // body that will never arrive.
+    header.removeKey(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
+    header.removeKey(TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING);
+
     // default: whole file (unknown, wait for first server response)
     Range rangebe;
 

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -325,6 +325,7 @@ public:
     SCHEME_NOT_SUPPORTED,
     UNACCEPTABLE_TE_REQUIRED,
     INVALID_POST_CONTENT_LENGTH,
+    HEAD_CONTENT,
     TOTAL_TYPES
   };
 
@@ -744,11 +745,13 @@ public:
     //  able to defer some work in building the request
     TransactFunc_t pending_work = nullptr;
 
-    HttpRequestData           request_data;
-    ParentConfigParams       *parent_params     = nullptr;
-    NextHopSelectionStrategy *next_hop_strategy = nullptr;
-    ParentResult              parent_result;
-    CacheControlResult        cache_control;
+    HttpRequestData     request_data;
+    ParentConfigParams *parent_params = nullptr;
+    // Keeps parent_params alive for the transaction.
+    std::shared_ptr<ConfigInfo> parent_params_lease;
+    NextHopSelectionStrategy   *next_hop_strategy = nullptr;
+    ParentResult                parent_result;
+    CacheControlResult          cache_control;
 
     StateMachineAction_t next_action                      = StateMachineAction_t::UNDEFINED; // out
     StateMachineAction_t api_next_action                  = StateMachineAction_t::UNDEFINED; // out
@@ -838,7 +841,8 @@ public:
     void
     init()
     {
-      parent_params = ParentConfig::acquire();
+      parent_params_lease = configProcessor.get_leased(ParentConfig::m_id);
+      parent_params       = static_cast<ParentConfigParams *>(parent_params_lease.get());
       new (&dns_info) decltype(dns_info); // reset to default state.
     }
 
@@ -881,10 +885,8 @@ public:
       free_internal_msg_buffer();
       ats_free(internal_msg_buffer_type);
 
-      if (parent_params != nullptr) {
-        ParentConfig::release(parent_params);
-        parent_params = nullptr;
-      }
+      parent_params = nullptr;
+      parent_params_lease.reset();
 
       hdr_info.client_request.destroy();
       hdr_info.client_response.destroy();
@@ -1048,6 +1050,7 @@ public:
   static void set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHdr *request, HTTPHdr *response);
   static void set_header_for_transform(State *s, HTTPHdr *base_header);
   static void merge_response_header_with_cached_header(HTTPHdr *cached_header, HTTPHdr *response_header);
+  static bool compact_cached_response_header(HTTPHdr *cached_header);
   static void merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_header);
   static void SetCacheFreshnessLimit(State *s);
   static void HandleApiErrorJump(State *);

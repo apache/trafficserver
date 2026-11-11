@@ -1,0 +1,9 @@
+REMAP {
+    if inbound.ip in {10.0.0.0/8} {
+        inbound.req.X-Internal-Net = "1";
+    }
+
+    if inbound.ip !in {192.168.0.0/16} {
+        inbound.req.X-Other-Net = "1";
+    }
+}

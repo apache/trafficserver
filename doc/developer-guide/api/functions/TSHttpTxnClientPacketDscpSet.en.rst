@@ -41,7 +41,4 @@ Change packet :arg:`dscp` for the client side connection.
 See Also
 ========
 
-`Traffic Shaping`_
-
-.. _Traffic Shaping:
-                 https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
+:ref:`admin-traffic-shaping`

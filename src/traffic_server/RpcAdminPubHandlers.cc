@@ -1,5 +1,5 @@
 /**
-   @section license License
+   @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -51,6 +51,7 @@ register_admin_jsonrpc_handlers()
   // HostDB
   using namespace rpc::handlers::hostdb;
   rpc::add_method_handler("get_hostdb_status", &get_hostdb_status, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_hostdb_clear", &clear_hostdb, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
 
   // Records
   using namespace rpc::handlers::records;

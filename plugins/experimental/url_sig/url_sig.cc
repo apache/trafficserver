@@ -192,7 +192,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       }
 
       cfg->excl_regex = std::make_unique<Regex>();
-      if (!cfg->excl_regex->compile(value, error, erroffset, 0)) {
+      if (!cfg->excl_regex->compile(value, error, erroffset, 0, "url_sig excl_regex")) {
         Dbg(dbg_ctl, "Regex compilation failed with error (%s) at character %d", error.c_str(), erroffset);
         cfg->excl_regex.reset();
       }
@@ -777,7 +777,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             }
 
             // chop off the last /, replace with '?' or ';' as appropriate.
-            has_path_params == false ? (signed_part[strlen(signed_part) - 1] = '?') : (signed_part[strlen(signed_part) - 1] = '\0');
+            // signed_part is empty when no parts are signed (P=0).
+            size_t const signed_part_len = strlen(signed_part);
+            size_t const tail            = signed_part_len > 0 ? signed_part_len - 1 : 0;
+            has_path_params == false ? (signed_part[tail] = '?') : (signed_part[tail] = '\0');
             cp = strstr(query, SIG_QSTRING "=");
             Dbg(dbg_ctl, "cp: %s, query: %s, signed_part: %s", cp, query, signed_part);
             strncat(signed_part, query, (cp - query) + strlen(SIG_QSTRING) + 1);

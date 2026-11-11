@@ -144,13 +144,26 @@ If ``--v4-region-map`` is not specified the plugin defaults to the mapping defin
 
 According to `Transferring Payload in a Single Chunk <http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html>`_ specification
 the ``CanonicalHeaders`` list *must* include the ``Host`` header,  the ``Content-Type`` header if present in the request and all the ``x-amz-*`` headers
-so ``--v4-include-headers`` and ``--v4-exclude-headers`` do not impact those headers and they are *always* signed.
+so ``--v4-include-headers`` and ``--v4-exclude-headers`` do not change whether those headers are signed: any of them
+still present when the signature is calculated is *always* signed. ``--v4-include-headers`` does, however, govern which
+``x-amz-*`` headers are still present at that point, as described below.
 
 The ``Via`` and ``X-Forwarded-For`` headers are *always* excluded from the signature since they are meant to be changed by the proxies and signing them could lead to invalidation of the signature.
 
 If ``--v4-include-headers`` is not specified all headers except those specified in ``--v4-exclude-headers`` will be signed.
 
 If ``--v4-include-headers`` is specified only the headers specified will be signed except those specified in ``--v4-exclude-headers``
+
+Since every ``x-amz-*`` header present at signing time is signed, an ``x-amz-*`` header supplied by a client
+would otherwise reach the origin carrying a valid signature over whatever value the client chose. To prevent
+this, the plugin removes ``x-amz-*`` headers from the request before signing unless they are explicitly named
+in ``--v4-include-headers``.
+
+Signing happens at ``TS_HTTP_SEND_REQUEST_HDR_HOOK``, at which point the plugin cannot distinguish an
+``x-amz-*`` header sent by the client from one added by another plugin earlier in the chain, so the removal
+applies to both. If a deployment relies on another plugin supplying an ``x-amz-*`` header (for example
+``x-amz-server-side-encryption`` set through :ref:`admin-plugins-header-rewrite`), name that header in
+``--v4-include-headers`` so that it is preserved and signed.
 
 
 AWS Authentication version 2

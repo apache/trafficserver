@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1219,7 +1219,20 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
         if (c->write_vio == nullptr) {
           consumer_handler(VC_EVENT_ERROR, c);
         }
+      } else if (c->write_empty_body && (c->write_vio = c->vc->do_io_write(this, 0, c->buffer_reader)) != nullptr) {
+        // The VC signals WRITE_COMPLETE once it has sent the frame that ends the body.
+        c->write_vio->reenable();
       } else {
+        // Either the VC needs no write to end an empty body, or its stream has
+        // already sent END_STREAM or been reset, so it refuses the write. Unlike a
+        // refused cache write this is not an error. A request with Content-Length: 0
+        // goes out with END_STREAM on HEADERS even when its client then sends an
+        // empty DATA frame, and the second, empty pass over a buffered request body
+        // reaches a stream the first pass already ended; both wait on this event. A
+        // reset reaches HttpSM through the response read already under way.
+        if (c->write_empty_body) {
+          Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] consumer '%s' cannot be written, completing without a write", sm->sm_id, c->name);
+        }
         c->write_vio = nullptr;
         consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }
@@ -1904,7 +1917,14 @@ HttpTunnel::final_consumer_bytes_to_write(HttpTunnelProducer *p, HttpTunnelConsu
       } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
         bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.dechunked_size;
       } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
-        bytes_to_write = p->bytes_consumed;
+        // Dropped trailers are counted in bytes_consumed but never reach the
+        // consumer buffer, so a write VIO sized from it waits for bytes that
+        // will never arrive. chunked_size counts only what was written out.
+        if (p->chunked_handler.drop_chunked_trailers) {
+          bytes_to_write = p->chunked_handler.skip_bytes + p->chunked_handler.chunked_size;
+        } else {
+          bytes_to_write = p->bytes_consumed;
+        }
       } else {
         bytes_to_write = p->bytes_consumed;
       }

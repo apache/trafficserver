@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -52,6 +52,10 @@
 
 #if HAVE_ZSTD_H
 #include <zstd.h>
+#endif
+
+#if HAVE_LZ4_H
+#include <lz4.h>
 #endif
 
 #if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
@@ -134,6 +138,11 @@ produce_features(bool json)
 #else
   print_feature("TS_HAS_ZSTD", 0, json);
 #endif
+#ifdef HAVE_LZ4_H
+  print_feature("TS_HAS_LZ4", 1, json);
+#else
+  print_feature("TS_HAS_LZ4", 0, json);
+#endif
   print_feature("TS_HAS_CERT_COMPRESSION", ts_has_cert_compression, json);
   print_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS", ts_has_cert_compression_callbacks, json);
   print_feature("TS_HAS_CERT_COMPRESSION_ZLIB", ts_has_cert_compression_zlib, json);
@@ -150,6 +159,7 @@ produce_features(bool json)
   print_feature("TS_HAS_BACKTRACE", TS_HAS_BACKTRACE, json);
   print_feature("TS_HAS_PROFILER", TS_HAS_PROFILER, json);
   print_feature("TS_USE_FAST_SDK", TS_USE_FAST_SDK, json);
+  print_feature("TS_USE_MALLOC_ALLOCATOR", TS_USE_MALLOC_ALLOCATOR, json);
   print_feature("TS_USE_DIAGS", TS_USE_DIAGS, json);
   print_feature("TS_USE_CACHE_SHM", TS_USE_CACHE_SHM, json);
   print_feature("TS_USE_EPOLL", TS_USE_EPOLL, json);
@@ -160,6 +170,7 @@ produce_features(bool json)
   print_feature("TS_HAS_IP_TOS", TS_HAS_IP_TOS, json);
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
   print_feature("TS_USE_TLS13", TS_USE_TLS13, json);
+  print_feature("TS_USE_RPK", TS_USE_RPK, json);
   print_feature("TS_USE_QUIC", TS_USE_QUIC, json);
   print_feature("TS_USE_QMUX", TS_USE_QMUX, json);
   print_feature("TS_HAS_OPENSSL_QUIC", TS_HAS_OPENSSL_QUIC, json);
@@ -169,6 +180,7 @@ produce_features(bool json)
   print_feature("SIZEOF_VOIDP", SIZEOF_VOIDP, json);
   print_feature("TS_IP_TRANSPARENT", TS_IP_TRANSPARENT, json);
   print_feature("TS_HAS_128BIT_CAS", TS_HAS_128BIT_CAS, json);
+  print_feature("TS_HAS_128BIT_CAS_LIBATOMIC", TS_HAS_128BIT_CAS_LIBATOMIC, json);
   print_feature("TS_HAS_TESTS", TS_HAS_TESTS, json);
   print_feature("TS_MAX_THREADS_IN_EACH_THREAD_TYPE", TS_MAX_THREADS_IN_EACH_THREAD_TYPE, json);
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
@@ -258,6 +270,12 @@ produce_versions(bool json)
   print_var("zstd", LBW().print("{}", ZSTD_versionString()).view(), json);
 #else
   print_var("zstd", undef, json);
+#endif
+#ifdef HAVE_LZ4_H
+  // Runtime version, matching what the zstd line above reports.
+  print_var("lz4", LBW().print("{}", LZ4_versionString()).view(), json);
+#else
+  print_var("lz4", undef, json);
 #endif
 
   // This should always be last

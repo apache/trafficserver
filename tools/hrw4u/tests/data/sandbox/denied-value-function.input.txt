@@ -1,0 +1,7 @@
+REMAP {
+    if access("/tmp/hrw4u-probe") {
+        inbound.req.X-Probe = "yes";
+    }
+
+    inbound.req.X-Txn-Count = "{txn-count()}";
+}

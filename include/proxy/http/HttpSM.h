@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -35,8 +35,6 @@
 #include <optional>
 #include <memory>
 
-#include "tscore/ink_platform.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include "proxy/http/HttpCacheSM.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpUserAgent.h"
@@ -45,10 +43,11 @@
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/ProxyTransaction.h"
-#include "proxy/hdrs/HdrUtils.h"
+#include "proxy/VirtualHost.h"
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
+#include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/TLSTunnelSupport.h"
 
 #include "tscore/History.h"
@@ -182,6 +181,28 @@ enum class CompatibilityCacheLookup {
   COMPAT_CACHE_LAST,
 };
 
+/// Policy for an object found under the previous (9.2) cache key. Shared by the
+/// HTTP state machine, its cache sub-machine and HttpTransact, which is why it
+/// is not a member of any of them.
+namespace CompatCacheKey
+{
+/// Whether this lookup addresses the cache with the previous (9.2) key.
+inline bool
+is_legacy(CompatibilityCacheLookup lookup)
+{
+  return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+}
+
+/// The object info to hand to a cache write, which a compatibility read must not
+/// carry: it belongs to the legacy key and would turn the write into an update
+/// of a vector the canonical key does not have.
+inline CacheHTTPInfo *
+write_info(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+{
+  return is_legacy(lookup) ? nullptr : object_read_info;
+}
+} // namespace CompatCacheKey
+
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpTransact;
@@ -195,6 +216,8 @@ public:
   HttpCacheSM     &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
   std::string_view get_outbound_sni() const;
   std::string_view get_outbound_cert() const;
+  /// @return the transaction's own proxy.config.ssl.client.verify.server.policy, or UNSET if it sets none.
+  YamlSNIConfig::Policy get_outbound_verify_server_policy() const;
   /// Return the name used by outbound TLS certificate name verification. This
   /// usually matches @c get_outbound_sni() above, but adds fallbacks for reuse
   /// checks that run after the original NetVCOptions are no longer being
@@ -276,6 +299,14 @@ public:
   bool is_private() const;
   bool is_redirect_required();
 
+  /// Whether the client request body goes to the origin after the request header,
+  /// through the request body tunnel. True when the client's request carries a
+  /// body, even one that turns out empty: for HTTP/1 a positive Content-Length or
+  /// chunked encoding, for HTTP/2 a stream the client did not end on HEADERS.
+  /// False when a plugin sets the origin request body, which replaces the
+  /// client's and goes out with the header, and for TRACE.
+  bool forwards_client_request_body() const;
+
   /// Get the protocol stack for the inbound (client, user agent) connection.
   /// @arg result [out] Array to store the results
   /// @arg n [in] Size of the array @a result.
@@ -313,6 +344,9 @@ public:
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
   std::shared_ptr<UrlRewrite> m_remap;
+  // Keeps t_state.http_config_param alive for the transaction when HttpSM::init() acquired it.
+  std::shared_ptr<ConfigInfo>   _http_config_lease;
+  Ptr<VirtualHostConfig::Entry> m_virtualhost_entry;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *
@@ -370,6 +404,7 @@ private:
 
   // Y! ebalsa: remap handlers
   int  state_remap_request(int event, void *data);
+  void set_virtualhost_entry(std::string_view domain);
   void do_remap_request(bool);
 
   // Cache Handlers
@@ -406,6 +441,7 @@ private:
 
   void do_hostdb_lookup();
   void do_hostdb_reverse_lookup();
+  URL *cache_lookup_url();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false, bool only_direct = false);
   bool apply_ip_allow_filter();
@@ -421,6 +457,7 @@ private:
   void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
   void do_cache_delete_all_alts();
+  void do_cache_delete_compat_alts();
   void do_auth_callout();
   int  do_api_callout();
   int  do_api_callout_internal();
@@ -429,11 +466,15 @@ private:
   void do_drain_request_body(HTTPHdr &response);
 
   void wait_for_full_body();
+  void generate_cache_key(HttpCacheKey *key, URL *url);
+  void generate_cache_key92(HttpCacheKey *key, URL *url);
 
   virtual void        handle_api_return();
   void                handle_server_setup_error(int event, void *data);
   void                handle_http_server_open();
   void                handle_post_failure();
+  bool                prepare_for_origin_retry();
+  bool                origin_retry_body_unavailable = false;
   void                mark_host_failure(ResolveInfo *info, ts_time time_down);
   void                release_server_session(bool serve_from_cache = false);
   void                set_ua_abort(HttpTransact::AbortState_t ua_abort, int event);
@@ -526,6 +567,22 @@ public:
   bool    server_connection_is_ssl        = false;
   bool    is_waiting_for_full_body        = false;
   bool    is_buffering_request_body       = false;
+  // Set once the client's request declared a body that ATS undertook to forward, and the
+  // request head has been written to the origin.  Cleared once that body has reached the
+  // origin in full, measured against the length in server_request.  While it is set the
+  // origin's parser is mid-message and is still waiting for body bytes, so the connection
+  // cannot carry another request.
+  //
+  // The flag is set under forwards_client_request_body(), the predicate that starts the
+  // body tunnel once the request head is written.  Other paths test has_request_body()
+  // without its TRACE and plugin-body checks, among them the body tunnel started after a
+  // 100 Continue and the chunked Transfer-Encoding that attach_server_session() appends.
+  // For a TRACE or a plugin-supplied body those can leave the origin expecting body bytes
+  // while this flag is clear, and nothing then keeps the connection out of the pool.  The
+  // plugin-supplied body behind api_server_request_body_set needs no debt of its own: it is
+  // written into the same buffer as the request head, so WRITE_COMPLETE already means it
+  // went out in full.
+  bool server_owed_request_body = false;
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
   //  do_api_callout_internal()

@@ -4,7 +4,7 @@
   support TLS Ssssion Resumption, either via server session caching or
   TLS session tickets.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -99,8 +99,14 @@ public:
   std::string_view getSSLGroupName() const;
 
 protected:
-  void                      clear();
-  virtual const IpEndpoint &_getLocalEndpoint() = 0;
+  void clear();
+  /** @return The address the certificate context for this connection is looked up by.
+
+      This is the local socket address, except where the certificate is chosen by another
+      address, such as a PROXY protocol destination. The session ticket keys follow the same
+      address as the certificate.
+   */
+  virtual const IpEndpoint &_getCertLookupEndpoint() = 0;
 
 private:
   enum class ResumptionType {

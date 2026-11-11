@@ -46,12 +46,23 @@ Add the plugin and its YAML configuration to plugin.config::
 A relative configuration path is resolved from the |TS| configuration
 directory.
 
-Fingerprint rules also require global JAx instances before Abuse Shield. Each
-method publishes to the registry named by ``global.fingerprint_registry``::
+Fingerprint rules also require the global JAx plugin to be loaded before
+Abuse Shield. Each JAx fingerprint publishes to the registry named by
+``global.fingerprint_registry``::
 
-   jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints
-   jax_fingerprint.so --method JA4 --export abuse_shield.fingerprints
+   jax_fingerprint.so jax_fingerprint.yaml
    abuse_shield.so abuse_shield.yaml
+
+with ``jax_fingerprint.yaml`` exporting to that registry:
+
+.. code-block:: yaml
+
+   jax_fingerprint:
+     fingerprints:
+       - method: JA3
+         export: abuse_shield.fingerprints
+       - method: JA4
+         export: abuse_shield.fingerprints
 
 Configuration
 =============
@@ -149,11 +160,12 @@ are rejected. Invalid boolean values are also rejected. An invalid reload leaves
 Burst multipliers default to 1.0 and must be at least 1.0. Every rule has an
 independent token bucket for each configured rate, so thresholds do not depend
 on rule order. A rate is exceeded when its token bucket becomes negative.
-Excess events add proportional token debt. Replenishment occurs on the next
-event for that address and metric; quiet addresses retain their stored debt.
-Entries with debt are protected from bounded-table eviction. All positive
-integer rates preserve fractional credit at millisecond resolution, including
-rates such as 30, 60, and 75. Burst capacity cannot exceed 2,147,483 tokens.
+Excess events add proportional token debt. Debt is repaid over time at the
+rule's rate whether or not the address sends more events, so a quiet address
+leaves debt once it has earned the tokens back. Entries with current debt are
+protected from bounded-table eviction. All positive integer rates preserve
+fractional credit at millisecond resolution, including rates such as 30, 60,
+and 75. Burst capacity cannot exceed 2,147,483 tokens.
 Operator-facing token balances are whole tokens, with negative fractions
 rounded down.
 
@@ -187,7 +199,7 @@ JAx owns all registry memory for the VConn lifetime.
 .. important::
 
    Since ``abuse_shield`` relies upon the JAx plugin for JA fingerprint
-   values, the JAx plugin lines must precede Abuse Shield in
+   values, the JAx plugin line must precede Abuse Shield in
    :file:`plugin.config`. This ensures their hooks publish values before Abuse
    Shield evaluates them. A missing or incompatible named registry is a
    startup error.
@@ -199,9 +211,14 @@ Adding Fingerprint Methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Downstream builds add private or site-specific methods to JAx, following its
-developer README, then load the method with the same export name::
+developer README, then configure the method with the same export name:
 
-   jax_fingerprint.so --method SITE_METHOD --export abuse_shield.fingerprints
+.. code-block:: yaml
+
+   jax_fingerprint:
+     fingerprints:
+       - method: SITE_METHOD
+         export: abuse_shield.fingerprints
 
 Configure ``SITE_METHOD`` as a key under ``fingerprints``. Abuse Shield does
 not need to know how the method is computed and compares the exported value
@@ -260,7 +277,8 @@ as is the state set by ``abuse_shield.enabled``. ``ip_tracking.slots`` and
 ``log_file`` and ``fingerprint_registry`` are startup-only; a reload that
 changes any of these settings is rejected. Fingerprint additions and removals
 apply to the next ClientHello. Buckets for removed or renamed rate rules are
-pruned on reload and during periodic maintenance, releasing obsolete debt.
+pruned on reload and during the next few maintenance passes, releasing
+obsolete debt.
 
 Other lifecycle messages are::
 

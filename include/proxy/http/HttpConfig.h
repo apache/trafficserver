@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -213,6 +213,8 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *origin_raw;
   Metrics::Counter::AtomicType *origin_reuse;
   Metrics::Counter::AtomicType *origin_reuse_fail;
+  Metrics::Counter::AtomicType *origin_retry_admitted;
+  Metrics::Counter::AtomicType *origin_retry_body_unavailable;
   Metrics::Counter::AtomicType *origin_server_request_document_total_size;
   Metrics::Counter::AtomicType *origin_server_request_header_total_size;
   Metrics::Counter::AtomicType *origin_server_response_document_total_size;
@@ -553,6 +555,7 @@ struct OverridableHttpConfigParams {
   MgmtByte auth_server_session_private        = 1;
   MgmtByte fwd_proxy_auth_to_parent           = 0;
   MgmtByte uncacheable_requests_bypass_parent = 1;
+  MgmtByte bypass_parent                      = 0;
   MgmtByte attach_server_session_to_client    = 0;
   MgmtInt  max_proxy_cycles                   = 0;
   MgmtInt  tunnel_activity_check_period       = 0;
@@ -642,6 +645,8 @@ struct OverridableHttpConfigParams {
   // Check Post request //
   ////////////////////////
   MgmtByte post_check_content_length_enabled = 1;
+
+  MgmtByte reject_head_with_content = 1;
 
   MgmtByte cache_post_method = 0;
 
@@ -1012,6 +1017,8 @@ private:
 class HttpConfig
 {
 public:
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<HttpConfig, HttpConfigParams>;
 
   static void startup();

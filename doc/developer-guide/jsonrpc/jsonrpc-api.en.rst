@@ -455,6 +455,8 @@ JSONRPC API
 
 * `admin_host_set_status`_
 
+* `admin_hostdb_clear`_
+
 * `admin_server_stop_drain`_
 
 * `admin_server_start_drain`_
@@ -1453,6 +1455,58 @@ Response:
    }
 
 
+HostDB
+======
+
+.. _admin_hostdb_clear:
+
+admin_hostdb_clear
+------------------
+
+|method|
+
+Description
+~~~~~~~~~~~
+
+Remove all cached DNS resolution records from HostDB. Entries loaded from the host file remain. In-flight transactions retain their
+current resolution, while subsequent transactions resolve their upstream hosts again.
+
+Parameters
+~~~~~~~~~~
+
+* ``params``: Omitted
+
+Result
+~~~~~~
+
+The response will contain the default `success_response` or an error. :ref:`jsonrpc-node-errors`.
+
+Examples
+~~~~~~~~
+
+Request:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "id": "dc8b7f1e-2521-4bc0-b0ed-5e3ec751599d",
+      "jsonrpc": "2.0",
+      "method": "admin_hostdb_clear"
+   }
+
+Response:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc": "2.0",
+      "result": "success",
+      "id": "dc8b7f1e-2521-4bc0-b0ed-5e3ec751599d"
+   }
+
+
 .. _admin_server_stop_drain:
 
 admin_server_stop_drain
@@ -1543,7 +1597,8 @@ Response could be either:
 
 #. The response will contain the default `success_response`
 
-#. Response from a server that is already in drain mode.
+#. Response from a server that is already in drain mode. The annotation is a warning, see
+   :ref:`jsonrpc-node-errors-severity`.
 
 .. code-block:: json
    :linenos:
@@ -1558,6 +1613,7 @@ Response could be either:
          "data": [{
 
             "code": 3000,
+            "severity": 4,
             "message": "Server already draining."
             }]
 

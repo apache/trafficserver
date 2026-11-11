@@ -2,7 +2,7 @@
 
   Definitions via the X Macro pattern for overridable configuration variables.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -60,7 +60,7 @@
      The MEMBER field is ignored but must be provided.
 
   3. Custom converter name - For configs needing special conversion logic.
-     The name must match a _CONF_CASE_<name> macro defined in InkAPI.cc.
+     The name must match a `_CONF_CASE_<name>` macro defined in InkAPI.cc.
      Examples: HttpDownServerCacheTimeConv, HttpStatusCodeList_Conv,
      ConnectionTracker_MIN_SERVER_CONV, HttpTransact_HOST_RES_CONV.
      See the X-Macro Dispatch doxygen documentation in InkAPI.cc for more
@@ -255,6 +255,8 @@
   X(SSL_CLIENT_CA_CERT_PATH,                        ssl_client_ca_cert_path,                    "proxy.config.ssl.client.CA.cert.path",                           STRING, NONE) \
   X(HTTP_CACHE_MAX_STALE_AGE_PERCENT,               cache_max_stale_age_percent,                "proxy.config.http.cache.max_stale_age_percent",                  INT,    GENERIC) \
   X(HTTP_PER_SERVER_CONNECTION_METRIC_ENABLED,      connection_tracker_config.metric_enabled,   ConnectionTracker::CONFIG_SERVER_VAR_METRIC_ENABLED,              INT,    ConnectionTracker_METRIC_ENABLED_CONV) \
-  X(HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,    connection_tracker_config.metric_aggregate, ConnectionTracker::CONFIG_SERVER_VAR_METRIC_AGGREGATE,            INT,    ConnectionTracker_METRIC_AGGREGATE_CONV)
+  X(HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,    connection_tracker_config.metric_aggregate, ConnectionTracker::CONFIG_SERVER_VAR_METRIC_AGGREGATE,            INT,    ConnectionTracker_METRIC_AGGREGATE_CONV) \
+  X(HTTP_BYPASS_PARENT,                             bypass_parent,                              "proxy.config.http.bypass_parent",                                INT,    GENERIC) \
+  X(HTTP_REJECT_HEAD_WITH_CONTENT,                  reject_head_with_content,                   "proxy.config.http.reject_head_with_content",                     INT,    GENERIC)
 
 // clang-format on

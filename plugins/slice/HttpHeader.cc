@@ -155,11 +155,14 @@ HttpHeader::removeKey(char const *const keystr, int const keylen)
 
   bool status = true;
 
-  TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
-  if (nullptr != locfield) {
-    int const rcode = TSMimeHdrFieldRemove(m_buffer, m_lochdr, locfield);
-    status          = (TS_SUCCESS == rcode);
+  TSMLoc locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
+  while (nullptr != locfield) {
+    TSMLoc const nextfield = TSMimeHdrFieldNextDup(m_buffer, m_lochdr, locfield);
+    if (TS_SUCCESS != TSMimeHdrFieldRemove(m_buffer, m_lochdr, locfield)) {
+      status = false;
+    }
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
+    locfield = nextfield;
   }
 
   return status;

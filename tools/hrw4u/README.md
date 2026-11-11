@@ -1,7 +1,7 @@
 # HRW4U - Header Rewrite for You
 
 [![Apache License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://python.org)
 
 HRW4U is a domain-specific language and compiler toolchain for Apache Traffic Server's `header_rewrite` plugin, providing a more readable and maintainable alternative to writing header rewrite rules directly.
 
@@ -21,7 +21,7 @@ Decompiles existing `header_rewrite` rules back into HRW4U source code.
 
 ## Requirements
 
-- **Python 3.11+** (uses modern type annotations and performance features)
+- **Python 3.12+** (uses modern type annotations and performance features)
 - **ANTLR4** for grammar parsing
 - **uv** (for Python environment management)
 

@@ -1,6 +1,6 @@
 /**
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -23,6 +23,8 @@
 
 #include "P_SSLCertLookup.h"
 #include "iocore/net/SSLTypes.h"
+#include "iocore/net/TLSBasicSupport.h"
+#include "swoc/MemSpan.h"
 #include "tscore/Diags.h"
 
 #ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
@@ -35,6 +37,9 @@
 #endif
 #include <openssl/ssl.h>
 #include <memory>
+#include <optional>
+#include <string_view>
+#include <string>
 
 class SSLNetVConnection;
 
@@ -45,6 +50,18 @@ ssl_curve_id SSLGetCurveNID(SSL *ssl);
 
 /// Return the TLS Group Name associated with the specified SSL connection.
 std::string_view SSLGetGroupName(SSL *ssl);
+
+/// Format TLS signature-scheme code points as dash-separated decimal values, excluding GREASE.
+std::string SSLFormatSignatureAlgorithms(swoc::MemSpan<uint16_t const> algorithms);
+
+/// Return the peer's offered TLS signature schemes in wire order.
+std::string SSLGetOfferedSignatureAlgorithms(SSL *ssl);
+
+/// Return the TLS signature scheme used locally to authenticate the current handshake.
+std::string SSLGetNegotiatedSignatureAlgorithm(SSL *ssl);
+
+/// Capture TLS signature information while the TLS library still exposes the selected scheme.
+void SSLHandshakeInfoCallback(const SSL *ssl, int where, int ret);
 
 SSL_SESSION *SSLSessionDup(SSL_SESSION *sess);
 
@@ -84,7 +101,15 @@ SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 
 void setClientCertLevel(SSL *ssl, uint8_t certLevel);
 void setClientCertCACerts(SSL *ssl, const char *file, const char *dir);
-void setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask);
+
+/** Digest the client CA scope named by @a file and @a dir, for the session id context.
+
+    @return The digest, or no value when neither location is set. A set location that cannot be read
+      also yields no value, with @a failed set, so the caller refuses to resume rather than falling
+      back to a different scope.
+ */
+std::optional<TLSBasicSupport::VerifyScopeDigest> digestClientCAScope(std::string_view file, std::string_view dir, bool &failed);
+void                                              setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask);
 
 // Helper functions to retrieve sni name or ip address from a SSL object
 // Used as part of the lookup key into the origin server session cache

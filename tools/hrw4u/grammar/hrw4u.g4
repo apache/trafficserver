@@ -168,7 +168,6 @@ statement
     | functionCall SEMICOLON
     | lhs=IDENT EQUAL value SEMICOLON
     | lhs=IDENT PLUSEQUAL value SEMICOLON
-    | op=IDENT SEMICOLON
     ;
 
 conditional

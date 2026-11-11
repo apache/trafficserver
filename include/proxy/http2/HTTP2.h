@@ -2,7 +2,7 @@
  *
  *  Fundamental HTTP/2 protocol definitions and parsers.
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -30,6 +30,8 @@
 #include "records/RecDefs.h"
 
 #include "tsutil/Metrics.h"
+
+#include <atomic>
 
 using ts::Metrics;
 
@@ -411,30 +413,30 @@ enum class Http2FlowControlPolicy {
 class Http2
 {
 public:
-  static uint32_t               max_concurrent_streams_in;
-  static uint32_t               min_concurrent_streams_in;
-  static uint32_t               max_active_streams_in;
-  static uint32_t               max_active_streams_policy_in;
-  static bool                   throttling;
-  static uint32_t               stream_priority_enabled;
-  static uint32_t               initial_window_size_in;
-  static Http2FlowControlPolicy flow_control_policy_in;
-  static uint32_t               max_frame_size;
-  static uint32_t               header_table_size;
-  static uint32_t               max_header_list_size;
-  static uint32_t               accept_no_activity_timeout;
-  static uint32_t               no_activity_timeout_in;
-  static uint32_t               active_timeout_in;
-  static uint32_t               incomplete_header_timeout_in;
-  static uint32_t               push_diary_size;
-  static uint32_t               zombie_timeout_in;
+  static uint32_t                            max_concurrent_streams_in;
+  static uint32_t                            min_concurrent_streams_in;
+  static uint32_t                            max_active_streams_in;
+  static uint32_t                            max_active_streams_policy_in;
+  static bool                                throttling;
+  static uint32_t                            stream_priority_enabled;
+  static uint32_t                            initial_window_size_in;
+  static std::atomic<Http2FlowControlPolicy> flow_control_policy_in;
+  static uint32_t                            max_frame_size;
+  static uint32_t                            header_table_size;
+  static uint32_t                            max_header_list_size;
+  static uint32_t                            accept_no_activity_timeout;
+  static uint32_t                            no_activity_timeout_in;
+  static uint32_t                            active_timeout_in;
+  static uint32_t                            incomplete_header_timeout_in;
+  static uint32_t                            push_diary_size;
+  static uint32_t                            zombie_timeout_in;
 
-  static uint32_t               max_concurrent_streams_out;
-  static uint32_t               min_concurrent_streams_out;
-  static uint32_t               max_active_streams_out;
-  static uint32_t               no_activity_timeout_out;
-  static uint32_t               initial_window_size_out;
-  static Http2FlowControlPolicy flow_control_policy_out;
+  static uint32_t                            max_concurrent_streams_out;
+  static uint32_t                            min_concurrent_streams_out;
+  static uint32_t                            max_active_streams_out;
+  static uint32_t                            no_activity_timeout_out;
+  static uint32_t                            initial_window_size_out;
+  static std::atomic<Http2FlowControlPolicy> flow_control_policy_out;
 
   static float    stream_error_rate_threshold;
   static uint32_t stream_error_sampling_threshold;
@@ -442,6 +444,7 @@ public:
   static int32_t  max_settings_per_minute;
   static int32_t  max_settings_frames_per_minute;
   static int32_t  max_ping_frames_per_minute;
+  static int32_t  max_ping_frames_per_minute_out;
   static int32_t  max_priority_frames_per_minute;
   static int32_t  max_rst_stream_frames_per_minute;
   static int32_t  max_continuation_frames_per_minute;

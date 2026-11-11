@@ -56,7 +56,7 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
     FAIL(errorstream.str());
   }
   REQUIRE(zret.is_ok());
-  REQUIRE(conf.items.size() == 13);
+  REQUIRE(conf.items.size() == 14);
 
   SECTION("If no ports were specified, port range should contain all ports.")
   {
@@ -111,6 +111,22 @@ TEST_CASE("YamlSNIConfig sets port ranges appropriately")
     CHECK(item.ssl_ticket_enabled.value() == 1);
     REQUIRE(item.ssl_ticket_number.has_value());
     CHECK(item.ssl_ticket_number.value() == 3);
+  }
+
+  SECTION("Raw public key settings are parsed.")
+  {
+    // server_rpk_ca is deliberately not exercised here: SNIConfigParams resolves it against the
+    // configured CA directory and probe-loads it, which a unit test can't stage. The loader
+    // itself is covered directly in test_SSLRPKUtils.cc.
+    auto const &item{conf.items[13]};
+    CHECK(item.client_rpk_enabled);
+  }
+
+  SECTION("Raw public key settings default to off.")
+  {
+    auto const &item{conf.items[12]};
+    CHECK_FALSE(item.client_rpk_enabled);
+    CHECK(item.server_rpk_ca.empty());
   }
 }
 

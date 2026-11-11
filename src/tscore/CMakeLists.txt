@@ -35,6 +35,7 @@ add_library(
   ConsistentHash.cc
   ContFlags.cc
   CryptoHash.cc
+  Demangle.cc
   Diags.cc
   Encoding.cc
   EventNotify.cc
@@ -49,7 +50,6 @@ add_library(
   MMH.cc
   MatcherUtils.cc
   ParseRules.cc
-  Random.cc
   Regression.cc
   SnowflakeID.cc
   TextBuffer.cc
@@ -138,12 +138,16 @@ if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
   target_compile_options(tscore PUBLIC "-mcx16")
 endif()
 
+if(TS_NEEDS_LIBATOMIC_FOR_CAS)
+  target_link_libraries(tscore PUBLIC atomic)
+endif()
+
+if(TS_HAS_128BIT_CAS_LIBATOMIC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(tscore PUBLIC "-Wno-error=atomic-alignment")
+endif()
+
 if(BUILD_SHARED_LIBS)
-  install(
-    TARGETS tscore
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
+  install(TARGETS tscore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 if(BUILD_TESTING)
@@ -151,12 +155,14 @@ if(BUILD_TESTING)
     test_tscore
     unit_tests/test_ArgParser.cc
     unit_tests/test_CryptoHash.cc
+    unit_tests/test_Demangle.cc
     unit_tests/test_Encoding.cc
     unit_tests/test_FrequencyCounter.cc
     unit_tests/test_HashAlgorithms.cc
     unit_tests/test_HKDF.cc
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc
+    unit_tests/test_InkAtomicList.cc
     unit_tests/test_IntrusivePtr.cc
     unit_tests/test_List.cc
     unit_tests/test_MMH.cc
@@ -168,6 +174,7 @@ if(BUILD_TESTING)
     unit_tests/test_Random.cc
     unit_tests/test_SnowflakeID.cc
     unit_tests/test_Throttler.cc
+    unit_tests/test_TimerWheel.cc
     unit_tests/test_Tokenizer.cc
     unit_tests/test_arena.cc
     unit_tests/test_ink_base64.cc
@@ -185,15 +192,16 @@ if(BUILD_TESTING)
   )
   target_link_libraries(
     test_tscore
-    PRIVATE libswoc::libswoc
-            ts::tscore
-            ts::tsutil
-            yaml-cpp::yaml-cpp
-            resolv::resolv
-            OpenSSL::Crypto
-            OpenSSL::SSL
-            Catch2::Catch2WithMain
-            inkevent
+    PRIVATE
+      libswoc::libswoc
+      ts::tscore
+      ts::tsutil
+      yaml-cpp::yaml-cpp
+      resolv::resolv
+      OpenSSL::Crypto
+      OpenSSL::SSL
+      Catch2::Catch2WithMain
+      inkevent
   )
   if(TS_USE_HWLOC)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)

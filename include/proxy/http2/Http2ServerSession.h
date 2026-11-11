@@ -2,7 +2,7 @@
 
   Http2ServerSession.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -57,6 +57,20 @@ public:
 
   void add_session() override;
   void remove_session();
+
+  /** Eagerly drop a half-closed session out of the server-session pool.
+   *
+   *  Sets the half-close-local flag (delegating to the base class) and, when
+   *  the flag transitions to @c true, immediately removes this session from
+   *  the per-thread server-session pool. Once @c half_close_local is set,
+   *  every subsequent @c create_initiating_stream on this session
+   *  short-circuits with @c REFUSED_STREAM, so leaving it discoverable in
+   *  the pool produces a stream of REFUSED_STREAM aborts on otherwise
+   *  unrelated requests until the session is finally torn down. The pool
+   *  must be made aware as soon as the half-close decision is made, not at
+   *  session destruction time.
+   */
+  void set_half_close_local_flag(bool flag) override;
 
   ////////////////////
   // Accessors

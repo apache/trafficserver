@@ -43,10 +43,8 @@ A complete version number is made of a version-triplet: ``MAJOR.MINOR.PATCH``.
 
 As of v4.0.0, there are no longer any development (or unstable) releases.
 All releases are considered stable and ready for production use. Releases
-within a major version are always upgrade compatible. More details are
-available on the `New Release Processes
-<https://cwiki.apache.org/confluence/display/TS/Release+Process>`_ wiki
-page.
+within a major version are always upgrade compatible. How a release is
+prepared and approved is described in :ref:`developer-release-process`.
 
 Sometimes we speak of *trunk*, *master* or *HEAD*, all of which are used
 interchangeably. Trunk and master, or sometimes TIP or HEAD, refer to the

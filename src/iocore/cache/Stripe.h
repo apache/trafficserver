@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -95,6 +95,8 @@ public:
    * @param dir_skip: Offset into the disk at which to start the stripe.
    * If this value is less than START_POS, START_POS will be used instead.
    *
+   * @param[in] avg_obj_size Average object size, or -1 to use the configured default.
+   * @param[in] fragment_size Fragment size, or -1 to use the configured default.
    * @see START_POS
    */
   Stripe(CacheDisk *disk, off_t blocks, off_t dir_skip, int avg_obj_size = -1, int fragment_size = -1);

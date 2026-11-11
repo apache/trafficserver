@@ -36,6 +36,7 @@ Checks: >-
   bugprone-use-after-move,
   misc-redundant-expression,
   misc-uniqueptr-reset-release,
+  modernize-use-using,
   performance-faster-string-find,
   performance-for-range-copy,
   performance-inefficient-algorithm,

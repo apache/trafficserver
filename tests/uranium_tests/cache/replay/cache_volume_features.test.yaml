@@ -1,0 +1,183 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# This test proves that multi-parameter storage.yaml volume entries are parsed
+# correctly AND that the per-volume settings actually take effect on the first
+# start after a cache clear (every Uranium item starts ATS against a fresh cache).
+# The generated storage.yaml contains:
+#
+#   cache:
+#     volumes:
+#       - id: 1
+#         scheme: http
+#         size: 128M
+#         ram_cache_size: 32M
+#         ram_cache_cutoff: 8K
+#         avg_obj_size: 2000
+#         fragment_size: 1M
+#       - id: 2
+#         scheme: http
+#         size: 128M
+#         ram_cache: false
+#
+# All volume parameters must be parsed correctly from the YAML format, and the
+# per-volume settings are verified via the metric_checks below:
+#   - Volume 1 (ram_cache_size: 32M, single 128MB stripe) -> ram_cache total_bytes == 32MB
+#   - Volume 1 (avg_obj_size: 2000)                        -> direntries.total == 66424
+#   - Volume 2 (ram_cache: false)                          -> ram_cache total_bytes == 0
+# These exercise two distinct downstream paths (the RAM cache sizing in
+# cacheInitialized() and the directory sizing in the StripeSM constructor). On a
+# build that ignores per-volume settings on first start, none of them match.
+urtest:
+  description: "Test cache volume features: per-volume RAM cache and @volume= directive"
+
+  dns:
+    name: "dns"
+
+  server:
+    name: "server"
+
+  client:
+    name: "client"
+
+  ats:
+    name: "ts"
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "cache|cache_hosting|ram_cache"
+      proxy.config.cache.ram_cache.size: 128M
+      proxy.config.cache.ram_cache_cutoff: 4K
+      proxy.config.http.insert_response_via_str: 0
+      proxy.config.cache.enable_read_while_writer: 0
+
+    storage_yaml:
+      cache:
+        spans:
+          - name: "disk-1"
+            path: "storage"
+            size: "512M"
+        volumes:
+          # Volume 1 with all new parameters (one 128MB stripe for an exact RAM cache size).
+          - id: 1
+            scheme: "http"
+            size: "128M"
+            ram_cache_size: "32M"
+            ram_cache_cutoff: "8K"
+            avg_obj_size: "2000"
+            fragment_size: "1M"
+          # Volume 2 — RAM cache explicitly disabled.
+          - id: 2
+            scheme: "http"
+            size: "128M"
+            ram_cache: false
+
+    metric_checks:
+      # avg_obj_size=2000 on volume 1 sizes the directory with more entries than the default
+      # min_average_object_size (8000) would. This exercises the avg_obj_size -> StripeSM
+      # directory-sizing path, which is distinct from the RAM cache path below. The value is a
+      # deterministic function of stripe length (one 128MB stripe) and avg_obj_size; on a build
+      # that ignores the per-volume setting on first start the directory uses the default size.
+      - metric: "proxy.process.cache.volume_1.direntries.total"
+        value: 66424
+      # ram_cache_size=32M on volume 1 (single 128MB stripe) -> exactly 32 * 1024 * 1024 bytes.
+      # On first start after a cache clear this only holds if the per-volume setting is applied
+      # to the freshly created CacheVol rather than ignored until the next restart.
+      - metric: "proxy.process.cache.volume_1.ram_cache.total_bytes"
+        value: 33554432
+      # ramcache=false on volume 2 means no RAM cache is allocated for it.
+      - metric: "proxy.process.cache.volume_2.ram_cache.total_bytes"
+        value: 0
+
+    log_validation:
+      traffic_out:
+        excludes:
+          # No storage.yaml volume entries should be discarded
+          - expression: "discarding.*entry at line"
+            description: "No storage.yaml volume entries should be discarded"
+
+    remap_config:
+      - from: "http://volume1.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=1"
+      - from: "http://volume2.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        options:
+          - "@volume=2"
+
+# All transactions in a single session for sequential execution.
+sessions:
+- transactions:
+
+  # Test 1: Request through volume 1 with per-volume RAM cache settings
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/test1"
+      headers:
+        fields:
+          - [Host, volume1.example.com]
+          - [X-Test-ID, "volume1-ramcache-test"]
+          - [uuid, 1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+          - [Content-Type, "text/plain"]
+          - [Cache-Control, "max-age=3600"]
+          - [X-Volume-Test, "1"]
+      content:
+        data: "Content for volume 1 with custom RAM cache"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [X-Volume-Test, { value: "1", as: equal }]
+
+  # Test 2: Request through volume 2 (simple volume, no extra params)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/test2"
+      headers:
+        fields:
+          - [Host, volume2.example.com]
+          - [X-Test-ID, "volume2-test"]
+          - [uuid, 2]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+          - [Content-Type, "text/plain"]
+          - [Cache-Control, "max-age=3600"]
+          - [X-Volume-Test, "2"]
+      content:
+        data: "Content for volume 2"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [X-Volume-Test, { value: "2", as: equal }]

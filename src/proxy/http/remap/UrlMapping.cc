@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -134,13 +134,6 @@ url_mapping::Print() const
          _plugin_inst_list.size());
 }
 
-std::string
-url_mapping::PrintRemapHitCount() const
-{
-  std::string result = R"({"fromURL": ")" + remapKey + R"(", "hit_count": )" + std::to_string(_hitCount) + "}";
-  return result;
-}
-
 /**
  *
  **/
@@ -208,7 +201,7 @@ referer_info::referer_info(const char *_ref, bool *error_flag, char *errmsgbuf, 
       if (!strcmp(referer, "*")) {
         any = true;
       } else {
-        regex_valid = regex.compile(referer, error, erroffset, RE_CASE_INSENSITIVE);
+        regex_valid = regex.compile(referer, error, erroffset, RE_CASE_INSENSITIVE, "map_with_referer referer");
         if (regex_valid == false) {
           if (errmsgbuf && (errmsgbuf_size - 1) > 0) {
             ink_strlcpy(errmsgbuf, error.c_str(), errmsgbuf_size);

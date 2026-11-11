@@ -40,8 +40,7 @@ TEMPLATE = json.loads('{"meta": {"version":"1.0"},"sessions":[]}')
 
 
 class PostProcessError(Exception):
-    ''' Base class for post processing errors.
-    '''
+    '''Base class for post processing errors.'''
 
     def __init__(self, message=None):
         self.message = message
@@ -54,31 +53,31 @@ class PostProcessError(Exception):
 
 
 class VerifyError(PostProcessError):
-    ''' Base class for node node verification errors.
-    '''
+    '''Base class for node node verification errors.'''
+
     pass
 
 
 class VerifyRequestError(VerifyError):
-    ''' There was a problem verifying a request node.
-    '''
+    '''There was a problem verifying a request node.'''
+
     pass
 
 
 class VerifyResponseError(VerifyError):
-    ''' There was a problem verifying a response node.
-    '''
+    '''There was a problem verifying a response node.'''
+
     pass
 
 
 class VerifySessionError(VerifyError):
-    ''' There was a problem verifying a session node.
-    '''
+    '''There was a problem verifying a session node.'''
+
     pass
 
 
 def verify_request(request):
-    """ Function to verify request with method, url, and headers
+    """Function to verify request with method, url, and headers
     Args:
         request (json object)
 
@@ -96,7 +95,7 @@ def verify_request(request):
 
 
 def verify_response(response):
-    """ Function to verify response with status
+    """Function to verify response with status
     Args:
         response (json object)
 
@@ -110,7 +109,7 @@ def verify_response(response):
 
 
 def verify_transaction(transaction, fabricate_proxy_requests=False):
-    """ Function to verify that a transaction looks complete.
+    """Function to verify that a transaction looks complete.
 
     Args:
         transaction (json object)
@@ -154,7 +153,7 @@ def verify_transaction(transaction, fabricate_proxy_requests=False):
 
 
 def verify_session(session, fabricate_proxy_requests=False):
-    """ Function to verify that a session looks complete.
+    """Function to verify that a session looks complete.
 
         A valid session contains a valid list of transactions.
 
@@ -176,7 +175,7 @@ def verify_session(session, fabricate_proxy_requests=False):
 
 
 def write_sessions(sessions, filename, indent):
-    """ Write the JSON sessions to the given filename.
+    """Write the JSON sessions to the given filename.
 
     Args:
         sessions The parsed JSON sessions to dump into filename.
@@ -186,19 +185,22 @@ def write_sessions(sessions, filename, indent):
     """
     new_json = deepcopy(TEMPLATE)
     new_json["sessions"] = deepcopy(sessions)
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf-8", errors="surrogateescape") as f:
         json.dump(new_json, f, ensure_ascii=False, indent=indent)
         logging.debug(f"{filename} has {len(sessions)} sessions")
 
 
 class ParseJSONError(PostProcessError):
-    ''' There was an error opening or parsing the replay file.
-    '''
+    '''There was an error opening or parsing the replay file.'''
+
     pass
 
 
 def parse_json(replay_file):
-    """ Open and parse the replay_file.
+    """Open and parse the replay_file.
+
+    Captured headers and bodies may contain non-UTF-8 bytes. Preserve them
+    with surrogateescape so write_sessions can write the original bytes.
 
     Args:
         replay_file (string) The file with JSON content to parse.
@@ -208,15 +210,16 @@ def parse_json(replay_file):
         parsing the file.
     """
     try:
-        fd = open(replay_file, 'r')
+        fd = open(replay_file, 'r', encoding='utf-8', errors='surrogateescape')
     except Exception as e:
         logging.exception("Failed to open %s.", replay_file)
         raise ParseJSONError(e)
 
     try:
-        parsed_json = json.load(fd)
+        with fd:
+            parsed_json = json.load(fd)
     except Exception as e:
-        message = e.msg.split(':')[0]
+        message = str(e).split(':')[0]
         logging.error("Failed to load %s as a JSON object: %s", replay_file, e)
         raise ParseJSONError(message)
 
@@ -224,7 +227,7 @@ def parse_json(replay_file):
 
 
 def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_requests, out_dir):
-    """ Read raw dump files, filter out incomplete sessions, and merge
+    """Read raw dump files, filter out incomplete sessions, and merge
     them into output files.
 
     Args:
@@ -259,11 +262,15 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_re
             try:
                 verify_session(session, fabricate_proxy_requests)
             except VerifyError as e:
-                connection_time = session['connection-time']
-                if not connection_time:
-                    connection_time = session['start-time']
+                connection_time = None
+                time_key = 'connection-time'
+                if isinstance(session, dict):
+                    connection_time = session.get(time_key)
+                    if not connection_time:
+                        time_key = 'start-time'
+                        connection_time = session.get(time_key)
                 if connection_time:
-                    logging.debug("Omitting session in %s with connection-time: %d: %s", replay_file, session['connection-time'], e)
+                    logging.debug("Omitting session in %s with %s: %s: %s", replay_file, time_key, connection_time, e)
                 else:
                     logging.debug("Omitting a session in %s, could not find a connection time: %s", replay_file, e)
                 continue
@@ -281,7 +288,7 @@ def readAndCombine(replay_dir, num_sessions_per_file, indent, fabricate_proxy_re
 
 
 def post_process(in_dir, subdir_q, out_dir, num_sessions_per_file, single_line, fabricate_proxy_requests, cnt_q):
-    """ Function used to set up individual threads.
+    """Function used to set up individual threads.
 
     Each thread loops over the subdir_q, pulls a directory from there, and
     process the replay files in that directory. The threads finish when the
@@ -315,7 +322,7 @@ def post_process(in_dir, subdir_q, out_dir, num_sessions_per_file, single_line, 
 
 
 def configure_logging(use_debug=False):
-    ''' Configure the logging mechanism.
+    '''Configure the logging mechanism.
 
     Args:
         use_debug (bool) Whether to configure debug-level logging.
@@ -328,8 +335,7 @@ def configure_logging(use_debug=False):
 
 
 def parse_args():
-    ''' Parse the command line arguments.
-    '''
+    '''Parse the command line arguments.'''
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument(
@@ -339,7 +345,8 @@ def parse_args():
                         files.  The expectation is that this will contain
                         sub-directories that themselves contain replay files.
                         This is written to accommodate the directory populated
-                        by traffic_dump via the --logdir option.''')
+                        by traffic_dump via the --logdir option.''',
+    )
     parser.add_argument("out_dir", type=str, help="The output directory of post processed replay files.")
     parser.add_argument(
         "-n",
@@ -347,14 +354,16 @@ def parse_args():
         type=int,
         default=10,
         help='''The maximum number of sessions merged into
-                        single replay output files. The default is 10.''')
+                        single replay output files. The default is 10.''',
+    )
     parser.add_argument(
         "--no-human-readable",
         action="store_true",
         help='''By default, post processor will generate replay
                         files that are spaced out in a human readable format.
                         This turns off that behavior and leaves the files as
-                        single-line entries.''')
+                        single-line entries.''',
+    )
     parser.add_argument(
         "--no-fabricate-proxy-requests",
         action="store_true",
@@ -367,7 +376,8 @@ def parse_args():
                         conditions. However, if it doesn't reply locally, then
                         the server will not know how to reply to these
                         requests. Using this option turns off this fabrication
-                        behavior.''')
+                        behavior.''',
+    )
     parser.add_argument("-j", "--num_threads", type=int, default=32, help='''The maximum number of threads to use.''')
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug level logging.")
     return parser.parse_args()
@@ -396,8 +406,15 @@ def main():
         t = Thread(
             target=post_process,
             args=(
-                args.in_dir, subdir_q, args.out_dir, args.num_sessions, args.no_human_readable,
-                not args.no_fabricate_proxy_requests, cnt_q))
+                args.in_dir,
+                subdir_q,
+                args.out_dir,
+                args.num_sessions,
+                args.no_human_readable,
+                not args.no_fabricate_proxy_requests,
+                cnt_q,
+            ),
+        )
         t.start()
         threads.append(t)
 

@@ -2,7 +2,7 @@
 
     Main program file for Cache Tool.
 
-    @section license License
+    @par License
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -262,16 +262,6 @@ StripeSM::InitializeMeta()
   }
   init_dir();
   return zret;
-}
-
-// Need to be bit more robust at some point.
-bool
-StripeSM::validateMeta(StripeMeta const *meta)
-{
-  // Need to be bit more robust at some point.
-  return StripeMeta::MAGIC == meta->magic && meta->version._major <= ts::CACHE_DB_MAJOR_VERSION &&
-         meta->version._minor <= 2 // This may have always been zero, actually.
-    ;
 }
 
 bool

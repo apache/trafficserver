@@ -16,32 +16,29 @@
 #######################
 
 add_library(
-  records STATIC
-  P_RecCore.cc
-  RecConfigParse.cc
-  RecCore.cc
-  RecDebug.cc
-  RecFile.cc
-  RecHttp.cc
-  RecMessage.cc
-  RecMutex.cc
-  RecUtils.cc
-  RecYAMLDecoder.cc
-  RecordsConfig.cc
-  RecordsConfigUtils.cc
-  RecRawStats.cc
-  # Reload infrastructure
-  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ReloadCoordinator.cc
-  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigReloadTrace.cc
-  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigContext.cc
+  records
+  STATIC
+    P_RecCore.cc
+    RecConfigParse.cc
+    RecCore.cc
+    RecDebug.cc
+    RecFile.cc
+    RecHttp.cc
+    RecMessage.cc
+    RecMutex.cc
+    RecUtils.cc
+    RecYAMLDecoder.cc
+    RecordsConfig.cc
+    RecordsConfigUtils.cc
+    RecRawStats.cc
+    # Reload infrastructure
+    ${CMAKE_SOURCE_DIR}/src/mgmt/config/ReloadCoordinator.cc
+    ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigReloadTrace.cc
+    ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigContext.cc
 )
 add_library(ts::records ALIAS records)
 
-target_link_libraries(
-  records
-  PUBLIC ts::tscore yaml-cpp::yaml-cpp ts::inkevent
-  PRIVATE ts::tsutil
-)
+target_link_libraries(records PUBLIC ts::tscore yaml-cpp::yaml-cpp ts::inkevent PRIVATE ts::tsutil)
 
 if(BUILD_TESTING)
   add_executable(
@@ -58,6 +55,13 @@ if(BUILD_TESTING)
   )
   target_link_libraries(test_records PRIVATE records configmanager inkevent Catch2::Catch2 ts::tscore libswoc::libswoc)
   add_catch2_test(NAME test_records COMMAND test_records)
+
+  add_executable(test_ConfigReloadProgress unit_tests/test_ConfigReloadProgress.cc)
+  target_include_directories(test_ConfigReloadProgress PRIVATE ${CMAKE_SOURCE_DIR}/src/iocore/eventsystem/unit_tests)
+  target_link_libraries(
+    test_ConfigReloadProgress PRIVATE records configmanager inkevent Catch2::Catch2WithMain ts::tscore
+  )
+  add_catch2_test(NAME test_ConfigReloadProgress COMMAND test_ConfigReloadProgress)
 endif()
 
 clang_tidy_check(records)

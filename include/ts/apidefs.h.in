@@ -3,7 +3,7 @@
   This header file defines common types that can be shared
   between internal code and TS APIs.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -21,7 +21,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section developers Developers
+  @par Developers
 
   Developers, when adding a new element to an enum, append it. DO NOT
   insert it.  Otherwise, binary compatibility of plugins will be broken!
@@ -922,6 +922,8 @@ enum TSOverridableConfigKey {
   TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE_PERCENT,
   TS_CONFIG_HTTP_PER_SERVER_CONNECTION_METRIC_ENABLED,
   TS_CONFIG_HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,
+  TS_CONFIG_HTTP_BYPASS_PARENT,
+  TS_CONFIG_HTTP_REJECT_HEAD_WITH_CONTENT,
   TS_CONFIG_LAST_ENTRY,
 };
 

@@ -3,7 +3,7 @@
   TLSSBasicSupport.cc provides implementations for
   TLSBasicSupport methods
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -70,11 +70,15 @@ TLSBasicSupport::unbind(SSL *ssl)
 void
 TLSBasicSupport::clear()
 {
+  this->_verify_scope_digest.reset();
+  this->_verify_scope_digest_failed   = false;
   this->_tls_handshake_begin_time     = 0;
   this->_tls_handshake_end_time       = 0;
   this->_tls_handshake_bytes_measured = false;
   this->_tls_handshake_bytes_in       = 0;
   this->_tls_handshake_bytes_out      = 0;
+  this->_tls_offered_signature_algorithms.reset();
+  this->_tls_negotiated_signature_algorithm.reset();
 }
 
 // Returns true only on the first call that reads from the BIOs, so callers
@@ -170,6 +174,51 @@ TLSBasicSupport::get_tls_group() const
   return this->_get_tls_group();
 }
 
+std::string_view
+TLSBasicSupport::get_tls_offered_signature_algorithms() const
+{
+  if (!this->_tls_offered_signature_algorithms.has_value()) {
+    this->_tls_offered_signature_algorithms =
+      this->_get_ssl_object() == nullptr ? "" : this->_get_tls_offered_signature_algorithms();
+  }
+
+  return *this->_tls_offered_signature_algorithms;
+}
+
+std::string_view
+TLSBasicSupport::get_tls_negotiated_signature_algorithm() const
+{
+  if (!this->_tls_negotiated_signature_algorithm.has_value()) {
+    this->_tls_negotiated_signature_algorithm =
+      this->_get_ssl_object() == nullptr ? "" : this->_get_tls_negotiated_signature_algorithm();
+  }
+
+  return *this->_tls_negotiated_signature_algorithm;
+}
+
+void
+TLSBasicSupport::capture_tls_offered_signature_algorithms()
+{
+  std::string offered = this->_get_ssl_object() == nullptr ? "" : this->_get_tls_offered_signature_algorithms();
+
+  if (!offered.empty() || !this->_tls_offered_signature_algorithms.has_value()) {
+    this->_tls_offered_signature_algorithms = std::move(offered);
+  }
+}
+
+void
+TLSBasicSupport::capture_tls_offered_signature_algorithms(std::string offered)
+{
+  this->_tls_offered_signature_algorithms = std::move(offered);
+}
+
+void
+TLSBasicSupport::capture_tls_negotiated_signature_algorithm()
+{
+  this->_tls_negotiated_signature_algorithm =
+    this->_get_ssl_object() == nullptr ? "" : this->_get_tls_negotiated_signature_algorithm();
+}
+
 ink_hrtime
 TLSBasicSupport::get_tls_handshake_begin_time() const
 {
@@ -180,6 +229,12 @@ ink_hrtime
 TLSBasicSupport::get_tls_handshake_end_time() const
 {
   return this->_tls_handshake_end_time;
+}
+
+bool
+TLSBasicSupport::is_tls_handshake_complete() const
+{
+  return this->_is_tls_handshake_complete();
 }
 
 void
@@ -257,6 +312,32 @@ X509_STORE_CTX *
 TLSBasicSupport::get_tls_cert_to_verify() const
 {
   return this->_cert_to_verify;
+}
+
+void
+TLSBasicSupport::set_verify_scope_digest(std::optional<VerifyScopeDigest> const &digest)
+{
+  this->_verify_scope_digest        = digest;
+  this->_verify_scope_digest_failed = false;
+}
+
+void
+TLSBasicSupport::mark_verify_scope_digest_failed()
+{
+  this->_verify_scope_digest.reset();
+  this->_verify_scope_digest_failed = true;
+}
+
+bool
+TLSBasicSupport::verify_scope_digest_failed() const
+{
+  return this->_verify_scope_digest_failed;
+}
+
+std::optional<TLSBasicSupport::VerifyScopeDigest> const &
+TLSBasicSupport::get_verify_scope_digest() const
+{
+  return this->_verify_scope_digest;
 }
 
 void

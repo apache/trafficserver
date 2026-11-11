@@ -124,6 +124,9 @@ TEST_CASE("XPACK_String", "[xpack]")
     {(char *)"cw Times New Roman_σ=1", 23,
      (uint8_t *)"\x95"
                 "\x27\x85\x37\x9a\x92\xa1\x4d\x25\xf0\xa6\xd3\xd2\x3a\xa2\xff\xff\xf6\xff\xff\x44\x01", 22},
+    {(char *)"\xff\xff\xff\xff",        4,
+     (uint8_t *)"\x04"
+                "\xff\xff\xff\xff",                                                                     5 },
   };
 
   SECTION("Encoding")
@@ -153,6 +156,68 @@ TEST_CASE("XPACK_String", "[xpack]")
       REQUIRE(actual_len == i.raw_string_len);
       REQUIRE(memcmp(actual, i.raw_string, i.raw_string_len) == 0);
     }
+  }
+
+  SECTION("failed huffman decoding releases the temporary area")
+  {
+    // 0x88 is the huffman flag plus a length of 8. An all-ones payload is not a
+    // decodable huffman sequence, so huffman_decode() fails after the temporary
+    // area has already been allocated out of the arena.
+    uint8_t bad_huffman[]   = "\x88\xff\xff\xff\xff\xff\xff\xff\xff";
+    int     bad_huffman_len = 9;
+
+    Arena arena;
+
+    // Arena::free() walks the block list with `while (b->next)`, so it never
+    // inspects the last block. Put the arena past its first block, otherwise
+    // nothing can be observed to rewind at all.
+    for (int i = 0; i < 40; ++i) {
+      arena.str_alloc(64);
+    }
+
+    // Arena has no water level accessor, so use the address str_alloc() hands
+    // back as the proxy for it.
+    char *baseline = arena.str_alloc(1);
+    arena.str_free(baseline);
+
+    for (int i = 0; i < 100; ++i) {
+      char    *actual     = nullptr;
+      uint64_t actual_len = 0;
+      int      len = xpack_decode_string(arena, &actual, actual_len, bad_huffman, bad_huffman + bad_huffman_len, MAX_FIELD_SIZE);
+
+      REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+    }
+
+    // Had the failed decodes left their temporary areas outstanding, the water
+    // level would have advanced once per failure and this would not match.
+    // Compared as void * so a mismatch is reported as an address.
+    REQUIRE(static_cast<void *>(arena.str_alloc(1)) == static_cast<void *>(baseline));
+  }
+
+  SECTION("outputs are written only on success")
+  {
+    uint8_t bad_huffman[]   = "\x88\xff\xff\xff\xff\xff\xff\xff\xff";
+    int     bad_huffman_len = 9;
+    // The length prefix announces ten octets but only four follow.
+    uint8_t truncated[]   = {0x0a, 'c', 'u', 's', 't'};
+    int     truncated_len = 5;
+
+    Arena    arena;
+    char     sentinel   = '\0';
+    char    *actual     = &sentinel;
+    uint64_t actual_len = 42;
+
+    // Fails after the temporary area was allocated out of the arena ...
+    REQUIRE(xpack_decode_string(arena, &actual, actual_len, bad_huffman, bad_huffman + bad_huffman_len, MAX_FIELD_SIZE) ==
+            XPACK_ERROR_COMPRESSION_ERROR);
+    CHECK(static_cast<void *>(actual) == static_cast<void *>(&sentinel));
+    CHECK(actual_len == 42);
+
+    // ... and before anything was allocated.
+    REQUIRE(xpack_decode_string(arena, &actual, actual_len, truncated, truncated + truncated_len, MAX_FIELD_SIZE) ==
+            XPACK_ERROR_COMPRESSION_ERROR);
+    CHECK(static_cast<void *>(actual) == static_cast<void *>(&sentinel));
+    CHECK(actual_len == 42);
   }
 
   SECTION("max_string_len enforcement")
@@ -251,6 +316,16 @@ TEST_CASE("XPACK_String", "[xpack]")
     result = dt.lookup_relative("", "");
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
     REQUIRE(result.index == 0);
+
+    // There is no head entry to count a relative index back from.
+    const char *name      = nullptr;
+    size_t      name_len  = 0;
+    const char *value     = nullptr;
+    size_t      value_len = 0;
+
+    result = dt.lookup_relative(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    REQUIRE(result.index == 0);
   }
 
   SECTION("Dynamic Table")
@@ -339,6 +414,8 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(memcmp(name, "name1", name_len) == 0);
     REQUIRE(value_len == strlen("value1"));
     REQUIRE(memcmp(value, "value1", value_len) == 0);
+    result = dt.lookup_relative(dt.count(), &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
     result = dt.lookup_relative("name2", "value2");
     REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
     REQUIRE(result.index == 0);

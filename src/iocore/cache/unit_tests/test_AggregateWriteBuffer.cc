@@ -26,7 +26,7 @@
 int  cache_vols           = 1;
 bool reuse_existing_cache = false;
 
-// This is a regression test for a bug caught in review. The RegressionSM
+// This is a regression test for a bug caught in review. The traffic_server regression
 // suite did not catch it. Issues related to this would manifest only after
 // the cache wraps around, because add() is only used by evacuators.
 TEST_CASE("Given 10 bytes are pending to the buffer, "

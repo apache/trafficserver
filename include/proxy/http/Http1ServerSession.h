@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -96,6 +96,8 @@ public:
   MIOBuffer *read_buffer = nullptr;
 
 private:
+  void pool_or_close();
+
   Http1ServerSessionMagic magic = Http1ServerSessionMagic::DEAD;
 
   IOBufferReader *_reader = nullptr;

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -225,6 +225,13 @@ HQTransaction::transaction_done()
 
 int
 HQTransaction::get_transaction_id() const
+{
+  // Narrowing is intentional here; see get_quic_stream_id() for the full-width value.
+  return static_cast<int>(this->_stream_id);
+}
+
+QUICStreamId
+HQTransaction::get_quic_stream_id() const
 {
   return this->_stream_id;
 }
@@ -655,7 +662,7 @@ Http3Transaction::do_io_close(int lerrno)
 bool
 Http3Transaction::_is_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&Http3Transaction::state_stream_closed);
+  return this->handler.is<&Http3Transaction::state_stream_closed>();
 }
 
 void
@@ -735,6 +742,13 @@ Http3Transaction::_process_write_vio()
                                                           nwritten, all_done);
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
     Http3TransDebug("Error occurred while processing write vio: %hu", error->get_code());
+    // The QUIC layer cannot reset a single stream, so a failure to produce the response is reported by closing the
+    // connection (RFC 9114, Section 8). Unlike _handle_error() this does not mark the transaction done, because the
+    // HttpSM writing the response still holds it.
+    if (error->cls == Http3ErrorClass::CONNECTION) {
+      NetVC2QUICCon(this->_proxy_ssn->get_netvc())
+        ->close_quic_connection(std::make_unique<QUICConnectionError>(QUICErrorClass::APPLICATION, error->get_code()));
+    }
     return 0;
   }
   this->_sent_bytes += nwritten;
@@ -856,7 +870,7 @@ Http09Transaction::do_io_close(int lerrno)
 bool
 Http09Transaction::_is_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&Http09Transaction::state_stream_closed);
+  return this->handler.is<&Http09Transaction::state_stream_closed>();
 }
 
 int

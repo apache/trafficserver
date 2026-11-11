@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -79,6 +79,8 @@ register_net_stats()
   net_rsb.connections_throttled_in   = Metrics::Counter::createPtr("proxy.process.net.connections_throttled_in");
   net_rsb.per_client_connections_throttled_in =
     Metrics::Counter::createPtr("proxy.process.net.per_client.connections_throttled_in");
+  net_rsb.per_client_connections_exempt_currently_open =
+    Metrics::Gauge::createPtr("proxy.process.net.per_client.connections_exempt_currently_open");
   net_rsb.per_client_connections_exempt_in = Metrics::Counter::createPtr("proxy.process.net.per_client.connections_exempt_in");
   net_rsb.connections_throttled_out        = Metrics::Counter::createPtr("proxy.process.net.connections_throttled_out");
   net_rsb.tunnel_total_client_connections_blind_tcp =
@@ -114,6 +116,12 @@ register_net_stats()
   net_rsb.handler_run                        = Metrics::Counter::createPtr("proxy.process.net.net_handler_run");
   net_rsb.inactivity_cop_lock_acquire_failure =
     Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
+  net_rsb.inactivity_cop_budget_exhausted  = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_budget_exhausted");
+  net_rsb.inactivity_cop_visited           = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_visited");
+  net_rsb.inactivity_cop_passes            = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_passes");
+  net_rsb.inactivity_cop_fired             = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_fired");
+  net_rsb.inactivity_cop_pass_time_us      = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_pass_time_us");
+  net_rsb.inactivity_cop_pass_max_us       = Metrics::Gauge::createPtr("proxy.process.net.inactivity_cop_pass_max_us");
   net_rsb.keep_alive_queue_timeout_count   = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
   net_rsb.keep_alive_queue_timeout_total   = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
   net_rsb.read_bytes                       = Metrics::Counter::createPtr("proxy.process.net.read_bytes");
@@ -123,6 +131,8 @@ register_net_stats()
   net_rsb.socks_connections_successful     = Metrics::Counter::createPtr("proxy.process.socks.connections_successful");
   net_rsb.socks_connections_unsuccessful   = Metrics::Counter::createPtr("proxy.process.socks.connections_unsuccessful");
   net_rsb.tcp_accept                       = Metrics::Counter::createPtr("proxy.process.tcp.total_accepts");
+  net_rsb.watchdog_accepts_refused         = Metrics::Counter::createPtr("proxy.process.net.watchdog_accepts_refused");
+  net_rsb.watchdog_listen_backlog          = Metrics::Gauge::createPtr("proxy.process.net.watchdog_listen_backlog");
   net_rsb.write_bytes                      = Metrics::Counter::createPtr("proxy.process.net.write_bytes");
   net_rsb.write_bytes_count                = Metrics::Counter::createPtr("proxy.process.net.write_bytes_count");
   net_rsb.connection_tracker_table_size    = Metrics::Gauge::createPtr("proxy.process.net.connection_tracker_table_size");

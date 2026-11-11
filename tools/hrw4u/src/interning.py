@@ -26,28 +26,57 @@ class StringInterning:
     """Centralized string interning for frequently used strings."""
 
     from hrw4u.types import LanguageKeyword
+
     KEYWORDS: Final[dict[str, str]] = {kw.keyword: sys.intern(kw.keyword) for kw in LanguageKeyword}
 
     SECTIONS: Final[dict[str, str]] = {
-        section: sys.intern(section) for section in
-        ['REMAP', 'SEND_REQUEST', 'READ_RESPONSE', 'SEND_RESPONSE', 'READ_REQUEST', 'PRE_REMAP', 'TXN_START', 'TXN_CLOSE', 'VARS']
+        section: sys.intern(section)
+        for section in [
+            'REMAP',
+            'SEND_REQUEST',
+            'READ_RESPONSE',
+            'SEND_RESPONSE',
+            'READ_REQUEST',
+            'PRE_REMAP',
+            'TXN_START',
+            'TXN_CLOSE',
+            'VARS',
+        ]
     }
 
     HOOKS: Final[dict[str, str]] = {
-        hook: sys.intern(hook) for hook in [
-            'REMAP_PSEUDO_HOOK', 'SEND_REQUEST_HDR_HOOK', 'READ_RESPONSE_HDR_HOOK', 'SEND_RESPONSE_HDR_HOOK',
-            'READ_REQUEST_HDR_HOOK', 'READ_REQUEST_PRE_REMAP_HOOK', 'TXN_START_HOOK', 'TXN_CLOSE_HOOK', 'VARS_SECTION'
+        hook: sys.intern(hook)
+        for hook in [
+            'REMAP_PSEUDO_HOOK',
+            'SEND_REQUEST_HDR_HOOK',
+            'READ_RESPONSE_HDR_HOOK',
+            'SEND_RESPONSE_HDR_HOOK',
+            'READ_REQUEST_HDR_HOOK',
+            'READ_REQUEST_PRE_REMAP_HOOK',
+            'TXN_START_HOOK',
+            'TXN_CLOSE_HOOK',
+            'VARS_SECTION',
         ]
     }
 
     MODIFIERS: Final[dict[str, str]] = {
-        mod: sys.intern(mod) for mod in ['AND', 'OR', 'NOT', 'NOCASE', 'PRE', 'SUF', 'EXT', 'MID', 'I', 'L', 'QSA']
+        mod: sys.intern(mod) for mod in ['AND', 'OR', 'NOT', 'NOCASE', 'PRE', 'SUF', 'EXT', 'MID', 'NORM', 'I', 'L', 'QSA']
     }
 
     LSP_STRINGS: Final[dict[str, str]] = {
-        string: sys.intern(string) for string in [
-            'markdown', 'kind', 'value', 'label', 'detail', 'documentation', 'insertText', 'textEdit', 'insertTextFormat', 'range',
-            'newText'
+        string: sys.intern(string)
+        for string in [
+            'markdown',
+            'kind',
+            'value',
+            'label',
+            'detail',
+            'documentation',
+            'insertText',
+            'textEdit',
+            'insertTextFormat',
+            'range',
+            'newText',
         ]
     }
 

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -26,14 +26,16 @@
 
 #include <atomic>
 
-#include "tscore/ink_platform.h"
-#include "tscore/ink_rand.h"
-#include "tscore/Version.h"
 #include "iocore/eventsystem/Thread.h"
 #include "iocore/eventsystem/PriorityEventQueue.h"
 #include "iocore/eventsystem/ProtectedQueue.h"
 #include "tsutil/Histogram.h"
 #include "iocore/eventsystem/Watchdog.h"
+
+#include <tscore/ink_hrtime.h>
+#include <tscore/ink_platform.h>
+#include <tscore/ink_rand.h>
+#include <tscore/Version.h>
 
 #if TS_USE_HWLOC
 struct hwloc_obj;
@@ -295,7 +297,7 @@ public:
       This is useful only for regular threads and if called before @c Thread::start. The event will be
       called first before the event loop.
 
-      @Note This will override the event for a dedicate thread so that this is called instead of the
+      @note This will override the event for a dedicate thread so that this is called instead of the
       event passed to the constructor.
   */
   Event *schedule_spawn(Continuation *c, int ev = EVENT_IMMEDIATE, void *cookie = nullptr);
@@ -324,12 +326,6 @@ public:
 
   Event *schedule(Event *e);
 
-  /** Block of memory to allocate thread specific data e.g. stat system arrays. */
-  char thread_private[PER_THREAD_DATA];
-
-  ProtectedQueue     EventQueueExternal;
-  PriorityEventQueue EventQueue;
-
   static constexpr int NO_ETHREAD_ID = -1;
   int                  id            = NO_ETHREAD_ID;
 
@@ -346,7 +342,7 @@ public:
 
   void             execute() override;
   void             execute_regular();
-  ink_hrtime       process_queue(Que(Event, link) * NegativeQueue, int *ev_count, int *nq_count, ink_hrtime event_time);
+  ink_hrtime       process_queue(Que(Event, link) * NegativeQueue, int *ev_count, ink_hrtime event_time);
   ink_hrtime       process_event(Event *e, int calling_code, ink_hrtime event_time);
   void             free_event(Event *e);
   LoopTailHandler *tail_cb = &DEFAULT_TAIL_HANDLER;
@@ -372,36 +368,6 @@ public:
   ServerSessionPool *server_session_pool = nullptr;
   PreWarmQueue      *prewarm_queue       = nullptr;
   ConnectingPool    *connecting_pool     = nullptr;
-
-  /** Default handler used until it is overridden.
-
-      This uses the cond var wait in @a ExternalQueue.
-  */
-  class DefaultTailHandler : public LoopTailHandler
-  {
-    explicit DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
-
-    int
-    waitForActivity(ink_hrtime timeout) override
-    {
-      _q.wait(ink_get_hrtime() + timeout);
-      return 0;
-    }
-    void
-    signalActivity() override
-    {
-      /* Try to acquire the `EThread::lock` of the Event Thread:
-       *   - Acquired, indicating that the Event Thread is sleep,
-       *               must send a wakeup signal to the Event Thread.
-       *   - Failed, indicating that the Event Thread is busy, do nothing.
-       */
-      (void)_q.try_signal();
-    }
-
-    ProtectedQueue &_q;
-
-    friend class EThread;
-  } DEFAULT_TAIL_HANDLER = DefaultTailHandler(EventQueueExternal);
 
   struct Metrics {
     using self_type = Metrics; ///< Self reference type.
@@ -581,7 +547,55 @@ public:
   Watchdog::Heartbeat heartbeat_state;
 
 private:
+  struct EventStatistics {
+    ink_hrtime event_time{};
+    int        ev_count{}; // # of events handled
+  };
+
+  /** Block of memory to allocate thread specific data e.g. stat system arrays. */
+  char thread_private[PER_THREAD_DATA];
+
+  ProtectedQueue     EventQueueExternal;
+  PriorityEventQueue EventQueue;
+
+  /** Default handler used until it is overridden.
+
+      This uses the cond var wait in @a ExternalQueue.
+  */
+  class DefaultTailHandler : public LoopTailHandler
+  {
+    explicit DefaultTailHandler(ProtectedQueue &q) : _q(q) {}
+
+    int
+    waitForActivity(ink_hrtime timeout) override
+    {
+      _q.wait(ink_get_hrtime() + timeout);
+      return 0;
+    }
+    void
+    signalActivity() override
+    {
+      /* Try to acquire the `EThread::lock` of the Event Thread:
+       *   - Acquired, indicating that the Event Thread is sleep,
+       *               must send a wakeup signal to the Event Thread.
+       *   - Failed, indicating that the Event Thread is busy, do nothing.
+       */
+      (void)_q.try_signal();
+    }
+
+    ProtectedQueue &_q;
+
+    friend class EThread;
+  } DEFAULT_TAIL_HANDLER = DefaultTailHandler(EventQueueExternal);
+
   void cons_common();
+
+  EventStatistics fire_ready_events(ink_hrtime loop_start_time);
+
+  ink_hrtime get_sleep_time(ink_hrtime event_time, Metrics::Slice *current_slice);
+
+  friend class Event;
+  friend class EventProcessor;
 };
 
 // --- Inline implementation
@@ -729,3 +743,15 @@ EThread::free_event(Event *e)
 }
 
 extern int thread_max_heartbeat_mseconds;
+
+/// Per-thread work for components layered above the event loop, so EThread does not depend on them.
+/// Each thread calls @a start when its loop begins and @a stop when its loop ends. @a between_events
+/// runs on every loop iteration after the ready events fire and before the tail handler polls, which
+/// also dispatches network handlers, so no event or network handler is on the stack when it runs.
+/// Set before the event threads start.
+struct EThreadLoopHooks {
+  void (*start)()          = nullptr;
+  void (*between_events)() = nullptr;
+  void (*stop)()           = nullptr;
+};
+extern EThreadLoopHooks ethread_loop_hooks;

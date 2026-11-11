@@ -109,3 +109,37 @@ Origin Server
 .. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_abort integer
    :type counter
    :units bytes
+
+.. ts:stat:: global proxy.process.http.origin.reuse_fail integer
+   :type counter
+   :units decisions
+
+   Counts session-pool probes that cannot acquire a lock or allocate an
+   origin transaction. A failed thread-local probe is counted even if the
+   subsequent global-pool probe succeeds or finds no matching session. If
+   both probes fail, one acquisition attempt increments this counter twice.
+   This is not a count of distinct transactions or failed requests, and it
+   can increase alongside ``proxy.process.http.origin.reuse`` or
+   ``proxy.process.http.origin.not_found`` for the same acquisition attempt.
+
+.. ts:stat:: global proxy.process.http.origin.retry_admitted integer
+   :type counter
+   :units decisions
+
+   Counts admission decisions after an origin reports that a request was
+   not processed and |TS| confirms that its body, if present, is replayable.
+   A transaction can contribute more than once if successive attempts are
+   rejected by the origin. Other retry limits still apply, so admission does
+   not imply that a retry was issued or completed. This is not a count of
+   distinct transactions.
+
+.. ts:stat:: global proxy.process.http.origin.retry_body_unavailable integer
+   :type counter
+   :units decisions
+
+   Counts decisions rejecting a retry that an origin reports as unprocessed
+   because a complete, replayable request body is unavailable. This counts
+   decisions rather than distinct transactions. Once this condition is detected,
+   |TS| treats the request as non-retryable through both direct-origin and parent
+   retry paths. Parent health handling therefore follows the existing
+   non-retryable-request branches; this counter is not a parent health metric.

@@ -1,0 +1,149 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+urtest:
+  description: 'Verify anchor_policy_rules=0 keeps matching unchanged and reports unanchored rules'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 0
+      proxy.config.url_remap.remap_required: 1
+      # Without this the referer filter never runs and the rule is not exercised.
+      proxy.config.http.referer_filter: 1
+      # The default. Stated explicitly so the test documents which state it covers.
+      proxy.config.regex.anchor_policy_rules: 0
+
+    remap_config:
+      # "trusted\.example\.com" is unanchored, so it is satisfied by any Referer
+      # value containing it -- including one whose host is something else.
+      - 'map_with_referer http://gated.example.com/ http://127.0.0.1:{SERVER_HTTP_PORT}/ http://denied.example.com/ trusted\.example\.com'
+      # Already anchored at both ends, so the report leaves it alone. This is the form
+      # most rules take, and reporting it would make the report worthless.
+      - 'map_with_referer http://exact.example.com/ http://127.0.0.1:{SERVER_HTTP_PORT}/ http://denied.example.com/ ^https://ref\.example\.com/page$'
+      # Only the last alternative is end-anchored, so this one is reported: it still
+      # matches a Referer that merely starts with the first alternative.
+      - 'map_with_referer http://alt.example.com/ http://127.0.0.1:{SERVER_HTTP_PORT}/ http://denied.example.com/ ^https://a\.example\.com|^https://b\.example\.com$'
+      # A negative rule: "~" denies a matching Referer, and "*" allows the rest. This is
+      # the direction where enforcement removes a restriction rather than a permission.
+      - 'map_with_referer http://guarded.example.com/ http://127.0.0.1:{SERVER_HTTP_PORT}/ http://denied.example.com/ ~restricted\.example\.com *'
+
+    log_validation:
+      diags_log:
+        contains:
+        - expression: '\[regex-anchor\] map_with_referer referer pattern .*trusted'
+          description: 'The unanchored rule is reported at config load, naming the site'
+        - expression: "\\[regex-anchor\\] map_with_referer referer pattern '\\^https://a\\\\"
+          description: 'A partially anchored alternation is reported, since one branch is open'
+        excludes:
+        - expression: "\\[regex-anchor\\] map_with_referer referer pattern '\\^https://ref"
+          description: 'A pattern anchored at both ends is not reported'
+
+sessions:
+- transactions:
+
+  # The Referer host is "other.example.com"; the configured value appears only in
+  # the path. Unanchored matching accepts it, so the rule applies and the request
+  # is forwarded. This is the pre-existing behavior the default must preserve.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, gated.example.com]
+        - [Referer, 'https://other.example.com/trusted.example.com']
+        - [uuid, substring-referer-still-matches]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+        - [X-Origin-Marker, served-by-origin]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Origin-Marker, {value: served-by-origin, as: equal}]
+
+  # A Referer that does not contain the value at all is still rejected, so the
+  # rule is doing something in this state rather than matching everything.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, gated.example.com]
+        - [Referer, 'https://unrelated.example.org/page']
+        - [uuid, non-matching-referer-redirected]
+
+    proxy-request:
+      expect: absent
+
+    proxy-response:
+      status: 302
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]
+
+  # The negative rule restricts this Referer, because the configured value appears in
+  # it as a substring. The restriction applies and the request is redirected.
+  - client-request:
+      method: GET
+      url: /path/test.html
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, guarded.example.com]
+        - [Referer, 'https://other.example.com/restricted.example.com']
+        - [uuid, negative-referer-restricts]
+
+    proxy-request:
+      expect: absent
+
+    proxy-response:
+      status: 302
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 0]

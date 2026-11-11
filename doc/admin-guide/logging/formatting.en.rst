@@ -691,6 +691,9 @@ SSL / Encryption
 .. _cqssv:
 .. _cqssc:
 .. _cqssu:
+.. _cqssg:
+.. _cqssig:
+.. _cqssin:
 .. _cqssa:
 .. _cthbr:
 .. _cthbt:
@@ -730,6 +733,21 @@ cqssg  Client Request SSL Group used by |TS| to communicate with the client.
                       This field is only applicable when building |TS| against
                       OpenSSL 3.2 or later or a version of BoringSSL that
                       supports querying group names.
+cqssig Client Request TLS signature schemes offered by the client, rendered as
+                      dash-separated decimal IANA code points in wire order.
+                      RFC 8701 GREASE values are omitted. This field contains
+                      ``-`` when the client does not send the extension or the
+                      TLS library cannot expose it.
+cqssin Client Request TLS signature scheme used by |TS| to authenticate the
+                      handshake, rendered as a decimal IANA code point. When the
+                      TLS library does not expose the exact scheme, |TS| derives
+                      it from the signature type, digest, shared algorithm list,
+                      and certificate key. If these do not identify a unique
+                      scheme, this field contains ``-``. Resumed sessions always
+                      contain ``-`` because they do not create a new handshake
+                      signature, as do handshakes that use static RSA key
+                      exchange, which authenticate the server with the
+                      certificate alone.
 cqssa  Client Request ALPN Protocol ID negotiated with the client.
 cthbr  Client Request TLS handshake bytes received from the client. This is the
                       number of bytes read from the client during the TLS
@@ -744,9 +762,12 @@ cthb   Client Request Total TLS handshake bytes (received + sent). This is the
                       on a TLS connection, including reused connections.
 pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
                       was over SSL or not.
-pqssr  Proxy Request  SSL session ticket reused status from |TS| to the origin;
-                      indicates if the current request hit the SSL session ticket
-                      and avoided a full SSL handshake.
+pqssr  Proxy Request  0 if the connection from |TS| to the origin did a full TLS
+                      handshake because no cached session was offered or the
+                      origin declined it. 1 if it resumed a TLS session from
+                      the origin session cache (see
+                      :ts:cv:`proxy.config.ssl.origin_session_cache.enabled`),
+                      avoiding a full TLS handshake.
 pscert Proxy Request  1 if origin requested certificate from |TS| during TLS
                       handshake but no client certificate was defined. 2 if origin
                       requested certificate from |TS| during TLS handshake and a

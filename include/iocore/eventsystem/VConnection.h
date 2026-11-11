@@ -2,7 +2,7 @@
 
   Public VConnection declaration and associated declarations
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -126,7 +126,7 @@ enum TSApiDataType {
   TS_API_DATA_LAST ///< Used by other classes to extend the enum values.
 };
 
-typedef struct tsapi_vio *TSVIO;
+using TSVIO = struct tsapi_vio *;
 
 /**
   Base class for the connection classes that provide IO capabilities.

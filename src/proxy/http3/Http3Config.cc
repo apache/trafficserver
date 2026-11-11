@@ -2,7 +2,7 @@
  *
  *  HTTP/3 Config
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -85,6 +85,12 @@ ts::Http3Config::reconfigure()
   // re-read configuration
   params->initialize();
   ts::Http3Config::_config_id = configProcessor.set(ts::Http3Config::_config_id, params);
+}
+
+unsigned
+ts::Http3Config::config_id()
+{
+  return ts::Http3Config::_config_id;
 }
 
 ts::Http3ConfigParams *

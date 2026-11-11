@@ -2,7 +2,7 @@
 
   OpenSSL native QUIC NetVConnection support.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -99,7 +99,7 @@ QUICNetVConnection::~QUICNetVConnection() {}
 void
 QUICNetVConnection::init(SSL *ssl, QUICPacketHandler *packet_handler)
 {
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
+  SET_HANDLER(&QUICNetVConnection::acceptEvent);
 
   this->_ssl                          = ssl;
   this->_packet_handler               = packet_handler;
@@ -188,7 +188,7 @@ QUICNetVConnection::set_local_addr()
 void
 QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
 {
-  QUICConDebug("Free connection");
+  QUICConDebug("Free connection, %zu stream objects still held", this->_openssl_streams.size());
 
   this->_unschedule_openssl_event();
 
@@ -244,6 +244,7 @@ QUICNetVConnection::state_handshake(int event, Event *data)
     this->_unschedule_openssl_event();
     this->_propagate_event(event);
     this->closed = 1;
+    this->rearm_timer();
     break;
   default:
     QUICConDebug("Unhandled event: %d", event);
@@ -289,6 +290,7 @@ QUICNetVConnection::state_established(int event, Event *data)
     this->_unschedule_openssl_event();
     this->_propagate_event(event);
     this->closed = 1;
+    this->rearm_timer();
     break;
   default:
     QUICConDebug("Unhandled event: %d", event);
@@ -310,7 +312,7 @@ QUICNetVConnection::_switch_to_established_state()
   QUICConDebug("Enter state_connection_established");
   this->_record_tls_handshake_end_time();
   this->_update_end_of_handshake_stats();
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_established);
+  SET_HANDLER(&QUICNetVConnection::state_established);
   this->_handshake_completed = true;
   this->_start_application();
 }
@@ -415,7 +417,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
   this->read.enabled  = 1;
   this->write.enabled = 1;
 
-  SET_HANDLER((NetVConnHandler)&QUICNetVConnection::state_handshake);
+  SET_HANDLER(&QUICNetVConnection::state_handshake);
 
   nh->startCop(this);
   this->set_default_inactivity_timeout(0);
@@ -743,6 +745,12 @@ QUICNetVConnection::_process_openssl_streams()
     SSL        *stream_ssl = stream_it->second;
     QUICStream *stream     = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
     if (stream == nullptr) {
+      // Keeping a deleted stream's SSL object would make every later pass here walk every stream the
+      // connection has ever opened. The application deletes a stream only once each direction it has
+      // is done (the peer's FIN read, ours handed to OpenSSL), and SSL_free does not reset a stream
+      // part that was already concluded, so OpenSSL still delivers what it has buffered.
+      SSL_free(stream_ssl);
+      this->_openssl_streams.erase(stream_it);
       continue;
     }
 
@@ -987,6 +995,18 @@ QUICNetVConnection::_get_tls_group() const
   }
 }
 
+std::string
+QUICNetVConnection::_get_tls_offered_signature_algorithms() const
+{
+  return SSLGetOfferedSignatureAlgorithms(this->_ssl);
+}
+
+std::string
+QUICNetVConnection::_get_tls_negotiated_signature_algorithm() const
+{
+  return SSLGetNegotiatedSignatureAlgorithm(this->_ssl);
+}
+
 int
 QUICNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
 {
@@ -1023,7 +1043,7 @@ QUICNetVConnection::_get_local_port()
 }
 
 IpEndpoint const &
-QUICNetVConnection::_getLocalEndpoint()
+QUICNetVConnection::_getCertLookupEndpoint()
 {
   return this->local_addr;
 }

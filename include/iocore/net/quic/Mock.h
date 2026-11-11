@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -463,14 +463,8 @@ public:
   {
     return _info.get();
   }
-  virtual QUICConfig::scoped_config
-  config() const override
-  {
-    return _config;
-  }
 
 private:
-  QUICConfig::scoped_config                   _config;
   std::unique_ptr<QUICConnectionInfoProvider> _info;
 };
 

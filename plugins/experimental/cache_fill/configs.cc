@@ -168,6 +168,10 @@ BgFetchConfig::readConfig(const char *config_file)
             continue;
           }
           ++cfg_value; // Drop leading character.
+          if (cfg_value.empty()) {
+            TSError("[%s] missing Content-Length size value, skipping config value", PLUGIN_NAME);
+            continue;
+          }
           swoc::TextView parsed;
           auto           n = swoc::svtou(cfg_value, &parsed);
           if (parsed.size() != cfg_value.size()) {
@@ -213,11 +217,14 @@ BgFetchConfig::bgFetchAllowed(TSHttpTxn txnp) const
     if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) == TS_SUCCESS) {
       bool hasRangeHdrs = false;
       for (auto const &header : FILTER_HEADERS) {
-        if (TSMimeHdrFieldFind(bufp, hdr_loc, header.data(), header.size() == TS_SUCCESS)) {
+        TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header.data(), static_cast<int>(header.size()));
+        if (field_loc != TS_NULL_MLOC) {
+          TSHandleMLocRelease(bufp, hdr_loc, field_loc);
           hasRangeHdrs = true;
           break;
         }
       }
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       if (!hasRangeHdrs && _range_req_only) {
         Dbg(dbg_ctl, "_range_req_only=true; This transaction is not a range request");
         return false;

@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -389,7 +389,7 @@ QUICStreamVCAdapter::mark_stream_closed()
 bool
 QUICStreamVCAdapter::is_stream_closed() const
 {
-  return this->handler == continuation_handler_void_ptr(&QUICStreamVCAdapter::state_stream_closed);
+  return this->handler.is<&QUICStreamVCAdapter::state_stream_closed>();
 }
 
 int

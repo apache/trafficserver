@@ -2,7 +2,7 @@
 
   ProxyTransaction - Base class for protocol client transactions.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -101,6 +101,12 @@ ProxyTransaction::set_tx_error_code(ProxyError e)
   if (this->_sm) {
     this->_sm->t_state.client_info.tx_error_code = e;
   }
+}
+
+bool
+ProxyTransaction::is_safe_to_retry() const
+{
+  return false;
 }
 
 NetVConnection *

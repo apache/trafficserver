@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -294,7 +294,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
       // than or equal to the max number of open write retries
       ink_assert(!write_retry_done());
 
-      open_write(&cache_key, lookup_url, read_request_hdr, master_sm->t_state.cache_info.object_read,
+      open_write(&cache_key, lookup_url, read_request_hdr,
+                 CompatCacheKey::write_info(master_sm->compatibility_cache_lookup, master_sm->t_state.cache_info.object_read),
                  static_cast<time_t>(
                    (master_sm->t_state.cache_control.pin_in_cache_for < 0) ? 0 : master_sm->t_state.cache_control.pin_in_cache_for),
                  retry_write, false);

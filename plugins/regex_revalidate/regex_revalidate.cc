@@ -111,16 +111,16 @@ strForResult(TSCacheLookupResult const result)
   }
 }
 
-typedef struct invalidate_t {
-  char                *regex_text;
-  Regex               *regex;
-  time_t               epoch;
-  time_t               expiry;
-  TSCacheLookupResult  new_result;
-  struct invalidate_t *next;
-} invalidate_t;
+struct invalidate_t {
+  char               *regex_text;
+  Regex              *regex;
+  time_t              epoch;
+  time_t              expiry;
+  TSCacheLookupResult new_result;
+  invalidate_t       *next;
+};
 
-typedef struct {
+struct plugin_state_t {
   invalidate_t   *invalidate_list;
   char           *config_path;
   char           *match_header;
@@ -128,7 +128,7 @@ typedef struct {
   TSTextLogObject log;
   char           *state_path;
   TSMutex         reload_mutex; ///< serializes do_config_reload between the timed path and the ConfigRegistry path
-} plugin_state_t;
+};
 
 static invalidate_t *
 init_invalidate_t(invalidate_t *i)

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -40,8 +40,6 @@ class StripeSM;
 struct InterimCacheVol;
 struct CacheVC;
 class CacheEvacuateDocVC;
-
-// #define LOOP_CHECK_MODE 1
 
 /*
   Directory layout
@@ -308,26 +306,47 @@ public:
    */
   Dir *get_segment(int s) const;
 
-  int  probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+  /* Longest chain a bucket can legitimately hold.
+   *
+   * init_segment() frees rows 1..DIR_DEPTH-1 of every bucket onto the segment free list and never row 0, so one
+   * chain holds at most every free entry of the segment plus its own head. Past it the chain is corrupt, though not
+   * necessarily looping: a link into another bucket's row 0 stays acyclic, so repairs confirm with bucket_loop_fix().
+   */
+  int max_bucket_depth() const;
+
+  int  probe(const CacheKey *, StripeSM *, Dir *, Dir **) const;
   int  insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
   int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
   int  remove(const CacheKey *key, StripeSM *stripe, Dir *del);
   void free_entry(Dir *e, int s);
-  int  check();
+  int  check() const;
   /// check() for one segment, so a caller already walking segments need not stream the whole directory a second time.
-  int      check_segment(int s);
+  int      check_segment(int s) const;
   void     cleanup(StripeSM *stripe);
   void     clear_range(off_t start, off_t end, StripeSM *stripe);
   uint64_t entries_used();
-  int      bucket_length(Dir *b, int s);
+  int      bucket_length(Dir *b, int s) const;
   int      freelist_length(int s);
   void     clean_segment(int s, StripeSM *stripe);
-  void     init_segment(int s);
-  int      bucket_loop_fix(Dir *start_dir, int s);
-  Dir     *delete_entry(Dir *e, Dir *p, int s);
+  /// @a stripe owns the used-entry gauges to debit; null when the caller is itself counting for them.
+  void init_segment(int s, Stripe *stripe);
+  int  bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
+  Dir *delete_entry(Dir *e, Dir *p, int s);
+
+  /* Whether every non-head row of segment @a s is on at most one list, a bucket chain or the free list, with no list
+   * looping, leaving the segment or linking to a head row.
+   *
+   * Cleanup depends on this. A bucket chain that runs into the free list is acyclic, so the bounded walks never trip,
+   * yet deleting those entries pushes them back onto the same free list and loops it.
+   */
+  bool segment_links_valid(int s) const;
+  /// Wipes every segment failing segment_links_valid() and returns how many. Recovery only, like clear_range().
+  int clear_corrupt_segments();
 
 private:
   void unlink_from_freelist(Dir *e, int s);
+  /// Counted over the segment's rows: the chains are corrupt wherever this is used.
+  int segment_entries_used(int s) const;
 };
 
 // Global Functions
@@ -405,6 +424,12 @@ inline Dir *
 Directory::get_segment(int s) const
 {
   return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+}
+
+inline int
+Directory::max_bucket_depth() const
+{
+  return (DIR_DEPTH - 1) * this->buckets + 1;
 }
 
 inline void

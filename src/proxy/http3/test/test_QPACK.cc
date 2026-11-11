@@ -22,10 +22,15 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <memory>
+#include <thread>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
@@ -70,7 +75,7 @@ private:
 class TestQUICStream : public QUICStream
 {
 public:
-  TestQUICStream(QUICStreamId sid) : QUICStream(new MockQUICConnectionInfoProvider(), sid) {}
+  TestQUICStream(QUICStreamId sid) : TestQUICStream(std::make_unique<MockQUICConnectionInfoProvider>(), sid) {}
 
   void
   write(const uint8_t *buf, size_t buf_len, QUICOffset offset, bool last)
@@ -90,6 +95,14 @@ public:
     this->_adapter->consume(nread);
     return nread;
   }
+
+private:
+  TestQUICStream(std::unique_ptr<MockQUICConnectionInfoProvider> info, QUICStreamId sid)
+    : QUICStream(info.get(), sid), _info(std::move(info))
+  {
+  }
+
+  std::unique_ptr<MockQUICConnectionInfoProvider> _info;
 };
 
 class TestQPACKEventHandler : public Continuation
@@ -101,18 +114,220 @@ public:
   event_handler(int event, Event * /* data ATS_UNUSED */)
   {
     this->_event = event;
+    ++this->_events_seen;
     return 0;
   }
 
   int
-  last_event()
+  last_event() const
   {
-    return this->_event;
+    return this->_event.load();
+  }
+
+  // Delivered on an event thread, so wait for this to move rather than sleeping
+  // a fixed time when the handler must outlive the events QPACK schedules.
+  int
+  events_seen() const
+  {
+    return this->_events_seen.load();
+  }
+
+  bool
+  wait_for_events(int expected)
+  {
+    for (int i = 0; i < 5000 && this->_events_seen.load() < expected; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return this->_events_seen.load() >= expected;
   }
 
 private:
-  int _event = 0;
+  std::atomic<int> _event{0};
+  std::atomic<int> _events_seen{0};
 };
+
+/** A QPACK decoder and the encoder stream feeding it.
+ *
+ * Held through a shared_ptr so that a queued event that has not run yet keeps
+ * what it references alive, even if the test has already stopped waiting for
+ * it.
+ */
+struct TestQPACKFixture {
+  QUICApplicationDriver driver;
+  QPACK                 qpack{driver.get_connection(), UINT32_MAX, 1024, 1, MAX_FIELD_SIZE};
+  TestQUICStream        encoder_stream{0};
+  TestQPACKEventHandler event_handler;
+  HTTPHdr               hdr;
+
+  std::atomic<bool> done{false};
+  std::atomic<int>  decode_result{0};
+
+  TestQPACKFixture() { hdr.create(HTTPType::REQUEST); }
+  ~TestQPACKFixture() { hdr.destroy(); }
+};
+
+/** Feed an encoder stream instruction to QPACK, then decode a header block.
+ *
+ * Everything runs on one event thread. QUICStreamVCAdapter schedules its read
+ * ready event on this_ethread(), so opening the stream from the thread running
+ * the test would queue that event where no event loop runs and the write would
+ * go unnoticed. Decoding from the test's thread would then reach the same QPACK
+ * object the encoder stream read is running on, without QPACK's continuation
+ * mutex held, so the decode is driven from here as well.
+ *
+ * The write schedules the read ready event before this handler returns, and
+ * rescheduling from inside the handler therefore lands behind it. The second
+ * call runs with the encoder stream instruction already processed.
+ */
+class TestQPACKEncoderStreamDriver : public Continuation
+{
+public:
+  TestQPACKEncoderStreamDriver(std::shared_ptr<TestQPACKFixture> fixture, const uint8_t *instruction, size_t instruction_len,
+                               const uint8_t *header_block, size_t header_block_len)
+    : Continuation(new_ProxyMutex()),
+      _fixture(std::move(fixture)),
+      _instruction(instruction),
+      _instruction_len(instruction_len),
+      _header_block(header_block),
+      _header_block_len(header_block_len)
+  {
+    SET_HANDLER(&TestQPACKEncoderStreamDriver::drive);
+  }
+
+  int
+  drive(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
+  {
+    if (!this->_instruction_written) {
+      this->_instruction_written = true;
+      this->_fixture->qpack.on_stream_open(this->_fixture->encoder_stream);
+      this->_fixture->encoder_stream.write(this->_instruction, this->_instruction_len, 0, false);
+      this_ethread()->schedule_imm(this);
+      return 0;
+    }
+
+    this->_fixture->decode_result = this->_fixture->qpack.decode(1, this->_header_block, this->_header_block_len,
+                                                                 this->_fixture->hdr, &this->_fixture->event_handler);
+    this->_fixture->done          = true;
+
+    // Nothing else is scheduled for this continuation, so it can retire here
+    // rather than outliving the test on the stack.
+    delete this;
+    return 0;
+  }
+
+private:
+  std::shared_ptr<TestQPACKFixture> _fixture;
+  const uint8_t                    *_instruction;
+  size_t                            _instruction_len;
+  const uint8_t                    *_header_block;
+  size_t                            _header_block_len;
+  bool                              _instruction_written = false;
+};
+
+/** Wait for @a flag to be set.
+ *
+ * @param[in] flag The flag an event thread sets when it is done.
+ * @param[in] timeout The longest time to wait for @a flag.
+ *
+ * @return true if @a flag was set, false on timeout.
+ */
+static bool
+wait_for(const std::atomic<bool> &flag, std::chrono::milliseconds timeout = std::chrono::seconds(5))
+{
+  constexpr auto interval = std::chrono::milliseconds(10);
+
+  for (auto waited = std::chrono::milliseconds(0); waited < timeout; waited += interval) {
+    if (flag) {
+      return true;
+    }
+    std::this_thread::sleep_for(interval);
+  }
+  return flag;
+}
+
+/** Run @a call on an event thread and wait for it to return.
+ *
+ * QPACK delivers a decode's result on the thread the decode started on, and
+ * keeps the results it has not delivered on a list only that thread touches,
+ * so a test has to start its decodes, and cancel them, there.
+ */
+static int
+run_on_event_thread(std::function<int()> call)
+{
+  struct Result {
+    std::atomic<int>  value{0};
+    std::atomic<bool> done{false};
+  };
+
+  class Call : public Continuation
+  {
+  public:
+    Call(std::function<int()> call, std::shared_ptr<Result> result)
+      : Continuation(new_ProxyMutex()), _call(std::move(call)), _result(std::move(result))
+    {
+      SET_HANDLER(&Call::run);
+    }
+
+    int
+    run(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
+    {
+      this->_result->value = this->_call();
+      this->_result->done  = true;
+      delete this;
+      return 0;
+    }
+
+  private:
+    std::function<int()>    _call;
+    std::shared_ptr<Result> _result;
+  };
+
+  auto result = std::make_shared<Result>();
+
+  eventProcessor.all_ethreads[0]->schedule_imm(new Call(std::move(call), result));
+  if (!wait_for(result->done)) {
+    // The queued call still refers to the caller's locals, so unwinding past
+    // them would let it run on freed stack. A stuck event thread spoils every
+    // later test anyway.
+    std::fprintf(stderr, "event thread stalled\n");
+    std::abort();
+  }
+  return result->value;
+}
+
+static int
+decode_on_event_thread(QPACK &qpack, uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr,
+                       Continuation *cont)
+{
+  return run_on_event_thread([&] { return qpack.decode(stream_id, header_block, header_block_len, hdr, cont); });
+}
+
+/** Wait for @a event_handler to observe @a expected_event.
+ *
+ * QPACK reports decode results by scheduling an event on an event thread, so a
+ * test has to wait for that callback. Polling keeps the common case fast while
+ * still failing, rather than hanging, when the event never arrives.
+ *
+ * @param[in] event_handler The handler that receives the QPACK events.
+ * @param[in] expected_event The event to wait for.
+ * @param[in] timeout The longest time to wait for @a expected_event.
+ *
+ * @return true if @a expected_event was observed, false on timeout.
+ */
+static bool
+wait_for_event(const TestQPACKEventHandler &event_handler, int expected_event,
+               std::chrono::milliseconds timeout = std::chrono::seconds(5))
+{
+  constexpr auto interval = std::chrono::milliseconds(10);
+
+  for (auto waited = std::chrono::milliseconds(0); waited < timeout; waited += interval) {
+    if (event_handler.last_event() == expected_event) {
+      return true;
+    }
+    std::this_thread::sleep_for(interval);
+  }
+  return event_handler.last_event() == expected_event;
+}
 
 static int
 load_qif_file(const char *filename, HTTPHdr **headers)
@@ -377,7 +592,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
         header_sets[stream_id - 1]->create(HTTPType::REQUEST);
         ++n_headers;
       }
-      qpack->decode(stream_id, block, block_len, *header_sets[stream_id - 1], event_handler, eventProcessor.all_ethreads[0]);
+      decode_on_event_thread(*qpack, stream_id, block, block_len, *header_sets[stream_id - 1], event_handler);
     }
     ats_free(block);
   }
@@ -403,6 +618,55 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
   fflush(fd_out);
   fclose(fd_out);
   return ret;
+}
+
+TEST_CASE("Decoding out-of-range static table indexes fails", "[qpack-decode]")
+{
+  QUICApplicationDriver driver;
+  QPACK                 qpack(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+  TestQPACKEventHandler event_handler;
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  const uint8_t header_block[] = {
+    0x00, // Required Insert Count.
+    0x00, // Delta Base.
+    0xff, // Indexed static field with an extended 6-bit index.
+    0x25, // Index 100.
+  };
+
+  CHECK(decode_on_event_thread(qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 0);
+
+  CHECK(wait_for_event(event_handler, QPACK_EVENT_DECODE_FAILED));
+
+  hdr.destroy();
+}
+
+TEST_CASE("An out-of-range encoder stream name reference invalidates the decoder", "[qpack-decode]")
+{
+  static const uint8_t insert_with_name_ref[] = {
+    0xff, // Insert With Name Reference, static, with an extended 6-bit index.
+    0x25, // Index 100, one past the end of the static table.
+    0x01, // A one byte, unencoded value follows.
+    'x',
+  };
+  static const uint8_t empty_header_block[] = {
+    0x00, // Required Insert Count.
+    0x00, // Delta Base.
+  };
+
+  auto fixture = std::make_shared<TestQPACKFixture>();
+
+  eventProcessor.all_ethreads[0]->schedule_imm(new TestQPACKEncoderStreamDriver(
+    fixture, insert_with_name_ref, sizeof(insert_with_name_ref), empty_header_block, sizeof(empty_header_block)));
+
+  REQUIRE(wait_for(fixture->done));
+
+  // The rejected insert has to leave the decoder invalid rather than insert an
+  // entry built from an out-of-range lookup.
+  CHECK(fixture->decode_result == -1);
+  CHECK(wait_for_event(fixture->event_handler, QPACK_EVENT_DECODE_FAILED));
 }
 
 TEST_CASE("Encoding", "[qpack-encode]")
@@ -439,6 +703,113 @@ TEST_CASE("Encoding", "[qpack-encode]")
   }
 }
 
+// QPACK::decode() parses the Required Insert Count varint from the header
+// block prefix and stores the decoded value in a uint16_t local; the call site
+// must reject a varint whose value exceeds the uint16_t range, otherwise the
+// value silently truncates and the decoder proceeds with corrupted state.
+// Drive QPACK::decode() with a 4-byte 8-bit-prefix varint encoding 0x10000
+// and assert that the decoder reports failure rather than accepting it.
+TEST_CASE("decode() rejects oversized Required Insert Count at entry", "[qpack-decode-entry-bounds]")
+{
+  QUICApplicationDriver driver;
+  auto                  qpack   = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 4096, 100, MAX_FIELD_SIZE);
+  auto                  handler = std::make_unique<TestQPACKEventHandler>();
+
+  HTTPHdr hdr;
+  hdr.create(HTTPType::REQUEST);
+
+  uint8_t  block[16] = {0};
+  uint8_t *p         = block;
+  int      enc_len   = xpack_encode_integer(p, p + sizeof(block), 0x10000, 8);
+  REQUIRE(enc_len > 0);
+  p                += enc_len;
+  *p++              = 0x00;
+  size_t block_len  = static_cast<size_t>(p - block);
+
+  int sync_ret = decode_on_event_thread(*qpack, 1, block, block_len, hdr, handler.get());
+
+  // decode() schedules its result asynchronously when it returns >= 0; only
+  // wait in that case. A synchronous failure (sync_ret < 0) means no event
+  // will be delivered and there is nothing to wait for.
+  if (sync_ret >= 0) {
+    sleep(1);
+  }
+
+  CAPTURE(sync_ret);
+  CAPTURE(handler->last_event());
+  CHECK_FALSE((sync_ret == 0 && handler->last_event() == QPACK_EVENT_DECODE_COMPLETE));
+  CHECK((sync_ret < 0 || handler->last_event() == QPACK_EVENT_DECODE_FAILED));
+
+  hdr.destroy();
+}
+
+// QPACK::encode() compresses a header set into IOBufferBlocks that are then
+// framed as a HEADERS frame. A response whose compressed fields do not fit in a
+// single 2 KB block must still be encoded in full; a field that is silently
+// dropped never reaches the client. Encode a large header set, decode the
+// resulting header block with a second QPACK instance and check that every
+// field survived the round trip.
+TEST_CASE("encode() keeps every field of a header set larger than one buffer block", "[qpack-encode-large]")
+{
+  QUICApplicationDriver driver;
+  auto                  encoder = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+  auto                  decoder = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+  auto                  handler = std::make_unique<TestQPACKEventHandler>();
+
+  constexpr int    NUM_FIELDS             = 64;
+  constexpr size_t VALUE_LENGTH           = 256;
+  constexpr size_t OVERSIZED_VALUE_LENGTH = 1024;
+
+  HTTPHdr original;
+  original.create(HTTPType::RESPONSE);
+
+  // The encoded size bound of this field exceeds the initial 2 KB block, so encode() has to replace that block before
+  // anything is written to it.
+  std::string oversized_value(OVERSIZED_VALUE_LENGTH, 'z');
+  MIMEField  *oversized = original.field_create(std::string_view{"x-oversized-header"});
+  original.field_attach(oversized);
+  original.field_value_set(oversized, oversized_value);
+
+  for (int i = 0; i < NUM_FIELDS; ++i) {
+    char name[32];
+    snprintf(name, sizeof(name), "x-large-header-%02d", i);
+    std::string value(VALUE_LENGTH, static_cast<char>('a' + (i % 26)));
+    MIMEField  *field = original.field_create(std::string_view{name});
+    original.field_attach(field);
+    original.field_value_set(field, value);
+  }
+
+  MIOBuffer      *header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  IOBufferReader *header_block_reader = header_block->alloc_reader();
+  uint64_t        header_block_len    = 0;
+
+  REQUIRE(encoder->encode(1, original, header_block, header_block_len) == 0);
+  REQUIRE(header_block_len == static_cast<uint64_t>(header_block_reader->read_avail()));
+
+  std::vector<uint8_t> block(header_block_len);
+  header_block_reader->memcpy(block.data(), block.size());
+
+  HTTPHdr decoded;
+  decoded.create(HTTPType::RESPONSE);
+  REQUIRE(decode_on_event_thread(*decoder, 1, block.data(), block.size(), decoded, handler.get()) == 0);
+  sleep(1);
+  REQUIRE(handler->last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
+  CHECK(decoded.fields_count() == original.fields_count());
+  for (auto &field : original) {
+    auto name = field.name_get();
+    CAPTURE(name);
+    MIMEField *decoded_field = decoded.field_find(name);
+    REQUIRE(decoded_field != nullptr);
+    CHECK(decoded_field->value_get() == field.value_get());
+  }
+
+  decoded.destroy();
+  original.destroy();
+  header_block->dealloc_reader(header_block_reader);
+  free_MIOBuffer(header_block);
+}
+
 TEST_CASE("Decoding", "[qpack-decode]")
 {
   char app_dir[PATH_MAX + 1] = "";
@@ -471,4 +842,516 @@ TEST_CASE("Decoding", "[qpack-decode]")
       }
     }
   }
+}
+
+// QPACK::_arena and the encoder stream handler are private. This reaches them so
+// a test can tell whether the arena got back everything QPACK allocated out of it.
+struct QPACKTestAccess {
+  // Arena::free() never inspects the last block on its list, so nothing rewinds
+  // while the arena holds a single block. Allocate until a release is seen to
+  // rewind, which happens once a second block heads the list. That block is
+  // mostly free; the allocations under test must fit in it, otherwise they open
+  // a new head block and the water level moves for that reason.
+  static void
+  skip_first_block(QPACK &qpack)
+  {
+    for (int i = 0; i < 1000; ++i) {
+      char *probe = qpack._arena.str_alloc(1);
+
+      qpack._arena.str_free(probe);
+      if (water_level(qpack) == probe) {
+        return;
+      }
+      qpack._arena.str_alloc(64);
+    }
+    FAIL("the arena never rewound a release");
+  }
+
+  // Arena has no water level accessor. The address the next allocation gets
+  // stands in for it.
+  static void *
+  water_level(QPACK &qpack)
+  {
+    char *probe = qpack._arena.str_alloc(1);
+
+    qpack._arena.str_free(probe);
+    return probe;
+  }
+
+  // Hands encoder stream instructions straight to the handler a read on the
+  // encoder stream ends up in, on the calling thread. That skips event dispatch,
+  // the stream id routing in _on_read_ready() and QPACK's mutex, none of which
+  // touch the arena. Nothing else runs QPACK while a test calls this.
+  static void
+  read_encoder_stream(QPACK &qpack, const uint8_t *instructions, size_t len)
+  {
+    MIOBuffer      *buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
+    IOBufferReader *reader = buffer->alloc_reader();
+
+    buffer->write(instructions, len);
+    qpack._on_encoder_stream_read_ready(*reader);
+    free_MIOBuffer(buffer);
+  }
+};
+
+// Decodes one Literal Header Field Without Name Reference. That is the field
+// representation whose name and value are both allocated out of QPACK's
+// per-connection arena and released again once the header is attached, so it is
+// the path that cares about the order those releases happen in.
+TEST_CASE("Decoding a literal header field without name reference", "[qpack-literal-decode]")
+{
+  QUICApplicationDriver driver;
+  // decode() schedules its completion event on an event thread and hands it
+  // this handler, so every decode below is waited on before anything it can
+  // reach goes out of scope.
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+
+  // Header Data Prefix: Required Insert Count 0, Delta Base 0.
+  // Then 0x23: 001 N H <Name Length (3+)>, no never-index, no huffman, name of
+  // 3 bytes. Then 0x03: H <Value Length (7+)>, no huffman, value of 3 bytes.
+  // clang-format off
+  const uint8_t header_block[] = {
+    0x00, 0x00,
+    0x23, 'a', 'b', 'c',
+    0x03, 'x', 'y', 'z',
+  };
+  // clang-format on
+
+  SECTION("the name and value survive the decode")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
+    MIMEField *field = hdr.field_find("abc");
+
+    REQUIRE(field != nullptr);
+
+    auto value = field->value_get();
+
+    CHECK(value.length() == 3);
+    CHECK(memcmp(value.data(), "xyz", 3) == 0);
+
+    hdr.destroy();
+  }
+
+  SECTION("the arena gets back what the decode allocated")
+  {
+    QPACKTestAccess::skip_first_block(*qpack);
+    void *water_level = QPACKTestAccess::water_level(*qpack);
+
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+    CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+    hdr.destroy();
+  }
+
+  SECTION("the arena gets back the name when the value fails to decode")
+  {
+    // The value carries the huffman flag and a length of 8, and an all-ones
+    // payload is not a decodable huffman sequence.
+    // clang-format off
+    const uint8_t bad_value_block[] = {
+      0x00, 0x00,
+      0x23, 'a', 'b', 'c',
+      0x88, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    };
+    // clang-format on
+
+    QPACKTestAccess::skip_first_block(*qpack);
+    void *water_level = QPACKTestAccess::water_level(*qpack);
+
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    REQUIRE(decode_on_event_thread(*qpack, 1, bad_value_block, sizeof(bad_value_block), hdr, &event_handler) == 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
+    CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+    hdr.destroy();
+  }
+
+  SECTION("repeated decodes keep returning the same field")
+  {
+    for (int i = 0; i < 200; i++) {
+      HTTPHdr hdr;
+      hdr.create(HTTPType::REQUEST);
+
+      REQUIRE(decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler) == 0);
+      REQUIRE(event_handler.wait_for_events(i + 1));
+
+      MIMEField *field = hdr.field_find("abc");
+
+      REQUIRE(field != nullptr);
+
+      auto value = field->value_get();
+
+      REQUIRE(value.length() == 3);
+      REQUIRE(memcmp(value.data(), "xyz", 3) == 0);
+
+      hdr.destroy();
+    }
+  }
+}
+
+// Appends an Insert Without Name Reference: 01 H <Name Length (5+)> <Name> H <Value Length (7+)> <Value>,
+// neither string huffman coded. The lengths are written as single prefix bytes, which holds for names
+// shorter than 31 bytes and values shorter than 127.
+static void
+append_insert_without_name_ref(std::vector<uint8_t> &instructions, std::string_view name, std::string_view value)
+{
+  REQUIRE(name.size() < 31);
+  REQUIRE(value.size() < 127);
+
+  instructions.push_back(static_cast<uint8_t>(0x40 | name.size()));
+  instructions.insert(instructions.end(), name.begin(), name.end());
+  instructions.push_back(static_cast<uint8_t>(value.size()));
+  instructions.insert(instructions.end(), value.begin(), value.end());
+}
+
+// Insert Without Name Reference on the encoder stream allocates the name and the
+// value out of QPACK's per-connection arena, and has to give both back once the
+// entry is in the dynamic table, or when the value fails to decode.
+TEST_CASE("Insert Without Name Reference on the encoder stream", "[qpack-encoder-stream]")
+{
+  constexpr int INSERTS = 200;
+
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  // Room in the dynamic table for every insert below.
+  auto qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 16384, 0, MAX_FIELD_SIZE);
+
+  QPACKTestAccess::skip_first_block(*qpack);
+  void *water_level = QPACKTestAccess::water_level(*qpack);
+
+  // Distinct names and values so a decoded field tells which insert it came from.
+  std::vector<uint8_t> instructions;
+  for (int i = 0; i < INSERTS; ++i) {
+    char name[8];
+    char value[8];
+
+    snprintf(name, sizeof(name), "n%03d", i);
+    snprintf(value, sizeof(value), "v%03d", i);
+    append_insert_without_name_ref(instructions, name, value);
+  }
+
+  QPACKTestAccess::read_encoder_stream(*qpack, instructions.data(), instructions.size());
+  CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+  // Required Insert Count, which this decoder takes as the absolute index of the
+  // largest entry referenced, then Delta Base 0, then two Indexed Field Lines on
+  // the dynamic table: relative index 0 is the last insert and relative index
+  // INSERTS - 1 is the first.
+  uint8_t  header_block[16] = {0};
+  uint8_t *p                = header_block;
+  uint8_t *end              = header_block + sizeof(header_block);
+
+  p    += xpack_encode_integer(p, end, INSERTS - 1, 8);
+  *p++  = 0x00;
+  *p    = 0x80;
+  p    += xpack_encode_integer(p, end, 0, 6);
+  *p    = 0x80;
+  p    += xpack_encode_integer(p, end, INSERTS - 1, 6);
+
+  size_t header_block_len = p - header_block;
+
+  SECTION("every insert lands in the dynamic table")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    // Wait before checking the result: if an insert had failed, decode() would
+    // return -1 and still schedule an event for event_handler.
+    int ret = decode_on_event_thread(*qpack, 1, header_block, header_block_len, hdr, &event_handler);
+
+    CAPTURE(ret);
+    REQUIRE(event_handler.wait_for_events(1));
+    REQUIRE(ret == 0);
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
+    MIMEField *last = hdr.field_find("n199");
+
+    REQUIRE(last != nullptr);
+    CHECK(last->value_get() == "v199");
+
+    MIMEField *first = hdr.field_find("n000");
+
+    REQUIRE(first != nullptr);
+    CHECK(first->value_get() == "v000");
+
+    hdr.destroy();
+  }
+
+  SECTION("a value that fails to decode gives the name back and fails the decoder")
+  {
+    // The name decodes. The value carries the huffman flag and a length of 8,
+    // and an all-ones payload is not a decodable huffman sequence.
+    const uint8_t bad_value[] = {0x43, 'b', 'a', 'd', 0x88, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+    QPACKTestAccess::read_encoder_stream(*qpack, bad_value, sizeof(bad_value));
+    CHECK(QPACKTestAccess::water_level(*qpack) == water_level);
+
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    CHECK(decode_on_event_thread(*qpack, 1, header_block, header_block_len, hdr, &event_handler) < 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
+
+    hdr.destroy();
+  }
+}
+
+// Appends an Insert Without Name Reference with an empty value: 01 H <Name Length (5+)> <Name> H <Value Length (7+)>, the
+// name not huffman coded.
+static void
+append_insert_without_name_ref_empty_value(std::vector<uint8_t> &instructions, std::string_view name)
+{
+  uint8_t buf[16];
+
+  buf[0]   = 0x40;
+  auto len = xpack_encode_integer(buf, buf + sizeof(buf), name.size(), 5);
+
+  REQUIRE(len > 0);
+  instructions.insert(instructions.end(), buf, buf + len);
+  instructions.insert(instructions.end(), name.begin(), name.end());
+  instructions.push_back(0x00);
+}
+
+// RFC 9204 Section 3.2.2 lets an insert reference a dynamic table entry that the
+// same insert evicts. The referenced name has to survive that eviction rather
+// than being copied over itself in the table's storage.
+TEST_CASE("Insert With Name Reference to an entry the insert evicts", "[qpack-encoder-stream]")
+{
+  QUICApplicationDriver driver;
+  TestQPACKEventHandler event_handler;
+  // Room for one entry of each name below, 32 bytes of overhead included, but
+  // not two.
+  auto qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 128, 0, MAX_FIELD_SIZE);
+
+  std::string first(62, 'a');
+  std::string second(91, '\0');
+
+  for (size_t i = 0; i < second.size(); ++i) {
+    second[i] = static_cast<char>('a' + i % 26);
+  }
+
+  // The second insert evicts the first and wraps the table's storage. The third
+  // references the second by relative index 0 and evicts it in turn. An
+  // absolute index 0 would resolve to the long evicted first entry instead.
+  std::vector<uint8_t> instructions;
+
+  append_insert_without_name_ref_empty_value(instructions, first);
+  append_insert_without_name_ref_empty_value(instructions, second);
+  instructions.push_back(0x80); // Insert With Name Reference, dynamic, relative index 0.
+  instructions.push_back(0x00); // An empty, unencoded value.
+
+  QPACKTestAccess::read_encoder_stream(*qpack, instructions.data(), instructions.size());
+
+  // Required Insert Count, which this decoder takes as the absolute index of the
+  // largest entry referenced, Delta Base 0, then an Indexed Field Line on the
+  // dynamic table at relative index 0, the third insert.
+  const uint8_t header_block[] = {0x02, 0x00, 0x80};
+
+  HTTPHdr hdr;
+  hdr.create(HTTPType::REQUEST);
+
+  int ret = decode_on_event_thread(*qpack, 1, header_block, sizeof(header_block), hdr, &event_handler);
+
+  CAPTURE(ret);
+  REQUIRE(event_handler.wait_for_events(1));
+  REQUIRE(ret == 0);
+  CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+  CHECK(hdr.field_find(second) != nullptr);
+
+  hdr.destroy();
+}
+
+/** A decode or two on one QPACK, with a cancel in between or not.
+ *
+ * Shared with the driver so that the state outlives the test if wait_for()
+ * gives up while events are still queued.
+ */
+struct TestQPACKCancelCase {
+  TestQPACKFixture      fixture;
+  TestQPACKEventHandler other_handler;
+  HTTPHdr               other_hdr;
+
+  bool poison_decoder = false;
+  bool second_stream  = false;
+  bool cancel         = false;
+
+  std::atomic<int>  decode_result{0};
+  std::atomic<int>  cancel_result{-1};
+  std::atomic<int>  cancel_after_delivery{-1};
+  std::atomic<bool> done{false};
+
+  TestQPACKCancelCase() { other_hdr.create(HTTPType::REQUEST); }
+  ~TestQPACKCancelCase() { other_hdr.destroy(); }
+};
+
+/** Decode on streams 1 and maybe 5, maybe cancel stream 1, then look again.
+ *
+ * Everything runs on one event thread, so no report is delivered until the
+ * first event returns. The second event is queued behind every report the
+ * decodes scheduled, so by then each report has been delivered or withdrawn.
+ */
+class TestQPACKCancelDriver : public Continuation
+{
+public:
+  explicit TestQPACKCancelDriver(std::shared_ptr<TestQPACKCancelCase> state)
+    : Continuation(new_ProxyMutex()), _state(std::move(state))
+  {
+    SET_HANDLER(&TestQPACKCancelDriver::drive);
+  }
+
+  int
+  drive(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
+  {
+    // Required Insert Count 0, Delta Base 0, then :method GET from the static table.
+    static const uint8_t header_block[] = {0x00, 0x00, 0xd1};
+    // Insert With Name Reference to static index 100, one past the end of the table.
+    static const uint8_t bad_insert[] = {0xff, 0x25, 0x01, 'x'};
+
+    TestQPACKCancelCase &s     = *this->_state;
+    QPACK               &qpack = s.fixture.qpack;
+
+    if (this->_started) {
+      s.cancel_after_delivery = qpack.cancel(1);
+      s.done                  = true;
+      delete this;
+      return 0;
+    }
+
+    if (s.poison_decoder) {
+      QPACKTestAccess::read_encoder_stream(qpack, bad_insert, sizeof(bad_insert));
+    }
+    s.decode_result = qpack.decode(1, header_block, sizeof(header_block), s.fixture.hdr, &s.fixture.event_handler);
+    if (s.second_stream) {
+      qpack.decode(5, header_block, sizeof(header_block), s.other_hdr, &s.other_handler);
+    }
+    if (s.cancel) {
+      s.cancel_result = qpack.cancel(1);
+    }
+
+    this->_started = true;
+    this_ethread()->schedule_imm(this);
+    return 0;
+  }
+
+private:
+  std::shared_ptr<TestQPACKCancelCase> _state;
+  bool                                 _started = false;
+};
+
+static std::shared_ptr<TestQPACKCancelCase>
+run_cancel_case(bool cancel, bool second_stream = false, bool poison_decoder = false)
+{
+  auto state            = std::make_shared<TestQPACKCancelCase>();
+  state->cancel         = cancel;
+  state->second_stream  = second_stream;
+  state->poison_decoder = poison_decoder;
+
+  eventProcessor.all_ethreads[0]->schedule_imm(new TestQPACKCancelDriver(state));
+  REQUIRE(wait_for(state->done));
+  return state;
+}
+
+TEST_CASE("cancel() withdraws a stream's queued decode result", "[qpack-cancel]")
+{
+  SECTION("without a cancel the result is delivered")
+  {
+    // The control for the cases below: the handler does see a result that
+    // nobody cancels, so a count of zero there means the cancel worked.
+    auto s = run_cancel_case(false);
+
+    CHECK(s->decode_result == 0);
+    CHECK(s->fixture.event_handler.events_seen() == 1);
+    CHECK(s->fixture.event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+    // Once delivered, the result is no longer QPACK's to cancel.
+    CHECK(s->cancel_after_delivery == 0);
+  }
+
+  SECTION("a cancel before delivery withdraws the result")
+  {
+    auto s = run_cancel_case(true);
+
+    CHECK(s->decode_result == 0);
+    CHECK(s->cancel_result == 1);
+    CHECK(s->fixture.event_handler.events_seen() == 0);
+    CHECK(s->cancel_after_delivery == 0);
+  }
+
+  SECTION("a cancel leaves other streams' results alone")
+  {
+    auto s = run_cancel_case(true, true);
+
+    CHECK(s->cancel_result == 1);
+    CHECK(s->fixture.event_handler.events_seen() == 0);
+    CHECK(s->other_handler.events_seen() == 1);
+    CHECK(s->other_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+  }
+
+  SECTION("without a cancel a decoder that failed still reports")
+  {
+    auto s = run_cancel_case(false, false, true);
+
+    CHECK(s->decode_result == -1);
+    CHECK(s->fixture.event_handler.events_seen() == 1);
+    CHECK(s->fixture.event_handler.last_event() == QPACK_EVENT_DECODE_FAILED);
+  }
+
+  SECTION("a cancel withdraws a failed decoder's report too")
+  {
+    auto s = run_cancel_case(true, false, true);
+
+    CHECK(s->decode_result == -1);
+    CHECK(s->cancel_result == 1);
+    CHECK(s->fixture.event_handler.events_seen() == 0);
+  }
+}
+
+TEST_CASE("A cancelled blocked decode gives up its blocked stream slot", "[qpack-cancel]")
+{
+  // A Required Insert Count of 2, which this decoder takes as the absolute
+  // index of the largest entry referenced, blocks the decode while nothing is
+  // inserted. The fixture's decoder allows one blocked stream, so a second
+  // blocked stream is refused while the first still holds the slot.
+  static const uint8_t blocked_header_block[] = {0x02, 0x00, 0x80};
+
+  auto                  fixture = std::make_shared<TestQPACKFixture>();
+  TestQPACKEventHandler second_handler;
+  HTTPHdr               second_hdr;
+
+  second_hdr.create(HTTPType::REQUEST);
+  REQUIRE(decode_on_event_thread(fixture->qpack, 1, blocked_header_block, sizeof(blocked_header_block), fixture->hdr,
+                                 &fixture->event_handler) == 1);
+
+  SECTION("without a cancel the slot stays taken")
+  {
+    CHECK(decode_on_event_thread(fixture->qpack, 5, blocked_header_block, sizeof(blocked_header_block), second_hdr,
+                                 &second_handler) == -2);
+  }
+
+  SECTION("a cancel frees the slot")
+  {
+    CHECK(run_on_event_thread([&] { return fixture->qpack.cancel(1); }) == 1);
+    CHECK(decode_on_event_thread(fixture->qpack, 5, blocked_header_block, sizeof(blocked_header_block), second_hdr,
+                                 &second_handler) == 1);
+  }
+
+  // The fixture's QPACK goes away before second_hdr does, and drops what is
+  // still blocked on it.
+  fixture.reset();
+  second_hdr.destroy();
 }

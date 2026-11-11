@@ -146,6 +146,51 @@ This function call returns the new :class:`Option` instance. (0 is also number o
    ``--option=value`` form instead when options still have to follow a value that begins with
    ``-``.
 
+   The escaped token is also left alone by the option scan of every command on the line,
+   including the one that owns it. Each of those scans covers the whole remaining command line,
+   so without this a value spelled like an option of another command would be taken as that
+   option rather than reaching the command that asked for it. Only the single token right after
+   the ``--`` is protected this way, whatever the arity of its owner. A second or later value
+   after the ``--`` is still matched against the options of the enclosing commands, ``--help``
+   and ``--version`` included, and when it is a further positional argument of a command,
+   against that command's own options as well. Put the ``--`` directly before the value that
+   begins with ``-``. That works for one such value per option or command: a second ``--`` in
+   the same collection is taken as a value, since the first one already turned option
+   recognition off. Where more than one value begins with ``-``, use the ``--option=value`` form
+   for the values that belong to an option.
+
+.. Note::
+
+   When a command or option is written on the command line but given no value at all, a
+   declared environment variable fills it in, so a caller reading the value through
+   :func:`ArgumentData::value` or :func:`ArgumentData::at` needs no special handling. This
+   applies whether the value is missing because the option takes a fixed number of arguments,
+   ``AT_MOST_ONE_ARG_N``, or ``MORE_THAN_ONE_ARG_N`` collected none. The resolution order is:
+
+   #. the value typed on the command line, if any;
+   #. the declared environment variable, if set;
+   #. the declared default value.
+
+   The variable is consulted only when the command or option is actually written, and only
+   when it is given no value at all; it never activates one that was never typed, and it never
+   joins a value that was typed. For a fixed number of arguments above one, this means the
+   variable fills every slot only when none of them were given; a partial set is a usage error
+   just as it would be without a variable declared.
+
+   An option may be written more than once. The variable applies only when every occurrence is
+   bare: if any occurrence is given a value, in either the ``--option value`` or
+   ``--option=value`` spelling, a bare occurrence of the same option is the usage error it
+   would be without a variable at all, regardless of which occurrence comes first. A line with
+   no bare occurrence is untouched, including the last-one-wins behaviour a fixed-arity option
+   already has when typed more than once. ``AT_MOST_ONE_ARG_N`` cannot reach this case, since it
+   already refuses repetition outright.
+
+   ``MORE_THAN_ZERO_ARG_N`` does not support this fallback: zero values is already valid input
+   for it, so there is no usage error for a variable to replace.
+
+   :func:`ArgumentData::env` keeps returning the variable's raw value regardless of whether it
+   was used to fill a value.
+
 We can also use the following chained way to add subcommand or option:
 
 .. code-block:: cpp

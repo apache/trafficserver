@@ -41,7 +41,7 @@
 
 namespace
 {
-constexpr char OCSP_TEST_SSL_DIR[] = _XSTR(LIBINKNET_UNIT_TEST_DIR) "/../../../../tests/gold_tests/tls/ssl";
+constexpr char OCSP_TEST_SSL_DIR[] = _XSTR(LIBINKNET_UNIT_TEST_DIR) "/../../../../tests/uranium_tests/tls/ssl";
 
 struct BioDeleter {
   void

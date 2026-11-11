@@ -50,7 +50,7 @@ struct SinkData {
   /** The bytes for the response body streamed in from the sink.
    *
    * @note This example plugin buffers the body which is useful for the
-   * associated Autest. In most production scenarios the user will want to
+   * associated Uranium test. In most production scenarios the user will want to
    * interact with the body as a stream rather than buffering the entire body
    * for each transaction.
    */
@@ -59,7 +59,7 @@ struct SinkData {
   /** The bytes for the request body streamed in from the sink.
    *
    * @note This example plugin buffers the body which is useful for the
-   * associated Autest. In most production scenarios the user will want to
+   * associated Uranium test. In most production scenarios the user will want to
    * interact with the body as a stream rather than buffering the entire body
    * for each transaction.
    */

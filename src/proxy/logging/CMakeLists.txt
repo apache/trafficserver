@@ -16,23 +16,24 @@
 #######################
 
 add_library(
-  logging STATIC
-  Log.cc
-  LogAccess.cc
-  LogBuffer.cc
-  LogConfig.cc
-  LogField.cc
-  LogFieldAliasMap.cc
-  LogFile.cc
-  LogFilter.cc
-  LogFormat.cc
-  LogFieldFallback.cc
-  LogObject.cc
-  TransactionLogData.cc
-  LogUtils.cc
-  RolledLogDeleter.cc
-  YamlLogConfig.cc
-  YamlLogConfigDecoders.cc
+  logging
+  STATIC
+    Log.cc
+    LogAccess.cc
+    LogBuffer.cc
+    LogConfig.cc
+    LogField.cc
+    LogFieldAliasMap.cc
+    LogFile.cc
+    LogFilter.cc
+    LogFormat.cc
+    LogFieldFallback.cc
+    LogObject.cc
+    TransactionLogData.cc
+    LogUtils.cc
+    RolledLogDeleter.cc
+    YamlLogConfig.cc
+    YamlLogConfigDecoders.cc
 )
 add_library(ts::logging ALIAS logging)
 
@@ -40,13 +41,14 @@ target_include_directories(logging PRIVATE ${SWOC_INCLUDE_DIR})
 
 target_link_libraries(
   logging
-  PUBLIC ts::inkevent
-         ts::inkutils
-         ts::http
-         ts::hdrs
-         ts::tscore
-         ts::configmanager
-         yaml-cpp::yaml-cpp
+  PUBLIC
+    ts::inkevent
+    ts::inkutils
+    ts::http
+    ts::hdrs
+    ts::tscore
+    ts::configmanager
+    yaml-cpp::yaml-cpp
 )
 
 if(BUILD_TESTING)
@@ -72,6 +74,10 @@ if(BUILD_TESTING)
   add_executable(test_LogBuffer unit-tests/test_LogBuffer.cc)
   target_link_libraries(test_LogBuffer ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain)
   add_catch2_test(NAME test_LogBuffer COMMAND test_LogBuffer)
+
+  add_executable(test_LogRolling unit-tests/test_LogRolling.cc)
+  target_link_libraries(test_LogRolling ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_LogRolling COMMAND test_LogRolling)
 endif()
 
 clang_tidy_check(logging)

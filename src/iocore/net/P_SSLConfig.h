@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -30,9 +30,12 @@
  ****************************************************************************/
 #pragma once
 
+#include <optional>
+
 #include "P_SSLSecret.h"
 #include "SSLSessionCache.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "mgmt/config/ConfigContext.h"
 
@@ -61,18 +64,28 @@ struct SSLConfigParams : public ConfigInfo {
   char *serverCertChainFilename;
   char *serverKeyPathOnly;
   char *serverCACertFilename;
-  char *serverCACertPath;
-  char *configFilePath;
-  char *dhparamsFile;
-  char *cipherSuite;
-  char *client_cipherSuite;
-  int   configExitOnLoadError;
-  int   configPartialReload; ///< When 1, commit a partial SSLCertLookup on reload even if some certs failed.
-  int   configLoadConcurrency;
-  int   clientCertLevel;
-  int   verify_depth;
-  int   ssl_origin_session_cache{0};
-  int   ssl_origin_session_cache_size{0};
+
+  /** Digest of the trust anchors in proxy.config.ssl.CA.cert.filename, for the session id
+      context that scopes session resumption. Held here rather than process-wide so that the
+      handshake path reads it through the same scoped_config it already acquires, and so that it
+      is replaced with the configuration it describes. SSLConfig is always reconfigured before
+      SSLCertificateConfig, so it cannot go stale against the certificate contexts.
+   */
+  std::optional<TLSBasicSupport::VerifyScopeDigest> clientCADigest;
+  bool                                              clientCADigestFailed = false;
+  char                                             *serverCACertPath;
+  char                                             *configFilePath;
+  char                                             *dhparamsFile;
+  char                                             *cipherSuite;
+  char                                             *client_cipherSuite;
+  int                                               configExitOnLoadError;
+  int    configPartialReload; ///< When 1, commit a partial SSLCertLookup on reload even if some certs failed.
+  int    configLoadConcurrency;
+  int    clientCertLevel;
+  int    verify_depth;
+  int    ssl_origin_session_cache{0};
+  int    ssl_origin_session_cache_size{0};
+  size_t ssl_origin_session_max_size{0};
 
   char                   *clientCertPath;
   char                   *clientCertPathOnly;
@@ -126,6 +139,21 @@ struct SSLConfigParams : public ConfigInfo {
 
   static int    origin_session_cache;
   static size_t origin_session_cache_size;
+  static size_t origin_session_max_size;
+
+  /** Bounds on the ASN.1 form of a cached origin session, in bytes, for
+   * proxy.config.ssl.origin_session_cache.max_session_size.
+   *
+   * A serialized session carries the peer certificate and the session ticket, so a large
+   * origin certificate -- or any mutual-TLS origin, whose ticket has to encode the client
+   * certificate to resume the authenticated session -- exceeds the 4096 this was fixed at
+   * before it became configurable.  That 4096 is the floor, so no setting caches less than
+   * Traffic Server always did.  The ceiling keeps SSLSessionDup()'s serialization buffer,
+   * which is sized from the session, within the event thread stack.
+   */
+  static constexpr size_t ORIGIN_SESSION_MAX_SIZE_DEFAULT = 8192;
+  static constexpr size_t ORIGIN_SESSION_MAX_SIZE_MIN     = 4096;
+  static constexpr size_t ORIGIN_SESSION_MAX_SIZE_MAX     = 65536;
 
   static swoc::IPRangeSet *proxy_protocol_ip_addrs;
 
@@ -192,6 +220,8 @@ struct SSLConfig {
   static int  get_config_index();
   static int  get_loading_config_index();
   static void commit_config_id();
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<SSLConfig, SSLConfigParams>;
 
 private:
@@ -205,6 +235,8 @@ struct SSLCertificateConfig {
   static SSLCertLookup *acquire();
   static void           release(SSLCertLookup *params);
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<SSLCertificateConfig, SSLCertLookup>;
 
 private:
@@ -241,6 +273,12 @@ struct SSLTicketKeyConfig {
     }
   }
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned
+  config_id()
+  {
+    return configid;
+  }
   using scoped_config = ConfigProcessor::scoped_config<SSLTicketKeyConfig, SSLTicketParams>;
 
 private:

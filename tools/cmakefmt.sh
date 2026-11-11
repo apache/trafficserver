@@ -1,0 +1,78 @@
+#! /usr/bin/env bash
+#
+#  Simple wrapper to run cmakefmt on a directory.
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Update this version variable with the new desired cmakefmt release when a
+# new cmakefmt version is desired.
+# See:
+# https://github.com/cmakefmt/cmakefmt/releases
+CMAKEFMT_VERSION="2.3.1"
+
+function cmake_vendorlib_grep() {
+  grep -E "CMakeLists.txt|.cmake$" | grep -vE "lib/(Catch2|fastlz|highway|ls-hpack|swoc|yamlcpp)" || true
+}
+
+function main() {
+  set -e # exit on error
+
+  # Check for uv.
+  if ! command -v uv &> /dev/null; then
+    echo "uv is not installed. Please install it: https://docs.astral.sh/uv/getting-started/installation/"
+    exit 1
+  fi
+
+  DIR=${@:-.}
+
+  # Only run cmakefmt on tracked files. This saves time and possibly avoids
+  # formatting files the user doesn't want formatted.
+  tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
+  files=${tmp_dir}/git_files.txt
+  git ls-tree -r HEAD --name-only ${DIR} | cmake_vendorlib_grep > ${files}
+  # Add to the above any newly added staged files.
+  git diff --cached --name-only --diff-filter=A | cmake_vendorlib_grep >> ${files}
+  # Prepend the filenames with "./" to make the modified file output consistent
+  # with the clang-format target output.
+  sed -i'.bak' 's:^:\./:' ${files}
+  rm -f ${files}.bak
+
+  # With no files, both cmakefmt and find would fall back to recursing the
+  # current directory, which would reach files outside the requested scope.
+  if [[ ! -s ${files} ]]; then
+    rm -rf ${tmp_dir}
+    return 0
+  fi
+
+  # Efficiently retrieving modification timestamps in a platform
+  # independent way is challenging. We use find's -newer argument, which
+  # seems to be broadly supported. The following file is created and has a
+  # timestamp just before running cmakefmt. Any file with a timestamp
+  # after this we assume was modified by cmakefmt.
+  start_time_file=${tmp_dir}/format_start.$$
+  touch ${start_time_file}
+  uv tool run --quiet --from cmakefmt@${CMAKEFMT_VERSION} cmakefmt --required-version ${CMAKEFMT_VERSION} --quiet -i \
+    --files-from ${files}
+  find $(cat ${files}) -newer ${start_time_file}
+
+  rm -rf ${tmp_dir}
+}
+
+if [[ "$(basename -- "$0")" == 'cmakefmt.sh' ]]; then
+  main "$@"
+fi
+# When sourced, CMAKEFMT_VERSION is already set at the top of this file.

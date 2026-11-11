@@ -2,7 +2,7 @@
 
   Functionality allowing to load all plugins from a single config reload.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -149,7 +149,7 @@ PluginFactory::getUuid()
  * @param configPath plugin path as specified in the plugin
  * @param argc number of parameters passed to the plugin during instance initialization
  * @param argv parameters passed to the plugin during instance initialization
- * @param context Plugin context is used from continuations to guarantee correct reference counting against the plugin.
+ * @param[in] dynamicReloadEnabled Whether to load a dynamically reloadable copy of the plugin.
  * @param error human readable message if something goes wrong, empty otherwise
  * @return pointer to a plugin instance, nullptr if failure
  */
@@ -306,6 +306,7 @@ PluginFactory::cleanup()
  * @brief Find a plugin by path from our linked plugin list by using plugin effective (canonical) path
  *
  * @param path effective (canonical) path
+ * @param[in] dynamicReloadEnabled Whether to find a dynamically reloadable copy of the plugin.
  * @return plugin found or nullptr if not found
  */
 PluginDso *
@@ -344,11 +345,19 @@ PluginFactory::indicatePreReload()
 void
 PluginFactory::indicatePostReload(bool reloadSuccessful)
 {
-  /* Find out which plugins (DSO) are actually instantiated by this factory */
   std::unordered_map<PluginDso *, int> pluginUsed;
+  collectUsedPlugins(pluginUsed);
+
+  PluginDso::loadedPlugins()->indicatePostReload(reloadSuccessful, pluginUsed, getUuid());
+}
+
+/**
+ * @brief Add the plugins (DSO) actually instantiated by this factory to @a pluginUsed
+ */
+void
+PluginFactory::collectUsedPlugins(std::unordered_map<PluginDso *, int> &pluginUsed)
+{
   for (auto &inst : _instList) {
     pluginUsed[&(inst._plugin)]++;
   }
-
-  PluginDso::loadedPlugins()->indicatePostReload(reloadSuccessful, pluginUsed, getUuid());
 }

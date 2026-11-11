@@ -245,3 +245,42 @@ TEST_CASE("LogAccess marshals response HTTP versions as compact strings", "[LogA
   check([&](char *buf) { return access.marshal_server_resp_http_version(buf); });
   check([&](char *buf) { return access.marshal_cache_resp_http_version(buf); });
 }
+
+TEST_CASE("LogAccess JSON string slice stays within the raw value", "[LogAccess]")
+{
+  constexpr int     val_len = 10;
+  std::vector<char> src(INK_MIN_ALIGN * 2, '\x7e'); // sentinel fills the padding
+  for (int i = 0; i < val_len; ++i) {
+    src[i] = '\x01';
+  }
+  src[val_len] = '\0';
+
+  char dest[256];
+
+  SECTION("a slice that only overlaps the escaped output selects nothing")
+  {
+    char     spec[] = "x[50:60]"; // LogSlice rewrites the notation in place
+    LogSlice slice(spec);
+    char    *ptr = src.data();
+    int      n   = LogAccess::unmarshal_str(&ptr, dest, sizeof(dest), &slice, LOG_ESCAPE_JSON);
+    CHECK(n == 0);
+  }
+
+  SECTION("the escaped output is cut at end - start, dropping a partial escape")
+  {
+    char     spec[] = "x[0:14]";
+    LogSlice slice(spec);
+    char    *ptr = src.data();
+    int      n   = LogAccess::unmarshal_str(&ptr, dest, sizeof(dest), &slice, LOG_ESCAPE_JSON);
+    CHECK(std::string_view(dest, n) == "\\u0001\\u0001");
+  }
+
+  SECTION("a slice reaching past the raw value reads only up to its end")
+  {
+    char     spec[] = "x[8:60]";
+    LogSlice slice(spec);
+    char    *ptr = src.data();
+    int      n   = LogAccess::unmarshal_str(&ptr, dest, sizeof(dest), &slice, LOG_ESCAPE_JSON);
+    CHECK(std::string_view(dest, n) == "\\u0001\\u0001");
+  }
+}

@@ -1,7 +1,0 @@
-+++++++++ Proxy's Request after hooks +++++++++
--- State Machine Id``
-POST /some/path/http2``
-``
-x-ja3-raw: first-signature``
-x-ja3-via: first-via``
-``

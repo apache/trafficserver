@@ -1,0 +1,6 @@
+:1:0: warning: 'variables' is warned by sandbox policy (language)
+:8:4: warning: 'variables' is warned by sandbox policy (language)
+:9:4: warning: 'variables' is warned by sandbox policy (language)
+:10:7: warning: 'variables' is warned by sandbox policy (language)
+:11:8: warning: 'variables' is warned by sandbox policy (language)
+:13:7: warning: 'variables' is warned by sandbox policy (language)

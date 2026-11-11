@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -67,6 +67,8 @@ struct SSLMultiCertConfigParams {
   ats_scoped_str       ocsp_response;          ///< prefetched OCSP response
   ats_scoped_str       dialog;                 ///< Private key dialog
   ats_scoped_str       servername;             ///< Destination server
+  bool                 rpk_enabled = false;    ///< Offer RFC 7250 raw public keys from this entry's cert/key alongside X.509
+  ats_scoped_str       client_rpk_ca;          ///< Trusted client raw public keys (PEM, one or more) for inbound mTLS pinning
   SSLCertContextOption opt;                    ///< SSLCertContext special handling option
 };
 
@@ -80,8 +82,6 @@ struct ssl_ticket_key_block {
   unsigned         num_keys;
   ssl_ticket_key_t keys[];
 };
-
-using shared_ssl_ticket_key_block = std::shared_ptr<ssl_ticket_key_block>;
 
 /** A certificate context.
 
@@ -100,20 +100,13 @@ private:
   shared_SSL_CTX            ctx;
 
 public:
-  SSLCertContext() : ctx_mutex(), ctx(nullptr), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr) {}
-  explicit SSLCertContext(SSL_CTX *c)
-    : ctx_mutex(), ctx(c, SSL_CTX_free), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr), keyblock(nullptr)
+  SSLCertContext() : ctx_mutex(), ctx(nullptr), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr) {}
+  explicit SSLCertContext(SSL_CTX *c) : ctx_mutex(), ctx(c, SSL_CTX_free), opt(SSLCertContextOption::OPT_NONE), userconfig(nullptr)
   {
   }
 
   SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, const shared_SSLMultiCertConfigParams &u)
-    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(nullptr)
-  {
-  }
-
-  SSLCertContext(shared_SSL_CTX sc, SSLCertContextType ctx_type, const shared_SSLMultiCertConfigParams &u,
-                 shared_ssl_ticket_key_block kb)
-    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u), keyblock(std::move(kb))
+    : ctx_mutex(), ctx(std::move(sc)), ctx_type(ctx_type), opt(u->opt), userconfig(u)
   {
   }
 
@@ -129,14 +122,16 @@ public:
   SSLCertContextType              ctx_type   = SSLCertContextType::GENERIC;
   SSLCertContextOption            opt        = SSLCertContextOption::OPT_NONE; ///< Special handling option.
   shared_SSLMultiCertConfigParams userconfig = nullptr;                        ///< User provided settings
-  shared_ssl_ticket_key_block     keyblock   = nullptr;                        ///< session keys associated with this address
 };
 
 struct SSLCertLookup : public ConfigInfo {
   std::unique_ptr<SSLContextStorage> ssl_storage;
   std::unique_ptr<SSLContextStorage> ec_storage;
 
-  bool     is_valid        = true;
+  bool is_valid = true;
+  /// Some entry offers or pins RFC 7250 raw public keys, so on OpenSSL certificate selection has to
+  /// run before the library negotiates certificate types.
+  bool     has_raw_public_keys = false;
   unsigned user_cert_count = 0; ///< Count of certificate-bearing entries successfully loaded by the last load(). Tunnel-only and
                                 ///< bootstrap entries are not counted.
 

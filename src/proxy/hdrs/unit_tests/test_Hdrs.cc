@@ -845,6 +845,83 @@ TEST_CASE("MIME fields reuse deleted slots", "[proxy][hdrtest][mime]")
     CHECK(writable.field_create("X-Reused") == expected_slot);
     CHECK(writable.m_mime->m_fblock_list_tail == tail);
   }
+
+  auto free_list_is_descending = [](MIMEHdrImpl *mh) {
+    for (int32_t slot = mh->m_free_slot; slot != MIME_FIELD_FREE_SLOT_NONE;) {
+      MIMEField *field = mime_hdr_field_get_slotnum(mh, slot);
+
+      if (field == nullptr || field->m_readiness != MIME_FIELD_SLOT_READINESS_DELETED || field->m_free_next >= slot) {
+        return false;
+      }
+      slot = field->m_free_next;
+    }
+    return true;
+  };
+
+  SECTION("Out of order deletes rebuild a descending free list")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    std::array<MIMEField *, MIME_FIELD_BLOCK_SLOTS * 2> fields;
+    for (unsigned index = 0; index < fields.size(); ++index) {
+      fields[index] = add_field(hdr, "X-Field-" + std::to_string(index));
+    }
+
+    hdr.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 4], false);
+    CHECK(hdr.m_mime->m_free_slot == static_cast<int32_t>(MIME_FIELD_BLOCK_SLOTS + 4));
+    hdr.field_delete(fields[2], false);
+    hdr.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 1], false);
+    CHECK(hdr.m_mime->m_free_slot == MIME_FIELD_FREE_SLOT_UNINITIALIZED);
+
+    MIMEField *reused = add_field(hdr, "X-Reused");
+    CHECK(reused == fields[MIME_FIELD_BLOCK_SLOTS + 4]);
+    CHECK(hdr.m_mime->m_free_slot == static_cast<int32_t>(MIME_FIELD_BLOCK_SLOTS + 1));
+    CHECK(free_list_is_descending(hdr.m_mime));
+
+    CHECK(add_field(hdr, "X-Reused-2") == fields[MIME_FIELD_BLOCK_SLOTS + 1]);
+    CHECK(add_field(hdr, "X-Reused-3") == fields[2]);
+    CHECK(hdr.m_mime->m_free_slot == MIME_FIELD_FREE_SLOT_NONE);
+  }
+
+  SECTION("Duplicates past many free slots append without consuming them")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    constexpr unsigned       filler_count = MIME_FIELD_BLOCK_SLOTS * 256;
+    std::vector<MIMEField *> fillers;
+    for (unsigned index = 0; index < filler_count; ++index) {
+      fillers.push_back(add_field(hdr, "X-Filler-" + std::to_string(index)));
+    }
+    MIMEField *cookie = add_field(hdr, "Set-Cookie");
+    while (hdr.m_mime->m_fblock_list_tail->m_freetop < MIME_FIELD_BLOCK_SLOTS) {
+      cookie = add_field(hdr, "Set-Cookie");
+    }
+    for (MIMEField *filler : fillers) {
+      hdr.field_delete(filler, false);
+    }
+
+    int32_t const free_head = hdr.m_mime->m_free_slot;
+    REQUIRE(free_head == static_cast<int32_t>(filler_count - 1));
+    REQUIRE(free_list_is_descending(hdr.m_mime));
+
+    constexpr unsigned cookie_adds = MIME_FIELD_BLOCK_SLOTS * 64;
+    for (unsigned index = 0; index < cookie_adds; ++index) {
+      MIMEField *added = add_field(hdr, "Set-Cookie");
+
+      REQUIRE(mime_hdr_field_slotnum(hdr.m_mime, cookie) < mime_hdr_field_slotnum(hdr.m_mime, added));
+      REQUIRE(cookie->m_next_dup == added);
+      cookie = added;
+    }
+    CHECK(hdr.m_mime->m_free_slot == free_head);
+
+    MIMEField *other = add_field(hdr, "X-Other");
+    CHECK(other == fillers.back());
+    CHECK(free_list_is_descending(hdr.m_mime));
+  }
 }
 
 TEST_CASE("HdrTest", "[proxy][hdrtest]")
@@ -3092,6 +3169,218 @@ TEST_CASE("HTTPInfo::unmarshal_v24_1 frag bounds checks", "[proxy][hdrtest][unma
   }
 }
 
+// ---------------------------------------------------------------------------
+// Well-known string index rebuilding.
+//
+// A cached object stores indexes into the well-known string table next to the strings those
+// indexes stand for. A build whose table differs from the writer's would read those indexes as
+// different strings, so HTTPInfo::unmarshal() rebuilds them from the strings.
+//
+// There is only one table in a process, so these tests stand in for a differing table by rotating
+// every stored index and clearing the presence bits and slot accelerators derived from them, the
+// way a build that lacked some of these strings would leave them.
+// ---------------------------------------------------------------------------
+namespace
+{
+int16_t
+rotate_wks_idx(int16_t wks_idx)
+{
+  return wks_idx < 0 ? wks_idx : static_cast<int16_t>((wks_idx + 7) % hdrtoken_num_wks);
+}
+
+/// Rotate every well-known string index in one marshalled header heap.
+void
+scramble_marshalled_heap(HdrHeap *heap)
+{
+  char *obj_data = reinterpret_cast<char *>(heap) + reinterpret_cast<intptr_t>(heap->m_data_start);
+  char *heap_end = reinterpret_cast<char *>(heap) + heap->m_size;
+
+  while (obj_data < heap_end) {
+    HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
+
+    REQUIRE(obj->m_length > 0);
+    switch (static_cast<HdrHeapObjType>(obj->m_type)) {
+    case HdrHeapObjType::URL: {
+      URLImpl *url          = reinterpret_cast<URLImpl *>(obj);
+      url->m_scheme_wks_idx = rotate_wks_idx(url->m_scheme_wks_idx);
+      break;
+    }
+    case HdrHeapObjType::HTTP_HEADER: {
+      HTTPHdrImpl *hh = reinterpret_cast<HTTPHdrImpl *>(obj);
+      if (hh->m_polarity == HTTPType::REQUEST) {
+        hh->u.req.m_method_wks_idx = rotate_wks_idx(hh->u.req.m_method_wks_idx);
+      }
+      break;
+    }
+    case HdrHeapObjType::FIELD_BLOCK: {
+      MIMEFieldBlockImpl *fblock = reinterpret_cast<MIMEFieldBlockImpl *>(obj);
+      for (uint32_t i = 0; i < fblock->m_freetop; ++i) {
+        MIMEField &field = fblock->m_field_slots[i];
+        if (field.is_live()) {
+          field.m_wks_idx = rotate_wks_idx(field.m_wks_idx);
+        }
+      }
+      break;
+    }
+    case HdrHeapObjType::MIME_HEADER: {
+      MIMEHdrImpl *mh            = reinterpret_cast<MIMEHdrImpl *>(obj);
+      mh->m_presence_bits        = MIME_PRESENCE_NONE;
+      mh->m_slot_accelerators[0] = 0xFFFFFFFF;
+      mh->m_slot_accelerators[1] = 0xFFFFFFFF;
+      mh->m_slot_accelerators[2] = 0xFFFFFFFF;
+      mh->m_slot_accelerators[3] = 0xFFFFFFFF;
+      for (uint32_t i = 0; i < mh->m_first_fblock.m_freetop; ++i) {
+        MIMEField &field = mh->m_first_fblock.m_field_slots[i];
+        if (field.is_live()) {
+          field.m_wks_idx = rotate_wks_idx(field.m_wks_idx);
+        }
+      }
+      break;
+    }
+    default:
+      break;
+    }
+    obj_data += obj->m_length;
+  }
+}
+
+void
+parse_request(HTTPHdr &hdr, std::string_view text)
+{
+  HTTPParser parser;
+
+  http_parser_init(&parser);
+  hdr.create(HTTPType::REQUEST);
+
+  char const *start = text.data();
+  char const *end   = text.data() + text.length();
+
+  REQUIRE(hdr.parse_req(&parser, &start, end, true) == ParseResult::DONE);
+  http_parser_clear(&parser);
+}
+
+void
+parse_response(HTTPHdr &hdr, std::string_view text)
+{
+  HTTPParser parser;
+
+  http_parser_init(&parser);
+  hdr.create(HTTPType::RESPONSE);
+
+  char const *start = text.data();
+  char const *end   = text.data() + text.length();
+
+  REQUIRE(hdr.parse_resp(&parser, &start, end, true) == ParseResult::DONE);
+  http_parser_clear(&parser);
+}
+
+struct BareCRLineTest {
+  std::string_view raw_line_suffix_before_lf;
+  std::string_view normalized_field;
+};
+
+static const std::vector<BareCRLineTest> bare_cr_line_tests = {
+  {"\r\r\r\r"sv, "Extra-CRs: \r\n"sv   },
+  {"\r \r"sv,    "Extra-CRs: \r\n"sv   },
+  {"\r\r \r"sv,  "Extra-CRs: \r\n"sv   },
+  {"bar\r \r"sv, "Extra-CRs: bar\r\n"sv},
+  {"\r\t\r"sv,   "Extra-CRs: \r\n"sv   },
+};
+} // anonymous namespace
+
+TEST_CASE("HTTPHdrImpl::recompute_wks_indices rebuilds from the stored strings", "[proxy][hdrtest][wks]")
+{
+  HTTPHdr req;
+  parse_request(req, "GET /a HTTP/1.1\r\nHost: example.com\r\nCache-Control: no-cache\r\nAccept: */*\r\n\r\n"sv);
+  req.url_get()->scheme_set(static_cast<std::string_view>(URL_SCHEME_HTTP));
+
+  // Everything the header derives from the table is now wrong, as it would be had it come from a
+  // build whose table differed.
+  req.m_http->u.req.m_method_wks_idx             = rotate_wks_idx(req.m_http->u.req.m_method_wks_idx);
+  req.m_http->u.req.m_url_impl->m_scheme_wks_idx = rotate_wks_idx(req.m_http->u.req.m_url_impl->m_scheme_wks_idx);
+  req.m_mime->m_presence_bits                    = MIME_PRESENCE_NONE;
+  for (MIMEFieldBlockImpl *fblock = &req.m_mime->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    for (uint32_t i = 0; i < fblock->m_freetop; ++i) {
+      MIMEField &field = fblock->m_field_slots[i];
+      if (field.is_live()) {
+        field.m_wks_idx = rotate_wks_idx(field.m_wks_idx);
+      }
+    }
+  }
+  CHECK(req.method_get() != "GET"sv);
+  CHECK(req.presence(MIME_PRESENCE_CACHE_CONTROL) == 0);
+
+  req.m_http->recompute_wks_indices();
+
+  CHECK(req.method_get() == "GET"sv);
+  CHECK(req.method_get_wksidx() == HTTP_WKSIDX_GET);
+  CHECK(req.url_get()->scheme_get() == static_cast<std::string_view>(URL_SCHEME_HTTP));
+  CHECK(req.presence(MIME_PRESENCE_CACHE_CONTROL) != 0);
+  CHECK(req.value_get(static_cast<std::string_view>(MIME_FIELD_CACHE_CONTROL)) == "no-cache"sv);
+  CHECK(req.value_get(static_cast<std::string_view>(MIME_FIELD_HOST)) == "example.com"sv);
+
+  req.destroy();
+}
+
+TEST_CASE("HTTPInfo::unmarshal rebuilds well-known string indices", "[proxy][hdrtest][wks]")
+{
+  HTTPHdr req;
+  HTTPHdr resp;
+
+  parse_request(req, "GET /a HTTP/1.1\r\nHost: example.com\r\nAccept-Encoding: gzip\r\n\r\n"sv);
+  req.url_get()->scheme_set(static_cast<std::string_view>(URL_SCHEME_HTTP));
+  parse_response(resp,
+                 "HTTP/1.1 200 OK\r\nCache-Control: max-age=300\r\nContent-Type: text/plain\r\nVary: Accept-Encoding\r\n\r\n"sv);
+
+  HTTPInfo info;
+  info.create();
+  info.request_set(&req);
+  info.response_set(&resp);
+
+  int const len = info.marshal_length();
+  // uint64_t elements so the buffer meets the alignment marshal() asserts on.
+  std::vector<uint64_t> storage((len + sizeof(uint64_t) - 1) / sizeof(uint64_t), 0);
+  char *const           buf = reinterpret_cast<char *>(storage.data());
+
+  REQUIRE(info.marshal(buf, len) <= len);
+
+  HTTPCacheAlt *marshalled = reinterpret_cast<HTTPCacheAlt *>(buf);
+  REQUIRE(marshalled->m_request_hdr.m_heap != nullptr);
+  REQUIRE(marshalled->m_response_hdr.m_heap != nullptr);
+  scramble_marshalled_heap(reinterpret_cast<HdrHeap *>(buf + reinterpret_cast<intptr_t>(marshalled->m_request_hdr.m_heap)));
+  scramble_marshalled_heap(reinterpret_cast<HdrHeap *>(buf + reinterpret_cast<intptr_t>(marshalled->m_response_hdr.m_heap)));
+
+  // The synthetic writer used a different table, so its identity must differ too.
+  uint64_t const other_identity = 0;
+  memcpy(buf + len - sizeof(other_identity), &other_identity, sizeof(other_identity));
+  REQUIRE(HTTPInfo::unmarshal(buf, len, nullptr) == len);
+
+  HTTPInfo got;
+  REQUIRE(got.get_handle(buf, len) > 0);
+
+  HTTPHdr *got_req  = got.request_get();
+  HTTPHdr *got_resp = got.response_get();
+
+  CHECK(got_req->method_get() == "GET"sv);
+  CHECK(got_req->method_get_wksidx() == HTTP_WKSIDX_GET);
+  CHECK(got_req->url_get()->scheme_get() == static_cast<std::string_view>(URL_SCHEME_HTTP));
+  CHECK(got_req->value_get(static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING)) == "gzip"sv);
+  CHECK(got_req->presence(MIME_PRESENCE_HOST) != 0);
+
+  CHECK(got_resp->value_get(static_cast<std::string_view>(MIME_FIELD_CACHE_CONTROL)) == "max-age=300"sv);
+  CHECK(got_resp->value_get(static_cast<std::string_view>(MIME_FIELD_VARY)) == "Accept-Encoding"sv);
+  CHECK(got_resp->presence(MIME_PRESENCE_CACHE_CONTROL) != 0);
+  CHECK(got_resp->presence(MIME_PRESENCE_VARY) != 0);
+  // The cooked Cache-Control cache is keyed by directive name, so it survives independently, but
+  // it has to still agree with the rebuilt indices.
+  CHECK(got_resp->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_MAX_AGE);
+  CHECK(got_resp->get_cooked_cc_max_age() == 300);
+
+  info.destroy();
+  req.destroy();
+  resp.destroy();
+}
+
 TEST_CASE("http_parse_status overflow protection", "[proxy][hdrtest]")
 {
   SECTION("valid 3-digit status codes")
@@ -3175,9 +3464,18 @@ TEST_CASE("HTTP parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
   req_hdr.destroy();
 }
 
-TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endings", "[proxy][hdrtest]")
+TEST_CASE("HTTP request parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
 {
-  constexpr std::string_view message = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: \r\r\r\r\n\r\n"sv;
+  // Four CRs followed by LF recreate #12195. This gives a pad of 7, the largest the
+  // 3-bit field allows, so raw copying is still eligible. With five or more CRs, the
+  // pad limit alone forces a rebuild; the smaller cases below test the parser check.
+  auto test = GENERATE(from_range(bare_cr_line_tests));
+  CAPTURE(test.raw_line_suffix_before_lf);
+
+  std::string message  = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: ";
+  message             += test.raw_line_suffix_before_lf;
+  message             += '\n';
+  message             += "\r\n";
 
   HTTPParser parser;
   http_parser_init(&parser);
@@ -3186,7 +3484,7 @@ TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endin
   HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
   req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
 
-  auto start = message.data();
+  const char *start = message.data();
   REQUIRE(req_hdr.parse_req(&parser, &start, message.data() + message.size(), true) == ParseResult::DONE);
 
   std::string serialized(static_cast<size_t>(req_hdr.length_get()), '\0');
@@ -3195,10 +3493,47 @@ TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endin
   req_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
   serialized.resize(static_cast<size_t>(index));
 
-  CHECK(serialized.find("Extra-CRs: \r\n") != std::string::npos);
-  CHECK(serialized.find("Extra-CRs: \r\r") == std::string::npos);
+  CHECK(serialized.find(test.normalized_field) != std::string::npos);
+  std::string raw_field  = "Extra-CRs: ";
+  raw_field             += test.raw_line_suffix_before_lf;
+  raw_field             += '\n';
+  CHECK(serialized.find(raw_field) == std::string::npos);
 
   req_hdr.destroy();
+}
+
+TEST_CASE("HTTP response parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
+{
+  auto test = GENERATE(from_range(bare_cr_line_tests));
+  CAPTURE(test.raw_line_suffix_before_lf);
+  std::string message  = "HTTP/1.1 200 OK\r\nExtra-CRs: ";
+  message             += test.raw_line_suffix_before_lf;
+  message             += '\n';
+  message             += "\r\n";
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  resp_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  resp_hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
+
+  const char *start = message.data();
+  REQUIRE(resp_hdr.parse_resp(&parser, &start, message.data() + message.size(), true) == ParseResult::DONE);
+
+  std::string serialized(static_cast<size_t>(resp_hdr.length_get()), '\0');
+  int         index  = 0;
+  int         offset = 0;
+  resp_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
+  serialized.resize(static_cast<size_t>(index));
+
+  CHECK(serialized.find(test.normalized_field) != std::string::npos);
+  std::string raw_field  = "Extra-CRs: ";
+  raw_field             += test.raw_line_suffix_before_lf;
+  raw_field             += '\n';
+  CHECK(serialized.find(raw_field) == std::string::npos);
+
+  resp_hdr.destroy();
 }
 
 TEST_CASE("HTTP response parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")

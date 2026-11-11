@@ -271,6 +271,40 @@ Sets the compression level for Zstandard compression. Valid values are 1-22, whe
 (highest compression ratio). The default is 12, which provides an excellent
 balance between compression speed and ratio for web content.
 
+ETags and Conditional Requests
+==============================
+
+A compressed response's bytes differ from the origin's, so the plugin sends it
+with a weak ``ETag``: a strong ``"abc"`` from the origin goes out as
+``W/"abc"``. Uncompressed responses keep the origin's ``ETag``, and an ``ETag``
+that is already weak is left unchanged. A ``304 Not Modified`` for a request
+whose ``200`` would be compressed carries the same weak ``ETag``.
+
+Weak ``ETag`` values only satisfy weak comparison (:rfc:`9110#section-8.8.3`),
+which determines what clients holding a compressed copy can do:
+
+* ``If-None-Match`` compares weakly, so cache validation works: a client
+  sending ``If-None-Match: W/"abc"`` receives a ``304`` while its copy is
+  current. ``If-Modified-Since`` works as usual.
+* ``If-Match`` and ``If-Range`` compare strongly, so a weak ``ETag`` never
+  satisfies them. ``If-Match`` with a weak ``ETag`` fails with ``412``, and
+  ``If-Range`` with one is ignored, returning the full ``200`` instead of a
+  ``206``. ``If-Match: *`` still matches.
+
+Clients that need a strong validator, for example to resume a download with
+``If-Range`` or to guard a ``PUT`` with ``If-Match``, should request the
+uncompressed representation (``Accept-Encoding: identity``, or no
+``Accept-Encoding``), whose ``ETag`` is the origin's own. Alternatively,
+``If-Unmodified-Since`` can stand in for ``If-Match`` when the origin sends
+``Last-Modified``.
+
+.. note::
+
+   With ``cache false``, |TS| evaluates ``If-Match`` against the cached
+   uncompressed copy. A strong ``If-Match`` with the origin's ``ETag``
+   therefore succeeds and returns the compressed response, even though that
+   response's weak ``ETag`` could not strongly match.
+
 Examples
 ========
 

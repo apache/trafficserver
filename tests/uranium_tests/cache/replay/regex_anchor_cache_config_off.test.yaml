@@ -1,0 +1,108 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+urtest:
+  description: 'anchor_policy_rules=0 keeps a cache.config url_regex rule applying and names it'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 0
+      proxy.config.url_remap.remap_required: 1
+      proxy.config.http.cache.required_headers: 0
+      # The default. Stated explicitly so the test documents which state it covers.
+      proxy.config.regex.anchor_policy_rules: 0
+
+    remap_config:
+      - 'map http://cache.example.com/ http://127.0.0.1:{SERVER_HTTP_PORT}/'
+
+    cache_config:
+      # Unanchored, so it is satisfied by any URL containing it. The response is
+      # explicitly cacheable, so this rule is the only reason it is not cached.
+      - 'url_regex=private action=never-cache'
+
+    log_validation:
+      diags_log:
+        contains:
+        # The label has to identify the directive, file and line, not just the module:
+        # host_regex and url_regex match different subjects, so which one it is decides
+        # the right rewrite.
+        - expression: '\[regex-anchor\] \[CacheControl\] url_regex at .*cache\.config:[0-9]+ pattern .private.'
+          description: 'The unanchored rule is named with its directive, file and line'
+
+sessions:
+- transactions:
+
+  # First request populates whatever the cache is going to hold.
+  - client-request:
+      method: GET
+      url: /private/report.pdf
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, cache.example.com]
+        - [uuid, never-cache-first]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 16]
+        - [Cache-Control, max-age=300]
+
+    proxy-response:
+      status: 200
+
+  # The never-cache rule applies, because "private" appears in the URL, so this second
+  # request must reach the origin rather than being served from cache.
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /private/report.pdf
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, cache.example.com]
+        - [uuid, never-cache-second]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, 16]
+        - [Cache-Control, max-age=300]
+        - [X-Origin-Marker, second-origin-hit]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Origin-Marker, {value: second-origin-hit, as: equal}]

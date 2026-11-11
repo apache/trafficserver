@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -31,8 +31,6 @@
 
 
  ****************************************************************************/
-#pragma once
-
 #include "P_UnixNetVConnection.h"
 #include "iocore/net/QUICSupport.h"
 #include "iocore/net/TLSALPNSupport.h"
@@ -183,13 +181,20 @@ protected:
   SSL             *_get_ssl_object() const override;
   ssl_curve_id     _get_tls_curve() const override;
   std::string_view _get_tls_group() const override;
-  int              _verify_certificate(X509_STORE_CTX *ctx) override;
+  bool
+  _is_tls_handshake_complete() const override
+  {
+    return this->_handshake_completed;
+  }
+  std::string _get_tls_offered_signature_algorithms() const override;
+  std::string _get_tls_negotiated_signature_algorithm() const override;
+  int         _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSNISupport
   in_port_t _get_local_port() override;
 
   // TLSSessionResumptionSupport
-  IpEndpoint const &_getLocalEndpoint() override;
+  IpEndpoint const &_getCertLookupEndpoint() override;
 
   // TLSCertSwitchSupport
   bool           _isTryingRenegotiation() const override;
@@ -210,8 +215,7 @@ protected:
   }
 
 private:
-  SSL                      *_ssl;
-  QUICConfig::scoped_config _quic_config;
+  SSL *_ssl;
 
   QUICConnectionId _peer_quic_connection_id     = QUICConnectionId::ZERO(); // dst cid in local
   QUICConnectionId _peer_old_quic_connection_id = QUICConnectionId::ZERO(); // dst previous cid in local

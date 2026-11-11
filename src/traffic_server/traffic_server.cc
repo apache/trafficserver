@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -36,6 +36,7 @@
 #include "tscore/TSSystemState.h"
 #include "tscore/Version.h"
 #include "tscore/ink_platform.h"
+#include "tscore/Demangle.h"
 #include "tscore/ink_sys_control.h"
 #include "tscore/ink_args.h"
 #include "tscore/ink_hw.h"
@@ -54,7 +55,9 @@
 #include <syslog.h>
 #include <algorithm>
 #include <atomic>
+#include <exception>
 #include <filesystem>
+#include <limits>
 #include <list>
 #include <string>
 
@@ -327,14 +330,62 @@ struct AutoStopCont : public Continuation {
 class SignalContinuation : public Continuation
 {
 public:
-  SignalContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&SignalContinuation::periodic); }
+  SignalContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&SignalContinuation::state_running); }
 
   int
-  periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  state_running(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
-    ts::Metrics &metrics  = ts::Metrics::instance();
-    static auto  drain_id = metrics.lookup("proxy.process.proxy.draining");
+    _handle_user_signals();
 
+    if (_consume_exit_signal()) {
+      auto timeout{RecGetRecordInt("proxy.config.stop.shutdown_timeout")};
+      if (timeout && timeout.value()) {
+        ts::Metrics &metrics = ts::Metrics::instance();
+        metrics[metrics.lookup("proxy.process.proxy.draining")].store(1);
+        TSSystemState::drain(true);
+        // Close listening sockets here only if TS is running standalone
+        if (auto close_sockets{RecGetRecordInt("proxy.config.restart.stop_listening")}; close_sockets && close_sockets.value()) {
+          stop_HttpProxyServer();
+        }
+      }
+
+      Dbg(dbg_ctl_server, "received exit signal, shutting down in %" PRId64 "secs", timeout.value());
+
+      // Shutdown in `timeout` seconds (or now if that is 0).
+      eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(timeout.value()));
+      SET_HANDLER(&SignalContinuation::state_shutting_down);
+    }
+
+    return EVENT_CONT;
+  }
+
+  int
+  state_shutting_down(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  {
+    _handle_user_signals();
+
+    if (_consume_exit_signal()) {
+      Dbg(dbg_ctl_server, "received exit signal, shutdown already scheduled");
+    }
+
+    return EVENT_CONT;
+  }
+
+private:
+  bool
+  _consume_exit_signal()
+  {
+    if (!signal_received[SIGTERM] && !signal_received[SIGINT]) {
+      return false;
+    }
+    signal_received[SIGTERM] = false;
+    signal_received[SIGINT]  = false;
+    return true;
+  }
+
+  void
+  _handle_user_signals()
+  {
     if (signal_received[SIGUSR1]) {
       signal_received[SIGUSR1] = false;
 
@@ -364,28 +415,6 @@ public:
       // Reload any of the other moved log files (such as the ones in logging.yaml).
       Log::handle_log_rotation_request();
     }
-
-    if (signal_received[SIGTERM] || signal_received[SIGINT]) {
-      signal_received[SIGTERM] = false;
-      signal_received[SIGINT]  = false;
-
-      auto timeout{RecGetRecordInt("proxy.config.stop.shutdown_timeout")};
-      if (timeout && timeout.value()) {
-        metrics[drain_id].store(1);
-        TSSystemState::drain(true);
-        // Close listening sockets here only if TS is running standalone
-        if (auto close_sockets{RecGetRecordInt("proxy.config.restart.stop_listening")}; close_sockets && close_sockets.value()) {
-          stop_HttpProxyServer();
-        }
-      }
-
-      Dbg(dbg_ctl_server, "received exit signal, shutting down in %" PRId64 "secs", timeout.value());
-
-      // Shutdown in `timeout` seconds (or now if that is 0).
-      eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(timeout.value()));
-    }
-
-    return EVENT_CONT;
   }
 };
 
@@ -526,7 +555,9 @@ public:
     // ink_get_current_rss() reports current (not peak) RSS in bytes, portably,
     // so the gauge can both rise and fall and the throttle releases correctly.
     uint64_t rss = ink_get_current_rss();
-    ts::Metrics::Gauge::store(memory_rss, static_cast<int64_t>(rss));
+    // The gauge is signed; never let a reading turn it negative.
+    constexpr uint64_t max_gauge = static_cast<uint64_t>(std::numeric_limits<int64_t>::max());
+    ts::Metrics::Gauge::store(memory_rss, rss > max_gauge ? std::numeric_limits<int64_t>::max() : static_cast<int64_t>(rss));
     Dbg(dbg_ctl_server, "memory usage - current rss: %" PRIu64 " bytes memory limit: %" PRId64 " bytes", rss, _memory_limit);
 
     // net_memory_throttle is read on accept threads, so use relaxed atomics.
@@ -745,6 +776,19 @@ initialize_records()
   LibRecordsConfigInit();
 
   check_config_directories();
+
+  // Established as soon as records are readable, so the policy is in effect before
+  // cache.config, parent.config, splitdns.config, remap.config and the plugins
+  // compile their patterns. tsutil depends on neither librecords nor diags.
+  RecEstablishStaticConfigInt32(Regex::policy_gate_anchoring, "proxy.config.regex.anchor_policy_rules");
+  Regex::policy_gate_report_handler = [](Regex::PolicyGateReport kind, std::string_view message) {
+    // Enforced patterns are safe, so that report is a record rather than a problem.
+    if (kind == Regex::PolicyGateReport::ENFORCED) {
+      Note("%.*s", static_cast<int>(message.size()), message.data());
+    } else {
+      Warning("%.*s", static_cast<int>(message.size()), message.data());
+    }
+  };
 
   //
   // Define version info records
@@ -1932,6 +1976,24 @@ configure_io_uring()
 }
 #endif
 
+// Runs when an exception escapes on any thread. The terminate handler runs
+// before the stack unwinds, so aborting from here keeps the throwing frame in
+// the core. The one exception is a throw that leaves a noexcept function: the
+// runtime unwinds to that function's frame before it calls terminate, so the
+// core loses the frames between the throw and it. Catching in main() instead
+// would unwind those frames first and would miss other threads entirely. main()
+// installs this before init_system() registers the crash handler, and before
+// crash_logger_init() starts the crash logger. A throw in that window still
+// aborts and dumps a core, but writes no crash log.
+[[noreturn]] void
+abort_on_uncaught_exception()
+{
+  if (std::current_exception()) {
+    ink_abort("traffic_server: terminating on an unhandled %s", ts::describe_current_exception().c_str());
+  }
+  ink_abort("traffic_server: terminate called without an active exception");
+}
+
 } // end anonymous namespace
 
 //
@@ -1940,6 +2002,8 @@ configure_io_uring()
 int
 main(int /* argc ATS_UNUSED */, const char **argv)
 {
+  std::set_terminate(abort_on_uncaught_exception);
+
 #if TS_HAS_PROFILER
   HeapProfilerStart("/tmp/ts.hprof");
   ProfilerStart("/tmp/ts.prof");
@@ -2306,12 +2370,25 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   RecRegisterConfigUpdateCb("proxy.config.dump_mem_info_frequency", init_memory_tracker, nullptr);
   init_memory_tracker(nullptr, RECD_NULL, RecData(), nullptr);
 
-  // Start the watchdog
-  int watchdog_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_ms").value_or(0);
-  if (watchdog_timeout_ms > 0) {
+  // Start the watchdog. The mode is reloadable and tracked inside the watchdog itself; only the
+  // shrink timeout is fixed at startup, since it determines the monitor's scan period.
+  RecInt watchdog_shrink_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_shrink_ms").value_or(0);
+  RecInt watchdog_legacy_timeout_ms = RecGetRecordInt("proxy.config.exec_thread.watchdog.timeout_ms").value_or(0);
+  Watchdog::register_config_callbacks();
+  if (watchdog_shrink_timeout_ms > 0) {
+    if (watchdog_legacy_timeout_ms > 0) {
+      Warning("proxy.config.exec_thread.watchdog.timeout_ms is deprecated and ignored because "
+              "proxy.config.exec_thread.watchdog.timeout_shrink_ms is set");
+    }
     watchdog = std::make_unique<Watchdog::Monitor>(eventProcessor.thread_group[ET_NET]._thread,
                                                    static_cast<size_t>(eventProcessor.thread_group[ET_NET]._count),
-                                                   std::chrono::milliseconds{watchdog_timeout_ms});
+                                                   std::chrono::milliseconds{watchdog_shrink_timeout_ms});
+  } else if (watchdog_legacy_timeout_ms > 0) {
+    Warning("proxy.config.exec_thread.watchdog.timeout_ms is deprecated, use "
+            "proxy.config.exec_thread.watchdog.timeout_shrink_ms instead; running the watchdog in warn-only mode");
+    watchdog = std::make_unique<Watchdog::Monitor>(eventProcessor.thread_group[ET_NET]._thread,
+                                                   static_cast<size_t>(eventProcessor.thread_group[ET_NET]._count),
+                                                   std::chrono::milliseconds{watchdog_legacy_timeout_ms}, true);
   }
 
   {

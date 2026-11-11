@@ -1,0 +1,16 @@
+VARS {
+    f: bool;
+    g: bool;
+    n: int8;
+}
+
+REMAP {
+    f = true;
+    g = f;
+    if f {
+        inbound.req.X-A = "{g}";
+    }
+    if n > 1 {
+        inbound.req.X-B = "1";
+    }
+}

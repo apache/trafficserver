@@ -49,6 +49,7 @@ RUN apt update \
     hwloc \
     libbrotli-dev \
     libzstd-dev \
+    liblz4-dev \
     luajit \
     libluajit-5.1-dev \
     libcap-dev \
@@ -83,7 +84,7 @@ RUN git clone --depth 1 -b ${ATS_VERSION} https://github.com/apache/trafficserve
      -DCMAKE_BUILD_TYPE=Release \
      -DBUILD_TESTING=OFF \
      -DBUILD_REGRESSION_TESTING=OFF \
-     -DENABLE_AUTEST=OFF \
+     -DENABLE_URTEST=OFF \
      -DBUILD_EXPERIMENTAL_PLUGINS=ON \
      -DENABLE_JEMALLOC=ON \
      -DENABLE_MALLOC_ALLOCATOR=ON \

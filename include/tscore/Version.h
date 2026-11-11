@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -48,37 +48,37 @@ struct VersionNumber {
 
 inline constexpr VersionNumber::VersionNumber(unsigned short major, unsigned short minor) : _major(major), _minor(minor) {}
 
-inline bool
+inline constexpr bool
 operator<(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return lhs._major < rhs._major || (lhs._major == rhs._major && lhs._minor < rhs._minor);
 }
 
-inline bool
+inline constexpr bool
 operator==(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return lhs._major == rhs._major && lhs._minor == rhs._minor;
 }
 
-inline bool
+inline constexpr bool
 operator!=(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return !(lhs == rhs);
 }
 
-inline bool
+inline constexpr bool
 operator>(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return rhs < lhs;
 }
 
-inline bool
+inline constexpr bool
 operator<=(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return !(lhs > rhs);
 }
 
-inline bool
+inline constexpr bool
 operator>=(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return !(rhs > lhs);

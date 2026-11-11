@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -46,14 +46,20 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *connections_throttled_in;
   Metrics::Counter::AtomicType *per_client_connections_throttled_in;
   Metrics::Counter::AtomicType *per_client_connections_exempt_in;
+  Metrics::Gauge::AtomicType   *per_client_connections_exempt_currently_open;
   Metrics::Counter::AtomicType *connections_throttled_out;
   Metrics::Counter::AtomicType *default_inactivity_timeout_applied;
   Metrics::Counter::AtomicType *default_inactivity_timeout_count;
   Metrics::Counter::AtomicType *fastopen_attempts;
   Metrics::Counter::AtomicType *fastopen_successes;
   Metrics::Counter::AtomicType *handler_run;
-  Metrics::Counter::AtomicType *handler_run_count;
   Metrics::Counter::AtomicType *inactivity_cop_lock_acquire_failure;
+  Metrics::Counter::AtomicType *inactivity_cop_budget_exhausted;
+  Metrics::Counter::AtomicType *inactivity_cop_visited;
+  Metrics::Counter::AtomicType *inactivity_cop_passes;
+  Metrics::Counter::AtomicType *inactivity_cop_fired;
+  Metrics::Counter::AtomicType *inactivity_cop_pass_time_us;
+  Metrics::Gauge::AtomicType   *inactivity_cop_pass_max_us;
   Metrics::Counter::AtomicType *keep_alive_queue_timeout_count;
   Metrics::Counter::AtomicType *keep_alive_queue_timeout_total;
   Metrics::Counter::AtomicType *read_bytes;
@@ -77,6 +83,8 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *socks_connections_successful;
   Metrics::Counter::AtomicType *socks_connections_unsuccessful;
   Metrics::Counter::AtomicType *tcp_accept;
+  Metrics::Counter::AtomicType *watchdog_accepts_refused;
+  Metrics::Gauge::AtomicType   *watchdog_listen_backlog;
   Metrics::Counter::AtomicType *write_bytes;
   Metrics::Counter::AtomicType *write_bytes_count;
   Metrics::Gauge::AtomicType   *connection_tracker_table_size;

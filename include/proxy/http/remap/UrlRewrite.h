@@ -2,7 +2,7 @@
 
   URL rewriting.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -80,13 +80,22 @@ public:
    */
   bool load(ConfigContext ctx = {});
 
+  /** Build the tables from @a path, or from @a remap_node when it is set.
+   *
+   * @param path Configuration file to parse. Ignored when @a remap_node is set, so inline callers pass it empty.
+   * @param remap_node Inline remap.yaml style rule sequence, or @c nullptr to parse @a path.
+   * @param ctx ConfigContext for reload status tracking.
+   */
+  bool load_table(const std::string &path, YAML::Node const *remap_node, ConfigContext ctx = {});
+
   /** Build the internal url write tables.
    *
    * @param path Path to configuration file.
+   * @param[in] remap_node Inline remap.yaml rule sequence, or @c nullptr to parse @a path.
    * @param ctx  ConfigContext for reload status tracking.
    * @return 0 on success, non-zero error code on failure.
    */
-  int BuildTable(const char *path, ConfigContext ctx = {});
+  int BuildTable(const char *path, YAML::Node const *remap_node = nullptr, ConfigContext ctx = {});
 
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
   bool         ReverseMap(HTTPHdr *response_header);
@@ -155,10 +164,8 @@ public:
     }
   };
 
-  void        PerformACLFiltering(HttpTransact::State *s, const url_mapping *const mapping);
-  void        PrintStore(const MappingsStore &store) const;
-  std::string PrintRemapHits();
-  std::string PrintRemapHitsStore(MappingsStore &store);
+  void PerformACLFiltering(HttpTransact::State *s, const url_mapping *const mapping);
+  void PrintStore(const MappingsStore &store) const;
 
   void
   DestroyStore(MappingsStore &store)

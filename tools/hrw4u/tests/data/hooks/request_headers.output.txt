@@ -1,0 +1,9 @@
+cond %{READ_REQUEST_PRE_REMAP_HOOK} [AND]
+    set-header X-Set "pre-remap"
+    rm-header X-Remove
+    add-header X-Add "pre-remap"
+
+cond %{READ_REQUEST_HDR_HOOK} [AND]
+    set-header X-Set "read-request"
+    rm-header X-Remove
+    add-header X-Add "read-request"

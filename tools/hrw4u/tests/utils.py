@@ -44,6 +44,7 @@ __all__: Final[list[str]] = [
     "collect_sandbox_deny_test_files",
     "collect_sandbox_allow_test_files",
     "collect_sandbox_warn_test_files",
+    "sandbox_file_for",
     "run_output_test",
     "run_ast_test",
     "run_failing_test",
@@ -141,14 +142,20 @@ def collect_reverse_failing_inputs(group: str) -> Iterator[pytest.param]:
         yield pytest.param(input_file, id=test_id)
 
 
-def _collect_sandbox_test_files(group: str, result_suffix: str) -> Iterator[pytest.param]:
-    """Collect sandbox test files: (input, result, sandbox_config).
+def sandbox_file_for(input_file: Path) -> Path | None:
+    """A per-test `{name}.sandbox.yaml` if present, otherwise a shared `sandbox.yaml` in the same directory."""
+    per_test_sandbox = input_file.with_suffix("").with_suffix("").with_suffix(".sandbox.yaml")
+    if per_test_sandbox.exists():
+        return per_test_sandbox
+    shared_sandbox = input_file.parent / "sandbox.yaml"
+    if shared_sandbox.exists():
+        return shared_sandbox
+    return None
 
-    Uses a per-test `{name}.sandbox.yaml` if present, otherwise falls back
-    to a shared `sandbox.yaml` in the same directory.
-    """
+
+def _collect_sandbox_test_files(group: str, result_suffix: str) -> Iterator[pytest.param]:
+    """Collect sandbox test files: (input, result, sandbox_config)."""
     base_dir = Path("tests/data") / group
-    shared_sandbox = base_dir / "sandbox.yaml"
 
     for input_file in sorted(base_dir.glob("*.input.txt")):
         base = input_file.with_suffix("").with_suffix("")
@@ -157,10 +164,9 @@ def _collect_sandbox_test_files(group: str, result_suffix: str) -> Iterator[pyte
         if not result_file.exists():
             continue
 
-        per_test_sandbox = base.with_suffix(".sandbox.yaml")
-        sandbox_file = per_test_sandbox if per_test_sandbox.exists() else shared_sandbox
+        sandbox_file = sandbox_file_for(input_file)
 
-        if not sandbox_file.exists():
+        if sandbox_file is None:
             continue
 
         yield pytest.param(input_file, result_file, sandbox_file, id=base.name)
@@ -251,7 +257,8 @@ def run_failing_test(input_file: Path) -> None:
         assert expected_error_content in actual_error_str, (
             f"Error mismatch for {input_file}\n"
             f"Expected error (partial match):\n{expected_error_content}\n\n"
-            f"Actual error:\n{actual_error_str}")
+            f"Actual error:\n{actual_error_str}"
+        )
 
 
 def _parse_error_file(error_content: str) -> dict[str, str | int] | None:
@@ -275,30 +282,29 @@ def _parse_error_file(error_content: str) -> dict[str, str | int] | None:
 
 
 def _assert_structured_error_fields(
-        actual_exception: Hrw4uSyntaxError, expected_fields: dict[str, str | int], input_file: Path) -> None:
+    actual_exception: Hrw4uSyntaxError, expected_fields: dict[str, str | int], input_file: Path
+) -> None:
     expected_filename = str(Path(expected_fields['filename']).resolve())
     actual_filename = str(Path(actual_exception.filename).resolve())
     assert actual_filename == expected_filename, (
-        f"Filename mismatch for {input_file}\n"
-        f"Expected: {expected_filename}\n"
-        f"Actual: {actual_filename}")
+        f"Filename mismatch for {input_file}\nExpected: {expected_filename}\nActual: {actual_filename}"
+    )
 
     assert actual_exception.line == expected_fields['line'], (
-        f"Line number mismatch for {input_file}\n"
-        f"Expected: {expected_fields['line']}\n"
-        f"Actual: {actual_exception.line}")
+        f"Line number mismatch for {input_file}\nExpected: {expected_fields['line']}\nActual: {actual_exception.line}"
+    )
 
     assert actual_exception.column == expected_fields['column'], (
-        f"Column number mismatch for {input_file}\n"
-        f"Expected: {expected_fields['column']}\n"
-        f"Actual: {actual_exception.column}")
+        f"Column number mismatch for {input_file}\nExpected: {expected_fields['column']}\nActual: {actual_exception.column}"
+    )
 
     expected_message = expected_fields['message']
     actual_full_error = str(actual_exception)
     assert expected_message in actual_full_error, (
         f"Error message mismatch for {input_file}\n"
         f"Expected message (partial): '{expected_message}'\n"
-        f"Actual full error:\n{actual_full_error}")
+        f"Actual full error:\n{actual_full_error}"
+    )
 
 
 def run_sandbox_deny_test(input_file: Path, error_file: Path, sandbox_file: Path) -> None:
@@ -322,7 +328,8 @@ def run_sandbox_deny_test(input_file: Path, error_file: Path, sandbox_file: Path
             assert line in actual_summary, (
                 f"Expected phrase not found in error summary for {input_file}:\n"
                 f"  Missing: {line!r}\n"
-                f"Actual summary:\n{actual_summary}")
+                f"Actual summary:\n{actual_summary}"
+            )
 
 
 def run_sandbox_allow_test(input_file: Path, output_file: Path, sandbox_file: Path) -> None:
@@ -336,8 +343,8 @@ def run_sandbox_allow_test(input_file: Path, output_file: Path, sandbox_file: Pa
     actual_output = "\n".join(visitor.visit(tree) or []).strip()
 
     assert not error_collector.has_errors(), (
-        f"Expected no errors but sandbox denied something in {input_file}:\n"
-        f"{error_collector.get_error_summary()}")
+        f"Expected no errors but sandbox denied something in {input_file}:\n{error_collector.get_error_summary()}"
+    )
 
     expected_output = output_file.read_text().strip()
     assert actual_output == expected_output, f"Output mismatch in {input_file}"
@@ -354,8 +361,8 @@ def run_sandbox_warn_test(input_file: Path, warning_file: Path, output_file: Pat
     actual_output = "\n".join(visitor.visit(tree) or []).strip()
 
     assert not error_collector.has_errors(), (
-        f"Expected no errors but got errors in {input_file}:\n"
-        f"{error_collector.get_error_summary()}")
+        f"Expected no errors but got errors in {input_file}:\n{error_collector.get_error_summary()}"
+    )
 
     assert error_collector.has_warnings(), f"Expected warnings but none were emitted for {input_file}"
 
@@ -366,9 +373,8 @@ def run_sandbox_warn_test(input_file: Path, warning_file: Path, output_file: Pat
         line = line.strip()
         if line:
             assert line in actual_summary, (
-                f"Expected warning phrase not found for {input_file}:\n"
-                f"  Missing: {line!r}\n"
-                f"Actual summary:\n{actual_summary}")
+                f"Expected warning phrase not found for {input_file}:\n  Missing: {line!r}\nActual summary:\n{actual_summary}"
+            )
 
     expected_output = output_file.read_text().strip()
     assert actual_output == expected_output, f"Output mismatch in {input_file}"
@@ -412,7 +418,8 @@ def run_reverse_failing_test(input_file: Path) -> None:
             assert line in actual_summary, (
                 f"Expected phrase not found in error summary for {input_file}:\n"
                 f"  Missing: {line!r}\n"
-                f"Actual summary:\n{actual_summary}")
+                f"Actual summary:\n{actual_summary}"
+            )
 
 
 def create_output_test(group: str):
@@ -513,9 +520,8 @@ def run_bulk_test(group: str) -> None:
             expected_output = expected_output_file.read_text().strip()
 
             assert actual_output == expected_output, (
-                f"Bulk output mismatch for {input_file.name}\n"
-                f"Expected:\n{expected_output}\n\n"
-                f"Actual:\n{actual_output}")
+                f"Bulk output mismatch for {input_file.name}\nExpected:\n{expected_output}\n\nActual:\n{actual_output}"
+            )
 
 
 def _procs_dir(input_file: Path) -> Path:
@@ -571,8 +577,8 @@ def run_procedure_flatten_roundtrip_test(input_file: Path, output_file: Path) ->
     actual_output = "\n".join(visitor2.visit(tree2)).strip()
     expected_output = output_file.read_text().strip()
     assert actual_output == expected_output, (
-        f"Flatten roundtrip mismatch in {input_file}\n"
-        f"Flattened hrw4u compiles to different output than original")
+        f"Flatten roundtrip mismatch in {input_file}\nFlattened hrw4u compiles to different output than original"
+    )
 
 
 def run_procedure_failing_test(input_file: Path) -> None:
@@ -590,6 +596,5 @@ def run_procedure_failing_test(input_file: Path) -> None:
         HRW4UVisitor(filename=str(input_file), proc_search_paths=[procs_dir]).visit(tree)
 
     assert expected_error in str(exc_info.value), (
-        f"Error mismatch for {input_file}\n"
-        f"Expected (substring): {expected_error!r}\n"
-        f"Actual: {str(exc_info.value)!r}")
+        f"Error mismatch for {input_file}\nExpected (substring): {expected_error!r}\nActual: {str(exc_info.value)!r}"
+    )

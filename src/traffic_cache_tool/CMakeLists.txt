@@ -21,3 +21,9 @@ target_link_libraries(traffic_cache_tool PRIVATE ts::tscore libswoc::libswoc ts:
 install(TARGETS traffic_cache_tool)
 
 clang_tidy_check(traffic_cache_tool)
+
+if(BUILD_TESTING)
+  add_executable(test_cache_tool_version test_CacheVersion.cc)
+  target_link_libraries(test_cache_tool_version PRIVATE ts::tscore ts::tsutil Catch2::Catch2WithMain)
+  add_test(NAME test_cache_tool_version COMMAND test_cache_tool_version)
+endif()

@@ -325,10 +325,19 @@ limitations below:
 
 .. seealso::
    The ``host`` regex is matched against the request host (no scheme,
-   port, or path). Operator-written patterns can match more inputs
-   than intended when unanchored. For per-site subject definitions,
-   common pitfalls, and recommended pattern shapes, see
+   port, or path), and is anchored at both ends: a match must consume
+   the whole host. A substring-style pattern such as ``example\.com``
+   therefore does not match ``cdn.example.com``. For per-site subject
+   definitions, common pitfalls, and recommended pattern shapes, see
    :ref:`admin-regex-best-practices`.
+
+.. note::
+   Both-ends anchoring of the ``host`` regex arrived in 10.1.4 and
+   10.2.0. A deployed pattern that relied on matching only part of the
+   host stops matching entirely under it, so the rule becomes inert
+   rather than matching more loosely. Rewrite such a pattern by adding
+   ``.*`` at each end that was not anchored — ``\.example\.com``
+   becomes ``^.*\.example\.com.*$``.
 
 Examples
 --------

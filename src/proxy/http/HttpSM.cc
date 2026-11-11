@@ -2,7 +2,7 @@
 
   HTTP state machine
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -23,6 +23,7 @@
  */
 
 #include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HdrUtils.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_time.h"
 #include "tsutil/Metrics.h"
@@ -283,8 +284,13 @@ HttpSM::~HttpSM()
 {
   http_parser_clear(&http_parser);
 
-  // coverity[exn_spec_violation] - release() only does ref counting and delete on POD types
-  HttpConfig::release(t_state.http_config_param);
+  if (_http_config_lease) {
+    _http_config_lease.reset();
+  } else {
+    // Callers that set http_config_param themselves, such as unit tests, hand over an acquired reference.
+    // coverity[exn_spec_violation] - release() only does ref counting and delete on POD types
+    HttpConfig::release(t_state.http_config_param);
+  }
 
   // coverity[exn_spec_violation] - cancel_pending_action() cancels pending cache work and clears tracked pointers
   cache_sm.cancel_pending_action();
@@ -326,7 +332,8 @@ HttpSM::init(bool from_early_data)
   ATS_PROBE1(milestone_sm_start, sm_id);
   t_state.state_machine = this;
 
-  t_state.http_config_param = HttpConfig::acquire();
+  _http_config_lease        = configProcessor.get_leased(HttpConfig::config_id());
+  t_state.http_config_param = static_cast<HttpConfigParams *>(_http_config_lease.get());
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
   m_remap = rewrite_table.load(std::memory_order_acquire);
 
@@ -888,6 +895,18 @@ HttpSM::wait_for_full_body()
   tunnel.tunnel_run(p);
 }
 
+void
+HttpSM::generate_cache_key(HttpCacheKey *key, URL *url)
+{
+  Cache::generate_key(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+}
+
+void
+HttpSM::generate_cache_key92(HttpCacheKey *key, URL *url)
+{
+  Cache::generate_key92(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+}
+
 int
 HttpSM::state_watch_for_client_abort(int event, void *data)
 {
@@ -1159,7 +1178,11 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       _netvc_reader      = _netvc_read_buffer->alloc_reader();
 
       // Wait for write readiness to verify that the nonblocking TCP connection
-      // completed before reporting a successful tunnel to the client.
+      // completed before reporting a successful tunnel to the client. For a
+      // TLS origin, the zero-byte read lets incoming handshake data drive the
+      // handshake, and signals VC_EVENT_READ_COMPLETE when it completes; on a
+      // plain connection it does nothing.
+      _netvc->do_io_read(this, 0, _netvc_read_buffer);
       _netvc->do_io_write(this, 1, _netvc_reader);
       _netvc->set_inactivity_timeout(get_server_connect_timeout());
       return 0;
@@ -1171,6 +1194,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   case VC_EVENT_WRITE_COMPLETE: {
     if (netvc == nullptr) {
       netvc = _netvc;
+      netvc->do_io_read(nullptr, 0, nullptr);
       netvc->do_io_write(nullptr, 0, nullptr);
       free_MIOBuffer(_netvc_read_buffer);
       _netvc             = nullptr;
@@ -1206,6 +1230,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
         t_state.set_connect_fail(_netvc->lerrno);
       }
+      _netvc->do_io_read(nullptr, 0, nullptr);
       _netvc->do_io_write(nullptr, 0, nullptr);
       _netvc->do_io_close();
       _netvc = nullptr;
@@ -1322,7 +1347,8 @@ int
 HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHandler tunnel_handler, int event, void *data)
 {
   STATE_ENTER(state_common_wait_for_transform_read, event);
-  HttpTunnelConsumer *c = nullptr;
+  HttpTunnelConsumer *c                = nullptr;
+  bool                transform_closed = false;
 
   switch (event) {
   case HTTP_TUNNEL_EVENT_DONE:
@@ -1348,13 +1374,22 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
         //   handler to clean this mess up
         ink_assert(t_info == &post_transform_info);
         return (this->*tunnel_handler)(event, data);
-      } else {
+      } else if (c->write_success) {
         // On the response side, we just forward as much
         //   as we can of truncated documents so
         //   just don't cache the result
         ink_assert(t_info == &transform_info);
         t_state.api_info.cache_transformed = false;
         return 0;
+      }
+      // The tunnel aborted and closed the transform before the
+      //   transform signaled TRANSFORM_READ_READY, so it never
+      //   will. Fall through to the error case so the client gets
+      //   an error response instead of waiting forever.
+      ink_assert(t_info == &transform_info);
+      transform_closed = true;
+      if (c->producer->vc_type == HttpTunnelType_t::HTTP_SERVER) {
+        t_state.http_return_code = HTTPStatus::BAD_GATEWAY;
       }
     } else {
       // Case 3 - wait for transform read ready
@@ -1371,10 +1406,11 @@ HttpSM::state_common_wait_for_transform_read(HttpTransformInfo *t_info, HttpSMHa
     }
     vc_table.cleanup_entry(t_info->entry);
     t_info->entry = nullptr;
-    // In Case 1: error due to transform write,
-    // we need to keep the original t_info->vc for transform_cleanup()
-    // to skip do_io_close(); otherwise, set it to NULL.
-    if (c->handler_state != HTTP_SM_TRANSFORM_FAIL) {
+    // In Case 1: error due to transform write, and when the tunnel
+    // already closed the transform, we need to keep the original
+    // t_info->vc for transform_cleanup() to skip do_io_close();
+    // otherwise, set it to NULL.
+    if (c->handler_state != HTTP_SM_TRANSFORM_FAIL && !transform_closed) {
       t_info->vc = nullptr;
     }
     if (c->producer->vc_type == HttpTunnelType_t::HTTP_CLIENT) {
@@ -1998,6 +2034,12 @@ HttpSM::state_http_server_open(int event, void *data)
   case NET_EVENT_OPEN_FAILED: {
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     t_state.outbound_conn_track_state.clear();
+    if (event == NET_EVENT_OPEN_FAILED && data != nullptr) {
+      int const lerrno = -static_cast<int>(reinterpret_cast<intptr_t>(data));
+
+      t_state.current.server->connect_result = lerrno;
+      t_state.cause_of_death_errno           = lerrno;
+    }
     if (_netvc != nullptr) {
       if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
         t_state.set_connect_fail(_netvc->lerrno);
@@ -2169,38 +2211,20 @@ HttpSM::state_read_server_response_header(int event, void *data)
   }
 
   switch (state) {
-  case ParseResult::ERROR: {
-    // Many broken servers send really badly formed 302 redirects.
-    //  Even if the parser doesn't like the redirect forward
-    //  if it's got a Location header.  We check the type of the
-    //  response to make sure that the parser was able to parse
-    //  something  and didn't just throw up it's hands (INKqa05339)
-    bool allow_error = false;
-    if (t_state.hdr_info.server_response.type_get() == HTTPType::RESPONSE &&
-        t_state.hdr_info.server_response.status_get() == HTTPStatus::MOVED_TEMPORARILY) {
-      if (t_state.hdr_info.server_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
-        allow_error = true;
-      }
-    }
+  case ParseResult::ERROR:
+    SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
+    t_state.current.state = HttpTransact::PARSE_ERROR;
+    t_state.set_connect_fail(EBADMSG);
 
-    if (allow_error == false) {
-      SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
-      t_state.current.state = HttpTransact::PARSE_ERROR;
-      t_state.set_connect_fail(EBADMSG);
-
-      // If the server closed prematurely on us, use the
-      //   server setup error routine since it will forward
-      //   error to a POST tunnel if any
-      if (event == VC_EVENT_EOS) {
-        handle_server_setup_error(VC_EVENT_EOS, data);
-      } else {
-        call_transact_and_set_next_state(HttpTransact::HandleResponse);
-      }
-      break;
+    // If the server closed prematurely on us, use the
+    //   server setup error routine since it will forward
+    //   error to a POST tunnel if any
+    if (event == VC_EVENT_EOS) {
+      handle_server_setup_error(VC_EVENT_EOS, data);
+    } else {
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
-    // FALLTHROUGH (since we are allowing the parse error)
-  }
-    // fallthrough
+    break;
 
   case ParseResult::DONE: {
     if (!t_state.hdr_info.server_response.check_hdr_implements()) {
@@ -2266,8 +2290,6 @@ HttpSM::state_send_server_request_header(int event, void *data)
   ink_assert(server_entry->write_vio == (VIO *)data);
   STATE_ENTER(state_send_server_request_header, event);
 
-  int method;
-
   switch (event) {
   case VC_EVENT_WRITE_READY:
     server_entry->write_vio->reenable();
@@ -2279,10 +2301,13 @@ HttpSM::state_send_server_request_header(int event, void *data)
     if (server_entry->write_buffer) {
       free_MIOBuffer(server_entry->write_buffer);
       server_entry->write_buffer = nullptr;
-      method                     = t_state.hdr_info.server_request.method_get_wksidx();
-      if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
-          _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
-                                          t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
+      if (forwards_client_request_body()) {
+        // The client's body, possibly empty, follows the request header.  Record
+        // that the origin is owed it, whether or not a tunnel to deliver it is
+        // started below.  When the client asked for a 100 Continue the body is
+        // withheld until the origin sends one, so there is no tunnel to infer
+        // this from.
+        server_owed_request_body = true;
         if (post_transform_info.vc) {
           setup_transform_to_server_transfer();
         } else {
@@ -2774,18 +2799,25 @@ HttpSM::state_cache_open_read(int event, void *data)
           -cache_sm.get_last_error());
 
     SMDbg(dbg_ctl_http, "open read failed.");
-    // Inform HttpTransact somebody else is updating the document
-    // HttpCacheSM already waited so transact should go ahead.
+    // A path that carries its own ";params" segment already hashes to the 9.2
+    // key, so a compatibility lookup would just repeat the lookup that missed.
+    if (cache_sm.get_last_error() != -ECACHE_DOC_BUSY && t_state.http_config_param->cache_try_compat_key_read &&
+        compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL &&
+        !cache_lookup_url()->has_path_params()) {
+      // do the retry
+      compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+      do_cache_lookup_and_read();
+      return 0;
+    }
+    // Nothing was found under either key, or the document is busy, so no legacy
+    // object is in play past this point. The reset follows the retry decision
+    // so that it cannot re-arm the retry.
+    compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
+      // Inform HttpTransact somebody else is updating the document
+      // HttpCacheSM already waited so transact should go ahead.
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::DOC_BUSY;
     } else {
-      if (t_state.http_config_param->cache_try_compat_key_read &&
-          compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL) {
-        // do the retry
-        compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
-        do_cache_lookup_and_read();
-        return 0;
-      }
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::MISS;
     }
 
@@ -4290,11 +4322,61 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     ink_assert(tunnel.is_tunnel_alive() == false);
     break;
 
-  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_WRITE_COMPLETE: {
     // Completed successfully
     c->write_success        = true;
     server_entry->in_tunnel = false;
+    // A tunnel can complete having written fewer bytes than the request head declared, so
+    // the debt is cleared on the byte count rather than on the event alone.  Only a body
+    // matching the framing ATS declared leaves the origin able to parse a following request.
+    //
+    // Both routes to a short write here are narrow.  A half close makes HttpTunnel clamp the
+    // consumer write to whatever had already arrived, but the only trigger for that flag
+    // before the request body tunnel starts is a plugin calling TSHttpTxnCloseAfterResponse.
+    // A client FIN is not one: it aborts the tunnel in tunnel_handler_post_ua, so this
+    // consumer never completes.  A truncated chunked body sets chunked_handler.truncation,
+    // which reaches this event only when producer_handler_chunked sees a completion with the
+    // body unfinished.  Neither route is exercised by post-early-response-100-continue.test.py,
+    // so the check rests on the code path above rather than on a regression test; it is kept
+    // because clearing the debt on a short body is exactly what pools a connection the
+    // origin is still parsing.
+    //
+    // The length has to come from server_request rather than from the client's
+    // request_content_length.  A request body transform rewrites the outbound
+    // Content-Length to the transformed size and leaves the client's value alone, so
+    // comparing against the client's would hold the debt open for every transformed body
+    // that came out smaller than it went in.
+    // A null producer should not be read as a complete body, because the debt must only be
+    // cleared on positive evidence that the origin got what it was promised.
+    bool const body_truncated = c->producer == nullptr || c->producer->chunked_handler.truncation;
+    bool       body_complete  = !body_truncated;
+    int64_t    declared_bytes = HTTP_UNDEFINED_CL;
+
+    // Note the truncation flag above is only set by HttpTunnel::producer_handler_chunked(),
+    // so it covers dechunking and chunked passthrough.  When ATS is the one adding chunking
+    // the framing is correct by construction, because generate_chunked_content() emits the
+    // terminating chunk even for a body cut short.  A chunked request carries no declared
+    // length either way, so there is no byte count to check against.
+    if (t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+      declared_bytes = t_state.hdr_info.server_request.get_content_length();
+    }
+
+    if (body_complete && declared_bytes != HTTP_UNDEFINED_CL) {
+      // Count from the consumer rather than from server_request_body_bytes.  That member is
+      // first write wins and is never re-armed, so on a retry it still holds the previous
+      // attempt's total and would clear the debt for a second attempt that fell short.
+      // HttpTunnel::reset() zeroes the consumers, so this count is per attempt.
+      body_complete = c->bytes_written >= declared_bytes;
+    }
+
+    if (body_complete) {
+      server_owed_request_body = false;
+    } else if (server_owed_request_body) {
+      SMDbg(dbg_ctl_http_tproxy, "Post tunnel completed but origin is still owed body bytes, wrote %" PRId64 " of %" PRId64,
+            c->bytes_written, declared_bytes);
+    }
     break;
+  }
   default:
     ink_release_assert(0);
   }
@@ -4698,11 +4780,51 @@ HttpSM::check_sni_host()
 }
 
 void
+HttpSM::set_virtualhost_entry(std::string_view domain)
+{
+  VirtualHost::scoped_config vhost_config;
+  // If already set, don't need to look at configs
+  if (m_virtualhost_entry || domain.empty() || !vhost_config) {
+    return;
+  }
+
+  auto vhost_entry = vhost_config->find_by_domain(domain);
+  if (vhost_entry) {
+    SMDbg(dbg_ctl_url_rewrite, "Found virtualhost: %s", vhost_entry->get_id().c_str());
+    m_virtualhost_entry = std::move(vhost_entry);
+  }
+}
+
+void
 HttpSM::do_remap_request(bool run_inline)
 {
   SMDbg(dbg_ctl_http_seq, "Remapping request");
   SMDbg(dbg_ctl_url_rewrite, "Starting a possible remapping for request");
+
+  if (!m_virtualhost_entry) {
+    auto host_name{t_state.hdr_info.client_request.host_get()};
+    set_virtualhost_entry(host_name);
+  }
+
+  // Check virtualhost remap rules before looking at remap.config. Copying the shared_ptr pins the
+  // table for the life of this transaction, so a reload that drops the entry cannot pull the table
+  // out from under us mid-transaction.
+  bool virtualhost_remap = false;
+  if (m_virtualhost_entry && m_virtualhost_entry->remap_table) {
+    m_remap           = m_virtualhost_entry->remap_table;
+    virtualhost_remap = true;
+    SMDbg(dbg_ctl_url_rewrite, "Using virtualhost remap table: %s", m_virtualhost_entry->get_id().c_str());
+  }
+
   bool ret = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+
+  // If no remap matches in virtualhost, revert to default remap configs
+  if (!ret && virtualhost_remap) {
+    SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
+    // May be null once shutdown has cleared the table; setup_for_remap() handles that.
+    m_remap = rewrite_table.load(std::memory_order_acquire);
+    ret     = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+  }
 
   check_sni_host();
 
@@ -4848,7 +4970,7 @@ HttpSM::track_connect_fail() const
   // Excludes two cases:
   // - Reused keep-alive connection: there is a known race between ATS reusing and the origin closing it.
   // - Multiplexed origins (HTTP/2): stream-level failure does not indicate a connection failure.
-  if (policy >= 4) {
+  if (policy >= 4 && server_txn != nullptr) {
     bool multiplexed = false;
     auto ssn         = server_txn->get_proxy_ssn();
     if (ssn != nullptr) {
@@ -5292,6 +5414,28 @@ HttpSM::do_range_setup_if_necessary()
   }
 }
 
+// The URL this transaction looks up in the cache, and that every delete which
+// has to match that lookup uses too.
+//
+// hdr_info.client_request's URL always names the *current* request:
+// redirect_request() rewrites it in place, so after a redirect follow it is the
+// Location target. cache_info.lookup_url is set once, before the first lookup
+// (HttpTransact::DecideCacheLookup), and names the *original* request. Whether
+// it also moves with a redirect is an accident of how it was set: with
+// pristine_host_hdr off it aliases client_request's URL and follows it, with
+// pristine_host_hdr on it is a private copy and stays put. It is therefore not
+// a reliable way to reach the redirected URL, which is why the redirect case
+// below reads client_request instead.
+URL *
+HttpSM::cache_lookup_url()
+{
+  // Follow the redirect unless configured to keep the original cache key.
+  if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key) {
+    return t_state.hdr_info.client_request.url_get();
+  }
+  return t_state.cache_info.lookup_url;
+}
+
 void
 HttpSM::do_cache_lookup_and_read()
 {
@@ -5302,29 +5446,25 @@ HttpSM::do_cache_lookup_and_read()
   t_state.request_sent_time      = UNDEFINED_TIME;
   t_state.response_received_time = UNDEFINED_TIME;
 
-  Metrics::Counter::increment(http_rsb.cache_lookups);
-
-  ATS_PROBE1(milestone_cache_open_read_begin, sm_id);
-  milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
-  t_state.cache_lookup_result                    = HttpTransact::CacheLookupResult_t::NONE;
-  t_state.cache_info.lookup_count++;
-  // YTS Team, yamsat Plugin
-  // Changed the lookup_url to c_url which enables even
-  // the new redirect url to perform a CACHE_LOOKUP
-  URL *c_url;
-  if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key) {
-    c_url = t_state.hdr_info.client_request.url_get();
-  } else {
-    c_url = t_state.cache_info.lookup_url;
+  // A compatibility retry continues the lookup that just missed rather than
+  // starting a new one, so the counter, the probe, and the milestone all stay
+  // with the canonical-key lookup that began it.
+  if (!CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
+    Metrics::Counter::increment(http_rsb.cache_lookups);
+    ATS_PROBE1(milestone_cache_open_read_begin, sm_id);
+    milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
+    t_state.cache_info.lookup_count++;
   }
+  t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::NONE;
+  URL *c_url                  = cache_lookup_url();
 
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
-    Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  if (CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
+    generate_cache_key92(&key, c_url);
   } else {
-    Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+    generate_cache_key(&key, c_url);
   }
 
   t_state.hdr_info.cache_request.copy(&t_state.hdr_info.client_request);
@@ -5349,11 +5489,47 @@ HttpSM::do_cache_delete_all_alts()
   // Do not delete a non-existent object.
   ink_assert(t_state.cache_info.object_read);
 
-  SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
+  // Address the object that was looked up. A redirect follow can look up a
+  // different URL than cache_info.lookup_url, which is set once and does not
+  // track the redirect when the pristine host header is maintained.
+  URL *url = cache_lookup_url();
+
+  SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                      t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, url);
+  cacheProcessor.remove(nullptr, &key);
+
+  // A migration leaves the legacy copy in place, so the object can live under
+  // both keys. Removing only one of them would let the other be served after
+  // the purge.
+  do_cache_delete_compat_alts();
+}
+
+// Remove the object stored under the legacy key.
+//
+// Only for the delete paths, which have to reach both keys. A successful
+// migration deliberately leaves the legacy copy alone: VC_EVENT_WRITE_COMPLETE
+// means the tunnel handed the last byte to the cache VC, not that the object
+// reached disk, so deleting on that signal loses the object outright whenever
+// the write later fails. The copy ages out on its own, and it stops being read
+// as soon as the canonical key resolves, so compat_key_reads still decays to
+// zero.
+void
+HttpSM::do_cache_delete_compat_alts()
+{
+  // Same URL the lookup used; see do_cache_delete_all_alts().
+  URL *url = cache_lookup_url();
+
+  // A path that carries its own ";params" segment hashes to the same key
+  // under both schemes, so the canonical delete already reached it.
+  if (!t_state.http_config_param->cache_try_compat_key_read || url->has_path_params()) {
+    return;
+  }
+  SMDbg(dbg_ctl_http_seq, "Issuing compatibility cache delete for %s", url->string_get_ref());
+
+  HttpCacheKey key;
+  generate_cache_key92(&key, url);
   cacheProcessor.remove(nullptr, &key);
 }
 
@@ -5382,6 +5558,15 @@ HttpSM::do_cache_prepare_update()
       t_state.cache_info.object_store.valid() && t_state.cache_info.object_store.response_get() != nullptr &&
       t_state.cache_info.object_store.response_get()->valid() &&
       t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET) {
+    // An object found under the 9.2 key cannot be updated in place: the write
+    // would be a create on the current key, and the cache turns a header-only
+    // close of a create into an abort. Take the failed-update path instead,
+    // which serves the updated headers without storing them.
+    if (CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
+      ink_assert(t_state.cache_info.write_lock_state != HttpTransact::CacheWriteLock_t::SUCCESS);
+      call_transact_and_set_next_state(HttpTransact::HandleUpdateCachedObject);
+      return;
+    }
     t_state.cache_info.object_store.request_set(t_state.cache_info.object_read->request_get());
     // t_state.cache_info.object_read = NULL;
     // cache_sm.close_read();
@@ -5430,10 +5615,17 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   SMDbg(dbg_ctl_http_cache_write, "writing to cache with URL %s", s_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, s_url);
+
+  // A compatibility read returns an object stored under the legacy key. Passing
+  // that object to a write using the canonical key turns the write into an
+  // update, but the canonical-key vector does not contain the legacy alternate.
+  // Cache::open_write then fails with ECACHE_NO_DOC instead of creating the
+  // migrated object. Create a new canonical-key object for compatibility reads.
+  CacheHTTPInfo *write_object_read_info = CompatCacheKey::write_info(compatibility_cache_lookup, object_read_info);
 
   pending_action =
-    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, object_read_info,
+    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, write_object_read_info,
                      static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for),
                      retry, allow_multiple);
 }
@@ -5454,26 +5646,41 @@ HttpSM::send_origin_throttled_response()
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
 
+/// @return the policy a proxy.config.ssl.client.verify.server.policy value names, or UNSET if none.
+static YamlSNIConfig::Policy
+parse_verify_server_policy(const char *value, bool warn_if_invalid)
+{
+  if (value == nullptr) {
+    return YamlSNIConfig::Policy::UNSET;
+  }
+  if (strcmp(value, "DISABLED") == 0) {
+    return YamlSNIConfig::Policy::DISABLED;
+  }
+  if (strcmp(value, "PERMISSIVE") == 0) {
+    return YamlSNIConfig::Policy::PERMISSIVE;
+  }
+  if (strcmp(value, "ENFORCED") == 0) {
+    return YamlSNIConfig::Policy::ENFORCED;
+  }
+  if (warn_if_invalid) {
+    Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
+            value);
+  }
+  return YamlSNIConfig::Policy::UNSET;
+}
+
+YamlSNIConfig::Policy
+HttpSM::get_outbound_verify_server_policy() const
+{
+  // Already warned about when the connection that set it up was opened.
+  return parse_verify_server_policy(t_state.txn_conf->ssl_client_verify_server_policy, false);
+}
+
 static void
 set_tls_options(NetVCOptions &opt, const OverridableHttpConfigParams *txn_conf)
 {
-  char *verify_server = nullptr;
-  if (txn_conf->ssl_client_verify_server_policy == nullptr) {
-    opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-  } else {
-    verify_server = txn_conf->ssl_client_verify_server_policy;
-    if (strcmp(verify_server, "DISABLED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::DISABLED;
-    } else if (strcmp(verify_server, "PERMISSIVE") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::PERMISSIVE;
-    } else if (strcmp(verify_server, "ENFORCED") == 0) {
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::ENFORCED;
-    } else {
-      Warning("%s is invalid for proxy.config.ssl.client.verify.server.policy.  Should be one of DISABLED, PERMISSIVE, or ENFORCED",
-              verify_server);
-      opt.verifyServerPolicy = YamlSNIConfig::Policy::UNSET;
-    }
-  }
+  char *verify_server    = nullptr;
+  opt.verifyServerPolicy = parse_verify_server_policy(txn_conf->ssl_client_verify_server_policy, true);
   if (txn_conf->ssl_client_verify_server_properties == nullptr) {
     opt.verifyServerProperties = YamlSNIConfig::Property::UNSET;
   } else {
@@ -5645,7 +5852,7 @@ void
 HttpSM::open_prewarmed_connection()
 {
   NetVConnection *netvc = _prewarm_sm->move_netvc();
-  ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+  ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
 
   SMDbg(dbg_ctl_http_ss, "using pre-warmed tunnel netvc=%p", netvc);
 
@@ -5794,8 +6001,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       break;
     case HSMresult_t::RETRY:
       Metrics::Counter::increment(http_rsb.origin_reuse_fail);
-      //  Could not get shared pool lock
-      //   FIX: should retry lock
+      // Pool locking or transaction allocation failed; open a new connection.
       break;
     default:
       hsm_release_assert(0);
@@ -6021,15 +6227,18 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     EThread *ethread = this_ethread();
     if (nullptr != ethread->connecting_pool) {
       SMDbg(dbg_ctl_http_ss, "Queue multiplexed request");
-      new_entry          = new ConnectingEntry();
-      new_entry->mutex   = this->mutex;
-      new_entry->ua_txn  = _ua.get_txn();
-      new_entry->handler = (ContinuationHandler)&ConnectingEntry::state_http_server_open;
+      new_entry         = new ConnectingEntry();
+      new_entry->mutex  = this->mutex;
+      new_entry->ua_txn = _ua.get_txn();
+      SET_CONTINUATION_HANDLER(new_entry, &ConnectingEntry::state_http_server_open);
       new_entry->ipaddr.assign(&t_state.current.server->dst_addr.sa);
       new_entry->hostname            = t_state.current.server->name;
       new_entry->sni                 = this->get_outbound_sni();
       new_entry->cert_name           = this->get_outbound_cert();
       new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HttpPluginTunnel_t::NONE;
+      if (t_state.outbound_conn_track_state.is_active()) {
+        new_entry->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
+      }
       this->t_state.set_connect_fail(EIO);
       new_entry->connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));
@@ -6317,6 +6526,41 @@ HttpSM::release_server_session(bool serve_from_cache)
   }
 }
 
+// A peer's not-processed assertion permits a retry only if we can reproduce
+// the request. This includes safe methods with bodies: method safety does not
+// make an exhausted body reader replayable. Unbuffered, incomplete, unknown-length,
+// chunked and transformed bodies are excluded. Admission rearms a complete copy;
+// body rejection latches origin_retry_body_unavailable to block later retries.
+// Both outcomes increment their corresponding origin retry counters.
+bool
+HttpSM::prepare_for_origin_retry()
+{
+  if (server_txn == nullptr || !server_txn->is_safe_to_retry()) {
+    return false;
+  }
+  bool const has_body = server_request_body_bytes > 0 ||
+                        (_ua.get_txn() != nullptr && _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                                                                     t_state.client_info.transfer_encoding ==
+                                                                                       HttpTransact::TransferEncoding_t::CHUNKED));
+  if (has_body) {
+    int64_t const length = t_state.hdr_info.request_content_length;
+    // A done buffer is not proof of completeness: HttpTunnel also marks it done
+    // on EOS. Keep the exact-length check even when upstream paths reject early.
+    if (post_transform_info.vc || t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||
+        length < 0 || length == HTTP_UNDEFINED_CL || !this->is_postbuf_valid() || !this->get_postbuf_done() ||
+        this->postbuf_buffer_avail() != length) {
+      origin_retry_body_unavailable = true;
+      Metrics::Counter::increment(http_rsb.origin_retry_body_unavailable);
+      SMDbg(dbg_ctl_http, "Origin retry denied: complete replayable request body unavailable");
+      return false;
+    }
+    is_buffering_request_body = true;
+  }
+  Metrics::Counter::increment(http_rsb.origin_retry_admitted);
+  SMDbg(dbg_ctl_http, "Origin not-processed retry admitted: method=%d body=%d", t_state.method, has_body);
+  return true;
+}
+
 // void HttpSM::handle_post_failure()
 //
 //   We failed in our attempt post (or put) a document
@@ -6349,9 +6593,13 @@ HttpSM::handle_post_failure()
   _ua.get_entry()->in_tunnel = false;
   server_entry->in_tunnel    = false;
 
-  // disable redirection in case we got a partial response and then EOS, because the buffer might not
-  // have the full post and it's deallocating the post buffers here
-  this->disable_redirect();
+  // Preserve a complete buffered body only when the origin has not responded
+  // and explicitly reports that this request was not processed. Otherwise the
+  // copy may be incomplete, so discard it along with redirect eligibility.
+  bool const retry = this->prepare_for_origin_retry();
+  if (!retry) {
+    this->disable_redirect();
+  }
 
   // Don't even think about doing keep-alive after this debacle
   t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
@@ -6362,7 +6610,10 @@ HttpSM::handle_post_failure()
   // Server is down
   if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
     t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = retry ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
+  } else if (retry && t_state.current.state == HttpTransact::CONNECTION_CLOSED) {
+    // The upload tunnel already recorded EPIPE; a clean FIN can have lerrno == 0.
+    t_state.current.state = HttpTransact::CONNECTION_ERROR;
   }
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
@@ -6482,7 +6733,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   [[maybe_unused]] UnixNetVConnection *dbg_vc = nullptr;
   switch (event) {
   case VC_EVENT_EOS:
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = this->prepare_for_origin_retry() ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
     t_state.set_connect_fail(EPIPE);
     break;
   case VC_EVENT_ERROR:
@@ -6705,22 +6956,30 @@ HttpSM::do_setup_client_request_body_tunnel(HttpVC_t to_vc_type)
                         HttpTunnelType_t::TRANSFORM, "post transform");
     post_transform_info.entry->in_tunnel = true;
     break;
-  case HttpVC_t::SERVER_VC:
+  case HttpVC_t::SERVER_VC: {
+    HttpTunnelConsumer *c;
     // YTS Team, yamsat Plugin
     // When redirect in process is true and redirection is enabled
     // add http server as the consumer
     if (post_redirect) {
       chunked = false;
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_for_partial_post);
-      tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server,
-                          HttpTunnelType_t::HTTP_SERVER, "redirect http server post");
+      c = tunnel.add_consumer(server_entry->vc, HTTP_TUNNEL_STATIC_PRODUCER, &HttpSM::tunnel_handler_post_server,
+                              HttpTunnelType_t::HTTP_SERVER, "redirect http server post");
     } else {
       HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler_post);
-      tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server, HttpTunnelType_t::HTTP_SERVER,
-                          "http server post");
+      c = tunnel.add_consumer(server_entry->vc, _ua.get_entry()->vc, &HttpSM::tunnel_handler_post_server,
+                              HttpTunnelType_t::HTTP_SERVER, "http server post");
     }
+    // An HTTP/1 request body ends where its framing says. An HTTP/2 one ends with
+    // END_STREAM, which the stream sends on the DATA frame that finishes a write,
+    // so an empty body still needs a write or the origin waits for the rest.
+    // Only an HTTP/1 origin transaction supports chunked encoding, so that is
+    // what tells the two apart here.
+    c->write_empty_body     = !server_txn->is_chunked_encoding_supported();
     server_entry->in_tunnel = true;
     break;
+  }
   default:
     ink_release_assert(0);
     break;
@@ -6831,6 +7090,9 @@ HttpSM::perform_cache_write_action()
   case HttpTransact::CacheAction_t::DELETE: {
     // Write close deletes the old alternate
     cache_sm.close_write();
+    // That reached only one of the two keys the object can live under while
+    // the compatibility lookup is enabled.
+    do_cache_delete_compat_alts();
     cache_sm.close_read();
     t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
     break;
@@ -7695,7 +7957,7 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr, IOBufferReader *initial)
 
   // if pre-warmed connection is used and it has data from origin server, forward it to ua
   if (_prewarm_sm && _prewarm_sm->has_data_from_origin_server()) {
-    ink_release_assert(_prewarm_sm->handler == &PreWarmSM::state_closed);
+    ink_release_assert(_prewarm_sm->handler.is<&PreWarmSM::state_closed>());
     client_response_hdr_bytes += to_ua_buf->write(_prewarm_sm->server_buf_reader());
   }
 
@@ -7965,9 +8227,6 @@ HttpSM::kill_this()
       server_txn = nullptr;
     }
     if (_ua.get_txn()) {
-      if (_ua.get_txn()->get_server_session() != nullptr) {
-        _ua.get_txn()->attach_server_session(nullptr);
-      }
       _ua.get_txn()->transaction_done();
     }
 
@@ -8407,6 +8666,10 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::CACHE_LOOKUP: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_read);
+    // Every lookup starts from the canonical key. A redirect follow or a read
+    // retry looks up a different object than the one a previous compatibility
+    // lookup found, so the flag must not carry over.
+    compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
     do_cache_lookup_and_read();
     break;
   }
@@ -8467,6 +8730,19 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
     t_state.source = HttpTransact::Source_t::HTTP_ORIGIN_SERVER;
+
+    // The origin may answer before it has read the request body, for instance a POST carrying
+    // Expect: 100-continue that is answered immediately. Whatever the origin never read is still
+    // queued on the client connection and would otherwise be framed as the next request, so drain
+    // it here, or drop keep-alive when it cannot be drained.
+    bool const    is_chunked_body     = t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED;
+    int64_t const declared_body_bytes = t_state.hdr_info.client_request.get_content_length();
+    bool const    was_body_forwarded =
+      is_chunked_body ? client_request_body_bytes > 0 : client_request_body_bytes >= declared_body_bytes;
+
+    if (_ua.get_txn() != nullptr && (is_chunked_body || declared_body_bytes > 0) && !was_body_forwarded) {
+      do_drain_request_body(transform_info.vc ? t_state.hdr_info.transform_response : t_state.hdr_info.client_response);
+    }
 
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
@@ -9000,6 +9276,14 @@ HttpSM::set_server_session_private(bool private_session)
     return true;
   }
   return false;
+}
+
+bool
+HttpSM::forwards_client_request_body() const
+{
+  return !t_state.api_server_request_body_set && t_state.hdr_info.server_request.method_get_wksidx() != HTTP_WKSIDX_TRACE &&
+         _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                         t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED);
 }
 
 bool

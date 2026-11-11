@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <vector>
@@ -78,6 +79,29 @@ JA4::TLSClientHelloSummary::add_extension(std::uint16_t extension)
   ++this->_extension_count_including_sni_and_alpn;
   if (!is_ignored_non_GREASE_extension(extension)) {
     this->_extensions.push_back(extension);
+  }
+}
+
+std::vector<std::uint16_t> const &
+JA4::TLSClientHelloSummary::get_signature_algorithms() const
+{
+  return this->_signature_algorithms;
+}
+
+void
+JA4::TLSClientHelloSummary::set_signature_algorithms(unsigned char const *body, std::size_t body_len)
+{
+  this->_signature_algorithms.clear();
+  if (body_len < 2) {
+    return;
+  }
+
+  std::size_t end{std::min(body_len, 2 + ((static_cast<std::size_t>(body[0]) << 8) | body[1]))};
+  for (std::size_t i{2}; i + 1 < end; i += 2) {
+    std::uint16_t alg{static_cast<std::uint16_t>((body[i] << 8) | body[i + 1])};
+    if (!is_GREASE(alg)) {
+      this->_signature_algorithms.push_back(alg);
+    }
   }
 }
 

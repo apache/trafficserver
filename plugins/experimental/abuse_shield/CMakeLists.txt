@@ -20,7 +20,9 @@ project(abuse_shield)
 add_atsplugin(abuse_shield abuse_shield.cc config.cc fingerprint.cc ip_data.cc stats.cc)
 
 target_include_directories(
-  abuse_shield BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint
+  abuse_shield
+  BEFORE
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint
 )
 # Plugins resolve tsutil symbols from traffic_server. Linking the static tsutil
 # library here would duplicate its globals in the plugin at load time.
@@ -37,11 +39,21 @@ if(BUILD_TESTING)
 
   add_executable(test_abuse_shield_config unit_tests/test_config.cc config.cc fingerprint.cc)
   target_include_directories(
-    test_abuse_shield_config BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-                                            "${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint"
+    test_abuse_shield_config
+    BEFORE
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint"
   )
   target_link_libraries(
     test_abuse_shield_config PRIVATE Catch2::Catch2WithMain libswoc::libswoc ts::tsutil yaml-cpp::yaml-cpp
   )
   add_catch2_test(NAME test_abuse_shield_config COMMAND test_abuse_shield_config)
+
+  # Micro-benchmarks for the hook path, the maintenance pass, and eviction.
+  # Built but not registered with ctest, so they add nothing to CI time. Catch2
+  # is only available when BUILD_TESTING is on, hence the nesting.
+  if(ENABLE_BENCHMARKS)
+    add_executable(benchmark_abuse_shield unit_tests/benchmark_abuse_shield.cc ip_data.cc)
+    target_include_directories(benchmark_abuse_shield PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(benchmark_abuse_shield PRIVATE Catch2::Catch2WithMain libswoc::libswoc)
+  endif()
 endif()

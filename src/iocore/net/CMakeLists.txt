@@ -16,64 +16,66 @@
 #######################
 
 add_library(
-  inknet STATIC
-  ALPNSupport.cc
-  AsyncSignalEventIO.cc
-  BIO_fastopen.cc
-  BoringSSLUtils.cc
-  Connection.cc
-  ConnectionTracker.cc
-  EventIO.cc
-  YamlSNIConfig.cc
-  Net.cc
-  NetHandler.cc
-  NetVCOptions.cc
-  NetAcceptEventIO.cc
-  NetVConnection.cc
-  PollCont.cc
-  ProxyProtocol.cc
-  ReadWriteEventIO.cc
-  Server.cc
-  Socks.cc
-  SSLAPIHooks.cc
-  SSLCertLookup.cc
-  SSLClientCoordinator.cc
-  SSLClientUtils.cc
-  SSLConfig.cc
-  SSLSecret.cc
-  SSLDiags.cc
-  SSLNetAccept.cc
-  SSLNetProcessor.cc
-  SSLNetVConnection.cc
-  SSLNextProtocolAccept.cc
-  SSLNextProtocolSet.cc
-  SSLSNIConfig.cc
-  SSLStats.cc
-  SSLSessionCache.cc
-  SSLSessionTicket.cc
-  SSLUtils.cc
-  SSLKeyUtils.cc
-  OCSPStapling.cc
-  TLSBasicSupport.cc
-  TLSEventSupport.cc
-  TLSCertSwitchSupport.cc
-  TLSEarlyDataSupport.cc
-  TLSKeyLogger.cc
-  TLSSessionResumptionSupport.cc
-  TLSSNISupport.cc
-  TLSTunnelSupport.cc
-  TLSCertCompression.cc
-  UDPEventIO.cc
-  UDPIOEvent.cc
-  UnixConnection.cc
-  UnixNet.cc
-  UnixNetAccept.cc
-  UnixNetProcessor.cc
-  UnixNetVConnection.cc
-  UnixUDPConnection.cc
-  UnixUDPNet.cc
-  SSLDynlock.cc
-  SNIActionPerformer.cc
+  inknet
+  STATIC
+    ALPNSupport.cc
+    AsyncSignalEventIO.cc
+    BIO_fastopen.cc
+    BoringSSLUtils.cc
+    Connection.cc
+    ConnectionTracker.cc
+    EventIO.cc
+    YamlSNIConfig.cc
+    Net.cc
+    NetEvent.cc
+    NetHandler.cc
+    NetVCOptions.cc
+    NetAcceptEventIO.cc
+    NetVConnection.cc
+    PollCont.cc
+    ProxyProtocol.cc
+    ReadWriteEventIO.cc
+    Server.cc
+    Socks.cc
+    SSLAPIHooks.cc
+    SSLCertLookup.cc
+    SSLClientCoordinator.cc
+    SSLClientUtils.cc
+    SSLConfig.cc
+    SSLSecret.cc
+    SSLDiags.cc
+    SSLNetAccept.cc
+    SSLNetProcessor.cc
+    SSLNetVConnection.cc
+    SSLNextProtocolAccept.cc
+    SSLNextProtocolSet.cc
+    SSLRPKUtils.cc
+    SSLSNIConfig.cc
+    SSLStats.cc
+    SSLSessionCache.cc
+    SSLSessionTicket.cc
+    SSLUtils.cc
+    SSLKeyUtils.cc
+    OCSPStapling.cc
+    TLSBasicSupport.cc
+    TLSEventSupport.cc
+    TLSCertSwitchSupport.cc
+    TLSEarlyDataSupport.cc
+    TLSKeyLogger.cc
+    TLSSessionResumptionSupport.cc
+    TLSSNISupport.cc
+    TLSTunnelSupport.cc
+    TLSCertCompression.cc
+    UDPEventIO.cc
+    UnixConnection.cc
+    UnixNet.cc
+    UnixNetAccept.cc
+    UnixNetProcessor.cc
+    UnixNetVConnection.cc
+    UnixUDPConnection.cc
+    UnixUDPNet.cc
+    SSLDynlock.cc
+    SNIActionPerformer.cc
 )
 add_library(ts::inknet ALIAS inknet)
 
@@ -108,13 +110,14 @@ target_compile_options(inknet PUBLIC -Wno-deprecated-declarations)
 
 target_link_libraries(
   inknet
-  PUBLIC ts::inkevent
-         ts::proxy
-         ts::records
-         ts::tscore
-         OpenSSL::Crypto
-         OpenSSL::SSL
-         ts::tsapibackend
+  PUBLIC
+    ts::inkevent
+    ts::proxy
+    ts::records
+    ts::tscore
+    OpenSSL::Crypto
+    OpenSSL::SSL
+    ts::tsapibackend
   PRIVATE ts::config ts::tsutil yaml-cpp::yaml-cpp
 )
 
@@ -145,15 +148,21 @@ if(BUILD_TESTING)
     libinknet_stub.cc
     NetVCTest.cc
     unit_tests/test_ConnectionTracker.cc
+    unit_tests/test_EventIOMigration.cc
     unit_tests/test_NetHandler.cc
     unit_tests/test_ProxyProtocol.cc
     unit_tests/test_SSLCertLookup.cc
     unit_tests/test_SSLNetVConnectionAsyncEp.cc
+    unit_tests/test_SSLRPKUtils.cc
+    unit_tests/test_SSLSecret.cc
     unit_tests/test_SSLSNIConfig.cc
+    unit_tests/test_SSLUtils.cc
+    unit_tests/test_UnixNetVConnectionTimeouts.cc
     unit_tests/test_YamlSNIConfig.cc
     unit_tests/test_OCSPStapling.cc
     unit_tests/unit_test_main.cc
     unit_tests/benchmark_TLSCertCompression.cc
+    unit_tests/benchmark_InactivityCop.cc
   )
   if(SSLLIB_IS_AT_LEAST_OPENSSL3)
     target_sources(test_net PRIVATE unit_tests/test_SSLDHParams.cc)
@@ -208,14 +217,15 @@ if(BUILD_TESTING)
     # CMake <3.24 does not support LINK_GROUP. Use -Wl,--start-group and -Wl,--end-group manually.
     target_link_libraries(
       test_net
-      PRIVATE Catch2::Catch2WithMain
-              ts::tscore
-              -Wl,--start-group
-              ${LINK_GROUP_LIBS}
-              -Wl,--end-group
-              ts::tsutil
-              ts::inkevent
-              libswoc::libswoc
+      PRIVATE
+        Catch2::Catch2WithMain
+        ts::tscore
+        -Wl,--start-group
+        ${LINK_GROUP_LIBS}
+        -Wl,--end-group
+        ts::tsutil
+        ts::inkevent
+        libswoc::libswoc
     )
   endif()
   if(NOT APPLE)

@@ -1,0 +1,7 @@
+# The emitter echoes a number's digits, so the AST cannot normalize one anywhere:
+# 007 and 7 are different bytes once a number reaches a header value.
+REMAP {
+    if random(0100) > 007 {
+        inbound.req.X-Count = 007;
+    }
+}

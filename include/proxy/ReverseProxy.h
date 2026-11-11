@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "records/RecProcess.h"
 
 #include "tscore/ink_defs.h"
@@ -49,6 +51,9 @@ class url_mapping;
 struct host_hdr_info;
 
 extern AtomicSharedPtr<UrlRewrite> rewrite_table;
+
+// Wrap a freshly built table in a shared_ptr with the standard UrlRewrite deleter.
+std::shared_ptr<UrlRewrite> make_managed_url_rewrite(std::unique_ptr<UrlRewrite> table);
 
 // API Functions
 int init_reverse_proxy();

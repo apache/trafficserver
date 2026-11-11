@@ -1,0 +1,131 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Verify negative_revalidating disabled behavior. This replay file assumes that
+# ATS is configured with negative_revalidating disabled.
+#
+
+meta:
+  version: "1.0"
+
+# Configuration for the Uranium test runner
+urtest:
+  dns:
+    name: 'dns-neg_revalidating_disabled'
+  description: 'Verify negative revalidating disabled'
+
+  server:
+    name: 'server-negative-revalidating-disabled'
+
+  client:
+    name: 'client-negative-revalidating-disabled'
+
+  ats:
+    name: 'ts-negative-revalidating-disabled'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|cache'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.insert_response_via_str: 2
+      proxy.config.http.negative_revalidating_enabled: 0
+      proxy.config.http.cache.max_stale_age: 6
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/reques_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    # Populate the cache with a 200 response.
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+        - [ Cache-Control, max-age=2 ]
+
+    proxy-response:
+      status: 200
+
+  # Verify we serve the 200 OK out of the cache if it is not stale.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/reques_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 2 ]
+
+      # Give cache IO enough time to finish.
+      delay: 100ms
+
+    # This should not reach the origin server.
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+        - [ Cache-Control, max-age=2 ]
+
+    # Again, we should serve this out of the cache.
+    proxy-response:
+      status: 200
+
+  # Verify we serve a 5xx response if the cached 200 OK is stale.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/reques_item
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 3 ]
+
+      # Make sure the item is stale per it's 2 second max-age.
+      delay: 4s
+
+    server-response:
+      status: 503
+      reason: "Service Unavailable"
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+        - [ Cache-Control, max-age=2 ]
+
+    # Now the origin's 503 response should be served because
+    # negative_revalidating is disabled.
+    proxy-response:
+      status: 503

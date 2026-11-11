@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -100,45 +100,22 @@ private:
   _MatchDataPtr _match_data;
 };
 
-/// @brief Wrapper for PCRE2 match context
-///
-/// @internal This instance is not tied to any Regex and can be used with one of the Regex::exec overloads.
-class RegexMatchContext
-{
-  friend class Regex;
-
-public:
-  /** Construct a new RegexMatchContext object.
-   */
-  RegexMatchContext();
-  ~RegexMatchContext();
-
-  /// uses pcre2_match_context_copy for a deep copy.
-  RegexMatchContext(RegexMatchContext const &orig);
-  RegexMatchContext &operator=(RegexMatchContext const &orig);
-
-  RegexMatchContext(RegexMatchContext &&)            = default;
-  RegexMatchContext &operator=(RegexMatchContext &&) = default;
-
-  /** Limits the amount of backtracking that can take place.
-   * Any regex exec call that fails will return PCRE2_ERROR_MATCHLIMIT(-47)
-   */
-  void set_match_limit(uint32_t limit);
-
-private:
-  /// @internal This wraps a void* so to avoid requiring a pcre2 include.
-  struct _MatchContext;
-  struct _MatchContextPtr {
-    void *_ptr = nullptr;
-  };
-
-  _MatchContextPtr _match_context;
-};
-
 /// @brief Wrapper for PCRE2 regular expression.
 class Regex
 {
 public:
+  /// @brief Per call adjustments to the shared match configuration.
+  ///
+  /// Each field's zero value means "use the shared default", so a default constructed @c Options matches exactly like an
+  /// @c exec call without one.
+  struct Options {
+    /// Limits the amount of backtracking that can take place. An @c exec that exceeds it returns
+    /// PCRE2_ERROR_MATCHLIMIT (-47).
+    uint32_t match_limit = 0;
+
+    bool operator==(Options const &) const = default;
+  };
+
   Regex() = default;
   /** Deep copy constructor.
    *
@@ -174,6 +151,31 @@ public:
    */
   bool compile(std::string_view pattern, uint32_t flags = 0);
 
+  /** Compile the @a pattern into a regular expression that drives a policy decision.
+   *
+   * @param pattern Source pattern for regular expression.
+   * @param flags Compilation flags.
+   * @param policy_gate Operator-facing label identifying this pattern as a policy gate.
+   * @return @a true if compiled successfully, @a false otherwise.
+   *
+   * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * A non-empty @a policy_gate marks @a pattern as operator-authored input that
+   * drives a policy decision, subjecting it to @c policy_gate_anchoring. The label
+   * names the site in diagnostics, e.g. @c "url_sig excl_regex".
+   *
+   * @internal This is a distinct overload rather than a defaulted third parameter
+   * on the two-argument form. A default argument is supplied at the call site, so
+   * appending one changes the mangled name and every plugin already built against
+   * the old header fails to load with an undefined symbol for @c Regex::compile.
+   *
+   * @internal Dropping @a policy_gate at a call site selects the two-argument
+   * overload and compiles clean, leaving that site neither anchored nor reported.
+   * The two-argument form has to stay reachable for the plugins above, so this is
+   * covered by tests at the gate sites rather than by the signature.
+   */
+  bool compile(std::string_view pattern, uint32_t flags, std::string_view policy_gate);
+
   /** Compile the @a pattern into a regular expression.
    *
    * @param pattern Source pattern for regular expression.
@@ -186,7 +188,56 @@ public:
    *
    * On failure any previously compiled pattern is left in place and remains usable.
    */
-  bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, uint32_t flags = 0);
+
+  /** Compile the @a pattern into a regular expression that drives a policy decision.
+   *
+   * @param pattern Source pattern for regular expression.
+   * @param error String to receive error message.
+   * @param erroffset Pointer to integer to receive error offset.
+   * @param flags Compilation flags.
+   * @param policy_gate Operator-facing label identifying this pattern as a policy gate.
+   * @return @a true if compiled successfully, @a false otherwise.
+   *
+   * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * @internal A distinct overload for the same ABI reason as the two-argument form.
+   */
+  bool compile(std::string_view pattern, std::string &error, int &erroffset, uint32_t flags, std::string_view policy_gate);
+
+  /** Process-wide anchoring policy for policy-gate patterns.
+   *
+   * Non-zero anchors gate patterns to the whole subject. Zero (the default) leaves
+   * matching unchanged and warns instead. Read at compile time, so a change takes
+   * effect as configurations are reloaded.
+   *
+   * @internal tsutil cannot depend on librecords, so the owning process links this
+   * with @c RecEstablishStaticConfigInt32. Plugins share the variable, so they need
+   * no plumbing of their own.
+   */
+  static int32_t policy_gate_anchoring;
+
+  /** What a policy-gate report is telling the operator. */
+  enum class PolicyGateReport {
+    UNENFORCED, ///< The policy is off and this pattern is not required to match the whole subject.
+    ENFORCED,   ///< The policy anchored this pattern to the whole subject.
+  };
+
+  /** Handler invoked when a policy-gate pattern is compiled.
+   *
+   * @a message is a complete sentence. @a kind selects the severity: @c UNENFORCED is
+   * a warning, @c ENFORCED is informational, since under enforcement the pattern is
+   * safe and the operator only needs a record that the policy touched it. Null (the
+   * default) stays silent.
+   *
+   * @internal A function pointer because tsutil must not reference the diagnostics
+   * implementation: a @c Regex.cc to @c DbgCtl.cc edge pulls that object into every
+   * target linking @c libtsutil.a, colliding with the stubs some plugin tests
+   * provide and with the ODR constraint in @c plugins/esi/lib/CMakeLists.txt.
+   */
+  using PolicyGateReportHandler = void (*)(PolicyGateReport kind, std::string_view message);
+
+  static PolicyGateReportHandler policy_gate_report_handler;
 
   /** Execute the regular expression.
    *
@@ -214,9 +265,6 @@ public:
    * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
-   *
-   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
-   * be a multiple of 3 and at least three times the number of desired capture groups.
    */
   int exec(std::string_view subject, RegexMatches &matches) const;
 
@@ -225,20 +273,28 @@ public:
    * @param subject String to match against.
    * @param matches Place to store the capture groups.
    * @param flags Match flags (e.g., RE_NOTEMPTY).
-   * @param optional context Match context (set matching limits).
    * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
    *
    * It is safe to call this method concurrently on the same instance of @a this.
-   *
-   * Each capture group takes 3 elements of @a ovector, therefore @a ovecsize must
-   * be a multiple of 3 and at least three times the number of desired capture groups.
    */
-  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags,
-           RegexMatchContext const *const matchContext = nullptr) const;
+  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags) const;
+
+  /** Execute the regular expression.
+   *
+   * @param subject String to match against.
+   * @param matches Place to store the capture groups.
+   * @param flags Match flags (e.g., RE_NOTEMPTY).
+   * @param opts Adjustments to the shared match configuration, such as a match limit.
+   * @return @c The number of capture groups. < 0 if an error occurred. 0 if the number of Matches is too small.
+   * PCRE2_ERROR_NOMEMORY if @a opts is not the default and the match context it needs could not be allocated.
+   *
+   * It is safe to call this method concurrently on the same instance of @a this.
+   */
+  int exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Options const &opts) const;
 
   /** Error string for exec failure.
    *
-   * @param int return code from exec call.
+   * @param[in] rc Return code from exec call.
    */
   static std::string get_error_string(int rc);
 

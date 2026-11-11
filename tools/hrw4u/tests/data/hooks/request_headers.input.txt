@@ -1,0 +1,11 @@
+PRE_REMAP {
+    inbound.req.X-Set = "pre-remap";
+    inbound.req.X-Remove = "";
+    inbound.req.X-Add += "pre-remap";
+}
+
+READ_REQUEST {
+    inbound.req.X-Set = "read-request";
+    inbound.req.X-Remove = "";
+    inbound.req.X-Add += "read-request";
+}

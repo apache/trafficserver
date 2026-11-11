@@ -1,0 +1,2 @@
+:2:7: warning: 'inbound.method' is warned by sandbox policy (condition)
+:5:7: warning: 'inbound.method' is warned by sandbox policy (condition)

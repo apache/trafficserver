@@ -21,8 +21,52 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <charconv>
 #include <cstdint>
 #include <cstring>
+#include <string_view>
+
+enum class CidrQualifierError { NONE, IPV4, IPV6 };
+
+inline CidrQualifierError
+cidr_parse_qualifier(std::string_view qualifier, int &v4_cidr, int &v6_cidr)
+{
+  int parsed_v4 = v4_cidr;
+  int parsed_v6 = v6_cidr;
+
+  auto parse_field = [](std::string_view field, int max, int &value, bool allow_empty) {
+    if (field.empty()) {
+      return allow_empty;
+    }
+
+    int parsed              = 0;
+    auto const [end, error] = std::from_chars(field.data(), field.data() + field.size(), parsed);
+    if (error != std::errc{} || end != field.data() + field.size() || parsed < 0 || parsed > max) {
+      return false;
+    }
+
+    value = parsed;
+    return true;
+  };
+
+  auto const separator = qualifier.find_first_of(",/:");
+  if (separator == std::string_view::npos) {
+    if (!parse_field(qualifier, 32, parsed_v4, false)) {
+      return CidrQualifierError::IPV4;
+    }
+  } else {
+    if (!parse_field(qualifier.substr(0, separator), 32, parsed_v4, true)) {
+      return CidrQualifierError::IPV4;
+    }
+    if (!parse_field(qualifier.substr(separator + 1), 128, parsed_v6, true)) {
+      return CidrQualifierError::IPV6;
+    }
+  }
+
+  v4_cidr = parsed_v4;
+  v6_cidr = parsed_v6;
+  return CidrQualifierError::NONE;
+}
 
 // /0 yields a 0 mask, avoiding the undefined `<< 32`. Out-of-range prefixes
 // are clamped into [0, 32] to keep the shift well-defined.

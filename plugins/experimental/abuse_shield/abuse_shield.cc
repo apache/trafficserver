@@ -22,6 +22,7 @@
 
 #include <cerrno>
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cinttypes>
 #include <cstring>
@@ -53,6 +54,8 @@
 namespace
 {
 using abuse_shield::dbg_ctl;
+using abuse_shield::metric_burst_multiplier;
+using abuse_shield::metric_rate;
 using abuse_shield::PLUGIN_NAME;
 
 // Optional log file for LOG action output.
@@ -120,6 +123,22 @@ std::unique_ptr<BlockedIpTable> g_blocked_ips;
 std::shared_ptr<abuse_shield::Config> g_config;
 std::shared_mutex                     g_config_mutex; // Protects g_config pointer swaps
 
+// Maintenance passes that still prune rule buckets after a reload. Pruning walks
+// every slot of every tracker, so it runs only while a hook that captured the
+// pre-reload configuration could still recreate an obsolete bucket.
+//
+// Five passes is far more than that window needs. Every hook copies g_config at
+// the start of a single callback and drops the copy when the callback returns;
+// none keeps it across events. Those callbacks run on event threads and never
+// block, so they finish within microseconds to milliseconds, and one that ran
+// for whole seconds would already be stalling every connection on its thread.
+// Maintenance runs once per second, so five passes keep pruning for about five
+// seconds after the reload, orders of magnitude longer than such a callback. If
+// the final pass still removes a bucket, that assumption does not hold, and a
+// warning is logged.
+constexpr int    PRUNE_PASSES_AFTER_RELOAD = 5;
+std::atomic<int> g_prune_passes_remaining{0};
+
 // Sync the metrics from a single Udi table to its stats.
 void
 sync_tracker_stats(abuse_shield::TxnTable *tracker, abuse_shield::TrackerStats &stats)
@@ -179,34 +198,6 @@ reset_tracker_stats(Table *tracker, abuse_shield::TrackerStats &stats)
 // ============================================================================
 // Rule evaluation
 // ============================================================================
-
-int
-metric_rate(const abuse_shield::RuleFilter &filter, abuse_shield::RateMetric metric)
-{
-  switch (metric) {
-  case abuse_shield::RateMetric::REQUEST:
-    return filter.max_req_rate;
-  case abuse_shield::RateMetric::CONNECTION:
-    return filter.max_conn_rate;
-  case abuse_shield::RateMetric::H2_ERROR:
-    return filter.max_h2_error_rate;
-  }
-  return 0;
-}
-
-double
-metric_burst_multiplier(const abuse_shield::RuleFilter &filter, abuse_shield::RateMetric metric)
-{
-  switch (metric) {
-  case abuse_shield::RateMetric::REQUEST:
-    return filter.req_burst_multiplier;
-  case abuse_shield::RateMetric::CONNECTION:
-    return filter.conn_burst_multiplier;
-  case abuse_shield::RateMetric::H2_ERROR:
-    return filter.h2_burst_multiplier;
-  }
-  return 1.0;
-}
 
 template <typename Table>
 bool
@@ -1071,23 +1062,16 @@ dump_tracker()
   return result;
 }
 
-void
+// Remove buckets for rules that are no longer configured.
+// @return The number of buckets removed across all trackers.
+size_t
 prune_rule_buckets(const abuse_shield::Config &config)
 {
   auto prune = [&config](auto &table, abuse_shield::RateMetric metric) {
-    std::unordered_set<std::string> names;
-    for (const auto &rule : config.rules()) {
-      if (metric_rate(rule.filter, metric) > 0) {
-        names.insert(rule.name);
-      }
-    }
-    for (const auto &data : table->data_snapshot()) {
-      data->buckets.prune(names);
-    }
+    return abuse_shield::prune_tracker_buckets(*table, config.rules(), metric);
   };
-  prune(g_txn_tracker, abuse_shield::RateMetric::REQUEST);
-  prune(g_conn_tracker, abuse_shield::RateMetric::CONNECTION);
-  prune(g_h2_tracker, abuse_shield::RateMetric::H2_ERROR);
+  return prune(g_txn_tracker, abuse_shield::RateMetric::REQUEST) + prune(g_conn_tracker, abuse_shield::RateMetric::CONNECTION) +
+         prune(g_h2_tracker, abuse_shield::RateMetric::H2_ERROR);
 }
 
 int
@@ -1096,8 +1080,19 @@ handle_maintenance(TSCont, TSEvent, void *)
   try {
     std::shared_lock lock(g_config_mutex);
     // An in-flight hook can still use a pre-reload config. Repeating pruning
-    // removes any obsolete bucket it recreates after the reload pass.
-    prune_rule_buckets(*g_config);
+    // for a few passes removes any obsolete bucket it recreates after the
+    // reload pass.
+    int passes = g_prune_passes_remaining.load(std::memory_order_relaxed);
+    if (passes > 0) {
+      size_t removed = prune_rule_buckets(*g_config);
+      Dbg(dbg_ctl, "Post-reload prune pass removed %zu obsolete rule buckets, %d passes remaining", removed, passes - 1);
+      if (passes == 1 && removed > 0) {
+        TSWarning("[%s] Final post-reload prune pass still removed %zu obsolete rule buckets; a hook may be holding a "
+                  "pre-reload configuration longer than expected",
+                  PLUGIN_NAME, removed);
+      }
+      g_prune_passes_remaining.compare_exchange_strong(passes, passes - 1, std::memory_order_relaxed);
+    }
     sync_all_tracker_stats();
   } catch (const std::exception &error) {
     Dbg(dbg_ctl, "Maintenance failed: %s", error.what());
@@ -1148,6 +1143,7 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
           new_config->set_enabled(runtime_enabled);
           g_config = new_config;
           prune_rule_buckets(*g_config);
+          g_prune_passes_remaining.store(PRUNE_PASSES_AFTER_RELOAD, std::memory_order_relaxed);
           TSNote("[%s] Configuration reloaded successfully", PLUGIN_NAME);
         }
       }

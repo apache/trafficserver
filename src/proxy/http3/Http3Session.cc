@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -97,7 +97,7 @@ HQTransaction *
 HQSession::get_transaction(QUICStreamId id)
 {
   for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
-    if (t->get_transaction_id() == static_cast<int>(id)) {
+    if (t->get_quic_stream_id() == id) {
       return t;
     }
   }

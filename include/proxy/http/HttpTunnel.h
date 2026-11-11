@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -239,6 +239,13 @@ struct HttpTunnelConsumer {
   bool        write_success = false;
   const char *name          = nullptr;
 
+  /** Give this consumer a zero length write when it has nothing to write,
+      instead of completing it without one.  HttpSM sets this for an origin
+      whose request body ends with the frame that finishes a write, so that
+      write is what ends the request.
+  */
+  bool write_empty_body = false;
+
   /** Check if this consumer is downstream from @a vc.
       @return @c true if any producer in the tunnel eventually feeds
       data to this consumer.
@@ -407,7 +414,7 @@ public:
 
   /** Designate chunking behavior to the producer.
    *
-   * @param[in] producer The producer being configured.
+   * @param[in] p The producer being configured.
    * @param[in] skip_bytes The number of bytes to consume off the stream before
    * any chunked data is encountered. These are generally header bytes, if any.
    * @param[in] action The chunking behavior to enact on incoming bytes.

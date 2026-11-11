@@ -15,15 +15,12 @@
 #  limitations under the License.
 
 [project]
-name = "ats-autest"
+name = "ats-urtest"
 version = "0.1.0"
-description = "AuTest dependencies for Apache Traffic Server testing"
+description = "Pytest dependencies for Apache Traffic Server Uranium tests"
 requires-python = ">=3.11"
 
 dependencies = [
-    # Keep init.cli.ext updated with this required autest version.
-    "autest==1.10.6",
-
     # This should install TRLib, MicroServer, MicroDNS, Traffic-Replay.
     "traffic-replay",
 
@@ -38,6 +35,7 @@ dependencies = [
     "psutil",
 
     "charset-normalizer",
+    "colorama",
 
     # Keep init.cli.ext updated with this required microserver version.
     "microserver>=1.0.8",
@@ -46,20 +44,33 @@ dependencies = [
     "python-jose",
     "pyyaml",
 
+    # Pytest schedules the full Uranium test inventory. xdist gives each worker
+    # an independent sandbox and lets CI run those tests concurrently.
+    "pytest>=8.0",
+    "pytest-xdist>=3.6",
+
     # For the grpc tests.
     "grpcio",
     "grpcio-tools",
 
     "pyOpenSSL",
     "eventlet",
-    "aioquic==1.3.0",
+    "aioquic==1.7.2",
 
     # To test stats_over_http prometheus exporter.
     "prometheus_client",
 ]
 
 [project.optional-dependencies]
+fast-diff = [
+    "cdifflib>=1.2.9",
+]
 dev = [
     "pyflakes",
 ]
 
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+
+[tool.pyright]
+extraPaths = [".", "uranium_tests/remap", "uranium_tests/remap_yaml", "uranium_tests/lib"]

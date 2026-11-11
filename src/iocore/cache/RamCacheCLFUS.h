@@ -2,7 +2,7 @@
 
   Clocked Least Frequently Used by Size (CLFUS) RAM cache replacement policy.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -23,10 +23,11 @@
 
 #pragma once
 
-// See https://cwiki.apache.org/confluence/display/TS/RamCache
+// See https://docs.trafficserver.apache.org/en/latest/developer-guide/cache-architecture/ram-cache.en.html
 
 #include "P_RamCache.h"
 
+#include "iocore/cache/Cache.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/List.h"
@@ -40,19 +41,25 @@ class StripeSM;
 struct RamCacheCLFUSEntry {
   CryptoHash key;
   uint64_t   auxkey;
-  uint64_t   hits;
-  uint32_t   size; // memory used including padding in buffer
-  uint32_t   len;  // actual data length
+  uint32_t   hits;
+  uint32_t   epoch; // value of RamCacheCLFUS::_epoch when hits was last decayed
+  uint32_t   size;  // memory used including padding in buffer
+  uint32_t   len;   // actual data length
   uint32_t   compressed_len;
   union {
     struct {
-      uint32_t compressed     : 3; // compression type
+      uint32_t compressed     : 3; // compression type, a CACHE_COMPRESSION_* value
       uint32_t incompressible : 1;
       uint32_t lru            : 1;
       uint32_t copy           : 1; // copy-in-copy-out
     } flag_bits;
     uint32_t flags;
   };
+  // The compression type is stored in the 3-bit flag_bits.compressed field
+  // above, so a newly added codec value must still fit. Checked here rather
+  // than beside the codec, so that a build without that codec still evaluates
+  // it.
+  static_assert(CACHE_COMPRESSION_ZSTD < (1 << 3));
   LINK(RamCacheCLFUSEntry, lru_link);
   LINK(RamCacheCLFUSEntry, hash_link);
   Ptr<IOBufferData> data;
@@ -62,6 +69,12 @@ class RamCacheCLFUS : public RamCache
 {
 public:
   RamCacheCLFUS() {}
+  ~RamCacheCLFUS() override;
+
+  // Owns raw _bucket/_seen allocations and the pool-allocated entries, so
+  // copying one would double free all three.
+  RamCacheCLFUS(const RamCacheCLFUS &)            = delete;
+  RamCacheCLFUS &operator=(const RamCacheCLFUS &) = delete;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
   int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
@@ -90,6 +103,36 @@ private:
   int                 _ncompressed = 0;
   RamCacheCLFUSEntry *_compressed  = nullptr; // first uncompressed lru[0] entry
 
+  static constexpr uint32_t entry_overhead = 256; // per-entry overhead to consider when computing cache value/size
+
+  static constexpr double
+  cache_value_hits_size(const uint64_t hits, const uint32_t size)
+  {
+    // Dampen the linear size penalty using an effective size curve:
+    // (size >> 1) + 2048 prevents tiny objects (< 1KB) from having an
+    // overwhelming advantage over normal web objects (10KB-100KB),
+    // while remaining strictly monotonic with size so smaller objects still
+    // have higher density.
+    const uint32_t eff_size = (size >> 1) + 2048;
+    return static_cast<double>(hits + 1) / (eff_size + entry_overhead);
+  }
+
+  static constexpr double
+  cache_value(const RamCacheCLFUSEntry *const e)
+  {
+    return cache_value_hits_size(e->hits, e->size);
+  }
+
+  // Lets the unit tests reach a stored entry so the decompression failure
+  // paths in get() can be exercised, and the value metric so it can be
+  // checked; see unit_tests/test_RamCacheCLFUS.cc. Nothing in the product
+  // uses this.
+  friend struct RamCacheCLFUSTestAccess;
+
+  ink_hrtime          _last_decay_time = 0;
+  uint32_t            _epoch           = 0;
+  void                _decay_epochs();
+  void                _apply_decay(RamCacheCLFUSEntry *e);
   void                _resize_hashtable();
   void                _victimize(RamCacheCLFUSEntry *e);
   void                _move_compressed(RamCacheCLFUSEntry *e);

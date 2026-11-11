@@ -1,6 +1,6 @@
 /** @file
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -65,12 +65,14 @@ TLSCertSwitchSupport::_clear()
 }
 
 int
-TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
+TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType, const char *servername)
 {
   shared_SSL_CTX ctx = nullptr;
 
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  bool        found      = true;
+  if (servername == nullptr) {
+    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  }
+  bool found = true;
 
   Dbg(dbg_ctl_ssl, "set_context_cert ssl=%p server=%s", ssl, servername);
 
@@ -80,16 +82,20 @@ TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
     return 0;
   }
 
-  // The incoming SSL_CTX is either the one mapped from the inbound IP address or the default one. If we
-  // don't find a name-based match at this point, we *do not* want to mess with the context because we've
-  // already made a best effort to find the best match.
+  // Prefer a name-based match over the destination address.
   if (likely(servername)) {
     ctx = this->_lookupContextByName(servername, ctxType);
   }
 
-  // If there's no match on the server name, try to match on the peer address.
+  // If there's no match on the server name, try to match on the destination address.
   if (ctx == nullptr) {
     ctx = this->_lookupContextByIP();
+  }
+
+  // BoringSSL needs a separate context for each key type. The initial default
+  // context may not support this client, so select from the stored '*' contexts.
+  if (ctx == nullptr && ctxType != SSLCertContextType::GENERIC) {
+    ctx = this->_lookupContextByName("*", ctxType);
   }
 
   if (ctx != nullptr) {

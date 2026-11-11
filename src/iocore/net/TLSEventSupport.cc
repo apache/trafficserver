@@ -3,7 +3,7 @@
   TLSSEventSupport.cc provides implementations for
   TLSEventSupport methods
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -375,6 +375,20 @@ TLSEventSupport::calledHooks(TSEvent eventId) const
   return retval;
 }
 
+bool
+TLSEventSupport::reached_cert_hooks() const
+{
+  switch (this->sslHandshakeHookState) {
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+    return true;
+  default:
+    return false;
+  }
+}
+
 char const *
 TLSEventSupport::get_ssl_handshake_hook_state_name(SSLHandshakeHookState state)
 {
@@ -419,6 +433,49 @@ void
 TLSEventSupport::set_handshake_hook_state(TLSEventSupport::SSLHandshakeHookState state)
 {
   this->sslHandshakeHookState = state;
+}
+
+bool
+TLSEventSupport::finished_client_hello_hooks() const
+{
+  switch (this->sslHandshakeHookState) {
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_SNI:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_DONE:
+    return true;
+  default:
+    return false;
+  }
+}
+
+/** Whether a ClientHello hook has reenabled the connection and the ClientHello callback must
+ * continue the ClientHello hook list.
+ *
+ * The ClientHello is only readable during the TLS library's ClientHello callback, so the remaining
+ * hooks run when the resumed handshake calls it again.
+ *
+ * @return True if the ClientHello callback must run the remaining ClientHello hooks.
+ */
+bool
+TLSEventSupport::resuming_client_hello_hooks() const
+{
+  return this->sslHandshakeHookState == SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO && this->curHook != nullptr;
+}
+
+bool
+TLSEventSupport::finished_cert_hooks() const
+{
+  switch (this->sslHandshakeHookState) {
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_CERT_INVOKE:
+  case SSLHandshakeHookState::HANDSHAKE_HOOKS_DONE:
+    return true;
+  default:
+    return false;
+  }
 }
 
 bool

@@ -60,7 +60,6 @@
 static DbgCtl dbg_ctl{PLUGIN_NAME};
 
 static TSCont TxnHook;
-static TSCont InterceptHook;
 
 static int InterceptInterceptHook(TSCont contp, TSEvent event, void *edata);
 static int InterceptTxnHook(TSCont contp, TSEvent event, void *edata);
@@ -555,8 +554,7 @@ TSPluginInit(int /* argc */, const char * /* argv */[])
 
   // XXX accept hostname and port arguments
 
-  TxnHook       = InterceptContCreate(InterceptTxnHook, nullptr, nullptr);
-  InterceptHook = InterceptContCreate(InterceptInterceptHook, nullptr, nullptr);
+  TxnHook = InterceptContCreate(InterceptTxnHook, nullptr, nullptr);
 
   // Wait until after the cache lookup to decide whether to
   // intercept a request. For cache hits, we will never intercept.

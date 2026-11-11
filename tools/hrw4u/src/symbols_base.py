@@ -17,6 +17,8 @@
 #  limitations under the License.
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import cached_property, lru_cache
 from typing import Any
 from hrw4u.debugging import Dbg
@@ -29,9 +31,9 @@ import hrw4u.types as types
 
 
 class SymbolResolverBase:
-
     def __init__(
-            self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
+        self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None
+    ) -> None:
         self._dbg = dbg if dbg is not None else Dbg(debug)
         self._sandbox = sandbox or SandboxConfig.empty()
         self._sandbox_warnings: list[str] = []
@@ -49,6 +51,16 @@ class SymbolResolverBase:
         warnings = self._sandbox_warnings[:]
         self._sandbox_warnings.clear()
         return warnings
+
+    @contextmanager
+    def _warnings_on_success(self) -> Iterator[None]:
+        # The visitor drains only on success, so a failed resolution's warnings would leak to the next construct.
+        mark = len(self._sandbox_warnings)
+        try:
+            yield
+        except BaseException:
+            del self._sandbox_warnings[mark:]
+            raise
 
     @cached_property
     def _operator_map(self) -> dict[str, types.MapParams]:
@@ -101,7 +113,6 @@ class SymbolResolverBase:
     def debug_context(self, method_name: str, *args: Any):
 
         class DebugContext:
-
             def __init__(self, resolver: SymbolResolverBase, method: str, arguments: tuple[Any, ...]):
                 self.resolver = resolver
                 self.method = method

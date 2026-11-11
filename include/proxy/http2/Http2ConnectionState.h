@@ -2,7 +2,7 @@
 
   Http2ConnectionState.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -247,6 +247,18 @@ private:
 
   unsigned _adjust_concurrent_stream();
 
+  /** Top up the connection receive window after discarding a DATA frame.
+   *
+   * DATA that no stream will consume is still charged to the connection
+   * window, so nothing else would trigger a WINDOW_UPDATE for it. This tops
+   * the window back up to its configured size via restart_receiving() once it
+   * falls below the usual threshold.
+   *
+   * @param[in] discarded_length The discarded frame's payload length, used
+   *   only for debug logging.
+   */
+  void _top_up_window_after_discard(uint32_t discarded_length);
+
   /** Process an incoming SETTINGS ACK frame.
    *
    * Applies the settings from the front of the outstanding settings queue,
@@ -300,6 +312,9 @@ private:
    * @param[in] error_code The HTTP/2 error code to send in GOAWAY.
    */
   void _close_connection(Http2ErrorCode error_code);
+
+  Http2FlowControlPolicy _flow_control_policy{
+    Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM}; ///< Policy at connection initialization.
 
   // Getters for stream control configurations that retrieve the inbound or
   // outbound values per the configured session.
@@ -452,6 +467,7 @@ private:
   //     another CONTINUATION frame."
   Http2StreamId      continued_stream_id = 0;
   bool               fini_received       = false;
+  bool               _peer_goaway_drain  = false; ///< Outbound only: an origin's GOAWAY left streams to finish before close.
   bool               in_destroy          = false;
   int                recursion           = 0;
   int                _data_event_backoff = DATA_EVENT_BACKOFF_START;

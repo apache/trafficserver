@@ -67,11 +67,12 @@ def parse_tree(input_text: str) -> tuple[hrw4uParser, hrw4uParser.ProgramContext
 
 
 def process_file(
-        input_path: Path,
-        update_ast: bool = False,
-        update_output: bool = False,
-        update_error: bool = False,
-        exceptions: dict[str, str] = None) -> bool:
+    input_path: Path,
+    update_ast: bool = False,
+    update_output: bool = False,
+    update_error: bool = False,
+    exceptions: dict[str, str] = None,
+) -> bool:
     base = input_path.with_suffix('')
     ast_path = base.with_suffix('.ast.txt')
     output_path = base.with_suffix('.output.txt')
@@ -113,7 +114,8 @@ def process_file(
             parser, tree = parse_tree(input_text)
             ast_text = tree.toStringTree(recog=parser).strip()
             output_text = "\n".join(
-                HRW4UVisitor(filename=str(input_path), proc_search_paths=_proc_search_paths(input_path)).visit(tree)).strip()
+                HRW4UVisitor(filename=str(input_path), proc_search_paths=_proc_search_paths(input_path)).visit(tree)
+            ).strip()
 
             if update_ast:
                 ast_path.write_text(ast_text + "\n")
@@ -159,7 +161,8 @@ def run_batch(group: str | None = None, update_ast: bool = False, update_output:
                 continue
 
             ok = process_file(
-                f, update_ast=update_ast, update_output=update_output, update_error=update_error, exceptions=exceptions)
+                f, update_ast=update_ast, update_output=update_output, update_error=update_error, exceptions=exceptions
+            )
             if not ok:
                 failed += 1
 

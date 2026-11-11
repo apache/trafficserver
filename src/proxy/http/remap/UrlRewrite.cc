@@ -2,7 +2,7 @@
 
   URL rewriting.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -97,7 +97,12 @@ UrlRewrite::load(ConfigContext ctx)
       return false;
     }
   }
+  return load_table(std::string(config_file_path.get()), nullptr, ctx);
+}
 
+bool
+UrlRewrite::load_table(const std::string &path, YAML::Node const *remap_node, ConfigContext ctx)
+{
   this->ts_name = nullptr;
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
     this->ts_name = ats_stringdup(rec_str);
@@ -145,7 +150,7 @@ UrlRewrite::load(ConfigContext ctx)
   Dbg(dbg_ctl_url_rewrite_regex, "strategyFactory file: %s", sf.c_str());
   strategyFactory = new NextHopStrategyFactory(sf.c_str());
 
-  if (TS_SUCCESS == this->BuildTable(config_file_path, ctx)) {
+  if (TS_SUCCESS == this->BuildTable(path.c_str(), remap_node, ctx)) {
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
     required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);
@@ -254,47 +259,6 @@ UrlRewrite::PrintStore(const MappingsStore &store) const
       list_iter->url_map->Print();
     }
   }
-}
-
-std::string
-UrlRewrite::PrintRemapHits()
-{
-  std::string result;
-  result += PrintRemapHitsStore(forward_mappings);
-  result += PrintRemapHitsStore(reverse_mappings);
-  result += PrintRemapHitsStore(permanent_redirects);
-  result += PrintRemapHitsStore(temporary_redirects);
-  result += PrintRemapHitsStore(forward_mappings_with_recv_port);
-
-  if (result.size() > 2) {
-    result.pop_back(); // remove the trailing \n
-    result.pop_back(); // remove the trailing ,
-    result = "{\"list\": [\n" + result + " \n]}";
-  }
-
-  return result;
-}
-
-/** Debugging method. */
-std::string
-UrlRewrite::PrintRemapHitsStore(MappingsStore &store)
-{
-  std::string result;
-  if (store.hash_lookup) {
-    for (auto &it : *store.hash_lookup) {
-      result += it.second->PrintUrlMappingPathIndex();
-    }
-  }
-
-  if (!store.regex_list.empty()) {
-    forl_LL(RegexMapping, list_iter, store.regex_list)
-    {
-      result += list_iter->url_map->PrintRemapHitCount();
-      result += ",\n";
-    }
-  }
-
-  return result;
 }
 
 /**
@@ -732,7 +696,6 @@ UrlRewrite::_addToStore(MappingsStore &store, url_mapping *new_mapping, RegexMap
   bool retval;
 
   new_mapping->setRank(count); // Use the mapping rules number count for rank
-  new_mapping->setRemapKey();  // Used for remap hit stats
   if (is_cur_mapping_regex) {
     store.regex_list.enqueue(reg_map);
     retval = true;
@@ -819,7 +782,7 @@ UrlRewrite::InsertForwardMapping(mapping_type maptype, url_mapping *mapping, con
 
 */
 int
-UrlRewrite::BuildTable(const char *path, ConfigContext ctx)
+UrlRewrite::BuildTable(const char *path, YAML::Node const *remap_node, ConfigContext ctx)
 {
   ink_assert(forward_mappings.empty());
   ink_assert(reverse_mappings.empty());
@@ -832,6 +795,10 @@ UrlRewrite::BuildTable(const char *path, ConfigContext ctx)
   ink_assert(num_rules_redirect_temporary == 0);
   ink_assert(num_rules_forward_with_recv_port == 0);
 
+  // A supplied node is only reachable through the yaml parser; otherwise the node is silently
+  // dropped and @a path is parsed as a remap.config file name.
+  ink_release_assert(!remap_node || is_remap_yaml());
+
   forward_mappings.hash_lookup.reset(new URLTable);
   reverse_mappings.hash_lookup.reset(new URLTable);
   permanent_redirects.hash_lookup.reset(new URLTable);
@@ -840,7 +807,11 @@ UrlRewrite::BuildTable(const char *path, ConfigContext ctx)
 
   bool parse_success;
   if (is_remap_yaml()) {
-    parse_success = remap_parse_yaml(path, this, ctx);
+    if (remap_node) {
+      parse_success = remap_parse_yaml(remap_node, this, ctx);
+    } else {
+      parse_success = remap_parse_yaml(path, this, ctx);
+    }
   } else {
     parse_success = remap_parse_config(path, this, ctx);
   }
@@ -949,9 +920,6 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
                           mapping_container)) {
     Dbg(dbg_ctl_url_rewrite, "Using regex mapping with rank %d", (mapping_container.getMapping())->getRank());
     retval = true;
-  }
-  if (retval) {
-    (mapping_container.getMapping())->incrementCount();
   }
   return retval;
 }
