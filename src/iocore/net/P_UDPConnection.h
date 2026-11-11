@@ -48,6 +48,8 @@ public:
   bool       binding_valid     = false;
   int        tobedestroyed     = 0;
   int        sendGenerationNum = 0;
+  /// Whether SO_TXTIME is enabled on the socket. Only then may a send carry SCM_TXTIME.
+  bool txtime_enabled = false;
 };
 
 TS_INLINE
