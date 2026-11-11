@@ -38,6 +38,17 @@ def openssl_at_least(required: tuple[int, ...]) -> bool:
     return match is not None and tuple(int(part) for part in match.group().split(".")) >= required
 
 
+def tls13_group() -> str:
+    """Return the group to require for the TLSv1.3-only name, aaa.com.
+
+    X25519MLKEM768 needs OpenSSL 3.5. An older OpenSSL rejects it as an invalid
+    group list, which would refuse every aaa.com handshake whatever its TLS
+    version policy says, so use P-384 there instead.
+    """
+
+    return "X25519MLKEM768" if openssl_at_least((3, 5, 0)) else "P-384"
+
+
 def configure_ats(ats_factory: ATSFactory) -> ATS:
     """Configure TLS group and cipher policy for three SNI names.
 
@@ -60,16 +71,16 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.diags.debug.tags": "ssl_sni",
         }
     )
-    # OpenSSL 1.1.1 matches group names case-sensitively and rejects
-    # "x25519", so use the canonical spelling.
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
         "- fqdn: aaa.com\n"
-        "  server_groups_list: X25519MLKEM768\n"
+        f"  server_groups_list: {tls13_group()}\n"
         "  valid_tls_versions_in: [ TLSv1_3 ]\n"
         "  server_TLSv1_3_cipher_suites: TLS_AES_256_GCM_SHA384\n"
         "- fqdn: bbb.com\n"
+        # Keep OpenSSL's spelling: OpenSSL 1.1.1k matches group names
+        # case-sensitively and rejects "x25519".
         "  server_groups_list: X25519\n"
         "  valid_tls_versions_in: [ TLSv1_2 ]\n"
         "  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384\n"
@@ -161,19 +172,24 @@ def test_tls_sni_groups(ats_factory: ATSFactory, curl: Curl) -> None:
     result = s_client("bbb.com", "-cipher", "ECDHE-RSA-AES256-GCM-SHA384", _ats=_ats)
     require_version(result, "TLSv1.2")
     assert re.search(r"(Server|Peer) Temp Key: X25519", result.output), result.output
+    # X25519 is also OpenSSL's default first group, so the handshake above
+    # passes even if ATS ignores the list. A client that offers only a group
+    # outside the list shows the list was applied.
+    require_refused(s_client("bbb.com", "-cipher", "ECDHE-RSA-AES256-GCM-SHA384", "-groups", "P-256", _ats=_ats))
     require_refused(s_client("bbb.com", "-tls1_3", _ats=_ats))
     request("ccc.com", "--ciphers", "ECDHE-RSA-AES256-GCM-SHA384", _ats=_ats, _curl=curl)
 
     traffic_out = _ats.traffic_out.read_text(errors="replace")
-    assert "Setting groups list from server_groups_list to X25519" in traffic_out
+    assert re.search(r"Setting groups list from server_groups_list to X25519$", traffic_out, re.MULTILINE), traffic_out
     assert "ERROR: Invalid server_groups_list: ABC123" in _ats.diags_log.read_text(errors="replace")
 
+    group = tls13_group()
     require_refused(s_client("aaa.com", "-tls1_2", _ats=_ats))
-    if openssl_at_least((3, 5, 0)):
-        # System crypto policies, such as RHEL's, may leave X25519MLKEM768 out
-        # of the groups s_client offers by default.
-        result = s_client("aaa.com", "-ciphersuites", "TLS_AES_256_GCM_SHA384", "-groups", "X25519MLKEM768", _ats=_ats)
-        require_version(result, "TLSv1.3")
+    # System crypto policies, such as RHEL's, may leave X25519MLKEM768 out of
+    # the groups s_client offers by default, so offer the group explicitly.
+    result = s_client("aaa.com", "-ciphersuites", "TLS_AES_256_GCM_SHA384", "-groups", group, _ats=_ats)
+    require_version(result, "TLSv1.3")
+    if group == "X25519MLKEM768":
         assert re.search(r"((Server|Peer) Temp Key|Negotiated TLS1\.3 group): X25519MLKEM768", result.output), result.output
         traffic_out = _ats.traffic_out.read_text(errors="replace")
         assert "Setting groups list from server_groups_list to X25519MLKEM768" in traffic_out
