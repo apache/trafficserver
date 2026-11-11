@@ -983,7 +983,7 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
     "cache.url.query.remove": FunctionDoc(
         name="Cache Key Query Remove",
         category="Cache Key Statement",
-        description="Drops the named query parameters from the cache key. Can't be combined with cache.url.query.keep().",
+        description="Drops the named query parameters from the cache key. Can't be combined with cache.url.query.keep() or cache.url.query = \"\".",
         syntax="cache.url.query.remove(\"a\", \"b\")",
         maps_to="cachekey.so --exclude-params=a,b",
         usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
@@ -995,7 +995,7 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
     "cache.url.query.keep": FunctionDoc(
         name="Cache Key Query Keep",
         category="Cache Key Statement",
-        description="Keeps only the named query parameters in the cache key and drops the rest. Can't be combined with cache.url.query.remove().",
+        description="Keeps only the named query parameters in the cache key and drops the rest. Can't be combined with cache.url.query.remove() or cache.url.query = \"\".",
         syntax="cache.url.query.keep(\"a\", \"b\")",
         maps_to="cachekey.so --include-params=a,b",
         usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",

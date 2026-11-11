@@ -748,6 +748,8 @@ cache.url.canonical()                  --canonical-prefix=true                  
 cache.key.prefix = "p"                 --static-prefix=p                        Start the key with p, not host and port
 cache.key.headers.add("A", "B")        --include-headers=A,B                    Add these request headers
 cache.key.cookies.add("a", "b")        --include-cookies=a,b                    Add these cookies
+cache.key.headers.exists("A", "B")     --include-headers=@Hrw4u-Header-A,...    Add whether these headers are present
+cache.key.cookies.exists("a", "b")     --include-headers=@Hrw4u-Cookie-a,...    Add whether these cookies are present
 cache.key += "{...}"                   --include-headers=@Hrw4u-Key-NN          Add a computed value
 ====================================== ======================================== =========================================
 
@@ -763,6 +765,10 @@ values. Lists take one name per argument. Query param and cookie names are
 case-sensitive; header names are not. ``keep()``, ``remove()`` and
 ``query = ""`` can't be combined. A missing or empty header, cookie, or
 ``cache.key +=`` value adds nothing to the key.
+``exists()`` keys on whether each name is there, not on its value, and takes
+``@`` headers too. An empty header, or a cookie sent as ``sid=``, counts as
+absent. ``cache.key.cookies.exists("sid", "SID")`` fails to compile: the two
+cookies can't be told apart in the key.
 
 ``cache.key +=`` takes any string. The compiler sets the value into a numbered
 ``@Hrw4u-Key-NN`` header and adds that header to the key::
