@@ -38,13 +38,13 @@ def client_hello(server_name: str) -> bytes:
     server_name_list = b"\x00" + struct.pack("!H", len(encoded_name)) + encoded_name
     extensions = b"".join(
         (
-            extension(0,
-                      struct.pack("!H", len(server_name_list)) + server_name_list),
+            extension(0, struct.pack("!H", len(server_name_list)) + server_name_list),
             extension(10, b"\x00\x02\x00\x1d"),
             extension(11, b"\x01\x00"),
             extension(13, b"\x00\x04\x08\x04\x04\x03"),
             extension(43, b"\x02\x03\x03"),
-        ))
+        )
+    )
 
     body = b"".join(
         (
@@ -55,7 +55,8 @@ def client_hello(server_name: str) -> bytes:
             b"\x01\x00",
             struct.pack("!H", len(extensions)),
             extensions,
-        ))
+        )
+    )
     handshake = b"\x01" + len(body).to_bytes(3, byteorder="big") + body
     return b"\x16\x03\x01" + struct.pack("!H", len(handshake)) + handshake
 

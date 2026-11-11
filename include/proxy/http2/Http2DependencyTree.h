@@ -5,7 +5,7 @@
   The original idea of Stream Priority Algorithm using Weighted Fair Queue (WFQ)
   Scheduling is invented by Kazuho Oku (H2O project).
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

@@ -3,7 +3,7 @@
   TLSSEventSupport.cc provides implementations for
   TLSEventSupport methods
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -449,6 +449,20 @@ TLSEventSupport::finished_client_hello_hooks() const
   default:
     return false;
   }
+}
+
+/** Whether a ClientHello hook has reenabled the connection and the ClientHello callback must
+ * continue the ClientHello hook list.
+ *
+ * The ClientHello is only readable during the TLS library's ClientHello callback, so the remaining
+ * hooks run when the resumed handshake calls it again.
+ *
+ * @return True if the ClientHello callback must run the remaining ClientHello hooks.
+ */
+bool
+TLSEventSupport::resuming_client_hello_hooks() const
+{
+  return this->sslHandshakeHookState == SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO && this->curHook != nullptr;
 }
 
 bool

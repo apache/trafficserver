@@ -49,7 +49,8 @@ def test_compress_cache_untransformed(ats_factory: ATSFactory, services: Service
             "proxy.config.http.send_100_continue_response": 0,
             "proxy.config.http.cache.post_method": 1,
             "proxy.config.http.cache.range.write": 1,
-        })
+        }
+    )
     config = directory / "etc" / "compress-cache-false.config"
     ats.copy_to_config(config)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{port}/ @plugin=compress.so @pparam={ats.config_directory / config.name}")
@@ -59,12 +60,14 @@ def test_compress_cache_untransformed(ats_factory: ATSFactory, services: Service
         arguments = (
             "--http1.1 --silent --output /dev/null --request POST --header 'Accept-Encoding: gzip' "
             "--header 'Expect: 100-continue' --expect100-timeout 0 --data 'test body data' "
-            f"http://127.0.0.1:{ats.http_port}/test/resource.js")
+            f"http://127.0.0.1:{ats.http_port}/test/resource.js"
+        )
     else:
         # Exercise the range transform alongside the untransformed cache write.
         arguments = (
             "--http1.1 --silent --output /dev/null --header 'Range: bytes=0-64' "
-            f"http://127.0.0.1:{ats.http_port}/early-hints/redirect")
+            f"http://127.0.0.1:{ats.http_port}/early-hints/redirect"
+        )
     result = curl.run_for(ats, arguments)
     assert result.returncode == 0, result.output
     assert ats.is_running

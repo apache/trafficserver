@@ -24,11 +24,7 @@ add_library(ts::jsonrpc_protocol ALIAS jsonrpc_protocol)
 # position independent.
 set_target_properties(jsonrpc_protocol PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-target_link_libraries(
-  jsonrpc_protocol
-  PUBLIC ts::tscore
-  PRIVATE ts::tsutil
-)
+target_link_libraries(jsonrpc_protocol PUBLIC ts::tscore PRIVATE ts::tsutil)
 
 add_library(
   jsonrpc_server STATIC server/RPCServer.cc server/CommBase.cc server/IPCSocketServer.cc config/JsonRPCConfig.cc
@@ -38,16 +34,17 @@ add_library(ts::jsonrpc_server ALIAS jsonrpc_server)
 target_link_libraries(jsonrpc_server PUBLIC ts::jsonrpc_protocol)
 
 add_library(
-  rpcpublichandlers STATIC
-  handlers/cache/Cache.cc
-  handlers/common/ErrorUtils.cc
-  handlers/common/RecordsUtils.cc
-  handlers/config/Configuration.cc
-  handlers/hostdb/HostDB.cc
-  handlers/records/Records.cc
-  handlers/storage/Storage.cc
-  handlers/server/Server.cc
-  handlers/plugins/Plugins.cc
+  rpcpublichandlers
+  STATIC
+    handlers/cache/Cache.cc
+    handlers/common/ErrorUtils.cc
+    handlers/common/RecordsUtils.cc
+    handlers/config/Configuration.cc
+    handlers/hostdb/HostDB.cc
+    handlers/records/Records.cc
+    handlers/storage/Storage.cc
+    handlers/server/Server.cc
+    handlers/plugins/Plugins.cc
 )
 add_library(ts::rpcpublichandlers ALIAS rpcpublichandlers)
 
@@ -61,25 +58,25 @@ if(BUILD_TESTING)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/var)
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/config)
   add_executable(test_jsonrpc jsonrpc/unit_tests/test_basic_protocol.cc)
-  target_link_libraries(
-    test_jsonrpc ts::tsutil Catch2::Catch2WithMain ts::rpcpublichandlers ts::jsonrpc_protocol libswoc::libswoc
+  target_link_libraries(test_jsonrpc ts::tsutil Catch2::Catch2WithMain ts::rpcpublichandlers ts::jsonrpc_protocol
+                        libswoc::libswoc
   )
   add_catch2_test(NAME test_jsonrpc COMMAND test_jsonrpc)
 
-  add_executable(
-    test_jsonrpcserver server/unit_tests/test_rpcserver.cc ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
+  add_executable(test_jsonrpcserver server/unit_tests/test_rpcserver.cc
+                 ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
   )
-  target_link_libraries(
-    test_jsonrpcserver Catch2::Catch2WithMain ts::jsonrpc_server ts::inkevent libswoc::libswoc configmanager
+  target_link_libraries(test_jsonrpcserver Catch2::Catch2WithMain ts::jsonrpc_server ts::inkevent libswoc::libswoc
+                        configmanager
   )
   add_catch2_test(NAME test_jsonrpcserver COMMAND test_jsonrpcserver)
   # ~ScopedMethodHandler must survive its CHECK throwing under --abort. "fatal error condition" means
   # std::terminate ended the binary; a missing summary means it died without Catch2's signal handler.
   add_test(NAME test_jsonrpcserver.guard_abort COMMAND test_jsonrpcserver "[guard_abort]" --abort)
   set_tests_properties(
-    test_jsonrpcserver.guard_abort
-    PROPERTIES ENVIRONMENT RPC_TEST_GUARD_ABORT=1 PASS_REGULAR_EXPRESSION "handler: guard_abort_handler.*test cases: "
-               FAIL_REGULAR_EXPRESSION "fatal error condition"
+    test_jsonrpcserver.guard_abort PROPERTIES ENVIRONMENT RPC_TEST_GUARD_ABORT=1 PASS_REGULAR_EXPRESSION
+                                              "handler: guard_abort_handler.*test cases: " FAIL_REGULAR_EXPRESSION
+                                              "fatal error condition"
   )
 
   add_executable(test_record_yaml handlers/common/unit_tests/test_record_yaml.cc)

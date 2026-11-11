@@ -50,13 +50,15 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, send_immediately: bool,
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http.send_100_continue_response": int(send_immediately),
-        })
+        }
+    )
     return ats
 
 
@@ -76,7 +78,8 @@ def run_case(ats: ATS, protocol: str, body: str | Path, *, expect_continue: bool
         (
             f"--verbose --output /dev/null '--{protocol}' --header 'uuid: post' --header '{expect_header}' --data "
             f"'{f'@{body}' if isinstance(body, Path) else body}' --insecure "
-            f"'https://127.0.0.1:{ats.https_port}/post'"),
+            f"'https://127.0.0.1:{ats.https_port}/post'"
+        ),
         timeout=30,
     )
     assert result.returncode == 0, result.output

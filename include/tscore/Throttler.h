@@ -2,7 +2,7 @@
 
   A class for generic throttling.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -91,7 +91,7 @@ public:
 
   /** Set the log throttling interval to a new value.
    *
-   * @param[in] interval The new interval to set.
+   * @param[in] new_interval The new interval to set.
    */
   void set_throttling_interval(std::chrono::microseconds new_interval);
 

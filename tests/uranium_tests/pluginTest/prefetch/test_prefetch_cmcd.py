@@ -102,18 +102,17 @@ def test_prefetch_cmcd(ats_factory: ATSFactory, services: ServiceFactory) -> Non
 
         ats.set_logging_yaml(
             {
-                "logging":
-                    {
-                        "formats": [{
+                "logging": {
+                    "formats": [
+                        {
                             "name": "custom",
                             "format": "%<cquup> %<pssc> %<crc> %<cwr> %<pscl> %<{X-CDN-Prefetch}cqh>",
-                        }],
-                        "logs": [{
-                            "filename": "transaction",
-                            "format": "custom"
-                        }],
-                    }
-            })
+                        }
+                    ],
+                    "logs": [{"filename": "transaction", "format": "custom"}],
+                }
+            }
+        )
 
     def require_plugins(ats: ATS) -> None:
         """Skip when either remap plugin is unavailable.
@@ -135,7 +134,8 @@ def test_prefetch_cmcd(ats_factory: ATSFactory, services: ServiceFactory) -> Non
         ats.records.update(common_records())
         ats.remap_config.add_line(
             f"map / http://127.0.0.1:{_origin.port} "
-            "@plugin=cachekey.so @pparam==--sort-params=true @plugin=prefetch.so @pparam==--front=false")
+            "@plugin=cachekey.so @pparam==--sort-params=true @plugin=prefetch.so @pparam==--front=false"
+        )
         configure_logging(ats)
         return ats
 
@@ -151,7 +151,8 @@ def test_prefetch_cmcd(ats_factory: ATSFactory, services: ServiceFactory) -> Non
         ats.remap_config.add_line(
             f"map http://ts0 http://ts1:{_next_hop.http_port} "
             "@plugin=cachekey.so @pparam=--sort-params=true @plugin=prefetch.so "
-            "@pparam=--front=true @pparam=--fetch-policy=simple @pparam=--cmcd-nor=true")
+            "@pparam=--front=true @pparam=--fetch-policy=simple @pparam=--cmcd-nor=true"
+        )
         configure_logging(ats)
         return ats
 

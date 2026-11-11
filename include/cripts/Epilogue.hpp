@@ -24,7 +24,12 @@
 #include "cripts/Context.hpp"
 
 // Case hierarchy, this is from ATS ts_meta.h.
-template <unsigned N> struct CaseTag : public CaseTag<N - 1> {
+template <unsigned N>
+struct CaseTag
+#ifndef DOXYGEN
+  : public CaseTag<N - 1>
+#endif
+{
   constexpr CaseTag()             = default;
   static constexpr unsigned value = N;
 };

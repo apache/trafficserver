@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -121,6 +121,8 @@ private:
 class SNIConfig
 {
 public:
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<SNIConfig, SNIConfigParams>;
 
   static void startup();

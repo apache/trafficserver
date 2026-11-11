@@ -75,7 +75,8 @@ def configure_ats(ats_factory: ATSFactory, origin: OriginServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -84,7 +85,8 @@ def configure_ats(ats_factory: ATSFactory, origin: OriginServer) -> ATS:
             "proxy.config.ssl.client.certification_level": 2,
             # A server-side session would hold its own peer certificate reference beyond the connection.
             "proxy.config.ssl.server.session_ticket.enable": 0,
-        })
+        }
+    )
     ats.write_config_file("peer_cert.txnbox.yaml", TXN_BOX_CONFIG)
     ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_peer_cert_release.so")
     ats.plugin_config.add_line("ssl_peer_cert_release.so")
@@ -105,7 +107,8 @@ def request(ats: ATS, curl: Curl) -> None:
         (
             f"-v --http1.1 --insecure --cert '{SSL_DIRECTORY / 'alpha-signed.pem'}' "
             f"--key '{SSL_DIRECTORY / 'alpha-signed.key'}' "
-            f"--resolve 'base.ex:{ats.https_port}:127.0.0.1' 'https://base.ex:{ats.https_port}/cert'"),
+            f"--resolve 'base.ex:{ats.https_port}:127.0.0.1' 'https://base.ex:{ats.https_port}/cert'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert "X-Client-Subject: base.ex:role.alpha" in result.output, result.output

@@ -57,7 +57,8 @@ def configure_next_hop(ats_factory: ATSFactory, index: int, *, _dns: DNSServer, 
             "proxy.config.diags.debug.tags": "http|dns",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     _dns.add_records({f"next_hop{index}": ["127.0.0.1"]})
     return ats
@@ -83,7 +84,8 @@ def configure_front_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _next_hops:
             "proxy.config.http.no_dns_just_forward_to_parent": 1,
             "proxy.config.http.parent_proxy.mark_down_hostdb": 0,
             "proxy.config.http.parent_proxy.self_detect": 0,
-        })
+        }
+    )
     groups = ["groups:", "  - &g1"]
     for index, next_hop in enumerate(_next_hops):
         groups.extend(
@@ -93,7 +95,8 @@ def configure_front_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _next_hops:
                 "        - scheme: http",
                 f"          port: {next_hop.http_port}",
                 "      weight: 1.0",
-            ))
+            )
+        )
     strategies = (
         "strategies:\n"
         "  - strategy: the-strategy\n"
@@ -104,7 +107,8 @@ def configure_front_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _next_hops:
         "    ignore_self_detect: true\n"
         "    groups:\n"
         "      - *g1\n"
-        "    scheme: http\n")
+        "    scheme: http\n"
+    )
     ats.write_config_file("strategies.yaml", "\n".join(groups) + "\n" + strategies)
     ats.remap_config.add_line("map http://dummy.com http://not_used @strategy=the-strategy")
     return ats

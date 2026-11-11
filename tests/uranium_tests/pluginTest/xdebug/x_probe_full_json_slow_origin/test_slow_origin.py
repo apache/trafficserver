@@ -41,7 +41,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
             "proxy.config.diags.debug.tags": "xdebug_transform",
             "proxy.config.http.transaction_no_activity_timeout_in": 10,
             "proxy.config.http.transaction_no_activity_timeout_out": 10,
-        })
+        }
+    )
     ats.plugin_config.add_line("xdebug.so --enable=probe-full-json")
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin_port}/")
     return ats
@@ -95,10 +96,7 @@ def request(*, _ats: ATS, _curl: Curl) -> None:
     result = _curl.get(
         _ats,
         "/test",
-        headers={
-            "Host": "example.com",
-            "X-Debug": "probe-full-json=nobody"
-        },
+        headers={"Host": "example.com", "X-Debug": "probe-full-json=nobody"},
         options=f"--silent --output /dev/null --write-out '%{{http_code}}' --max-time 8",
         timeout=10,
     )

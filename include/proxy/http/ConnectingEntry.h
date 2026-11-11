@@ -2,7 +2,7 @@
 
   Server side connection management.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -37,9 +37,14 @@ public:
   ~ConnectingEntry() override;
   /** Retain a connection-tracker reservation until the connection completes.
    *
-   * @param group Reserved outbound connection group owned by this entry.
+   * The reservation is the creating transaction's, so the shared connection is counted under that transaction's
+   * connection-tracker configuration and group. Transactions that join the entry add no reservation of their own.
+   *
+   * @param[in] group Reserved outbound connection group owned by this entry.
    */
-  void                    enable_outbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group);
+  void enable_outbound_connection_tracking(std::shared_ptr<ConnectionTracker::Group> group);
+  /** Return the connection-tracker reservation, if any, to its group. */
+  void                    release_outbound_connection_tracking();
   void                    remove_entry();
   int                     state_http_server_open(int event, void *data);
   static PoolableSession *create_server_session(HttpSM *root_sm, NetVConnection *netvc, MIOBuffer *netvc_read_buffer,
@@ -56,6 +61,8 @@ public:
   bool               is_no_plugin_tunnel = false;
 
 private:
+  void _transfer_outbound_connection_tracking(PoolableSession &session);
+
   std::shared_ptr<ConnectionTracker::Group> _conn_track_group;
   MIOBuffer                                *_netvc_read_buffer = nullptr;
   IOBufferReader                           *_netvc_reader      = nullptr;

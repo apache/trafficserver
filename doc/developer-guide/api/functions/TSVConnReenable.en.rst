@@ -70,4 +70,5 @@ the plugin wants to stop the processing it can set the event to :enumerator:`TS_
 
 For example, in the case of the TS_SSL_VERIFY_SERVER_HOOK, the plugin make decide the
 origin certificate is bad.  By calling TSVonnReenable with :enumerator:`TS_EVENT_ERROR`, the
-certificate check will error and the TLS handshake will fail.
+certificate check will error and the TLS handshake will fail, unless the origin's verification
+policy is :code:`PERMISSIVE`, which only logs the failure and lets the handshake complete.

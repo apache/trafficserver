@@ -54,41 +54,25 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     """
 
     ats = ats_factory.create("ts", enable_cache=False)
-    ats.records.update({
-        "proxy.config.log.max_secs_per_buffer": 1,
-        "proxy.config.log.periodic_tasks_interval": 1,
-    })
+    ats.records.update(
+        {
+            "proxy.config.log.max_secs_per_buffer": 1,
+            "proxy.config.log.periodic_tasks_interval": 1,
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}/")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "custom_fmt",
-                        "format": "%<chi> %<cqu> %<pssc> %<sshv>"
-                    }],
-                    "logs":
-                        [
-                            {
-                                "filename": "v2",
-                                "format": "custom_fmt",
-                                "mode": "binary",
-                                "binary_log_version": 2
-                            },
-                            {
-                                "filename": "v3",
-                                "format": "custom_fmt",
-                                "mode": "binary",
-                                "binary_log_version": 3
-                            },
-                            {
-                                "filename": "ascii",
-                                "format": "custom_fmt",
-                                "mode": "ascii"
-                            },
-                        ],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "custom_fmt", "format": "%<chi> %<cqu> %<pssc> %<sshv>"}],
+                "logs": [
+                    {"filename": "v2", "format": "custom_fmt", "mode": "binary", "binary_log_version": 2},
+                    {"filename": "v3", "format": "custom_fmt", "mode": "binary", "binary_log_version": 3},
+                    {"filename": "ascii", "format": "custom_fmt", "mode": "ascii"},
+                ],
+            }
+        }
+    )
     return ats
 
 
@@ -142,14 +126,14 @@ def test_binary_log_v3(ats_factory: ATSFactory, services: ServiceFactory, curl: 
 
     v3_header = decode("-H", str(v3_blog), _ats=_ats)
     for expression in (
-            r"version:\s+3",
-            r"format_type:\s+4 \(CUSTOM\)",
-            r"fieldlist:\s+chi,cqu,pssc,sshv",
-            r"field_type_schema:\s+field_count=4",
-            r"chi\s+IP",
-            r"cqu\s+STRING",
-            r"pssc\s+sINT",
-            r"sshv\s+STRING",
+        r"version:\s+3",
+        r"format_type:\s+4 \(CUSTOM\)",
+        r"fieldlist:\s+chi,cqu,pssc,sshv",
+        r"field_type_schema:\s+field_count=4",
+        r"chi\s+IP",
+        r"cqu\s+STRING",
+        r"pssc\s+sINT",
+        r"sshv\s+STRING",
     ):
         assert re.search(expression, v3_header), v3_header
 

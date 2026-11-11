@@ -29,10 +29,12 @@ def configure_ats(ats_factory: ATSFactory, name: str, origin_port: int, metadata
     """
 
     ats = ats_factory.create(name)
-    ats.records.update({
-        "proxy.config.body_factory.enable_customizations": 1,
-        "proxy.config.url_remap.remap_required": 1,
-    })
+    ats.records.update(
+        {
+            "proxy.config.body_factory.enable_customizations": 1,
+            "proxy.config.url_remap.remap_required": 1,
+        }
+    )
     ats.remap_config.add_line(f"map http://mapped.example.com http://127.0.0.1:{origin_port}")
     ats.write_body_factory_file("default/.body_factory_info", metadata)
     return ats

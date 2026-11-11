@@ -15,16 +15,7 @@
 #
 #######################
 
-add_atsplugin(
-  multiplexer
-  ats-multiplexer.cc
-  chunk-decoder.cc
-  dispatch.cc
-  fetcher.cc
-  original-request.cc
-  post.cc
-  ts.cc
-)
+add_atsplugin(multiplexer ats-multiplexer.cc chunk-decoder.cc dispatch.cc fetcher.cc original-request.cc post.cc ts.cc)
 
 target_compile_definitions(multiplexer PRIVATE PLUGIN_TAG="multiplexer")
 

@@ -845,6 +845,83 @@ TEST_CASE("MIME fields reuse deleted slots", "[proxy][hdrtest][mime]")
     CHECK(writable.field_create("X-Reused") == expected_slot);
     CHECK(writable.m_mime->m_fblock_list_tail == tail);
   }
+
+  auto free_list_is_descending = [](MIMEHdrImpl *mh) {
+    for (int32_t slot = mh->m_free_slot; slot != MIME_FIELD_FREE_SLOT_NONE;) {
+      MIMEField *field = mime_hdr_field_get_slotnum(mh, slot);
+
+      if (field == nullptr || field->m_readiness != MIME_FIELD_SLOT_READINESS_DELETED || field->m_free_next >= slot) {
+        return false;
+      }
+      slot = field->m_free_next;
+    }
+    return true;
+  };
+
+  SECTION("Out of order deletes rebuild a descending free list")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    std::array<MIMEField *, MIME_FIELD_BLOCK_SLOTS * 2> fields;
+    for (unsigned index = 0; index < fields.size(); ++index) {
+      fields[index] = add_field(hdr, "X-Field-" + std::to_string(index));
+    }
+
+    hdr.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 4], false);
+    CHECK(hdr.m_mime->m_free_slot == static_cast<int32_t>(MIME_FIELD_BLOCK_SLOTS + 4));
+    hdr.field_delete(fields[2], false);
+    hdr.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 1], false);
+    CHECK(hdr.m_mime->m_free_slot == MIME_FIELD_FREE_SLOT_UNINITIALIZED);
+
+    MIMEField *reused = add_field(hdr, "X-Reused");
+    CHECK(reused == fields[MIME_FIELD_BLOCK_SLOTS + 4]);
+    CHECK(hdr.m_mime->m_free_slot == static_cast<int32_t>(MIME_FIELD_BLOCK_SLOTS + 1));
+    CHECK(free_list_is_descending(hdr.m_mime));
+
+    CHECK(add_field(hdr, "X-Reused-2") == fields[MIME_FIELD_BLOCK_SLOTS + 1]);
+    CHECK(add_field(hdr, "X-Reused-3") == fields[2]);
+    CHECK(hdr.m_mime->m_free_slot == MIME_FIELD_FREE_SLOT_NONE);
+  }
+
+  SECTION("Duplicates past many free slots append without consuming them")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    constexpr unsigned       filler_count = MIME_FIELD_BLOCK_SLOTS * 256;
+    std::vector<MIMEField *> fillers;
+    for (unsigned index = 0; index < filler_count; ++index) {
+      fillers.push_back(add_field(hdr, "X-Filler-" + std::to_string(index)));
+    }
+    MIMEField *cookie = add_field(hdr, "Set-Cookie");
+    while (hdr.m_mime->m_fblock_list_tail->m_freetop < MIME_FIELD_BLOCK_SLOTS) {
+      cookie = add_field(hdr, "Set-Cookie");
+    }
+    for (MIMEField *filler : fillers) {
+      hdr.field_delete(filler, false);
+    }
+
+    int32_t const free_head = hdr.m_mime->m_free_slot;
+    REQUIRE(free_head == static_cast<int32_t>(filler_count - 1));
+    REQUIRE(free_list_is_descending(hdr.m_mime));
+
+    constexpr unsigned cookie_adds = MIME_FIELD_BLOCK_SLOTS * 64;
+    for (unsigned index = 0; index < cookie_adds; ++index) {
+      MIMEField *added = add_field(hdr, "Set-Cookie");
+
+      REQUIRE(mime_hdr_field_slotnum(hdr.m_mime, cookie) < mime_hdr_field_slotnum(hdr.m_mime, added));
+      REQUIRE(cookie->m_next_dup == added);
+      cookie = added;
+    }
+    CHECK(hdr.m_mime->m_free_slot == free_head);
+
+    MIMEField *other = add_field(hdr, "X-Other");
+    CHECK(other == fillers.back());
+    CHECK(free_list_is_descending(hdr.m_mime));
+  }
 }
 
 TEST_CASE("HdrTest", "[proxy][hdrtest]")

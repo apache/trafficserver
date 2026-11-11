@@ -53,8 +53,8 @@ The following methods are available to access ClientHello data:
 .. function:: bool is_available() const
 
    Returns whether the object contains valid values. As long as
-   :func:`TSVConnClientHelloGet` is called for a TLS connection, the return
-   value should be `true`.
+   :func:`TSVConnClientHelloGet` is called from the
+   ``TS_EVENT_SSL_CLIENT_HELLO`` hook, the return value should be `true`.
 
 .. function:: uint16_t get_version() const
 

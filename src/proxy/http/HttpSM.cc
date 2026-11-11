@@ -2,7 +2,7 @@
 
   HTTP state machine
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -284,8 +284,13 @@ HttpSM::~HttpSM()
 {
   http_parser_clear(&http_parser);
 
-  // coverity[exn_spec_violation] - release() only does ref counting and delete on POD types
-  HttpConfig::release(t_state.http_config_param);
+  if (_http_config_lease) {
+    _http_config_lease.reset();
+  } else {
+    // Callers that set http_config_param themselves, such as unit tests, hand over an acquired reference.
+    // coverity[exn_spec_violation] - release() only does ref counting and delete on POD types
+    HttpConfig::release(t_state.http_config_param);
+  }
 
   // coverity[exn_spec_violation] - cancel_pending_action() cancels pending cache work and clears tracked pointers
   cache_sm.cancel_pending_action();
@@ -327,7 +332,8 @@ HttpSM::init(bool from_early_data)
   ATS_PROBE1(milestone_sm_start, sm_id);
   t_state.state_machine = this;
 
-  t_state.http_config_param = HttpConfig::acquire();
+  _http_config_lease        = configProcessor.get_leased(HttpConfig::config_id());
+  t_state.http_config_param = static_cast<HttpConfigParams *>(_http_config_lease.get());
   // Acquire a lease on the global remap / rewrite table (stupid global name ...)
   m_remap = rewrite_table.load(std::memory_order_acquire);
 
@@ -6230,7 +6236,9 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       new_entry->sni                 = this->get_outbound_sni();
       new_entry->cert_name           = this->get_outbound_cert();
       new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HttpPluginTunnel_t::NONE;
-      new_entry->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
+      if (t_state.outbound_conn_track_state.is_active()) {
+        new_entry->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
+      }
       this->t_state.set_connect_fail(EIO);
       new_entry->connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));

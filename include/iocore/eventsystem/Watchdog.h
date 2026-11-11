@@ -117,7 +117,7 @@
   `timeout_shrink_ms` is not reloadable: it fixes the monitor's scan period, so changing it requires
   a restart.  The mode, refuse timeout, backlog floor, and decrease and increase rates are.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -259,7 +259,11 @@ void register_config_callbacks();
 class Monitor
 {
 public:
-  /** @param legacy Started from the deprecated @c proxy.config.exec_thread.watchdog.timeout_ms rather than
+  /** @param[in] threads The event threads to watch.
+      @param[in] n_threads The number of entries in @a threads.
+      @param[in] shrink_timeout_ms How long an event loop iteration may run before it counts as stalled;
+      must be greater than zero.
+      @param[in] legacy Started from the deprecated @c proxy.config.exec_thread.watchdog.timeout_ms rather than
       @c timeout_shrink_ms.  The monitor then behaves exactly as that setting did: it logs a warning for each
       event loop iteration that runs past the timeout and does nothing else - no metrics and no
       backpressure, whatever the other watchdog settings say.

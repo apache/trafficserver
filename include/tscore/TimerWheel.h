@@ -3,7 +3,7 @@
   A timer wheel: O(1) amortized scheduling and expiry of per-element
   deadlines, used to replace O(N)-per-tick scans of open connections.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

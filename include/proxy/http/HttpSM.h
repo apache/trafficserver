@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -343,7 +343,9 @@ public:
 
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  std::shared_ptr<UrlRewrite>   m_remap;
+  std::shared_ptr<UrlRewrite> m_remap;
+  // Keeps t_state.http_config_param alive for the transaction when HttpSM::init() acquired it.
+  std::shared_ptr<ConfigInfo>   _http_config_lease;
   Ptr<VirtualHostConfig::Entry> m_virtualhost_entry;
 
   History<HISTORY_DEFAULT_SIZE> history;

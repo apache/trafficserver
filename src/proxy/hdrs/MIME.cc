@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -646,6 +646,7 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
       ink_release_assert(field != nullptr);
       ink_release_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED);
       ink_release_assert(++free_count <= deleted_count);
+      ink_release_assert(field->m_free_next < free_slot);
       free_slot = field->m_free_next;
     }
     ink_release_assert(free_count == deleted_count);
@@ -1076,7 +1077,7 @@ mime_hdr_clone(MIMEHdrImpl *s_mh, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit
  * @a dest_ptr does to @a src_base.
  */
 static inline MIMEField *
-rebase(MIMEField *dest_ptr,  ///< Original pointer into @src_base memory.
+rebase(MIMEField *dest_ptr,  ///< Original pointer into @a src_base memory.
        void      *dest_base, ///< New base pointer.
        void      *src_base   ///< Original base pointer.
 )
@@ -1401,29 +1402,15 @@ mime_field_create_for_name(HdrHeap *heap, MIMEHdrImpl *mh, std::string_view name
     ink_release_assert(last_dup_slot >= 0);
   }
 
-  int32_t previous_free_slot = MIME_FIELD_FREE_SLOT_NONE;
-  int32_t free_slot          = mh->m_free_slot;
-
-  while (free_slot != MIME_FIELD_FREE_SLOT_NONE) {
-    MIMEField *field = mime_hdr_field_get_slotnum(mh, free_slot);
+  // The free list is kept in descending slot order, so the head is the only candidate worth checking.
+  if (mh->m_free_slot > last_dup_slot) {
+    MIMEField *field = mime_hdr_field_get_slotnum(mh, mh->m_free_slot);
     ink_release_assert(field != nullptr);
     ink_release_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DELETED);
 
-    if (free_slot > last_dup_slot) {
-      if (previous_free_slot == MIME_FIELD_FREE_SLOT_NONE) {
-        mh->m_free_slot = field->m_free_next;
-      } else {
-        MIMEField *previous_free = mime_hdr_field_get_slotnum(mh, previous_free_slot);
-
-        ink_release_assert(previous_free != nullptr);
-        previous_free->m_free_next = field->m_free_next;
-      }
-      mime_field_init(field);
-      return field;
-    }
-
-    previous_free_slot = free_slot;
-    free_slot          = field->m_free_next;
+    mh->m_free_slot = field->m_free_next;
+    mime_field_init(field);
+    return field;
   }
 
   return mime_field_create(heap, mh);
@@ -1710,11 +1697,18 @@ mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field)
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DELETED;
 
   if (mh->m_free_slot == MIME_FIELD_FREE_SLOT_UNINITIALIZED) {
-    mime_hdr_rebuild_field_free_list(mh);
-  } else {
+    return;
+  }
+
+  int32_t slotnum = mime_hdr_field_slotnum(mh, field);
+  ink_release_assert(slotnum >= 0);
+
+  if (slotnum > mh->m_free_slot) {
     field->m_free_next = mh->m_free_slot;
-    mh->m_free_slot    = mime_hdr_field_slotnum(mh, field);
-    ink_release_assert(mh->m_free_slot >= 0);
+    mh->m_free_slot    = slotnum;
+  } else {
+    // Inserting below the head would break the descending order, so rebuild lazily when a slot is next needed.
+    mh->m_free_slot = MIME_FIELD_FREE_SLOT_UNINITIALIZED;
   }
 }
 
@@ -3846,6 +3840,71 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 //      detaching the field                           //
 ////////////////////////////////////////////////////////
 
+namespace
+{
+/** Find the no-cache, no-store and private directives named anywhere in a Cache-Control element.
+ *
+ * @param[in] s The start of the element.
+ * @param[in] e The end of the element.
+ * @return The cooked mask bits of the restrictive directives found.
+ */
+uint32_t
+restrictive_cc_directives_in(const char *s, const char *e)
+{
+  constexpr uint32_t restrictive_mask = MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE;
+  uint32_t           mask             = 0;
+
+  while (s < e) {
+    if (!ParseRules::is_token(*s)) {
+      ++s;
+      continue;
+    }
+    const char *token_start = s;
+    while (s < e && ParseRules::is_token(*s)) {
+      ++s;
+    }
+    const char *token_wks;
+    if (hdrtoken_tokenize(token_start, s - token_start, &token_wks) >= 0) {
+      mask |= hdrtoken_wks_to_prefix(token_wks)->wks_type_specific.u.cache_control.cc_mask & restrictive_mask;
+    }
+  }
+  return mask;
+}
+
+/** Skip the optional argument of a Cache-Control directive.
+ *
+ * RFC 9111, Section 5.2: cache-directive = token [ "=" ( token / quoted-string ) ].
+ * The CSV iterator strips the closing quote of a quoted-string, so its absence is tolerated.
+ *
+ * @param[in] c The position just after the directive name.
+ * @param[in] e The end of the element.
+ * @return The position just after the argument, or @a c if there is no argument.
+ */
+const char *
+skip_cc_argument(const char *c, const char *e)
+{
+  if (c >= e || *c != '=') {
+    return c;
+  }
+  ++c;
+  if (c < e && *c == '"') {
+    for (++c; c < e && *c != '"'; ++c) {
+      if (*c == '\\' && c + 1 < e) {
+        ++c;
+      }
+    }
+    if (c < e) {
+      ++c;
+    }
+  } else {
+    while (c < e && ParseRules::is_token(*c)) {
+      ++c;
+    }
+  }
+  return c;
+}
+} // namespace
+
 void
 MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std::string_view *targeted_headers,
                                     size_t targeted_headers_count)
@@ -3978,46 +4037,36 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
                 csv_value_mask                         = 0;
                 m_cooked_stuff.m_cache_control.m_mask &= ~mask;
               }
-            } else if (c < e && *c == '=') {
-              // RFC 9111, Section 5.2: cache-directive = token [ "=" ( token / quoted-string ) ].
+            } else {
               // Skip the argument, such as the field names of a qualified private or no-cache.
-              // The CSV iterator strips the closing quote, so tolerate its absence.
-              ++c;
-              if (c < e && *c == '"') {
-                for (++c; c < e && *c != '"'; ++c) {
-                  if (*c == '\\' && c + 1 < e) {
-                    ++c;
-                  }
-                }
-                if (c < e) {
-                  ++c;
-                }
-              } else {
-                while (c < e && ParseRules::is_token(*c)) {
-                  ++c;
-                }
-              }
+              c = skip_cc_argument(c, e);
             }
+          } else {
+            // An unknown directive, such as an extension, is ignored along with its argument.
+            c = skip_cc_argument(c, e);
+          }
 
-            // Detect whether there is any more non-whitespace content after the
-            // directive. This indicates an unrecognized or malformed directive.
-            // This can happen, for instance, if the host uses semicolons
-            // instead of commas as separators which is against RFC 7234 (see
-            // issue #12029). Regardless of the cause, this means we need to
-            // ignore the directive and clear any mask bits we set from it.
-            while (c < e && ParseRules::is_ws(*c)) {
-              ++c;
-            }
-            if (c < e) {
-              // There's non-whitespace content that wasn't parsed. This means
-              // that we cannot really understand what this directive is.
-              // Per RFC 7234 Section 5.2: "A cache MUST ignore unrecognized cache
-              // directives."
-              if (csv_value_mask != 0) {
-                // Reverse the mask that we set above.
-                m_cooked_stuff.m_cache_control.m_mask &= ~csv_value_mask;
-              }
-            }
+          // Detect whether there is any more non-whitespace content after the
+          // directive. This indicates an unrecognized or malformed directive.
+          // This can happen, for instance, if the host uses semicolons
+          // instead of commas as separators which is against RFC 7234 (see
+          // issue #12029). Regardless of the cause, this means we need to
+          // ignore the directive and clear any mask bits we set from it,
+          // except for the restrictive directives handled below.
+          while (c < e && ParseRules::is_ws(*c)) {
+            ++c;
+          }
+          if (c < e) {
+            // There's non-whitespace content that wasn't parsed. This means
+            // that we cannot really understand what this directive is.
+            // Per RFC 9111 Section 5.2.3: "A cache MUST ignore unrecognized
+            // cache directives." A no-cache, no-store or private named
+            // anywhere in the element is kept, though: dropping it could
+            // expose a response that the origin meant to protect, such as
+            // with "private; max-age=600", "max-age=600; private" or
+            // "stale-while-revalidate=60; private".
+            m_cooked_stuff.m_cache_control.m_mask &= ~csv_value_mask;
+            m_cooked_stuff.m_cache_control.m_mask |= restrictive_cc_directives_in(s, e);
           }
         }
       }

@@ -30,8 +30,9 @@ endforeach()
 #find_package(fmt 8.1 REQUIRED)
 #$<TARGET_PROPERTY:fmt::fmt,INCLUDE_DIRECTORIES>
 
-set(cript-includes -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/lib/swoc/include -I${CMAKE_BINARY_DIR}/include
-                   -I${OPENSSL_INCLUDE_DIR} -I/opt/homebrew/include -I/usr/local/include
+set(cript-includes
+    -I${CMAKE_SOURCE_DIR}/include -I${CMAKE_SOURCE_DIR}/lib/swoc/include -I${CMAKE_BINARY_DIR}/include
+    -I${OPENSSL_INCLUDE_DIR} -I/opt/homebrew/include -I/usr/local/include
 )
 
 add_custom_target(
