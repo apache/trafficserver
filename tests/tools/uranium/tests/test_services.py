@@ -17,6 +17,7 @@
 
 from importlib import import_module
 from pathlib import Path
+import dataclasses
 import json
 import os
 import subprocess
@@ -334,6 +335,62 @@ def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
 
     ats.close()
     assert process.was_stopped
+
+
+def make_uds_ats(tmp_path: Path, **process_options: Any) -> ATS:
+    """Create an ATS in the curl UDS mode, so start() adds a Unix socket listener."""
+
+    return ATS(dataclasses.replace(make_context(tmp_path), use_uds=True), **process_options)
+
+
+@pytest.mark.parametrize(
+    ("options", "listeners"),
+    [
+        pytest.param({}, "{http}", id="plain"),
+        pytest.param({"enable_tls": True, "enable_quic": True}, "{http} {https}:ssl {https}:quic", id="quic"),
+        pytest.param(
+            {"enable_tls": True, "enable_proxy_protocol": True},
+            "{http} {https}:ssl {pp}:pp {pp_https}:ssl:pp",
+            id="proxy_protocol",
+        ),
+        pytest.param(
+            {"enable_tls": True, "enable_proxy_protocol": True, "enable_proxy_protocol_cp_src": True},
+            "{http} {https}:ssl {pp}:pp:pp-clnt {pp_https}:ssl:pp:pp-clnt",
+            id="proxy_protocol_cp_src",
+        ),
+    ],
+)
+def test_uds_mode_adds_the_socket_to_the_default_listeners(tmp_path: Path, options: dict[str, bool], listeners: str) -> None:
+    """Without a configured server_ports, UDS mode keeps every default listener and adds the socket."""
+
+    ats = make_uds_ats(tmp_path, **options)
+    attach_process(ats)
+
+    ats.start()
+
+    expected = listeners.format(
+        http=ats.http_port, https=ats.https_port, pp=ats.proxy_protocol_port, pp_https=ats.proxy_protocol_https_port
+    )
+    assert ats._runner.spec.urtest["ats"]["records_config"]["proxy.config.http.server_ports"] == f"{expected} {ats.uds_path}"
+    ats.close()
+
+
+@pytest.mark.parametrize("with_socket", [False, True], ids=["without_socket", "with_socket"])
+def test_uds_mode_adds_only_the_socket_to_configured_listeners(tmp_path: Path, with_socket: bool) -> None:
+    """A configured server_ports gets the socket once and none of the default TLS or PROXY protocol listeners."""
+
+    ats = make_uds_ats(tmp_path, enable_tls=True, enable_proxy_protocol=True)
+    attach_process(ats)
+    configured = f"{ats.http_port} {ats.ipv6_port}:ipv6 {ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6"
+    if with_socket:
+        configured += f" {ats.uds_path}"
+    ats.records.update({"proxy.config.http.server_ports": configured})
+
+    ats.start()
+
+    expected = configured if with_socket else f"{configured} {ats.uds_path}"
+    assert ats._runner.spec.urtest["ats"]["records_config"]["proxy.config.http.server_ports"] == expected
+    ats.close()
 
 
 def test_ats_factory_owns_multiple_process_lifecycles(tmp_path: Path) -> None:

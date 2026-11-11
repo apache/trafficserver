@@ -17,6 +17,8 @@
 from pathlib import Path
 import re
 
+import pytest
+
 from tools.uranium.services import (
     ATS,
     ATSFactory,
@@ -168,6 +170,8 @@ def test_connect_curl(ats_factory: ATSFactory, services: ServiceFactory, curl: C
     :param services: Factory owning support services and their cleanup.
     :param curl: Transport-aware curl command runner.
     """
+    if curl.uses_uds:
+        pytest.skip("curl drops --proxy when --unix-socket is set, so --proxytunnel never sends CONNECT")
     _origin = curl_connect_configure_origin(services)
     _ats = curl_connect_configure_ats(ats_factory, _origin=_origin)
 

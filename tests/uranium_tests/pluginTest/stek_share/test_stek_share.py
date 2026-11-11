@@ -202,8 +202,8 @@ def verify_basic_request(*, _ats_nodes: list[ATS], _curl: Curl) -> None:
     """
 
     ats = _ats_nodes[0]
-    result = _curl.run_for(
-        ats,
+    # TLS cannot use the clear-text Unix socket listener, so this request uses TCP in every mode.
+    result = _curl.run(
         (f"--insecure --silent --show-error --header 'Host: www.example.com' 'https://127.0.0.1:{ats.https_port}/'"),
     )
     assert result.returncode == 0, result.output
