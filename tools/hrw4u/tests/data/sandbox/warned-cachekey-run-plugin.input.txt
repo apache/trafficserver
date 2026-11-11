@@ -1,3 +1,0 @@
-CACHEKEY {
-    cache.key.headers.add("X-Foo");
-}

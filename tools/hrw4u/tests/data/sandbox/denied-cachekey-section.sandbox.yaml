@@ -2,5 +2,5 @@ sandbox:
   message: "Feature denied by sandbox policy. Contact platform team."
 
   deny:
-    language:
-      - else
+    sections:
+      - CACHEKEY

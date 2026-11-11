@@ -1,6 +1,0 @@
-sandbox:
-  message: "Feature denied by sandbox policy. Contact platform team."
-
-  deny:
-    functions:
-      - run-plugin

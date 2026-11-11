@@ -839,8 +839,9 @@ To skip the cache entirely, call ``cache.bypass()`` in `REMAP`. It compiles to
        }
    }
 
-Under a sandbox policy, `CACHEKEY` needs ``run-plugin``, and ``else`` when the
-compiler adds one.
+A sandbox policy controls `CACHEKEY` as a section: list it under
+``deny: sections`` to turn it off. The ``run-plugin`` line and the ``else`` the
+compiler writes for it aren't checked against the policy.
 
 Running and Debugging
 =====================

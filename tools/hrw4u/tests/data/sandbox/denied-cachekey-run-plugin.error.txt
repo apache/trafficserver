@@ -1,2 +1,0 @@
-'run-plugin' is denied by sandbox policy (function)
-CACHEKEY compiles to run-plugin cachekey.so

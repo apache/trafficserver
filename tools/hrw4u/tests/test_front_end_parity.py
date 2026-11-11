@@ -101,14 +101,16 @@ def _policy_for(input_file: Path) -> SandboxConfig | None:
     return None
 
 
-def _sema_gaps(input_file: Path) -> list[pytest.MarkDecorator]:
-    if SEMA_LACKS_CACHEKEY.search(input_file.read_text()):
+def _cachekey_xfail(input_file: Path) -> list[pytest.MarkDecorator]:
+    # Expect all CACHEKEY tests to fail since Sema doesn't support CACHEKEY yet. The sandbox
+    # test is an exception since it doesn't depend on Sema support.
+    if _case_id(input_file) != "sandbox/denied-cachekey-section" and SEMA_LACKS_CACHEKEY.search(input_file.read_text()):
         return [pytest.mark.xfail(strict=True, reason="Sema has no CACHEKEY yet")]
     return []
 
 
 def _corpus() -> list[pytest.param]:
-    return [pytest.param(f, id=_case_id(f), marks=_sema_gaps(f)) for f in sorted(Path("tests/data").glob("*/*.input.txt"))]
+    return [pytest.param(f, id=_case_id(f), marks=_cachekey_xfail(f)) for f in sorted(Path("tests/data").glob("*/*.input.txt"))]
 
 
 @dataclass(frozen=True)

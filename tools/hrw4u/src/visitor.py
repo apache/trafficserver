@@ -23,9 +23,9 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
-from antlr4 import InputStream, CommonTokenStream, ParserRuleContext
+from antlr4 import InputStream, CommonTokenStream
 from antlr4.error.ErrorStrategy import BailErrorStrategy
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
@@ -104,7 +104,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._cachekey_branch: cachekey_section.Branch | None = None
         self._remap_end: int | None = None  # output index just past the last REMAP section's rules
 
-    def _sandbox_check(self, ctx: ParserRuleContext, check_fn: Callable[[], str | None], *, note: str | None = None) -> bool:
+    def _sandbox_check(self, ctx, check_fn) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
 
         Returns True if the check passed (or warned), False if denied.
@@ -112,10 +112,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         try:
             warning = check_fn()
             if warning:
-                self._add_sandbox_warning(ctx, f"{warning}: {note}" if note else warning)
+                self._add_sandbox_warning(ctx, warning)
             return True
         except SandboxDenialError:
-            with self.trap(ctx, note=note):
+            with self.trap(ctx):
                 raise
             return False
 
@@ -1011,22 +1011,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             return
         self._cachekey = cachekey_section.CacheKeySection()
         self._cachekey_items(ctx.sectionBody())
-        self._cachekey_sandbox_check(ctx)
         for error in self._cachekey.conflicts():
             with self.trap(error.statement.source or ctx):
                 raise error
-
-    def _cachekey_sandbox_check(self, ctx: hrw4uParser.SectionContext) -> None:
-        """The lowering writes run-plugin, and an else the source may lack: the policy covers both."""
-        self._sandbox_check(
-            ctx, lambda: self._sandbox.check_function("run-plugin"), note="CACHEKEY compiles to run-plugin cachekey.so"
-        )
-        if self._cachekey.adds_else:
-            self._sandbox_check(
-                self._cachekey.chain_start,
-                lambda: self._sandbox.check_language("else"),
-                note="CACHEKEY adds an else to an if/elif chain, so every request gets a key",
-            )
 
     def _cachekey_items(self, items: Sequence[hrw4uParser.SectionBodyContext | hrw4uParser.BlockItemContext]) -> None:
         """Collect section or block items. Comments are dropped: the body folds into flags."""

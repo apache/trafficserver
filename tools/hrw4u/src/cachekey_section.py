@@ -169,11 +169,6 @@ class CacheKeySection:
         return branch
 
     @property
-    def chain_start(self) -> ParserRuleContext | None:
-        """The parse node of the chain's if, or None with no chain."""
-        return self.chain[0].ctx if self.chain else None
-
-    @property
     def adds_else(self) -> bool:
         """True if the chain has no else, so the lowering adds one that keys on the shared parts."""
         return bool(self.chain) and self.chain[-1].keyword.has_condition
