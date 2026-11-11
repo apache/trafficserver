@@ -191,5 +191,8 @@ def test_tls_sni_groups(ats_factory: ATSFactory, curl: Curl) -> None:
     require_version(result, "TLSv1.3")
     if group == "X25519MLKEM768":
         assert re.search(r"((Server|Peer) Temp Key|Negotiated TLS1\.3 group): X25519MLKEM768", result.output), result.output
-        traffic_out = _ats.traffic_out.read_text(errors="replace")
-        assert "Setting groups list from server_groups_list to X25519MLKEM768" in traffic_out
+    # As for bbb.com, a client that offers only a group outside the list must be
+    # refused, or the handshake above could have used a default group.
+    require_refused(s_client("aaa.com", "-ciphersuites", "TLS_AES_256_GCM_SHA384", "-groups", "X25519", _ats=_ats))
+    traffic_out = _ats.traffic_out.read_text(errors="replace")
+    assert re.search(rf"Setting groups list from server_groups_list to {group}$", traffic_out, re.MULTILINE), traffic_out
