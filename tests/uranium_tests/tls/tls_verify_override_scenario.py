@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import re
 import time
 
 from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, DNSServer, OriginServer, ServiceFactory
@@ -250,7 +251,8 @@ def run_tls_verify_override(
     else:
         raise AssertionError(f"Expected outbound TLS verification diagnostics:\n{diagnostics}")
 
-    assert "Action=Continue Error=self-signed certificate" in diagnostics
+    # OpenSSL 3 hyphenates "self-signed"; BoringSSL and older OpenSSL do not.
+    assert re.search(r"Action=Continue Error=self[- ]signed certificate", diagnostics), diagnostics
     assert "SNI (bar.com) not in certificate. Action=Continue" in diagnostics
     assert "SNI (random.com) not in certificate. Action=Continue" in diagnostics
     assert "SNI (bar.com) not in certificate. Action=Terminate" in diagnostics
