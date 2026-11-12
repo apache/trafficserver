@@ -95,7 +95,7 @@ class CacheKeyFlag:
     option: str
     fixed_value: str | None = None
     # Written as `<name> = "..."`, routed like any assignment, not a call.
-    assignment: bool = False
+    is_assignment: bool = False
     # cachekey.so looks the names up ignoring case, so a second spelling would add the same value twice.
     case_insensitive: bool = False
     names: NameRule | None = None
@@ -107,20 +107,20 @@ class CacheKeyFlag:
     @property
     def takes_value(self) -> bool:
         """True for an assignment whose string is the flag value, so one run-plugin line holds one."""
-        return self.assignment and not self.is_switch
+        return self.is_assignment and not self.is_switch
 
 
 # Table order is the order of the flags on the run-plugin line.
 # yapf: disable
 CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
-    "cache.key.prefix":       CacheKeyFlag("--static-prefix", assignment=True),
+    "cache.key.prefix":       CacheKeyFlag("--static-prefix", is_assignment=True),
     "cache.url.canonical":    CacheKeyFlag("--canonical-prefix", "true"),
     "cache.url.pristine":     CacheKeyFlag("--uri-type", "pristine"),
     "cache.url.query.remove": CacheKeyFlag("--exclude-params"),
     "cache.url.query.keep":   CacheKeyFlag("--include-params"),
     "cache.url.query.sort":   CacheKeyFlag("--sort-params", "true"),
-    "cache.url.query":        CacheKeyFlag("--remove-all-params", "true", assignment=True),
-    "cache.url.path":         CacheKeyFlag("--remove-path", "true", assignment=True),
+    "cache.url.query":        CacheKeyFlag("--remove-all-params", "true", is_assignment=True),
+    "cache.url.path":         CacheKeyFlag("--remove-path", "true", is_assignment=True),
     HEADERS_ADD_NAME:         CacheKeyFlag("--include-headers", case_insensitive=True, names=HEADER_NAMES),
     "cache.key.cookies.add":  CacheKeyFlag("--include-cookies", names=COOKIE_NAMES),
 }
@@ -178,7 +178,7 @@ class CacheKeyStatement:
 def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None) -> CacheKeyStatement:
     """Validate `lhs = rhs`. rhs is the raw value text, quotes included."""
     flag = CACHEKEY_STATEMENTS.get(lhs)
-    if flag is None or not flag.assignment:
+    if flag is None or not flag.is_assignment:
         raise SymbolResolutionError(lhs, f"Unknown cache key assignment: '{lhs}'")
 
     if flag.is_switch:
@@ -192,7 +192,7 @@ def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None
 def parse_statement(name: str, args: list[str], source: ParserRuleContext | None = None) -> CacheKeyStatement:
     """Validate one statement, a flag or a presence one. args are the raw argument texts, quotes included."""
     flag = CACHEKEY_STATEMENTS.get(name)
-    if (flag is None or flag.assignment) and name not in PRESENCE_STATEMENTS:
+    if (flag is None or flag.is_assignment) and name not in PRESENCE_STATEMENTS:
         raise SymbolResolutionError(name, f"Unknown cache key statement: '{name}'")
 
     if flag is not None and flag.is_switch:
@@ -236,12 +236,12 @@ def _flag_value(name: str, subject: str, text: str) -> str:
         raise SymbolResolutionError(name, f"{subject} must be static: plugin flags can't hold {{...}} values")
     if not value:
         raise SymbolResolutionError(name, f"{subject} can't be empty")
-    if problem := _mangles_flag(value):
+    if problem := _mangling_reason(value):
         raise SymbolResolutionError(name, f'{subject} "{value}" {problem}')
     return value
 
 
-def _mangles_flag(item: str) -> str | None:
+def _mangling_reason(item: str) -> str | None:
     """Why item can't sit in a quoted run-plugin flag, or None if it can.
 
     No header, cookie, param name, or prefix holds these; they would only mangle the flag.
@@ -269,9 +269,9 @@ class ConflictError(SymbolResolutionError):
     statement is the later of the two, the one to point the error at.
     """
 
-    def __init__(self, first: CacheKeyStatement, second: CacheKeyStatement, statement: CacheKeyStatement) -> None:
+    def __init__(self, first: CacheKeyStatement, second: CacheKeyStatement, later: CacheKeyStatement) -> None:
         super().__init__(first.name, f"{_as_written(first)} and {_as_written(second)} can't be used together")
-        self.statement = statement
+        self.statement = later
 
 
 def check_conflicts(statements: Sequence[CacheKeyStatement]) -> None:
@@ -297,7 +297,7 @@ def _as_written(stmt: CacheKeyStatement) -> str:
     flag = CACHEKEY_STATEMENTS[stmt.name]
     if flag.takes_value:
         return f'{stmt.name} = "{stmt.items[0]}"'
-    return f'{stmt.name} = ""' if flag.assignment else f"{stmt.name}()"
+    return f'{stmt.name} = ""' if flag.is_assignment else f"{stmt.name}()"
 
 
 def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:

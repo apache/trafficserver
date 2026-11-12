@@ -528,7 +528,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self._proc_context(sig, bindings):
             self._visit_block_items(sig.body_ctx)
 
-    def _resolve_procedure_call(self, call_ctx) -> tuple[ProcSig, dict[str, str]]:
+    def _resolve_procedure_call(self, call_ctx: hrw4uParser.FunctionCallContext) -> tuple[ProcSig, dict[str, str]]:
         """Look up a called procedure and bind its arguments. Raises if it's unknown or the call is circular."""
         name = call_ctx.funcName.text
         sig = self._proc_registry.get(name)

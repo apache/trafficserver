@@ -77,7 +77,7 @@ def test_empty_section_fails_to_parse(section: str) -> None:
 
 
 @pytest.mark.cachekey
-def test_remap_hook_still_reads_back_as_remap() -> None:
+def test_remap_hook_reads_back_as_remap() -> None:
     assert SectionType.CACHEKEY.hook_name == SectionType.REMAP.hook_name
     assert SectionType.from_hook("REMAP_PSEUDO_HOOK") is SectionType.REMAP
 
