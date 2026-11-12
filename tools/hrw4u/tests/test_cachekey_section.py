@@ -23,6 +23,9 @@ from pathlib import Path
 import pytest
 import utils
 from antlr4 import CommonTokenStream, InputStream
+from hrw4u.cachekey import CacheKeyStatement, parse_statement
+from hrw4u.cachekey_section import MAX_KEY_PARTS, BranchKeyword, CacheKeySection
+from hrw4u.errors import SymbolResolutionError
 from hrw4u.states import SectionType
 from u4wrh.hrw_visitor import HRWInverseVisitor
 from u4wrh.u4wrhLexer import u4wrhLexer
@@ -88,3 +91,120 @@ def test_u4wrh_reads_cachekey_output_as_a_raw_run_plugin_in_remap() -> None:
     assert hrw4u.startswith("REMAP {")
     assert 'run-plugin("cachekey.so", "--key-type=cache_key,parent_selection_url", "--include-headers=X-Region");' in hrw4u
     assert "CACHEKEY" not in hrw4u
+
+
+def headers(*names: str) -> CacheKeyStatement:
+    return parse_statement("cache.key.headers.add", [f'"{name}"' for name in names])
+
+
+def keyed_on(statements: list[CacheKeyStatement]) -> list[str]:
+    return [item for stmt in statements for item in stmt.items]
+
+
+class TestPlacement:
+    def test_outside_the_chain_goes_to_shared(self) -> None:
+        section = CacheKeySection()
+        section.add(headers("X-A"))
+        with section.branch(BranchKeyword.IF, None):
+            section.add(headers("X-B"))
+        section.add(headers("X-C"))
+
+        assert keyed_on(section.shared.statements) == ["X-A", "X-C"]
+        assert keyed_on(section.chain[0].parts.statements) == ["X-B"]
+
+    def test_each_arm_gets_its_own_statements(self) -> None:
+        section = CacheKeySection()
+        with section.branch(BranchKeyword.IF, None):
+            section.add(headers("X-A"))
+        with section.branch(BranchKeyword.ELSE, None):
+            section.add(headers("X-B"))
+
+        assert [keyed_on(branch.parts.statements) for branch in section.chain] == [["X-A"], ["X-B"]]
+        assert not section.adds_else
+
+    def test_a_chain_without_else_gets_one(self) -> None:
+        section = CacheKeySection()
+        with section.branch(BranchKeyword.IF, None):
+            section.add(headers("X-A"))
+
+        assert section.adds_else
+
+    def test_the_branch_closes_when_its_block_raises(self) -> None:
+        section = CacheKeySection()
+        with pytest.raises(SymbolResolutionError), section.branch(BranchKeyword.IF, None):
+            raise SymbolResolutionError("x", "boom")
+        section.add(headers("X-A"))
+
+        assert keyed_on(section.shared.statements) == ["X-A"]
+
+
+class TestChainRules:
+    def test_rejects_a_nested_arm(self) -> None:
+        section = CacheKeySection()
+        with section.branch(BranchKeyword.IF, None):
+            with pytest.raises(SymbolResolutionError, match="nested conditionals"):
+                with section.branch(BranchKeyword.IF, None):
+                    pass
+
+    def test_rejects_a_second_chain(self) -> None:
+        section = CacheKeySection()
+        with section.branch(BranchKeyword.IF, None):
+            pass
+        with pytest.raises(SymbolResolutionError, match="one if/elif/else chain"):
+            with section.branch(BranchKeyword.IF, None):
+                pass
+
+
+class TestPresence:
+    def test_one_check_per_name_however_many_arms_test_it(self) -> None:
+        section = CacheKeySection()
+        exists = parse_statement("cache.key.headers.exists", ['"X-A"'])
+        with section.branch(BranchKeyword.IF, None):
+            section.add(exists)
+        with section.branch(BranchKeyword.ELSE, None):
+            section.add(exists)
+
+        assert list(section.presence) == ["@hrw4u-header-x-a"]
+        assert [keyed_on(branch.parts.statements) for branch in section.chain] == [["@Hrw4u-Header-X-A"]] * 2
+        assert section.shared.statements == []
+
+
+class TestComputed:
+    def test_numbers_run_across_arms(self) -> None:
+        section = CacheKeySection()
+        with section.branch(BranchKeyword.IF, None):
+            section.add_computed('"a"')
+        with section.branch(BranchKeyword.ELSE, None):
+            section.add_computed('"b"')
+
+        assert [branch.parts.computed[0].header for branch in section.chain] == ["@Hrw4u-Key-01", "@Hrw4u-Key-02"]
+
+    def test_caps_the_parts(self) -> None:
+        section = CacheKeySection()
+        for _ in range(MAX_KEY_PARTS):
+            section.add_computed('"v"')
+
+        with pytest.raises(SymbolResolutionError, match=f"at most {MAX_KEY_PARTS}"):
+            section.add_computed('"v"')
+
+
+class TestConflicts:
+    def test_a_shared_conflict_is_reported_once(self) -> None:
+        section = CacheKeySection()
+        section.add(parse_statement("cache.url.query.keep", ['"a"']))
+        section.add(parse_statement("cache.url.query.remove", ['"b"']))
+        with section.branch(BranchKeyword.IF, None):
+            pass
+        with section.branch(BranchKeyword.ELSE, None):
+            pass
+
+        assert len(section.conflicts()) == 1
+
+    def test_a_conflict_in_each_arm_is_reported_per_arm(self) -> None:
+        section = CacheKeySection()
+        section.add(parse_statement("cache.url.query.keep", ['"a"']))
+        for keyword in (BranchKeyword.IF, BranchKeyword.ELSE):
+            with section.branch(keyword, None):
+                section.add(parse_statement("cache.url.query.remove", ['"b"']))
+
+        assert len(section.conflicts()) == 2
