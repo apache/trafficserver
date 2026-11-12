@@ -43,7 +43,7 @@
 #endif
 
 #ifdef TS_ASAN_ENABLED
-TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[freelist][lsan]")
+TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[libts][freelist][lsan]")
 {
   InkFreeList *f{ink_freelist_create("lsan_seeded", 8, 8, 8)};
 
@@ -60,7 +60,7 @@ TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[freelist][lsan]")
 
 // Caller-returned cells on the free-chain at process exit must not
 // appear as direct leaks.
-TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[freelist][lsan]")
+TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[libts][freelist][lsan]")
 {
   InkFreeList *f{ink_freelist_create("lsan_returned", 8, 8, 8)};
 
@@ -82,7 +82,7 @@ TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[freelist][lsan]")
 }
 #endif // TS_ASAN_ENABLED
 
-TEST_CASE("Freelist", "[freelist]")
+TEST_CASE("Freelist", "[libts][freelist]")
 {
   // There is no error reporting for this routine. The allocation
   // is assumed to never fail. Free cells hold the freelist's next pointer,

@@ -163,6 +163,7 @@ if(BUILD_TESTING)
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc
     unit_tests/test_InkAtomicList.cc
+    unit_tests/test_InkFreelist.cc
     unit_tests/test_IntrusivePtr.cc
     unit_tests/test_List.cc
     unit_tests/test_MMH.cc
@@ -181,7 +182,6 @@ if(BUILD_TESTING)
     unit_tests/test_ink_ascii_tolower.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
-    unit_tests/test_ink_queue.cc
     unit_tests/test_ink_string.cc
     unit_tests/test_ink_sys_control.cc
     unit_tests/test_layout.cc
