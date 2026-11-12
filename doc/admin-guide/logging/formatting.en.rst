@@ -902,7 +902,7 @@ ms     Proxy                   Timestamp in milliseconds of a specific milestone
 msdms  Proxy                   Difference in milliseconds between the timestamps
                                of two milestones. See note below about
                                specifying which milestones to use.
-mstsms Proxy                   Slow log report in milliseconds as CSV.
+mstsms Proxy                   Full milestone report in milliseconds as CSV.
                                See note below about what timestamps are used.
 stms   Proxy-Origin Connection Time (in milliseconds) spent accessing the origin
                                server. Measured from the time the connection
@@ -940,8 +940,9 @@ tts    Client Request          Same as ttms_, but in integer seconds (no
 
 .. note::
 
-   A full milestone report can be generated as a CSV string that matches
-   the example slow log. Fields are:
+   A full milestone report can be generated as a CSV string. The first field is
+   the TLS handshake time, and the rest are milliseconds since
+   ``TS_MILESTONE_SM_START``, or ``-1`` when a milestone was never set. Fields are:
 
       1. tls_handshake
       2. ua_begin

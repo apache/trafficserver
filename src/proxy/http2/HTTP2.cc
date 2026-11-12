@@ -523,8 +523,6 @@ int32_t  Http2::max_rst_stream_frames_per_minute   = 200;
 int32_t  Http2::max_continuation_frames_per_minute = 120;
 int32_t  Http2::max_empty_frames_per_minute        = 0;
 float    Http2::min_avg_window_update              = 2560.0;
-uint32_t Http2::con_slow_log_threshold             = 0;
-uint32_t Http2::stream_slow_log_threshold          = 0;
 uint32_t Http2::header_table_size_limit            = 65536;
 uint32_t Http2::write_buffer_block_size            = 262144;
 int64_t  Http2::write_buffer_block_size_index      = BUFFER_SIZE_INDEX_256K;
@@ -572,8 +570,6 @@ Http2::init()
   RecEstablishStaticConfigInt32(max_continuation_frames_per_minute, "proxy.config.http2.max_continuation_frames_per_minute");
   RecEstablishStaticConfigInt32(max_empty_frames_per_minute, "proxy.config.http2.max_empty_frames_per_minute");
   RecEstablishStaticConfigFloat(min_avg_window_update, "proxy.config.http2.min_avg_window_update");
-  RecEstablishStaticConfigUInt32(con_slow_log_threshold, "proxy.config.http2.connection.slow.log.threshold");
-  RecEstablishStaticConfigUInt32(stream_slow_log_threshold, "proxy.config.http2.stream.slow.log.threshold");
   RecEstablishStaticConfigUInt32(header_table_size_limit, "proxy.config.http2.header_table_size_limit");
   RecEstablishStaticConfigUInt32(write_buffer_block_size, "proxy.config.http2.write_buffer_block_size");
   RecEstablishStaticConfigFloat(write_size_threshold, "proxy.config.http2.write_size_threshold");

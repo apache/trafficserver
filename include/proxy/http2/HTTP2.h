@@ -450,8 +450,6 @@ public:
   static int32_t  max_continuation_frames_per_minute;
   static int32_t  max_empty_frames_per_minute;
   static float    min_avg_window_update;
-  static uint32_t con_slow_log_threshold;
-  static uint32_t stream_slow_log_threshold;
   static uint32_t header_table_size_limit;
   static uint32_t write_buffer_block_size;
   static int64_t  write_buffer_block_size_index;
