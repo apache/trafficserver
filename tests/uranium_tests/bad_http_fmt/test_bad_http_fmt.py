@@ -15,7 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
-import time
+import sys
 
 from tools.uranium.services import (
     ATS,
@@ -59,7 +59,7 @@ def configure_method_server(services: ServiceFactory, *, _method_port: int) -> P
 
     return services.process(
         "method-server",
-        ["bash", TEST_DIRECTORY / "method-server.sh", str(_method_port), "outserver"],
+        [sys.executable, TEST_DIRECTORY / "method_server.py", str(_method_port), "outserver"],
     )
 
 
@@ -157,7 +157,7 @@ def test_bad_http_fmt(ats_factory: ATSFactory, services: ServiceFactory) -> None
     client_output = "".join(filtered_response(_request(request, _ats=_ats)) for request in requests)
 
     _method_server.start()
-    time.sleep(0.1)
+    _method_server.wait_for_output(r"^listening$")
     arbitrary = f"xyzxyz /add-method HTTP/1.1\r\n{common}X-Req-Id: 6\r\n\r\n"
     client_output += filtered_response(_request(arbitrary, _ats=_ats))
     valid_ipv6 = f"GET /example/2 HTTP/1.1\r\n{common}X-Req-Id: 7\r\n\r\n"
