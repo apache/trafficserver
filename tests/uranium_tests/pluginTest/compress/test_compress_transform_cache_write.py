@@ -66,7 +66,8 @@ def test_compress_transform_cache_write(ats_factory: ATSFactory, services: Servi
             # Let the br requests use that stored object, so that the transform
             # reads from the cache.
             "proxy.config.http.cache.ignore_accept_encoding_mismatch": 1,
-        })
+        }
+    )
     config = directory / "etc" / "cache-true-transform-write.config"
     ats.copy_to_config(config)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{port}/ @plugin=compress.so @pparam={ats.config_directory / config.name}")
@@ -81,9 +82,11 @@ def test_compress_transform_cache_write(ats_factory: ATSFactory, services: Servi
         """
         header = f"--header 'Accept-Encoding: {accept_encoding}' " if accept_encoding else ""
         result = curl.run_for(
-            ats, f"--http1.1 --silent --output /dev/null --max-time {CLIENT_MAX_TIME} {header}"
+            ats,
+            f"--http1.1 --silent --output /dev/null --max-time {CLIENT_MAX_TIME} {header}"
             f"--write-out '%{{http_code}} %header{{content-encoding}}' {url}",
-            timeout=CLIENT_MAX_TIME + 5)
+            timeout=CLIENT_MAX_TIME + 5,
+        )
         if result.returncode != 0:
             return f"curl exit {result.returncode}", ""
         status, _, encoding = result.stdout.strip().partition(" ")
