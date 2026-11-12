@@ -22,6 +22,7 @@
  */
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/TLSSNISupport.h"
+#include "SSLStats.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_config.h"
 #include "tscore/ink_inet.h"
@@ -61,6 +62,8 @@ void
 TLSSNISupport::bind(SSL *ssl, TLSSNISupport *snis)
 {
   SSL_set_ex_data(ssl, _ex_data_index, snis);
+  snis->_reset_raw_extension_types();
+
   char const *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername) {
     snis->_set_sni_server_name_buffer(servername);
@@ -139,6 +142,117 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
 }
 
 void
+TLSSNISupport::on_client_hello_message(const uint8_t *msg, size_t len)
+{
+  _reset_raw_extension_types();
+
+  auto const count =
+    parse_client_hello_extension_types(msg, len, _fast_raw_extension_storage.data(), _fast_raw_extension_storage.size());
+  if (!count) {
+    Metrics::Counter::increment(ssl_rsb.client_hello_raw_parse_failure);
+    Dbg(dbg_ctl_ssl_sni, "Could not parse the extensions of the raw ClientHello");
+    return;
+  }
+  if (*count <= _fast_raw_extension_storage.size()) {
+    _raw_extension_types = _fast_raw_extension_storage.data();
+  } else {
+    _slow_raw_extension_storage = std::make_unique<int[]>(*count);
+    auto const stored           = parse_client_hello_extension_types(msg, len, _slow_raw_extension_storage.get(), *count);
+    if (stored != count) {
+      Metrics::Counter::increment(ssl_rsb.client_hello_raw_parse_failure);
+      Dbg(dbg_ctl_ssl_sni, "The raw ClientHello extensions did not parse the same way twice");
+      _reset_raw_extension_types();
+      return;
+    }
+    _raw_extension_types = _slow_raw_extension_storage.get();
+  }
+  _raw_extension_count = *count;
+}
+
+void
+TLSSNISupport::_reset_raw_extension_types()
+{
+  _raw_extension_types = nullptr;
+  _raw_extension_count = 0;
+  _slow_raw_extension_storage.reset();
+}
+
+std::optional<size_t>
+TLSSNISupport::parse_client_hello_extension_types(const uint8_t *msg, size_t msg_len, int *types, size_t capacity)
+{
+  size_t offset = 0;
+  size_t end    = 0;
+
+  auto read_u8 = [&](size_t &value) {
+    if (offset + 1 > end) {
+      return false;
+    }
+    value   = msg[offset];
+    offset += 1;
+    return true;
+  };
+  auto read_u16 = [&](size_t &value) {
+    if (offset + 2 > end) {
+      return false;
+    }
+    value   = (msg[offset] << 8) | msg[offset + 1];
+    offset += 2;
+    return true;
+  };
+  auto skip = [&](size_t n) {
+    if (offset + n > end) {
+      return false;
+    }
+    offset += n;
+    return true;
+  };
+
+  // Handshake header: msg_type(1) length(3).
+  if (msg_len < 4 || msg[0] != SSL3_MT_CLIENT_HELLO) {
+    return std::nullopt;
+  }
+  size_t const body_len = (msg[1] << 16) | (msg[2] << 8) | msg[3];
+  if (4 + body_len > msg_len) {
+    return std::nullopt;
+  }
+  offset = 4;
+  end    = 4 + body_len;
+
+  // legacy_version(2) random(32) session_id<0..32> cipher_suites<2..2^16-2> compression_methods<1..2^8-1>
+  size_t len = 0;
+  if (!skip(2 + 32) || !read_u8(len) || len > 32 || !skip(len)) {
+    return std::nullopt;
+  }
+  if (!read_u16(len) || len < 2 || len % 2 != 0 || !skip(len)) {
+    return std::nullopt;
+  }
+  if (!read_u8(len) || len < 1 || !skip(len)) {
+    return std::nullopt;
+  }
+
+  // The extensions block is optional.
+  size_t count = 0;
+  if (offset == end) {
+    return count;
+  }
+  if (!read_u16(len) || offset + len != end) {
+    return std::nullopt;
+  }
+
+  while (offset < end) {
+    size_t type = 0;
+    if (!read_u16(type) || !read_u16(len) || !skip(len)) {
+      return std::nullopt;
+    }
+    if (count < capacity) {
+      types[count] = static_cast<int>(type);
+    }
+    ++count;
+  }
+  return count;
+}
+
+void
 TLSSNISupport::on_servername(SSL *ssl, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
 {
   const char *name = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
@@ -177,6 +291,8 @@ TLSSNISupport::_clear()
 {
   hints_from_sni = {};
   _sni_server_name.reset();
+  // Release the heap fallback: SSLNetVConnection is recycled without running its destructor.
+  _reset_raw_extension_types();
 }
 
 const char *
@@ -253,6 +369,9 @@ TLSSNISupport::ClientHello::begin()
 {
   ink_assert(_chc);
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  if (auto snis = TLSSNISupport::getInstance(_chc); snis && snis->_raw_extension_types) {
+    return ExtensionIdIterator(snis->_raw_extension_types, snis->_raw_extension_count, 0);
+  }
   if (_ext_ids == nullptr) {
     SSL_client_hello_get1_extensions_present(_chc, &_ext_ids, &_ext_len);
   }
@@ -267,6 +386,10 @@ TLSSNISupport::ClientHello::end()
 {
   ink_assert(_chc);
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  if (auto snis = TLSSNISupport::getInstance(_chc); snis && snis->_raw_extension_types) {
+    auto const n = snis->_raw_extension_count;
+    return ExtensionIdIterator(snis->_raw_extension_types, n, n);
+  }
   if (_ext_ids == nullptr) {
     SSL_client_hello_get1_extensions_present(_chc, &_ext_ids, &_ext_len);
   }
