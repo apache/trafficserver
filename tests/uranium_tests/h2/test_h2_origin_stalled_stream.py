@@ -54,7 +54,14 @@ def start_stalling_origin(ats_factory: ATSFactory, services: ServiceFactory) -> 
     ssl = Path(__file__).parents[2] / "tools/ssl"
     origin = services.process(
         "origin",
-        [sys.executable, Path(__file__).with_name("stalled_stream_origin.py"), str(port), ssl / "server.pem", ssl / "server.key", stop],
+        [
+            sys.executable,
+            Path(__file__).with_name("stalled_stream_origin.py"),
+            str(port),
+            ssl / "server.pem",
+            ssl / "server.key",
+            stop,
+        ],
         ready_port=port,
     )
     origin.start()
