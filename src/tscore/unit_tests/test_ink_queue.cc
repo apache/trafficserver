@@ -54,7 +54,7 @@ TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[freelist][lsan]")
   // The remaining chunk_size-1 seeded cells are on the free-chain. At process
   // exit LSan must classify them as "still reachable" through the registered
   // root region, not as direct leaks.
-  CHECK(true);
+  SUCCEED();
 }
 
 // Caller-returned cells on the free-chain at process exit must not
@@ -77,7 +77,7 @@ TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[freelist][lsan]")
   // All four returned cells are now on the free-chain. At process exit LSan
   // must classify them as "still reachable" through the registered root
   // region, not as direct leaks.
-  CHECK(true);
+  SUCCEED();
 }
 #endif // TS_ASAN_ENABLED
 
