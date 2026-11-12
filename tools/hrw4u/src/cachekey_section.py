@@ -189,11 +189,12 @@ class CacheKeySection:
             check = PresenceCheck(statement, name)
             first = self.presence.setdefault(check.header.lower(), check)
             # The prefixes differ, so a clash is two spellings of one name in one statement kind.
+            # Both would set one @ header, since header names ignore case.
             if first.name != name and not check.presence.case_insensitive:
                 raise SymbolResolutionError(
                     statement.name,
-                    f'{statement.name}("{name}") and {first.statement.name}("{first.name}") '
-                    f"need the same header, {check.header}: header names ignore case",
+                    f'{statement.name}("{name}") and {first.statement.name}("{first.name}"): '
+                    f"the two {check.presence.names.noun}s can't be told apart in the key",
                 )
             self._target.statements.append(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (first.header,), statement.source))
 
