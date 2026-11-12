@@ -144,10 +144,13 @@ public:
     GlobalConfig(GlobalConfig const &);
     GlobalConfig &operator=(GlobalConfig const &);
 
-    std::chrono::seconds            client_alert_delay{60}; ///< Alert delay in seconds.
-    std::chrono::seconds            server_alert_delay{60}; ///< Alert delay in seconds.
-    std::string                     metric_prefix;          ///< Per server metric prefix.
-    swoc::IPRangeSet                client_exempt_list; ///< The set of IP addresses to not block due client connection counting.
+    std::chrono::seconds client_alert_delay{60}; ///< Alert delay in seconds.
+    std::chrono::seconds server_alert_delay{60}; ///< Alert delay in seconds.
+    std::string          metric_prefix;          ///< Per server metric prefix.
+    swoc::IPRangeSet     client_exempt_list;     ///< The set of IP addresses to not block due client connection counting.
+    /// Fast-path flag to skip acquiring client_exempt_list_mutex when the exempt list is empty.
+    /// Every writer must update this under client_exempt_list_mutex.
+    std::atomic<bool>               has_client_exempt_entries{false};
     mutable ts::bravo::shared_mutex client_exempt_list_mutex; ///< Protects client_exempt_list from concurrent access.
   };
 

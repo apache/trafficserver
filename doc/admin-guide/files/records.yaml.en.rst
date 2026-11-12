@@ -985,7 +985,8 @@ Network
    connections drops below this configured value, |TS| will begin accepting new
    connections from that IP while the number of concurrent connections remains
    below this limit. A value of 0 disables the per client concurrent connection
-   limit.
+   limit. A limit raised from 0 at runtime only counts connections accepted after
+   the change.
 
    See :ts:cv:`proxy.config.http.per_client.connection.exempt_list` for a way to
    allow (not count) certain client IP addresses when applying this limit.
