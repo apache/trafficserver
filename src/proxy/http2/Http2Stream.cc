@@ -207,13 +207,25 @@ Http2Stream::main_event_handler(int event, void *edata)
                          "stream timeout");
         connection_state.handleEvent(HTTP2_SESSION_EVENT_ERROR, &error);
       }
-    } else if (_sm && read_vio.ntodo() > 0) {
-      this->signal_read_event(event);
-    } else if (_sm && write_vio.ntodo() > 0) {
-      this->signal_write_event(event);
     } else {
-      Warning("HTTP/2 unknown case of %d event - session_id=%" PRId64 " stream_id=%u", event, this->_proxy_ssn->connection_id(),
-              this->_id);
+      if (_sm && this->is_outbound_connection() && !_received_header) {
+        // An origin that never answered a stream may be failing others on the same connection, so
+        // stop giving the session new streams. Streams already on it can still finish, and the
+        // session closes once it has none. A stream that times out after its response header
+        // arrived is no evidence against the session: its body may be held back by a slow client
+        // through flow control or, for the active timeout, simply be long. A client upload slow
+        // enough to time out before the origin answers retires the session too, at the cost of one
+        // new connection.
+        get_connection_state().drain_outbound_session("a stream timed out with no response");
+      }
+      if (_sm && read_vio.ntodo() > 0) {
+        this->signal_read_event(event);
+      } else if (_sm && write_vio.ntodo() > 0) {
+        this->signal_write_event(event);
+      } else {
+        Warning("HTTP/2 unknown case of %d event - session_id=%" PRId64 " stream_id=%u", event, this->_proxy_ssn->connection_id(),
+                this->_id);
+      }
     }
     break;
   case VC_EVENT_WRITE_READY:
@@ -310,7 +322,8 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
       }
     }
     ink_release_assert(this->_sm != nullptr);
-    this->_http_sm_id = this->_sm->sm_id;
+    this->_http_sm_id      = this->_sm->sm_id;
+    this->_received_header = true;
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
