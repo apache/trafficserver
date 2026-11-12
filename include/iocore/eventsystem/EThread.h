@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -297,7 +297,7 @@ public:
       This is useful only for regular threads and if called before @c Thread::start. The event will be
       called first before the event loop.
 
-      @Note This will override the event for a dedicate thread so that this is called instead of the
+      @note This will override the event for a dedicate thread so that this is called instead of the
       event passed to the constructor.
   */
   Event *schedule_spawn(Continuation *c, int ev = EVENT_IMMEDIATE, void *cookie = nullptr);
@@ -743,3 +743,15 @@ EThread::free_event(Event *e)
 }
 
 extern int thread_max_heartbeat_mseconds;
+
+/// Per-thread work for components layered above the event loop, so EThread does not depend on them.
+/// Each thread calls @a start when its loop begins and @a stop when its loop ends. @a between_events
+/// runs on every loop iteration after the ready events fire and before the tail handler polls, which
+/// also dispatches network handlers, so no event or network handler is on the stack when it runs.
+/// Set before the event threads start.
+struct EThreadLoopHooks {
+  void (*start)()          = nullptr;
+  void (*between_events)() = nullptr;
+  void (*stop)()           = nullptr;
+};
+extern EThreadLoopHooks ethread_loop_hooks;

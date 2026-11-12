@@ -15,9 +15,8 @@
 #
 #######################
 
-add_executable(
-  test_access_control test_access_control.cc test_utils.cc ${PROJECT_SOURCE_DIR}/access_control.cc
-                      ${PROJECT_SOURCE_DIR}/common.cc ${PROJECT_SOURCE_DIR}/utils.cc
+add_executable(test_access_control test_access_control.cc test_utils.cc ${PROJECT_SOURCE_DIR}/access_control.cc
+               ${PROJECT_SOURCE_DIR}/common.cc ${PROJECT_SOURCE_DIR}/utils.cc
 )
 
 target_link_libraries(test_access_control PRIVATE ts::tscore OpenSSL::SSL OpenSSL::Crypto Catch2::Catch2WithMain)

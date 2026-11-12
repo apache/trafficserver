@@ -49,7 +49,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: aaa-signed.pem",
             "    ssl_key_name: aaa-signed.key",
-        ])
+        ]
+    )
     secrets = TEST_DIRECTORY / "test_secrets"
     ats.copy_to_ssl(secrets / "aaa-signed.pem", secrets / "aaa-signed.key")
     ats.records.update(
@@ -60,7 +61,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.http.connect_attempts_rr_retries": 0,
             "proxy.config.http.connect_attempts_timeout": 2,
             "proxy.config.http.transaction_no_activity_timeout_out": 2,
-        })
+        }
+    )
     return ats
 
 
@@ -80,8 +82,7 @@ def test_server_abort(ats_factory: ATSFactory, services: ServiceFactory, curl: C
     _origin.start()
     _ats.start()
     result = curl.run(
-        (f"--verbose --insecure --http1.1 --max-time 10 --header 'Host: foo.com' "
-         f"'https://127.0.0.1:{_ats.https_port}/'"),
+        (f"--verbose --insecure --http1.1 --max-time 10 --header 'Host: foo.com' 'https://127.0.0.1:{_ats.https_port}/'"),
         timeout=15,
     )
     assert result.returncode in (0, 28), result.output

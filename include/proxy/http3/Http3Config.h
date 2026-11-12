@@ -2,7 +2,7 @@
  *
  *  HTTP/3 Config
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -57,6 +57,8 @@ public:
   static Http3ConfigParams *acquire();
   static void               release(Http3ConfigParams *params);
 
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<Http3Config, Http3ConfigParams>;
 
 private:

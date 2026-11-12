@@ -3,7 +3,7 @@
  *  Basic implementation of RFC 4122, see
  *      https://www.ietf.org/rfc/rfc4122.txt
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file

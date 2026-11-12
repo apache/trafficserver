@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -34,6 +34,17 @@
 namespace
 {
 DbgCtl dbg_ctl_qpack{"qpack"};
+
+// Upper bound of the encoded size of a header field. Huffman codes are at most 30 bits long, so an encoded string is
+// shorter than 4 bytes per input byte (the bound xpack_encode_string relies on as well), and a field representation
+// carries at most three variable-length integers of up to 11 bytes each.
+int64_t
+max_encoded_field_size(const MIMEField &field)
+{
+  constexpr int64_t MAX_INTEGER_LENGTH = 11;
+
+  return 4 * static_cast<int64_t>(field.name_get().length() + field.value_get().length()) + 3 * MAX_INTEGER_LENGTH;
+}
 
 } // end anonymous namespace
 
@@ -159,6 +170,14 @@ QPACK::QPACK(QUICConnection *qc, uint32_t max_field_section_size, uint16_t max_t
 
 QPACK::~QPACK()
 {
+  // Every caller cancels its stream before its QPACK goes away, so anything
+  // left here belongs to a caller that may already be gone.
+  while (DecodeReport *r = this->_pending_reports.take_head()) {
+    r->withdraw();
+  }
+  while (DecodeRequest *r = this->_blocked_list.take_head()) {
+    delete r;
+  }
   free_MIOBuffer(_encoder_stream_sending_instructions);
   free_MIOBuffer(_decoder_stream_sending_instructions);
 }
@@ -166,32 +185,34 @@ QPACK::~QPACK()
 void
 QPACK::on_stream_open(QUICStream &stream)
 {
-  auto *info = new QUICStreamVCAdapter::IOInfo(stream);
+  auto  ret  = this->_streams.emplace(stream.id(), stream);
+  auto &info = ret.first->second;
 
   switch (stream.direction()) {
   case QUICStreamDirection::BIDIRECTIONAL:
     // ink_assert(!"QPACK does not use bidirectional streams");
     // QPACK offline interop uses stream 0 as a encoder stream.
-    info->setup_write_vio(this);
-    info->setup_read_vio(this);
+    info.setup_write_vio(this);
+    info.setup_read_vio(this);
     break;
   case QUICStreamDirection::SEND:
-    info->setup_write_vio(this);
+    info.setup_write_vio(this);
     break;
   case QUICStreamDirection::RECEIVE:
-    info->setup_read_vio(this);
+    info.setup_read_vio(this);
     break;
   default:
     ink_assert(false);
     break;
   }
 
-  stream.set_io_adapter(&info->adapter);
+  stream.set_io_adapter(&info.adapter);
 }
 
 void
-QPACK::on_stream_close(QUICStream & /* stream ATS_UNUSED */)
+QPACK::on_stream_close(QUICStream &stream)
 {
+  this->_streams.erase(stream.id());
 }
 
 int
@@ -242,10 +263,32 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
   uint16_t       largest_reference  = 0;
   uint16_t       smallest_reference = 0;
   IOBufferBlock *compressed_headers = new_IOBufferBlock();
+  IOBufferBlock *current_block      = compressed_headers;
   compressed_headers->alloc(BUFFER_SIZE_INDEX_2K);
 
   for (auto &field : header_set) {
-    int ret            = this->_encode_header(field, base_index, compressed_headers, referred_index);
+    // The field encoders fail when the field does not fit in the space left in the block. Chain a block that is large
+    // enough for the whole field before encoding it, so that no field is left out of the header block.
+    int64_t required = max_encoded_field_size(field);
+    if (required > current_block->write_avail()) {
+      if (required > DEFAULT_MAX_BUFFER_SIZE) {
+        compressed_headers->free();
+        return -1;
+      }
+      IOBufferBlock *next_block = new_IOBufferBlock();
+      next_block->alloc(std::max<int64_t>(BUFFER_SIZE_INDEX_2K, iobuffer_size_to_index(required, MAX_BUFFER_SIZE_INDEX)));
+      if (current_block->read_avail() == 0) {
+        // Nothing has been written to the current block, so replace it rather than leaving an empty block in the chain
+        ink_assert(current_block == compressed_headers);
+        compressed_headers->free();
+        compressed_headers = next_block;
+      } else {
+        current_block->next = next_block;
+      }
+      current_block = next_block;
+    }
+
+    int ret            = this->_encode_header(field, base_index, current_block, referred_index);
     largest_reference  = std::max(largest_reference, referred_index);
     smallest_reference = std::min(smallest_reference, referred_index);
     if (ret < 0) {
@@ -265,21 +308,28 @@ QPACK::encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, 
   header_block_len += header_data_prefix->size();
 
   header_block->append_block(compressed_headers);
-  header_block_len += compressed_headers->size();
+  for (IOBufferBlock *block = compressed_headers; block != nullptr; block = block->next.get()) {
+    header_block_len += block->size();
+  }
 
   return 0;
 }
 
 int
-QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
-              EThread *thread)
+QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont)
 {
   if (!cont || !header_block) {
     return -1;
   }
 
+  EThread *thread = this_ethread();
+  if (this->_decode_thread == nullptr) {
+    this->_decode_thread = thread;
+  }
+  ink_release_assert(thread == this->_decode_thread);
+
   if (this->_invalid) {
-    thread->schedule_imm(cont, QPACK_EVENT_DECODE_FAILED, nullptr);
+    this->_report(thread, cont, stream_id, QPACK_EVENT_DECODE_FAILED, nullptr);
     return -1;
   }
 
@@ -306,6 +356,71 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
   this->_decode(thread, cont, stream_id, header_block, header_block_len, hdr);
 
   return 0;
+}
+
+int
+QPACK::cancel(uint64_t stream_id)
+{
+  // From any other thread this would race the decoding thread over both lists.
+  ink_release_assert(this->_decode_thread == nullptr || this->_decode_thread == this_ethread());
+
+  int dropped = 0;
+
+  for (DecodeReport *r = this->_pending_reports.head(); r != nullptr;) {
+    DecodeReport *next = DecodeReport::Linkage::next_ptr(r);
+    if (r->stream_id() == stream_id) {
+      // The report is still in the event queue and frees itself when it runs.
+      this->_pending_reports.erase(r);
+      r->withdraw();
+      ++dropped;
+    }
+    r = next;
+  }
+
+  for (DecodeRequest *r = this->_blocked_list.head(); r != nullptr;) {
+    DecodeRequest *next = DecodeRequest::Linkage::next_ptr(r);
+    if (r->stream_id() == stream_id) {
+      this->_blocked_list.erase(r);
+      delete r;
+      ++dropped;
+    }
+    r = next;
+  }
+
+  return dropped;
+}
+
+QPACK::DecodeReport::DecodeReport(QPACK *qpack, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr)
+  : Continuation(continuation->mutex), _qpack(qpack), _continuation(continuation), _stream_id(stream_id), _event(event), _hdr(hdr)
+{
+  SET_HANDLER(&QPACK::DecodeReport::deliver);
+}
+
+int
+QPACK::DecodeReport::deliver(int /* event ATS_UNUSED */, Event *data)
+{
+  // Off the list before the handler runs: the handler may destroy its owner,
+  // which cancels this stream, or the session that owns this QPACK.
+  if (this->_qpack != nullptr) {
+    this->_qpack->_pending_reports.erase(this);
+  }
+  if (this->_continuation != nullptr) {
+    data->cookie = this->_hdr;
+    this->_continuation->handleEvent(this->_event, data);
+  }
+  delete this;
+  return EVENT_DONE;
+}
+
+void
+QPACK::_report(EThread *thread, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr)
+{
+  ink_assert(thread == this_ethread());
+
+  auto *report = new DecodeReport(this, continuation, stream_id, event, hdr);
+
+  this->_pending_reports.append(report);
+  thread->schedule_imm(report);
 }
 
 void
@@ -462,56 +577,61 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
   }
 
   // Encode
+  int ret = 0;
   if (lookup_result_static.match_type == XpackLookupResult::MatchType::EXACT) {
-    this->_encode_indexed_header_field(lookup_result_static.index, base_index, false, compressed_header);
+    ret = this->_encode_indexed_header_field(lookup_result_static.index, base_index, false, compressed_header);
     QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_static.index,
                base_index, false);
     referred_index = 0;
   } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::EXACT) {
     if (lookup_result_dynamic.index < this->_largest_known_received_index) {
-      this->_encode_indexed_header_field(lookup_result_dynamic.index, base_index, true, compressed_header);
+      ret = this->_encode_indexed_header_field(lookup_result_dynamic.index, base_index, true, compressed_header);
       QPACKDebug("Encoded Indexed Header Field: abs_index=%d, base_index=%d, dynamic_table=%d", lookup_result_dynamic.index,
                  base_index, true);
     } else {
-      this->_encode_indexed_header_field_with_postbase_index(lookup_result_dynamic.index, base_index, never_index,
-                                                             compressed_header);
+      ret = this->_encode_indexed_header_field_with_postbase_index(lookup_result_dynamic.index, base_index, never_index,
+                                                                   compressed_header);
       QPACKDebug("Encoded Indexed Header With Postbase Index: abs_index=%d, base_index=%d, never_index=%d",
                  lookup_result_dynamic.index, base_index, never_index);
     }
-    this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
-    referred_index = lookup_result_dynamic.index;
+    if (ret == 0) {
+      this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
+      referred_index = lookup_result_dynamic.index;
+    }
   } else if (lookup_result_static.match_type == XpackLookupResult::MatchType::NAME) {
-    this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value.data(), value.length(),
-                                                     never_index, compressed_header);
+    ret = this->_encode_literal_header_field_with_name_ref(lookup_result_static.index, false, base_index, value.data(),
+                                                           value.length(), never_index, compressed_header);
     QPACKDebug(
       "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
       lookup_result_static.index, base_index, false, static_cast<int>(value.length()), value.data(), never_index);
     referred_index = 0;
   } else if (lookup_result_dynamic.match_type == XpackLookupResult::MatchType::NAME) {
     if (lookup_result_dynamic.index <= this->_largest_known_received_index) {
-      this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value.data(), value.length(),
-                                                       never_index, compressed_header);
+      ret = this->_encode_literal_header_field_with_name_ref(lookup_result_dynamic.index, true, base_index, value.data(),
+                                                             value.length(), never_index, compressed_header);
       QPACKDebug(
         "Encoded Literal Header Field With Name Ref: abs_index=%d, base_index=%d, dynamic_table=%d, value=%.*s, never_index=%d",
         lookup_result_dynamic.index, base_index, true, static_cast<int>(value.length()), value.data(), never_index);
     } else {
-      this->_encode_literal_header_field_with_postbase_name_ref(lookup_result_dynamic.index, base_index, value.data(),
-                                                                value.length(), never_index, compressed_header);
+      ret = this->_encode_literal_header_field_with_postbase_name_ref(lookup_result_dynamic.index, base_index, value.data(),
+                                                                      value.length(), never_index, compressed_header);
       QPACKDebug("Encoded Literal Header Field With Postbase Name Ref: abs_index=%d, base_index=%d, value=%.*s, never_index=%d",
                  lookup_result_dynamic.index, base_index, static_cast<int>(value.length()), value.data(), never_index);
     }
-    this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
-    referred_index = lookup_result_dynamic.index;
+    if (ret == 0) {
+      this->_dynamic_table.ref_entry(lookup_result_dynamic.index);
+      referred_index = lookup_result_dynamic.index;
+    }
   } else {
-    this->_encode_literal_header_field_without_name_ref(lowered_name, name.length(), value.data(), value.length(), never_index,
-                                                        compressed_header);
+    ret = this->_encode_literal_header_field_without_name_ref(lowered_name, name.length(), value.data(), value.length(),
+                                                              never_index, compressed_header);
     QPACKDebug("Encoded Literal Header Field Without Name Ref: name=%.*s, value=%.*s, never_index=%d",
                static_cast<int>(name.length()), lowered_name, static_cast<int>(value.length()), value.data(), never_index);
   }
 
   this->_arena.str_free(lowered_name);
 
-  return 0;
+  return ret;
 }
 
 int
@@ -520,6 +640,10 @@ QPACK::_encode_indexed_header_field(uint16_t index, uint16_t base_index, bool dy
   char *buf     = compressed_header->end();
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
+
+  if (buf >= buf_end) {
+    return -1;
+  }
 
   // Indexed Header Field
   buf[0] = 0x80;
@@ -554,6 +678,10 @@ QPACK::_encode_indexed_header_field_with_postbase_index(uint16_t index, uint16_t
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
 
+  if (buf >= buf_end) {
+    return -1;
+  }
+
   // Indexed Header Field with Post-Base Index
   buf[0] = 0x10;
 
@@ -578,6 +706,10 @@ QPACK::_encode_literal_header_field_with_name_ref(uint16_t index, bool dynamic_t
   char *buf     = compressed_header->end();
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
+
+  if (buf >= buf_end) {
+    return -1;
+  }
 
   // Literal Header Field With Name Reference
   buf[0] = 0x40;
@@ -623,6 +755,10 @@ QPACK::_encode_literal_header_field_without_name_ref(const char *name, int name_
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
 
+  if (buf >= buf_end) {
+    return -1;
+  }
+
   // Literal Header Field Without Name Reference
   buf[0] = 0x20;
 
@@ -658,6 +794,10 @@ QPACK::_encode_literal_header_field_with_postbase_name_ref(uint16_t index, uint1
   char *buf     = compressed_header->end();
   char *buf_end = buf + compressed_header->write_avail();
   int   written = 0;
+
+  if (buf >= buf_end) {
+    return -1;
+  }
 
   // Literal Header Field With Post-Base Name Reference
   buf[0] = 0x00;
@@ -995,7 +1135,7 @@ QPACK::_decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const u
     event = QPACK_EVENT_DECODE_COMPLETE;
     this->_write_header_acknowledgement(stream_id);
   }
-  ethread->schedule_imm(cont, event, &hdr);
+  this->_report(ethread, cont, stream_id, event, &hdr);
 }
 
 bool
@@ -1064,7 +1204,7 @@ QPACK::_abort_decode()
   DecodeRequest *r = this->_blocked_list.head();
   while (r) {
     if (this->_largest_known_received_index >= r->largest_reference()) {
-      r->thread()->schedule_imm(r->continuation(), QPACK_EVENT_DECODE_FAILED, nullptr);
+      this->_report(r->thread(), r->continuation(), r->stream_id(), QPACK_EVENT_DECODE_FAILED, nullptr);
       DecodeRequest *tmp = r;
       r                  = DecodeRequest::Linkage::next_ptr(r);
       this->_blocked_list.erase(tmp);
@@ -1149,21 +1289,41 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
     reader.memcpy(&buf, 1);
     if (buf & 0x80) { // Insert With Name Reference
       bool        is_static;
-      uint16_t    index;
-      const char *name;
-      size_t      name_len;
-      const char *dummy;
-      size_t      dummy_len;
+      uint64_t    index;
+      const char *name      = nullptr;
+      size_t      name_len  = 0;
+      const char *dummy     = nullptr;
+      size_t      dummy_len = 0;
       char       *value;
       size_t      value_len;
       if (this->_read_insert_with_name_ref(reader, is_static, index, this->_arena, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
-      QPACKDebug("Received Insert With Name Ref: is_static=%d, index=%d, value=%.*s", is_static, index, static_cast<int>(value_len),
-                 value);
-      StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
-      this->_dynamic_table.insert_entry(name, name_len, value, value_len);
+      QPACKDebug("Received Insert With Name Ref: is_static=%d, index=%" PRIu64 ", value=%.*s", is_static, index,
+                 static_cast<int>(value_len), value);
+      XpackLookupResult result;
+      if (is_static) {
+        result = StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
+      } else {
+        result = this->_dynamic_table.lookup_relative(index, &name, &name_len, &dummy, &dummy_len);
+      }
+      if (result.match_type != XpackLookupResult::MatchType::EXACT) {
+        this->_arena.str_free(value);
+        this->_abort_decode();
+        return EVENT_DONE;
+      }
+      if (is_static) {
+        this->_dynamic_table.insert_entry(name, name_len, value, value_len);
+      } else {
+        // The referenced name lives in the dynamic table's storage, which this
+        // insert may evict and overwrite (RFC 9204 Section 3.2.2), so copy it.
+        char *owned_name = this->_arena.str_store(name, name_len);
+
+        this->_dynamic_table.insert_entry(owned_name, name_len, value, value_len);
+        // Free in reverse allocation order so Arena can rewind both entries.
+        this->_arena.str_free(owned_name);
+      }
       this->_arena.str_free(value);
     } else if (buf & 0x40) { // Insert Without Name Reference
       char  *name;
@@ -1228,14 +1388,18 @@ QPACK::estimate_header_block_size(const HTTPHdr & /* hdr ATS_UNUSED */)
 }
 
 const XpackLookupResult
-QPACK::StaticTable::lookup(uint16_t index, const char **name, size_t *name_len, const char **value, size_t *value_len)
+QPACK::StaticTable::lookup(uint64_t index, const char **name, size_t *name_len, const char **value, size_t *value_len)
 {
+  if (index >= countof(STATIC_HEADER_FIELDS)) {
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
   const Header &header = STATIC_HEADER_FIELDS[index];
   *name                = header.name;
   *name_len            = header.name_len;
   *value               = header.value;
   *value_len           = header.value_len;
-  return {index, XpackLookupResult::MatchType::EXACT};
+  return {static_cast<uint32_t>(index), XpackLookupResult::MatchType::EXACT};
 }
 
 const XpackLookupResult
@@ -1509,7 +1673,7 @@ QPACK::_write_stream_cancellation(uint64_t stream_id)
 }
 
 int
-QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
+QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint64_t &index, Arena &arena, char **value,
                                   size_t &value_len)
 {
   size_t   read_len = 0;
@@ -1522,14 +1686,13 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
   is_static = input[0] & 0x40;
 
   // Name Index
-  uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 || tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(index, input, input + input_len, 6)) < 0) {
     return -1;
   }
-  index     = tmp;
   read_len += ret;
 
   // Value
+  uint64_t tmp = 0;
   if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 ||
       tmp > 0xFFFF) {
     return -1;

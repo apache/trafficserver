@@ -15,8 +15,7 @@
 #
 #######################
 
-set(ENABLE_JAX_METHODS
-    "ja3;ja4;ja4h"
+set(ENABLE_JAX_METHODS "ja3;ja4;ja4h"
     CACHE STRING "Semicolon-separated list of fingerprint methods to compile into jax_fingerprint"
 )
 
@@ -49,6 +48,7 @@ endforeach()
 add_atsplugin(
   jax_fingerprint
   plugin.cc
+  config.cc
   context.cc
   userarg.cc
   header.cc
@@ -56,7 +56,7 @@ add_atsplugin(
   common/utils.cc
   ${_jax_plugin_method_sources}
 )
-target_link_libraries(jax_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+target_link_libraries(jax_fingerprint PRIVATE OpenSSL::Crypto OpenSSL::SSL yaml-cpp::yaml-cpp)
 target_include_directories(jax_fingerprint BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(jax_fingerprint PRIVATE ${_jax_method_defs} JAX_FINGERPRINT_MAX_METHODS=${_jax_method_count})
 verify_global_plugin(jax_fingerprint)

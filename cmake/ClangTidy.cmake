@@ -30,11 +30,7 @@
 
 if(ENABLE_CLANG_TIDY)
   # Find clang-tidy program
-  find_program(
-    CLANG_TIDY_EXE
-    NAMES "clang-tidy"
-    HINTS ${CLANG_TIDY_PATH}
-  )
+  find_program(CLANG_TIDY_EXE NAMES "clang-tidy" HINTS ${CLANG_TIDY_PATH})
 
   # Add options if there
   #

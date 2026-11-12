@@ -34,17 +34,11 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     common = "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=500\r\n"
     origin.add_response(
         {"headers": "GET /etag HTTP/1.1\r\nHost: origin\r\n\r\n"},
-        {
-            "headers": common + f'Etag: "foo"\r\nLast-Modified: {LAST_MODIFIED}\r\n\r\n',
-            "body": "lets go surfin now"
-        },
+        {"headers": common + f'Etag: "foo"\r\nLast-Modified: {LAST_MODIFIED}\r\n\r\n', "body": "lets go surfin now"},
     )
     origin.add_response(
         {"headers": "GET /lm HTTP/1.1\r\nHost: origin\r\n\r\n"},
-        {
-            "headers": common + f"Last-Modified: {LAST_MODIFIED}\r\n\r\n",
-            "body": "lets go surfin now"
-        },
+        {"headers": common + f"Last-Modified: {LAST_MODIFIED}\r\n\r\n", "body": "lets go surfin now"},
     )
     return origin
 
@@ -62,34 +56,32 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "slice",
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     plugin = " @plugin=slice.so @pparam=--blockbytes-test=11"
     ats.remap_config.add_lines(
         (
             f"map http://preload/ http://127.0.0.1:{_origin.port}",
             f"map http://slice/ http://127.0.0.1:{_origin.port}{plugin}",
             f"map http://slicecustom/ http://127.0.0.1:{_origin.port}{plugin} @pparam=--crr-ident-header=CrrIdent",
-        ))
+        )
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "custom",
-                                "format":
-                                    (
-                                        "%<cquup> %<sssc> %<pssc> range=::%<{Range}cqh>:: "
-                                        "x-crr-ident=::%<{X-Crr-Ident}cqh>:: crrident=::%<{CrrIdent}cqh>::"),
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "transaction",
-                        "format": "custom"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "custom",
+                        "format": (
+                            "%<cquup> %<sssc> %<pssc> range=::%<{Range}cqh>:: "
+                            "x-crr-ident=::%<{X-Crr-Ident}cqh>:: crrident=::%<{CrrIdent}cqh>::"
+                        ),
+                    }
+                ],
+                "logs": [{"filename": "transaction", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 
@@ -105,8 +97,7 @@ def request(host: str, path: str, expected_status: str, *, _ats: ATS, _curl: Cur
 
     result = _curl.run_for(
         _ats,
-        (f"--silent --dump-header /dev/stdout --output /dev/null --proxy 'localhost:{_ats.http_port}' "
-         f"'http://{host}/{path}'"),
+        (f"--silent --dump-header /dev/stdout --output /dev/null --proxy 'localhost:{_ats.http_port}' 'http://{host}/{path}'"),
     )
     assert result.returncode == 0, result.output
     assert expected_status in result.stdout

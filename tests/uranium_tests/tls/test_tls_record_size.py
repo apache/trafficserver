@@ -35,10 +35,10 @@ def configure_origin(services: ServiceFactory, *, _body_length: int) -> OriginSe
     origin.add_response(
         {"headers": "GET /obj HTTP/1.1\r\nHost: ex.test\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                    f"Cache-Control: max-age=3600\r\nContent-Length: {_body_length}\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                f"Cache-Control: max-age=3600\r\nContent-Length: {_body_length}\r\n\r\n"
+            ),
             "body": "x" * _body_length,
         },
     )
@@ -61,7 +61,8 @@ def configure_ats(ats_factory: ATSFactory, *, _max_record: int, _origin: OriginS
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     ats.records.update({"proxy.config.ssl.max_record_size": _max_record})
     return ats

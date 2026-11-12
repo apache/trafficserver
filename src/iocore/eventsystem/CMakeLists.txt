@@ -16,35 +16,38 @@
 #######################
 
 add_library(
-  inkevent STATIC
-  EventSystem.cc
-  IOBuffer.cc
-  Lock.cc
-  MIOBufferWriter.cc
-  PQ-List.cc
-  Processor.cc
-  ProtectedQueue.cc
-  ProxyAllocator.cc
-  Tasks.cc
-  Thread.cc
-  UnixEThread.cc
-  UnixEvent.cc
-  UnixEventProcessor.cc
-  UnixSocket.cc
-  ConfigProcessor.cc
-  RecRawStatsImpl.cc
-  RecProcess.cc
-  Watchdog.cc
-  VIO.cc
+  inkevent
+  STATIC
+    EventSystem.cc
+    IOBuffer.cc
+    Lock.cc
+    MIOBufferWriter.cc
+    PQ-List.cc
+    Processor.cc
+    ProtectedQueue.cc
+    ProxyAllocator.cc
+    Tasks.cc
+    Thread.cc
+    UnixEThread.cc
+    UnixEvent.cc
+    UnixEventProcessor.cc
+    UnixSocket.cc
+    ConfigProcessor.cc
+    RecRawStatsImpl.cc
+    RecProcess.cc
+    Watchdog.cc
+    VIO.cc
 )
 add_library(ts::inkevent ALIAS inkevent)
 
 target_link_libraries(
   inkevent
   PUBLIC ts::records ts::tscore
-  PRIVATE libswoc::libswoc resolv::resolv # transitive
-          tsutil # transitive
-          yaml-cpp::yaml-cpp # transitive
+  PRIVATE
+    libswoc::libswoc
+    resolv::resolv # transitive
+    tsutil # transitive
+    yaml-cpp::yaml-cpp # transitive
 )
 
 if(TS_USE_HWLOC)
@@ -72,9 +75,17 @@ if(BUILD_TESTING)
   target_link_libraries(test_Action ts::inkevent configmanager Catch2::Catch2WithMain)
   add_catch2_test(NAME test_Action COMMAND test_Action)
 
+  add_executable(test_ConfigPins unit_tests/test_ConfigPins.cc)
+  target_link_libraries(test_ConfigPins ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_ConfigPins COMMAND test_ConfigPins)
+
   add_executable(test_Lock unit_tests/test_Lock.cc)
   target_link_libraries(test_Lock ts::inkevent configmanager Catch2::Catch2WithMain)
   add_catch2_test(NAME test_Lock COMMAND test_Lock)
+
+  add_executable(test_WatchdogPolicy unit_tests/test_WatchdogPolicy.cc)
+  target_link_libraries(test_WatchdogPolicy ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_WatchdogPolicy COMMAND test_WatchdogPolicy)
 endif()
 
 clang_tidy_check(inkevent)

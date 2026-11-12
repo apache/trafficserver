@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -217,7 +217,7 @@ public:
                                  size_t *value_len) const;
   const XpackLookupResult lookup(const char *name, size_t name_len, const char *value, size_t value_len) const;
   const XpackLookupResult lookup(const std::string_view name, const std::string_view value) const;
-  const XpackLookupResult lookup_relative(uint32_t relative_index, const char **name, size_t *name_len, const char **value,
+  const XpackLookupResult lookup_relative(uint64_t relative_index, const char **name, size_t *name_len, const char **value,
                                           size_t *value_len) const;
   const XpackLookupResult lookup_relative(const char *name, size_t name_len, const char *value, size_t value_len) const;
   const XpackLookupResult lookup_relative(const std::string_view name, const std::string_view value) const;

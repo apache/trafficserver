@@ -43,14 +43,16 @@ class QuickServerCase:
             f"client-{'abort' if self.abort_request else 'finish'}-"
             f"origin-{'drain' if self.drain_request else 'close'}-"
             f"headers-{'abort' if self.abort_response_headers else 'complete'}-"
-            f"transform-{'on' if self.use_request_transform else 'off'}")
+            f"transform-{'on' if self.use_request_transform else 'off'}"
+        )
 
 
 CASES = tuple(
     QuickServerCase(abort_request, drain_request, abort_response_headers)
     for abort_request in (True, False)
     for drain_request in (True, False)
-    for abort_response_headers in (True, False))
+    for abort_response_headers in (True, False)
+)
 CASES += (QuickServerCase(False, False, False, use_request_transform=True),)
 
 
@@ -98,10 +100,12 @@ def configure_ats(ats_factory: ATSFactory, *, _case: QuickServerCase, _origin_po
 
     ats = ats_factory.create("ts")
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin_port}")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http|dns|hostdb",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|dns|hostdb",
+        }
+    )
     if _case.use_request_transform:
         ats.copy_custom_plugin("{AtsTestPluginsDir}/tunnel_transform.so")
         ats.plugin_config.add_line("tunnel_transform.so request_hdr")

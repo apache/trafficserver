@@ -29,19 +29,13 @@ project(ats VERSION 11.0.0)
 set(TS_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(TS_VERSION_MINOR ${PROJECT_VERSION_MINOR})
 set(TS_VERSION_MICRO ${PROJECT_VERSION_PATCH})
-set(TS_VERSION_STRING
-    ${TS_VERSION_MAJOR}.${TS_VERSION_MINOR}.${TS_VERSION_MICRO}
-    CACHE STRING "The version string"
-)
+set(TS_VERSION_STRING ${TS_VERSION_MAJOR}.${TS_VERSION_MINOR}.${TS_VERSION_MICRO} CACHE STRING "The version string")
 math(EXPR TS_VERSION_NUMBER "${TS_VERSION_MAJOR} * 1000000 + ${TS_VERSION_MINOR} * 1000 + ${TS_VERSION_MICRO}")
 
 # We make this a cache entry so that it can be configured to different values
 # for testing purposes. For example, it can be used on CI to check compatibility
 # with a newer standard than what our codebase currently has to comply with.
-set(CMAKE_CXX_STANDARD
-    20
-    CACHE STRING "The C++ standard to compile with (default 20)"
-)
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "The C++ standard to compile with (default 20)")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -50,10 +44,7 @@ list(APPEND CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE -DATS_BUILD)
 
 # Setup default install directory
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX
-      /usr/local/trafficserver
-      CACHE PATH "Default install path" FORCE
-  )
+  set(CMAKE_INSTALL_PREFIX /usr/local/trafficserver CACHE PATH "Default install path" FORCE)
 endif()
 
 include(layout)
@@ -68,36 +59,19 @@ remove_definitions(-Dunix)
 
 # Gather some environment info
 string(TOLOWER ${CMAKE_HOST_SYSTEM_NAME} HOST_OS)
-set(BUILD_NUMBER
-    "0"
-    CACHE STRING "The build number"
-)
+set(BUILD_NUMBER "0" CACHE STRING "The build number")
 
-execute_process(
-  COMMAND id -nu
-  OUTPUT_VARIABLE BUILD_PERSON
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-execute_process(
-  COMMAND id -ng
-  OUTPUT_VARIABLE BUILD_GROUP
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-execute_process(
-  COMMAND uname -n
-  OUTPUT_VARIABLE BUILD_MACHINE
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+execute_process(COMMAND id -nu OUTPUT_VARIABLE BUILD_PERSON OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND id -ng OUTPUT_VARIABLE BUILD_GROUP OUTPUT_STRIP_TRAILING_WHITESPACE)
+execute_process(COMMAND uname -n OUTPUT_VARIABLE BUILD_MACHINE OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Detect git common directory (works for both regular repos and worktrees).
 if(EXISTS ${CMAKE_SOURCE_DIR}/.git)
   execute_process(
     COMMAND git rev-parse --git-common-dir
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_COMMON_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE GIT_RESULT
-    ERROR_QUIET
+    OUTPUT_VARIABLE GIT_COMMON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+    RESULT_VARIABLE GIT_RESULT ERROR_QUIET
   )
   if(GIT_RESULT EQUAL 0 AND GIT_COMMON_DIR)
     # Convert to absolute path if relative.
@@ -112,33 +86,9 @@ endif()
 include(AutoOptionHelpers)
 find_package(PkgConfig)
 auto_option(HWLOC FEATURE_VAR TS_USE_HWLOC PACKAGE_DEPENDS hwloc)
-auto_option(
-  JEMALLOC
-  FEATURE_VAR
-  TS_HAS_JEMALLOC
-  DEFAULT
-  OFF
-  PACKAGE_DEPENDS
-  jemalloc
-)
-auto_option(
-  MIMALLOC
-  FEATURE_VAR
-  TS_HAS_MIMALLOC
-  DEFAULT
-  OFF
-  PACKAGE_DEPENDS
-  mimalloc
-)
-auto_option(
-  POSIX_CAP
-  FEATURE_VAR
-  TS_USE_POSIX_CAP
-  PACKAGE_DEPENDS
-  cap
-  HEADER_DEPENDS
-  "sys/prctl.h"
-)
+auto_option(JEMALLOC FEATURE_VAR TS_HAS_JEMALLOC DEFAULT OFF PACKAGE_DEPENDS jemalloc)
+auto_option(MIMALLOC FEATURE_VAR TS_HAS_MIMALLOC DEFAULT OFF PACKAGE_DEPENDS mimalloc)
+auto_option(POSIX_CAP FEATURE_VAR TS_USE_POSIX_CAP PACKAGE_DEPENDS cap HEADER_DEPENDS "sys/prctl.h")
 auto_option(LUAJIT PACKAGE_DEPENDS luajit)
 auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
@@ -150,14 +100,13 @@ option(ENABLE_FIPS "Enable fips compliance (default OFF)")
 option(ENABLE_EVENT_TRACKER "Enable event tracking (default OFF)")
 option(BUILD_REGRESSION_TESTING "Build regression tests (default ON)" ON)
 option(BUILD_EXPERIMENTAL_PLUGINS "Build the experimental plugins (default OFF)")
-set(DEFAULT_STACK_SIZE
-    1048576
-    CACHE STRING "Default stack size (default 1048576)"
-)
+set(DEFAULT_STACK_SIZE 1048576 CACHE STRING "Default stack size (default 1048576)")
 option(ENABLE_FAST_SDK "Use fast SDK APIs (default OFF)")
 option(ENABLE_MALLOC_ALLOCATOR "Use direct malloc allocator over freelist allocator (default OFF)")
 option(ENABLE_ALLOCATOR_METRICS "Enable metrics for Allocators (default OFF)")
 option(ENABLE_DOCS "Build docs (default OFF)")
+option(ENABLE_DOXYGEN "Build Doxygen API documentation (default OFF)")
+option(DOXYGEN_CHECK_ONLY "Have the doxygen target check documentation without generating HTML (default OFF)")
 option(ENABLE_DISK_FAILURE_TESTS "Build disk failure tests (enables AIO fault injection, default OFF)" OFF)
 if(ENABLE_DISK_FAILURE_TESTS)
   add_compile_definitions("AIO_FAULT_INJECTION")
@@ -179,22 +128,12 @@ option(THREAD_SAFETY_ANALYSIS_AS_ERROR "Treat thread-safety findings as errors; 
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
-set(WITH_USER
-    nobody
-    CACHE STRING "The system user (default nobody)"
-)
+set(WITH_USER nobody CACHE STRING "The system user (default nobody)")
 # NOTE: I can't tell that this is used at all besides being printed
-set(WITH_GROUP
-    nobody
-    CACHE STRING "The system group (default nobody, or specified user's group)"
-)
+set(WITH_GROUP nobody CACHE STRING "The system group (default nobody, or specified user's group)")
 
 if(WITH_GROUP STREQUAL nobody)
-  execute_process(
-    COMMAND id -ng ${WITH_USER}
-    OUTPUT_VARIABLE TS_PKGSYSGROUP
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+  execute_process(COMMAND id -ng ${WITH_USER} OUTPUT_VARIABLE TS_PKGSYSGROUP OUTPUT_STRIP_TRAILING_WHITESPACE)
 else()
   set(TS_PKGSYSGROUP ${WITH_GROUP})
 endif()
@@ -208,8 +147,7 @@ option(ENABLE_POSIX_CAP "Use POSIX capabilities, turn OFF to use id switching. (
 )
 
 option(ENABLE_PROFILER "Use gperftools profiler (default OFF)")
-set(ENABLE_TPROXY
-    "AUTO"
+set(ENABLE_TPROXY "AUTO"
     CACHE
       STRING
       "Use TPROXY to enable connection transparency. (default AUTO)
@@ -225,22 +163,10 @@ option(ENABLE_HIGHWAY_DISPATCH
 )
 
 option(ENABLE_EXAMPLE "Build example directory (default OFF)")
-set(TS_MAX_HOST_NAME_LEN
-    256
-    CACHE STRING "Max host name length (default 256)"
-)
-set(MAX_EVENT_THREADS
-    4096
-    CACHE STRING "Max number of event threads (default 4096)"
-)
-set(MAX_THREADS_PER_TYPE
-    3072
-    CACHE STRING "Max number of threads per event type (default 3072)"
-)
-set(TS_USE_DIAGS
-    1
-    CACHE STRING "Use diags (default 1)"
-)
+set(TS_MAX_HOST_NAME_LEN 256 CACHE STRING "Max host name length (default 256)")
+set(MAX_EVENT_THREADS 4096 CACHE STRING "Max number of event threads (default 4096)")
+set(MAX_THREADS_PER_TYPE 3072 CACHE STRING "Max number of threads per event type (default 3072)")
+set(TS_USE_DIAGS 1 CACHE STRING "Use diags (default 1)")
 option(ENABLE_CRIPTS "Build and install the Cripts library and headers  (default OFF)")
 
 set(TS_USE_FAST_SDK ${ENABLE_FAST_SDK})
@@ -317,20 +243,13 @@ else()
 endif()
 check_openssl_is_quictls(SSLLIB_IS_QUICTLS "${OPENSSL_INCLUDE_DIR}")
 
-if(NOT SSLLIB_IS_BORINGSSL
-   AND NOT SSLLIB_IS_AWSLC
-   AND OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0"
-)
+if(NOT SSLLIB_IS_BORINGSSL AND NOT SSLLIB_IS_AWSLC AND OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
   set(SSLLIB_IS_AT_LEAST_OPENSSL3 TRUE)
   add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_AT_LEAST_OPENSSL3)
 endif()
 
 check_openssl_has_quic_tls_cbs(SSLLIB_HAS_QUIC_TLS_CBS "${OPENSSL_INCLUDE_DIR}")
-if(SSLLIB_HAS_QUIC_TLS_CBS
-   AND NOT SSLLIB_IS_BORINGSSL
-   AND NOT SSLLIB_IS_AWSLC
-   AND NOT SSLLIB_IS_QUICTLS
-)
+if(SSLLIB_HAS_QUIC_TLS_CBS AND NOT SSLLIB_IS_BORINGSSL AND NOT SSLLIB_IS_AWSLC AND NOT SSLLIB_IS_QUICTLS)
   set(TS_OPENSSL_QUIC_TLS_CBS_COMPAT TRUE)
   add_compile_definitions(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
 endif()
@@ -344,9 +263,7 @@ check_openssl_has_native_quic(SSLLIB_HAS_NATIVE_QUIC "${OPENSSL_INCLUDE_DIR}")
 set(TS_HAS_OPENSSL_QUIC FALSE)
 if(SSLLIB_HAS_NATIVE_QUIC
    AND NOT SSLLIB_IS_BORINGSSL
-   AND NOT SSLLIB_IS_AWSLC
-   AND NOT SSLLIB_IS_QUICTLS
-   AND NOT ENABLE_QUICHE
+   AND NOT SSLLIB_IS_AWSLC AND NOT SSLLIB_IS_QUICTLS AND NOT ENABLE_QUICHE
 )
   set(TS_HAS_OPENSSL_QUIC TRUE)
 endif()
@@ -373,10 +290,7 @@ if(ENABLE_QUICHE)
   find_package(quiche REQUIRED)
 
   set(TS_HAS_QUICHE ${quiche_FOUND})
-  if(NOT SSLLIB_IS_BORINGSSL
-     AND NOT SSLLIB_IS_QUICTLS
-     AND NOT TS_OPENSSL_QUIC_TLS_CBS_COMPAT
-  )
+  if(NOT SSLLIB_IS_BORINGSSL AND NOT SSLLIB_IS_QUICTLS AND NOT TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
     message(
       FATAL_ERROR "Use of BoringSSL, OPENSSL/QUICTLS, or OpenSSL QUIC TLS callbacks is required if quiche is used."
     )
@@ -386,7 +300,7 @@ if(ENABLE_QUICHE)
     # Until we get quictls support integrated with quiche, we just print this message.
     # Once the above that is done, then we can just validate the version.
     message(
-      "WARNING - Using quictls requires using a special version of quiche. Make sure quictls is supported in quiche."
+            "WARNING - Using quictls requires using a special version of quiche. Make sure quictls is supported in quiche."
     )
   elseif(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
     message(STATUS "Using OpenSSL QUIC TLS callbacks compatibility for quiche")
@@ -433,10 +347,7 @@ auto_option(
   TS_QUICHE_HAS_QMUX
 )
 
-if(TS_HAS_QUIC_BACKEND
-   AND NOT TS_USE_QUIC
-   AND NOT TS_USE_QMUX
-)
+if(TS_HAS_QUIC_BACKEND AND NOT TS_USE_QUIC AND NOT TS_USE_QMUX)
   message(WARNING "A QUIC backend is enabled but neither UDP QUIC nor QMux is, so QUIC will not be served.")
 endif()
 
@@ -510,10 +421,7 @@ endif()
 # Enabling it on FreeBSD needs those legacy wrappers made analysis-clean first.
 # Elsewhere the platform leaves the pthread primitives un-annotated, so only
 # annotated code is analyzed and this stays quiet until a real violation.
-if(ENABLE_THREAD_SAFETY_ANALYSIS
-   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"
-   AND NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD"
-)
+if(ENABLE_THREAD_SAFETY_ANALYSIS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
   add_compile_options(-Wthread-safety)
   if(THREAD_SAFETY_ANALYSIS_AS_ERROR)
     add_compile_options(-Werror=thread-safety)
@@ -577,8 +485,8 @@ if(EXTERNAL_YAML_CPP)
   message(STATUS "Looking for external yaml-cpp")
   find_package(yaml-cpp "0.8.0" REQUIRED)
   set(YAMLCPP_LIB_VERSION ${yaml-cpp_VERSION})
-  find_package_message(
-    yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")" "${yaml-cpp_CONFIG}"
+  find_package_message(yaml-cpp "Found yaml-cpp: ${yaml-cpp_CONFIG} (found version \"${yaml-cpp_VERSION}\")"
+                       "${yaml-cpp_CONFIG}"
   )
 endif()
 
@@ -610,10 +518,7 @@ check_symbol_exists(IP_TOS "netinet/ip.h" TS_HAS_IP_TOS)
 check_symbol_exists(SO_MARK "sys/socket.h" TS_HAS_SO_MARK)
 check_symbol_exists(SO_PEERCRED "sys/socket.h" TS_HAS_SO_PEERCRED)
 if(TS_NO_USE_TLS13)
-  set(TS_USE_TLS13
-      FALSE
-      CACHE
-  )
+  set(TS_USE_TLS13 FALSE CACHE)
 endif()
 check_symbol_exists(clock_gettime time.h HAVE_CLOCK_GETTIME)
 check_symbol_exists(epoll_create "sys/epoll.h" TS_USE_EPOLL)
@@ -649,8 +554,10 @@ check_symbol_exists(prctl "sys/prctl.h" HAVE_PRCTL)
 if(TS_USE_HWLOC)
   list(APPEND CMAKE_REQUIRED_INCLUDES ${hwloc_INCLUDE_DIRS})
   check_source_compiles(
-    C "#include <hwloc.h>
-    int main() { return HWLOC_OBJ_PU; }" HAVE_HWLOC_OBJ_PU
+    C
+    "#include <hwloc.h>
+    int main() { return HWLOC_OBJ_PU; }"
+    HAVE_HWLOC_OBJ_PU
   )
   list(REMOVE_ITEM CMAKE_REQUIRED_INCLUDES ${hwloc_INCLUDE_DIRS})
 endif()
@@ -680,20 +587,28 @@ check_symbol_exists(pthread_getname_np pthread.h HAVE_PTHREAD_GETNAME_NP)
 check_symbol_exists(pthread_get_name_np pthread.h HAVE_PTHREAD_GET_NAME_NP)
 
 check_source_compiles(
-  C "#include <pthread.h>
-  void main() { pthread_setname_np(\"name\"); }" HAVE_PTHREAD_SETNAME_NP_1
+  C
+  "#include <pthread.h>
+  void main() { pthread_setname_np(\"name\"); }"
+  HAVE_PTHREAD_SETNAME_NP_1
 )
 check_source_compiles(
-  C "#include <pthread.h>
-  void main() { pthread_setname_np(0, \"name\"); }" HAVE_PTHREAD_SETNAME_NP_2
+  C
+  "#include <pthread.h>
+  void main() { pthread_setname_np(0, \"name\"); }"
+  HAVE_PTHREAD_SETNAME_NP_2
 )
 check_source_compiles(
-  C "#include <pthread.h>
-  void main() { pthread_set_name_np(\"name\"); }" HAVE_PTHREAD_SET_NAME_NP_1
+  C
+  "#include <pthread.h>
+  void main() { pthread_set_name_np(\"name\"); }"
+  HAVE_PTHREAD_SET_NAME_NP_1
 )
 check_source_compiles(
-  C "#include <pthread.h>
-  void main() { pthread_set_name_np(0, \"name\"); }" HAVE_PTHREAD_SET_NAME_NP_2
+  C
+  "#include <pthread.h>
+  void main() { pthread_set_name_np(0, \"name\"); }"
+  HAVE_PTHREAD_SET_NAME_NP_2
 )
 list(REMOVE_ITEM CMAKE_REQUIRED_LIBRARIES pthread)
 # Check ssl functionality
@@ -714,6 +629,8 @@ check_symbol_exists(DH_get_2048_256 "openssl/dh.h" TS_USE_GET_DH_2048_256)
 check_symbol_exists(OPENSSL_NO_TLS_3 "openssl/ssl.h" TS_NO_USE_TLS12)
 check_symbol_exists(SSL_CTX_set_client_hello_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_CLIENT_HELLO_CB)
 check_symbol_exists(SSL_CTX_set_select_certificate_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB)
+check_symbol_exists(SSL_CTX_set1_server_cert_type "openssl/ssl.h" HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE)
+check_symbol_exists(SSL_CREDENTIAL_new_raw_public_key "openssl/ssl.h" HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY)
 check_symbol_exists(SSL_set1_verify_cert_store "openssl/ssl.h" TS_HAS_VERIFY_CERT_STORE)
 check_symbol_exists(SSL_get_shared_curve "openssl/ssl.h" HAVE_SSL_GET_SHARED_CURVE)
 check_symbol_exists(SSL_get_curve_name "openssl/ssl.h" HAVE_SSL_GET_CURVE_NAME)
@@ -723,6 +640,20 @@ check_symbol_exists(SSL_CTX_get0_implemented_groups "openssl/ssl.h" HAVE_SSL_CTX
 check_symbol_exists(SSL_get_group_id "openssl/ssl.h" HAVE_SSL_GET_GROUP_ID)
 check_symbol_exists(SSL_get_group_name "openssl/ssl.h" HAVE_SSL_GET_GROUP_NAME)
 check_symbol_exists(SSL_group_to_name "openssl/ssl.h" HAVE_SSL_GROUP_TO_NAME)
+check_symbol_exists(SSL_get_sigalgs "openssl/ssl.h" HAVE_SSL_GET_SIGALGS)
+check_symbol_exists(SSL_get_shared_sigalgs "openssl/ssl.h" HAVE_SSL_GET_SHARED_SIGALGS)
+check_symbol_exists(SSL_get0_peer_verify_algorithms "openssl/ssl.h" HAVE_SSL_GET0_PEER_VERIFY_ALGORITHMS)
+check_symbol_exists(SSL_get_signature_algorithm_used "openssl/ssl.h" HAVE_SSL_GET_SIGNATURE_ALGORITHM_USED)
+check_cxx_source_compiles(
+  "#include <openssl/ssl.h>
+  int main() {
+    SSL *ssl = nullptr;
+    int digest = 0;
+    int type = 0;
+    return SSL_get_signature_nid(ssl, &digest) + SSL_get_signature_type_nid(ssl, &type);
+  }"
+  HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS
+)
 check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
 check_symbol_exists(SSL_read_early_data "openssl/ssl.h" HAVE_SSL_READ_EARLY_DATA)
 check_symbol_exists(SSL_write_early_data "openssl/ssl.h" HAVE_SSL_WRITE_EARLY_DATA)
@@ -753,23 +684,29 @@ else()
   set(TS_USE_HELLO_CB FALSE)
 endif()
 
-if(HAVE_SSL_SET_MAX_EARLY_DATA
-   OR HAVE_SSL_READ_EARL_DATA
-   OR HAVE_SSL_WRITE_EARLY_DATA
-   OR HAVE_SSL_IN_EARLY_DATA
-)
+if(HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE OR HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY)
+  set(TS_USE_RPK TRUE)
+else()
+  set(TS_USE_RPK FALSE)
+endif()
+
+if(HAVE_SSL_SET_MAX_EARLY_DATA OR HAVE_SSL_READ_EARL_DATA OR HAVE_SSL_WRITE_EARLY_DATA OR HAVE_SSL_IN_EARLY_DATA)
   set(TS_HAS_TLS_EARLY_DATA TRUE)
 else()
   set(TS_HAS_TLS_EARLY_DATA FALSE)
 endif()
 
 check_source_compiles(
-  C "#include <openssl/ssl.h>
-  int main() { int x = SSL_CTRL_GET_EXTRA_CHAIN_CERTS; return 0; }" HAVE_NATIVE_DUAL_CERT_SUPPORT
+  C
+  "#include <openssl/ssl.h>
+  int main() { int x = SSL_CTRL_GET_EXTRA_CHAIN_CERTS; return 0; }"
+  HAVE_NATIVE_DUAL_CERT_SUPPORT
 )
 check_source_compiles(
-  C "#include <openssl/ex_data.h>
-  int main() { CRYPTO_EX_unused x; return 0; }" HAVE_CRYPTO_EX_UNUSED
+  C
+  "#include <openssl/ex_data.h>
+  int main() { CRYPTO_EX_unused x; return 0; }"
+  HAVE_CRYPTO_EX_UNUSED
 )
 check_cxx_source_compiles(
   "#include <openssl/crypto.h>
@@ -799,10 +736,7 @@ if(SSLLIB_IS_BORINGSSL OR SSLLIB_IS_AWSLC)
 else()
   # This probe is only meaningful for BoringSSL-family libraries. Force it off
   # for OpenSSL so a stale cache or macro shape change can't enable bssl:: code.
-  set(HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
-      FALSE
-      CACHE INTERNAL "GENERAL_NAME lives in the bssl namespace" FORCE
-  )
+  set(HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE FALSE CACHE INTERNAL "GENERAL_NAME lives in the bssl namespace" FORCE)
 endif()
 # Prevent unrelated feature probes from inheriting the OpenSSL dependencies.
 list(REMOVE_ITEM CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
@@ -836,11 +770,7 @@ if(ENABLE_DOCS OR ENABLE_URTEST)
 endif()
 
 if(ENABLE_DOCS)
-  find_package(
-    Java
-    COMPONENTS Runtime
-    REQUIRED
-  )
+  find_package(Java COMPONENTS Runtime REQUIRED)
 
   find_program(GRAPHVIZ_DOT dot REQUIRED)
 endif()
@@ -853,18 +783,11 @@ if(ENABLE_URTEST)
   # deterministic across runs.
   string(MD5 _build_dir_hash "${CMAKE_BINARY_DIR}")
   string(SUBSTRING "${_build_dir_hash}" 0 8 _build_dir_hash)
-  set(URTEST_SANDBOX
-      "/tmp/urtest_${_build_dir_hash}"
+  set(URTEST_SANDBOX "/tmp/urtest_${_build_dir_hash}"
       CACHE STRING "Location for Uranium test output (default /tmp/urtest_<hash>)"
   )
-  set(URTEST_OPTIONS
-      ""
-      CACHE STRING "Additional options for Uranium tests (default \"\")"
-  )
-  if(DEFINED AUTEST_SANDBOX
-     OR DEFINED AUTEST_OPTIONS
-     OR DEFINED PYTEST_OPTIONS
-  )
+  set(URTEST_OPTIONS "" CACHE STRING "Additional options for Uranium tests (default \"\")")
+  if(DEFINED AUTEST_SANDBOX OR DEFINED AUTEST_OPTIONS OR DEFINED PYTEST_OPTIONS)
     message(
       FATAL_ERROR
         "AUTEST_SANDBOX, AUTEST_OPTIONS, and PYTEST_OPTIONS were removed; use URTEST_SANDBOX and URTEST_OPTIONS"
@@ -935,7 +858,7 @@ add_subdirectory(lib)
 # Note: -DCMAKE_COMPILE_WARNING_AS_ERROR=ON will turn warnings into errors.
 add_compile_options(-pipe -Wall -Wextra)
 add_compile_options(
-  "$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override;-Wno-vla-extension;-fno-strict-aliasing>"
+                    "$<$<COMPILE_LANGUAGE:CXX>:-Wno-noexcept-type;-Wsuggest-override;-Wno-vla-extension;-fno-strict-aliasing>"
 )
 add_compile_options("$<$<CXX_COMPILER_ID:GNU>:-Wno-format-truncation>")
 
@@ -1015,11 +938,11 @@ endif()
 add_subdirectory(ext)
 
 if(ENABLE_DOCS)
-  set(DOC_LANG
-      en
-      CACHE STRING "Document language option"
-  )
+  set(DOC_LANG en CACHE STRING "Document language option")
   add_subdirectory(doc)
+endif()
+if(ENABLE_DOXYGEN)
+  include(cmake/Doxygen.cmake)
 endif()
 add_subdirectory(rc)
 
@@ -1039,18 +962,14 @@ add_custom_target(
 
 function(add_clang_format_target target)
   add_custom_target(
-    clang-format-${target}
-    ${CMAKE_SOURCE_DIR}/tools/clang-format.sh ${CMAKE_SOURCE_DIR}/${target}
+    clang-format-${target} ${CMAKE_SOURCE_DIR}/tools/clang-format.sh ${CMAKE_SOURCE_DIR}/${target}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Checking clang-format for ${target}"
     VERBATIM
   )
   add_dependencies(clang-format-${target} clang-format-install)
   list(APPEND CLANG_FORMAT_TARGETS clang-format-${target})
-  set(CLANG_FORMAT_TARGETS
-      ${CLANG_FORMAT_TARGETS}
-      PARENT_SCOPE
-  )
+  set(CLANG_FORMAT_TARGETS ${CLANG_FORMAT_TARGETS} PARENT_SCOPE)
 endfunction(add_clang_format_target)
 
 add_clang_format_target(src)
@@ -1069,35 +988,28 @@ add_custom_target(
 )
 
 add_custom_target(
-  yapf
-  ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
+  ruff ${CMAKE_SOURCE_DIR}/tools/ruff.sh ${CMAKE_SOURCE_DIR}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "formatting python files"
+  COMMENT "formatting Python files"
   VERBATIM
 )
 
 add_custom_target(
-  cmake-format
-  ${CMAKE_SOURCE_DIR}/tools/cmake-format.sh ${CMAKE_SOURCE_DIR}
+  cmakefmt ${CMAKE_SOURCE_DIR}/tools/cmakefmt.sh ${CMAKE_SOURCE_DIR}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "formatting CMakeLists.txt files"
   VERBATIM
 )
 
 add_custom_target(
-  whitespace-format
-  ${CMAKE_SOURCE_DIR}/tools/whitespace-format.sh
+  whitespace-format ${CMAKE_SOURCE_DIR}/tools/whitespace-format.sh
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
   COMMENT "fixing whitespace issues (trailing whitespace, DOS line endings)"
   VERBATIM
 )
 
 # Add a format target that runs all the formatters.
-add_custom_target(
-  format
-  DEPENDS clang-format yapf cmake-format whitespace-format
-  COMMENT "formatting all files"
-)
+add_custom_target(format DEPENDS clang-format ruff cmakefmt whitespace-format COMMENT "formatting all files")
 
 # Install pre-commit hook if this is a git repository (including worktrees).
 if(GIT_COMMON_DIR)
@@ -1114,9 +1026,9 @@ endif()
 add_custom_target(
   rat
   COMMENT "Running Apache RAT"
-  COMMAND java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.17.jar --input-exclude-file
-          ${CMAKE_SOURCE_DIR}/ci/rat-exclude.txt --input-include-file ${CMAKE_SOURCE_DIR}/ci/rat-include.txt --
-          ${CMAKE_SOURCE_DIR}
+  COMMAND
+    java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.17.jar --input-exclude-file ${CMAKE_SOURCE_DIR}/ci/rat-exclude.txt
+    --input-include-file ${CMAKE_SOURCE_DIR}/ci/rat-include.txt -- ${CMAKE_SOURCE_DIR}
 )
 
 # Create an empty directories for ATS runtime
@@ -1126,8 +1038,8 @@ install(DIRECTORY DESTINATION ${CMAKE_INSTALL_CACHEDIR})
 
 install(CODE "set(OWNER_USER ${TS_PKGSYSUSER})")
 install(CODE "set(OWNER_GROUP ${TS_PKGSYSGROUP})")
-install(
-  CODE "set(CHOWN_DIRS ${CMAKE_INSTALL_FULL_LOGDIR} ${CMAKE_INSTALL_FULL_RUNSTATEDIR} ${CMAKE_INSTALL_FULL_CACHEDIR})"
+install(CODE
+        "set(CHOWN_DIRS ${CMAKE_INSTALL_FULL_LOGDIR} ${CMAKE_INSTALL_FULL_RUNSTATEDIR} ${CMAKE_INSTALL_FULL_CACHEDIR})"
 )
 install(SCRIPT cmake/post_install.cmake)
 

@@ -2,7 +2,7 @@
 
   SNISupport.cc provides implementations for SNISupport methods
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -55,6 +55,12 @@ TLSSNISupport::ClientHello *
 TLSSNISupport::get_client_hello() const
 {
   return this->_ch;
+}
+
+void
+TLSSNISupport::clear_client_hello()
+{
+  this->_ch = nullptr;
 }
 
 void

@@ -39,7 +39,6 @@ def _build(source: str, filename: str = SystemDefaults.DEFAULT_FILENAME) -> HRW4
 
 
 class TestAssignments:
-
     def test_simple_assignment(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo = "test";\n}')
         a = ast.body[0].body[0]
@@ -109,7 +108,6 @@ class TestAssignments:
 
 
 class TestFunctionCalls:
-
     def test_no_args(self):
         ast = _build('REMAP {\n    set-debug();\n}')
         fc = ast.body[0].body[0]
@@ -137,7 +135,6 @@ class TestFunctionCalls:
 
 
 class TestSections:
-
     def test_comments_in_section_body_are_kept_in_order(self):
         src = 'REMAP {\n    # a comment\n    set-debug();\n    # another comment\n}'
         ast = _build(src)
@@ -180,7 +177,6 @@ class TestSections:
 
 
 class TestVarSections:
-
     def test_comments_in_var_section_are_kept_in_order(self):
         src = 'VARS {\n    # comment\n    x: bool;\n    # another\n    y: int;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
@@ -226,7 +222,6 @@ class TestVarSections:
 
 
 class TestProcedures:
-
     def test_basic_decl(self):
         src = 'procedure local::stamp($tag) {\n    inbound.req.X-Stamp = "$tag";\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
@@ -246,8 +241,7 @@ class TestProcedures:
         assert pd.params[0].default == NumberValue(raw="300")
 
     def test_body(self):
-        src = ('procedure local::multi() {\n    inbound.req.X = "a";\n'
-               '    set-debug();\n}\nREMAP {\n    set-debug();\n}')
+        src = 'procedure local::multi() {\n    inbound.req.X = "a";\n    set-debug();\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         pd = ast.body[0]
         assert isinstance(pd, ProcedureDecl)
@@ -257,7 +251,6 @@ class TestProcedures:
 
 
 class TestConditionExpressions:
-
     def _first_condition(self, source: str):
         ast = _build(source)
         return ast.body[0].body[0].condition
@@ -336,7 +329,8 @@ class TestConditionExpressions:
 
     def test_and_condition(self):
         cond = self._first_condition(
-            'REMAP {\n    if inbound.req.X-A == "a" && inbound.req.X-B == "b" {\n        set-debug();\n    }\n}')
+            'REMAP {\n    if inbound.req.X-A == "a" && inbound.req.X-B == "b" {\n        set-debug();\n    }\n}'
+        )
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, Comparison)
@@ -344,7 +338,8 @@ class TestConditionExpressions:
 
     def test_or_condition(self):
         cond = self._first_condition(
-            'REMAP {\n    if inbound.req.X-A == "a" || inbound.req.X-B == "b" {\n        set-debug();\n    }\n}')
+            'REMAP {\n    if inbound.req.X-A == "a" || inbound.req.X-B == "b" {\n        set-debug();\n    }\n}'
+        )
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
 
@@ -396,7 +391,8 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if inbound.req.X-A == "a" || inbound.req.X-B == "b" && inbound.req.X-C == "c" {\n'
-            '        set-debug();\n    }\n}')
+            '        set-debug();\n    }\n}'
+        )
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
         assert isinstance(cond.left, Comparison)
@@ -409,9 +405,8 @@ class TestConditionExpressions:
     def test_not_with_and(self):
         # !ident && comparison  should parse as  (!ident) && comparison
         cond = self._first_condition(
-            'REMAP {\n'
-            '    if !inbound.resp.All-Cache && inbound.req.X-B == "b" {\n'
-            '        set-debug();\n    }\n}')
+            'REMAP {\n    if !inbound.resp.All-Cache && inbound.req.X-B == "b" {\n        set-debug();\n    }\n}'
+        )
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, NotOp)
@@ -423,9 +418,8 @@ class TestConditionExpressions:
     def test_not_comparison_with_or(self):
         # !(a == "x") || b == "y"  should parse as  (!(a == "x")) || (b == "y")
         cond = self._first_condition(
-            'REMAP {\n'
-            '    if !(inbound.req.X-A == "x") || inbound.req.X-B == "y" {\n'
-            '        set-debug();\n    }\n}')
+            'REMAP {\n    if !(inbound.req.X-A == "x") || inbound.req.X-B == "y" {\n        set-debug();\n    }\n}'
+        )
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
         assert isinstance(cond.left, NotOp)
@@ -454,7 +448,8 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if (inbound.req.X-A == "a" || inbound.req.X-B == "b") && inbound.req.X-C == "c" {\n'
-            '        set-debug();\n    }\n}')
+            '        set-debug();\n    }\n}'
+        )
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, Group)
@@ -470,7 +465,8 @@ class TestConditionExpressions:
         cond = self._first_condition(
             'REMAP {\n'
             '    if !(inbound.req.X-A == "x" || inbound.req.X-B == "y") && inbound.req.X-C == "z" {\n'
-            '        set-debug();\n    }\n}')
+            '        set-debug();\n    }\n}'
+        )
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, NotOp)
@@ -482,7 +478,6 @@ class TestConditionExpressions:
 
 
 class TestIfBlocks:
-
     def test_simple_if(self):
         ast = _build('REMAP {\n    if true {\n        inbound.req.X = "y";\n    }\n}')
         ib = ast.body[0].body[0]
@@ -510,7 +505,8 @@ class TestIfBlocks:
         src = (
             'REMAP {\n    if inbound.req.X == "a" {\n        set-debug();\n'
             '    } elif inbound.req.X == "b" {\n        set-debug();\n'
-            '    } else {\n    }\n}')
+            '    } else {\n    }\n}'
+        )
         ib = _build(src).body[0].body[0]
         assert len(ib.elif_branches) == 1
         assert ib.has_else is True
@@ -527,7 +523,8 @@ class TestIfBlocks:
             'SEND_RESPONSE {\n    if inbound.url.path == "foo" {\n'
             '        inbound.resp.X = "f";\n    } elif inbound.url.path == "bar" {\n'
             '        inbound.resp.X = "b";\n    } else {\n'
-            '        inbound.resp.X = "other";\n    }\n}')
+            '        inbound.resp.X = "other";\n    }\n}'
+        )
         ast = _build(src)
         ib = ast.body[0].body[0]
         assert isinstance(ib, IfBlock)
@@ -541,7 +538,8 @@ class TestIfBlocks:
             'SEND_RESPONSE {\n    if inbound.url.path == "a" {\n        set-debug();\n'
             '    } elif inbound.url.path == "b" {\n        set-debug();\n'
             '    } elif inbound.url.path == "c" {\n        set-debug();\n'
-            '    } else {\n        set-debug();\n    }\n}')
+            '    } else {\n        set-debug();\n    }\n}'
+        )
         ast = _build(src)
         ib = ast.body[0].body[0]
         assert len(ib.elif_branches) == 2
@@ -549,7 +547,8 @@ class TestIfBlocks:
     def test_nested_if(self):
         src = (
             'REMAP {\n    if inbound.req.X == "a" {\n'
-            '        if inbound.req.Y == "b" {\n            set-debug();\n        }\n    }\n}')
+            '        if inbound.req.Y == "b" {\n            set-debug();\n        }\n    }\n}'
+        )
         ast = _build(src)
         outer = ast.body[0].body[0]
         assert isinstance(outer, IfBlock)
@@ -557,10 +556,7 @@ class TestIfBlocks:
         assert isinstance(inner, IfBlock)
 
     def test_mixed_body(self):
-        src = (
-            'REMAP {\n    inbound.req.X = "before";\n'
-            '    if true {\n        set-debug();\n    }\n'
-            '    inbound.req.Y = "after";\n}')
+        src = 'REMAP {\n    inbound.req.X = "before";\n    if true {\n        set-debug();\n    }\n    inbound.req.Y = "after";\n}'
         ast = _build(src)
         body = ast.body[0].body
         assert len(body) == 3
@@ -704,7 +700,6 @@ class TestSpanLines:
 
 
 class TestRealConfigs:
-
     def test_nested_ifs_from_test_data(self):
         """Validates AST for tests/data/conds/nested-ifs.input.txt pattern."""
         src = '''VARS {
@@ -828,7 +823,6 @@ REMAP {
 
 
 class TestSpans:
-
     def test_span_carries_file_line_and_column(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo = "test";\n}', filename="demo.hrw4u")
         stmt = ast.body[0].body[0]
@@ -853,7 +847,6 @@ class TestSpans:
 
 
 class TestComments:
-
     def test_top_level_comment_preserved(self):
         ast = _build('# hello\nREMAP {\n    set-debug();\n}')
         assert ast.body[0] == Comment(text="# hello", span=Span(file=SystemDefaults.DEFAULT_FILENAME, line=1, column=0))
@@ -893,7 +886,6 @@ class TestComments:
 
 
 class TestGrouping:
-
     def test_negated_group(self):
         ast = _build('REMAP {\n    if !(inbound.status > 399) {\n        set-debug();\n    }\n}')
         cond = ast.body[0].body[0].condition

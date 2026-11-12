@@ -16,7 +16,7 @@
 
 import time
 
-from tools.uranium.services import ATS, ATSFactory
+from tools.uranium.services import ATS, ATSFactory, wait_for_file_lines
 
 from .config_reload_helpers import wait_for_reload
 
@@ -28,24 +28,28 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     """
 
     ats = ats_factory.create("ts", enable_cache=True)
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "rpc|config|reload",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config|reload",
+        }
+    )
     ats.write_config_file(
         "ip_allow.yaml",
-        "ip_allow:\n"
-        "  - apply: in\n"
-        "    ip_addrs: 0/0\n"
-        "    action: allow\n"
-        "    methods: ALL\n",
+        "ip_allow:\n  - apply: in\n    ip_addrs: 0/0\n    action: allow\n    methods: ALL\n",
     )
-    ats.set_logging_yaml({"logging": {
-        "formats": [{
-            "name": "smoke",
-            "format": "%<cqtq>",
-        }]
-    }})
+    ats.set_logging_yaml(
+        {
+            "logging": {
+                "formats": [
+                    {
+                        "name": "smoke",
+                        "format": "%<cqtq>",
+                    }
+                ]
+            }
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         'sni:\n  - fqdn: "*.example.com"\n    verify_client: NONE\n',
@@ -91,6 +95,9 @@ def file_reload(*, _ats: ATS) -> None:
     touch_all_config_files(_ats=_ats)
     reload_result = _ats.traffic_ctl("config", "reload", "-t", "full_reload_smoke")
     assert reload_result.returncode == 0, reload_result.output
+    # The root briefly reports success before the record-triggered handlers reserve their subtasks; the reload
+    # summary is logged only once the root is still terminal after the confirmation delay.
+    wait_for_file_lines(_ats.diags_log, r"Config reload \[full_reload_smoke\]", 1, timeout=30)
     assert wait_for_reload(_ats, "full_reload_smoke") == "success"
     status = _ats.traffic_ctl("config", "status", "-t", "full_reload_smoke")
     assert status.returncode == 0, status.output

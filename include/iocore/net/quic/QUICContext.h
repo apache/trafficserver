@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -35,12 +35,10 @@ public:
 
   virtual ~QUICContext(){};
   virtual QUICConnectionInfoProvider *connection_info() const;
-  virtual QUICConfig::scoped_config   config() const;
 
   // For Mock
   QUICContext() {}
 
 private:
-  QUICConfig::scoped_config   _config;
   QUICConnectionInfoProvider *_connection_info = nullptr;
 };

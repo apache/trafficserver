@@ -2,7 +2,7 @@
 
   Virtual Host configuration implementation
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -628,6 +628,12 @@ VirtualHost::reconfigure(std::string_view id, ConfigContext ctx)
   plugin_reload.finish(*config);
   _configid = configProcessor.set(_configid, config.release());
   return 1;
+}
+
+unsigned
+VirtualHost::config_id()
+{
+  return _configid.load();
 }
 
 VirtualHostConfig *

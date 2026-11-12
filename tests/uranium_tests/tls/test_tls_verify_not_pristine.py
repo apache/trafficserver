@@ -36,10 +36,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""}
     for hostname in ("foo.com", "badfoo.com"):
         origin.add_response(
-            {
-                "headers": f"GET / HTTP/1.1\r\nHost: {hostname}\r\n\r\n",
-                "body": ""
-            },
+            {"headers": f"GET / HTTP/1.1\r\nHost: {hostname}\r\n\r\n", "body": ""},
             response,
         )
     return origin
@@ -67,7 +64,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
     ats = ats_factory.create("ts", enable_tls=True)
     ats.copy_to_ssl(
         *(
-            TEST_DIRECTORY / "ssl" / name for name in (
+            TEST_DIRECTORY / "ssl" / name
+            for name in (
                 "signed-foo.pem",
                 "signed-foo.key",
                 "signed-bar.pem",
@@ -76,19 +74,23 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
                 "server.key",
                 "signer.pem",
                 "signer.key",
-            )))
+            )
+        )
+    )
     ats.remap_config.add_lines(
         (
             f"map https://bar.com:{ats.https_port}/ https://foo.com:{_origin.https_port}",
             f"map https://foo.com:{ats.https_port}/ https://bar.com:{_origin.https_port}",
-        ))
+        )
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
@@ -99,7 +101,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     return ats
 
 
@@ -113,8 +116,7 @@ def request(hostname: str, *, _ats: ATS, _curl: Curl) -> str:
 
     result = _curl.run_for(
         _ats,
-        (f"--verbose --resolve '{hostname}:{_ats.https_port}:127.0.0.1' --insecure "
-         f"'https://{hostname}:{_ats.https_port}'"),
+        (f"--verbose --resolve '{hostname}:{_ats.https_port}:127.0.0.1' --insecure 'https://{hostname}:{_ats.https_port}'"),
     )
     assert result.returncode == 0, result.output
     return result.output

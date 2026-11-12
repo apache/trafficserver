@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -24,6 +24,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_map>
 
 #include "swoc/IntrusiveDList.h"
 
@@ -64,13 +65,26 @@ public:
   int encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, uint64_t &header_block_len);
 
   /*
-   * This will emit either of two events below:
-   * - QPACK_EVENT_DECODE_COMPLETE (Data: *HTTPHdr)
-   * - QPACK_EVENT_DECODE_FAILED (Data: nullptr)
+   * This will emit either of two events below, on the thread decode() is
+   * called on:
+   * - QPACK_EVENT_DECODE_COMPLETE (the event's cookie is &hdr)
+   * - QPACK_EVENT_DECODE_FAILED (the event's cookie is &hdr, or nullptr if the
+   *   decoder had already failed)
+   *
+   * Every decode() and cancel() on one QPACK has to run on the same thread:
+   * QPACK keeps the decodes it has not reported yet on lists that only that
+   * thread touches.
    */
-  int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont,
-             EThread *thread = this_ethread());
+  int decode(uint64_t stream_id, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr, Continuation *cont);
 
+  /*
+   * Stops reporting on the decodes for @a stream_id: a blocked decode is
+   * dropped, and a result still in the event queue is never delivered. Call
+   * this, on the thread decode() runs on, before the continuation or the
+   * HTTPHdr given to decode() goes away. It sends nothing to the peer.
+   *
+   * Returns the number of blocked decodes and queued results dropped.
+   */
   int cancel(uint64_t stream_id);
 
   void set_encoder_stream(QUICStreamId id);
@@ -98,7 +112,7 @@ private:
   class StaticTable
   {
   public:
-    static const XpackLookupResult lookup(uint16_t index, const char **name, size_t *name_len, const char **value,
+    static const XpackLookupResult lookup(uint64_t index, const char **name, size_t *name_len, const char **value,
                                           size_t *value_len);
     static const XpackLookupResult lookup(const char *name, size_t name_len, const char *value, size_t value_len);
 
@@ -192,17 +206,71 @@ private:
     DecodeRequest *_prev = nullptr;
   };
 
+  /*
+   * Carries one decode result to the continuation it is for. QPACK schedules
+   * this instead of that continuation, and keeps it listed until it runs, so
+   * that cancel() can withdraw a result still waiting in the event queue.
+   */
+  class DecodeReport : public Continuation
+  {
+  public:
+    DecodeReport(QPACK *qpack, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr);
+
+    int deliver(int event, Event *data);
+
+    uint64_t
+    stream_id() const
+    {
+      return this->_stream_id;
+    }
+
+    // For a report taken off QPACK's list: it still runs, but delivers nothing.
+    void
+    withdraw()
+    {
+      this->_continuation = nullptr;
+      this->_qpack        = nullptr;
+    }
+
+    class Linkage
+    {
+    public:
+      static DecodeReport *&
+      next_ptr(DecodeReport *t)
+      {
+        return t->_next;
+      }
+      static DecodeReport *&
+      prev_ptr(DecodeReport *t)
+      {
+        return t->_prev;
+      }
+    };
+
+  private:
+    // Set exactly while this report is on _qpack->_pending_reports.
+    QPACK         *_qpack;
+    Continuation  *_continuation;
+    const uint64_t _stream_id;
+    const int      _event;
+    HTTPHdr *const _hdr;
+
+    DecodeReport *_next = nullptr;
+    DecodeReport *_prev = nullptr;
+  };
+
   struct EntryReference {
     uint16_t smallest;
     uint16_t largest;
   };
 
-  XpackDynamicTable                         _dynamic_table;
-  std::map<uint64_t, struct EntryReference> _references;
-  uint32_t                                  _max_field_section_size = 0;
-  uint32_t                                  _header_field_max_size  = 0;
-  uint16_t                                  _max_table_size         = 0;
-  uint16_t                                  _max_blocking_streams   = 0;
+  std::unordered_map<QUICStreamId, QUICStreamVCAdapter::IOInfo> _streams;
+  XpackDynamicTable                                             _dynamic_table;
+  std::map<uint64_t, struct EntryReference>                     _references;
+  uint32_t                                                      _max_field_section_size = 0;
+  uint32_t                                                      _header_field_max_size  = 0;
+  uint16_t                                                      _max_table_size         = 0;
+  uint16_t                                                      _max_blocking_streams   = 0;
 
   Continuation *_event_handler = nullptr;
   void          _resume_decode();
@@ -213,6 +281,13 @@ private:
   swoc::IntrusiveDList<DecodeRequest::Linkage> _blocked_list;
   bool                                         _add_to_blocked_list(DecodeRequest *decode_request);
 
+  swoc::IntrusiveDList<DecodeReport::Linkage> _pending_reports;
+  void _report(EThread *thread, Continuation *continuation, uint64_t stream_id, int event, HTTPHdr *hdr);
+
+  // The thread the first decode() ran on. _blocked_list and _pending_reports
+  // are only safe to touch from it.
+  EThread *_decode_thread = nullptr;
+
   uint16_t _largest_known_received_index = 0;
   void     _update_largest_known_received_index_by_insert_count(uint16_t insert_count);
   void     _update_largest_known_received_index_by_stream_id(uint64_t stream_id);
@@ -220,7 +295,7 @@ private:
   void _update_reference_counts(uint64_t stream_id);
 
   // Encoder Stream
-  int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
+  int _read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint64_t &index, Arena &arena, char **value,
                                  size_t &value_len);
   int _read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char **name, size_t &name_len, char **value,
                                     size_t &value_len);

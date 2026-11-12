@@ -16,28 +16,29 @@
 #######################
 
 add_library(
-  inkcache STATIC
-  AggregateWriteBuffer.cc
-  Cache.cc
-  CacheDir.cc
-  CacheDisk.cc
-  CacheDoc.cc
-  CacheEvacuateDocVC.cc
-  CacheHosting.cc
-  CacheHttp.cc
-  CacheProcessor.cc
-  CacheRead.cc
-  CacheShm.cc
-  CacheVC.cc
-  CacheWrite.cc
-  HttpTransactCache.cc
-  PreservationTable.cc
-  RamCacheCLFUS.cc
-  RamCacheLRU.cc
-  RamCacheS3FIFO.cc
-  Store.cc
-  Stripe.cc
-  StripeSM.cc
+  inkcache
+  STATIC
+    AggregateWriteBuffer.cc
+    Cache.cc
+    CacheDir.cc
+    CacheDisk.cc
+    CacheDoc.cc
+    CacheEvacuateDocVC.cc
+    CacheHosting.cc
+    CacheHttp.cc
+    CacheProcessor.cc
+    CacheRead.cc
+    CacheShm.cc
+    CacheVC.cc
+    CacheWrite.cc
+    HttpTransactCache.cc
+    PreservationTable.cc
+    RamCacheCLFUS.cc
+    RamCacheLRU.cc
+    RamCacheS3FIFO.cc
+    Store.cc
+    Stripe.cc
+    StripeSM.cc
 )
 add_library(ts::inkcache ALIAS inkcache)
 

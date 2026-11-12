@@ -61,7 +61,8 @@ def test_dns_down_nameserver(ats_factory: ATSFactory, services: ServiceFactory) 
                 "proxy.config.diags.debug.tags": "hostdb|dns",
                 "proxy.config.dns.nameservers": f"127.0.0.1:{_dns_servers[0].port}",
                 "proxy.config.dns.resolv_conf": "NULL",
-            })
+            }
+        )
         for ordinal in ("first", "second", "third"):
             ats.remap_config.add_line(f"map /{ordinal}/host http://{ordinal}.host.com:{_origin.http_port}/")
         return ats

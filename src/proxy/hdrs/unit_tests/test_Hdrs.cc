@@ -845,6 +845,83 @@ TEST_CASE("MIME fields reuse deleted slots", "[proxy][hdrtest][mime]")
     CHECK(writable.field_create("X-Reused") == expected_slot);
     CHECK(writable.m_mime->m_fblock_list_tail == tail);
   }
+
+  auto free_list_is_descending = [](MIMEHdrImpl *mh) {
+    for (int32_t slot = mh->m_free_slot; slot != MIME_FIELD_FREE_SLOT_NONE;) {
+      MIMEField *field = mime_hdr_field_get_slotnum(mh, slot);
+
+      if (field == nullptr || field->m_readiness != MIME_FIELD_SLOT_READINESS_DELETED || field->m_free_next >= slot) {
+        return false;
+      }
+      slot = field->m_free_next;
+    }
+    return true;
+  };
+
+  SECTION("Out of order deletes rebuild a descending free list")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    std::array<MIMEField *, MIME_FIELD_BLOCK_SLOTS * 2> fields;
+    for (unsigned index = 0; index < fields.size(); ++index) {
+      fields[index] = add_field(hdr, "X-Field-" + std::to_string(index));
+    }
+
+    hdr.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 4], false);
+    CHECK(hdr.m_mime->m_free_slot == static_cast<int32_t>(MIME_FIELD_BLOCK_SLOTS + 4));
+    hdr.field_delete(fields[2], false);
+    hdr.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 1], false);
+    CHECK(hdr.m_mime->m_free_slot == MIME_FIELD_FREE_SLOT_UNINITIALIZED);
+
+    MIMEField *reused = add_field(hdr, "X-Reused");
+    CHECK(reused == fields[MIME_FIELD_BLOCK_SLOTS + 4]);
+    CHECK(hdr.m_mime->m_free_slot == static_cast<int32_t>(MIME_FIELD_BLOCK_SLOTS + 1));
+    CHECK(free_list_is_descending(hdr.m_mime));
+
+    CHECK(add_field(hdr, "X-Reused-2") == fields[MIME_FIELD_BLOCK_SLOTS + 1]);
+    CHECK(add_field(hdr, "X-Reused-3") == fields[2]);
+    CHECK(hdr.m_mime->m_free_slot == MIME_FIELD_FREE_SLOT_NONE);
+  }
+
+  SECTION("Duplicates past many free slots append without consuming them")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    constexpr unsigned       filler_count = MIME_FIELD_BLOCK_SLOTS * 256;
+    std::vector<MIMEField *> fillers;
+    for (unsigned index = 0; index < filler_count; ++index) {
+      fillers.push_back(add_field(hdr, "X-Filler-" + std::to_string(index)));
+    }
+    MIMEField *cookie = add_field(hdr, "Set-Cookie");
+    while (hdr.m_mime->m_fblock_list_tail->m_freetop < MIME_FIELD_BLOCK_SLOTS) {
+      cookie = add_field(hdr, "Set-Cookie");
+    }
+    for (MIMEField *filler : fillers) {
+      hdr.field_delete(filler, false);
+    }
+
+    int32_t const free_head = hdr.m_mime->m_free_slot;
+    REQUIRE(free_head == static_cast<int32_t>(filler_count - 1));
+    REQUIRE(free_list_is_descending(hdr.m_mime));
+
+    constexpr unsigned cookie_adds = MIME_FIELD_BLOCK_SLOTS * 64;
+    for (unsigned index = 0; index < cookie_adds; ++index) {
+      MIMEField *added = add_field(hdr, "Set-Cookie");
+
+      REQUIRE(mime_hdr_field_slotnum(hdr.m_mime, cookie) < mime_hdr_field_slotnum(hdr.m_mime, added));
+      REQUIRE(cookie->m_next_dup == added);
+      cookie = added;
+    }
+    CHECK(hdr.m_mime->m_free_slot == free_head);
+
+    MIMEField *other = add_field(hdr, "X-Other");
+    CHECK(other == fillers.back());
+    CHECK(free_list_is_descending(hdr.m_mime));
+  }
 }
 
 TEST_CASE("HdrTest", "[proxy][hdrtest]")
@@ -3196,6 +3273,19 @@ parse_response(HTTPHdr &hdr, std::string_view text)
   REQUIRE(hdr.parse_resp(&parser, &start, end, true) == ParseResult::DONE);
   http_parser_clear(&parser);
 }
+
+struct BareCRLineTest {
+  std::string_view raw_line_suffix_before_lf;
+  std::string_view normalized_field;
+};
+
+static const std::vector<BareCRLineTest> bare_cr_line_tests = {
+  {"\r\r\r\r"sv, "Extra-CRs: \r\n"sv   },
+  {"\r \r"sv,    "Extra-CRs: \r\n"sv   },
+  {"\r\r \r"sv,  "Extra-CRs: \r\n"sv   },
+  {"bar\r \r"sv, "Extra-CRs: bar\r\n"sv},
+  {"\r\t\r"sv,   "Extra-CRs: \r\n"sv   },
+};
 } // anonymous namespace
 
 TEST_CASE("HTTPHdrImpl::recompute_wks_indices rebuilds from the stored strings", "[proxy][hdrtest][wks]")
@@ -3374,9 +3464,18 @@ TEST_CASE("HTTP parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
   req_hdr.destroy();
 }
 
-TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endings", "[proxy][hdrtest]")
+TEST_CASE("HTTP request parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
 {
-  constexpr std::string_view message = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: \r\r\r\r\n\r\n"sv;
+  // Four CRs followed by LF recreate #12195. This gives a pad of 7, the largest the
+  // 3-bit field allows, so raw copying is still eligible. With five or more CRs, the
+  // pad limit alone forces a rebuild; the smaller cases below test the parser check.
+  auto test = GENERATE(from_range(bare_cr_line_tests));
+  CAPTURE(test.raw_line_suffix_before_lf);
+
+  std::string message  = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: ";
+  message             += test.raw_line_suffix_before_lf;
+  message             += '\n';
+  message             += "\r\n";
 
   HTTPParser parser;
   http_parser_init(&parser);
@@ -3385,7 +3484,7 @@ TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endin
   HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
   req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
 
-  auto start = message.data();
+  const char *start = message.data();
   REQUIRE(req_hdr.parse_req(&parser, &start, message.data() + message.size(), true) == ParseResult::DONE);
 
   std::string serialized(static_cast<size_t>(req_hdr.length_get()), '\0');
@@ -3394,10 +3493,47 @@ TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endin
   req_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
   serialized.resize(static_cast<size_t>(index));
 
-  CHECK(serialized.find("Extra-CRs: \r\n") != std::string::npos);
-  CHECK(serialized.find("Extra-CRs: \r\r") == std::string::npos);
+  CHECK(serialized.find(test.normalized_field) != std::string::npos);
+  std::string raw_field  = "Extra-CRs: ";
+  raw_field             += test.raw_line_suffix_before_lf;
+  raw_field             += '\n';
+  CHECK(serialized.find(raw_field) == std::string::npos);
 
   req_hdr.destroy();
+}
+
+TEST_CASE("HTTP response parser normalizes bare carriage returns in header line endings", "[proxy][hdrtest]")
+{
+  auto test = GENERATE(from_range(bare_cr_line_tests));
+  CAPTURE(test.raw_line_suffix_before_lf);
+  std::string message  = "HTTP/1.1 200 OK\r\nExtra-CRs: ";
+  message             += test.raw_line_suffix_before_lf;
+  message             += '\n';
+  message             += "\r\n";
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  resp_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  resp_hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
+
+  const char *start = message.data();
+  REQUIRE(resp_hdr.parse_resp(&parser, &start, message.data() + message.size(), true) == ParseResult::DONE);
+
+  std::string serialized(static_cast<size_t>(resp_hdr.length_get()), '\0');
+  int         index  = 0;
+  int         offset = 0;
+  resp_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
+  serialized.resize(static_cast<size_t>(index));
+
+  CHECK(serialized.find(test.normalized_field) != std::string::npos);
+  std::string raw_field  = "Extra-CRs: ";
+  raw_field             += test.raw_line_suffix_before_lf;
+  raw_field             += '\n';
+  CHECK(serialized.find(raw_field) == std::string::npos);
+
+  resp_hdr.destroy();
 }
 
 TEST_CASE("HTTP response parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -56,8 +56,9 @@ char const *const EThread::Metrics::Slice::STAT_NAME[] = {
 };
 
 int              thread_max_heartbeat_mseconds = THREAD_MAX_HEARTBEAT_MSECONDS;
-int              loop_time_update_probability  = 10;
-const ink_hrtime DELAY_FOR_RETRY               = HRTIME_MSECONDS(10);
+EThreadLoopHooks ethread_loop_hooks;
+int              loop_time_update_probability = 10;
+const ink_hrtime DELAY_FOR_RETRY              = HRTIME_MSECONDS(10);
 
 // To define a class inherits from Thread:
 //   1) Define an independent thread_local static member
@@ -248,6 +249,10 @@ EThread::execute_regular()
 
   Metrics::Slice *current_slice{nullptr};
 
+  if (ethread_loop_hooks.start != nullptr) {
+    ethread_loop_hooks.start();
+  }
+
   // give priority to immediate events
   while (!TSSystemState::is_event_system_shut_down()) {
     current_slice = metrics._slice.data() + (loop_start_time / HRTIME_SECOND) % Metrics::N_SLICES;
@@ -262,22 +267,19 @@ EThread::execute_regular()
     ++(current_slice->_count); // loop started, bump count.
 
     EventStatistics statistics = fire_ready_events(loop_start_time);
-    ink_hrtime      sleep_time = get_sleep_time(statistics.event_time, current_slice);
+    if (ethread_loop_hooks.between_events != nullptr) {
+      ethread_loop_hooks.between_events();
+    }
+    ink_hrtime sleep_time = get_sleep_time(statistics.event_time, current_slice);
 
     // drained the queue by this point
     ink_hrtime post_drain  = statistics.event_time;
     ink_hrtime drain_queue = post_drain - loop_start_time;
 
-    // watchdog kick - pre-sleep
-    // Relaxed store because this EThread is the only writer and the watchdog only needs a coherent timestamp.
-    this->heartbeat_state.last_sleep.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
-
+    // The watchdog heartbeat is kicked inside the tail handler, bracketing only the blocking poll -
+    // see Watchdog::SleepScope. Most of waitForActivity is dispatch work, not sleep, so timestamping
+    // around this call would attribute the busiest part of the loop to being asleep.
     tail_cb->waitForActivity(sleep_time);
-
-    // watchdog kick - post-wake
-    // Relaxed store/fetch because the monitor thread is the single reader and per-field coherence is sufficient.
-    this->heartbeat_state.last_wake.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
-    this->heartbeat_state.seq.fetch_add(1, std::memory_order_relaxed);
 
     // loop cleanup
     loop_finish_time = ink_get_hrtime();
@@ -291,6 +293,10 @@ EThread::execute_regular()
     metrics.record_loop_time(delta);
     current_slice->record_event_count(statistics.ev_count);
     current_slice->record_drain_queue(drain_queue);
+  }
+
+  if (ethread_loop_hooks.stop != nullptr) {
+    ethread_loop_hooks.stop();
   }
 }
 

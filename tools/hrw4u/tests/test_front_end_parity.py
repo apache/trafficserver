@@ -68,6 +68,7 @@ from hrw4u.visitor import HRW4UVisitor
 
 class CstBug(Enum):
     """A known way the CST emitter gets an input wrong, and so where Sema must differ from it."""
+
     # Raises out of visit() despite an error collector, so its caller gets an exception
     # instead of a diagnostic. Sema collects the same error and carries on, which is the
     # behaviour the collector was asked for.
@@ -133,7 +134,8 @@ def _compile(front_end: str, tree, input_file: Path, text: str, *, collect: bool
         text,
         collect=collect,
         sandbox=_policy_for(input_file),
-        proc_search_paths=[input_file.parent / "procs"])
+        proc_search_paths=[input_file.parent / "procs"],
+    )
 
 
 @pytest.mark.parametrize("collect", COLLECT_MODES)
@@ -244,6 +246,7 @@ def test_the_corpus_is_not_empty() -> None:
 @dataclass(frozen=True)
 class Case:
     """A construct the corpus has no fixture for."""
+
     source: str
     deny: dict | None = None  # the sandbox `deny:` block
     warn: dict | None = None  # the sandbox `warn:` block
@@ -261,173 +264,226 @@ SYNTHETIC = [
     pytest.param(
         Case(
             'REMAP {\n    if inbound.req.Path in ["a","b"] with EXT,NOCASE {\n        set-debug();\n    }\n}\n',
-            deny={"modifiers": ["EXT"]}),
-        id="first-of-two-modifiers-denied"),
+            deny={"modifiers": ["EXT"]},
+        ),
+        id="first-of-two-modifiers-denied",
+    ),
     pytest.param(
         Case(
             'REMAP {\n    if inbound.req.Path in ["a","b"] with NOCASE,EXT {\n        set-debug();\n    }\n}\n',
-            deny={"modifiers": ["EXT"]}),
-        id="second-of-two-modifiers-denied"),
+            deny={"modifiers": ["EXT"]},
+        ),
+        id="second-of-two-modifiers-denied",
+    ),
     pytest.param(Case('VARS {\n    a: bool;\n    b: bool;\n}\nREMAP {\n    a = b;\n}\n'), id="variable-to-variable-assignment"),
     pytest.param(
-        Case('REMAP {\n    if inbound.req.Host == "x" with BOGUS {\n        set-debug();\n    }\n}\n'), id="unknown-modifier"),
+        Case('REMAP {\n    if inbound.req.Host == "x" with BOGUS {\n        set-debug();\n    }\n}\n'), id="unknown-modifier"
+    ),
     pytest.param(
         Case('REMAP {\n    if inbound.req.Host == "x" with PRE,SUF {\n        set-debug();\n    }\n}\n'),
-        id="conflicting-substring-modifiers"),
+        id="conflicting-substring-modifiers",
+    ),
     pytest.param(Case('REMAP {\n    if access("") {\n        set-debug();\n    }\n}\n'), id="function-with-an-empty-argument"),
     pytest.param(Case('REMAP {\n    inbound.req.X-A = 007;\n}\n'), id="number-with-a-leading-zero"),
     pytest.param(Case('REMAP {\n    counter($nope);\n}\n'), id="param-ref-outside-a-procedure"),
     pytest.param(
         Case(
             'REMAP {\n    if inbound.req.Host == "a" && inbound.req.Host == "b" {\n        set-debug();\n    }\n}\n',
-            warn={"conditions": ["inbound.req."]}),
-        id="one-warned-condition-used-twice"),
+            warn={"conditions": ["inbound.req."]},
+        ),
+        id="one-warned-condition-used-twice",
+    ),
     pytest.param(
         Case('use syn::p\nREMAP {\n    syn::p("v");\n}\n', procedure='procedure syn::p($a) {\n    inbound.req.X-A = $zzz;\n}\n'),
-        id="unbound-param-in-a-procedure-body"),
+        id="unbound-param-in-a-procedure-body",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n    syn::p("w");\n}\n',
-            procedure='procedure syn::p($a) {\n    inbound.req.X-A = $zzz;\n}\n'),
-        id="failed-procedure-called-twice"),
+            procedure='procedure syn::p($a) {\n    inbound.req.X-A = $zzz;\n}\n',
+        ),
+        id="failed-procedure-called-twice",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
-            procedure='procedure syn::p($a) {\n    outbound.resp.X-B = "1";\n    inbound.req.X-A = $zzz;\n}\n'),
-        id="unbound-param-after-a-failed-statement"),
+            procedure='procedure syn::p($a) {\n    outbound.resp.X-B = "1";\n    inbound.req.X-A = $zzz;\n}\n',
+        ),
+        id="unbound-param-after-a-failed-statement",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
-            procedure='procedure syn::p($a) {\n    inbound.req.X-A = $zzz;\n    inbound.req.X-B = $yyy;\n}\n'),
-        id="two-unbound-params"),
+            procedure='procedure syn::p($a) {\n    inbound.req.X-A = $zzz;\n    inbound.req.X-B = $yyy;\n}\n',
+        ),
+        id="two-unbound-params",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
             procedure='procedure syn::p($a) {\n    if inbound.req.X == $zzz {\n        no-op();\n    }\n'
-            '    outbound.resp.X-B = "1";\n}\n'),
-        id="unbound-param-in-a-comparison-before-a-failed-statement"),
+            '    outbound.resp.X-B = "1";\n}\n',
+        ),
+        id="unbound-param-in-a-comparison-before-a-failed-statement",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
             procedure='procedure syn::p($a) {\n'
             '    if (inbound.req.Host == $a || inbound.req.X-B == "x-$a") && !(inbound.req.X-C == $a) {\n'
-            '        no-op();\n    }\n}\n'),
-        id="param-in-a-compound-condition-in-a-procedure"),
+            '        no-op();\n    }\n}\n',
+        ),
+        id="param-in-a-compound-condition-in-a-procedure",
+    ),
     pytest.param(
         Case('VARS {\n    f: bool;\n}\nprocedure syn::p() {\n    f = true;\n}\nREMAP {\n    syn::p();\n}\n'),
-        id="procedure-declared-after-vars"),
+        id="procedure-declared-after-vars",
+    ),
     pytest.param(
         Case(
-            'VARS {\n    f: bool;\n}\nuse syn::p\nREMAP {\n    syn::p();\n}\n',
-            procedure='procedure syn::p() {\n    no-op();\n}\n'),
-        id="use-after-vars"),
+            'VARS {\n    f: bool;\n}\nuse syn::p\nREMAP {\n    syn::p();\n}\n', procedure='procedure syn::p() {\n    no-op();\n}\n'
+        ),
+        id="use-after-vars",
+    ),
     pytest.param(
         Case('VARS {\n    n: int8;\n}\nREMAP {\n    inbound.req.X-A = "{n with NORM}";\n}\n'),
-        id="variable-interpolation-with-a-value-modifier"),
+        id="variable-interpolation-with-a-value-modifier",
+    ),
     pytest.param(
         Case('VARS {\n    n: int8;\n}\nREMAP {\n    inbound.req.X-A = "{n with NOCASE}";\n}\n'),
-        id="variable-interpolation-with-a-condition-modifier"),
+        id="variable-interpolation-with-a-condition-modifier",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
             procedure='procedure syn::p($a) {\n    if inbound.status > 399 {\n        set-debug();\n    }\n'
             '    else {\n        set-debug();\n    }\n}\n',
-            deny={"language": ["else"]}),
-        id="denied-else-in-a-procedure"),
+            deny={"language": ["else"]},
+        ),
+        id="denied-else-in-a-procedure",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
             procedure='procedure syn::p($a) {\n    if inbound.req.Host == "x"\n        with NOCASE {\n'
             '        set-debug();\n    }\n}\n',
-            deny={"modifiers": ["NOCASE"]}),
-        id="denied-modifier-in-a-procedure"),
+            deny={"modifiers": ["NOCASE"]},
+        ),
+        id="denied-modifier-in-a-procedure",
+    ),
     pytest.param(
         Case('use syn::p\nREMAP {\n    syn::p("v");\n}\n', procedure='procedure syn::p($a) {\n    inbound.req.$h = "1";\n}\n'),
-        id="syntax-error-in-a-procedure-file"),
+        id="syntax-error-in-a-procedure-file",
+    ),
     pytest.param(Case('REMAP {\n    inbound.req.X-A = $nope;\n}\n'), id="param-ref-outside-a-procedure-in-an-assignment"),
     pytest.param(
         Case('REMAP {\n    if inbound.req.X-A == $nope {\n        set-debug();\n    }\n}\n'),
-        id="param-ref-outside-a-procedure-in-a-comparison"),
+        id="param-ref-outside-a-procedure-in-a-comparison",
+    ),
     pytest.param(
-        Case('REMAP {\n    if access("/tmp/{x}") {\n        set-debug();\n    }\n}\n'),
-        id="braces-in-a-condition-function-argument"),
+        Case('REMAP {\n    if access("/tmp/{x}") {\n        set-debug();\n    }\n}\n'), id="braces-in-a-condition-function-argument"
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p();\n}\n',
-            procedure='procedure syn::p($a = "{inbound.req.Host}") {\n    inbound.req.X-A = $a;\n}\n'),
-        id="string-default-is-not-interpolated"),
+            procedure='procedure syn::p($a = "{inbound.req.Host}") {\n    inbound.req.X-A = $a;\n}\n',
+        ),
+        id="string-default-is-not-interpolated",
+    ),
     pytest.param(
         Case('use syn::p\nREMAP {\n    syn::p("5");\n}\n', procedure='procedure syn::p($a) {\n    counter($a);\n}\n'),
-        id="param-ref-as-an-operator-argument-in-a-procedure"),
+        id="param-ref-as-an-operator-argument-in-a-procedure",
+    ),
     pytest.param(
         Case('use syn::p\nREMAP {\n    # hi\n    syn::p();\n}\n', procedure='procedure syn::p() {\n    no-op();\n}\n'),
-        id="leading-comment-before-a-procedure-call"),
+        id="leading-comment-before-a-procedure-call",
+    ),
     pytest.param(
-        Case('use syn::p\nREMAP {\n    syn::p();\n}\n', procedure='procedure syn::p() {\n    # c\n}\n'),
-        id="comment-only-procedure"),
+        Case('use syn::p\nREMAP {\n    syn::p();\n}\n', procedure='procedure syn::p() {\n    # c\n}\n'), id="comment-only-procedure"
+    ),
     pytest.param(Case('use syn::p\nREMAP {\n    syn::p();\n}\n', procedure='procedure syn::p() {\n}\n'), id="empty-procedure"),
     pytest.param(
         Case('use syn::p\nREMAP {\n    syn::p();\n}\n', procedure='procedure syn::p() {\n    # c\n    no-op();\n}\n'),
-        id="procedure-opening-with-a-comment"),
+        id="procedure-opening-with-a-comment",
+    ),
     pytest.param(
         Case(
-            'use syn::p\nREMAP {\n    syn::p();\n}\n', procedure='procedure syn::p() {\n    # c\n    no-op();\n}\n',
-            comments=False),
-        id="procedure-opening-with-a-comment-comments-off"),
+            'use syn::p\nREMAP {\n    syn::p();\n}\n', procedure='procedure syn::p() {\n    # c\n    no-op();\n}\n', comments=False
+        ),
+        id="procedure-opening-with-a-comment-comments-off",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    if inbound.status > 1 {\n        no-op();\n    }\n    syn::p();\n}\n',
-            procedure='procedure syn::p() {\n    if inbound.status > 1 {\n        no-op();\n    }\n}\n'),
-        id="procedure-after-an-if"),
+            procedure='procedure syn::p() {\n    if inbound.status > 1 {\n        no-op();\n    }\n}\n',
+        ),
+        id="procedure-after-an-if",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::q();\n}\n',
-            procedure='procedure syn::p() {\n    # c\n    no-op();\n}\nprocedure syn::q() {\n    syn::p();\n    no-op();\n}\n'),
-        id="nested-procedure-first"),
+            procedure='procedure syn::p() {\n    # c\n    no-op();\n}\nprocedure syn::q() {\n    syn::p();\n    no-op();\n}\n',
+        ),
+        id="nested-procedure-first",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p($x);\n}\n',
             procedure='procedure syn::p($a) {\n    inbound.req.X-A = $a;\n}\n',
-            cst_bug=CstBug.RAISES),
-        id="param-ref-passed-to-a-procedure-outside-one"),
+            cst_bug=CstBug.RAISES,
+        ),
+        id="param-ref-passed-to-a-procedure-outside-one",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
-            procedure='procedure syn::p($a) {\n    inbound.req.X-A = "{bogus} $a";\n}\n'),
-        id="interpolation-note-in-a-procedure"),
+            procedure='procedure syn::p($a) {\n    inbound.req.X-A = "{bogus} $a";\n}\n',
+        ),
+        id="interpolation-note-in-a-procedure",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::q("v");\n}\n',
             procedure='procedure syn::p($b) {\n    inbound.req.X-A = $b;\n}\n'
-            'procedure syn::q($a) {\n    syn::p("{bogus} $a");\n}\n'),
-        id="interpolation-note-in-a-nested-call-argument"),
+            'procedure syn::q($a) {\n    syn::p("{bogus} $a");\n}\n',
+        ),
+        id="interpolation-note-in-a-nested-call-argument",
+    ),
     pytest.param(
         Case(
             'procedure syn::inner($x = $a) {\n    inbound.req.X-A = $x;\n}\n'
             'procedure syn::outer($a) {\n    syn::inner();\n}\nREMAP {\n    syn::outer("v");\n}\n',
             cst_bug=CstBug.ACCEPTS,
-            sema_error="'$a' used outside procedure context"),
-        id="default-naming-a-caller-param"),
+            sema_error="'$a' used outside procedure context",
+        ),
+        id="default-naming-a-caller-param",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("v");\n}\n',
             procedure='procedure syn::p($a, $b = $a) {\n    inbound.req.X-B = $b;\n}\n',
-            cst_bug=CstBug.MISATTRIBUTES),
-        id="default-naming-an-unbound-param"),
+            cst_bug=CstBug.MISATTRIBUTES,
+        ),
+        id="default-naming-an-unbound-param",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p("1", "2");\n}\n',
             procedure='procedure syn::p($a = "x", $b) {\n    inbound.req.X-A = "$a$b";\n}\n',
             cst_bug=CstBug.ACCEPTS,
-            sema_error="procedure 'syn::p': required parameter '$b' must not follow an optional parameter"),
-        id="required-after-optional-in-a-used-file"),
+            sema_error="procedure 'syn::p': required parameter '$b' must not follow an optional parameter",
+        ),
+        id="required-after-optional-in-a-used-file",
+    ),
     pytest.param(
         Case(
             'use syn::p\nREMAP {\n    syn::p();\n}\n',
             procedure='procedure syn::p() {\n    syn::q();\n}\nprocedure syn::q() {\n    syn::p();\n}\n',
             cst_bug=CstBug.CRASHES,
-            sema_error="circular procedure call: syn::p -> syn::q -> syn::p"),
-        id="mutual-procedure-recursion"),
+            sema_error="circular procedure call: syn::p -> syn::q -> syn::p",
+        ),
+        id="mutual-procedure-recursion",
+    ),
 ]
 
 

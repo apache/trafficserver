@@ -2,7 +2,7 @@
 
   Http2ConnectionState.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -246,6 +246,18 @@ private:
   };
 
   unsigned _adjust_concurrent_stream();
+
+  /** Top up the connection receive window after discarding a DATA frame.
+   *
+   * DATA that no stream will consume is still charged to the connection
+   * window, so nothing else would trigger a WINDOW_UPDATE for it. This tops
+   * the window back up to its configured size via restart_receiving() once it
+   * falls below the usual threshold.
+   *
+   * @param[in] discarded_length The discarded frame's payload length, used
+   *   only for debug logging.
+   */
+  void _top_up_window_after_discard(uint32_t discarded_length);
 
   /** Process an incoming SETTINGS ACK frame.
    *

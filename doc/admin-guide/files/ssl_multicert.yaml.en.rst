@@ -15,6 +15,8 @@
   specific language governing permissions and limitations
   under the License.
 
+.. include:: ../../common.defs
+
 ==================
 ssl_multicert.yaml
 ==================
@@ -128,6 +130,55 @@ ssl_key_dialog: builtin|"exec:/path/to/program [args]" (optional)
       are supported by single quoting (').  The intent is that this
       program runs a security check to ensure that the system is not
       compromised by an attacker before providing the pass phrase.
+
+ssl_rpk_enabled: 1|0 (optional)
+  Set to `1` to offer a raw public key (`RFC 7250
+  <https://www.rfc-editor.org/rfc/rfc7250>`_), derived from this entry's ``ssl_cert_name``/
+  ``ssl_key_name``, as an alternative to the X.509 certificate for inbound connections matching
+  this entry. The raw public key is offered alongside the certificate, not instead of it: a
+  client that does not support RFC 7250 negotiates a normal certificate exchange instead.
+  Defaults to `0`.
+
+  Only available in builds linked against a TLS library with RFC 7250 support (OpenSSL 3.2 or
+  later, or a sufficiently recent BoringSSL). If this key is set on a build without that support,
+  |TS| logs a warning and ignores it.
+
+  HTTP/3 support depends on the QUIC implementation |TS| is built with, and is not covered by
+  tests. With quiche, entries apply to HTTP/3 connections as they do to TLS over TCP. With
+  OpenSSL's QUIC, an HTTP/3 connection keeps the certificate types of the default
+  (``dest_ip: "*"``) entry, because QUIC connections select their certificate through a separate
+  callback: the default entry's raw public key settings apply to every HTTP/3 connection, and
+  other entries' settings do not apply to any. No warning is logged.
+
+ssl_client_rpk_ca_name: FILENAME (optional)
+  The name of the file containing the raw public key(s) (RFC 7250) that a client is trusted to
+  present for mutual TLS on this entry, PEM-encoded. *FILENAME* is resolved relative to the
+  :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable. The file may contain more than
+  one key concatenated together, which allows an "old" and "new" key to both be trusted during a
+  planned key rotation.
+
+  A client authenticating with a raw public key has no certificate chain to verify, so this
+  trusted set takes the place of the usual client-certificate verification for that connection.
+  An unmatched pin is always fatal to the connection, the same as a failed certificate check --
+  there is no separate log-only mode.
+
+  Replacing the file and running :option:`traffic_ctl config reload` takes effect for new
+  handshakes, and a TLS session a client authenticated under the old set cannot be resumed under
+  the new one.
+
+  This key only has an effect where a client certificate is actually requested, which means either
+  a non-zero :ts:cv:`proxy.config.ssl.client.certification_level` or a
+  :file:`sni.yaml` ``verify_client`` action covering the connection. With neither, no credential is
+  requested and nothing is pinned.
+
+  On HTTP/3, see the note under ``ssl_rpk_enabled`` above. A ``verify_client`` action does not
+  reach an HTTP/3 connection, so there the client certificate level is the only way to request a
+  client credential. With OpenSSL's QUIC, setting this key on the default entry lets a client that
+  prefers raw public keys negotiate one on a connection matching another entry; if that entry has
+  no trusted keys to match it against, the handshake fails rather than falling back to X.509.
+
+  Only available in builds linked against a TLS library with RFC 7250 support; see
+  ``ssl_rpk_enabled`` above.
 
 action: tunnel (optional)
   If set to ``tunnel``, Traffic Server will not participate in the
@@ -252,6 +303,20 @@ pass phrase to decrypt the keys.
 
       - ssl_cert_name: server2.pem
         ssl_key_dialog: "exec:/usr/bin/mypass foo 'ba r'"
+
+The following example configures Traffic Server to use the SSL certificate
+``server.pem`` for all requests, and offers a raw public key (RFC 7250)
+alongside it. Clients presenting a raw public key for mutual TLS are checked
+against ``client-rpk-trusted.pem`` instead of the usual certificate chain.
+
+.. code-block:: yaml
+
+    ssl_multicert:
+      - dest_ip: "*"
+        ssl_cert_name: server.pem
+        ssl_key_name: server.key
+        ssl_rpk_enabled: 1
+        ssl_client_rpk_ca_name: client-rpk-trusted.pem
 
 Migration from ssl_multicert.config
 ===================================

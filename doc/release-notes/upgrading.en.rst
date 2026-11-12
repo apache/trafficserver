@@ -65,6 +65,21 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+``RegexMatchContext``, in the installed ``tsutil/Regex.h``, is removed. A match
+limit is now passed to ``Regex::exec`` as a ``Regex::Options`` value, in which a
+zero field means the shared default:
+
+.. code-block:: cpp
+
+    Regex::Options opts;
+    opts.match_limit = 1750;
+    int rc = regex.exec(subject, matches, flags, opts);
+
+Matches with options now use the shared match configuration, including its
+1 MiB JIT stack, rather than PCRE2's defaults. Plugins that call
+``Regex::exec(subject, matches, flags)`` must be recompiled, because the symbol
+that call resolved to is gone.
+
 traffic_ctl Changes
 -------------------
 
@@ -287,6 +302,16 @@ Configuration Changes
 ---------------------
 The following :file:`records.yaml` changes have been made:
 
+- :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` now applies only to inbound connections.
+  Outbound HTTP/2 connections use the new
+  :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out`, which defaults to ``300``. Origin
+  connections now allow 300 PING frames a minute by default where they allowed 60, so a default
+  configuration closes fewer origin connections. If you set
+  :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` to anything other than the default,
+  origin connections no longer use that value and get ``300`` instead. That is stricter for
+  origins if you had set it negative (no limit) or above ``300``; set
+  :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out` as well to keep your limit for them.
+
 - The addresses in :ts:cv:`proxy.config.http.per_client.connection.exempt_list` are now also
   exempt from :ts:cv:`proxy.config.net.connections_throttle`. If you already use this list for the
   per-client limit, those addresses can now also connect when ATS is at the connection limit, and
@@ -470,6 +495,11 @@ The following :file:`records.yaml` changes have been made:
   ``HostDBInfo::State::SUSPECT`` state it actually applies to (a recovering origin allowed a limited probe budget after
   :ts:cv:`proxy.config.http.down_server.cache_time` elapses). When only the deprecated record is set, its value is mirrored
   forward to the new record and a warning is logged. When both are set, the new record wins.
+- The records.yaml entry ``proxy.config.exec_thread.watchdog.timeout_ms`` is now deprecated in favor of
+  :ts:cv:`proxy.config.exec_thread.watchdog.timeout_shrink_ms`. When only the deprecated record is set, the watchdog
+  behaves as before - it only logs a warning for each event loop iteration that runs past the timeout - and a
+  deprecation warning is logged. The new watchdog metrics and backpressure settings require
+  :ts:cv:`proxy.config.exec_thread.watchdog.timeout_shrink_ms`. When both are set, the new record wins.
 - The entry ``proxy.config.http.connect.dead.policy`` has been renamed to :ts:cv:`proxy.config.http.connect.down.policy`.
 - The records.yaml entry ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
   ``proxy.config.http.post_connect_attempts_timeout`` have been removed. Instead use

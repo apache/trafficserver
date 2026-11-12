@@ -90,9 +90,7 @@ class TestRuntime:
             ats_bin=ats_bin.resolve(),
             verifier_bin=verifier_bin.resolve(),
             sandbox_root=sandbox_root.resolve(),
-            layout={
-                key: value.rstrip("/") for key, value in layout.items()
-            },
+            layout={key: value.rstrip("/") for key, value in layout.items()},
             features=features,
             versions=versions,
         )

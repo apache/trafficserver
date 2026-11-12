@@ -80,8 +80,8 @@ def chunked_encoding_configure_smuggle_server(services: ServiceFactory, *, _smug
 
 
 def chunked_encoding_configure_ats(
-        ats_factory: ATSFactory, *, _post_server: OriginServer, _server: OriginServer, _smuggle_port: int,
-        _tls_server: OriginServer) -> ATS:
+    ats_factory: ATSFactory, *, _post_server: OriginServer, _server: OriginServer, _smuggle_port: int, _tls_server: OriginServer
+) -> ATS:
     """Configure clear-text, TLS-origin, and smuggling remaps.
 
     :param _post_server: Test-local post server configured by the test.
@@ -98,14 +98,16 @@ def chunked_encoding_configure_ats(
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map http://www.example.com http://127.0.0.1:{_server.port}",
             f"map http://www.yetanotherexample.com http://127.0.0.1:{_post_server.port}",
             f"map https://www.anotherexample.com https://127.0.0.1:{_tls_server.https_port}",
             f"map / http://127.0.0.1:{_smuggle_port}",
-        ))
+        )
+    )
     return ats
 
 
@@ -148,7 +150,8 @@ def chunked_trailers_run_case(*, drop_trailers: bool, _ats_factory: ATSFactory, 
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     if not drop_trailers:
         ats.records.update({"proxy.config.http.drop_chunked_trailers": 0})
     client = _services.verifier_client(f"client-{suffix}", replay, http_ports=[ats.http_port])
@@ -195,7 +198,8 @@ def test_chunked_encoding(ats_factory: ATSFactory, services: ServiceFactory, cur
     )
     _smuggle_server = chunked_encoding_configure_smuggle_server(services, _smuggle_port=_smuggle_port)
     _ats = chunked_encoding_configure_ats(
-        ats_factory, _post_server=_post_server, _server=_server, _smuggle_port=_smuggle_port, _tls_server=_tls_server)
+        ats_factory, _post_server=_post_server, _server=_server, _smuggle_port=_smuggle_port, _tls_server=_tls_server
+    )
 
     _server.start()
     _tls_server.start()
@@ -227,7 +231,8 @@ def test_chunked_encoding(ats_factory: ATSFactory, services: ServiceFactory, cur
             "Knock knock",
             gold="h2_chunked_POST_200.gold",
             _ats=_ats,
-            _curl=curl)
+            _curl=curl,
+        )
     for extra in ((), ("--header", "Transfer-Encoding: chunked")):
         chunked_encoding_curl_request(
             f"http://127.0.0.1:{_ats.http_port}",
@@ -239,7 +244,8 @@ def test_chunked_encoding(ats_factory: ATSFactory, services: ServiceFactory, cur
             "Knock knock",
             gold="chunked_POST_200.gold",
             _ats=_ats,
-            _curl=curl)
+            _curl=curl,
+        )
 
     _smuggle_server.start()
     time.sleep(0.1)

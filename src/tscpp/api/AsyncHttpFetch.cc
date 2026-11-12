@@ -53,7 +53,7 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
   static const size_t                          BODY_BUFFER_SIZE = 32 * 1024;
   char                                         body_buffer_[BODY_BUFFER_SIZE];
 
-  AsyncHttpFetchState(const string &url_str, HttpMethod http_method, string request_body,
+  AsyncHttpFetchState(const std::string &url_str, HttpMethod http_method, string request_body,
                       AsyncHttpFetch::StreamingFlag streaming_flag)
     : request_body_(std::move(request_body)),
       result_(AsyncHttpFetch::RESULT_FAILURE),
@@ -154,28 +154,29 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 }
 } // namespace
 
-AsyncHttpFetch::AsyncHttpFetch(const string &url_str, const string &request_body)
+AsyncHttpFetch::AsyncHttpFetch(const std::string &url_str, const std::string &request_body)
 {
   init(url_str, HTTP_METHOD_POST, request_body, STREAMING_DISABLED);
 }
 
-AsyncHttpFetch::AsyncHttpFetch(const string &url_str, HttpMethod http_method)
+AsyncHttpFetch::AsyncHttpFetch(const std::string &url_str, HttpMethod http_method)
 {
   init(url_str, http_method, "", STREAMING_DISABLED);
 }
 
-AsyncHttpFetch::AsyncHttpFetch(const string &url_str, StreamingFlag streaming_flag, const string &request_body)
+AsyncHttpFetch::AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag, const std::string &request_body)
 {
   init(url_str, HTTP_METHOD_POST, request_body, streaming_flag);
 }
 
-AsyncHttpFetch::AsyncHttpFetch(const string &url_str, StreamingFlag streaming_flag, HttpMethod http_method)
+AsyncHttpFetch::AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag, HttpMethod http_method)
 {
   init(url_str, http_method, "", streaming_flag);
 }
 
 void
-AsyncHttpFetch::init(const string &url_str, HttpMethod http_method, const string &request_body, StreamingFlag streaming_flag)
+AsyncHttpFetch::init(const std::string &url_str, HttpMethod http_method, const std::string &request_body,
+                     StreamingFlag streaming_flag)
 {
   LOG_DEBUG("Created new AsyncHttpFetch object %p", this);
   state_ = std::make_unique<AsyncHttpFetchState>(url_str, http_method, request_body, streaming_flag);
@@ -263,7 +264,7 @@ AsyncHttpFetch::getRequestUrl() const
   return state_->request_->getUrl();
 }
 
-const string &
+const std::string &
 AsyncHttpFetch::getRequestBody() const
 {
   return state_->request_body_;

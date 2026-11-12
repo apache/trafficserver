@@ -2,7 +2,7 @@
 
   Configs for PreWarming Tunnel
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -59,6 +59,12 @@ PreWarmConfig::reconfigure(ConfigContext ctx)
 
   prewarmManager.reconfigure();
   ctx.complete("PreWarm config published");
+}
+
+unsigned
+PreWarmConfig::config_id()
+{
+  return _config_id;
 }
 
 PreWarmConfigParams *

@@ -57,7 +57,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.http.accept_no_activity_timeout": 2,
             "proxy.config.net.default_inactivity_timeout": 10,
             "proxy.config.net.defer_accept": 0,
-        })
+        }
+    )
     return ats
 
 
@@ -73,11 +74,9 @@ def client_command(*, _ats: ATS, _case: AcceptTimeoutCase) -> str:
         client = f"openssl s_client -ign_eof -connect 127.0.0.1:{_ats.https_port}"
         command = f"bash {timer} {shlex.quote(client)}"
         return f"printf 'GET /.html HTTP/1.1' | {command}" if _case.incomplete_request else command
+    client = f"bash {TEST_DIRECTORY / 'tcp_client.sh'} {_ats.http_port}"
     if _case.incomplete_request:
-        request = shlex.quote(str(TEST_DIRECTORY / "create_request.sh"))
-        client = f"nc -c {request} 127.0.0.1 {_ats.http_port}"
-    else:
-        client = f"telnet 127.0.0.1 {_ats.http_port}"
+        client += " incomplete-request"
     return f"bash {timer} {shlex.quote(client)}"
 
 
@@ -103,10 +102,8 @@ def test_accept_timeout(case: AcceptTimeoutCase, ats_factory: ATSFactory, curl: 
 
     if curl.uses_uds:
         pytest.skip("raw TCP connections require a TCP listener")
-    required = ("openssl",) if case.tls else (("nc",) if case.incomplete_request else ("telnet",))
-    missing = [program for program in required if shutil.which(program) is None]
-    if missing:
-        pytest.skip(f"required program is unavailable: {', '.join(missing)}")
+    if case.tls and shutil.which("openssl") is None:
+        pytest.skip("required program is unavailable: openssl")
     _ats = configure_ats(ats_factory)
 
     _ats.start()
