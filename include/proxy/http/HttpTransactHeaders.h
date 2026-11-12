@@ -104,7 +104,7 @@ HttpTransactHeaders::is_this_http_method_supported(int method)
   return ((method == HTTP_WKSIDX_GET) || (method == HTTP_WKSIDX_POST) || (method == HTTP_WKSIDX_CONNECT) ||
           (method == HTTP_WKSIDX_DELETE) || (method == HTTP_WKSIDX_PURGE) || (method == HTTP_WKSIDX_HEAD) ||
           (method == HTTP_WKSIDX_OPTIONS) || (method == HTTP_WKSIDX_PUT) || (method == HTTP_WKSIDX_PUSH) ||
-          (method == HTTP_WKSIDX_TRACE));
+          (method == HTTP_WKSIDX_QUERY) || (method == HTTP_WKSIDX_TRACE));
 }
 
 inline int

@@ -85,6 +85,8 @@ HttpDebugNames::get_method_name(const char *method)
     return ("HTTP_METHOD_POST");
   } else if (method == HTTP_METHOD_PURGE.c_str()) {
     return ("HTTP_METHOD_PURGE");
+  } else if (method == HTTP_METHOD_QUERY.c_str()) {
+    return ("HTTP_METHOD_QUERY");
   } else if (method == HTTP_METHOD_PUT.c_str()) {
     return ("HTTP_METHOD_PUT");
   } else if (method == HTTP_METHOD_TRACE.c_str()) {

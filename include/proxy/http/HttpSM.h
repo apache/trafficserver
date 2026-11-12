@@ -206,6 +206,7 @@ write_info(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpTransact;
+  friend class TestableHttpSM;
 
 public:
   HttpSM();
@@ -607,8 +608,11 @@ private:
   HttpVCTable vc_table;
 
   HttpUserAgent     _ua{};
-  HttpVCTableEntry *server_entry = nullptr;
-  ProxyTransaction *server_txn   = nullptr;
+  HttpVCTableEntry *server_entry                     = nullptr;
+  ProxyTransaction *server_txn                       = nullptr;
+  int64_t           server_request_hdr_bytes_written = 0; ///< Header write progress on the current origin attempt.
+
+  void update_server_request_header_bytes_written();
 
   HttpTransformInfo transform_info;
   HttpTransformInfo post_transform_info;

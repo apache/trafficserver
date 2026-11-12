@@ -43,20 +43,27 @@ SPLIT_REQUESTS = 3
 
 
 class RetryOrigin:
-    """An HTTP/2 origin that rejects the first POST and accepts its retry."""
+    """An HTTP/2 origin that rejects the first request and accepts its retry."""
 
-    def __init__(self, mode: str, lifecycle: OriginLifecycle) -> None:
+    def __init__(self, mode: str, lifecycle: OriginLifecycle, method: str = "POST") -> None:
+        """Configure the origin's rejection and expected request.
+
+        :param mode: HTTP/2 rejection or drain behavior.
+        :param lifecycle: Cooperative origin shutdown controller.
+        :param method: HTTP method required on every request.
+        """
         self.mode = mode
         self.lifecycle = lifecycle
+        self.method = method
         self.attempts = 0
         self.extra_bytes = b""
         # goaway-split serves its retries on concurrent connections.
         self.lock = threading.Lock()
 
     def _validate_request(self, headers: dict[str, str], body: bytes) -> None:
-        """Verify that ATS replayed the non-idempotent request intact."""
-        if headers.get(":method") != "POST":
-            raise RuntimeError(f"expected POST, got {headers.get(':method')}")
+        """Verify that ATS replayed the request intact."""
+        if headers.get(":method") != self.method:
+            raise RuntimeError(f"expected {self.method}, got {headers.get(':method')}")
         if body != EXPECTED_BODY:
             raise RuntimeError(f"expected body {EXPECTED_BODY!r}, got {body!r}")
 
@@ -237,13 +244,13 @@ class RetryOrigin:
                 send_bytes(tls_socket, wire_bytes)
 
             if drain_succeeded:
-                print(f"drain_succeeded attempts={attempt} method=POST", flush=True)
+                print(f"drain_succeeded attempts={attempt} method={self.method}", flush=True)
                 # Leave the connection open: ATS, not the origin, must close a drained session.
                 self._wait_for_close(tls_socket)
                 return True
             if retry_succeeded:
                 print(
-                    f"retry_succeeded attempts={attempt} method=POST body={EXPECTED_BODY.decode()}",
+                    f"retry_succeeded attempts={attempt} method={self.method} body={EXPECTED_BODY.decode()}",
                     flush=True,
                 )
                 if not split:
@@ -254,14 +261,25 @@ class RetryOrigin:
         return False
 
 
-def run_server(mode: str, port: int, certificate: str, private_key: str, stop_file: str, expected_attempts: int) -> int:
-    """Serve until the client and retry-counter assertions finish."""
+def run_server(
+    mode: str, port: int, certificate: str, private_key: str, stop_file: str, expected_attempts: int, method: str = "POST"
+) -> int:
+    """Serve until the client and retry-counter assertions finish.
+
+    :param mode: HTTP/2 rejection or drain behavior.
+    :param port: TLS listener port.
+    :param certificate: Server certificate path.
+    :param private_key: Server private key path.
+    :param stop_file: Marker requesting cooperative shutdown.
+    :param expected_attempts: Total number of origin request attempts.
+    :param method: HTTP method required on every request.
+    """
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certificate, private_key)
     context.set_alpn_protocols(["h2"])
 
     lifecycle = OriginLifecycle(stop_file)
-    origin = RetryOrigin(mode, lifecycle)
+    origin = RetryOrigin(mode, lifecycle, method)
     errors: list[BaseException] = []
     threads: list[threading.Thread] = []
 
@@ -350,13 +368,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("private_key")
     parser.add_argument("stop_file")
     parser.add_argument("expected_attempts", type=int)
+    parser.add_argument("--method", default="POST", choices=("POST", "QUERY"))
     return parser.parse_args()
 
 
 def main() -> int:
     """Run the test origin."""
     args = parse_args()
-    return run_server(args.mode, args.port, args.certificate, args.private_key, args.stop_file, args.expected_attempts)
+    return run_server(args.mode, args.port, args.certificate, args.private_key, args.stop_file, args.expected_attempts, args.method)
 
 
 if __name__ == "__main__":
