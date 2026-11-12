@@ -15,14 +15,17 @@
 #  limitations under the License.
 
 import json
+import socket
 
-from tools.uranium.services import ATS, ATSFactory
+import pytest
+from tools.uranium.services import ATS, ATSFactory, wait_for_metric
 
 
-def configure_ats(ats_factory: ATSFactory) -> ATS:
+def configure_ats(ats_factory: ATSFactory, **records: object) -> ATS:
     """Use a small fixed event-thread pool.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
+    :param records: Extra or overridden records.yaml entries.
     """
 
     ats = ats_factory.create("ts")
@@ -32,6 +35,7 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.exec_thread.limit": 4,
         }
     )
+    ats.records.update(records)
     return ats
 
 
@@ -85,3 +89,27 @@ def test_traffic_ctl_server_output(ats_factory: ATSFactory) -> None:
     assert connection_tracker(_ats=_ats) == {"outbound": empty}
     assert connection_tracker("inbound", _ats=_ats) == {"inbound": empty}
     assert connection_tracker("outbound", _ats=_ats) == {"outbound": empty}
+
+
+@pytest.mark.parametrize("limit, expect_tracked", [(0, False), (3, True)])
+def test_connection_tracker_inbound_per_client_limit(ats_factory: ATSFactory, limit: int, expect_tracked: bool) -> None:
+    """Verify that inbound connections are only tracked when per-client limit is configured.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param limit: Value for proxy.config.net.per_client.max_connections_in.
+    :param expect_tracked: Whether the open client connection should appear in the inbound table.
+    """
+
+    ats = configure_ats(ats_factory, **({"proxy.config.net.per_client.max_connections_in": limit} if limit > 0 else {}))
+    ats.start()
+
+    with socket.create_connection(("127.0.0.1", ats.http_port)) as client_sock:
+        client_sock.sendall(b"GET / HTTP/1.1\r\nHost: test\r\n")
+        wait_for_metric(ats, "proxy.process.net.connections_currently_open", 1)
+        inbound = connection_tracker("inbound", _ats=ats)["inbound"]
+        if expect_tracked:
+            assert int(inbound["count"]) == 1
+            assert len(inbound["list"]) == 1
+            assert inbound["list"][0]["ip"].startswith("127.0.0.1:")
+        else:
+            assert inbound == {"count": "0", "list": []}
