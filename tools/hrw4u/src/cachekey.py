@@ -173,6 +173,7 @@ def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None
     flag = CACHEKEY_STATEMENTS.get(lhs)
     if flag is None or not flag.assignment:
         raise SymbolResolutionError(lhs, f"Unknown cache key assignment: '{lhs}'")
+
     if flag.is_switch:
         if rhs != '""':
             raise SymbolResolutionError(lhs, f'{lhs} can only be set to ""')
@@ -204,6 +205,7 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
     if not args:
         raise SymbolResolutionError(name, f"{name}() takes at least one string argument")
     names = flag.names if flag is not None else PRESENCE_STATEMENTS[name].names
+
     items = []
     for arg in args:
         item = _unquote(arg)

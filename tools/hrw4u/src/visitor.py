@@ -1008,8 +1008,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             with self.trap(ctx):
                 raise SymbolResolutionError("CACHEKEY", "CACHEKEY may only appear once")
             return
+
         self._cachekey = cachekey_section.CacheKeySection()
         self._cachekey_items(ctx.sectionBody())
+
         for error in self._cachekey.conflicts():
             with self.trap(error.statement.source or ctx):
                 raise error

@@ -208,6 +208,7 @@ class CacheKeySection:
             cachekey.check_conflicts(self.shared.statements)
         except ConflictError as error:
             return [error]
+
         errors = []
         for branch in self.chain:
             try:
