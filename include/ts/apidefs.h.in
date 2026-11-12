@@ -1108,8 +1108,9 @@ public:
 
   size_t get_cipher_suites_len() const;
 
-  // Returns an iterable container of extension type IDs
-  // This abstracts the difference between BoringSSL (extensions buffer) and OpenSSL (extension_ids array)
+  // Returns an iterable container of extension type IDs in the order the client sent them: every type in the raw
+  // extensions, including GREASE and types the SSL library does not recognize. If OpenSSL builds cannot parse the
+  // raw ClientHello, this falls back to the extensions OpenSSL recognizes.
   TSExtensionTypeList
   get_extension_types() const
   {

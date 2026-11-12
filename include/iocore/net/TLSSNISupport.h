@@ -30,6 +30,8 @@
 #include <netinet/in.h>
 #include <openssl/ssl.h>
 
+#include <array>
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <memory>
@@ -71,8 +73,16 @@ public:
       size_t _offset  = 0;
     };
 
-    uint16_t            getVersion();
-    std::string_view    getCipherSuites();
+    uint16_t         getVersion();
+    std::string_view getCipherSuites();
+    /** Iterate every extension type in the ClientHello in wire order.
+     *
+     * This includes GREASE values and extension types the TLS library does
+     * not recognize. OpenSSL omits those from its parsed ClientHello, so on
+     * OpenSSL this walks the extension types recorded from the raw
+     * ClientHello message, falling back to OpenSSL's parsed list if the raw
+     * message could not be parsed.
+     */
     ExtensionIdIterator begin();
     ExtensionIdIterator end();
 
@@ -109,6 +119,28 @@ public:
   /** Forget the CLIENT_HELLO passed to on_client_hello(), which is only valid during the ClientHello callback.
    */
   void clear_client_hello();
+
+  /** Record the extension types of a raw ClientHello handshake message.
+   *
+   * @param[in] msg The full handshake message, including its four byte header.
+   * @param[in] len The length of @a msg in bytes.
+   */
+  void on_client_hello_message(const uint8_t *msg, size_t len);
+
+  /** Validate a raw ClientHello handshake message and count its extension types.
+   *
+   * The whole message is validated even when @a capacity is too small to hold
+   * every extension type, so a caller can size exact storage from the count
+   * and parse again.
+   *
+   * @param[in] msg The full handshake message, including its four byte header.
+   * @param[in] len The length of @a msg in bytes.
+   * @param[out] types Receives the first @a capacity extension types, in wire order. May be null if @a capacity is 0.
+   * @param[in] capacity The number of entries @a types can hold.
+   * @return The number of extensions in the ClientHello, or std::nullopt if
+   *   @a msg is not a well formed ClientHello.
+   */
+  static std::optional<size_t> parse_client_hello_extension_types(const uint8_t *msg, size_t len, int *types, size_t capacity);
 
   /** Process the servername extension when a client uses one in the TLS handshake.
    *
@@ -156,6 +188,18 @@ protected:
 
   void _clear();
 
+  /** The extension types recorded from the raw ClientHello, in wire order.
+   *
+   * @param[out] count The number of recorded extension types.
+   * @return The recorded extension types, or nullptr if none are recorded.
+   */
+  const int *
+  _get_raw_extension_types(size_t &count) const
+  {
+    count = _raw_extension_count;
+    return _raw_extension_types;
+  }
+
 private:
   static int _ex_data_index;
 
@@ -164,4 +208,18 @@ private:
 
   void         _set_sni_server_name_buffer(std::string_view name);
   ClientHello *_ch = nullptr;
+
+  void _reset_raw_extension_types();
+
+  // Extension types from the raw ClientHello, used where the TLS library's
+  // parsed ClientHello omits extensions it doesn't recognize. They are held in
+  // the fixed buffer unless the ClientHello has more extensions than it holds,
+  // so the common handshake does not allocate.
+  static constexpr size_t MAX_EXTENSIONS_FOR_FAST_PATH = 32;
+
+  // The recorded extension types, or nullptr if none have been recorded.
+  int                                          *_raw_extension_types = nullptr;
+  size_t                                        _raw_extension_count = 0;
+  std::array<int, MAX_EXTENSIONS_FOR_FAST_PATH> _fast_raw_extension_storage;
+  std::unique_ptr<int[]>                        _slow_raw_extension_storage;
 };
