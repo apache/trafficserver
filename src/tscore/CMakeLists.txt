@@ -163,6 +163,7 @@ if(BUILD_TESTING)
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc
     unit_tests/test_InkAtomicList.cc
+    unit_tests/test_InkFreelist.cc
     unit_tests/test_IntrusivePtr.cc
     unit_tests/test_List.cc
     unit_tests/test_MMH.cc

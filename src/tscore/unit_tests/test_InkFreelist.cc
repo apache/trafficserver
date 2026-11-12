@@ -1,0 +1,128 @@
+/** @file
+
+    Freelist and Atomiclist tests
+
+    @section license License
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
+#include <catch2/catch_test_macros.hpp>
+
+#include <tscore/ink_queue.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <new>
+
+// Chunk-seeded cells on the free-chain at process exit must not appear
+// as direct leaks. The one issued cell is reachable via the registered root
+// region; the remaining chunk_size-1 seeded cells are also covered because
+// the entire chunk is a registered LSan root region.
+#ifdef __SANITIZE_ADDRESS__
+#define TS_ASAN_ENABLED
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define TS_ASAN_ENABLED
+#endif
+#endif
+
+#ifdef TS_ASAN_ENABLED
+TEST_CASE("FreelistChunkSeededCellsNotDirectLeak", "[libts][freelist][lsan]")
+{
+  InkFreeList *f{ink_freelist_create("lsan_seeded", 8, 8, 8)};
+
+  // Force the first chunk allocation. Do not return this cell — intentionally
+  // held to represent an "in-use" cell so LSan sees it reachable via the
+  // root region scan rather than as a dropped pointer.
+  (void)ink_freelist_new(f);
+
+  // The remaining chunk_size-1 seeded cells are on the free-chain. At process
+  // exit LSan must classify them as "still reachable" through the registered
+  // root region, not as direct leaks.
+  SUCCEED();
+}
+
+// Caller-returned cells on the free-chain at process exit must not
+// appear as direct leaks.
+TEST_CASE("FreelistReturnedCellsNotDirectLeak", "[libts][freelist][lsan]")
+{
+  InkFreeList *f{ink_freelist_create("lsan_returned", 8, 8, 8)};
+
+  // Issue several cells then return them all via single-item free.
+  void *a{ink_freelist_new(f)};
+  void *b{ink_freelist_new(f)};
+  void *c{ink_freelist_new(f)};
+  void *d{ink_freelist_new(f)};
+
+  ink_freelist_free(f, a);
+  ink_freelist_free(f, b);
+  ink_freelist_free(f, c);
+  ink_freelist_free(f, d);
+
+  // All four returned cells are now on the free-chain. At process exit LSan
+  // must classify them as "still reachable" through the registered root
+  // region, not as direct leaks.
+  SUCCEED();
+}
+#endif // TS_ASAN_ENABLED
+
+TEST_CASE("Freelist", "[libts][freelist]")
+{
+  // There is no error reporting for this routine. The allocation
+  // is assumed to never fail. Free cells hold the freelist's next pointer,
+  // so the cell type must be at least pointer-sized.
+  InkFreeList *f{ink_freelist_create("test#1", sizeof(std::intptr_t), 1, alignof(std::intptr_t))};
+
+  SECTION("Freelist allocates aligned pointers")
+  {
+    void *addr{ink_freelist_new(f)};
+
+    CHECK(!(reinterpret_cast<std::uintptr_t>(addr) & (alignof(std::intptr_t) - 1)));
+
+    ink_freelist_free(f, addr);
+  }
+
+  SECTION("Two new freelist allocations")
+  {
+    std::intptr_t *a{new (ink_freelist_new(f)) std::intptr_t{1}};
+    std::intptr_t *b{new (ink_freelist_new(f)) std::intptr_t{2}};
+
+    CHECK(((*a == 1) && (*b == 2)));
+
+    ink_freelist_free(f, a);
+    ink_freelist_free(f, b);
+  }
+
+  SECTION("Freelist stack behavior")
+  {
+    void *a{ink_freelist_new(f)};
+    void *b{ink_freelist_new(f)};
+
+    ink_freelist_free(f, a);
+    ink_freelist_free(f, b);
+
+    void *x{ink_freelist_new(f)};
+    void *y{ink_freelist_new(f)};
+
+    CHECK((a == y && b == x));
+
+    ink_freelist_free(f, x);
+    ink_freelist_free(f, y);
+  }
+}

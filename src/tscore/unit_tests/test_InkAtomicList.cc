@@ -219,3 +219,123 @@ TEST_CASE("InkFreeList: concurrent new/free", "[libts][InkFreeList]")
 
   REQUIRE(f->used == 0);
 }
+
+TEST_CASE("Empty atomic list", "[libts][InkAtomicList]")
+{
+  InkAtomicList l;
+  ink_atomiclist_init(&l, "test#1", 0);
+
+  CHECK(nullptr == ink_atomiclist_pop(&l));
+}
+
+TEST_CASE("Popall from empty atomic list", "[libts][InkAtomicList]")
+{
+  InkAtomicList l;
+  ink_atomiclist_init(&l, "test#1", 0);
+
+  CHECK(nullptr == ink_atomiclist_popall(&l));
+}
+
+TEST_CASE("Atomic list", "[libts][InkAtomicList]")
+{
+  struct test_type {
+    std::int32_t i;
+    void        *next;
+  };
+
+  InkAtomicList l;
+  ink_atomiclist_init(&l, "test#1", offsetof(test_type, next));
+
+  // We allocate memory this way to ensure proper alignment for atomiclist.
+  InkFreeList *f{ink_freelist_create("test#1", sizeof(test_type), 1, alignof(test_type))};
+
+  SECTION("Atomic list becomes empty after push and pop")
+  {
+    ink_atomiclist_push(&l, ink_freelist_new(f));
+    void *a{ink_atomiclist_pop(&l)};
+
+    CHECK(nullptr == ink_atomiclist_pop(&l));
+
+    ink_freelist_free(f, a);
+  }
+
+  SECTION("Atomic list stack behavior")
+  {
+    void *a{ink_freelist_new(f)};
+    void *b{ink_freelist_new(f)};
+
+    ink_atomiclist_push(&l, a);
+    ink_atomiclist_push(&l, b);
+
+    void *x{ink_atomiclist_pop(&l)};
+    void *y{ink_atomiclist_pop(&l)};
+
+    CHECK((a == y && b == x));
+
+    ink_freelist_free(f, x);
+    ink_freelist_free(f, y);
+  }
+
+  SECTION("Atomic list remove head")
+  {
+    void *a{ink_freelist_new(f)};
+    void *b{ink_freelist_new(f)};
+
+    ink_atomiclist_push(&l, a);
+    ink_atomiclist_push(&l, b);
+
+    CHECK(b == ink_atomiclist_remove(&l, b));
+
+    ink_freelist_free(f, a);
+    ink_freelist_free(f, b);
+  }
+
+  SECTION("Atomic list remove tail")
+  {
+    void *a{ink_freelist_new(f)};
+    void *b{ink_freelist_new(f)};
+
+    ink_atomiclist_push(&l, a);
+    ink_atomiclist_push(&l, b);
+
+    CHECK(a == ink_atomiclist_remove(&l, a));
+
+    ink_freelist_free(f, a);
+    ink_freelist_free(f, b);
+  }
+
+  SECTION("Atomic list becomes empty after popall")
+  {
+    void *a{ink_freelist_new(f)};
+    void *b{ink_freelist_new(f)};
+
+    ink_atomiclist_push(&l, a);
+    ink_atomiclist_push(&l, b);
+
+    ink_atomiclist_popall(&l);
+    CHECK(nullptr == ink_atomiclist_popall(&l));
+
+    ink_freelist_free(f, a);
+    ink_freelist_free(f, b);
+  }
+
+  SECTION("Atomic list popall behavior")
+  {
+    void *a{ink_freelist_new(f)};
+    void *b{ink_freelist_new(f)};
+
+    ink_atomiclist_push(&l, a);
+    ink_atomiclist_push(&l, b);
+
+    void     *raw_head{ink_atomiclist_popall(&l)};
+    test_type head{};
+    std::memcpy(&head, raw_head, sizeof(test_type));
+    void *tail{head.next};
+
+    CHECK(raw_head == b);
+    CHECK(tail == a);
+
+    ink_freelist_free(f, a);
+    ink_freelist_free(f, b);
+  }
+}
