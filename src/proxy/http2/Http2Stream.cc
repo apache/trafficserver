@@ -594,14 +594,20 @@ Http2Stream::do_io_close(int /* flags */)
     Http2StreamDebug("do_io_close");
 
     // Let the other end know we are going away.
-    // We only need to do this for the client side since we only need to pass through RST_STREAM
-    // from the server. If a client sends a RST_STREAM, we need to keep the server side alive so
-    // the background fill can function as intended.
     //
     // In the half-closed(local) state, server can close stream actively by sending RST_STREAM frame
     if (!this->is_outbound_connection() &&
         (this->is_state_writeable() || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL)) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    }
+
+    // An origin stream closed before the origin finished it, after a timeout for example, is
+    // cancelled. Until it is reset, the origin keeps it open and counts it against its
+    // SETTINGS_MAX_CONCURRENT_STREAMS. Background fill keeps the transaction, so the stream is
+    // not closed here while a fill is running.
+    if (this->is_outbound_connection() && _state != Http2StreamState::HTTP2_STREAM_STATE_IDLE &&
+        _state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+      this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_CANCEL);
     }
 
     // When we get here, the SM has initiated the shutdown.  Either it received a WRITE_COMPLETE, or it is shutting down.  Any
