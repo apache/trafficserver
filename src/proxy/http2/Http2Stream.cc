@@ -593,18 +593,17 @@ Http2Stream::do_io_close(int /* flags */)
     REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("do_io_close");
 
-    // Let the other end know we are going away.
-    //
-    // In the half-closed(local) state, server can close stream actively by sending RST_STREAM frame
+    // Let a client know we are going away. In the half-closed(local) state, ATS as the server can
+    // close the stream actively by sending RST_STREAM.
     if (!this->is_outbound_connection() &&
         (this->is_state_writeable() || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL)) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
     }
 
-    // An origin stream closed before the origin finished it, after a timeout for example, is
-    // cancelled. Until it is reset, the origin keeps it open and counts it against its
-    // SETTINGS_MAX_CONCURRENT_STREAMS. Background fill keeps the transaction, so the stream is
-    // not closed here while a fill is running.
+    // An origin stream that is still open in either direction when it is closed here, after a
+    // timeout for example, is cancelled. Until it is reset, the origin keeps it open and counts it
+    // against its SETTINGS_MAX_CONCURRENT_STREAMS. Background fill keeps the transaction, so the
+    // stream is not closed here while a fill is running.
     if (this->is_outbound_connection() && _state != Http2StreamState::HTTP2_STREAM_STATE_IDLE &&
         _state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_CANCEL);

@@ -72,12 +72,16 @@ def start_stalling_origin(ats_factory: ATSFactory, services: ServiceFactory) -> 
 def test_h2_origin_stalled_stream_is_reset(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """Reset a stalled origin stream with CANCEL when its transaction times out, and only that stream.
 
+    The reset is not counted as a stream error. Streams the origin finished, including one whose
+    END_STREAM came in its own empty DATA frame, are not reset.
+
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Runs the origin.
     """
     ats, origin, stop = start_stalling_origin(ats_factory, services)
 
     assert get(ats, "/ok-before") == 200
+    assert get(ats, "/split") == 200
     assert get(ats, "/stall") == 504
     output = origin.wait_for_output(r"^conn \d+ request stream=\d+ path=/stall$")
     stalled = re.search(r"^conn (\d+) request stream=(\d+) path=/stall$", output, re.MULTILINE)
@@ -85,11 +89,16 @@ def test_h2_origin_stalled_stream_is_reset(ats_factory: ATSFactory, services: Se
     output = origin.wait_for_output(rf"^conn {stalled[1]} reset stream={stalled[2]} error={CANCEL}$")
     assert get(ats, "/ok-after") == 200
 
-    output = origin.wait_for_output(r"^conn \d+ request stream=\d+ path=/ok-after$")
-    # Streams that finished normally are not reset.
-    assert len(re.findall(r"^conn \d+ reset ", output, re.MULTILINE)) == 1, output
+    # The client side is HTTP/1.1, so every stream error here would be on the origin session.
+    result = ats.traffic_ctl("metric", "get", "proxy.process.http2.stream_errors")
+    assert result.returncode == 0 and result.stdout.split() == ["proxy.process.http2.stream_errors", "0"], result.output
 
     finish_origin(services, origin, stop)
     ats.stop()
+    assert "Traceback" not in origin.output, origin.output
+    # Only the stalled stream was cancelled.
+    traffic = ats.traffic_out.read_text(errors="replace")
+    cancels = re.findall(rf"Send RST_STREAM frame: Error Code: {CANCEL}$", traffic, re.MULTILINE)
+    assert len(cancels) == 1, "\n".join(line for line in traffic.splitlines() if "RST_STREAM" in line)
     diags = ats.diags_log.read_text(errors="replace")
     assert not re.search("FATAL:|Unrecognized configuration value", diags), diags

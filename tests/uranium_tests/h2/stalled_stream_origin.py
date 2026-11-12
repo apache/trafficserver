@@ -19,7 +19,9 @@ Paths starting with /stall are never answered. Paths starting with /partial
 get their response header and part of their body, then nothing more. Paths
 starting with /slow get their response header at once and their body one byte
 at a time, every TRICKLE_INTERVAL seconds, over --slow-delay seconds, so the
-stream stays busy without going idle. Everything else is answered at once.
+stream stays busy without going idle. Paths starting with /split get their
+whole body in one DATA frame and END_STREAM in a second, empty one. Everything
+else is answered at once.
 Every connection is numbered, and each line it prints starts with "conn N".
 """
 
@@ -87,6 +89,14 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
                     )
                     connection.send_data(event.stream_id, b"x" * 10)
                     continue
+                if path.startswith("/split"):
+                    body = f"ok {path}\n".encode()
+                    connection.send_headers(
+                        event.stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")]
+                    )
+                    connection.send_data(event.stream_id, body)
+                    connection.send_data(event.stream_id, b"", end_stream=True)
+                    continue
                 if path.startswith("/slow"):
                     pieces = max(1, round(slow_delay / TRICKLE_INTERVAL))
                     connection.send_headers(
@@ -133,8 +143,9 @@ def run_server(port: int, certificate: str, private_key: str, slow_delay: float,
         plain_socket.settimeout(5)
         try:
             tls_socket = context.wrap_socket(plain_socket, server_side=True)
-        except (ssl.SSLError, TimeoutError, ConnectionError):
+        except (ssl.SSLError, TimeoutError, ConnectionError) as error:
             # Readiness probes never finish TLS, so this is not a failure on its own.
+            say(f"handshake failed {error!r}")
             plain_socket.close()
             return
         with count_lock:
