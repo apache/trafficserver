@@ -15,8 +15,10 @@
 #  limitations under the License.
 """HTTP/2 origin that never answers some streams and reports what ATS does with them.
 
-Paths starting with /stall are never answered. Paths starting with /slow are
-answered after --slow-delay seconds. Everything else is answered at once.
+Paths starting with /stall are never answered. Paths starting with /slow get
+their response header at once and their body one byte at a time, every
+TRICKLE_INTERVAL seconds, over --slow-delay seconds, so the stream stays busy
+without going idle. Everything else is answered at once.
 Every connection is numbered, and each line it prints starts with "conn N".
 """
 
@@ -34,6 +36,7 @@ from h2.connection import H2Connection
 from h2.events import ConnectionTerminated, RequestReceived, StreamReset
 
 PRINT_LOCK = threading.Lock()
+TRICKLE_INTERVAL = 0.5
 
 
 def say(message: str) -> None:
@@ -56,7 +59,8 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
     send_bytes(tls_socket, connection.data_to_send())
     say(f"conn {number} open")
 
-    slow: list[tuple[float, int, str]] = []
+    # Each entry is (next send time, stream id, path, body bytes still to send).
+    slow: list[tuple[float, int, str, int]] = []
     closed: set[int] = set()
     while not lifecycle.stopped:
         try:
@@ -77,7 +81,11 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
                 if path.startswith("/stall"):
                     continue
                 if path.startswith("/slow"):
-                    slow.append((time.monotonic() + slow_delay, event.stream_id, path))
+                    pieces = max(1, round(slow_delay / TRICKLE_INTERVAL))
+                    connection.send_headers(
+                        event.stream_id, [(":status", "200"), ("content-length", str(pieces)), ("cache-control", "no-store")]
+                    )
+                    slow.append((time.monotonic() + TRICKLE_INTERVAL, event.stream_id, path, pieces))
                     continue
                 respond(connection, event.stream_id, path)
             elif isinstance(event, StreamReset):
@@ -89,11 +97,14 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
         now = time.monotonic()
         for due in [entry for entry in slow if entry[0] <= now]:
             slow.remove(due)
-            _, stream_id, path = due
+            _, stream_id, path, left = due
             if stream_id in closed:
                 continue
-            respond(connection, stream_id, path)
-            say(f"conn {number} answered stream={stream_id} path={path}")
+            connection.send_data(stream_id, b".", end_stream=left == 1)
+            if left == 1:
+                say(f"conn {number} answered stream={stream_id} path={path}")
+            else:
+                slow.append((now + TRICKLE_INTERVAL, stream_id, path, left - 1))
 
         wire = connection.data_to_send()
         if wire:
