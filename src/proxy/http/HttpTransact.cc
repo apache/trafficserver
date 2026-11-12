@@ -793,6 +793,17 @@ find_server_and_update_current_info(HttpTransact::State *s)
     char const *const hostname = s->parent_result.hostname;
 
     if (nullptr != hostname) {
+      // A retry re-enters selection here with the previous parent's address
+      // still in parent_info.dst_addr. The PPDNSLookup validity gate would then
+      // connect to the parent this attempt already failed on; invalidate the
+      // address so the newly selected parent is resolved (a same-parent retry
+      // is a no-op).
+      if (s->parent_info.dst_addr.isValid() &&
+          (s->parent_info.name == nullptr || strcmp(s->parent_info.name, hostname) != 0 ||
+           s->parent_info.dst_addr.network_order_port() != htons(s->parent_result.port))) {
+        ats_ip_invalidate(&s->parent_info.dst_addr);
+      }
+
       s->parent_info.name = s->arena.str_store(hostname, strlen(hostname));
 
       // if host header override option enabled
