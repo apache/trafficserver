@@ -2898,7 +2898,10 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   Http2StreamDebug(session, id, "Send RST_STREAM frame: Error Code: %u", static_cast<uint32_t>(ec));
   ATS_PROBE3(http2_rst_stream_sent, this->session->get_connection_id(), id, static_cast<uint32_t>(ec));
 
-  if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
+  // CANCEL only says the stream is no longer needed, so it is not a stream error. ATS cancels an
+  // origin stream whenever it gives up on one, on a timeout or a client abort, and counting those
+  // could push the session over proxy.config.http2.stream_error_rate_threshold and close it.
+  if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR && ec != Http2ErrorCode::HTTP2_ERROR_CANCEL) {
     Metrics::Counter::increment(http2_rsb.stream_errors_count);
     ++stream_error_count;
   }
