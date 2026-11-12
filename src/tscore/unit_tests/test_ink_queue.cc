@@ -27,6 +27,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <new>
 
 // Chunk-seeded cells on the free-chain at process exit must not appear
@@ -233,11 +234,12 @@ TEST_CASE("Atomic list", "[atomiclist]")
     ink_atomiclist_push(&l, a);
     ink_atomiclist_push(&l, b);
 
-    void  *head{ink_atomiclist_popall(&l)};
-    void **head_{reinterpret_cast<void **>(reinterpret_cast<unsigned char *>(head) + l.offset)};
-    void  *tail{*head_};
+    void     *raw_head{ink_atomiclist_popall(&l)};
+    test_type head{};
+    std::memcpy(&head, raw_head, sizeof(test_type));
+    void *tail{head.next};
 
-    CHECK(((head == b) && (tail == a)));
+    CHECK(((&head == b) && (tail == a)));
 
     ink_freelist_free(f, a);
     ink_freelist_free(f, b);
