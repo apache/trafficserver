@@ -121,8 +121,8 @@ TEST_CASE("Freelist", "[freelist]")
 
     CHECK((a == y && b == x));
 
-    ink_freelist_free(f, a);
-    ink_freelist_free(f, b);
+    ink_freelist_free(f, x);
+    ink_freelist_free(f, y);
   }
 }
 
@@ -178,8 +178,8 @@ TEST_CASE("Atomic list", "[atomiclist]")
 
     CHECK((a == y && b == x));
 
-    ink_freelist_free(f, a);
-    ink_freelist_free(f, b);
+    ink_freelist_free(f, x);
+    ink_freelist_free(f, y);
   }
 
   SECTION("Atomic list remove head")
