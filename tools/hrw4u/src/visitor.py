@@ -242,7 +242,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if m.group("var"):
                     var_name, mods = split_interpolation_mods(m.group("var"))
                     self._check_value_mods(mods, ctx)
-                    self._check_not_cache_url(var_name)
+                    self._check_not_key_name(var_name)
                     resolved, _ = self.symbol_resolver.resolve_condition(var_name, self._read_section)
                     replacement = apply_percent_mods(resolved, mods)
                     self._drain_resolver_warnings(ctx)
@@ -276,17 +276,17 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return self.current_section and self.current_section.emits_as
 
     @staticmethod
-    def _check_not_cache_url(name: str) -> None:
-        if name.startswith(cachekey.URL_PREFIX):
+    def _check_not_key_name(name: str) -> None:
+        if cachekey.is_key_name(name):
             raise SymbolResolutionError(
-                name, "cache.url.* can't be read in a condition or a string: run-plugin cachekey.so has no %{CACHE-URL}"
+                name, "cache.url.* and cache.key.* can't be read in a condition or a string: they only set the cache key"
             )
 
     def _resolve_identifier_with_validation(self, name: str) -> tuple[str, bool]:
         if not name:
             raise SymbolResolutionError("identifier", "Missing or empty identifier text")
 
-        self._check_not_cache_url(name)
+        self._check_not_key_name(name)
         try:
             return self.symbol_resolver.resolve_condition(name, self._read_section)
         except SandboxDenialError:

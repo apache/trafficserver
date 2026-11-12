@@ -1,0 +1,5 @@
+CACHEKEY {
+    if cache.key.prefix == "x" {
+        cache.url.pristine();
+    }
+}
