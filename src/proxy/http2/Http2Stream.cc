@@ -233,14 +233,14 @@ Http2Stream::main_event_handler(int event, void *edata)
       }
     } else {
       if (_sm && this->is_outbound_connection() && !_received_header) {
-        // An origin that never answered a stream may be failing others on the same connection.
-        // Stop giving the session new streams, the way an HTTP/1.1 origin connection that timed out
-        // is not reused. Streams already on it can still finish. A stream that times out after its
-        // response header arrived says nothing about the session: its body may be waiting on a
-        // slow client, through flow control, or simply be long.
-        Http2ConnectionState &connection_state = get_connection_state();
-        SCOPED_MUTEX_LOCK(lock, connection_state.mutex, this_ethread());
-        connection_state.drain_outbound_session("a stream timed out with no response");
+        // An origin that never answered a stream may be failing others on the same connection, so
+        // stop giving the session new streams. Streams already on it can still finish, and the
+        // session closes once it has none. A stream that times out after its response header
+        // arrived is no evidence against the session: its body may be held back by a slow client
+        // through flow control or, for the active timeout, simply be long. A client upload slow
+        // enough to time out before the origin answers retires the session too, at the cost of one
+        // new connection.
+        get_connection_state().drain_outbound_session("a stream timed out with no response");
       }
       if (_sm && read_vio.ntodo() > 0) {
         this->signal_read_event(event);

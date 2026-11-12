@@ -3045,6 +3045,7 @@ Http2ConnectionState::_get_outstanding_settings_frame_limit() const
 void
 Http2ConnectionState::drain_outbound_session(const char *reason)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   if (!this->session->is_outbound() || this->session->get_half_close_local_flag()) {
     return;
   }

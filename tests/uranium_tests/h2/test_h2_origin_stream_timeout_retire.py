@@ -65,7 +65,7 @@ def start_origin(ats_factory: ATSFactory, services: ServiceFactory) -> tuple[ATS
     )
     stop = ats.run_directory / "stop-origin"
     ssl = Path(__file__).parents[2] / "tools/ssl"
-    # The /slow stream trickles its body for 4 s: it outlives the 2 s timeout of /stall, but it
+    # The /slow stream trickles its body for 6 s: it outlives the 2 s timeout of /stall, but it
     # never goes idle long enough to time out itself.
     origin = services.process(
         "origin",
@@ -77,7 +77,7 @@ def start_origin(ats_factory: ATSFactory, services: ServiceFactory) -> tuple[ATS
             ssl / "server.key",
             stop,
             "--slow-delay",
-            "4",
+            "6",
         ],
         ready_port=port,
     )
@@ -89,8 +89,9 @@ def start_origin(ats_factory: ATSFactory, services: ServiceFactory) -> tuple[ATS
 def test_h2_origin_session_retired_after_stream_timeout(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """Stop giving an origin session new streams once a stream on it times out with no response.
 
-    A stream that is still busy on the session when that happens finishes normally, the next
-    request opens a new connection, and the old one closes once it has no streams left.
+    A stream that is still busy on the session when that happens finishes normally, a request made
+    while it is still busy goes out on a new connection, and the old one closes once it has no
+    streams left.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Runs the origin.
@@ -105,16 +106,21 @@ def test_h2_origin_session_retired_after_stream_timeout(ats_factory: ATSFactory,
         busy = pool.submit(get, ats.http_port, "/slow")
         origin.wait_for_output(r"^conn 1 request stream=\d+ path=/slow$")
         assert stalled.result() == 504
+        # The session is draining with /slow still on it: a new request must not join it.
+        assert get(ats.http_port, "/ok-during") == 200
+        output = origin.wait_for_output(r"^conn \d+ request stream=\d+ path=/ok-during$")
+        assert re.search(r"^conn 2 request stream=\d+ path=/ok-during$", output, re.MULTILINE), output
+        assert not re.search(r"^conn 1 answered stream=\d+ path=/slow$", output, re.MULTILINE), output
         assert busy.result() == 200
 
-    assert get(ats.http_port, "/ok-after") == 200
-    output = origin.wait_for_output(r"^conn \d+ request stream=\d+ path=/ok-after$")
-    assert re.search(r"^conn 2 request stream=\d+ path=/ok-after$", output, re.MULTILINE), output
-    output = origin.wait_for_output(r"^conn 1 (goaway error=0|eof)")
+    # The drained session closes without a GOAWAY once /slow is done.
+    output = origin.wait_for_output(r"^conn 1 (goaway|eof)")
+    assert re.search(r"^conn 1 eof", output, re.MULTILINE), output
     assert re.search(r"^conn 1 answered stream=\d+ path=/slow$", output, re.MULTILINE), output
 
     finish_origin(services, origin, stop)
     ats.stop()
+    assert "Traceback" not in origin.output, origin.output
     diags = ats.diags_log.read_text(errors="replace")
     assert not re.search("FATAL:|Unrecognized configuration value", diags), diags
 
@@ -123,7 +129,7 @@ def test_h2_origin_session_kept_after_mid_body_timeout(ats_factory: ATSFactory, 
     """Keep an origin session in use when a stream times out after its response header arrived.
 
     A body that stops partway can be ATS's own doing (a slow client holds back flow control), so
-    it says nothing about the session, and the next request reuses it.
+    it is no evidence against the session, and the next request reuses it.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Runs the origin.
@@ -134,7 +140,7 @@ def test_h2_origin_session_kept_after_mid_body_timeout(ats_factory: ATSFactory, 
     origin.wait_for_output(r"^conn 1 request stream=\d+ path=/ok-before$")
     status, received = get_partial(ats.http_port, "/partial")
     assert status == 200
-    assert received < 100
+    assert received == 10
 
     assert get(ats.http_port, "/ok-after") == 200
     output = origin.wait_for_output(r"^conn \d+ request stream=\d+ path=/ok-after$")
@@ -143,5 +149,6 @@ def test_h2_origin_session_kept_after_mid_body_timeout(ats_factory: ATSFactory, 
 
     finish_origin(services, origin, stop)
     ats.stop()
+    assert "Traceback" not in origin.output, origin.output
     diags = ats.diags_log.read_text(errors="replace")
     assert not re.search("FATAL:|Unrecognized configuration value", diags), diags

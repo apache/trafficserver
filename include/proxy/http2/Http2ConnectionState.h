@@ -186,7 +186,11 @@ public:
 
   /** Stop giving an origin session new streams, and close it once the streams on it finish.
    *
-   * Does nothing for a client session, or for one that is already half-closed.
+   * The session leaves the pool now. When its last stream is released it closes the way a session
+   * draining after the origin's GOAWAY does, without sending a GOAWAY of its own: an ATS origin
+   * answers a client's GOAWAY by closing every stream at once. Does nothing for a client session,
+   * or for one that is already half-closed. Takes the connection mutex, so call it on the
+   * session's thread.
    *
    * @param[in] reason Why, for the debug log.
    */
