@@ -53,6 +53,29 @@ def is_plugin_path(path: str) -> bool:
     return path.strip('"').rsplit("/", 1)[-1] == PLUGIN
 
 
+# RFC 9110 and RFC 6265 token characters, less %, which header_rewrite reads as the start of a
+# %{...} expansion: an exists() name ends up in a header_rewrite line.
+_TOKEN: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9!#$&'*+.^_`|~-]+")
+
+
+@dataclass(frozen=True, slots=True)
+class NameRule:
+    """The names a header or cookie statement takes. Both are tokens: any other name can never match."""
+
+    noun: str  # "header" or "cookie", for the error
+    # @ headers, which REMAP sets and a client can't send.
+    allows_internal: bool = False
+
+    def accepts(self, name: str) -> bool:
+        if self.allows_internal and name.startswith("@"):
+            name = name[1:]
+        return _TOKEN.fullmatch(name) is not None
+
+
+HEADER_NAMES: Final[NameRule] = NameRule("header", allows_internal=True)
+COOKIE_NAMES: Final[NameRule] = NameRule("cookie")
+
+
 @dataclass(frozen=True, slots=True)
 class CacheKeyFlag:
     """How one cache.* statement lowers to a cachekey.so flag.
@@ -68,6 +91,7 @@ class CacheKeyFlag:
     assignment: bool = False
     # cachekey.so looks the names up ignoring case, so a second spelling would add the same value twice.
     case_insensitive: bool = False
+    names: NameRule | None = None
 
     @property
     def is_switch(self) -> bool:
@@ -90,8 +114,8 @@ CACHEKEY_STATEMENTS: Final[dict[str, CacheKeyFlag]] = {
     "cache.url.query.sort":   CacheKeyFlag("--sort-params", "true"),
     "cache.url.query":        CacheKeyFlag("--remove-all-params", "true", assignment=True),
     "cache.url.path":         CacheKeyFlag("--remove-path", "true", assignment=True),
-    HEADERS_ADD_NAME:         CacheKeyFlag("--include-headers", case_insensitive=True),
-    "cache.key.cookies.add":  CacheKeyFlag("--include-cookies"),
+    HEADERS_ADD_NAME:         CacheKeyFlag("--include-headers", case_insensitive=True, names=HEADER_NAMES),
+    "cache.key.cookies.add":  CacheKeyFlag("--include-cookies", names=COOKIE_NAMES),
 }
 # yapf: enable
 
@@ -107,6 +131,7 @@ class Presence:
 
     header_prefix: str
     condition: str  # format string for the header_rewrite condition that reads the name
+    names: NameRule
     # Header names ignore case, so two spellings test one header. Cookie names don't.
     case_insensitive: bool = False
     # Set for names that can be @ headers. An @ can't sit inside a header name, and
@@ -118,12 +143,6 @@ class Presence:
             return f"{self.internal_prefix}{name[1:]}"
         return f"{self.header_prefix}{name}"
 
-    def is_valid_name(self, name: str) -> bool:
-        """The name, less an internal name's @, has to be a token: it ends up in a header name."""
-        if self.internal_prefix and name.startswith("@"):
-            name = name[1:]
-        return _HEADER_NAME.fullmatch(name) is not None
-
     def cond_line(self, name: str) -> str:
         """Matches what `if inbound.req.X` or `if inbound.cookie.X` compiles to: an empty value counts as absent."""
         return f'cond {self.condition.format(name)} ="" [NOT]'
@@ -131,14 +150,10 @@ class Presence:
 
 # yapf: disable
 PRESENCE_STATEMENTS: Final[dict[str, Presence]] = {
-    "cache.key.headers.exists": Presence("@Hrw4u-Header-", "%{{CLIENT-HEADER:{}}}", case_insensitive=True, internal_prefix="@Hrw4u-Internal-"),
-    "cache.key.cookies.exists": Presence("@Hrw4u-Cookie-", "%{{COOKIE:{}}}"),
+    "cache.key.headers.exists": Presence("@Hrw4u-Header-", "%{{CLIENT-HEADER:{}}}", HEADER_NAMES, case_insensitive=True, internal_prefix="@Hrw4u-Internal-"),
+    "cache.key.cookies.exists": Presence("@Hrw4u-Cookie-", "%{{COOKIE:{}}}", COOKIE_NAMES),
 }
 # yapf: enable
-
-# RFC 9110 token characters, less %, which header_rewrite reads as the start of a %{...} expansion.
-# The name ends up in a header name, so it has to be one.
-_HEADER_NAME: Final[re.Pattern[str]] = re.compile(r"[A-Za-z0-9!#$&'*+.^_`|~-]+")
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,6 +203,7 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
 
     if not args:
         raise SymbolResolutionError(name, f"{name}() takes at least one string argument")
+    names = flag.names if flag is not None else PRESENCE_STATEMENTS[name].names
     items = []
     for arg in args:
         item = _unquote(arg)
@@ -203,8 +219,8 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a comma: pass each name as its own argument")
         if problem := _mangles_flag(item):
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" {problem}")
-        if name in PRESENCE_STATEMENTS and not PRESENCE_STATEMENTS[name].is_valid_name(item):
-            raise SymbolResolutionError(name, f"{name}() name \"{item}\" is not a valid header name")
+        if names is not None and not names.accepts(item):
+            raise SymbolResolutionError(name, f"{name}() name \"{item}\" is not a valid {names.noun} name")
         items.append(item)
     return CacheKeyStatement(name, tuple(items), source)
 

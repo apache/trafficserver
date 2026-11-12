@@ -285,9 +285,13 @@ class TestParseStatementErrors:
             ("cache.key.headers.exists", ['"@"'], "not a valid header name"),
             ("cache.key.headers.exists", ['"@@X"'], "not a valid header name"),
             ("cache.key.headers.exists", ['"X@Y"'], "not a valid header name"),
-            ("cache.key.cookies.exists", ['"@x"'], "not a valid header name"),
-            ("cache.key.cookies.exists", ['"a%b"'], "not a valid header name"),
-            ("cache.key.cookies.exists", ['"a=b"'], "not a valid header name"),
+            ("cache.key.cookies.exists", ['"@x"'], "not a valid cookie name"),
+            ("cache.key.cookies.exists", ['"a%b"'], "not a valid cookie name"),
+            ("cache.key.cookies.exists", ['"a=b"'], "not a valid cookie name"),
+            ("cache.key.headers.add", ['"X-User:Id"'], "not a valid header name"),
+            ("cache.key.headers.add", ['"@"'], "not a valid header name"),
+            ("cache.key.cookies.add", ['"a=b"'], "not a valid cookie name"),
+            ("cache.key.cookies.add", ['"@x"'], "not a valid cookie name"),
         ],
     )
     def test_rejects(self, name: str, args: list[str], message: str) -> None:
