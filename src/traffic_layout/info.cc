@@ -182,6 +182,37 @@ produce_features(bool json)
   print_feature("TS_HAS_128BIT_CAS", TS_HAS_128BIT_CAS, json);
   print_feature("TS_HAS_128BIT_CAS_LIBATOMIC", TS_HAS_128BIT_CAS_LIBATOMIC, json);
   print_feature("TS_HAS_TESTS", TS_HAS_TESTS, json);
+  // Whether PCRE2 can run a pattern on the just-in-time engine. This is a property of the
+  // PCRE2 that ATS is linked against, not of ATS. Only the JIT has a stack to exhaust: the
+  // interpreter keeps its backtracking frames on the heap, so a subject that fails with a
+  // JIT stack error can match on the interpreter. Tests that assert on that error need to
+  // know which engine runs.
+  //
+  // PCRE2_JIT_TEST_ALLOC (PCRE2 10.45) also confirms the JIT can allocate executable
+  // memory. PCRE2_CONFIG_JIT does not, and reports 1 on a hardened runtime where every JIT
+  // compile then fails, which is the direction that misleads a test gate.
+  {
+    bool has_jit = false;
+
+#ifdef PCRE2_JIT_TEST_ALLOC
+    has_jit = pcre2_jit_compile(nullptr, PCRE2_JIT_TEST_ALLOC) == 0;
+#else
+    // Below 10.45 there is no library-wide probe that also proves the allocator works, and
+    // PCRE2_CONFIG_JIT alone is the misleading answer above. A hardened runtime fails a
+    // real JIT compile, so its result is the answer.
+    int         errnum    = 0;
+    PCRE2_SIZE  erroffset = 0;
+    pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>("a"), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+
+    if (code != nullptr) {
+      has_jit = pcre2_jit_compile(code, PCRE2_JIT_COMPLETE) == 0;
+      pcre2_code_free(code);
+    }
+    // A pattern as trivial as "a" failing to compile means the library is unusable, and
+    // reporting no JIT is the right answer in that case too.
+#endif
+    print_feature("TS_HAS_PCRE2_JIT", has_jit, json);
+  }
   print_feature("TS_MAX_THREADS_IN_EACH_THREAD_TYPE", TS_MAX_THREADS_IN_EACH_THREAD_TYPE, json);
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
   print_feature("TS_MAX_HOST_NAME_LEN", TS_MAX_HOST_NAME_LEN, json);

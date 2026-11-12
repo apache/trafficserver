@@ -20,8 +20,14 @@
   limitations under the License.
 */
 
+#include <atomic>
+#include <condition_variable>
+#include <cstdint>
+#include <mutex>
 #include <string>
 #include <string_view>
+#include <thread>
+#include <utility>
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -1008,29 +1014,6 @@ TEST_CASE("Regex::Options keeps the shared JIT stack", "[libts][Regex][Options]"
   REQUIRE(shared_rc == opts_rc);
 }
 
-TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex]")
-{
-  // The regex_remap rule from #5762. Under PCRE1 its per character recursion overflowed the native thread stack and
-  // crashed ATS. Under PCRE2 the JIT keeps its frames on the JIT stack, and exhausting that is reported as an error.
-  Regex r;
-  REQUIRE(r.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
-
-  std::string subject{"/alpha/bravo/?"};
-  subject.append(256 * 1024, 'x');
-  RegexMatches matches;
-
-  int const rc = r.exec(subject, matches, 0);
-  CAPTURE(rc);
-
-  // Without JIT the interpreter keeps its backtracking frames on the heap and simply matches, so there is nothing to
-  // assert beyond not crashing.
-  uint32_t has_jit = 0;
-  pcre2_config(PCRE2_CONFIG_JIT, &has_jit);
-  if (has_jit != 0) {
-    REQUIRE(rc == PCRE2_ERROR_JIT_STACKLIMIT);
-  }
-}
-
 TEST_CASE("Regex RE_FULL_MATCH rejects trailing content", "[libts][Regex][full_match]")
 {
   Regex re;
@@ -1703,4 +1686,253 @@ TEST_CASE("Regex copies answer the same as their original", "[libts][Regex][copy
     RegexMatches copy_ordinary;
     CHECK(original.exec(ordinary, original_ordinary) == copy.exec(ordinary, copy_ordinary));
   }
+}
+
+namespace
+{
+// Whether a match on this pattern runs JIT code. PCRE2 consults the JIT stack only
+// then, so a test about the stack must skip otherwise: without JIT code there is no
+// stack bound to assert on. pcre2_jit_compile() fails when PCRE2 has no JIT, cannot get
+// executable memory, or meets an item the JIT does not support, so its result is a per
+// pattern answer for this host, which the library-wide probes are not. The exception is
+// a pattern starting with (*NO_JIT), which compiles without error and gets no JIT code,
+// so do not pass one. Call this from the test thread only; Catch2 assertions are not
+// thread safe.
+bool
+pattern_has_jit(char const *pattern)
+{
+  int         errnum    = 0;
+  PCRE2_SIZE  erroffset = 0;
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+
+  // A typo in a pattern must fail the test rather than turn into a SKIP.
+  REQUIRE(code != nullptr);
+
+  int const rc = pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+
+  pcre2_code_free(code);
+  return rc == 0;
+}
+} // namespace
+
+// A pattern that backtracks once per character must fail cleanly rather than run
+// the thread out of stack. A regex engine that recurses on the machine stack crashes
+// the server on a long enough subject; PCRE2 must report an error instead.
+TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex][limits]")
+{
+  // Only the JIT path has a bound to exhaust here. PCRE2's interpreter keeps its
+  // backtracking frames on the heap, so it matches this subject rather than running
+  // out of anything, and there is no resource error to assert.
+  char const *const pattern = R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so there is no stack bound to exhaust");
+  }
+
+  Regex re;
+  REQUIRE(re.compile(pattern));
+
+  // This pattern starts failing at roughly 43KiB of subject against a 1MiB JIT
+  // stack, measured identically on x86_64 and arm64. Smaller JIT frames get more
+  // subject out of the same stack and so push that threshold up; 256KiB keeps a
+  // six times margin against that.
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+
+  RegexMatches matches;
+  int const    rc = re.exec(subject, matches);
+  CAPTURE(rc);
+
+  REQUIRE(rc == PCRE2_ERROR_JIT_STACKLIMIT);
+
+  // The paired positive control, and the only part of this case that can tell a
+  // 1MiB stack from PCRE2's 32KiB fallback: 256KiB overruns both bounds, so every
+  // assertion above also holds with no JIT stack assigned. 10,000 is seven
+  // times over the fallback's bound and four times under the 1MiB stack's. Neither
+  // bound pins 1MiB itself; this case only requires a maximum between roughly
+  // 240KB and 6MB.
+  std::string smaller{"/alpha/bravo/?"};
+  smaller.append(10000, 'x');
+
+  RegexMatches small_matches;
+  int const    small_rc = re.exec(smaller, small_matches);
+  CAPTURE(small_rc);
+
+  REQUIRE(small_rc > 0);
+}
+
+namespace
+{
+// A subject the deep pattern below backtracks through once per character.
+//
+// At 40 bytes of JIT stack per character the longest of these needs about 223KiB: seven
+// times what PCRE2's 32KiB fallback resolves, and under a quarter of the 1MiB stack.
+// Each thread gets its own length and its own content, so no two threads are matching
+// identical bytes.
+std::string
+stack_hungry_subject(int thread_index)
+{
+  std::string subject(5000 + thread_index * 100, 'a');
+
+  subject[11 + thread_index] = 'b';
+  return subject;
+}
+
+// How many times each round of the concurrency case matches the hit. A match limit that
+// leaks between threads shows only when one thread changes it between another thread
+// setting its own and matching, a window of a few nanoseconds on an optimized build, so
+// each round gives it many chances to land.
+constexpr int HITS_PER_ROUND = 64;
+
+// The matches each round of the concurrency case performs on a thread whose match limit is
+// never reached: HITS_PER_ROUND hits that must each yield the same three captures, a
+// miss that must stay a miss, and a deep subject that overruns PCRE2's 32KiB fallback
+// stack. Returns false on the first disagreement, so a caller counts rounds that went
+// wrong rather than individual assertions.
+bool
+concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
+                       std::string const &deep, Regex::Options const &opts)
+{
+  for (int k = 0; k < HITS_PER_ROUND; ++k) {
+    RegexMatches matches;
+    if (re_captures.exec(hit, matches, 0, opts) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+      return false;
+    }
+  }
+
+  RegexMatches no_matches;
+  if (re_captures.exec(miss, no_matches, 0, opts) != RE_ERROR_NOMATCH) {
+    return false;
+  }
+
+  // On a JIT build, matching all of it shows a stack larger than the fallback ran.
+  RegexMatches deep_matches;
+  if (re_deep.exec(deep, deep_matches, 0, opts) <= 0 || deep_matches[0].size() != deep.size()) {
+    return false;
+  }
+
+  return true;
+}
+
+// The hit takes more than one match limit step on either engine, so a limit of 1 stops it.
+constexpr uint32_t HIT_STOPPING_MATCH_LIMIT = 1;
+
+// Far above what any match in the concurrency case takes, while still a non-default option.
+constexpr uint32_t NEVER_REACHED_MATCH_LIMIT = 100000000;
+
+// The round a thread whose limit is HIT_STOPPING_MATCH_LIMIT performs instead: each of
+// HITS_PER_ROUND hits must stop at the limit.
+bool
+limited_match_round(Regex const &re_captures, std::string const &hit, Regex::Options const &opts)
+{
+  for (int k = 0; k < HITS_PER_ROUND; ++k) {
+    RegexMatches matches;
+    if (re_captures.exec(hit, matches, 0, opts) != PCRE2_ERROR_MATCHLIMIT) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Holds each thread that calls arrive_and_wait() until the expected number of threads
+// have, then releases them together, and can be reused for the next round. It stands in
+// for std::barrier, which is missing from the libstdc++ before GCC 11 that some CI builds use.
+class RoundBarrier
+{
+public:
+  explicit RoundBarrier(int threads) : _threads(threads) {}
+
+  void
+  arrive_and_wait()
+  {
+    std::unique_lock lock{_mutex};
+    uint64_t const   round = _round;
+
+    if (++_arrived == _threads) {
+      _arrived = 0;
+      ++_round;
+      lock.unlock();
+      _released.notify_all();
+      return;
+    }
+    _released.wait(lock, [&] { return _round != round; });
+  }
+
+private:
+  std::mutex              _mutex;
+  std::condition_variable _released;
+  int const               _threads;     ///< Arrivals that complete a round.
+  int                     _arrived = 0; ///< Threads that have arrived in the current round.
+  uint64_t                _round   = 0; ///< Rounds completed, so a waiter can tell its round ended.
+};
+
+} // namespace
+
+// The header promises that exec() may be called concurrently on one instance. Every thread
+// must reach the verdict its own options call for, whatever the other threads pass.
+//
+// Four threads match with the default options and two with a limit that is never reached;
+// both must match. The other two use a limit too small for the hit and must get
+// PCRE2_ERROR_MATCHLIMIT. A limit that reached another thread's match, in either direction,
+// fails the case.
+//
+// The deep subjects are longer than PCRE2's 32KiB fallback stack can resolve, so on a JIT
+// build this also fails if a thread's match context loses its 1MiB JIT stack, whether that
+// is the thread's default context or the copy that non-default options match through.
+// Without a JIT the interpreter resolves them either way, so only the concurrency half of
+// this case carries over to such a build.
+//
+// Every round starts at a barrier, so all eight threads are alive for the whole case and
+// each round's matches start together on every thread. The test is deterministic when the
+// stacks are distinct, but it does not prove that they are: one stack shared by the threads
+// corrupts a result only when two deep matches touch the same frames at once, which the
+// barrier makes likely but cannot force. The same holds for a limit shared across threads.
+// ThreadSanitizer does not see the stack writes, because they come from sljit code.
+TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
+{
+  Regex re_captures;
+  REQUIRE(re_captures.compile(R"(^/([a-z]+)/([0-9]+)/(.*)$)"));
+
+  Regex re_deep;
+  REQUIRE(re_deep.compile(R"(^(?:(a)|(b))+$)"));
+
+  constexpr int THREADS    = 8;
+  constexpr int ITERATIONS = 2000;
+
+  std::string const hit{"/alpha/42/tail"};
+  std::string const miss{"/Alpha/xx/tail"};
+
+  std::atomic<int> failures{0};
+  RoundBarrier     round_start{THREADS};
+
+  std::vector<std::thread> threads;
+  threads.reserve(THREADS);
+  for (int i = 0; i < THREADS; ++i) {
+    threads.emplace_back([&, i]() {
+      std::string const deep    = stack_hungry_subject(i);
+      bool const        limited = (i % 4) == 2;
+      Regex::Options    opts;
+
+      if (limited) {
+        opts.match_limit = HIT_STOPPING_MATCH_LIMIT;
+      } else if ((i % 4) == 0) {
+        opts.match_limit = NEVER_REACHED_MATCH_LIMIT;
+      }
+
+      for (int n = 0; n < ITERATIONS; ++n) {
+        // Unconditional, so a failing round cannot leave the other threads waiting.
+        round_start.arrive_and_wait();
+        bool const ok = limited ? limited_match_round(re_captures, hit, opts) :
+                                  concurrent_match_round(re_captures, re_deep, hit, miss, deep, opts);
+        if (!ok) {
+          ++failures;
+        }
+      }
+    });
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+
+  CHECK(failures.load() == 0);
 }

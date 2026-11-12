@@ -28,6 +28,18 @@ from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServe
 
 REGEX_REMAP_UPDATED_RULE = "^/cache-generation$ https://updated.example/ @status=302"
 
+# A query long enough to exhaust the 1 MiB per thread JIT stack on the redirect rule, which
+# backtracks once per subject character. Measured on arm64 with PCRE2 10.47 and on x86_64
+# with PCRE2 10.49, 43,672 characters after "action=newsfed;" match and 43,673 return -46
+# on both. The ceiling is a 65,535 byte request line, request_line_max_size's default and
+# the length a debug build asserts on in http_parser_parse_req, so 64,000 sits near the top
+# of the window. Below the threshold the rule matches and redirects, and the JIT half of
+# this check fails.
+JIT_STACK_EXHAUSTING_QUERY_LENGTH = 64000
+
+# The error the exhaustion check expects on a JIT build, where PCRE2 reports the stack bound as -46.
+ALPHA_BRAVO_RESOURCE_ERROR = r'ERROR: \[regex_remap\] Bad regular expression result -46 .* from "\^/alpha/bravo/'
+
 REGEX_REMAP_ORIGINAL_RULES = (
     "# regex_remap configuration",
     "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ https://redirect.com/ @status=301",
@@ -93,7 +105,7 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
         pytest.skip("regex_remap.so is not installed")
     ats.allow_errors(
         r'ERROR: \[regex_remap\] Bad regular expression result '
-        r'(?:-(?:46|47|53|63) .* from "\^/alpha/bravo/|-47 .* from "\^/match_limit/)'
+        r'(?:-46 .* from "\^/alpha/bravo/|-47 .* from "\^/match_limit/)'
     )
     ats.write_config_file("regex_remap.conf", "\n".join(REGEX_REMAP_ORIGINAL_RULES) + "\n")
     ats.write_config_file(
@@ -118,6 +130,10 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.diags.debug.tags": "http|regex_remap",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
+            # Room for the JIT stack exhaustion request. request_line_max_size keeps its
+            # 65,535 default: a debug build asserts in http_parser_parse_req on a request
+            # line of 65,535 bytes or more before that limit is checked.
+            "proxy.config.http.request_header_max_size": 131072,
         }
     )
     return ats
@@ -178,6 +194,31 @@ def run_matching_checks(*, _ats: ATS, _curl: Curl, _transactions: list[dict[str,
     )
     assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
     wait_for_file_lines(_ats.diags_log, r"ERROR: .regex_remap. Bad regular expression result -47", 1)
+    run_jit_stack_exhaustion_check(_ats=_ats, _curl=_curl)
+
+
+def run_jit_stack_exhaustion_check(*, _ats: ATS, _curl: Curl) -> None:
+    """Verify a query past the JIT stack bound is handled without crashing ATS.
+
+    On a JIT build the rule fails with the stack limit error and the request
+    falls through to the origin. The interpreter keeps its backtracking frames
+    on the heap, so without a JIT the rule matches and redirects. Each engine's
+    outcome is asserted, so a ``TS_HAS_PCRE2_JIT`` that does not describe the
+    PCRE2 ATS runs on fails this check.
+
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    errors_before = len(re.findall(ALPHA_BRAVO_RESOURCE_ERROR, _ats.diags_log.read_text(errors="replace"), re.MULTILINE))
+    query = "action=newsfed;" + "x" * JIT_STACK_EXHAUSTING_QUERY_LENGTH
+    output = _request(f"http://example.one/alpha/bravo/?{query}", "180", _ats=_ats, _curl=_curl)
+    if not _ats.has_feature("TS_HAS_PCRE2_JIT"):
+        assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output, output
+        return
+    assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output, output
+    assert "Location: https://redirect.com/" not in output, output
+    wait_for_file_lines(_ats.diags_log, ALPHA_BRAVO_RESOURCE_ERROR, errors_before + 1)
 
 
 def reload_rules(*, _ats: ATS) -> None:
@@ -245,5 +286,7 @@ def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     run_generation_checks(_ats=_ats, _curl=_curl)
     _ats.stop()
     log = _ats.diags_log.read_text(errors="replace")
-    assert not re.search(r'ERROR: (?!\[regex_remap\] Bad regular expression result -47 .* from "\^/match_limit/)', log), log
+    match_limit_error = r'\[regex_remap\] Bad regular expression result -47 .* from "\^/match_limit/'
+    alpha_bravo_error = r'\[regex_remap\] Bad regular expression result -46 .* from "\^/alpha/bravo/'
+    assert not re.search(rf"ERROR: (?!{match_limit_error}|{alpha_bravo_error})", log), log
     assert not re.search(r"FATAL:|Unrecognized configuration value", log), log
