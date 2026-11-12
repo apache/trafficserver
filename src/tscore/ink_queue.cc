@@ -429,18 +429,14 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, [[maybe_unused]] size_
 }
 
 void
-malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
+malloc_bulkfree(InkFreeList *f, void *head, [[maybe_unused]] void *tail, size_t num_item)
 {
   void *item = head;
   void *next;
 
-  // Avoid compiler warnings
-  (void)f;
-  (void)tail;
-
   for (size_t i = 0; i < num_item && item; ++i, item = next) {
     next = *static_cast<void **>(item); // find next item before freeing current item
-    ats_free(item);
+    malloc_free(f, item);
   }
 }
 

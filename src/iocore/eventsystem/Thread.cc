@@ -46,6 +46,7 @@ Thread::Thread()
 
 Thread::~Thread()
 {
+  iobuf_thread_cache_drain(ioBufCache);
   if (this_thread_ptr == this) {
     this_thread_ptr = nullptr;
   }

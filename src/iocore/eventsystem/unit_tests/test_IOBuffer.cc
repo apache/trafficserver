@@ -33,6 +33,10 @@
 
 #include "iocore/utils/diags.i"
 
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #define TEST_THREADS 1
 
 TEST_CASE("MIOBuffer", "[iocore]")
@@ -465,6 +469,109 @@ TEST_CASE("block size parser", "[iocore]")
 
   // bad index token
   REQUIRE(parse_buffer_chunk_sizes("bob:1 2 3", chunk_sizes) == false);
+}
+
+namespace
+{
+constexpr int64_t CACHE_BYTES = 512 * 1024;
+
+int64_t
+expected_high(int64_t size_index)
+{
+  return std::min<int64_t>(CACHE_BYTES / BUFFER_SIZE_FOR_INDEX(size_index), 512);
+}
+
+int
+cached_total(Thread *t)
+{
+  int total = 0;
+  for (auto const &l : t->ioBufCache) {
+    total += l.allocated;
+  }
+  return total;
+}
+
+#if TS_USE_ALLOCATOR_METRICS
+ts::Metrics::AtomicType *
+inuse_metric(int64_t size_index)
+{
+  ts::Metrics::IdType id;
+  std::string const   name = "proxy.process.allocator.inuse.ioBufAllocator[" + std::to_string(size_index) + "]";
+  return ts::Metrics::Gauge::lookup(name, &id);
+}
+#endif
+} // namespace
+
+TEST_CASE("IOBuffer per-thread block cache", "[iocore][iobuffer]")
+{
+  Thread *t = this_thread();
+  REQUIRE(t != nullptr);
+  init_iobuf_thread_cache(CACHE_BYTES);
+  iobuf_thread_cache_drain(t->ioBufCache);
+
+  SECTION("cached sizes trim to the low watermark on overflow")
+  {
+    for (int64_t idx = IOBUF_THREAD_CACHE_FIRST_INDEX; idx <= IOBUF_THREAD_CACHE_LAST_INDEX; ++idx) {
+      ProxyAllocator &l    = t->ioBufCache[idx - IOBUF_THREAD_CACHE_FIRST_INDEX];
+      int64_t const   high = expected_high(idx);
+#if TS_USE_ALLOCATOR_METRICS
+      auto *inuse = inuse_metric(idx);
+      REQUIRE(inuse != nullptr);
+      int64_t const baseline = inuse->load();
+#endif
+
+      std::vector<IOBufferData *> blocks;
+      for (int64_t i = 0; i <= high; ++i) {
+        blocks.push_back(new_IOBufferData(idx, MEMALIGNED));
+      }
+      for (int64_t i = 0; i < high; ++i) {
+        blocks[i]->free();
+      }
+      CHECK(l.allocated == high);
+
+      // One past the high watermark trims back to a quarter of it.
+      blocks[high]->free();
+      CHECK(l.allocated == high / 4);
+
+      // A block allocated on this thread comes from its cache.
+      IOBufferData *d = new_IOBufferData(idx, MEMALIGNED);
+      CHECK(l.allocated == high / 4 - 1);
+      d->free();
+      CHECK(l.allocated == high / 4);
+
+#if TS_USE_ALLOCATOR_METRICS
+      CHECK(inuse->load() == baseline);
+#endif
+    }
+  }
+
+  SECTION("other sizes bypass the cache")
+  {
+    for (int64_t idx : {BUFFER_SIZE_INDEX_2K, BUFFER_SIZE_INDEX_64K}) {
+      new_IOBufferData(idx, MEMALIGNED)->free();
+    }
+    CHECK(cached_total(t) == 0);
+  }
+
+  SECTION("a zero budget disables the cache")
+  {
+    init_iobuf_thread_cache(0);
+    new_IOBufferData(BUFFER_SIZE_INDEX_4K, MEMALIGNED)->free();
+    CHECK(cached_total(t) == 0);
+  }
+
+  SECTION("drain empties every cache")
+  {
+    for (int64_t idx = IOBUF_THREAD_CACHE_FIRST_INDEX; idx <= IOBUF_THREAD_CACHE_LAST_INDEX; ++idx) {
+      new_IOBufferData(idx, MEMALIGNED)->free();
+    }
+    CHECK(cached_total(t) == IOBUF_THREAD_CACHE_CLASSES);
+    iobuf_thread_cache_drain(t->ioBufCache);
+    CHECK(cached_total(t) == 0);
+  }
+
+  iobuf_thread_cache_drain(t->ioBufCache);
+  init_iobuf_thread_cache(CACHE_BYTES);
 }
 
 struct EventProcessorListener : Catch::EventListenerBase {
