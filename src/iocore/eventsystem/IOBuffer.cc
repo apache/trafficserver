@@ -32,6 +32,7 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
 
+#include <algorithm>
 #include <optional>
 
 // TODO: I think we're overly aggressive here on making MIOBuffer 64-bit
@@ -190,6 +191,113 @@ new_IOBufferData_internal(const char *loc, int64_t size_index, AllocType type)
   return d;
 }
 
+namespace
+{
+static_assert(IOBUF_THREAD_CACHE_FIRST_INDEX == BUFFER_SIZE_INDEX_4K);
+static_assert(IOBUF_THREAD_CACHE_LAST_INDEX == BUFFER_SIZE_INDEX_32K);
+
+// Matches the default proxy.config.allocator.thread_freelist_size cap on the other per-thread caches.
+constexpr int64_t IOBUF_THREAD_CACHE_MAX_BLOCKS = 512;
+
+// Per-class watermarks for the ioBufCache freelists on each Thread. A high watermark of zero
+// disables the cache for that class, which is the state until init_iobuf_thread_cache() runs.
+int iobuf_thread_cache_high[IOBUF_THREAD_CACHE_CLASSES];
+int iobuf_thread_cache_low[IOBUF_THREAD_CACHE_CLASSES];
+
+// The per-thread cache for @a size_index on the current thread, or nullptr if the block
+// should go to the global allocator.
+ProxyAllocator *
+iobuf_thread_cache(int64_t size_index)
+{
+  int const cls = size_index - IOBUF_THREAD_CACHE_FIRST_INDEX;
+  if (cls < 0 || cls >= IOBUF_THREAD_CACHE_CLASSES || iobuf_thread_cache_high[cls] == 0 || cmd_disable_pfreelist) {
+    return nullptr;
+  }
+  Thread *t = this_thread();
+  return t ? &t->ioBufCache[cls] : nullptr;
+}
+
+// Return blocks from the head of @a l to the global freelist until @a keep remain. The blocks
+// were counted as freed when they entered the cache, so this must not touch the metrics,
+// which free_void_bulk() does not.
+void
+iobuf_thread_cache_trim(int64_t size_index, ProxyAllocator &l, int keep)
+{
+  void  *head  = l.freelist;
+  void  *tail  = l.freelist;
+  size_t count = 0;
+
+  while (l.freelist && l.allocated > keep) {
+    tail       = l.freelist;
+    l.freelist = *static_cast<void **>(l.freelist);
+    --l.allocated;
+    ++count;
+  }
+  if (count > 0) {
+    ioBufAllocator[size_index].free_void_bulk(head, tail, count);
+  }
+}
+
+// Metrics are counted when a block leaves or enters the per-thread cache, the same as for the
+// THREAD_ALLOC/THREAD_FREE caches, so the ioBufAllocator metrics read as if there were no cache.
+void *
+iobuf_block_alloc(int64_t size_index)
+{
+  if (ProxyAllocator *l = iobuf_thread_cache(size_index); l && l->freelist) {
+    void *p     = l->freelist;
+    l->freelist = *static_cast<void **>(p);
+    --l->allocated;
+#if TS_USE_ALLOCATOR_METRICS
+    ioBufAllocator[size_index].increment_for_alloc();
+#endif
+    return p;
+  }
+  return ioBufAllocator[size_index].alloc_void();
+}
+
+void
+iobuf_block_free(int64_t size_index, void *p)
+{
+  ProxyAllocator *l = iobuf_thread_cache(size_index);
+  if (l == nullptr) {
+    ioBufAllocator[size_index].free_void(p);
+    return;
+  }
+
+  ink_assert(p != l->freelist);
+  *static_cast<void **>(p) = l->freelist;
+  l->freelist              = p;
+  ++l->allocated;
+#if TS_USE_ALLOCATOR_METRICS
+  ioBufAllocator[size_index].increment_for_free();
+#endif
+  int const cls = size_index - IOBUF_THREAD_CACHE_FIRST_INDEX;
+  if (l->allocated > iobuf_thread_cache_high[cls]) {
+    iobuf_thread_cache_trim(size_index, *l, iobuf_thread_cache_low[cls]);
+  }
+}
+} // namespace
+
+void
+init_iobuf_thread_cache(int64_t bytes_per_class)
+{
+  for (int cls = 0; cls < IOBUF_THREAD_CACHE_CLASSES; ++cls) {
+    int64_t const blocks = bytes_per_class > 0 ? bytes_per_class / BUFFER_SIZE_FOR_INDEX(IOBUF_THREAD_CACHE_FIRST_INDEX + cls) : 0;
+    // Below two blocks the cache would trim on nearly every free, so leave the class uncached.
+    int const high               = blocks < 2 ? 0 : static_cast<int>(std::min<int64_t>(blocks, IOBUF_THREAD_CACHE_MAX_BLOCKS));
+    iobuf_thread_cache_high[cls] = high;
+    iobuf_thread_cache_low[cls]  = high / 4;
+  }
+}
+
+void
+iobuf_thread_cache_drain(ProxyAllocator (&caches)[IOBUF_THREAD_CACHE_CLASSES])
+{
+  for (int cls = 0; cls < IOBUF_THREAD_CACHE_CLASSES; ++cls) {
+    iobuf_thread_cache_trim(IOBUF_THREAD_CACHE_FIRST_INDEX + cls, caches[cls], 0);
+  }
+}
+
 // IRIX has a compiler bug which prevents this function
 // from being compiled correctly at -O3
 // so it is DUPLICATED in IOBuffer.cc
@@ -206,7 +314,7 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
   switch (type) {
   case MEMALIGNED:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(size_index)) {
-      _data = static_cast<char *>(ioBufAllocator[size_index].alloc_void());
+      _data = static_cast<char *>(iobuf_block_alloc(size_index));
       // coverity[dead_error_condition]
     } else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(size_index)) {
       _data = static_cast<char *>(ats_memalign(ats_pagesize(), index_to_buffer_size(size_index)));
@@ -215,7 +323,7 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
   default:
   case DEFAULT_ALLOC:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(size_index)) {
-      _data = static_cast<char *>(ioBufAllocator[size_index].alloc_void());
+      _data = static_cast<char *>(iobuf_block_alloc(size_index));
     } else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(size_index)) {
       _data = static_cast<char *>(ats_malloc(BUFFER_SIZE_FOR_XMALLOC(size_index)));
     }
@@ -232,7 +340,7 @@ IOBufferData::dealloc()
   switch (_mem_type) {
   case MEMALIGNED:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index)) {
-      ioBufAllocator[_size_index].free_void(_data);
+      iobuf_block_free(_size_index, _data);
     } else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index)) {
       ::free(_data);
     }
@@ -240,7 +348,7 @@ IOBufferData::dealloc()
   default:
   case DEFAULT_ALLOC:
     if (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_size_index)) {
-      ioBufAllocator[_size_index].free_void(_data);
+      iobuf_block_free(_size_index, _data);
     } else if (BUFFER_SIZE_INDEX_IS_XMALLOCED(_size_index)) {
       ats_free(_data);
     }

@@ -125,6 +125,13 @@ extern FreelistAllocator ioBufAllocator[DEFAULT_BUFFER_SIZES];
 void init_buffer_allocators(int iobuffer_advice, int chunk_sizes[DEFAULT_BUFFER_SIZES], bool use_hugepages);
 void init_buffer_allocators(int iobuffer_advice);
 
+/** Size the per-thread IOBuffer block caches.
+
+    Each cached size class holds up to @a bytes_per_class bytes of free blocks per thread.
+    Zero or a negative value disables the caches.
+*/
+void init_iobuf_thread_cache(int64_t bytes_per_class);
+
 bool parse_buffer_chunk_sizes(const char *s, int chunk_sizes[DEFAULT_BUFFER_SIZES]);
 
 /**

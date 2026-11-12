@@ -70,6 +70,16 @@ void *thread_alloc(Allocator &a, ProxyAllocator &l);
 
 void thread_freeup(Allocator &a, ProxyAllocator &l);
 
+// IOBuffer data size indices (4K through 32K) that get a per-thread cache in front of
+// ioBufAllocator. These carry most per-transaction buffer traffic; larger blocks mostly hold
+// body data, are allocated far less often, and would make each cached block expensive to hold.
+constexpr int IOBUF_THREAD_CACHE_FIRST_INDEX = 5;
+constexpr int IOBUF_THREAD_CACHE_LAST_INDEX  = 8;
+constexpr int IOBUF_THREAD_CACHE_CLASSES     = IOBUF_THREAD_CACHE_LAST_INDEX - IOBUF_THREAD_CACHE_FIRST_INDEX + 1;
+
+/** Return every block in @a caches to the global ioBufAllocator freelists. */
+void iobuf_thread_cache_drain(ProxyAllocator (&caches)[IOBUF_THREAD_CACHE_CLASSES]);
+
 #if 1
 
 // Potentially empty variable arguments -- non-standard GCC way

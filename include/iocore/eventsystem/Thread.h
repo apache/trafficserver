@@ -139,6 +139,7 @@ public:
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
+  ProxyAllocator ioBufCache[IOBUF_THREAD_CACHE_CLASSES];
   ProxyAllocator preWarmSMAllocator;
   // From InkAPI (plugins wrappers)
   ProxyAllocator apiHookAllocator;
