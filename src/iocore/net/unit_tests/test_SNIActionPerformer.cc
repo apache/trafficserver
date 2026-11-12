@@ -21,6 +21,13 @@
   limitations under the License.
  */
 
+#ifndef LIBINKNET_UNIT_TEST_DIR
+#error please set LIBINKNET_UNIT_TEST_DIR
+#endif
+
+#define _STR(s)  #s
+#define _XSTR(s) _STR(s)
+
 #include "../SNIActionPerformer.h"
 #include "../P_SSLNetVConnection.h"
 #include "../P_SSLUtils.h"
@@ -36,8 +43,14 @@
 #include "../P_QUICNetVConnection.h"
 #endif
 
+#if TS_USE_QUIC == 1 && TS_HAS_OPENSSL_QUIC
+#include "iocore/net/quic/QUICConfig.h"
+#include "iocore/net/quic/QUICGlobals.h"
+#endif
+
 #include <catch2/catch_test_macros.hpp>
 
+#include <openssl/err.h>
 #include <openssl/ssl.h>
 
 #include <algorithm>
@@ -66,8 +79,8 @@ make_endpoint(const char *ip)
   return ep;
 }
 
-// A connection that binds TLSSNISupport and ALPNSupport but is not an SSLNetVConnection, the way
-// QUICNetVConnection is.
+// A connection that attaches itself and binds TLSSNISupport and ALPNSupport but is not an
+// SSLNetVConnection, the way QUICNetVConnection is.
 class NonSSLNetVConnection : public UnixNetVConnection, public ALPNSupport, public TLSSNISupport
 {
 public:
@@ -83,6 +96,7 @@ public:
   void
   bind_to(SSL *ssl)
   {
+    NetVCAttach(ssl, this);
     ALPNSupport::bind(ssl, this);
     TLSSNISupport::bind(ssl, this);
   }
@@ -124,7 +138,7 @@ public:
   bind_to(SSL *ssl)
   {
     this->ssl = ssl;
-    SSLNetVCAttach(ssl, this);
+    NetVCAttach(ssl, this);
     ALPNSupport::bind(ssl, this);
     TLSSNISupport::bind(ssl, this);
     TLSTunnelSupport::bind(ssl, this);
@@ -132,17 +146,6 @@ public:
 
   // The SSL object belongs to the test.
   ~PeerSSLNetVConnection() override { this->ssl = nullptr; }
-};
-
-// TLSSNISupport bound on its own, with no connection behind it.
-class DetachedSNISupport : public TLSSNISupport
-{
-protected:
-  in_port_t
-  _get_local_port() override
-  {
-    return 443;
-  }
 };
 
 struct SSLDeleter {
@@ -216,6 +219,9 @@ const ActionItem::Context no_context{};
 
 // TunnelDestination keeps a reference to its ALPN list, so the list has to outlive the action.
 const std::vector<int> no_alpn{};
+
+const std::string ca_dir{_XSTR(LIBINKNET_UNIT_TEST_DIR) "/../../../../tests/uranium_tests/tls/ssl"};
+const std::string ca_file{ca_dir + "/signer.pem"};
 } // end anonymous namespace
 
 TEST_CASE("SNI_IpAllow checks the peer of a connection that is not an SSLNetVConnection", "[sni][ip_allow]")
@@ -361,22 +367,9 @@ TEST_CASE("SNI_IpAllow refuses when it cannot find the connection", "[sni][ip_al
   ScopedAclSubjects subjects{IpAllow::Subject::PEER};
   std::string       allow_list{"0.0.0.0/0,::/0"};
   SNI_IpAllow       action{allow_list, server_name};
+  SSLObject         ssl;
 
-  SECTION("nothing is bound to the SSL object")
-  {
-    SSLObject ssl;
-
-    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
-  }
-
-  SECTION("the bound TLSSNISupport is not a connection")
-  {
-    DetachedSNISupport snis;
-    SSLObject          ssl;
-
-    TLSSNISupport::bind(ssl.get(), &snis);
-    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
-  }
+  CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
 }
 
 TEST_CASE("SNI_IpAllow still checks the peer of an SSLNetVConnection", "[sni][ip_allow]")
@@ -402,23 +395,46 @@ TEST_CASE("SNI_IpAllow still checks the peer of an SSLNetVConnection", "[sni][ip
   }
 }
 
-TEST_CASE("VerifyClient refuses a connection that is not an SSLNetVConnection when it has to verify", "[sni][verify_client]")
+TEST_CASE("VerifyClient applies the level to a connection that is not an SSLNetVConnection", "[sni][verify_client]")
 {
   auto      vc = std::make_unique<NonSSLNetVConnection>();
   SSLObject ssl;
 
   vc->bind_to(ssl.get());
 
-  SECTION("STRICT is refused")
+  SECTION("STRICT")
   {
     VerifyClient action{uint8_t{2}, "", ""};
+    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
+    CHECK(SSL_get_verify_mode(ssl.get()) == (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE));
+  }
+
+  SECTION("MODERATE")
+  {
+    VerifyClient action{uint8_t{1}, "", ""};
+    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
+    CHECK(SSL_get_verify_mode(ssl.get()) == (SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE));
+  }
+
+  SECTION("STRICT with a CA file is refused")
+  {
+    VerifyClient action{uint8_t{2}, ca_file, ""};
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
   }
 
-  SECTION("MODERATE is refused")
+  SECTION("MODERATE with a CA directory is refused")
   {
-    VerifyClient action{uint8_t{1}, "", ""};
+    VerifyClient action{uint8_t{1}, "", ca_dir};
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
+  }
+
+  SECTION("NONE with a CA file is applied")
+  {
+    VerifyClient action{uint8_t{0}, ca_file, ""};
+
+    SSL_set_verify(ssl.get(), SSL_VERIFY_PEER, nullptr);
+    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
+    CHECK(SSL_get_verify_mode(ssl.get()) == SSL_VERIFY_NONE);
   }
 
   SECTION("NONE is applied over a stricter default")
@@ -460,15 +476,32 @@ TEST_CASE("VerifyClient still applies the level to an SSLNetVConnection", "[sni]
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
     CHECK(SSL_get_verify_mode(ssl.get()) == SSL_VERIFY_NONE);
   }
+
+  SECTION("the CA override is kept on the connection")
+  {
+    VerifyClient action{uint8_t{2}, ca_file, ca_dir};
+    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
+    REQUIRE(vc->get_ca_cert_file() != nullptr);
+    CHECK(vc->get_ca_cert_file() == ca_file);
+    REQUIRE(vc->get_ca_cert_dir() != nullptr);
+    CHECK(vc->get_ca_cert_dir() == ca_dir);
+  }
 }
 
 TEST_CASE("VerifyClient with nothing bound to the SSL object", "[sni][verify_client]")
 {
   SSLObject ssl;
 
-  SECTION("STRICT is refused")
+  SECTION("STRICT is applied")
   {
     VerifyClient action{uint8_t{2}, "", ""};
+    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
+    CHECK(SSL_get_verify_mode(ssl.get()) == (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE));
+  }
+
+  SECTION("STRICT with a CA file is refused")
+  {
+    VerifyClient action{uint8_t{2}, ca_file, ""};
     CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
   }
 
@@ -527,3 +560,40 @@ TEST_CASE("TunnelDestination still routes an SSLNetVConnection", "[sni][tunnel_r
   CHECK(vc->has_tunnel_destination());
   CHECK(vc->get_tunnel_host() == "tunnel.example.com");
 }
+
+#if TS_USE_QUIC == 1 && TS_HAS_OPENSSL_QUIC
+TEST_CASE("A QUICNetVConnection attaches itself to its SSL object", "[sni][quic]")
+{
+  [[maybe_unused]] static bool const quic_initialized = (QUIC::init(), QUICConfig::startup(), true);
+
+  ScopedAclSubjects subjects{IpAllow::Subject::PEER};
+  std::string       allow_list{"10.1.0.0/16"};
+  SNI_IpAllow       action{allow_list, server_name};
+  auto              vc = std::make_unique<QUICNetVConnection>();
+  SSLObject         ssl;
+
+  vc->init(ssl.get(), nullptr);
+  // init() also makes QUIC-only calls, which fail on this TLS object; don't leave their errors queued.
+  ERR_clear_error();
+  REQUIRE(NetVCAccess(ssl.get()) == vc.get());
+
+  SECTION("SNI_IpAllow accepts a peer in the list")
+  {
+    vc->set_quic_endpoints(make_endpoint("192.0.2.100"), make_endpoint("10.1.2.3"));
+    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
+  }
+
+  SECTION("SNI_IpAllow refuses a peer outside the list")
+  {
+    vc->set_quic_endpoints(make_endpoint("192.0.2.100"), make_endpoint("10.2.0.1"));
+    CHECK(action.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_ALERT_FATAL);
+  }
+
+  SECTION("VerifyClient applies STRICT")
+  {
+    VerifyClient verify{uint8_t{2}, "", ""};
+    CHECK(verify.SNIAction(*ssl, no_context) == SSL_TLSEXT_ERR_OK);
+    CHECK(SSL_get_verify_mode(ssl.get()) == (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE));
+  }
+}
+#endif

@@ -40,15 +40,6 @@ namespace
 DbgCtl dbg_ctl_ssl_sni{"ssl_sni"};
 #endif
 
-// SSLNetVCAccess() only finds an SSLNetVConnection. QUICNetVConnection binds
-// TLSSNISupport but not that slot, so reach the NetVConnection through
-// TLSSNISupport, which both bind.
-NetVConnection *
-sni_netvc(SSL &ssl)
-{
-  return dynamic_cast<NetVConnection *>(TLSSNISupport::getInstance(&ssl));
-}
-
 } // end anonymous namespace
 
 int
@@ -191,10 +182,9 @@ TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingTyp
 int
 TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
 {
-  auto snis      = TLSSNISupport::getInstance(&ssl);
   auto tuns      = TLSTunnelSupport::getInstance(&ssl);
   auto alpns     = ALPNSupport::getInstance(&ssl);
-  auto ssl_netvc = dynamic_cast<SSLNetVConnection *>(snis);
+  auto ssl_netvc = dynamic_cast<SSLNetVConnection *>(NetVCAccess(&ssl));
 
   if (ssl_netvc == nullptr) {
     // Only an SSLNetVConnection can be tunnelled, so refuse rather than serve the name here.
@@ -206,7 +196,7 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
     return SSL_TLSEXT_ERR_OK;
   }
 
-  const char *servername = snis->get_sni_server_name();
+  const char *servername = ssl_netvc->get_sni_server_name();
   if (fnArrIndexes.empty()) {
     tuns->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
     Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
@@ -313,23 +303,24 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
 int
 VerifyClient::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
-  auto snis   = TLSSNISupport::getInstance(&ssl);
-  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(snis);
+  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(NetVCAccess(&ssl));
 
   if (ssl_vc == nullptr) {
-    // The CA override is kept on the SSLNetVConnection for the certificate callback, and
-    // ssl_verify_client_callback() looks the connection up with SSLNetVCAccess(), so a client
-    // certificate can't be checked as configured on any other connection. Refuse rather than let the
-    // default verification stand in. NONE needs neither.
-    if (this->mode == 0) {
-      setClientCertLevel(&ssl, 0);
-      return SSL_TLSEXT_ERR_OK;
+    // A CA override is kept on the SSLNetVConnection, for the certificate callback to apply again after
+    // it switches the SSL_CTX, so it can't be applied to any other connection. Refuse rather than let the
+    // default CA store stand in. Without an override the level only needs the SSL object, and NONE checks
+    // no certificate.
+    if (this->mode != 0 && (!ca_file.empty() || !ca_dir.empty())) {
+      Dbg(dbg_ctl_ssl_sni, "verify_client %d with a CA override needs an SSLNetVConnection - denying connection", this->mode);
+      return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
-    Dbg(dbg_ctl_ssl_sni, "verify_client %d needs an SSLNetVConnection - denying connection", this->mode);
-    return SSL_TLSEXT_ERR_ALERT_FATAL;
+    Dbg(dbg_ctl_ssl_sni, "action verify param %d", this->mode);
+    setClientCertLevel(&ssl, this->mode);
+    setClientCertCACerts(&ssl, ca_file.c_str(), ca_dir.c_str());
+    return SSL_TLSEXT_ERR_OK;
   }
 
-  const char *servername = snis->get_sni_server_name();
+  const char *servername = ssl_vc->get_sni_server_name();
   Dbg(dbg_ctl_ssl_sni, "action verify param %d, fqdn [%s]", this->mode, servername);
   setClientCertLevel(ssl_vc->ssl, this->mode);
   ssl_vc->set_ca_cert_file(ca_file, ca_dir);
@@ -439,7 +430,7 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
     return SSL_TLSEXT_ERR_OK;
   }
 
-  auto netvc = sni_netvc(ssl);
+  auto netvc = NetVCAccess(&ssl);
   if (netvc == nullptr) {
     Dbg(dbg_ctl_ssl_sni, "no connection to check the ip_allow for %s - denying connection", server_name.c_str());
     return SSL_TLSEXT_ERR_ALERT_FATAL;

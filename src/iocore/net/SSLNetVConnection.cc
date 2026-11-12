@@ -138,7 +138,7 @@ SSLNetVConnection::_make_ssl_connection(SSL_CTX *ctx)
 void
 SSLNetVConnection::_bindSSLObject()
 {
-  SSLNetVCAttach(this->ssl, this);
+  NetVCAttach(this->ssl, this);
   TLSBasicSupport::bind(this->ssl, this);
   TLSEventSupport::bind(this->ssl, this);
   ALPNSupport::bind(this->ssl, this);
@@ -152,7 +152,7 @@ SSLNetVConnection::_bindSSLObject()
 void
 SSLNetVConnection::_unbindSSLObject()
 {
-  SSLNetVCDetach(this->ssl);
+  NetVCDetach(this->ssl);
   TLSBasicSupport::unbind(this->ssl);
   TLSEventSupport::unbind(this->ssl);
   ALPNSupport::unbind(this->ssl);
