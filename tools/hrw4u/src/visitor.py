@@ -101,6 +101,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         self._cachekey: cachekey_section.CacheKeySection | None = None  # set once the CACHEKEY section is visited
         self._program_has_cachekey: bool = False  # set before any section is visited, for checks in sections before CACHEKEY
+        self._cachekey_comments: list[str] = []  # top-level comments right above CACHEKEY, which move with it
         self._remap_end: int | None = None  # output index just past the last REMAP section's rules
 
     def _sandbox_check(self, ctx, check_fn) -> bool:
@@ -796,7 +797,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                             self.emit_separator()
                 elif item.commentLine() and self.preserve_comments:
                     comment_text = item.commentLine().COMMENT().getText()
-                    self.output.append(comment_text)
+                    if self._precedes_cachekey(program_items[idx + 1 :]):
+                        self._cachekey_comments.append(comment_text)
+                    else:
+                        self.output.append(comment_text)
             self._flush_condition()
             if self._cachekey is not None:
                 self._emit_cachekey()
@@ -1107,6 +1111,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             name = value.paramRef().IDENT().getText()
             raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be quoted here: write \"${name}\"")
 
+    @classmethod
+    def _precedes_cachekey(cls, items: Sequence[hrw4uParser.ProgramItemContext]) -> bool:
+        """True if the first item that isn't a comment is the CACHEKEY section."""
+        for item in items:
+            if not item.commentLine():
+                return bool(item.section()) and cls._is_cachekey_section(item.section())
+        return False
+
     @staticmethod
     def _is_cachekey_section(section_ctx: hrw4uParser.SectionContext) -> bool:
         return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY
@@ -1137,7 +1149,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         With no REMAP it is the only rule set on its hook, so it goes at the end.
         """
         insert_at = self._remap_end if self._remap_end is not None else len(self.output)
-        block = self._cachekey.render()
+        block = [*self._cachekey_comments, *self._cachekey.render()]
         if insert_at > 0 and self.output[insert_at - 1] != "":
             block = ["", *block]
         if insert_at < len(self.output) and self.output[insert_at] != "":

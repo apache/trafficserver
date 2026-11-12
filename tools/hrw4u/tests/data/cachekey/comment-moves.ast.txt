@@ -1,0 +1,1 @@
+(program (programItem (commentLine # Key on the region)) (programItem (section CACHEKEY { (sectionBody (statement (functionCall cache.key.headers.add ( (argumentList (value "X-Region")) )) ;)) })) (programItem (commentLine # Tag every request)) (programItem (section REMAP { (sectionBody (statement inbound.req.X-Tag = (value "1") ;)) })) <EOF>)
