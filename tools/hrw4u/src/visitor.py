@@ -204,11 +204,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             if warning := self._sandbox.check_modifier(mod):
                 self._add_sandbox_warning(ctx, warning)
 
-    def _substitute_strings(self, s: str, ctx) -> str:
-        inner = s[1:-1]
+    def _substitute_params(self, text: str) -> str:
+        """Replace $param references with the values bound by the procedure call being expanded."""
+        if not self._proc_bindings:
+            return text
+        return self._PARAM_REF_PATTERN.sub(lambda m: self._proc_bindings.get(m.group(1), m.group(0)), text)
 
-        if self._proc_bindings:
-            inner = self._PARAM_REF_PATTERN.sub(lambda m: self._proc_bindings.get(m.group(1), m.group(0)), inner)
+    def _substitute_strings(self, s: str, ctx) -> str:
+        inner = self._substitute_params(s[1:-1])
 
         def repl(m: re.Match) -> str:
             try:
@@ -1101,7 +1104,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         """
         self._check_not_bare_param(value)
         if value.str_ is not None:
-            return self._flatten_substitute_params(value.getText(), self._proc_bindings)
+            return self._substitute_params(value.getText())
         return value.getText()
 
     @staticmethod
