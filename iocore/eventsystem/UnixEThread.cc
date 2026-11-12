@@ -384,9 +384,17 @@ EThread::summarize_stats(EventMetrics summary[N_EVENT_TIMESCALES])
   // not N_EVENT_TIMESCALES times.
   EventMetrics sum;
 
+  // The current metric block is null until the thread enters its event loop.
+  // The stat sync can run before then during startup, so such a thread has no
+  // loop samples to report.
+  EventMetrics volatile *current = current_metric;
+  if (current == nullptr) {
+    return;
+  }
+
   // To avoid race conditions, we back up one from the current metric block. It's close enough
   // and won't be updated during the time this method runs so it should be thread safe.
-  EventMetrics *m = this->prev(current_metric);
+  EventMetrics *m = this->prev(current);
 
   for (int t = 0; t < N_EVENT_TIMESCALES; ++t) {
     int count = SAMPLE_COUNT[t];
