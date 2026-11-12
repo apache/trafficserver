@@ -101,7 +101,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         self._cachekey: cachekey_section.CacheKeySection | None = None  # set once the CACHEKEY section is visited
         self._program_has_cachekey: bool = False  # set before any section is visited, for checks in sections before CACHEKEY
-        self._cachekey_branch: cachekey_section.Branch | None = None
         self._remap_end: int | None = None  # output index just past the last REMAP section's rules
 
     def _sandbox_check(self, ctx, check_fn) -> bool:
@@ -1026,23 +1025,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self._cachekey_statement(item.statement())
 
     def _cachekey_chain(self, ctx: hrw4uParser.ConditionalContext) -> None:
-        if self._cachekey_branch is not None:
-            raise SymbolResolutionError("if", "nested conditionals not allowed in CACHEKEY")
         arms = [(BranchKeyword.IF, ctx.ifStatement()), *((BranchKeyword.ELIF, arm) for arm in ctx.elifClause())]
         if ctx.elseClause():
             arms.append((BranchKeyword.ELSE, ctx.elseClause()))
+
         for keyword, arm in arms:
             if keyword is not BranchKeyword.IF:
                 self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword.value))
-            # Added before its condition renders, so a chain whose condition fails still counts as the one.
-            branch = self._cachekey.add_branch(keyword, arm)
-            if keyword.has_condition:
-                branch.cond_lines = self._render_condition(arm.condition())
-            self._cachekey_branch = branch
-            try:
+            # Opened before its condition renders, so a chain whose condition fails still counts as the one.
+            with self._cachekey.branch(keyword, arm) as branch:
+                if keyword.has_condition:
+                    branch.cond_lines = self._render_condition(arm.condition())
                 self._cachekey_items(arm.block().blockItem())
-            finally:
-                self._cachekey_branch = None
 
     def _render_condition(self, cond_ctx: hrw4uParser.ConditionContext) -> list[str]:
         """Compile a condition at indent 0 into its own lines, off the main output."""
@@ -1055,11 +1049,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         Expands procedure calls. Raises for anything that isn't a cache.* key statement.
         """
-        target = self._cachekey_branch.parts if self._cachekey_branch else self._cachekey.shared
         if ctx.BREAK():
             raise SymbolResolutionError(
                 "break", "operator 'break' not allowed in CACHEKEY: it would end the rule set before cachekey.so runs"
             )
+
         if ctx.functionCall():
             func = ctx.functionCall().funcName.text
             if func in self._proc_registry or '::' in func:
@@ -1069,27 +1063,27 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 return
             if cachekey.is_key_name(func):
                 values = ctx.functionCall().argumentList().value() if ctx.functionCall().argumentList() else []
-                statement = cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values], ctx)
-                if func in cachekey.PRESENCE_STATEMENTS:
-                    self._cachekey.add_presence(statement, target)
-                else:
-                    target.statements.append(statement)
+                self._cachekey.add(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values], ctx))
                 return
             raise SymbolResolutionError(func, f"operator '{func}' not allowed in CACHEKEY")
+
         if ctx.lhs is None:
             # Only reachable via parser error recovery, which already reported the error.
             return
+
         lhs = ctx.lhs.text
         if ctx.EQUAL() and cachekey.is_key_name(lhs):
-            target.statements.append(cachekey.parse_assignment(lhs, self._cachekey_arg(ctx.value()), ctx))
+            self._cachekey.add(cachekey.parse_assignment(lhs, self._cachekey_arg(ctx.value()), ctx))
             return
+
         if ctx.PLUSEQUAL() and lhs == cachekey.KEY_NAME:
             value = ctx.value()
             self._check_not_bare_param(value)
             if value.str_ is None:
                 raise SymbolResolutionError(lhs, "cache.key += takes a quoted string")
-            target.add_computed(self._cachekey.new_key_part(self._substitute_strings(value.getText(), ctx)))
+            self._cachekey.add_computed(self._substitute_strings(value.getText(), ctx))
             return
+
         op = lhs if ctx.EQUAL() else f"{lhs} +="
         raise SymbolResolutionError(lhs, f"operator '{op}' not allowed in CACHEKEY")
 

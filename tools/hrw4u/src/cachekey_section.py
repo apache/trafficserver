@@ -24,6 +24,8 @@ cachekey.so instance runs per request.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Final
@@ -129,22 +131,57 @@ class CacheKeySection:
     shared holds the statements outside the chain, wherever they sit. presence holds
     each tested name once, keyed by its header lowercased, wherever it is tested:
     setting a header no branch keys on is harmless, so the checks run outside the chain.
+    A statement added while a branch is open goes to that branch, else to shared.
     """
 
     shared: KeyParts = field(default_factory=KeyParts)
     chain: list[Branch] = field(default_factory=list)
     key_part_count: int = 0
     presence: dict[str, PresenceCheck] = field(default_factory=dict)
+    _open: Branch | None = field(default=None, init=False, repr=False)
 
-    def new_key_part(self, value: str) -> KeyPart:
+    @contextmanager
+    def branch(self, keyword: BranchKeyword, ctx: ParserRuleContext) -> Iterator[Branch]:
+        """Append an arm to the chain and keep it open for the statements in its block.
+
+        Raises on an arm inside an open one, or on an if when the section already has a chain.
+        """
+        if self._open is not None:
+            raise SymbolResolutionError("if", "nested conditionals not allowed in CACHEKEY")
+        if keyword is BranchKeyword.IF and self.chain:
+            raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
+
+        self._open = Branch(keyword, ctx)
+        self.chain.append(self._open)
+        try:
+            yield self._open
+        finally:
+            self._open = None
+
+    def add(self, statement: CacheKeyStatement) -> None:
+        """Key the open branch, or every branch outside the chain, on one parsed cache.* statement."""
+        if statement.name in cachekey.PRESENCE_STATEMENTS:
+            self._add_presence(statement)
+        else:
+            self._target.statements.append(statement)
+
+    def add_computed(self, value: str) -> None:
+        """Key the open branch, or every branch, on a cache.key += value: a quoted HRW string."""
+        self._target.add_computed(self._new_key_part(value))
+
+    @property
+    def _target(self) -> KeyParts:
+        return self._open.parts if self._open is not None else self.shared
+
+    def _new_key_part(self, value: str) -> KeyPart:
         """Number the next key part. Numbers run across the whole section, not per branch."""
         if self.key_part_count == MAX_KEY_PARTS:
             raise SymbolResolutionError(cachekey.KEY_NAME, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
         self.key_part_count += 1
         return KeyPart(KEY_HEADER_FORMAT.format(self.key_part_count), value)
 
-    def add_presence(self, statement: CacheKeyStatement, target: KeyParts) -> None:
-        """Test each name in a cache.key.*.exists statement, and key target on its header.
+    def _add_presence(self, statement: CacheKeyStatement) -> None:
+        """Test each name in a cache.key.*.exists statement, and key on its header.
 
         Raises if two names need one header: header names ignore case, cookie names don't.
         """
@@ -158,15 +195,7 @@ class CacheKeySection:
                     f'{statement.name}("{name}") and {first.statement.name}("{first.name}") '
                     f"need the same header, {check.header}: header names ignore case",
                 )
-            target.statements.append(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (first.header,), statement.source))
-
-    def add_branch(self, keyword: BranchKeyword, ctx: ParserRuleContext) -> Branch:
-        """Append an arm to the chain. Raises on an if when the section already has a chain."""
-        if keyword is BranchKeyword.IF and self.chain:
-            raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
-        branch = Branch(keyword, ctx)
-        self.chain.append(branch)
-        return branch
+            self._target.statements.append(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (first.header,), statement.source))
 
     @property
     def adds_else(self) -> bool:
