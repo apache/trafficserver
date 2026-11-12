@@ -231,13 +231,23 @@ Http2Stream::main_event_handler(int event, void *edata)
                          "stream timeout");
         connection_state.handleEvent(HTTP2_SESSION_EVENT_ERROR, &error);
       }
-    } else if (_sm && read_vio.ntodo() > 0) {
-      this->signal_read_event(event);
-    } else if (_sm && write_vio.ntodo() > 0) {
-      this->signal_write_event(event);
     } else {
-      Warning("HTTP/2 unknown case of %d event - session_id=%" PRId64 " stream_id=%u", event, this->_proxy_ssn->connection_id(),
-              this->_id);
+      if (_sm && this->is_outbound_connection()) {
+        // An origin that let one stream time out may be failing others on the same connection.
+        // Stop giving the session new streams, the way an HTTP/1.1 origin connection that timed out
+        // is not reused. Streams already on it can still finish.
+        Http2ConnectionState &connection_state = get_connection_state();
+        SCOPED_MUTEX_LOCK(lock, connection_state.mutex, this_ethread());
+        connection_state.drain_outbound_session("a stream timed out");
+      }
+      if (_sm && read_vio.ntodo() > 0) {
+        this->signal_read_event(event);
+      } else if (_sm && write_vio.ntodo() > 0) {
+        this->signal_write_event(event);
+      } else {
+        Warning("HTTP/2 unknown case of %d event - session_id=%" PRId64 " stream_id=%u", event, this->_proxy_ssn->connection_id(),
+                this->_id);
+      }
     }
     break;
   case VC_EVENT_WRITE_READY:

@@ -1033,7 +1033,7 @@ Http2ConnectionState::rcv_goaway_frame(const Http2Frame &frame)
 
     if (drain && survivors > 0) {
       Http2ConDebug(session, "Draining %u streams after GOAWAY last_stream_id=%u", survivors, goaway.last_streamid);
-      this->_peer_goaway_drain = true;
+      this->_outbound_drain = true;
       this->session->set_half_close_local_flag(true);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
@@ -2341,9 +2341,9 @@ Http2ConnectionState::release_stream()
         // Can't do this because we just destroyed right here ^,
         // or we can use a local variable to do it.
         // session = nullptr;
-      } else if (_peer_goaway_drain) {
-        // Every stream left by the origin's GOAWAY is gone. The half-closed
-        // session cannot gain streams, so the count stays at zero.
+      } else if (_outbound_drain) {
+        // Every stream left on the draining origin session is gone. The
+        // half-closed session cannot gain streams, so the count stays at zero.
         if (fini_event == nullptr) {
           fini_event = this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_FINI);
         }
@@ -3043,10 +3043,21 @@ Http2ConnectionState::_get_outstanding_settings_frame_limit() const
 }
 
 void
+Http2ConnectionState::drain_outbound_session(const char *reason)
+{
+  if (!this->session->is_outbound() || this->session->get_half_close_local_flag()) {
+    return;
+  }
+  Http2ConDebug(session, "Draining the origin session because %s", reason);
+  this->_outbound_drain = true;
+  this->session->set_half_close_local_flag(true);
+}
+
+void
 Http2ConnectionState::_close_connection(Http2ErrorCode error_code)
 {
-  // A session draining the origin's GOAWAY is half-closed without having sent one.
-  if (!this->session->get_half_close_local_flag() || this->_peer_goaway_drain) {
+  // A draining origin session is half-closed without having sent GOAWAY.
+  if (!this->session->get_half_close_local_flag() || this->_outbound_drain) {
     this->send_goaway_frame(this->latest_streamid_in, error_code);
     this->session->set_half_close_local_flag(true);
   }
