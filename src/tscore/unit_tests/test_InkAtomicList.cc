@@ -332,7 +332,8 @@ TEST_CASE("Atomic list", "[libts][InkAtomicList]")
     std::memcpy(&head, raw_head, sizeof(test_type));
     void *tail{head.next};
 
-    CHECK(((&head == b) && (tail == a)));
+    CHECK(raw_head == b);
+    CHECK(tail == a);
 
     ink_freelist_free(f, a);
     ink_freelist_free(f, b);
