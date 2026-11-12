@@ -38,6 +38,8 @@
 
 #include <cerrno>
 #include <algorithm>
+#include <string>
+#include <vector>
 
 namespace
 {
@@ -438,7 +440,10 @@ QUICPacketHandlerIn::getNetProcessor() const
 NetAccept *
 QUICPacketHandlerIn::clone() const
 {
-  return new QUICPacketHandlerIn(this->opt);
+  auto *a = new QUICPacketHandlerIn(this->opt);
+  ats_ip_copy(&a->server.accept_addr, &this->server.accept_addr);
+  a->action_ = this->action_;
+  return a;
 }
 
 int
@@ -450,7 +455,8 @@ QUICPacketHandlerIn::acceptEvent(int /* event ATS_UNUSED */, void * /* data ATS_
     this->_collector_event = this_ethread()->schedule_every(this->_closed_con_collector.get(), HRTIME_MSECONDS(100));
   }
 
-  if (this->_listener == nullptr && !this->_start_listener()) {
+  if (this->_listener == nullptr && this->_start_listener() != Listen::started) {
+    this->_stop_unstarted_listener();
     return EVENT_DONE;
   }
 
@@ -464,17 +470,95 @@ QUICPacketHandlerIn::acceptEvent(int /* event ATS_UNUSED */, void * /* data ATS_
 void
 QUICPacketHandlerIn::init_accept(EThread *t)
 {
-  SET_HANDLER(&QUICPacketHandlerIn::acceptEvent);
-
   if (t == nullptr) {
     t = eventProcessor.assign_thread(ET_NET);
   }
 
+  // A lone acceptor hands every connection to the session acceptor on this one thread, so the session
+  // acceptor can borrow the thread's mutex.
   if (!this->action_->continuation->mutex) {
     this->action_->continuation->mutex = t->mutex;
     this->action_->mutex               = t->mutex;
   }
 
+  this->_schedule_on(t);
+}
+
+void
+QUICPacketHandlerIn::init_accept_per_thread_listeners()
+{
+#if defined(__linux__) || defined(SO_REUSEPORT_LB)
+  auto const         &net_threads = eventProcessor.thread_group[ET_NET];
+  ip_port_text_buffer addr;
+  ats_ip_nptop(&this->server.accept_addr, addr, sizeof(addr));
+
+  // Every socket is bound before any acceptor runs. The kernel picks a socket for a datagram by hashing
+  // over however many sockets are bound at that moment, so a connection established while the group
+  // was still growing could have its later datagrams sent to a listener that does not know it.
+  std::vector<QUICPacketHandlerIn *> acceptors;
+  for (int i = 0; i < net_threads._count; ++i) {
+    auto        *a      = (i == 0) ? this : static_cast<QUICPacketHandlerIn *>(this->clone());
+    Listen const result = a->_start_listener(i);
+    if (result == Listen::started) {
+      acceptors.push_back(a);
+      continue;
+    }
+
+    if (a != this) {
+      a->server.close();
+      delete a;
+    } else if (result == Listen::port_not_shared) {
+      Warning("HTTP/3 port %d: one OpenSSL QUIC listener serves %s, because its socket cannot share the port", this->opt.local_port,
+              addr);
+      this->server.close();
+      this->init_accept(nullptr);
+      return;
+    }
+    break;
+  }
+
+  if (acceptors.empty()) {
+    this->_stop_unstarted_listener();
+    return;
+  }
+  if (acceptors.size() < static_cast<size_t>(net_threads._count)) {
+    Warning("HTTP/3 port %d: the OpenSSL QUIC listener for net thread %zu on %s failed to start (see the error above), so only "
+            "%zu of %d net threads accept HTTP/3 connections on this port",
+            this->opt.local_port, acceptors.size(), addr, acceptors.size(), net_threads._count);
+  }
+  Dbg(dbg_ctl_openssl_quic, "accepting OpenSSL QUIC connections on %zu of %d net threads", acceptors.size(), net_threads._count);
+
+  // Continuation::handleEvent() requires the caller to hold the continuation's mutex, and each net thread
+  // holds its own for good, so a session acceptor called from every net thread cannot have one. As with
+  // TCP per-thread accept, its mutex stays unset: the QUIC session acceptors hold only state fixed at
+  // startup, and the IP-allow configuration they read is a reference-counted snapshot.
+  for (size_t i = 0; i < acceptors.size(); ++i) {
+    acceptors[i]->_schedule_on(net_threads._thread[i]);
+  }
+#else
+  // Without SO_REUSEPORT load balancing, one of the sockets would receive every datagram.
+  Note("HTTP/3 port %d: one OpenSSL QUIC listener serves the port, because this platform does not spread a shared port "
+       "over its sockets",
+       this->opt.local_port);
+  this->init_accept(nullptr);
+#endif
+}
+
+void
+QUICPacketHandlerIn::_stop_unstarted_listener()
+{
+  ip_port_text_buffer addr;
+  Error("HTTP/3 port %d: no OpenSSL QUIC listener started on %s", this->opt.local_port,
+        ats_ip_nptop(&this->server.accept_addr, addr, sizeof(addr)));
+  this->server.close();
+  SSL_free(this->_listener);
+  this->_listener = nullptr;
+}
+
+void
+QUICPacketHandlerIn::_schedule_on(EThread *t)
+{
+  SET_HANDLER(&QUICPacketHandlerIn::acceptEvent);
   this->mutex = get_NetHandler(t)->mutex;
   t->schedule_imm(this);
 }
@@ -490,33 +574,52 @@ QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket * /* udp
 {
 }
 
-bool
-QUICPacketHandlerIn::_start_listener()
+QUICPacketHandlerIn::Listen
+QUICPacketHandlerIn::_start_listener(int net_thread)
 {
+  ip_port_text_buffer addr;
+  std::string         where{ats_ip_nptop(&this->server.accept_addr, addr, sizeof(addr))};
+  if (net_thread >= 0) {
+    where += " for net thread " + std::to_string(net_thread);
+  }
+
   if (!this->server.sock.is_ok()) {
     this->server.sock = UnixSocket{this->server.accept_addr.sa.sa_family, SOCK_DGRAM, 0};
     if (!this->server.sock.is_ok()) {
-      Error("failed to create OpenSSL QUIC UDP socket: %s", strerror(errno));
-      return false;
+      Error("failed to create OpenSSL QUIC UDP socket on %s: %s", where.c_str(), strerror(errno));
+      return Listen::failed;
     }
 
     if (this->server.accept_addr.sa.sa_family == AF_INET6 && this->server.sock.enable_option(IPPROTO_IPV6, IPV6_V6ONLY) < 0) {
-      Error("failed to set IPV6_V6ONLY on OpenSSL QUIC socket: %s", strerror(errno));
-      return false;
+      Error("failed to set IPV6_V6ONLY on OpenSSL QUIC socket on %s: %s", where.c_str(), strerror(errno));
+      return Listen::failed;
+    }
+    if (net_thread >= 0) {
+      if (this->server.sock.enable_option(SOL_SOCKET, SO_REUSEPORT) < 0) {
+        Warning("failed to set SO_REUSEPORT on OpenSSL QUIC socket on %s: %s", where.c_str(), strerror(errno));
+        return Listen::port_not_shared;
+      }
+#ifdef SO_REUSEPORT_LB
+      // Where it exists, SO_REUSEPORT alone does not spread datagrams over the group.
+      if (this->server.sock.enable_option(SOL_SOCKET, SO_REUSEPORT_LB) < 0) {
+        Warning("failed to set SO_REUSEPORT_LB on OpenSSL QUIC socket on %s: %s", where.c_str(), strerror(errno));
+        return Listen::port_not_shared;
+      }
+#endif
     }
     if (this->server.sock.enable_option(SOL_SOCKET, SO_REUSEADDR) < 0) {
-      Error("failed to set SO_REUSEADDR on OpenSSL QUIC socket: %s", strerror(errno));
-      return false;
+      Error("failed to set SO_REUSEADDR on OpenSSL QUIC socket on %s: %s", where.c_str(), strerror(errno));
+      return Listen::failed;
     }
     if (this->server.sock.bind(&this->server.accept_addr.sa, ats_ip_size(&this->server.accept_addr.sa)) < 0) {
-      Error("failed to bind OpenSSL QUIC socket: %s", strerror(errno));
-      return false;
+      Error("failed to bind OpenSSL QUIC socket on %s: %s", where.c_str(), strerror(errno));
+      return Listen::failed;
     }
   }
 
   if (this->server.sock.set_nonblocking() < 0) {
-    Error("failed to make OpenSSL QUIC socket nonblocking: %s", strerror(errno));
-    return false;
+    Error("failed to make OpenSSL QUIC socket on %s nonblocking: %s", where.c_str(), strerror(errno));
+    return Listen::failed;
   }
   if (this->opt.recv_bufsize > 0) {
     this->server.sock.set_rcvbuf_size(this->opt.recv_bufsize);
@@ -537,19 +640,19 @@ QUICPacketHandlerIn::_start_listener()
 
   this->_listener = SSL_new_listener(default_ctx.get(), listener_flags);
   if (this->_listener == nullptr) {
-    Error("failed to create OpenSSL QUIC listener");
-    return false;
+    Error("failed to create OpenSSL QUIC listener on %s", where.c_str());
+    return Listen::failed;
   }
 
   BIO *bio = new_peer_capture_bio(this->server.sock.get_fd());
   if (bio == nullptr) {
-    Error("failed to create OpenSSL QUIC peer capture BIO");
-    return false;
+    Error("failed to create OpenSSL QUIC peer capture BIO on %s", where.c_str());
+    return Listen::failed;
   }
   SSL_set_bio(this->_listener, bio, bio);
   if (SSL_get_rbio(this->_listener) == nullptr || SSL_get_wbio(this->_listener) == nullptr) {
-    Error("failed to configure OpenSSL QUIC listener socket");
-    return false;
+    Error("failed to configure OpenSSL QUIC listener socket on %s", where.c_str());
+    return Listen::failed;
   }
   SSL_set_blocking_mode(this->_listener, 0);
   SSL_set_event_handling_mode(this->_listener, SSL_VALUE_EVENT_HANDLING_MODE_EXPLICIT);
@@ -560,12 +663,12 @@ QUICPacketHandlerIn::_start_listener()
   SSL_set_incoming_stream_policy(this->_listener, SSL_INCOMING_STREAM_POLICY_ACCEPT, 0);
 
   if (SSL_listen(this->_listener) != 1) {
-    Error("failed to start OpenSSL QUIC listener");
-    return false;
+    Error("failed to start OpenSSL QUIC listener on %s", where.c_str());
+    return Listen::failed;
   }
 
-  Dbg(dbg_ctl_openssl_quic, "OpenSSL QUIC listener started on fd %d", this->server.sock.get_fd());
-  return true;
+  Dbg(dbg_ctl_openssl_quic, "OpenSSL QUIC listener started on %s, fd %d", where.c_str(), this->server.sock.get_fd());
+  return Listen::started;
 }
 
 void
