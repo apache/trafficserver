@@ -430,10 +430,22 @@ EThread::Metrics::summarize(Metrics &global)
   // not N_EVENT_TIMESCALES times.
   Slice sum;
 
+  // Only summarize if there's no outstanding decay.
+  if (0 == _decay_count) {
+    global._loop_timing += _loop_timing;
+    global._api_timing  += _api_timing;
+  }
+
   // To avoid race conditions, we back up one from the current metric block. It's close enough
   // and won't be updated during the time this method runs so it should be thread safe.
   // The acquire fence ensures we see all the preceeding updates to the previous slice.
-  Slice *slice = this->prev_slice(current_slice.load(std::memory_order_acquire));
+  Slice *current = current_slice.load(std::memory_order_acquire);
+  if (current == nullptr) {
+    // The thread has not entered its event loop yet, so it has no loop samples.
+    // The stat sync can run during startup before every thread gets there.
+    return;
+  }
+  Slice *slice = this->prev_slice(current);
 
   for (unsigned t = 0; t < N_TIMESCALES; ++t) {
     int count = SLICE_SAMPLE_COUNT[t];
@@ -447,12 +459,6 @@ EThread::Metrics::summarize(Metrics &global)
       slice = this->prev_slice(slice);
     }
     global._slice[t] += sum; // push out to return vector.
-  }
-
-  // Only summarize if there's no outstanding decay.
-  if (0 == _decay_count) {
-    global._loop_timing += _loop_timing;
-    global._api_timing  += _api_timing;
   }
 }
 
