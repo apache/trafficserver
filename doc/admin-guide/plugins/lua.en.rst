@@ -2566,6 +2566,11 @@ transaction to use that strategy.
 Use empty string or "null" to clear the strategy and fall back to
 parent.config or the remap to url.
 
+If the named strategy does not exist, the transaction's strategy is left
+unchanged. The failure is logged as an error at most once a minute, with a
+count of the failures suppressed since the previous error; the suppressed
+failures are logged with the ``ts_lua`` debug tag.
+
 Here is an example:
 
 ::

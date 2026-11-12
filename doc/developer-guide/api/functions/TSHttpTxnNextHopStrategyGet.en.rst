@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void const* TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
+.. function:: TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
 
 Description
 ===========
@@ -40,8 +40,8 @@ This may be nullptr indicating that parent.config is in use.
 
    This strategy pointer must not be freed and the contents must not
    be changed.
-   Strategy pointers held by plugins will become invalid when ATS
-   configs are reloaded and should be reset with :func:`TSRemapNewInstance`
+   Strategy pointers held by plugins become invalid when ATS configs
+   are reloaded and must be re-obtained during :func:`TSRemapNewInstance`
 
 See Also
 ========
