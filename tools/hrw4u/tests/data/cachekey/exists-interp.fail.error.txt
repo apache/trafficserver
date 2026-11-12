@@ -1,1 +1,1 @@
-tests/data/cachekey/exists-interp.fail.input.txt:2:4: error: cache.key.cookies.exists() arguments must be static
+tests/data/cachekey/exists-interp.fail.input.txt:2:4: error: cache.key.cookies.exists() name must be static

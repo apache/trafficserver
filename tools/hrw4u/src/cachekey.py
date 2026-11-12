@@ -179,16 +179,7 @@ def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None
             raise SymbolResolutionError(lhs, f'{lhs} can only be set to ""')
         return CacheKeyStatement(lhs, source=source)
 
-    value = _unquote(rhs)
-    if value is None:
-        raise SymbolResolutionError(lhs, f"{lhs} must be set to a quoted string")
-    if "{" in value:
-        raise SymbolResolutionError(lhs, f"{lhs} must be static: plugin flags can't hold {{...}} values")
-    if not value:
-        raise SymbolResolutionError(lhs, f"{lhs} can't be empty")
-    if problem := _mangles_flag(value):
-        raise SymbolResolutionError(lhs, f'{lhs} value "{value}" {problem}')
-    return CacheKeyStatement(lhs, (value,), source)
+    return CacheKeyStatement(lhs, (_flag_value(lhs, f"{lhs} value", rhs),), source)
 
 
 def parse_statement(name: str, args: list[str], source: ParserRuleContext | None = None) -> CacheKeyStatement:
@@ -208,19 +199,10 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
 
     items = []
     for arg in args:
-        item = _unquote(arg)
-        if item is None:
-            raise SymbolResolutionError(name, f"{name}() arguments must be quoted strings")
-        # cachekey.so reads its flags once, at config load.
-        if "{" in item:
-            raise SymbolResolutionError(name, f"{name}() arguments must be static: plugin flags can't hold {{...}} values")
-        if not item:
-            raise SymbolResolutionError(name, f"{name}() has an empty name")
+        item = _flag_value(name, f"{name}() name", arg)
         # The flag value is comma-separated, so a comma would split one name into two.
         if "," in item:
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a comma: pass each name as its own argument")
-        if problem := _mangles_flag(item):
-            raise SymbolResolutionError(name, f"{name}() name \"{item}\" {problem}")
         if names is not None and not names.accepts(item):
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" is not a valid {names.noun} name")
         items.append(item)
@@ -232,6 +214,24 @@ def _unquote(arg: str) -> str | None:
     if len(arg) < 2 or not (arg.startswith('"') and arg.endswith('"')):
         return None
     return arg[1:-1]
+
+
+def _flag_value(name: str, subject: str, text: str) -> str:
+    """Unquote an argument or an assigned value, and raise if it can't sit in a cachekey.so flag.
+
+    subject names the value in an error, as in "cache.key.prefix value".
+    """
+    value = _unquote(text)
+    if value is None:
+        raise SymbolResolutionError(name, f"{subject} must be a quoted string")
+    # cachekey.so reads its flags once, at config load.
+    if "{" in value:
+        raise SymbolResolutionError(name, f"{subject} must be static: plugin flags can't hold {{...}} values")
+    if not value:
+        raise SymbolResolutionError(name, f"{subject} can't be empty")
+    if problem := _mangles_flag(value):
+        raise SymbolResolutionError(name, f'{subject} "{value}" {problem}')
+    return value
 
 
 def _mangles_flag(item: str) -> str | None:

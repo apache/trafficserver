@@ -1,1 +1,1 @@
-tests/data/cachekey/prefix-interp.fail.input.txt:2:4: error: cache.key.prefix must be static: plugin flags can't hold {...} values
+tests/data/cachekey/prefix-interp.fail.input.txt:2:4: error: cache.key.prefix value must be static: plugin flags can't hold {...} values
