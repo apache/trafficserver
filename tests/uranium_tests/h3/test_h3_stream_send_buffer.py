@@ -43,6 +43,9 @@ MAX_CONNECTION_SEND_BUFFER = 2 * 1048576
 # about whether a limit holds rather than about exact byte counts.
 LIMIT_SLACK = 16 * 1024
 
+# proxy.config.quic.max_stream_send_buffer's default in RecordsConfig.cc.
+DEFAULT_MAX_STREAM_SEND_BUFFER = 262144
+
 # Each response fits under the stream limit, so ATS can hand OpenSSL all of it and finish the
 # transaction; eight of them are twice the connection limit.
 UNACKNOWLEDGED_BODY_SIZE = 524288
@@ -144,8 +147,8 @@ def configure_ats(
     name: str,
     server: VerifierServer,
     remap: str,
-    max_stream_send_buffer: int = MAX_STREAM_SEND_BUFFER,
-    max_connection_send_buffer: int = MAX_CONNECTION_SEND_BUFFER,
+    max_stream_send_buffer: int | None = MAX_STREAM_SEND_BUFFER,
+    max_connection_send_buffer: int | None = MAX_CONNECTION_SEND_BUFFER,
 ) -> ATS:
     """Configure HTTP/3 with quic_net debugging on, so each stream write logs what OpenSSL holds.
 
@@ -153,9 +156,13 @@ def configure_ats(
     :param name: Unique Traffic Server name within the scenario.
     :param server: The origin.
     :param remap: The remap rule's source URL.
-    :param max_stream_send_buffer: The per-stream send limit.
-    :param max_connection_send_buffer: The per-connection send limit.
+    :param max_stream_send_buffer: The per-stream send limit, or None to leave the default.
+    :param max_connection_send_buffer: The per-connection send limit, or None to leave the default.
     """
+    limits = {
+        "proxy.config.quic.max_stream_send_buffer": max_stream_send_buffer,
+        "proxy.config.quic.max_connection_send_buffer": max_connection_send_buffer,
+    }
 
     ats = ats_factory.create(name, enable_tls=True, enable_quic=True, enable_cache=False)
     ats.set_startup_timeout(60)
@@ -173,8 +180,7 @@ def configure_ats(
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "quic_net|v_quic_net",
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-            "proxy.config.quic.max_stream_send_buffer": max_stream_send_buffer,
-            "proxy.config.quic.max_connection_send_buffer": max_connection_send_buffer,
+            **{record: value for record, value in limits.items() if value is not None},
         }
     )
     ats.remap_config.add_line(f"map {remap} http://127.0.0.1:{server.http_port}/")
@@ -209,7 +215,7 @@ def aioquic_client(services: ServiceFactory, ats: ATS, scenario: str, *options: 
 
 
 def run_aioquic_scenario(
-    ats_factory: ATSFactory, services: ServiceFactory, scenario: str, *options: str, **limits: int
+    ats_factory: ATSFactory, services: ServiceFactory, scenario: str, *options: str, **limits: int | None
 ) -> tuple[ATS, str]:
     """Start an origin and ATS, run one aioquic scenario to completion, and return ATS and the client's output.
 
@@ -376,6 +382,40 @@ def test_h3_stream_send_buffer_stream_limit(ats_factory: ATSFactory, services: S
     )
     assert most_held >= SMALL_STREAM_SEND_BUFFER - LIMIT_SLACK, (
         f"OpenSSL held at most {most_held} bytes for the stream, so the {SMALL_STREAM_SEND_BUFFER}-byte stream limit was never reached"
+    )
+
+
+def test_h3_stream_send_buffer_default_stream_limit(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """With no send limits configured, a stream's buffer grows past OpenSSL's initial size and stops at the default stream limit.
+
+    The same client as the stream limit test: it acknowledges nothing, and its windows exceed the
+    response. The default connection limit is larger than the default stream limit, so only the
+    stream limit stops ATS from handing over the whole response, and a wrong default shows as
+    OpenSSL holding well above or below it.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    """
+    require_openssl_quic(ats_factory)
+    ats, stdout = run_aioquic_scenario(
+        ats_factory, services, "send-buffer-stream-limit", max_stream_send_buffer=None, max_connection_send_buffer=None
+    )
+    assert "sent 1 requests" in stdout, stdout
+
+    writes = [write for write in stream_writes(read_settled(ats.traffic_out)) if write.stream[1] % 4 == 0]
+    assert writes, "expected write lines for the response stream"
+    largest = max(write.size for write in writes)
+    assert largest > OPENSSL_INITIAL_STREAM_SEND_BUFFER, (
+        f"the response stream's OpenSSL send buffer never grew past {OPENSSL_INITIAL_STREAM_SEND_BUFFER} bytes"
+    )
+    most_held = max(write.used for write in writes)
+    assert DEFAULT_MAX_STREAM_SEND_BUFFER - LIMIT_SLACK <= most_held <= DEFAULT_MAX_STREAM_SEND_BUFFER + LIMIT_SLACK, (
+        f"OpenSSL held at most {most_held} bytes for the stream in a buffer of at most {largest}, not within "
+        f"{LIMIT_SLACK} of the {DEFAULT_MAX_STREAM_SEND_BUFFER}-byte default stream limit"
+    )
+    assert largest <= DEFAULT_MAX_STREAM_SEND_BUFFER + LIMIT_SLACK, (
+        f"the response stream's OpenSSL send buffer grew to {largest} bytes, past the "
+        f"{DEFAULT_MAX_STREAM_SEND_BUFFER}-byte default stream limit"
     )
 
 
