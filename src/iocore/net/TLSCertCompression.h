@@ -52,23 +52,42 @@ int register_certificate_compression_preference(SSL_CTX *ctx, const std::vector<
 // Max algorithm ID + 1, used to size the cache entry array
 constexpr int CERT_COMPRESS_MAX_ALG_ID = 4;
 
-// Keyed by (SSL_CTX, alg). Assumes one cert chain per SSL_CTX, which the
-// BoringSSL build path enforces (HAVE_NATIVE_DUAL_CERT_SUPPORT is off).
+// Distinct uncompressed Certificate messages cached per (SSL_CTX, alg). One SSL_CTX carries one cert chain (the BoringSSL
+// build path keeps HAVE_NATIVE_DUAL_CERT_SUPPORT off), but the message also carries the OCSP staple and SCT list, which
+// are only included when the client asks for them and change when the staple is refreshed.
+constexpr int CERT_COMPRESS_VARIANTS = 4;
+
+// Compressed Certificate messages per SSL_CTX, keyed by algorithm and by the exact uncompressed message. Entries are only
+// freed by cert_compress_cache_invalidate() (one invalidation after they are unpublished) and when the SSL_CTX is freed.
 struct CertCompressionCache {
   struct Entry {
-    std::vector<uint8_t> bytes;
+    std::vector<uint8_t> input; ///< Uncompressed Certificate message this entry was compressed from.
+    std::vector<uint8_t> bytes; ///< Compressed form of @a input.
   };
   struct Slot {
     std::atomic<Entry const *> live{nullptr};
     std::atomic<Entry const *> retired{nullptr};
   };
-  Slot slots[CERT_COMPRESS_MAX_ALG_ID];
+  Slot slots[CERT_COMPRESS_MAX_ALG_ID][CERT_COMPRESS_VARIANTS];
 };
 
 void                  cert_compress_cache_init();
 CertCompressionCache *cert_compress_cache_get(SSL_CTX *ctx);
 void                  cert_compress_cache_invalidate(SSL_CTX *ctx);
-void                  cert_compress_cache_try_publish(CertCompressionCache::Slot &slot, CertCompressionCache::Entry const *fresh);
+
+/** Find the cached compression of exactly @a in for algorithm @a alg.
+ *
+ * @return The matching entry, or @c nullptr on a miss. The entry is not freed until the second
+ *   cert_compress_cache_invalidate() after it is returned.
+ */
+CertCompressionCache::Entry const *cert_compress_cache_find(CertCompressionCache &cache, int alg, const uint8_t *in, size_t in_len);
+
+/** Cache @a compressed as the compression of @a in for algorithm @a alg if a variant slot is free.
+ *
+ * Nothing is cached if every variant slot is taken; the caller already wrote @a compressed to the handshake either way.
+ */
+void cert_compress_cache_try_publish(CertCompressionCache &cache, int alg, const uint8_t *in, size_t in_len,
+                                     const uint8_t *compressed, size_t compressed_len);
 #endif
 
 #if HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
