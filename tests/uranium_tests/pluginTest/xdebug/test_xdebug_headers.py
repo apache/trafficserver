@@ -38,15 +38,26 @@ def test_xdebug_headers(ats_factory: ATSFactory, services: ServiceFactory, scena
             {"headers": f"GET {path} HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n"},
             {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
         )
+    # No records and no default address, so the unmapped "none" host gets
+    # NXDOMAIN at once instead of waiting on the host resolver.
+    dns = services.dns("dns")
     ats = ats_factory.create("ts")
     if not ats.plugin_exists("xdebug.so"):
         pytest.skip("xdebug.so is required")
-    ats.records.update({"proxy.config.url_remap.remap_required": 0})
+    ats.records.update(
+        {
+            "proxy.config.url_remap.remap_required": 0,
+            "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
+            # Otherwise ATS adds the host resolv.conf nameservers to this one.
+            "proxy.config.dns.resolv_conf": "NULL",
+        }
+    )
     ats.plugin_config.add_line("xdebug.so")
     ats.remap_config.add_line(f"map http://one http://127.0.0.1:{origin.port}")
     suffix = "/two" if scenario == "x_effective_url" else ""
     ats.remap_config.add_line(f"map http://two http://127.0.0.1:{origin.port}{suffix}")
     ats.remap_config.add_line(f"regex_map http://three[0-9]+ http://127.0.0.1:{origin.port}")
+    dns.start()
     origin.start()
     ats.start()
     output = ""
