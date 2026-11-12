@@ -29,12 +29,28 @@ from hrw4u.cachekey import (
     parse_assignment,
     parse_statement,
     render,
+    writes_reserved_header,
 )
 from hrw4u.errors import SymbolResolutionError
 
 
 def flags(*calls: tuple[str, list[str]]) -> list[str]:
     return merge(parse_statement(name, args) for name, args in calls)
+
+
+@pytest.mark.parametrize(
+    ("lhs", "reserved"),
+    [
+        ("inbound.req.@Hrw4u-Key-01", True),
+        ("inbound.req.@hrw4u-header-X", True),
+        ("outbound.req.@Hrw4u-Cookie-sid", True),
+        ("inbound.req.@Hrw4uX", False),
+        ("inbound.req.Hrw4u-Key-01", False),
+        ("inbound.req.@X", False),
+    ],
+)
+def test_writes_reserved_header(lhs: str, reserved: bool) -> None:
+    assert writes_reserved_header(lhs) is reserved
 
 
 class TestParseAssignment:

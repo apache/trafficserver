@@ -1115,8 +1115,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
 
         cache.* key operators belong in CACHEKEY. With a CACHEKEY section, a break in REMAP would
-        skip it, and a hand-written run-plugin cachekey.so would set the key twice, the later
-        instance overriding the earlier.
+        skip it, a hand-written run-plugin cachekey.so would set the key twice, the later
+        instance overriding the earlier, and a write to an @Hrw4u- header would forge a key part.
         """
         if ctx.BREAK():
             if self.current_section is SectionType.REMAP and self._program_has_cachekey:
@@ -1128,6 +1128,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
         if call and name == "run-plugin" and self._program_has_cachekey and args and cachekey.is_plugin_path(args[0]):
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
+        if not call and name and self._program_has_cachekey and cachekey.writes_reserved_header(name):
+            raise SymbolResolutionError(name, f"{cachekey.RESERVED_HEADER_PREFIX} headers are reserved for CACHEKEY")
 
     def _emit_cachekey(self) -> None:
         """Insert the compiled CACHEKEY section after the output of the last REMAP section, one blank line on each side.
