@@ -23,6 +23,8 @@
 
 #include <openssl/ssl.h>
 
+#include <cstring>
+
 #include "tscore/Diags.h"
 #include "TLSCertCompression.h"
 
@@ -106,9 +108,11 @@ cert_compress_cache_free_cb(void * /* parent */, void *ptr, CRYPTO_EX_DATA * /* 
 {
   auto *cache = static_cast<CertCompressionCache *>(ptr);
   if (cache) {
-    for (auto &slot : cache->slots) {
-      delete slot.live.load(std::memory_order_acquire);
-      delete slot.retired.load(std::memory_order_acquire);
+    for (auto &variants : cache->slots) {
+      for (auto &slot : variants) {
+        delete slot.live.load(std::memory_order_acquire);
+        delete slot.retired.load(std::memory_order_acquire);
+      }
     }
     delete cache;
   }
@@ -144,13 +148,48 @@ cert_compress_cache_attach(SSL_CTX *ctx)
   }
 }
 
-void
-cert_compress_cache_try_publish(CertCompressionCache::Slot &slot, CertCompressionCache::Entry const *fresh)
+namespace
 {
-  CertCompressionCache::Entry const *expected = nullptr;
-  if (!slot.live.compare_exchange_strong(expected, fresh, std::memory_order_acq_rel)) {
-    delete fresh;
+bool
+entry_matches(CertCompressionCache::Entry const *entry, const uint8_t *in, size_t in_len)
+{
+  return entry != nullptr && entry->input.size() == in_len && memcmp(entry->input.data(), in, in_len) == 0;
+}
+} // end anonymous namespace
+
+CertCompressionCache::Entry const *
+cert_compress_cache_find(CertCompressionCache &cache, int alg, const uint8_t *in, size_t in_len)
+{
+  for (auto &slot : cache.slots[alg]) {
+    auto const *entry = slot.live.load(std::memory_order_acquire);
+    if (entry_matches(entry, in, in_len)) {
+      return entry;
+    }
   }
+  return nullptr;
+}
+
+void
+cert_compress_cache_try_publish(CertCompressionCache &cache, int alg, const uint8_t *in, size_t in_len, const uint8_t *compressed,
+                                size_t compressed_len)
+{
+  auto *fresh = new CertCompressionCache::Entry();
+  fresh->input.assign(in, in + in_len);
+  fresh->bytes.assign(compressed, compressed + compressed_len);
+
+  // A slot is only ever filled from empty, so entries are never replaced while a handshake may be reading them. An entry
+  // whose input no longer matches any handshake (for example one compressed with a staple that was refreshed while the
+  // handshake was in flight) is never served and is removed by the next invalidation.
+  for (auto &slot : cache.slots[alg]) {
+    CertCompressionCache::Entry const *expected = nullptr;
+    if (slot.live.compare_exchange_strong(expected, fresh, std::memory_order_acq_rel, std::memory_order_acquire)) {
+      return;
+    }
+    if (entry_matches(expected, in, in_len)) {
+      break;
+    }
+  }
+  delete fresh;
 }
 
 void
@@ -160,10 +199,12 @@ cert_compress_cache_invalidate(SSL_CTX *ctx)
   if (!cache) {
     return;
   }
-  for (auto &slot : cache->slots) {
-    auto const *prev    = slot.live.exchange(nullptr, std::memory_order_acq_rel);
-    auto const *to_free = slot.retired.exchange(prev, std::memory_order_acq_rel);
-    delete to_free;
+  for (auto &variants : cache->slots) {
+    for (auto &slot : variants) {
+      auto const *prev    = slot.live.exchange(nullptr, std::memory_order_acq_rel);
+      auto const *to_free = slot.retired.exchange(prev, std::memory_order_acq_rel);
+      delete to_free;
+    }
   }
   Dbg(dbg_ctl_ssl_cert_compress, "Cache invalidated for SSL_CTX %p", ctx);
 }
