@@ -1,0 +1,116 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "header_rewrite rm-destination edits the URL that an earlier set-destination URL put in place"
+  requires: {plugins: [header_rewrite.so]}
+  server: {name: "server"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    process_config: {enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "header_rewrite"
+    inline_config_files:
+      plain.conf: |
+        rm-destination QUERY "utm_source"
+      inplace.conf: |
+        set-destination PATH canary/
+        rm-destination QUERY "utm_source"
+      canary.conf: |
+        cond %{CLIENT-HEADER:X-Canary} ="1"
+          set-destination URL "http://127.0.0.1:{SERVER_HTTP_PORT}/canary/?%{CLIENT-URL:QUERY}"
+
+        cond %{TRUE}
+          rm-destination QUERY "utm_source"
+      path.conf: |
+        set-destination URL "http://127.0.0.1:{SERVER_HTTP_PORT}/canary/deep?keep=1"
+        rm-destination PATH
+    remap_config:
+      - "map http://plain.ex/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=header_rewrite.so @pparam={CONFIG_DIR}/plain.conf"
+      - "map http://inplace.ex/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=header_rewrite.so @pparam={CONFIG_DIR}/inplace.conf"
+      - "map http://canary.ex/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=header_rewrite.so @pparam={CONFIG_DIR}/canary.conf"
+      - "map http://path.ex/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=header_rewrite.so @pparam={CONFIG_DIR}/path.conf"
+
+sessions:
+  - transactions:
+      # No earlier URL change: the remap request URL is edited directly.
+      - client-request:
+          method: GET
+          url: /plain?utm_source=x&a=1
+          version: "1.1"
+          headers: {fields: [[Host, plain.ex], [uuid, rm-query-plain]]}
+        proxy-request:
+          url:
+            - [query, {value: "a=1", as: equal}]
+        server-response: &ok
+          status: 200
+          headers: {fields: [[Content-Length, 0]]}
+        proxy-response: {status: 200}
+
+      # An in-place edit keeps the same URL object.
+      - client-request:
+          method: GET
+          url: /?utm_source=x&a=1
+          version: "1.1"
+          headers: {fields: [[Host, inplace.ex], [uuid, rm-query-after-path]]}
+        proxy-request:
+          url:
+            - [path, {value: /canary/, as: equal}]
+            - [query, {value: "a=1", as: equal}]
+        server-response: *ok
+        proxy-response: {status: 200}
+
+      # Without X-Canary the URL is never replaced.
+      - client-request:
+          method: GET
+          url: /?utm_source=x&a=1&b=2
+          version: "1.1"
+          headers: {fields: [[Host, canary.ex], [uuid, rm-query-no-canary]]}
+        proxy-request:
+          url:
+            - [query, {value: "a=1&b=2", as: equal}]
+        server-response: *ok
+        proxy-response: {status: 200}
+
+      # set-destination URL replaces the URL object, so rm-destination must
+      # edit the new one rather than the one the remap request first held.
+      - client-request:
+          method: GET
+          url: /?utm_source=x&a=1&b=2
+          version: "1.1"
+          headers: {fields: [[Host, canary.ex], [X-Canary, "1"], [uuid, rm-query-after-url]]}
+        proxy-request:
+          url:
+            - [path, {value: /canary/, as: equal}]
+            - [query, {value: "a=1&b=2", as: equal}]
+        server-response: *ok
+        proxy-response: {status: 200}
+
+      - client-request:
+          method: GET
+          url: /x?y=1
+          version: "1.1"
+          headers: {fields: [[Host, path.ex], [uuid, rm-path-after-url]]}
+        proxy-request:
+          url:
+            - [path, {value: /, as: equal}]
+            - [query, {value: "keep=1", as: equal}]
+        server-response: *ok
+        proxy-response: {status: 200}
