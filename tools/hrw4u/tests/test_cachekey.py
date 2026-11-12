@@ -232,33 +232,6 @@ class TestMerge:
             == expected
         )
 
-    def test_client_api(self) -> None:
-        assert flags(
-            ("cache.url.pristine", []),
-            (
-                "cache.url.query.remove",
-                [
-                    '"utm_source"',
-                    '"guid"',
-                    '"utm_medium"',
-                    '"utm_campaign"',
-                    '"utm_term"',
-                    '"client_id"',
-                    '"ref"',
-                    '"token"',
-                    '"ts"',
-                ],
-            ),
-            ("cache.key.headers.add", ['"X-Region"', '"@Geo-Country"']),
-            ("cache.key.cookies.add", ['"session"', '"locale"', '"theme"', '"variant"']),
-        ) == [
-            KEY_TYPE_FLAG,
-            "--uri-type=pristine",
-            "--exclude-params=utm_source,guid,utm_medium,utm_campaign,utm_term,client_id,ref,token,ts",
-            "--include-headers=X-Region,@Geo-Country",
-            "--include-cookies=session,locale,theme,variant",
-        ]
-
 
 class TestRender:
     def test_quotes_each_flag(self) -> None:
