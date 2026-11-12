@@ -90,7 +90,6 @@ public:
       Registry *expected{nullptr};
       Registry *r{new Registry};
       if (!_registry_instance.compare_exchange_strong(expected, r)) {
-        r->_mtx.lock();
         delete r;
       }
     }
