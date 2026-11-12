@@ -15,10 +15,11 @@
 #  limitations under the License.
 """HTTP/2 origin that never answers some streams and reports what ATS does with them.
 
-Paths starting with /stall are never answered. Paths starting with /slow get
-their response header at once and their body one byte at a time, every
-TRICKLE_INTERVAL seconds, over --slow-delay seconds, so the stream stays busy
-without going idle. Everything else is answered at once.
+Paths starting with /stall are never answered. Paths starting with /partial
+get their response header and part of their body, then nothing more. Paths
+starting with /slow get their response header at once and their body one byte
+at a time, every TRICKLE_INTERVAL seconds, over --slow-delay seconds, so the
+stream stays busy without going idle. Everything else is answered at once.
 Every connection is numbered, and each line it prints starts with "conn N".
 """
 
@@ -79,6 +80,12 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
                 path = dict(event.headers).get(":path", "/")
                 say(f"conn {number} request stream={event.stream_id} path={path}")
                 if path.startswith("/stall"):
+                    continue
+                if path.startswith("/partial"):
+                    connection.send_headers(
+                        event.stream_id, [(":status", "200"), ("content-length", "100"), ("cache-control", "no-store")]
+                    )
+                    connection.send_data(event.stream_id, b"x" * 10)
                     continue
                 if path.startswith("/slow"):
                     pieces = max(1, round(slow_delay / TRICKLE_INTERVAL))

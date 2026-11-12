@@ -13,14 +13,14 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""An HTTP/2 origin session must stop taking new streams once one of its streams times out."""
+"""An HTTP/2 origin session must stop taking new streams once a stream on it times out unanswered."""
 
 import http.client
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from tools.uranium.services import ATSFactory, ServiceFactory
+from tools.uranium.services import ATS, ATSFactory, ServiceFactory, ProcessService
 from .origin_test_helpers import configure_h2_origin, finish_origin
 
 
@@ -36,15 +36,22 @@ def get(port: int, path: str) -> int:
         connection.close()
 
 
-def test_h2_origin_session_retired_after_stream_timeout(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """Stop giving an origin session new streams once one of its streams times out.
+def get_partial(port: int, path: str) -> tuple[int, int]:
+    """Send one request through ATS and return the status and how many body bytes arrived."""
+    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=30)
+    try:
+        connection.request("GET", path, headers={"Host": "origin.example.com"})
+        response = connection.getresponse()
+        try:
+            return response.status, len(response.read())
+        except http.client.IncompleteRead as error:
+            return response.status, len(error.partial)
+    finally:
+        connection.close()
 
-    A stream that is still busy on the session when that happens finishes normally, the next
-    request opens a new connection, and the old one closes once it has no streams left.
 
-    :param ats_factory: Factory for isolated Traffic Server instances.
-    :param services: Runs the origin.
-    """
+def start_origin(ats_factory: ATSFactory, services: ServiceFactory) -> tuple[ATS, ProcessService, Path]:
+    """Start ATS, with a 2 s no-activity timeout to the origin, in front of the test origin."""
     port = services.allocate_port()
     ats = configure_h2_origin(
         ats_factory,
@@ -76,6 +83,19 @@ def test_h2_origin_session_retired_after_stream_timeout(ats_factory: ATSFactory,
     )
     origin.start()
     ats.start()
+    return ats, origin, stop
+
+
+def test_h2_origin_session_retired_after_stream_timeout(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Stop giving an origin session new streams once a stream on it times out with no response.
+
+    A stream that is still busy on the session when that happens finishes normally, the next
+    request opens a new connection, and the old one closes once it has no streams left.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Runs the origin.
+    """
+    ats, origin, stop = start_origin(ats_factory, services)
 
     assert get(ats.http_port, "/ok-before") == 200
     origin.wait_for_output(r"^conn 1 request stream=\d+ path=/ok-before$")
@@ -92,6 +112,34 @@ def test_h2_origin_session_retired_after_stream_timeout(ats_factory: ATSFactory,
     assert re.search(r"^conn 2 request stream=\d+ path=/ok-after$", output, re.MULTILINE), output
     output = origin.wait_for_output(r"^conn 1 (goaway error=0|eof)")
     assert re.search(r"^conn 1 answered stream=\d+ path=/slow$", output, re.MULTILINE), output
+
+    finish_origin(services, origin, stop)
+    ats.stop()
+    diags = ats.diags_log.read_text(errors="replace")
+    assert not re.search("FATAL:|Unrecognized configuration value", diags), diags
+
+
+def test_h2_origin_session_kept_after_mid_body_timeout(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Keep an origin session in use when a stream times out after its response header arrived.
+
+    A body that stops partway can be ATS's own doing (a slow client holds back flow control), so
+    it says nothing about the session, and the next request reuses it.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Runs the origin.
+    """
+    ats, origin, stop = start_origin(ats_factory, services)
+
+    assert get(ats.http_port, "/ok-before") == 200
+    origin.wait_for_output(r"^conn 1 request stream=\d+ path=/ok-before$")
+    status, received = get_partial(ats.http_port, "/partial")
+    assert status == 200
+    assert received < 100
+
+    assert get(ats.http_port, "/ok-after") == 200
+    output = origin.wait_for_output(r"^conn \d+ request stream=\d+ path=/ok-after$")
+    assert re.search(r"^conn 1 request stream=\d+ path=/ok-after$", output, re.MULTILINE), output
+    assert not re.search(r"^conn 1 (goaway|eof)", output, re.MULTILINE), output
 
     finish_origin(services, origin, stop)
     ats.stop()

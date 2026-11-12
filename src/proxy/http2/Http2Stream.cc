@@ -232,13 +232,15 @@ Http2Stream::main_event_handler(int event, void *edata)
         connection_state.handleEvent(HTTP2_SESSION_EVENT_ERROR, &error);
       }
     } else {
-      if (_sm && this->is_outbound_connection()) {
-        // An origin that let one stream time out may be failing others on the same connection.
+      if (_sm && this->is_outbound_connection() && !_received_header) {
+        // An origin that never answered a stream may be failing others on the same connection.
         // Stop giving the session new streams, the way an HTTP/1.1 origin connection that timed out
-        // is not reused. Streams already on it can still finish.
+        // is not reused. Streams already on it can still finish. A stream that times out after its
+        // response header arrived says nothing about the session: its body may be waiting on a
+        // slow client, through flow control, or simply be long.
         Http2ConnectionState &connection_state = get_connection_state();
         SCOPED_MUTEX_LOCK(lock, connection_state.mutex, this_ethread());
-        connection_state.drain_outbound_session("a stream timed out");
+        connection_state.drain_outbound_session("a stream timed out with no response");
       }
       if (_sm && read_vio.ntodo() > 0) {
         this->signal_read_event(event);
@@ -344,7 +346,8 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
       }
     }
     ink_release_assert(this->_sm != nullptr);
-    this->_http_sm_id = this->_sm->sm_id;
+    this->_http_sm_id      = this->_sm->sm_id;
+    this->_received_header = true;
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
