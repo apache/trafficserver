@@ -397,7 +397,14 @@ ConditionUrl::do_append_value(std::string &s, const Resources &res)
     bufp = res._rri->requestBufp;
     if (_type == URL) {
       Dbg(pi_dbg_ctl, "   Using the request url");
-      url = res._rri->requestUrl;
+      if (res.changed_url) {
+        if (TSHttpHdrUrlGet(res._rri->requestBufp, res._rri->requestHdrp, &url) != TS_SUCCESS) {
+          log_error(res, "Error getting the request URL");
+          return;
+        }
+      } else {
+        url = res._rri->requestUrl;
+      }
     } else if (_type == FROM) {
       Dbg(pi_dbg_ctl, "   Using the from url");
       url = res._rri->mapFromUrl;
