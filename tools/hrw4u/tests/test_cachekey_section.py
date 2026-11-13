@@ -208,3 +208,12 @@ class TestConflicts:
                 section.add(parse_statement("cache.url.query.remove", ['"b"']))
 
         assert len(section.conflicts()) == 2
+
+    def test_a_shared_statement_after_the_chain_is_the_later(self) -> None:
+        section = CacheKeySection()
+        with section.branch(BranchKeyword.IF, None):
+            section.add(parse_statement("cache.url.query.keep", ['"a"']))
+        section.add(parse_statement("cache.url.query.remove", ['"b"']))
+
+        [error] = section.conflicts()
+        assert error.statement.name == "cache.url.query.remove"

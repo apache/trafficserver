@@ -168,11 +168,14 @@ class CacheKeyStatement:
     """One validated cache.* statement: its table name and the names it lists, unquoted.
 
     source is the parse node it came from, so errors found later can point at it.
+    order is its place in the CACHEKEY section, so a check across the shared and
+    branch parts, which are kept apart, can tell which statement came later.
     """
 
     name: str
     items: tuple[str, ...] = ()
     source: ParserRuleContext | None = field(default=None, compare=False, repr=False)
+    order: int = field(default=0, compare=False, repr=False)
 
 
 def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None) -> CacheKeyStatement:
@@ -266,12 +269,12 @@ CONFLICTS: Final[tuple[tuple[str, str], ...]] = (
 class ConflictError(SymbolResolutionError):
     """Two statements on one run-plugin line contradict each other.
 
-    statement is the later of the two, the one to point the error at.
+    statement is the later of the two, the one to point the error at and to name first.
     """
 
-    def __init__(self, first: CacheKeyStatement, second: CacheKeyStatement, later: CacheKeyStatement) -> None:
-        super().__init__(first.name, f"{_as_written(first)} and {_as_written(second)} can't be used together")
-        self.statement = later
+    def __init__(self, statement: CacheKeyStatement, earlier: CacheKeyStatement) -> None:
+        super().__init__(statement.name, f"{_as_written(statement)} can't be used with {_as_written(earlier)}")
+        self.statement = statement
 
 
 def check_conflicts(statements: Sequence[CacheKeyStatement]) -> None:
@@ -284,13 +287,13 @@ def check_conflicts(statements: Sequence[CacheKeyStatement]) -> None:
         if CACHEKEY_STATEMENTS[stmt.name].takes_value:
             first = first_value.setdefault(stmt.name, stmt)
             if first.items != stmt.items:
-                raise ConflictError(first, stmt, stmt)
+                raise ConflictError(stmt, first)
 
     last_seen = {stmt.name: (index, stmt) for index, stmt in enumerate(statements)}
     for first, second in CONFLICTS:
         if first in last_seen and second in last_seen:
-            _, later = max(last_seen[first], last_seen[second], key=lambda seen: seen[0])
-            raise ConflictError(last_seen[first][1], last_seen[second][1], later)
+            (_, earlier), (_, later) = sorted((last_seen[first], last_seen[second]), key=lambda seen: seen[0])
+            raise ConflictError(later, earlier)
 
 
 def _as_written(stmt: CacheKeyStatement) -> str:

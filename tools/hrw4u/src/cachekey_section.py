@@ -26,8 +26,9 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
+from operator import attrgetter
 from typing import Final
 
 from antlr4 import ParserRuleContext
@@ -64,10 +65,6 @@ class KeyParts:
 
     statements: list[CacheKeyStatement] = field(default_factory=list)
     computed: list[KeyPart] = field(default_factory=list)
-
-    def add_computed(self, part: KeyPart) -> None:
-        self.computed.append(part)
-        self.statements.append(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (part.header,)))
 
     def __add__(self, other: KeyParts) -> KeyParts:
         return KeyParts(self.statements + other.statements, self.computed + other.computed)
@@ -139,6 +136,7 @@ class CacheKeySection:
     key_part_count: int = 0
     presence: dict[str, PresenceCheck] = field(default_factory=dict)
     _open: Branch | None = field(default=None, init=False, repr=False)
+    _added: int = field(default=0, init=False, repr=False)
 
     @contextmanager
     def branch(self, keyword: BranchKeyword, ctx: ParserRuleContext) -> Iterator[Branch]:
@@ -163,15 +161,21 @@ class CacheKeySection:
         if statement.name in cachekey.PRESENCE_STATEMENTS:
             self._add_presence(statement)
         else:
-            self._target.statements.append(statement)
+            self._key_on(statement)
 
     def add_computed(self, value: str) -> None:
         """Key the open branch, or every branch, on a cache.key += value: a quoted HRW string."""
-        self._target.add_computed(self._new_key_part(value))
+        part = self._new_key_part(value)
+        self._target.computed.append(part)
+        self._key_on(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (part.header,)))
 
     @property
     def _target(self) -> KeyParts:
         return self._open.parts if self._open is not None else self.shared
+
+    def _key_on(self, statement: CacheKeyStatement) -> None:
+        self._added += 1
+        self._target.statements.append(replace(statement, order=self._added))
 
     def _new_key_part(self, value: str) -> KeyPart:
         """Number the next key part. Numbers run across the whole section, not per branch."""
@@ -196,7 +200,7 @@ class CacheKeySection:
                     f'{statement.name}("{name}") and {first.statement.name}("{first.name}"): '
                     f"the two {check.presence.names.noun}s can't be told apart in the key",
                 )
-            self._target.statements.append(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (first.header,), statement.source))
+            self._key_on(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (first.header,), statement.source))
 
     @property
     def adds_else(self) -> bool:
@@ -210,10 +214,11 @@ class CacheKeySection:
         except ConflictError as error:
             return [error]
 
+        # The shared parts come first in each line, wherever they sit, so check in source order.
         errors = []
         for branch in self.chain:
             try:
-                cachekey.check_conflicts((self.shared + branch.parts).statements)
+                cachekey.check_conflicts(sorted((self.shared + branch.parts).statements, key=attrgetter("order")))
             except ConflictError as error:
                 errors.append(error)
         return errors

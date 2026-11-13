@@ -106,37 +106,34 @@ class TestCheckConflicts:
         [
             (
                 [parse_statement("cache.url.query.keep", ['"a"']), parse_statement("cache.url.query.remove", ['"b"'])],
-                r"cache.url.query.keep\(\) and cache.url.query.remove\(\)",
+                r"cache.url.query.remove\(\) can't be used with cache.url.query.keep\(\)",
+            ),
+            (
+                [parse_statement("cache.url.query.remove", ['"b"']), parse_statement("cache.url.query.keep", ['"a"'])],
+                r"cache.url.query.keep\(\) can't be used with cache.url.query.remove\(\)",
             ),
             (
                 [parse_assignment("cache.url.query", '""'), parse_statement("cache.url.query.keep", ['"a"'])],
-                r'cache.url.query = "" and cache.url.query.keep\(\)',
+                r'cache.url.query.keep\(\) can\'t be used with cache.url.query = ""',
             ),
             (
                 [parse_statement("cache.url.query.remove", ['"a"']), parse_assignment("cache.url.query", '""')],
-                r'cache.url.query = "" and cache.url.query.remove\(\)',
+                r'cache.url.query = "" can\'t be used with cache.url.query.remove\(\)',
             ),
             (
                 [parse_statement("cache.url.canonical", []), parse_assignment("cache.key.prefix", '"a"')],
-                r'cache.url.canonical\(\) and cache.key.prefix = "a"',
+                r'cache.key.prefix = "a" can\'t be used with cache.url.canonical\(\)',
             ),
             (
                 [parse_assignment("cache.key.prefix", '"a"'), parse_assignment("cache.key.prefix", '"b"')],
-                r'cache.key.prefix = "a" and cache.key.prefix = "b"',
+                r'cache.key.prefix = "b" can\'t be used with cache.key.prefix = "a"',
             ),
         ],
     )
-    def test_rejects(self, stmts: list[CacheKeyStatement], message: str) -> None:
-        with pytest.raises(SymbolResolutionError, match=message):
+    def test_rejects_and_points_at_the_later(self, stmts: list[CacheKeyStatement], message: str) -> None:
+        with pytest.raises(ConflictError, match=message) as error:
             check_conflicts(stmts)
-
-    def test_names_the_later_statement(self) -> None:
-        keep = parse_statement("cache.url.query.keep", ['"a"'])
-        remove = parse_statement("cache.url.query.remove", ['"b"'])
-        for stmts, later in (([keep, remove], remove), ([remove, keep], keep)):
-            with pytest.raises(ConflictError) as error:
-                check_conflicts(stmts)
-            assert error.value.statement is later
+        assert error.value.statement is stmts[-1]
 
     def test_compatible(self) -> None:
         check_conflicts(
@@ -149,12 +146,6 @@ class TestCheckConflicts:
 
     def test_same_prefix_twice(self) -> None:
         check_conflicts([parse_assignment("cache.key.prefix", '"a"'), parse_assignment("cache.key.prefix", '"a"')])
-
-    def test_names_the_second_prefix(self) -> None:
-        second = parse_assignment("cache.key.prefix", '"b"')
-        with pytest.raises(ConflictError) as error:
-            check_conflicts([parse_assignment("cache.key.prefix", '"a"'), second])
-        assert error.value.statement is second
 
 
 class TestMerge:

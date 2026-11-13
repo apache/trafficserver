@@ -1,0 +1,1 @@
+tests/data/cachekey/keep-remove-after-chain.fail.input.txt:5:4: error: cache.url.query.remove() can't be used with cache.url.query.keep()
