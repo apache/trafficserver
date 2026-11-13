@@ -34,8 +34,7 @@ compression_func_zlib(SSL *ssl, CBB *out, const uint8_t *in, size_t in_len)
   auto *cache = cert_compress_cache_get(SSL_get_SSL_CTX(ssl));
 
   if (cache) {
-    auto const *entry = cache->slots[CERT_COMPRESS_ALG_ZLIB].live.load(std::memory_order_acquire);
-    if (entry) {
+    if (auto const *entry = cert_compress_cache_find(*cache, CERT_COMPRESS_ALG_ZLIB, in, in_len); entry) {
       uint8_t *buf;
       if (CBB_reserve(out, &buf, entry->bytes.size()) != 1) {
         Metrics::Counter::increment(ssl_rsb.cert_compress_zlib_failure);
@@ -62,9 +61,7 @@ compression_func_zlib(SSL *ssl, CBB *out, const uint8_t *in, size_t in_len)
     Metrics::Counter::increment(ssl_rsb.cert_compress_zlib);
 
     if (cache) {
-      auto *fresh = new CertCompressionCache::Entry();
-      fresh->bytes.assign(buf, buf + buf_len);
-      cert_compress_cache_try_publish(cache->slots[CERT_COMPRESS_ALG_ZLIB], fresh);
+      cert_compress_cache_try_publish(*cache, CERT_COMPRESS_ALG_ZLIB, in, in_len, buf, buf_len);
     }
 
     return 1;
