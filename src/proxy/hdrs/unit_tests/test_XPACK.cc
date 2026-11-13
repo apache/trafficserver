@@ -591,6 +591,31 @@ TEST_CASE("XPACK_String", "[xpack]")
       dt.insert_entry(name, value);
     }
   }
+
+  SECTION("Dynamic Table whose size does not divide 2^32")
+  {
+    // The entry slots form a ring of as many slots as the table has bytes. Older entries are found by stepping back from the
+    // newest, and that step has to wrap within the ring for any size, not only for powers of two.
+    XpackDynamicTable dt(220);
+    const char       *name      = nullptr;
+    size_t            name_len  = 0;
+    const char       *value     = nullptr;
+    size_t            value_len = 0;
+
+    REQUIRE(dt.insert_entry("name0", "value0").index == 0);
+    REQUIRE(dt.insert_entry("name1", "value1").index == 1);
+    REQUIRE(dt.entries_inserted() == 2);
+
+    XpackLookupResult result = dt.lookup(0, &name, &name_len, &value, &value_len);
+
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(std::string_view(name, name_len) == "name0");
+    REQUIRE(std::string_view(value, value_len) == "value0");
+
+    result = dt.lookup_relative(1, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
+    REQUIRE(std::string_view(name, name_len) == "name0");
+  }
 }
 
 // Return a 110 character string.

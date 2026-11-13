@@ -278,7 +278,7 @@ XpackDynamicTable::lookup(uint32_t index, const char **name, size_t *name_len, c
     return {0, XpackLookupResult::MatchType::NONE};
   }
 
-  uint32_t pos = this->_calc_index(this->_entries_head, index - this->_entries[this->_entries_head].index);
+  uint32_t pos = this->_calc_index(this->_entries_head, static_cast<int64_t>(index) - this->_entries[this->_entries_head].index);
   *name_len    = this->_entries[pos].name_len;
   *value_len   = this->_entries[pos].value_len;
   this->_storage.read(this->_entries[pos].offset, name, *name_len, value, *value_len);
@@ -401,7 +401,7 @@ XpackDynamicTable::insert_entry(const char *name, size_t name_len, const char *v
 
   XPACKDbg("Insert Entry: entry=%u, index=%u, size=%zu", this->_entries_head, this->_entries_inserted - 1, name_len + value_len);
   XPACKDbg("Available size: %u", this->_available);
-  return {this->_entries_inserted, value_len ? XpackLookupResult::MatchType::EXACT : XpackLookupResult::MatchType::NAME};
+  return {this->_entries_inserted - 1, value_len ? XpackLookupResult::MatchType::EXACT : XpackLookupResult::MatchType::NAME};
 }
 
 const XpackLookupResult
@@ -481,14 +481,14 @@ XpackDynamicTable::maximum_size() const
 void
 XpackDynamicTable::ref_entry(uint32_t index)
 {
-  uint32_t pos = this->_calc_index(this->_entries_head, (index - this->_entries[this->_entries_head].index));
+  uint32_t pos = this->_calc_index(this->_entries_head, static_cast<int64_t>(index) - this->_entries[this->_entries_head].index);
   ++this->_entries[pos].ref_count;
 }
 
 void
 XpackDynamicTable::unref_entry(uint32_t index)
 {
-  uint32_t pos = this->_calc_index(this->_entries_head, (index - this->_entries[this->_entries_head].index));
+  uint32_t pos = this->_calc_index(this->_entries_head, static_cast<int64_t>(index) - this->_entries[this->_entries_head].index);
   --this->_entries[pos].ref_count;
 }
 
@@ -516,6 +516,12 @@ XpackDynamicTable::count() const
   } else {
     return (this->_max_entries - this->_entries_tail - 1) + (this->_entries_head + 1);
   }
+}
+
+uint32_t
+XpackDynamicTable::entries_inserted() const
+{
+  return this->_entries_inserted;
 }
 
 void
@@ -567,9 +573,12 @@ XpackDynamicTable::_calc_index(uint32_t base, int64_t offset) const
 {
   if (unlikely(this->_max_entries == 0)) {
     return base + offset;
-  } else {
-    return (base + offset) % this->_max_entries;
   }
+
+  // Older entries sit at negative offsets from the head, which have to wrap back from the end of the buffer.
+  int64_t const index = (static_cast<int64_t>(base) + offset) % static_cast<int64_t>(this->_max_entries);
+
+  return static_cast<uint32_t>(index < 0 ? index + this->_max_entries : index);
 }
 
 //
