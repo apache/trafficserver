@@ -1039,7 +1039,12 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
         maps_to="cachekey.so --include-headers=H1,H2",
         usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
         parameters=[
-            ParameterDoc("names", "string", "One or more names, each its own argument, case-insensitive. Static: no {...} values.")
+            ParameterDoc(
+                "names",
+                "string",
+                "One or more header names, each its own argument, case-insensitive. @Hrw4u- names are the compiler's. "
+                "Static: no {...} values.",
+            )
         ],
         examples=["cache.key.headers.add(\"X-Region\", \"@Geo-Country\");"],
     ),
@@ -1066,7 +1071,8 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
             ParameterDoc(
                 "names",
                 "string",
-                "One or more header names, each its own argument, case-insensitive. @ headers work too. Static: no {...} values.",
+                "One or more header names, each its own argument, case-insensitive. @ headers work too, except the compiler's "
+                "@Hrw4u- ones. Static: no {...} values.",
             )
         ],
         examples=["cache.key.headers.exists(\"X-User-Id\");"],
@@ -1091,9 +1097,12 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
     "cache.key": FunctionDoc(
         name="Cache Key",
         category="Cache Key Assignment",
-        description="Adds a computed value to the key: the compiler copies it to a numbered @Hrw4u-Key-N header and keys on that header.",
+        description=(
+            "Adds a computed value to the key: the compiler copies it to a numbered @Hrw4u-Key-NN header and keys on that "
+            "header. A CACHEKEY section allows at most 99 values."
+        ),
         syntax="cache.key += \"<expr>\"",
-        maps_to="set-header @Hrw4u-Key-N \"<expr>\" and cachekey.so --include-headers=@Hrw4u-Key-N",
+        maps_to="set-header @Hrw4u-Key-01 \"<expr>\" and cachekey.so --include-headers=@Hrw4u-Key-01",
         usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
         examples=["cache.key += \"{inbound.req.@Geo-Country}\";"],
     ),

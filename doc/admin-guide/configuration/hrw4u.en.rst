@@ -761,10 +761,13 @@ share cache entries. The two can't be combined. A branch takes one prefix
 value.
 
 List arguments and ``cache.key.prefix`` are static strings, with no ``{...}``
-values. Lists take one name per argument. Query param and cookie names are
-case-sensitive; header names are not. ``keep()``, ``remove()`` and
-``query = ""`` can't be combined. A missing or empty header, cookie, or
-``cache.key +=`` value adds nothing to the key.
+values. Lists take one name per argument, and no name can hold a comma. Header
+and cookie names must be HTTP tokens: no spaces, ``:``, ``=``, or ``%``. A
+header name can start with ``@``; a cookie name can't. Query param and cookie
+names are case-sensitive, except in ``cache.key.cookies.exists()``; header
+names are not. ``keep()``, ``remove()`` and ``query = ""`` can't be combined. A
+missing or empty header, cookie, or ``cache.key +=`` value adds nothing to the
+key.
 
 ``exists()`` keys on whether each name is there, not on its value, and takes
 ``@`` headers too. An empty header, or a cookie sent as ``sid=``, counts as
@@ -830,7 +833,11 @@ instance per request:
   a ``{...}`` value, and ``cache.key.headers.*`` can't name them.
 
 Because `CACHEKEY` runs after `REMAP`, make request changes in `REMAP`. The key
-and its conditions see headers and cookies as `REMAP` left them. To key on a
+and its conditions see headers and cookies as `REMAP` left them. URL conditions
+are the exception: ``inbound.url.*`` reads the URL the client sent, while the
+key starts from the URL `REMAP` left. After `REMAP` rewrites ``/legacy/*`` to
+``/v2/*``, a `CACHEKEY` branch on ``/v2/`` never matches; test ``/legacy/``. To
+key on a
 computed value that other rules also need, set it into an ``@`` header in
 `REMAP` and add that header with ``cache.key.headers.add()``.
 

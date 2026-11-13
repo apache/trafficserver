@@ -173,7 +173,7 @@ resolved from the directory containing the rule file.
 ### Cache keys
 
 A `CACHEKEY` section sets the cache key and the parent selection URL from the
-same statements. It compiles to one `run-plugin "cachekey.so"` after every
+same statements. It compiles to `run-plugin "cachekey.so"` after every
 `REMAP` rule, and holds only `cache.url.*` and `cache.key.*` statements, and
 procedures made of them:
 
