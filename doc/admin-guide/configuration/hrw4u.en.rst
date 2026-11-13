@@ -443,8 +443,8 @@ A special section `VARS` is used to declare variables. There is no equivalent in
 transactions on the same client connection (session).
 
 The `CACHEKEY` section sets the cache key and the parent selection URL. It has
-no hook of its own: the compiler emits it on ``REMAP_PSEUDO_HOOK``, after every
-`REMAP` rule. See :ref:`hrw4u-cache-keys`.
+no hook of its own: the compiler emits it on ``REMAP_PSEUDO_HOOK`` at the end of
+the output, so it runs after every `REMAP` rule. See :ref:`hrw4u-cache-keys`.
 
 Variables and State Slots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

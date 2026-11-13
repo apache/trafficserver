@@ -101,9 +101,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         self._cachekey: cachekey_section.CacheKeySection | None = None  # the collected CACHEKEY section; None until one is visited
         self._program_has_cachekey: bool = False  # the rule has a CACHEKEY section, so every section must respect it
-        self._cachekey_moves: bool = False  # a REMAP section follows CACHEKEY, so its rules go after that REMAP's
-        self._cachekey_comments: list[str] = []  # top-level comments right above a CACHEKEY that moves, which move with it
-        self._remap_end: int | None = None  # output index just past the last REMAP section's rules
+        self._cachekey_comments: list[str] = []  # top-level comments right above CACHEKEY, which move with it
 
     def _sandbox_check(self, ctx, check_fn) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
@@ -774,12 +772,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             seen_sections = False
             program_items = ctx.programItem()
 
-            sections = [item.section() for item in program_items if item.section()]
-            cachekey_at = next((i for i, section in enumerate(sections) if self._is_cachekey_section(section)), None)
-            self._program_has_cachekey = cachekey_at is not None
-            self._cachekey_moves = cachekey_at is not None and any(
-                self._is_section(section, SectionType.REMAP) for section in sections[cachekey_at + 1 :]
-            )
+            self._program_has_cachekey = any(item.section() and self._is_cachekey_section(item.section()) for item in program_items)
 
             for idx, item in enumerate(program_items):
                 start_length = len(self.output)
@@ -812,16 +805,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.visit(item.section())
                     if idx < len(program_items) - 1 and len(self.output) > start_length:
                         next_items = program_items[idx + 1 :]
-                        if any(next_item.section() and self._emits_in_place(next_item.section()) for next_item in next_items):
+                        if any(
+                            next_item.section() and not self._is_cachekey_section(next_item.section()) for next_item in next_items
+                        ):
                             self.emit_separator()
                 elif item.commentLine() and self.preserve_comments:
                     comment_text = item.commentLine().COMMENT().getText()
-                    if self._cachekey_moves and self._precedes_cachekey(program_items[idx + 1 :]):
+                    if self._precedes_cachekey(program_items[idx + 1 :]):
                         self._cachekey_comments.append(comment_text)
                     else:
                         self.output.append(comment_text)
             self._flush_condition()
-            if self._cachekey is not None and self._cachekey_moves:
+            if self._cachekey is not None:
                 self._emit_cachekey()
             return self.get_final_output()
 
@@ -843,8 +838,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 return
 
             self._emit_section_body(ctx.sectionBody(), hook)
-            if self.current_section is SectionType.REMAP:
-                self._remap_end = len(self.output)
 
     def _prepare_section(self, ctx):
         """Extract section info and validate. Returns hook name."""
@@ -1027,7 +1020,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     # Only reachable via parser error recovery, which already reported the error.
                     return
 
-    # CACHEKEY: collected while visiting, emitted after the last REMAP rule set.
+    # CACHEKEY: collected while visiting, emitted at the end of the output.
 
     def _visit_cachekey_section(self, ctx: hrw4uParser.SectionContext) -> None:
         if self._cachekey is not None:
@@ -1041,9 +1034,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         for error in self._cachekey.conflicts():
             with self.trap(error.statement.source or ctx):
                 raise error
-
-        if not self._cachekey_moves:
-            self.output.extend(self._cachekey.render())
 
     def _cachekey_items(self, items: Sequence[hrw4uParser.SectionBodyContext | hrw4uParser.BlockItemContext]) -> None:
         """Collect section or block items. Comments are dropped: the body folds into flags."""
@@ -1148,16 +1138,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         return False
 
     @staticmethod
-    def _is_section(section_ctx: hrw4uParser.SectionContext, section: SectionType) -> bool:
-        return section_ctx.name is not None and section_ctx.name.text == section
-
-    @classmethod
-    def _is_cachekey_section(cls, section_ctx: hrw4uParser.SectionContext) -> bool:
-        return cls._is_section(section_ctx, SectionType.CACHEKEY)
-
-    def _emits_in_place(self, section_ctx: hrw4uParser.SectionContext) -> bool:
-        """True unless the section is a CACHEKEY whose rules move after a later REMAP's."""
-        return not (self._cachekey_moves and self._is_cachekey_section(section_ctx))
+    def _is_cachekey_section(section_ctx: hrw4uParser.SectionContext) -> bool:
+        return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY
 
     def _check_outside_cachekey(self, ctx: hrw4uParser.StatementContext, func: str | None, args: list[str]) -> None:
         """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
@@ -1185,17 +1167,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             raise SymbolResolutionError(name, cachekey.RESERVED_HEADER_ERROR)
 
     def _emit_cachekey(self) -> None:
-        """Insert the compiled CACHEKEY section after the output of the last REMAP section, one blank line on each side.
+        """Append the compiled CACHEKEY section, and the comments above it, after a blank line.
 
         REMAP_PSEUDO_HOOK rules run in file order, and the key must be set after every REMAP rule.
+        Other hooks keep their own rule lists, so the end of the output is always late enough.
         """
-        insert_at = self._remap_end
-        block = [*self._cachekey_comments, *self._cachekey.render()]
-        if insert_at > 0 and self.output[insert_at - 1] != "":
-            block = ["", *block]
-        if insert_at < len(self.output) and self.output[insert_at] != "":
-            block = [*block, ""]
-        self.output[insert_at:insert_at] = block
+        if self.output and self.output[-1] != "":
+            self.emit_separator()
+        self.output.extend([*self._cachekey_comments, *self._cachekey.render()])
 
     def visitVariables(self, ctx) -> None:
         with self.debug_context("visitVariables"):

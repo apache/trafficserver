@@ -1,3 +1,4 @@
+# trailing comment
+
 cond %{REMAP_PSEUDO_HOOK} [AND]
     run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--uri-type=pristine"
-# trailing comment
