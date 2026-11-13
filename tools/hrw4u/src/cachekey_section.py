@@ -135,7 +135,7 @@ class CacheKeySection:
     presence: dict[str, PresenceCheck] = field(default_factory=dict)
     _open: Branch | None = field(default=None, init=False, repr=False)
     _key_part_count: int = field(default=0, init=False, repr=False)
-    _added: int = field(default=0, init=False, repr=False)
+    _statement_count: int = field(default=0, init=False, repr=False)
 
     @contextmanager
     def branch(self, keyword: BranchKeyword) -> Iterator[Branch]:
@@ -173,8 +173,8 @@ class CacheKeySection:
         return self._open.parts if self._open is not None else self.shared
 
     def _key_on(self, statement: CacheKeyStatement) -> None:
-        self._added += 1
-        self._target.statements.append(replace(statement, order=self._added))
+        self._statement_count += 1
+        self._target.statements.append(replace(statement, order=self._statement_count))
 
     def _key_on_header(self, header: str, source: ParserRuleContext | None = None) -> None:
         """Key on one of the lowering's @ headers, which a rule set before cachekey.so runs."""
