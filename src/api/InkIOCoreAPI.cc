@@ -168,7 +168,7 @@ try {
 
   ink_mutex_acquire(&ithread->completion.lock);
 
-  if (ithread->completion.done == false) {
+  while (ithread->completion.done == false) {
     ink_cond_wait(&ithread->completion.signal, &ithread->completion.lock);
   }
 
