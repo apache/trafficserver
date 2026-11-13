@@ -765,6 +765,7 @@ values. Lists take one name per argument. Query param and cookie names are
 case-sensitive; header names are not. ``keep()``, ``remove()`` and
 ``query = ""`` can't be combined. A missing or empty header, cookie, or
 ``cache.key +=`` value adds nothing to the key.
+
 ``exists()`` keys on whether each name is there, not on its value, and takes
 ``@`` headers too. An empty header, or a cookie sent as ``sid=``, counts as
 absent. ``cache.key.cookies.exists("sid", "SID")`` fails to compile: the two
@@ -843,8 +844,11 @@ To skip the cache entirely, call ``cache.bypass()`` in `REMAP`. It compiles to
    }
 
 A sandbox policy controls `CACHEKEY` as a section: list it under
-``deny: sections`` to turn it off. The ``run-plugin`` line and the ``else`` the
-compiler writes for it aren't checked against the policy.
+``deny: sections`` to turn it off. Inside the section, the policy checks what
+you write, such as conditions, ``elif`` and ``else``, but not what the compiler
+writes for it. So denying ``run-plugin``, ``else``, a header or cookie
+condition, or a header operator doesn't stop `CACHEKEY`. The ``cache.url.*``
+and ``cache.key.*`` statements can't be denied one by one.
 
 Running and Debugging
 =====================
