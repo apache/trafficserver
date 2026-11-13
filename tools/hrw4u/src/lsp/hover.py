@@ -153,7 +153,12 @@ class DottedExpressionHoverProvider:
         """Parse dotted expressions and provide appropriate hover info."""
         cursor_pos = character_pos - expr_start
 
-        # Try table-driven pattern matching first
+        # Dotted statements like cache.url.query.remove are documented as functions. Look them up first: the
+        # URL and operator fallbacks below would otherwise answer with generic text.
+        if '.' in full_expression and full_expression in doc.LSP_FUNCTION_DOCUMENTATION:
+            return FunctionHoverProvider.get_function_hover_info(full_expression)
+
+        # Try table-driven pattern matching
         if match := LSPPatternMatcher.match_any_pattern(full_expression):
             return DottedExpressionHoverProvider._handle_pattern_match(match, full_expression, cursor_pos, expr_start)
 

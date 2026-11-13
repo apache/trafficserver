@@ -634,6 +634,32 @@ def test_connection_namespace_hover_details(shared_lsp_client) -> None:
         assert "Context:" in content, f"Missing 'Context:' for {sub_namespace}"
 
 
+@pytest.mark.parametrize(
+    "statement,expression,doc_name",
+    [
+        ('cache.url.query.remove("a");', "cache.url.query.remove", "Cache Key Query Remove"),
+        ('cache.key.headers.exists("X");', "cache.key.headers.exists", "Cache Key Header Presence"),
+        ('cache.key.prefix = "p";', "cache.key.prefix", "Cache Key Prefix"),
+        ('cache.url.query = "";', "cache.url.query", "Cache Key Query"),
+        ('cache.key += "{inbound.req.X}";', "cache.key", "Cache Key"),
+    ],
+)
+@pytest.mark.parametrize("cursor", ["start", "end"])
+def test_cache_statement_hover(shared_lsp_client, statement, expression, doc_name, cursor) -> None:
+    """A cache.* statement shows its own docs wherever the cursor sits in the name."""
+    test_content = f"""CACHEKEY {{
+    {statement}
+}}"""
+
+    uri = _create_test_document(shared_lsp_client, test_content, f"cache_hover_{expression.replace('.', '_')}_{cursor}")
+
+    char_pos = len("    ") + (1 if cursor == "start" else len(expression) - 1)
+    response = shared_lsp_client.request_hover(uri, 1, char_pos)
+
+    content = _assert_hover_response(response, f"**{doc_name}**", expression)
+    assert "HRW4U symbol" not in content
+
+
 def test_unknown_namespace_fallback(shared_lsp_client) -> None:
     """Test that unknown namespaces still get generic fallback response."""
     test_content = """READ_REQUEST {
