@@ -32,22 +32,19 @@ Throttler::is_throttled(uint64_t &skipped_count)
   TimePoint       last_allowed_time{_last_allowed_time.load()};
   if ((last_allowed_time + _interval.load()) <= now) {
     if (_last_allowed_time.compare_exchange_strong(last_allowed_time, now)) {
-      skipped_count     = _suppressed_count;
-      _suppressed_count = 0;
+      skipped_count = _suppressed_count.exchange(0, std::memory_order_relaxed);
       return false;
     }
   }
-  ++_suppressed_count;
+  _suppressed_count.fetch_add(1, std::memory_order_relaxed);
   return true;
 }
 
 uint64_t
 Throttler::reset_counter()
 {
-  _last_allowed_time       = Clock::now();
-  auto const skipped_count = _suppressed_count;
-  _suppressed_count        = 0;
-  return skipped_count;
+  _last_allowed_time = Clock::now();
+  return _suppressed_count.exchange(0, std::memory_order_relaxed);
 }
 
 void
