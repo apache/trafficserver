@@ -105,7 +105,7 @@ class TestPlacement:
     def test_outside_the_chain_goes_to_shared(self) -> None:
         section = CacheKeySection()
         section.add(headers("X-A"))
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             section.add(headers("X-B"))
         section.add(headers("X-C"))
 
@@ -114,9 +114,9 @@ class TestPlacement:
 
     def test_each_arm_gets_its_own_statements(self) -> None:
         section = CacheKeySection()
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             section.add(headers("X-A"))
-        with section.branch(BranchKeyword.ELSE, None):
+        with section.branch(BranchKeyword.ELSE):
             section.add(headers("X-B"))
 
         assert [keyed_on(branch.parts.statements) for branch in section.chain] == [["X-A"], ["X-B"]]
@@ -124,14 +124,14 @@ class TestPlacement:
 
     def test_a_chain_without_else_gets_one(self) -> None:
         section = CacheKeySection()
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             section.add(headers("X-A"))
 
         assert section.adds_else
 
     def test_the_branch_closes_when_its_block_raises(self) -> None:
         section = CacheKeySection()
-        with pytest.raises(SymbolResolutionError), section.branch(BranchKeyword.IF, None):
+        with pytest.raises(SymbolResolutionError), section.branch(BranchKeyword.IF):
             raise SymbolResolutionError("x", "boom")
         section.add(headers("X-A"))
 
@@ -141,17 +141,17 @@ class TestPlacement:
 class TestChainRules:
     def test_rejects_a_nested_arm(self) -> None:
         section = CacheKeySection()
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             with pytest.raises(SymbolResolutionError, match="nested conditionals"):
-                with section.branch(BranchKeyword.IF, None):
+                with section.branch(BranchKeyword.IF):
                     pass
 
     def test_rejects_a_second_chain(self) -> None:
         section = CacheKeySection()
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             pass
         with pytest.raises(SymbolResolutionError, match="one if/elif/else chain"):
-            with section.branch(BranchKeyword.IF, None):
+            with section.branch(BranchKeyword.IF):
                 pass
 
 
@@ -159,9 +159,9 @@ class TestPresence:
     def test_one_check_per_name_however_many_arms_test_it(self) -> None:
         section = CacheKeySection()
         exists = parse_statement("cache.key.headers.exists", ['"X-A"'])
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             section.add(exists)
-        with section.branch(BranchKeyword.ELSE, None):
+        with section.branch(BranchKeyword.ELSE):
             section.add(exists)
 
         assert list(section.presence) == ["@hrw4u-header-x-a"]
@@ -172,9 +172,9 @@ class TestPresence:
 class TestComputed:
     def test_numbers_run_across_arms(self) -> None:
         section = CacheKeySection()
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             section.add_computed('"a"')
-        with section.branch(BranchKeyword.ELSE, None):
+        with section.branch(BranchKeyword.ELSE):
             section.add_computed('"b"')
 
         assert [branch.parts.computed[0].header for branch in section.chain] == ["@Hrw4u-Key-01", "@Hrw4u-Key-02"]
@@ -193,9 +193,9 @@ class TestConflicts:
         section = CacheKeySection()
         section.add(parse_statement("cache.url.query.keep", ['"a"']))
         section.add(parse_statement("cache.url.query.remove", ['"b"']))
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             pass
-        with section.branch(BranchKeyword.ELSE, None):
+        with section.branch(BranchKeyword.ELSE):
             pass
 
         assert len(section.conflicts()) == 1
@@ -204,14 +204,14 @@ class TestConflicts:
         section = CacheKeySection()
         section.add(parse_statement("cache.url.query.keep", ['"a"']))
         for keyword in (BranchKeyword.IF, BranchKeyword.ELSE):
-            with section.branch(keyword, None):
+            with section.branch(keyword):
                 section.add(parse_statement("cache.url.query.remove", ['"b"']))
 
         assert len(section.conflicts()) == 2
 
     def test_a_shared_statement_after_the_chain_is_the_later(self) -> None:
         section = CacheKeySection()
-        with section.branch(BranchKeyword.IF, None):
+        with section.branch(BranchKeyword.IF):
             section.add(parse_statement("cache.url.query.keep", ['"a"']))
         section.add(parse_statement("cache.url.query.remove", ['"b"']))
 

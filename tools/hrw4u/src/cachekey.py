@@ -216,8 +216,8 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
 
     if not args:
         raise SymbolResolutionError(name, f"{name}() takes at least one string argument")
-    names = flag.names if flag is not None else PRESENCE_STATEMENTS[name].names
 
+    names = flag.names if flag is not None else PRESENCE_STATEMENTS[name].names
     items = []
     for arg in args:
         item = _flag_value(name, f"{name}() name", arg)

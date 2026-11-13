@@ -116,7 +116,6 @@ class Branch:
     """One arm of the CACHEKEY if/elif/else chain, keyed on the shared parts plus its own."""
 
     keyword: BranchKeyword
-    ctx: ParserRuleContext | None = None  # None for the else the lowering adds
     cond_lines: list[str] = field(default_factory=list)  # rendered at indent 0; empty for else
     parts: KeyParts = field(default_factory=KeyParts)
 
@@ -133,13 +132,13 @@ class CacheKeySection:
 
     shared: KeyParts = field(default_factory=KeyParts)
     chain: list[Branch] = field(default_factory=list)
-    key_part_count: int = 0
     presence: dict[str, PresenceCheck] = field(default_factory=dict)
     _open: Branch | None = field(default=None, init=False, repr=False)
+    _key_part_count: int = field(default=0, init=False, repr=False)
     _added: int = field(default=0, init=False, repr=False)
 
     @contextmanager
-    def branch(self, keyword: BranchKeyword, ctx: ParserRuleContext) -> Iterator[Branch]:
+    def branch(self, keyword: BranchKeyword) -> Iterator[Branch]:
         """Append an arm to the chain and keep it open for the statements in its block.
 
         Raises on an arm inside an open one, or on an if when the section already has a chain.
@@ -149,7 +148,7 @@ class CacheKeySection:
         if keyword is BranchKeyword.IF and self.chain:
             raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
 
-        self._open = Branch(keyword, ctx)
+        self._open = Branch(keyword)
         self.chain.append(self._open)
         try:
             yield self._open
@@ -167,7 +166,7 @@ class CacheKeySection:
         """Key the open branch, or every branch, on a cache.key += value: a quoted HRW string."""
         part = self._new_key_part(value)
         self._target.computed.append(part)
-        self._key_on(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (part.header,)))
+        self._key_on_header(part.header)
 
     @property
     def _target(self) -> KeyParts:
@@ -177,12 +176,16 @@ class CacheKeySection:
         self._added += 1
         self._target.statements.append(replace(statement, order=self._added))
 
+    def _key_on_header(self, header: str, source: ParserRuleContext | None = None) -> None:
+        """Key on one of the lowering's @ headers, which a rule set before cachekey.so runs."""
+        self._key_on(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (header,), source))
+
     def _new_key_part(self, value: str) -> KeyPart:
         """Number the next key part. Numbers run across the whole section, not per branch."""
-        if self.key_part_count == MAX_KEY_PARTS:
+        if self._key_part_count == MAX_KEY_PARTS:
             raise SymbolResolutionError(cachekey.KEY_NAME, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
-        self.key_part_count += 1
-        return KeyPart(KEY_HEADER_FORMAT.format(self.key_part_count), value)
+        self._key_part_count += 1
+        return KeyPart(KEY_HEADER_FORMAT.format(self._key_part_count), value)
 
     def _add_presence(self, statement: CacheKeyStatement) -> None:
         """Test each name in a cache.key.*.exists statement, and key on its header.
@@ -200,7 +203,7 @@ class CacheKeySection:
                     f'{statement.name}("{name}") and {first.statement.name}("{first.name}"): '
                     f"the two {check.presence.names.noun}s can't be told apart in the key",
                 )
-            self._key_on(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (first.header,), statement.source))
+            self._key_on_header(first.header, statement.source)
 
     @property
     def adds_else(self) -> bool:

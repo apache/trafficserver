@@ -198,27 +198,19 @@ class TestMerge:
             "--include-headers=H",
             "--include-cookies=c",
         ]
-        assert (
-            merge(
-                [
-                    parse_statement("cache.key.cookies.add", ['"c"']),
-                    parse_assignment("cache.url.path", '""'),
-                    parse_statement("cache.url.canonical", []),
-                    parse_assignment("cache.key.prefix", '"p"'),
-                ]
-                + [
-                    parse_statement(name, args)
-                    for name, args in (
-                        ("cache.key.headers.add", ['"H"']),
-                        ("cache.url.query.sort", []),
-                        ("cache.url.query.keep", ['"k"']),
-                        ("cache.url.query.remove", ['"q"']),
-                        ("cache.url.pristine", []),
-                    )
-                ]
-            )
-            == expected
-        )
+        statements = [
+            parse_statement("cache.key.cookies.add", ['"c"']),
+            parse_assignment("cache.url.path", '""'),
+            parse_statement("cache.url.canonical", []),
+            parse_assignment("cache.key.prefix", '"p"'),
+            parse_statement("cache.key.headers.add", ['"H"']),
+            parse_statement("cache.url.query.sort", []),
+            parse_statement("cache.url.query.keep", ['"k"']),
+            parse_statement("cache.url.query.remove", ['"q"']),
+            parse_statement("cache.url.pristine", []),
+        ]
+
+        assert merge(statements) == expected
 
 
 class TestRender:

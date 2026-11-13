@@ -837,9 +837,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 hook = self._prepare_section(ctx)
             if not hook:
                 return
+
             if self.current_section is SectionType.CACHEKEY:
                 self._visit_cachekey_section(ctx)
                 return
+
             self._emit_section_body(ctx.sectionBody(), hook)
             if self.current_section is SectionType.REMAP:
                 self._remap_end = len(self.output)
@@ -963,7 +965,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def visitStatement(self, ctx) -> None:
         with self.debug_context("visitStatement"), self.trap(ctx):
-            self._check_outside_cachekey(ctx)
+            call = ctx.functionCall()
+            func, args = self._parse_function_call(call) if call else (None, [])
+            self._check_outside_cachekey(ctx, func, args)
             match ctx:
                 case _ if ctx.BREAK():
                     warning = self._sandbox.check_language("break")
@@ -973,8 +977,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.emit_statement("no-op [L]")
                     return
 
-                case _ if ctx.functionCall():
-                    func, args = self._parse_function_call(ctx.functionCall())
+                case _ if call:
                     if func in self._proc_registry:
                         self._expand_procedure_call(ctx.functionCall())
                         return
@@ -1061,7 +1064,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             if keyword is not BranchKeyword.IF:
                 self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword.value))
             # Opened before its condition renders, so a chain whose condition fails still counts as the one.
-            with self._cachekey.branch(keyword, arm) as branch:
+            with self._cachekey.branch(keyword) as branch:
                 if keyword.has_condition:
                     branch.cond_lines = self._render_condition(arm.condition())
                 self._cachekey_items(arm.block().blockItem())
@@ -1082,17 +1085,20 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 "break", "operator 'break' not allowed in CACHEKEY: it would end the rule set before cachekey.so runs"
             )
 
-        if ctx.functionCall():
-            func = ctx.functionCall().funcName.text
+        call = ctx.functionCall()
+        if call:
+            func = call.funcName.text
             if func in self._proc_registry or '::' in func:
-                sig, bindings = self._resolve_procedure_call(ctx.functionCall())
+                sig, bindings = self._resolve_procedure_call(call)
                 with self._proc_context(sig, bindings):
                     self._cachekey_items(sig.body_ctx.blockItem())
                 return
+
             if cachekey.is_key_name(func):
-                values = ctx.functionCall().argumentList().value() if ctx.functionCall().argumentList() else []
+                values = call.argumentList().value() if call.argumentList() else []
                 self._cachekey.add(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values], ctx))
                 return
+
             raise SymbolResolutionError(func, f"operator '{func}' not allowed in CACHEKEY")
 
         if ctx.lhs is None:
@@ -1153,9 +1159,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         """True unless the section is a CACHEKEY whose rules move after a later REMAP's."""
         return not (self._cachekey_moves and self._is_cachekey_section(section_ctx))
 
-    def _check_outside_cachekey(self, ctx: hrw4uParser.StatementContext) -> None:
+    def _check_outside_cachekey(self, ctx: hrw4uParser.StatementContext, func: str | None, args: list[str]) -> None:
         """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
 
+        func and args are the statement's parsed call, or None and [] if it isn't one.
         cache.* key operators belong in CACHEKEY. With a CACHEKEY section, a break in REMAP would
         skip it, a hand-written run-plugin cachekey.so would set the key twice, the later
         instance overriding the earlier, and a write to an @Hrw4u- header would forge a key part.
@@ -1164,13 +1171,17 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             if self.current_section is SectionType.REMAP and self._program_has_cachekey:
                 raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
             return
-        call = ctx.functionCall()
-        name, args = self._parse_function_call(call) if call else (ctx.lhs.text if ctx.lhs else None, [])
+
+        name = func if func is not None else (ctx.lhs.text if ctx.lhs else None)
         if name and cachekey.is_key_name(name):
             raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
-        if call and name == "run-plugin" and self._program_has_cachekey and args and cachekey.is_plugin_path(args[0]):
+
+        if not self._program_has_cachekey:
+            return
+
+        if func == "run-plugin" and args and cachekey.is_plugin_path(args[0]):
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
-        if not call and name and self._program_has_cachekey and cachekey.writes_reserved_header(name):
+        if func is None and name and cachekey.writes_reserved_header(name):
             raise SymbolResolutionError(name, cachekey.RESERVED_HEADER_ERROR)
 
     def _emit_cachekey(self) -> None:
