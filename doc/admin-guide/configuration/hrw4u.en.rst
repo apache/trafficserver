@@ -825,7 +825,8 @@ instance per request:
   `CACHEKEY`.
 - ``cache.url.*`` and ``cache.key.*`` fail to compile outside `CACHEKEY`.
 - Headers starting with ``@Hrw4u-`` are the compiler's. Other sections can't
-  set them when the rule has a `CACHEKEY` section.
+  set them when the rule has a `CACHEKEY` section, and ``cache.key.headers.*``
+  can't name them.
 
 Because `CACHEKEY` runs after `REMAP`, make request changes in `REMAP`. The key
 and its conditions see headers and cookies as `REMAP` left them. To key on a

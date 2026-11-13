@@ -1144,7 +1144,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if call and name == "run-plugin" and self._program_has_cachekey and args and cachekey.is_plugin_path(args[0]):
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
         if not call and name and self._program_has_cachekey and cachekey.writes_reserved_header(name):
-            raise SymbolResolutionError(name, f"{cachekey.RESERVED_HEADER_PREFIX} headers are reserved for CACHEKEY")
+            raise SymbolResolutionError(name, cachekey.RESERVED_HEADER_ERROR)
 
     def _emit_cachekey(self) -> None:
         """Insert the compiled CACHEKEY section after the output of the last REMAP section, one blank line on each side.

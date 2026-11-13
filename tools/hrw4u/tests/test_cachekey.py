@@ -272,11 +272,17 @@ class TestParseStatementErrors:
             ("cache.key.headers.add", ['"@"'], "not a valid header name"),
             ("cache.key.cookies.add", ['"a=b"'], "not a valid cookie name"),
             ("cache.key.cookies.add", ['"@x"'], "not a valid cookie name"),
+            ("cache.key.headers.add", ['"@Hrw4u-Key-01"'], "@Hrw4u- headers are reserved for CACHEKEY"),
+            ("cache.key.headers.add", ['"X"', '"@hrw4u-key-01"'], "@Hrw4u- headers are reserved for CACHEKEY"),
+            ("cache.key.headers.exists", ['"@Hrw4u-Header-X"'], "@Hrw4u- headers are reserved for CACHEKEY"),
         ],
     )
     def test_rejects(self, name: str, args: list[str], message: str) -> None:
         with pytest.raises(SymbolResolutionError, match=message):
             parse_statement(name, args)
+
+    def test_a_name_like_the_reserved_prefix_passes(self) -> None:
+        assert parse_statement("cache.key.headers.add", ['"@Hrw4uX"']).items == ("@Hrw4uX",)
 
 
 class TestPresence:

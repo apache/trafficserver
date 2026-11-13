@@ -37,6 +37,7 @@ HEADERS_ADD_NAME: Final[str] = "cache.key.headers.add"
 PLUGIN: Final[str] = "cachekey.so"
 # The lowering's own @ headers start with this, so the rules it writes can't clash with the user's.
 RESERVED_HEADER_PREFIX: Final[str] = "@Hrw4u-"
+RESERVED_HEADER_ERROR: Final[str] = f"{RESERVED_HEADER_PREFIX} headers are reserved for CACHEKEY"
 # Consistent-hash parent selection hashes the parent selection URL if a plugin set one,
 # so setting it from the same flags keeps a remap's parents when it moves to CACHEKEY.
 KEY_TYPE_FLAG: Final[str] = "--key-type=cache_key,parent_selection_url"
@@ -77,6 +78,10 @@ class NameRule:
         if self.allows_internal and name.startswith("@"):
             name = name[1:]
         return _TOKEN.fullmatch(name) is not None
+
+    def reserves(self, name: str) -> bool:
+        """True for one of the lowering's own @ headers, which a statement can't key on or test."""
+        return self.allows_internal and name.lower().startswith(RESERVED_HEADER_PREFIX.lower())
 
 
 HEADER_NAMES: Final[NameRule] = NameRule("header", allows_internal=True)
@@ -213,6 +218,8 @@ def parse_statement(name: str, args: list[str], source: ParserRuleContext | None
         # The flag value is comma-separated, so a comma would split one name into two.
         if "," in item:
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" contains a comma: pass each name as its own argument")
+        if names is not None and names.reserves(item):
+            raise SymbolResolutionError(name, RESERVED_HEADER_ERROR)
         if names is not None and not names.accepts(item):
             raise SymbolResolutionError(name, f"{name}() name \"{item}\" is not a valid {names.noun} name")
         items.append(item)
