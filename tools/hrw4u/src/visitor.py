@@ -271,7 +271,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     @property
     def _read_section(self) -> SectionType | None:
-        # A section reads what its hook can read: CACHEKEY reads what REMAP reads.
         return self.current_section and self.current_section.emits_as
 
     def _resolve_read(self, name: str) -> tuple[str, bool]:
@@ -976,13 +975,13 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
                 case _ if call:
                     if func in self._proc_registry:
-                        self._expand_procedure_call(ctx.functionCall())
+                        self._expand_procedure_call(call)
                         return
                     if '::' in func:
                         raise Hrw4uSyntaxError(
                             self.filename,
-                            ctx.functionCall().start.line,
-                            ctx.functionCall().start.column,
+                            call.start.line,
+                            call.start.column,
                             f"unknown procedure '{func}': not loaded via 'use'",
                             "",
                         )

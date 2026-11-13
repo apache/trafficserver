@@ -41,7 +41,7 @@ class SectionType(str, Enum):
 
     @property
     def emits_as(self) -> Self:
-        """The section whose hook runs this one's rules: REMAP for CACHEKEY, itself for the rest."""
+        """The section whose hook runs this one's rules, so whose symbols it can read: REMAP for CACHEKEY, itself for the rest."""
         return SectionType.REMAP if self is SectionType.CACHEKEY else self
 
     @property
