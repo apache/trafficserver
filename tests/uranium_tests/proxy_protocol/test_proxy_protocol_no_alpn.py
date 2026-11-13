@@ -47,7 +47,8 @@ class TestProxyProtocolTLSWithoutALPN:
                 "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1",
                 "proxy.config.http.insert_response_via_str": 0,
                 "proxy.config.url_remap.remap_required": 0,
-            })
+            }
+        )
 
         origin.start()
         ats.start()
@@ -68,7 +69,8 @@ class TestProxyProtocolTLSWithoutALPN:
                 "--resolve",
                 f"no-alpn.example.com:{port}:127.0.0.1",
                 f"https://no-alpn.example.com:{port}/",
-            ])
+            ]
+        )
         result = curl.run(arguments, timeout=15)
 
         assert result.returncode == 0, result.output
