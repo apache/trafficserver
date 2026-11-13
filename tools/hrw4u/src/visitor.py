@@ -99,8 +99,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._source_text: str = ""
         self._current_var_scope: types.VarScope = types.VarScope.TXN
 
-        self._cachekey: cachekey_section.CacheKeySection | None = None  # set once the CACHEKEY section is visited
-        self._program_has_cachekey: bool = False  # set before any section is visited, for checks in sections before CACHEKEY
+        self._cachekey: cachekey_section.CacheKeySection | None = None  # the collected CACHEKEY section; None until one is visited
+        self._program_has_cachekey: bool = False  # the rule has a CACHEKEY section, so every section must respect it
         self._cachekey_moves: bool = False  # a REMAP section follows CACHEKEY, so its rules go after that REMAP's
         self._cachekey_comments: list[str] = []  # top-level comments right above a CACHEKEY that moves, which move with it
         self._remap_end: int | None = None  # output index just past the last REMAP section's rules
@@ -1063,7 +1063,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         for keyword, arm in arms:
             if keyword is not BranchKeyword.IF:
                 self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword.value))
-            # Opened before its condition renders, so a chain whose condition fails still counts as the one.
+            # Opened before its condition renders, so the chain counts as the section's chain even if its condition fails.
             with self._cachekey.branch(keyword) as branch:
                 if keyword.has_condition:
                     branch.cond_lines = self._render_condition(arm.condition())

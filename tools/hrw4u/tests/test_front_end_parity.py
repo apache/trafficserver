@@ -102,8 +102,7 @@ def _policy_for(input_file: Path) -> SandboxConfig | None:
 
 
 def _cachekey_xfail(input_file: Path) -> list[pytest.MarkDecorator]:
-    # Expect all CACHEKEY tests to fail since Sema doesn't support CACHEKEY yet. The sandbox
-    # test is an exception since it doesn't depend on Sema support.
+    # The section denial fires in Sema's _section_of, before Sema reads the CACHEKEY body.
     if _case_id(input_file) != "sandbox/denied-cachekey-section" and SEMA_LACKS_CACHEKEY.search(input_file.read_text()):
         return [pytest.mark.xfail(strict=True, reason="Sema has no CACHEKEY yet")]
     return []
