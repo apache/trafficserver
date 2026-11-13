@@ -73,6 +73,12 @@ QUICStream::has_no_more_data() const
 }
 
 bool
+QUICStream::is_fin_sent() const
+{
+  return this->_sent_fin;
+}
+
+bool
 QUICStream::has_data_to_send()
 {
   if (this->_pending_send_block) {

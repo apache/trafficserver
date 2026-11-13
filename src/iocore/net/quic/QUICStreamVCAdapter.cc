@@ -33,6 +33,12 @@ QUICStreamVCAdapter::QUICStreamVCAdapter(QUICStream &stream) : VConnection(new_P
 
 QUICStreamVCAdapter::~QUICStreamVCAdapter()
 {
+  this->cancel_pending_events();
+}
+
+void
+QUICStreamVCAdapter::cancel_pending_events()
+{
   if (this->_read_ready_event) {
     this->_read_ready_event->cancel();
     this->_read_ready_event = nullptr;
@@ -377,7 +383,13 @@ QUICStreamVCAdapter::is_readable()
 bool
 QUICStreamVCAdapter::is_writable()
 {
-  return this->stream().direction() != QUICStreamDirection::RECEIVE;
+  return this->stream().direction() != QUICStreamDirection::RECEIVE && !this->stream().is_fin_sent();
+}
+
+bool
+QUICStreamVCAdapter::has_pending_write_complete_event() const
+{
+  return this->_write_complete_event != nullptr;
 }
 
 void

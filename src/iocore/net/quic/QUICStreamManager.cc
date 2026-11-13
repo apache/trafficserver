@@ -106,6 +106,7 @@ QUICStreamManager::create_stream(QUICStreamId stream_id, QUICConnectionError & /
 {
   QUICStream *stream = new QUICStream(this->_context->connection_info(), stream_id);
   this->stream_list.push(stream);
+  Dbg(QUICStreamDbgCtl::quic_stream(), "created stream %" PRIu64, stream_id);
 
   QUICApplication *application = this->_app_map->get(stream_id);
   application->on_stream_open(*stream);
@@ -158,6 +159,7 @@ QUICStreamManager::delete_stream(QUICStreamId stream_id)
 
   stream_list.remove(stream);
   delete stream;
+  Dbg(QUICStreamDbgCtl::quic_stream(), "deleted stream %" PRIu64, stream_id);
 
   return nullptr;
 }

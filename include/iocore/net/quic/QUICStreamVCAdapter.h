@@ -50,10 +50,18 @@ public:
   void do_io_shutdown(ShutdownHowTo_t howto) override;
   void reenable(VIO *vio) override;
 
-  // Helpers to check VIO states
+  // Helpers to check VIO states. A stream can be deleted once it is neither readable nor writable
+  // and no WRITE_COMPLETE is still waiting to reach the write VIO's continuation.
   bool is_readable();
+  /// Whether the send side still has a FIN to deliver.
   bool is_writable();
+  /// Whether a WRITE_COMPLETE is scheduled but has not reached the write VIO's continuation yet.
+  bool has_pending_write_complete_event() const;
   void mark_stream_closed();
+  /// Cancels the read, write and EOS events scheduled for the VIO continuations. The handlers that
+  /// receive them dereference stream(), so they must not run once the stream is deleted while this
+  /// adapter outlives it.
+  void cancel_pending_events();
   bool is_stream_closed() const;
 
   void clear_read_ready_event(Event *e);
