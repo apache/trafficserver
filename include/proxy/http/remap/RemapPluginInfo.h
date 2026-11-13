@@ -105,12 +105,12 @@ protected:
   /* Utility to be used only with unit testing */
   std::string missingRequiredSymbolError(const std::string &pluginName, const char *required, const char *requiring = nullptr);
   template <class T> T *getFunctionSymbol(const char *symbol);
-  void                  setPluginContext();
-  void                  resetPluginContext();
+  /// Make this plugin the thread's current plugin context; returns the context it replaced.
+  PluginThreadContext *setPluginContext();
+  /// Restore the context that setPluginContext() returned.
+  void resetPluginContext(PluginThreadContext *previous);
 
   static constexpr const char *const _tag = "plugin_remap"; /** @brief log tag used by this class */
-
-  PluginThreadContext *_tempContext = nullptr;
 };
 
 /**
