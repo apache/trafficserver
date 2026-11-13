@@ -57,6 +57,7 @@ SRC_FILES_HRW4U=src/visitor.py \
 	src/kg_visitor.py \
 	src/ast_nodes.py \
 	src/ast_visitor.py \
+	src/ast_unparse.py \
 	src/sema_nodes.py \
 	src/sema.py \
 	src/emit_conf.py

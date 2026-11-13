@@ -14,7 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Render an AST back to hrw4u source. Test-only; see test_ast_roundtrip.py for why.
+"""Render an AST back to hrw4u source.
 
 Whitespace is not reproduced: the emitter derives its own indentation and never reads the
 source's.
@@ -28,7 +28,12 @@ INDENT = "    "
 
 
 def unparse(ast: HRW4UAST) -> str:
-    return "\n".join(_top_level(item) for item in ast.body) + "\n"
+    lines: list[str] = []
+    for i, item in enumerate(ast.body):
+        if i and isinstance(ast.body[i - 1], (ProcedureDecl, VarSection, Section)):
+            lines.append("")
+        lines.append(_top_level(item))
+    return "".join(f"{line}\n" for line in lines)
 
 
 def _top_level(node: TopLevelNode) -> str:
@@ -39,12 +44,12 @@ def _top_level(node: TopLevelNode) -> str:
             return f"use {node.spec}"
         case ProcedureDecl():
             params = ", ".join(_proc_param(p) for p in node.params)
-            return _braced(f"procedure {node.name}({params})", [_body_item(b, 1) for b in node.body])
+            return _braced(f"procedure {node.name}({params})", _body(node.body))
         case VarSection():
             keyword = "SESSION_VARS" if node.scope == "session" else "VARS"
             return _braced(keyword, [_var_item(d) for d in node.items])
         case Section():
-            return _braced(node.type, [_body_item(b, 1) for b in node.body])
+            return _braced(node.type, _body(node.body))
     raise ValueError(f"unparse: unhandled top-level node {type(node).__name__}")
 
 
@@ -53,7 +58,7 @@ def _braced(header: str, lines: list[str]) -> str:
 
 
 def _proc_param(p: ProcParam) -> str:
-    return f"${p.name}" if p.default is None else f"${p.name}={_value(p.default)}"
+    return f"${p.name}" if p.default is None else f"${p.name}={unparse_value(p.default)}"
 
 
 def _var_item(node: VarDecl | Comment) -> str:
@@ -63,41 +68,42 @@ def _var_item(node: VarDecl | Comment) -> str:
     return f"{node.name}: {node.type_name}{slot};"
 
 
-def _body_item(node: BodyNode, depth: int) -> str:
+def _body(body: tuple[BodyNode, ...]) -> list[str]:
+    """Lines indented relative to the enclosing block, which adds its own indentation."""
+    return [line for item in body for line in _body_item(item)]
+
+
+def _body_item(node: BodyNode) -> list[str]:
     match node:
         case Comment():
-            return node.text
+            return [node.text]
         case Break():
-            return "break;"
+            return ["break;"]
         case FunctionCall():
-            return f"{_call(node)};"
+            return [f"{_call(node)};"]
         case Assignment():
-            return f"{node.name} {node.operator} {_value(node.value)};"
+            return [f"{node.name} {node.operator} {unparse_value(node.value)};"]
         case IfBlock():
-            return _if_block(node, depth)
+            return _if_block(node)
     raise ValueError(f"unparse: unhandled body node {type(node).__name__}")
 
 
-def _if_block(node: IfBlock, depth: int) -> str:
-    pad = INDENT * depth
-    lines = [f"if {_condition(node.condition)} {{"]
-    lines += [f"{INDENT}{line}" for line in _nested(node.body, depth)]
+def _if_block(node: IfBlock) -> list[str]:
+    lines = [f"if {_condition(node.condition)} {{", *_nested(node.body)]
     for arm in node.elif_branches:
-        lines.append(f"}} elif {_condition(arm.condition)} {{")
-        lines += [f"{INDENT}{line}" for line in _nested(arm.body, depth)]
+        lines += [f"}} elif {_condition(arm.condition)} {{", *_nested(arm.body)]
     if node.has_else:
-        lines.append("} else {")
-        lines += [f"{INDENT}{line}" for line in _nested(node.else_body, depth)]
+        lines += ["} else {", *_nested(node.else_body)]
     lines.append("}")
-    return f"\n{pad}".join(lines)
+    return lines
 
 
-def _nested(body: tuple[BodyNode, ...], depth: int) -> list[str]:
-    return [line for item in body for line in _body_item(item, depth + 1).splitlines()]
+def _nested(body: tuple[BodyNode, ...]) -> list[str]:
+    return [f"{INDENT}{line}" for line in _body(body)]
 
 
 def _call(node: FunctionCall) -> str:
-    return f"{node.name}({', '.join(_value(a) for a in node.args)})"
+    return f"{node.name}({', '.join(unparse_value(a) for a in node.args)})"
 
 
 def _condition(node: ConditionExpr) -> str:
@@ -122,10 +128,11 @@ def _condition(node: ConditionExpr) -> str:
 def _comparison(node: Comparison) -> str:
     left = node.left.raw if isinstance(node.left, IdentValue) else _call(node.left)
     mods = f" with {', '.join(node.modifiers)}" if node.modifiers else ""
-    return f"{left} {node.operator} {_value(node.right)}{mods}"
+    return f"{left} {node.operator} {unparse_value(node.right)}{mods}"
 
 
-def _value(v: ValueExpr | RegexValue | SetValue) -> str:
+def unparse_value(v: ValueExpr | RegexValue | SetValue) -> str:
+    """Returns the hrw4u source spelling of a value, quotes and delimiters included."""
     match v:
         case LiteralStringValue():
             return f'"{v.raw}"'
@@ -137,4 +144,4 @@ def _value(v: ValueExpr | RegexValue | SetValue) -> str:
             return v.raw
         case SetValue():
             return f"[{v.raw}]"
-    raise ValueError(f"unparse: unhandled value {type(v).__name__}")
+    raise ValueError(f"unparse_value: unhandled value {type(v).__name__}")

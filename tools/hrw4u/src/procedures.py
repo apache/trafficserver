@@ -41,7 +41,7 @@ class ProcEntry:
     name: str
     params: tuple[ast.ProcParam, ...]
     body: tuple[ast.BodyNode, ...]
-    source_file: str
+    span: ast.Span  # the `procedure` keyword
 
 
 @dataclass
@@ -65,7 +65,7 @@ class ProcRegistry:
                 span, f"procedure '{decl.name}' does not match namespace '{namespace}' (expected from 'use {use_spec}')"
             )
         if existing := self._sigs.get(decl.name):
-            raise self.source_map.error_at(span, f"procedure '{decl.name}' already declared in {existing.source_file}")
+            raise self.source_map.error_at(span, f"procedure '{decl.name}' already declared in {existing.span.file}")
 
         seen_default = False
         for param in decl.params:
@@ -76,7 +76,7 @@ class ProcRegistry:
             if param.default is not None:
                 seen_default = True
 
-        self._sigs[decl.name] = ProcEntry(name=decl.name, params=decl.params, body=decl.body, source_file=span.file)
+        self._sigs[decl.name] = ProcEntry(name=decl.name, params=decl.params, body=decl.body, span=span)
 
     def load(self, spec: str, span: ast.Span, search_paths: list[Path], load_stack: list[str] | None = None) -> None:
         from antlr4 import CommonTokenStream, InputStream

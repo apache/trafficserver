@@ -27,13 +27,15 @@ import urllib.parse
 from pathlib import Path
 from typing import Any
 
+from hrw4u.ast_unparse import unparse_value
+from hrw4u.ast_visitor import ASTVisitor
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.hrw4uParser import hrw4uParser
-from hrw4u.visitor import HRW4UVisitor, ProcSig
+from hrw4u.procedures import ProcEntry, ProcRegistry, resolve_use_path
 from hrw4u.sandbox import SandboxConfig
+from hrw4u.sema import Sema
 from hrw4u.common import create_parse_tree
 from hrw4u.types import VarType, LanguageKeyword
-from hrw4u.procedures import resolve_use_path
 
 from hrw4u_lsp.lsp.strings import StringLiteralHandler, ContextAnalyzer, ExpressionParser, DocumentAnalyzer
 from hrw4u_lsp.lsp.types import LSPDiagnostic, CompletionContext, VariableDeclaration
@@ -56,7 +58,7 @@ class DocumentManager:
         self.documents: dict[str, str] = {}
         self.diagnostics: dict[str, list[LSPDiagnostic]] = {}
         self.variable_declarations: dict[str, dict[str, VariableDeclaration]] = {}
-        self.proc_registries: dict[str, dict[str, ProcSig]] = {}
+        self.proc_registries: dict[str, ProcRegistry] = {}
         self._completion_provider = CompletionProvider()
         self._uri_path_cache: dict[str, str] = {}
         self.proc_search_paths: list[Path] = []
@@ -127,16 +129,16 @@ class DocumentManager:
             if hasattr(parser, '_syntax_errors'):
                 parser_errors = list(parser._syntax_errors)
 
-            if tree is not None:
-                visitor = HRW4UVisitor(
-                    filename=filename,
-                    error_collector=error_collector,
-                    proc_search_paths=self.proc_search_paths or None,
-                    sandbox=self.sandbox,
-                )
+            # An error-recovered tree has no AST; hover and definition keep the last analysis's procedures.
+            if tree is not None and not error_collector.has_errors():
                 try:
-                    visitor.visit(tree)
-                    self.proc_registries[uri] = dict(visitor._proc_registry)
+                    ast = ASTVisitor(filename=filename).visit(tree)
+                    sema = Sema(
+                        error_collector=error_collector, proc_search_paths=self.proc_search_paths or None, sandbox=self.sandbox
+                    )
+                    sema.source_map.add(filename, text)
+                    sema.analyze(ast)
+                    self.proc_registries[uri] = sema.procs
                 except Exception as e:
                     diagnostics.append(
                         {
@@ -289,20 +291,24 @@ class DocumentManager:
 
         return completions
 
-    def _format_proc_signature(self, sig: ProcSig) -> str:
+    def _proc_entry(self, uri: str, name: str) -> ProcEntry | None:
+        registry = self.proc_registries.get(uri)
+        if registry is None:
+            return None
+        return registry.get(name)
+
+    def _format_proc_signature(self, sig: ProcEntry) -> str:
         parts = []
         for p in sig.params:
-            if p.default_ctx is not None:
-                default_text = p.default_ctx.getText()
-                parts.append(f"${p.name} = {default_text}")
+            if p.default is not None:
+                parts.append(f"${p.name} = {unparse_value(p.default)}")
             else:
                 parts.append(f"${p.name}")
         params = ", ".join(parts)
-        return f"**procedure {sig.qualified_name}**({params})\n\nSource: `{sig.source_file}`"
+        return f"**procedure {sig.name}**({params})\n\nSource: `{sig.span.file}`"
 
     def _get_procedure_hover(self, uri: str, current_line: str, line: int, character: int) -> dict[str, Any] | None:
         stripped = current_line.strip()
-        registry = self.proc_registries.get(uri, {})
 
         # `use Namespace::Name` directive
         if stripped.startswith("use "):
@@ -322,7 +328,7 @@ class DocumentManager:
             paren = rest.find('(')
             name = rest[:paren].strip() if paren != -1 else rest.split()[0] if rest else ""
             if name and '::' in name:
-                sig = registry.get(name)
+                sig = self._proc_entry(uri, name)
                 if sig:
                     return HoverInfoProvider.create_hover_info(self._format_proc_signature(sig))
                 return HoverInfoProvider.create_hover_info(f"**procedure {name}**")
@@ -330,7 +336,7 @@ class DocumentManager:
         # Qualified name at cursor (Namespace::Name call or reference)
         word = self._extract_qualified_name(current_line, character)
         if word:
-            sig = registry.get(word)
+            sig = self._proc_entry(uri, word)
             if sig:
                 return HoverInfoProvider.create_hover_info(self._format_proc_signature(sig))
 
@@ -444,7 +450,6 @@ class DocumentManager:
             return None
 
         stripped = current_line.strip()
-        registry = self.proc_registries.get(uri, {})
 
         # `use Namespace::Name` → open the resolved file
         if stripped.startswith("use "):
@@ -469,12 +474,11 @@ class DocumentManager:
             name = self._extract_qualified_name(current_line, character)
 
         if name:
-            sig = registry.get(name)
+            sig = self._proc_entry(uri, name)
             if sig:
-                def_line = getattr(sig.body_ctx, 'start', None)
-                target_line = (def_line.line - 1) if def_line else 0
+                target_line = sig.span.line - 1
                 return {
-                    "uri": self._path_to_uri(sig.source_file),
+                    "uri": self._path_to_uri(sig.span.file),
                     "range": {"start": {"line": target_line, "character": 0}, "end": {"line": target_line, "character": 0}},
                 }
 

@@ -272,7 +272,7 @@ def create_parse_tree(
             emit_fatal_message(error_format, f"{error_prefix} error: {e}", filename=filename)
 
 
-def compile_to_conf(
+def _analyze(
     tree: Any,
     filename: str,
     source_text: str,
@@ -282,22 +282,15 @@ def compile_to_conf(
     preserve_comments: bool = True,
     proc_search_paths: list[Path] | None = None,
     sandbox: SandboxConfig | None = None,
-) -> list[str]:
-    """Run the hrw4u front end: CST -> AST -> resolved tree -> header_rewrite lines.
-
-    Not reachable from the CLI yet -- generate_output still routes through the CST
-    emitter. This is the single wiring both the switchover and the parity test use, so
-    the two cannot drift. A run that reported an error returns no lines: what the emitter
-    renders around an unresolved node is not a configuration anyone asked for. That
-    includes a syntax error already in `error_collector`, which stops the run before the
-    front end, because the AST cannot be built from an error-recovered tree.
-    """
+) -> tuple[Any, Any, Any] | None:
+    """Run the hrw4u front end: CST -> AST -> resolved tree. Returns the Sema, the AST and the
+    resolved program, or None when an error was reported, including a syntax error already in
+    `error_collector`, because the AST cannot be built from an error-recovered tree."""
     from hrw4u.ast_visitor import ASTVisitor
-    from hrw4u.emit_conf import ConfEmitter
     from hrw4u.sema import Sema
 
     if error_collector is not None and error_collector.has_errors():
-        return []
+        return None
     ast = ASTVisitor(filename=filename).visit(tree)
     sema = Sema(
         debug=debug,
@@ -309,24 +302,52 @@ def compile_to_conf(
     sema.source_map.add(filename, source_text)
     program = sema.analyze(ast)
     if error_collector is not None and error_collector.has_errors():
+        return None
+    return sema, ast, program
+
+
+def compile_to_conf(tree: Any, filename: str, source_text: str, **kwargs: Any) -> list[str]:
+    """Compile to header_rewrite lines through the resolved tree.
+
+    The single wiring both the CLI and the parity test use, so the two cannot drift. A
+    run that reported an error returns no lines: what the emitter renders around an
+    unresolved node is not a configuration anyone asked for.
+    """
+    from hrw4u.emit_conf import ConfEmitter
+
+    if (analyzed := _analyze(tree, filename, source_text, **kwargs)) is None:
         return []
+    _, _, program = analyzed
     return ConfEmitter().emit(program)
+
+
+def compile_to_hrw4u(tree: Any, filename: str, source_text: str, **kwargs: Any) -> list[str]:
+    """Rewrite to hrw4u with every procedure call written out in place, so the program needs no
+    procedures path. Fails like compile_to_conf."""
+    from hrw4u.ast_unparse import unparse
+
+    if (analyzed := _analyze(tree, filename, source_text, **kwargs)) is None:
+        return []
+    sema, ast, _ = analyzed
+    # Not splitlines(): a comment or string may hold U+2028 and other separators the grammar reads as text.
+    return unparse(sema.expand(ast)).split("\n")[:-1]
 
 
 def generate_output(
     tree: Any,
     parser_obj: ParserProtocol,
-    visitor_class: type[VisitorProtocol],
+    visitor_class: type[VisitorProtocol] | None,
     filename: str,
     args: Any,
     error_collector: ErrorCollector | None = None,
     extra_kwargs: dict[str, Any] | None = None,
     out: TextIO | None = None,
+    source_text: str = "",
 ) -> bool:
     """Write the compiled output to `out`, and return True when the input had errors.
 
     `out` is a parameter so the caller, which owns the destination, can still decide
-    whether to keep the bytes.
+    whether to keep the bytes. `source_text` is the input Sema quotes in diagnostics.
     """
     out = sys.stdout if out is None else out
     if args.ast:
@@ -345,12 +366,13 @@ def generate_output(
             }
             if extra_kwargs:
                 kwargs.update(extra_kwargs)
-            visitor = visitor_class(**kwargs)
             try:
-                if getattr(args, 'output', None) == 'hrw4u':
-                    result = visitor.flatten(tree)
+                if visitor_class is not None:
+                    result = visitor_class(**kwargs).visit(tree)
+                elif args.output == 'hrw4u':
+                    result = compile_to_hrw4u(tree, source_text=source_text, **kwargs)
                 else:
-                    result = visitor.visit(tree)
+                    result = compile_to_conf(tree, source_text=source_text, **kwargs)
                 if result:
                     print("\n".join(result), file=out)
             except Exception as e:
@@ -376,7 +398,7 @@ def run_main(
     description: str,
     lexer_class: type[LexerProtocol],
     parser_class: type[ParserProtocol],
-    visitor_class: type[VisitorProtocol],
+    visitor_class: type[VisitorProtocol] | None,
     error_prefix: str,
     output_flag_name: str,
     output_flag_help: str,
@@ -391,7 +413,7 @@ def run_main(
         description: Description for argument parser
         lexer_class: ANTLR lexer class to use
         parser_class: ANTLR parser class to use
-        visitor_class: Visitor class to use
+        visitor_class: Visitor class to use, or None to compile through Sema
         error_prefix: Error prefix for error messages
         output_flag_name: Name of output flag (e.g., "hrw", "hrw4u")
         output_flag_help: Help text for output flag
@@ -462,7 +484,17 @@ def run_main(
             content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format
         )
         buffer = io.StringIO()
-        failed = generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer)
+        failed = generate_output(
+            tree,
+            parser_obj,
+            visitor_class,
+            filename,
+            args,
+            error_collector,
+            extra_kwargs,
+            out=buffer,
+            source_text=content,
+        )
         if not failed or (args.ast and buffer.getvalue()):
             sys.stdout.write(buffer.getvalue())
         if failed:
@@ -507,7 +539,15 @@ def run_main(
 
             buffer = io.StringIO()
             pair_failed = generate_output(
-                tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer
+                tree,
+                parser_obj,
+                visitor_class,
+                filename,
+                args,
+                error_collector,
+                extra_kwargs,
+                out=buffer,
+                source_text=content,
             )
             failed |= pair_failed
 
@@ -548,7 +588,17 @@ def run_main(
 
             # These concatenate into one document, so a partial run is a config with a hole.
             buffer = io.StringIO()
-            failed |= generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs, out=buffer)
+            failed |= generate_output(
+                tree,
+                parser_obj,
+                visitor_class,
+                filename,
+                args,
+                error_collector,
+                extra_kwargs,
+                out=buffer,
+                source_text=content,
+            )
             # Empty chunks hold their place, or `# ---` stops marking file boundaries.
             chunks.append(buffer.getvalue())
 

@@ -55,7 +55,6 @@ class ProcSig:
     params: list[ProcParam]
     body_ctx: Any  # block parse tree node
     source_file: str
-    source_text: str  # full text of source file (for flatten)
 
 
 @dataclass(slots=True)
@@ -92,7 +91,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._proc_bindings: dict[str, str] = {}
         self._proc_call_stack: list[str] = []
         self._proc_search_paths: list[Path] = list(proc_search_paths) if proc_search_paths else []
-        self._source_text: str = ""
         self._current_var_scope: types.VarScope = types.VarScope.TXN
 
     def _sandbox_check(self, ctx, check_fn) -> bool:
@@ -364,7 +362,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         str(path), ctx.start.line, 0, f"procedure '{name}' already declared in {existing.source_file}", ""
                     )
                 params = self._collect_proc_params(ctx.paramList()) if ctx.paramList() else []
-                self._proc_registry[name] = ProcSig(name, params, ctx.block(), str(path), text)
+                self._proc_registry[name] = ProcSig(name, params, ctx.block(), str(path))
                 found_proc = True
 
         if not found_proc:
@@ -517,173 +515,6 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self._proc_context(sig, bindings):
             self._visit_block_items(sig.body_ctx)
 
-    @staticmethod
-    def _get_source_text(ctx, source_text: str) -> str:
-        """Extract original source text for a parse tree node."""
-        return source_text[ctx.start.start : ctx.stop.stop + 1]
-
-    def _flatten_substitute_params(self, text: str, bindings: dict[str, str]) -> str:
-        """Replace $param references in source text with bound values."""
-        if not bindings:
-            return text
-        return self._PARAM_REF_PATTERN.sub(lambda m: bindings.get(m.group(1), m.group(0)), text)
-
-    def _flatten_reindent(self, text: str, indent: str, source_indent: str | None = None) -> list[str]:
-        """Re-indent text: replace source indentation with target indent, preserving relative nesting.
-
-        If source_indent is None, it is auto-detected from the first non-empty line.
-        """
-        lines: list[str] = []
-
-        for line in text.splitlines():
-            stripped = line.strip()
-            if not stripped:
-                lines.append("")
-                continue
-
-            if source_indent is None:
-                source_indent = line[: len(line) - len(line.lstrip())]
-
-            if line.startswith(source_indent):
-                lines.append(f"{indent}{line[len(source_indent) :]}")
-            else:
-                lines.append(f"{indent}{stripped}")
-
-        return lines
-
-    @staticmethod
-    def _source_indent_at(ctx, source_text: str) -> str:
-        """Detect the source indentation of a parse tree node from its position in source text."""
-        start = ctx.start.start
-        line_start = source_text.rfind('\n', 0, start)
-        line_start = 0 if line_start == -1 else line_start + 1
-        prefix = source_text[line_start:start]
-        return prefix if prefix.isspace() or not prefix else ""
-
-    def _has_proc_calls(self, ctx) -> bool:
-        """Check if a block or conditional contains any procedure calls (recursively)."""
-        if hasattr(ctx, 'blockItem'):
-            for item in ctx.blockItem():
-                if self._get_proc_call_info(item):
-                    return True
-                if item.conditional() and self._has_proc_calls(item.conditional()):
-                    return True
-            return False
-
-        if self._has_proc_calls(ctx.ifStatement().block()):
-            return True
-        for elif_ctx in ctx.elifClause():
-            if self._has_proc_calls(elif_ctx.block()):
-                return True
-        if ctx.elseClause() and self._has_proc_calls(ctx.elseClause().block()):
-            return True
-        return False
-
-    def _flatten_items(self, items, indent: str, source_text: str, bindings: dict[str, str] | None = None) -> list[str]:
-        """Flatten a list of sectionBody or blockItem nodes, expanding procedure calls."""
-        if bindings is None:
-            bindings = {}
-        lines: list[str] = []
-
-        for item in items:
-            if item.commentLine() is not None:
-                if self.preserve_comments:
-                    comment_text = self._get_source_text(item.commentLine(), source_text)
-                    lines.extend(self._flatten_reindent(comment_text, indent))
-                continue
-
-            proc_info = self._get_proc_call_info(item)
-            if proc_info:
-                sig, call_ctx = proc_info
-                nested_bindings = self._bind_proc_args(sig, call_ctx)
-                lines.extend(self._flatten_items(sig.body_ctx.blockItem(), indent, sig.source_text, nested_bindings))
-                continue
-
-            if item.conditional() and self._has_proc_calls(item.conditional()):
-                lines.extend(self._flatten_conditional(item.conditional(), indent, source_text, bindings))
-                continue
-
-            item_text = self._get_source_text(item, source_text)
-            item_text = self._flatten_substitute_params(item_text, bindings)
-            source_indent = self._source_indent_at(item, source_text)
-            lines.extend(self._flatten_reindent(item_text, indent, source_indent))
-
-        return lines
-
-    def _flatten_conditional(self, cond_ctx, indent: str, source_text: str, bindings: dict[str, str]) -> list[str]:
-        """Flatten a conditional block, expanding proc calls within its branches."""
-        lines: list[str] = []
-        inner_indent = indent + (" " * SystemDefaults.INDENT_SPACES)
-
-        if_ctx = cond_ctx.ifStatement()
-        cond_text = self._get_source_text(if_ctx.condition(), source_text)
-        cond_text = self._flatten_substitute_params(cond_text, bindings)
-        lines.append(f"{indent}if {cond_text.strip()} {{")
-        lines.extend(self._flatten_items(if_ctx.block().blockItem(), inner_indent, source_text, bindings))
-
-        for elif_ctx in cond_ctx.elifClause():
-            elif_cond = self._get_source_text(elif_ctx.condition(), source_text)
-            elif_cond = self._flatten_substitute_params(elif_cond, bindings)
-            lines.append(f"{indent}}} elif {elif_cond.strip()} {{")
-            lines.extend(self._flatten_items(elif_ctx.block().blockItem(), inner_indent, source_text, bindings))
-
-        if cond_ctx.elseClause():
-            lines.append(f"{indent}}} else {{")
-            lines.extend(self._flatten_items(cond_ctx.elseClause().block().blockItem(), inner_indent, source_text, bindings))
-
-        lines.append(f"{indent}}}")
-        return lines
-
-    def flatten(self, ctx, source_text: str = "") -> list[str]:
-        """Flatten procedures: expand all procedure calls inline and output self-contained HRW4U."""
-        if not source_text:
-            source_text = ctx.start.source[1].getText(0, ctx.start.source[1].size - 1)
-        self._source_text = source_text
-        indent = " " * SystemDefaults.INDENT_SPACES
-
-        # Phase 1: Load all procedures (use directives + local procedure declarations)
-        for item in ctx.programItem():
-            if item.useDirective():
-                with self.trap(item.useDirective()):
-                    self.visitUseDirective(item.useDirective())
-            elif item.procedureDecl():
-                with self.trap(item.procedureDecl()):
-                    self.visitProcedureDecl(item.procedureDecl())
-
-        # Phase 2: Emit flattened output
-        output: list[str] = []
-        program_items = ctx.programItem()
-
-        for idx, item in enumerate(program_items):
-            if item.useDirective() or item.procedureDecl():
-                continue
-
-            if item.commentLine() and self.preserve_comments:
-                comment_text = item.commentLine().COMMENT().getText()
-                output.append(comment_text)
-                continue
-
-            if item.section():
-                section_ctx = item.section()
-
-                if section_ctx.varSection():
-                    var_text = self._get_source_text(section_ctx.varSection(), self._source_text)
-                    output.append(var_text)
-                    continue
-
-                section_name = section_ctx.name.text
-                output.append(f"{section_name} {{")
-
-                body_lines = self._flatten_items(section_ctx.sectionBody(), indent, self._source_text)
-                output.extend(body_lines)
-                output.append("}")
-
-                remaining = program_items[idx + 1 :]
-                if any(r.section() for r in remaining):
-                    output.append("")
-
-        return output
-
     def visitUseDirective(self, ctx) -> None:
         spec = ctx.QUALIFIED_IDENT().getText()
         if not self._proc_search_paths:
@@ -725,7 +556,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 )
             if p.default_ctx is not None:
                 seen_default = True
-        self._proc_registry[name] = ProcSig(name, params, ctx.block(), self.filename, self._source_text)
+        self._proc_registry[name] = ProcSig(name, params, ctx.block(), self.filename)
 
     def visitProgram(self, ctx) -> list[str]:
         with self.debug_context("visitProgram"):
