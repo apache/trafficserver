@@ -1,0 +1,9 @@
+REMAP {
+    inbound.url.query.remove("utm_source,utm_medium");
+    inbound.url.query.keep("id,page");
+    inbound.url.query.sort();
+}
+
+SEND_REQUEST {
+    outbound.url.query.sort();
+}
