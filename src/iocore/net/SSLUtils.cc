@@ -553,6 +553,11 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
         return CLIENT_HELLO_ERROR;
       }
       if (auto const servername = ch.getServerName(); servername != std::string_view{snis->get_sni_server_name()}) {
+        // Any client can trigger this, so it is throttled. Both names are client-supplied bytes, so they
+        // are left to the debug log.
+        static LogMessage log_msg{IS_THROTTLED};
+
+        log_msg.warning(MakeSourceLocation(), "rejecting a ClientHello after a HelloRetryRequest that changes the server name");
         Dbg(dbg_ctl_ssl_error, "Rejecting a ClientHello for '%.*s' after one for '%s'", static_cast<int>(servername.size()),
             servername.empty() ? "" : servername.data(), snis->get_sni_server_name());
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB

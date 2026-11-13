@@ -17,7 +17,7 @@
 from pathlib import Path
 import sys
 
-from tools.uranium.services import ATS, ATSFactory, CommandResult, OriginServer, ServiceFactory
+from tools.uranium.services import ATS, ATSFactory, CommandResult, OriginServer, ServiceFactory, wait_for_file_lines
 
 SSL_DIRECTORY = Path(__file__).parent / "ssl"
 
@@ -139,3 +139,6 @@ def test_tls_hrr_sni_change(ats_factory: ATSFactory, services: ServiceFactory) -
         # OpenSSL hands ATS the second ClientHello, which ATS rejects.
         assert "handshake=failed" in result.output, result.output
         assert "illegal parameter" in result.output, result.output
+        wait_for_file_lines(
+            ats.diags_log, "WARNING:.* rejecting a ClientHello after a HelloRetryRequest that changes the server name", 1
+        )
