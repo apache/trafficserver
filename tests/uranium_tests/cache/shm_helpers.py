@@ -20,6 +20,8 @@ from pathlib import Path
 import os
 import re
 
+import pytest
+
 from tools.uranium.services import ATS, ATSFactory, Curl
 
 DISK_SIZE = 256 * 1024 * 1024
@@ -54,8 +56,16 @@ def configure_shm_ats(
     purge: bool = False,
     debug_tags: str = "cache_shm",
 ) -> ATS:
-    """Create one ATS instance using explicit cache spans and shm settings."""
+    """Create one ATS instance using explicit cache spans and shm settings.
 
+    Skip the calling test when ATS was built without cache shared memory
+    support (TS_USE_CACHE_SHM is 0): configured with ENABLE_CACHE_SHM=OFF, or
+    built where shm_open is not in libc, as on glibc older than 2.34, which
+    keeps shm_open in librt.
+    """
+
+    if not factory.has_feature("TS_USE_CACHE_SHM"):
+        pytest.skip("ATS was built without cache shared memory support")
     ats = factory.create(name)
     storage_lines = ["cache:", "  spans:"]
     for index, storage_path in enumerate(storage_paths):
