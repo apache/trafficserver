@@ -1,3 +1,0 @@
-SEND_RESPONSE {
-    cache.key += "{geo.COUNTRY}";
-}

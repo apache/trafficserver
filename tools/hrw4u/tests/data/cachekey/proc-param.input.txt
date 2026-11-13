@@ -19,11 +19,18 @@ procedure local::no-path($p="") {
 }
 
 CACHEKEY {
+    # A quoted argument
     local::hdr("X-Region");
+    # A bare argument
     local::hdr(X-Tenant);
+    # A default
     local::cookie();
+    # A bare argument over a default
     local::cookie(locale);
+    # A parameter passed through a nested call
     local::pass("@Geo-Country");
+    # A {...} value in cache.key +=
     local::part("{geo.COUNTRY}");
+    # An assignment from a default
     local::no-path();
 }

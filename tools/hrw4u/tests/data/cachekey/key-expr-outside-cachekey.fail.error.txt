@@ -1,1 +1,0 @@
-tests/data/cachekey/key-expr-outside-cachekey.fail.input.txt:2:4: error: cache.* key operators are only allowed in CACHEKEY

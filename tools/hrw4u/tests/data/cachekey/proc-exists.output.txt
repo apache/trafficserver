@@ -1,0 +1,9 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-User-Id} ="" [NOT]
+    set-header @Hrw4u-Header-X-User-Id "1"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Host} ="a.example.com"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=@Hrw4u-Header-X-User-Id"
+else
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url"

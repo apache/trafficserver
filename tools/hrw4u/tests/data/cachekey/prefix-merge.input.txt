@@ -1,5 +1,4 @@
 CACHEKEY {
-    cache.url.query.remove("utm_source", "guid");
     cache.key.prefix = "assets.example.com/443";
     if inbound.req.Host == "img.example.com" {
         cache.key.headers.add("X-Region");
