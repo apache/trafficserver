@@ -29,14 +29,15 @@ this file. This applies to both the |TS| core and plugins. This file also
 contains some generic operational messages which track |TS| starting and
 stopping. If |TS| crashes a stack trace should be put in this file.
 
-Most messages will have a timestamp, process tag, and a thread pointer.::
+Most messages will have a timestamp, a thread name, and a priority level.::
 
-   [Oct 13 14:40:46.134] Server {0x2ae95ff5ce80} DIAG: (header_freq.init) initializing plugin
+   [2026-11-06T15:28:48.732Z] [ET_NET 8] DIAG: <HttpSM.cc:4795 (do_remap_request)> (http_seq) [0] Remapping request
 
-The process tag is "Server" indicating :program:`traffic_server`. It was logged
-from the thread with an instance address of `0x2ae95ff5ce80` and had a priority
-level of "DIAG" ("diagnostic"). The message is from a plugin, logged because the
-debug tag "header_freq.init" was active.
+The timestamp is ISO 8601 in UTC with milliseconds, so it reads the same on every
+host regardless of its time zone. The message was logged from the ``ET_NET 8``
+thread and had a priority level of "DIAG" ("diagnostic"). The source location is
+shown because of :ts:cv:`proxy.config.diags.show_location`, and the message was
+logged because the debug tag "http_seq" was active.
 
 =============
 diags.log
