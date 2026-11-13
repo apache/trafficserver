@@ -79,6 +79,11 @@ class TestParseAssignment:
             ("cache.url.bogus", '""', "Unknown cache key assignment"),
             ("cache.url.pristine", '""', r"cache.url.pristine is a statement: write cache.url.pristine\(\)"),
             ("cache.url.canonical", '""', r"cache.url.canonical is a statement: write cache.url.canonical\(\)"),
+            (
+                "cache.key.headers.exists",
+                '"X"',
+                r"cache.key.headers.exists is a statement: write cache.key.headers.exists\(\.\.\.\)",
+            ),
             ("cache.key.prefix", '""', "can't be empty"),
             ("cache.key.prefix", "x", "must be a quoted string"),
             ("cache.key.prefix", "42", "must be a quoted string"),
