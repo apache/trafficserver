@@ -182,16 +182,21 @@ TunnelDestination::TunnelDestination(const std::string_view &dest, SNIRoutingTyp
 int
 TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
 {
-  auto snis      = TLSSNISupport::getInstance(&ssl);
   auto tuns      = TLSTunnelSupport::getInstance(&ssl);
   auto alpns     = ALPNSupport::getInstance(&ssl);
-  auto ssl_netvc = SSLNetVCAccess(&ssl);
+  auto ssl_netvc = dynamic_cast<SSLNetVConnection *>(NetVCAccess(&ssl));
 
-  if (snis == nullptr || tuns == nullptr || alpns == nullptr || ssl_netvc == nullptr) {
+  if (ssl_netvc == nullptr) {
+    // Only an SSLNetVConnection can be tunnelled, so refuse rather than serve the name here.
+    Dbg(dbg_ctl_ssl_sni, "routing to %s needs an SSLNetVConnection - denying connection", destination.c_str());
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+
+  if (tuns == nullptr || alpns == nullptr) {
     return SSL_TLSEXT_ERR_OK;
   }
 
-  const char *servername = snis->get_sni_server_name();
+  const char *servername = ssl_netvc->get_sni_server_name();
   if (fnArrIndexes.empty()) {
     tuns->set_tunnel_destination(destination, type, !TLSTunnelSupport::PORT_IS_DYNAMIC, tunnel_prewarm);
     Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], fqdn [%s]", destination.c_str(), servername);
@@ -298,14 +303,24 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
 int
 VerifyClient::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
-  auto snis   = TLSSNISupport::getInstance(&ssl);
-  auto ssl_vc = SSLNetVCAccess(&ssl);
+  auto ssl_vc = dynamic_cast<SSLNetVConnection *>(NetVCAccess(&ssl));
 
-  if (snis == nullptr || ssl_vc == nullptr) {
+  if (ssl_vc == nullptr) {
+    // A CA override is kept on the SSLNetVConnection, for the certificate callback to apply again after
+    // it switches the SSL_CTX, so it can't be applied to any other connection. Refuse rather than let the
+    // default CA store stand in. Without an override the level only needs the SSL object, and NONE checks
+    // no certificate.
+    if (this->mode != 0 && (!ca_file.empty() || !ca_dir.empty())) {
+      Dbg(dbg_ctl_ssl_sni, "verify_client %d with a CA override needs an SSLNetVConnection - denying connection", this->mode);
+      return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+    Dbg(dbg_ctl_ssl_sni, "action verify param %d", this->mode);
+    setClientCertLevel(&ssl, this->mode);
+    setClientCertCACerts(&ssl, ca_file.c_str(), ca_dir.c_str());
     return SSL_TLSEXT_ERR_OK;
   }
 
-  const char *servername = snis->get_sni_server_name();
+  const char *servername = ssl_vc->get_sni_server_name();
   Dbg(dbg_ctl_ssl_sni, "action verify param %d, fqdn [%s]", this->mode, servername);
   setClientCertLevel(ssl_vc->ssl, this->mode);
   ssl_vc->set_ca_cert_file(ca_file, ca_dir);
@@ -415,22 +430,27 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
     return SSL_TLSEXT_ERR_OK;
   }
 
-  auto            ssl_vc    = SSLNetVCAccess(&ssl);
+  auto netvc = NetVCAccess(&ssl);
+  if (netvc == nullptr) {
+    Dbg(dbg_ctl_ssl_sni, "no connection to check the ip_allow for %s - denying connection", server_name.c_str());
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
+
   const sockaddr *client_ip = nullptr;
   for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
     if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {
-      client_ip = ssl_vc->get_effective_remote_addr();
+      client_ip = netvc->get_effective_remote_addr();
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
-               ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      if (sockaddr const *proxy_ip = ssl_vc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+               netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+      if (sockaddr const *proxy_ip = netvc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
         client_ip = proxy_ip;
         break;
       }
     }
   }
   if (client_ip == nullptr) {
-    client_ip = ssl_vc->get_remote_addr();
+    client_ip = netvc->get_remote_addr();
   }
   swoc::IPAddr ip = swoc::IPAddr(client_ip);
 

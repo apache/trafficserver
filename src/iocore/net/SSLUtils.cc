@@ -313,8 +313,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
     return false;
   }
 
-  // QUIC binds TLSBasicSupport without ever calling SSLNetVCAttach(), so the netvc is null on an H3
-  // connection even though tbs is not. Take the name from the support class instead.
+  // Take the name from TLSSNISupport, which QUIC connections bind as well as TLS ones.
   TLSSNISupport *snis       = TLSSNISupport::getInstance(ssl);
   const char    *servername = snis != nullptr ? snis->get_sni_server_name() : "";
 
@@ -384,9 +383,9 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     *out_alert = SSL_AD_INTERNAL_ERROR;
     return ssl_verify_invalid;
   }
-  // QUIC binds TLSBasicSupport without ever calling SSLNetVCAttach(), so this is null on an H3
-  // connection even though tbs is not. Only the per-connection CA override below needs it.
-  SSLNetVConnection *netvc      = SSLNetVCAccess(ssl);
+  // Only the per-connection CA override below needs this, and only an SSLNetVConnection carries one, so
+  // it is null on any other connection, such as QUIC.
+  SSLNetVConnection *netvc      = dynamic_cast<SSLNetVConnection *>(NetVCAccess(ssl));
   TLSSNISupport     *snis       = TLSSNISupport::getInstance(ssl);
   const char        *servername = snis != nullptr ? snis->get_sni_server_name() : "";
 
@@ -1352,7 +1351,7 @@ SSLInitializeLibrary()
 #endif
 
   // Reserve an application data index so that we can attach
-  // the SSLNetVConnection to the SSL session.
+  // the NetVConnection to the SSL session.
   ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", nullptr, nullptr, nullptr);
 
 #if TS_USE_RPK
@@ -1486,7 +1485,7 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 
   SSLHandshakeInfoCallback(ssl, where, ret);
 
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  auto netvc = dynamic_cast<SSLNetVConnection *>(NetVCAccess(ssl));
 
   if (!netvc || netvc->ssl != ssl) {
     Dbg(dbg_ctl_ssl_error, "ssl_callback_info call back on stale netvc");
@@ -2726,26 +2725,21 @@ SSLReleaseContext(SSL_CTX *ctx)
 }
 
 void
-SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc)
+NetVCAttach(SSL *ssl, NetVConnection *vc)
 {
   SSL_set_ex_data(ssl, ssl_vc_index, vc);
 }
 
 void
-SSLNetVCDetach(SSL *ssl)
+NetVCDetach(SSL *ssl)
 {
   SSL_set_ex_data(ssl, ssl_vc_index, nullptr);
 }
 
-SSLNetVConnection *
-SSLNetVCAccess(const SSL *ssl)
+NetVConnection *
+NetVCAccess(const SSL *ssl)
 {
-  SSLNetVConnection *netvc;
-  netvc = static_cast<SSLNetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index));
-
-  ink_assert(dynamic_cast<SSLNetVConnection *>(static_cast<NetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index))));
-
-  return netvc;
+  return static_cast<NetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index));
 }
 
 std::string
@@ -2780,7 +2774,7 @@ get_verify_str(SSL *ssl)
 {
   std::string verify_str;
 
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  NetVConnection *netvc = NetVCAccess(ssl);
   if (netvc != nullptr) {
     std::string policy_str;
     switch (netvc->options.verifyServerPolicy) {
