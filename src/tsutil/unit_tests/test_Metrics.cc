@@ -1042,3 +1042,74 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
     REQUIRE_FALSE(in_hidden);
   }
 }
+
+TEST_CASE("Metrics deferred counters", "[libtsapi][Metrics]")
+{
+  auto counter = Metrics::Counter::createPtr("deferred.counter");
+  auto other   = Metrics::Counter::createPtr("deferred.other");
+  auto gauge   = Metrics::Gauge::createPtr("deferred.gauge");
+
+  SECTION("a thread without deferral increments directly")
+  {
+    int64_t const before = Metrics::Counter::load(counter);
+    Metrics::Counter::increment(counter, 3);
+    CHECK(Metrics::Counter::load(counter) == before + 3);
+  }
+
+  SECTION("deferred increments become visible on flush")
+  {
+    int64_t const before_counter = Metrics::Counter::load(counter);
+    int64_t const before_other   = Metrics::Counter::load(other);
+    int64_t const before_gauge   = Metrics::Gauge::load(gauge);
+
+    Metrics::enable_thread_counter_deferral();
+    Metrics::Counter::increment(counter, 2);
+    Metrics::Counter::increment(counter);
+    Metrics::Counter::increment(other, 5);
+    Metrics::Gauge::increment(gauge, 4);
+
+    CHECK(Metrics::Counter::load(counter) == before_counter);
+    CHECK(Metrics::Counter::load(other) == before_other);
+    // Gauges are never deferred.
+    CHECK(Metrics::Gauge::load(gauge) == before_gauge + 4);
+
+    // Another thread's increments are not held by this thread's table.
+    std::thread([counter] { Metrics::Counter::increment(counter, 10); }).join();
+    CHECK(Metrics::Counter::load(counter) == before_counter + 10);
+
+    Metrics::flush_thread_counters();
+    CHECK(Metrics::Counter::load(counter) == before_counter + 13);
+    CHECK(Metrics::Counter::load(other) == before_other + 5);
+
+    // A second flush with nothing pending changes nothing.
+    Metrics::flush_thread_counters();
+    CHECK(Metrics::Counter::load(counter) == before_counter + 13);
+
+    Metrics::Counter::increment(counter);
+    Metrics::disable_thread_counter_deferral();
+    CHECK(Metrics::Counter::load(counter) == before_counter + 14);
+
+    Metrics::Counter::increment(counter);
+    CHECK(Metrics::Counter::load(counter) == before_counter + 15);
+  }
+
+  SECTION("increments that do not fit in the table are applied directly")
+  {
+    // More distinct counters than the table has slots.
+    std::vector<Metrics::Counter::AtomicType *> many;
+    for (int i = 0; i < 2000; ++i) {
+      many.push_back(Metrics::Counter::createPtr("deferred.many." + std::to_string(i)));
+    }
+
+    Metrics::enable_thread_counter_deferral();
+    for (auto *m : many) {
+      Metrics::Counter::increment(m);
+    }
+    Metrics::flush_thread_counters();
+    Metrics::disable_thread_counter_deferral();
+
+    for (auto *m : many) {
+      CHECK(Metrics::Counter::load(m) == 1);
+    }
+  }
+}

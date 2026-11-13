@@ -938,6 +938,17 @@ Thread Variables
    should improve the situation. Note that this setting should only be used by expert
    system tuners, and will not be beneficial with random fiddling.
 
+.. ts:cv:: CONFIG proxy.config.stats.deferred_counter_interval_ms INT 5
+   :units: milliseconds
+
+   How often each event thread adds its counter increments into the shared counter metrics. Every
+   transaction updates dozens of counters, and when every thread does that directly they contend
+   for the same cache lines. Instead, each event thread sums its increments locally and applies
+   them at this interval, and also just before it goes idle. As a result, a counter read through
+   :program:`traffic_ctl` or a stats plugin can lag the true value by up to this interval while
+   the threads are busy. Gauges, such as current connection counts, are always updated
+   immediately. Set to ``0`` to update counters directly.
+
 Network
 =======
 
