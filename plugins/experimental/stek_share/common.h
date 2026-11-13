@@ -76,9 +76,8 @@ public:
 
   // Like std::this_thread::sleep_for, but terminate() wakes it early so
   // shutdown does not wait out a long sleep.
-  template <class Rep, class Period>
   void
-  sleep_for(const std::chrono::duration<Rep, Period> &duration)
+  sleep_for(std::chrono::milliseconds duration)
   {
     std::unique_lock<std::mutex> lock(sleep_mutex);
     sleep_cv.wait_for(lock, duration, [this] { return shut_down.load(); });
