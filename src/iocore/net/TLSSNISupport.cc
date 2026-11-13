@@ -114,11 +114,18 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
   // Save local copy for later use;
   _ch = &client_hello;
 
-  const char          *servername = nullptr;
+  if (auto const servername = client_hello.getServerName(); !servername.empty()) {
+    this->_set_sni_server_name_buffer(servername);
+  }
+}
+
+std::string_view
+TLSSNISupport::ClientHello::getServerName()
+{
   const unsigned char *p;
   size_t               remaining, len;
   // Parse the server name if the get extension call succeeds and there are more than 2 bytes to parse
-  if (client_hello.getExtension(TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
+  if (this->getExtension(TLSEXT_TYPE_server_name, &p, &remaining) && remaining > 2) {
     // Parse to get to the name, originally from test/handshake_helper.c in openssl tree
     /* Extract the length of the supplied list of names. */
     len  = *(p++) << 8;
@@ -136,15 +143,13 @@ TLSSNISupport::on_client_hello(ClientHello &client_hello)
           len  = *(p++) << 8;
           len += *(p++);
           if (len + 2 <= remaining) {
-            servername = reinterpret_cast<const char *>(p);
+            return {reinterpret_cast<const char *>(p), len};
           }
         }
       }
     }
   }
-  if (servername) {
-    this->_set_sni_server_name_buffer(std::string_view(servername, len));
-  }
+  return {};
 }
 
 void
