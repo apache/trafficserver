@@ -27,22 +27,29 @@ std::atomic<SniSelector *> SniSelector::_instance = nullptr;
 ///////////////////////////////////////////////////////////////////////////////
 // YAML parser for the global YAML configuration (via plugin.config)
 //
+// This is the exception boundary for the configuration parsing. The node
+// accessors and conversions in parseYamlFile() throw on malformed input, and a
+// config reload runs this on an ET_TASK thread via ConfigUpdateCallback, so
+// letting an exception escape here would terminate the server.
+//
 bool
 SniSelector::yamlParser(const std::string &yaml_file)
 {
-  YAML::Node config;
-
   try {
-    config = YAML::LoadFile(yaml_file);
+    return parseYamlFile(yaml_file);
   } catch (YAML::BadFile const &e) {
-    TSError("[%s] Cannot load configuration file: %s.", PLUGIN_NAME, e.what());
-    return false;
+    TSError("[%s] Cannot load configuration file %s: %s.", PLUGIN_NAME, yaml_file.c_str(), e.what());
   } catch (std::exception const &e) {
-    TSError("[%s] Unknown error while loading configuration file: %s.", PLUGIN_NAME, e.what());
-    return false;
+    TSError("[%s] Failed to parse configuration file %s: %s.", PLUGIN_NAME, yaml_file.c_str(), e.what());
   }
 
-  _yaml_file = yaml_file;
+  return false;
+}
+
+bool
+SniSelector::parseYamlFile(const std::string &yaml_file)
+{
+  YAML::Node config = YAML::LoadFile(yaml_file);
 
   // First build the Lists, if any
   const YAML::Node &lists = config["lists"];
@@ -111,10 +118,11 @@ SniSelector::yamlParser(const std::string &yaml_file)
 
   if (sel && sel.IsSequence()) {
     for (const auto &i : sel) {
-      const YAML::Node &sni = i;
+      const YAML::Node &sni      = i;
+      const YAML::Node  sni_node = sni.IsMap() ? sni["sni"] : YAML::Node{};
 
-      if (sni.IsMap() && !sni["sni"].IsSequence()) {
-        auto name = sni["sni"].as<std::string>();
+      if (sni.IsMap() && sni_node && !sni_node.IsSequence()) {
+        auto name = sni_node.as<std::string>();
 
         if (nullptr != findLimiter(name)) {
           TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, name.c_str());
@@ -167,7 +175,8 @@ SniSelector::yamlParser(const std::string &yaml_file)
     }
   }
 
-  Dbg(dbg_ctl, "Succesfully loaded YAML file: %s", yaml_file.c_str());
+  _yaml_file = yaml_file;
+  Dbg(dbg_ctl, "Successfully loaded YAML file: %s", yaml_file.c_str());
 
   return true;
 }
