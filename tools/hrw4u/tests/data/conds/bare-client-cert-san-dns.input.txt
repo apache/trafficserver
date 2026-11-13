@@ -1,0 +1,5 @@
+REMAP {
+    if inbound.conn.client-cert.SAN.DNS {
+        inbound.req.X-Cert = "{inbound.conn.client-cert.SAN.DNS}";
+    }
+}
