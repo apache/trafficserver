@@ -107,8 +107,8 @@ def test_post_slow_server(ats_factory: ATSFactory, services: ServiceFactory, cur
     wait_for_origin(_origin=_origin, _ready_file=_ready_file)
     _ats.start()
     output = _ats.run_directory.parent / "curl.log"
-    result = curl.run_for(
-        _ats,
+    # TLS cannot use the clear-text Unix socket listener, so this request uses TCP in every mode.
+    result = curl.run(
         (
             f"--request POST --verbose --ipv4 --http2 --insecure --header 'Content-Length: 0' --output "
             f"'{str(output)}' 'https://localhost:{_ats.https_port}/xyz'"

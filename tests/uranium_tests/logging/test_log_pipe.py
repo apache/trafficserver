@@ -82,7 +82,9 @@ def generate_log(ats: ATS, reader: ProcessService, output_path: Path, *, _curl: 
     """
 
     reader.start()
-    result = _curl.get(ats, "/", options=f"--verbose")
+    # The log format is %<hii>, the address the client connected to, and the test waits for
+    # 127.0.0.1. A Unix socket connection has no IP address, so this request uses TCP.
+    result = _curl.run(f"--verbose http://127.0.0.1:{ats.http_port}/")
     assert result.returncode == 0, result.output
     wait_for_file_lines(output_path, "127.0.0.1", 1)
 

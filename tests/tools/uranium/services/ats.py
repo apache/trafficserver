@@ -332,16 +332,21 @@ class ATS:
         if self._was_started:
             raise RuntimeError(f"{self.name} has already been started")
         if self._context.use_uds:
-            server_ports = str(self._records.get("proxy.config.http.server_ports", self.http_port))
-            if self._process_options.get("enable_tls", False):
-                server_ports += f" {self.https_port}:ssl"
-            if self._process_options.get("enable_quic", False):
-                server_ports += f" {self.https_port}:quic"
-            if self._process_options.get("enable_proxy_protocol", False):
-                client_flag = ":pp-clnt" if self._process_options.get("enable_proxy_protocol_cp_src", False) else ""
-                server_ports += f" {self.proxy_protocol_port}:pp{client_flag}"
-                if self._process_options.get("enable_tls", False):
-                    server_ports += f" {self.proxy_protocol_https_port}:ssl:pp{client_flag}"
+            # Without UDS, a test's own server_ports replaces the runner's
+            # default listeners outright, so only the socket is appended to it.
+            # Appending the TLS, QUIC or PROXY protocol defaults as well would
+            # list a port twice when the test already names it, or open one
+            # the test left out.
+            if "proxy.config.http.server_ports" in self._records:
+                server_ports = str(self._records["proxy.config.http.server_ports"])
+            else:
+                # The defaults ReplayTest._start_ats writes, so the two cannot drift.
+                server_ports = self._runner._server_ports(
+                    enable_tls=bool(self._process_options.get("enable_tls", False)),
+                    enable_quic=bool(self._process_options.get("enable_quic", False)),
+                    enable_proxy_protocol=bool(self._process_options.get("enable_proxy_protocol", False)),
+                    enable_proxy_protocol_cp_src=bool(self._process_options.get("enable_proxy_protocol_cp_src", False)),
+                )
             if self.uds_path not in server_ports:
                 server_ports += f" {self.uds_path}"
             self._records["proxy.config.http.server_ports"] = server_ports
