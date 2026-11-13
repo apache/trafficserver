@@ -1,0 +1,1 @@
+tests/data/cachekey/fence-proc.fail.input.txt:3:4: error: operator 'inbound.req.X-Tag' not allowed in CACHEKEY

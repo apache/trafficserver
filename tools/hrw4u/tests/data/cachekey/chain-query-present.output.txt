@@ -1,0 +1,5 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-URL:QUERY:profile} ="" [NOT]
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=Origin"
+else
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url"

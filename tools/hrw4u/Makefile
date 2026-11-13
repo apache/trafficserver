@@ -50,6 +50,8 @@ UTILS_FILES=src/symbols_base.py \
 
 # hrw4u-specific source files (no LSP modules needed)
 SRC_FILES_HRW4U=src/visitor.py \
+	src/cachekey.py \
+	src/cachekey_section.py \
 	src/symbols.py \
 	src/suggestions.py \
 	src/procedures.py \

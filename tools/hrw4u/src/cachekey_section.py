@@ -1,0 +1,242 @@
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+"""The CACHEKEY section: its collected body and its lowering to REMAP rules.
+
+The visitor collects the section into a CacheKeySection. render() turns it into
+rule sets on REMAP_PSEUDO_HOOK: one per presence check, then one with one
+run-plugin cachekey.so per branch. The branches are exclusive, so exactly one
+cachekey.so instance runs per request.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass, field, replace
+from enum import Enum
+from operator import attrgetter
+from typing import Final
+
+from antlr4 import ParserRuleContext
+
+from hrw4u import cachekey
+from hrw4u.cachekey import CacheKeyStatement, ConflictError
+from hrw4u.common import SystemDefaults
+from hrw4u.errors import SymbolResolutionError
+from hrw4u.states import SectionType
+
+# cachekey.so sorts --include-headers as strings, so the numbers are zero-padded.
+KEY_HEADER_FORMAT: Final[str] = "@Hrw4u-Key-{:02d}"
+MAX_KEY_PARTS: Final[int] = 99
+
+HOOK_LINE: Final[str] = f"cond %{{{SectionType.CACHEKEY.hook_name}}} [AND]"
+INDENT: Final[str] = " " * SystemDefaults.INDENT_SPACES
+
+
+@dataclass(frozen=True, slots=True)
+class KeyPart:
+    """A `cache.key += "..."` value, carried to cachekey.so in an @ header."""
+
+    header: str
+    value: str  # quoted HRW string, interpolations already resolved
+
+
+@dataclass(slots=True)
+class KeyParts:
+    """What one cachekey.so instance keys on.
+
+    statements is in source order, a computed part counted as its --include-headers name.
+    computed holds the cache.key += values, each set into its header before cachekey.so runs.
+    """
+
+    statements: list[CacheKeyStatement] = field(default_factory=list)
+    computed: list[KeyPart] = field(default_factory=list)
+
+    def __add__(self, other: KeyParts) -> KeyParts:
+        return KeyParts(self.statements + other.statements, self.computed + other.computed)
+
+    def plugin_lines(self, depth: int) -> list[str]:
+        """The set-header for each computed part, then the run-plugin cachekey.so line."""
+        pad = INDENT * depth
+        lines = [f"{pad}set-header {part.header} {part.value}" for part in self.computed]
+        lines.append(pad + cachekey.render(cachekey.merge(self.statements)))
+        return lines
+
+
+@dataclass(frozen=True, slots=True)
+class PresenceCheck:
+    """One name a cache.key.*.exists statement tests, set into its @ header before the chain runs."""
+
+    statement: CacheKeyStatement
+    name: str
+
+    @property
+    def presence(self) -> cachekey.Presence:
+        return cachekey.PRESENCE_STATEMENTS[self.statement.name]
+
+    @property
+    def header(self) -> str:
+        return self.presence.header(self.name)
+
+    def rule_lines(self) -> list[str]:
+        return [HOOK_LINE, self.presence.cond_line(self.name), f'{INDENT}set-header {self.header} "1"']
+
+
+class BranchKeyword(str, Enum):
+    IF = "if"
+    ELIF = "elif"
+    ELSE = "else"
+
+    @property
+    def has_condition(self) -> bool:
+        return self is not BranchKeyword.ELSE
+
+    @property
+    def depth(self) -> int:
+        """The indent level of the arm's conditions and operators: header_rewrite nests an elif's one deeper."""
+        return 2 if self is BranchKeyword.ELIF else 1
+
+
+@dataclass(slots=True)
+class Branch:
+    """One arm of the CACHEKEY if/elif/else chain, keyed on the shared parts plus its own."""
+
+    keyword: BranchKeyword
+    cond_lines: list[str] = field(default_factory=list)  # rendered at indent 0; empty for else
+    parts: KeyParts = field(default_factory=KeyParts)
+
+
+@dataclass(slots=True)
+class CacheKeySection:
+    """The collected CACHEKEY section: parts every request keys on, and at most one chain.
+
+    shared holds the statements outside the chain, wherever they sit. presence holds
+    each tested name once, keyed by its header lowercased, wherever it is tested:
+    setting a header no branch keys on is harmless, so the checks run outside the chain.
+    A statement added while a branch is open goes to that branch, else to shared.
+    """
+
+    shared: KeyParts = field(default_factory=KeyParts)
+    chain: list[Branch] = field(default_factory=list)
+    presence: dict[str, PresenceCheck] = field(default_factory=dict)
+    _open: Branch | None = field(default=None, init=False, repr=False)
+    _key_part_count: int = field(default=0, init=False, repr=False)
+    _statement_count: int = field(default=0, init=False, repr=False)
+
+    @contextmanager
+    def branch(self, keyword: BranchKeyword) -> Iterator[Branch]:
+        """Append an arm to the chain and keep it open for the statements in its block.
+
+        Raises on an arm inside an open one, or on an if when the section already has a chain.
+        """
+        if self._open is not None:
+            raise SymbolResolutionError("if", "nested conditionals not allowed in CACHEKEY")
+        if keyword is BranchKeyword.IF and self.chain:
+            raise SymbolResolutionError("if", "CACHEKEY allows one if/elif/else chain")
+
+        self._open = Branch(keyword)
+        self.chain.append(self._open)
+        try:
+            yield self._open
+        finally:
+            self._open = None
+
+    def add(self, statement: CacheKeyStatement) -> None:
+        """Key the open branch, or every branch outside the chain, on one parsed cache.* statement."""
+        if statement.name in cachekey.PRESENCE_STATEMENTS:
+            self._add_presence(statement)
+        else:
+            self._key_on(statement)
+
+    def add_computed(self, value: str) -> None:
+        """Key the open branch, or every branch, on a cache.key += value: a quoted HRW string."""
+        part = self._new_key_part(value)
+        self._target.computed.append(part)
+        self._key_on_header(part.header)
+
+    @property
+    def _target(self) -> KeyParts:
+        return self._open.parts if self._open is not None else self.shared
+
+    def _key_on(self, statement: CacheKeyStatement) -> None:
+        self._statement_count += 1
+        self._target.statements.append(replace(statement, order=self._statement_count))
+
+    def _key_on_header(self, header: str, source: ParserRuleContext | None = None) -> None:
+        """Key on one of the lowering's @ headers, which a rule set before cachekey.so runs."""
+        self._key_on(CacheKeyStatement(cachekey.HEADERS_ADD_NAME, (header,), source))
+
+    def _new_key_part(self, value: str) -> KeyPart:
+        """Number the next key part. Numbers run across the whole section, not per branch."""
+        if self._key_part_count == MAX_KEY_PARTS:
+            raise SymbolResolutionError(cachekey.KEY_NAME, f"CACHEKEY allows at most {MAX_KEY_PARTS} cache.key += values")
+        self._key_part_count += 1
+        return KeyPart(KEY_HEADER_FORMAT.format(self._key_part_count), value)
+
+    def _add_presence(self, statement: CacheKeyStatement) -> None:
+        """Test each name in a cache.key.*.exists statement, and key on its header.
+
+        Raises if two names need one header: header names ignore case, cookie names don't.
+        """
+        for name in statement.items:
+            check = PresenceCheck(statement, name)
+            first = self.presence.setdefault(check.header.lower(), check)
+            # The prefixes differ, so a clash is two spellings of one name in one statement kind.
+            # Both would set one @ header, since header names ignore case.
+            if first.name != name and not check.presence.case_insensitive:
+                raise SymbolResolutionError(
+                    statement.name,
+                    f'{statement.name}("{name}") and {first.statement.name}("{first.name}"): '
+                    f"the two {check.presence.names.noun}s can't be told apart in the key",
+                )
+            self._key_on_header(first.header, statement.source)
+
+    @property
+    def adds_else(self) -> bool:
+        """True if the chain has no else, so the lowering adds one that keys on the shared parts."""
+        return bool(self.chain) and self.chain[-1].keyword.has_condition
+
+    def conflicts(self) -> list[ConflictError]:
+        """The contradictions on each run-plugin line. A conflict in the shared parts is reported once, not per branch."""
+        try:
+            cachekey.check_conflicts(self.shared.statements)
+        except ConflictError as error:
+            return [error]
+
+        # The shared parts come first in each line, wherever they sit, so check in source order.
+        errors = []
+        for branch in self.chain:
+            try:
+                cachekey.check_conflicts(sorted((self.shared + branch.parts).statements, key=attrgetter("order")))
+            except ConflictError as error:
+                errors.append(error)
+        return errors
+
+    def render(self) -> list[str]:
+        """The presence rule sets, then one run-plugin cachekey.so per branch, each with the shared parts plus its own."""
+        lines = [line for check in self.presence.values() for line in [*check.rule_lines(), ""]]
+        if not self.chain:
+            return [*lines, HOOK_LINE, *self.shared.plugin_lines(1)]
+
+        lines.append(HOOK_LINE)
+        for branch in [*self.chain, Branch(BranchKeyword.ELSE)] if self.adds_else else self.chain:
+            if branch.keyword is not BranchKeyword.IF:
+                lines.append(branch.keyword.value)
+            depth = branch.keyword.depth
+            lines += [INDENT * (depth - 1) + line for line in branch.cond_lines]
+            lines += (self.shared + branch.parts).plugin_lines(depth)
+        return lines

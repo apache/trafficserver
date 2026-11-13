@@ -1,0 +1,7 @@
+CACHEKEY {
+    cache.key.headers.add("X-Foo");
+}
+
+REMAP {
+    inbound.req.X-Foo = "1";
+}

@@ -378,6 +378,19 @@ def test_section_restrictions_batch(shared_lsp_client, section, prefix, should_a
     lsp_asserts.assert_completion_items_with_prefix(items, prefix, should_allow, f"{section} completion for {prefix}")
 
 
+def test_cachekey_offers_the_conditions_remap_offers(shared_lsp_client) -> None:
+    def conditions(section: str) -> set[str]:
+        uri = f"file:///test_conditions_{section.lower()}.hrw4u"
+        shared_lsp_client.open_document(uri, f"{section} {{\n    inbound.\n}}")
+        response = shared_lsp_client.request_completion(uri, 1, len("    inbound."))
+        items = lsp_asserts.assert_result_items(response, f"completion in {section}")
+        return {item["label"] for item in items if item.get("detail", "").startswith("Condition:")}
+
+    remap = conditions("REMAP")
+    assert remap
+    assert conditions("CACHEKEY") == remap
+
+
 def test_multi_section_inbound_always_allowed(shared_lsp_client) -> None:
     """Test inbound.req. in multiple sections efficiently."""
     test_cases = [("REMAP", "inbound.req."), ("SEND_REQUEST", "inbound.req."), ("READ_RESPONSE", "inbound.req.")]
@@ -632,6 +645,32 @@ def test_connection_namespace_hover_details(shared_lsp_client) -> None:
         assert "Available items:" in content, f"Missing 'Available items:' for {sub_namespace}"
         assert "Usage:" in content, f"Missing 'Usage:' for {sub_namespace}"
         assert "Context:" in content, f"Missing 'Context:' for {sub_namespace}"
+
+
+@pytest.mark.parametrize(
+    "statement,expression,doc_name",
+    [
+        ('cache.url.query.remove("a");', "cache.url.query.remove", "Cache Key Query Remove"),
+        ('cache.key.headers.exists("X");', "cache.key.headers.exists", "Cache Key Header Presence"),
+        ('cache.key.prefix = "p";', "cache.key.prefix", "Cache Key Prefix"),
+        ('cache.url.query = "";', "cache.url.query", "Cache Key Query"),
+        ('cache.key += "{inbound.req.X}";', "cache.key", "Cache Key"),
+    ],
+)
+@pytest.mark.parametrize("cursor", ["start", "end"])
+def test_cache_statement_hover(shared_lsp_client, statement, expression, doc_name, cursor) -> None:
+    """A cache.* statement shows its own docs wherever the cursor sits in the name."""
+    test_content = f"""CACHEKEY {{
+    {statement}
+}}"""
+
+    uri = _create_test_document(shared_lsp_client, test_content, f"cache_hover_{expression.replace('.', '_')}_{cursor}")
+
+    char_pos = len("    ") + (1 if cursor == "start" else len(expression) - 1)
+    response = shared_lsp_client.request_hover(uri, 1, char_pos)
+
+    content = _assert_hover_response(response, f"**{doc_name}**", expression)
+    assert "HRW4U symbol" not in content
 
 
 def test_unknown_namespace_fallback(shared_lsp_client) -> None:

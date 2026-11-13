@@ -1,0 +1,15 @@
+REMAP {
+    inbound.req.X-A = "1";
+}
+
+CACHEKEY {
+    cache.key.headers.add("X-A", "X-C");
+}
+
+SEND_RESPONSE {
+    inbound.resp.X-B = "1";
+}
+
+REMAP {
+    inbound.req.X-C = "1";
+}

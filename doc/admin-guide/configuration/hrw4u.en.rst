@@ -442,6 +442,10 @@ A special section `VARS` is used to declare variables. There is no equivalent in
 `SESSION_VARS` declares session-scoped variables that persist across all
 transactions on the same client connection (session).
 
+The `CACHEKEY` section sets the cache key and the parent selection URL. It has
+no hook of its own: the compiler emits it on ``REMAP_PSEUDO_HOOK`` at the end of
+the output, so it runs after every `REMAP` rule. See :ref:`hrw4u-cache-keys`.
+
 Variables and State Slots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -698,6 +702,160 @@ value:
    }
 
    inbound.req.X-Decoded-Path = "{inbound.url.path with NORM}";
+
+.. _hrw4u-cache-keys:
+
+Cache Keys
+----------
+
+The `CACHEKEY` section picks which parts of the request go into the cache key.
+The compiler lowers it to ``run-plugin "cachekey.so"`` with the matching
+:doc:`../plugins/cachekey.en` flags, so the plugin must be installed. For
+example::
+
+   CACHEKEY {
+       cache.url.query.remove("utm_source", "guid");
+       cache.key.headers.add("X-Region");
+       cache.key.cookies.add("session");
+   }
+
+compiles to::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--exclude-params=utm_source,guid" "--include-headers=X-Region" "--include-cookies=session"
+
+Every line starts with ``--key-type=cache_key,parent_selection_url``, so the
+same statements set both the cache key and the parent selection URL, even in a
+branch with no statements. Consistent-hash parent selection hashes the parent
+selection URL when a plugin sets one, so the parent follows the cache key. This
+differs from cachekey.so's own default, ``--key-type=cache_key`` only: a rule
+moved from a hand-written ``cachekey.so`` line without ``--key-type`` keeps its
+cache key, but consistent-hash parent selection may pick different parents.
+
+The section only writes the key. It can read the request in conditions, but
+holds only these statements, and procedures made of them:
+
+====================================== ======================================== =========================================
+HRW4U Statement                        cachekey.so Flag                         Description
+====================================== ======================================== =========================================
+cache.url.query.remove("a", "b")       --exclude-params=a,b                     Drop these query params from the key
+cache.url.query.keep("a", "b")         --include-params=a,b                     Keep only these query params
+cache.url.query = ""                   --remove-all-params=true                 Drop the whole query
+cache.url.query.sort()                 --sort-params=true                       Sort the query params
+cache.url.path = ""                    --remove-path=true                       Drop the path
+cache.url.pristine()                   --uri-type=pristine                      Start from the URL the client sent
+cache.url.canonical()                  --canonical-prefix=true                  Start the key with scheme://host:port
+cache.key.prefix = "p"                 --static-prefix=p                        Start the key with p, not host and port
+cache.key.headers.add("A", "B")        --include-headers=A,B                    Add these request headers
+cache.key.cookies.add("a", "b")        --include-cookies=a,b                    Add these cookies
+cache.key.headers.exists("A", "B")     --include-headers=@Hrw4u-Header-A,...    Add whether these headers are present
+cache.key.cookies.exists("a", "b")     --include-headers=@Hrw4u-Cookie-a,...    Add whether these cookies are present
+cache.key += "{...}"                   --include-headers=@Hrw4u-Key-NN          Add a computed value
+====================================== ======================================== =========================================
+
+The key starts with cachekey.so's default prefix, ``/host/port``, so a rule
+moved from a hand-written ``cachekey.so`` keeps its key.
+``cache.url.canonical()`` makes it ``scheme://host:port``.
+``cache.key.prefix`` replaces it with a fixed string, so several hosts can
+share cache entries. The two can't be combined. A branch takes one prefix
+value.
+
+List arguments and ``cache.key.prefix`` are static strings, with no ``{...}``
+values. Lists take one name per argument, and no name can hold a comma. Header
+and cookie names must be HTTP tokens: no spaces, ``:``, ``=``, or ``%``. A
+header name can start with ``@``; a cookie name can't. Query param and cookie
+names are case-sensitive, except in ``cache.key.cookies.exists()``; header
+names are not. ``keep()``, ``remove()`` and ``query = ""`` can't be combined. A
+missing or empty header, cookie, or ``cache.key +=`` value adds nothing to the
+key.
+
+``exists()`` keys on whether each name is there, not on its value, and takes
+``@`` headers too. An empty header, or a cookie sent as ``sid=``, counts as
+absent. ``cache.key.cookies.exists("sid", "SID")`` fails to compile: the two
+cookies can't be told apart in the key.
+
+``cache.key +=`` takes any string. The compiler sets the value into a numbered
+``@Hrw4u-Key-NN`` header and adds that header to the key::
+
+   CACHEKEY {
+       cache.key += "{geo.COUNTRY}";
+   }
+
+compiles to::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+       set-header @Hrw4u-Key-01 "%{GEO:COUNTRY}"
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=@Hrw4u-Key-01"
+
+A `CACHEKEY` section allows at most 99 ``cache.key +=`` values.
+
+Keys that depend on the request
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+One ``if``/``elif``/``else`` chain picks key parts by request. Statements
+outside the chain apply to every branch, wherever they sit. Each branch
+becomes its own ``run-plugin "cachekey.so"`` line with the shared parts plus
+its own. If the chain has no ``else``, the compiler adds one with the shared
+parts, so every request gets a key::
+
+   CACHEKEY {
+       cache.key.headers.add("X-Region");
+       if inbound.url.path ~ /^search/ {
+           cache.url.query.keep("q");
+       } elif inbound.url.path ~ /^api\// {
+           cache.url.query.sort();
+       }
+   }
+
+compiles to::
+
+   cond %{REMAP_PSEUDO_HOOK} [AND]
+   cond %{CLIENT-URL:PATH} /^search/
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-params=q" "--include-headers=X-Region"
+   elif
+       cond %{CLIENT-URL:PATH} /^api\//
+           run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--sort-params=true" "--include-headers=X-Region"
+   else
+       run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--include-headers=X-Region"
+
+Only the first ``cachekey.so`` to run sets the key, so the compiler allows one
+instance per request:
+
+- A rule has at most one `CACHEKEY` section, with at most one chain and no
+  nested ``if``.
+- `REMAP` can't use ``break`` when the rule has a `CACHEKEY` section: it
+  would skip the key.
+- A hand-written ``run-plugin("cachekey.so", ...)`` can't be combined with
+  `CACHEKEY`.
+- ``cache.url.*`` and ``cache.key.*`` fail to compile outside `CACHEKEY`.
+- Headers starting with ``@Hrw4u-`` are the compiler's. When the rule has a
+  `CACHEKEY` section, no section can set them or read them in a condition or
+  a ``{...}`` value, and ``cache.key.headers.*`` can't name them.
+
+Because `CACHEKEY` runs after `REMAP`, make request changes in `REMAP`. The key
+and its conditions see headers and cookies as `REMAP` left them. URL conditions
+are the exception: ``inbound.url.*`` reads the URL the client sent, while the
+key starts from the URL `REMAP` left. After `REMAP` rewrites ``/legacy/*`` to
+``/v2/*``, a `CACHEKEY` branch on ``/v2/`` never matches; test ``/legacy/``. To
+key on a
+computed value that other rules also need, set it into an ``@`` header in
+`REMAP` and add that header with ``cache.key.headers.add()``.
+
+To skip the cache entirely, call ``cache.bypass()`` in `REMAP`. It compiles to
+``set-config "proxy.config.http.cache.http" 0``::
+
+   REMAP {
+       if !inbound.req.X-Region {
+           cache.bypass();
+       }
+   }
+
+A sandbox policy controls `CACHEKEY` as a section: list it under
+``deny: sections`` to turn it off. Inside the section, the policy checks what
+you write, such as conditions, ``elif`` and ``else``, but not what the compiler
+writes for it. So denying ``run-plugin``, ``else``, a header or cookie
+condition, or a header operator doesn't stop `CACHEKEY`. The ``cache.url.*``
+and ``cache.key.*`` statements can't be denied one by one.
 
 Running and Debugging
 =====================

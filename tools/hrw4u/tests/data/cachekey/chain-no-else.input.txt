@@ -1,0 +1,8 @@
+CACHEKEY {
+    cache.url.pristine();
+    if inbound.req.Host == "a.example.com" || inbound.req.Host == "b.example.com" {
+        cache.key.headers.add("X-Tenant");
+    } elif inbound.url.path ~ /^search/ {
+        cache.url.query.keep("q");
+    }
+}

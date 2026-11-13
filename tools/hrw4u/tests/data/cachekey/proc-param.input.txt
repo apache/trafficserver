@@ -1,0 +1,36 @@
+procedure local::hdr($h) {
+    cache.key.headers.add("$h");
+}
+
+procedure local::cookie($c="session") {
+    cache.key.cookies.add("$c");
+}
+
+procedure local::pass($h) {
+    local::hdr($h);
+}
+
+procedure local::part($v) {
+    cache.key += "$v";
+}
+
+procedure local::no-path($p="") {
+    cache.url.path = "$p";
+}
+
+CACHEKEY {
+    # A quoted argument
+    local::hdr("X-Region");
+    # A bare argument
+    local::hdr(X-Tenant);
+    # A default
+    local::cookie();
+    # A bare argument over a default
+    local::cookie(locale);
+    # A parameter passed through a nested call
+    local::pass("@Geo-Country");
+    # A {...} value in cache.key +=
+    local::part("{geo.COUNTRY}");
+    # An assignment from a default
+    local::no-path();
+}

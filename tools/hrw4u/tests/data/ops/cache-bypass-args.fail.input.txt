@@ -1,0 +1,3 @@
+REMAP {
+    cache.bypass("now");
+}

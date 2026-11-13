@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import lru_cache
@@ -31,13 +32,16 @@ from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.symbols import SymbolResolver, SymbolResolutionError
-from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, ThrowingErrorListener
+from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, SectionAccessError, ThrowingErrorListener
 from hrw4u.states import CondState, SectionType, VALUE_MODIFIERS
 from hrw4u.common import RegexPatterns, SystemDefaults, apply_percent_mods, parse_mods, split_interpolation_mods
 from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
 from hrw4u.sandbox import SandboxConfig, SandboxDenialError
+from hrw4u import cachekey
+from hrw4u import cachekey_section
+from hrw4u.cachekey_section import BranchKeyword
 import hrw4u.types as types
 
 _regex_validator = Validator.regex_pattern()
@@ -94,6 +98,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._proc_search_paths: list[Path] = list(proc_search_paths) if proc_search_paths else []
         self._source_text: str = ""
         self._current_var_scope: types.VarScope = types.VarScope.TXN
+
+        self._cachekey: cachekey_section.CacheKeySection | None = None  # the collected CACHEKEY section; None until one is visited
+        self._program_has_cachekey: bool = False  # the rule has a CACHEKEY section, so every section must respect it
+        self._cachekey_comments: list[str] = []  # top-level comments right above CACHEKEY, which move with it
 
     def _sandbox_check(self, ctx, check_fn) -> bool:
         """Run a sandbox check, trapping any denial error into the error collector.
@@ -195,11 +203,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             if warning := self._sandbox.check_modifier(mod):
                 self._add_sandbox_warning(ctx, warning)
 
-    def _substitute_strings(self, s: str, ctx) -> str:
-        inner = s[1:-1]
+    def _substitute_params(self, text: str) -> str:
+        """Replace $param references with the values bound by the procedure call being expanded."""
+        if not self._proc_bindings:
+            return text
+        return self._PARAM_REF_PATTERN.sub(lambda m: self._proc_bindings.get(m.group(1), m.group(0)), text)
 
-        if self._proc_bindings:
-            inner = self._PARAM_REF_PATTERN.sub(lambda m: self._proc_bindings.get(m.group(1), m.group(0)), inner)
+    def _substitute_strings(self, s: str, ctx) -> str:
+        inner = self._substitute_params(s[1:-1])
 
         def repl(m: re.Match) -> str:
             try:
@@ -230,7 +241,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if m.group("var"):
                     var_name, mods = split_interpolation_mods(m.group("var"))
                     self._check_value_mods(mods, ctx)
-                    resolved, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
+                    self._check_not_key_name(var_name)
+                    resolved, _ = self._resolve_read(var_name)
                     replacement = apply_percent_mods(resolved, mods)
                     self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
@@ -257,12 +269,40 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         substituted = self._SUBSTITUTE_PATTERN.sub(repl, inner)
         return f'"{substituted}"'
 
+    @property
+    def _read_section(self) -> SectionType | None:
+        return self.current_section and self.current_section.emits_as
+
+    def _resolve_read(self, name: str) -> tuple[str, bool]:
+        """Resolve a condition or {...} read as its hook's section, naming the section the user wrote if it's denied."""
+        # The lowering sets its own headers as it goes, so a read would see a value that depends on statement order.
+        if self._program_has_cachekey and cachekey.names_reserved_header(name):
+            raise SymbolResolutionError(name, cachekey.RESERVED_HEADER_ERROR)
+
+        try:
+            return self.symbol_resolver.resolve_condition(name, self._read_section)
+        except SectionAccessError as error:
+            if self._read_section is self.current_section:
+                raise
+            written, read = self.current_section.value, self._read_section.value
+            raise SectionAccessError(
+                name, f"{name} is not available in the {written} section: {written} reads what {read} reads"
+            ) from error
+
+    @staticmethod
+    def _check_not_key_name(name: str) -> None:
+        if cachekey.is_key_name(name):
+            raise SymbolResolutionError(
+                name, "cache.url.* and cache.key.* can't be read in a condition or a string: they only set the cache key"
+            )
+
     def _resolve_identifier_with_validation(self, name: str) -> tuple[str, bool]:
         if not name:
             raise SymbolResolutionError("identifier", "Missing or empty identifier text")
 
+        self._check_not_key_name(name)
         try:
-            return self.symbol_resolver.resolve_condition(name, self.current_section)
+            return self._resolve_read(name)
         except SandboxDenialError:
             raise
         except SymbolResolutionError:
@@ -271,7 +311,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             error = SymbolResolutionError(
                 "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section."
             )
-            suggestions = self.symbol_resolver.get_variable_suggestions(name, self.current_section)
+            suggestions = self.symbol_resolver.get_variable_suggestions(name, self._read_section)
             if suggestions:
                 error.add_symbol_suggestion(suggestions)
             raise error from None
@@ -498,6 +538,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def _expand_procedure_call(self, call_ctx) -> None:
         """Expand a procedure call inline at the current indent level."""
+        sig, bindings = self._resolve_procedure_call(call_ctx)
+        with self._proc_context(sig, bindings):
+            self._visit_block_items(sig.body_ctx)
+
+    def _resolve_procedure_call(self, call_ctx: hrw4uParser.FunctionCallContext) -> tuple[ProcSig, dict[str, str]]:
+        """Look up a called procedure and bind its arguments. Raises if it's unknown or the call is circular."""
         name = call_ctx.funcName.text
         sig = self._proc_registry.get(name)
 
@@ -512,10 +558,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 self.filename, call_ctx.start.line, call_ctx.start.column, f"circular procedure call: {cycle}", ""
             )
 
-        bindings = self._bind_proc_args(sig, call_ctx)
-
-        with self._proc_context(sig, bindings):
-            self._visit_block_items(sig.body_ctx)
+        return sig, self._bind_proc_args(sig, call_ctx)
 
     @staticmethod
     def _get_source_text(ctx, source_text: str) -> str:
@@ -731,6 +774,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         with self.debug_context("visitProgram"):
             seen_sections = False
             program_items = ctx.programItem()
+
+            self._program_has_cachekey = any(item.section() and self._is_cachekey_section(item.section()) for item in program_items)
+
             for idx, item in enumerate(program_items):
                 start_length = len(self.output)
                 if item.useDirective():
@@ -762,12 +808,19 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.visit(item.section())
                     if idx < len(program_items) - 1 and len(self.output) > start_length:
                         next_items = program_items[idx + 1 :]
-                        if any(next_item.section() for next_item in next_items):
+                        if any(
+                            next_item.section() and not self._is_cachekey_section(next_item.section()) for next_item in next_items
+                        ):
                             self.emit_separator()
                 elif item.commentLine() and self.preserve_comments:
                     comment_text = item.commentLine().COMMENT().getText()
-                    self.output.append(comment_text)
+                    if self._precedes_cachekey(program_items[idx + 1 :]):
+                        self._cachekey_comments.append(comment_text)
+                    else:
+                        self.output.append(comment_text)
             self._flush_condition()
+            if self._cachekey is not None:
+                self._emit_cachekey()
             return self.get_final_output()
 
     def visitSection(self, ctx) -> None:
@@ -780,8 +833,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             hook = None
             with self.trap(ctx):
                 hook = self._prepare_section(ctx)
-            if hook:
-                self._emit_section_body(ctx.sectionBody(), hook)
+            if not hook:
+                return
+
+            if self.current_section is SectionType.CACHEKEY:
+                self._visit_cachekey_section(ctx)
+                return
+
+            self._emit_section_body(ctx.sectionBody(), hook)
 
     def _prepare_section(self, ctx):
         """Extract section info and validate. Returns hook name."""
@@ -902,6 +961,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def visitStatement(self, ctx) -> None:
         with self.debug_context("visitStatement"), self.trap(ctx):
+            call = ctx.functionCall()
+            func, args = self._parse_function_call(call) if call else (None, [])
+            self._check_outside_cachekey(ctx, func, args)
             match ctx:
                 case _ if ctx.BREAK():
                     warning = self._sandbox.check_language("break")
@@ -911,16 +973,15 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     self.emit_statement("no-op [L]")
                     return
 
-                case _ if ctx.functionCall():
-                    func, args = self._parse_function_call(ctx.functionCall())
+                case _ if call:
                     if func in self._proc_registry:
-                        self._expand_procedure_call(ctx.functionCall())
+                        self._expand_procedure_call(call)
                         return
                     if '::' in func:
                         raise Hrw4uSyntaxError(
                             self.filename,
-                            ctx.functionCall().start.line,
-                            ctx.functionCall().start.column,
+                            call.start.line,
+                            call.start.column,
                             f"unknown procedure '{func}': not loaded via 'use'",
                             "",
                         )
@@ -961,6 +1022,162 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 case _:
                     # Only reachable via parser error recovery, which already reported the error.
                     return
+
+    # CACHEKEY: collected while visiting, emitted at the end of the output.
+
+    def _visit_cachekey_section(self, ctx: hrw4uParser.SectionContext) -> None:
+        if self._cachekey is not None:
+            with self.trap(ctx):
+                raise SymbolResolutionError("CACHEKEY", "CACHEKEY may only appear once")
+            return
+
+        self._cachekey = cachekey_section.CacheKeySection()
+        self._cachekey_items(ctx.sectionBody())
+
+        for error in self._cachekey.conflicts():
+            with self.trap(error.statement.source or ctx):
+                raise error
+
+    def _cachekey_items(self, items: Sequence[hrw4uParser.SectionBodyContext | hrw4uParser.BlockItemContext]) -> None:
+        """Collect section or block items. Comments are dropped: the body folds into flags."""
+        for item in items:
+            if item.conditional():
+                with self.trap(item.conditional()):
+                    self._cachekey_chain(item.conditional())
+            elif item.statement():
+                with self.trap(item.statement()):
+                    self._cachekey_statement(item.statement())
+
+    def _cachekey_chain(self, ctx: hrw4uParser.ConditionalContext) -> None:
+        arms = [(BranchKeyword.IF, ctx.ifStatement()), *((BranchKeyword.ELIF, arm) for arm in ctx.elifClause())]
+        if ctx.elseClause():
+            arms.append((BranchKeyword.ELSE, ctx.elseClause()))
+
+        for keyword, arm in arms:
+            if keyword is not BranchKeyword.IF:
+                self._sandbox_check(arm, lambda: self._sandbox.check_language(keyword.value))
+            # Opened before its condition renders, so the chain counts as the section's chain even if its condition fails.
+            with self._cachekey.branch(keyword) as branch:
+                if keyword.has_condition:
+                    branch.cond_lines = self._render_condition(arm.condition())
+                self._cachekey_items(arm.block().blockItem())
+
+    def _render_condition(self, cond_ctx: hrw4uParser.ConditionContext) -> list[str]:
+        """Compile a condition at indent 0 into its own lines, off the main output."""
+        with self.detached_output() as lines:
+            self.visit(cond_ctx)
+        return lines
+
+    def _cachekey_statement(self, ctx: hrw4uParser.StatementContext) -> None:
+        """Add one CACHEKEY statement to the current branch, or to the shared parts outside the chain.
+
+        Expands procedure calls. Raises for anything that isn't a cache.* key statement.
+        """
+        if ctx.BREAK():
+            raise SymbolResolutionError(
+                "break", "operator 'break' not allowed in CACHEKEY: it would end the rule set before cachekey.so runs"
+            )
+
+        call = ctx.functionCall()
+        if call:
+            func = call.funcName.text
+            if func in self._proc_registry or '::' in func:
+                sig, bindings = self._resolve_procedure_call(call)
+                with self._proc_context(sig, bindings):
+                    self._cachekey_items(sig.body_ctx.blockItem())
+                return
+
+            if cachekey.is_key_name(func):
+                values = call.argumentList().value() if call.argumentList() else []
+                self._cachekey.add(cachekey.parse_statement(func, [self._cachekey_arg(value) for value in values], ctx))
+                return
+
+            raise SymbolResolutionError(func, f"operator '{func}' not allowed in CACHEKEY")
+
+        if ctx.lhs is None:
+            # Only reachable via parser error recovery, which already reported the error.
+            return
+
+        lhs = ctx.lhs.text
+        if ctx.EQUAL() and cachekey.is_key_name(lhs):
+            self._cachekey.add(cachekey.parse_assignment(lhs, self._cachekey_arg(ctx.value()), ctx))
+            return
+
+        if ctx.PLUSEQUAL() and lhs == cachekey.KEY_NAME:
+            value = ctx.value()
+            self._check_not_bare_param(value)
+            if value.str_ is None:
+                raise SymbolResolutionError(lhs, "cache.key += takes a quoted string")
+            self._cachekey.add_computed(self._substitute_strings(value.getText(), ctx))
+            return
+
+        op = lhs if ctx.EQUAL() else f"{lhs} +="
+        raise SymbolResolutionError(lhs, f"operator '{op}' not allowed in CACHEKEY")
+
+    def _cachekey_arg(self, value: hrw4uParser.ValueContext) -> str:
+        """Source text of a value in a cache.* call or assignment, with $params substituted in a string.
+
+        Raises for a bare $param (see _check_not_bare_param). Any other value is returned as
+        written, for cachekey.parse_* to reject.
+        """
+        self._check_not_bare_param(value)
+        if value.str_ is not None:
+            return self._substitute_params(value.getText())
+        return value.getText()
+
+    @staticmethod
+    def _check_not_bare_param(value: hrw4uParser.ValueContext) -> None:
+        """Raise for a bare $param in CACHEKEY: its binding has no quotes, so it can't be a string."""
+        if value.paramRef():
+            name = value.paramRef().IDENT().getText()
+            raise SymbolResolutionError(f"${name}", f"procedure parameter '${name}' must be quoted here: write \"${name}\"")
+
+    @classmethod
+    def _precedes_cachekey(cls, items: Sequence[hrw4uParser.ProgramItemContext]) -> bool:
+        """True if the first item that isn't a comment is the CACHEKEY section."""
+        for item in items:
+            if not item.commentLine():
+                return bool(item.section()) and cls._is_cachekey_section(item.section())
+        return False
+
+    @staticmethod
+    def _is_cachekey_section(section_ctx: hrw4uParser.SectionContext) -> bool:
+        return section_ctx.name is not None and section_ctx.name.text == SectionType.CACHEKEY
+
+    def _check_outside_cachekey(self, ctx: hrw4uParser.StatementContext, func: str | None, args: list[str]) -> None:
+        """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
+
+        func and args are the statement's parsed call, or None and [] if it isn't one.
+        cache.* key operators belong in CACHEKEY. With a CACHEKEY section, a break in REMAP would
+        skip it, a hand-written run-plugin cachekey.so would set the key twice, the later
+        instance overriding the earlier, and a write to an @Hrw4u- header would forge a key part.
+        """
+        if ctx.BREAK():
+            if self.current_section is SectionType.REMAP and self._program_has_cachekey:
+                raise SymbolResolutionError("CACHEKEY", "break in REMAP would skip CACHEKEY")
+            return
+
+        name = func if func is not None else (ctx.lhs.text if ctx.lhs else None)
+        if name and cachekey.is_key_name(name):
+            raise SymbolResolutionError(name, "cache.* key operators are only allowed in CACHEKEY")
+
+        if not self._program_has_cachekey:
+            return
+
+        if func == "run-plugin" and args and cachekey.is_plugin_path(args[0]):
+            raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
+        if func is None and name and cachekey.names_reserved_header(name):
+            raise SymbolResolutionError(name, cachekey.RESERVED_HEADER_ERROR)
+
+    def _emit_cachekey(self) -> None:
+        """Append the compiled CACHEKEY section, and the comments above it, after a blank line.
+
+        REMAP_PSEUDO_HOOK rules run in file order, and the key must be set after every REMAP rule.
+        Other hooks keep their own rule lists, so the end of the output is always late enough.
+        """
+        if self.output and self.output[-1] != "":
+            self.emit_separator()
+        self.output.extend([*self._cachekey_comments, *self._cachekey.render()])
 
     def visitVariables(self, ctx) -> None:
         with self.debug_context("visitVariables"):

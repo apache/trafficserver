@@ -1,0 +1,1 @@
+tests/data/cachekey/two-chains.fail.input.txt:5:4: error: CACHEKEY allows one if/elif/else chain

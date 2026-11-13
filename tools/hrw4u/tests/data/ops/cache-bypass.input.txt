@@ -1,0 +1,5 @@
+REMAP {
+    if !inbound.req.X-Region || inbound.req.X-Region ~ /vip$/ {
+        cache.bypass();
+    }
+}

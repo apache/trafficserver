@@ -1,0 +1,9 @@
+CACHEKEY {
+    cache.key.prefix = "assets.example.com/443";
+    if inbound.req.Host == "img.example.com" {
+        cache.key.headers.add("X-Region");
+    } else {
+        cache.key.prefix = "assets.example.com/443";
+        cache.url.pristine();
+    }
+}

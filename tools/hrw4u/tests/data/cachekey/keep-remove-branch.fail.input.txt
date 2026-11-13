@@ -1,0 +1,6 @@
+CACHEKEY {
+    cache.url.query.remove("guid");
+    if inbound.url.path ~ /^search/ {
+        cache.url.query.keep("q");
+    }
+}

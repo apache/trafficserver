@@ -1,0 +1,4 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Region} ="" [OR]
+cond %{CLIENT-HEADER:X-Region} /vip$/
+    set-config "proxy.config.http.cache.http" 0

@@ -1,0 +1,1 @@
+tests/data/cachekey/exists-cookie-case.fail.input.txt:3:4: error: cache.key.cookies.exists("SID") and cache.key.cookies.exists("sid"): the two cookies can't be told apart in the key

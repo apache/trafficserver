@@ -1,0 +1,1 @@
+tests/data/cachekey/prefix-twice-shared.fail.input.txt:3:4: error: cache.key.prefix = "b.example.com/443" can't be used with cache.key.prefix = "a.example.com/443"

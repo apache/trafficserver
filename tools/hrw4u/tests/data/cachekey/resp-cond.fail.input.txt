@@ -1,0 +1,5 @@
+CACHEKEY {
+    if inbound.resp.X-Foo == "a" {
+        cache.url.query.sort();
+    }
+}

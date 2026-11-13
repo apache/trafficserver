@@ -1,0 +1,5 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:Host} ="img.example.com"
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--static-prefix=assets.example.com/443" "--include-headers=X-Region"
+else
+    run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url" "--static-prefix=assets.example.com/443" "--uri-type=pristine"

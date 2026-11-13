@@ -1,0 +1,4 @@
+CACHEKEY {
+    cache.key.cookies.add("locale");
+    cache.key.cookies.exists("session", "beta");
+}

@@ -1,0 +1,7 @@
+CACHEKEY {
+    if inbound.req.Host == "a.example.com" {
+        cache.key.headers.add("X-A");
+    } elif !inbound.req.X-B && inbound.url.path ~ /^b\// {
+        cache.key.headers.add("X-C");
+    }
+}

@@ -1,0 +1,5 @@
+CACHEKEY {
+    if inbound.url.query.profile != "" {
+        cache.key.headers.add("Origin");
+    }
+}
