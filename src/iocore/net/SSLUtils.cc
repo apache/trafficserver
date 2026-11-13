@@ -525,7 +525,7 @@ ssl_client_offered_signature_algorithms(TLSSNISupport::ClientHello &client_hello
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
-ssl_client_hello_callback(SSL *s, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
+ssl_client_hello_callback(SSL *s, int *al, void * /* arg ATS_UNUSED */)
 {
   TLSSNISupport::ClientHello ch = {s};
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
@@ -544,8 +544,25 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     // Renegotiation carries a new ClientHello, whose SNI actions must still run.
     TLSBasicSupport *tbs = TLSBasicSupport::getInstance(s);
     if (tbs == nullptr || !tbs->is_tls_handshake_complete()) {
+      // The ClientHello after a HelloRetryRequest also arrives here. The SNI actions ran for the first
+      // ClientHello, so the second must name the same server (RFC 8446 section 4.1.2).
+      TLSSNISupport *snis = TLSSNISupport::getInstance(s);
+
+      if (snis == nullptr) {
+        Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
+        return CLIENT_HELLO_ERROR;
+      }
+      if (auto const servername = ch.getServerName(); servername != std::string_view{snis->get_sni_server_name()}) {
+        Dbg(dbg_ctl_ssl_error, "Rejecting a ClientHello for '%.*s' after one for '%s'", static_cast<int>(servername.size()),
+            servername.empty() ? "" : servername.data(), snis->get_sni_server_name());
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
-      // The pass that paused returned before binding, so this connection has not been bound yet.
+        *al = SSL_AD_ILLEGAL_PARAMETER;
+#endif
+        return CLIENT_HELLO_ERROR;
+      }
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+      // A pass that paused returned before binding. After a HelloRetryRequest this recomputes the
+      // binding before the session for the second ClientHello is created or looked up.
       if (!bind_session_id_context_to_verify_scope(s)) {
         return CLIENT_HELLO_ERROR;
       }

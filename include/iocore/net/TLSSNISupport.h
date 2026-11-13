@@ -91,6 +91,12 @@ public:
      */
     int getExtension(int type, const uint8_t **out, size_t *outlen);
 
+    /** The host name in the server_name extension, or empty if the ClientHello has none or the extension does not parse.
+     *
+     * The view points into the ClientHello and is only valid during the ClientHello callback.
+     */
+    std::string_view getServerName();
+
   private:
     ClientHelloContainer _chc;
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
