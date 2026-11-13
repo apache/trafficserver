@@ -41,13 +41,15 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "quic",
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-        })
+        }
+    )
     return ats
 
 
