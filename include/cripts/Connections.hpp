@@ -399,13 +399,6 @@ public:
     return TSNetVConnRemoteAddrGet(_vc);
   }
 
-  [[nodiscard]] cripts::IP
-  IP()
-  {
-    _ensure_initialized(this);
-    return cripts::IP{Socket()};
-  }
-
   [[nodiscard]] bool
   Initialized() const
   {
@@ -425,6 +418,7 @@ public:
     return TSVConnIsSsl(_vc);
   }
 
+  [[nodiscard]] virtual cripts::IP IP()                   = 0;
   [[nodiscard]] virtual cripts::IP LocalIP() const        = 0;
   [[nodiscard]] virtual int        Count() const          = 0;
   virtual void                     SetDscp(int val) const = 0;
@@ -502,6 +496,13 @@ namespace Client
       TSHttpTxnClientPacketMarkSet(_state->txnp, val);
     }
 
+    // The PROXY protocol source on a port with pp-clnt.
+    [[nodiscard]] cripts::IP
+    IP() override
+    {
+      return cripts::IP{TSHttpTxnClientAddrGet(_state->txnp)};
+    }
+
     [[nodiscard]] cripts::IP
     LocalIP() const override
     {
@@ -538,6 +539,13 @@ namespace Server
     SetMark(int val) const override
     {
       TSHttpTxnServerPacketMarkSet(_state->txnp, val);
+    }
+
+    [[nodiscard]] cripts::IP
+    IP() override
+    {
+      _ensure_initialized(this);
+      return cripts::IP{Socket()};
     }
 
     [[nodiscard]] cripts::IP

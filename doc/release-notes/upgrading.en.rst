@@ -315,6 +315,8 @@ Plugins
   than continuing; ``prefetch`` constrains relative paths; ``rate_limit`` no
   longer allows the queue to be bypassed.
 
+* Cripts: ``Client::Connection::IP()`` returns the PROXY protocol source on a port with ``pp-clnt``.
+
 * Regex rules that drive a security or routing decision can be required to match
   the whole subject. This is off by default. See
   :ts:cv:`proxy.config.regex.anchor_policy_rules` and
