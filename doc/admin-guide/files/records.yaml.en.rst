@@ -6425,6 +6425,50 @@ removed in the future without prior notice.
 
    Specified the maximum outgoing UDP payload size.
 
+.. ts:cv:: CONFIG proxy.config.quic.max_stream_send_buffer INT 262144
+   :units: bytes
+
+   The most stream data, in bytes, that |TS| hands the OpenSSL QUIC stack for one
+   stream at a time. The count covers data not yet sent and data sent but not yet
+   acknowledged by the client. It applies to the OpenSSL QUIC backend only.
+
+   This trades throughput against memory. A stream cannot have more than this much
+   data in flight, so it caps one stream's rate at about this value divided by the
+   round trip time: the default allows about 210 Mbps per stream at a 10 ms round
+   trip and about 40 Mbps at 50 ms. OpenSSL grows a stream's send buffer to fit
+   what it is given, up to its own limit of 6 MB, and does not shrink it again
+   until the stream ends, so each busy stream can keep up to this much memory for
+   its lifetime. Set to 8192, the size OpenSSL gives each new stream's send
+   buffer, no buffer grows, but one stream is capped at about 1.3 Mbps at a 50 ms
+   round trip. See also
+   :ts:cv:`proxy.config.quic.max_connection_send_buffer`.
+
+.. ts:cv:: CONFIG proxy.config.quic.max_connection_send_buffer INT 1048576
+   :units: bytes
+
+   The most stream data, in bytes, that |TS| hands the OpenSSL QUIC stack for all
+   the streams of one connection together, counted the same way as
+   :ts:cv:`proxy.config.quic.max_stream_send_buffer`. It applies to the OpenSSL QUIC
+   backend only.
+
+   This bounds how much data, not yet sent or not yet acknowledged, one connection
+   holds at once, which would otherwise grow with the number of streams the client
+   opens. It does not bound the memory allocated for the connection's send buffers,
+   which can be larger: |TS| counts what OpenSSL reports as used in each stream's
+   send buffer, not the size OpenSSL has allocated for it (see
+   `SSL_get_stream_write_buf_used and SSL_get_stream_write_buf_size
+   <https://docs.openssl.org/3.5/man3/SSL_get_value_uint/>`_). A buffer OpenSSL has
+   grown keeps its size after the client acknowledges the data, until its stream
+   ends, so a connection whose busy streams stay open can keep up to about
+   :ts:cv:`proxy.config.quic.max_stream_send_buffer` of buffer for each of them. A
+   lower value saves memory; a value below the per-stream limit times the number of
+   busy streams on a connection lowers their combined rate. Each stream that has data
+   to send may hold at most an equal share of this limit, but not below 16 KB (or
+   the per-stream limit, if that is smaller), so one stream cannot take the room
+   another needs. With more streams than this limit
+   divided by 16 KB, the shares add up to more than the limit, and the limit alone
+   decides how much each stream gets, in the order |TS| visits them.
+
 .. ts:cv:: CONFIG proxy.config.quic.disable_http_0_9 INT 1
 
    Disables HTTP/0.9 over QUIC by default.

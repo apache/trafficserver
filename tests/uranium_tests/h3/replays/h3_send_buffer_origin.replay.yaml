@@ -1,0 +1,380 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# The origin for the aioquic send buffer checks. Each request carries its case
+# name in a uuid header, which picks its response here.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - request_base: &request_base
+      version: "1.1"
+      method: GET
+      url: /send-buffer
+  - generated_1m_response: &generated_1m_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "1048576" ]
+      content:
+        size: 1048576
+  - generated_512k_response: &generated_512k_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "524288" ]
+      content:
+        size: 524288
+  - generated_100_response: &generated_100_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+      content:
+        size: 100
+
+sessions:
+- transactions:
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-window-16384 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-window-16384-second ]
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-window-10000 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-window-10000-second ]
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-0 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-1 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-2 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-3 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-4 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-5 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-6 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-concurrent-7 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-stop-sending ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-stop-sending-second ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-0 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-1 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-2 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-3 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-4 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-5 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-6 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-7 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-8 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-9 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-10 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-unacknowledged-11 ]
+
+    server-response:
+      <<: *generated_512k_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-0 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-1 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-2 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-3 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-shared-late ]
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-stream-limit-0 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-0 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-1 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-2 ]
+
+    server-response:
+      <<: *generated_1m_response
+
+  - client-request:
+      <<: *request_base
+      headers:
+        fields:
+        - [ uuid, send-buffer-reset-share-live ]
+
+    server-response:
+      <<: *generated_1m_response
