@@ -285,7 +285,10 @@ git_short_sha()
     }
   }
   pclose(pipe);
-  return result.empty() ? "unknown" : result;
+  if (result.empty()) {
+    return "unknown";
+  }
+  return result;
 }
 
 std::string

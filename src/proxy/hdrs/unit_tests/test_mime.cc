@@ -30,6 +30,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 using namespace std::literals;
@@ -304,7 +305,7 @@ TEST_CASE("HdrTokenFusedNameScanParity", "[proxy][hdrtoken]")
       ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
     }
 
-    for (auto const &name : {wks, upper, lower}) {
+    for (auto const &name : {wks, std::move(upper), std::move(lower)}) {
       std::string const buf      = name + ":v";
       int const         name_len = static_cast<int>(name.size());
       uint32_t          hash     = 0;
