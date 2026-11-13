@@ -18,12 +18,11 @@ from pathlib import Path
 import os
 import re
 import shlex
-import shutil
-import subprocess
 
 import pytest
 
 from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory, VerifierServer, wait_for_file_lines
+from tools.uranium.utils import go_toolchain_skip_reason
 
 TEST_DIRECTORY = Path(__file__).parent
 
@@ -114,11 +113,9 @@ def test_h3_go_client(ats_factory: ATSFactory, services: ServiceFactory) -> None
     """
     if not ats_factory.has_feature("TS_USE_QUIC"):
         pytest.skip("ATS was built without QUIC")
-    if shutil.which("go") is None:
-        pytest.skip("Go 1.24 or newer is required")
-    version = re.search(r"go(\d+(?:\.\d+)+)", subprocess.check_output(("go", "version"), text=True))
-    if version is None or tuple(int(part) for part in version.group(1).split(".")) < (1, 24):
-        pytest.skip("Go 1.24 or newer is required")
+    reason = go_toolchain_skip_reason(TEST_DIRECTORY / "go_h3_client" / "go.mod")
+    if reason is not None:
+        pytest.skip(reason)
     _server = configure_server(services)
     _ats = configure_ats(ats_factory, _server=_server)
     _client = configure_client(services, ats_factory.run_directory, _ats=_ats)

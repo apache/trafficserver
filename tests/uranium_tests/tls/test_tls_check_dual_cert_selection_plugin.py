@@ -92,8 +92,10 @@ def handshake(hostname: str, *, rsa_only: bool = False, ca_file: str = "signer.p
     """
 
     sigalgs = " -sigalgs RSA-PSS+SHA256" if rsa_only else ""
+    # Pin the subject format: OpenSSL 1.1.1 and 3.0 print "CN = <name>" by default and later releases
+    # print "CN=<name>". With RFC2253 every release prints "CN=<name>".
     script = (
-        f"printf 'foo\\n' | openssl s_client -CAfile {shlex.quote(str(SSL_DIRECTORY / ca_file))} "
+        f"printf 'foo\\n' | openssl s_client -nameopt RFC2253 -CAfile {shlex.quote(str(SSL_DIRECTORY / ca_file))} "
         f"-servername {shlex.quote(hostname)}{sigalgs} -connect 127.0.0.1:{_ats.https_port}"
     )
     result = _ats.run_shell(script)
