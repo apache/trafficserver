@@ -25,6 +25,7 @@
 
 #include <chrono>
 #include <thread>
+#include <vector>
 
 using namespace std::literals;
 
@@ -52,4 +53,30 @@ TEST_CASE("Throttler", "[libts][Throttler]")
 
   CHECK_FALSE(throttler.is_throttled(skipped_count));
   CHECK(skipped_count == expected_skip_count);
+}
+
+TEST_CASE("Throttler counts suppressions from concurrent callers", "[libts][Throttler]")
+{
+  // Long enough that only the first call is ever allowed.
+  Throttler throttler(1h);
+  uint64_t  skipped_count = 0;
+
+  CHECK_FALSE(throttler.is_throttled(skipped_count));
+
+  constexpr unsigned       n_threads        = 8;
+  constexpr unsigned       calls_per_thread = 100000;
+  std::vector<std::thread> threads;
+  for (unsigned t = 0; t < n_threads; ++t) {
+    threads.emplace_back([&throttler] {
+      uint64_t unused = 0;
+      for (unsigned i = 0; i < calls_per_thread; ++i) {
+        throttler.is_throttled(unused);
+      }
+    });
+  }
+  for (auto &thread : threads) {
+    thread.join();
+  }
+
+  CHECK(throttler.reset_counter() == uint64_t{n_threads} * calls_per_thread);
 }

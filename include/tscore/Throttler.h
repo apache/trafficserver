@@ -130,6 +130,6 @@ private:
   /// The minimum number of microseconds desired between actions.
   std::atomic<std::chrono::microseconds> _interval{std::chrono::microseconds{0}};
 
-  /// The number of calls to Throttler since the last
-  uint64_t _suppressed_count = 0;
+  /// The number of suppressed calls since the last unsuppressed one or counter reset.
+  std::atomic<uint64_t> _suppressed_count{0};
 };
