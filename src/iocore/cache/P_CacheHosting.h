@@ -83,7 +83,7 @@ public:
   ~CacheHostMatcher();
 
   void AllocateSpace(int num_entries);
-  void NewEntry(matcher_line *line_info);
+  bool NewEntry(matcher_line *line_info);
 
   void Match(std::string_view rdata, CacheHostResult *result) const;
   void Print() const;
@@ -254,6 +254,20 @@ public:
     return gen_host_rec.num_cachevols;
   }
 
+  int
+  getNumErrors() const
+  {
+    return m_numErrors;
+  }
+
+  // A table is only safe to install if every entry was accepted and the
+  // generic record has volumes, since key_to_stripe falls back to it.
+  bool
+  is_valid() const
+  {
+    return m_numErrors == 0 && gen_host_rec.num_cachevols > 0;
+  }
+
   CacheHostMatcher *
   getHostMatcher() const
   {
@@ -278,6 +292,7 @@ private:
   CacheType                         type         = CacheType::HTTP;
   Cache                            *cache        = nullptr;
   int                               m_numEntries = 0;
+  int                               m_numErrors  = 0;
   CacheHostRecord                   gen_host_rec;
   std::unique_ptr<CacheHostMatcher> hostMatch    = nullptr;
   const matcher_tags                config_tags  = {"hostname", "domain", nullptr, nullptr, nullptr, nullptr, false};
