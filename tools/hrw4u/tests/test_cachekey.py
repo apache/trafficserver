@@ -26,10 +26,10 @@ from hrw4u.cachekey import (
     ConflictError,
     check_conflicts,
     merge,
+    names_reserved_header,
     parse_assignment,
     parse_statement,
     render,
-    writes_reserved_header,
 )
 from hrw4u.errors import SymbolResolutionError
 
@@ -39,7 +39,7 @@ def flags(*calls: tuple[str, list[str]]) -> list[str]:
 
 
 @pytest.mark.parametrize(
-    ("lhs", "reserved"),
+    ("name", "reserved"),
     [
         ("inbound.req.@Hrw4u-Key-01", True),
         ("inbound.req.@hrw4u-header-X", True),
@@ -49,8 +49,8 @@ def flags(*calls: tuple[str, list[str]]) -> list[str]:
         ("inbound.req.@X", False),
     ],
 )
-def test_writes_reserved_header(lhs: str, reserved: bool) -> None:
-    assert writes_reserved_header(lhs) is reserved
+def test_names_reserved_header(name: str, reserved: bool) -> None:
+    assert names_reserved_header(name) is reserved
 
 
 class TestParseAssignment:
@@ -271,9 +271,9 @@ class TestParseStatementErrors:
             ("cache.key.headers.add", ['"@"'], "not a valid header name"),
             ("cache.key.cookies.add", ['"a=b"'], "not a valid cookie name"),
             ("cache.key.cookies.add", ['"@x"'], "not a valid cookie name"),
-            ("cache.key.headers.add", ['"@Hrw4u-Key-01"'], "@Hrw4u- headers are reserved for CACHEKEY"),
-            ("cache.key.headers.add", ['"X"', '"@hrw4u-key-01"'], "@Hrw4u- headers are reserved for CACHEKEY"),
-            ("cache.key.headers.exists", ['"@Hrw4u-Header-X"'], "@Hrw4u- headers are reserved for CACHEKEY"),
+            ("cache.key.headers.add", ['"@Hrw4u-Key-01"'], "@Hrw4u- headers are reserved for the compiler"),
+            ("cache.key.headers.add", ['"X"', '"@hrw4u-key-01"'], "@Hrw4u- headers are reserved for the compiler"),
+            ("cache.key.headers.exists", ['"@Hrw4u-Header-X"'], "@Hrw4u- headers are reserved for the compiler"),
         ],
     )
     def test_rejects(self, name: str, args: list[str], message: str) -> None:

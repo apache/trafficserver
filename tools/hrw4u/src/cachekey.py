@@ -37,7 +37,7 @@ HEADERS_ADD_NAME: Final[str] = "cache.key.headers.add"
 PLUGIN: Final[str] = "cachekey.so"
 # The lowering's own @ headers start with this, so the rules it writes can't clash with the user's.
 RESERVED_HEADER_PREFIX: Final[str] = "@Hrw4u-"
-RESERVED_HEADER_ERROR: Final[str] = f"{RESERVED_HEADER_PREFIX} headers are reserved for CACHEKEY"
+RESERVED_HEADER_ERROR: Final[str] = f"{RESERVED_HEADER_PREFIX} headers are reserved for the compiler"
 # Consistent-hash parent selection hashes the parent selection URL if a plugin set one,
 # so setting it from the same flags keeps a remap's parents when it moves to CACHEKEY.
 KEY_TYPE_FLAG: Final[str] = "--key-type=cache_key,parent_selection_url"
@@ -51,9 +51,9 @@ def is_key_name(name: str) -> bool:
     return name == KEY_NAME or name.startswith((f"{KEY_NAME}.", URL_PREFIX))
 
 
-def writes_reserved_header(lhs: str) -> bool:
-    """True if an assignment target, such as inbound.req.@Hrw4u-Key-01, is one of the lowering's headers."""
-    return f".{RESERVED_HEADER_PREFIX}".lower() in lhs.lower()
+def names_reserved_header(name: str) -> bool:
+    """True if a header symbol, such as inbound.req.@Hrw4u-Key-01, is one of the lowering's headers."""
+    return f".{RESERVED_HEADER_PREFIX}".lower() in name.lower()
 
 
 def is_plugin_path(path: str) -> bool:

@@ -1,0 +1,7 @@
+REMAP {
+    inbound.req.X-Copy = "{inbound.req.@hrw4u-key-01}";
+}
+
+CACHEKEY {
+    cache.key += "{inbound.req.X-Region}";
+}

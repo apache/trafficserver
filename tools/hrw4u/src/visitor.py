@@ -276,6 +276,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def _resolve_read(self, name: str) -> tuple[str, bool]:
         """Resolve a condition or {...} read as its hook's section, naming the section the user wrote if it's denied."""
+        # The lowering sets its own headers as it goes, so a read would see a value that depends on statement order.
+        if self._program_has_cachekey and cachekey.names_reserved_header(name):
+            raise SymbolResolutionError(name, cachekey.RESERVED_HEADER_ERROR)
+
         try:
             return self.symbol_resolver.resolve_condition(name, self._read_section)
         except SectionAccessError as error:
@@ -1163,7 +1167,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         if func == "run-plugin" and args and cachekey.is_plugin_path(args[0]):
             raise SymbolResolutionError("CACHEKEY", "run-plugin cachekey.so conflicts with CACHEKEY")
-        if func is None and name and cachekey.writes_reserved_header(name):
+        if func is None and name and cachekey.names_reserved_header(name):
             raise SymbolResolutionError(name, cachekey.RESERVED_HEADER_ERROR)
 
     def _emit_cachekey(self) -> None:
