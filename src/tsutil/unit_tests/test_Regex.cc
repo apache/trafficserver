@@ -1850,7 +1850,6 @@ public:
     if (++_arrived == _threads) {
       _arrived = 0;
       ++_round;
-      lock.unlock();
       _released.notify_all();
       return;
     }
