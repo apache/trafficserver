@@ -127,6 +127,10 @@ class SymbolResolutionError(Exception):
             self.add_note(f"Did you mean: {suggestions[0]}?")
 
 
+class SectionAccessError(SymbolResolutionError):
+    """A symbol that exists but can't be used in the section it was resolved for."""
+
+
 def _with_notes(error: Hrw4uSyntaxError, exc: Exception) -> Hrw4uSyntaxError:
     for note in getattr(exc, '__notes__', ()):
         error.add_note(note)

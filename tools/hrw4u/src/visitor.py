@@ -32,7 +32,7 @@ from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.symbols import SymbolResolver, SymbolResolutionError
-from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, ThrowingErrorListener
+from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, SectionAccessError, ThrowingErrorListener
 from hrw4u.states import CondState, SectionType, VALUE_MODIFIERS
 from hrw4u.common import RegexPatterns, SystemDefaults, apply_percent_mods, parse_mods, split_interpolation_mods
 from hrw4u.visitor_base import BaseHRWVisitor
@@ -244,7 +244,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     var_name, mods = split_interpolation_mods(m.group("var"))
                     self._check_value_mods(mods, ctx)
                     self._check_not_key_name(var_name)
-                    resolved, _ = self.symbol_resolver.resolve_condition(var_name, self._read_section)
+                    resolved, _ = self._resolve_read(var_name)
                     replacement = apply_percent_mods(resolved, mods)
                     self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
@@ -276,6 +276,18 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         # A section reads what its hook can read: CACHEKEY reads what REMAP reads.
         return self.current_section and self.current_section.emits_as
 
+    def _resolve_read(self, name: str) -> tuple[str, bool]:
+        """Resolve a condition or {...} read as its hook's section, naming the section the user wrote if it's denied."""
+        try:
+            return self.symbol_resolver.resolve_condition(name, self._read_section)
+        except SectionAccessError as error:
+            if self._read_section is self.current_section:
+                raise
+            written, read = self.current_section.value, self._read_section.value
+            raise SectionAccessError(
+                name, f"{name} is not available in the {written} section: {written} reads what {read} reads"
+            ) from error
+
     @staticmethod
     def _check_not_key_name(name: str) -> None:
         if cachekey.is_key_name(name):
@@ -289,7 +301,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         self._check_not_key_name(name)
         try:
-            return self.symbol_resolver.resolve_condition(name, self._read_section)
+            return self._resolve_read(name)
         except SandboxDenialError:
             raise
         except SymbolResolutionError:

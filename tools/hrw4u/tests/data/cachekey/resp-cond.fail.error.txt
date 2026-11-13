@@ -1,0 +1,1 @@
+tests/data/cachekey/resp-cond.fail.input.txt:2:7: error: inbound.resp.X-Foo is not available in the CACHEKEY section: CACHEKEY reads what REMAP reads

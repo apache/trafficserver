@@ -76,12 +76,17 @@ class TestParseAssignment:
             ("cache.url.query", '"a=1"', 'can only be set to ""'),
             ("cache.url.path", '"/x"', 'can only be set to ""'),
             ("cache.url.query", "x", 'can only be set to ""'),
-            ("cache.url.pristine", '""', "Unknown cache key assignment"),
-            ("cache.url.canonical", '""', "Unknown cache key assignment"),
+            ("cache.url.bogus", '""', "Unknown cache key assignment"),
+            ("cache.url.pristine", '""', r"cache.url.pristine is a statement: write cache.url.pristine\(\)"),
+            ("cache.url.canonical", '""', r"cache.url.canonical is a statement: write cache.url.canonical\(\)"),
             ("cache.key.prefix", '""', "can't be empty"),
             ("cache.key.prefix", "x", "must be a quoted string"),
             ("cache.key.prefix", "42", "must be a quoted string"),
-            ("cache.key.prefix", '"{inbound.req.Host}"', "must be static"),
+            (
+                "cache.key.prefix",
+                '"{inbound.req.Host}"',
+                r"cache.key.prefix value must be static: it's fixed when the rule loads, so it can't hold \{...\} values",
+            ),
             ("cache.key.prefix", '"%{CLIENT-HEADER:Host}"', "must be static"),
             ("cache.key.prefix", '"a b"', "contains whitespace"),
             ("cache.key.prefix", '"a\\"b"', "contains a quote or backslash"),
@@ -90,14 +95,6 @@ class TestParseAssignment:
     def test_rejects(self, lhs: str, rhs: str, message: str) -> None:
         with pytest.raises(SymbolResolutionError, match=message):
             parse_assignment(lhs, rhs)
-
-    def test_assignment_name_is_not_a_statement(self) -> None:
-        with pytest.raises(SymbolResolutionError, match="Unknown cache key statement"):
-            parse_statement("cache.url.query", [])
-
-    def test_prefix_is_not_a_statement(self) -> None:
-        with pytest.raises(SymbolResolutionError, match="Unknown cache key statement"):
-            parse_statement("cache.key.prefix", ['"a"'])
 
 
 class TestCheckConflicts:
@@ -243,13 +240,19 @@ class TestParseStatementErrors:
         "name,args,message",
         [
             ("cache.url.bogus", [], "Unknown cache key statement"),
+            ("cache.url.query", [], 'cache.url.query is an assignment: write cache.url.query = ""'),
+            ("cache.key.prefix", ['"a"'], r'cache.key.prefix is an assignment: write cache.key.prefix = "\.\.\."'),
             ("cache.url.pristine", ['"x"'], "takes no arguments"),
             ("cache.url.query.sort", ['"x"'], "takes no arguments"),
             ("cache.url.canonical", ['"x"'], "takes no arguments"),
             ("cache.key.headers.add", [], "takes at least one string argument"),
             ("cache.key.headers.add", ["X-Foo"], "must be a quoted string"),
             ("cache.key.headers.add", ['"a"', "42"], "must be a quoted string"),
-            ("cache.key.headers.add", ['"{inbound.req.X}"'], "static"),
+            (
+                "cache.key.headers.add",
+                ['"{inbound.req.X}"'],
+                r"cache.key.headers.add\(\) name must be static: it's fixed when the rule loads, so it can't hold \{...\} values",
+            ),
             ("cache.key.headers.add", ['"%{CLIENT-HEADER:X}"'], "static"),
             ("cache.key.headers.add", ['""'], "can't be empty"),
             ("cache.key.headers.add", ['"a"', '""'], "can't be empty"),
@@ -260,7 +263,11 @@ class TestParseStatementErrors:
             ("cache.key.headers.add", ['"a\\"b"'], "quote or backslash"),
             ("cache.key.headers.add", ['"a\\nb"'], "quote or backslash"),
             ("cache.key.headers.exists", [], "takes at least one string argument"),
-            ("cache.key.cookies.exists", ['"{inbound.req.X}"'], "static"),
+            (
+                "cache.key.cookies.exists",
+                ['"{inbound.req.X}"'],
+                r"cache.key.cookies.exists\(\) name must be static: it's fixed when the rule loads, so it can't hold \{...\} values",
+            ),
             ("cache.key.headers.exists", ['"X:Y"'], "not a valid header name"),
             ("cache.key.headers.exists", ['"@"'], "not a valid header name"),
             ("cache.key.headers.exists", ['"@@X"'], "not a valid header name"),

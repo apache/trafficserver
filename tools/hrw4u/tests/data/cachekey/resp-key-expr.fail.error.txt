@@ -1,0 +1,1 @@
+tests/data/cachekey/resp-key-expr.fail.input.txt:2:4: error: symbol error in {}: inbound.resp.X-Foo is not available in the CACHEKEY section: CACHEKEY reads what REMAP reads

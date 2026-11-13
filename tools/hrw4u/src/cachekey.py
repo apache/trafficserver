@@ -186,7 +186,10 @@ class CacheKeyStatement:
 def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None) -> CacheKeyStatement:
     """Validate `lhs = rhs`. rhs is the raw value text, quotes included."""
     flag = CACHEKEY_STATEMENTS.get(lhs)
-    if flag is None or not flag.is_assignment:
+    if (flag is not None and not flag.is_assignment) or lhs in PRESENCE_STATEMENTS:
+        args = "" if flag is not None and flag.is_switch else "..."
+        raise SymbolResolutionError(lhs, f"{lhs} is a statement: write {lhs}({args})")
+    if flag is None:
         raise SymbolResolutionError(lhs, f"Unknown cache key assignment: '{lhs}'")
 
     if flag.is_switch:
@@ -200,7 +203,10 @@ def parse_assignment(lhs: str, rhs: str, source: ParserRuleContext | None = None
 def parse_statement(name: str, args: list[str], source: ParserRuleContext | None = None) -> CacheKeyStatement:
     """Validate one statement, a flag or a presence one. args are the raw argument texts, quotes included."""
     flag = CACHEKEY_STATEMENTS.get(name)
-    if (flag is None or flag.is_assignment) and name not in PRESENCE_STATEMENTS:
+    if flag is not None and flag.is_assignment:
+        value = '""' if flag.is_switch else '"..."'
+        raise SymbolResolutionError(name, f"{name} is an assignment: write {name} = {value}")
+    if flag is None and name not in PRESENCE_STATEMENTS:
         raise SymbolResolutionError(name, f"Unknown cache key statement: '{name}'")
 
     if flag is not None and flag.is_switch:
@@ -241,9 +247,11 @@ def _flag_value(name: str, subject: str, text: str) -> str:
     value = _unquote(text)
     if value is None:
         raise SymbolResolutionError(name, f"{subject} must be a quoted string")
-    # cachekey.so reads its flags once, at config load.
+    # cachekey.so reads its flags, and header_rewrite its conditions, once, at config load.
     if "{" in value:
-        raise SymbolResolutionError(name, f"{subject} must be static: plugin flags can't hold {{...}} values")
+        raise SymbolResolutionError(
+            name, f"{subject} must be static: it's fixed when the rule loads, so it can't hold {{...}} values"
+        )
     if not value:
         raise SymbolResolutionError(name, f"{subject} can't be empty")
     if problem := _mangling_reason(value):
