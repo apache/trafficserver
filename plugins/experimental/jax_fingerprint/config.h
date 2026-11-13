@@ -69,15 +69,16 @@ struct PluginConfig {
   PluginConfig() { Dbg(dbg_ctl, "New config (%p) has been created", this); }
   ~PluginConfig() { Dbg(dbg_ctl, "Config for (%p) has been deleted", this); }
 
-  PluginType      plugin_type    = PluginType::GLOBAL;
-  struct Method   method         = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};
-  std::string     log_filename   = "";
-  std::string     log_symbol     = "";
-  std::string     export_name    = "";
-  int             user_arg_index = -1;
-  TSCont          handler        = nullptr; // For remap plugin
-  bool            standalone     = false;
-  TSTextLogObject log_handle     = nullptr;
+  PluginType      plugin_type            = PluginType::GLOBAL;
+  struct Method   method                 = {"uninitialized", Method::Type::CONNECTION_BASED, nullptr, nullptr};
+  std::string     log_filename           = "";
+  std::string     log_symbol             = "";
+  std::string     export_name            = "";
+  int             user_arg_index         = -1;
+  int             session_user_arg_index = -1;      // Only reserved for log_field
+  TSCont          handler                = nullptr; // For remap plugin
+  bool            standalone             = false;
+  TSTextLogObject log_handle             = nullptr;
 
   /** Get a snapshot of the runtime settings that stays valid while it is held. */
   std::shared_ptr<RuntimeSettings const>

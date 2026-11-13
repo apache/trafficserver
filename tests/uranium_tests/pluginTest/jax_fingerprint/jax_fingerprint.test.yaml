@@ -346,7 +346,7 @@ urtest:
       - path: '{LOG_DIR}/jax_fingerprint.log'
         contains: 'JA4H: [a-z0-9_-]+'
       - path: '{LOG_DIR}/jax_log_field.log'
-        contains: 'JA4H: [a-z0-9]'
+        contains: 'JA4H: [a-z][0-9a-z_]{9,}'
       inline_config_files:
         jax_fingerprint.yaml: |
           jax_fingerprint:
@@ -381,7 +381,7 @@ urtest:
       - path: '{LOG_DIR}/jax_fingerprint.log'
         contains: 'JA4: [a-z0-9_-]+'
       - path: '{LOG_DIR}/jax_log_field.log'
-        contains: 'JA4: [a-z0-9]'
+        contains: 'JA4: [a-z][0-9a-z_]{9,}'
       inline_config_files:
         jax_fingerprint.yaml: |
           jax_fingerprint:
@@ -397,6 +397,89 @@ urtest:
         contains:
         - expression: '(?i)x-jax:'
           description: The expected fingerprinted request reaches the origin.
+  # Both instances fingerprint with JA4 but export to different registries and filter on different server
+  # names, so each log field reports only its own instance's fingerprint.
+  - name: log-field-per-export
+    replay: jax_fingerprint_servernames.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint_a.yaml
+      - jax_fingerprint.so jax_fingerprint_b.yaml
+      remap_config:
+      - map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      - map https://jax-filtered.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}
+      logging_yaml:
+        logging:
+          formats:
+          - name: jax_custom
+            format: uuid=%<{uuid}cqh> a=%<jaxa> b=%<jaxb>
+          logs:
+          - filename: jax_log_field
+            format: jax_custom
+      file_checks:
+      - path: '{LOG_DIR}/jax_log_field.log'
+        contains: ^uuid=servernames-in-filter a=t13[0-9a-z_]+ b=-$
+      - path: '{LOG_DIR}/jax_log_field.log'
+        contains: ^uuid=servernames-filtered a=- b=t13[0-9a-z_]+$
+      inline_config_files:
+        jax_fingerprint_a.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              header: x-jax
+              via_header: x-jax-via
+              standalone: true
+              servernames:
+              - jax.server.test
+              export: test.jax.a
+              log_field: jaxa
+        jax_fingerprint_b.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4
+              standalone: true
+              servernames:
+              - jax-filtered.server.test
+              export: test.jax.b
+              log_field: jaxb
+  # The instance without log_field shares the JA4H context and its TXN_CLOSE hook runs first, so the
+  # logged fingerprint must not depend on the logging instance's hook seeing the context.
+  - name: log-field-second-instance
+    replay: jax_fingerprint_global.replay.yaml
+    ats:
+      plugin_config:
+      - jax_fingerprint.so jax_fingerprint_first.yaml
+      - jax_fingerprint.so jax_fingerprint_second.yaml
+      remap_config:
+      - map http://jax.server.test http://jax.backend.test:{SERVER_HTTP_PORT}
+      logging_yaml:
+        logging:
+          formats:
+          - name: jax_custom
+            format: 'JA4H: %<jaxja4h>'
+          logs:
+          - filename: jax_log_field
+            format: jax_custom
+      file_checks:
+      - path: '{LOG_DIR}/jax_log_field.log'
+        contains: 'JA4H: [a-z][0-9a-z_]{9,}'
+      - path: '{LOG_DIR}/jax_log_field.log'
+        excludes: 'JA4H: -'
+        line_count_min: 2
+      inline_config_files:
+        jax_fingerprint_first.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              header: x-jax
+              via_header: x-jax-via
+              standalone: true
+        jax_fingerprint_second.yaml: |
+          jax_fingerprint:
+            fingerprints:
+            - method: JA4H
+              standalone: true
+              log_field: jaxja4h
   - name: all-methods-share-context
     replay: jax_fingerprint_all_methods.replay.yaml
     ats:
@@ -521,7 +604,7 @@ urtest:
       - path: '{LOG_DIR}/jax_fingerprint.log'
         contains: 'JA4H: [a-z0-9_-]+'
       - path: '{LOG_DIR}/jax_log_field.log'
-        contains: 'JA4H: [a-z0-9]'
+        contains: 'JA4H: [a-z][0-9a-z_]{9,}'
     server:
       log_validation:
         contains:
