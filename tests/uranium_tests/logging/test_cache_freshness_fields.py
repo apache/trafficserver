@@ -36,23 +36,17 @@ def test_cache_freshness_fields(ats_factory: ATSFactory, services: ServiceFactor
             "proxy.config.http.cache.http": 1,
             "proxy.config.http.insert_age_in_response": 0,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map http://example.com/ http://127.0.0.1:{server.http_port}/")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "cache_freshness_fields",
-                        "format": "%<{uuid}cqh> %<cfl> %<cca> %<crc> %<cwr>"
-                    }],
-                    "logs": [{
-                        "filename": "cache_freshness_fields",
-                        "format": "cache_freshness_fields",
-                        "mode": "ascii"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "cache_freshness_fields", "format": "%<{uuid}cqh> %<cfl> %<cca> %<crc> %<cwr>"}],
+                "logs": [{"filename": "cache_freshness_fields", "format": "cache_freshness_fields", "mode": "ascii"}],
+            }
+        }
+    )
     server.start()
     ats.start()
     client = services.verifier_client("client", replay, http_ports=[ats.http_port])
@@ -60,7 +54,8 @@ def test_cache_freshness_fields(ats_factory: ATSFactory, services: ServiceFactor
     assert result.returncode == 0, result.output
     log = ats.log_directory / "cache_freshness_fields.log"
     wait_for_file_lines(
-        log, r"^(cache-write|cache-hit|negative-revalidation-write|negative-revalidation|failed-cache-write|uncacheable) ", 6)
+        log, r"^(cache-write|cache-hit|negative-revalidation-write|negative-revalidation|failed-cache-write|uncacheable) ", 6
+    )
     result = ats.run(sys.executable, services.resolve_path("verify_cache_freshness_fields.py"), log)
     assert result.returncode == 0, result.output
     ats.stop()
