@@ -6978,10 +6978,23 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 
 /************************   REC Stats API    **************************/
 int
-TSStatCreate(const char *the_name, TSRecordDataType /* the_type ATS_UNUSED */, TSStatPersistence /* persist ATS_UNUSED */,
+TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence /* persist ATS_UNUSED */,
              TSStatSync /* sync ATS_UNUSED */)
 {
-  int id = Metrics::Gauge::create(the_name); // Gauges allows for all "int" operations
+  int id;
+
+  switch (the_type) {
+  case TS_RECORDDATATYPE_COUNTER:
+    id = Metrics::Counter::create(the_name);
+    break;
+
+  case TS_RECORDDATATYPE_INT:
+    id = Metrics::Gauge::create(the_name);
+    break;
+
+  default:
+    return TS_ERROR;
+  }
 
   if (id == ts::Metrics::NOT_FOUND) {
     return TS_ERROR;

@@ -9127,12 +9127,24 @@ REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int /* level */, int
   box.check(!TSStatIdIsValid(-1), "TSStatIdIsValid(-1) unexpectedly succeeded");
   box.check(!TSStatIdIsValid(INT_MAX), "TSStatIdIsValid(INT_MAX) unexpectedly succeeded");
 
-  TSStatIntSet(id, getpid());
+  // Verify counter behavior.
+  TSStatIntSet(id, 0);
   TSStatIntIncrement(id, 1);
   TSStatIntIncrement(id, 1);
 
-  TSMgmtInt value    = TSStatIntGet(id);
-  TSMgmtInt expected = getpid() + 2;
+  TSMgmtInt value = TSStatIntGet(id);
+  box.check(value == 2, "Counter %s expected 2, got %" PRId64, name, value);
 
-  box.check(expected >= value, "TSStatIntGet(%s) gave %" PRId64 ", expected at least %" PRId64, name, value, expected);
+  // Verify gauge behavior.
+  const char gauge_name[] = "regression.test.gauge";
+  int        gauge_id     = TSStatCreate(gauge_name, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
+
+  box.check(gauge_id != TS_ERROR, "TSStatCreate(%s) failed with %d", gauge_name, gauge_id);
+
+  if (gauge_id != TS_ERROR) {
+    TSStatIntSet(gauge_id, 10);
+    TSStatIntIncrement(gauge_id, 5);
+
+    box.check(TSStatIntGet(gauge_id) == 15, "Gauge %s expected 15", gauge_name);
+  }
 }
