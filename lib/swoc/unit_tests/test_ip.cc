@@ -156,12 +156,12 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   CHECK(ll4.is_link_local());
   CHECK_FALSE(ll4.is_multicast());
   CHECK(swoc::ip::is_link_local_host_order(ll4.host_order()));
-  CHECK_FALSE(swoc::ip::is_link_local_network_order(ll4.host_order()));
+  CHECK(swoc::ip::is_link_local_network_order(htonl(ll4.host_order())));
 
   CHECK(swoc::ip::is_private_host_order(0xC0A8BADC));
-  CHECK_FALSE(swoc::ip::is_private_network_order(0xC0A8BADC));
+  CHECK(swoc::ip::is_private_network_order(htonl(0xC0A8BADC)));
   CHECK_FALSE(swoc::ip::is_private_host_order(0xDCBA8C0));
-  CHECK(swoc::ip::is_private_network_order(0xDCBA8C0));
+  CHECK_FALSE(swoc::ip::is_private_network_order(htonl(0x0DCBA8C0)));
 
   CHECK(IP4Addr(INADDR_LOOPBACK).is_loopback());
 
