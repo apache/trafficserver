@@ -947,7 +947,7 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
     "cache.bypass": FunctionDoc(
         name="Cache Bypass",
         category="Cache Statement",
-        description="Skips the cache for this request: no lookup and no store. Not a key flag; use it when a key part the response needs is missing.",
+        description="Skips the cache for this request: no lookup and no store.",
         syntax="cache.bypass()",
         maps_to="set-config \"proxy.config.http.cache.http\" 0",
         usage_context="REMAP only. Allowed inside an if.",

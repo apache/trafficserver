@@ -378,6 +378,19 @@ def test_section_restrictions_batch(shared_lsp_client, section, prefix, should_a
     lsp_asserts.assert_completion_items_with_prefix(items, prefix, should_allow, f"{section} completion for {prefix}")
 
 
+def test_cachekey_offers_the_conditions_remap_offers(shared_lsp_client) -> None:
+    def conditions(section: str) -> set[str]:
+        uri = f"file:///test_conditions_{section.lower()}.hrw4u"
+        shared_lsp_client.open_document(uri, f"{section} {{\n    inbound.\n}}")
+        response = shared_lsp_client.request_completion(uri, 1, len("    inbound."))
+        items = lsp_asserts.assert_result_items(response, f"completion in {section}")
+        return {item["label"] for item in items if item.get("detail", "").startswith("Condition:")}
+
+    remap = conditions("REMAP")
+    assert remap
+    assert conditions("CACHEKEY") == remap
+
+
 def test_multi_section_inbound_always_allowed(shared_lsp_client) -> None:
     """Test inbound.req. in multiple sections efficiently."""
     test_cases = [("REMAP", "inbound.req."), ("SEND_REQUEST", "inbound.req."), ("READ_RESPONSE", "inbound.req.")]

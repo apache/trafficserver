@@ -232,6 +232,8 @@ class CompletionProvider:
         """Get completions for operators and conditions with the given prefix."""
         completions = []
         seen_labels = set()
+        # A section reads what its hook can read: CACHEKEY reads what REMAP reads.
+        read_section = current_section and current_section.emits_as
 
         # Add condition completions
         for key, params in tables.CONDITION_MAP.items():
@@ -240,7 +242,7 @@ class CompletionProvider:
                 sections = params.sections if params else None
                 tag = params.target if params else None
 
-                item = self.builder.condition_completion(key, tag, sections, current_section, replacement_range)
+                item = self.builder.condition_completion(key, tag, sections, read_section, replacement_range)
                 if item:
                     completions.append(item.to_lsp_dict())
 
