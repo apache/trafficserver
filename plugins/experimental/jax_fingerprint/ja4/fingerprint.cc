@@ -23,10 +23,11 @@
 #include "tls_client_hello_summary.h"
 
 std::string
-ja4::fingerprint(TSClientHello client_hello)
+ja4::fingerprint(TSVConn vconn, TSClientHello client_hello)
 {
-  char                  result[FINGERPRINT_LENGTH];
-  TLSClientHelloSummary summary{Datasource::Protocol::TLS, client_hello};
+  char       result[FINGERPRINT_LENGTH];
+  auto const protocol = TSVConnProtocolStackContains(vconn, "quic") ? Datasource::Protocol::QUIC : Datasource::Protocol::TLS;
+  TLSClientHelloSummary summary{protocol, client_hello};
 
   generate_fingerprint(result, summary);
   return {result, FINGERPRINT_LENGTH};

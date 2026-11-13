@@ -205,6 +205,20 @@ CB_Client_Hello(TSCont cont, TSEvent event, void *edata)
   Dbg(dbg_ctl, "Client Hello callback %d ssl_vc=%p - event is %s", count, ssl_vc,
       event == TS_EVENT_SSL_CLIENT_HELLO ? "good" : "bad");
 
+  // Lets tests check the transport that TSVConnProtocolStackGet() reports before there is a session.
+  char const *protocols[10];
+  int         protocol_count = 0;
+  std::string stack;
+
+  TSVConnProtocolStackGet(ssl_vc, std::size(protocols), protocols, &protocol_count);
+  for (int i = 0; i < protocol_count && i < static_cast<int>(std::size(protocols)); ++i) {
+    if (i > 0) {
+      stack += ',';
+    }
+    stack += protocols[i];
+  }
+  Dbg(dbg_ctl, "Client Hello callback %d protocol stack: %s", count, stack.c_str());
+
   TSCont cb = TSContCreate(&ReenableSSL, TSMutexCreate());
 
   TSContDataSet(cb, ssl_vc);
