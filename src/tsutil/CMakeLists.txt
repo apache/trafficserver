@@ -87,6 +87,7 @@ if(BUILD_TESTING)
     unit_tests/test_Regex.cc
     unit_tests/test_ts_meta.cc
     unit_tests/test_thread_safety.cc
+    unit_tests/test_ThreadLeasedSharedPtr.cc
     unit_tests/test_time_parser.cc
     unit_tests/test_UdiTable.cc
   )

@@ -79,7 +79,7 @@ struct UrlRewriteDeleter {
 } // end anonymous namespace
 
 // Global Ptrs
-AtomicSharedPtr<UrlRewrite>       rewrite_table;
+ThreadLeasedSharedPtr<UrlRewrite> rewrite_table;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
 std::shared_ptr<UrlRewrite>
