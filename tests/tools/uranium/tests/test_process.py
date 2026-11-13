@@ -15,6 +15,8 @@
 #  limitations under the License.
 """Unit tests for managed process behavior."""
 
+import errno
+import os
 from pathlib import Path
 import re
 import sys
@@ -224,3 +226,40 @@ def test_runtime_placeholders_are_replaced_in_structured_metadata(tmp_path: Path
     rendered = replay._replace_runtime_placeholders(sni_yaml, paths)
 
     assert rendered["sni"][0]["proxy_protocol_port"] == "12350"
+
+
+def _raise_eperm(_pgid: int, _signal_number: int) -> None:
+    """Fail as Darwin's killpg() does while the group's leader is exiting or not yet reaped."""
+
+    raise PermissionError(errno.EPERM, os.strerror(errno.EPERM))
+
+
+def test_managed_process_stop_tolerates_eperm_from_an_exiting_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stop a process whose leader refuses the signal because it is about to exit.
+
+    :param tmp_path: Directory receiving the process output.
+    :param monkeypatch: Fixture standing in for the Darwin errno.
+    """
+
+    process = ManagedProcess("origin", [sys.executable, "-c", "import time; time.sleep(0.3)"], tmp_path)
+    process.start()
+    monkeypatch.setattr(os, "killpg", _raise_eperm)
+    process.stop()
+    assert process.return_code == 0
+
+
+def test_managed_process_stop_raises_eperm_from_a_running_group(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Report EPERM from a group that keeps running rather than treating it as gone.
+
+    :param tmp_path: Directory receiving the process output.
+    :param monkeypatch: Fixture making killpg() fail with EPERM.
+    """
+
+    process = ManagedProcess("origin", [sys.executable, "-c", "import time; time.sleep(30)"], tmp_path)
+    process.start()
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "killpg", _raise_eperm)
+        with pytest.raises(PermissionError):
+            process.stop(timeout=0.5)
+    process.stop()
+    assert process.return_code is not None
