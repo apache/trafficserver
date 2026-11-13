@@ -24,7 +24,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <thread>
 #include <utility>
 
 #include <openssl/ssl.h>
@@ -93,9 +92,11 @@ static int
 shutdown_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
+    // Stop the updater before tearing raft down: it calls into the raft server
+    // and dereferences the state machine, which shutdown() stops and reset() frees.
+    plugin_threads.terminate();
     stek_share_server.raft_launcher.shutdown();
     stek_share_server.reset();
-    plugin_threads.terminate();
   }
   return 0;
 }
@@ -419,10 +420,6 @@ print_status()
 static void *
 stek_updater(void * /* arg ATS_UNUSED */)
 {
-  plugin_threads.store(::pthread_self());
-  ::pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, nullptr);
-  ::pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, nullptr);
-
   Dbg(dbg_ctl, "Starting STEK updater thread");
 
   while (!plugin_threads.is_shut_down()) {
@@ -455,7 +452,7 @@ stek_updater(void * /* arg ATS_UNUSED */)
       std::shared_lock init_lock(stek_share_server.raft_mutex);
       if (!stek_share_server.raft_instance || !stek_share_server.raft_instance->is_initialized()) {
         init_lock.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        plugin_threads.sleep_for(std::chrono::milliseconds(250));
         continue;
       }
       init_lock.unlock();
@@ -533,7 +530,7 @@ stek_updater(void * /* arg ATS_UNUSED */)
       // that server might receive multiple keys (the ones it missed) when it reconnects. Since we only need the
       // most recent one, and to save time, we check back every 10 seconds in hope that the barrage of incoming
       // keys has finished, and if not the second time around it'll definitely has.
-      std::this_thread::sleep_for(std::chrono::seconds(10));
+      plugin_threads.sleep_for(std::chrono::seconds(10));
     }
 
     stek_share_server.config_reloading = false;
@@ -571,7 +568,11 @@ TSPluginInit(int argc, const char *argv[])
       if (init_raft(nuraft::cs_new<STEKShareSM>(), config) == 0) {
         backup_config(config);
         Dbg(dbg_ctl, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
-        TSThreadCreate(stek_updater, nullptr);
+        if (TSThread updater = TSThreadCreate(stek_updater, nullptr); updater != nullptr) {
+          plugin_threads.store(updater);
+        } else {
+          TSError("[%s] Failed to create the STEK updater thread.", PLUGIN_NAME);
+        }
       } else {
         TSError("[%s] Raft initialization failed.", PLUGIN_NAME);
       }

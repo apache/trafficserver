@@ -29,9 +29,13 @@
 #include <string>
 #include <cstring>
 #include <mutex>
+#include <condition_variable>
+#include <chrono>
 #include <deque>
 #include <cmath>
 #include <atomic>
+
+#include <ts/ts.h>
 
 #define PLUGIN_NAME "stek_share"
 
@@ -39,22 +43,28 @@ class PluginThreads
 {
 public:
   void
-  store(const pthread_t &th)
+  store(TSThread th)
   {
     std::lock_guard<std::mutex> lock(threads_mutex);
     threads_queue.push_back(th);
   }
 
+  // TSThreadCreate starts its threads detached, so wait on each handle with
+  // TSThreadWait rather than pthread_join. The handles are not destroyed: the
+  // process is exiting, and the thread can still touch its handle briefly
+  // after TSThreadWait returns.
   void
   terminate()
   {
-    shut_down = true;
+    {
+      std::lock_guard<std::mutex> lock(sleep_mutex);
+      shut_down = true;
+    }
+    sleep_cv.notify_all();
 
     std::lock_guard<std::mutex> lock(threads_mutex);
-    while (!threads_queue.empty()) {
-      pthread_t th = threads_queue.front();
-      ::pthread_join(th, nullptr);
-      threads_queue.pop_front();
+    for (TSThread th : threads_queue) {
+      TSThreadWait(th);
     }
   }
 
@@ -64,10 +74,21 @@ public:
     return shut_down;
   }
 
+  // Like std::this_thread::sleep_for, but terminate() wakes it early so
+  // shutdown does not wait out a long sleep.
+  void
+  sleep_for(std::chrono::milliseconds duration)
+  {
+    std::unique_lock<std::mutex> lock(sleep_mutex);
+    sleep_cv.wait_for(lock, duration, [this] { return shut_down.load(); });
+  }
+
 private:
-  std::atomic<bool>     shut_down = false;
-  std::deque<pthread_t> threads_queue;
-  std::mutex            threads_mutex;
+  std::atomic<bool>       shut_down = false;
+  std::deque<TSThread>    threads_queue;
+  std::mutex              threads_mutex;
+  std::mutex              sleep_mutex;
+  std::condition_variable sleep_cv;
 };
 
 std::string hex_str(std::string const &str);
