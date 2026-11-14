@@ -57,10 +57,20 @@ struct Lengths {
 std::vector<uint8_t>
 make_client_hello_body(std::vector<Extension> const &extensions, bool with_extensions_block = true, Lengths lengths = {})
 {
-  // Reserve the fixed fields first: growing a two byte vector with insert()
+  std::vector<uint8_t> block;
+  if (with_extensions_block) {
+    for (auto const &ext : extensions) {
+      put_u16(block, ext.type);
+      put_u16(block, ext.data.size());
+      block.insert(block.end(), ext.data.begin(), ext.data.end());
+    }
+  }
+
+  // Reserve the whole body first: growing a two byte vector with insert()
   // trips a false out of bounds warning in GCC 11 and 12 at -O3.
   std::vector<uint8_t> body;
-  body.reserve(2 + 32 + 1 + lengths.session_id + 2 + lengths.cipher_suites + 1 + lengths.compression_methods);
+  body.reserve(2 + 32 + 1 + lengths.session_id + 2 + lengths.cipher_suites + 1 + lengths.compression_methods +
+               (with_extensions_block ? 2 + block.size() : 0));
 
   put_u16(body, 0x0303);
   body.insert(body.end(), 32, 0xAB);
@@ -79,12 +89,6 @@ make_client_hello_body(std::vector<Extension> const &extensions, bool with_exten
   body.insert(body.end(), lengths.compression_methods, 0);
 
   if (with_extensions_block) {
-    std::vector<uint8_t> block;
-    for (auto const &ext : extensions) {
-      put_u16(block, ext.type);
-      put_u16(block, ext.data.size());
-      block.insert(block.end(), ext.data.begin(), ext.data.end());
-    }
     put_u16(body, block.size());
     body.insert(body.end(), block.begin(), block.end());
   }
