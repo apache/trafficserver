@@ -193,7 +193,7 @@ TEST_CASE("ats_ip_pton port", "[libts][inet][ink_inet]")
     CHECK(port_of("1.2.3.4:65536") == 0);
     CHECK(port_of("1.2.3.4:70000") == 4464);
     CHECK(port_of("1.2.3.4:99999999999") == 59391);
-    // Values too large for 64 bits saturate, which leaves 65535.
+    // These values overflow 64 bits and saturate, which leaves 65535.
     CHECK(port_of("1.2.3.4:18446744073709551616") == 65535);
     CHECK(port_of("1.2.3.4:99999999999999999999") == 65535);
   }
