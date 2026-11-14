@@ -285,7 +285,7 @@ LogObject::compute_signature(LogFormat *format, char *filename, unsigned int fla
   char    *ps        = format->printf_str();
   uint64_t signature = 0;
 
-  if (fl && ps && filename) {
+  if (fl && ps) {
     int   buf_size = strlen(fl) + strlen(ps) + strlen(filename) + 2;
     char *buffer   = static_cast<char *>(ats_malloc(buf_size));
 
