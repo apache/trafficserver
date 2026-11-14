@@ -39,6 +39,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 namespace
@@ -121,7 +122,12 @@ TEST_CASE("SSL_SECRET hooks run one caller at a time")
   }
   hook_armed = false;
 
-  CHECK(max_callers_in_hook == 1);
+  int max_callers = 0;
+  {
+    std::lock_guard lock(hook_mutex);
+    max_callers = max_callers_in_hook;
+  }
+  CHECK(max_callers == 1);
 }
 
 TEST_CASE("An SSL_SECRET hook can call back into SSLSecret on its own thread")
@@ -136,7 +142,7 @@ TEST_CASE("An SSL_SECRET hook can call back into SSLSecret on its own thread")
   // hanging the binary. A std::async future would block in its destructor.
   auto done     = std::make_shared<std::promise<void>>();
   auto finished = done->get_future();
-  std::thread([done]() {
+  std::thread([done = std::move(done)]() {
     std::string cert_data;
     std::string key_data;
     secrets.getOrLoadSecret("/nonexistent/reentry-outer-cert.pem", "/nonexistent/reentry-outer-key.pem", cert_data, key_data);

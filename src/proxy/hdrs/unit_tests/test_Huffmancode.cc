@@ -337,10 +337,11 @@ TEST_CASE("decoder_roundtrip_fuzz", "[proxy][huffman]")
     int64_t              enc_len = huffman_encode(encoded.data(), encoded.size(), src.data(), src_len);
     REQUIRE(enc_len >= 0);
     REQUIRE(enc_len <= static_cast<int64_t>(encoded.size()));
+    uint32_t const enc_size = enc_len > 0 ? static_cast<uint32_t>(enc_len) : 0;
 
     // One byte of headroom guarantees success (see require_decoder_parity).
     std::vector<char> decoded(src_len + 1);
-    int64_t           dec_len = huffman_decode(decoded.data(), src_len + 1, encoded.data(), static_cast<uint32_t>(enc_len));
+    int64_t           dec_len = huffman_decode(decoded.data(), src_len + 1, encoded.data(), enc_size);
     REQUIRE(dec_len == static_cast<int64_t>(src_len));
     REQUIRE(memcmp(decoded.data(), src.data(), src_len) == 0);
   }

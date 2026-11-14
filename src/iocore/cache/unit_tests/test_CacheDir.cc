@@ -452,8 +452,10 @@ public:
       auto free_entry_at = [&](int hops) {
         Dir *e = dir_from_offset(stripe->directory.header->freelist[s], seg_dir);
         for (int i = 0; i < hops; i++) {
+          ink_release_assert(e);
           e = next_dir(e, seg_dir);
         }
+        ink_release_assert(e);
         return e;
       };
 

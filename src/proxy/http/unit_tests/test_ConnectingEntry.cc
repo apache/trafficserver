@@ -30,6 +30,7 @@
 
 #include <memory>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace
@@ -114,7 +115,7 @@ TEST_CASE("ConnectingEntry destructor releases exactly one reservation", "[Conne
 
   auto *entry = new ConnectingEntry();
 
-  entry->enable_outbound_connection_tracking(group);
+  entry->enable_outbound_connection_tracking(std::move(group));
   delete entry;
 
   CHECK(other->_count == 1);
@@ -133,7 +134,7 @@ TEST_CASE("ConnectingEntry releases the outbound reservation before deletion", "
 
   auto *entry = new ConnectingEntry();
 
-  entry->enable_outbound_connection_tracking(group);
+  entry->enable_outbound_connection_tracking(std::move(group));
   entry->release_outbound_connection_tracking();
   CHECK(other->_count == 1);
 

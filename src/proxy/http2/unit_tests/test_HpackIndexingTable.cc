@@ -24,6 +24,7 @@
     limitations under the License.
  */
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <string_view>
@@ -298,7 +299,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         REQUIRE(encoded_len > 0);
         REQUIRE(encoded_len <= static_cast<int64_t>(sizeof(buf) - sizeof(value)));
 
-        size_t block_len = static_cast<size_t>(encoded_len);
+        size_t block_len = std::min(static_cast<size_t>(encoded_len), sizeof(buf) - sizeof(value));
 
         memcpy(buf + block_len, value, sizeof(value));
         block_len += sizeof(value);
