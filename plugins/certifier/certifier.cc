@@ -456,7 +456,7 @@ shadow_cert_generator(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* ed
   FILE       *fp = nullptr;
   /// If directory doesn't exist, create one
   if (stat(path.c_str(), &st) == -1) {
-    // Without the directory the certificate is still served, just not saved to disk.
+    // Without the directory a newly signed certificate is still served, but it cannot be saved.
     if (mkdir(path.c_str(), 0755) == -1 && errno != EEXIST) {
       Dbg(dbg_ctl, "%s: error creating directory %s: %s", __func__, path.c_str(), strerror(errno));
     }
