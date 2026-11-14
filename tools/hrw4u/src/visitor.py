@@ -40,8 +40,7 @@ from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
 from hrw4u.sandbox import SandboxConfig, SandboxDenialError
 from hrw4u import cachekey
-from hrw4u import cachekey_section
-from hrw4u.cachekey_section import BranchKeyword
+from hrw4u.cachekey import BranchKeyword
 import hrw4u.types as types
 
 _regex_validator = Validator.regex_pattern()
@@ -99,7 +98,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         self._source_text: str = ""
         self._current_var_scope: types.VarScope = types.VarScope.TXN
 
-        self._cachekey: cachekey_section.CacheKeySection | None = None  # the collected CACHEKEY section; None until one is visited
+        self._cachekey: cachekey.CacheKeySection | None = None  # the collected CACHEKEY section; None until one is visited
         self._program_has_cachekey: bool = False  # the rule has a CACHEKEY section, so every section must respect it
         self._cachekey_comments: list[str] = []  # top-level comments right above CACHEKEY, which move with it
 
@@ -1031,7 +1030,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 raise SymbolResolutionError("CACHEKEY", "CACHEKEY may only appear once")
             return
 
-        self._cachekey = cachekey_section.CacheKeySection()
+        self._cachekey = cachekey.CacheKeySection()
         self._cachekey_items(ctx.sectionBody())
 
         for error in self._cachekey.conflicts():
