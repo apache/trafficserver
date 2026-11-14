@@ -9127,24 +9127,34 @@ REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int /* level */, int
     id = TSStatCreate(name, TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     box.check(id != TS_ERROR, "TSStatCreate(%s) failed with %d", name, id);
   }
+  if (id != TS_ERROR) {
+    box.check(ts::Metrics::instance().type(id) == ts::Metrics::MetricType::COUNTER, "Stat %s was not created as a COUNTER", name);
+  }
 
   box.check(TSStatIdIsValid(id), "TSStatIdIsValid(%d) failed for %s", id, name);
   box.check(!TSStatIdIsValid(-1), "TSStatIdIsValid(-1) unexpectedly succeeded");
   box.check(!TSStatIdIsValid(INT_MAX), "TSStatIdIsValid(INT_MAX) unexpectedly succeeded");
 
-  // Verify counter behavior.
-  TSStatIntSet(id, 0);
-  TSStatIntIncrement(id, 1);
-  TSStatIntIncrement(id, 1);
+  if (id != TS_ERROR) {
+    // Verify counter behavior.
+    TSStatIntSet(id, 0);
+    TSStatIntIncrement(id, 1);
+    TSStatIntIncrement(id, 1);
 
-  TSMgmtInt value = TSStatIntGet(id);
-  box.check(value == 2, "Counter %s expected 2, got %" PRId64, name, value);
+    TSMgmtInt value = TSStatIntGet(id);
+    box.check(value == 2, "Counter %s expected 2, got %" PRId64, name, value);
+  }
 
   // Verify gauge behavior.
   const char gauge_name[] = "regression.test.gauge";
   int        gauge_id     = TSStatCreate(gauge_name, TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
   box.check(gauge_id != TS_ERROR, "TSStatCreate(%s) failed with %d", gauge_name, gauge_id);
+
+  if (gauge_id != TS_ERROR) {
+    box.check(ts::Metrics::instance().type(gauge_id) == ts::Metrics::MetricType::GAUGE, "Stat %s was not created as a GAUGE",
+              gauge_name);
+  }
 
   if (gauge_id != TS_ERROR) {
     TSStatIntSet(gauge_id, 10);
