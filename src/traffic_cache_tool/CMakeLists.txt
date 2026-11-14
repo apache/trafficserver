@@ -34,4 +34,8 @@ if(BUILD_TESTING)
   add_executable(test_cache_tool_stripe test_CacheStripe.cc CacheDefs.cc)
   target_link_libraries(test_cache_tool_stripe PRIVATE ts::tscore libswoc::libswoc ts::tsutil Catch2::Catch2WithMain)
   add_test(NAME test_cache_tool_stripe COMMAND test_cache_tool_stripe)
+
+  add_executable(test_cache_tool_scan test_CacheScan.cc CacheDefs.cc CacheScan.cc)
+  target_link_libraries(test_cache_tool_scan PRIVATE ts::tscore libswoc::libswoc ts::tsutil Catch2::Catch2WithMain)
+  add_test(NAME test_cache_tool_scan COMMAND test_cache_tool_scan)
 endif()
