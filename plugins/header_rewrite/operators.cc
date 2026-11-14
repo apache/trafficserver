@@ -403,7 +403,8 @@ OperatorSetDestination::exec(const Resources &res) const
           const_cast<Resources &>(res).changed_url = true;
           res.reset_query_cache();
           if (res._rri) {
-            TSHttpHdrUrlGet(bufp, res.hdr_loc, &res._rri->requestUrl);
+            // In remap hdr_loc is the client request, so this cannot fail.
+            (void)TSHttpHdrUrlGet(bufp, res.hdr_loc, &res._rri->requestUrl);
           }
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
