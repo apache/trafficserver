@@ -479,23 +479,16 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
           if (!(*s)) {
             const char *errptr = "A volume number expected";
             Warning("%s discarding %s entry at line %d :%s", "[CacheHosting]", config_file, line_info->line_num, errptr);
-            if (val != nullptr) {
-              ats_free(val);
-            }
+            ats_free(val);
             return -1;
           }
         }
         if ((*s < '0') || (*s > '9')) {
           Warning("%s discarding %s entry at line %d : bad token [%c]", "[CacheHosting]", config_file, line_info->line_num, *s);
-          if (val != nullptr) {
-            ats_free(val);
-          }
+          ats_free(val);
           return -1;
         }
         s++;
-      }
-      if (val == nullptr) {
-        return -1;
       }
       s = val;
       num_cachevols++;
