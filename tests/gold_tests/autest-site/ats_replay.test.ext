@@ -156,7 +156,7 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
         strategies_text = yaml.dump(strategies_yaml)
         strategies_text = strategies_text.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
         strategies_text = strategies_text.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
-        ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies_yaml", typename="ats:config")
+        ts.Disk.File(os.path.join(ts.Variables.CONFIGDIR, "strategies.yaml"), id="strategies_yaml", typename="ats:config")
         ts.Disk.strategies_yaml.AddLines(strategies_text.split('\n'))
 
     # Configure cache_config if specified.
