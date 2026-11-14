@@ -196,37 +196,35 @@ public:
   {
     TSMutexLock(list_mutex);
     std::unique_ptr<SslData> local = nullptr;
-    if (data != nullptr) {
-      // If data is the most recent node in the list,
-      // we leave it unchanged.
-      if (head != data) {
-        // Remove data from the list (does size decrement)
-        remove_from_list(data);
+    // If data is the most recent node in the list,
+    // we leave it unchanged.
+    if (head != data) {
+      // Remove data from the list (does size decrement)
+      remove_from_list(data);
 
-        // Prepend to head
-        data->prev = nullptr;
-        data->next = head;
-        if (data->next != nullptr) {
-          data->next->prev = data;
-        }
-        head = data;
-        if (tail == nullptr) {
-          tail = data;
-        }
+      // Prepend to head
+      data->prev = nullptr;
+      data->next = head;
+      if (data->next != nullptr) {
+        data->next->prev = data;
+      }
+      head = data;
+      if (tail == nullptr) {
+        tail = data;
+      }
 
-        // Remove oldest node if size exceeds limit
-        if (++size > limit) {
-          Dbg(dbg_ctl, "%s: removing '%s'", __func__, tail->commonName.c_str());
-          auto iter = cnDataMap.find(tail->commonName);
-          if (iter != cnDataMap.end()) {
-            local = std::move(iter->second); // copy ownership
-            cnDataMap.erase(iter);
-          }
-          if ((tail = tail->prev) != nullptr) {
-            tail->next = nullptr;
-          }
-          size -= 1;
+      // Remove oldest node if size exceeds limit
+      if (++size > limit) {
+        Dbg(dbg_ctl, "%s: removing '%s'", __func__, tail->commonName.c_str());
+        auto iter = cnDataMap.find(tail->commonName);
+        if (iter != cnDataMap.end()) {
+          local = std::move(iter->second); // copy ownership
+          cnDataMap.erase(iter);
         }
+        if ((tail = tail->prev) != nullptr) {
+          tail->next = nullptr;
+        }
+        size -= 1;
       }
     }
     Dbg(dbg_ctl, "%s: prepending '%s' to LRU ... list size: %d, map size: %d", __func__, data->commonName.c_str(), size,
