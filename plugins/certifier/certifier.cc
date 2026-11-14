@@ -456,7 +456,10 @@ shadow_cert_generator(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* ed
   FILE       *fp = nullptr;
   /// If directory doesn't exist, create one
   if (stat(path.c_str(), &st) == -1) {
-    mkdir(path.c_str(), 0755);
+    // Without the directory the certificate is still served, just not saved to disk.
+    if (mkdir(path.c_str(), 0755) == -1 && errno != EEXIST) {
+      Dbg(dbg_ctl, "%s: error creating directory %s: %s", __func__, path.c_str(), strerror(errno));
+    }
   } else {
     /// Try open the file if directory exists
     fp = fopen(cert_filename.c_str(), "rt");
