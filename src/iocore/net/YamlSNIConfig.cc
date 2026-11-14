@@ -139,7 +139,8 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
     actions.push_back(std::make_unique<ControlQUIC>(offer_quic.value()));
   }
   if (verify_client_level != 255) {
-    actions.push_back(std::make_unique<VerifyClient>(verify_client_level, verify_client_ca_file, verify_client_ca_dir));
+    actions.push_back(std::make_unique<VerifyClient>(verify_client_level, verify_client_ca_file, verify_client_ca_dir,
+                                                     verify_client_rpk_keys, verify_client_rpk_digest));
   }
   if (host_sni_policy != 255) {
     actions.push_back(std::make_unique<HostSniPolicy>(host_sni_policy));
@@ -202,8 +203,6 @@ YamlSNIConfig::Item::populate_sni_actions(action_vector_t &actions)
   actions.push_back(std::make_unique<SNI_IpAllow>(ip_allow, fqdn));
 }
 
-VerifyClient::~VerifyClient() {}
-
 TsEnumDescriptor LEVEL_DESCRIPTOR = {
   {{"NONE", 0}, {"MODERATE", 1}, {"STRICT", 2}}
 };
@@ -221,6 +220,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_inbound_port_ranges,
                                                TS_verify_client,
                                                TS_verify_client_ca_certs,
+                                               TS_verify_client_rpk_ca,
                                                TS_tunnel_route,
                                                TS_forward_route,
                                                TS_partial_blind_route,
@@ -237,7 +237,7 @@ std::set<std::string> valid_sni_config_keys = {TS_fqdn,
                                                TS_client_cert,
                                                TS_client_key,
                                                TS_client_rpk_enabled,
-                                               TS_server_rpk_ca,
+                                               TS_verify_server_rpk_ca,
                                                TS_client_sni_policy,
                                                TS_server_cipher_suite,
 #if TS_USE_TLS_SET_CIPHERSUITES
@@ -375,6 +375,20 @@ template <> struct convert<YamlSNIConfig::Item> {
 #endif
     }
 
+    if (node[TS_verify_client_rpk_ca]) {
+      // Only the verify_client action applies the set, so without one it would be silently ignored.
+      if (item.verify_client_level == 255) {
+        throw YAML::ParserException(node[TS_verify_client_rpk_ca].Mark(),
+                                    std::string(TS_verify_client_rpk_ca) + " requires " + TS_verify_client);
+      }
+#if !TS_USE_RPK
+      // Ignoring it would leave the host trusting the global client CA, which this key replaces.
+      throw YAML::ParserException(node[TS_verify_client_rpk_ca].Mark(),
+                                  std::string(TS_verify_client_rpk_ca) + " requires RFC 7250 raw public key support");
+#endif
+      item.verify_client_rpk_ca = node[TS_verify_client_rpk_ca].as<std::string>();
+    }
+
     if (node[TS_host_sni_policy]) {
       auto value           = node[TS_host_sni_policy].as<std::string>();
       int  policy          = POLICY_DESCRIPTOR.get(value);
@@ -472,13 +486,13 @@ template <> struct convert<YamlSNIConfig::Item> {
     if (node[TS_client_rpk_enabled]) {
       item.client_rpk_enabled = node[TS_client_rpk_enabled].as<bool>();
     }
-    if (node[TS_server_rpk_ca]) {
-      item.server_rpk_ca = node[TS_server_rpk_ca].as<std::string>();
+    if (node[TS_verify_server_rpk_ca]) {
+      item.verify_server_rpk_ca = node[TS_verify_server_rpk_ca].as<std::string>();
     }
 #if !TS_USE_RPK
-    if (item.client_rpk_enabled || !item.server_rpk_ca.empty()) {
-      Warning("sni.yaml: this build has no RFC 7250 raw public key support, so client_rpk_enabled and server_rpk_ca do not apply "
-              "for fqdn '%s'",
+    if (item.client_rpk_enabled || !item.verify_server_rpk_ca.empty()) {
+      Warning("sni.yaml: this build has no RFC 7250 raw public key support, so client_rpk_enabled and verify_server_rpk_ca do "
+              "not apply for fqdn '%s'",
               item.fqdn.empty() ? "*" : item.fqdn.c_str());
     }
 #endif

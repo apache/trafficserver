@@ -81,20 +81,47 @@ bool origin_presented_raw_public_key(NetVConnection *netvc);
 YamlSNIConfig::Policy resolve_verify_server_policy(YamlSNIConfig::Policy txn_policy, const NextHopProperty *nps,
                                                    const SSLConfigParams *params);
 
+/// The raw public keys an outbound connection pins, with the digest that identifies them.
+struct OriginTrustedRPK {
+  const std::shared_ptr<const SSLRPKUtils::TrustedKeySet> &keys;
+  const std::string                                       &digest;
+};
+
+/** @return the raw public keys an outbound connection pins, in the order X.509 settings take effect:
+    those the transaction's override of proxy.config.ssl.client.CA.rpk.filename names, else those of
+    its sni.yaml next-hop entry @a nps, else those proxy.config.ssl.client.CA.rpk.filename names. The
+    set is nullptr if none names any. The handshake and the origin session reuse checks both select
+    through here, so they cannot disagree about the set.
+
+    @param txn_rpk_name The transaction's override of proxy.config.ssl.client.CA.rpk.filename, or
+      nullptr if it has none.
+    @param txn_ca_path The transaction's override of proxy.config.ssl.client.CA.cert.path, against
+      which a relative @a txn_rpk_name is resolved, or nullptr if it has none.
+    @param nps The connection's next-hop properties, or nullptr if no entry matched.
+    @param params The SSL configuration supplying the global set.
+ */
+OriginTrustedRPK origin_trusted_rpk(const char *txn_rpk_name, const char *txn_ca_path, const NextHopProperty *nps,
+                                    const SSLConfigParams *params);
+
 /** @return true if a raw public key origin connection may carry a request whose own connection
     would select the sni.yaml next-hop entry @a property_key.
 
     When the request's policy is ENFORCED, the key the connection presented must be in the set the
-    entry pins now; a name says nothing about which set that is. A connection whose own policy was
-    DISABLED never compared its key with a set, so it has no recorded key and fails that check. When the
-    request's policy is PERMISSIVE or DISABLED, a new handshake would accept the key regardless, so
-    the connection may carry the request too.
+    request would pin now, as origin_trusted_rpk() selects it; a name says nothing about which set
+    that is. A connection whose own policy was DISABLED never compared its key with a set, so it has
+    no recorded key and fails that check. When the request's policy is PERMISSIVE or DISABLED, a new
+    handshake would accept the key regardless, so the connection may carry the request too.
 
     @param netvc A pooled origin connection for which origin_presented_raw_public_key() is true.
     @param property_key The new request's key, from next_hop_property_key().
     @param txn_policy The new request's own verification policy, or UNSET.
+    @param txn_rpk_name The new request's override of proxy.config.ssl.client.CA.rpk.filename, or
+      nullptr if it has none.
+    @param txn_ca_path The new request's override of proxy.config.ssl.client.CA.cert.path, or nullptr
+      if it has none.
  */
-bool origin_rpk_pin_matches(NetVConnection *netvc, std::string_view property_key, YamlSNIConfig::Policy txn_policy);
+bool origin_rpk_pin_matches(NetVConnection *netvc, std::string_view property_key, YamlSNIConfig::Policy txn_policy,
+                            const char *txn_rpk_name, const char *txn_ca_path);
 
 #if TS_USE_RPK
 /// Reserve the per-connection data slot for next-hop raw public keys. Called once at startup.

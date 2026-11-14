@@ -30,18 +30,27 @@
  ****************************************************************************/
 #pragma once
 
+#include <map>
+#include <memory>
 #include <optional>
+#include <shared_mutex>
+#include <string>
+#include <string_view>
+#include <utility>
 
 #include "P_SSLSecret.h"
 #include "SSLSessionCache.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/net/SSLTypes.h"
 #include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "mgmt/config/ConfigContext.h"
+#include "tscore/Ptr.h"
 
 #include <openssl/rand.h>
 #include <atomic>
 
+struct ClientTrust;
 struct SSLCertLookup;
 struct ssl_ticket_key_block;
 
@@ -99,6 +108,15 @@ struct SSLConfigParams : public ConfigInfo {
   int                     client_verify_depth;
   long                    ssl_ctx_options;
   long                    ssl_client_ctx_options;
+
+  /// The trust a connection gets when no sni.yaml verify_client action names its own: the raw public
+  /// keys proxy.config.ssl.CA.rpk.filename names. Null if that is unset or could not be loaded.
+  Ptr<ClientTrust> serverClientTrust;
+  /// The raw public keys a next hop is trusted to present when its sni.yaml entry names none, from
+  /// proxy.config.ssl.client.CA.rpk.filename; nullptr if that is unset or could not be loaded.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> clientRPKCA;
+  /// Identifies clientRPKCA in the origin session cache key.
+  std::string clientRPKCADigest;
 
   unsigned char alpn_protocols_array[MAX_ALPN_STRING];
   int           alpn_protocols_array_size = 0;
@@ -183,6 +201,51 @@ struct SSLConfigParams : public ConfigInfo {
   void           updateCTX(const std::string &secret_string_name) const;
 
   void clearCTX(const std::string &client_cert) const;
+
+  /// The raw public keys a transaction's proxy.config.ssl.client.CA.rpk.filename override names, with
+  /// the digest that identifies them.
+  struct OverrideRPK {
+    std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys;
+    std::string                                       digest;
+  };
+
+  /** @return the raw public keys the per-transaction override @a name names.
+
+      A relative @a name is resolved against @a ca_path, the transaction's override of
+      proxy.config.ssl.client.CA.cert.path, or against that record if @a ca_path is empty. The file is
+      read the first time a transaction names it and kept for the life of this configuration, so the
+      reference stays valid for as long as the configuration does. A file that cannot be loaded gives
+      a set of nullptr, so no key is trusted through it, and it is not read again once that result is
+      kept.
+   */
+  const OverrideRPK &getOverrideRPK(std::string_view name, std::string_view ca_path) const;
+
+  /// Orders the override cache by (file name, CA path override), and finds entries by views of both,
+  /// so a lookup builds no strings.
+  struct OverrideRPKKeyLess {
+    using is_transparent = void;
+    using Key            = std::pair<std::string, std::string>;
+    using View           = std::pair<std::string_view, std::string_view>;
+
+    bool
+    operator()(const Key &a, const Key &b) const
+    {
+      return a < b;
+    }
+    bool
+    operator()(const Key &a, const View &b) const
+    {
+      return View{a.first, a.second} < b;
+    }
+    bool
+    operator()(const View &a, const Key &b) const
+    {
+      return a < View{b.first, b.second};
+    }
+  };
+
+  mutable std::map<std::pair<std::string, std::string>, OverrideRPK, OverrideRPKKeyLess> override_rpk_cache;
+  mutable std::shared_mutex                                                              override_rpk_cache_lock;
 
   void cleanupCTXTable();
 

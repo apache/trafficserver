@@ -201,7 +201,8 @@ ServerSessionPool::validate_pinned_origin(HttpSM *sm, NetVConnection *netvc)
 
   return origin_rpk_pin_matches(netvc,
                                 next_hop_property_key(sm->get_outbound_sni(), &sm->t_state.current.server->dst_addr.sa, buffer),
-                                sm->get_outbound_verify_server_policy());
+                                sm->get_outbound_verify_server_policy(), sm->t_state.txn_conf->ssl_client_ca_rpk_filename,
+                                sm->t_state.txn_conf->ssl_client_ca_cert_path);
 }
 
 bool

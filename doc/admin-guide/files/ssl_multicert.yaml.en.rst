@@ -150,36 +150,6 @@ ssl_rpk_enabled: 1|0 (optional)
   callback: the default entry's raw public key settings apply to every HTTP/3 connection, and
   other entries' settings do not apply to any. No warning is logged.
 
-ssl_client_rpk_ca_name: FILENAME (optional)
-  The name of the file containing the raw public key(s) (RFC 7250) that a client is trusted to
-  present for mutual TLS on this entry, PEM-encoded. *FILENAME* is resolved relative to the
-  :ts:cv:`proxy.config.ssl.CA.cert.path` configuration variable. The file may contain more than
-  one key concatenated together, which allows an "old" and "new" key to both be trusted during a
-  planned key rotation.
-
-  A client authenticating with a raw public key has no certificate chain to verify, so this
-  trusted set takes the place of the usual client-certificate verification for that connection.
-  An unmatched pin is always fatal to the connection, the same as a failed certificate check --
-  there is no separate log-only mode.
-
-  Replacing the file and running :option:`traffic_ctl config reload` takes effect for new
-  handshakes, and a TLS session a client authenticated under the old set cannot be resumed under
-  the new one.
-
-  This key only has an effect where a client certificate is actually requested, which means either
-  a non-zero :ts:cv:`proxy.config.ssl.client.certification_level` or a
-  :file:`sni.yaml` ``verify_client`` action covering the connection. With neither, no credential is
-  requested and nothing is pinned.
-
-  On HTTP/3, see the note under ``ssl_rpk_enabled`` above. A ``verify_client`` action does not
-  reach an HTTP/3 connection, so there the client certificate level is the only way to request a
-  client credential. With OpenSSL's QUIC, setting this key on the default entry lets a client that
-  prefers raw public keys negotiate one on a connection matching another entry; if that entry has
-  no trusted keys to match it against, the handshake fails rather than falling back to X.509.
-
-  Only available in builds linked against a TLS library with RFC 7250 support; see
-  ``ssl_rpk_enabled`` above.
-
 action: tunnel (optional)
   If set to ``tunnel``, Traffic Server will not participate in the
   TLS handshake and will blind tunnel the connection instead.
@@ -306,8 +276,9 @@ pass phrase to decrypt the keys.
 
 The following example configures Traffic Server to use the SSL certificate
 ``server.pem`` for all requests, and offers a raw public key (RFC 7250)
-alongside it. Clients presenting a raw public key for mutual TLS are checked
-against ``client-rpk-trusted.pem`` instead of the usual certificate chain.
+alongside it. The raw public keys that clients are trusted to present are
+configured with :ts:cv:`proxy.config.ssl.CA.rpk.filename` and the :file:`sni.yaml`
+key ``verify_client_rpk_ca``, alongside their X.509 counterparts.
 
 .. code-block:: yaml
 
@@ -316,7 +287,6 @@ against ``client-rpk-trusted.pem`` instead of the usual certificate chain.
         ssl_cert_name: server.pem
         ssl_key_name: server.key
         ssl_rpk_enabled: 1
-        ssl_client_rpk_ca_name: client-rpk-trusted.pem
 
 Migration from ssl_multicert.config
 ===================================

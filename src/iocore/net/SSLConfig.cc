@@ -34,6 +34,7 @@
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
 #include "P_TLSKeyLogger.h"
+#include "SSLRPKUtils.h"
 #include "SSLSessionCache.h"
 #include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "iocore/net/SSLDiags.h"
@@ -52,6 +53,10 @@
 #include <array>
 #include <cstring>
 #include <cmath>
+#include <memory>
+#include <mutex>
+#include <shared_mutex>
+#include <string>
 #include <thread>
 #include <unordered_map>
 
@@ -193,6 +198,41 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
   if (final_filename && path) {
     *final_filename = filename ? ats_stringdup(Layout::get()->relative_to(path, filename)) : nullptr;
   }
+}
+
+/** Load the raw public key trust set the records.yaml variable @a record_name names, if it names one.
+
+    A relative file name is resolved against @a base_path. When the file cannot be loaded, the set
+    and its digest are left empty, so no raw public key is trusted through this setting, and the
+    reload reports the failure.
+ */
+static void
+load_trusted_rpk_file(ConfigContext &ctx, const char *record_name, const char *base_path,
+                      std::shared_ptr<const SSLRPKUtils::TrustedKeySet> &keys, std::string &digest)
+{
+  auto rec_str{RecGetRecordStringAlloc(record_name)};
+
+  keys.reset();
+  digest.clear();
+  if (!rec_str || rec_str->empty()) {
+    return;
+  }
+#if TS_USE_RPK
+  std::string const path = Layout::get()->relative_to(base_path, rec_str->c_str());
+
+  // Watched so that replacing the file in place is picked up by a configuration reload.
+  if (SSLConfigParams::load_ssl_file_cb != nullptr) {
+    SSLConfigParams::load_ssl_file_cb(path.c_str());
+  }
+  if (!SSLRPKUtils::loadTrustedKeyFile(path.c_str(), keys, digest)) {
+    CfgLoadFail(ctx, "failed to load the raw public keys %s names from %s", record_name, path.c_str());
+  }
+#else
+  (void)base_path;
+  (void)keys;
+  (void)digest;
+  CfgLoadLog(ctx, DL_Warning, "%s is set, but this build has no RFC 7250 raw public key support; ignoring", record_name);
+#endif
 }
 
 int
@@ -468,6 +508,14 @@ SSLConfigParams::initialize(ConfigContext ctx)
                                          serverCACertPath != nullptr ? serverCACertPath : "", clientCADigestFailed);
   }
 
+  {
+    std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys;
+    std::string                                       digest;
+
+    load_trusted_rpk_file(ctx, "proxy.config.ssl.CA.rpk.filename", serverCACertPath, keys, digest);
+    serverClientTrust = keys != nullptr ? make_ptr(new ClientTrust(std::move(keys), std::move(digest), true)) : Ptr<ClientTrust>{};
+  }
+
   // SSL session cache configurations
   ssl_origin_session_cache      = RecGetRecordInt("proxy.config.ssl.origin_session_cache.enabled").value_or(0);
   ssl_origin_session_cache_size = RecGetRecordInt("proxy.config.ssl.origin_session_cache.size").value_or(0);
@@ -577,6 +625,8 @@ SSLConfigParams::initialize(ConfigContext ctx)
     auto clientCACertRelativePath{ats_as_c_str(path_str)};
     set_paths_helper(clientCACertRelativePath, ssl_client_ca_cert_filename, &clientCACertPath, &clientCACertFilename);
   }
+
+  load_trusted_rpk_file(ctx, "proxy.config.ssl.client.CA.rpk.filename", clientCACertPath, clientRPKCA, clientRPKCADigest);
 
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.ssl.client.groups_list")}; rec_str) {
     client_groups_list = ats_stringdup(rec_str);
@@ -972,6 +1022,37 @@ SSLConfigParams::updateCTX(const std::string &cert_secret_name) const
   loader.update_ssl_ctx(cert_secret_name);
 
   secret_for_updateCTX = nullptr;
+}
+
+const SSLConfigParams::OverrideRPK &
+SSLConfigParams::getOverrideRPK(std::string_view name, std::string_view ca_path) const
+{
+  OverrideRPKKeyLess::View const key{name, ca_path};
+
+  {
+    std::shared_lock lock{override_rpk_cache_lock};
+
+    if (auto spot = override_rpk_cache.find(key); spot != override_rpk_cache.end()) {
+      return spot->second;
+    }
+  }
+
+  // Read outside the lock, so connections using other sets are not held up by the file access. Two
+  // first uses of one file may both read it, and both report a failure; the first to finish is kept.
+  std::string const base = ca_path.empty() ? std::string{clientCACertPath != nullptr ? clientCACertPath : ""} :
+                                             Layout::get()->relative_to(Layout::get()->prefix, ca_path);
+  std::string const path = Layout::get()->relative_to(base, name);
+  OverrideRPK       loaded;
+
+  if (!SSLRPKUtils::loadTrustedKeyFile(path.c_str(), loaded.keys, loaded.digest)) {
+    Error("failed to load the raw public keys a transaction's proxy.config.ssl.client.CA.rpk.filename names from %s; no key is "
+          "trusted through it",
+          path.c_str());
+  }
+
+  std::unique_lock lock{override_rpk_cache_lock};
+
+  return override_rpk_cache.try_emplace(OverrideRPKKeyLess::Key{name, ca_path}, std::move(loaded)).first->second;
 }
 
 void

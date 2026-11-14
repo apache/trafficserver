@@ -164,9 +164,45 @@ verify_client_ca_certs                   Inbound   Specifies an alternate set of
                                                    are ``file`` and ``dir``.  The value for ``file`` must be a file path for a file
                                                    containing CA certs.  The value for ``dir`` must be a file path for an OpenSSL
                                                    X509 hashed directory containing CA certs.  If a given file path does not begin
-                                                   with ``/`` , it must be relative to the |TS| configuration directory.
+                                                   with ``/`` , it must be relative to the |TS| configuration directory. This differs
+                                                   from ``verify_client_rpk_ca`` in the same entry, which resolves a relative path
+                                                   against :ts:cv:`proxy.config.ssl.CA.cert.path`.
                                                    ``verify_client_ca_certs`` can only be used with capabilities provided by
                                                    OpenSSL 1.0.2 or later.
+
+                                                   Setting this or ``verify_client_rpk_ca`` replaces both global trust settings,
+                                                   :ts:cv:`proxy.config.ssl.CA.cert.filename` and
+                                                   :ts:cv:`proxy.config.ssl.CA.rpk.filename`, for this entry: a client can then
+                                                   authenticate only with a credential the entry names. If only this key is set, no
+                                                   raw public key is accepted.
+
+verify_client_rpk_ca                     Inbound   The PEM file containing the raw public key(s) (`RFC 7250
+                                                   <https://www.rfc-editor.org/rfc/rfc7250>`_) that a client is trusted to present,
+                                                   in place of :ts:cv:`proxy.config.ssl.CA.rpk.filename`. It is the raw public key
+                                                   counterpart of ``verify_client_ca_certs``, but a relative path is resolved
+                                                   against :ts:cv:`proxy.config.ssl.CA.cert.path`, as for the global record, not
+                                                   against the configuration directory as for ``verify_client_ca_certs``. The file
+                                                   may contain more than one key concatenated together, which allows an "old" and a
+                                                   "new" key to be trusted at the same time during a planned key rotation. It
+                                                   requires ``verify_client`` in the same entry, which decides whether a client
+                                                   credential is requested at all. As with ``verify_client_ca_certs``, it replaces
+                                                   both global trust settings for this entry, so if only this key is set, no X.509
+                                                   client certificate is accepted.
+
+                                                   A client that authenticates with a raw public key has no certificate chain to
+                                                   verify, so the trusted set takes the place of the certificate checks. A key
+                                                   outside the set is always fatal to the connection, as a failed certificate check
+                                                   is. Replacing the contents of the file and running :option:`traffic_ctl config
+                                                   reload` takes effect for new handshakes, and a TLS session a client
+                                                   authenticated under the old set cannot be resumed under the new one.
+
+                                                   A ``verify_client`` action does not reach an HTTP/3 connection, so neither this
+                                                   nor ``verify_client_ca_certs`` applies there; see
+                                                   :ts:cv:`proxy.config.ssl.CA.rpk.filename` for what does.
+
+                                                   Only available in builds linked against a TLS library with RFC 7250 support.
+                                                   On a build without that support, setting this key is a configuration error,
+                                                   since ignoring it would leave the global client CA trusted for this entry.
 
 server_cipher_suite                      Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.cipher_suite`
                                                    :file:`records.yaml` configuration. See the
@@ -274,14 +310,17 @@ client_rpk_enabled                       Outbound  Set to :code:`true` to offer 
                                                    (OpenSSL 3.2 or later, or a sufficiently recent BoringSSL). If this key is set on a
                                                    build without that support, |TS| logs a warning and ignores it.
 
-server_rpk_ca                            Outbound  The file containing the raw public key(s) (RFC 7250) that this next hop is trusted
+verify_server_rpk_ca                     Outbound  The file containing the raw public key(s) (RFC 7250) that this next hop is trusted
                                                    to present, PEM-encoded. The file may contain more than one key concatenated together,
                                                    which allows an "old" and "new" key to both be trusted during a planned key rotation.
                                                    Keys are compared in their encoded form, so EC keys must be written with uncompressed
                                                    points, which is what ``openssl pkey -pubout`` produces by default.
 
-                                                   If this is relative, it is relative to the path in
-                                                   :ts:cv:`proxy.config.ssl.client.CA.cert.path`.
+                                                   A relative path is resolved against
+                                                   :ts:cv:`proxy.config.ssl.client.CA.cert.path`. When this is not set,
+                                                   :ts:cv:`proxy.config.ssl.client.CA.rpk.filename` applies, if set. As with
+                                                   ``verify_server_policy``, a per-transaction override of that record takes
+                                                   precedence over this key.
 
                                                    Raw public keys have no certificate chain, issuer, or subject alternative name, so
                                                    when the next hop authenticates with one, |TS| checks the offered key against this
@@ -461,30 +500,31 @@ In addition ``verify_server_properties`` specifies what |TS| will check when per
   Verify both the signature and the SNI in the origin certificate.
 
 
-If ``server_rpk_ca`` is set and the next hop authenticates with a raw public key rather than a
-certificate, neither the certificate chain check nor ``verify_server_properties``'s :code:`NAME`
-check has anything to act on -- a raw public key has no issuer or subject alternative name -- so
-``server_rpk_ca`` (matching the offered key against a configured trusted set) takes the place of
-both. ``verify_server_policy`` still governs whether
-a key that is not in the trusted set is fatal, exactly as for a failed certificate check. Since
-raw public keys are negotiated alongside X.509 rather than instead of it, this only applies when
-the next hop actually offers one; a next hop that does not support RFC 7250 falls back to a normal
-certificate exchange, and the usual certificate checks apply.
+If ``verify_server_rpk_ca`` or :ts:cv:`proxy.config.ssl.client.CA.rpk.filename` is set and the next
+hop authenticates with a raw public key rather than a certificate, neither the certificate chain
+check nor ``verify_server_properties``'s :code:`NAME` check has anything to act on -- a raw public
+key has no issuer or subject alternative name -- so matching the offered key against the set that
+applies (a per-transaction override of the record if there is one, else ``verify_server_rpk_ca``
+if set, else the record) takes the place of both.
+``verify_server_policy`` still governs whether a key that is not in the trusted set is fatal,
+exactly as for a failed certificate check. Since raw public keys are negotiated alongside X.509
+rather than instead of it, this only applies when the next hop actually offers one; a next hop that
+does not support RFC 7250 falls back to a normal certificate exchange, and the usual certificate
+checks apply.
 
-Replacing the file named by ``server_rpk_ca`` and running :option:`traffic_ctl config reload`
-takes effect for requests that follow. An origin connection taken from the session pool, or an
-HTTP/2 connection shared with requests that waited for it to open, carries a request verified under
-:code:`ENFORCED` only while the set that request would pin still contains the key the connection
-presented. Adding a key for rotation keeps existing connections, while removing a key retires the
-connections that presented it. Such a connection accepted under :code:`PERMISSIVE` with a key
-outside the set, or opened under :code:`DISABLED`, never carries a request verified under
-:code:`ENFORCED`. A request verified under :code:`PERMISSIVE` would accept the key in a new
-handshake anyway, so it may use the connection either way. These checks do not cover a server
-session kept with its client connection, such as a private session, or an HTTP/1.1 connection handed
-to a request that waited for it to open; both are reused as they are for a certificate. Cached TLS
-sessions are keyed on the whole set, so any change to it makes the next connection to that next hop
-a full handshake. Requests already in progress on an existing connection are not
-interrupted.
+Replacing the file ``verify_server_rpk_ca`` or the record names and running
+:option:`traffic_ctl config reload` takes effect for requests that follow. An origin connection taken from the session pool, or an HTTP/2 connection shared with
+requests that waited for it to open, carries a request verified under :code:`ENFORCED` only while
+the set that request would pin still contains the key the connection presented. Adding a key for
+rotation keeps existing connections, while removing a key retires the connections that presented it.
+Such a connection accepted under :code:`PERMISSIVE` with a key outside the set, or opened under
+:code:`DISABLED`, never carries a request verified under :code:`ENFORCED`. A request verified under
+:code:`PERMISSIVE` would accept the key in a new handshake anyway, so it may use the connection
+either way. These checks do not cover a server session kept with its client connection, such as a
+private session, or an HTTP/1.1 connection handed to a request that waited for it to open; both are
+reused as they are for a certificate. Cached TLS sessions are keyed on the whole set, so any change
+to it makes the next connection to that next hop a full handshake. Requests already in progress on
+an existing connection are not interrupted.
 
 If ``tunnel_route`` is specified, none of the certificate verification will be done because the TLS
 negotiation will be tunneled to the upstream target, making those values irrelevant for that
@@ -511,7 +551,7 @@ the expected state throughout a rolling upgrade of that next hop, not a failure.
    sni:
    - fqdn: parent.example.com
      client_rpk_enabled: true
-     server_rpk_ca: parent-rpk-trusted.pem
+     verify_server_rpk_ca: parent-rpk-trusted.pem
      verify_server_policy: ENFORCED
 
 Require client certificate verification for ``foo.com`` and any server name ending with ``.yahoo.com``. Therefore, client
