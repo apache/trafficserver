@@ -62,13 +62,15 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: VerifierServer) -> ATS:
             "proxy.config.diags.debug.tags": "http2|hpack",
             "proxy.config.http.header_field_max_size": 65535,
             "proxy.config.http2.max_header_list_size": 8 * 1024 * 1024,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
     return ats
 
 
 def configure_client(
-        name: str, path: str, name_size: int, value_size: int, *, _ats: ATS, _services: ServiceFactory) -> ProcessService:
+    name: str, path: str, name_size: int, value_size: int, *, _ats: ATS, _services: ServiceFactory
+) -> ProcessService:
     """Configure one invocation of the raw HPACK client.
 
     :param _ats: Test-local ats configured by the test.

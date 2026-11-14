@@ -2,7 +2,7 @@
  *
  *  OpenSSL socket BIO that does TCP Fast Open.
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file

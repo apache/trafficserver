@@ -147,11 +147,7 @@ if(TS_HAS_128BIT_CAS_LIBATOMIC AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(BUILD_SHARED_LIBS)
-  install(
-    TARGETS tscore
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
+  install(TARGETS tscore LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
 
 if(BUILD_TESTING)
@@ -196,15 +192,16 @@ if(BUILD_TESTING)
   )
   target_link_libraries(
     test_tscore
-    PRIVATE libswoc::libswoc
-            ts::tscore
-            ts::tsutil
-            yaml-cpp::yaml-cpp
-            resolv::resolv
-            OpenSSL::Crypto
-            OpenSSL::SSL
-            Catch2::Catch2WithMain
-            inkevent
+    PRIVATE
+      libswoc::libswoc
+      ts::tscore
+      ts::tsutil
+      yaml-cpp::yaml-cpp
+      resolv::resolv
+      OpenSSL::Crypto
+      OpenSSL::SSL
+      Catch2::Catch2WithMain
+      inkevent
   )
   if(TS_USE_HWLOC)
     target_link_libraries(test_tscore PRIVATE hwloc::hwloc)

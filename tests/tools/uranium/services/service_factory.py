@@ -95,8 +95,9 @@ class ServiceFactory:
         use_ssl = bool(options.pop("ssl", False))
         use_both = bool(options.pop("both", False))
         port = int(options.pop("port", 0)) or (self._context.runtime.allocate_port() if not use_ssl or use_both else 0)
-        https_port = int(options.pop("https_port", options.pop(
-            "s_port", 0))) or (self._context.runtime.allocate_port() if use_ssl or use_both else 0)
+        https_port = int(options.pop("https_port", options.pop("s_port", 0))) or (
+            self._context.runtime.allocate_port() if use_ssl or use_both else 0
+        )
         ip_value = str(options.pop("ip", "INADDR_LOOPBACK"))
         address = {"INADDR_LOOPBACK": "127.0.0.1", "IN6ADDR_LOOPBACK": "::1"}.get(ip_value, ip_value)
         lookup_key = str(options.pop("lookup_key", "{PATH}"))
@@ -125,7 +126,8 @@ class ServiceFactory:
                     options.pop("clientcert", ssl_dir / "server.crt"),
                     "--s_port",
                     https_port,
-                ])
+                ]
+            )
         for flag, value in options.pop("options", {}).items():
             command.append(str(flag))
             if value:
@@ -142,9 +144,7 @@ class ServiceFactory:
             {
                 "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
                 "body": "imok",
-                "options": {
-                    "skipHooks": None
-                },
+                "options": {"skipHooks": None},
             },
             "healthcheck.json",
         )
@@ -219,7 +219,8 @@ class ServiceFactory:
                     options.pop("ssl_cert", ssl_dir / "server.pem"),
                     "--ca-certs",
                     options.pop("ca_cert", ssl_dir / "ca.pem"),
-                ])
+                ]
+            )
         command.append(self._context.resolve_path(replay_path))
         if options.pop("verbose", True):
             command.extend(["--verbose", "diag"])
@@ -258,7 +259,8 @@ class ServiceFactory:
                     options.pop("ssl_cert", ssl_dir / "client.pem"),
                     "--ca-certs",
                     options.pop("ca_cert", ssl_dir / "ca.pem"),
-                ])
+                ]
+            )
         keys = options.pop("keys", None)
         if keys:
             command.append("--keys")

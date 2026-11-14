@@ -55,22 +55,22 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
             "proxy.config.http.connect_ports": str(_origin.https_port),
-        })
+        }
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map https://http-test:{ats.https_port}/ https://127.0.0.1:{_origin.https_port}/")
     # An address, since HostDB does not read /etc/hosts and CI resolvers
     # need not answer for localhost.
     ats.write_config_file(
         "sni.yaml",
-        "sni:\n"
-        "  - fqdn: tunnel-test\n"
-        f"    tunnel_route: 127.0.0.1:{_origin.https_port}\n",
+        f"sni:\n  - fqdn: tunnel-test\n    tunnel_route: 127.0.0.1:{_origin.https_port}\n",
     )
     ats.allow_private_connect(("CONNECT", "GET"))
     return ats
@@ -105,14 +105,16 @@ def send_traffic(*, _ats: ATS, _curl: Curl) -> None:
         f"http-test:{_ats.https_port}:127.0.0.1",
         f"https://http-test:{_ats.https_port}/",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
     request(
         *common,
         "--resolve",
         f"tunnel-test:{_ats.https_port}:127.0.0.1",
         f"https://tunnel-test:{_ats.https_port}/",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
     request(
         *common,
         "--resolve",
@@ -123,7 +125,8 @@ def send_traffic(*, _ats: ATS, _curl: Curl) -> None:
         f"http-test:{_ats.https_port}:127.0.0.1",
         f"https://http-test:{_ats.https_port}/",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
 
 
 def test_txn_type(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:

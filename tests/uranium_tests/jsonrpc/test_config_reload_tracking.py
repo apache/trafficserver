@@ -34,10 +34,12 @@ def test_config_reload_tracking(ats_factory: ATSFactory) -> None:
         """
 
         ats = ats_factory.create("ts")
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "rpc|config",
-        })
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rpc|config",
+            }
+        )
         return ats
 
     def rpc(method: str, params: object | None = None) -> dict[str, Any]:

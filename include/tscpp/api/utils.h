@@ -46,25 +46,25 @@ namespace utils
   /**
    * @brief Returns a pretty printed string of a sockaddr *
    *
-   * @param sockaddr* A pointer to a sockaddr *
+   * @param[in] sockaddress A pointer to a sockaddr *
    * @return a string which is the pretty printed address
    */
-  std::string getIpString(const sockaddr *);
+  std::string getIpString(const sockaddr *sockaddress);
 
   /**
    * @brief Returns just the port portion of the sockaddr *
    *
-   * @param sockaddr* A pointer to a sockaddr *
+   * @param[in] sockaddress A pointer to a sockaddr *
    * @return a uint16_t which is the port from the sockaddr *
    */
-  uint16_t getPort(const sockaddr *);
+  uint16_t getPort(const sockaddr *sockaddress);
 
   /**
    * @brief Returns a pretty printed string of a sockaddr * including port
    *
-   * @param sockaddr* A pointer to a sockaddr *
+   * @param[in] sockaddress A pointer to a sockaddr *
    * @return a string which is the pretty printed address including port
    */
-  std::string getIpPortString(const sockaddr *);
+  std::string getIpPortString(const sockaddr *sockaddress);
 } // namespace utils
 } // namespace atscppapi

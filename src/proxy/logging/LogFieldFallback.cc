@@ -2,7 +2,7 @@
 
   Helpers for parsing log field fallback expressions.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

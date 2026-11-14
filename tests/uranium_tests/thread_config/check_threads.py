@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -41,8 +40,9 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
             process_name = p.name()
             process_cwd = p.cwd()
             process_exe = p.exe()
-            is_ts = process_name == '[TS_MAIN]' or process_name == 'traffic_server' or os.path.basename(
-                process_exe) == 'traffic_server'
+            is_ts = (
+                process_name == '[TS_MAIN]' or process_name == 'traffic_server' or os.path.basename(process_exe) == 'traffic_server'
+            )
             match_by_cwd = process_cwd == ts_path
             match_by_cmdline = any(ts_path in arg for arg in (p.cmdline() or []))
             if not is_ts or not (match_by_cwd or match_by_cmdline):
@@ -71,7 +71,6 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
                 continue
 
             if thread_name.startswith('[ET_NET'):
-
                 # Get the id of this thread and check if it's in range.
                 etnet_id = int(thread_name.split(' ')[1][:-1])
                 if etnet_id >= etnet_threads:
@@ -82,7 +81,6 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
                     etnet_check.add(etnet_id)
 
             elif thread_name.startswith('[ACCEPT'):
-
                 # Get the id of this thread and check if it's in range.
                 accept_id = int(thread_name.split(' ')[1].split(':')[0])
                 if accept_id >= accept_threads:
@@ -91,7 +89,6 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
                     accept_check.add(accept_id)
 
             elif thread_name.startswith('[ET_TASK'):
-
                 # Get the id of this thread and check if it's in range.
                 task_id = int(thread_name.split(' ')[1][:-1])
                 if task_id >= task_threads:
@@ -102,7 +99,6 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
                     task_check.add(task_id)
 
             elif thread_name.startswith('[ET_AIO'):
-
                 # Get the id of this thread and check if it's in range.
                 aio_id = int(thread_name.split(' ')[1].split(':')[0])
                 if aio_id >= aio_threads:
@@ -126,13 +122,14 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
 
 
 def count_threads(
-        ts_path,
-        etnet_threads,
-        accept_threads,
-        task_threads,
-        aio_threads,
-        wait_seconds=COUNT_THREAD_WAIT_SECONDS,
-        poll_seconds=COUNT_THREAD_POLL_SECONDS):
+    ts_path,
+    etnet_threads,
+    accept_threads,
+    task_threads,
+    aio_threads,
+    wait_seconds=COUNT_THREAD_WAIT_SECONDS,
+    poll_seconds=COUNT_THREAD_POLL_SECONDS,
+):
     deadline = time.monotonic() + wait_seconds
 
     # Retry on startup/transient states:
@@ -154,11 +151,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--ts-path', type=str, dest='ts_path', help='path to traffic_server binary', required=True)
     parser.add_argument(
-        '-e', '--etnet-threads', type=int, dest='etnet_threads', help='expected number of ET_NET threads', required=True)
+        '-e', '--etnet-threads', type=int, dest='etnet_threads', help='expected number of ET_NET threads', required=True
+    )
     parser.add_argument(
-        '-a', '--accept-threads', type=int, dest='accept_threads', help='expected number of ACCEPT threads', required=True)
+        '-a', '--accept-threads', type=int, dest='accept_threads', help='expected number of ACCEPT threads', required=True
+    )
     parser.add_argument(
-        '-t', '--task-threads', type=int, dest='task_threads', help='expected number of TASK threads', required=True)
+        '-t', '--task-threads', type=int, dest='task_threads', help='expected number of TASK threads', required=True
+    )
     parser.add_argument('-c', '--aio-threads', type=int, dest='aio_threads', help='expected number of AIO threads', required=True)
     args = parser.parse_args()
     exit(count_threads(args.ts_path, args.etnet_threads, args.accept_threads, args.task_threads, args.aio_threads))

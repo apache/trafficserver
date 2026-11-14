@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -30,10 +30,4 @@ QUICConnectionInfoProvider *
 QUICContext::connection_info() const
 {
   return _connection_info;
-}
-
-QUICConfig::scoped_config
-QUICContext::config() const
-{
-  return _config;
 }

@@ -18,8 +18,8 @@
 
 .. default-domain:: cpp
 
-TSHttpNextHopStrategyNameGet
-****************************
+TSRemapNextHopStrategyFind
+**************************
 
 Synopsis
 ========
@@ -28,22 +28,33 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: char const* TSHttpNextHopStrategyNameGet(void const* strategy)
+.. function:: TSStrategy TSRemapNextHopStrategyFind(const char *name)
 
 Description
 ===========
 
-Gets the name associated with the provided strategy.
-This may be nullptr indicating that parent.config is in use.
+Gets a pointer to the specified :arg:`name` NextHopSelectionStrategy.
+This may be nullptr, indicating that no strategy exists with the given
+name or that the call was made outside of remap rule initialization
+(e.g. from a globally loaded plugin).
+
+This function may ONLY be called during TSRemapNewInstance. A call
+made outside of remap rule initialization is logged to ``diags.log``
+at most once per :ts:cv:`proxy.config.log.throttling_interval_msec`.
+
+.. note::
+
+   :arg:`name` must not be nullptr; passing nullptr is a plugin API
+   violation and triggers an assertion.
 
 .. note::
 
    This returned pointer must not be freed and the contents must not
    be changed.
-   Strategy pointers held by plugins will become invalid when ATS
-   configs are reloaded and should be reset with :func:`TSRemapNewInstance`
+   Strategy pointers held by plugins become invalid when ATS configs
+   are reloaded and must be re-obtained during :func:`TSRemapNewInstance`
 
 See Also
 ========
 
-:func:`TSHttpTxnNextHopStrategyGet`
+:func:`TSRemapNextHopStrategySet`

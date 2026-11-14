@@ -102,7 +102,8 @@ class ASTVisitor(hrw4uVisitor):
 
     def _visit_var_decl(self, ctx) -> VarDecl:
         return VarDecl(
-            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, span=self._span(ctx))
+            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, span=self._span(ctx)
+        )
 
     def _visit_body(self, items) -> list[BodyNode]:
         """Shared helper for sectionBody and blockItem lists."""
@@ -181,7 +182,8 @@ class ASTVisitor(hrw4uVisitor):
             else_body=else_body,
             has_else=else_clause is not None,
             else_span=else_span,
-            span=self._span(ctx))
+            span=self._span(ctx),
+        )
 
     def _visit_condition(self, ctx) -> ConditionExpr:
         return self._visit_expression(ctx.expression())
@@ -232,7 +234,8 @@ class ASTVisitor(hrw4uVisitor):
             modifier_span = self._span(ctx.modifier())
 
         return Comparison(
-            left=left, operator=operator, right=right, modifiers=modifiers, modifier_span=modifier_span, span=self._span(ctx))
+            left=left, operator=operator, right=right, modifiers=modifiers, modifier_span=modifier_span, span=self._span(ctx)
+        )
 
     def _detect_comparison_operator(self, ctx) -> str:
         if ctx.EQUALS():

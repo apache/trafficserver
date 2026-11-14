@@ -49,13 +49,13 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
     ats = ats_factory.create("ts", enable_cache=False, disable_log_checks=True)
     if not ats.plugin_exists("slice.so"):
         pytest.skip("slice.so is required")
-    ats.remap_config.add_line(
-        f"map http://slice/ http://127.0.0.1:{_origin_port}/ "
-        "@plugin=slice.so @pparam=--blockbytes-test=7")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "slice",
-    })
+    ats.remap_config.add_line(f"map http://slice/ http://127.0.0.1:{_origin_port}/ @plugin=slice.so @pparam=--blockbytes-test=7")
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "slice",
+        }
+    )
     return ats
 
 
@@ -72,7 +72,8 @@ def request_range(path: str, byte_range: str, *, _ats: ATS, _curl: Curl) -> Comm
         _ats,
         (
             f"--silent --dump-header /dev/stdout --output /dev/stderr --proxy 'localhost:{_ats.http_port}' "
-            f"'http://slice/{path}' --range '{byte_range}' --write-out '\nSIZE:%{{size_download}}'"),
+            f"'http://slice/{path}' --range '{byte_range}' --write-out '\nSIZE:%{{size_download}}'"
+        ),
     )
 
 

@@ -23,11 +23,7 @@
 include(add_atsplugin)
 include(add_cripts_bundle)
 
-file(
-  GLOB EXT_SUBDIRS
-  LIST_DIRECTORIES true
-  *
-)
+file(GLOB EXT_SUBDIRS LIST_DIRECTORIES true *)
 
 foreach(SDIR ${EXT_SUBDIRS})
   if(IS_DIRECTORY ${SDIR})

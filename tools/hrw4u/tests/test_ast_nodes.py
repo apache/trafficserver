@@ -23,7 +23,6 @@ from hrw4u.ast_nodes import Span
 
 
 class TestSpan:
-
     def test_equality_is_by_value(self):
         assert Span(file="a", line=1, column=0) == Span(file="a", line=1, column=0)
         assert Span(file="a", line=1, column=0) != Span(file="b", line=1, column=0)

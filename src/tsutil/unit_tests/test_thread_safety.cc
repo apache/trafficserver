@@ -143,7 +143,10 @@ TEST_CASE("ts::shared_mutex annotated guards provide mutual exclusion", "[thread
   threads.reserve(n_threads);
   for (int t = 0; t < n_threads; ++t) {
     threads.emplace_back([&table, t]() {
-      const std::string key = "k" + std::to_string(t);
+      // Appended rather than written "k" + std::to_string(t): GCC 12 at -O3
+      // reports a false -Wrestrict overlap inside that operator+.
+      std::string key{"k"};
+      key += std::to_string(t);
       for (int i = 0; i < per_thread; ++i) {
         table.put(key, i);
         (void)table.get(key);

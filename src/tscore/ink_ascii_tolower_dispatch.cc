@@ -25,7 +25,7 @@
   Correctness is bit-for-bit identical to the cascade (see the
   test_ink_ascii_tolower parity suite in src/tscore/unit_tests).
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

@@ -18,7 +18,7 @@
 #  limitations under the License.
 
 import argparse
-from http_utils import (wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket)
+from http_utils import wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket
 import socket
 import sys
 import time
@@ -66,13 +66,11 @@ def send_responses(sock: socket.socket, num_103_responses: int) -> None:
     200 OK.
     """
     for _ in range(num_103_responses):
-        response = ('HTTP/1.1 103 Early Hints\r\n'
-                    'Link: </style.css>; rel=preload\r\n\r\n')
+        response = 'HTTP/1.1 103 Early Hints\r\nLink: </style.css>; rel=preload\r\n\r\n'
         print(f'Sending:\n{response}')
         sock.sendall(response.encode("utf-8"))
         time.sleep(0.1)
-    response = ('HTTP/1.1 200 OK\r\n'
-                'Content-Length: 10\r\n\r\n')
+    response = 'HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n'
     print(f'Sending:\n{response}')
     sock.sendall(response.encode("utf-8"))
     time.sleep(0.1)

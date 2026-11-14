@@ -16,8 +16,8 @@
 
 # Used by: global JA4H overwrite test.
 #
-# The jax_fingerprint plugin is loaded globally with --method JA4H
-# --standalone --mode overwrite.  Every request should have the
+# The jax_fingerprint plugin is loaded globally with method JA4H,
+# standalone, and mode overwrite.  Every request should have the
 # fingerprint header (x-jax) and via header (x-jax-via) written by ATS
 # regardless of any pre-existing values.
 

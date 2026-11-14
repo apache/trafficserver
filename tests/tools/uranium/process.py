@@ -36,13 +36,13 @@ class ManagedProcess:
     """Own a subprocess and its captured output files."""
 
     def __init__(
-            self,
-            name: str,
-            command: Sequence[str],
-            run_directory: Path,
-            environment: dict[str, str] | None = None,
-            expected_return_codes: Iterable[int] = (0,),
-            test_directory: Path | None = None,
+        self,
+        name: str,
+        command: Sequence[str],
+        run_directory: Path,
+        environment: dict[str, str] | None = None,
+        expected_return_codes: Iterable[int] = (0,),
+        test_directory: Path | None = None,
     ) -> None:
         """Create a managed process and its explicit expectations.
 
@@ -173,7 +173,8 @@ class ManagedProcess:
             if return_code is not None:
                 self._close_streams()
                 raise ProcessError(
-                    f"{self.name} exited with status {return_code} while waiting for {description}.\n{self.output()}")
+                    f"{self.name} exited with status {return_code} while waiting for {description}.\n{self.output()}"
+                )
             if ready():
                 return
             time.sleep(0.05)
@@ -195,8 +196,8 @@ class ManagedProcess:
 
         if return_code not in self.return_codes:
             raise ProcessError(
-                f"{self.name} exited with status {return_code}; expected "
-                f"{sorted(self.return_codes)}.\n{self.output()}")
+                f"{self.name} exited with status {return_code}; expected {sorted(self.return_codes)}.\n{self.output()}"
+            )
 
     def validate_output(self) -> None:
         """Apply registered stdout and stderr expectations."""

@@ -52,7 +52,8 @@ def configure_ats(name: str, server: VerifierServer, *, _ats_factory: ATSFactory
             "proxy.config.http.server_session_sharing.match": "ip,sni,cert",
             "proxy.config.ssl.client.alpn_protocols": "h2,http/1.1",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / https://127.0.0.1:{server.https_port}")
     return ats
 
@@ -67,8 +68,7 @@ def configure_h1_client(ats: ATS, *, _directory: Path, _services: ServiceFactory
 
     return _services.process(
         "h1-client",
-        [sys.executable, _directory / "h1_trailer_client.py", "127.0.0.1",
-         str(ats.http_port)],
+        [sys.executable, _directory / "h1_trailer_client.py", "127.0.0.1", str(ats.http_port)],
     )
 
 

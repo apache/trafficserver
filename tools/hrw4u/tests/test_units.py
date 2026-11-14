@@ -27,7 +27,6 @@ import pytest
 
 
 class TestHRW4UVisitorUnits:
-
     def setup_method(self):
         self.visitor = HRW4UVisitor()
 
@@ -62,7 +61,9 @@ class TestHRW4UVisitorUnits:
         complex_arg = 'func("arg1, with comma", nested_func(a,b), "arg3")'
         assert self.visitor._parse_function_args(complex_arg) == [complex_arg]
         assert self.visitor._parse_function_args('"quoted, arg", func(a,b), normal_arg') == [
-            '"quoted, arg"', 'func(a,b)', 'normal_arg'
+            '"quoted, arg"',
+            'func(a,b)',
+            'normal_arg',
         ]
 
     def test_parse_function_args_whitespace_handling(self):
@@ -82,7 +83,6 @@ class TestHRW4UVisitorUnits:
 
 
 class TestErrorCollectorUnits:
-
     def setup_method(self):
         self.error_collector = ErrorCollector()
 
@@ -116,7 +116,6 @@ class TestErrorCollectorUnits:
 
 
 class TestValidationUnits:
-
     def test_http_header_name_valid_standard(self):
         validator = Validator.http_header_name()
 
@@ -252,7 +251,6 @@ class TestValidationUnits:
 
 
 class TestHumanizeErrorMessage:
-
     def test_replaces_qualified_ident(self):
         msg = "mismatched input 'Apple' expecting QUALIFIED_IDENT"
         result = humanize_error_message(msg)

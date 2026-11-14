@@ -79,11 +79,7 @@ if(BUILD_TESTING)
       #
       # Prepend rather than replace: a cross-compiling build may already have an
       # emulator here, and it has to keep running the executable.
-      get_property(
-        _catch2_emulator
-        TARGET ${_catch2_target}
-        PROPERTY CROSSCOMPILING_EMULATOR
-      )
+      get_property(_catch2_emulator TARGET ${_catch2_target} PROPERTY CROSSCOMPILING_EMULATOR)
       set_property(
         TARGET ${_catch2_target} PROPERTY CROSSCOMPILING_EMULATOR "${CMAKE_COMMAND}" -E env ${CATCH2_TEST_ENVIRONMENT}
                                           ${_catch2_emulator}
@@ -108,10 +104,7 @@ add_subdirectory(fastlz)
 if(NOT EXTERNAL_LIBSWOC)
   message(STATUS "Using internal libswoc")
   add_subdirectory(swoc)
-  set(SWOC_INCLUDE_DIR
-      ${CMAKE_SOURCE_DIR}/lib/swoc/include
-      PARENT_SCOPE
-  )
+  set(SWOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/swoc/include PARENT_SCOPE)
 endif()
 
 add_library(systemtap::systemtap INTERFACE IMPORTED GLOBAL)
@@ -135,22 +128,10 @@ add_subdirectory(ls-hpack)
 # to upstream this change
 if(ENABLE_HIGHWAY_DISPATCH AND NOT EXTERNAL_HWY)
   message(STATUS "Using internal highway")
-  set(HWY_FORCE_STATIC_LIBS
-      ON
-      CACHE BOOL "Ignore BUILD_SHARED_LIBS" FORCE
-  )
-  set(HWY_ENABLE_INSTALL
-      OFF
-      CACHE BOOL "Install library" FORCE
-  )
-  set(HWY_ENABLE_EXAMPLES
-      OFF
-      CACHE BOOL "Build examples" FORCE
-  )
-  set(HWY_ENABLE_TESTS
-      OFF
-      CACHE BOOL "Enable HWY tests" FORCE
-  )
+  set(HWY_FORCE_STATIC_LIBS ON CACHE BOOL "Ignore BUILD_SHARED_LIBS" FORCE)
+  set(HWY_ENABLE_INSTALL OFF CACHE BOOL "Install library" FORCE)
+  set(HWY_ENABLE_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
+  set(HWY_ENABLE_TESTS OFF CACHE BOOL "Enable HWY tests" FORCE)
   set(CMAKE_POLICY_DEFAULT_CMP0075 NEW)
   set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
   add_subdirectory(highway)

@@ -2,7 +2,7 @@
 
   Implementation file for DbgCtl class.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -90,7 +90,6 @@ public:
       Registry *expected{nullptr};
       Registry *r{new Registry};
       if (!_registry_instance.compare_exchange_strong(expected, r)) {
-        r->_mtx.lock();
         delete r;
       }
     }

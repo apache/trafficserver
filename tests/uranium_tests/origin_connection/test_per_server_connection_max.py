@@ -52,7 +52,8 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.raw_stat_sync_interval_ms": STAT_SYNC_INTERVAL_MS,
                 "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
                 "proxy.config.dns.resolv_conf": "NULL",
-            })
+            }
+        )
 
     def read_metrics(ats: ATS, *, include_hidden: bool = False) -> str:
         """Read the per-server metric namespace.
@@ -116,7 +117,8 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
                 "proxy.config.http.per_server.connection.metric_prefix": "foo",
                 "proxy.config.http.per_server.connection.match": "port",
-            })
+            }
+        )
         return ats
 
     def configure_connect_ats(
@@ -143,7 +145,8 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
                 "proxy.config.http.per_server.connection.metric_aggregate": metric_aggregate,
                 "proxy.config.http.per_server.connection.max": maximum,
-            })
+            }
+        )
         ats.remap_config.add_line(f"map http://foo.com/ http://www.this.origin.com:{origin.port}/")
         ats.allow_private_connect()
         return ats
@@ -225,12 +228,14 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
                 "proxy.config.http.per_server.connection.metric_aggregate": 3,
                 "proxy.config.http.per_server.connection.match": "both",
-            })
+            }
+        )
         ats.remap_config.add_lines(
             (
                 f"map http://multi.origin.com/a/ http://multi.origin.com:{origin_a.port}/",
                 f"map http://multi.origin.com/b/ http://multi.origin.com:{origin_b.port}/",
-            ))
+            )
+        )
         return ats
 
     def multi_group_request(ats: ATS, path: str, hold_seconds: int) -> CommandResult:
@@ -245,7 +250,8 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
             ats,
             (
                 f"--verbose --fail --silent --proxy '127.0.0.1:{ats.http_port}' "
-                f"'http://multi.origin.com/{path}/delay/{hold_seconds}'"),
+                f"'http://multi.origin.com/{path}/delay/{hold_seconds}'"
+            ),
             timeout=hold_seconds + 10,
         )
 
@@ -264,14 +270,16 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.diags.debug.tags": "http|conn_track",
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
                 "proxy.config.http.per_server.connection.match": "port",
-            })
+            }
+        )
         ats.remap_config.add_lines(
             (
                 f"map http://metric-on.com/ http://127.0.0.1:{origin_on.port}/",
                 f"map http://metric-off.com/ http://127.0.0.1:{origin_off.port}/"
                 " @plugin=conf_remap.so"
                 " @pparam=proxy.config.http.per_server.connection.metric_enabled=0",
-            ))
+            )
+        )
         return ats
 
     def configure_aggregate_only_without_host_ats(origin: HttpBinServer) -> ATS:
@@ -289,7 +297,8 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
                 "proxy.config.http.per_server.connection.metric_aggregate": 2,
                 "proxy.config.http.per_server.connection.match": "port",
-            })
+            }
+        )
         ats.remap_config.add_line(f"map http://agg-only.com/ http://127.0.0.1:{origin.port}/")
         return ats
 
@@ -307,7 +316,8 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.http.per_server.connection.metric_aggregate": 0,
                 "proxy.config.http.per_server.connection.match": "both",
                 "proxy.config.http.keep_alive_enabled_out": 0,
-            })
+            }
+        )
         ats.remap_config.add_line(f"map http://retract.origin.com/ http://retract.origin.com:{origin.port}/")
         return ats
 
@@ -339,8 +349,9 @@ def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFac
             result = curl.get(ats, "/get", headers={"Host": "retract.origin.com"}, options="--fail --silent")
             assert result.returncode == 0, result.output
             metrics = read_metrics(ats)
-            if ("per_server.current_connection.max.retract.origin.com " in metrics and
-                    not re.search(r"per_server\.\w+_connection\.retract\.origin\.com(?:\.\d| )", metrics)):
+            if "per_server.current_connection.max.retract.origin.com " in metrics and not re.search(
+                r"per_server\.\w+_connection\.retract\.origin\.com(?:\.\d| )", metrics
+            ):
                 return
             time.sleep(0.1)
         pytest.fail(f"Per-group metrics and hostname sums were not withdrawn in max-only mode:\n{metrics}")

@@ -55,7 +55,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.ssl.CA.cert.path": "",
             "proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     ats.write_config_file(
         "sni.yaml",
@@ -83,11 +84,13 @@ def request(host: str, certificate: str | None = None, key: str | None = None, *
     arguments = ["--tls-max", "1.2", "--insecure"]
     if certificate is not None and key is not None:
         arguments.extend(("--cert", str(SSL_DIRECTORY / certificate), "--key", str(SSL_DIRECTORY / key)))
-    arguments.extend((
-        "--resolve",
-        f"{host}:{_ats.https_port}:127.0.0.1",
-        f"https://{host}:{_ats.https_port}/case1",
-    ))
+    arguments.extend(
+        (
+            "--resolve",
+            f"{host}:{_ats.https_port}:127.0.0.1",
+            f"https://{host}:{_ats.https_port}/case1",
+        )
+    )
     return _curl.run_for(
         _ats,
         shlex.join(arguments),

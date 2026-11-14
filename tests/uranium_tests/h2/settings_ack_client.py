@@ -54,11 +54,16 @@ def main(port: int) -> None:
                     # depends only on the inbound flow-control exchange.
                     for stream_id in (1, 3, 5):
                         connection.send_headers(
-                            stream_id, [
-                                (":method", "POST"), (":scheme", "https"), (":authority", "settings-ack.example.com"),
-                                (":path", "/"), ("content-length", "1")
+                            stream_id,
+                            [
+                                (":method", "POST"),
+                                (":scheme", "https"),
+                                (":authority", "settings-ack.example.com"),
+                                (":path", "/"),
+                                ("content-length", "1"),
                             ],
-                            end_stream=False)
+                            end_stream=False,
+                        )
                     opened = True
                 if settings >= 3 and not ping_sent:
                     # Sent after the queued ACKs; its response proves ATS has

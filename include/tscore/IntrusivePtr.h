@@ -13,7 +13,7 @@
     The requirement of modifying the target class limits the generality of this class but it is
     still quite useful in specific cases (particularly containers and their internal node classes).
 
-    @section license License
+    @par License
 
     Licensed to the Apache Software Foundation (ASF) under one or more contributor license
     agreements.  See the NOTICE file distributed with this work for additional information regarding

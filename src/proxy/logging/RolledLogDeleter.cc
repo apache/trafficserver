@@ -2,7 +2,7 @@
 
   This file implements the rolled log deletion.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -34,8 +34,8 @@
 
 namespace fs = swoc::file;
 
-LogDeletingInfo::LogDeletingInfo(const char *_logname, int _min_count)
-  : logname(_logname),
+LogDeletingInfo::LogDeletingInfo(const char *logname, int min_count)
+  : logname(logname),
     /**
      * A min_count of zero indicates a request to try to keep all rotated logs
      * around. By setting min_count to INT_MAX in these cases, we make the rolled
@@ -44,12 +44,12 @@ LogDeletingInfo::LogDeletingInfo(const char *_logname, int _min_count)
      * @note This cannot have a zero value because it is used as the denominator
      * in a division operation when calculating the log deletion preference.
      */
-    min_count((_min_count > 0) ? _min_count : INT_MAX)
+    min_count((min_count > 0) ? min_count : INT_MAX)
 {
 }
 
-LogDeletingInfo::LogDeletingInfo(std::string_view _logname, int _min_count)
-  : logname(_logname),
+LogDeletingInfo::LogDeletingInfo(std::string_view logname, int min_count)
+  : logname(logname),
     /**
      * A min_count of zero indicates a request to try to keep all rotated logs
      * around. By setting min_count to INT_MAX in these cases, we make the rolled
@@ -58,7 +58,7 @@ LogDeletingInfo::LogDeletingInfo(std::string_view _logname, int _min_count)
      * @note This cannot have a zero value because it is used as the denominator
      * in a division operation when calculating the log deletion preference.
      */
-    min_count((_min_count > 0) ? _min_count : INT_MAX)
+    min_count((min_count > 0) ? min_count : INT_MAX)
 {
 }
 

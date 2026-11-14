@@ -59,12 +59,8 @@ class ResponseInfo:
     """POD for response headers, etc."""
 
     def __init__(
-            self,
-            status: int,
-            headers: Dict[bytes, bytes],
-            body: bytes,
-            trailers: Dict[bytes, bytes] = None,
-            errors: List[str] = None):
+        self, status: int, headers: Dict[bytes, bytes], body: bytes, trailers: Dict[bytes, bytes] = None, errors: List[str] = None
+    ):
         self.status_code: int = status
         self.headers: Dict[bytes, bytes] = headers
         self.body_bytes: bytes = body
@@ -142,13 +138,12 @@ class Http2Connection:
         data_frame_differentials: List[int] = []
         time_of_last_frame = time.perf_counter_ns()
         while not response_stream_ended:
-
             send_window = self.conn.local_flow_control_window(request.stream_id)
             bytes_to_send = min(send_window, bytes_left)
             # Send one byte at a time, every millisecond.
             while bytes_to_send > 0:
                 chunk_size = 1
-                byte_to_send = request.body_bytes[bytes_sent:bytes_sent + chunk_size]
+                byte_to_send = request.body_bytes[bytes_sent : bytes_sent + chunk_size]
                 logging.debug(f'Sending {byte_to_send}')
                 self.conn.send_data(request.stream_id, byte_to_send)
                 self.sock.sendall(self.conn.data_to_send())
@@ -297,8 +292,7 @@ def send_http2_request_to_server(hostname: str, port: int, cert_file: str, write
         else:
             client.close()
     except Exception as e:
-        logging.error(f"Connection to '{replay_server}' initiated with request to "
-                      f"'{scheme}://{authority}{path}' failed: {e}")
+        logging.error(f"Connection to '{replay_server}' initiated with request to '{scheme}://{authority}{path}' failed: {e}")
         traceback.print_exc(file=sys.stdout)
         return 1
 

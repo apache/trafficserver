@@ -70,7 +70,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _side: str)
             f"proxy.config.net.sock_option_flag_{record_suffix}": SOCK_OPT_FLAG_PACKET_MARK,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": f"http|{_side}_packet_mark",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{_side}_packet_mark.so")
     ats.plugin_config.add_line(f"{_side}_packet_mark.so")

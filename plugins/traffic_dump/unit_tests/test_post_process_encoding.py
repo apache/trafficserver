@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """Check that post-processing preserves arbitrary captured bytes."""
+
 import importlib.util
 import json
 from pathlib import Path
@@ -39,7 +40,7 @@ PAYLOADS = (
     b"\xed\xa0\x80",  # Encoded surrogate.
     b"\xf0\x9f",  # Truncated sequence.
     b"\x80\xbf",  # Lone continuation bytes.
-    bytes(range(0xf5, 0x100)),
+    bytes(range(0xF5, 0x100)),
     bytes(range(256)),
 )
 
@@ -48,25 +49,19 @@ def make_session(url: str, payload: bytes) -> dict:
     text = payload.decode("utf-8", errors="surrogateescape")
     return {
         "connection-time": 123,
-        "transactions":
-            [
-                {
-                    "client-request": {
-                        "method": "GET",
-                        "url": url,
-                        "headers": {
-                            "fields": [["X-Probe", text]]
-                        },
-                    },
-                    "proxy-response": {
-                        "status": 200,
-                        "content": {
-                            "data": text,
-                            "size": len(payload)
-                        },
-                    },
-                }
-            ],
+        "transactions": [
+            {
+                "client-request": {
+                    "method": "GET",
+                    "url": url,
+                    "headers": {"fields": [["X-Probe", text]]},
+                },
+                "proxy-response": {
+                    "status": 200,
+                    "content": {"data": text, "size": len(payload)},
+                },
+            }
+        ],
     }
 
 
@@ -76,7 +71,6 @@ def write_dump(path: Path, session: dict) -> None:
 
 
 class PostProcessEncodingTest(unittest.TestCase):
-
     def test_parse_and_write_preserve_bytes(self) -> None:
         for payload in PAYLOADS:
             for indent in (None, 2):
@@ -150,7 +144,8 @@ class PostProcessEncodingTest(unittest.TestCase):
                     self.assertEqual(actual_transaction["proxy-response"], transaction["proxy-response"])
                 self.assertEqual(
                     (output / "summary.txt").read_text(encoding="ascii").strip(),
-                    f"Total {len(expected)} sessions and {len(expected)} transactions.")
+                    f"Total {len(expected)} sessions and {len(expected)} transactions.",
+                )
                 self.assertIn("Total errors:", result.stderr)
 
 

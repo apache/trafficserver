@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -30,7 +29,12 @@ def gen(slow_time):
 
 
 def slow_post(port, slow_time):
-    requests.post('http://127.0.0.1:{0}/'.format(port,), data=gen(slow_time))
+    requests.post(
+        'http://127.0.0.1:{0}/'.format(
+            port,
+        ),
+        data=gen(slow_time),
+    )
 
 
 def makerequest(port, connection_limit):
@@ -40,7 +44,11 @@ def makerequest(port, connection_limit):
         t.daemon = True
         t.start()
     time.sleep(1)
-    r = requests.get('http://127.0.0.1:{0}/'.format(port,))
+    r = requests.get(
+        'http://127.0.0.1:{0}/'.format(
+            port,
+        )
+    )
     print(r.status_code)
 
 

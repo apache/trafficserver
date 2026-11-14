@@ -39,10 +39,7 @@ def test_ip_allow_reload_triggered(ats_factory: ATSFactory, services: ServiceFac
         origin = services.origin("origin")
         origin.add_response(
             {"headers": "GET /test HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n",
-                "body": "ok"
-            },
+            {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n", "body": "ok"},
         )
         return origin
 
@@ -71,7 +68,8 @@ def test_ip_allow_reload_triggered(ats_factory: ATSFactory, services: ServiceFac
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "ip_allow|config",
                 "proxy.config.cache.ip_categories.filename": str(_active_file),
-            })
+            }
+        )
         ats.ip_allow_config.add_lines(
             """ip_allow:
   - apply: in
@@ -83,7 +81,8 @@ def test_ip_allow_reload_triggered(ats_factory: ATSFactory, services: ServiceFac
     action: allow
     methods:
       - HEAD
-""")
+"""
+        )
         ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
         return ats
 

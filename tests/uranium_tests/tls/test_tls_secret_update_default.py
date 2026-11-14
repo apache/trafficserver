@@ -65,23 +65,16 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.ssl.server.multicert.concurrency": 1,
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.url_remap.pristine_host_hdr": 1,
-        })
+        }
+    )
     ats.set_ssl_multicert_yaml(
         {
-            "ssl_multicert":
-                [
-                    {
-                        "dest_ip": "*",
-                        "ssl_cert_name": "signed-bar.pem",
-                        "ssl_key_name": "signed-bar.key"
-                    },
-                    {
-                        "dest_ip": "*",
-                        "ssl_cert_name": "signed-foo.pem",
-                        "ssl_key_name": "signed-foo.key"
-                    },
-                ]
-        })
+            "ssl_multicert": [
+                {"dest_ip": "*", "ssl_cert_name": "signed-bar.pem", "ssl_key_name": "signed-bar.key"},
+                {"dest_ip": "*", "ssl_cert_name": "signed-foo.pem", "ssl_key_name": "signed-foo.key"},
+            ]
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -95,8 +88,7 @@ def certificate_output(*, _ats: ATS, _curl: Curl) -> str:
 
     result = _curl.run_for(
         _ats,
-        (f"--insecure --verbose --http1.1 --header 'Host: doesnotmatter' "
-         f"'https://127.0.0.1:{_ats.https_port}/'"),
+        (f"--insecure --verbose --http1.1 --header 'Host: doesnotmatter' 'https://127.0.0.1:{_ats.https_port}/'"),
     )
     assert result.returncode == 0, result.output
     return result.output

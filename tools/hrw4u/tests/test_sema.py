@@ -38,9 +38,36 @@ from hrw4u.procedures import ProcRegistry
 from hrw4u.sandbox import SandboxConfig
 from hrw4u.sema import Sema
 from hrw4u.sema_nodes import (
-    And, BoolCond, BreakStmt, BuiltinRef, CallOp, CmpOp, CommentStmt, Cond, FuncCond, Group, IpRangeLit, ModifiedRef, Not,
-    OpVariant, Or, Program, RawArg, RegexLit, ResolvedSection, SetLit, SetOp, SetVar, Stmt, StrTemplate, Test, Truth, Unresolved,
-    VarsBlock, VarRef)
+    And,
+    BoolCond,
+    BreakStmt,
+    BuiltinRef,
+    CallOp,
+    CmpOp,
+    CommentStmt,
+    Cond,
+    FuncCond,
+    Group,
+    IpRangeLit,
+    ModifiedRef,
+    Not,
+    OpVariant,
+    Or,
+    Program,
+    RawArg,
+    RegexLit,
+    ResolvedSection,
+    SetLit,
+    SetOp,
+    SetVar,
+    Stmt,
+    StrTemplate,
+    Test,
+    Truth,
+    Unresolved,
+    VarsBlock,
+    VarRef,
+)
 from hrw4u.states import SectionType
 from hrw4u.symbols import SymbolResolver
 from hrw4u.tables import FUNCTION_MAP
@@ -219,7 +246,8 @@ class TestFunctionRef:
             op=CmpOp.GT,
             rhs=RawArg(text="10"),
             modifiers=(),
-            span=Span("cond.hrw4u", 1, 0))
+            span=Span("cond.hrw4u", 1, 0),
+        )
         assert cond.ref.as_value_text() == "%{TXN-COUNT}"
 
 
@@ -248,7 +276,6 @@ def _sema(source: str, **kwargs) -> Program:
 
 
 class TestSemaTopLevel:
-
     def test_section_resolves_its_hook(self):
         prog = _sema('REMAP {\n    set-debug();\n}')
         assert isinstance(prog.items[0], ResolvedSection)
@@ -301,7 +328,6 @@ def _stmts(source: str, **kwargs):
 
 
 class TestSemaStatements:
-
     def test_header_set(self):
         s = _stmts('REMAP {\n    inbound.req.X-Foo = "bar";\n}')[0]
         assert isinstance(s, SetOp)
@@ -363,7 +389,6 @@ def _cond(source: str, **kwargs):
 
 
 class TestSemaConditions:
-
     def test_comparison(self):
         c = _cond('REMAP {\n    if inbound.status > 399 {\n        set-debug();\n    }\n}')
         assert isinstance(c, Test)
@@ -452,7 +477,6 @@ class TestSemaConditions:
 
 
 class TestProcRegistry:
-
     def test_use_registers_declarations(self, tmp_path):
         # 'use' specs and procedure names are QUALIFIED_IDENT in the grammar (>=1 '::'),
         # so both segments here are load-bearing, not arbitrary test data.
@@ -508,7 +532,6 @@ class TestProcRegistry:
 
 
 class TestProcedureInlining:
-
     def test_body_is_spliced(self, tmp_path):
         procs = tmp_path / "procs"
         (procs / "Base").mkdir(parents=True)
@@ -546,8 +569,9 @@ class TestProcedureInlining:
         numeric default ('300' instead of 300)."""
         procs = tmp_path / "procs"
         (procs / "test").mkdir(parents=True)
-        (procs / "test" /
-         "set-cache.hrw4u").write_text('procedure test::set-cache($ttl=300) {\n    inbound.req.X-Cache-TTL = $ttl;\n}\n')
+        (procs / "test" / "set-cache.hrw4u").write_text(
+            'procedure test::set-cache($ttl=300) {\n    inbound.req.X-Cache-TTL = $ttl;\n}\n'
+        )
         s = _sema('use test::set-cache\nREMAP {\n    test::set-cache();\n}', proc_search_paths=[procs]).items[0].body[0].body[0]
         assert s.value == RawArg(text="300")
 
@@ -579,8 +603,9 @@ class TestProcedureInlining:
     def test_mutual_call_cycle_names_the_whole_chain(self, tmp_path):
         procs = tmp_path / "procs"
         (procs / "Base").mkdir(parents=True)
-        (procs / "Base" /
-         "a.hrw4u").write_text('procedure Base::p() {\n    Base::q();\n}\nprocedure Base::q() {\n    Base::p();\n}\n')
+        (procs / "Base" / "a.hrw4u").write_text(
+            'procedure Base::p() {\n    Base::q();\n}\nprocedure Base::q() {\n    Base::p();\n}\n'
+        )
         ec = ErrorCollector()
         _sema('use Base::a\nREMAP {\n    Base::p();\n}', proc_search_paths=[procs], error_collector=ec)
         assert [e.message for e in ec.errors] == ["circular procedure call: Base::p -> Base::q -> Base::p"]
@@ -609,8 +634,10 @@ class TestDenialDoesNotFailOpen:
 
     def test_denied_modifier_keeps_the_comparison(self, tmp_path):
         prog, collector = self._analyze(
-            tmp_path, 'REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        inbound.req.X-R = "y";\n    }\n}\n',
-            {"modifiers": ["NOCASE"]})
+            tmp_path,
+            'REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        inbound.req.X-R = "y";\n    }\n}\n',
+            {"modifiers": ["NOCASE"]},
+        )
         cond = prog.items[0].body[0].cond
         assert collector.has_errors()
         assert isinstance(cond, Test), f"the guard became {type(cond).__name__}"

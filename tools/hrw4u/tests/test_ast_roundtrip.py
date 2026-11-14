@@ -79,8 +79,8 @@ def test_emitted_config_survives_a_round_trip_through_the_ast(input_file: Path) 
     # An empty config would pass no matter what the AST drops.
     assert expected, f"{input_file} compiles to nothing; it cannot witness a round trip"
     assert _compile(regenerated, input_file) == expected, (
-        f"{input_file}: the AST lost something the emitter reads.\n"
-        f"--- regenerated hrw4u ---\n{regenerated}")
+        f"{input_file}: the AST lost something the emitter reads.\n--- regenerated hrw4u ---\n{regenerated}"
+    )
 
 
 def test_the_corpus_reaches_every_grammar_rule() -> None:

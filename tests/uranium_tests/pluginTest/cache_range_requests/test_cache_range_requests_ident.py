@@ -58,10 +58,7 @@ def add_asset(
         fields.append(f"Last-Modified: {last_modified}")
     origin.add_response(
         {"headers": (f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\nAccept: */*\r\nRange: bytes=0-\r\n\r\n")},
-        {
-            "headers": "\r\n".join(fields) + "\r\n\r\n",
-            "body": CACHE_RANGE_IDENT_BODY
-        },
+        {"headers": "\r\n".join(fields) + "\r\n\r\n", "body": CACHE_RANGE_IDENT_BODY},
     )
 
 
@@ -92,16 +89,18 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
         pytest.skip("cache_range_requests.so and xdebug.so are required")
     ats.remap_config.add_lines(
         (
-            f"map http://ident http://127.0.0.1:{_origin.port} "
-            "@plugin=cache_range_requests.so @pparam=--consider-ident",
+            f"map http://ident http://127.0.0.1:{_origin.port} @plugin=cache_range_requests.so @pparam=--consider-ident",
             f"map http://identheader http://127.0.0.1:{_origin.port} "
             "@plugin=cache_range_requests.so @pparam=--consider-ident @pparam=--ident-header=CrrIdent",
-        ))
+        )
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "cache_range_requests",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "cache_range_requests",
+        }
+    )
     return ats
 
 

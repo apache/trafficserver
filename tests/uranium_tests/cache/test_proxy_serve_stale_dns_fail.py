@@ -42,7 +42,8 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
     stale_window_rules = (
         "cond %{REMAP_PSEUDO_HOOK}\n"
         "cond %{CLIENT-HEADER:X-Stale-Window} =narrow\n"
-        f"set-config proxy.config.http.cache.max_stale_age {narrow_stale_age}\n")
+        f"set-config proxy.config.http.cache.max_stale_age {narrow_stale_age}\n"
+    )
     narrow = '-H "X-Stale-Window: narrow"'
     dns = services.dns("dns")
     dns.add_records({"localhost": ["127.0.0.1"]})
@@ -56,11 +57,13 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
             "proxy.config.http.parent_proxy.self_detect": 0,
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     child.parent_config.add_line(f"dest_domain=. parent=localhost:{parent.http_port} round_robin=consistent_hash go_direct=false")
     child.write_config_file("stale_window.conf", stale_window_rules)
     child.remap_config.add_line(
-        f"map http://localhost:{child.http_port} {_SERVER_NAME} @plugin=header_rewrite.so @pparam=stale_window.conf")
+        f"map http://localhost:{child.http_port} {_SERVER_NAME} @plugin=header_rewrite.so @pparam=stale_window.conf"
+    )
     parent.records.update(
         {
             "proxy.config.http.push_method_enabled": 1,
@@ -68,19 +71,21 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
             "proxy.config.http.cache.max_stale_age": wide_stale_age,
             "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     parent.write_config_file("stale_window.conf", stale_window_rules)
     parent.remap_config.add_lines(
         [
             f"map http://localhost:{parent.http_port} {_SERVER_NAME} @plugin=header_rewrite.so @pparam=stale_window.conf",
             f"map {_SERVER_NAME} {_SERVER_NAME}",
-        ])
+        ]
+    )
     dns.start()
     parent.start()
     child.start()
     stale_5 = (
-        "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\n"
-        "Cache-Control: public, max-age=5\n\nCACHED")
+        "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=5\n\nCACHED"
+    )
     stale_10 = stale_5.replace("max-age=5", "max-age=10")
     script = (
         f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{child.http_port}";'
@@ -92,7 +97,8 @@ def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, service
         f"sleep 7; {{curl}} -s -v {narrow} http://localhost:{child.http_port};"
         f'{{curl_base}} -X PUSH -d "{stale_5}" "http://localhost:{parent.http_port}";'
         f"sleep 7; {{curl_base}} -s -v http://localhost:{parent.http_port};"
-        f"{{curl_base}} -s -v {narrow} http://localhost:{parent.http_port};")
+        f"{{curl_base}} -s -v {narrow} http://localhost:{parent.http_port};"
+    )
     result = curl.run_script(child, script, timeout=70)
 
     assert result.returncode == 0, result.output

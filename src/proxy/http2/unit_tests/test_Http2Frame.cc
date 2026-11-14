@@ -23,6 +23,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
+
 #include "proxy/http2/Http2Frame.h"
 
 TEST_CASE("Http2Frame", "[http2][Http2Frame]")
@@ -49,8 +51,8 @@ TEST_CASE("Http2Frame", "[http2][Http2Frame]")
 
     REQUIRE(written <= static_cast<int64_t>(sizeof(buf)));
 
-    size_t const frame_len = static_cast<size_t>(written);
-    int64_t      read      = miob_r->read(buf, written);
+    size_t const frame_len = written > 0 ? std::min(static_cast<size_t>(written), sizeof(buf)) : 0;
+    int64_t      read      = miob_r->read(buf, static_cast<int64_t>(frame_len));
 
     CHECK(read == written);
 

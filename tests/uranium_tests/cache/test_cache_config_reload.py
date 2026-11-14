@@ -25,10 +25,12 @@ def configure_traffic_server(*, _ats: ATS) -> None:
 
     :param _ats: Test-local ats configured by the test.
     """
-    _ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "rpc|config",
-    })
+    _ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config",
+        }
+    )
     _ats.cache_config.add_line("dest_domain=example.com ttl-in-cache=30d")
 
 

@@ -78,6 +78,11 @@ information.
 
 TLS handshake processing will pause until the hook callback executes :func:`TSVConnReenable()`.
 
+A plugin that switches the connection's ``SSL_CTX`` should do so from TS_SSL_CERT_HOOK rather than
+this hook. The TLS library looks up its handshake callbacks on the connection's current context, so
+switching from this hook to a context that Traffic Server did not create can skip the remaining
+ClientHello hooks and later handshake hooks.
+
 TS_SSL_SERVERNAME_HOOK
 ----------------------
 

@@ -3,7 +3,7 @@
   The @c Continuation base class for Event System state machines, and the
   handler type, macros, and codes used to install and invoke its handlers.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

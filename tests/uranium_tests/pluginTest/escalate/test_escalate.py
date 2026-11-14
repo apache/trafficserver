@@ -33,8 +33,9 @@ def configure_dns(suffix: str, *, _services: ServiceFactory) -> DNSServer:
     return _services.dns(f"dns-{suffix}", default="127.0.0.1")
 
 
-def configure_servers(suffix: str, origin_replay: str, failover_replay: str, *,
-                      _services: ServiceFactory) -> tuple[VerifierServer, VerifierServer]:
+def configure_servers(
+    suffix: str, origin_replay: str, failover_replay: str, *, _services: ServiceFactory
+) -> tuple[VerifierServer, VerifierServer]:
     """Create the primary and failover verifier origins.
 
     :param _services: Test-local services configured by the test.
@@ -49,8 +50,17 @@ def configure_servers(suffix: str, origin_replay: str, failover_replay: str, *,
 
 
 def configure_ats(
-        suffix: str, dns: DNSServer, origin: VerifierServer, failover: VerifierServer, *, disable_redirect_header: bool,
-        enable_cache: bool, escalate_non_get: bool, _ats_factory: ATSFactory, _services: ServiceFactory) -> ATS:
+    suffix: str,
+    dns: DNSServer,
+    origin: VerifierServer,
+    failover: VerifierServer,
+    *,
+    disable_redirect_header: bool,
+    enable_cache: bool,
+    escalate_non_get: bool,
+    _ats_factory: ATSFactory,
+    _services: ServiceFactory,
+) -> ATS:
     """Configure primary and down-origin mappings for one option set.
 
     :param _ats_factory: Test-local ats factory configured by the test.
@@ -74,19 +84,21 @@ def configure_ats(
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.http.redirect.actions": "self:follow",
             "proxy.config.http.number_of_redirections": 4,
-        })
+        }
+    )
     options = []
     if disable_redirect_header:
         options.append("@pparam=--no-redirect-header")
     if escalate_non_get:
         options.append("@pparam=--escalate-non-get-methods")
     parameters = " ".join(options)
-    plugin = (f"@plugin=escalate.so @pparam=500,502:failover.server.com:{failover.http_port} {parameters}")
+    plugin = f"@plugin=escalate.so @pparam=500,502:failover.server.com:{failover.http_port} {parameters}"
     ats.remap_config.add_lines(
         (
             f"map http://origin.server.com http://backend.origin.server.com:{origin.http_port} {plugin}",
             f"map http://down_origin.server.com http://backend.down_origin.server.com:{dead_port} {plugin}",
-        ))
+        )
+    )
     return ats
 
 
@@ -166,13 +178,14 @@ def assert_non_get_outputs(origin: VerifierServer, failover: VerifierServer, cli
 
 
 def run_case(
-        suffix: str,
-        *,
-        disable_redirect_header: bool = False,
-        enable_cache: bool = False,
-        escalate_non_get: bool = False,
-        _ats_factory: ATSFactory,
-        _services: ServiceFactory) -> None:
+    suffix: str,
+    *,
+    disable_redirect_header: bool = False,
+    enable_cache: bool = False,
+    escalate_non_get: bool = False,
+    _ats_factory: ATSFactory,
+    _services: ServiceFactory,
+) -> None:
     """Create, run, and validate one escalate option set.
 
     :param _ats_factory: Test-local ats factory configured by the test.
@@ -203,7 +216,8 @@ def run_case(
         enable_cache=enable_cache,
         escalate_non_get=escalate_non_get,
         _ats_factory=_ats_factory,
-        _services=_services)
+        _services=_services,
+    )
     client = configure_client(suffix, client_replay, ats, _services=_services)
     dns.start()
     origin.start()

@@ -22,7 +22,8 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory
 
 THREAD_CONFIGURATION_CASES = tuple(
-    (execution, *other) for execution in (1, 2, 32, 100) for other in ((0, 1, 1), (1, 2, 8), (10, 10, 32)))
+    (execution, *other) for execution in (1, 2, 32, 100) for other in ((0, 1, 1), (1, 2, 8), (10, 10, 32))
+)
 
 
 def configure_ats(execution: int, accept: int, task: int, aio: int, *, _ats_factory: ATSFactory) -> ATS:
@@ -46,7 +47,8 @@ def configure_ats(execution: int, accept: int, task: int, aio: int, *, _ats_fact
             "proxy.config.cache.threads_per_disk": aio,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "iocore_thread_start|iocore_net_accept_start",
-        })
+        }
+    )
     return ats
 
 

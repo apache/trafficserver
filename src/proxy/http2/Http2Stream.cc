@@ -2,7 +2,7 @@
 
   Http2Stream.cc
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -100,13 +100,9 @@ Http2Stream::~Http2Stream()
   ink_release_assert(this->closed);
   ink_release_assert(reentrancy_count == 0);
 
-  uint64_t cid = 0;
-
   if (_registered_stream) {
     // Safe to initiate SSN_CLOSE if this is the last stream
     if (_proxy_ssn) {
-      cid = _proxy_ssn->connection_id();
-
       SCOPED_MUTEX_LOCK(lock, _proxy_ssn->mutex, this_ethread());
       Http2ConnectionState &connection_state = this->get_connection_state();
 
@@ -130,26 +126,6 @@ Http2Stream::~Http2Stream()
 
   ink_hrtime total_time = this->_milestones.elapsed(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE);
   Metrics::Counter::increment(http2_rsb.total_transactions_time, total_time);
-
-  // Slow Log
-  if (Http2::stream_slow_log_threshold != 0 && ink_hrtime_from_msec(Http2::stream_slow_log_threshold) < total_time) {
-    Error("[%" PRIu64 "] [%" PRIu32 "] [%" PRId64 "] Slow H2 Stream: "
-          "open: %" PRIu64 " "
-          "dec_hdrs: %.3f "
-          "txn: %.3f "
-          "enc_hdrs: %.3f "
-          "tx_hdrs: %.3f "
-          "tx_data: %.3f "
-          "close: %.3f",
-          cid, static_cast<uint32_t>(this->_id), this->_http_sm_id,
-          ink_hrtime_to_msec(this->_milestones[Http2StreamMilestone::OPEN]),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_DECODE_HEADERS),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TXN),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_ENCODE_HEADERS),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_HEADERS_FRAMES),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::START_TX_DATA_FRAMES),
-          this->_milestones.difference_sec(Http2StreamMilestone::OPEN, Http2StreamMilestone::CLOSE));
-  }
 
   _receive_header.destroy();
   _send_header.destroy();
@@ -231,13 +207,25 @@ Http2Stream::main_event_handler(int event, void *edata)
                          "stream timeout");
         connection_state.handleEvent(HTTP2_SESSION_EVENT_ERROR, &error);
       }
-    } else if (_sm && read_vio.ntodo() > 0) {
-      this->signal_read_event(event);
-    } else if (_sm && write_vio.ntodo() > 0) {
-      this->signal_write_event(event);
     } else {
-      Warning("HTTP/2 unknown case of %d event - session_id=%" PRId64 " stream_id=%u", event, this->_proxy_ssn->connection_id(),
-              this->_id);
+      if (_sm && this->is_outbound_connection() && !_received_header) {
+        // An origin that never answered a stream may be failing others on the same connection, so
+        // stop giving the session new streams. Streams already on it can still finish, and the
+        // session closes once it has none. A stream that times out after its response header
+        // arrived is no evidence against the session: its body may be held back by a slow client
+        // through flow control or, for the active timeout, simply be long. A client upload slow
+        // enough to time out before the origin answers retires the session too, at the cost of one
+        // new connection.
+        get_connection_state().drain_outbound_session("a stream timed out with no response");
+      }
+      if (_sm && read_vio.ntodo() > 0) {
+        this->signal_read_event(event);
+      } else if (_sm && write_vio.ntodo() > 0) {
+        this->signal_write_event(event);
+      } else {
+        Warning("HTTP/2 unknown case of %d event - session_id=%" PRId64 " stream_id=%u", event, this->_proxy_ssn->connection_id(),
+                this->_id);
+      }
     }
     break;
   case VC_EVENT_WRITE_READY:
@@ -334,7 +322,8 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
       }
     }
     ink_release_assert(this->_sm != nullptr);
-    this->_http_sm_id = this->_sm->sm_id;
+    this->_http_sm_id      = this->_sm->sm_id;
+    this->_received_header = true;
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
@@ -593,15 +582,20 @@ Http2Stream::do_io_close(int /* flags */)
     REMEMBER(NO_EVENT, this->reentrancy_count);
     Http2StreamDebug("do_io_close");
 
-    // Let the other end know we are going away.
-    // We only need to do this for the client side since we only need to pass through RST_STREAM
-    // from the server. If a client sends a RST_STREAM, we need to keep the server side alive so
-    // the background fill can function as intended.
-    //
-    // In the half-closed(local) state, server can close stream actively by sending RST_STREAM frame
+    // Let a client know we are going away. In the half-closed(local) state, ATS as the server can
+    // close the stream actively by sending RST_STREAM.
     if (!this->is_outbound_connection() &&
         (this->is_state_writeable() || _state == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL)) {
       this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
+    }
+
+    // An origin stream that is still open in either direction when it is closed here, after a
+    // timeout for example, is cancelled. Until it is reset, the origin keeps it open and counts it
+    // against its SETTINGS_MAX_CONCURRENT_STREAMS. Background fill keeps the transaction, so the
+    // stream is not closed here while a fill is running.
+    if (this->is_outbound_connection() && _state != Http2StreamState::HTTP2_STREAM_STATE_IDLE &&
+        _state != Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+      this->get_connection_state().send_rst_stream_frame(_id, Http2ErrorCode::HTTP2_ERROR_CANCEL);
     }
 
     // When we get here, the SM has initiated the shutdown.  Either it received a WRITE_COMPLETE, or it is shutting down.  Any

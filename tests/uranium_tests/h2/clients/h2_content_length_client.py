@@ -79,17 +79,23 @@ SCENARIOS = {
     "cl-negative": ("-3", ((FLAG_END_STREAM, BODY),), EXPECT_REJECTED),
     "cl-matches": (str(len(BODY)), ((FLAG_END_STREAM, BODY),), EXPECT_PROXIED),
     "padded-pad-length-equals-frame-length": ("4294967295", ((FLAG_END_STREAM | FLAG_PADDED, PAD_FILLS_FRAME),), EXPECT_REJECTED),
-    "padded-pad-length-equals-frame-length-then-body":
-        ("4294967298", ((FLAG_PADDED, PAD_FILLS_FRAME), (FLAG_END_STREAM, BODY)), EXPECT_REJECTED),
+    "padded-pad-length-equals-frame-length-then-body": (
+        "4294967298",
+        ((FLAG_PADDED, PAD_FILLS_FRAME), (FLAG_END_STREAM, BODY)),
+        EXPECT_REJECTED,
+    ),
     "padded-empty-frame": ("4294967295", ((FLAG_END_STREAM | FLAG_PADDED, b""),), EXPECT_REJECTED),
     "padded-matches": (str(len(BODY)), ((FLAG_END_STREAM | FLAG_PADDED, bytes([2]) + BODY + bytes(2)),), EXPECT_PROXIED),
-    "padded-no-data-then-body-matches":
-        (str(len(BODY)), ((FLAG_PADDED, PAD_LEAVES_NO_DATA), (FLAG_END_STREAM, BODY)), EXPECT_PROXIED),
+    "padded-no-data-then-body-matches": (
+        str(len(BODY)),
+        ((FLAG_PADDED, PAD_LEAVES_NO_DATA), (FLAG_END_STREAM, BODY)),
+        EXPECT_PROXIED,
+    ),
 }
 
 
 def make_frame(frame_type: int, flags: int, stream_id: int, payload: bytes = b"") -> bytes:
-    return (len(payload).to_bytes(3, "big") + bytes([frame_type, flags]) + (stream_id & 0x7FFFFFFF).to_bytes(4, "big") + payload)
+    return len(payload).to_bytes(3, "big") + bytes([frame_type, flags]) + (stream_id & 0x7FFFFFFF).to_bytes(4, "big") + payload
 
 
 def recv_exact(sock: socket.socket, size: int) -> bytes:

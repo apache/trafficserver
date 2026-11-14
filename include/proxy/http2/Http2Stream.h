@@ -2,7 +2,7 @@
 
   Http2Stream.h
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -263,8 +263,13 @@ private:
    * "possible" is added because the peer may or may not send trailing headers.
    */
   bool _trailing_header_is_possible = false;
-  bool _expect_send_trailer         = false;
-  bool _expect_receive_trailer      = false;
+  /** The header block, not counting interim responses and trailers, has been handed to the SM.
+   *
+   * On an origin stream this is the final response header.
+   */
+  bool _received_header        = false;
+  bool _expect_send_trailer    = false;
+  bool _expect_receive_trailer = false;
 
   bool has_body = false;
 

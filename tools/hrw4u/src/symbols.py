@@ -52,9 +52,9 @@ class OpLookup:
 
 
 class SymbolResolver(SymbolResolverBase):
-
     def __init__(
-            self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
+        self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None
+    ) -> None:
         super().__init__(debug, sandbox=sandbox, dbg=dbg)
         self._symbols: dict[str, types.Symbol] = {}
         self._var_counter = {vt: 0 for vt in types.VarType}
@@ -64,7 +64,8 @@ class SymbolResolver(SymbolResolverBase):
         return self._symbols.get(name)
 
     def declare_variable(
-            self, name: str, type_name: str, explicit_slot: int | None = None, scope: types.VarScope = types.VarScope.TXN) -> str:
+        self, name: str, type_name: str, explicit_slot: int | None = None, scope: types.VarScope = types.VarScope.TXN
+    ) -> str:
         try:
             var_type = types.VarType.from_str(type_name)
         except ValueError as e:
@@ -76,7 +77,8 @@ class SymbolResolver(SymbolResolverBase):
         if explicit_slot is not None:
             if explicit_slot < 0 or explicit_slot >= var_type.limit:
                 raise SymbolResolutionError(
-                    name, f"Slot @{explicit_slot} out of range for type '{type_name}' (valid: 0-{var_type.limit-1})")
+                    name, f"Slot @{explicit_slot} out of range for type '{type_name}' (valid: 0-{var_type.limit - 1})"
+                )
             for var_name, sym in self._symbols.items():
                 if sym.var_type == var_type and sym.scope == scope and sym.slot == explicit_slot:
                     raise SymbolResolutionError(name, f"Slot @{explicit_slot} already used by variable '{var_name}'")
@@ -101,7 +103,7 @@ class SymbolResolver(SymbolResolverBase):
                 if op_key.endswith("."):
                     if name.startswith(op_key):
                         self.validate_section_access(name, section, params.sections if params else None)
-                        qualifier = name[len(op_key):]
+                        qualifier = name[len(op_key) :]
                         if params and params.upper:
                             qualifier = qualifier.upper()
                         if params and params.validate:
@@ -113,7 +115,7 @@ class SymbolResolver(SymbolResolverBase):
 
                         commands = params.target if params else None
                         if isinstance(commands, (list, tuple)):
-                            return f"{commands[0 if value == '\"\"' else 1]} {qualifier}" + ("" if value == '""' else f" {value}")
+                            return f"{commands[0 if value == '""' else 1]} {qualifier}" + ("" if value == '""' else f" {value}")
                         return f"{commands} {qualifier} {value}"
 
                 elif name == op_key:
@@ -147,11 +149,12 @@ class SymbolResolver(SymbolResolverBase):
             for op_key, params in self._operator_map.items():
                 if op_key.endswith(".") and name.startswith(op_key) and params and params.add:
                     self.validate_section_access(name, section, params.sections)
-                    qualifier = name[len(op_key):]
+                    qualifier = name[len(op_key) :]
                     if params.validate:
                         params.validate(qualifier)
 
                     from hrw4u.common import HeaderOperations
+
                     return f"{HeaderOperations.ADD_OPERATION} {qualifier} {value}"
 
             # += not allowed if no matching operator with 'add' flag found
@@ -182,7 +185,7 @@ class SymbolResolver(SymbolResolverBase):
                 allowed_sections = params.sections if params else None
 
                 self.validate_section_access(name, section, allowed_sections)
-                suffix = name[len(prefix):]
+                suffix = name[len(prefix) :]
                 suffix_norm = suffix.upper() if (params and params.upper) else suffix
                 if validator:
                     validator(suffix_norm)
@@ -276,7 +279,7 @@ class SymbolResolver(SymbolResolverBase):
 
             for prefix, params in self.find_prefix_matches(name, self._condition_map):
                 self.validate_section_access(name, section, _sections_of(params))
-                suffix_norm = name[len(prefix):]
+                suffix_norm = name[len(prefix) :]
                 if params and params.upper:
                     suffix_norm = suffix_norm.upper()
                 if params and params.validate:
@@ -300,7 +303,7 @@ class SymbolResolver(SymbolResolverBase):
                     if add and not (params and params.add):
                         continue
                     self.validate_section_access(name, section, _sections_of(params))
-                    qualifier = name[len(op_key):]
+                    qualifier = name[len(op_key) :]
                     # resolve_add_assignment does not case-normalize, so += must not either.
                     if params and params.upper and not add:
                         qualifier = qualifier.upper()
@@ -326,7 +329,8 @@ class SymbolResolver(SymbolResolverBase):
                 if resolved_rhs := self.symbol_for(value_text):
                     if resolved_rhs.var_type != resolved_lhs.var_type:
                         raise SymbolResolutionError(
-                            value_text, f"Type mismatch: {resolved_lhs.var_type} vs {resolved_rhs.var_type}")
+                            value_text, f"Type mismatch: {resolved_lhs.var_type} vs {resolved_rhs.var_type}"
+                        )
                 else:
                     Validator.validate_assignment(resolved_lhs.var_type, value_text, name)
                 return OpLookup(key=name, entry=None, qualifier=None, symbol=resolved_lhs)
@@ -353,10 +357,9 @@ class SymbolResolver(SymbolResolverBase):
                 error.add_symbol_suggestion(suggestions)
             raise error
 
-    def lookup_statement_function(self,
-                                  func_name: str,
-                                  args: list[str],
-                                  section: SectionType | None = None) -> tuple[str, types.MapParams]:
+    def lookup_statement_function(
+        self, func_name: str, args: list[str], section: SectionType | None = None
+    ) -> tuple[str, types.MapParams]:
         with self.debug_context("lookup_statement_function", func_name, args, section), self._warnings_on_success():
             self._collect_warning(self._sandbox.check_function(func_name))
 

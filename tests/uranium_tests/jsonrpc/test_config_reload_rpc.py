@@ -37,10 +37,12 @@ def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
         """
 
         ats = ats_factory.create("ts", disable_log_checks=True)
-        ats.records.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "rpc|config",
-        })
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rpc|config",
+            }
+        )
         ats.write_config_file("virtualhost.yaml", "virtualhost:\n  - id: myhost.example.com\n    domains: [myhost.example.com]\n")
         return ats
 
@@ -99,52 +101,42 @@ def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
     assert empty.get("message") == ["No configs were scheduled for reload"]
     time.sleep(2)
     assert_result_error(
-        reload({"unknown_config_key": {
-            "some": "data"
-        }}),
+        reload({"unknown_config_key": {"some": "data"}}),
         "6010",
         "not registered",
     )
     time.sleep(1)
     assert_result_error(
-        reload({"remap.config": {
-            "some": "data"
-        }}),
+        reload({"remap.config": {"some": "data"}}),
         "6010",
         "not registered",
     )
 
     time.sleep(2)
     assert_result_error(
-        reload({"ip_allow": [{
-            "apply": "in",
-            "ip_addrs": "127.0.0.1",
-            "action": "allow",
-            "methods": ["GET", "HEAD"],
-        }]}),
+        reload(
+            {
+                "ip_allow": [
+                    {
+                        "apply": "in",
+                        "ip_addrs": "127.0.0.1",
+                        "action": "allow",
+                        "methods": ["GET", "HEAD"],
+                    }
+                ]
+            }
+        ),
         "6011",
         "does not support RPC",
     )
     time.sleep(2)
     multiple = reload(
         {
-            "ip_allow": [{
-                "apply": "in",
-                "ip_addrs": "0.0.0.0/0",
-                "action": "allow"
-            }],
-            "sni": [{
-                "fqdn": "*.test.com",
-                "verify_client": "NONE"
-            }],
-            "records": {
-                "diags": {
-                    "debug": {
-                        "enabled": 1
-                    }
-                }
-            },
-        })
+            "ip_allow": [{"apply": "in", "ip_addrs": "0.0.0.0/0", "action": "allow"}],
+            "sni": [{"fqdn": "*.test.com", "verify_client": "NONE"}],
+            "records": {"diags": {"debug": {"enabled": 1}}},
+        }
+    )
     assert_result_error(multiple, "6010", "6011")
 
     time.sleep(1)
@@ -158,19 +150,14 @@ def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
     assert not token or token.startswith("inline-")
 
     time.sleep(2)
-    nested = reload({"records": {
-        "diags": {
-            "debug": {
-                "enabled": 1,
-                "tags": "http|rpc|test"
+    nested = reload(
+        {
+            "records": {
+                "diags": {"debug": {"enabled": 1, "tags": "http|rpc|test"}},
+                "http": {"cache": {"http": 1}},
             }
-        },
-        "http": {
-            "cache": {
-                "http": 1
-            }
-        },
-    }})
+        }
+    )
     assert isinstance(nested, dict)
     time.sleep(2)
     status = rpc("get_reload_config_status")
@@ -180,11 +167,7 @@ def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
     assert_result_error(reload({"ip_allow": large_ip_allow}), "6011")
     time.sleep(2)
     assert_result_error(
-        reload({"sni": {
-            "_reload": {
-                "fqdn": "*.example.com"
-            }
-        }}),
+        reload({"sni": {"_reload": {"fqdn": "*.example.com"}}}),
         "6011",
     )
     time.sleep(2)
@@ -194,49 +177,28 @@ def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
     time.sleep(2)
     assert_result_error(
         reload(
-            {"ip_allow": {
-                "_reload": {
-                    "validate_only": "true"
-                },
-                "rules": [{
-                    "apply": "in",
-                    "ip_addrs": "0/0",
-                    "action": "allow"
-                }],
-            }}),
+            {
+                "ip_allow": {
+                    "_reload": {"validate_only": "true"},
+                    "rules": [{"apply": "in", "ip_addrs": "0/0", "action": "allow"}],
+                }
+            }
+        ),
         "6011",
     )
 
 
 @pytest.mark.parametrize(
-    "content,config,marker", [
-        ("present", [{
-            "id": "myhost.example.com"
-        }], "virtualhost does not accept config content over rpc"),
-        ("present", {
-            "_reload": {
-                "id": "absent.example.com"
-            }
-        }, "virtualhost with id 'absent.example.com' not found"),
-        ("missing", {
-            "_reload": {
-                "id": "myhost.example.com"
-            }
-        }, "Cannot reload virtualhost entry 'myhost.example.com'"),
-        ("present", {
-            "_reload": {
-                "id": ""
-            }
-        }, "must name an entry"),
-        ("missing", {
-            "_reload": {}
-        }, "Cannot reload virtualhost config"),
-        ("present", {
-            "_reload": {
-                "ID": "myhost.example.com"
-            }
-        }, "directive 'ID' is not supported"),
-    ])
+    "content,config,marker",
+    [
+        ("present", [{"id": "myhost.example.com"}], "virtualhost does not accept config content over rpc"),
+        ("present", {"_reload": {"id": "absent.example.com"}}, "virtualhost with id 'absent.example.com' not found"),
+        ("missing", {"_reload": {"id": "myhost.example.com"}}, "Cannot reload virtualhost entry 'myhost.example.com'"),
+        ("present", {"_reload": {"id": ""}}, "must name an entry"),
+        ("missing", {"_reload": {}}, "Cannot reload virtualhost config"),
+        ("present", {"_reload": {"ID": "myhost.example.com"}}, "directive 'ID' is not supported"),
+    ],
+)
 def test_virtualhost_reload_failure(ats_factory: ATSFactory, content: str, config: object, marker: str) -> None:
     """Report virtualhost handler failures as failed asynchronous tasks.
 

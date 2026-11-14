@@ -27,14 +27,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET /test HTTP/1.1\r\nHost: iprep.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n",
-            "body": "OK"
-        },
+        {"headers": "GET /test HTTP/1.1\r\nHost: iprep.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n", "body": "OK"},
     )
     return origin
 
@@ -69,7 +63,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.tags": "rate_limit",
             "proxy.config.http.insert_response_via_str": 0,
             "proxy.config.url_remap.remap_required": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     return ats
 
@@ -85,7 +80,9 @@ def request(*, _ats: ATS, _curl: Curl) -> CommandResult:
         (
             f"--silent --insecure --output /dev/null --write-out '%{{http_code}}' --resolve "
             f"'iprep.example.com:{_ats.https_port}:127.0.0.1' "
-            f"'https://iprep.example.com:{_ats.https_port}/test'"),)
+            f"'https://iprep.example.com:{_ats.https_port}/test'"
+        ),
+    )
 
 
 def test_rate_limit_iprep(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:

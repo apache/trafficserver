@@ -49,7 +49,8 @@ PAYLOAD = (
     b"Host: localhost\r\n"
     b"uuid: 2\r\n"
     b"Connection: close\r\n"
-    b"\r\n")
+    b"\r\n"
+)
 
 # Byte offset at which to split the payload across two sends, right after the
 # final "0\r\n" and before the bare LF terminator, so the proxy must suspend

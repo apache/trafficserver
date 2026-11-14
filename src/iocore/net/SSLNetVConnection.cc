@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -1354,8 +1354,9 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   bool const in_client_hello =
     this->get_handshake_hook_state() == TLSEventSupport::SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO;
   // We only feed CLIENT_HELLO bytes into our temporary buffers. If we are past
-  // the CLIENT_HELLO, then no need to buffer.
-  if (in_client_hello && this->handShakeReader) {
+  // the CLIENT_HELLO, then no need to buffer. A delayed ClientHello hook resumes
+  // with the TLS library already holding the whole CLIENT_HELLO.
+  if (in_client_hello && !this->resuming_client_hello_hooks() && this->handShakeReader) {
     if (BIO_ctrl_pending(SSL_get_rbio(this->ssl)) == 0) { // No more data in the buffer
                                                           // Is this the first read?
 #if TS_USE_TLS_ASYNC
@@ -1797,15 +1798,18 @@ SSLNetVConnection::reenable(int event)
     sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_ERROR;
   }
 
+  // The ClientHello is only readable during the TLS library's ClientHello callback, which
+  // the resumed handshake calls again to run the remaining ClientHello hooks.
+  if (this->get_handshake_hook_state() == TLSEventSupport::SSLHandshakeHookState::HANDSHAKE_HOOKS_CLIENT_HELLO_INVOKE) {
+    this->resume_tls_event();
+    this->readReschedule(nh);
+    return;
+  }
+
   this->resume_tls_event();
 
-  // Reenabling from the handshake callback
-  //
-  // Originally, we would wait for the callback to go again to execute additional
-  // hooks, but since the callbacks are associated with the context and the context
-  // can be replaced by the plugin, it didn't seem reasonable to assume that the
-  // callback would be executed again.  So we walk through the rest of the hooks
-  // here in the reenable.
+  // The handshake callbacks of the other stages are associated with the context, which a plugin
+  // can replace, so the library may not call them again. Walk the rest of those hooks here.
   if (this->invoke_tls_event() == 2) {
     this->write.triggered = true;
     this->write.enabled   = true;
@@ -2292,6 +2296,18 @@ SSLNetVConnection::_get_tls_group() const
   }
 }
 
+std::string
+SSLNetVConnection::_get_tls_offered_signature_algorithms() const
+{
+  return SSLGetOfferedSignatureAlgorithms(ssl);
+}
+
+std::string
+SSLNetVConnection::_get_tls_negotiated_signature_algorithm() const
+{
+  return SSLGetNegotiatedSignatureAlgorithm(ssl);
+}
+
 int
 SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
 {
@@ -2300,6 +2316,8 @@ SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
   // We could pass a structure that has both a cert to verify and a NetVC.
   // It would allow us to remove confusing TSSslVerifyCTX and its internal implementation that are only available during a very
   // limited time.
+  SSLHandshakeStatus const status_before_hooks = this->sslHandshakeStatus;
+
   if (get_context() == NET_VCONNECTION_IN) {
     this->callHooks(TS_EVENT_SSL_VERIFY_CLIENT /* , ctx */);
   } else {
@@ -2307,6 +2325,10 @@ SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
   }
 
   if (this->sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+    // The rejection reaches the handshake through the verify callback, which fails it or, for an
+    // origin under PERMISSIVE, lets it continue. Left in place, the error status would mark a
+    // continuing handshake complete before it is, so the steps that run when it completes would be skipped.
+    this->sslHandshakeStatus = status_before_hooks;
     return 1;
   }
 

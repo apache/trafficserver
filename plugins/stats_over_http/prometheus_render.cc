@@ -250,8 +250,11 @@ prometheus_record_filter(std::string_view query)
   std::optional<std::vector<std::string>> names;
 
   while (!query.empty()) {
-    size_t const           amp   = query.find('&');
-    std::string_view const param = query.substr(0, amp);
+    size_t const amp = query.find('&');
+    // From substr(0, npos), GCC 11 at -O3 follows a SIZE_MAX length into param.find() and fails the build on a false
+    // -Wstringop-overread, since substr clamps to size(). A view built from an explicit length does not trip it.
+    size_t const           length = amp == std::string_view::npos ? query.size() : amp;
+    std::string_view const param{query.data(), length};
 
     query.remove_prefix(amp == std::string_view::npos ? query.size() : amp + 1);
 

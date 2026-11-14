@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -39,8 +39,6 @@
   I think I will stop here for now.
 
  ****************************************************************************/
-#pragma once
-
 #include "P_UnixNetProcessor.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
 #include "tscore/ink_config.h"

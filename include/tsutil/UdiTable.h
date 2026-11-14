@@ -2,7 +2,7 @@
 
   Fixed-size table for tracking frequently observed keys with bounded memory.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one or more contributor license
   agreements.  See the NOTICE file distributed with this work for additional information regarding
@@ -252,6 +252,7 @@ private:
    *
    * @param[in] key The key trying to enter.
    * @param[in] incoming_score The score of the incoming key.
+   * @param[out] status Receives the outcome of processing the contested key.
    * @return The data for @a key if contest won, nullptr if contest lost.
    */
   data_ptr contest(Key const &key, uint32_t incoming_score, ProcessStatus *status);

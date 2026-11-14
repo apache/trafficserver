@@ -2,7 +2,7 @@
 
   HTTP configuration support.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -325,7 +325,7 @@ HttpProxyPort::loadConfig(std::vector<self> &entries)
 }
 
 bool
-HttpProxyPort::loadDefaultIfEmpty(Group &ports)
+HttpProxyPort::loadDefaultIfEmpty(std::vector<HttpProxyPort> &ports)
 {
   if (0 == ports.size()) {
     self::loadValue(ports, DEFAULT_VALUE);

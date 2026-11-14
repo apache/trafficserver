@@ -49,17 +49,9 @@ SCENARIOS: tuple[dict[str, str], ...] = (
         "self": "reject",
         "default": "return",
     },
-    {
-        "loopback": "return",
-        "default": "reject"
-    },
-    {
-        "loopback": "reject",
-        "default": "return"
-    },
-    {
-        "default": "return"
-    },
+    {"loopback": "return", "default": "reject"},
+    {"loopback": "reject", "default": "return"},
+    {"default": "return"},
 )
 
 
@@ -68,11 +60,13 @@ def discover_targets() -> dict[str, tuple[str, ...]]:
 
     host = socket.gethostname()
     ipv4 = {
-        address for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
+        address
+        for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
         if family == socket.AF_INET and not address.startswith("127.")
     }
     ipv6 = {
-        f"[{address.split('%')[0]}]" for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
+        f"[{address.split('%')[0]}]"
+        for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
         if family == socket.AF_INET6 and not address.lower().startswith("fe80")
     }
     if not ipv4:
@@ -139,21 +133,21 @@ def configure_origin(*, _origin: OriginServer, _targets: dict[str, tuple[str, ..
             _origin.add_response(
                 {"headers": f"GET {path} HTTP/1.1\r\nHost: ignored\r\n\r\n"},
                 {
-                    "headers":
-                        (
-                            "HTTP/1.1 307 Temporary Redirect\r\n"
-                            f"Location: http://{domain(category, index)}:{_origin.port}/\r\n"
-                            "Connection: close\r\n\r\n")
+                    "headers": (
+                        "HTTP/1.1 307 Temporary Redirect\r\n"
+                        f"Location: http://{domain(category, index)}:{_origin.port}/\r\n"
+                        "Connection: close\r\n\r\n"
+                    )
                 },
             )
     _origin.add_response(
         {"headers": "GET /redirect/unresolved HTTP/1.1\r\nHost: ignored\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 307 Temporary Redirect\r\n"
-                    f"Location: http://redirect-unresolved.test:{_origin.port}/\r\n"
-                    "Connection: close\r\n\r\n")
+            "headers": (
+                "HTTP/1.1 307 Temporary Redirect\r\n"
+                f"Location: http://redirect-unresolved.test:{_origin.port}/\r\n"
+                "Connection: close\r\n\r\n"
+            )
         },
     )
 
@@ -179,7 +173,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _scenario: Mappin
             "proxy.config.http.redirect.actions": config,
             "proxy.config.http.connect_attempts_timeout": 5,
             "proxy.config.http.connect_attempts_max_retries": 0,
-        })
+        }
+    )
     return ats
 
 

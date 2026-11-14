@@ -26,9 +26,8 @@ verify_global_plugin(stats_over_http)
 verify_remap_plugin(stats_over_http)
 
 if(BUILD_TESTING)
-  add_executable(
-    test_stats_over_http unit_tests/test_prometheus_render.cc unit_tests/test_prometheus_rules.cc prometheus_render.cc
-                         prometheus_rules.cc
+  add_executable(test_stats_over_http unit_tests/test_prometheus_render.cc unit_tests/test_prometheus_rules.cc
+                 prometheus_render.cc prometheus_rules.cc
   )
   target_include_directories(test_stats_over_http PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(test_stats_over_http PRIVATE Catch2::Catch2WithMain ts::tsutil yaml-cpp::yaml-cpp)

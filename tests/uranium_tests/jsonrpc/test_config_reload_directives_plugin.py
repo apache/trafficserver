@@ -31,7 +31,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc|config|config.reload|cfg_plugin_directives_test",
-        })
+        }
+    )
     ats.write_config_file("cfg_plugin_directives_test.conf", "initial: config\n")
     ats.copy_custom_plugin("plugins/.libs/cfg_plugin_directives_test.so")
     ats.plugin_config.add_line("cfg_plugin_directives_test.so cfg_plugin_directives_test.conf")
@@ -53,12 +54,8 @@ def reload(token: str, config: dict[str, object], *, force: bool = False, _ats: 
         "admin_config_reload",
         {
             "token": token,
-            "configs": {
-                "cfg_plugin_directives_test": config
-            },
-            **({
-                "force": True
-            } if force else {}),
+            "configs": {"cfg_plugin_directives_test": config},
+            **({"force": True} if force else {}),
         },
     )
     assert "error" not in response, response

@@ -21,13 +21,14 @@ from tools.uranium.services import ATS, ATSFactory
 
 
 def configure_failure(
-        name: str,
-        rule_lines: Sequence[str],
-        error_marker: str,
-        records: Mapping[str, int] | None = None,
-        files: Mapping[str, str] | None = None,
-        *,
-        _ats_factory: ATSFactory) -> ATS:
+    name: str,
+    rule_lines: Sequence[str],
+    error_marker: str,
+    records: Mapping[str, int] | None = None,
+    files: Mapping[str, str] | None = None,
+    *,
+    _ats_factory: ATSFactory,
+) -> ATS:
     """Configure one invalid header_rewrite startup scenario.
 
     :param name: Unique scenario and ATS process name.
@@ -50,9 +51,7 @@ def configure_failure(
             ats.write_config_file(filename, content)
     rule_name = f"{name}.conf"
     ats.write_config_file(rule_name, "\n".join(rule_lines) + "\n")
-    ats.remap_config.add_line(
-        f"map http://{name}.example.com/ http://127.0.0.1/ "
-        f"@plugin=header_rewrite.so @pparam={rule_name}")
+    ats.remap_config.add_line(f"map http://{name}.example.com/ http://127.0.0.1/ @plugin=header_rewrite.so @pparam={rule_name}")
     ats.expect_start_failure(error_marker)
     return ats
 
@@ -77,19 +76,27 @@ def test_header_rewrite_bad_set_body(ats_factory: ATSFactory) -> None:
     hook = "cond %{REMAP_PSEUDO_HOOK}"
     cases = (
         (
-            "missing-body-file", [hook, "  set-body-from-file no-such-body.json application/json"],
-            r"unable to load body file.*no-such-body\.json", None, None),
+            "missing-body-file",
+            [hook, "  set-body-from-file no-such-body.json application/json"],
+            r"unable to load body file.*no-such-body\.json",
+            None,
+            None,
+        ),
         (
-            "oversized-body-file", [hook, "  set-body-from-file too-large-body.json application/json"],
-            r"exceeds proxy\.config\.body_factory\.response_max_size.*8", {
-                "proxy.config.body_factory.response_max_size": 8
-            }, {
-                "too-large-body.json": '{"error":"too large"}'
-            }),
+            "oversized-body-file",
+            [hook, "  set-body-from-file too-large-body.json application/json"],
+            r"exceeds proxy\.config\.body_factory\.response_max_size.*8",
+            {"proxy.config.body_factory.response_max_size": 8},
+            {"too-large-body.json": '{"error":"too large"}'},
+        ),
         ("ambiguous-body-arguments", [hook, "  set-body Sorry, page not found"], r"accepts at most two arguments", None, None),
         (
-            "invalid-body-mime", [hook, "  set-body Sorry not-a-mime-type"], r"Content-Type must be a MIME type containing '/'",
-            None, None),
+            "invalid-body-mime",
+            [hook, "  set-body Sorry not-a-mime-type"],
+            r"Content-Type must be a MIME type containing '/'",
+            None,
+            None,
+        ),
     )
     for name, rules, marker, records, files in cases:
         verify_failure(configure_failure(name, rules, marker, records, files, _ats_factory=ats_factory))

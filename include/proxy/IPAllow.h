@@ -2,7 +2,7 @@
 
   Access control by IP address and HTTP method.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -83,7 +83,9 @@ class IpAllow : public ConfigInfo
   };
 
 public:
-  using self_type     = IpAllow; ///< Self reference type.
+  using self_type = IpAllow; ///< Self reference type.
+  /// The ConfigProcessor slot acquire() reads.
+  static unsigned config_id();
   using scoped_config = ConfigProcessor::scoped_config<self_type, self_type>;
   using IpMap         = swoc::IPSpace<Record const *>;
   using IpCategories  = std::unordered_map<std::string, swoc::IPSpace<bool>>;

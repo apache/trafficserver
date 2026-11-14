@@ -52,7 +52,8 @@ def configure_next_hop(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: Ori
             "proxy.config.diags.debug.tags": "http|dns",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     _dns.add_records({"next_hop0": ["127.0.0.1"]})
     return ats
@@ -78,7 +79,8 @@ def configure_front_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _next_hop: 
             "proxy.config.http.no_dns_just_forward_to_parent": 1,
             "proxy.config.http.parent_proxy.mark_down_hostdb": 0,
             "proxy.config.http.parent_proxy.self_detect": 0,
-        })
+        }
+    )
     ats.write_config_file(
         "strategies.yaml",
         "groups:\n"

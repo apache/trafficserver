@@ -121,8 +121,8 @@ unmarshal_function_string(char **buf, char *dest, int len)
     memcpy(dest, *buf, l);
     Dbg(dbg_ctl, "Unmarshaled value: %.*s", l, dest);
     return {
-      l, // The length of data read from buf
-      l  // The length of data written to dest
+      l + 1, // The length of data read from buf, including the terminating NUL written by the marshal function
+      l      // The length of data written to dest
     };
   } else {
     return {-1, -1};

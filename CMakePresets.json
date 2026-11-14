@@ -484,7 +484,8 @@
       "cacheVariables": {
         "CMAKE_CXX_FLAGS_DEBUG": "--coverage",
         "CMAKE_C_FLAGS_DEBUG": "--coverage",
-        "BUILD_TESTING": "ON"
+        "BUILD_TESTING": "ON",
+        "ENABLE_CRIPTS": "OFF"
       }
     }
   ],

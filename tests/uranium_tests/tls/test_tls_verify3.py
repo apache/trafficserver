@@ -70,7 +70,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _default: Orig
             f"map https://bar.com:{ats.https_port}/ https://127.0.0.1:{_bar.https_port}",
             f"map https://bob.bar.com:{ats.https_port}/ https://127.0.0.1:{_bar.https_port}",
             f"map / https://127.0.0.1:{_default.https_port}",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
@@ -79,7 +80,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _default: Orig
             "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.url_remap.pristine_host_hdr": 1,
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
@@ -104,8 +106,8 @@ def request(hostname: str, *, _ats: ATS, _curl: Curl) -> str:
     """
 
     result = _curl.run(
-        (f"--verbose --insecure --resolve '{hostname}:{_ats.https_port}:127.0.0.1' "
-         f"'https://{hostname}:{_ats.https_port}/'"),)
+        (f"--verbose --insecure --resolve '{hostname}:{_ats.https_port}:127.0.0.1' 'https://{hostname}:{_ats.https_port}/'"),
+    )
     assert result.returncode == 0, result.output
     return result.stdout
 

@@ -985,7 +985,8 @@ Network
    connections drops below this configured value, |TS| will begin accepting new
    connections from that IP while the number of concurrent connections remains
    below this limit. A value of 0 disables the per client concurrent connection
-   limit.
+   limit. A limit raised from 0 at runtime only counts connections accepted after
+   the change.
 
    See :ts:cv:`proxy.config.http.per_client.connection.exempt_list` for a way to
    allow (not count) certain client IP addresses when applying this limit.
@@ -2489,6 +2490,10 @@ Origin Server Connect Attempts
 
    Frequency of alerts
       See :ts:cv:`proxy.config.http.per_server.connection.alert_delay`.
+
+   When transactions wait on the same new connection to a possibly multiplexed (HTTP/2) upstream,
+   the connection is counted once, under the group and per-server configuration of the transaction
+   that opened it. Overrides from the transactions that joined it do not apply to that connection.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.match STRING both
    :reloadable:
@@ -4582,34 +4587,6 @@ Logging Configuration
    summary log message for that interval until the message is emitted again
    outside of the throttled interval.
 
-.. ts:cv:: CONFIG proxy.config.http.slow.log.threshold INT 0
-   :reloadable:
-   :units: milliseconds
-
-   If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
-   completion will cause its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile.name>`. This is identifying data about the transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
-
-.. ts:cv:: CONFIG proxy.config.http2.connection.slow.log.threshold INT 0
-   :reloadable:
-   :units: milliseconds
-
-   If set to a non-zero value :arg:`N` then any HTTP/2 connection
-   that takes longer than :arg:`N` milliseconds from open to close will cause
-   its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile.name>`. This is identifying data about the
-   transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
-
-.. ts:cv:: CONFIG proxy.config.http2.stream.slow.log.threshold INT 0
-   :reloadable:
-   :units: milliseconds
-
-   If set to a non-zero value :arg:`N` then any HTTP/2 stream
-   that takes longer than :arg:`N` milliseconds from open to close will cause
-   its timing stats to be written to the :ts:cv:`debugging log file
-   <proxy.config.output.logfile.name>`. This is identifying data about the
-   transaction and all of the :cpp:type:`transaction milestones <TSMilestonesType>`.
-
 .. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.yaml
    :reloadable:
    :deprecated:
@@ -6084,9 +6061,31 @@ HTTP/2 Configuration
 .. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
    :reloadable:
 
-   Specifies how many number of PING frames |TS| receives for a minute at maximum.
-   Clients exceeded this limit will be immediately disconnected with an error
+   Specifies how many PING frames |TS| receives per minute at maximum on an
+   inbound connection.
+   Clients exceeding this limit are immediately disconnected with an error
    code of ENHANCE_YOUR_CALM.
+   Any negative value configures no limit to the number of PING frames received.
+   Outbound connections use
+   :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out` instead.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute_out INT 300
+   :reloadable:
+
+   Specifies how many PING frames |TS| receives per minute at maximum on an
+   outbound connection.
+   Origins exceeding this limit are immediately disconnected with an error
+   code of ENHANCE_YOUR_CALM, which ends every stream on that connection. A
+   response already in progress is cut off, and a request still waiting for its
+   response fails unless |TS| can retry it: the request must be safe to resend,
+   such as a ``GET``, and
+   :ts:cv:`proxy.config.http.connect_attempts_max_retries` must allow another
+   attempt.
+   Origins may send PING frames to measure round-trip time or to check that the
+   connection still works, often faster than a limit sized for clients allows,
+   so this limit is set separately from
+   :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` and has a higher
+   default.
    Any negative value configures no limit to the number of PING frames received.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_priority_frames_per_minute INT 120
@@ -6214,6 +6213,30 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.server.stateless_retry_enabled INT 0
 
    Enables Stateless Retry.
+
+.. ts:cv:: CONFIG proxy.config.quic.server.listen_per_thread INT 1
+
+   With OpenSSL's QUIC, a connection is served on the net thread whose listener
+   accepted it. When this is ``1``, on Linux and FreeBSD, each QUIC port gets
+   one UDP socket and QUIC listener per net thread, all bound to the port with
+   ``SO_REUSEPORT``, and the kernel spreads incoming datagrams over the sockets
+   by a hash of the client and server addresses and ports. When it is ``0``, on
+   other platforms, or when the first socket cannot share the port, one socket
+   and one net thread serve every QUIC connection on the port. A port given an
+   inherited ``fd`` always has one socket. quiche ignores this setting.
+
+   OpenSSL's QUIC does not support connection migration: it asks clients not to
+   migrate and keeps sending to the address a connection started from. A client
+   whose address or port changes during a connection, for example after a NAT
+   rebinding, loses the connection with either setting. With per-thread listeners
+   its datagrams usually reach a listener that does not know the connection and
+   are dropped.
+
+   With either setting, another process that also sets ``SO_REUSEADDR`` can bind
+   the port. With per-thread listeners, a process of the same user that sets
+   ``SO_REUSEPORT`` also joins the group of sockets on the port and changes how
+   datagrams are spread over them, so established connections can land on
+   sockets that do not know them.
 
 .. ts:cv:: CONFIG proxy.config.quic.server.token_key.filename STRING NULL
    :reloadable:
@@ -6859,6 +6882,17 @@ Sockets
    You might want to adjust these values to reduce the overall number of allocations that ATS needs to make based
    on your configured RAM cache size.  On a running system, you can send SIGUSR1 to the ATS process to have it
    log the allocator statistics and see how many of each buffer size have been allocated.
+
+.. ts:cv:: CONFIG proxy.config.allocator.iobuf_thread_cache_size INT 524288
+
+   The maximum number of bytes of free IO buffer blocks each thread keeps for reuse, per buffer
+   size, for the ``4k``, ``8k``, ``16k`` and ``32k`` sizes. Freeing and reallocating these blocks
+   on the same thread then avoids the allocator's shared freelist, which all threads contend on.
+   A thread holds at most 512 blocks of any one size; a size that fits fewer than two blocks in
+   the budget is not cached. When a thread exceeds the limit, it returns blocks to the shared
+   freelist until a quarter of the limit remains. Set to ``0`` to disable these caches.
+
+   With the default, each thread can hold up to 2MB of free IO buffer blocks.
 
 .. ts:cv:: CONFIG proxy.config.ssl.misc.io.max_buffer_index INT 8
 

@@ -14,31 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# A very simple cleartext server for one HTTP transaction.  Does no validation of the Request message.
+line-length = 132
+extend-exclude = ["lib"]
+extend-include = ["*.cli.ext", "*.test.ext"]
+force-exclude = true
+required-version = "==0.16.6"
 
-response ()
-{
-  # Wait for end of Request message.
-  #
-  while (( 1 == 1 ))
-  do
-    if [[ -f $outfile ]] ; then
-      if tr '\r' '=' < $outfile | grep '^=$' > /dev/null
-      then
-        break;
-      fi
-    fi
-    sleep 1
-  done
-
-  # respond even if the method is funky
-
-  printf "HTTP/1.1 200 OK\r\n"
-  printf "Content-Length: 0\r\n"
-  printf "X-Resp-Id: 3\r\n"
-  printf "\r\n"
-
-}
-
-outfile=$2
-response | nc -l $1 > $outfile
+[format]
+preview = false
+quote-style = "preserve"

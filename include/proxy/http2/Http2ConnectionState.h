@@ -2,7 +2,7 @@
 
   Http2ConnectionState.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -184,6 +184,18 @@ public:
   void send_goaway_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_window_update_frame(Http2StreamId id, uint32_t size);
 
+  /** Stop giving an origin session new streams, and close it once the streams on it finish.
+   *
+   * The session leaves the pool now. When its last stream is released it closes the way a session
+   * draining after the origin's GOAWAY does, without sending a GOAWAY of its own: an ATS origin
+   * answers a client's GOAWAY by closing every stream at once. Does nothing for a client session,
+   * or for one that is already half-closed. Takes the connection mutex, so call it on the
+   * session's thread.
+   *
+   * @param[in] reason Why, for the debug log.
+   */
+  void drain_outbound_session(const char *reason);
+
   bool is_state_closed() const;
   bool is_recursing() const;
   bool is_valid_streamid(Http2StreamId id) const;
@@ -246,6 +258,18 @@ private:
   };
 
   unsigned _adjust_concurrent_stream();
+
+  /** Top up the connection receive window after discarding a DATA frame.
+   *
+   * DATA that no stream will consume is still charged to the connection
+   * window, so nothing else would trigger a WINDOW_UPDATE for it. This tops
+   * the window back up to its configured size via restart_receiving() once it
+   * falls below the usual threshold.
+   *
+   * @param[in] discarded_length The discarded frame's payload length, used
+   *   only for debug logging.
+   */
+  void _top_up_window_after_discard(uint32_t discarded_length);
 
   /** Process an incoming SETTINGS ACK frame.
    *
@@ -455,7 +479,7 @@ private:
   //     another CONTINUATION frame."
   Http2StreamId      continued_stream_id = 0;
   bool               fini_received       = false;
-  bool               _peer_goaway_drain  = false; ///< Outbound only: an origin's GOAWAY left streams to finish before close.
+  bool               _outbound_drain     = false; ///< Outbound only: half-closed, streams still on it finish before close.
   bool               in_destroy          = false;
   int                recursion           = 0;
   int                _data_event_backoff = DATA_EVENT_BACKOFF_START;

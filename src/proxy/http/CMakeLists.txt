@@ -16,27 +16,28 @@
 #######################
 
 add_library(
-  http STATIC
-  HttpSessionAccept.cc
-  HttpBodyFactory.cc
-  HttpCacheSM.cc
-  Http1ClientSession.cc
-  Http1ClientTransaction.cc
-  Http1ServerTransaction.cc
-  HttpConfig.cc
-  HttpDebugNames.cc
-  HttpProxyServerMain.cc
-  HttpSM.cc
-  Http1ServerSession.cc
-  HttpSessionManager.cc
-  HttpTransact.cc
-  HttpTransactHeaders.cc
-  HttpTunnel.cc
-  HttpVCTable.cc
-  ConnectingEntry.cc
-  ForwardedConfig.cc
-  PreWarmConfig.cc
-  PreWarmManager.cc
+  http
+  STATIC
+    HttpSessionAccept.cc
+    HttpBodyFactory.cc
+    HttpCacheSM.cc
+    Http1ClientSession.cc
+    Http1ClientTransaction.cc
+    Http1ServerTransaction.cc
+    HttpConfig.cc
+    HttpDebugNames.cc
+    HttpProxyServerMain.cc
+    HttpSM.cc
+    Http1ServerSession.cc
+    HttpSessionManager.cc
+    HttpTransact.cc
+    HttpTransactHeaders.cc
+    HttpTunnel.cc
+    HttpVCTable.cc
+    ConnectingEntry.cc
+    ForwardedConfig.cc
+    PreWarmConfig.cc
+    PreWarmManager.cc
 )
 add_library(ts::http ALIAS http)
 
@@ -61,9 +62,8 @@ endif()
 add_subdirectory(remap)
 
 if(BUILD_TESTING)
-  add_executable(
-    test_proxy_http unit_tests/test_ForwardedConfig.cc unit_tests/test_error_page_selection.cc
-                    unit_tests/test_PreWarm.cc ForwardedConfig.cc HttpBodyFactory.cc
+  add_executable(test_proxy_http unit_tests/test_ForwardedConfig.cc unit_tests/test_error_page_selection.cc
+                 unit_tests/test_PreWarm.cc ForwardedConfig.cc HttpBodyFactory.cc
   )
   target_link_libraries(test_proxy_http PRIVATE Catch2::Catch2WithMain hdrs tscore inkevent proxy logging)
   add_catch2_test(NAME test_proxy_http COMMAND test_proxy_http)

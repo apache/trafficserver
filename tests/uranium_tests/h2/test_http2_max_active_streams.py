@@ -48,7 +48,8 @@ def configure_ats(name: str, policy: int, server: VerifierServer, *, _ats_factor
             "proxy.config.http2.max_active_streams_in": 2,
             "proxy.config.http2.max_active_streams_policy_in": policy,
             "proxy.config.http2.max_concurrent_streams_in": 100,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}")
     return ats
 
@@ -77,7 +78,8 @@ def run_client(name: str, ats: ATS, *, _directory: Path, _services: ServiceFacto
 
 
 def run_case(
-        name: str, replay_name: str, policy: int, *, _ats_factory: ATSFactory, _directory: Path, _services: ServiceFactory) -> None:
+    name: str, replay_name: str, policy: int, *, _ats_factory: ATSFactory, _directory: Path, _services: ServiceFactory
+) -> None:
     """Execute and validate one active-stream policy.
 
     :param _ats_factory: Test-local ats factory configured by the test.
@@ -116,11 +118,13 @@ def test_http2_max_active_streams(ats_factory: ATSFactory, services: ServiceFact
         1,
         _ats_factory=ats_factory,
         _directory=_directory,
-        _services=services)
+        _services=services,
+    )
     run_case(
         "advisory",
         "http2_max_active_streams_advisory.replay.yaml",
         0,
         _ats_factory=ats_factory,
         _directory=_directory,
-        _services=services)
+        _services=services,
+    )

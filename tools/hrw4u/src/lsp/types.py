@@ -23,18 +23,21 @@ from typing import Any, TypedDict
 
 class LSPPosition(TypedDict):
     """LSP Position structure."""
+
     line: int
     character: int
 
 
 class LSPRange(TypedDict):
     """LSP Range structure."""
+
     start: LSPPosition
     end: LSPPosition
 
 
 class CompletionContext(TypedDict):
     """Strongly-typed completion context structure."""
+
     is_section_context: bool
     has_dot: bool
     dot_prefix: str
@@ -46,6 +49,7 @@ class CompletionContext(TypedDict):
 
 class VariableDeclaration(TypedDict):
     """Variable declaration structure."""
+
     type: str
     description: str
     line: int
@@ -53,12 +57,14 @@ class VariableDeclaration(TypedDict):
 
 class DiagnosticRange(TypedDict):
     """Diagnostic range structure."""
+
     start: LSPPosition
     end: LSPPosition
 
 
 class LSPDiagnostic(TypedDict):
     """LSP Diagnostic structure."""
+
     range: DiagnosticRange
     severity: int
     message: str
@@ -67,6 +73,7 @@ class LSPDiagnostic(TypedDict):
 
 class LSPCompletionItem(TypedDict, total=False):
     """LSP Completion Item structure."""
+
     label: str
     kind: int
     detail: str
@@ -78,11 +85,13 @@ class LSPCompletionItem(TypedDict, total=False):
 
 class LSPHoverInfo(TypedDict):
     """LSP Hover information structure."""
+
     contents: dict[str, str]
 
 
 class LSPTextDocument(TypedDict):
     """LSP Text Document structure."""
+
     uri: str
     languageId: str
     version: int
@@ -91,24 +100,28 @@ class LSPTextDocument(TypedDict):
 
 class LSPMessage(TypedDict):
     """Base LSP message structure."""
+
     jsonrpc: str
     id: int | str | None
 
 
 class LSPRequest(LSPMessage):
     """LSP Request structure."""
+
     method: str
     params: dict[str, Any]
 
 
 class LSPResponse(LSPMessage):
     """LSP Response structure."""
+
     result: Any | None
     error: dict[str, Any] | None
 
 
 class LSPNotification(TypedDict):
     """LSP Notification structure."""
+
     jsonrpc: str
     method: str
     params: dict[str, Any]

@@ -127,11 +127,7 @@ class ATS:
         spec = ReplaySpec(
             path=context.test_path,
             document={},
-            urtest={
-                "server": {},
-                "client": {},
-                "ats": {}
-            },
+            urtest={"server": {}, "client": {}, "ats": {}},
         )
         self._runner = ReplayTest(spec, context.runtime, f"{context.node_name}-{name}")
         self._runner.sandbox = context.run_directory
@@ -353,9 +349,7 @@ class ATS:
             "name": self.name,
             "process_config": self._process_options,
             "records_config": self._records,
-            **{
-                name: lines for name, lines in self._config_lines.items() if lines
-            },
+            **{name: lines for name, lines in self._config_lines.items() if lines},
             **self._config,
         }
         self._runner.spec.urtest["ats"] = ats_config
@@ -695,8 +689,10 @@ class ATS:
                     expressions += ["ERROR:", "Unrecognized configuration value"]
                 for expression in expressions:
                     unexpected = [
-                        line for line in lines if expression in line and
-                        not (expression == "ERROR:" and any(allowed.search(line) for allowed in self._allowed_errors))
+                        line
+                        for line in lines
+                        if expression in line
+                        and not (expression == "ERROR:" and any(allowed.search(line) for allowed in self._allowed_errors))
                     ]
                     if unexpected:
                         raise AssertionError(f"{self.name} emitted an unexpected {expression!r} diagnostic:\n{content}")

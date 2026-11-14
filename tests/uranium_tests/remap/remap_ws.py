@@ -61,14 +61,12 @@ def run_remap_web_socket(ats_factory: ATSFactory, services: ServiceFactory, curl
         origin = services.origin("origin")
         origin.add_response(
             {
-                "headers": "GET /chat HTTP/1.1\r\nHost: www.example.com\r\n"
-                           "Upgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
+                "headers": "GET /chat HTTP/1.1\r\nHost: www.example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
                 "body": "",
             },
             {
-                "headers":
-                    "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
-                    "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
+                "headers": "HTTP/1.1 101 OK\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
+                "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n\r\n",
                 "body": "",
             },
         )
@@ -91,13 +89,15 @@ def run_remap_web_socket(ats_factory: ATSFactory, services: ServiceFactory, curl
                     "  - type: map",
                     f"    from: {{url: 'wss://www.example.com:{ats.https_port}'}}",
                     f"    to: {{url: 'ws://127.0.0.1:{_origin.port}'}}",
-                ])
+                ]
+            )
         else:
             ats.remap_config.add_lines(
                 [
                     f"map ws://www.example.com:{ats.http_port} ws://127.0.0.1:{_origin.port}",
                     f"map wss://www.example.com:{ats.https_port} ws://127.0.0.1:{_origin.port}",
-                ])
+                ]
+            )
         return ats
 
     def request_upgrade(*, tls: bool) -> None:
@@ -114,7 +114,8 @@ def run_remap_web_socket(ats_factory: ATSFactory, services: ServiceFactory, curl
                 f"--max-time 2 --verbose --silent --http1.1 --insecure --header 'Connection: Upgrade' --header "
                 f"'Upgrade: websocket' --header 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' --header "
                 f"'Sec-WebSocket-Version: 13' --resolve 'www.example.com:{port}:127.0.0.1' "
-                f"'{scheme}://www.example.com:{port}/chat'"),
+                f"'{scheme}://www.example.com:{port}/chat'"
+            ),
             timeout=10,
         )
         assert result.returncode == 28, result.output
@@ -136,7 +137,8 @@ def run_remap_web_socket(ats_factory: ATSFactory, services: ServiceFactory, curl
         (
             f"--max-time 2 --verbose --silent --http1.1 --header 'Connection: Upgrade' --header "
             f"'Upgrade: websocket' --resolve 'www.example.com:{_ats.http_port}:127.0.0.1' "
-            f"'http://www.example.com:{_ats.http_port}/chat'"),
+            f"'http://www.example.com:{_ats.http_port}/chat'"
+        ),
         timeout=10,
     )
     assert result.returncode == 0, result.output

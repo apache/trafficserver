@@ -24,7 +24,6 @@ def observe(headers):
 
     for h in headers.items():
         if h[0].lower().startswith('ssl-'):
-
             log.write(h[0] + ": " + h[1] + "\n")
     log.write("-\n")
     log.flush()

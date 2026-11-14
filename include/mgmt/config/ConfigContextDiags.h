@@ -75,7 +75,7 @@
   Fatal/Emergency terminate the process — reload status is irrelevant.
   Call Fatal() directly; do not use these macros for it.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

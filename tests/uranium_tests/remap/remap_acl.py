@@ -107,14 +107,14 @@ def standard_acl_cases(*, use_yaml: bool) -> list[AclCase]:
     """
 
     def case(
-            name: str,
-            replay: str,
-            inline: str,
-            expected: tuple[int | None, ...],
-            *,
-            named: tuple[tuple[str, str], ...] = (),
-            deactivate: bool = False,
-            proxy_protocol: bool = False,
+        name: str,
+        replay: str,
+        inline: str,
+        expected: tuple[int | None, ...],
+        *,
+        named: tuple[tuple[str, str], ...] = (),
+        deactivate: bool = False,
+        proxy_protocol: bool = False,
     ) -> AclCase:
         """Case.
 
@@ -298,7 +298,8 @@ def combination_acl_cases(records: Sequence[Mapping[str, object]], *, prefix: st
                 (("acl", named),) if named else (),
                 (record["GET response"], record["POST response"]),  # type: ignore[arg-type]
                 generated_replay=True,
-            ))
+            )
+        )
     return cases
 
 
@@ -398,11 +399,13 @@ def run_remap_acl(
             lines.extend(["  - define_filter:", f"      {name}:"])
             lines.extend(f"        {value}" for value in values)
             lines.append(f"  - activate_filter: {name}")
-        lines.extend([
-            "  - type: map",
-            "    from: {url: '/'}",
-            f"    to: {{url: 'http://127.0.0.1:{_origin.http_port}'}}",
-        ])
+        lines.extend(
+            [
+                "  - type: map",
+                "    from: {url: '/'}",
+                f"    to: {{url: 'http://127.0.0.1:{_origin.http_port}'}}",
+            ]
+        )
         inline = tuple(case.inline) if not isinstance(case.inline, str) else _yaml_filter(case.inline)
         if inline:
             lines.append("    acl_filter:")
@@ -421,7 +424,8 @@ def run_remap_acl(
                 "proxy.config.http.connect_ports": _origin.http_port,
                 "proxy.config.url_remap.acl_behavior_policy": case.policy,
                 "proxy.config.acl.subjects": "PROXY,PEER",
-            })
+            }
+        )
         ats.ip_allow_config.add_lines(case.ip_allow)
         (ats.remap_yaml if use_yaml else ats.remap_config).add_lines(_yaml_remap() if use_yaml else _classic_remap())
         return ats
@@ -472,7 +476,8 @@ def run_old_acl_action(ats_factory: ATSFactory, case: OldActionCase, *, use_yaml
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|url|remap|ip_allow",
                 "proxy.config.url_remap.acl_behavior_policy": 1,
-            })
+            }
+        )
         ats.ip_allow_config.add_lines(case.ip_allow)
         if use_yaml:
             lines = ["remap:", "  - type: map", "    from: {url: '/'}", "    to: {url: 'http://127.0.0.1:8080'}"]

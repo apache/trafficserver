@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Every request forwarded to an HTTP/2 origin ends its stream, however the client ended its request."""
+
 import sys
 from pathlib import Path
 import pytest
@@ -84,9 +85,9 @@ def start_proxy(ats_factory: ATSFactory, services: ServiceFactory) -> ATS:
     ssl = Path(__file__).parents[2] / "tools/ssl"
     origin = services.process(
         "origin",
-        [sys.executable, SCRIPT, "serve", "127.0.0.1",
-         str(port), "--cert", ssl / "server.pem", "--key", ssl / "server.key"],
-        ready_port=port)
+        [sys.executable, SCRIPT, "serve", "127.0.0.1", str(port), "--cert", ssl / "server.pem", "--key", ssl / "server.key"],
+        ready_port=port,
+    )
     ats = configure_h2_origin(
         ats_factory,
         port,
@@ -94,7 +95,8 @@ def start_proxy(ats_factory: ATSFactory, services: ServiceFactory) -> ATS:
             # A request the origin never sees end turns into a 504 in seconds.
             "proxy.config.http.transaction_no_activity_timeout_out": 2,
             "proxy.config.http.connect_attempts_max_retries": 0,
-        })
+        },
+    )
     origin.start()
     ats.start()
     return ats
@@ -111,8 +113,9 @@ def run_client(services: ServiceFactory, command: list[object]) -> None:
     assert "PASS" in result.stdout
 
 
-def h2_command(ats: ATS, method: str, end: str, content_length: int | None, body: str, end_frame: str, *options:
-               str) -> list[object]:
+def h2_command(
+    ats: ATS, method: str, end: str, content_length: int | None, body: str, end_frame: str, *options: str
+) -> list[object]:
     """Build the HTTP/2 client command line.
 
     :param ats: Running proxy.
@@ -124,8 +127,19 @@ def h2_command(ats: ATS, method: str, end: str, content_length: int | None, body
     :param options: Further client options.
     """
     command = [
-        sys.executable, SCRIPT, "request", "127.0.0.1",
-        str(ats.https_port), method, "--end", end, "--body", body, "--origin-end-frame", end_frame, *options
+        sys.executable,
+        SCRIPT,
+        "request",
+        "127.0.0.1",
+        str(ats.https_port),
+        method,
+        "--end",
+        end,
+        "--body",
+        body,
+        "--origin-end-frame",
+        end_frame,
+        *options,
     ]
     if content_length is not None:
         command += ["--content-length", str(content_length)]
@@ -144,8 +158,19 @@ def h1_command(ats: ATS, method: str, framing: str, body: str, late: bool, end_f
     :param options: Further client options.
     """
     command = [
-        sys.executable, SCRIPT, "request-h1", "127.0.0.1",
-        str(ats.http_port), method, "--framing", framing, "--body", body, "--origin-end-frame", end_frame, *options
+        sys.executable,
+        SCRIPT,
+        "request-h1",
+        "127.0.0.1",
+        str(ats.http_port),
+        method,
+        "--framing",
+        framing,
+        "--body",
+        body,
+        "--origin-end-frame",
+        end_frame,
+        *options,
     ]
     if late:
         command.append("--late")
@@ -154,8 +179,8 @@ def h1_command(ats: ATS, method: str, framing: str, body: str, late: bool, end_f
 
 @pytest.mark.parametrize("method,end,content_length,body,end_frame", [pytest.param(*case[1:], id=case[0]) for case in CASES])
 def test_h2_origin_request_end_stream(
-        ats_factory: ATSFactory, services: ServiceFactory, method: str, end: str, content_length: int | None, body: str,
-        end_frame: str) -> None:
+    ats_factory: ATSFactory, services: ServiceFactory, method: str, end: str, content_length: int | None, body: str, end_frame: str
+) -> None:
     """The origin receives the end of an HTTP/2 client request and the client gets its reply.
 
     :param ats_factory: Proxy factory.
@@ -173,8 +198,8 @@ def test_h2_origin_request_end_stream(
 
 @pytest.mark.parametrize("method,framing,body,late,end_frame", [pytest.param(*case[1:], id=case[0]) for case in H1_CASES])
 def test_h1_client_request_end_stream(
-        ats_factory: ATSFactory, services: ServiceFactory, method: str, framing: str, body: str, late: bool,
-        end_frame: str) -> None:
+    ats_factory: ATSFactory, services: ServiceFactory, method: str, framing: str, body: str, late: bool, end_frame: str
+) -> None:
     """The origin receives all of an HTTP/1.1 client request body and the end of its stream.
 
     :param ats_factory: Proxy factory.
@@ -191,10 +216,11 @@ def test_h1_client_request_end_stream(
 
 
 @pytest.mark.parametrize(
-    "method,end,content_length,body,end_frame", [pytest.param(*case[1:], id=case[0]) for case in LARGE_HEADER_CASES])
+    "method,end,content_length,body,end_frame", [pytest.param(*case[1:], id=case[0]) for case in LARGE_HEADER_CASES]
+)
 def test_h2_client_large_header_end_stream(
-        ats_factory: ATSFactory, services: ServiceFactory, method: str, end: str, content_length: int | None, body: str,
-        end_frame: str) -> None:
+    ats_factory: ATSFactory, services: ServiceFactory, method: str, end: str, content_length: int | None, body: str, end_frame: str
+) -> None:
     """The origin receives the end of an HTTP/2 client request whose header block ATS sends in HEADERS and CONTINUATION frames.
 
     :param ats_factory: Proxy factory.
@@ -211,10 +237,11 @@ def test_h2_client_large_header_end_stream(
 
 
 @pytest.mark.parametrize(
-    "method,framing,body,late,end_frame", [pytest.param(*case[1:], id=case[0]) for case in H1_LARGE_HEADER_CASES])
+    "method,framing,body,late,end_frame", [pytest.param(*case[1:], id=case[0]) for case in H1_LARGE_HEADER_CASES]
+)
 def test_h1_client_large_header_end_stream(
-        ats_factory: ATSFactory, services: ServiceFactory, method: str, framing: str, body: str, late: bool,
-        end_frame: str) -> None:
+    ats_factory: ATSFactory, services: ServiceFactory, method: str, framing: str, body: str, late: bool, end_frame: str
+) -> None:
     """The origin receives the end of an HTTP/1.1 client request whose header block ATS sends in HEADERS and CONTINUATION frames.
 
     :param ats_factory: Proxy factory.

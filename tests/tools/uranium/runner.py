@@ -107,10 +107,12 @@ def run_from_source(source_root: Path, arguments: Sequence[str]) -> int:
     cache_path = build_root / "CMakeCache.txt"
     if _cmake_cache_value(cache_path, "URTEST_SANDBOX") != str(sandbox):
         commands.append(configure_command)
-    commands.extend([
-        ["cmake", "--build", str(build_root), "-j", build_jobs],
-        ["cmake", "--install", str(build_root)],
-    ])
+    commands.extend(
+        [
+            ["cmake", "--build", str(build_root), "-j", build_jobs],
+            ["cmake", "--install", str(build_root)],
+        ]
+    )
     try:
         for command in commands:
             is_install = command[0:2] == ["cmake", "--install"]
@@ -317,7 +319,8 @@ def launch_container(source_root: Path, arguments: Sequence[str]) -> int:
         raise RunnerError(
             "A supported container runtime is required by the default execution mode. Install Apple container "
             "on macOS, Podman or Docker, run inside the Fedora 44 test environment, or pass "
-            "--no-run-in-container to use the current environment.")
+            "--no-run-in-container to use the current environment."
+        )
     runtime_name, executable = runtime
     image = os.environ.get("ATS_URTEST_CONTAINER_IMAGE", os.environ.get("ATS_URTEST_DOCKER_IMAGE", DEFAULT_IMAGE))
     source_root = source_root.resolve()
@@ -345,18 +348,21 @@ def launch_container(source_root: Path, arguments: Sequence[str]) -> int:
             f"ATS_URTEST_HOST_OS={sys.platform}",
             "--env",
             f"{CONTAINER_MARKER}=1",
-        ])
+        ]
+    )
     for variable in ("ATS_URTEST_BUILD_JOBS", "ATS_URTEST_SANDBOX", "RUN_CACHE_CONTENTION_TEST", "SHARD", "SHARDCNT"):
         if variable in os.environ:
             command.extend(["--env", f"{variable}={os.environ[variable]}"])
     if extra_arguments := os.environ.get("ATS_URTEST_CONTAINER_ARGS", os.environ.get("ATS_URTEST_DOCKER_ARGS")):
         command.extend(shlex.split(extra_arguments))
-    command.extend([
-        image,
-        str(source_root / "tests" / "urtest.sh"),
-        "--no-run-in-container",
-        *arguments,
-    ])
+    command.extend(
+        [
+            image,
+            str(source_root / "tests" / "urtest.sh"),
+            "--no-run-in-container",
+            *arguments,
+        ]
+    )
     result = subprocess.run(command, check=False)
     return result.returncode
 
@@ -382,7 +388,7 @@ def _parse_configured_build(arguments: list[str]) -> tuple[ConfiguredBuild, list
         raise RunnerError("The configured runner is missing its argument separator")
     separator = arguments.index("--")
     fixed = arguments[:separator]
-    test_arguments = arguments[separator + 1:]
+    test_arguments = arguments[separator + 1 :]
     values: dict[str, str] = {}
     curl_uds = False
     for argument in fixed:

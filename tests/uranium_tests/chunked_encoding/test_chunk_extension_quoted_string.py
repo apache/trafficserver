@@ -46,7 +46,8 @@ def configure_ats(*, _ats_factory: ATSFactory, _origin: VerifierServer) -> ATS:
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http.strict_chunk_parsing": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
     return ats
 

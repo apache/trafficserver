@@ -73,11 +73,13 @@ def tls_client_cert_override_remap_with_certificate(ats: ATS, path: str, origin:
         f"map {path} https://127.0.0.1:{origin.https_port}/ "
         "@plugin=conf_remap.so "
         f"@pparam=proxy.config.ssl.client.cert.filename={certificate} "
-        f"@pparam=proxy.config.ssl.client.private_key.filename={key}")
+        f"@pparam=proxy.config.ssl.client.private_key.filename={key}"
+    )
 
 
 def tls_client_cert_override_configure_ats(
-        ats_factory: ATSFactory, *, _server1: OriginServer, _server2: OriginServer, _use_secret_plugin: bool) -> ATS:
+    ats_factory: ATSFactory, *, _server1: OriginServer, _server2: OriginServer, _use_secret_plugin: bool
+) -> ATS:
     """Configure matching and mismatched client-certificate routes.
 
     :param _server1: Test-local server1 configured by the test.
@@ -111,7 +113,8 @@ def tls_client_cert_override_configure_ats(
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.url_remap.pristine_host_hdr": 1,
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     if _use_secret_plugin:
         ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_secret_load_test.so")
         ats.plugin_config.add_line("ssl_secret_load_test.so")
@@ -122,7 +125,8 @@ def tls_client_cert_override_configure_ats(
             tls_client_cert_override_remap_with_certificate(ats, "/badcase1", _server1, "signed2-foo.pem", "signed-foo.key"),
             tls_client_cert_override_remap_with_certificate(ats, "/case2", _server2, "signed2-foo.pem", "signed-foo.key"),
             tls_client_cert_override_remap_with_certificate(ats, "/badcase2", _server2, "signed-foo.pem", "signed-foo.key"),
-        ))
+        )
+    )
     return ats
 
 
@@ -191,7 +195,8 @@ def run_tls_client_cert_override(ats_factory: ATSFactory, services: ServiceFacto
         "signed-bar.key",
     )
     _ats = tls_client_cert_override_configure_ats(
-        ats_factory, _server1=_server1, _server2=_server2, _use_secret_plugin=use_secret_plugin)
+        ats_factory, _server1=_server1, _server2=_server2, _use_secret_plugin=use_secret_plugin
+    )
 
     _server1.start()
     _server2.start()

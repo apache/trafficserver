@@ -26,6 +26,7 @@ from hrw4u.interning import intern_section, intern_hook, intern_modifier
 
 class SectionType(str, Enum):
     """Valid section types for hrw4u with their corresponding hook names"""
+
     REMAP = intern_section("REMAP")
     SEND_REQUEST = intern_section("SEND_REQUEST")
     READ_RESPONSE = intern_section("READ_RESPONSE")
@@ -75,8 +76,9 @@ CONDITION_MODIFIERS = frozenset(
         intern_modifier("SUF"),
         intern_modifier("EXT"),
         intern_modifier("MID"),
-        intern_modifier("NORM")
-    })
+        intern_modifier("NORM"),
+    }
+)
 
 OPERATOR_MODIFIERS = frozenset({intern_modifier("I"), intern_modifier("L"), intern_modifier("QSA")})
 
@@ -88,7 +90,7 @@ WITH_MODIFIER_ORDER = [
     intern_modifier("PRE"),
     intern_modifier("MID"),
     intern_modifier("SUF"),
-    intern_modifier("NORM")
+    intern_modifier("NORM"),
 ]
 
 WITH_MODIFIERS = frozenset(WITH_MODIFIER_ORDER)

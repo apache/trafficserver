@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -45,6 +45,11 @@ Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPAC
 
 Http3HeaderVIOAdaptor::~Http3HeaderVIOAdaptor()
 {
+  // QPACK may still hold this adaptor and its header, for a decode that is
+  // blocked or whose result is still in the event queue.
+  if (this->_qpack != nullptr) {
+    this->_qpack->cancel(this->_stream_id);
+  }
   this->_header.destroy();
 }
 

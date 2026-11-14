@@ -26,10 +26,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("server")
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "curl test"
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "curl test"},
     )
     return origin
 
@@ -53,7 +50,8 @@ def configure_tls(ats: ATS, *, reuse: bool, debug: bool = False) -> None:
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
             "proxy.config.diags.debug.enabled": int(debug),
             "proxy.config.diags.debug.tags": "ssl.origin_session_cache",
-        })
+        }
+    )
 
 
 def configure_tls_origin(ats_factory: ATSFactory, name: str, *, reuse: bool) -> ATS:
@@ -97,12 +95,14 @@ def configure_remaps(*, _origin: OriginServer, _ts1: ATS, _ts2: ATS, _ts3: ATS, 
     # separate cache entry. Only Linux routes all of 127.0.0.0/8 to loopback;
     # ::1 is available everywhere.
     _ts1.records.update(
-        {"proxy.config.http.server_ports": f"{_ts1.http_port} {_ts1.https_port}:ssl {_ts1.ipv6_https_port}:ssl:ipv6"})
+        {"proxy.config.http.server_ports": f"{_ts1.http_port} {_ts1.https_port}:ssl {_ts1.ipv6_https_port}:ssl:ipv6"}
+    )
     _ts2.remap_config.add_lines(
         (
             f"map /reuse_session https://127.0.0.1:{_ts1.https_port}",
             f"map /remove_oldest https://[::1]:{_ts1.ipv6_https_port}",
-        ))
+        )
+    )
     _ts3.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
     _ts4.remap_config.add_line(f"map / https://127.0.0.1:{_ts3.https_port}")
 

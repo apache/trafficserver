@@ -560,34 +560,35 @@ TEST_CASE("Regex match", "[bench][regex]")
   };
 }
 
-TEST_CASE("Regex match with a caller supplied context", "[bench][regex]")
+TEST_CASE("Regex match with caller supplied options", "[bench][regex]")
 {
   Regex path;
   REQUIRE(path.compile(PATTERN_PATH));
-  RegexMatchContext context;
+  Regex::Options opts;
+  opts.match_limit = 100000;
 
   // Both paths have to match before either is timed. This case reports one path against the
   // other, so an empty pattern does not just mis-time it, it inverts the comparison: with
-  // PATTERN_PATH broken the caller supplied context measures about half the shared one.
+  // PATTERN_PATH broken the options path measures about half the default one.
   {
     RegexMatches matches;
-    REQUIRE(path.exec(SUBJECT_PATH, matches, 0, nullptr) > 0);
+    REQUIRE(path.exec(SUBJECT_PATH, matches, 0) > 0);
   }
   {
     RegexMatches matches;
-    REQUIRE(path.exec(SUBJECT_PATH, matches, 0, &context) > 0);
+    REQUIRE(path.exec(SUBJECT_PATH, matches, 0, opts) > 0);
   }
 
-  BENCHMARK("exec through the shared context")
+  BENCHMARK("exec with the default options")
   {
     RegexMatches matches;
-    return path.exec(SUBJECT_PATH, matches, 0, nullptr);
+    return path.exec(SUBJECT_PATH, matches, 0);
   };
 
-  BENCHMARK("exec through a caller supplied context")
+  BENCHMARK("exec with a match limit")
   {
     RegexMatches matches;
-    return path.exec(SUBJECT_PATH, matches, 0, &context);
+    return path.exec(SUBJECT_PATH, matches, 0, opts);
   };
 }
 

@@ -33,7 +33,8 @@ def configure_ats(ats_factory: ATSFactory, *, _configured_timeout: int | None) -
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "net|v_quic|quic|socket|inactivity_cop|v_iocore_net_poll",
-        })
+        }
+    )
     if _configured_timeout is not None:
         ats.records.update({"proxy.config.udp.poll_timeout": _configured_timeout})
     return ats

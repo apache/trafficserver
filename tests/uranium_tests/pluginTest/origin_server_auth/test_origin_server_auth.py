@@ -33,10 +33,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     for path in ("s3-bucket", "gcp"):
         origin.add_response(
             {"headers": f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": "success!"
-            },
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "success!"},
         )
     return origin
 
@@ -56,7 +53,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _rules: Pat
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.show_location": 0,
             "proxy.config.diags.debug.tags": "origin_server_auth",
-        })
+        }
+    )
     ats.copy_to_config(_rules)
     rules_path = ats.config_directory / _rules.name
     ats.remap_config.add_lines(
@@ -66,7 +64,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _rules: Pat
             f"map http://www.example.com/gcp http://127.0.0.1:{_origin.port}/gcp "
             f"@plugin=origin_server_auth.so @pparam=--access_key @pparam=1234567 "
             f"@pparam=--session_token @pparam={_token} @pparam=--version @pparam=gcpv1",
-        ))
+        )
+    )
     return ats
 
 
@@ -98,9 +97,8 @@ def test_origin_server_auth(ats_factory: ATSFactory, services: ServiceFactory, c
     """
     _rules = TEST_DIRECTORY / "rules" / "v4-parse-test.test_input"
     _token = next(
-        line.removeprefix("session_token=").strip()
-        for line in _rules.read_text().splitlines()
-        if line.startswith("session_token="))
+        line.removeprefix("session_token=").strip() for line in _rules.read_text().splitlines() if line.startswith("session_token=")
+    )
     _origin = configure_origin(services)
     _ats = configure_ats(ats_factory, _origin=_origin, _rules=_rules, _token=_token)
     if not _ats.plugin_exists("origin_server_auth.so"):

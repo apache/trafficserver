@@ -5,7 +5,7 @@
   This enables specifying the set of methods usable by a user agent based on the remove IP address
   for a user agent connection.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -146,6 +146,12 @@ IpAllow::reconfigure(ConfigContext ctx)
   }
   configid = configProcessor.set(configid, new_table);
   CfgLoadComplete(ctx, "%s finished loading", ts::filename::IP_ALLOW);
+}
+
+unsigned
+IpAllow::config_id()
+{
+  return configid;
 }
 
 IpAllow *

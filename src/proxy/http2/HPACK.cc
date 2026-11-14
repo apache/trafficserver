@@ -2,7 +2,7 @@
 
   [RFC 7541] HPACK: Header Compression for HTTP/2
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

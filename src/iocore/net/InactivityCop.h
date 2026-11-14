@@ -2,7 +2,7 @@
 
    Timer-wheel driven inactivity cop: dispatches connection timeouts under a per-pass budget, with an optional audit.
 
- @section license License
+ @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

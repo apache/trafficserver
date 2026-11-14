@@ -2,7 +2,7 @@
 
   Functionality allowing to load all plugins from a single config reload.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -27,6 +27,7 @@
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "records/RecCore.h"
 #include "proxy/http/remap/PluginFactory.h"
+#include "proxy/http/remap/UrlMapping.h"
 #include "tscore/TSSystemState.h"
 #ifdef PLUGIN_DSO_TESTS
 #include "unit-tests/plugin_testing_common.h"
@@ -149,7 +150,7 @@ PluginFactory::getUuid()
  * @param configPath plugin path as specified in the plugin
  * @param argc number of parameters passed to the plugin during instance initialization
  * @param argv parameters passed to the plugin during instance initialization
- * @param context Plugin context is used from continuations to guarantee correct reference counting against the plugin.
+ * @param[in] dynamicReloadEnabled Whether to load a dynamically reloadable copy of the plugin.
  * @param error human readable message if something goes wrong, empty otherwise
  * @return pointer to a plugin instance, nullptr if failure
  */
@@ -216,8 +217,18 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
 
     plugin = new RemapPluginInfo(configPath, effectivePath, runtimePath);
     if (nullptr != plugin) {
-      if (plugin->load(error, _compilerPath)) {
-        if (plugin->init(error)) {
+      bool loaded      = false;
+      bool initialized = false;
+      {
+        // TSRemapInit is plugin-global: hide the loading rule from the strategy APIs.
+        UrlMappingInstanceScope const no_rule{nullptr};
+
+        loaded      = plugin->load(error, _compilerPath);
+        initialized = loaded && plugin->init(error);
+      }
+
+      if (loaded) {
+        if (initialized) {
           PluginDso::loadedPlugins()->add(plugin);
           inst = RemapPluginInst::init(plugin, argc, argv, error);
           if (nullptr != inst) {
@@ -306,6 +317,7 @@ PluginFactory::cleanup()
  * @brief Find a plugin by path from our linked plugin list by using plugin effective (canonical) path
  *
  * @param path effective (canonical) path
+ * @param[in] dynamicReloadEnabled Whether to find a dynamically reloadable copy of the plugin.
  * @return plugin found or nullptr if not found
  */
 PluginDso *

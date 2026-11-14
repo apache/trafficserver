@@ -35,8 +35,8 @@ add_custom_target(
   generate_docs_setup
   COMMENT "Copy static files to build directory"
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/static ${CMAKE_CURRENT_BINARY_DIR}/static
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/_templates
-          ${CMAKE_CURRENT_BINARY_DIR}/_templates
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/_templates ${CMAKE_CURRENT_BINARY_DIR}/_templates
 )
 
 # generate svg files from uml files
@@ -65,9 +65,10 @@ foreach(UML ${UML_FILES})
   list(APPEND SVG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg)
   add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/uml/images/${uml_name}.svg
-    COMMAND ${CMAKE_COMMAND} -E env GRAPHVIZ_DOT=${GRAPHVIZ_DOT} ${Java_JAVA_EXECUTABLE} -Djava.awt.headless=true
-            -Dapple.awt.UIElement=true -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg
-            ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
+    COMMAND
+      ${CMAKE_COMMAND} -E env GRAPHVIZ_DOT=${GRAPHVIZ_DOT} ${Java_JAVA_EXECUTABLE} -Djava.awt.headless=true
+      -Dapple.awt.UIElement=true -jar ${PLANTUML_JAR} -o ${CMAKE_CURRENT_SOURCE_DIR}/uml/images -tsvg
+      ${CMAKE_CURRENT_SOURCE_DIR}/${UML}
     DEPENDS ${UML}
     VERBATIM
   )
@@ -92,11 +93,13 @@ add_custom_command(
 
 add_custom_target(
   generate_docs
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
-          python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
-          python -m sphinx -W -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
-          ${CMAKE_CURRENT_BINARY_DIR}/docbuild/html
+  COMMAND
+    ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run python
+    ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND
+    ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run python
+    -m sphinx -W -c ${CMAKE_CURRENT_BINARY_DIR} -b html ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/docbuild/html
   DEPENDS generate_docs_setup .uv_installed
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Sphinx PlantUML extension now generates diagrams automatically in build tree"
@@ -104,13 +107,16 @@ add_custom_target(
 # Generate PDF documentation (Letter paper size - US standard)
 add_custom_target(
   generate_pdf
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
-          python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
-          python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_paper ${CMAKE_CURRENT_SOURCE_DIR}
-          ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex
-  COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex latexmk -pdf -interaction=nonstopmode -f
-          ApacheTrafficServer.tex
+  COMMAND
+    ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run python
+    ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND
+    ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run python
+    -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_paper ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex
+  COMMAND
+    ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex latexmk -pdf -interaction=nonstopmode -f
+    ApacheTrafficServer.tex
   DEPENDS generate_docs_setup .uv_installed
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Building PDF documentation with Sphinx and LaTeX (Letter paper, PlantUML generates PNG automatically)"
@@ -119,13 +125,16 @@ add_custom_target(
 # Generate PDF documentation (A4 paper size - International standard)
 add_custom_target(
   generate_pdf_a4
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
-          python ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
-  COMMAND ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run
-          python -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_a4 ${CMAKE_CURRENT_SOURCE_DIR}
-          ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4
-  COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4 latexmk -pdf -interaction=nonstopmode
-          -f ApacheTrafficServer.tex
+  COMMAND
+    ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run python
+    ${CMAKE_CURRENT_SOURCE_DIR}/checkvers.py --check-version
+  COMMAND
+    ${CMAKE_COMMAND} -E env "JAVA_TOOL_OPTIONS=-Djava.awt.headless=true -Dapple.awt.UIElement=true" ${RUNUV} run python
+    -m sphinx -c ${CMAKE_CURRENT_BINARY_DIR} -b latex -t latex_a4 ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4
+  COMMAND
+    ${CMAKE_COMMAND} -E chdir ${CMAKE_CURRENT_BINARY_DIR}/docbuild/latex-a4 latexmk -pdf -interaction=nonstopmode -f
+    ApacheTrafficServer.tex
   DEPENDS generate_docs_setup .uv_installed
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   COMMENT "Building PDF documentation with Sphinx and LaTeX (A4 paper, PlantUML generates PNG automatically)"

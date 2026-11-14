@@ -54,10 +54,7 @@ def add_response(
         fields.append(f"Content-Range: bytes {content_range}")
     origin.add_response(
         {"headers": f"GET {{PATH}} HTTP/1.1\r\nHost: www.example.com\r\nUID: {uid}\r\n\r\n"},
-        {
-            "headers": "\r\n".join(fields) + "\r\n\r\n",
-            "body": body
-        },
+        {"headers": "\r\n".join(fields) + "\r\n\r\n", "body": body},
     )
 
 
@@ -131,19 +128,20 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     origin = f"http://127.0.0.1:{_origin.port}"
     ats.remap_config.add_lines(
         (
-            f"map http://example.com/naieve {origin}/naieve @plugin=cache_range_requests.so "
-            "@pparam=--cache-complete-responses",
+            f"map http://example.com/naieve {origin}/naieve @plugin=cache_range_requests.so @pparam=--cache-complete-responses",
             f"map http://example.com {origin} @plugin=slice.so @pparam=--blockbytes=4m "
             "@plugin=cachekey.so @pparam=--key-type=cache_key @pparam=--include-headers=Range "
             "@pparam=--remove-all-params=true @plugin=cache_range_requests.so "
             "@pparam=--no-modify-cachekey @pparam=--cache-complete-responses",
-        ))
+        )
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-cache-key")
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "cachekey|cache_range_requests|slice",
-        })
+        }
+    )
     return ats
 
 
@@ -162,7 +160,8 @@ def request(path: str, byte_range: str, uid: str, *, _ats: ATS, _curl: Curl) -> 
         (
             f"--silent --show-error --dump-header - --proxy 'http://127.0.0.1:{_ats.http_port}' --header "
             f"'x-debug: x-cache, x-cache-key' --header 'UID: {uid}' --range '{byte_range}' "
-            f"'http://example.com{path}'"),
+            f"'http://example.com{path}'"
+        ),
     )
 
 
@@ -203,12 +202,15 @@ def run_small_object_round(*, _ats: ATS, _curl: Curl) -> None:
     key = r"X-Cache-Key: /.*?/Range:bytes=0-4194303/obj"
     assert_response(request("/obj", "0-5000", "SMALL", _ats=_ats, _curl=_curl), status="200 OK", cache="miss, none", cache_key=key)
     assert_response(
-        request("/obj", "5001-5999", "SMALL", _ats=_ats, _curl=_curl), status="200 OK", cache="hit-fresh, none", cache_key=key)
+        request("/obj", "5001-5999", "SMALL", _ats=_ats, _curl=_curl), status="200 OK", cache="hit-fresh, none", cache_key=key
+    )
     time.sleep(2)
     assert_response(
-        request("/obj", "0-403", "SMALL-INM", _ats=_ats, _curl=_curl), status="200 OK", cache="hit-stale, none", cache_key=key)
+        request("/obj", "0-403", "SMALL-INM", _ats=_ats, _curl=_curl), status="200 OK", cache="hit-stale, none", cache_key=key
+    )
     assert_response(
-        request("/obj", "0-3999", "SMALL", _ats=_ats, _curl=_curl), status="200 OK", cache="hit-fresh, none", cache_key=key)
+        request("/obj", "0-3999", "SMALL", _ats=_ats, _curl=_curl), status="200 OK", cache="hit-fresh, none", cache_key=key
+    )
 
 
 def run_sliced_object_round(*, _ats: ATS, _curl: Curl) -> None:
@@ -260,7 +262,8 @@ def run_raw_range_round(*, _ats: ATS, _curl: Curl) -> None:
     original_key = r"X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000"
     alternate_key = r"X-Cache-Key: http://.*?/naieve/obj-bytes=444-777"
     assert_response(
-        request("/naieve/obj", "0-5000", "NAIEVE", _ats=_ats, _curl=_curl), status="200 OK", cache="miss", cache_key=original_key)
+        request("/naieve/obj", "0-5000", "NAIEVE", _ats=_ats, _curl=_curl), status="200 OK", cache="miss", cache_key=original_key
+    )
     assert_response(
         request("/naieve/obj", "0-5000", "NAIEVE", _ats=_ats, _curl=_curl),
         status="200 OK",
@@ -281,9 +284,11 @@ def run_raw_range_round(*, _ats: ATS, _curl: Curl) -> None:
         cache_key=original_key,
     )
     assert_response(
-        request("/naieve/obj", "444-777", "NAIEVE", _ats=_ats, _curl=_curl), status="200 OK", cache="miss", cache_key=alternate_key)
+        request("/naieve/obj", "444-777", "NAIEVE", _ats=_ats, _curl=_curl), status="200 OK", cache="miss", cache_key=alternate_key
+    )
     assert_response(
-        request("/naieve/obj", "444-777", "NAIEVE", _ats=_ats, _curl=_curl), status="200 OK", cache="hit", cache_key=alternate_key)
+        request("/naieve/obj", "444-777", "NAIEVE", _ats=_ats, _curl=_curl), status="200 OK", cache="hit", cache_key=alternate_key
+    )
     assert_response(
         request("/naieve/obj", "0-5000", "NAIEVE", _ats=_ats, _curl=_curl),
         status="200 OK",

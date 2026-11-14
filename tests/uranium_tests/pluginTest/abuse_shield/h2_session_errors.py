@@ -79,9 +79,13 @@ def send_error(port: int, mode: str, barrier: threading.Barrier) -> None:
                     headers = HeadersFrame(stream_id, flags=["END_HEADERS"])
                     headers.data = encoder.encode(
                         [
-                            (":method", "POST"), (":scheme", "https"), (":authority", "localhost"), (":path", "/"),
-                            ("content-length", "10000")
-                        ])
+                            (":method", "POST"),
+                            (":scheme", "https"),
+                            (":authority", "localhost"),
+                            (":path", "/"),
+                            ("content-length", "10000"),
+                        ]
+                    )
                     frames.append(headers.serialize())
                 connection.sendall(b"".join(frames))
                 expected_code = 9

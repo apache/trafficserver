@@ -84,7 +84,8 @@ def configure_ats(ats_factory: ATSFactory, *, _case: IncompleteHeaderCase, _orig
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http2",
             "proxy.config.http2.incomplete_header_timeout_in": _case.timeout,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
     return ats
 

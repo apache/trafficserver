@@ -34,14 +34,17 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     ats = ats_factory.create("ts", enable_tls=True)
     ats.copy_to_ssl(
         *(
-            TEST_DIRECTORY / "ssl" / name for name in (
+            TEST_DIRECTORY / "ssl" / name
+            for name in (
                 "signed-bar.pem",
                 "signed2-bar.pem",
                 "signed-bar.key",
                 "signer.pem",
                 "signer.key",
                 "combo.pem",
-            )))
+            )
+        )
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
@@ -49,7 +52,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "    ssl_key_name: signed-bar.key",
             '  - dest_ip: "*"',
             "    ssl_cert_name: combo.pem",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.url_remap.pristine_host_hdr": 1,
@@ -57,7 +61,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
             "proxy.config.diags.debug.tags": "ssl|http|lm",
             "proxy.config.diags.debug.enabled": 1,
-        })
+        }
+    )
     return ats
 
 
@@ -74,7 +79,8 @@ def request(ca_file: str, expected_code: int, *, _ats: ATS, _curl: Curl) -> str:
         _ats,
         (
             f"--verbose --cacert '{str(TEST_DIRECTORY / 'ssl' / ca_file)}' --resolve "
-            f"'bar.com:{_ats.https_port}:127.0.0.1' 'https://bar.com:{_ats.https_port}/random'"),
+            f"'bar.com:{_ats.https_port}:127.0.0.1' 'https://bar.com:{_ats.https_port}/random'"
+        ),
     )
     assert result.returncode == expected_code, result.output
     return result.output

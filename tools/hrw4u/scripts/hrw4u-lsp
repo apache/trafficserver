@@ -35,11 +35,17 @@ from hrw4u.common import create_parse_tree
 from hrw4u.types import VarType, LanguageKeyword
 from hrw4u.procedures import resolve_use_path
 
-from hrw4u_lsp.lsp.strings import (StringLiteralHandler, ContextAnalyzer, ExpressionParser, DocumentAnalyzer)
+from hrw4u_lsp.lsp.strings import StringLiteralHandler, ContextAnalyzer, ExpressionParser, DocumentAnalyzer
 from hrw4u_lsp.lsp.types import LSPDiagnostic, CompletionContext, VariableDeclaration
 from hrw4u_lsp.lsp.hover import (
-    HoverInfoProvider, FunctionHoverProvider, VariableHoverProvider, SectionHoverProvider, RegexHoverProvider,
-    ModifierHoverProvider, OperatorHoverProvider)
+    HoverInfoProvider,
+    FunctionHoverProvider,
+    VariableHoverProvider,
+    SectionHoverProvider,
+    RegexHoverProvider,
+    ModifierHoverProvider,
+    OperatorHoverProvider,
+)
 from hrw4u_lsp.lsp.completions import CompletionProvider
 
 
@@ -58,7 +64,8 @@ class DocumentManager:
 
     def _add_operator_completions(self, completions: list, base_prefix: str, current_section, context: CompletionContext) -> None:
         operator_completions = self._completion_provider.get_operator_completions(
-            base_prefix, current_section, context["replacement_range"])
+            base_prefix, current_section, context["replacement_range"]
+        )
         completions.extend(operator_completions)
 
     def _add_function_completions(self, completions: list) -> None:
@@ -125,27 +132,20 @@ class DocumentManager:
                     filename=filename,
                     error_collector=error_collector,
                     proc_search_paths=self.proc_search_paths or None,
-                    sandbox=self.sandbox)
+                    sandbox=self.sandbox,
+                )
                 try:
                     visitor.visit(tree)
                     self.proc_registries[uri] = dict(visitor._proc_registry)
                 except Exception as e:
                     diagnostics.append(
                         {
-                            "range": {
-                                "start": {
-                                    "line": 0,
-                                    "character": 0
-                                },
-                                "end": {
-                                    "line": 0,
-                                    "character": 10
-                                }
-                            },
+                            "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 10}},
                             "severity": 1,
                             "message": f"Visitor error: {str(e)}",
-                            "source": "hrw4u-visitor"
-                        })
+                            "source": "hrw4u-visitor",
+                        }
+                    )
 
             # Collect semantic errors first (they're more helpful with suggestions)
             semantic_error_positions = set()
@@ -207,21 +207,15 @@ class DocumentManager:
 
                     diagnostics.append(
                         {
-                            "range":
-                                {
-                                    "start": {
-                                        "line": line_num,
-                                        "character": col_num
-                                    },
-                                    "end": {
-                                        "line": line_num,
-                                        "character": end_col
-                                    }
-                                },
+                            "range": {
+                                "start": {"line": line_num, "character": col_num},
+                                "end": {"line": line_num, "character": end_col},
+                            },
                             "severity": severity,
                             "message": error_str,
-                            "source": "hrw4u"
-                        })
+                            "source": "hrw4u",
+                        }
+                    )
 
             # Emit sandbox warnings as LSP severity=2 (Warning) diagnostics
             if error_collector and error_collector.has_warnings():
@@ -230,21 +224,15 @@ class DocumentManager:
                     col_num = max(0, w.column)
                     diagnostics.append(
                         {
-                            "range":
-                                {
-                                    "start": {
-                                        "line": line_num,
-                                        "character": col_num
-                                    },
-                                    "end": {
-                                        "line": line_num,
-                                        "character": col_num + 1
-                                    }
-                                },
+                            "range": {
+                                "start": {"line": line_num, "character": col_num},
+                                "end": {"line": line_num, "character": col_num + 1},
+                            },
                             "severity": 2,
                             "message": w.message,
-                            "source": "hrw4u-sandbox"
-                        })
+                            "source": "hrw4u-sandbox",
+                        }
+                    )
 
             # Add parser errors only if they don't overlap with semantic errors
             for parser_error in parser_errors:
@@ -258,20 +246,12 @@ class DocumentManager:
         except Exception as e:
             diagnostics.append(
                 {
-                    "range": {
-                        "start": {
-                            "line": 0,
-                            "character": 0
-                        },
-                        "end": {
-                            "line": 0,
-                            "character": 10
-                        }
-                    },
+                    "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 10}},
                     "severity": 1,
                     "message": f"Parse error: {str(e)}",
-                    "source": "hrw4u-parser"
-                })
+                    "source": "hrw4u-parser",
+                }
+            )
 
         self.diagnostics[uri] = diagnostics
 
@@ -416,7 +396,7 @@ class DocumentManager:
         # Check if this is a section declaration (SECTION_NAME { or SECTION_NAME{)
         stripped_line = current_line.strip()
         if stripped_line.startswith(word):
-            remainder = stripped_line[len(word):].lstrip()
+            remainder = stripped_line[len(word) :].lstrip()
             if remainder.startswith('{'):
                 return SectionHoverProvider.get_section_hover_info(word)
 
@@ -475,16 +455,7 @@ class DocumentManager:
             if resolved:
                 return {
                     "uri": self._path_to_uri(resolved),
-                    "range": {
-                        "start": {
-                            "line": 0,
-                            "character": 0
-                        },
-                        "end": {
-                            "line": 0,
-                            "character": 0
-                        }
-                    }
+                    "range": {"start": {"line": 0, "character": 0}, "end": {"line": 0, "character": 0}},
                 }
             return None
 
@@ -504,16 +475,7 @@ class DocumentManager:
                 target_line = (def_line.line - 1) if def_line else 0
                 return {
                     "uri": self._path_to_uri(sig.source_file),
-                    "range": {
-                        "start": {
-                            "line": target_line,
-                            "character": 0
-                        },
-                        "end": {
-                            "line": target_line,
-                            "character": 0
-                        }
-                    }
+                    "range": {"start": {"line": target_line, "character": 0}, "end": {"line": target_line, "character": 0}},
                 }
 
         return None
@@ -604,19 +566,15 @@ class HRW4ULanguageServer:
         response = {
             "jsonrpc": "2.0",
             "id": message["id"],
-            "result":
-                {
-                    "capabilities":
-                        {
-                            "textDocumentSync": 1,
-                            "completionProvider": {
-                                "triggerCharacters": ["."]
-                            },
-                            "hoverProvider": True,
-                            "definitionProvider": True,
-                            "codeActionProvider": True
-                        }
+            "result": {
+                "capabilities": {
+                    "textDocumentSync": 1,
+                    "completionProvider": {"triggerCharacters": ["."]},
+                    "hoverProvider": True,
+                    "definitionProvider": True,
+                    "codeActionProvider": True,
                 }
+            },
         }
         self._send_message(response)
 
@@ -705,14 +663,7 @@ class HRW4ULanguageServer:
                             "title": f"Replace with '{suggestion_part}'",
                             "kind": "quickfix",
                             "diagnostics": [diagnostic],
-                            "edit": {
-                                "changes": {
-                                    uri: [{
-                                        "range": diagnostic["range"],
-                                        "newText": suggestion_part
-                                    }]
-                                }
-                            }
+                            "edit": {"changes": {uri: [{"range": diagnostic["range"], "newText": suggestion_part}]}},
                         }
                         actions.append(action)
 
@@ -730,10 +681,7 @@ class HRW4ULanguageServer:
         notification = {
             "jsonrpc": "2.0",
             "method": "textDocument/publishDiagnostics",
-            "params": {
-                "uri": uri,
-                "diagnostics": diagnostics
-            }
+            "params": {"uri": uri, "diagnostics": diagnostics},
         }
         self._send_message(notification)
 

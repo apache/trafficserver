@@ -60,12 +60,8 @@ class ResponseInfo:
     """POD for response headers, etc."""
 
     def __init__(
-            self,
-            status: int,
-            headers: Dict[bytes, bytes],
-            body: bytes,
-            trailers: Dict[bytes, bytes] = None,
-            errors: List[str] = None):
+        self, status: int, headers: Dict[bytes, bytes], body: bytes, trailers: Dict[bytes, bytes] = None, errors: List[str] = None
+    ):
         self.status_code: int = status
         self.headers: Dict[bytes, bytes] = headers
         self.body_bytes: bytes = body
@@ -106,12 +102,13 @@ class Http2ConnectionManager:
                 bytes_to_send = min(send_window, body_size)
                 if bytes_to_send < body_size:
                     raise ValueError(
-                        f'We do not have a big enough window: body size of {body_size} bytes vs {send_window} byte window')
+                        f'We do not have a big enough window: body size of {body_size} bytes vs {send_window} byte window'
+                    )
                 # Send one byte at a time, every millisecond.
                 bytes_sent = 0
                 while bytes_to_send > 0:
                     chunk_size = 1
-                    byte_to_send = response.body_bytes[bytes_sent:bytes_sent + chunk_size]
+                    byte_to_send = response.body_bytes[bytes_sent : bytes_sent + chunk_size]
                     logging.debug(f'Sending {byte_to_send}')
                     self.listening_conn.send_data(stream_id, byte_to_send)
                     self.sock.sendall(self.listening_conn.data_to_send())
@@ -352,7 +349,7 @@ def run_server(listen_port, https_pem, ca_pem) -> List[int]:
 
     :return: The list of DATA frame delays.
     """
-    options = (SSL.OP_NO_COMPRESSION | SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_TLSv1 | SSL.OP_NO_TLSv1_1)
+    options = SSL.OP_NO_COMPRESSION | SSL.OP_NO_SSLv2 | SSL.OP_NO_SSLv3 | SSL.OP_NO_TLSv1 | SSL.OP_NO_TLSv1_1
     context = SSL.Context(SSL.TLSv1_2_METHOD)
     context.set_options(options)
     context.set_verify(SSL.VERIFY_NONE, lambda *args: True)

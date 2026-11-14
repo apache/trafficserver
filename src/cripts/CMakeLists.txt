@@ -65,10 +65,8 @@ target_link_libraries(cripts PUBLIC libswoc::libswoc OpenSSL::Crypto fmt::fmt Pk
 set_target_properties(cripts PROPERTIES PUBLIC_HEADER "${CRIPTS_PUBLIC_HEADERS}")
 
 set_target_properties(
-  cripts
-  PROPERTIES VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}
-             SOVERSION ${PROJECT_VERSION_MAJOR}
-             MACHO_COMPATIBILITY_VERSION ${PROJECT_VERSION_MAJOR}.0.0
+  cripts PROPERTIES VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH} SOVERSION
+                    ${PROJECT_VERSION_MAJOR} MACHO_COMPATIBILITY_VERSION ${PROJECT_VERSION_MAJOR}.0.0
 )
 
 install(TARGETS cripts PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cripts)
@@ -86,8 +84,9 @@ endif()
 # This needs to be done manually as the generated file is checked in.
 add_custom_target(
   generate-cripts-config
-  COMMAND ${PROJECT_SOURCE_DIR}/tools/cripts/genconfig.py ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc >
-          ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
+  COMMAND
+    ${PROJECT_SOURCE_DIR}/tools/cripts/genconfig.py ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc >
+    ${PROJECT_SOURCE_DIR}/include/cripts/Configs.hpp
   DEPENDS ${PROJECT_SOURCE_DIR}/src/shared/overridable_txn_vars.cc ${PROJECT_SOURCE_DIR}/tools/cripts/genconfig.py
   VERBATIM
 )
@@ -102,10 +101,7 @@ if(BUILD_TESTING)
   target_include_directories(test_cripts_cases PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
   target_link_libraries(test_cripts_cases PRIVATE Catch2::Catch2 ts::cripts)
   set_target_properties(
-    test_cripts_cases
-    PROPERTIES PREFIX ""
-               SUFFIX ".so"
-               LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    test_cripts_cases PROPERTIES PREFIX "" SUFFIX ".so" LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
   if(APPLE)
     target_link_options(test_cripts_cases PRIVATE -undefined dynamic_lookup)
@@ -127,32 +123,33 @@ if(BUILD_TESTING)
   )
   target_link_libraries(
     test_cripts
-    PRIVATE ${CMAKE_DL_LIBS}
-            Catch2::Catch2
-            tsapi_objects
-            ts::tscore
-            ts::overridable_txn_vars
-            ts::tsutil
-            ts::http
-            ts::http_remap
-            ts::http2
-            ts::logging
-            ts::hdrs
-            ts::diagsconfig
-            ts::inkutils
-            ts::inkdns
-            ts::inkhostdb
-            ts::inkcache
-            ts::aio
-            ts::proxy
-            ts::inknet
-            ts::records
-            ts::inkevent
-            libswoc::libswoc
-            ts::jsonrpc_protocol
-            ts::jsonrpc_server
-            ts::rpcpublichandlers
-            ts::configmanager
+    PRIVATE
+      ${CMAKE_DL_LIBS}
+      Catch2::Catch2
+      tsapi_objects
+      ts::tscore
+      ts::overridable_txn_vars
+      ts::tsutil
+      ts::http
+      ts::http_remap
+      ts::http2
+      ts::logging
+      ts::hdrs
+      ts::diagsconfig
+      ts::inkutils
+      ts::inkdns
+      ts::inkhostdb
+      ts::inkcache
+      ts::aio
+      ts::proxy
+      ts::inknet
+      ts::records
+      ts::inkevent
+      libswoc::libswoc
+      ts::jsonrpc_protocol
+      ts::jsonrpc_server
+      ts::rpcpublichandlers
+      ts::configmanager
   )
   add_catch2_test(NAME test_cripts COMMAND test_cripts)
 endif()

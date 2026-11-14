@@ -4,7 +4,7 @@
 
   See:  https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

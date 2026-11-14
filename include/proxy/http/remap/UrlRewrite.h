@@ -2,7 +2,7 @@
 
   URL rewriting.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -91,6 +91,7 @@ public:
   /** Build the internal url write tables.
    *
    * @param path Path to configuration file.
+   * @param[in] remap_node Inline remap.yaml rule sequence, or @c nullptr to parse @a path.
    * @param ctx  ConfigContext for reload status tracking.
    * @return 0 on success, non-zero error code on failure.
    */
@@ -163,10 +164,8 @@ public:
     }
   };
 
-  void        PerformACLFiltering(HttpTransact::State *s, const url_mapping *const mapping);
-  void        PrintStore(const MappingsStore &store) const;
-  std::string PrintRemapHits();
-  std::string PrintRemapHitsStore(MappingsStore &store);
+  void PerformACLFiltering(HttpTransact::State *s, const url_mapping *const mapping);
+  void PrintStore(const MappingsStore &store) const;
 
   void
   DestroyStore(MappingsStore &store)

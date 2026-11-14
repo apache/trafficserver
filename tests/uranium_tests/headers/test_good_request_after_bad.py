@@ -32,10 +32,10 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n"
-                    "Cache-Control: max-age=1000\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n"
+                "Cache-Control: max-age=1000\r\n\r\n"
+            ),
             "body": "xxx",
         },
     )
@@ -57,7 +57,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, strictness: int, *, _origi
         (
             f"map / http://127.0.0.1:{_origin.http_port}",
             f"map /bob<> http://127.0.0.1:{_origin.http_port}",
-        ))
+        )
+    )
     return ats
 
 
@@ -113,7 +114,8 @@ def send_curl_trace_requests(*, _curl: Curl, _strict: ATS) -> None:
         _strict,
         (
             f"--verbose --http1.1 --header 'Transfer-Encoding: chunked' --data aaa -X TRACE "
-            f"'http://127.0.0.1:{_strict.http_port}/foo'"),
+            f"'http://127.0.0.1:{_strict.http_port}/foo'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert "HTTP/1.1 400 Invalid HTTP Request" in result.output
@@ -140,8 +142,8 @@ def send_less_strict_requests(*, _less_strict: ATS) -> None:
     )
     assert "HTTP/1.1 200 OK" in accepted
     for request in (
-            "GET /bob foo HTTP/1.1\r\nhost: bob\r\n\r\n",
-            "GET / HTP/1.1\r\nhost: bob\r\n\r\n",
+        "GET /bob foo HTTP/1.1\r\nhost: bob\r\n\r\n",
+        "GET / HTP/1.1\r\nhost: bob\r\n\r\n",
     ):
         assert_gold(send_tcp(_less_strict.http_port, request + SECOND_REQUEST), "bad_good_request_http1.gold")
 

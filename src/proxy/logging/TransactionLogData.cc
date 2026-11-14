@@ -2,7 +2,7 @@
 
   TransactionLogData implementation.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -694,6 +694,24 @@ TransactionLogData::get_client_security_group() const
 {
   if (likely(m_http_sm != nullptr)) {
     return m_http_sm->get_user_agent().get_client_security_group();
+  }
+  return nullptr;
+}
+
+const char *
+TransactionLogData::get_client_offered_signature_algorithms() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_offered_signature_algorithms();
+  }
+  return nullptr;
+}
+
+const char *
+TransactionLogData::get_client_negotiated_signature_algorithm() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_negotiated_signature_algorithm();
   }
   return nullptr;
 }

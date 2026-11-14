@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Serve many metrics from stats_over_http remap rules and release each request."""
+
 import re
 import sys
 from pathlib import Path
@@ -33,13 +34,13 @@ def fetch(services: ServiceFactory, ats: ATS, name: str, stats_format: str) -> N
     """
     result = services.process(
         name,
-        [sys.executable,
-         Path(__file__).parent / "fetch_stats.py",
-         str(ats.http_port), stats_format, f"--count={METRIC_COUNT}"]).run()
+        [sys.executable, Path(__file__).parent / "fetch_stats.py", str(ats.http_port), stats_format, f"--count={METRIC_COUNT}"],
+    ).run()
     assert result.returncode == 0, result.output
     assert f"Verified {METRIC_COUNT} test metrics" in result.stdout, f"The {stats_format} body should hold every test metric."
-    assert re.search(rf"^X-Stats-Format: {stats_format}$", result.stdout, re.MULTILINE), \
+    assert re.search(rf"^X-Stats-Format: {stats_format}$", result.stdout, re.MULTILINE), (
         f"The {stats_format} rule should serve the request."
+    )
 
 
 def test_stats_over_http_remap_intercept(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -64,22 +65,34 @@ def test_stats_over_http_remap_intercept(ats_factory: ATSFactory, services: Serv
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "stats_over_http",
             "proxy.config.dump_mem_info_frequency": 1,
-        })
+            # Over loopback, Linux autotunes the send buffer of the socket to the client to a few megabytes, more than the
+            # whole prometheus body, so the intercept can finish its write before the client's reset arrives and never log
+            # the EOS or ERROR that the test looks for.  This record sets SO_SNDBUF, which fixes the size and turns the
+            # autotuning off.  The kernel doubles the value, so the socket holds 32 KB of the 1.6 MB body.
+            "proxy.config.net.sock_send_buffer_size_in": 16384,
+        }
+    )
     # A remap rule matches a path prefix, so the prometheus_v2 rule comes before the prometheus rule.
     for stats_format in ["prometheus_v2", "prometheus", "json", "csv"]:
         ats.remap_config.add_line(
             f"map http://127.0.0.1:{ats.http_port}/_stats/{stats_format} http://127.0.0.1/"
-            f" @plugin=stats_over_http.so @pparam=--format={stats_format}")
+            f" @plugin=stats_over_http.so @pparam=--format={stats_format}"
+        )
     ats.start()
 
     for stats_format in ["json", "csv", "prometheus", "prometheus_v2"]:
         fetch(services, ats, f"fetch-{stats_format}", stats_format)
 
     client = directory / "fetch_stats.py"
+    # The continuation count comes from the freelist dump, which has no
+    # INKContAllocator rows when allocations go straight to malloc.
+    count_continuations = not ats.has_feature("TS_USE_MALLOC_ALLOCATOR")
     baseline = ats.run_directory / "cont_baseline"
-    result = services.process("count-before",
-                              [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
-    assert result.returncode == 0, result.output
+    if count_continuations:
+        result = services.process(
+            "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]
+        ).run()
+        assert result.returncode == 0, result.output
 
     fetch(services, ats, "fetch-again", "prometheus")
     for name, option, status in [("head", "--head", 200), ("post", "--post", 405), ("reject", "--reject", 406)]:
@@ -89,9 +102,10 @@ def test_stats_over_http_remap_intercept(ats_factory: ATSFactory, services: Serv
     result = services.process("reset", [sys.executable, client, str(ats.http_port), "prometheus", "--reset"]).run()
     assert result.returncode == 0, result.output
 
-    result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
-    assert result.returncode == 0, result.output
-    assert "no more than the baseline" in result.stdout, "The requests should release their continuations."
+    if count_continuations:
+        result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
+        assert result.returncode == 0, result.output
+        assert "no more than the baseline" in result.stdout, "The requests should release their continuations."
 
     fetch(services, ats, "fetch-after-aborts", "json")
     wait_for_file_lines(ats.traffic_out, "Intercept finished on TS_EVENT_NET_ACCEPT_FAILED", 1)

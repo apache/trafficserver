@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 #
-#  Simple wrapper to run yapf on a directory.
+#  Simple wrapper to run cmakefmt on a directory.
 #
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -18,12 +18,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Update these VERSION variables with the new desired yapf tag when a new
-# yapf version is desired.
+# Update this version variable with the new desired cmakefmt release when a
+# new cmakefmt version is desired.
 # See:
-# https://github.com/google/yapf/tags
-YAPF_VERSION="0.43.0"
-VERSION="yapf 0.43.0"
+# https://github.com/cmakefmt/cmakefmt/releases
+CMAKEFMT_VERSION="2.3.1"
+
+function cmake_vendorlib_grep() {
+  grep -E "CMakeLists.txt|.cmake$" | grep -vE "lib/(Catch2|fastlz|highway|ls-hpack|swoc|yamlcpp)" || true
+}
 
 function main() {
   set -e # exit on error
@@ -34,54 +37,42 @@ function main() {
     exit 1
   fi
 
-  ver=$(uv tool run --quiet yapf@${YAPF_VERSION} --version 2>&1)
-  if [ "$ver" != "$VERSION" ]
-  then
-      echo "Wrong version of yapf!"
-      echo "Expected: \"${VERSION}\", got: \"${ver}\""
-      exit 1
-  fi
-
-  REPO_ROOT=$(cd $(dirname $0) && git rev-parse --show-toplevel)
-
   DIR=${@:-.}
 
-  # Only run yapf on tracked files. This saves time and possibly avoids
+  # Only run cmakefmt on tracked files. This saves time and possibly avoids
   # formatting files the user doesn't want formatted.
   tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
   files=${tmp_dir}/git_files.txt
-  files_filtered=${tmp_dir}/git_files_filtered.txt
-  git ls-tree -r HEAD --name-only ${DIR} | grep -vE "lib/yamlcpp" > ${files}
+  git ls-tree -r HEAD --name-only ${DIR} | cmake_vendorlib_grep > ${files}
   # Add to the above any newly added staged files.
-  git diff --cached --name-only --diff-filter=A >> ${files}
-  # Keep this list of Python extensions the same with the list of
-  # extensions searched for in the tools/git/pre-commit hook.
-  grep -E '\.py$|\.cli.ext$|\.test.ext$' ${files} > ${files_filtered}
-  # Add back in the tools Python scripts without a .py extension.
-  grep -rl '#!.*python' "${REPO_ROOT}/tools" | grep -vE '(yapf.sh|.py)' | sed "s:${REPO_ROOT}/::g" >> ${files_filtered}
+  git diff --cached --name-only --diff-filter=A | cmake_vendorlib_grep >> ${files}
   # Prepend the filenames with "./" to make the modified file output consistent
   # with the clang-format target output.
-  sed -i'.bak' 's:^:\./:' ${files_filtered}
-  rm -f ${files_filtered}.bak
+  sed -i'.bak' 's:^:\./:' ${files}
+  rm -f ${files}.bak
+
+  # With no files, both cmakefmt and find would fall back to recursing the
+  # current directory, which would reach files outside the requested scope.
+  if [[ ! -s ${files} ]]; then
+    rm -rf ${tmp_dir}
+    return 0
+  fi
 
   # Efficiently retrieving modification timestamps in a platform
   # independent way is challenging. We use find's -newer argument, which
   # seems to be broadly supported. The following file is created and has a
-  # timestamp just before running yapf. Any file with a timestamp
-  # after this we assume was modified by yapf.
+  # timestamp just before running cmakefmt. Any file with a timestamp
+  # after this we assume was modified by cmakefmt.
   start_time_file=${tmp_dir}/format_start.$$
   touch ${start_time_file}
-  YAPF_CONFIG=${REPO_ROOT}/.style.yapf
-  uv tool run --quiet yapf@${YAPF_VERSION} \
-      --style ${YAPF_CONFIG} \
-      --parallel \
-      --in-place \
-      $(cat ${files_filtered})
-  find $(cat ${files_filtered}) -newer ${start_time_file}
+  uv tool run --quiet --from cmakefmt@${CMAKEFMT_VERSION} cmakefmt --required-version ${CMAKEFMT_VERSION} --quiet -i \
+    --files-from ${files}
+  find $(cat ${files}) -newer ${start_time_file}
 
   rm -rf ${tmp_dir}
 }
 
-if [[ "$(basename -- "$0")" == 'yapf.sh' ]]; then
+if [[ "$(basename -- "$0")" == 'cmakefmt.sh' ]]; then
   main "$@"
 fi
+# When sourced, CMAKEFMT_VERSION is already set at the top of this file.

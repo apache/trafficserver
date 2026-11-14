@@ -16,27 +16,24 @@
 #######################
 
 add_library(
-  hdrs STATIC
-  HTTP.cc
-  HdrHeap.cc
-  HdrTSOnly.cc
-  HdrToken.cc
-  HdrUtils.cc
-  HttpCompat.cc
-  MIME.cc
-  URL.cc
-  VersionConverter.cc
-  HuffmanCodec.cc
-  XPACK.cc
-  HeaderValidator.cc
+  hdrs
+  STATIC
+    HTTP.cc
+    HdrHeap.cc
+    HdrTSOnly.cc
+    HdrToken.cc
+    HdrUtils.cc
+    HttpCompat.cc
+    MIME.cc
+    URL.cc
+    VersionConverter.cc
+    HuffmanCodec.cc
+    XPACK.cc
+    HeaderValidator.cc
 )
 add_library(ts::hdrs ALIAS hdrs)
 
-target_link_libraries(
-  hdrs
-  PUBLIC libswoc::libswoc ts::tscore
-  PRIVATE ts::inkevent ts::tsutil lshpack
-)
+target_link_libraries(hdrs PUBLIC libswoc::libswoc ts::tscore PRIVATE ts::inkevent ts::tsutil lshpack)
 
 # For ls-hpack includes.
 target_include_directories(hdrs PRIVATE ${CMAKE_SOURCE_DIR}/lib)
@@ -56,13 +53,14 @@ if(BUILD_TESTING)
   )
   target_link_libraries(
     test_proxy_hdrs
-    PRIVATE ts::hdrs
-            ts::tscore
-            ts::inkevent
-            libswoc::libswoc
-            Catch2::Catch2WithMain
-            lshpack
-            configmanager
+    PRIVATE
+      ts::hdrs
+      ts::tscore
+      ts::inkevent
+      libswoc::libswoc
+      Catch2::Catch2WithMain
+      lshpack
+      configmanager
   )
   # For the ls-hpack decoder parity tests.
   target_include_directories(test_proxy_hdrs PRIVATE ${CMAKE_SOURCE_DIR}/lib)

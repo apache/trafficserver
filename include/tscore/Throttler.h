@@ -2,7 +2,7 @@
 
   A class for generic throttling.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -91,7 +91,7 @@ public:
 
   /** Set the log throttling interval to a new value.
    *
-   * @param[in] interval The new interval to set.
+   * @param[in] new_interval The new interval to set.
    */
   void set_throttling_interval(std::chrono::microseconds new_interval);
 
@@ -130,6 +130,6 @@ private:
   /// The minimum number of microseconds desired between actions.
   std::atomic<std::chrono::microseconds> _interval{std::chrono::microseconds{0}};
 
-  /// The number of calls to Throttler since the last
-  uint64_t _suppressed_count = 0;
+  /// The number of suppressed calls since the last unsuppressed one or counter reset.
+  std::atomic<uint64_t> _suppressed_count{0};
 };

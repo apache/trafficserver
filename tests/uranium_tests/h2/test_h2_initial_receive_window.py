@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Independent stream and connection receive windows for all policies."""
+
 import sys
 from pathlib import Path
 import pytest
@@ -38,15 +39,13 @@ def test_h2_initial_receive_window(ats_factory: ATSFactory, services: ServiceFac
             "proxy.config.http2.initial_window_size_in": window,
             "proxy.config.http2.max_concurrent_streams_in": 100,
             "proxy.config.http.request_buffer_enabled": 1,
-        })
+        }
+    )
     ats.remap_config.add_line("map / http://127.0.0.1:1")
     ats.start()
     result = services.process(
         "client",
-        [sys.executable,
-         Path(__file__).with_name("initial_window_client.py"),
-         str(ats.http_port),
-         str(policy),
-         str(window)]).run(timeout=15)
+        [sys.executable, Path(__file__).with_name("initial_window_client.py"), str(ats.http_port), str(policy), str(window)],
+    ).run(timeout=15)
     assert result.returncode == 0, result.output
     assert f"verified policy={policy} stream_window={window}" in result.stdout

@@ -16,8 +16,8 @@
 
 # Used by: global JA4H keep mode test.
 #
-# The jax_fingerprint plugin is loaded globally with --method JA4H
-# --standalone --mode keep.
+# The jax_fingerprint plugin is loaded globally with method JA4H,
+# standalone, and mode keep.
 #
 # keep mode: if the fingerprint header (x-jax) or via header (x-jax-via)
 # is already present on the incoming request, the plugin must leave them

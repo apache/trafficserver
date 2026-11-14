@@ -1,6 +1,6 @@
 /** @file
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -44,6 +44,7 @@
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "records/RecHttp.h"
 #include "tsutil/Convert.h"
+#include "tsutil/PostScript.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/ink_config.h"
 #include "tscore/SimpleTokenizer.h"
@@ -62,6 +63,7 @@
 #include <openssl/bio.h>
 #include <openssl/conf.h>
 #ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
+#include <openssl/core_names.h>
 #include <openssl/evp.h>
 #endif
 #include <openssl/dh.h>
@@ -83,6 +85,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <thread>
 #include <utility>
 #include <string>
@@ -354,7 +357,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
         X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
   }
 
-  if (tbs->verify_certificate(ctx) == 1) { // hook moved the handshake state to terminal
+  if (tbs->verify_certificate(ctx) == 1) { // a plugin rejected the certificate
     Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
     return false;
   }
@@ -495,10 +498,34 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
 }
 #endif
 
+static std::string
+ssl_client_offered_signature_algorithms(TLSSNISupport::ClientHello &client_hello)
+{
+  uint8_t const *extension = nullptr;
+  size_t         length    = 0;
+
+  if (client_hello.getExtension(TLSEXT_TYPE_signature_algorithms, &extension, &length) != 1 || length < 2) {
+    return {};
+  }
+
+  size_t const algorithms_length = static_cast<size_t>(extension[0]) << 8 | extension[1];
+  if (algorithms_length != length - 2 || algorithms_length % 2 != 0) {
+    return {};
+  }
+
+  std::vector<uint16_t> algorithms;
+  algorithms.reserve(algorithms_length / 2);
+  for (size_t offset = 2; offset < length; offset += 2) {
+    algorithms.push_back(static_cast<uint16_t>(extension[offset]) << 8 | extension[offset + 1]);
+  }
+
+  return SSLFormatSignatureAlgorithms(algorithms);
+}
+
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
-ssl_client_hello_callback(SSL *s, int * /* al ATS_UNUSED */, void * /* arg ATS_UNUSED */)
+ssl_client_hello_callback(SSL *s, int *al, void * /* arg ATS_UNUSED */)
 {
   TLSSNISupport::ClientHello ch = {s};
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
@@ -517,13 +544,57 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     // Renegotiation carries a new ClientHello, whose SNI actions must still run.
     TLSBasicSupport *tbs = TLSBasicSupport::getInstance(s);
     if (tbs == nullptr || !tbs->is_tls_handshake_complete()) {
+      // The ClientHello after a HelloRetryRequest also arrives here. The SNI actions ran for the first
+      // ClientHello, so the second must name the same server (RFC 8446 section 4.1.2).
+      TLSSNISupport *snis = TLSSNISupport::getInstance(s);
+
+      if (snis == nullptr) {
+        Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
+        return CLIENT_HELLO_ERROR;
+      }
+      if (auto const servername = ch.getServerName(); servername != std::string_view{snis->get_sni_server_name()}) {
+        // Any client can trigger this, so it is throttled. Both names are client-supplied bytes, so they
+        // are left to the debug log.
+        static LogMessage log_msg{IS_THROTTLED};
+
+        log_msg.warning(MakeSourceLocation(), "rejecting a ClientHello after a HelloRetryRequest that changes the server name");
+        Dbg(dbg_ctl_ssl_error, "Rejecting a ClientHello for '%.*s' after one for '%s'", static_cast<int>(servername.size()),
+            servername.empty() ? "" : servername.data(), snis->get_sni_server_name());
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+        *al = SSL_AD_ILLEGAL_PARAMETER;
+#endif
+        return CLIENT_HELLO_ERROR;
+      }
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+      // A pass that paused returned before binding. After a HelloRetryRequest this recomputes the
+      // binding before the session for the second ClientHello is created or looked up.
+      if (!bind_session_id_context_to_verify_scope(s)) {
+        return CLIENT_HELLO_ERROR;
+      }
+#endif
       return CLIENT_HELLO_SUCCESS;
     }
   }
 
+  if (auto *tbs = TLSBasicSupport::getInstance(s); tbs != nullptr) {
+    tbs->capture_tls_offered_signature_algorithms(ssl_client_offered_signature_algorithms(ch));
+  }
+
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
-  if (snis) {
-    snis->on_client_hello(ch);
+  if (snis == nullptr) {
+    // This error suggests either of these:
+    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
+    // 2) Call back on stale netvc
+    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
+    return CLIENT_HELLO_ERROR;
+  }
+
+  snis->on_client_hello(ch);
+  ts::PostScript clear_client_hello([snis]() -> void { snis->clear_client_hello(); });
+
+  // When a delayed ClientHello hook reenables, the TLS library calls back again for the remaining
+  // hooks, and the SNI actions and any certificate context selection have already run.
+  if (es == nullptr || !es->resuming_client_hello_hooks()) {
     int ret = snis->perform_sni_action(*s);
     if (ret != SSL_TLSEXT_ERR_OK) {
       return CLIENT_HELLO_ERROR;
@@ -561,21 +632,18 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
       }
     }
 #endif
-  } else {
-    // This error suggests either of these:
-    // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
-    // 2) Call back on stale netvc
-    Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback was called unexpectedly");
-    return CLIENT_HELLO_ERROR;
   }
 
   if (es) {
-    if (es->finished_client_hello_hooks()) {
-      return CLIENT_HELLO_SUCCESS;
-    }
-    bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
-    if (!reenabled) {
-      return CLIENT_HELLO_RETRY;
+    // A renegotiation reaches here with the hooks already finished; it still needs its own bind.
+    if (!es->finished_client_hello_hooks()) {
+      // Hooks that reenable from within their invocation leave the rest to run here.
+      do {
+        bool reenabled = es->callHooks(TS_EVENT_SSL_CLIENT_HELLO);
+        if (!reenabled) {
+          return CLIENT_HELLO_RETRY;
+        }
+      } while (es->resuming_client_hello_hooks());
     }
   } else {
     Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
@@ -595,6 +663,24 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   return CLIENT_HELLO_SUCCESS;
 }
 
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+// OpenSSL's ClientHello API drops extensions it doesn't recognize, including
+// GREASE. Record the extension types from the raw ClientHello message, which
+// this callback receives before ssl_client_hello_callback runs.
+static void
+ssl_msg_callback(int write_p, int /* version ATS_UNUSED */, int content_type, const void *buf, size_t len, SSL *ssl,
+                 void * /* arg ATS_UNUSED */)
+{
+  auto const *msg = static_cast<const uint8_t *>(buf);
+  if (write_p || content_type != SSL3_RT_HANDSHAKE || len == 0 || msg[0] != SSL3_MT_CLIENT_HELLO) {
+    return;
+  }
+  if (TLSSNISupport *snis = TLSSNISupport::getInstance(ssl); snis != nullptr) {
+    snis->on_client_hello_message(msg, len);
+  }
+}
+#endif
+
 /**
  * Called before either the server or the client certificate is used
  * Return 1 on success, 0 on error, or -1 to pause, -2 to retry
@@ -609,6 +695,10 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   bool const            is_renegotiation = tbs != nullptr && tbs->is_tls_handshake_complete();
   bool                  reenabled;
   int                   retval = 1;
+
+  if (auto *tbs = TLSBasicSupport::getInstance(ssl); tbs != nullptr) {
+    tbs->capture_tls_offered_signature_algorithms();
+  }
 
   // If we are in tunnel mode, don't select a cert.  Pause!
   if (sslnetvc) {
@@ -1394,6 +1484,8 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 {
   Dbg(dbg_ctl_ssl_load, "ssl_callback_info ssl: %p, where: %d, ret: %d, State: %s", ssl, where, ret, SSL_state_string_long(ssl));
 
+  SSLHandshakeInfoCallback(ssl, where, ret);
+
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
   if (!netvc || netvc->ssl != ssl) {
@@ -1434,6 +1526,10 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
   }
   if (where & SSL_CB_HANDSHAKE_DONE) {
     // handshake is complete
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+    // The raw ClientHello has been recorded. Stop the per record message callbacks.
+    SSL_set_msg_callback(const_cast<SSL *>(ssl), nullptr);
+#endif
     const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
     if (cipher) {
       const char *cipherName = SSL_CIPHER_get_name(cipher);
@@ -1469,6 +1565,7 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
   SSL_CTX_set_client_hello_cb(ctx, ssl_client_hello_callback, nullptr);
+  SSL_CTX_set_msg_callback(ctx, ssl_msg_callback);
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
   SSL_CTX_set_select_certificate_cb(ctx, [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
     ssl_select_cert_result_t res;
@@ -3255,6 +3352,212 @@ SSLGetGroupName([[maybe_unused]] SSL *ssl)
 #else
   return "";
 #endif // HAVE_SSL_GET0_GROUP_NAME
+}
+
+namespace
+{
+bool
+is_grease_signature_algorithm(uint16_t algorithm)
+{
+  return (algorithm & 0x0f0f) == 0x0a0a && (algorithm >> 12) == ((algorithm >> 4) & 0x0f);
+}
+
+#if HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS
+bool
+signature_algorithm_matches_private_key(SSL *ssl, uint16_t algorithm)
+{
+  EVP_PKEY *private_key = SSL_get_privatekey(ssl);
+
+  if (private_key == nullptr) {
+    return false;
+  }
+
+  int const key_type = EVP_PKEY_base_id(private_key);
+
+  switch (algorithm) {
+  case 0x0804: // rsa_pss_rsae_sha256
+  case 0x0805: // rsa_pss_rsae_sha384
+  case 0x0806: // rsa_pss_rsae_sha512
+    return key_type == EVP_PKEY_RSA;
+  case 0x0809: // rsa_pss_pss_sha256
+  case 0x080a: // rsa_pss_pss_sha384
+  case 0x080b: // rsa_pss_pss_sha512
+    return key_type == EVP_PKEY_RSA_PSS;
+  default:
+    break;
+  }
+
+#if defined(TLS1_3_VERSION)
+  if (SSL_version(ssl) >= TLS1_3_VERSION && key_type == EVP_PKEY_EC) {
+    int expected_curve = NID_undef;
+
+    switch (algorithm) {
+    case 0x0403: // ecdsa_secp256r1_sha256
+      expected_curve = NID_X9_62_prime256v1;
+      break;
+    case 0x0503: // ecdsa_secp384r1_sha384
+      expected_curve = NID_secp384r1;
+      break;
+    case 0x0603: // ecdsa_secp521r1_sha512
+      expected_curve = NID_secp521r1;
+      break;
+    case 0x081a: // ecdsa_brainpoolP256r1tls13_sha256
+      expected_curve = NID_brainpoolP256r1;
+      break;
+    case 0x081b: // ecdsa_brainpoolP384r1tls13_sha384
+      expected_curve = NID_brainpoolP384r1;
+      break;
+    case 0x081c: // ecdsa_brainpoolP512r1tls13_sha512
+      expected_curve = NID_brainpoolP512r1;
+      break;
+    default:
+      break;
+    }
+
+    if (expected_curve != NID_undef) {
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
+      char   group_name[80];
+      size_t group_name_length = 0;
+
+      return EVP_PKEY_get_utf8_string_param(private_key, OSSL_PKEY_PARAM_GROUP_NAME, group_name, sizeof(group_name),
+                                            &group_name_length) == 1 &&
+             OBJ_txt2nid(group_name) == expected_curve;
+#else
+      EC_KEY const *ec_key = EVP_PKEY_get0_EC_KEY(private_key);
+
+      if (ec_key != nullptr) {
+        EC_GROUP const *group = EC_KEY_get0_group(ec_key);
+        return group != nullptr && EC_GROUP_get_curve_name(group) == expected_curve;
+      }
+#endif
+    }
+  }
+#endif
+
+  return true;
+}
+#endif
+} // namespace
+
+std::string
+SSLFormatSignatureAlgorithms(swoc::MemSpan<uint16_t const> algorithms)
+{
+  std::string result;
+
+  for (uint16_t const algorithm : algorithms) {
+    if (is_grease_signature_algorithm(algorithm)) {
+      continue;
+    }
+    if (!result.empty()) {
+      result.push_back('-');
+    }
+    result.append(std::to_string(algorithm));
+  }
+
+  return result;
+}
+
+std::string
+SSLGetOfferedSignatureAlgorithms([[maybe_unused]] SSL *ssl)
+{
+#if HAVE_SSL_GET0_PEER_VERIFY_ALGORITHMS
+  uint16_t const *algorithms = nullptr;
+  size_t const    count      = SSL_get0_peer_verify_algorithms(ssl, &algorithms);
+
+  return SSLFormatSignatureAlgorithms({algorithms, count});
+#elif HAVE_SSL_GET_SIGALGS
+  int const count = SSL_get_sigalgs(ssl, -1, nullptr, nullptr, nullptr, nullptr, nullptr);
+
+  if (count <= 0) {
+    return {};
+  }
+
+  std::vector<uint16_t> algorithms;
+  algorithms.reserve(count);
+  for (int index = 0; index < count; ++index) {
+    unsigned char signature = 0;
+    unsigned char hash      = 0;
+
+    if (SSL_get_sigalgs(ssl, index, nullptr, nullptr, nullptr, &signature, &hash) > 0) {
+      algorithms.push_back(static_cast<uint16_t>(hash) << 8 | signature);
+    }
+  }
+
+  return SSLFormatSignatureAlgorithms(algorithms);
+#else
+  return {};
+#endif
+}
+
+std::string
+SSLGetNegotiatedSignatureAlgorithm(SSL *ssl)
+{
+  // A resumed handshake creates no new signature, even if the library retains signature metadata.
+  if (ssl == nullptr || SSL_session_reused(ssl)) {
+    return {};
+  }
+
+#if HAVE_SSL_GET_SIGNATURE_ALGORITHM_USED
+  uint16_t const algorithm = SSL_get_signature_algorithm_used(ssl);
+
+  return algorithm == 0 ? "" : std::to_string(algorithm);
+#elif HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS
+  // Static RSA key exchange authenticates the handshake with the certificate alone. The server signs nothing, but the
+  // library still reports the signature algorithm it chose while selecting that certificate, so report no value rather
+  // than a scheme that never signed anything.
+  SSL_CIPHER const *cipher = SSL_get_current_cipher(ssl);
+
+  if (cipher == nullptr || SSL_CIPHER_get_kx_nid(cipher) == NID_kx_rsa) {
+    return {};
+  }
+
+  // When the TLS library does not expose the exact IANA scheme, derive it from the local signature type and digest, the
+  // shared list, and the certificate key. Return no value if more than one compatible code point remains.
+  int signature_type = NID_undef;
+  int hash           = NID_undef;
+
+  if (SSL_get_signature_type_nid(ssl, &signature_type) != 1 || SSL_get_signature_nid(ssl, &hash) != 1) {
+    return {};
+  }
+
+  std::optional<uint16_t> matched_algorithm;
+  int const               count = SSL_get_shared_sigalgs(ssl, 0, nullptr, nullptr, nullptr, nullptr, nullptr);
+  for (int index = 0; index < count; ++index) {
+    int           shared_signature_type = NID_undef;
+    int           shared_hash           = NID_undef;
+    unsigned char signature             = 0;
+    unsigned char raw_hash              = 0;
+
+    if (SSL_get_shared_sigalgs(ssl, index, &shared_signature_type, &shared_hash, nullptr, &signature, &raw_hash) <= 0 ||
+        shared_signature_type != signature_type || shared_hash != hash) {
+      continue;
+    }
+
+    uint16_t const algorithm = static_cast<uint16_t>(raw_hash) << 8 | signature;
+    if (signature_algorithm_matches_private_key(ssl, algorithm)) {
+      if (matched_algorithm.has_value() && *matched_algorithm != algorithm) {
+        return {};
+      }
+      matched_algorithm = algorithm;
+    }
+  }
+
+  return matched_algorithm.has_value() ? std::to_string(*matched_algorithm) : "";
+#else
+  return {};
+#endif
+}
+
+void
+SSLHandshakeInfoCallback(const SSL *ssl, int where, int /* ret */)
+{
+  if ((where & SSL_CB_HANDSHAKE_DONE) == 0) {
+    return;
+  }
+
+  if (auto *tbs = TLSBasicSupport::getInstance(const_cast<SSL *>(ssl)); tbs != nullptr) {
+    tbs->capture_tls_negotiated_signature_algorithm();
+  }
 }
 
 SSL_SESSION *

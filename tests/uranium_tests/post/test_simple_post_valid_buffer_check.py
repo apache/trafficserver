@@ -40,7 +40,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http.request_buffer_enabled": 1,
             "proxy.config.http.number_of_redirections": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 

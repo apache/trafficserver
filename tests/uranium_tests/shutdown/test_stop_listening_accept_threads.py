@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """SIGTERM must finish draining when listeners are closed, with and without dedicated accept threads."""
+
 import signal
 
 import pytest
@@ -33,7 +34,8 @@ def test_stop_listening_sigterm_exits(ats: ATS, accept_threads: int) -> None:
             "proxy.config.accept_threads": accept_threads,
             "proxy.config.restart.stop_listening": 1,
             "proxy.config.stop.shutdown_timeout": 3,
-        })
+        }
+    )
     ats.start()
     ats.send_signal(signal.SIGTERM)
     ats.wait(timeout=20)

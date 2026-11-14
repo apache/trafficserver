@@ -1,0 +1,83 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: test_jax_fingerprint_log_field.py
+#
+# The origin side of the HTTP/3 case. curl sends these requests on one HTTP/3 connection and gives up on
+# h3-slow before the origin answers it.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - ok_response: &ok_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 2 ]
+
+      proxy-response:
+        status: 200
+
+sessions:
+
+- protocol:
+    stack: http3
+    tls:
+      sni: jax.server.test
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, jax.server.test ]
+        - [ :path, /h3-first ]
+        - [ uuid, h3-first ]
+
+    <<: *ok_response
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, jax.server.test ]
+        - [ :path, /h3-second ]
+        - [ uuid, h3-second ]
+
+    <<: *ok_response
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, jax.server.test ]
+        - [ :path, /h3-slow ]
+        - [ uuid, h3-slow ]
+
+    server-response:
+      delay: 3s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 2 ]

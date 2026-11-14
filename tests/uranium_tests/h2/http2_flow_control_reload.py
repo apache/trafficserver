@@ -106,7 +106,8 @@ class WindowProbe:
                 return
             if time.monotonic() >= deadline:
                 raise AssertionError(
-                    f'policies in={inbound_policy}, out={outbound_policy}: expected windows {expected}, got {actual}')
+                    f'policies in={inbound_policy}, out={outbound_policy}: expected windows {expected}, got {actual}'
+                )
             time.sleep(0.25)
 
     def _ping(self, sock: ssl.SSLSocket, connection: H2Connection) -> None:
@@ -144,17 +145,23 @@ class WindowProbe:
                         time.sleep(0.25)
                     for stream_id in (1, 3):
                         connection.send_headers(
-                            stream_id, [
-                                (':method', 'POST'), (':scheme', 'https'), (':authority', 'localhost'), (':path', '/'),
-                                ('content-length', '1')
+                            stream_id,
+                            [
+                                (':method', 'POST'),
+                                (':scheme', 'https'),
+                                (':authority', 'localhost'),
+                                (':path', '/'),
+                                ('content-length', '1'),
                             ],
-                            end_stream=False)
+                            end_stream=False,
+                        )
                         self._ping(sock, connection)
                     expected_stream_window = 65535 if original == 0 else 6553500 // 2
                     actual = connection.remote_settings[SettingCodes.INITIAL_WINDOW_SIZE]
                     assert actual == expected_stream_window, (
                         f'Existing connection changed policy {original} -> {updated}: '
-                        f'expected stream window {expected_stream_window}, got {actual}')
+                        f'expected stream window {expected_stream_window}, got {actual}'
+                    )
         print(f'PASS: existing connection retained policy {original} after reload to {updated}', flush=True)
 
     def run(self) -> None:

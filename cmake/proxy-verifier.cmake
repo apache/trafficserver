@@ -53,10 +53,8 @@ get_filename_component(PV_DEST_DIR "${PV_DEST_DIR}" ABSOLUTE BASE_DIR "${CMAKE_S
 
 # Download proxy-verifier to the destination directory.
 set(PV_ARCHIVE ${PV_DEST_DIR}/proxy-verifier/proxy-verifier.tar.gz)
-file(
-  DOWNLOAD https://ci.trafficserver.apache.org/bintray/proxy-verifier-${PROXY_VERIFIER_VERSION}.tar.gz ${PV_ARCHIVE}
-  EXPECTED_HASH ${PROXY_VERIFIER_HASH}
-  SHOW_PROGRESS
+file(DOWNLOAD https://ci.trafficserver.apache.org/bintray/proxy-verifier-${PROXY_VERIFIER_VERSION}.tar.gz ${PV_ARCHIVE}
+     EXPECTED_HASH ${PROXY_VERIFIER_HASH} SHOW_PROGRESS
 )
 file(ARCHIVE_EXTRACT INPUT ${PV_ARCHIVE} DESTINATION ${PV_DEST_DIR})
 

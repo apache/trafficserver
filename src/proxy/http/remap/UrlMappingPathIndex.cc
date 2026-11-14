@@ -2,7 +2,7 @@
 
     A brief file description
 
-    @section license License
+    @par License
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -104,17 +104,4 @@ UrlMappingPathIndex::Print() const
   for (auto &m_trie : m_tries) {
     m_trie.second->Print();
   }
-}
-
-std::string
-UrlMappingPathIndex::PrintUrlMappingPathIndex() const
-{
-  std::string result;
-  for (auto &m_trie : m_tries) {
-    for (auto const &node : *m_trie.second) {
-      result += node.PrintRemapHitCount();
-      result += ",\n";
-    }
-  }
-  return result;
 }

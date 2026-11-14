@@ -391,7 +391,7 @@ def _check_rate_limit(resp: httpx.Response) -> None:
     """
     if resp.status_code not in (403, 429):
         return
-    if (resp.status_code == 429 or resp.headers.get("x-ratelimit-remaining") == "0" or "retry-after" in resp.headers):
+    if resp.status_code == 429 or resp.headers.get("x-ratelimit-remaining") == "0" or "retry-after" in resp.headers:
         print(
             "You have exceeded your rate limit. Try using an auth token.",
             file=sys.stderr,

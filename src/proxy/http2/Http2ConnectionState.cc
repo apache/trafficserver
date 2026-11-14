@@ -2,7 +2,7 @@
 
   Http2ConnectionState.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -107,7 +107,9 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   Http2StreamDebug(this->session, id, "Received DATA frame, flags: %d", frame.header().flags);
 
-  // Update connection window size, before any stream specific handling
+  // Update connection window size, before any stream specific handling. RFC
+  // 9113 section 6.9 requires accounting for every flow-controlled frame
+  // against the connection window, even one that is in error.
   this->decrement_local_rwnd(payload_length);
 
   if (this->get_zombie_event()) {
@@ -125,6 +127,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   Http2Stream *stream = this->find_stream(id);
   if (stream == nullptr) {
     if (this->is_valid_streamid(id)) {
+      this->_top_up_window_after_discard(payload_length);
       // This error occurs fairly often, and is probably innocuous (SM initiates the shutdown)
       if (this->session->is_outbound()) {
         this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
@@ -140,6 +143,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED ||
       stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
+    this->_top_up_window_after_discard(payload_length);
     this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
@@ -149,6 +153,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   // the recipient MUST respond with a stream error of type STREAM_CLOSED.
   if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_OPEN &&
       stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
                       "recv data stream closed");
   }
@@ -169,10 +174,12 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
     stream->receive_end_stream = true;
     if (!stream->change_state(frame.header().type, frame.header().flags)) {
+      this->_top_up_window_after_discard(payload_length);
       this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
     if (!stream->payload_length_is_valid()) {
+      this->_top_up_window_after_discard(payload_length);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
     }
@@ -216,6 +223,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
                       "recv data this->local_rwnd < payload_length");
   }
   if (stream->get_local_rwnd() < payload_length) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_FLOW_CONTROL_ERROR,
                       "recv data stream->local_rwnd < payload_length");
   }
@@ -233,6 +241,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   MIOBuffer *writer = stream->read_vio_writer();
   if (writer == nullptr) {
+    this->_top_up_window_after_discard(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "no writer");
   }
 
@@ -253,6 +262,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
     unsigned int num_written = writer->write(myreader, read_len);
     if (num_written != read_len) {
       myreader->writer()->dealloc_reader(myreader);
+      this->_top_up_window_after_discard(payload_length);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_INTERNAL_ERROR, "Write mismatch");
     }
     myreader->consume(num_written);
@@ -1023,7 +1033,7 @@ Http2ConnectionState::rcv_goaway_frame(const Http2Frame &frame)
 
     if (drain && survivors > 0) {
       Http2ConDebug(session, "Draining %u streams after GOAWAY last_stream_id=%u", survivors, goaway.last_streamid);
-      this->_peer_goaway_drain = true;
+      this->_outbound_drain = true;
       this->session->set_half_close_local_flag(true);
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
@@ -1513,11 +1523,12 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
                                   configured_settings.get(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE));
 
   configured_max_settings_frames_per_minute     = Http2::max_settings_frames_per_minute;
-  configured_max_ping_frames_per_minute         = Http2::max_ping_frames_per_minute;
   configured_max_priority_frames_per_minute     = Http2::max_priority_frames_per_minute;
   configured_max_rst_stream_frames_per_minute   = Http2::max_rst_stream_frames_per_minute;
   configured_max_continuation_frames_per_minute = Http2::max_continuation_frames_per_minute;
   configured_max_empty_frames_per_minute        = Http2::max_empty_frames_per_minute;
+  configured_max_ping_frames_per_minute =
+    session->is_outbound() ? Http2::max_ping_frames_per_minute_out : Http2::max_ping_frames_per_minute;
 
   HttpConfigParams *http_config = HttpConfig::acquire();
   if (http_config) {
@@ -2161,6 +2172,14 @@ Http2ConnectionState::restart_streams()
 }
 
 void
+Http2ConnectionState::_top_up_window_after_discard(uint32_t discarded_length)
+{
+  Http2StreamDebug(this->session, HTTP2_CONNECTION_CONTROL_STREAM, "Discarded DATA payload_length=%" PRIu32 " rwnd con=%zd",
+                   discarded_length, this->get_local_rwnd());
+  this->restart_receiving(nullptr);
+}
+
+void
 Http2ConnectionState::restart_receiving(Http2Stream *stream)
 {
   if (this->session->get_proxy_session()->is_peer_closed()) {
@@ -2322,9 +2341,9 @@ Http2ConnectionState::release_stream()
         // Can't do this because we just destroyed right here ^,
         // or we can use a local variable to do it.
         // session = nullptr;
-      } else if (_peer_goaway_drain) {
-        // Every stream left by the origin's GOAWAY is gone. The half-closed
-        // session cannot gain streams, so the count stays at zero.
+      } else if (_outbound_drain) {
+        // Every stream left on the draining origin session is gone. The
+        // half-closed session cannot gain streams, so the count stays at zero.
         if (fini_event == nullptr) {
           fini_event = this_ethread()->schedule_imm_local(static_cast<Continuation *>(this), HTTP2_SESSION_EVENT_FINI);
         }
@@ -2879,7 +2898,10 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   Http2StreamDebug(session, id, "Send RST_STREAM frame: Error Code: %u", static_cast<uint32_t>(ec));
   ATS_PROBE3(http2_rst_stream_sent, this->session->get_connection_id(), id, static_cast<uint32_t>(ec));
 
-  if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
+  // CANCEL only says the stream is no longer needed, so it is not a stream error. ATS cancels an
+  // origin stream whenever it gives up on one, on a timeout or a client abort, and counting those
+  // could push the session over proxy.config.http2.stream_error_rate_threshold and close it.
+  if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR && ec != Http2ErrorCode::HTTP2_ERROR_CANCEL) {
     Metrics::Counter::increment(http2_rsb.stream_errors_count);
     ++stream_error_count;
   }
@@ -3024,10 +3046,22 @@ Http2ConnectionState::_get_outstanding_settings_frame_limit() const
 }
 
 void
+Http2ConnectionState::drain_outbound_session(const char *reason)
+{
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  if (!this->session->is_outbound() || this->session->get_half_close_local_flag()) {
+    return;
+  }
+  Http2ConDebug(session, "Draining the origin session because %s", reason);
+  this->_outbound_drain = true;
+  this->session->set_half_close_local_flag(true);
+}
+
+void
 Http2ConnectionState::_close_connection(Http2ErrorCode error_code)
 {
-  // A session draining the origin's GOAWAY is half-closed without having sent one.
-  if (!this->session->get_half_close_local_flag() || this->_peer_goaway_drain) {
+  // A draining origin session is half-closed without having sent GOAWAY.
+  if (!this->session->get_half_close_local_flag() || this->_outbound_drain) {
     this->send_goaway_frame(this->latest_streamid_in, error_code);
     this->session->set_half_close_local_flag(true);
   }

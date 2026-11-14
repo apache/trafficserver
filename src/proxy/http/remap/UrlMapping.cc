@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -36,7 +36,21 @@ namespace
 {
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
+thread_local url_mapping *loading_mapping = nullptr;
+
 } // end anonymous namespace
+
+url_mapping *
+url_mapping::loading_instance()
+{
+  return loading_mapping;
+}
+
+void
+url_mapping::set_loading_instance(url_mapping *um)
+{
+  loading_mapping = um;
+}
 
 /**
  *
@@ -132,13 +146,6 @@ url_mapping::Print() const
   printf("\t %s %s=> %s %s <%s> [plugins %s enabled; running with %zu plugins]\n", from_url_buf, unique ? "(unique)" : "",
          to_url_buf, homePageRedirect ? "(R)" : "", tag ? tag : "", _plugin_inst_list.size() > 0 ? "are" : "not",
          _plugin_inst_list.size());
-}
-
-std::string
-url_mapping::PrintRemapHitCount() const
-{
-  std::string result = R"({"fromURL": ")" + remapKey + R"(", "hit_count": )" + std::to_string(_hitCount) + "}";
-  return result;
 }
 
 /**

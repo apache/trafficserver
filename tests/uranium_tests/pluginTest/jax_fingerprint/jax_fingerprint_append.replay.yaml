@@ -16,8 +16,8 @@
 
 # Used by: global JA4H append mode test.
 #
-# The jax_fingerprint plugin is loaded globally with --method JA4H
-# --standalone --mode append.
+# The jax_fingerprint plugin is loaded globally with method JA4H,
+# standalone, and mode append.
 #
 # append mode behaviour (from header.cc):
 #   - If the header field is absent: create it with the new value.

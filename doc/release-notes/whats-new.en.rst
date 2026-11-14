@@ -47,6 +47,10 @@ Configuration
   default; when disabled, each unanchored rule is named once at config load so
   the effect of enabling it can be measured first. See
   :ref:`admin-regex-best-practices`.
+* Added :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out` to limit
+  PING frames from origins separately from PING frames from clients. It
+  defaults to ``300``; origin connections previously shared the client limit,
+  ``60`` by default.
 * :ts:cv:`proxy.config.http2.default_buffer_water_mark` now defaults to ``32768``
   and no longer accepts values below ``1024``.
 * :ts:cv:`proxy.config.http.header_field_max_size` and

@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Never pool an origin connection that is still owed a request body."""
+
 import re
 import shlex
 import sys
@@ -23,12 +24,14 @@ from tools.uranium.services import ATSFactory, ServiceFactory
 
 
 @pytest.mark.parametrize(
-    "case,args", (
+    "case,args",
+    (
         ("expect", "--expect-100-continue"),
         ("plain", ""),
         ("interim", "--expect-100-continue --path /interim"),
         ("reuse", "--complete-body --path /complete"),
-    ))
+    ),
+)
 def test_post_early_response_100_continue(ats_factory: ATSFactory, services: ServiceFactory, case: str, args: str) -> None:
     """Check both owed-body refusal and legitimate reuse after a complete body.
 
@@ -50,7 +53,8 @@ def test_post_early_response_100_continue(ats_factory: ATSFactory, services: Ser
             "proxy.config.exec_thread.limit": 1,
             "proxy.config.exec_thread.autoconfig.enabled": 0,
             "proxy.config.http.server_session_sharing.pool": "global",
-        })
+        }
+    )
     if case == "reuse":
         for expression in ("SAW-EXPECT 1", "BODY-COMPLETE 16 of 16", "REQUEST 2 GET /probe"):
             origin.stdout.contains(expression, "A completed POST must allow reuse of the same origin connection.")

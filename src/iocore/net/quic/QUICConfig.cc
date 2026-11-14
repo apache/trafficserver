@@ -2,7 +2,7 @@
  *
  *  A brief file description
  *
- *  @section license License
+ *  @par License
  *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -166,6 +166,12 @@ QUICTokenKeyConfig::reconfigure(ConfigContext ctx)
 
   _config_id = configProcessor.set(_config_id, params);
   return true;
+}
+
+unsigned
+QUICTokenKeyConfig::config_id()
+{
+  return _config_id;
 }
 
 QUICTokenKeyConfigParams *
@@ -628,6 +634,12 @@ QUICConfig::reconfigure(ConfigContext ctx)
 
   QUICConnectionId::SCID_LEN = params->scid_len();
   ctx.complete("QUICConfig reloaded");
+}
+
+unsigned
+QUICConfig::config_id()
+{
+  return _config_id;
 }
 
 QUICConfigParams *

@@ -29,10 +29,7 @@ function(subproject_version subproject_name VERSION_VAR)
     endif()
   endforeach()
   if(version_value)
-    set(${VERSION_VAR}
-        "${version_value}"
-        PARENT_SCOPE
-    )
+    set(${VERSION_VAR} "${version_value}" PARENT_SCOPE)
     message("INFO: ${subproject_name} version ${version_value}")
   else()
     message("WARNING: Cannot extract version for subproject '${subproject_name}'")

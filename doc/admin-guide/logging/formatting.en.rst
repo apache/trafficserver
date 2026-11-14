@@ -691,6 +691,9 @@ SSL / Encryption
 .. _cqssv:
 .. _cqssc:
 .. _cqssu:
+.. _cqssg:
+.. _cqssig:
+.. _cqssin:
 .. _cqssa:
 .. _cthbr:
 .. _cthbt:
@@ -730,6 +733,21 @@ cqssg  Client Request SSL Group used by |TS| to communicate with the client.
                       This field is only applicable when building |TS| against
                       OpenSSL 3.2 or later or a version of BoringSSL that
                       supports querying group names.
+cqssig Client Request TLS signature schemes offered by the client, rendered as
+                      dash-separated decimal IANA code points in wire order.
+                      RFC 8701 GREASE values are omitted. This field contains
+                      ``-`` when the client does not send the extension or the
+                      TLS library cannot expose it.
+cqssin Client Request TLS signature scheme used by |TS| to authenticate the
+                      handshake, rendered as a decimal IANA code point. When the
+                      TLS library does not expose the exact scheme, |TS| derives
+                      it from the signature type, digest, shared algorithm list,
+                      and certificate key. If these do not identify a unique
+                      scheme, this field contains ``-``. Resumed sessions always
+                      contain ``-`` because they do not create a new handshake
+                      signature, as do handshakes that use static RSA key
+                      exchange, which authenticate the server with the
+                      certificate alone.
 cqssa  Client Request ALPN Protocol ID negotiated with the client.
 cthbr  Client Request TLS handshake bytes received from the client. This is the
                       number of bytes read from the client during the TLS
@@ -884,7 +902,7 @@ ms     Proxy                   Timestamp in milliseconds of a specific milestone
 msdms  Proxy                   Difference in milliseconds between the timestamps
                                of two milestones. See note below about
                                specifying which milestones to use.
-mstsms Proxy                   Slow log report in milliseconds as CSV.
+mstsms Proxy                   Full milestone report in milliseconds as CSV.
                                See note below about what timestamps are used.
 stms   Proxy-Origin Connection Time (in milliseconds) spent accessing the origin
                                server. Measured from the time the connection
@@ -922,8 +940,9 @@ tts    Client Request          Same as ttms_, but in integer seconds (no
 
 .. note::
 
-   A full milestone report can be generated as a CSV string that matches
-   the example slow log. Fields are:
+   A full milestone report can be generated as a CSV string. The first field is
+   the TLS handshake time, and the rest are milliseconds since
+   ``TS_MILESTONE_SM_START``, or ``-1`` when a milestone was never set. Fields are:
 
       1. tls_handshake
       2. ua_begin

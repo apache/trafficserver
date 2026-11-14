@@ -315,7 +315,7 @@ TEST_CASE("ConfigRegistry duplicate-key warning names both owners", "[config][re
   // Registers @a key twice and returns the warning the second registration produced.
   // The owner names fit in the string's inline buffer, so a registration that had been
   // moved from before the warning was built would print an empty owner.
-  auto rejected_warning = [&](std::string const &key, char const *first_owner, char const *second_owner) {
+  auto rejected_warning = [&](std::string const &key, char const *first_owner, char const *second_owner) -> std::string {
     bool const first = register_as(key, first_owner);
     if (first_owner != nullptr) {
       REQUIRE(first);

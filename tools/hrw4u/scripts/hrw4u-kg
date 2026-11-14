@@ -157,7 +157,7 @@ def export_json(kg_data: KGData, output_path: Path, pretty: bool = True) -> None
         'node_count': len(kg_data.nodes),
         'edge_count': len(kg_data.edges),
         'node_types': list({node.type for node in kg_data.nodes}),
-        'relationship_types': list({edge.relationship for edge in kg_data.edges})
+        'relationship_types': list({edge.relationship for edge in kg_data.edges}),
     }
 
     with output_path.open('w', encoding='utf-8') as f:
@@ -180,7 +180,7 @@ def export_stats(kg_data: KGData, output_path: Path = None) -> None:
         'total_edges': len(kg_data.edges),
         'node_types': {},
         'relationship_types': {},
-        'top_connected_nodes': []
+        'top_connected_nodes': [],
     }
 
     # Count node types
@@ -203,12 +203,8 @@ def export_stats(kg_data: KGData, output_path: Path = None) -> None:
         node = next((n for n in kg_data.nodes if n.id == node_id), None)
         if node:
             stats['top_connected_nodes'].append(
-                {
-                    'id': node_id,
-                    'type': node.type,
-                    'connections': count,
-                    'properties': node.properties
-                })
+                {'id': node_id, 'type': node.type, 'connections': count, 'properties': node.properties}
+            )
 
     if output_path:
         with output_path.open('w', encoding='utf-8') as f:
@@ -250,7 +246,8 @@ Examples:
 
   # Just show statistics without saving
   hrw4u_kg tests/data/ --show-stats
-""")
+""",
+    )
 
     parser.add_argument('paths', nargs='+', type=Path, help='Input paths (files or directories) to process')
     parser.add_argument('-o', '--output', type=Path, help='Output JSON file for KG data')

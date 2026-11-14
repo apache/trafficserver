@@ -56,7 +56,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -64,7 +65,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
             "proxy.config.proxy_name": "Poxy_Proxy",
             "proxy.config.http.transaction_no_activity_timeout_out": 150,
             "proxy.config.http2.no_activity_timeout_in": 150,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map https://localhost http://127.0.0.1:{_origin_port}")
     return ats
 
@@ -109,7 +111,8 @@ def test_post_slow_server(ats_factory: ATSFactory, services: ServiceFactory, cur
         _ats,
         (
             f"--request POST --verbose --ipv4 --http2 --insecure --header 'Content-Length: 0' --output "
-            f"'{str(output)}' 'https://localhost:{_ats.https_port}/xyz'"),
+            f"'{str(output)}' 'https://localhost:{_ats.https_port}/xyz'"
+        ),
         timeout=150,
     )
     assert result.returncode == 0, result.output

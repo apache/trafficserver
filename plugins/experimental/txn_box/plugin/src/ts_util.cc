@@ -1176,27 +1176,37 @@ SSLContext::local_issuer_field(int nid) const
 TextView
 SSLContext::remote_subject_field(int nid) const
 {
+  TextView zret;
+
   if (_obj != nullptr) {
+    // SSL_get_peer_certificate() returns a new reference, which must be dropped. The session keeps its own reference to the
+    // peer certificate until SSL_free(), so the returned view stays valid for the life of the connection.
     if (auto cert = SSL_get_peer_certificate(_obj); cert != nullptr) {
-      if (auto subject = X509_get_subject_name(cert); subject != nullptr) {
-        return ssl_value_for(subject, nid);
+      if (auto name = X509_get_subject_name(cert); name != nullptr) {
+        zret = ssl_value_for(name, nid);
       }
+      X509_free(cert);
     }
   }
-  return {};
+  return zret;
 }
 
 TextView
 SSLContext::remote_issuer_field(int nid) const
 {
+  TextView zret;
+
   if (_obj != nullptr) {
+    // SSL_get_peer_certificate() returns a new reference, which must be dropped. The session keeps its own reference to the
+    // peer certificate until SSL_free(), so the returned view stays valid for the life of the connection.
     if (auto cert = SSL_get_peer_certificate(_obj); cert != nullptr) {
-      if (auto subject = X509_get_issuer_name(cert); subject != nullptr) {
-        return ssl_value_for(subject, nid);
+      if (auto name = X509_get_issuer_name(cert); name != nullptr) {
+        zret = ssl_value_for(name, nid);
       }
+      X509_free(cert);
     }
   }
-  return {};
+  return zret;
 }
 /* ------------------------------------------------------------------------------------ */
 /** Get the next pair from the query string.

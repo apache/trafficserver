@@ -17,24 +17,9 @@
 
 project(uri_signing)
 
-add_atsplugin(
-  uri_signing
-  common.cc
-  config.cc
-  cookie.cc
-  jwt.cc
-  match.cc
-  normalize.cc
-  parse.cc
-  timing.cc
-  uri_signing.cc
-)
+add_atsplugin(uri_signing common.cc config.cc cookie.cc jwt.cc match.cc normalize.cc parse.cc timing.cc uri_signing.cc)
 
-target_link_libraries(
-  uri_signing
-  PRIVATE cjose::cjose
-  PUBLIC jansson::jansson
-)
+target_link_libraries(uri_signing PRIVATE cjose::cjose PUBLIC jansson::jansson)
 
 verify_remap_plugin(uri_signing)
 

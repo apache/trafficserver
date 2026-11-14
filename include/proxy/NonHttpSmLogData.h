@@ -3,7 +3,7 @@
   NonHttpSmLogData populates LogData for access-log entries that cannot be
   backed by an HttpSM.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

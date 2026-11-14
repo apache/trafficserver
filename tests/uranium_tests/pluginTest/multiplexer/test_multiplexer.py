@@ -38,8 +38,9 @@ def select_replays(variant: str) -> tuple[Path, Path]:
     return TEST_DIRECTORY / "replays" / origin, TEST_DIRECTORY / "replays" / copy
 
 
-def configure_servers(services: ServiceFactory, *, _copy_replay: Path,
-                      _origin_replay: Path) -> tuple[VerifierServer, VerifierServer, VerifierServer]:
+def configure_servers(
+    services: ServiceFactory, *, _copy_replay: Path, _origin_replay: Path
+) -> tuple[VerifierServer, VerifierServer, VerifierServer]:
     """Create distinct verifier listeners for the original, HTTP copy, and HTTPS copy.
 
     :param services: Factory used to create the verifier servers.
@@ -65,8 +66,14 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _dns: DNSServer, _http_copy: VerifierServer, _https_copy: VerifierServer,
-        _origin: VerifierServer, _variant: str) -> ATS:
+    ats_factory: ATSFactory,
+    *,
+    _dns: DNSServer,
+    _http_copy: VerifierServer,
+    _https_copy: VerifierServer,
+    _origin: VerifierServer,
+    _variant: str,
+) -> ATS:
     """Configure the remap plugin and its two multiplexed destinations.
 
     :param ats_factory: Factory used to create the Traffic Server process.
@@ -88,11 +95,13 @@ def configure_ats(
             "proxy.config.diags.debug.tags": "http|multiplexer",
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
-        })
+        }
+    )
     skip = " @pparam=proxy.config.multiplexer.skip_post_put=1" if _variant == "skip-post-put" else ""
     ats.remap_config.add_line(
         f"map https://origin.server.com https://backend.origin.server.com:{_origin.https_port} "
-        f"@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com{skip}")
+        f"@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com{skip}"
+    )
     ats.remap_config.add_line(f"map http://nontls.server.com http://backend.nontls.server.com:{_http_copy.http_port}")
     ats.remap_config.add_line(f"map http://tls.server.com https://backend.tls.server.com:{_https_copy.https_port}")
     return ats
@@ -115,7 +124,8 @@ def configure_client(services: ServiceFactory, *, _ats: ATS, _origin_replay: Pat
 
 
 def verify_server_traffic(
-        *, _http_copy: VerifierServer, _https_copy: VerifierServer, _origin: VerifierServer, _variant: str) -> None:
+    *, _http_copy: VerifierServer, _https_copy: VerifierServer, _origin: VerifierServer, _variant: str
+) -> None:
     """Check routing coverage beyond Proxy Verifier's field assertions.
 
     :param _http_copy: Test-local http copy configured by the test.

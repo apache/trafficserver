@@ -2,7 +2,7 @@
 
     Main file for the traffic_top application.
 
-    @section license License
+    @par License
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -375,7 +375,7 @@ main_stats_page(Stats &stats)
   makeTable(62, 17, server2, stats);
 }
 
-enum class HostStatus { UP, DOWN };
+enum class TopHostStatus { UP, DOWN };
 char reconnecting_animation[4] = {'|', '/', '-', '\\'};
 
 //----------------------------------------------------------------------------
@@ -423,10 +423,10 @@ try {
     usage(argument_descriptions, countof(argument_descriptions), USAGE);
   }
 
-  HostStatus host_status{HostStatus::DOWN};
-  Stats      stats;
+  TopHostStatus host_status{TopHostStatus::DOWN};
+  Stats         stats;
   if (stats.getStats()) {
-    host_status = HostStatus::UP;
+    host_status = TopHostStatus::UP;
   }
 
   const string &host = stats.getHost();
@@ -467,7 +467,7 @@ try {
     stats.getStat("version", version);
 
     std::string hh;
-    if (host_status == HostStatus::DOWN) {
+    if (host_status == TopHostStatus::DOWN) {
       hh.append("connecting ");
       hh.append(1, reconnecting_animation[animation_index % 4]);
       ++animation_index;
@@ -507,7 +507,7 @@ try {
     case 'a':
       absolute = stats.toggleAbsolute();
     }
-    host_status = !stats.getStats() ? HostStatus::DOWN : HostStatus::UP;
+    host_status = !stats.getStats() ? TopHostStatus::DOWN : TopHostStatus::UP;
     clear();
   }
 

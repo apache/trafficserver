@@ -24,7 +24,7 @@
   historical code for every well-defined input; only the out-of-bounds reads
   are removed.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

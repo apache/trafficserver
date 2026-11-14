@@ -49,7 +49,8 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.http.proxy_protocol_allowlist": "192.0.2.1",
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "proxyprotocol",
-        })
+        }
+    )
     return ats
 
 

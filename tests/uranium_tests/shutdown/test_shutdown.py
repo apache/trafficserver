@@ -39,7 +39,8 @@ def test_emergency_shutdown(ats_factory: ATSFactory) -> None:
                 "proxy.config.task_threads": 2,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": f"TS{kind.title()}_test",
-            })
+            }
+        )
         plugin = f"{kind}_shutdown.so"
         ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{plugin}")
         ats.plugin_config.add_line(plugin)
@@ -54,7 +55,8 @@ def test_emergency_shutdown(ats_factory: ATSFactory) -> None:
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "server",
                 "proxy.config.crash_log_helper": str(ats.run_directory / "bin/traffic_crashlog"),
-            })
+            }
+        )
         ats.start()
         ats.stop()
         output = ats.traffic_out.read_text(errors="replace")
@@ -96,7 +98,8 @@ def test_fatal_shutdown(ats_factory: ATSFactory) -> None:
                 "proxy.config.task_threads": 2,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": f"TS{kind.title()}_test",
-            })
+            }
+        )
         plugin = f"{kind}_shutdown.so"
         ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{plugin}")
         ats.plugin_config.add_line(plugin)
@@ -111,7 +114,8 @@ def test_fatal_shutdown(ats_factory: ATSFactory) -> None:
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "server",
                 "proxy.config.crash_log_helper": str(ats.run_directory / "bin/traffic_crashlog"),
-            })
+            }
+        )
         ats.start()
         ats.stop()
         output = ats.traffic_out.read_text(errors="replace")
@@ -153,7 +157,8 @@ def test_crashlog_no_false_positive(ats_factory: ATSFactory) -> None:
                 "proxy.config.task_threads": 2,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": f"TS{kind.title()}_test",
-            })
+            }
+        )
         plugin = f"{kind}_shutdown.so"
         ats.copy_custom_plugin(f"{{AtsTestPluginsDir}}/{plugin}")
         ats.plugin_config.add_line(plugin)
@@ -180,7 +185,8 @@ def test_crashlog_no_false_positive(ats_factory: ATSFactory) -> None:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "server",
             "proxy.config.crash_log_helper": str(ats.run_directory / "bin/traffic_crashlog"),
-        })
+        }
+    )
     ats.start()
     ats.stop()
     output = ats.traffic_out.read_text(errors="replace")

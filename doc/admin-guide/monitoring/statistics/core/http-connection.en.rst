@@ -380,7 +380,9 @@ HTTP/2
 
    Represents the total number of closed HTTP/2 connections for exceeding the
    maximum allowed number of ping frames per minute limit which is configured by
-   :ts:cv:`proxy.config.http2.max_ping_frames_per_minute`.
+   :ts:cv:`proxy.config.http2.max_ping_frames_per_minute` for inbound connections
+   and :ts:cv:`proxy.config.http2.max_ping_frames_per_minute_out` for outbound
+   connections.
 
 .. ts:stat:: global proxy.process.http2.max_priority_frames_per_minute_exceeded integer
    :type: counter

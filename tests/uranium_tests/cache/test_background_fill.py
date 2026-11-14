@@ -44,7 +44,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""")
+"""
+        )
         ats.records.update(
             {
                 "proxy.config.http.server_ports": f"{ats.http_port} {ats.https_port}:ssl {ats.uds_path}",
@@ -62,7 +63,8 @@ ssl_multicert:
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
                 "proxy.config.diags.debug.enabled": 3,
                 "proxy.config.diags.debug.tags": "http",
-            })
+            }
+        )
         ats.plugin_config.add_line("xdebug.so --enable=x-cache")
         ats.remap_config.add_line(f"map / http://127.0.0.1:{origin_port}")
 
@@ -105,7 +107,8 @@ sleep 5
 """,
                     "background_fill_2_stderr_H.gold",
                 ),
-            ])
+            ]
+        )
 
     for script, gold_name in scripts:
         result = curl.run_script(for_httpbin, script, timeout=20)

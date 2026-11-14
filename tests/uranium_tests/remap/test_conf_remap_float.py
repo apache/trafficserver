@@ -34,7 +34,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     )
     ats.remap_config.add_line(
         "map http://cdn.example.com/ http://origin.example.com/ "
-        f"@plugin=conf_remap.so @pparam={ats.config_directory}/conf_remap.yaml")
+        f"@plugin=conf_remap.so @pparam={ats.config_directory}/conf_remap.yaml"
+    )
     return ats
 
 

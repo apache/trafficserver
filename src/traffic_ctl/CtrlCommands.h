@@ -1,5 +1,5 @@
 /**
-@section license License
+@par License
 
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file
@@ -32,13 +32,17 @@ protected:
   /// @brief Invoke the remote server. This is the very basic function which does not play or interact with any codec. Request
   ///        and message should be already en|de coded.
   /// @param request A string representation of the json/yaml request.
+  /// @param[in] timeout_ms Timeout for each RPC attempt.
+  /// @param[in] attempts Maximum number of RPC attempts.
   /// @return a string with the json/yaml response.
   /// @note This function does print the raw string if requested by the "--format". No printer involved, standard output.
   std::string invoke_rpc(std::string const &request, std::chrono::milliseconds timeout_ms, int attempts);
 
   /// @brief Function that calls the rpc server. This function takes a json objects and uses the defined coded to convert them to a
   ///        string. This function will call invoke_rpc(string) overload.
-  /// @param A Client request.
+  /// @param[in] request Client request.
+  /// @param[in] timeout_ms Timeout for each RPC attempt.
+  /// @param[in] attempts Maximum number of RPC attempts.
   /// @return A server response.
   shared::rpc::JSONRPCResponse invoke_rpc(shared::rpc::ClientRequest const &request, std::chrono::milliseconds timeout_ms,
                                           int attempts);

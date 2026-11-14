@@ -16,8 +16,8 @@
 #######################
 
 # This is odd but seems to be the idiomatic way to pass arguments to install scripts
-install(
-  CODE "set(CONFIG_SOURCE_GLOBS \"${CMAKE_BINARY_DIR}/configs/*.default\" \"${CMAKE_SOURCE_DIR}/configs/*.default\")"
+install(CODE
+        "set(CONFIG_SOURCE_GLOBS \"${CMAKE_BINARY_DIR}/configs/*.default\" \"${CMAKE_SOURCE_DIR}/configs/*.default\")"
 )
 install(CODE "set(CONFIG_DEST_PATH \"${CMAKE_INSTALL_SYSCONFDIR}\")")
 

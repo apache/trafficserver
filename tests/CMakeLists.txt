@@ -28,10 +28,7 @@ function(ADD_URTEST_PLUGIN _NAME)
     )
   endif()
   set_target_properties(
-    ${_NAME}
-    PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs"
-               PREFIX ""
-               SUFFIX ".so"
+    ${_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/.libs" PREFIX "" SUFFIX ".so"
   )
 endfunction()
 

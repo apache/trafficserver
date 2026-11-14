@@ -22,13 +22,14 @@ from tools.uranium.services import ProceduralContext, assert_matches_gold
 
 
 def convert(
-        source_name: str,
-        output_name: str,
-        *options: str,
-        expected_return_code: int = 0,
-        _converter: Path,
-        _directory: Path,
-        _run_directory: Path) -> subprocess.CompletedProcess[str]:
+    source_name: str,
+    output_name: str,
+    *options: str,
+    expected_return_code: int = 0,
+    _converter: Path,
+    _directory: Path,
+    _run_directory: Path,
+) -> subprocess.CompletedProcess[str]:
     """Convert one source file into this scenario's sandbox.
 
     :param _converter: Test-local converter configured by the test.
@@ -92,11 +93,13 @@ def test_records_config_to_yaml(procedural_context: ProceduralContext) -> None:
         "--mute",
         _converter=_converter,
         _directory=_directory,
-        _run_directory=_run_directory)
+        _run_directory=_run_directory,
+    )
     assert_output("generated1.yaml", "full_records.yaml", _directory=_directory, _run_directory=_run_directory)
 
     renamed = convert(
-        "old_records.config", "generated2.yaml", _converter=_converter, _directory=_directory, _run_directory=_run_directory)
+        "old_records.config", "generated2.yaml", _converter=_converter, _directory=_directory, _run_directory=_run_directory
+    )
     renamed_gold = (_directory / "gold/renamed_records.gold").read_text(errors="replace").splitlines()
     assert "\n".join(renamed_gold[1:-1]) in renamed.stdout + renamed.stderr
     assert_output("generated2.yaml", "renamed_records.yaml", _directory=_directory, _run_directory=_run_directory)
@@ -108,10 +111,12 @@ def test_records_config_to_yaml(procedural_context: ProceduralContext) -> None:
         expected_return_code=1,
         _converter=_converter,
         _directory=_directory,
-        _run_directory=_run_directory)
+        _run_directory=_run_directory,
+    )
     assert (
         "We cannot continue with 'proxy.config.ssl.client.verify.server.policy' at line '3' "
-        "as a value node will be overridden" in override_value.stdout)
+        "as a value node will be overridden" in override_value.stdout
+    )
 
     override_map = convert(
         "override_map.config",
@@ -120,10 +125,12 @@ def test_records_config_to_yaml(procedural_context: ProceduralContext) -> None:
         expected_return_code=1,
         _converter=_converter,
         _directory=_directory,
-        _run_directory=_run_directory)
+        _run_directory=_run_directory,
+    )
     assert (
         "We cannot continue with 'proxy.config.ssl.client.verify.server' at line '3' "
-        "as an existing YAML map will be overridden." in override_map.stdout)
+        "as an existing YAML map will be overridden." in override_map.stdout
+    )
 
     convert(
         "no_newline.config",
@@ -131,5 +138,6 @@ def test_records_config_to_yaml(procedural_context: ProceduralContext) -> None:
         "--mute",
         _converter=_converter,
         _directory=_directory,
-        _run_directory=_run_directory)
+        _run_directory=_run_directory,
+    )
     assert_output("generated3.yaml", "no_newline.yaml", _directory=_directory, _run_directory=_run_directory)

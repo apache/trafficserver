@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -46,6 +46,7 @@ Thread::Thread()
 
 Thread::~Thread()
 {
+  iobuf_thread_cache_drain(ioBufCache);
   if (this_thread_ptr == this) {
     this_thread_ptr = nullptr;
   }

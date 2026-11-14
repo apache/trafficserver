@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Validate truncated redirect framing using unmodified socket response bytes."""
+
 import re
 import sys
 from pathlib import Path
@@ -29,8 +30,8 @@ def test_malformed_redirect_truncated(ats_factory: ATSFactory, services: Service
     directory = Path(__file__).parent
     port = services.allocate_port()
     origin = services.process(
-        "origin", [sys.executable, directory / "malformed_redirect_truncated_server.py", "127.0.0.1",
-                   str(port)], ready_port=port)
+        "origin", [sys.executable, directory / "malformed_redirect_truncated_server.py", "127.0.0.1", str(port)], ready_port=port
+    )
     for path in ("/truncated-302", "/pooled-conflicting-cl-302"):
         origin.stdout.contains(f"Received request line: GET {path}", "The origin must actually receive the regression request.")
     ats = ats_factory.create("ts", enable_cache=False)
@@ -51,7 +52,8 @@ def test_malformed_redirect_truncated(ats_factory: ATSFactory, services: Service
         request = ats.run_directory / f"request-{index}.txt"
         request.write_bytes(f"GET {path} HTTP/1.1\r\nHost: www.example.com\r\nConnection: close\r\n\r\n".encode())
         result = ats.run(
-            sys.executable, directory.parents[1] / "tools/tcp_client.py", "127.0.0.1", str(ats.http_port), request, timeout=30)
+            sys.executable, directory.parents[1] / "tools/tcp_client.py", "127.0.0.1", str(ats.http_port), request, timeout=30
+        )
         assert result.returncode == 0, result.output
         for expression in contains:
             assert expression in result.stdout, result.output

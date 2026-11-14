@@ -54,7 +54,7 @@ def write_pipelined_requests(sock: socket.socket, first_hostname: str, second_ho
     """
     first_request = f'GET /first HTTP/1.1\r\nHost: {first_hostname}\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n'
     # For if we want to test CL first. Leave this out of the final commit.
-    #first_request = f'GET /first HTTP/1.1\r\nHost: {first_hostname}\r\nContent-Length: 5\r\n\r\n67891'
+    # first_request = f'GET /first HTTP/1.1\r\nHost: {first_hostname}\r\nContent-Length: 5\r\n\r\n67891'
     second_request = f'GET /second HTTP/1.1\r\nHost: {first_hostname}\r\nContent-Length: 5\r\n\r\n12345'
     third_request = f'DELETE /third HTTP/1.1\r\nHost: {second_hostname}\r\nContent-Length: 0\r\n\r\n'
     pipelined_requests = first_request + second_request + third_request
@@ -62,7 +62,8 @@ def write_pipelined_requests(sock: socket.socket, first_hostname: str, second_ho
     print(
         f'Sending three pipelined requests: {len(first_request)} bytes, '
         f'{len(second_request)} bytes, and {len(third_request)} bytes: '
-        f'{total} total bytes')
+        f'{total} total bytes'
+    )
     print(pipelined_requests)
     sock.sendall(pipelined_requests.encode())
     print()

@@ -74,7 +74,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
             "proxy.config.ssl.client.verify.server.policy": "DISABLED",
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http|ssl|ssl_io",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map /post https://127.0.0.1:{_origin_port}")
     return ats
 

@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -759,5 +759,5 @@ int
 NetHandler::get_per_client_max_connections_in()
 {
   int config_value = per_client_max_connections_in.load(std::memory_order_relaxed);
-  return (config_value > 0 ? config_value : INT32_MAX - 1);
+  return std::max(config_value, 0);
 }

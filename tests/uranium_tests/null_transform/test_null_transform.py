@@ -35,10 +35,7 @@ def test_null_transform(ats_factory: ATSFactory, services: ServiceFactory, curl:
         pytest.skip("null_transform.so is not installed")
     origin = services.origin("server")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
         {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
             "body": "This is expected response.",
@@ -49,15 +46,15 @@ def test_null_transform(ats_factory: ATSFactory, services: ServiceFactory, curl:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.show_location": 0,
             "proxy.config.diags.debug.tags": "null_transform",
-        })
+        }
+    )
     ats.plugin_config.add_line("null_transform.so")
     ats.remap_config.add_line(f"map http://www.example.com http://127.0.0.1:{origin.port}")
     origin.start()
     ats.start()
     result = curl.run_for(
         ats,
-        f"--proxy http://127.0.0.1:{ats.http_port} http://www.example.com "
-        "--verbose --header 'Proxy-Connection: keep-alive'",
+        f"--proxy http://127.0.0.1:{ats.http_port} http://www.example.com --verbose --header 'Proxy-Connection: keep-alive'",
     )
     assert result.returncode == 0, result.output
     assert result.stdout == "This is expected response."

@@ -26,7 +26,7 @@ import traceback
 
 
 class GetPidError(Exception):
-    """ Raised when there was an error retrieving the specified PID."""
+    """Raised when there was an error retrieving the specified PID."""
 
     def __init__(self, message):
         self.message = message
@@ -77,9 +77,7 @@ def convert_signal_name_to_signal(signal_name):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Interact with a Traffic Server process')
-    parser.add_argument(
-        'ts_identifier', help='An identifier in the command line for the desired '
-        'Traffic Server process.')
+    parser.add_argument('ts_identifier', help='An identifier in the command line for the desired Traffic Server process.')
     parser.add_argument('--signal', help='Send the given signal to the process.')
 
     return parser.parse_args()
@@ -103,5 +101,6 @@ def main():
 
 if __name__ == '__main__':
     import doctest
+
     doctest.testmod()
     sys.exit(main())

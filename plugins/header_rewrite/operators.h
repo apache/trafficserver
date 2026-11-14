@@ -23,6 +23,7 @@
 
 #include <string>
 #include <memory>
+#include <atomic>
 
 #include "ts/ts.h"
 
@@ -713,7 +714,15 @@ protected:
   bool exec(const Resources &res) const override;
 
 private:
-  Value _value;
+  // Logs a per-transaction lookup failure as an error at most once per interval for this rule.
+  void log_lookup_failure(std::string const &name) const;
+
+  Value                         _value;              // Expanded per transaction when it has conditions.
+  std::string                   _stratname;          // Literal name, when _value has no conditions.
+  TSStrategy                    _strategy = nullptr; // Resolved at remap init; otherwise looked up per transaction.
+  bool                          _inert    = false;   // Remap-mode resolution failed at load; skip at runtime.
+  mutable std::atomic<TSHRTime> _next_error{0};      // Earliest time the next lookup failure is logged as an error.
+  mutable std::atomic<uint64_t> _suppressed_errors{0};
 };
 
 ///////////////////////////////////////////////////////////////////////////////

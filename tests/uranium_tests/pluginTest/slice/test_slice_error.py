@@ -47,7 +47,7 @@ def add_block(
 
     begin = index * SLICE_ERROR_BLOCK_BYTES
     end = begin + SLICE_ERROR_BLOCK_BYTES - 1
-    body = SLICE_ERROR_BODY[begin:end + 1]
+    body = SLICE_ERROR_BODY[begin : end + 1]
     fields = [f"HTTP/1.1 {status}", "Connection: close"]
     if etag is not None:
         fields.append(f"Etag: {etag}")
@@ -57,15 +57,11 @@ def add_block(
         fields.extend((f"Content-Range: bytes {begin}-{end}/{total_length}", "Cache-Control: max-age=500"))
     origin.add_response(
         {
-            "headers":
-                (
-                    f"GET /{path} HTTP/1.1\r\nHost: ats\r\nRange: bytes={begin}-{end}\r\n"
-                    "X-Slicer-Info: full content request\r\n\r\n")
+            "headers": (
+                f"GET /{path} HTTP/1.1\r\nHost: ats\r\nRange: bytes={begin}-{end}\r\nX-Slicer-Info: full content request\r\n\r\n"
+            )
         },
-        {
-            "headers": "\r\n".join(fields) + "\r\n\r\n",
-            "body": body
-        },
+        {"headers": "\r\n".join(fields) + "\r\n\r\n", "body": body},
     )
 
 
@@ -103,7 +99,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     if not ats.plugin_exists("slice.so"):
         pytest.skip("slice.so is not installed")
     ats.remap_config.add_line(
-        f"map / http://127.0.0.1:{_origin.port} @plugin=slice.so @pparam=--blockbytes-test={SLICE_ERROR_BLOCK_BYTES}")
+        f"map / http://127.0.0.1:{_origin.port} @plugin=slice.so @pparam=--blockbytes-test={SLICE_ERROR_BLOCK_BYTES}"
+    )
     return ats
 
 

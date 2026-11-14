@@ -23,6 +23,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <thread>
+#include <utility>
 #include <vector>
 
 using namespace abuse_shield;
@@ -235,7 +236,7 @@ TEST_CASE("Pruning a tracker keeps only the buckets of rules that limit its metr
   Rule connections;
   connections.name                 = "connections";
   connections.filter.max_conn_rate = 10;
-  std::vector<Rule> const rules{requests, connections};
+  std::vector<Rule> const rules{std::move(requests), std::move(connections)};
 
   TxnTable table(2);
   for (auto const *addr : {"192.0.2.1", "192.0.2.2"}) {

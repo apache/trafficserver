@@ -20,6 +20,8 @@ from pathlib import Path
 import os
 import re
 
+import pytest
+
 from tools.uranium.services import ATS, ATSFactory, Curl
 
 DISK_SIZE = 256 * 1024 * 1024
@@ -54,22 +56,34 @@ def configure_shm_ats(
     purge: bool = False,
     debug_tags: str = "cache_shm",
 ) -> ATS:
-    """Create one ATS instance using explicit cache spans and shm settings."""
+    """Create one ATS instance using explicit cache spans and shm settings.
 
+    Skip the calling test when ATS was built without cache shared memory
+    support (TS_USE_CACHE_SHM is 0): configured with ENABLE_CACHE_SHM=OFF, or
+    built where shm_open is not in libc, as on glibc older than 2.34, which
+    keeps shm_open in librt.
+    """
+
+    if not factory.has_feature("TS_USE_CACHE_SHM"):
+        pytest.skip("ATS was built without cache shared memory support")
     ats = factory.create(name)
     storage_lines = ["cache:", "  spans:"]
     for index, storage_path in enumerate(storage_paths):
-        storage_lines.extend([
-            f"    - name: disk.{index}",
-            f"      path: {storage_path}",
-            f"      size: {DISK_SIZE}",
-        ])
-    storage_lines.extend([
-        "  volumes:",
-        "    - id: 1",
-        "      scheme: http",
-        "      size: 100%",
-    ])
+        storage_lines.extend(
+            [
+                f"    - name: disk.{index}",
+                f"      path: {storage_path}",
+                f"      size: {DISK_SIZE}",
+            ]
+        )
+    storage_lines.extend(
+        [
+            "  volumes:",
+            "    - id: 1",
+            "      scheme: http",
+            "      size: 100%",
+        ]
+    )
     ats.storage_config.add_lines(storage_lines)
     ats.records.update(
         {
@@ -81,7 +95,8 @@ def configure_shm_ats(
             "proxy.config.diags.debug.tags": debug_tags,
             "proxy.config.diags.output.diag": "L",
             "proxy.config.http.wait_for_cache": 1,
-        })
+        }
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache,via")
     target = f"http://127.0.0.1:{origin_port}/" if origin_port is not None else "http://127.0.0.1/ @plugin=generator.so"
     ats.remap_config.add_line(f"map / {target}")
@@ -95,8 +110,9 @@ def assert_log(ats: ATS, *, contains: Iterable[str] = (), excludes: Iterable[str
     for expression in contains:
         assert re.search(expression, content, re.MULTILINE), f"{ats.name} diags.log should contain {expression!r}\n{content}"
     for expression in excludes:
-        assert re.search(expression, content, re.MULTILINE) is None, \
+        assert re.search(expression, content, re.MULTILINE) is None, (
             f"{ats.name} diags.log should exclude {expression!r}\n{content}"
+        )
     return content
 
 
@@ -107,7 +123,8 @@ def get_200(curl: Curl, ats: ATS, path: str) -> None:
         ats,
         (
             f"--silent --output /dev/null --write-out '%{{http_code}}\n' --header 'x-debug: x-cache,via' "
-            f"'http://127.0.0.1:{ats.http_port}{path}'"),
+            f"'http://127.0.0.1:{ats.http_port}{path}'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert result.stdout.strip() == "200", result.output

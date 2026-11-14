@@ -24,10 +24,12 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     """
 
     ats = ats_factory.create("ts")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 0,
-        "proxy.config.diags.debug.tags": "xyz",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "xyz",
+        }
+    )
     return ats
 
 

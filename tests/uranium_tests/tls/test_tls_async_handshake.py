@@ -30,15 +30,12 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n", "body": ""},
         {
-            "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                    "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"
+            ),
             "body": "ok",
         },
     )
@@ -63,7 +60,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _plugin: Pa
             "proxy.config.ssl.async.handshake.enabled": 1,
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "ssl|http",
-        })
+        }
+    )
     return ats
 
 
@@ -94,8 +92,8 @@ def test_tls_async_handshake(
     _origin.start()
     _ats.start()
     result = curl.run(
-        (f"--insecure --verbose --header 'uuid: basic' --header 'Host: example.com' "
-         f"'https://127.0.0.1:{_ats.https_port}/'"),)
+        (f"--insecure --verbose --header 'uuid: basic' --header 'Host: example.com' 'https://127.0.0.1:{_ats.https_port}/'"),
+    )
     assert result.returncode == 0, result.output
     assert "HTTP/1.1 200" in result.output or "HTTP/2 200" in result.output
     wait_for_file_lines(_ats.traffic_out, "resumed OpenSSL async job", 1)

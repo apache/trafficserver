@@ -16,13 +16,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-    TS Sphinx Directives
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
+TS Sphinx Directives
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Sphinx Docs directives for Apache Traffic Server
+Sphinx Docs directives for Apache Traffic Server
 
-    :copyright: Copyright 2013 by the Apache Software Foundation
-    :license: Apache
+:copyright: Copyright 2013 by the Apache Software Foundation
+:license: Apache
 """
 
 from docutils import nodes
@@ -128,13 +128,13 @@ class TSConfVar(std.Target):
                 if key not in config:
                     config[key] = {}
 
-                add_object(config[key], var[index + 1:], value, type=type)
+                add_object(config[key], var[index + 1 :], value, type=type)
 
         name = cv_name
         if name.startswith("proxy.config."):
-            name = name[len("proxy.config."):]
+            name = name[len("proxy.config.") :]
         elif name.startswith("local.config."):
-            name = name[len("local.config."):]
+            name = name[len("local.config.") :]
 
         ts = {}
         config = {}
@@ -167,7 +167,7 @@ class TSConfVar(std.Target):
         env = self.state.document.settings.env
         cv_default = None
         cv_scope, cv_name, cv_type = self.arguments[0:3]
-        if (len(self.arguments) > 3):
+        if len(self.arguments) > 3:
             cv_default = self.arguments[3]
 
         # First, make a generic desc() node to be the parent.
@@ -192,7 +192,7 @@ class TSConfVar(std.Target):
 
         node.append(title)
 
-        if ('class' in self.options):
+        if 'class' in self.options:
             title['classes'].append(self.options.get('class'))
         # This has to be a distinct node before the title. if nested then
         # the browser will scroll forward to just past the title.
@@ -205,17 +205,17 @@ class TSConfVar(std.Target):
         fl = nodes.field_list()
         fl.append(self.make_field('Scope', cv_scope))
         fl.append(self.make_field('Type', cv_type))
-        if (cv_default):
+        if cv_default:
             fl.append(self.make_field('Default', cv_default))
         else:
             fl.append(self.make_field('Default', sphinx.addnodes.literal_emphasis(text='*NONE*')))
-        if ('units' in self.options):
+        if 'units' in self.options:
             fl.append(self.make_field('Units', self.options['units']))
-        if ('reloadable' in self.options):
+        if 'reloadable' in self.options:
             fl.append(self.make_field('Reloadable', 'Yes'))
-        if ('overridable' in self.options):
+        if 'overridable' in self.options:
             fl.append(self.make_field('Overridable', 'Yes'))
-        if ('deprecated' in self.options):
+        if 'deprecated' in self.options:
             fl.append(self.make_field('Deprecated', 'Yes'))
 
         # add yaml rep if record is not legacy.
@@ -246,7 +246,6 @@ class TSConfVar(std.Target):
 
 
 class TSConfVarRef(XRefRole):
-
     def process_link(self, env, ref_node, explicit_title_p, title, target):
         return title, target
 
@@ -257,9 +256,21 @@ def metrictypes(typename):
 
 def metricunits(unitname):
     return directives.choice(
-        unitname.lower(), (
-            'ratio', 'percent', 'kbits', 'mbits', 'bytes', 'kbytes', 'mbytes', 'nanoseconds', 'microseconds', 'milliseconds',
-            'seconds'))
+        unitname.lower(),
+        (
+            'ratio',
+            'percent',
+            'kbits',
+            'mbits',
+            'bytes',
+            'kbytes',
+            'mbytes',
+            'nanoseconds',
+            'microseconds',
+            'milliseconds',
+            'seconds',
+        ),
+    )
 
 
 class TSStat(std.Target):
@@ -282,7 +293,7 @@ class TSStat(std.Target):
         'units': metricunits,
         'introduced': rst.directives.unchanged,
         'deprecated': rst.directives.unchanged,
-        'ungathered': rst.directives.flag
+        'ungathered': rst.directives.flag,
     }
     required_arguments = 3
     optional_arguments = 1  # example value is optional
@@ -305,7 +316,7 @@ class TSStat(std.Target):
         env = self.state.document.settings.env
         stat_example = None
         stat_group, stat_name, stat_type = self.arguments[0:3]
-        if (len(self.arguments) > 3):
+        if len(self.arguments) > 3:
             stat_example = self.arguments[3]
 
         # First, make a generic desc() node to be the parent.
@@ -339,21 +350,21 @@ class TSStat(std.Target):
 
         fl = nodes.field_list()
         fl.append(self.make_field('Collection', stat_group))
-        if ('type' in self.options):
+        if 'type' in self.options:
             fl.append(self.make_field('Type', self.options['type']))
-        if ('units' in self.options):
+        if 'units' in self.options:
             fl.append(self.make_field('Units', self.options['units']))
         fl.append(self.make_field('Datatype', stat_type))
-        if ('introduced' in self.options and len(self.options['introduced']) > 0):
+        if 'introduced' in self.options and len(self.options['introduced']) > 0:
             fl.append(self.make_field('Introduced', self.options['introduced']))
-        if ('deprecated' in self.options):
-            if (len(self.options['deprecated']) > 0):
+        if 'deprecated' in self.options:
+            if len(self.options['deprecated']) > 0:
                 fl.append(self.make_field('Deprecated', self.options['deprecated']))
             else:
                 fl.append(self.make_field('Deprecated', 'Yes'))
-        if ('ungathered' in self.options):
+        if 'ungathered' in self.options:
             fl.append(self.make_field('Gathered', 'No'))
-        if (stat_example):
+        if stat_example:
             fl.append(self.make_field('Example', stat_example))
 
         # Get any contained content
@@ -374,7 +385,6 @@ class TSStat(std.Target):
 
 
 class TSStatRef(XRefRole):
-
     def process_link(self, env, ref_node, explicit_title_p, title, target):
         return title, target
 
@@ -396,12 +406,12 @@ class TrafficServerDomain(Domain):
 
     initial_data = {
         'cv': {},  # full name -> docname
-        'stat': {}
+        'stat': {},
     }
 
     dangling_warnings = {
         'cv': "No definition found for configuration variable '%(target)s'",
-        'stat': "No definition found for statistic '%(target)s'"
+        'stat': "No definition found for statistic '%(target)s'",
     }
 
     def clear_doc(self, docname):
@@ -431,7 +441,7 @@ class TrafficServerDomain(Domain):
 
     def resolve_xref(self, env, src_doc, builder, obj_type, target, node, cont_node):
         dst_doc = self.find_doc(target, obj_type)
-        if (dst_doc):
+        if dst_doc:
             return sphinx.util.nodes.make_refnode(builder, src_doc, dst_doc, nodes.make_id(target), cont_node, 'records.yaml')
 
     # Python 2/3 compat - iteritems is 2, items is 3
@@ -468,7 +478,8 @@ else:
 # Run git from the repository root to work with both normal repos and worktrees.
 try:
     git_branch = subprocess.check_output(
-        ['git', '-C', REPO_ROOT, 'rev-parse', '--abbrev-ref', 'HEAD'], stderr=subprocess.DEVNULL, text=True).strip()
+        ['git', '-C', REPO_ROOT, 'rev-parse', '--abbrev-ref', 'HEAD'], stderr=subprocess.DEVNULL, text=True
+    ).strip()
 except (subprocess.CalledProcessError, FileNotFoundError):
     git_branch = 'master'
 

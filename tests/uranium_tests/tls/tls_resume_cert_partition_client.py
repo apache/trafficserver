@@ -33,6 +33,7 @@ from dataclasses import dataclass
 @dataclass
 class Leg:
     '''One connection: where to connect, which path to request, and an optional PROXY destination.'''
+
     host: str
     port: int
     path: str
@@ -45,7 +46,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--tls', choices=('1.2', '1.3'), required=True, help='TLS version to use.')
     for leg in ('first', 'second'):
         parser.add_argument(
-            f'--{leg}', nargs=3, metavar=('HOST', 'PORT', 'PATH'), required=True, help=f'Where the {leg} connection goes.')
+            f'--{leg}', nargs=3, metavar=('HOST', 'PORT', 'PATH'), required=True, help=f'Where the {leg} connection goes.'
+        )
         parser.add_argument(f'--{leg}-proxy-dst', help=f'Send a PROXY header naming this destination on the {leg} connection.')
     return parser.parse_args()
 

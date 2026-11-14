@@ -31,14 +31,9 @@ def webp_buffer_override_configure_origin(services: ServiceFactory) -> OriginSer
 
     origin = services.origin("origin")
     origin.add_response(
+        {"headers": "GET /two_mib.jpg HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
         {
-            "headers": "GET /two_mib.jpg HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers":
-                ("HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\n"
-                 f"Content-Length: {TWO_MIB}\r\nConnection: close\r\n\r\n"),
+            "headers": (f"HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: {TWO_MIB}\r\nConnection: close\r\n\r\n"),
             "body": "A" * TWO_MIB,
         },
     )
@@ -56,10 +51,12 @@ def webp_buffer_override_configure_ats(ats_factory: ATSFactory, *, _origin: Orig
     if not ats.plugin_exists("webp_transform.so"):
         pytest.skip("webp_transform.so is required")
     ats.plugin_config.add_line("webp_transform.so convert_to_webp max_buffer_size=1M")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "webp_transform",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "webp_transform",
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     return ats
 
@@ -85,12 +82,14 @@ def webp_invalid_buffer_size_configure_ats(ats_factory: ATSFactory) -> ATS:
     if not ats.plugin_exists("webp_transform.so"):
         pytest.skip("webp_transform.so is required")
     ats.plugin_config.add_line(
-        "webp_transform.so convert_to_webp max_buffer_size=-1 "
-        "max_buffer_size=8X max_buffer_size=20000000000G")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "webp_transform",
-    })
+        "webp_transform.so convert_to_webp max_buffer_size=-1 max_buffer_size=8X max_buffer_size=20000000000G"
+    )
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "webp_transform",
+        }
+    )
     return ats
 
 

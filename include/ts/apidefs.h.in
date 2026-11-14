@@ -3,7 +3,7 @@
   This header file defines common types that can be shared
   between internal code and TS APIs.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -21,7 +21,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 
-  @section developers Developers
+  @par Developers
 
   Developers, when adding a new element to an enum, append it. DO NOT
   insert it.  Otherwise, binary compatibility of plugins will be broken!
@@ -857,7 +857,6 @@ enum TSOverridableConfigKey {
   TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED,
   TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER,
   TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE,
-  TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD,
   TS_CONFIG_HTTP_CACHE_GENERATION,
   TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE,
   TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION,
@@ -1109,8 +1108,9 @@ public:
 
   size_t get_cipher_suites_len() const;
 
-  // Returns an iterable container of extension type IDs
-  // This abstracts the difference between BoringSSL (extensions buffer) and OpenSSL (extension_ids array)
+  // Returns an iterable container of extension type IDs in the order the client sent them: every type in the raw
+  // extensions, including GREASE and types the SSL library does not recognize. If OpenSSL builds cannot parse the
+  // raw ClientHello, this falls back to the extensions OpenSSL recognizes.
   TSExtensionTypeList
   get_extension_types() const
   {
@@ -1164,6 +1164,7 @@ using TSHostLookupResult = struct tsapi_hostlookupresult *;
 using TSAIOCallback      = struct tsapi_aiocallback *;
 using TSAcceptor         = struct tsapi_net_accept *;
 using TSRemapPluginInfo  = struct tsapi_remap_plugin_info *;
+using TSStrategy         = struct tsapi_strategy *;
 
 using TSFetchSM = struct tsapi_fetchsm *;
 

@@ -54,7 +54,8 @@ def ca_overrides(ats: ATS, filename: str) -> str:
 
     return (
         f"@pparam=proxy.config.ssl.client.CA.cert.path={ats.ssl_directory} "
-        f"@pparam=proxy.config.ssl.client.CA.cert.filename={filename}")
+        f"@pparam=proxy.config.ssl.client.CA.cert.filename={filename}"
+    )
 
 
 def configure_ats(ats_factory: ATSFactory, *, _server1: OriginServer, _server2: OriginServer) -> ATS:
@@ -81,15 +82,12 @@ def configure_ats(ats_factory: ATSFactory, *, _server1: OriginServer, _server2: 
     )
     ats.remap_config.add_lines(
         (
-            f"map /case1 https://127.0.0.1:{_server1.https_port}/ "
-            f"@plugin=conf_remap.so {ca_overrides(ats, 'signer.pem')}",
-            f"map /badcase1 https://127.0.0.1:{_server1.https_port}/ "
-            f"@plugin=conf_remap.so {ca_overrides(ats, 'signer2.pem')}",
-            f"map /case2 https://127.0.0.1:{_server2.https_port}/ "
-            f"@plugin=conf_remap.so {ca_overrides(ats, 'signer2.pem')}",
-            f"map /badcase2 https://127.0.0.1:{_server2.https_port}/ "
-            f"@plugin=conf_remap.so {ca_overrides(ats, 'signer.pem')}",
-        ))
+            f"map /case1 https://127.0.0.1:{_server1.https_port}/ @plugin=conf_remap.so {ca_overrides(ats, 'signer.pem')}",
+            f"map /badcase1 https://127.0.0.1:{_server1.https_port}/ @plugin=conf_remap.so {ca_overrides(ats, 'signer2.pem')}",
+            f"map /case2 https://127.0.0.1:{_server2.https_port}/ @plugin=conf_remap.so {ca_overrides(ats, 'signer2.pem')}",
+            f"map /badcase2 https://127.0.0.1:{_server2.https_port}/ @plugin=conf_remap.so {ca_overrides(ats, 'signer.pem')}",
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
@@ -98,7 +96,8 @@ def configure_ats(ats_factory: ATSFactory, *, _server1: OriginServer, _server2: 
             "proxy.config.ssl.client.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.url_remap.pristine_host_hdr": 1,
-        })
+        }
+    )
     return ats
 
 

@@ -2,7 +2,7 @@
 
   Public RecYamlDecoder declarations
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -38,8 +38,7 @@
 ///       should specify the type in the yaml configuration, otherwise will be ignored as
 ///       we cannot assume any type.
 ///
-/// @param node Parsed configuration node.
-/// @param value Parsed Value node.
+/// @param[in] field Parsed configuration field and its value.
 /// @param errata Output variable, errors will be added in the passed Errata.
 void SetRecordFromYAMLNode(const CfgNode &field, swoc::Errata &errata);
 
@@ -78,7 +77,7 @@ swoc::Errata RecYAMLConfigFileParse(const char *path, RecYAMLNodeHandler handler
 ///       independently, i.e.: From a RPC handler.
 ///
 /// @param root Top YAML node, it should contain the "records" element.
-/// @param handle Callback that will process each parsed node.
+/// @param[in] handler Callback that will process each parsed node.
 /// @param lock true if we want this function to lock g_records_rwlock. If you are locking already,
 ///             then leave it as false.
 /// @return swoc::Errata Collected notes from the YAML parsing

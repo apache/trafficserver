@@ -29,14 +29,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: server.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: server.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -62,7 +56,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "    ssl_cert_name: server.ocsp.pem",
             "    ssl_key_name: server.ocsp.key",
             "    ssl_ocsp_name: ocsp_response.der",
-        ])
+        ]
+    )
     ats.remap_config.add_line(f"map https://server.example.com:{ats.https_port} http://127.0.0.1:{_origin.port}")
     ats.records.update(
         {
@@ -72,7 +67,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl_ocsp",
-        })
+        }
+    )
     return ats
 
 
@@ -92,5 +88,7 @@ def test_tls_ocsp(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl)
         (
             f"--verbose --cacert '{str(_ats.ssl_directory / 'ca.ocsp.pem')}' --cert-status --resolve "
             f"'server.example.com:{_ats.https_port}:127.0.0.1' "
-            f"'https://server.example.com:{_ats.https_port}/'"),)
+            f"'https://server.example.com:{_ats.https_port}/'"
+        ),
+    )
     assert result.returncode == 0, result.output

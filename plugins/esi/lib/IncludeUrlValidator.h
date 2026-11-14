@@ -76,11 +76,11 @@ private:
   bool _has_allow_regex{false};
   // PCRE2-backed (ts::Regex) instead of std::regex: the allowlist is matched
   // in a hot path against attacker-influenced hostnames, and a backtracking
-  // engine is vulnerable to catastrophic-backtracking DoS. _match_context
+  // engine is vulnerable to catastrophic-backtracking DoS. _match_options
   // carries a match (backtracking) limit so worst-case CPU time per match is
   // bounded; exceeding it fails closed (treated as "not allowlisted").
-  Regex             _allow_regex;
-  RegexMatchContext _match_context;
+  Regex          _allow_regex;
+  Regex::Options _match_options;
 };
 
 } // namespace EsiLib

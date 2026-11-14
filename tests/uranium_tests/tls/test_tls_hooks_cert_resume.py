@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Resuming a paused TLS hook must continue at the correct hook stage."""
+
 import re
 from pathlib import Path
 import pytest
@@ -32,27 +33,21 @@ def test_tls_hooks_cert_resume(ats_factory: ATSFactory, services: ServiceFactory
     ssl = Path(__file__).parent / "ssl"
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\n",
-            "body": "ok"
-        })
+        {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 2\r\n\r\n", "body": "ok"},
+    )
     ats = ats_factory.create("ts", enable_tls=True)
     ats.copy_to_ssl(ssl / "server.pem", ssl / "server.key", ssl / "signer.pem")
     ats.copy_custom_plugin("{ATS_TEST_PLUGINS_DIR}/ssl_hook_test.so")
     hook_args = {
         "verify": "-cert=1",
         "switch": "-client_hello=1 -cert=1 -cert_switch=bar.com",
-        "chain": "-client_hello=1 -sni=1 -cert=1"
+        "chain": "-client_hello=1 -sni=1 -cert=1",
     }[mode]
     ats.plugin_config.add_line(f"ssl_hook_test.so {hook_args}")
     ats.records.update(
-        {
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "ssl_hook_test|ssl_client_verify_test"
-        })
+        {"proxy.config.diags.debug.enabled": 1, "proxy.config.diags.debug.tags": "ssl_hook_test|ssl_client_verify_test"}
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
     multicert = [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"}]
     if mode == "verify":
@@ -64,18 +59,12 @@ def test_tls_hooks_cert_resume(ats_factory: ATSFactory, services: ServiceFactory
         for name in ("signed-foo", "signed-bar"):
             ats.copy_to_ssl(ssl / f"{name}.pem", ssl / f"{name}.key")
         ats.write_config_file(
-            "sni.yaml", f"sni:\n- fqdn: foo.com\n  verify_client: STRICT\n"
-            f"  verify_client_ca_certs: {ats.ssl_directory}/signer.pem\n")
+            "sni.yaml",
+            f"sni:\n- fqdn: foo.com\n  verify_client: STRICT\n  verify_client_ca_certs: {ats.ssl_directory}/signer.pem\n",
+        )
         multicert = [
-            {
-                "dest_ip": "192.0.2.1",
-                "ssl_cert_name": "signed-foo.pem",
-                "ssl_key_name": "signed-foo.key"
-            }, {
-                "dest_ip": "*",
-                "ssl_cert_name": "signed-bar.pem",
-                "ssl_key_name": "signed-bar.key"
-            }
+            {"dest_ip": "192.0.2.1", "ssl_cert_name": "signed-foo.pem", "ssl_key_name": "signed-foo.key"},
+            {"dest_ip": "*", "ssl_cert_name": "signed-bar.pem", "ssl_key_name": "signed-bar.key"},
         ]
     ats.set_ssl_multicert_yaml({"ssl_multicert": multicert})
     origin.start()
@@ -87,8 +76,10 @@ def test_tls_hooks_cert_resume(ats_factory: ATSFactory, services: ServiceFactory
         sni = "random.com" if mode == "verify" and not authenticated else "foo.com"
         auth = f"--cert {ssl}/signed-foo.pem --key {ssl}/signed-foo.key" if authenticated or mode == "switch" else ""
         result = curl.run_for(
-            ats, f"-v -k --max-time 15 -o /dev/null -w 'status=%{{http_code}}' {version} {auth} "
-            f"-H uuid:basic --resolve '{sni}:{ats.https_port}:127.0.0.1' https://{sni}:{ats.https_port}/")
+            ats,
+            f"-v -k --max-time 15 -o /dev/null -w 'status=%{{http_code}}' {version} {auth} "
+            f"-H uuid:basic --resolve '{sni}:{ats.https_port}:127.0.0.1' https://{sni}:{ats.https_port}/",
+        )
         assert result.returncode == 0, result.output
         assert "status=200" in result.stdout
         if mode == "switch":

@@ -54,10 +54,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     ):
         origin.add_response(
             {"headers": f"GET {path} HTTP/1.1\r\nHost: {{%Host}}\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": body
-            },
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
         )
     origin.add_response(
         {
@@ -65,8 +62,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
             "body": "knock knock",
         },
         {
-            "headers": ("HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\n"
-                        "Transfer-Encoding: chunked\r\n\r\n"),
+            "headers": ("HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n"),
             "body": "",
         },
     )
@@ -74,7 +70,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
 
 def configure_ats(
-        ats_factory: ATSFactory, name: str, *, max_early_data: int, sni_name: str, sni_value: int, _origin: OriginServer) -> ATS:
+    ats_factory: ATSFactory, name: str, *, max_early_data: int, sni_name: str, sni_value: int, _origin: OriginServer
+) -> ATS:
     """Configure one global policy with an opposing SNI override.
 
     :param _origin: Test-local origin configured by the test.
@@ -87,7 +84,13 @@ def configure_ats(
 
     ats = ats_factory.create(name, enable_tls=True)
     ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
-    ats.set_ssl_multicert_yaml({"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"},]})
+    ats.set_ssl_multicert_yaml(
+        {
+            "ssl_multicert": [
+                {"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"},
+            ]
+        }
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -99,7 +102,8 @@ def configure_ats(
             "proxy.config.ssl.server.session_ticket.enable": 1,
             "proxy.config.ssl.server.max_early_data": max_early_data,
             "proxy.config.ssl.server.allow_early_data_params": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     ats.write_config_file(
         "sni.yaml",
@@ -117,12 +121,12 @@ def configure_client_files(run_directory: Path) -> Path:
     directory = run_directory / "early-data-client"
     directory.mkdir()
     for filename in (
-            "early_h1_get.txt",
-            "early_h1_post.txt",
-            "early_h2_get.txt",
-            "early_h2_post.txt",
-            "early_h2_multi1.txt",
-            "early_h2_multi2.txt",
+        "early_h1_get.txt",
+        "early_h1_post.txt",
+        "early_h2_get.txt",
+        "early_h2_post.txt",
+        "early_h2_multi1.txt",
+        "early_h2_multi2.txt",
     ):
         shutil.copy2(TEST_DIRECTORY / filename, directory / filename)
     return directory
@@ -183,7 +187,8 @@ def verify_basic_request(*, _curl: Curl, _enabled: ATS) -> None:
         ats,
         (
             f"--insecure --silent --show-error --resolve 'example.com:{ats.https_port}:127.0.0.1' "
-            f"'https://example.com:{ats.https_port}/'"),
+            f"'https://example.com:{ats.https_port}/'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert_output(result, contains=("curl test",), excludes=("early data accepted",))
@@ -200,7 +205,8 @@ def verify_enabled_policy(*, _client_directory: Path, _enabled: ATS) -> None:
     assert_output(
         run_client(_enabled, "h1", "get", _client_directory=_client_directory),
         contains=("early data accepted",),
-        excludes=forbidden)
+        excludes=forbidden,
+    )
     assert_output(
         run_client(_enabled, "h1", "post", _client_directory=_client_directory),
         contains=("HTTP/1.1 425 Too Early",),
@@ -209,7 +215,8 @@ def verify_enabled_policy(*, _client_directory: Path, _enabled: ATS) -> None:
     assert_output(
         run_client(_enabled, "h2", "get", _client_directory=_client_directory),
         contains=("early data accepted",),
-        excludes=forbidden)
+        excludes=forbidden,
+    )
     assert_output(
         run_client(_enabled, "h2", "post", _client_directory=_client_directory),
         contains=(":status 425",),
@@ -270,7 +277,8 @@ def test_tls_0rtt_server(ats_factory: ATSFactory, services: ServiceFactory, curl
     _origin = configure_origin(services)
     _enabled = configure_ats(ats_factory, "enabled", max_early_data=16384, sni_name="example-no.com", sni_value=0, _origin=_origin)
     _disabled = configure_ats(
-        ats_factory, "disabled", max_early_data=0, sni_name="example-yes.com", sni_value=16384, _origin=_origin)
+        ats_factory, "disabled", max_early_data=0, sni_name="example-yes.com", sni_value=16384, _origin=_origin
+    )
     _client_directory = configure_client_files(ats_factory.run_directory)
 
     _origin.start()

@@ -16,32 +16,29 @@
 #######################
 
 add_library(
-  records STATIC
-  P_RecCore.cc
-  RecConfigParse.cc
-  RecCore.cc
-  RecDebug.cc
-  RecFile.cc
-  RecHttp.cc
-  RecMessage.cc
-  RecMutex.cc
-  RecUtils.cc
-  RecYAMLDecoder.cc
-  RecordsConfig.cc
-  RecordsConfigUtils.cc
-  RecRawStats.cc
-  # Reload infrastructure
-  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ReloadCoordinator.cc
-  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigReloadTrace.cc
-  ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigContext.cc
+  records
+  STATIC
+    P_RecCore.cc
+    RecConfigParse.cc
+    RecCore.cc
+    RecDebug.cc
+    RecFile.cc
+    RecHttp.cc
+    RecMessage.cc
+    RecMutex.cc
+    RecUtils.cc
+    RecYAMLDecoder.cc
+    RecordsConfig.cc
+    RecordsConfigUtils.cc
+    RecRawStats.cc
+    # Reload infrastructure
+    ${CMAKE_SOURCE_DIR}/src/mgmt/config/ReloadCoordinator.cc
+    ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigReloadTrace.cc
+    ${CMAKE_SOURCE_DIR}/src/mgmt/config/ConfigContext.cc
 )
 add_library(ts::records ALIAS records)
 
-target_link_libraries(
-  records
-  PUBLIC ts::tscore yaml-cpp::yaml-cpp ts::inkevent
-  PRIVATE ts::tsutil
-)
+target_link_libraries(records PUBLIC ts::tscore yaml-cpp::yaml-cpp ts::inkevent PRIVATE ts::tsutil)
 
 if(BUILD_TESTING)
   add_executable(

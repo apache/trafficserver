@@ -58,7 +58,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _server_port: int
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http2.min_avg_window_update": 0,
-        })
+        }
+    )
     return ats
 
 

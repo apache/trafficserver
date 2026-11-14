@@ -40,10 +40,10 @@ def add_object(
     origin.add_response(
         {"headers": f"GET {path} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: \"359670651\"\r\n"
-                    f"Cache-Control: {cache_control}\r\nAccept-Ranges: bytes\r\nContent-Type: {content_type}\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: \"359670651\"\r\n"
+                f"Cache-Control: {cache_control}\r\nAccept-Ranges: bytes\r\nContent-Type: {content_type}\r\n\r\n"
+            ),
             "body": f"Content for {path}\n",
         },
     )
@@ -75,10 +75,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     """
 
     ats = ats_factory.create("ts", disable_log_checks=True)
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http|combo_handler",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|combo_handler",
+        }
+    )
     ats.plugin_config.add_line("combo_handler.so - - - ctwl.txt")
     ats.remap_config.add_lines(
         (
@@ -86,7 +88,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             f"map http://localhost/127.0.0.1/ http://127.0.0.1:{_origin.http_port}/",
             f"map http://localhost/sub/ http://127.0.0.1:{_origin.http_port}/sub/",
             f"map http://localhost/s/ http://127.0.0.1:{_origin.http_port}/s/",
-        ))
+        )
+    )
     ats.copy_to_config(TEST_DIRECTORY / "ctwl.txt")
     return ats
 

@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Send compliant traffic on one connection at a non-divisor rate."""
+
 import argparse
 import http.client
 import time

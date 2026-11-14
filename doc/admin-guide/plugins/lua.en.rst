@@ -2566,6 +2566,11 @@ transaction to use that strategy.
 Use empty string or "null" to clear the strategy and fall back to
 parent.config or the remap to url.
 
+If the named strategy does not exist, the transaction's strategy is left
+unchanged. The failure is logged as an error at most once a minute, with a
+count of the failures suppressed since the previous error; the suppressed
+failures are logged with the ``ts_lua`` debug tag.
+
 Here is an example:
 
 ::
@@ -4809,7 +4814,6 @@ Http config constants
     TS_LUA_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED
     TS_LUA_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER
     TS_LUA_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE
-    TS_LUA_CONFIG_HTTP_SLOW_LOG_THRESHOLD
     TS_LUA_CONFIG_HTTP_CACHE_GENERATION
     TS_LUA_CONFIG_BODY_FACTORY_TEMPLATE_BASE
     TS_LUA_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION

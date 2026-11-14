@@ -1,0 +1,99 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: remap JA4H configuration reload test.
+#
+# Each client run selects one session by uuid key:
+#
+#   remap-initial  : the remap configuration sets header x-jax-initial.
+#   remap-reloaded : after only the remap YAML file is changed to set
+#                    header x-jax-reloaded and traffic_ctl config reload
+#                    is run.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, remap-initial ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax-initial, { as: present } ]
+        - [ x-jax-reloaded, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+
+- protocol:
+  - name: http
+    version: 1
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, remap-reloaded ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax-reloaded, { as: present } ]
+        - [ x-jax-initial, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200

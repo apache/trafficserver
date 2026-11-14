@@ -56,12 +56,13 @@ def test_metric_values(stats_format: str, body: str) -> list[int]:
 
 
 def request(
-        port: int,
-        path: str,
-        encoding: str | None = None,
-        headers: dict[str, str] | None = None,
-        method: str = 'GET',
-        timeout: float = 60) -> tuple[http.client.HTTPResponse, bytes]:
+    port: int,
+    path: str,
+    encoding: str | None = None,
+    headers: dict[str, str] | None = None,
+    method: str = 'GET',
+    timeout: float = 60,
+) -> tuple[http.client.HTTPResponse, bytes]:
     headers = {'Connection': 'close', **(headers or {})}
     if encoding:
         headers['Accept-Encoding'] = encoding
@@ -94,7 +95,7 @@ def fetch_and_verify(args: argparse.Namespace) -> int:
     lines = body.split('\n')
     missing = False
     for expected in args.expect:
-        if any(lines[i:i + len(expected)] == expected for i in range(len(lines))):
+        if any(lines[i : i + len(expected)] == expected for i in range(len(lines))):
             print(f'Found the lines {expected}')
             continue
         missing = True
@@ -124,8 +125,13 @@ def fetch_records(args: argparse.Namespace) -> int:
 
 
 def reset_after_first_byte(args: argparse.Namespace) -> int:
+    '''Reset the connection after the first response byte.
+
+    The caller must give Traffic Server a small proxy.config.net.sock_send_buffer_size_in.  Otherwise the kernel can take
+    the whole body before the reset arrives, and the intercept finishes on WRITE_COMPLETE instead of EOS or ERROR.
+    '''
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # A small receive window keeps most of the body in Traffic Server when the client goes away.
+    # A small receive window keeps the client from taking more than a few KB of the body.
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4096)
     sock.settimeout(60)
     sock.connect(('127.0.0.1', args.port))
@@ -173,12 +179,15 @@ def main() -> int:
         action='append',
         default=[],
         metavar='LINE',
-        help='lines that the decoded body must have, one after the other.  Repeat the option for each group of lines')
+        help='lines that the decoded body must have, one after the other.  Repeat the option for each group of lines',
+    )
     parser.add_argument(
-        '--record', action='append', default=[], help='a record to request with records[].  Repeat the option for each record')
+        '--record', action='append', default=[], help='a record to request with records[].  Repeat the option for each record'
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
-        '--reset', action='store_true', help='reset the connection after the first response byte instead of verifying the body')
+        '--reset', action='store_true', help='reset the connection after the first response byte instead of verifying the body'
+    )
     mode.add_argument('--reject', action='store_true', help='send a request that Traffic Server rejects with a 406')
     mode.add_argument('--head', action='store_true', help='send a HEAD request instead of verifying the body')
     mode.add_argument('--post', action='store_true', help='send a POST request, which a remap rule rejects with a 405')

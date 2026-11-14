@@ -56,8 +56,7 @@ def configure_ats(ats_factory: ATSFactory, *, _curl: Curl, _enable_quic: bool, _
         "proxy.config.http.insert_response_via_str": 4,
     }
     if not _curl.uses_uds:
-        server_ports = (f"{ats.http_port} {ats.ipv6_port}:ipv6 "
-                        f"{ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6")
+        server_ports = f"{ats.http_port} {ats.ipv6_port}:ipv6 {ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6"
         if _enable_quic:
             server_ports += f" {ats.https_port}:quic {ats.ipv6_https_port}:quic:ipv6"
         records["proxy.config.http.server_ports"] = server_ports
@@ -66,7 +65,8 @@ def configure_ats(ats_factory: ATSFactory, *, _curl: Curl, _enable_quic: bool, _
         (
             f"map http://www.example.com http://127.0.0.1:{_origin.port}",
             f"map https://www.example.com http://127.0.0.1:{_origin.port}",
-        ))
+        )
+    )
     return ats
 
 
@@ -116,7 +116,8 @@ def run_network_requests(*, _ats: ATS, _curl: Curl, _enable_quic: bool) -> int:
         "Host: www.example.com",
         f"https://localhost:{_ats.https_port}",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
     count = 3
     if _enable_quic:
         __curl(
@@ -127,7 +128,8 @@ def run_network_requests(*, _ats: ATS, _curl: Curl, _enable_quic: bool) -> int:
             "Host: www.example.com",
             f"https://localhost:{_ats.https_port}",
             _ats=_ats,
-            _curl=_curl)
+            _curl=_curl,
+        )
         count += 1
     __curl(
         "--ipv4",
@@ -137,7 +139,8 @@ def run_network_requests(*, _ats: ATS, _curl: Curl, _enable_quic: bool) -> int:
         "Host: www.example.com",
         f"https://localhost:{_ats.https_port}",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
     __curl("--ipv6", "--http1.1", "--proxy", f"localhost:{_ats.ipv6_port}", "http://www.example.com", _ats=_ats, _curl=_curl)
     __curl(
         "--ipv6",
@@ -147,7 +150,8 @@ def run_network_requests(*, _ats: ATS, _curl: Curl, _enable_quic: bool) -> int:
         "Host: www.example.com",
         f"https://localhost:{_ats.ipv6_https_port}",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
     return count + 3
 
 
@@ -166,9 +170,11 @@ def test_via(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> N
 
     _origin.start()
     _ats.start()
-    count = run_uds_requests(
-        _ats=_ats, _curl=curl) if curl.uses_uds else run_network_requests(
-            _ats=_ats, _curl=curl, _enable_quic=_enable_quic)
+    count = (
+        run_uds_requests(_ats=_ats, _curl=curl)
+        if curl.uses_uds
+        else run_network_requests(_ats=_ats, _curl=curl, _enable_quic=_enable_quic)
+    )
     log_path = _origin.run_directory / "via.log"
     wait_for_file_lines(log_path, r"^Via:", count)
     gold = "via_uds.gold" if curl.uses_uds else ("via_h3.gold" if _enable_quic else "via.gold")

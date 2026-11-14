@@ -20,7 +20,9 @@ project(abuse_shield)
 add_atsplugin(abuse_shield abuse_shield.cc config.cc fingerprint.cc ip_data.cc stats.cc)
 
 target_include_directories(
-  abuse_shield BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint
+  abuse_shield
+  BEFORE
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint
 )
 # Plugins resolve tsutil symbols from traffic_server. Linking the static tsutil
 # library here would duplicate its globals in the plugin at load time.
@@ -37,8 +39,9 @@ if(BUILD_TESTING)
 
   add_executable(test_abuse_shield_config unit_tests/test_config.cc config.cc fingerprint.cc)
   target_include_directories(
-    test_abuse_shield_config BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-                                            "${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint"
+    test_abuse_shield_config
+    BEFORE
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint"
   )
   target_link_libraries(
     test_abuse_shield_config PRIVATE Catch2::Catch2WithMain libswoc::libswoc ts::tsutil yaml-cpp::yaml-cpp

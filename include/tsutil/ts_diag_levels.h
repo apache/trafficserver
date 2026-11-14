@@ -1,6 +1,8 @@
-/** @file Diagnostic definitions and functions.
+/** @file
 
-@section license License
+  Diagnostic definitions and functions.
+
+@par License
 
 Licensed to the Apache Software Foundation (ASF) under one
 or more contributor license agreements.  See the NOTICE file

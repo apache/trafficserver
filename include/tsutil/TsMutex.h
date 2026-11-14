@@ -10,7 +10,7 @@
   that of std::mutex; the annotations are compile-time only (see
   tsutil/ts_thread_safety.h).
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

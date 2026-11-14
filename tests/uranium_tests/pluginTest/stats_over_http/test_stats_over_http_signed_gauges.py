@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Negative gauges print as signed values, and --wrap-counters wraps only counters."""
+
 import sys
 from pathlib import Path
 import pytest
@@ -79,12 +80,16 @@ def test_stats_over_http_signed_gauges(ats_factory: ATSFactory, services: Servic
     """
     ats = start_ats(ats_factory, "ts", "_stats")
     verify(
-        services, ats, "signed", {
+        services,
+        ats,
+        "signed",
+        {
             "json": [['"plugin.test_metrics.negative": "-42",'], ['"plugin.test_metrics.large_counter": "9223372036854775850",']],
             "csv": [["plugin.test_metrics.negative,-42"], ["plugin.test_metrics.large_counter,9223372036854775850"]],
             "prometheus": prometheus("9223372036854775850"),
             "prometheus_v2": prometheus("9223372036854775850"),
-        })
+        },
+    )
 
 
 def test_stats_over_http_wrap_counters(ats_factory: ATSFactory, services: ServiceFactory) -> None:
@@ -95,9 +100,13 @@ def test_stats_over_http_wrap_counters(ats_factory: ATSFactory, services: Servic
     """
     ats = start_ats(ats_factory, "ts_wrap", "--wrap-counters --integer-counters _stats")
     verify(
-        services, ats, "wrap", {
+        services,
+        ats,
+        "wrap",
+        {
             "json": [['"plugin.test_metrics.negative": -42,'], ['"plugin.test_metrics.large_counter": 43,']],
             "csv": [["plugin.test_metrics.negative,-42"], ["plugin.test_metrics.large_counter,43"]],
             "prometheus": prometheus("43"),
             "prometheus_v2": prometheus("43"),
-        })
+        },
+    )

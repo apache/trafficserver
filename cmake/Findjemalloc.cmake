@@ -29,11 +29,7 @@
 #
 
 find_library(jemalloc_LIBRARY NAMES jemalloc)
-find_path(
-  jemalloc_INCLUDE_DIR
-  NAMES jemalloc.h
-  PATH_SUFFIXES jemalloc
-)
+find_path(jemalloc_INCLUDE_DIR NAMES jemalloc.h PATH_SUFFIXES jemalloc)
 
 mark_as_advanced(jemalloc_FOUND jemalloc_LIBRARY jemalloc_INCLUDE_DIR)
 

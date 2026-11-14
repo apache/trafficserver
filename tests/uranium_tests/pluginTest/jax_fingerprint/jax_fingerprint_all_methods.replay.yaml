@@ -16,7 +16,7 @@
 
 # Used by: All methods test.
 #
-# The jax_fingerprint plugin is loaded multiple times with different methods.
+# The jax_fingerprint plugin is configured with multiple fingerprint methods.
 # All fingerprint headers should be present and non-empty.
 
 meta:

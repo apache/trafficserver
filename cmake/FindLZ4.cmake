@@ -57,11 +57,7 @@ if(LZ4_INCLUDE_DIR AND EXISTS "${LZ4_INCLUDE_DIR}/lz4.h")
 endif()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(
-  LZ4
-  REQUIRED_VARS LZ4_LIBRARY LZ4_INCLUDE_DIR
-  VERSION_VAR LZ4_VERSION
-)
+find_package_handle_standard_args(LZ4 REQUIRED_VARS LZ4_LIBRARY LZ4_INCLUDE_DIR VERSION_VAR LZ4_VERSION)
 
 if(LZ4_FOUND)
   set(LZ4_INCLUDE_DIRS "${LZ4_INCLUDE_DIR}")

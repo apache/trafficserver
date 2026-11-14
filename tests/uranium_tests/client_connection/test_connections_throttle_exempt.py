@@ -102,13 +102,8 @@ class ThrottledTrafficServer:
     THROTTLE = 5
 
     def __init__(
-            self,
-            ats_factory: ATSFactory,
-            services: ServiceFactory,
-            exempt_list: str,
-            held: str,
-            other: str,
-            accept_threads: int = 1) -> None:
+        self, ats_factory: ATSFactory, services: ServiceFactory, exempt_list: str, held: str, other: str, accept_threads: int = 1
+    ) -> None:
         """Start Traffic Server and fill connections_throttle.
 
         :param exempt_list: The value of proxy.config.http.per_client.connection.exempt_list.
@@ -151,7 +146,8 @@ class ThrottledTrafficServer:
                 # Hold the incomplete requests for the whole test.
                 "proxy.config.http.accept_no_activity_timeout": 300,
                 "proxy.config.http.transaction_no_activity_timeout_in": 300,
-            })
+            }
+        )
         return ats
 
     def _port(self, host: str, kind: str) -> int:
@@ -195,7 +191,8 @@ class ThrottledTrafficServer:
             open_counts.update(metrics(self.ats, (OPEN, EXEMPT_OPEN)))
 
         outcome = attempt(
-            self.other, self._port(self.other, kind), tls=kind == "tls", proxy_source=proxy_source, while_open=read_open_counts)
+            self.other, self._port(self.other, kind), tls=kind == "tls", proxy_source=proxy_source, while_open=read_open_counts
+        )
         assert outcome == "served", f"A {kind} connection from {self.other} was refused"
         assert open_counts == {OPEN: self.THROTTLE + 1, EXEMPT_OPEN: 1}, "The open exempt connection is counted as exempt."
         self._wait_for_counters()
@@ -230,7 +227,8 @@ def test_memory_limit_applies(ats_factory: ATSFactory) -> None:
             EXEMPT_LIST_VAR: "::1",
             # Less than any resident set size, so every new client connection is refused once memory use is checked.
             "proxy.config.memory.max_usage": 1,
-        })
+        }
+    )
     ats.start()
     # Traffic Server checks memory use every 10 seconds, and serves the health check until then.
     request("::1", ats.ipv6_port, "refused", retry=30)
@@ -253,7 +251,8 @@ def test_exempt_ipv6(ats_factory: ATSFactory, services: ServiceFactory, accept_t
         "192.0.2.0/24, 198.51.100.1-198.51.100.9, ::1,",
         held="127.0.0.1",
         other="::1",
-        accept_threads=accept_threads)
+        accept_threads=accept_threads,
+    )
     # IPv4 is refused at the limit.
     t.refused(t.held)
     # ::1 is served over TCP, TLS, plain HTTP on an allow-plain TLS port, and a PROXY protocol port that claims an
@@ -289,7 +288,8 @@ def test_exempt_ipv4(ats_factory: ATSFactory, services: ServiceFactory, exempt_l
 
 @pytest.mark.parametrize(("prefix", "covered", "other"), INVALID_PREFIXES)
 def test_invalid_prefix_at_startup(
-        ats_factory: ATSFactory, services: ServiceFactory, prefix: str, covered: str, other: str) -> None:
+    ats_factory: ATSFactory, services: ServiceFactory, prefix: str, covered: str, other: str
+) -> None:
     """Check that a list with an invalid prefix is rejected at startup, and exempts no address.
 
     :param prefix: An exempt list entry with a prefix longer than the address.

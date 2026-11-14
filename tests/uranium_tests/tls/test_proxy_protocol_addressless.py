@@ -33,14 +33,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": f"GET /proxy_protocol HTTP/1.1\r\nHost: {HOST}\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "ok"
-        },
+        {"headers": f"GET /proxy_protocol HTTP/1.1\r\nHost: {HOST}\r\nConnection: close\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "ok"},
     )
     return origin
 
@@ -65,12 +59,14 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _use_tls: b
             "proxy.config.http.proxy_protocol_allowlist": "127.0.0.1",
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "proxyprotocol",
-        })
+        }
+    )
     return ats
 
 
 def configure_client(
-        services: ServiceFactory, *, _ats: ATS, _origin: OriginServer, _protocol_version: int, _use_tls: bool) -> ProcessService:
+    services: ServiceFactory, *, _ats: ATS, _origin: OriginServer, _protocol_version: int, _use_tls: bool
+) -> ProcessService:
     """Configure the custom client for v1 UNKNOWN or v2 LOCAL.
 
     :param _ats: Test-local ats configured by the test.

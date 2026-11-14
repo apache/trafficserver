@@ -34,7 +34,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc|config|config.reload|cfg_plugin_deferred_test",
-        })
+        }
+    )
     ats.write_config_file("cfg_plugin_deferred_test.conf", "mode: success\n")
     ats.copy_custom_plugin("plugins/.libs/cfg_plugin_deferred_test.so")
     ats.plugin_config.add_line("cfg_plugin_deferred_test.so cfg_plugin_deferred_test.conf")
@@ -54,7 +55,8 @@ def trigger(token: str, *, fail: bool = False, _ats: ATS) -> None:
     update = f'printf "defer_fail: true\\n" > "{config / "cfg_plugin_deferred_test.conf"}" && ' if fail else ""
     command = (
         f'{update}touch "{config / "ip_allow.yaml"}" "{config / "sni.yaml"}" '
-        f'"{config / "cfg_plugin_deferred_test.conf"}" && traffic_ctl config reload -t {token}')
+        f'"{config / "cfg_plugin_deferred_test.conf"}" && traffic_ctl config reload -t {token}'
+    )
     require_command(_ats.run_shell(command))
 
 

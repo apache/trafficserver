@@ -247,20 +247,20 @@ utils::internal::convertInternalTransformationTypeToTsHook(TransformationPlugin:
 }
 
 void
-utils::internal::invokePluginForEvent(TransactionPlugin *plugin, TSHttpTxn ats_txn_handle, TSEvent event)
+atscppapi::utils::internal::invokePluginForEvent(TransactionPlugin *plugin, TSHttpTxn ats_txn_handle, TSEvent event)
 {
   std::lock_guard<Mutex> scopedLock(*(plugin->getMutex()));
   ::invokePluginForEvent(static_cast<Plugin *>(plugin), ats_txn_handle, event);
 }
 
 void
-utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpTxn ats_txn_handle, TSEvent event)
+atscppapi::utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpTxn ats_txn_handle, TSEvent event)
 {
   ::invokePluginForEvent(static_cast<Plugin *>(plugin), ats_txn_handle, event);
 }
 
 void
-utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpAltInfo altinfo_handle, [[maybe_unused]] TSEvent event)
+atscppapi::utils::internal::invokePluginForEvent(GlobalPlugin *plugin, TSHttpAltInfo altinfo_handle, [[maybe_unused]] TSEvent event)
 {
   TSMBuffer hdr_buf;
   TSMLoc    hdr_loc;

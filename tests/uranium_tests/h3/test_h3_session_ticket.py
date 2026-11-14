@@ -41,7 +41,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ticket_file = ats_factory.run_directory / "file.ticket"
     shutil.copy2(TEST_DIRECTORY.parent / "tls" / "file.ticket", ticket_file)
     ats.records.update(
@@ -52,7 +53,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.ssl.server.session_ticket.enable": 1,
             "proxy.config.ssl.server.session_ticket.number": 2,
             "proxy.config.ssl.server.ticket_key.filename": str(ticket_file),
-        })
+        }
+    )
     return ats
 
 

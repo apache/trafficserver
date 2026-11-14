@@ -2,7 +2,7 @@
 
   Generic interface which enables any event or async activity to be cancelled
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

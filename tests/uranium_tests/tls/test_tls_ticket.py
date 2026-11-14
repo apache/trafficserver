@@ -54,14 +54,16 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, _origin: OriginServer) 
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     ats.records.update(
         {
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.ssl.server.session_ticket.enable": 1,
             "proxy.config.ssl.server.ticket_key.filename": "../../file.ticket",
-        })
+        }
+    )
     return ats
 
 
@@ -75,8 +77,7 @@ def openssl_request(ats: ATS, *, resume: bool, _ticket: Path) -> str:
 
     session_option = f"-sess_in {shlex.quote(str(_ticket))}" if resume else f"-sess_out {shlex.quote(str(_ticket))}"
     result = ats.run_shell(
-        f"printf 'GET / HTTP/1.0\\r\\n\\r\\n' | openssl s_client -tls1_2 "
-        f"-connect 127.0.0.1:{ats.https_port} {session_option}",
+        f"printf 'GET / HTTP/1.0\\r\\n\\r\\n' | openssl s_client -tls1_2 -connect 127.0.0.1:{ats.https_port} {session_option}",
         timeout=30,
     )
     assert result.returncode == 0, result.output

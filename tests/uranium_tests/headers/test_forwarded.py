@@ -66,10 +66,12 @@ def configure_baseline(ats: ATS, *, _origin: OriginServer) -> None:
     """
 
     ats.add_default_ssl_files()
-    ats.records.update({
-        "proxy.config.url_remap.pristine_host_hdr": 1,
-        "proxy.config.proxy_name": "Poxy_Proxy",
-    })
+    ats.records.update(
+        {
+            "proxy.config.url_remap.pristine_host_hdr": 1,
+            "proxy.config.proxy_name": "Poxy_Proxy",
+        }
+    )
     ats.remap_config.add_line(f"map http://www.no-oride.com http://127.0.0.1:{_origin.port}")
 
 
@@ -85,7 +87,8 @@ def configure_remap_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> A
     for host, option in FORWARDED_SINGLE_OPTIONS:
         ats.remap_config.add_line(
             f"map http://{host} http://127.0.0.1:{_origin.port} "
-            f"@plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded={option}")
+            f"@plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded={option}"
+        )
     return ats
 
 
@@ -101,10 +104,11 @@ def configure_global_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> 
     ats.records.update(
         {
             "proxy.config.http.insert_forwarded": "by=uuid",
-            "proxy.config.http.server_ports":
-                (f"{ats.http_port} {ats.ipv6_port}:ipv6 "
-                 f"{ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6"),
-        })
+            "proxy.config.http.server_ports": (
+                f"{ats.http_port} {ats.ipv6_port}:ipv6 {ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6"
+            ),
+        }
+    )
     ats.remap_config.add_line(f"map https://www.no-oride.com http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -172,7 +176,8 @@ def run_global_requests(*, _curl: Curl, _global_ats: ATS) -> None:
         "--proxy",
         proxy4,
         "http://www.no-oride.com",
-        _curl=_curl)
+        _curl=_curl,
+    )
     common_tls = ("--insecure", "--header", "Host: www.no-oride.com")
     __curl(ats, "--ipv4", "--http2", *common_tls, f"https://localhost:{ats.https_port}", _curl=_curl)
     __curl(ats, "--ipv4", "--http1.1", *common_tls, f"https://localhost:{ats.https_port}", _curl=_curl)

@@ -17,16 +17,7 @@
 
 project(access_control)
 
-add_atsplugin(
-  access_control
-  access_control.cc
-  common.cc
-  config.cc
-  headers.cc
-  pattern.cc
-  plugin.cc
-  utils.cc
-)
+add_atsplugin(access_control access_control.cc common.cc config.cc headers.cc pattern.cc plugin.cc utils.cc)
 
 target_link_libraries(access_control PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 

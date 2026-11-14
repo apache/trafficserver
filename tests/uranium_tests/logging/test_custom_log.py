@@ -44,18 +44,12 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     ats.remap_config.add_line("map / http://www.linkedin.com/ @action=deny")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "custom",
-                        "format": "%<hii> %<hiih>"
-                    }],
-                    "logs": [{
-                        "filename": "test_log_field",
-                        "format": "custom"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "custom", "format": "%<hii> %<hiih>"}],
+                "logs": [{"filename": "test_log_field", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 
@@ -67,7 +61,9 @@ def send_requests(*, _ats: ATS, _curl: Curl) -> None:
     """
 
     for address in CUSTOM_LOG_ADDRESS_ADDRESSES:
-        result = _curl.run(f"'http://{address}:{_ats.http_port}' --verbose",)
+        result = _curl.run(
+            f"'http://{address}:{_ats.http_port}' --verbose",
+        )
         assert result.returncode == 0, result.output
 
 

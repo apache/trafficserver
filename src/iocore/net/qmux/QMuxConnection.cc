@@ -2,7 +2,7 @@
 
   QMux connection implementation wrapping quiche_conn (draft-opik-quic-qmux-01)
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file

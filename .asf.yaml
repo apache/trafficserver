@@ -49,9 +49,9 @@ github:
         # strict means "Require branches to be up to date before merging"
         strict: false
         contexts:
-          - URTest 0of3
           - URTest 1of3
           - URTest 2of3
+          - URTest 3of3
           - Rocky
           - CentOS
           - Clang-Analyzer
@@ -59,6 +59,7 @@ github:
           - Format
           - Debian
           - Docs
+          - Doxygen
           - Fedora
           - RAT
           - Ubuntu

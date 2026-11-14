@@ -34,16 +34,9 @@ def virtualhost_entry(identifier: str, domains: list[str], routes: list[tuple[st
     return {
         "id": identifier,
         "domains": domains,
-        "remap":
-            [{
-                "type": "map",
-                "from": {
-                    "url": source
-                },
-                "to": {
-                    "url": f"http://{origin}/{target}/"
-                }
-            } for source, target in routes]
+        "remap": [
+            {"type": "map", "from": {"url": source}, "to": {"url": f"http://{origin}/{target}/"}} for source, target in routes
+        ],
     }
 
 
@@ -56,36 +49,48 @@ def test_virtualhost_remap(ats_factory: ATSFactory, services: ServiceFactory, cu
     """
     ats = ats_factory.create("ats", disable_log_checks=True)
     server = services.origin("server")
-    for path in ("vhost-exact-domain", "vhost-deep-wildcard", "vhost-wide-wildcard", "vhost-wildcard-precedence",
-                 "vhost-exact-precedence", "vhost-fallback-rule", "global-fallback/other", "global-plain", "vhost-conflict"):
+    for path in (
+        "vhost-exact-domain",
+        "vhost-deep-wildcard",
+        "vhost-wide-wildcard",
+        "vhost-wildcard-precedence",
+        "vhost-exact-precedence",
+        "vhost-fallback-rule",
+        "global-fallback/other",
+        "global-plain",
+        "vhost-conflict",
+    ):
         body = "hit:" + ("global-fallback" if path == "global-fallback/other" else path)
         server.add_response(
-            {
-                "headers": f"GET /{path}/ HTTP/1.1\r\nHost: origin.example.com\r\n\r\n",
-                "body": ""
-            }, {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": body
-            })
+            {"headers": f"GET /{path}/ HTTP/1.1\r\nHost: origin.example.com\r\n\r\n", "body": ""},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
+        )
     origin = f"127.0.0.1:{server.port}"
     ats.records.update({"proxy.config.diags.debug.enabled": 1, "proxy.config.diags.debug.tags": "virtualhost|url_rewrite"})
     ats.remap_config.add_lines(
         [
             f"map http://fallback.example.net/ http://{origin}/global-fallback/",
-            f"map http://none.example.net/ http://{origin}/global-plain/"
-        ])
+            f"map http://none.example.net/ http://{origin}/global-plain/",
+        ]
+    )
     entries = [
         virtualhost_entry("exact-only", ["exact.example.org"], [("http://exact.example.org/", "vhost-exact-domain")], origin),
         virtualhost_entry("deep-wildcard", ["*.deep.example.com"], [("http://x.deep.example.com/", "vhost-deep-wildcard")], origin),
         virtualhost_entry(
-            "wide-wildcard", ["*.example.com"], [
+            "wide-wildcard",
+            ["*.example.com"],
+            [
                 ("http://x.deep.example.com/", "vhost-wide-wildcard"),
-                ("http://precedence.example.com/", "vhost-wildcard-precedence")
-            ], origin),
+                ("http://precedence.example.com/", "vhost-wildcard-precedence"),
+            ],
+            origin,
+        ),
         virtualhost_entry(
-            "exact-precedence", ["precedence.example.com"], [("http://precedence.example.com/", "vhost-exact-precedence")], origin),
+            "exact-precedence", ["precedence.example.com"], [("http://precedence.example.com/", "vhost-exact-precedence")], origin
+        ),
         virtualhost_entry(
-            "path-miss", ["fallback.example.net"], [("http://fallback.example.net/only-here/", "vhost-fallback-rule")], origin),
+            "path-miss", ["fallback.example.net"], [("http://fallback.example.net/only-here/", "vhost-fallback-rule")], origin
+        ),
     ]
     ats.write_config_file("virtualhost.yaml", yaml.safe_dump({"virtualhost": entries}))
     server.start()
@@ -105,12 +110,26 @@ def test_virtualhost_remap(ats_factory: ATSFactory, services: ServiceFactory, cu
             assert f"hit:{forbidden}" not in result.stdout, result.output
     conflict = copy.deepcopy(entries[:2])
     conflict[1] = virtualhost_entry(
-        "deep-wildcard", ["*.deep.example.com", "exact.example.org"],
-        [("http://x.deep.example.com/", "vhost-conflict"), ("http://exact.example.org/", "vhost-conflict")], origin)
+        "deep-wildcard",
+        ["*.deep.example.com", "exact.example.org"],
+        [("http://x.deep.example.com/", "vhost-conflict"), ("http://exact.example.org/", "vhost-conflict")],
+        origin,
+    )
     (ats.config_directory / "virtualhost.yaml").write_text(yaml.safe_dump({"virtualhost": conflict}))
     result = ats.traffic_ctl(
-        "config", "reload", "-m", "-t", "vhost-conflict", "-w", "1", "-r", "0.5", "-T", "30s",
-        "--directive=virtualhost.id=deep-wildcard")
+        "config",
+        "reload",
+        "-m",
+        "-t",
+        "vhost-conflict",
+        "-w",
+        "1",
+        "-r",
+        "0.5",
+        "-T",
+        "30s",
+        "--directive=virtualhost.id=deep-wildcard",
+    )
     assert result.returncode == 2, result.output
     statuses = reload_task_statuses(ats, "vhost-conflict")
     assert statuses.get("virtualhost") == "fail", statuses

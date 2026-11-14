@@ -320,8 +320,10 @@ def test_cli_u4wrh_exits_nonzero_on_error(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    "argv", [["--bogus"], ["--ast", "--hrw"], ["--error-format", "nope"], ["--max-errors", "x"]],
-    ids=["unknown-option", "conflicting-output-modes", "invalid-choice", "invalid-int"])
+    "argv",
+    [["--bogus"], ["--ast", "--hrw"], ["--error-format", "nope"], ["--max-errors", "x"]],
+    ids=["unknown-option", "conflicting-output-modes", "invalid-choice", "invalid-int"],
+)
 def test_cli_usage_error_exits_two(argv: list[str]) -> None:
     """Usage errors come from argparse and exit 2, not 1; the documented status must hold."""
     result = run_hrw4u(argv, stdin="")

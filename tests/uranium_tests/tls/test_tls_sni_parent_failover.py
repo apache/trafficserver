@@ -44,18 +44,12 @@ def configure_origin(
     )
     origin.add_response(
         {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": f"{suffix} ok"
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": f"{suffix} ok"},
     )
     if include_path:
         origin.add_response(
             {"headers": f"GET /path HTTP/1.1\r\nHost: {host}\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": "path bar ok"
-            },
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "path bar ok"},
         )
     return origin
 
@@ -67,12 +61,14 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
     """
 
     dns = services.dns("dns")
-    dns.add_records({
-        "foo.com.": ["127.0.0.1"],
-        "bar.com.": ["127.0.0.1"],
-        "parent.": ["127.0.0.1"],
-        "strategy.": ["127.0.0.1"],
-    })
+    dns.add_records(
+        {
+            "foo.com.": ["127.0.0.1"],
+            "bar.com.": ["127.0.0.1"],
+            "parent.": ["127.0.0.1"],
+            "strategy.": ["127.0.0.1"],
+        }
+    )
     return dns
 
 
@@ -97,20 +93,22 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _dns: DNSServe
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.http.connect.down.policy": 1,
-        })
+        }
+    )
     ats.remap_config.add_lines(
         (
             "map http://parent https://parent",
             "map http://strategy https://strategy @strategy=strat",
-            "map http://parent_prist https://parent "
-            "@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
+            "map http://parent_prist https://parent @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
             "map http://strategy_prist https://strategy @strategy=strat "
             "@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
-        ))
+        )
+    )
     ats.parent_config.add_line(
         f'dest_domain=. port=443 parent="foo.com:{_foo.https_port}|1;bar.com:{_bar.https_port}|1" '
         'parent_retry=simple_retry parent_is_proxy=false go_direct=false simple_server_retry_responses="404" '
-        "host_override=true")
+        "host_override=true"
+    )
     ats.write_config_file(
         "strategies.yaml",
         "groups:\n"

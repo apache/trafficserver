@@ -34,7 +34,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "rpc|config",
             "proxy.config.diags.debug.throttling_interval_msec": 0,
-        })
+        }
+    )
     return ats
 
 
@@ -78,10 +79,9 @@ def wait_for_reload(token: str, *, _ats: ATS) -> str:
                 "jsonrpc": "2.0",
                 "id": "reload-status",
                 "method": "get_reload_config_status",
-                "params": {
-                    "token": token
-                },
-            })
+                "params": {"token": token},
+            }
+        )
         assert result.returncode == 0, result.output
         latest = json.loads(result.stdout)
         assert "error" not in latest, latest
@@ -213,7 +213,8 @@ def verify_exit_codes(*, _ats: ATS) -> None:
         "0.1",
         "--timeout",
         "15s",
-        _ats=_ats)
+        _ats=_ats,
+    )
     assert result.returncode == 0
     reload("--token", token, expected=2, _ats=_ats)
 

@@ -46,10 +46,9 @@ def test_regex_revalidate(ats_factory: ATSFactory, services: ServiceFactory) -> 
             origin.add_response(
                 {"headers": f"GET {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
                 {
-                    "headers":
-                        (
-                            f'HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "{etag}"\r\n'
-                            f"Cache-Control: max-age={max_age},public\r\n\r\n"),
+                    "headers": (
+                        f'HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "{etag}"\r\nCache-Control: max-age={max_age},public\r\n\r\n'
+                    ),
                     "body": body,
                 },
             )
@@ -73,7 +72,8 @@ def test_regex_revalidate(ats_factory: ATSFactory, services: ServiceFactory) -> 
                 "proxy.config.diags.debug.tags": "regex_revalidate",
                 "proxy.config.http.insert_age_in_response": 0,
                 "proxy.config.http.response_via_str": 3,
-            })
+            }
+        )
         return ats
 
     def rules_path() -> Path:
@@ -91,10 +91,7 @@ def test_regex_revalidate(ats_factory: ATSFactory, services: ServiceFactory) -> 
         result = _curl.get(
             _ats,
             path,
-            headers={
-                "x-debug": "x-cache",
-                "Host": "www.example.com"
-            },
+            headers={"x-debug": "x-cache", "Host": "www.example.com"},
             options=f"--silent --dump-header - --output /dev/null",
         )
         assert result.returncode == 0, result.output

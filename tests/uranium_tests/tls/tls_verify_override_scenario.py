@@ -87,11 +87,8 @@ def run_tls_verify_override(
             SSL_DIRECTORY / "signer.key",
         )
         ats.set_ssl_multicert_yaml(
-            {"ssl_multicert": [{
-                "dest_ip": "*",
-                "ssl_cert_name": "server.pem",
-                "ssl_key_name": "server.key"
-            }]})
+            {"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"}]}
+        )
         ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -106,13 +103,15 @@ def run_tls_verify_override(
                 "proxy.config.dns.resolv_conf": "NULL",
                 "proxy.config.exec_thread.autoconfig.scale": 1.0,
                 "proxy.config.http.connect.down.policy": 1,
-            })
+            }
+        )
         if not include_server_name:
             ats.records.update(
                 {
                     "proxy.config.ssl.client.verify.server.properties": "ALL",
                     "proxy.config.ssl.client.sni_policy": "remap",
-                })
+                }
+            )
         configure_remap(ats)
         return ats
 
@@ -132,22 +131,24 @@ def run_tls_verify_override(
         ats.remap_config.add_line(f"map http://foo.com/override https://foo.com:{_foo.https_port} {plugin} {policy}=ENFORCED")
         ats.remap_config.add_line(f"map http://bar.com/basic https://bar.com:{_foo.https_port}")
         ats.remap_config.add_line(
-            f"map http://bar.com/overridedisabled https://bar.com:{_foo.https_port} "
-            f"{plugin} {policy}=DISABLED")
+            f"map http://bar.com/overridedisabled https://bar.com:{_foo.https_port} {plugin} {policy}=DISABLED"
+        )
         if not include_server_name:
             ats.remap_config.add_line(
-                f"map http://bad_bar.com/overridedisabled https://bar.com:{_foo.https_port} "
-                f"{plugin} {policy}=DISABLED")
+                f"map http://bad_bar.com/overridedisabled https://bar.com:{_foo.https_port} {plugin} {policy}=DISABLED"
+            )
         ats.remap_config.add_line(
             f"map http://bar.com/overridesignature https://bar.com:{_foo.https_port} "
-            f"{plugin} {properties}=SIGNATURE {plugin} {policy}=ENFORCED")
+            f"{plugin} {properties}=SIGNATURE {plugin} {policy}=ENFORCED"
+        )
         if not include_server_name:
             ats.remap_config.add_line(
                 f"map http://bar.com/overridenone https://bar.com:{_foo.https_port} "
-                f"{plugin} {properties}=NONE {plugin} {policy}=ENFORCED")
+                f"{plugin} {properties}=NONE {plugin} {policy}=ENFORCED"
+            )
         ats.remap_config.add_line(
-            f"map http://bar.com/overrideenforced https://bar.com:{_foo.https_port} "
-            f"{plugin} {policy}=ENFORCED")
+            f"map http://bar.com/overrideenforced https://bar.com:{_foo.https_port} {plugin} {policy}=ENFORCED"
+        )
         basic_host = "127.0.0.1" if include_server_name else "random.com"
         ats.remap_config.add_line(f"map /basic https://{basic_host}:{_untrusted.https_port}")
         ats.remap_config.add_line(f"map /overrideenforce https://127.0.0.1:{_untrusted.https_port} {plugin} {policy}=ENFORCED")
@@ -156,11 +157,13 @@ def run_tls_verify_override(
             for mode in ("remap", "host"):
                 ats.remap_config.add_line(
                     f"map /snipolicy{origin_name}{mode} https://{origin_name}.com:{_bar.https_port} "
-                    f"{plugin} {properties}=NAME {plugin} {policy}=ENFORCED {plugin} {sni_policy}={mode}")
+                    f"{plugin} {properties}=NAME {plugin} {policy}=ENFORCED {plugin} {sni_policy}={mode}"
+                )
             if include_server_name:
                 ats.remap_config.add_line(
                     f"map /snipolicy{origin_name}servername https://{origin_name}.com:{_bar.https_port} "
-                    f"{plugin} {properties}=NAME {plugin} {policy}=ENFORCED {plugin} {sni_policy}=server_name")
+                    f"{plugin} {properties}=NAME {plugin} {policy}=ENFORCED {plugin} {sni_policy}=server_name"
+                )
 
     def request(host: str, path: str, *, inbound_tls: bool = False) -> CommandResult:
         """Send one request through ATS while preserving its HTTP Host or TLS SNI.
@@ -173,9 +176,7 @@ def run_tls_verify_override(
         if inbound_tls:
             return curl.run_for(
                 _ats,
-                (
-                    f"--insecure --verbose --resolve '{host}:{_ats.https_port}:127.0.0.1' "
-                    f"'https://{host}:{_ats.https_port}/{path}'"),
+                (f"--insecure --verbose --resolve '{host}:{_ats.https_port}:127.0.0.1' 'https://{host}:{_ats.https_port}/{path}'"),
             )
         return curl.get(
             _ats,

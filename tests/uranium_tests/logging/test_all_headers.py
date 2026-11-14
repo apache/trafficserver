@@ -50,31 +50,29 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     """
 
     ats = ats_factory.create("ts")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 0,
-        "proxy.config.diags.debug.tags": "http|dns",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http|dns",
+        }
+    )
     ats.remap_config.add_line(f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{_origin.port}")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "custom",
-                                "format":
-                                    (
-                                        "%<cqah> ___FS___ %<pssc> ___FS___ %<psah> ___FS___ "
-                                        "%<ssah> ___FS___ %<pqah> ___FS___ %<cssah> ___FS___ END_TXN"),
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "test_all_headers",
-                        "format": "custom"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "custom",
+                        "format": (
+                            "%<cqah> ___FS___ %<pssc> ___FS___ %<psah> ___FS___ "
+                            "%<ssah> ___FS___ %<pqah> ___FS___ %<cssah> ___FS___ END_TXN"
+                        ),
+                    }
+                ],
+                "logs": [{"filename": "test_all_headers", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 

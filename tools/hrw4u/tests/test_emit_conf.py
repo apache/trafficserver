@@ -37,13 +37,14 @@ def _emit(source: str, **kwargs) -> list[str]:
 
 
 class TestSectionFraming:
-
     def test_hook_then_indented_statement(self):
         assert _emit('REMAP {\n    set-debug();\n}') == ["cond %{REMAP_PSEUDO_HOOK} [AND]", "    set-debug"]
 
     def test_statement_run_shares_one_hook(self):
         assert _emit('REMAP {\n    set-debug();\n    no-op();\n}') == [
-            "cond %{REMAP_PSEUDO_HOOK} [AND]", "    set-debug", "    no-op"
+            "cond %{REMAP_PSEUDO_HOOK} [AND]",
+            "    set-debug",
+            "    no-op",
         ]
 
     def test_blank_line_between_sections(self):
@@ -53,7 +54,6 @@ class TestSectionFraming:
 
 
 class TestStatements:
-
     def test_header_set(self):
         assert _emit('REMAP {\n    inbound.req.X-Foo = "bar";\n}')[1] == '    set-header X-Foo "bar"'
 
@@ -108,10 +108,11 @@ class TestStatements:
 
 
 class TestConditions:
-
     def test_simple_if(self):
         assert _emit('REMAP {\n    if inbound.status > 399 {\n        set-debug();\n    }\n}') == [
-            "cond %{REMAP_PSEUDO_HOOK} [AND]", "cond %{STATUS} >399", "    set-debug"
+            "cond %{REMAP_PSEUDO_HOOK} [AND]",
+            "cond %{STATUS} >399",
+            "    set-debug",
         ]
 
     def test_not_equal_sets_the_not_flag(self):
@@ -130,7 +131,8 @@ class TestConditions:
     def test_group(self):
         out = _emit(
             'REMAP {\n    if (inbound.status > 399 || inbound.status < 200) && inbound.method == "GET" {\n'
-            '        set-debug();\n    }\n}')
+            '        set-debug();\n    }\n}'
+        )
         assert out == [
             "cond %{REMAP_PSEUDO_HOOK} [AND]",
             "cond %{GROUP}",
@@ -144,7 +146,8 @@ class TestConditions:
     def test_else_and_elif(self):
         out = _emit(
             'REMAP {\n    if inbound.status > 399 {\n        set-debug();\n    } elif inbound.status > 299 {\n'
-            '        no-op();\n    } else {\n        counter("c");\n    }\n}')
+            '        no-op();\n    } else {\n        counter("c");\n    }\n}'
+        )
         assert out == [
             "cond %{REMAP_PSEUDO_HOOK} [AND]",
             "cond %{STATUS} >399",
@@ -159,7 +162,8 @@ class TestConditions:
     def test_nested_if_uses_if_endif(self):
         out = _emit(
             'REMAP {\n    if inbound.status > 399 {\n        if inbound.method == "GET" {\n'
-            '            set-debug();\n        }\n    }\n}')
+            '            set-debug();\n        }\n    }\n}'
+        )
         assert out == [
             "cond %{REMAP_PSEUDO_HOOK} [AND]",
             "cond %{STATUS} >399",
@@ -200,7 +204,6 @@ class TestConditions:
 
 
 class TestCompileToConf:
-
     def test_a_run_that_reported_an_error_returns_no_lines(self, tmp_path):
         # Rendered anyway, the denied operand would vanish and leave its `!` on the next
         # condition: `cond %{METHOD} ="GET" [NOT]`.
@@ -216,7 +219,8 @@ class TestCompileToConf:
     def test_a_syntax_error_stops_before_the_front_end(self):
         source = (
             'REMAP {\n    if inbound.status > 1 {\n        no-op();\n    }\n'
-            '    # c\n    elif inbound.status > 2 {\n        no-op();\n    }\n}\n')
+            '    # c\n    elif inbound.status > 2 {\n        no-op();\n    }\n}\n'
+        )
         tree, _, collector = create_parse_tree(source, "<test>", hrw4uLexer, hrw4uParser, "hrw4u")
         syntax_errors = list(collector.errors)
         assert syntax_errors

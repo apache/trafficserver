@@ -2,7 +2,7 @@
 
   A brief file description
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -74,4 +74,5 @@ ink_event_system_init(ts::ModuleVersion v)
 #endif
 
   init_buffer_allocators(iobuffer_advice, chunk_sizes, use_hugepages);
+  init_iobuf_thread_cache(RecGetRecordInt("proxy.config.allocator.iobuf_thread_cache_size").value_or(0));
 }

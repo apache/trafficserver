@@ -24,10 +24,11 @@ function(add_atsplugin name)
   else()
     target_include_directories(
       ${name}
-      PRIVATE "$<TARGET_PROPERTY:libswoc::libswoc,INCLUDE_DIRECTORIES>"
-              "$<TARGET_PROPERTY:libswoc::libswoc,INTERFACE_INCLUDE_DIRECTORIES>"
-              "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
-              "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INTERFACE_INCLUDE_DIRECTORIES>"
+      PRIVATE
+        "$<TARGET_PROPERTY:libswoc::libswoc,INCLUDE_DIRECTORIES>"
+        "$<TARGET_PROPERTY:libswoc::libswoc,INTERFACE_INCLUDE_DIRECTORIES>"
+        "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INCLUDE_DIRECTORIES>"
+        "$<TARGET_PROPERTY:yaml-cpp::yaml-cpp,INTERFACE_INCLUDE_DIRECTORIES>"
     )
   endif()
   set_target_properties(${name} PROPERTIES PREFIX "")
@@ -39,16 +40,18 @@ endfunction()
 
 function(verify_remap_plugin target)
   if(ENABLE_VERIFY_PLUGINS)
-    add_test(NAME verify_remap_${target} COMMAND $<TARGET_FILE:traffic_server> -C
-                                                 "verify_remap_plugin $<TARGET_FILE:${target}>"
+    add_test(
+      NAME verify_remap_${target} COMMAND $<TARGET_FILE:traffic_server> -C
+                                          "verify_remap_plugin $<TARGET_FILE:${target}>"
     )
   endif()
 endfunction()
 
 function(verify_global_plugin target)
   if(ENABLE_VERIFY_PLUGINS)
-    add_test(NAME verify_global_${target} COMMAND $<TARGET_FILE:traffic_server> -C
-                                                  "verify_global_plugin $<TARGET_FILE:${target}>"
+    add_test(
+      NAME verify_global_${target} COMMAND $<TARGET_FILE:traffic_server> -C
+                                           "verify_global_plugin $<TARGET_FILE:${target}>"
     )
     # Process the optional suppression file parameter.
     set(suppression_file ${ARGV1})

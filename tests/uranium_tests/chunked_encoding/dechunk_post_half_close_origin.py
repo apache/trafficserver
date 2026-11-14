@@ -63,7 +63,8 @@ def handle(conn, body_size, hold):
             b"HTTP/1.1 200 OK\r\n"
             b"Content-Type: application/octet-stream\r\n"
             b"Transfer-Encoding: chunked\r\n"
-            b"\r\n" + b"%x\r\n" % body_size + b"x" * body_size + b"\r\n")
+            b"\r\n" + b"%x\r\n" % body_size + b"x" * body_size + b"\r\n"
+        )
         # The last-chunk arrives as its own read while the consumer is throttled,
         # so the chunked throttle parks it unparsed in chunked_reader.
         time.sleep(hold)

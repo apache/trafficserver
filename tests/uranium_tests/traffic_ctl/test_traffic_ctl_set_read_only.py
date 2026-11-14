@@ -47,10 +47,16 @@ def lookup(*, _ats: ATS) -> dict[str, Any]:
     """
 
     response = _request(
-        Request.admin_lookup_records([{
-            "record_name": READ_ONLY_RECORD_RECORD,
-            "rec_types": ["1"],
-        }]), _ats=_ats)
+        Request.admin_lookup_records(
+            [
+                {
+                    "record_name": READ_ONLY_RECORD_RECORD,
+                    "rec_types": ["1"],
+                }
+            ]
+        ),
+        _ats=_ats,
+    )
     assert "error" not in response, response
     records = response["result"]["recordList"]
     assert len(records) == 1
@@ -80,10 +86,14 @@ def test_traffic_ctl_set_read_only(ats_factory: ATSFactory) -> None:
     assert_default_read_only_value(_ats=_ats)
     response = _request(
         Request.admin_config_set_records(
-            [{
-                "record_name": READ_ONLY_RECORD_RECORD,
-                "record_value": READ_ONLY_RECORD_ATTEMPTED_VALUE,
-            }]),
-        _ats=_ats)
+            [
+                {
+                    "record_name": READ_ONLY_RECORD_RECORD,
+                    "record_value": READ_ONLY_RECORD_ATTEMPTED_VALUE,
+                }
+            ]
+        ),
+        _ats=_ats,
+    )
     assert response["error"]["data"][0]["code"] == READ_ONLY_RECORD_RECORD_READ_ONLY_CODE
     assert_default_read_only_value(_ats=_ats)

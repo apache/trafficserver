@@ -31,6 +31,7 @@ from . import documentation as doc
 @dataclass(slots=True, frozen=True)
 class CompletionItem:
     """Represents a completion item with all necessary LSP fields."""
+
     label: str
     kind: int
     detail: str
@@ -45,7 +46,7 @@ class CompletionItem:
             intern_lsp_string("label"): self.label,
             intern_lsp_string("kind"): self.kind,
             intern_lsp_string("detail"): self.detail,
-            intern_lsp_string("documentation"): self.documentation
+            intern_lsp_string("documentation"): self.documentation,
         }
 
         if self.insert_text:
@@ -60,6 +61,7 @@ class CompletionItem:
 
 class LSPCompletionItemKind(IntEnum):
     """LSP Completion Item Kinds - official LSP specification values."""
+
     TEXT = 1
     METHOD = 2
     FUNCTION = 3
@@ -97,8 +99,13 @@ class CompletionBuilder:
 
     @classmethod
     def operator_completion(
-            cls, label: str, commands: str | list[str] | tuple[str, ...], sections: set[SectionType] | None,
-            current_section: SectionType | None, replacement_range: dict[str, Any]) -> CompletionItem | None:
+        cls,
+        label: str,
+        commands: str | list[str] | tuple[str, ...],
+        sections: set[SectionType] | None,
+        current_section: SectionType | None,
+        replacement_range: dict[str, Any],
+    ) -> CompletionItem | None:
         """Create completion item for operators."""
         if sections and current_section and current_section not in sections:
             return None
@@ -117,15 +124,18 @@ class CompletionBuilder:
             kind=LSPCompletionItemKind.FIELD,
             detail=detail,
             documentation=documentation,
-            text_edit={
-                intern_lsp_string("range"): replacement_range,
-                intern_lsp_string("newText"): label
-            })
+            text_edit={intern_lsp_string("range"): replacement_range, intern_lsp_string("newText"): label},
+        )
 
     @classmethod
     def condition_completion(
-            cls, label: str, tag: str, sections: set[SectionType] | None, current_section: SectionType | None,
-            replacement_range: dict[str, Any]) -> CompletionItem | None:
+        cls,
+        label: str,
+        tag: str,
+        sections: set[SectionType] | None,
+        current_section: SectionType | None,
+        replacement_range: dict[str, Any],
+    ) -> CompletionItem | None:
         """Create completion item for conditions."""
         if sections and current_section and current_section not in sections:
             return None
@@ -143,10 +153,8 @@ class CompletionBuilder:
             kind=LSPCompletionItemKind.FIELD,
             detail=detail,
             documentation=documentation,
-            text_edit={
-                intern_lsp_string("range"): replacement_range,
-                intern_lsp_string("newText"): label
-            })
+            text_edit={intern_lsp_string("range"): replacement_range, intern_lsp_string("newText"): label},
+        )
 
     @classmethod
     def function_completion(cls, func_name: str, tag: str, function_type: str) -> CompletionItem:
@@ -155,15 +163,14 @@ class CompletionBuilder:
         documentation_value = (
             f"**{func_name}()** - HRW4U {function_type} Function\n\n"
             f"Maps to: `{tag}`\n\n"
-            f"Used {'in conditional expressions' if function_type == 'Function' else 'as statements in code blocks'}.")
+            f"Used {'in conditional expressions' if function_type == 'Function' else 'as statements in code blocks'}."
+        )
 
         # Use comprehensive documentation if available
         if func_name in doc.LSP_FUNCTION_DOCUMENTATION:
             func_doc = doc.LSP_FUNCTION_DOCUMENTATION[func_name]
             detail = f"{func_doc.category}: {func_doc.name}"
-            documentation_value = (f"**{func_doc.name}**\n\n"
-                                   f"{func_doc.description}\n\n"
-                                   f"**Syntax:** `{func_doc.syntax}`")
+            documentation_value = f"**{func_doc.name}**\n\n{func_doc.description}\n\n**Syntax:** `{func_doc.syntax}`"
 
         documentation = cls.create_markdown_doc(documentation_value)
 
@@ -173,7 +180,8 @@ class CompletionBuilder:
             detail=detail,
             documentation=documentation,
             insert_text=f"{func_name}($0)",
-            insert_text_format=2)
+            insert_text_format=2,
+        )
 
     @classmethod
     def keyword_completion(cls, keyword: str, desc: str) -> CompletionItem:
@@ -184,9 +192,7 @@ class CompletionBuilder:
     @classmethod
     def section_completion(cls, section: SectionType) -> CompletionItem:
         """Create completion item for sections."""
-        documentation = cls.create_markdown_doc(
-            f"**{section.value}** - HRW4U Section\n\n"
-            f"Maps to ATS hook: `{section.hook_name}`")
+        documentation = cls.create_markdown_doc(f"**{section.value}** - HRW4U Section\n\nMaps to ATS hook: `{section.hook_name}`")
 
         return CompletionItem(
             label=section.value,
@@ -194,21 +200,22 @@ class CompletionBuilder:
             detail=f"Hook: {section.hook_name}",
             documentation=documentation,
             insert_text=f"{section.value} {{\n\t$0\n}}",
-            insert_text_format=2  # Snippet format
+            insert_text_format=2,  # Snippet format
         )
 
     @classmethod
     def variable_type_completion(cls, var_type: str) -> CompletionItem:
         """Create completion item for variable types."""
         documentation = cls.create_markdown_doc(
-            f"**{var_type}** - HRW4U Variable Type\n\n"
-            f"Used for declaring variables in the VARS section.")
+            f"**{var_type}** - HRW4U Variable Type\n\nUsed for declaring variables in the VARS section."
+        )
 
         return CompletionItem(
             label=var_type,
             kind=LSPCompletionItemKind.TYPE_PARAMETER,
             detail=f"Variable type: {var_type}",
-            documentation=documentation)
+            documentation=documentation,
+        )
 
 
 class CompletionProvider:
@@ -217,8 +224,9 @@ class CompletionProvider:
     def __init__(self) -> None:
         self.builder = CompletionBuilder()
 
-    def get_operator_completions(self, base_prefix: str, current_section: SectionType | None,
-                                 replacement_range: dict[str, Any]) -> list[dict[str, Any]]:
+    def get_operator_completions(
+        self, base_prefix: str, current_section: SectionType | None, replacement_range: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Get completions for operators and conditions with the given prefix."""
         completions = []
         seen_labels = set()

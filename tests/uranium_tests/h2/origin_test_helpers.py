@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Shared setup and metric assertions for HTTP/2 origin regression tests."""
+
 import sys
 import time
 from pathlib import Path
@@ -43,7 +44,8 @@ def configure_h2_origin(ats_factory: ATSFactory, port: int, *, disable_log_check
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http|http2",
             **records,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / https://127.0.0.1:{port}")
     return ats
 

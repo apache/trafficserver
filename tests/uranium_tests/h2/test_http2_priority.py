@@ -36,15 +36,12 @@ def test_http2_priority(ats_factory: ATSFactory, services: ServiceFactory, curl:
         pytest.skip("curl requires HTTP/2 support")
     origin = services.origin("origin")
     origin.add_response(
+        {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
         {
-            "headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                    "Cache-Control: max-age=3600\r\nContent-Length: 1048576\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                "Cache-Control: max-age=3600\r\nContent-Length: 1048576\r\n\r\n"
+            ),
             "body": "",
         },
     )
@@ -57,14 +54,14 @@ def test_http2_priority(ats_factory: ATSFactory, services: ServiceFactory, curl:
             "proxy.config.http2.no_activity_timeout_in": 3,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http2",
-        })
+        }
+    )
     origin.start()
     ats.start()
     body = ats.run_directory / "priority-body"
     result = curl.run_for(
         ats,
-        f"--verbose --silent --show-error --insecure --http2 --output '{body}' "
-        f"https://127.0.0.1:{ats.https_port}/bigfile",
+        f"--verbose --silent --show-error --insecure --http2 --output '{body}' https://127.0.0.1:{ats.https_port}/bigfile",
         timeout=5,
     )
     assert result.returncode == 0, result.output

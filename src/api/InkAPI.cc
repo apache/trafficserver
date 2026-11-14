@@ -2,7 +2,7 @@
 
   Implements the Traffic Server C API functions.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -5472,57 +5472,145 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
   s->internal_msg_buffer_fast_allocator_size = -1;
 }
 
-void const *
+TSStrategy
 TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  return static_cast<void *>(sm->t_state.next_hop_strategy);
+  return reinterpret_cast<TSStrategy>(sm->t_state.next_hop_strategy);
 }
 
-void
-TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *stratptr)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  // null strategy falls back to parent.config
-  // sdk_assert(sdk_sanity_check_null_ptr(strategy) == TS_SUCCESS);
-
-  auto sm       = reinterpret_cast<HttpSM *>(txnp);
-  auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
-
-  sm->t_state.next_hop_strategy = const_cast<NextHopSelectionStrategy *>(strategy);
-}
-
-char const *
-TSHttpNextHopStrategyNameGet(void const *stratptr)
-{
-  char const *name = nullptr;
-  if (nullptr != stratptr) {
-    auto strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
-    name          = strategy->strategy_name.c_str();
-  }
-
-  return name;
-}
-
-void const *
-TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+TSStrategy
+TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap.get()) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap->strategyFactory) == TS_SUCCESS);
+  // m_remap is null if no rewrite table existed when the transaction started.
+  if (sm->m_remap.get() == nullptr || sm->m_remap->strategyFactory == nullptr) {
+    return nullptr;
+  }
 
-  // HttpSM has a reference count handle to UrlRewrite which has a
-  // pointer to NextHopStrategyFactory
-  NextHopSelectionStrategy const *const strat = sm->m_remap->strategyFactory->strategyInstance(name);
+  NextHopSelectionStrategy *const strategy = sm->m_remap->strategyFactory->strategyInstance(name);
 
-  return static_cast<void const *>(strat);
+  return reinterpret_cast<TSStrategy>(strategy);
+}
+
+void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, TSStrategy stratptr)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  auto sm = reinterpret_cast<HttpSM *>(txnp);
+
+  // A null strategy falls back to parent.config.
+  if (stratptr == nullptr) {
+    sm->t_state.next_hop_strategy = nullptr;
+    sm->m_strategy_owner.reset();
+    return;
+  }
+
+  // The core dereferences this pointer during parent selection, so reject
+  // handles not owned by this transaction's factory (e.g. cached across a reload).
+  auto const candidate = reinterpret_cast<NextHopSelectionStrategy *>(stratptr);
+  if (sm->m_remap == nullptr || sm->m_remap->strategyFactory == nullptr || !sm->m_remap->strategyFactory->contains(candidate)) {
+    SiteThrottledError("%s: strategy %p is not present in the live strategy factory; ignoring", __func__,
+                       static_cast<void const *>(stratptr));
+    Dbg(dbg_ctl_parent_select, "%s: strategy %p is not present in the live strategy factory; ignoring", __func__,
+        static_cast<void const *>(stratptr));
+    return;
+  }
+
+  sm->t_state.next_hop_strategy = candidate;
+  sm->m_strategy_owner          = sm->m_remap;
+}
+
+TSStrategy
+TSRemapNextHopStrategyFind(const char *name)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)name) == TS_SUCCESS);
+
+  auto const um = url_mapping::loading_instance();
+  if (um == nullptr) {
+    SiteThrottledError("%s: must be called during remap plugin initialization (no loading remap rule); returning nullptr",
+                       __func__);
+    return nullptr;
+  }
+
+  // No strategies.yaml is loaded.
+  if (um->strategyFactory == nullptr) {
+    return nullptr;
+  }
+
+  return reinterpret_cast<TSStrategy>(um->strategyFactory->strategyInstance(name));
+}
+
+void
+TSRemapNextHopStrategySet(TSStrategy strategy)
+{
+  auto const um = url_mapping::loading_instance();
+  if (um == nullptr) {
+    SiteThrottledError("%s: must be called during remap plugin initialization (no loading remap rule); ignoring", __func__);
+    return;
+  }
+
+  if (strategy == nullptr) {
+    um->strategy = nullptr;
+    return;
+  }
+
+  auto const candidate = reinterpret_cast<NextHopSelectionStrategy *>(strategy);
+  if (um->strategyFactory == nullptr || !um->strategyFactory->contains(candidate)) {
+    TSError("%s: strategy %p is not present in the loading strategy factory; ignoring", __func__,
+            static_cast<void const *>(strategy));
+    return;
+  }
+
+  um->strategy = candidate;
+}
+
+TSStrategy
+TSRemapNextHopStrategyGet()
+{
+  auto const um = url_mapping::loading_instance();
+  if (um == nullptr) {
+    SiteThrottledError("%s: must be called during remap plugin initialization (no loading remap rule); returning nullptr",
+                       __func__);
+    return nullptr;
+  }
+  return reinterpret_cast<TSStrategy>(um->strategy);
+}
+
+char const *
+TSNextHopStrategyNameGet(TSStrategy stratptr)
+{
+  if (stratptr == nullptr) {
+    return nullptr;
+  }
+  auto const *const strategy = reinterpret_cast<NextHopSelectionStrategy const *>(stratptr);
+  return strategy->strategy_name.c_str();
+}
+
+void const *
+TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+{
+  return TSHttpTxnNextHopStrategyFind(txnp, name);
+}
+
+char const *
+TSHttpNextHopStrategyNameGet(void const *strategy)
+{
+  return TSNextHopStrategyNameGet(reinterpret_cast<TSStrategy>(const_cast<void *>(strategy)));
+}
+
+void
+TSHttpTxnNextHopStrategySet(TSHttpTxn txnp, void const *strategy)
+{
+  TSHttpTxnNextHopStrategySet(txnp, reinterpret_cast<TSStrategy>(const_cast<void *>(strategy)));
 }
 
 TSReturnCode
@@ -7761,6 +7849,7 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  * Don't be intimidated by the macros below - they're simpler than they look!
  * The end result is just a switch statement with one case per config, like:
  *
+ * @code
  *   switch (conf) {
  *     case TS_CONFIG_HTTP_CHUNKING_ENABLED:
  *       ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
@@ -7772,12 +7861,14 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  *     // ... ~130 more cases, one per overridable config ...
  *   }
  *
+ * @endcode
+ *
  * The macros just auto-generate these cases from OverridableConfigDefs.h so we
  * don't have to maintain them by hand. Here's how an entry becomes a case:
  *
  * Example 1 - Standard config (GENERIC converter):
  *   Entry in OverridableConfigDefs.h:
- *     X(HTTP_CHUNKING_ENABLED, chunking_enabled, "...", INT, GENERIC)
+ *     `X(HTTP_CHUNKING_ENABLED, chunking_enabled, "...", INT, GENERIC)`
  *   Generates this case:
  *     case TS_CONFIG_HTTP_CHUNKING_ENABLED:
  *       ret = _memberp_to_generic(&overridableHttpConfig->chunking_enabled, conv);
@@ -7785,11 +7876,11 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  *
  * Example 2 - Custom converter:
  *   Entry in OverridableConfigDefs.h:
- *     X(HTTP_DOWN_SERVER_CACHE_TIME, down_server_timeout, "...", INT, HttpDownServerCacheTimeConv)
+ *     `X(HTTP_DOWN_SERVER_CACHE_TIME, down_server_timeout, "...", INT, HttpDownServerCacheTimeConv)`
  *   Generates this case:
  *     case TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME:
- *       conv = &HttpDownServerCacheTimeConv;
- *       ret = &overridableHttpConfig->down_server_timeout;
+ *       conv = &amp;HttpDownServerCacheTimeConv;
+ *       ret = &amp;overridableHttpConfig->down_server_timeout;
  *       break;
  *
  * The magic is in _CONF_CASE_DISPATCH which uses the CONV parameter (5th field)
@@ -7799,15 +7890,17 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
  * Built-in converter types:
  *   - GENERIC: Auto-selects converter based on member type (most common).
  *   - NONE: No-op for configs handled elsewhere (e.g., SSL strings).
- *   - Custom: Any other name maps to a _CONF_CASE_<name> macro defined below.
+ *   - Custom: Any other name maps to a `_CONF_CASE_<name>` macro defined below.
  *
  * To add a new custom converter:
  *   1. Define your MgmtConverter (e.g., MyConv with load/store lambdas).
  *   2. Add a macro here following this pattern:
+ *        @code
  *        #define _CONF_CASE_MyConv(KEY, MEMBER) \
  *          case TS_CONFIG_##KEY: conv = &MyConv; \
  *            ret = &overridableHttpConfig->MEMBER; break;
- *   3. Add #undef _CONF_CASE_MyConv after _conf_to_memberp().
+ *        @endcode
+ *   3. Add `#undef _CONF_CASE_MyConv` after _conf_to_memberp().
  *   4. Use "MyConv" as the CONV parameter in OverridableConfigDefs.h.
  */
 
@@ -8726,8 +8819,8 @@ TSSslClientContextsNamesGet(int n, const char **result, int *actual)
  * present before querying for them. User will need to release the context returned
  * from this function.
  * Returns valid TSSslContext on success and nullptr on failure.
- * @param first_key Key string for the top level.
- * @param second_key Key string for the second level.
+ * @param[in] ca_paths Key string for the top level.
+ * @param[in] ck_paths Key string for the second level.
  */
 TSSslContext
 TSSslClientContextFindByName(const char *ca_paths, const char *ck_paths)
@@ -9728,7 +9821,8 @@ TSLogStringUnmarshal(char **buf, char *dest, int len)
   // of the alignment.
   if (int l = strlen(*buf); l < len) {
     memcpy(dest, *buf, l);
-    return {l, l};
+    // TSLogStringMarshal also wrote the terminating NUL, so the field occupies one more byte than was written to dest.
+    return {l + 1, l};
   } else {
     return {-1, -1};
   }

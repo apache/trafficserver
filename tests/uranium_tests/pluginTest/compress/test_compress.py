@@ -48,27 +48,24 @@ def test_compress(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl)
             options={"--load": str(TEST_DIRECTORY / "compress_observer.py")},
         )
         response = {
-            "headers":
-                (
-                    'HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "359670651"\r\n'
-                    "Cache-Control: public, max-age=31536000\r\nAccept-Ranges: bytes\r\n"
-                    "Content-Type: text/javascript\r\n\r\n"),
+            "headers": (
+                'HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "359670651"\r\n'
+                "Cache-Control: public, max-age=31536000\r\nAccept-Ranges: bytes\r\n"
+                "Content-Type: text/javascript\r\n\r\n"
+            ),
             "body": _body.decode(),
         }
         for index in range(6):
             origin.add_response(
-                {
-                    "headers": f"GET /obj{index} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n",
-                    "body": ""
-                },
+                {"headers": f"GET /obj{index} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n", "body": ""},
                 response,
             )
         origin.add_response(
             {
-                "headers":
-                    (
-                        "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\n"
-                        "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n"),
+                "headers": (
+                    "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\n"
+                    "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n"
+                ),
                 "body": "knock knock",
             },
             response,
@@ -96,7 +93,8 @@ def test_compress(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl)
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "compress",
                 "proxy.config.http.normalize_ae": 0,
-            })
+            }
+        )
         configs = [TEST_DIRECTORY / name for name in ("compress.config", "compress2.config", "compress3.config")]
         ats.copy_to_config(*configs)
         for index in range(6):

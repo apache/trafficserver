@@ -34,14 +34,16 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "config.reload",
-        })
+        }
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.write_config_file("sni.yaml", 'sni:\n- fqdn: "*.example.com"\n  verify_client: NONE\n')
     return ats
 
@@ -56,9 +58,8 @@ def reload(token: str, *, _ats: ATS) -> None:
 
     config = _ats.config_directory
     require_command(
-        _ats.run_shell(
-            f'touch "{config / "sni.yaml"}" "{config / "ssl_multicert.yaml"}" '
-            f'&& traffic_ctl config reload -t {token}'))
+        _ats.run_shell(f'touch "{config / "sni.yaml"}" "{config / "ssl_multicert.yaml"}" && traffic_ctl config reload -t {token}')
+    )
 
 
 def test_config_reload_ssl_state(ats_factory: ATSFactory) -> None:
@@ -84,12 +85,15 @@ def test_config_reload_ssl_state(ats_factory: ATSFactory) -> None:
     config = _ats.config_directory
     broken_sni = (
         "sni:\n- fqdn: example.com\n  client_cert: /nonexistent/bad.pem\n"
-        "  client_key: /nonexistent/bad.key\n  verify_client: STRICT\n")
+        "  client_key: /nonexistent/bad.key\n  verify_client: STRICT\n"
+    )
     require_command(
         _ats.run_shell(
             f'printf %b {broken_sni!r} > "{config / "sni.yaml"}" '
             f'&& touch "{config / "ssl_multicert.yaml"}" '
-            "&& traffic_ctl config reload -t ssl-sni-fail"))
+            "&& traffic_ctl config reload -t ssl-sni-fail"
+        )
+    )
     wait_for_status(
         _ats,
         "ssl-sni-fail",
@@ -109,7 +113,9 @@ def test_config_reload_ssl_state(ats_factory: ATSFactory) -> None:
         _ats.run_shell(
             f'printf %b {valid_sni!r} > "{config / "sni.yaml"}" '
             f'&& touch "{config / "ssl_multicert.yaml"}" '
-            "&& traffic_ctl config reload -t ssl-recovery"))
+            "&& traffic_ctl config reload -t ssl-recovery"
+        )
+    )
     wait_for_status(_ats, "ssl-recovery", "[Note]", excludes=("FAIL", "in_progress"))
 
     diagnostics = wait_for_file_lines(_ats.diags_log, r"Config reload \[ssl-recovery\]", 1)

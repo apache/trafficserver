@@ -50,7 +50,8 @@ def configure_origins(services: ServiceFactory, *, _ports: list[int]) -> list[Pr
                     f"outserver{number}",
                 ),
                 ready_port=port,
-            ))
+            )
+        )
     return origins
 
 
@@ -63,10 +64,12 @@ def configure_ats(ats_factory: ATSFactory, *, _ports: list[int]) -> ATS:
 
     ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
     ats.add_default_ssl_files()
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 0,
-        "proxy.config.diags.debug.tags": "http",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http",
+        }
+    )
     for name, port in zip(("one", "two", "three", "four", "five", "six"), _ports):
         ats.remap_config.add_line(f"map /{name} http://127.0.0.1:{port}")
     ats.ssl_multicert_config.add_lines(
@@ -75,7 +78,8 @@ def configure_ats(ats_factory: ATSFactory, *, _ports: list[int]) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     return ats
 
 
@@ -93,7 +97,8 @@ def run_curl_case(protocol: str, path: str, body: str, *, _ats: ATS, _curl: Curl
         _ats,
         (
             f"--verbose --output /dev/null '--{protocol}' --header Expect: --data '{body}' --insecure "
-            f"'https://127.0.0.1:{_ats.https_port}/{path}'"),
+            f"'https://127.0.0.1:{_ats.https_port}/{path}'"
+        ),
         timeout=30,
     )
     assert result.returncode == 0, result.output

@@ -22,6 +22,7 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <algorithm>
+#include <cinttypes>
 #include <iomanip>
 #include <stdexcept>
 #include <system_error>
@@ -401,6 +402,9 @@ OperatorSetDestination::exec(const Resources &res) const
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
           const_cast<Resources &>(res).changed_url = true;
           res.reset_query_cache();
+          if (res._rri) {
+            TSHttpHdrUrlGet(bufp, res.hdr_loc, &res._rri->requestUrl);
+          }
           Dbg(pi_dbg_ctl, "Set destination URL to %s", value.c_str());
         } else {
           Dbg(pi_dbg_ctl, "Failed to set URL %s", value.c_str());
@@ -468,10 +472,12 @@ OperatorRMDestination::exec(const Resources &res) const
   if (res._rri || (res.bufp && res.hdr_loc)) {
     std::string value = "";
 
-    // Determine which TSMBuffer and TSMLoc to use
+    // Determine which TSMBuffer and TSMLoc to use.
+    // set-destination URL replaces the URL object and frees the one _rri->requestUrl points at,
+    // so once the URL has changed, read it from the header.
     TSMBuffer bufp;
     TSMLoc    url_m_loc;
-    if (res._rri) {
+    if (res._rri && !res.changed_url) {
       bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
     } else {
@@ -606,8 +612,15 @@ OperatorSetRedirect::exec(const Resources &res) const
     TSMLoc    url_loc;
     if (remap) {
       // Handle when called from remap plugin.
-      bufp    = res._rri->requestBufp;
-      url_loc = res._rri->requestUrl;
+      bufp = res._rri->requestBufp;
+      if (res.changed_url) {
+        if (TS_SUCCESS != TSHttpHdrUrlGet(res._rri->requestBufp, res._rri->requestHdrp, &url_loc)) {
+          Dbg(pi_dbg_ctl, "Could not get request URL");
+          return true;
+        }
+      } else {
+        url_loc = res._rri->requestUrl;
+      }
     } else {
       // Handle when not called from remap plugin.
       bufp = res.client_bufp;
@@ -1706,9 +1719,35 @@ void
 OperatorSetNextHopStrategy::initialize(Parser &p)
 {
   Operator::initialize(p);
-
   _value.set_value(p.get_arg(), this);
-  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::initialie: %s", _value.get_value().c_str());
+
+  if (_value.has_conds()) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() '%s' expanded per transaction", _value.get_value().c_str());
+    return;
+  }
+
+  _stratname = _value.get_value();
+  if ("null" == _stratname) {
+    _stratname.clear();
+  }
+
+  if (_stratname.empty()) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() 'clear'");
+    return;
+  }
+
+  // A global config (no from/to URLs) looks the name up per transaction.
+  if (p.from_url() != nullptr) {
+    _strategy = TSRemapNextHopStrategyFind(_stratname.c_str());
+    if (_strategy == nullptr) {
+      TSError("[%s] Failed to resolve strategy '%s' while loading the remap rule; operator disabled", PLUGIN_NAME,
+              _stratname.c_str());
+      _inert = true;
+      return;
+    }
+  }
+
+  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy() '%s'", _stratname.c_str());
 }
 
 void
@@ -1718,32 +1757,63 @@ OperatorSetNextHopStrategy::initialize_hooks()
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
+void
+OperatorSetNextHopStrategy::log_lookup_failure(std::string const &name) const
+{
+  constexpr TSHRTime interval = TS_HRTIME_SECONDS(60);
+  TSHRTime const     now      = TShrtime();
+  TSHRTime           next     = _next_error.load(std::memory_order_relaxed);
+
+  if (now >= next && _next_error.compare_exchange_strong(next, now + interval, std::memory_order_relaxed)) {
+    uint64_t const suppressed = _suppressed_errors.exchange(0, std::memory_order_relaxed);
+    TSError("[%s] Failed to get strategy '%s' (%" PRIu64 " similar errors suppressed)", PLUGIN_NAME, name.c_str(), suppressed);
+  } else {
+    _suppressed_errors.fetch_add(1, std::memory_order_relaxed);
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Failed to get strategy '%s'", name.c_str());
+  }
+}
+
 bool
 OperatorSetNextHopStrategy::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
+  auto const txnp = res.state.txnp;
+  if (!txnp) {
     TSError("[%s] OperatorSetNextHopStrategy() failed. Transaction is null", PLUGIN_NAME);
+    return true;
   }
 
-  auto const txnp = res.state.txnp;
+  if (_inert) {
+    return true;
+  }
 
-  std::string value;
-  _value.append_value(value, res);
+  bool const  dynamic = _value.has_conds();
+  std::string expanded;
+  if (dynamic) {
+    _value.append_value(expanded, res);
+    if ("null" == expanded) {
+      expanded.clear();
+    }
+  }
+  std::string const &name = dynamic ? expanded : _stratname;
 
-  // Setting an empty strategy clears it for either parent.config or remap to
-  if ("null" == value || value.empty()) {
-    Dbg(pi_dbg_ctl, "Clearing strategy");
+  if (name.empty()) {
+    Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Clearing strategy");
     TSHttpTxnNextHopStrategySet(txnp, nullptr);
     return true;
   }
 
-  void const *const stratptr = TSHttpTxnNextHopNamedStrategyGet(txnp, value.c_str());
-  if (nullptr == stratptr) {
-    TSWarning("[%s] Failed to get strategy '%s'", PLUGIN_NAME, value.c_str());
-  } else {
-    Dbg(pi_dbg_ctl, "   Setting strategy '%s'", value.c_str());
-    TSHttpTxnNextHopStrategySet(txnp, stratptr);
+  TSStrategy strategy = _strategy;
+  if (nullptr == strategy) {
+    // Global configuration or an expanded name: resolve per transaction.
+    strategy = TSHttpTxnNextHopStrategyFind(txnp, name.c_str());
+    if (nullptr == strategy) {
+      log_lookup_failure(name);
+      return true;
+    }
   }
+
+  Dbg(pi_dbg_ctl, "OperatorSetNextHopStrategy::exec: Setting strategy to '%s'", name.c_str());
+  TSHttpTxnNextHopStrategySet(txnp, strategy);
 
   return true;
 }

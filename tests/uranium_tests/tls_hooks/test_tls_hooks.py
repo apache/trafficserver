@@ -33,7 +33,8 @@ def tls_hook_configure_origin(services: ServiceFactory) -> VerifierServer:
 
 
 def tls_hook_configure_ats(
-        ats_factory: ATSFactory, disable_tls_13: bool, *, _origin: VerifierServer, _plugin_arguments: str) -> ATS:
+    ats_factory: ATSFactory, disable_tls_13: bool, *, _origin: VerifierServer, _plugin_arguments: str
+) -> ATS:
     """Configure TLS, the origin mapping, and the selected hook callbacks.
 
     :param _origin: Test-local origin configured by the test.
@@ -71,7 +72,8 @@ def tls_hook_request(*, _ats: ATS, _curl: Curl, disable_tls_13: bool) -> None:
         _ats,
         (
             f"--verbose --insecure --header 'host:example.com:{_ats.https_port}' --header 'uuid: tls-hook' "
-            f"'https://127.0.0.1:{_ats.https_port}/'"),
+            f"'https://127.0.0.1:{_ats.https_port}/'"
+        ),
         timeout=15,
     )
     assert result.returncode == 0, result.output
@@ -169,8 +171,7 @@ def parked_tls_close_request(*, _ats: ATS, _curl: Curl) -> None:
 
     result = _curl.run_for(
         _ats,
-        (f"--insecure --max-time 1 --header 'host:example.com:{_ats.https_port}' "
-         f"'https://127.0.0.1:{_ats.https_port}/'"),
+        (f"--insecure --max-time 1 --header 'host:example.com:{_ats.https_port}' 'https://127.0.0.1:{_ats.https_port}/'"),
         timeout=15,
     )
     assert result.returncode == 28, result.output
@@ -193,7 +194,8 @@ def parked_tls_close_verify_hook_diagnostics(*, _ats: ATS) -> None:
 
 
 def parked_tls_close_configure_ats(
-        ats_factory: ATSFactory, disable_tls_13: bool, *, _origin: VerifierServer, _plugin_arguments: str) -> ATS:
+    ats_factory: ATSFactory, disable_tls_13: bool, *, _origin: VerifierServer, _plugin_arguments: str
+) -> ATS:
     """Configure TLS, the origin mapping, and the selected hook callbacks.
 
     :param _origin: Test-local origin configured by the test.

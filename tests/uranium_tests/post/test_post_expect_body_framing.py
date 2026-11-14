@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """An unread Expect body must not be interpreted as a second request."""
+
 import sys
 from pathlib import Path
 import pytest
@@ -36,8 +37,17 @@ def test_post_expect_body_framing(ats_factory: ATSFactory, services: ServiceFact
     origin.start()
     ats.start()
     result = ats.run(
-        sys.executable, directory / "expect_client.py", "127.0.0.1", str(ats.http_port), "--mode", mode, "--path", f"/{mode}", "-s",
-        "example.com")
+        sys.executable,
+        directory / "expect_client.py",
+        "127.0.0.1",
+        str(ats.http_port),
+        "--mode",
+        mode,
+        "--path",
+        f"/{mode}",
+        "-s",
+        "example.com",
+    )
     assert result.returncode == 0, result.output
     assert "RESPONSES_RECEIVED=1" in result.stdout, result.output
     assert "X-Smuggled" not in result.stdout, result.output
