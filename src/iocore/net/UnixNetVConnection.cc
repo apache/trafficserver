@@ -663,7 +663,7 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
 
   if (this->has_error()) {
     this->lerrno = this->error;
-    // Nothing else is done for this VC either way, and the handler may have closed it.
+    // Nothing else is done for this VC either way, and on EVENT_DONE it has already been freed.
     (void)write_signal_and_update(VC_EVENT_ERROR, this);
     return;
   }
