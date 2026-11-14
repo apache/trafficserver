@@ -25,23 +25,26 @@
 
 #include "../P_RecFile.h"
 
+#include <cstdlib>
 #include <unistd.h>
 
 TEST_CASE("RecFileGetSize", "[librecords][RecFile]")
 {
-  int fds[2];
-  REQUIRE(pipe(fds) == 0);
-  close(fds[1]);
+  char path[] = "/tmp/test_RecFile.XXXXXX";
+  int  fd     = mkstemp(path);
+  REQUIRE(fd >= 0);
+  unlink(path);
+  REQUIRE(write(fd, "12345", 5) == 5);
 
   SECTION("an open descriptor reports its size")
   {
-    REQUIRE(RecFileGetSize(fds[0]) == 0);
-    close(fds[0]);
+    REQUIRE(RecFileGetSize(fd) == 5);
+    close(fd);
   }
 
   SECTION("a descriptor that cannot be stat'ed reports failure")
   {
-    close(fds[0]);
-    REQUIRE(RecFileGetSize(fds[0]) == -1);
+    close(fd);
+    REQUIRE(RecFileGetSize(fd) == -1);
   }
 }
