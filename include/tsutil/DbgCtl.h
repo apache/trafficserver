@@ -51,7 +51,8 @@ public:
   // Generate the default diagnostics format string for the given parameters.
   // @return The offset in the format string of the timestamp (in case the caller doesn't want to include that)
   static size_t generate_format_string(swoc::LocalBufferWriter<1024> &format_writer, const char *debug_tag, DiagsLevel diags_level,
-                                       const SourceLocation *loc, DiagsShowLocation show_location, const char *format_string);
+                                       const SourceLocation *loc, DiagsShowLocation show_location,
+                                       const char *format_string) noexcept;
   static const char *level_name(DiagsLevel dl);
 };
 

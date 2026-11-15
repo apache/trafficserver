@@ -340,9 +340,15 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagThreadname cons
 
 } // namespace
 
+// noexcept because swoc throws only on a bad format spec, a named argument or a
+// capture, and every format here and in the bwformat overloads it reaches is a
+// literal without them. The caller's format_string is an argument to "{}" and
+// is never parsed by swoc. restrict(2) throws only on a writer with less than 2
+// bytes of capacity, and both callers pass a new 1024-byte writer.
 size_t
 DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_writer, const char *debug_tag, DiagsLevel diags_level,
-                                       const SourceLocation *loc, DiagsShowLocation show_location, const char *format_string)
+                                       const SourceLocation *loc, DiagsShowLocation show_location,
+                                       const char *format_string) noexcept
 {
   // Save room for optional newline and terminating NUL bytes.
   format_writer.restrict(2);

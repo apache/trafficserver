@@ -19,8 +19,10 @@
  */
 
 #include <cstring>
+#include <utility>
 
 #include "tsutil/ts_meta.h"
+#include "tsutil/DbgCtl.h"
 #include "swoc/TextView.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -105,3 +107,8 @@ TEST_CASE("Meta", "[meta]")
   REQUIRE(detect(C()) == "none");
   REQUIRE(detect(AA()) == "value");
 }
+
+// Dbg(), Error() and Warning() reach generate_format_string from destructors
+// and other noexcept code, so it must not be able to throw.
+static_assert(noexcept(DebugInterface::generate_format_string(std::declval<swoc::LocalBufferWriter<1024> &>(), nullptr, DL_Diag,
+                                                              nullptr, SHOW_LOCATION_NONE, nullptr)));
