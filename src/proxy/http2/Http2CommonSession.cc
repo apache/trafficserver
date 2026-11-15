@@ -181,12 +181,20 @@ Http2CommonSession::flush()
   }
 }
 
-/** Whether the write buffer holds frames the network connection has not taken yet.
+/** Whether the write buffer holds bytes, flushed or not, that the network connection has not taken yet.
  */
 bool
-Http2CommonSession::has_unsent_data()
+Http2CommonSession::has_unsent_data() const
 {
   return this->_write_buffer_reader != nullptr && this->_write_buffer_reader->is_read_avail_more_than(0);
+}
+
+/** How many bytes, flushed or not, the write buffer holds that the network connection has not taken yet.
+ */
+int64_t
+Http2CommonSession::unsent_bytes() const
+{
+  return this->_write_buffer_reader != nullptr ? this->_write_buffer_reader->read_avail() : 0;
 }
 
 int

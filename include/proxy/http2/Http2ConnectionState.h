@@ -469,7 +469,7 @@ private:
 
   static constexpr const int DATA_EVENT_BACKOFF_START = 10;
   static constexpr const int DATA_EVENT_BACKOFF_MAX   = 1000;
-  /// How many times a scheduled FINI waits for queued frames, such as a GOAWAY, to be written.
+  /// The most times a scheduled FINI waits for queued frames, such as a GOAWAY, to be written.
   static constexpr const int FINI_WRITE_WAIT_MAX = 5;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.

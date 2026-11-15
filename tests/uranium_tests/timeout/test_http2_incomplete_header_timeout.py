@@ -48,10 +48,23 @@ class IncompleteHeaderCase:
     min_elapsed: float | None = None
     max_elapsed: float | None = None
     expect_timeout: bool = False
+    poll_event: bool = False
 
 
 CASES = (
     IncompleteHeaderCase("times-out", 3, "/incomplete", "incomplete_header", min_elapsed=2.5, max_elapsed=7, expect_timeout=True),
+    # A poll event on every ET_NET thread, as in a QUIC build, runs the FINI the
+    # timeout schedules before the net handler writes the GOAWAY.
+    IncompleteHeaderCase(
+        "times-out-poll-event",
+        3,
+        "/incomplete",
+        "incomplete_header",
+        min_elapsed=2.5,
+        max_elapsed=7,
+        expect_timeout=True,
+        poll_event=True,
+    ),
     IncompleteHeaderCase("continuation-arrives", 5, "/incomplete", "incomplete_header", continuation_delay=1),
     IncompleteHeaderCase("transaction-started", 2, "/delayed", "delayed_response", end_headers=True, min_elapsed=4.5),
 )
@@ -82,10 +95,13 @@ def configure_ats(ats_factory: ATSFactory, *, _case: IncompleteHeaderCase, _orig
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http2",
+            "proxy.config.diags.debug.tags": "http2|net_poll_event",
             "proxy.config.http2.incomplete_header_timeout_in": _case.timeout,
         }
     )
+    if _case.poll_event:
+        ats.copy_custom_plugin("{AtsTestPluginsDir}/net_poll_event.so")
+        ats.plugin_config.add_line("net_poll_event.so")
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.http_port}")
     return ats
 
@@ -127,6 +143,8 @@ def verify(result: CommandResult, *, _ats: ATS, _case: IncompleteHeaderCase) -> 
     """
 
     assert result.returncode == 0, result.output
+    if _case.poll_event:
+        wait_for_file_lines(_ats.traffic_out, r"scheduled a poll event on [1-9][0-9]* ET_NET threads", 1)
     timeout_error = "ERROR: HTTP/2 stream error timeout"
     if _case.expect_timeout:
         assert f"GOAWAY error_code={HTTP2_ERROR_COMPRESSION_ERROR} last_stream_id=1" in result.stdout

@@ -93,7 +93,6 @@ public:
   void    write_reenable();
   int64_t xmit(const Http2TxFrame &frame, bool flush = true);
   void    flush();
-  bool    has_unsent_data();
 
   int64_t          get_connection_id();
   Ptr<ProxyMutex> &get_mutex();
@@ -116,6 +115,8 @@ public:
 
   int64_t write_avail();
   bool    is_write_high_water() const;
+  bool    has_unsent_data() const;
+  int64_t unsent_bytes() const;
 
   virtual ProxySession *get_proxy_session() = 0;
 
