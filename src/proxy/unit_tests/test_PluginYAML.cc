@@ -288,7 +288,8 @@ something_else:
 
 TEST_CASE("parse_plugin_yaml - document is not a map", "[plugin_yaml]")
 {
-  // plugin.config lines pasted into plugin.yaml parse as one plain scalar.
+  // plugin.config lines pasted into plugin.yaml parse as one plain scalar, and
+  // subscripting a scalar throws. A top-level sequence is not a map either.
   auto content = GENERATE(as<std::string>{}, "header_rewrite.so rules.conf\nfoo.so\n", "- path: foo.so\n");
 
   CAPTURE(content);

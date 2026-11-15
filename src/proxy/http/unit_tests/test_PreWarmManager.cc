@@ -79,7 +79,7 @@ TEST_CASE("PreWarm parse_authority", "[prewarm]")
     CHECK(port == 65535);
   }
 
-  SECTION("no fixed port to pre-warm")
+  SECTION("no host, or no fixed port, to pre-warm")
   {
     for (std::string_view bad : {
            "origin.example.com:{inbound_local_port}",
@@ -90,6 +90,7 @@ TEST_CASE("PreWarm parse_authority", "[prewarm]")
            "origin.example.com:0",
            "origin.example.com:65536",
            "origin.example.com:99999999999",
+           "origin.example.com:18446744073709552059", // 2^64 + 443: svtou clamps, so this is not port 443.
            ":443",
            "",
          }) {
