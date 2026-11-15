@@ -21,8 +21,11 @@ starting with /slow get their response header at once and their body one byte
 at a time, every TRICKLE_INTERVAL seconds, over --slow-delay seconds, so the
 stream stays busy without going idle. Paths starting with /split get their
 whole body in one DATA frame and END_STREAM in a second, empty one. Paths
-starting with /large-split do the same with a LARGE_SPLIT_SIZE body in two DATA
-frames. Everything else is answered at once.
+starting with /large-split do the same with a --large-split-size body in two
+DATA frames. Paths starting with /late-end get their whole response at once but
+END_STREAM only LATE_END_DELAY seconds later, in an empty DATA frame:
+/late-end-empty has no body, /late-end-body a short one and /late-end-large a
+--large-split-size one. Everything else is answered at once.
 Every connection is numbered, and each line it prints starts with "conn N".
 """
 
@@ -41,8 +44,7 @@ from h2.events import ConnectionTerminated, RequestReceived, StreamReset
 
 PRINT_LOCK = threading.Lock()
 TRICKLE_INTERVAL = 0.5
-# Two DATA frames under the default 16 KB frame size, and a body far larger than the socket buffers the test sets.
-LARGE_SPLIT_SIZE = 20000
+LATE_END_DELAY = 0.5
 
 
 def say(message: str) -> None:
@@ -58,7 +60,9 @@ def respond(connection: H2Connection, stream_id: int, path: str) -> None:
     connection.send_data(stream_id, body, end_stream=True)
 
 
-def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, lifecycle: OriginLifecycle) -> None:
+def serve_connection(
+    tls_socket: ssl.SSLSocket, number: int, slow_delay: float, large_split_size: int, lifecycle: OriginLifecycle
+) -> None:
     """Serve one ATS connection until it closes or the test stops the origin."""
     connection = H2Connection(config=H2Configuration(client_side=False, header_encoding="utf-8"))
     connection.initiate_connection()
@@ -67,6 +71,8 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
 
     # Each entry is (next send time, stream id, path, body bytes still to send).
     slow: list[tuple[float, int, str, int]] = []
+    # Each entry is (END_STREAM time, stream id, path).
+    late: list[tuple[float, int, str]] = []
     closed: set[int] = set()
     while not lifecycle.stopped:
         try:
@@ -93,14 +99,30 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
                     connection.send_data(event.stream_id, b"x" * 10)
                     continue
                 if path.startswith("/large-split"):
-                    body = b"x" * LARGE_SPLIT_SIZE
-                    half = LARGE_SPLIT_SIZE // 2
+                    body = b"x" * large_split_size
+                    half = large_split_size // 2
                     connection.send_headers(
                         event.stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")]
                     )
                     connection.send_data(event.stream_id, body[:half])
                     connection.send_data(event.stream_id, body[half:])
                     connection.send_data(event.stream_id, b"", end_stream=True)
+                    continue
+                if path.startswith("/late-end"):
+                    if path.startswith("/late-end-empty"):
+                        body = b""
+                    elif path.startswith("/late-end-large"):
+                        body = b"x" * large_split_size
+                    else:
+                        body = f"ok {path}\n".encode()
+                    connection.send_headers(
+                        event.stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")]
+                    )
+                    half = (len(body) + 1) // 2
+                    for piece in (body[:half], body[half:]):
+                        if piece:
+                            connection.send_data(event.stream_id, piece)
+                    late.append((time.monotonic() + LATE_END_DELAY, event.stream_id, path))
                     continue
                 if path.startswith("/split"):
                     body = f"ok {path}\n".encode()
@@ -125,6 +147,13 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
                 say(f"conn {number} goaway error={int(event.error_code)}")
 
         now = time.monotonic()
+        for due in [entry for entry in late if entry[0] <= now]:
+            late.remove(due)
+            _, stream_id, path = due
+            if stream_id in closed:
+                continue
+            connection.send_data(stream_id, b"", end_stream=True)
+            say(f"conn {number} ended stream={stream_id} path={path}")
         for due in [entry for entry in slow if entry[0] <= now]:
             slow.remove(due)
             _, stream_id, path, left = due
@@ -141,7 +170,7 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
             send_bytes(tls_socket, wire)
 
 
-def run_server(port: int, certificate: str, private_key: str, slow_delay: float, stop_file: str) -> int:
+def run_server(port: int, certificate: str, private_key: str, slow_delay: float, large_split_size: int, stop_file: str) -> int:
     """Accept ATS connections, each on its own thread, until the test asks the origin to stop."""
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certificate, private_key)
@@ -169,7 +198,7 @@ def run_server(port: int, certificate: str, private_key: str, slow_delay: float,
                 say(f"conn {connection_number} not_h2")
                 return
             tls_socket.settimeout(0.1)
-            serve_connection(tls_socket, connection_number, slow_delay, lifecycle)
+            serve_connection(tls_socket, connection_number, slow_delay, large_split_size, lifecycle)
 
     with socket.create_server(("127.0.0.1", port)) as listener:
         listener.settimeout(0.2)
@@ -196,13 +225,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("private_key")
     parser.add_argument("stop_file")
     parser.add_argument("--slow-delay", type=float, default=1.5)
+    parser.add_argument("--large-split-size", type=int, default=20000, help="Body size for /large-split paths")
     return parser.parse_args()
 
 
 def main() -> int:
     """Run the test origin."""
     args = parse_args()
-    return run_server(args.port, args.certificate, args.private_key, args.slow_delay, args.stop_file)
+    return run_server(args.port, args.certificate, args.private_key, args.slow_delay, args.large_split_size, args.stop_file)
 
 
 if __name__ == "__main__":
