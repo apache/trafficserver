@@ -25,6 +25,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <ctime>
 
 namespace ts
 {
@@ -44,5 +45,19 @@ inline constexpr size_t ISO8601_TIMESTAMP_LEN = 24;
  * the year in UTC is outside 0000-9999.
  */
 size_t format_iso8601_utc(std::chrono::system_clock::time_point tp, char *buf, size_t size);
+
+/** Write a time given as seconds since the epoch plus milliseconds, in the same format.
+ *
+ * This reaches every year from 0000 to 9999 wherever @c time_t is 64 bits, which a
+ * @c system_clock::time_point does not on platforms whose clock counts nanoseconds.
+ *
+ * @param epoch_secs Whole seconds since the epoch, floored for times before it.
+ * @param ms Milliseconds past @a epoch_secs, from 0 to 999.
+ * @param buf Destination buffer.
+ * @param size Size of @a buf, which must be greater than @c ISO8601_TIMESTAMP_LEN.
+ * @return The number of characters written, not counting the NUL, or 0 if @a buf is too small,
+ * @a ms is outside 0-999 or the year in UTC is outside 0000-9999.
+ */
+size_t format_iso8601_utc(time_t epoch_secs, int ms, char *buf, size_t size);
 
 } // namespace ts

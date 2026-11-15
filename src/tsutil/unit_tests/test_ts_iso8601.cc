@@ -40,6 +40,18 @@ format(int64_t epoch_ms)
 
   return std::string(buf, n);
 }
+
+// Formats a time given as seconds since the epoch plus milliseconds, returning an empty string on failure.
+// The years far from the epoch are tested this way because libstdc++ counts system_clock in 64-bit nanoseconds,
+// which only reaches the years 1677 to 2262.
+std::string
+format(time_t epoch_secs, int ms)
+{
+  char   buf[ts::ISO8601_TIMESTAMP_LEN + 1];
+  size_t n = ts::format_iso8601_utc(epoch_secs, ms, buf, sizeof(buf));
+
+  return std::string(buf, n);
+}
 } // namespace
 
 TEST_CASE("ISO 8601 UTC timestamps", "[iso8601]")
@@ -69,15 +81,27 @@ TEST_CASE("ISO 8601 UTC timestamps", "[iso8601]")
 
   SECTION("years are zero padded to four digits")
   {
-    REQUIRE(format(-30'627'458'703'211) == "0999-06-15T12:34:56.789Z");
+    REQUIRE(format(time_t{-30'627'458'704}, 789) == "0999-06-15T12:34:56.789Z");
   }
 
   SECTION("years outside 0000-9999 are rejected")
   {
-    REQUIRE(format(-62'167'219'200'000) == "0000-01-01T00:00:00.000Z");
-    REQUIRE(format(-62'167'219'200'001).empty());
-    REQUIRE(format(253'402'300'799'999) == "9999-12-31T23:59:59.999Z");
-    REQUIRE(format(253'402'300'800'000).empty());
+    REQUIRE(format(time_t{-62'167'219'200}, 0) == "0000-01-01T00:00:00.000Z");
+    REQUIRE(format(time_t{-62'167'219'201}, 999).empty());
+    REQUIRE(format(time_t{253'402'300'799}, 999) == "9999-12-31T23:59:59.999Z");
+    REQUIRE(format(time_t{253'402'300'800}, 0).empty());
+  }
+
+  SECTION("milliseconds outside 0-999 are rejected")
+  {
+    REQUIRE(format(time_t{0}, -1).empty());
+    REQUIRE(format(time_t{0}, 1000).empty());
+  }
+
+  SECTION("both forms agree")
+  {
+    REQUIRE(format(int64_t{1'791'399'662'007}) == format(time_t{1'791'399'662}, 7));
+    REQUIRE(format(int64_t{-1}) == format(time_t{-1}, 999));
   }
 
   SECTION("NUL terminated")

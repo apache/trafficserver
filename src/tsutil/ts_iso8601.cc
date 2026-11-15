@@ -32,17 +32,23 @@ namespace ts
 size_t
 format_iso8601_utc(std::chrono::system_clock::time_point tp, char *buf, size_t size)
 {
-  if (size <= ISO8601_TIMESTAMP_LEN) {
+  // Floor rather than truncate so times before the epoch keep a non-negative millisecond part.
+  auto secs = std::chrono::floor<std::chrono::seconds>(tp);
+  auto ms   = std::chrono::duration_cast<std::chrono::milliseconds>(tp - secs).count();
+
+  return format_iso8601_utc(std::chrono::system_clock::to_time_t(secs), static_cast<int>(ms), buf, size);
+}
+
+size_t
+format_iso8601_utc(time_t epoch_secs, int ms, char *buf, size_t size)
+{
+  if (size <= ISO8601_TIMESTAMP_LEN || ms < 0 || ms > 999) {
     return 0;
   }
 
-  // Floor rather than truncate so times before the epoch keep a non-negative millisecond part.
-  auto   secs  = std::chrono::floor<std::chrono::seconds>(tp);
-  auto   ms    = std::chrono::duration_cast<std::chrono::milliseconds>(tp - secs).count();
-  time_t epoch = std::chrono::system_clock::to_time_t(secs);
-  tm     utc;
+  tm utc;
 
-  if (gmtime_r(&epoch, &utc) == nullptr) {
+  if (gmtime_r(&epoch_secs, &utc) == nullptr) {
     return 0;
   }
 
@@ -55,7 +61,7 @@ format_iso8601_utc(std::chrono::system_clock::time_point tp, char *buf, size_t s
 
   // Built from the fields rather than with strftime, because %Y does not zero pad years before 1000 in every C library.
   snprintf(buf, size, "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", year, utc.tm_mon + 1, utc.tm_mday, utc.tm_hour, utc.tm_min, utc.tm_sec,
-           static_cast<int>(ms));
+           ms);
 
   return ISO8601_TIMESTAMP_LEN;
 }
