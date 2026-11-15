@@ -20,8 +20,9 @@ get their response header and part of their body, then nothing more. Paths
 starting with /slow get their response header at once and their body one byte
 at a time, every TRICKLE_INTERVAL seconds, over --slow-delay seconds, so the
 stream stays busy without going idle. Paths starting with /split get their
-whole body in one DATA frame and END_STREAM in a second, empty one. Everything
-else is answered at once.
+whole body in one DATA frame and END_STREAM in a second, empty one. Paths
+starting with /large-split do the same with a LARGE_SPLIT_SIZE body in two DATA
+frames. Everything else is answered at once.
 Every connection is numbered, and each line it prints starts with "conn N".
 """
 
@@ -40,6 +41,8 @@ from h2.events import ConnectionTerminated, RequestReceived, StreamReset
 
 PRINT_LOCK = threading.Lock()
 TRICKLE_INTERVAL = 0.5
+# Two DATA frames under the default 16 KB frame size, and a body far larger than the socket buffers the test sets.
+LARGE_SPLIT_SIZE = 20000
 
 
 def say(message: str) -> None:
@@ -88,6 +91,16 @@ def serve_connection(tls_socket: ssl.SSLSocket, number: int, slow_delay: float, 
                         event.stream_id, [(":status", "200"), ("content-length", "100"), ("cache-control", "no-store")]
                     )
                     connection.send_data(event.stream_id, b"x" * 10)
+                    continue
+                if path.startswith("/large-split"):
+                    body = b"x" * LARGE_SPLIT_SIZE
+                    half = LARGE_SPLIT_SIZE // 2
+                    connection.send_headers(
+                        event.stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")]
+                    )
+                    connection.send_data(event.stream_id, body[:half])
+                    connection.send_data(event.stream_id, body[half:])
+                    connection.send_data(event.stream_id, b"", end_stream=True)
                     continue
                 if path.startswith("/split"):
                     body = f"ok {path}\n".encode()

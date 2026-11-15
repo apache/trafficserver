@@ -17,7 +17,9 @@
 
 import http.client
 import re
+import socket
 import sys
+import time
 from pathlib import Path
 from tools.uranium.services import ATS, ATSFactory, ServiceFactory, ProcessService
 from .origin_test_helpers import configure_h2_origin, finish_origin
@@ -37,8 +39,31 @@ def get(ats: ATS, path: str) -> int:
         connection.close()
 
 
-def start_stalling_origin(ats_factory: ATSFactory, services: ServiceFactory) -> tuple[ATS, ProcessService, Path]:
-    """Start ATS in front of an origin that never answers /stall requests."""
+def get_slowly(ats: ATS, path: str) -> tuple[int, int]:
+    """Send one HTTP/1.1 request through ATS from a client that reads late, and return the status and body length.
+
+    With a small receive buffer and a late read, ATS cannot finish writing a large body to the client before the
+    origin ends the stream.
+    """
+    connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 2048)
+        connection.settimeout(30)
+        connection.connect(("127.0.0.1", ats.http_port))
+        connection.sendall(f"GET {path} HTTP/1.1\r\nHost: origin.example.com\r\n\r\n".encode())
+        time.sleep(1)
+        response = http.client.HTTPResponse(connection)
+        response.begin()
+        return response.status, len(response.read())
+    finally:
+        connection.close()
+
+
+def start_stalling_origin(ats_factory: ATSFactory, services: ServiceFactory, **records: object) -> tuple[ATS, ProcessService, Path]:
+    """Start ATS in front of an origin that never answers /stall requests.
+
+    :param records: Additional record values for ATS.
+    """
     port = services.allocate_port()
     ats = configure_h2_origin(
         ats_factory,
@@ -48,6 +73,7 @@ def start_stalling_origin(ats_factory: ATSFactory, services: ServiceFactory) -> 
             "proxy.config.http.transaction_no_activity_timeout_out": 2,
             # A retry would put the stalled request on the origin a second time.
             "proxy.config.http.connect_attempts_max_retries": 0,
+            **records,
         },
     )
     stop = ats.run_directory / "stop-origin"
@@ -102,3 +128,22 @@ def test_h2_origin_stalled_stream_is_reset(ats_factory: ATSFactory, services: Se
     assert len(cancels) == 1, "\n".join(line for line in traffic.splitlines() if "RST_STREAM" in line)
     diags = ats.diags_log.read_text(errors="replace")
     assert not re.search("FATAL:|Unrecognized configuration value", diags), diags
+
+
+def test_h2_origin_empty_end_stream_reaches_slow_client(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Deliver a whole body that ends with an empty DATA frame to a client that has not read it yet.
+
+    ATS is still writing the body to the client when the origin's END_STREAM arrives, so the end of
+    the origin stream must not be taken for the origin giving up.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Runs the origin.
+    """
+    ats, origin, stop = start_stalling_origin(ats_factory, services, **{"proxy.config.net.sock_send_buffer_size_in": 2048})
+
+    for attempt in range(3):
+        assert get_slowly(ats, f"/large-split-{attempt}") == (200, 20000)
+
+    finish_origin(services, origin, stop)
+    ats.stop()
+    assert "Traceback" not in origin.output, origin.output
