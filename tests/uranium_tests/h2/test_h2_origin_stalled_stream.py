@@ -208,12 +208,12 @@ def test_h2_origin_empty_end_stream_reaches_slow_client(ats_factory: ATSFactory,
 def test_h2_origin_late_empty_end_stream_frees_stream(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """Free an origin stream whose empty END_STREAM arrives after its transaction has released it.
 
-    The origin sends the whole response at once but ends each stream half a second later. ATS has
-    read the whole body and released the stream by then. For the first two requests the
-    transaction is also finished, so nothing is left to free the stream. A stream left behind
-    would time out at the keep-alive timeout as an HTTP/2 stream error and take the pooled origin
-    connection down with it. For the last request the client reads late, so the transaction is
-    still writing to it when the END_STREAM arrives, and must not hear about a stream it has let go.
+    The origin sends the whole response at once but ends each stream half a second later. For the
+    first two requests ATS has sent the whole body to the client by then and the transaction is
+    over, so nothing is left to free the stream. A stream left behind would time out at the
+    keep-alive timeout as an HTTP/2 stream error and take the pooled origin connection down with
+    it. For the last request the client reads late, so the transaction is still reading the body
+    from the stream when the END_STREAM arrives, and must finish the body from it.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Runs the origin.
