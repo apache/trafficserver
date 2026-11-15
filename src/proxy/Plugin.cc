@@ -458,7 +458,8 @@ parse_plugin_yaml(const char *yaml_path)
     return result;
   }
 
-  if (!root["plugins"] || !root["plugins"].IsSequence()) {
+  // Subscripting a scalar document throws, so check for a map first.
+  if (!root.IsMap() || !root["plugins"] || !root["plugins"].IsSequence()) {
     result.errata.note("missing or invalid 'plugins' sequence");
     return result;
   }

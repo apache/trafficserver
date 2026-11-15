@@ -286,6 +286,20 @@ something_else:
   CHECK(std::string(result.errata.front().text()).find("missing or invalid 'plugins' sequence") != std::string::npos);
 }
 
+TEST_CASE("parse_plugin_yaml - document is not a map", "[plugin_yaml]")
+{
+  // plugin.config lines pasted into plugin.yaml parse as one plain scalar.
+  auto content = GENERATE(as<std::string>{}, "header_rewrite.so rules.conf\nfoo.so\n", "- path: foo.so\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("missing or invalid 'plugins' sequence") != std::string::npos);
+}
+
 TEST_CASE("parse_plugin_yaml - invalid YAML syntax", "[plugin_yaml]")
 {
   TempYAML yaml("plugins:\n  - path: foo.so\n  bad indent here\n");
