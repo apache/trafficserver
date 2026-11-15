@@ -108,7 +108,7 @@ TEST_CASE("Meta", "[meta]")
   REQUIRE(detect(AA()) == "value");
 }
 
-// Dbg(), Error() and Warning() reach generate_format_string from destructors
-// and other noexcept code, so it must not be able to throw.
+// Dbg() runs in destructors and TSError() is itself noexcept, and both reach
+// generate_format_string, so it must stay noexcept.
 static_assert(noexcept(DebugInterface::generate_format_string(std::declval<swoc::LocalBufferWriter<1024> &>(), nullptr, DL_Diag,
                                                               nullptr, SHOW_LOCATION_NONE, nullptr)));
