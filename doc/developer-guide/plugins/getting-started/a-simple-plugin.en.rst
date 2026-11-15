@@ -81,12 +81,12 @@ plugin.
     # ls libexec/trafficserver
     hello_world.so*
     # bin/traffic_server
-    [2026-03-27T19:06:31.669Z] NOTE: updated diags config
-    [2026-03-27T19:06:31.680Z] NOTE: loading plugin 'libexec/trafficserver/hello_world.so'
+    2026-03-27T19:06:31.669Z NOTE: updated diags config
+    2026-03-27T19:06:31.680Z NOTE: loading plugin 'libexec/trafficserver/hello_world.so'
     hello world
-    [2026-03-27T19:06:32.046Z] NOTE: cache disabled (initializing)
-    [2026-03-27T19:06:32.053Z] NOTE: cache enabled
-    [2026-03-27T19:06:32.526Z] NOTE: Traffic Server running
+    2026-03-27T19:06:32.046Z NOTE: cache disabled (initializing)
+    2026-03-27T19:06:32.053Z NOTE: cache enabled
+    2026-03-27T19:06:32.526Z NOTE: Traffic Server running
 
 .. note::
 

@@ -345,7 +345,7 @@ DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_wri
   // Save room for optional newline and terminating NUL bytes.
   format_writer.restrict(2);
 
-  format_writer.print("[{}] ", DiagTimestamp{});
+  format_writer.print("{} ", DiagTimestamp{});
   auto timestamp_offset = format_writer.size();
 
   format_writer.print("{} {}: ", DiagThreadname{}, level_name(diags_level));

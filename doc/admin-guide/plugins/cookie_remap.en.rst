@@ -458,26 +458,26 @@ Initially, you will notice output describing each operation and how trafficserve
 
 .. code-block::
 
-   [2026-07-08T13:08:34.183Z] Server {3187168} DIAG: (cookie_remap) loading cookie remap configuration file from /homes/ebalsa/dev/yts_mods/cookie_remap/example_config.txt
-   [2026-07-08T13:08:34.199Z] Server {3187168} DIAG: (cookie_remap) ++++operation++++
-   [2026-07-08T13:08:34.199Z] Server {3187168} DIAG: (cookie_remap) sending to: http://finance.yahoo.com/2k.html
-   [2026-07-08T13:08:34.199Z] Server {3187168} DIAG: (cookie_remap) if these operations match:
-   [2026-07-08T13:08:34.200Z] Server {3187168} DIAG: (cookie_remap)     +++subop+++
-   [2026-07-08T13:08:34.200Z] Server {3187168} DIAG: (cookie_remap)         cookie: B
-   [2026-07-08T13:08:34.200Z] Server {3187168} DIAG: (cookie_remap)         operation: bucket
-   [2026-07-08T13:08:34.200Z] Server {3187168} DIAG: (cookie_remap)         bucket: 1/100
-   [2026-07-08T13:08:34.200Z] Server {3187168} DIAG: (cookie_remap)         taking: 1
-   [2026-07-08T13:08:34.200Z] Server {3187168} DIAG: (cookie_remap)         out of: 100
-   [2026-07-08T13:08:34.200Z] Server {3187168} DIAG: (cookie_remap)     +++subop+++
-   [2026-07-08T13:08:34.201Z] Server {3187168} DIAG: (cookie_remap)         cookie: Y.l
-   [2026-07-08T13:08:34.201Z] Server {3187168} DIAG: (cookie_remap)         operation: exists
-   [2026-07-08T13:08:34.201Z] Server {3187168} DIAG: (cookie_remap) ++++operation++++
-   [2026-07-08T13:08:34.201Z] Server {3187168} DIAG: (cookie_remap) sending to: http://X.existed.com
-   [2026-07-08T13:08:34.201Z] Server {3187168} DIAG: (cookie_remap) if these operations match:
-   [2026-07-08T13:08:34.201Z] Server {3187168} DIAG: (cookie_remap)     +++subop+++
-   [2026-07-08T13:08:34.201Z] Server {3187168} DIAG: (cookie_remap)         cookie: PH.l
-   [2026-07-08T13:08:34.202Z] Server {3187168} DIAG: (cookie_remap)         operation: exists
-   [2026-07-08T13:08:34.202Z] Server {3187168} DIAG: (cookie_remap) # of ops: 2
+   2026-07-08T13:08:34.183Z Server {3187168} DIAG: (cookie_remap) loading cookie remap configuration file from /homes/ebalsa/dev/yts_mods/cookie_remap/example_config.txt
+   2026-07-08T13:08:34.199Z Server {3187168} DIAG: (cookie_remap) ++++operation++++
+   2026-07-08T13:08:34.199Z Server {3187168} DIAG: (cookie_remap) sending to: http://finance.yahoo.com/2k.html
+   2026-07-08T13:08:34.199Z Server {3187168} DIAG: (cookie_remap) if these operations match:
+   2026-07-08T13:08:34.200Z Server {3187168} DIAG: (cookie_remap)     +++subop+++
+   2026-07-08T13:08:34.200Z Server {3187168} DIAG: (cookie_remap)         cookie: B
+   2026-07-08T13:08:34.200Z Server {3187168} DIAG: (cookie_remap)         operation: bucket
+   2026-07-08T13:08:34.200Z Server {3187168} DIAG: (cookie_remap)         bucket: 1/100
+   2026-07-08T13:08:34.200Z Server {3187168} DIAG: (cookie_remap)         taking: 1
+   2026-07-08T13:08:34.200Z Server {3187168} DIAG: (cookie_remap)         out of: 100
+   2026-07-08T13:08:34.200Z Server {3187168} DIAG: (cookie_remap)     +++subop+++
+   2026-07-08T13:08:34.201Z Server {3187168} DIAG: (cookie_remap)         cookie: Y.l
+   2026-07-08T13:08:34.201Z Server {3187168} DIAG: (cookie_remap)         operation: exists
+   2026-07-08T13:08:34.201Z Server {3187168} DIAG: (cookie_remap) ++++operation++++
+   2026-07-08T13:08:34.201Z Server {3187168} DIAG: (cookie_remap) sending to: http://X.existed.com
+   2026-07-08T13:08:34.201Z Server {3187168} DIAG: (cookie_remap) if these operations match:
+   2026-07-08T13:08:34.201Z Server {3187168} DIAG: (cookie_remap)     +++subop+++
+   2026-07-08T13:08:34.201Z Server {3187168} DIAG: (cookie_remap)         cookie: PH.l
+   2026-07-08T13:08:34.202Z Server {3187168} DIAG: (cookie_remap)         operation: exists
+   2026-07-08T13:08:34.202Z Server {3187168} DIAG: (cookie_remap) # of ops: 2
 
 
 each operation is enumerated and is more-or-less human readable from the top-down.  From now on, each request has information spit out to the console with debugging information on how the cookie_remap is treating this request.

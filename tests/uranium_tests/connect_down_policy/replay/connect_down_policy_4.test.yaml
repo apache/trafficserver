@@ -66,7 +66,7 @@ urtest:
             description: error.log lines start with an ISO 8601 UTC stamp
       diags_log:
         contains:
-          - expression: '^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\]\s'
+          - expression: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\s'
             description: diags.log lines start with an ISO 8601 UTC stamp
 
 sessions:

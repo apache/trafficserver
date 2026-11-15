@@ -31,7 +31,7 @@ stopping. If |TS| crashes a stack trace should be put in this file.
 
 Most messages will have a timestamp, a thread name, and a priority level.::
 
-   [2026-11-06T15:28:48.732Z] [ET_NET 8] DIAG: <HttpSM.cc:4795 (do_remap_request)> (http_seq) [0] Remapping request
+   2026-11-06T15:28:48.732Z [ET_NET 8] DIAG: <HttpSM.cc:4795 (do_remap_request)> (http_seq) [0] Remapping request
 
 The timestamp is ISO 8601 in UTC with milliseconds, so it reads the same on every
 host regardless of its time zone. The message was logged from the ``ET_NET 8``
