@@ -186,7 +186,13 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
     // Pure END_STREAM
     if (payload_length == 0) {
-      if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+      // A client stream is closed here only once its response has gone out, so close it. An
+      // origin stream gets here whenever the origin ends its response with an empty DATA frame.
+      // Finish its body with READ_COMPLETE, as when the last DATA frame carries END_STREAM, not
+      // with the EOS that initiating_close() sends. HttpSM checks a server EOS for truncation
+      // against the body bytes already written to the client, so it would fail a complete
+      // response whenever the EOS ran before that write.
+      if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED && !stream->is_outbound_connection()) {
         stream->initiating_close();
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
       }
