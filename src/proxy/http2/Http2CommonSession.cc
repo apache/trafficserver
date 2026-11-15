@@ -181,6 +181,14 @@ Http2CommonSession::flush()
   }
 }
 
+/** Whether the write buffer holds frames the network connection has not taken yet.
+ */
+bool
+Http2CommonSession::has_unsent_data()
+{
+  return this->_write_buffer_reader != nullptr && this->_write_buffer_reader->is_read_avail_more_than(0);
+}
+
 int
 Http2CommonSession::state_read_connection_preface(int event, void *edata)
 {

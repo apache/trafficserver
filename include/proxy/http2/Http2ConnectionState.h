@@ -469,6 +469,8 @@ private:
 
   static constexpr const int DATA_EVENT_BACKOFF_START = 10;
   static constexpr const int DATA_EVENT_BACKOFF_MAX   = 1000;
+  /// How many times a scheduled FINI waits for queued frames, such as a GOAWAY, to be written.
+  static constexpr const int FINI_WRITE_WAIT_MAX = 5;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
@@ -483,6 +485,7 @@ private:
   bool               in_destroy          = false;
   int                recursion           = 0;
   int                _data_event_backoff = DATA_EVENT_BACKOFF_START;
+  int                _fini_write_waits   = 0;
   bool               _data_event_retry   = false;
   Http2ShutdownState shutdown_state      = HTTP2_SHUTDOWN_NONE;
   Http2ErrorCode     shutdown_reason     = Http2ErrorCode::HTTP2_ERROR_MAX;

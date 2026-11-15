@@ -93,6 +93,7 @@ public:
   void    write_reenable();
   int64_t xmit(const Http2TxFrame &frame, bool flush = true);
   void    flush();
+  bool    has_unsent_data();
 
   int64_t          get_connection_id();
   Ptr<ProxyMutex> &get_mutex();

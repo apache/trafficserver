@@ -1722,6 +1722,8 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
+  bool const scheduled_fini = edata != nullptr && edata == fini_event;
+
   if (edata == zombie_event) {
     // zombie session is still around. Assert
     ink_release_assert(zombie_event == nullptr);
@@ -1741,6 +1743,21 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   case HTTP2_SESSION_EVENT_FINI: {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     REMEMBER(event, this->recursion);
+
+    // A FINI scheduled after a GOAWAY can run before the net handler has
+    // written that GOAWAY: a thread that has a poll event, such as the QUIC
+    // UDP poll, runs immediate events again before it does network I/O.
+    // Closing the connection then discards the frame, so give the queued
+    // frames a few event loop passes to go out first.
+    if (scheduled_fini && this->_fini_write_waits < FINI_WRITE_WAIT_MAX && this->session != nullptr &&
+        !this->session->get_proxy_session()->is_peer_closed() && this->session->has_unsent_data()) {
+      ++this->_fini_write_waits;
+      Http2ConDebug(session, "waiting for queued frames to be written before closing (%d)", this->_fini_write_waits);
+      this->session->flush();
+      fini_event =
+        this_ethread()->schedule_in_local(static_cast<Continuation *>(this), HRTIME_MSECONDS(1), HTTP2_SESSION_EVENT_FINI);
+      break;
+    }
 
     ink_assert(this->fini_received == false);
     this->fini_received = true;
