@@ -110,20 +110,18 @@ PreWarm::parse_authority(std::string &fqdn, int32_t &port, std::string_view auth
   std::string_view port_text;
   std::string_view rest;
 
-  // Same split as TLSTunnelSupport::set_tunnel_destination, so the pool key
-  // matches the destination a tunnel asks for. Anything left over (a port
-  // variable such as {inbound_local_port}, or a non-numeric port) has no
-  // fixed value to pre-warm.
+  // Split with IPEndpoint::tokenize, as TLSTunnelSupport::set_tunnel_destination
+  // does, so an explicit host and port are the ones a tunnel looks up. Anything
+  // left over (a port variable such as {inbound_local_port}, or a non-numeric
+  // port) has no fixed value to pre-warm.
   if (!swoc::IPEndpoint::tokenize(authority, &host, &port_text, &rest) || !rest.empty()) {
     return false;
   }
 
   int32_t parsed_port = -1;
+
   if (!port_text.empty()) {
-    // At most five digits, so the conversion cannot overflow.
-    if (port_text.size() > 5) {
-      return false;
-    }
+    // svtou clamps an overflow to its maximum, which the range check rejects.
     auto n = swoc::svtou(port_text);
     if (n < 1 || n > std::numeric_limits<in_port_t>::max()) {
       return false;
@@ -1119,8 +1117,10 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
 
     std::string dst_fqdn;
     int32_t     port = -1;
+
     if (!PreWarm::parse_authority(dst_fqdn, port, item.tunnel_destination)) {
-      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\", which has no fixed host and port",
+      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": it has no host, or its port is not a fixed "
+              "number from 1 to 65535",
               item.fqdn.c_str(), item.tunnel_destination.c_str());
       continue;
     }

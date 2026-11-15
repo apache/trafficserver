@@ -60,9 +60,17 @@ TEST_CASE("PreWarm parse_authority", "[prewarm]")
     CHECK(fqdn == "::1");
     CHECK(port == 443);
 
+    REQUIRE(PreWarm::parse_authority(fqdn, port, "[::1]:8443"));
+    CHECK(fqdn == "::1");
+    CHECK(port == 8443);
+
     REQUIRE(PreWarm::parse_authority(fqdn, port, "[2001:4860::1]:443"));
     CHECK(fqdn == "2001:4860::1");
     CHECK(port == 443);
+
+    REQUIRE(PreWarm::parse_authority(fqdn, port, "[::1]"));
+    CHECK(fqdn == "::1");
+    CHECK(port == -1);
   }
 
   SECTION("highest port")
@@ -76,7 +84,7 @@ TEST_CASE("PreWarm parse_authority", "[prewarm]")
     for (std::string_view bad : {
            "origin.example.com:{inbound_local_port}",
            "origin.example.com:{proxy_protocol_port}",
-           "$1.example.com:$2",
+           "$1.example.com:$2", // Rejected for the $2 port.
            "origin.example.com:",
            "origin.example.com:443x",
            "origin.example.com:0",

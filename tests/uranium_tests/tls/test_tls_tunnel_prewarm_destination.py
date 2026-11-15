@@ -14,12 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import socket
+
 from tools.uranium.services import ATS, ATSFactory, wait_for_file_lines
 
 WARNING = "not pre-warming tunnel destination"
 
-STARTUP_SNI = (
-    "sni:\n"
+# Destinations with no fixed port to pre-warm. Each one logs WARNING.
+SKIPPED_SNI = (
     "  - fqdn: template.example.com\n"
     "    forward_route: 127.0.0.1:{inbound_local_port}\n"
     "    tunnel_prewarm: true\n"
@@ -32,29 +34,45 @@ STARTUP_SNI = (
 )
 
 
-def configure_ats(ats_factory: ATSFactory) -> ATS:
-    """Configure pre-warmed tunnel routes whose port is not a fixed number.
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+    """Configure pre-warmed tunnel routes with and without a fixed port.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
+    :param _origin_port: Port of a live listener for the valid route.
     """
 
     ats = ats_factory.create("ts", enable_tls=True)
     ats.add_default_ssl_files()
     ats.remap_config.add_line("map / http://127.0.0.1:1/")
-    ats.write_config_file("sni.yaml", STARTUP_SNI)
+    sni_yaml = (
+        f"sni:\n  - fqdn: valid.example.com\n    forward_route: 127.0.0.1:{_origin_port}\n    tunnel_prewarm: true\n{SKIPPED_SNI}"
+    )
+    ats.write_config_file("sni.yaml", sni_yaml)
     return ats
 
 
 def test_tls_tunnel_prewarm_destination(ats_factory: ATSFactory) -> None:
-    """A pre-warm destination without a fixed port is skipped at startup.
+    """A pre-warm destination without a fixed port is skipped at startup, and a valid one gets a pool.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
-    _ats = configure_ats(ats_factory)
+    # A live origin, so pre-warm connections to the valid route succeed.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as origin:
+        origin.bind(("127.0.0.1", 0))
+        origin.listen(64)
+        origin_port = origin.getsockname()[1]
+        _ats = configure_ats(ats_factory, _origin_port=origin_port)
 
-    _ats.start()
-    diags = wait_for_file_lines(_ats.diags_log, WARNING, 3)
-    assert '"127.0.0.1:{inbound_local_port}"' in diags
-    assert '"127.0.0.1:{proxy_protocol_port}"' in diags
-    assert '"127.0.0.1:"' in diags
-    assert _ats.is_running
+        _ats.start()
+        diags = wait_for_file_lines(_ats.diags_log, WARNING, 3)
+        assert '"127.0.0.1:{inbound_local_port}"' in diags
+        assert '"127.0.0.1:{proxy_protocol_port}"' in diags
+        assert '"127.0.0.1:"' in diags
+        assert diags.count(WARNING) == 3, diags
+        assert _ats.is_running
+
+        # The valid route still gets a pool, whose stats are registered.
+        metric = f"proxy.process.tunnel.prewarm.127.0.0.1:{origin_port}.tcp.total_miss"
+        result = _ats.traffic_ctl("metric", "get", metric)
+        assert result.returncode == 0 and metric in result.stdout, result.output
+        _ats.stop()

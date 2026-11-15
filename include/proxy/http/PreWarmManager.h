@@ -135,14 +135,14 @@ using StatsIdMap        = std::unordered_map<SPtrConstDst, SPtrConstStatsIds, Ds
 
 /** Split a tunnel destination from sni.yaml into host and port.
 
-    IPv6 addresses must be in brackets, which are removed from @a fqdn.
+    An IPv6 address needs brackets to carry a port; @a fqdn excludes them.
 
-    @param fqdn Set to the host when the destination is usable.
-    @param port Set to the port, or -1 when the destination has none.
-    @param authority The destination, such as "example.com:443" or "[::1]:443".
-    @return @c false if there is no fixed host and port to pre-warm, for example
-    when the port is a variable such as {inbound_local_port} or is not a number
-    from 1 to 65535. @a fqdn and @a port are then left unchanged.
+    @param[out] fqdn Set to the host when the destination can be pre-warmed.
+    @param[out] port Set to the port, or -1 when the destination has none.
+    @param[in] authority The destination, such as "example.com:443" or "[::1]:443".
+    @return @c false if the destination has no host, or has a port that is not
+    a fixed number from 1 to 65535, such as the variable {inbound_local_port}.
+    @a fqdn and @a port are then left unchanged.
  */
 bool parse_authority(std::string &fqdn, int32_t &port, std::string_view authority);
 } // namespace PreWarm
