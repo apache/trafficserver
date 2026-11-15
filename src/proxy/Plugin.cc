@@ -474,30 +474,36 @@ parse_plugin_yaml(const char *yaml_path)
   for (const auto &node : root["plugins"]) {
     PluginYAMLEntry entry;
 
-    if (!node["path"]) {
-      result.errata.note("plugin entry #{} missing required 'path' field", seq_idx + 1);
-      return result;
-    }
-    entry.path = node["path"].as<std::string>();
-
-    if (auto n = node["enabled"]; n) {
-      entry.enabled = n.as<bool>();
-    }
-    if (auto n = node["load_order"]; n) {
-      entry.load_order = n.as<int>();
-    }
-    if (auto n = node["params"]; n && n.IsSequence()) {
-      for (const auto &p : n) {
-        entry.params.emplace_back(p.as<std::string>());
-      }
-    }
-    if (auto n = node["config"]; n) {
-      if (n.IsScalar()) {
-        entry.config_literal = n.as<std::string>();
-      } else {
-        result.errata.note("plugin '{}': 'config' must be a scalar (use literal block '|' for multi-line content)", entry.path);
+    // A wrong node type or value (a scalar entry, "enabled: maybe") makes yaml-cpp throw.
+    try {
+      if (!node["path"]) {
+        result.errata.note("plugin entry #{} missing required 'path' field", seq_idx + 1);
         return result;
       }
+      entry.path = node["path"].as<std::string>();
+
+      if (auto n = node["enabled"]; n) {
+        entry.enabled = n.as<bool>();
+      }
+      if (auto n = node["load_order"]; n) {
+        entry.load_order = n.as<int>();
+      }
+      if (auto n = node["params"]; n && n.IsSequence()) {
+        for (const auto &p : n) {
+          entry.params.emplace_back(p.as<std::string>());
+        }
+      }
+      if (auto n = node["config"]; n) {
+        if (n.IsScalar()) {
+          entry.config_literal = n.as<std::string>();
+        } else {
+          result.errata.note("plugin '{}': 'config' must be a scalar (use literal block '|' for multi-line content)", entry.path);
+          return result;
+        }
+      }
+    } catch (const YAML::Exception &e) {
+      result.errata.note("plugin entry #{}: {}", seq_idx + 1, e.what());
+      return result;
     }
 
     indexed.push_back({seq_idx++, std::move(entry)});

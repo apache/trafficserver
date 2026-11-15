@@ -22,6 +22,7 @@
 */
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <atomic>
 #include <filesystem>
 #include <fstream>
@@ -249,6 +250,27 @@ plugins:
 
   REQUIRE_FALSE(result.ok());
   CHECK(std::string(result.errata.front().text()).find("missing required 'path' field") != std::string::npos);
+}
+
+TEST_CASE("parse_plugin_yaml - malformed entry is a config error", "[plugin_yaml]")
+{
+  // Each case has a good first entry, so the error must name entry #2.
+  auto content = GENERATE(as<std::string>{},
+                          // A bare scalar instead of a mapping.
+                          "plugins:\n  - path: good.so\n  - libfoo.so\n",
+                          // Values of the wrong type.
+                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    enabled: maybe\n",
+                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    load_order: x\n",
+                          "plugins:\n  - path: good.so\n  - path: [libfoo.so]\n",
+                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    params:\n      - {a: b}\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("plugin entry #2") != std::string::npos);
 }
 
 TEST_CASE("parse_plugin_yaml - missing plugins key", "[plugin_yaml]")
