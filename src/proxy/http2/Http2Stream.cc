@@ -1170,6 +1170,10 @@ Http2Stream::release()
     return;
   }
 
+  // The transaction is done with the stream, so no read event may reach it any more. The
+  // stream stays open only to wait for the peer's END_STREAM, and transaction_done() closes it
+  // if that has arrived.
+  read_vio.disable();
   Http2StreamDebug("Delaying do_io_close() until stream is in the closed state");
 }
 
