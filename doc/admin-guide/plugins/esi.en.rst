@@ -218,4 +218,5 @@ Differences from Spec - http://www.w3.org/TR/esi-lang
 
 5. ``HTTP_COOKIE`` supports fetching for sub-key.
 
-6. ``HTTP_HEADER`` supports accessing request headers as variables except "Cookie".
+6. ``HTTP_HEADER`` supports accessing request headers as variables except "Cookie". Header names are matched
+   case-insensitively, so ``$(HTTP_HEADER{Sec-GPC})`` matches a ``sec-gpc`` header sent by an HTTP/2 client.
