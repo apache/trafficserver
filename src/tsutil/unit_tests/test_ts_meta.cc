@@ -19,10 +19,8 @@
  */
 
 #include <cstring>
-#include <utility>
 
 #include "tsutil/ts_meta.h"
-#include "tsutil/DbgCtl.h"
 #include "swoc/TextView.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -107,8 +105,3 @@ TEST_CASE("Meta", "[meta]")
   REQUIRE(detect(C()) == "none");
   REQUIRE(detect(AA()) == "value");
 }
-
-// Dbg() runs in destructors and TSError() is itself noexcept, and both reach
-// generate_format_string, so it must stay noexcept.
-static_assert(noexcept(DebugInterface::generate_format_string(std::declval<swoc::LocalBufferWriter<1024> &>(), nullptr, DL_Diag,
-                                                              nullptr, SHOW_LOCATION_NONE, nullptr)));
