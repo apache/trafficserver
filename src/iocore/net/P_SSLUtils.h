@@ -41,7 +41,7 @@
 #include <string_view>
 #include <string>
 
-class SSLNetVConnection;
+class NetVConnection;
 
 using ssl_error_t = int;
 
@@ -90,14 +90,14 @@ void SSLInitializeLibrary();
 // Initialize SSL library based on configuration settings
 void SSLPostConfigInitialize();
 
-// Attach a SSL NetVC back pointer to a SSL session.
-void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);
+// Attach a NetVC back pointer to a SSL session.
+void NetVCAttach(SSL *ssl, NetVConnection *vc);
 
-// Detach from SSL NetVC back pointer to a SSL session.
-void SSLNetVCDetach(SSL *ssl);
+// Detach the NetVC back pointer from a SSL session.
+void NetVCDetach(SSL *ssl);
 
-// Return the SSLNetVConnection (if any) attached to this SSL session.
-SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
+// Return the NetVConnection (if any) attached to this SSL session.
+NetVConnection *NetVCAccess(const SSL *ssl);
 
 void setClientCertLevel(SSL *ssl, uint8_t certLevel);
 void setClientCertCACerts(SSL *ssl, const char *file, const char *dir);

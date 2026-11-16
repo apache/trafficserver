@@ -598,6 +598,7 @@ QUICNetVConnection::load_buffer_and_write(int64_t /* towrite ATS_UNUSED */, MIOB
 void
 QUICNetVConnection::_bindSSLObject()
 {
+  NetVCAttach(this->_ssl, this);
   TLSBasicSupport::bind(this->_ssl, this);
   TLSEventSupport::bind(this->_ssl, this);
   ALPNSupport::bind(this->_ssl, this);
@@ -610,6 +611,7 @@ QUICNetVConnection::_bindSSLObject()
 void
 QUICNetVConnection::_unbindSSLObject()
 {
+  NetVCDetach(this->_ssl);
   TLSBasicSupport::unbind(this->_ssl);
   TLSEventSupport::unbind(this->_ssl);
   ALPNSupport::unbind(this->_ssl);

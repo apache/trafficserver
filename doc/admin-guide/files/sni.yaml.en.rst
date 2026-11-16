@@ -168,6 +168,8 @@ verify_client_ca_certs                   Inbound   Specifies an alternate set of
                                                    ``verify_client_ca_certs`` can only be used with capabilities provided by
                                                    OpenSSL 1.0.2 or later.
 
+                                                   |TS| applies this alternate set only to TLS over TCP connections.
+
 server_cipher_suite                      Inbound   Specifies an override to the global :ts:cv:`proxy.config.ssl.server.cipher_suite`
                                                    :file:`records.yaml` configuration. See the
                                                    `OpenSSL SSL_CTX_set_cipher_list <https://docs.openssl.org/3.1/man3/SSL_CTX_set_cipher_list/>`_
@@ -339,6 +341,9 @@ tunnel_route                             Inbound   Destination as an FQDN and po
 
                                                    This will forward all traffic to the specified destination without first terminating
                                                    the incoming TLS connection.
+
+                                                   Only TLS over TCP connections can be routed this way, or with ``forward_route`` or
+                                                   ``partial_blind_route``.
 
                                                    The destination port can be designated with the literal string
                                                    ``{inbound_local_port}`` to specify that |TS| should connect to the tunnel route's

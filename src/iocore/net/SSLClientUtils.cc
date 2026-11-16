@@ -162,8 +162,8 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
    * Retrieve the pointer to the SSL of the connection currently treated
    * and the application specific data stored into the SSL object.
    */
-  ssl                      = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  ssl                   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  NetVConnection *netvc = NetVCAccess(ssl);
 
   // No enforcing, go away
   if (netvc == nullptr) {
@@ -312,7 +312,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
 static enum ssl_verify_result_t
 ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  NetVConnection *netvc = NetVCAccess(ssl);
   if (netvc == nullptr) {
     Dbg(dbg_ctl_ssl_verify, "WARNING, NetVC is NULL in custom cert verify callback");
     *out_alert = SSL_AD_INTERNAL_ERROR;
@@ -608,9 +608,9 @@ validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hos
 static int
 ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  SSL_CTX           *ctx   = SSL_get_SSL_CTX(ssl);
-  if (ctx) {
+  auto     netvc = dynamic_cast<SSLNetVConnection *>(NetVCAccess(ssl));
+  SSL_CTX *ctx   = SSL_get_SSL_CTX(ssl);
+  if (netvc != nullptr && ctx) {
     // Do not need to free either the cert or the ssl_ctx
     // both are internal pointers
     X509 *cert = SSL_CTX_get0_certificate(ctx);
@@ -641,7 +641,7 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 void
 origin_rpk_record_resumed_peer_key(SSL *ssl)
 {
-  if (SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  if (NetVConnection *netvc = NetVCAccess(ssl);
       netvc == nullptr || netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
     return;
   }
