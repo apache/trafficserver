@@ -3958,7 +3958,6 @@ Logging Configuration
    Refer to :ref:`admin-logging` for more information on event logging.
 
 .. ts:cv:: CONFIG proxy.config.log.log_fast_buffer INT 0
-   :reloadable:
 
    Enables ``fast`` logging mode as the default for all log objects.  This mode
    can log larger transaction rates, but log entries will appear out of order
