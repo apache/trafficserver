@@ -69,7 +69,7 @@ if(APPLE)
 endif()
 
 if(BUILD_TESTING)
-  add_executable(test_api unit_tests/test_HttpOverridableConfig.cc)
+  add_executable(test_api unit_tests/test_HttpOverridableConfig.cc unit_tests/test_LogAddr.cc)
   target_link_libraries(
     test_api
     PRIVATE

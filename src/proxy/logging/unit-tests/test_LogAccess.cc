@@ -29,6 +29,8 @@
 #include "tscore/ink_align.h"
 #include "tscore/ink_inet.h"
 
+#include <cstring>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -283,4 +285,31 @@ TEST_CASE("LogAccess JSON string slice stays within the raw value", "[LogAccess]
     int      n   = LogAccess::unmarshal_str(&ptr, dest, sizeof(dest), &slice, LOG_ESCAPE_JSON);
     CHECK(std::string_view(dest, n) == "\\u0001\\u0001");
   }
+}
+
+TEST_CASE("LogAccess marshals a full unix socket path as a terminated string", "[LogAccess]")
+{
+  // A kernel sockaddr_un may carry a full, unterminated sun_path, so none of the guard bytes after it may reach the output.
+  struct {
+    sockaddr_un sun;
+    char        guard[16];
+  } raw;
+  memset(&raw, 'g', sizeof(raw));
+  raw.guard[sizeof(raw.guard) - 1] = '\0';
+  raw.sun.sun_family               = AF_UNIX;
+  memset(raw.sun.sun_path, 'z', TS_UNIX_SIZE);
+  auto const       *sa = reinterpret_cast<sockaddr const *>(&raw.sun);
+  std::string const truncated(TS_UNIX_SIZE - 1, 'z');
+
+  std::vector<char> marshalled(LogAccess::marshal_ip(nullptr, sa));
+  LogAccess::marshal_ip(marshalled.data(), sa);
+
+  auto const *un = reinterpret_cast<LogFieldUn const *>(marshalled.data());
+  CHECK(std::string_view(un->_path, strnlen(un->_path, TS_UNIX_SIZE)) == truncated);
+
+  char  dest[256];
+  char *src = marshalled.data();
+  int   len = LogAccess::unmarshal_ip_to_str(&src, dest, sizeof(dest));
+  REQUIRE(len >= 0);
+  CHECK(std::string_view(dest, len) == truncated);
 }
