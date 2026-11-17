@@ -160,8 +160,9 @@ cert_verification(const std::string &sn)
 int
 init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<PluginConfig> config)
 {
-  // The launcher gets these local references, not the shared members: reset() on the shutdown hook's thread can clear those
-  // under their own mutexes while a reload is still here.
+  // Hand the launcher sm_instance and this smgr_instance, not the stek_share_server members, and judge the result by the
+  // server it returns: a reload runs on the RPC thread, and the shutdown hook's reset() can clear those members at any point
+  // after they are stored below.
   nuraft::ptr<nuraft::state_mgr> smgr_instance =
     nuraft::cs_new<STEKShareSMGR>(config->server_id, config->endpoint, config->server_list);
 
@@ -199,14 +200,14 @@ init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<Plugin
   params.return_method_ = CALL_TYPE;
 
   // Initialize Raft server.
+  nuraft::ptr<nuraft::raft_server> raft_instance;
   {
     std::unique_lock lock(stek_share_server.raft_mutex);
-    stek_share_server.raft_instance =
-      stek_share_server.raft_launcher.init(sm_instance, smgr_instance, nullptr, config->port, asio_opts, params);
+    raft_instance = stek_share_server.raft_launcher.init(sm_instance, smgr_instance, nullptr, config->port, asio_opts, params);
+    stek_share_server.raft_instance = raft_instance;
   }
 
-  std::shared_lock lock(stek_share_server.raft_mutex);
-  if (!stek_share_server.raft_instance) {
+  if (!raft_instance) {
     Dbg(dbg_ctl, "Failed to initialize launcher.");
     return -1;
   }
