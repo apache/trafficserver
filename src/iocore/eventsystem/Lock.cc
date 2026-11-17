@@ -40,29 +40,29 @@ DbgCtl dbg_ctl_locks{"locks"};
 } // end anonymous namespace
 
 void
-lock_waiting(const SourceLocation &srcloc, const char *handler)
+lock_waiting(const SourceLocation &srcloc)
 {
   if (dbg_ctl_locks.on()) {
     char buf[128];
-    fprintf(stderr, "WARNING: waiting on lock %s for %s\n", srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
+    fprintf(stderr, "WARNING: waiting on lock %s\n", srcloc.str(buf, sizeof(buf)));
   }
 }
 
 void
-lock_holding(const SourceLocation &srcloc, const char *handler)
+lock_holding(const SourceLocation &srcloc)
 {
   if (dbg_ctl_locks.on()) {
     char buf[128];
-    fprintf(stderr, "WARNING: holding lock %s too long for %s\n", srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
+    fprintf(stderr, "WARNING: holding lock %s too long\n", srcloc.str(buf, sizeof(buf)));
   }
 }
 
 void
-lock_taken(const SourceLocation &srcloc, const char *handler)
+lock_taken(const SourceLocation &srcloc)
 {
   if (dbg_ctl_locks.on()) {
     char buf[128];
-    fprintf(stderr, "WARNING: lock %s taken too many times for %s\n", srcloc.str(buf, sizeof(buf)), handler ? handler : "UNKNOWN");
+    fprintf(stderr, "WARNING: lock %s taken too many times\n", srcloc.str(buf, sizeof(buf)));
   }
 }
 
