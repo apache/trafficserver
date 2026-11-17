@@ -59,10 +59,12 @@ CacheScan::Scan(bool search)
           int     fd     = this->stripe->_span->_fd;
           int64_t offset = this->stripe->stripe_offset(e);
           ssize_t n      = pread(fd, stripe_buff2, size, offset);
+          Doc    *doc    = reinterpret_cast<Doc *>(stripe_buff2);
           if (n < 0) {
             std::cout << "Failed to read content from the Stripe.  " << strerror(errno) << std::endl;
+          } else if (!doc->fits_in(n)) {
+            std::cout << "Skipping a document whose lengths do not fit in the " << n << " bytes read from the Stripe" << std::endl;
           } else {
-            Doc *doc = reinterpret_cast<Doc *>(stripe_buff2);
             get_alternates(doc->hdr(), doc->hlen, search,
                            ts::VersionNumber{static_cast<unsigned short>(doc->v_major), static_cast<unsigned short>(doc->v_minor)});
           }

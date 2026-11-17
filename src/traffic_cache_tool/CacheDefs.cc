@@ -473,6 +473,11 @@ StripeSM::dir_probe(CryptoHash *key, [[maybe_unused]] CacheDirEntry *result, [[m
     }
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
+    if (!doc->fits_in(n)) {
+      std::cout << "The document's lengths do not fit in the " << n << " bytes read from the Stripe" << std::endl;
+      free(stripe_buff2);
+      return 0;
+    }
     std::string hdr(doc->hdr(), doc->hlen);
 
     std::string data_(doc->data(), doc->data_len());
