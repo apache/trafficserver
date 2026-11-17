@@ -24,7 +24,7 @@
 #include "CacheDefs.h"
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("cache inspection checks document lengths against the bytes read", "[cache_tool]")
+TEST_CASE("Doc::fits_in checks document lengths against the bytes read", "[cache_tool]")
 {
   ts::Doc       doc{};
   int64_t const read = 4096;
@@ -33,6 +33,9 @@ TEST_CASE("cache inspection checks document lengths against the bytes read", "[c
   doc.hlen = 100;
   CHECK(doc.fits_in(read));
   CHECK(doc.fits_in(doc.len));
+  doc.hlen = doc.len - sizeof(ts::Doc);
+  CHECK(doc.fits_in(doc.len));
+  doc.hlen = 100;
   CHECK_FALSE(doc.fits_in(doc.len - 1));
   CHECK_FALSE(doc.fits_in(sizeof(ts::Doc) - 1));
   CHECK_FALSE(doc.fits_in(-1));

@@ -49,8 +49,8 @@ def test_traffic_logcat_keeps_existing_output(ats_factory: ATSFactory) -> None:
 def test_traffic_logcat_refuses_output_symlink(ats_factory: ATSFactory) -> None:
     """Without -w, traffic_logcat does not follow a dangling symbolic link at the output path.
 
-    A dangling link passes an existence check that follows links, so only an exclusive create
-    keeps traffic_logcat from creating the file the link names.
+    The output is created exclusively, which fails on any existing name, the link included, so the
+    file the link names is never created.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
@@ -64,3 +64,17 @@ def test_traffic_logcat_refuses_output_symlink(ats_factory: ATSFactory) -> None:
     assert result.returncode != 0, result.output
     assert re.search(r"output file .* already exists", result.stderr), result.output
     assert not target.exists()
+
+
+def test_traffic_logcat_overwrites_output(ats_factory: ATSFactory) -> None:
+    """With -w, traffic_logcat truncates an existing output file instead of refusing it.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    output = _ats.run_directory / "existing.log"
+    output.write_text("replace\n")
+    result = _ats.run("traffic_logcat", "-w", "-o", output, _ats.run_directory / "missing.blog")
+    assert output.read_text() == "", result.output
