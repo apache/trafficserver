@@ -102,7 +102,7 @@ struct SSLConfigParams : public ConfigInfo {
   char                   *clientKeyPathOnly;
   char                   *clientCACertFilename;
   char                   *clientCACertPath;
-  int                     clientCertExitOnLoadError;
+  int                     clientCertExitOnLoadError = 0;
   YamlSNIConfig::Policy   verifyServerPolicy;
   YamlSNIConfig::Property verifyServerProperties;
   int                     client_verify_depth;
@@ -118,8 +118,8 @@ struct SSLConfigParams : public ConfigInfo {
   /// Identifies clientRPKCA in the origin session cache key.
   std::string clientRPKCADigest;
 
-  unsigned char alpn_protocols_array[MAX_ALPN_STRING];
-  int           alpn_protocols_array_size = 0;
+  unsigned char alpn_protocols_array[MAX_ALPN_STRING] = {};
+  int           alpn_protocols_array_size             = 0;
 
   char *server_cert_compression_algorithms;
   bool  server_cert_compression_cache = true;
@@ -129,10 +129,11 @@ struct SSLConfigParams : public ConfigInfo {
   char *client_tls13_cipher_suites;
   char *server_groups_list;
   char *client_groups_list;
-  int   server_tls_ver_min;
-  int   server_tls_ver_max;
-  int   client_tls_ver_min;
-  int   client_tls_ver_max;
+  // -1, the records default, leaves the protocol bound to the TLS library.
+  int server_tls_ver_min = -1;
+  int server_tls_ver_max = -1;
+  int client_tls_ver_min = -1;
+  int client_tls_ver_max = -1;
 
   char *keylog_file;
 
