@@ -61,6 +61,15 @@ is_port_in_the_ranges(const std::vector<ts::port_range_t> &port_ranges, in_port_
   return std::any_of(port_ranges.begin(), port_ranges.end(),
                      [port](ts::port_range_t const &port_range) { return port_range.contains(port); });
 }
+
+// prewarmManager sets this from its constructor during static initialization, which may run
+// before this file's own initializers, so the callback cannot be a namespace-scope object.
+std::function<void()> &
+on_reconfigure()
+{
+  static std::function<void()> callback;
+  return callback;
+}
 } // namespace
 
 ////
@@ -352,8 +361,7 @@ SNIConfigParams::~SNIConfigParams()
 ////
 // SNIConfig
 //
-int                   SNIConfig::_configid      = 0;
-std::function<void()> SNIConfig::on_reconfigure = nullptr;
+int SNIConfig::_configid = 0;
 
 void
 SNIConfig::startup()
@@ -374,8 +382,8 @@ SNIConfig::reconfigure(ConfigContext ctx)
 
   if (retStatus) {
     _configid = configProcessor.set(_configid, params);
-    if (SNIConfig::on_reconfigure) {
-      SNIConfig::on_reconfigure();
+    if (on_reconfigure()) {
+      on_reconfigure()();
     }
     CfgLoadComplete(ctx, "%s finished loading", sni_filename.c_str());
   } else {
@@ -407,5 +415,5 @@ SNIConfig::release(SNIConfigParams *params)
 void
 SNIConfig::set_on_reconfigure_callback(std::function<void()> cb)
 {
-  SNIConfig::on_reconfigure = std::move(cb);
+  on_reconfigure() = std::move(cb);
 }
