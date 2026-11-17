@@ -170,50 +170,99 @@ RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record
 // RecMessageUnmarshalNext
 //-------------------------------------------------------------------------
 
+namespace
+{
+// A message read back from records.snap is only as sound as the file, so every offset in it must land inside
+// the buffer, which is o_end bytes long.
+bool
+fits_in_message(const RecMessage *msg, intptr_t offset, intptr_t len)
+{
+  return offset >= msg->o_start && offset <= msg->o_end && len <= msg->o_end - offset;
+}
+
+// The string offsets are relative to the record and become pointers only once the string is known to end
+// inside the message.
+template <typename Char>
+bool
+resolve_string(RecMessage *msg, const RecRecord *r, Char *&str)
+{
+  if (str == nullptr) {
+    return true;
+  }
+
+  intptr_t const rel    = reinterpret_cast<intptr_t>(str);
+  intptr_t const offset = (reinterpret_cast<const char *>(r) - reinterpret_cast<const char *>(msg)) + rel;
+  if (rel < 0 || rel > msg->o_end || !fits_in_message(msg, offset, 1)) {
+    return false;
+  }
+
+  char *p = reinterpret_cast<char *>(msg) + offset;
+  if (memchr(p, '\0', msg->o_end - offset) == nullptr) {
+    return false;
+  }
+  str = p;
+  return true;
+}
+} // namespace
+
 int
 RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 {
   RecMessageEleHdr *eh;
   RecRecord        *r;
+  intptr_t          offset;
+  intptr_t const    ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecord);
+
+  auto corrupt = []() {
+    Warning("Persistent statistics file records.stat is corrupted. Ignoring the rest of the file\n");
+    return REC_ERR_FAIL;
+  };
 
   if (itr == nullptr) {
     if (msg->entries == 0) {
       return REC_ERR_FAIL;
-    } else {
-      eh = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + msg->o_start);
     }
+    offset = msg->o_start;
   } else {
     if (itr->next >= msg->entries) {
       return REC_ERR_FAIL;
     }
-    itr->ele_hdr  = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + itr->ele_hdr->o_next);
+    // Each element must start past the one before it, or its offsets would be resolved a second time.
+    intptr_t const current = reinterpret_cast<char *>(itr->ele_hdr) - reinterpret_cast<char *>(msg);
+    offset                 = itr->ele_hdr->o_next;
+    if (offset < current + ele_size) {
+      return corrupt();
+    }
+  }
+
+  if (!fits_in_message(msg, offset, ele_size)) {
+    return corrupt();
+  }
+  eh = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + offset);
+  if (itr != nullptr) {
+    itr->ele_hdr  = eh;
     itr->next    += 1;
-    eh            = itr->ele_hdr;
   }
 
   ink_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);
 
   // If the file is corrupt, ignore the rest of the file.
   if (eh->magic != REC_MESSAGE_ELE_MAGIC) {
-    Warning("Persistent statistics file records.stat is corrupted. Ignoring the rest of the file\n");
-    return REC_ERR_FAIL;
+    return corrupt();
   }
 
   r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(eh) + sizeof(RecMessageEleHdr));
 
-  if (r->name) {
-    r->name = reinterpret_cast<char *>(r) + (intptr_t)(r->name);
+  if (!resolve_string(msg, r, r->name)) {
+    return corrupt();
   }
   if (r->data_type == RECD_STRING) {
-    if (r->data.rec_string) {
-      r->data.rec_string = reinterpret_cast<char *>(r) + (intptr_t)(r->data.rec_string);
-    }
-    if (r->data_default.rec_string) {
-      r->data_default.rec_string = reinterpret_cast<char *>(r) + (intptr_t)(r->data_default.rec_string);
+    if (!resolve_string(msg, r, r->data.rec_string) || !resolve_string(msg, r, r->data_default.rec_string)) {
+      return corrupt();
     }
   }
-  if (REC_TYPE_IS_CONFIG(r->rec_type) && (r->config_meta.check_expr)) {
-    r->config_meta.check_expr = reinterpret_cast<char *>(r) + (intptr_t)(r->config_meta.check_expr);
+  if (REC_TYPE_IS_CONFIG(r->rec_type) && !resolve_string(msg, r, r->config_meta.check_expr)) {
+    return corrupt();
   }
 
   *record = r;

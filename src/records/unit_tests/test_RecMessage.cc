@@ -137,3 +137,116 @@ TEST_CASE("RecMessageReadFromDisk rejects a truncated header", "[librecords][Rec
   CHECK(RecMessageReadFromDisk(path.c_str()) == nullptr);
   std::filesystem::remove(path);
 }
+
+namespace
+{
+RecMessage *
+marshal_records(int count)
+{
+  RecMessage *msg = RecMessageAlloc(RECG_NULL);
+
+  for (int i = 0; i < count; ++i) {
+    RecRecord rec;
+
+    RecRecordInit(&rec);
+    rec.rec_type     = RECT_PROCESS;
+    rec.data_type    = RECD_INT;
+    rec.name         = "proxy.process.test.snapshot";
+    rec.data.rec_int = i;
+    msg              = RecMessageMarshal_Realloc(msg, &rec);
+  }
+  return msg;
+}
+
+RecMessageEleHdr *
+first_element(RecMessage *msg)
+{
+  return reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + msg->o_start);
+}
+
+RecRecord *
+element_record(RecMessageEleHdr *eh)
+{
+  return reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(eh) + sizeof(RecMessageEleHdr));
+}
+
+RecMessage *
+write_and_read(RecMessage *msg, const std::filesystem::path &path)
+{
+  REQUIRE(RecMessageWriteToDisk(msg, path.c_str()) == REC_ERR_OKAY);
+  RecMessageFree(msg);
+
+  RecMessage *in = RecMessageReadFromDisk(path.c_str());
+  REQUIRE(in != nullptr);
+  return in;
+}
+} // namespace
+
+TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the snapshot", "[librecords][RecMessage]")
+{
+  auto          path = snap_path("elements");
+  RecMessageItr itr;
+  RecRecord    *got = nullptr;
+
+  SECTION("an entry with no element after the header")
+  {
+    RecMessageHdr hdr{};
+
+    hdr.o_start = sizeof(RecMessageHdr);
+    hdr.o_write = hdr.o_end = sizeof(RecMessageHdr);
+    hdr.entries             = 1;
+    write_snap(path, &hdr, sizeof(hdr));
+
+    RecMessage *in = RecMessageReadFromDisk(path.c_str());
+    REQUIRE(in != nullptr);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+  SECTION("a next element that does not come after the current one")
+  {
+    RecMessage *msg = marshal_records(2);
+
+    first_element(msg)->o_next = msg->o_start;
+
+    RecMessage *in = write_and_read(msg, path);
+    REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
+    CHECK(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+  SECTION("a next element past the end of the snapshot")
+  {
+    RecMessage *msg = marshal_records(2);
+
+    first_element(msg)->o_next = msg->o_end;
+
+    RecMessage *in = write_and_read(msg, path);
+    REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
+    CHECK(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+  SECTION("a name offset past the end of the snapshot")
+  {
+    RecMessage *msg = marshal_records(1);
+
+    element_record(first_element(msg))->name = reinterpret_cast<const char *>(static_cast<intptr_t>(msg->o_end) * 2);
+
+    RecMessage *in = write_and_read(msg, path);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+  SECTION("a name that is not terminated inside the snapshot")
+  {
+    RecMessage *msg  = marshal_records(1);
+    RecRecord  *r    = element_record(first_element(msg));
+    char       *last = reinterpret_cast<char *>(msg) + msg->o_end - 1;
+
+    *last   = 'x';
+    r->name = reinterpret_cast<const char *>(last - reinterpret_cast<char *>(r));
+
+    RecMessage *in = write_and_read(msg, path);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+
+  std::filesystem::remove(path);
+}
