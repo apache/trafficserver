@@ -369,14 +369,14 @@ TEST_CASE("ink_inet_unix full sun_path", "[libts][inet][unix]")
 {
   // A kernel sockaddr_un may carry a full, unterminated sun_path, so none of the guard bytes after it may reach the output.
   struct {
-    sockaddr_un sun;
-    char        guard[16];
+    IpEndpoint ep;
+    char       guard[16];
   } raw;
   memset(&raw, 'g', sizeof(raw));
   raw.guard[sizeof(raw.guard) - 1] = '\0';
-  raw.sun.sun_family               = AF_UNIX;
-  memset(raw.sun.sun_path, 'z', TS_UNIX_SIZE);
-  auto const       *sa = reinterpret_cast<sockaddr const *>(&raw.sun);
+  raw.ep.sun.sun_family            = AF_UNIX;
+  memset(raw.ep.sun.sun_path, 'z', TS_UNIX_SIZE);
+  auto const       *sa = &raw.ep.sa;
   std::string const full(TS_UNIX_SIZE, 'z');
 
   char dst[256];
@@ -388,9 +388,10 @@ TEST_CASE("ink_inet_unix full sun_path", "[libts][inet][unix]")
   memset(small, 'x', sizeof(small));
   REQUIRE(ats_ip_ntop(sa, small, INET6_ADDRSTRLEN) == small);
   CHECK(small[INET6_ADDRSTRLEN - 1] == '\0');
-  CHECK(strlen(small) == INET6_ADDRSTRLEN - 1);
+  CHECK(strnlen(small, sizeof(small)) == INET6_ADDRSTRLEN - 1);
 
+  // An IpEndpoint reaches the ATS sockaddr formatter, while a bare sockaddr pointer gets the libswoc one, which has no AF_UNIX.
   swoc::LocalBufferWriter<1024> w;
-  w.print("{}", sa);
+  w.print("{}", raw.ep);
   CHECK(w.view() == full);
 }
