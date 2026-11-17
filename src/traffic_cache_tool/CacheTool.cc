@@ -746,7 +746,8 @@ Span::loadDevice()
       if (n >= BUFF_SIZE) {
         ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
         _base                    = round_up(offset);
-        // A span cannot hold more stripes than it has stripe blocks, which is also how traffic_server sizes the header.
+        // traffic_server sizes the header for one stripe per stripe block of the span, and never fewer than one,
+        // so a larger count cannot be real.
         uint64_t const max_stripes = _geometry.totalsz / CacheStripeBlocks::SCALE + 1;
         // See if it looks valid
         if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free &&
@@ -759,7 +760,7 @@ Span::loadDevice()
           } else {
             ssize_t n = pread(fd, _header.get(), span_hdr_size, offset);
             if (n < span_hdr_size) {
-              return Errata(make_errno_code(), "Failed to read the span header from {}", _path);
+              return Errata(n < 0 ? make_errno_code() : make_errno_code(EIO), "Failed to read the span header from {}", _path);
             }
           }
           _len = _header->num_blocks;
