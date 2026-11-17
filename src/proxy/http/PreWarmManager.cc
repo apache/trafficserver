@@ -681,7 +681,7 @@ PreWarmQueue::state_init(int event, void * /* data ATS_UNUSED */)
   case EVENT_IMMEDIATE: {
     _reconfigure();
 
-    _cop = ActivityCop<PreWarmSM>(this->mutex, &_cop_list, 1);
+    _cop.init(this->mutex, &_cop_list, 1);
     _cop.start();
 
     // schedule tick event

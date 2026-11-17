@@ -124,9 +124,8 @@ QUICPacketHandlerIn::getNetProcessor() const
 NetAccept *
 QUICPacketHandlerIn::clone() const
 {
-  NetAccept *na;
-  na  = new QUICPacketHandlerIn(opt, this->_ctable, this->_quiche_config);
-  *na = *this;
+  NetAccept *na = new QUICPacketHandlerIn(opt, this->_ctable, this->_quiche_config);
+  na->clone_from(*this);
   return na;
 }
 

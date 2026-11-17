@@ -1554,7 +1554,7 @@ Http2ConnectionState::init(Http2CommonSession *ssn)
     }
   }
 
-  _cop = ActivityCop<Http2Stream>(this->mutex, &stream_list, 1);
+  _cop.init(this->mutex, &stream_list, 1);
   _cop.start();
 }
 

@@ -219,9 +219,10 @@ private:
   state and handler methods, and typically replace @c handler as they
   move between states.
 
-  @note A copy shares the original's @c mutex, and its @c link refers
-        to the original's list neighbors even though the copy is in no
-        list.
+  @note A Continuation is not copyable: a copy would share the
+        original's @c mutex and its @c link would refer to the
+        original's list neighbors. A class that clones itself copies
+        the dispatch state with @c copy_dispatch_state.
 
   @par Lifetime
   A handler MUST be installed before the Continuation is scheduled or
@@ -241,6 +242,9 @@ private:
 class Continuation : private force_VFPT_to_top
 {
 public:
+  Continuation(const Continuation &)            = delete;
+  Continuation &operator=(const Continuation &) = delete;
+
   /**
     The member function that @c handleEvent invokes for each event
     dispatched to this Continuation, or null.
@@ -490,6 +494,16 @@ protected:
     be written concurrently with this call.
   */
   explicit Continuation(Ptr<ProxyMutex> &amutex);
+
+  /**
+    Copies the handler, mutex, control flags and thread affinity of
+    @p other. The list link is not copied, so this Continuation stays in
+    no list.
+
+    @par Thread Safety
+    Not thread-safe; see @c handler and @c mutex.
+  */
+  void copy_dispatch_state(const Continuation &other);
 };
 
 /**
@@ -563,4 +577,16 @@ inline Continuation::Continuation(ProxyMutex *amutex) : mutex(amutex)
 {
   // Pick up the control flags from the creating thread
   this->control_flags.set_flags(get_cont_flags().get_flags());
+}
+
+inline void
+Continuation::copy_dispatch_state(const Continuation &other)
+{
+  handler = other.handler;
+#ifdef DEBUG
+  handler_name = other.handler_name;
+#endif
+  mutex           = other.mutex;
+  control_flags   = other.control_flags;
+  thread_affinity = other.thread_affinity;
 }

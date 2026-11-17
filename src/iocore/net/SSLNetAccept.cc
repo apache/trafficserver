@@ -34,8 +34,7 @@ SSLNetAccept::getNetProcessor() const
 NetAccept *
 SSLNetAccept::clone() const
 {
-  NetAccept *na;
-  na  = new SSLNetAccept(opt);
-  *na = *this;
+  NetAccept *na = new SSLNetAccept(opt);
+  na->clone_from(*this);
   return na;
 }

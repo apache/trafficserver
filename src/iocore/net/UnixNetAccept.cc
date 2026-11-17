@@ -1039,7 +1039,10 @@ NetAccept::release_dedicated()
 //
 //
 
-NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nullptr), opt(_opt) {}
+NetAccept::NetAccept(const NetProcessor::AcceptOptions &_opt) : Continuation(nullptr)
+{
+  opt = _opt;
+}
 
 //
 // Stop listening.  When the next poll takes place, an error will result.
@@ -1055,10 +1058,16 @@ NetAccept::cancel()
 NetAccept *
 NetAccept::clone() const
 {
-  NetAccept *na;
-  na  = new NetAccept(opt);
-  *na = *this;
+  NetAccept *na = new NetAccept(opt);
+  na->clone_from(*this);
   return na;
+}
+
+void
+NetAccept::clone_from(const NetAccept &other)
+{
+  copy_dispatch_state(other);
+  static_cast<NetAcceptState &>(*this) = other;
 }
 
 NetProcessor *

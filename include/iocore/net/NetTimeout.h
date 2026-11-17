@@ -80,7 +80,8 @@ template <class T, class List = DLL<T>> class ActivityCop : public Continuation
 {
 public:
   ActivityCop(){};
-  ActivityCop(Ptr<ProxyMutex> &m, List *l, int f);
+
+  void init(Ptr<ProxyMutex> &m, List *l, int f);
 
   void start();
   void stop();
@@ -217,8 +218,12 @@ NetTimeout::update_inactivity()
 // ActivityCop
 //
 template <class T, class List>
-inline ActivityCop<T, List>::ActivityCop(Ptr<ProxyMutex> &m, List *l, int f) : Continuation(m.get()), _list(l), _freq(f)
+inline void
+ActivityCop<T, List>::init(Ptr<ProxyMutex> &m, List *l, int f)
 {
+  mutex = m;
+  _list = l;
+  _freq = f;
   SET_HANDLER((&ActivityCop<T, List>::check_activity));
 }
 

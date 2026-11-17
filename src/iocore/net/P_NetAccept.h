@@ -119,7 +119,8 @@ private:
 // NetAccept
 // Handles accepting connections.
 //
-struct NetAccept : public Continuation {
+/** The data members of @c NetAccept, in a base of their own so that @c NetAccept::clone_from() copies all of them. */
+struct NetAcceptState {
   ink_hrtime             period = 0;
   Server                 server;
   int                    ifd = NO_FD;
@@ -168,9 +169,6 @@ struct NetAccept : public Continuation {
   */
   std::shared_ptr<std::atomic<int>> dedicated_release;
 
-  /** Called once by each of the two parties; deletes this acceptor on the second call. Do not touch the acceptor afterwards. */
-  void release_dedicated();
-
   /** True when this acceptor opened a listening socket of its own (@c proxy.config.exec_thread.listen), as opposed to
       sharing the original's. Cancelling the shared action closes only the original's socket, so these must be
       closed by their owning thread.
@@ -187,6 +185,11 @@ struct NetAccept : public Continuation {
 
   /** Event thread whose NetHandler mutex serializes this acceptor, set alongside @c uses_fast_accept. */
   EThread *accept_thread = nullptr;
+};
+
+struct NetAccept : public Continuation, public NetAcceptState {
+  /** Called once by each of the two parties; deletes this acceptor on the second call. Do not touch the acceptor afterwards. */
+  void release_dedicated();
 
   virtual NetProcessor *getNetProcessor() const;
 
@@ -205,6 +208,9 @@ struct NetAccept : public Continuation {
   */
   void               retire();
   virtual NetAccept *clone() const;
+
+  /** Copies @p other into this acceptor, except for its list link. */
+  void clone_from(const NetAccept &other);
 
   /** Listen without blocking.
    *
