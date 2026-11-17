@@ -70,8 +70,15 @@ The cripts header and URL objects reach the request through calls such as `TSHtt
 only check that `txnp` is a live `HttpSM` and return one of its `t_state.hdr_info` headers. `cripts_test::Txn`
 provides exactly that, without running the state machine:
 - an `HttpSM` marked alive, with the HTTP configuration attached;
-- a client request parsed by the real parser, and optionally a server response (`set_server_response()`);
+- a client request parsed by the real parser;
 - a `cripts::Context` for that transaction.
+
+`headers()` gives the core's headers of the transaction. A test that needs another header, such as the client response
+at SEND_RESPONSE, parses it in with `parse_request()` or `parse_response()`:
+
+```cpp
+cripts_test::parse_response(txn.headers().client_response, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+```
 
 A test case declares `context` the same way a cript has it, so the cripts macros work unchanged:
 
@@ -91,6 +98,7 @@ TEST_CASE("Header: add a field", "[cripts][Headers]")
 When checking writes, check what the core holds rather than what cripts reads back:
 - `client_request_field()`, `client_request_field_count()` and `client_url()` read the core's `HTTPHdr` and `URL`
   directly, so a change that only lives in a cripts cache still fails the test.
+- `headers()` reads the other headers the same way, such as `headers().server_request.value_get()`.
 - `sm()` gives access to the rest of the transaction state.
 - `cripts_test::str()` turns a cripts component into a `std::string`. Catch2 needs this to print values, because the
   components only convert through a non-const `GetSV()`.

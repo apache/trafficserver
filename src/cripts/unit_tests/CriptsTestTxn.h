@@ -65,6 +65,18 @@ parse_into(HTTPHdr &hdr, HTTPType type, std::string_view msg)
   http_parser_clear(&parser);
 }
 
+inline void
+parse_request(HTTPHdr &hdr, std::string_view msg)
+{
+  parse_into(hdr, HTTPType::REQUEST, msg);
+}
+
+inline void
+parse_response(HTTPHdr &hdr, std::string_view msg)
+{
+  parse_into(hdr, HTTPType::RESPONSE, msg);
+}
+
 // A transaction that is just alive enough for the TSHttpTxn*Get() header accessors, which is all the
 // cripts header and URL objects need. Nothing here runs the state machine.
 class Txn
@@ -79,7 +91,7 @@ public:
     _sm.magic                     = HttpSmMagic_t::ALIVE;
     _sm.t_state.http_config_param = HttpConfig::acquire();
     _sm.t_state.txn_conf          = &_sm.t_state.http_config_param->oride;
-    parse_into(_sm.t_state.hdr_info.client_request, HTTPType::REQUEST, client_request);
+    parse_request(_sm.t_state.hdr_info.client_request, client_request);
 
     _context = std::make_unique<cripts::Context>(reinterpret_cast<TSHttpTxn>(&_sm), nullptr, nullptr, _instance);
   }
@@ -98,10 +110,11 @@ public:
     _sm.t_state.hdr_info.server_response.destroy();
   }
 
+  // Deprecated: use parse_response(headers().server_response, msg).
   void
   set_server_response(std::string_view msg)
   {
-    parse_into(_sm.t_state.hdr_info.server_response, HTTPType::RESPONSE, msg);
+    parse_response(_sm.t_state.hdr_info.server_response, msg);
   }
 
   // Raw MIME value of the client request, bypassing cripts, to check what cripts actually wrote.
@@ -132,6 +145,13 @@ public:
   client_url()
   {
     return *_sm.t_state.hdr_info.client_request.url_get();
+  }
+
+  // The core's headers of this transaction, for a test to parse into and to check what cripts wrote.
+  HttpTransact::HeaderInfo &
+  headers()
+  {
+    return _sm.t_state.hdr_info;
   }
 
   cripts::Context *
