@@ -389,6 +389,7 @@ TEST_CASE("ink_inet_unix full sun_path", "[libts][inet][unix]")
   REQUIRE(ats_ip_ntop(sa, small, INET6_ADDRSTRLEN) == small);
   CHECK(small[INET6_ADDRSTRLEN - 1] == '\0');
   CHECK(strnlen(small, sizeof(small)) == INET6_ADDRSTRLEN - 1);
+  CHECK(small[INET6_ADDRSTRLEN] == 'x');
 
   // An IpEndpoint reaches the ATS sockaddr formatter, while a bare sockaddr pointer gets the libswoc one, which has no AF_UNIX.
   swoc::LocalBufferWriter<1024> w;
