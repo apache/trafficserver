@@ -195,9 +195,11 @@ public:
       size_t index  = DenseThreadId::self() % SLOT_SIZE;
       Slot  &slot   = _mutex.readers[index];
       bool   expect = false;
-      if (slot.mu.compare_exchange_strong(expect, true, std::memory_order_relaxed)) {
-        // recheck
-        if (_mutex.read_bias.load(std::memory_order_acquire)) {
+      // The slot claim and the read_bias recheck pair with the store and slot scan in _revoke(). Both sides store one flag
+      // and then load the other's, which needs seq_cst on all four operations: with weaker ordering, the reader can see
+      // the old read_bias while the writer sees the slot still free, and both enter the critical section.
+      if (slot.mu.compare_exchange_strong(expect, true, std::memory_order_seq_cst, std::memory_order_relaxed)) {
+        if (_mutex.read_bias.load(std::memory_order_seq_cst)) {
           token = index + 1;
           return;
         } else {
@@ -227,9 +229,9 @@ public:
       Slot  &slot   = _mutex.readers[index];
       bool   expect = false;
 
-      if (slot.mu.compare_exchange_weak(expect, true, std::memory_order_release, std::memory_order_relaxed)) {
-        // recheck
-        if (_mutex.read_bias.load(std::memory_order_acquire)) {
+      // See lock_shared() for why these are seq_cst.
+      if (slot.mu.compare_exchange_weak(expect, true, std::memory_order_seq_cst, std::memory_order_relaxed)) {
+        if (_mutex.read_bias.load(std::memory_order_seq_cst)) {
           token = index + 1;
           return true;
         } else {
@@ -260,8 +262,9 @@ public:
       return;
     }
 
+    // Release so the reads in the critical section complete before _revoke() sees the slot free.
     Slot &slot = _mutex.readers[token - 1];
-    slot.mu.store(false, std::memory_order_relaxed);
+    slot.mu.store(false, std::memory_order_release);
   }
 
 private:
@@ -293,10 +296,11 @@ private:
       return;
     }
 
-    _mutex.read_bias.store(false, std::memory_order_release);
+    // seq_cst pairs with the reader fast path in lock_shared(); the slot loads also acquire the releasing unlock_shared().
+    _mutex.read_bias.store(false, std::memory_order_seq_cst);
     time_point start = _now();
     for (size_t i = 0; i < SLOT_SIZE; ++i) {
-      for (int j = 0; _mutex.readers[i].mu.load(std::memory_order_relaxed); ++j) {
+      for (int j = 0; _mutex.readers[i].mu.load(std::memory_order_seq_cst); ++j) {
         std::this_thread::sleep_for(std::chrono::nanoseconds(1 << j));
       }
     }
