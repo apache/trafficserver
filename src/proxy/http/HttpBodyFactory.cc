@@ -86,13 +86,17 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
 
   *resulting_buffer_length = 0;
 
+  // Read once: url is filled in only when logging, and a reload can change
+  // enable_logging before the log calls below.
+  bool const should_log = enable_logging.load(std::memory_order_relaxed);
+
   ink_strlcpy(content_language_out_buf, "en", content_language_buf_size);
   ink_strlcpy(content_type_out_buf, "text/html", content_type_buf_size);
 
   ///////////////////////////////////////////////////////////////////
   // if logging turned on, buffer up the URL string for simplicity //
   ///////////////////////////////////////////////////////////////////
-  if (enable_logging) {
+  if (should_log) {
     url[0] = '\0';
     URL *u = context->hdr_info.client_request.url_get();
 
@@ -113,7 +117,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   // if suppressing this response, return NULL //
   ///////////////////////////////////////////////
   if (is_response_suppressed(context)) {
-    if (enable_logging) {
+    if (should_log) {
       Log::error("BODY_FACTORY: suppressing '%s' response for url '%s'", type, url);
     }
     return nullptr;
@@ -168,7 +172,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
   // enforce the max buffer length //
   ///////////////////////////////////
   if (buffer && (*resulting_buffer_length > max_buffer_length)) {
-    if (enable_logging) {
+    if (should_log) {
       Log::error(("BODY_FACTORY: template '%s/%s' consumed %" PRId64 " bytes, "
                   "exceeding %" PRId64 " byte limit, using internal default"),
                  set, type, *resulting_buffer_length, max_buffer_length);
@@ -190,7 +194,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
       }
     }
 
-    if (enable_logging) {
+    if (should_log) {
       if (found_requested_template) { // got exact template
         Log::error(("BODY_FACTORY: using custom template "
                     "'%s/%s' for url '%s' (language '%s', charset '%s')"),
@@ -202,7 +206,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
       }
     }
   } else { // no template
-    if (enable_logging) {
+    if (should_log) {
       Log::error(("BODY_FACTORY: can't find templates '%s' or '%s' for url `%s'"), type, "default", url);
     }
   }
