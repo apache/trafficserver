@@ -149,7 +149,7 @@ percent_decode(const char *uri, int uri_ct, char *decoded_uri, bool lower)
       if (uri_ct < i + 2) {
         goto decode_failure;
       }
-      char encodedVal[2] = {0};
+      char encodedVal[3] = {0};
       int  j;
       for (j = 0; j < 2; j++) {
         if (isxdigit(uri[i + j + 1])) {
