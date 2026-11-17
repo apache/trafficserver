@@ -97,7 +97,10 @@ if(BUILD_TESTING)
   # The cases run against the real plugin API and header heaps, without a running server. They are loaded
   # like a cript: a module resolving the TS API against an executable that carries the core.
   # Only the core's headers: linking its libraries would give the module private copies of the core's globals.
-  add_library(test_cripts_cases MODULE unit_tests/test_CacheGroup.cc unit_tests/test_Headers.cc unit_tests/test_Urls.cc)
+  add_library(
+    test_cripts_cases MODULE unit_tests/test_CacheGroup.cc unit_tests/test_Files.cc unit_tests/test_Headers.cc
+                             unit_tests/test_Urls.cc
+  )
   target_include_directories(test_cripts_cases PRIVATE ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include)
   target_link_libraries(test_cripts_cases PRIVATE Catch2::Catch2 ts::cripts)
   set_target_properties(

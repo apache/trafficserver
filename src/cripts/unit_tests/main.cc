@@ -26,6 +26,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/Diags.h"
+#include "tscore/Layout.h"
 
 #include <catch2/catch_session.hpp>
 
@@ -43,6 +44,7 @@ main(int argc, char *argv[])
   Thread *main_thread   = new EThread();
   main_thread->set_specific();
   DiagsPtr::set(new Diags("test_cripts", "" /* tags */, "" /* actions */, new BaseLogFile("stderr")));
+  Layout::create();
   http_init();
   api_init();
 
