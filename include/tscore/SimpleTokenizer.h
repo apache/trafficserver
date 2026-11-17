@@ -245,18 +245,19 @@ private:
         // requested is larger than 1, remove them if the
         // CONSIDER_NULL_FIELDS flag is not set
         //
+        // A null field is empty, so the trims must stop at the start of the token rather than walk off the front of the data.
+        size_t const first = next - _data;
+
         if (!(_mode & CONSIDER_NULL_FIELDS)) {
-          while (_data[--end] == delimiter) {
-            // do nothing
+          while (end > first && _data[end - 1] == delimiter) {
+            --end;
           }
-          ++end;
         }
 
         if (!(_mode & KEEP_WHITESPACE_RIGHT)) {
-          while (isspace(_data[--end])) {
-            // do nothing
+          while (end > first && isspace(_data[end - 1])) {
+            --end;
           }
-          ++end;
         }
 
         if (!countOnly) {
