@@ -1276,6 +1276,7 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[stale-response] Server session pool must be set to 'global'");
     assert(false);
   }
+  TSfree(value);
 
   // create the default ConfigInfo
   ConfigInfo *plugin_config = parse_args(argc, argv);
