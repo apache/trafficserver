@@ -374,16 +374,17 @@ plugin_init(bool validateOnly)
 
     // not comment or blank, so rip line into tokens
     while (true) {
-      if (argc >= MAX_PLUGIN_ARGS) {
-        Warning("Exceeded max number of args (%d) for plugin: [%s]", MAX_PLUGIN_ARGS, argc > 0 ? argv[0] : "???");
-        break;
-      }
-
       while (*p && ParseRules::is_wslfcr(*p)) {
         ++p;
       }
       if ((*p == '\0') || (*p == '#')) {
         break; // EOL
+      }
+
+      // Check the limit only when another token follows, so the newline ending a full line does not trip it.
+      if (argc >= MAX_PLUGIN_ARGS) {
+        Warning("Exceeded max number of args (%d) for plugin: [%s]", MAX_PLUGIN_ARGS, argc > 0 ? argv[0] : "???");
+        break;
       }
 
       if (*p == '\"') {

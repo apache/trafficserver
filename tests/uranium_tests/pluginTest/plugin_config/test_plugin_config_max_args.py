@@ -23,9 +23,9 @@ MAX_PLUGIN_ARGS = 64
 def test_plugin_config_line_with_max_args(ats: ATS, curl: Curl) -> None:
     """A plugin.config line with the maximum number of tokens passes every one to the plugin.
 
-    The last token is the only one that enables an xdebug feature, so the X-Cache header in the
-    response shows that it reached the plugin, and the filler tokens before it make getopt_long()
-    walk the whole argument vector up to argc.
+    The filler tokens make the line exactly that long, which puts the last token in the final slot
+    of the argument vector. It is the only token that enables an xdebug feature, so the X-Cache
+    header in the response shows that it reached the plugin, and nothing may be reported dropped.
 
     :param ats: Traffic Server instance configured or queried by this step.
     :param curl: Transport-aware curl command runner.
@@ -39,3 +39,4 @@ def test_plugin_config_line_with_max_args(ats: ATS, curl: Curl) -> None:
     result = curl.run_for(ats, f"--verbose --output /dev/null --header 'X-Debug: x-cache' '{url}'")
     assert result.returncode == 0, result.output
     assert "< X-Cache: miss" in result.output, result.output
+    assert "Exceeded max number of args" not in ats.diags_log.read_text(errors="replace")
