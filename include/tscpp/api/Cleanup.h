@@ -145,8 +145,10 @@ public:
       return;
     }
 
-    TSReleaseAssert(TSUserArgIndexReserve(TS_USER_ARGS_TXN, arg_name, arg_desc, &md.txnArgIndex) == TS_SUCCESS);
-    TSReleaseAssert(md.txnCloseContp = TSContCreate(_deleteAuxData, nullptr));
+    TSReturnCode reserved = TSUserArgIndexReserve(TS_USER_ARGS_TXN, arg_name, arg_desc, &md.txnArgIndex);
+    TSReleaseAssert(reserved == TS_SUCCESS);
+    md.txnCloseContp = TSContCreate(_deleteAuxData, nullptr);
+    TSReleaseAssert(md.txnCloseContp);
   }
 
   // Get a reference to the auxiliary data for a transaction.

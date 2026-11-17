@@ -1170,7 +1170,7 @@ Log::preproc_thread_main(void *args)
     if (TSSystemState::is_event_system_shut_down()) {
       // Signal flush thread to drain data we just pushed.
       Log::flush_notify->signal();
-      return nullptr;
+      break;
     }
 
     // wait for more work; a spurious wake-up is ok since we'll just
@@ -1180,7 +1180,6 @@ Log::preproc_thread_main(void *args)
     Log::preproc_notify[idx].wait();
   }
 
-  /* NOTREACHED */
   Log::preproc_notify[idx].unlock();
   return nullptr;
 }
@@ -1289,13 +1288,12 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     // again.
     //
     if (TSSystemState::is_event_system_shut_down()) {
-      return nullptr;
+      break;
     }
 
     Log::flush_notify->wait();
   }
 
-  /* NOTREACHED */
   Log::flush_notify->unlock();
   return nullptr;
 }

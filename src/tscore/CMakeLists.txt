@@ -179,6 +179,7 @@ if(BUILD_TESTING)
     unit_tests/test_arena.cc
     unit_tests/test_ink_base64.cc
     unit_tests/test_ink_ascii_tolower.cc
+    unit_tests/test_ink_file.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
     unit_tests/test_ink_string.cc

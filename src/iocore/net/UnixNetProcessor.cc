@@ -295,9 +295,6 @@ UnixNetProcessor::init_socks()
       Warning("We can not have accept_enabled and socks_needed turned off"
               " disabling Socks accept\n");
       socks_conf_stuff->accept_enabled = 0;
-    } else {
-      // this is sslNetprocessor
-      socks_conf_stuff = netProcessor.socks_conf_stuff;
     }
   }
 }

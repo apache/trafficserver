@@ -960,7 +960,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
     // We must be holding the lock already to do later do_io_read's
     SCOPED_MUTEX_LOCK(lock, vc->mutex, e->ethread);
     vc->handleEvent(EVENT_NONE, nullptr);
-    vc = nullptr;
   } while (count < additional_accepts);
 
 Ldone:

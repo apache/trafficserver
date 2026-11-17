@@ -128,7 +128,7 @@ ink_file_fd_writestring(int fd, const char *buf)
 {
   int len, i = 0;
 
-  if (buf && (len = strlen(buf)) > 0 && (i = static_cast<int>(write(fd, buf, static_cast<size_t>(len))) != len)) {
+  if (buf && (len = strlen(buf)) > 0 && (i = static_cast<int>(write(fd, buf, static_cast<size_t>(len)))) != len) {
     i = -1;
   }
 

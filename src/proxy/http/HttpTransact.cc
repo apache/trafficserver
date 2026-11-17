@@ -9280,10 +9280,6 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
     Metrics::Counter::increment(http_rsb.ua_counts_errors_aborts);
     Metrics::Counter::increment(http_rsb.ua_msecs_errors_aborts, total_msec);
     break;
-  case ClientTransactionResult_t::ERROR_POSSIBLE_ABORT:
-    Metrics::Counter::increment(http_rsb.ua_counts_errors_possible_aborts);
-    Metrics::Counter::increment(http_rsb.ua_msecs_errors_possible_aborts, total_msec);
-    break;
   case ClientTransactionResult_t::ERROR_CONNECT_FAIL:
     Metrics::Counter::increment(http_rsb.ua_counts_errors_connect_failed);
     Metrics::Counter::increment(http_rsb.ua_msecs_errors_connect_failed, total_msec);

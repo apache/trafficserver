@@ -47,10 +47,6 @@ get_hook_name(TSHttpHookID hook)
     return "REMAP_PSEUDO_HOOK";
   }
 
-  if (hook == TS_HTTP_LAST_HOOK) {
-    return "UNKNOWN_HOOK";
-  }
-
   if (const char *name = TSHttpHookNameLookup(hook); name != nullptr) {
     return name;
   }
