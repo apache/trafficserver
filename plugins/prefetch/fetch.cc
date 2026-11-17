@@ -697,8 +697,10 @@ BgFetch::handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
         PrefetchDebug("client IPv6 = %s", buf);
         break;
       case AF_UNIX:
-        char path[TS_UNIX_SIZE];
+        // sun_path need not be terminated when the path fills it.
+        char path[TS_UNIX_SIZE + 1];
         strncpy(path, ats_unix_cast(sockaddress)->sun_path, TS_UNIX_SIZE);
+        path[TS_UNIX_SIZE] = '\0';
         PrefetchDebug("client UDS = %s", path);
         break;
       default:
