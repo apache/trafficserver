@@ -1421,6 +1421,11 @@ try {
   }
   if (auto data = arguments.get("aos")) {
     cache_config_min_average_object_size = std::stoi(data.value());
+    // The stripe layout divides by the average object size.
+    if (cache_config_min_average_object_size <= 0) {
+      std::cerr << "--aos must be a positive number of bytes, not " << data.value() << std::endl;
+      return 1;
+    }
   }
   if (auto data = arguments.get("device")) {
     inputFile = data.value();
