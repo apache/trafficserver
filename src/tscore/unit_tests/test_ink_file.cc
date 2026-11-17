@@ -38,6 +38,20 @@ TEST_CASE("ink_file_fd_writestring returns the number of bytes written", "[ink_f
 
   CHECK(ink_file_fd_writestring(fds[1], text) == len);
 
+  close(fds[0]);
+  close(fds[1]);
+}
+
+TEST_CASE("ink_file_fd_writestring writes the whole string", "[ink_file]")
+{
+  int fds[2];
+  REQUIRE(pipe(fds) == 0);
+
+  char const *text = "/var/cache 1048576\n";
+  int const   len  = static_cast<int>(strlen(text));
+
+  REQUIRE(ink_file_fd_writestring(fds[1], text) != -1);
+
   char got[64] = {};
   REQUIRE(read(fds[0], got, sizeof(got) - 1) == len);
   CHECK(strcmp(got, text) == 0);
