@@ -158,37 +158,34 @@ ts_lua_client_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TS
       n = 2;
     }
 
-    if (towrite == 0 && empty_input == 0) {
-      break;
-    }
-
-    // additional condition for client
+    // Unlike the transform handler, the client hook is never called with
+    // an empty chunk. With no input buffer towrite is always 0, so the
+    // code below runs only when there is input.
     if (towrite == 0) {
       break;
     }
+    TSAssert(empty_input == 0);
 
-    if (empty_input == 0) {
-      blk   = TSIOBufferReaderStart(transform_ctx->reserved.reader);
-      start = TSIOBufferBlockReadStart(blk, transform_ctx->reserved.reader, &blk_len);
+    blk   = TSIOBufferReaderStart(transform_ctx->reserved.reader);
+    start = TSIOBufferBlockReadStart(blk, transform_ctx->reserved.reader, &blk_len);
 
-      lua_pushlightuserdata(L, transform_ctx);
-      lua_rawget(L, LUA_GLOBALSINDEX); /* push function */
+    lua_pushlightuserdata(L, transform_ctx);
+    lua_rawget(L, LUA_GLOBALSINDEX); /* push function */
 
-      if (towrite > blk_len) {
-        lua_pushlstring(L, start, (size_t)blk_len);
-        towrite -= blk_len;
-        TSIOBufferReaderConsume(transform_ctx->reserved.reader, blk_len);
-      } else {
-        lua_pushlstring(L, start, (size_t)towrite);
-        TSIOBufferReaderConsume(transform_ctx->reserved.reader, towrite);
-        towrite = 0;
-      }
+    if (towrite > blk_len) {
+      lua_pushlstring(L, start, (size_t)blk_len);
+      towrite -= blk_len;
+      TSIOBufferReaderConsume(transform_ctx->reserved.reader, blk_len);
+    } else {
+      lua_pushlstring(L, start, (size_t)towrite);
+      TSIOBufferReaderConsume(transform_ctx->reserved.reader, towrite);
+      towrite = 0;
+    }
 
-      if (!towrite && eos) {
-        lua_pushinteger(L, 1); /* second param, data finished */
-      } else {
-        lua_pushinteger(L, 0); /* second param, data not finish */
-      }
+    if (!towrite && eos) {
+      lua_pushinteger(L, 1); /* second param, data finished */
+    } else {
+      lua_pushinteger(L, 0); /* second param, data not finish */
     }
 
   launch:
