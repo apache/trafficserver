@@ -316,8 +316,8 @@ public:
   EThread *assign_affinity_by_type(Continuation *cont, EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
-  /// No. of dedicated threads. Readers walk all_dthreads without the spawn lock, so
-  /// the count is published only after the element it covers.
+  /// Count of initialized entries in all_dthreads. Readers walk the array without the
+  /// spawn lock, so the release store also publishes the EThread each entry points to.
   std::atomic<int> n_dthreads{0};
   int              thread_data_used = 0;
 

@@ -58,7 +58,9 @@ private:
 } // namespace
 
 // The stats sync task walks the dedicated threads on its own thread while
-// accept and logging threads are still being spawned during startup.
+// accept and logging threads are still being spawned during startup. On x86
+// the null-entry check rarely trips even when the count is published without
+// ordering; ThreadSanitizer is what reports that race.
 TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocore]")
 {
   constexpr int SPAWNS = 64;
@@ -84,7 +86,7 @@ TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocor
   is_spawning.store(false, std::memory_order_release);
   walker.join();
 
-  // The continuations must outlive the threads that run them.
+  // Wait for every handler to run before conts is destroyed.
   auto const deadline = std::chrono::steady_clock::now() + inkevent_test::DEFAULT_TIMEOUT;
   while (started.load(std::memory_order_acquire) < SPAWNS && std::chrono::steady_clock::now() < deadline) {
     std::this_thread::yield();
