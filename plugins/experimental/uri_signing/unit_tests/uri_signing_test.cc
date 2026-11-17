@@ -1017,9 +1017,6 @@ TEST_CASE("8", "[TestsWithConfig]")
   fprintf(stderr, "\n");
 }
 
-// Defined in normalize.cc, which this test compiles in.
-int percent_decode(const char *uri, int uri_ct, char *decoded_uri, bool lower);
-
 TEST_CASE("9", "[PercentDecodeTest]")
 {
   INFO("TEST 9, Percent decoding reads only the component it is given");
