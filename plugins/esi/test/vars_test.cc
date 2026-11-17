@@ -423,7 +423,8 @@ TEST_CASE("esi vars test")
     esi_vars.populate(HttpHeader("cookie", -1, "x=y", -1));
 
     REQUIRE(esi_vars.getValue("HTTP_HEADER{hdr1}") == "hval1");
-    REQUIRE(esi_vars.getValue("HTTP_HEADER{hdr2}") == "");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{HDR1}") == "hval1");
+    REQUIRE(esi_vars.getValue("HTTP_HEADER{hdr2}") == "hval2");
     REQUIRE(esi_vars.getValue("HTTP_HEADER{Hdr2}") == "hval2");
     REQUIRE(esi_vars.getValue("HTTP_HEADER{non-existent}") == "");
     REQUIRE(esi_vars.getValue("HTTP_HEADER{@Intenal-hdr1}") == "internal-hval1");

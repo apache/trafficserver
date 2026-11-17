@@ -120,7 +120,10 @@ Variables::populate(const HttpHeader &header)
         }
       }
     }
-    _insert(_dict_data[HTTP_HEADER], string(header.name, name_len), string(header.value, value_len));
+    // Field names are case-insensitive (RFC 9110 section 5.1), and HTTP/2 and HTTP/3 always send them in lowercase, so
+    // the dictionary is keyed by the uppercased name. getValue() uppercases the requested name to match.
+    string name_key(header.name, name_len);
+    _insert(_dict_data[HTTP_HEADER], _toUpperCase(name_key), string(header.value, value_len));
   }
 }
 
@@ -253,6 +256,9 @@ Variables::getValue(const string &name) const
 
   // change variable name to use only the attribute field
   search_key.assign(attr, attr_len);
+  if (dict_index == HTTP_HEADER) {
+    _toUpperCase(search_key);
+  }
 
   iter = _dict_data[dict_index].find(search_key);
 

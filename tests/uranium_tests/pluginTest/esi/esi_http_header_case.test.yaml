@@ -1,0 +1,97 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "ESI HTTP_HEADER variables match request header names case-insensitively"
+  requires:
+    plugins: ["esi.so"]
+  server:
+    name: "esi-header-case-origin"
+  client:
+    name: "esi-header-case-client"
+  ats:
+    name: "esi-header-case-ts"
+    process_config: {enable_tls: true, enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|plugin_esi"
+    plugin_config:
+      - "esi.so"
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+# The template names the same header in three casings. Each must resolve no
+# matter how the client spelled the field name, since HTTP field names are
+# case-insensitive. HTTP/2 clients always send them in lowercase.
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /esi_vars_h1
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Sec-GPC, "1"]
+              - [uuid, h1]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [X-Esi, "1"]
+              - [Content-Type, text/html]
+              - [Content-Length, "142"]
+          content:
+            data: '<html><body><esi:vars>mixed=[$(HTTP_HEADER{Sec-GPC})] lower=[$(HTTP_HEADER{sec-gpc})] upper=[$(HTTP_HEADER{SEC-GPC})]</esi:vars></body></html>'
+        proxy-response:
+          status: 200
+          content:
+            verify: {as: equal}
+            data: '<html><body>mixed=[1] lower=[1] upper=[1]</body></html>'
+
+  - protocol:
+      stack: http2
+      tls: {sni: www.example.com}
+    transactions:
+      - client-request:
+          headers:
+            fields:
+              - [":method", GET]
+              - [":scheme", https]
+              - [":authority", www.example.com]
+              - [":path", /esi_vars_h2]
+              - [sec-gpc, "1"]
+              - [uuid, h2]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [X-Esi, "1"]
+              - [Content-Type, text/html]
+              - [Content-Length, "142"]
+          content:
+            data: '<html><body><esi:vars>mixed=[$(HTTP_HEADER{Sec-GPC})] lower=[$(HTTP_HEADER{sec-gpc})] upper=[$(HTTP_HEADER{SEC-GPC})]</esi:vars></body></html>'
+        proxy-response:
+          status: 200
+          content:
+            verify: {as: equal}
+            data: '<html><body>mixed=[1] lower=[1] upper=[1]</body></html>'
