@@ -1,0 +1,7 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    rm-destination QUERY "utm_source,utm_medium"
+    rm-destination QUERY "id,page" [I]
+    sort-destination QUERY
+
+cond %{SEND_REQUEST_HDR_HOOK} [AND]
+    sort-destination QUERY

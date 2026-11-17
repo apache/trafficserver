@@ -18,9 +18,9 @@
 from __future__ import annotations
 
 import hrw4u.sema_nodes as ir
+import hrw4u.tables as tables
 from hrw4u.common import HeaderOperations, SystemDefaults
 from hrw4u.states import CondState
-from hrw4u.types import MagicStrings
 
 
 class ConfEmitter:
@@ -162,7 +162,7 @@ class ConfEmitter:
         line = stmt.entry.target
         if args:
             line = f"{line} {' '.join(args)}"
-        if stmt.key == MagicStrings.KEEP_QUERY:
+        if stmt.key in tables.INVERTED_STATEMENT_FUNCTIONS:
             return f"{line} [I]"
         return line
 

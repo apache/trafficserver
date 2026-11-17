@@ -78,3 +78,22 @@ def test_zero_arg_operator_call_form_compiles() -> None:
     output, errors = _compile("REMAP {\n    no-op();\n}\n")
     assert not errors.has_errors()
     assert "no-op" in "\n".join(output)
+
+
+@pytest.mark.ops
+@pytest.mark.parametrize(
+    "old,new,expected",
+    [
+        ('remove_query("a,b")', 'inbound.url.query.remove', 'rm-destination QUERY "a,b"'),
+        ('keep_query("a,b")', 'inbound.url.query.keep', 'rm-destination QUERY "a,b" [I]'),
+    ],
+)
+def test_deprecated_query_functions_warn(old: str, new: str, expected: str) -> None:
+    """Deprecated query functions still compile, with a warning naming the replacement."""
+    output, errors = _compile(f"REMAP {{\n    {old};\n}}\n")
+
+    assert not errors.has_errors(), errors.get_error_summary()
+    assert expected in "\n".join(output)
+    summary = errors.get_error_summary()
+    assert "deprecated" in summary
+    assert new in summary
