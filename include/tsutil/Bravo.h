@@ -41,6 +41,7 @@
 #include "tsutil/Assert.h"
 #include "tsutil/ts_thread_safety.h"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cassert>
@@ -279,6 +280,8 @@ private:
     T                           underlying;
   };
 
+  static constexpr int MAX_BACKOFF_SHIFT = 20;
+
   time_point
   _now()
   {
@@ -300,7 +303,8 @@ private:
     _mutex.read_bias.store(false, std::memory_order_seq_cst);
     time_point start = _now();
     for (size_t i = 0; i < SLOT_SIZE; ++i) {
-      for (int j = 0; _mutex.readers[i].mu.load(std::memory_order_seq_cst); ++j) {
+      // The backoff doubles up to about a millisecond, then polls at that rate for as long as the reader holds the slot.
+      for (int j = 0; _mutex.readers[i].mu.load(std::memory_order_seq_cst); j = std::min(j + 1, MAX_BACKOFF_SHIFT)) {
         std::this_thread::sleep_for(std::chrono::nanoseconds(1 << j));
       }
     }
