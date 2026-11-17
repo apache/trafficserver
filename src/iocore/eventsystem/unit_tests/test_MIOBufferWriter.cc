@@ -24,6 +24,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstdint>
+#include <cstdlib>
 
 struct IOBufferBlock {
   std::int64_t write_avail();
@@ -195,7 +196,14 @@ TEST_CASE("MIOBufferWriter", "[MIOBW]")
 void
 _ink_assert(const char * /* a ATS_UNUSED */, const char * /* f ATS_UNUSED */, int /* l ATS_UNUSED */)
 {
-  // Coverity is confused and thinks this _ink_assert is the one used in traffic_server
-  // coverity[UNCAUGHT_EXCEPT:FALSE]
+  // Throwing lets REQUIRE_THROWS_AS check that MIOBufferWriter asserts.
+  // Coverity analyzes every program as one and picks this definition for
+  // ink_assert() in traffic_server too, then reports each destructor or
+  // entry point that can reach an assert as letting InkAssertExcept escape.
+  // Coverity compiles this test but never runs it, so it gets an abort.
+#if defined(__COVERITY__)
+  std::abort();
+#else
   throw InkAssertExcept();
+#endif
 }
