@@ -339,7 +339,7 @@ plugin_init(bool validateOnly)
 {
   ats_scoped_str path;
   char           line[1024], *p;
-  char          *argv[MAX_PLUGIN_ARGS];
+  char          *argv[MAX_PLUGIN_ARGS + 1]; // a full line still leaves room for the terminating nullptr
   char          *vars[MAX_PLUGIN_ARGS];
   int            argc;
   int            fd;
@@ -418,11 +418,7 @@ plugin_init(bool validateOnly)
       }
     }
 
-    if (argc < MAX_PLUGIN_ARGS) {
-      argv[argc] = nullptr;
-    } else {
-      argv[MAX_PLUGIN_ARGS - 1] = nullptr;
-    }
+    argv[argc] = nullptr;
 
     ++load_index;
     std::string plugin_name = (argc > 0) ? argv[0] : "unknown";
