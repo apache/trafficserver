@@ -28,8 +28,10 @@
  */
 
 #include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
-#include <fstream>                      /* ofstream */
+#include <atomic>
+#include <fstream> /* ofstream */
 #include <string>
+#include <thread>
 
 #include "plugin_testing_common.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
@@ -470,6 +472,65 @@ SCENARIO("config reload", "[plugin][core]")
         CHECK(TSREMAP_CONFIG_RELOAD_SUCCESS_PLUGIN_UNUSED == debugObject->postReloadConfigStatus);
       }
       cleanupSandBox();
+    }
+  }
+}
+
+namespace
+{
+// Coordinates two threads inside one plugin's doRemap(); see the scenario below.
+std::atomic<bool> first_remap_entered{false};
+std::atomic<bool> second_remap_finished{false};
+
+TSRemapStatus
+overlapping_do_remap(void *ih, TSHttpTxn, TSRemapRequestInfo *)
+{
+  // The first caller passes a non-null handle and stays inside until the second caller is done.
+  if (ih != nullptr) {
+    first_remap_entered = true;
+    while (!second_remap_finished) {
+      std::this_thread::yield();
+    }
+  }
+  return TSREMAP_NO_REMAP;
+}
+} // namespace
+
+SCENARIO("overlapping remaps restore each thread's plugin context", "[plugin][core]")
+{
+  GIVEN("a plugin remapping on two threads at once")
+  {
+    RemapPluginUnitTest plugin(fs::path{"overlap.so"}, fs::path{"overlap.so"}, fs::path{"overlap.so"});
+    plugin.do_remap_cb = overlapping_do_remap;
+
+    // Distinct non-null contexts, only compared, never dereferenced.
+    auto *const first_previous  = reinterpret_cast<PluginThreadContext *>(0x1000);
+    auto *const second_previous = reinterpret_cast<PluginThreadContext *>(0x2000);
+
+    PluginThreadContext *first_restored  = nullptr;
+    PluginThreadContext *second_restored = nullptr;
+
+    std::thread first([&] {
+      pluginThreadContext = first_previous;
+      plugin.doRemap(INSTANCE_HANDLER, nullptr, nullptr);
+      first_restored = pluginThreadContext;
+    });
+    std::thread second([&] {
+      while (!first_remap_entered) {
+        std::this_thread::yield();
+      }
+      pluginThreadContext = second_previous;
+      plugin.doRemap(nullptr, nullptr, nullptr);
+      second_restored       = pluginThreadContext;
+      second_remap_finished = true;
+    });
+    first.join();
+    second.join();
+
+    THEN("each thread gets back the context it had before its own remap")
+    {
+      CHECK(first_restored == first_previous);
+      CHECK(second_restored == second_previous);
     }
   }
 }
