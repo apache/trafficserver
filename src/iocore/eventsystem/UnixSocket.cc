@@ -154,7 +154,7 @@ static unsigned int
 read_uint_from_fd(int fd)
 {
   int result{};
-  if (fd) {
+  if (fd >= 0) {
     TextBuffer buffer(16);
     buffer.slurp(fd);
     result = std::atoi(buffer.bufPtr());
