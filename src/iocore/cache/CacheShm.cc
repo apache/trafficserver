@@ -234,6 +234,20 @@ using cache_shm::stripe_segment_name;
 enum class ShmAccess { Open, Create };
 enum class HugePages { Off, On };
 
+/// Whether an existing segment has the owner and mode our create gives it. Shm names are shared by every local account,
+/// so anyone else may have created the segment under our name, and whoever can write it can rewrite the directory after
+/// the attach gates have passed it.
+bool
+is_private_segment(const std::string &name, const struct stat &sb)
+{
+  if (sb.st_uid != geteuid() || (sb.st_mode & (S_IRWXG | S_IRWXO)) != 0) {
+    Warning("cache shm: %s is not private to this user (owner uid %u, mode %03o); not attaching it", name.c_str(),
+            static_cast<unsigned>(sb.st_uid), static_cast<unsigned>(sb.st_mode & 0777));
+    return false;
+  }
+  return true;
+}
+
 /// nullptr on failure. `out_fd`, when set, keeps the fd open so the caller can flock it; otherwise it is closed, which
 /// the mapping survives.
 void *
@@ -274,6 +288,9 @@ open_and_map_shm(const std::string &name, std::size_t size, ShmAccess access, [[
     };
     if (fstat(fd, &sb) < 0 || sb.st_size < 0 || !cache_shm::is_expected_shm_size(static_cast<std::size_t>(sb.st_size), size)) {
       Dbg(dbg_ctl, "shm %s size mismatch (have %lld, want %zu)", name.c_str(), static_cast<long long>(sb.st_size), size);
+      return nullptr;
+    }
+    if (!is_private_segment(name, sb)) {
       return nullptr;
     }
   }
@@ -349,6 +366,12 @@ open_control_segment(const std::string &name)
     out.sys_err = errno;
     out.map     = ControlMap::Failed;
     Warning("cache shm: fstat(%s) failed: %s", name.c_str(), strerror(out.sys_err));
+    return out;
+  }
+  // Disables shm for the run rather than dropping: a segment another account owns is not ours to unlink.
+  if (!is_private_segment(name, sb)) {
+    out.sys_err = EPERM;
+    out.map     = ControlMap::Failed;
     return out;
   }
 

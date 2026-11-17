@@ -239,6 +239,12 @@ stripe segment it lists) and falls through to ``CreateFresh``:
 
    * - Gate
      - Drops the segment when...
+   * - ownership
+     - the segment is not owned by the effective user, or grants any group or
+       other access. Shared memory names are global, so another local account
+       can create a segment under this prefix first; every gate below is a value
+       its writer chooses. This disables shared memory for the run rather than
+       dropping, since a segment another account owns is not ours to unlink.
    * - concurrent-attach guard
      - another live process is mapping the segment (see below). This actually
        disables shared memory for the run rather than dropping -- the live
@@ -336,7 +342,8 @@ falling back to the hugepage / aligned-heap allocation:
 ``attach_or_create_stripe`` looks up the stripe by ``stripe_key_hash`` in the
 control table:
 
-* **Match found** (and the recorded size matches): map the existing segment and
+* **Match found** (and the recorded size matches, and the segment passes the
+  same ownership check as the control segment): map the existing segment and
   return it. This is the segment the previous run left behind.
 * **No match**: reserve a fresh table slot and create a new, zero-filled
   segment.
