@@ -92,6 +92,10 @@ get_geo_string(const sockaddr *addr, Qualifiers q)
 cripts::string
 get_geo_string_from_ip(const cripts::IP &ip, Qualifiers q)
 {
+  if (!ip.is_valid()) {
+    return "(unknown)";
+  }
+
   auto addr = ip.Socket();
   return get_geo_string(addr, q);
 }

@@ -142,10 +142,16 @@ IP::GetSV(unsigned ipv4_cidr, unsigned ipv6_cidr)
   return "";
 }
 
+// Starts from an empty endpoint: constructing one from an invalid address leaves its family unset.
 swoc::IPEndpoint
 IP::Socket() const
 {
-  return swoc::IPEndpoint{*this};
+  swoc::IPEndpoint ep;
+
+  if (is_valid()) {
+    ep.assign(*this);
+  }
+  return ep;
 }
 
 uint64_t
