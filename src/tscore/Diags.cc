@@ -472,6 +472,8 @@ Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
 bool
 Diags::reseat_diagslog()
 {
+  std::lock_guard<std::mutex> rotation_guard(rotation_lock);
+
   if (diags_log == nullptr || !diags_log->is_init()) {
     return false;
   }
@@ -506,6 +508,8 @@ Diags::reseat_diagslog()
 bool
 Diags::should_roll_diagslog()
 {
+  std::lock_guard<std::mutex> rotation_guard(rotation_lock);
+
   bool ret_val = false;
 
   log_log_trace("%s was called\n", __func__);
@@ -588,6 +592,8 @@ Diags::should_roll_diagslog()
 bool
 Diags::should_roll_outputlog()
 {
+  std::lock_guard<std::mutex> rotation_guard(rotation_lock);
+
   // stdout_log and stderr_log should never be nullptr as this point in time
   ink_assert(stdout_log != nullptr);
   ink_assert(stderr_log != nullptr);
@@ -625,13 +631,13 @@ Diags::should_roll_outputlog()
         if (stdout_log->roll()) {
           char *oldname = ats_strdup(stdout_log->get_name());
           log_log_trace("in %s(), oldname=%s\n", __func__, oldname);
-          set_std_output(StdStream::STDOUT, oldname);
+          bind_std_output(StdStream::STDOUT, oldname);
 
           // if stderr and stdout are redirected to the same place, we should
           // update the stderr_log object as well
           if (!strcmp(oldname, stderr_log->get_name())) {
             log_log_trace("oldname == stderr_log->get_name()\n");
-            set_std_output(StdStream::STDERR, oldname);
+            bind_std_output(StdStream::STDERR, oldname);
             need_consider_stderr = false;
           }
           ats_free(oldname);
@@ -655,13 +661,13 @@ Diags::should_roll_outputlog()
           outputlog_time_last_roll = now;
           char *oldname            = ats_strdup(stdout_log->get_name());
           log_log_trace("in %s, oldname=%s\n", __func__, oldname);
-          set_std_output(StdStream::STDOUT, oldname);
+          bind_std_output(StdStream::STDOUT, oldname);
 
           // if stderr and stdout are redirected to the same place, we should
           // update the stderr_log object as well
           if (!strcmp(oldname, stderr_log->get_name())) {
             log_log_trace("oldname == stderr_log->get_name()\n");
-            set_std_output(StdStream::STDERR, oldname);
+            bind_std_output(StdStream::STDERR, oldname);
             need_consider_stderr = false;
           }
           ats_free(oldname);
@@ -689,6 +695,14 @@ Diags::should_roll_outputlog()
 
 bool
 Diags::set_std_output(StdStream stream, const char *file)
+{
+  std::lock_guard<std::mutex> rotation_guard(rotation_lock);
+
+  return bind_std_output(stream, file);
+}
+
+bool
+Diags::bind_std_output(StdStream stream, const char *file)
 {
   const char   *target_stream;
   BaseLogFile **current;
