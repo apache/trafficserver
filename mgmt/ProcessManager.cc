@@ -384,7 +384,12 @@ ProcessManager::pollLMConnection()
 
   // Avoid getting stuck enqueuing too many requests in a row, limit to MAX_MSGS_IN_A_ROW.
   for (count = 0; running && count < max_msgs_in_a_row; ++count) {
-    timeout.tv_sec  = 1;
+    // Wait up to a second for the first message, then only drain the messages
+    // that are already waiting. The caller sends our queued signals, including
+    // the librecords pushes that do not trigger wakeup_fd, only after we
+    // return, and traffic_manager messages us about once a second, so waiting
+    // a full second after every message could hold those signals indefinitely.
+    timeout.tv_sec  = count == 0 ? 1 : 0;
     timeout.tv_usec = 0;
 
     FD_ZERO(&fdlist);
