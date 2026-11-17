@@ -32,6 +32,9 @@ def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
     :param curl: Curl command helper.
     """
 
+    if curl.uses_uds:
+        pytest.skip("cert_update is checked over TLS, which the clear-text Unix socket listener cannot carry")
+
     def configure_origin(services: ServiceFactory) -> OriginServer:
         """Create the clear-text origin used by the inbound certificate case.
 

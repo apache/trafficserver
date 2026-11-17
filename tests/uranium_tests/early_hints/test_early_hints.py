@@ -146,5 +146,8 @@ def test_early_hints(ats_factory: ATSFactory, services: ServiceFactory, curl: Cu
     ]
     if ats_factory.has_feature("TS_USE_QUIC") and curl.supports("http3"):
         cases.append(ProtocolCase("HTTP3", ("--insecure", "--http3-only"), "https", enable_quic=True))
+    if curl.uses_uds:
+        # The Unix socket listener is a clear-text stream socket, so it cannot carry the TLS or QUIC cases.
+        cases = [case for case in cases if case.scheme == "http"]
     for case in cases:
         run_case(case, _ats_factory=ats_factory, _curl=curl, _dns=_dns, _services=services)

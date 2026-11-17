@@ -94,8 +94,9 @@ def test_test_TSHttpSsnInfo(ats_factory: ATSFactory, services: ServiceFactory, c
     assert_matches_gold(h2.stdout, TEST_DIRECTORY / "test_TSHttpSsnInfo_nghttp0.gold")
 
     if _enable_quic:
-        h3 = curl.run_for(
-            _ats,
+        # HTTP/3 needs the QUIC listener, which the clear-text Unix socket cannot
+        # stand in for, so this request uses curl.run even in the curl UDS mode.
+        h3 = curl.run(
             f"--insecure --http3 --data post_body 'https://localhost:{_ats.https_port}/httpbin/post'",
         )
         assert h3.returncode == 0, h3.output
