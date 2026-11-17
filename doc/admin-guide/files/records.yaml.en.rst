@@ -4779,7 +4779,7 @@ Diagnostic Logging Configuration
 
    Specifies how often the diagnostics log is rolled, in seconds. The timer starts on |TS| startup.
 
-.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_size_mb INT 100
+.. ts:cv:: CONFIG proxy.config.diags.logfile.rolling_size_mb INT 10
    :reloadable:
    :units: megabytes
 
@@ -6812,7 +6812,7 @@ Sockets
 
    .. seealso:: :ref:`admin-traffic-shaping`
 
-.. ts:cv:: CONFIG proxy.config.net.sock_notsent_lowat INT 16384
+.. ts:cv:: CONFIG proxy.config.net.sock_notsent_lowat INT 32768
    :overridable:
 
    Set socket option TCP_NOTSENT_LOWAT to specified value for a connection
@@ -7035,7 +7035,7 @@ Sockets
 IO_URING
 ========
 
-.. ts:cv:: CONFIG proxy.config.io_uring.entries INT 32
+.. ts:cv:: CONFIG proxy.config.io_uring.entries INT 1024
 
    Specify the number of entries in each io_uring.  There will be on io_uring instance per thread that uses io_uring
    for IO.  This parameter is passed to io_uring_queue_init.
