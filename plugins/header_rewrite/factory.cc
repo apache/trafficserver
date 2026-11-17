@@ -19,198 +19,145 @@
 // factory.cc: Factory functions for operators, conditions and condition variables.
 //
 //
+#include <algorithm>
 #include <string>
+#include <string_view>
+#include <utility>
 
 #include "operators.h"
 #include "conditions.h"
 #include "conditions_geo.h"
 
-///////////////////////////////////////////////////////////////////////////////
-// "Factory" functions, processing the parsed lines
-//
+namespace
+{
+// Tables rather than if-chains so the set of names is plain data, which tools/hrw4u's coverage test reads.
+using OperatorEntry  = std::pair<std::string_view, Operator *(*)()>;
+using ConditionEntry = std::pair<std::string_view, Condition *(*)()>;
+
+constexpr OperatorEntry OPERATORS[] = {
+  {"rm-header",             []() -> Operator * { return new OperatorRMHeader(); }                     },
+  {"set-header",            []() -> Operator * { return new OperatorSetHeader(); }                    },
+  {"add-header",            []() -> Operator * { return new OperatorAddHeader(); }                    },
+  {"set-config",            []() -> Operator * { return new OperatorSetConfig(); }                    },
+  {"set-status",            []() -> Operator * { return new OperatorSetStatus(); }                    },
+  {"set-status-reason",     []() -> Operator * { return new OperatorSetStatusReason(); }              },
+  {"set-destination",       []() -> Operator * { return new OperatorSetDestination(); }               },
+  {"rm-destination",        []() -> Operator * { return new OperatorRMDestination(); }                },
+  {"set-redirect",          []() -> Operator * { return new OperatorSetRedirect(); }                  },
+  {"timeout-out",           []() -> Operator * { return new OperatorSetTimeoutOut(); }                },
+  {"skip-remap",            []() -> Operator * { return new OperatorSkipRemap(); }                    },
+  {"no-op",                 []() -> Operator * { return new OperatorNoOp(); }                         },
+  {"counter",               []() -> Operator * { return new OperatorCounter(); }                      },
+  {"rm-cookie",             []() -> Operator * { return new OperatorRMCookie(); }                     },
+  {"set-cookie",            []() -> Operator * { return new OperatorSetCookie(); }                    },
+  {"add-cookie",            []() -> Operator * { return new OperatorAddCookie(); }                    },
+  {"set-conn-dscp",         []() -> Operator * { return new OperatorSetConnDSCP(); }                  },
+  {"set-conn-mark",         []() -> Operator * { return new OperatorSetConnMark(); }                  },
+  {"set-debug",             []() -> Operator * { return new OperatorSetDebug(); }                     },
+  {"set-body",              []() -> Operator * { return new OperatorSetBody(); }                      },
+  {"set-body-from-file",    []() -> Operator * { return new OperatorSetBodyFromFile(); }              },
+  {"set-http-cntl",         []() -> Operator * { return new OperatorSetHttpCntl(); }                  },
+  {"set-plugin-cntl",       []() -> Operator * { return new OperatorSetPluginCntl(); }                },
+  {"run-plugin",            []() -> Operator * { return new OperatorRunPlugin(); }                    },
+  {"set-body-from",         []() -> Operator * { return new OperatorSetBodyFrom(); }                  },
+  {"set-state-flag",        []() -> Operator * { return new OperatorSetStateFlag(); }                 },
+  {"set-state-int8",        []() -> Operator * { return new OperatorSetStateInt8(); }                 },
+  {"set-state-int16",       []() -> Operator * { return new OperatorSetStateInt16(); }                },
+  {"set-session-flag",      []() -> Operator * { return new OperatorSetStateFlag(TS_USER_ARGS_SSN); } },
+  {"set-session-int8",      []() -> Operator * { return new OperatorSetStateInt8(TS_USER_ARGS_SSN); } },
+  {"set-session-int16",     []() -> Operator * { return new OperatorSetStateInt16(TS_USER_ARGS_SSN); }},
+  {"set-effective-address", []() -> Operator * { return new OperatorSetEffectiveAddress(); }          },
+  {"set-next-hop-strategy", []() -> Operator * { return new OperatorSetNextHopStrategy(); }           },
+  {"set-cc-alg",            []() -> Operator * { return new OperatorSetCCAlgorithm(); }               },
+};
+
+constexpr ConditionEntry CONDITIONS[] = {
+  {"TRUE",                 []() -> Condition * { return new ConditionTrue(); }                         },
+  {"FALSE",                []() -> Condition * { return new ConditionFalse(); }                        },
+  {"STATUS",               []() -> Condition * { return new ConditionStatus(); }                       },
+  {"RANDOM",               []() -> Condition * { return new ConditionRandom(); }                       },
+  {"ACCESS",               []() -> Condition * { return new ConditionAccess(); }                       },
+  {"COOKIE",               []() -> Condition * { return new ConditionCookie(); }                       },
+  // HEADER, CLIENT-URL and NEXT-HOP adapt to the hook.
+  {"HEADER",               []() -> Condition * { return new ConditionHeader(); }                       },
+  {"CLIENT-HEADER",        []() -> Condition * { return new ConditionHeader(ConditionHeader::CLIENT); }},
+  {"SERVER-HEADER",        []() -> Condition * { return new ConditionHeader(ConditionHeader::SERVER); }},
+  {"CLIENT-URL",           []() -> Condition * { return new ConditionUrl(ConditionUrl::CLIENT); }      },
+  {"SERVER-URL",           []() -> Condition * { return new ConditionUrl(ConditionUrl::SERVER); }      },
+  {"URL",                  []() -> Condition * { return new ConditionUrl(ConditionUrl::URL); }         },
+  {"FROM-URL",             []() -> Condition * { return new ConditionUrl(ConditionUrl::FROM); }        },
+  {"TO-URL",               []() -> Condition * { return new ConditionUrl(ConditionUrl::TO); }          },
+  {"DBM",                  []() -> Condition * { return new ConditionDBM(); }                          },
+  {"INTERNAL-TRANSACTION", []() -> Condition * { return new ConditionInternalTxn(); }                  },
+  {"INTERNAL-TXN",         []() -> Condition * { return new ConditionInternalTxn(); }                  },
+  {"IP",                   []() -> Condition * { return new ConditionIp(); }                           },
+  {"METHOD",               []() -> Condition * { return new ConditionMethod(); }                       },
+  {"TXN-COUNT",            []() -> Condition * { return new ConditionTransactCount(); }                },
+  {"NOW",                  []() -> Condition * { return new ConditionNow(); }                          },
+  {"GEO",
+   []() -> Condition * {
+#if TS_USE_HRW_GEOIP
+     return new GeoIPConditionGeo();
+#elif TS_USE_HRW_MAXMINDDB
+     return new MMConditionGeo();
+#else
+     return new ConditionGeo();
+#endif
+   }                                                                                                   },
+  {"ID",                   []() -> Condition * { return new ConditionId(); }                           },
+  {"CIDR",                 []() -> Condition * { return new ConditionCidr(); }                         },
+  {"INBOUND",              []() -> Condition * { return new ConditionInbound(); }                      },
+  {"SSN-TXN-COUNT",        []() -> Condition * { return new ConditionSessionTransactCount(); }         },
+  {"TCP-INFO",             []() -> Condition * { return new ConditionTcpInfo(); }                      },
+  {"CACHE",                []() -> Condition * { return new ConditionCache(); }                        },
+  {"NEXT-HOP",             []() -> Condition * { return new ConditionNextHop(); }                      },
+  {"HTTP-CNTL",            []() -> Condition * { return new ConditionHttpCntl(); }                     },
+  {"GROUP",                []() -> Condition * { return new ConditionGroup(); }                        },
+  {"STATE-FLAG",           []() -> Condition * { return new ConditionStateFlag(); }                    },
+  {"STATE-INT8",           []() -> Condition * { return new ConditionStateInt8(); }                    },
+  {"STATE-INT16",          []() -> Condition * { return new ConditionStateInt16(); }                   },
+  {"SESSION-FLAG",         []() -> Condition * { return new ConditionStateFlag(TS_USER_ARGS_SSN); }    },
+  {"SESSION-INT8",         []() -> Condition * { return new ConditionStateInt8(TS_USER_ARGS_SSN); }    },
+  {"SESSION-INT16",        []() -> Condition * { return new ConditionStateInt16(TS_USER_ARGS_SSN); }   },
+  {"LAST-CAPTURE",         []() -> Condition * { return new ConditionLastCapture(); }                  },
+};
+
+} // namespace
+
 Operator *
 operator_factory(const std::string &op)
 {
-  Operator *o = nullptr;
+  // Note that we don't support the OperatorIf() pseudo-operator here!
+  auto it = std::find_if(std::begin(OPERATORS), std::end(OPERATORS), [&op](const OperatorEntry &e) { return e.first == op; });
 
-  if (op == "rm-header") {
-    o = new OperatorRMHeader();
-  } else if (op == "set-header") {
-    o = new OperatorSetHeader();
-  } else if (op == "add-header") {
-    o = new OperatorAddHeader();
-  } else if (op == "set-config") {
-    o = new OperatorSetConfig();
-  } else if (op == "set-status") {
-    o = new OperatorSetStatus();
-  } else if (op == "set-status-reason") {
-    o = new OperatorSetStatusReason();
-  } else if (op == "set-destination") {
-    o = new OperatorSetDestination();
-  } else if (op == "rm-destination") {
-    o = new OperatorRMDestination();
-  } else if (op == "set-redirect") {
-    o = new OperatorSetRedirect();
-  } else if (op == "timeout-out") {
-    o = new OperatorSetTimeoutOut();
-  } else if (op == "skip-remap") {
-    o = new OperatorSkipRemap();
-  } else if (op == "no-op") {
-    o = new OperatorNoOp();
-  } else if (op == "counter") {
-    o = new OperatorCounter();
-  } else if (op == "rm-cookie") {
-    o = new OperatorRMCookie();
-  } else if (op == "set-cookie") {
-    o = new OperatorSetCookie();
-  } else if (op == "add-cookie") {
-    o = new OperatorAddCookie();
-  } else if (op == "set-conn-dscp") {
-    o = new OperatorSetConnDSCP();
-  } else if (op == "set-conn-mark") {
-    o = new OperatorSetConnMark();
-  } else if (op == "set-debug") {
-    o = new OperatorSetDebug();
-  } else if (op == "set-body") {
-    o = new OperatorSetBody();
-  } else if (op == "set-body-from-file") {
-    o = new OperatorSetBodyFromFile();
-  } else if (op == "set-http-cntl") {
-    o = new OperatorSetHttpCntl();
-  } else if (op == "set-plugin-cntl") {
-    o = new OperatorSetPluginCntl();
-  } else if (op == "run-plugin") {
-    o = new OperatorRunPlugin();
-  } else if (op == "set-body-from") {
-    o = new OperatorSetBodyFrom();
-  } else if (op == "set-state-flag") {
-    o = new OperatorSetStateFlag();
-  } else if (op == "set-state-int8") {
-    o = new OperatorSetStateInt8();
-  } else if (op == "set-state-int16") {
-    o = new OperatorSetStateInt16();
-  } else if (op == "set-session-flag") {
-    o = new OperatorSetStateFlag(TS_USER_ARGS_SSN);
-  } else if (op == "set-session-int8") {
-    o = new OperatorSetStateInt8(TS_USER_ARGS_SSN);
-  } else if (op == "set-session-int16") {
-    o = new OperatorSetStateInt16(TS_USER_ARGS_SSN);
-  } else if (op == "set-effective-address") {
-    o = new OperatorSetEffectiveAddress();
-  } else if (op == "set-next-hop-strategy") {
-    o = new OperatorSetNextHopStrategy();
-  } else if (op == "set-cc-alg") {
-    o = new OperatorSetCCAlgorithm();
-  } else {
-    // Note that we don't support the OperatorIf() pseudo-operator here!
+  if (it == std::end(OPERATORS)) {
     TSError("[%s] Unknown operator: %s", PLUGIN_NAME, op.c_str());
     return nullptr;
   }
-
-  return o;
+  return it->second();
 }
 
 Condition *
 condition_factory(const std::string &cond)
 {
-  Condition             *c = nullptr;
-  std::string            c_name, c_qual;
+  std::string_view       c_name = cond;
+  std::string            c_qual;
   std::string::size_type pos = cond.find_first_of(':');
 
   if (pos != std::string::npos) {
-    c_name = cond.substr(0, pos);
+    c_name = c_name.substr(0, pos);
     c_qual = cond.substr(pos + 1);
-  } else {
-    c_name = cond;
-    c_qual = "";
   }
 
-  if (c_name == "TRUE") {
-    c = new ConditionTrue();
-  } else if (c_name == "FALSE") {
-    c = new ConditionFalse();
-  } else if (c_name == "STATUS") {
-    c = new ConditionStatus();
-  } else if (c_name == "RANDOM") {
-    c = new ConditionRandom();
-  } else if (c_name == "ACCESS") {
-    c = new ConditionAccess();
-  } else if (c_name == "COOKIE") {
-    c = new ConditionCookie();
-  } else if (c_name == "HEADER") { // This condition adapts to the hook
-    c = new ConditionHeader();
-  } else if (c_name == "CLIENT-HEADER") {
-    c = new ConditionHeader(ConditionHeader::CLIENT);
-  } else if (c_name == "SERVER-HEADER") {
-    c = new ConditionHeader(ConditionHeader::SERVER);
-  } else if (c_name == "CLIENT-URL") { // This condition adapts to the hook
-    c = new ConditionUrl(ConditionUrl::CLIENT);
-  } else if (c_name == "SERVER-URL") {
-    c = new ConditionUrl(ConditionUrl::SERVER);
-  } else if (c_name == "URL") {
-    c = new ConditionUrl(ConditionUrl::URL);
-  } else if (c_name == "FROM-URL") {
-    c = new ConditionUrl(ConditionUrl::FROM);
-  } else if (c_name == "TO-URL") {
-    c = new ConditionUrl(ConditionUrl::TO);
-  } else if (c_name == "DBM") {
-    c = new ConditionDBM();
-  } else if (c_name == "INTERNAL-TRANSACTION") {
-    c = new ConditionInternalTxn();
-  } else if (c_name == "INTERNAL-TXN") {
-    c = new ConditionInternalTxn();
-  } else if (c_name == "IP") {
-    c = new ConditionIp();
-  } else if (c_name == "METHOD") {
-    c = new ConditionMethod();
-  } else if (c_name == "TXN-COUNT") {
-    c = new ConditionTransactCount();
-  } else if (c_name == "NOW") {
-    c = new ConditionNow();
-  } else if (c_name == "GEO") {
-#if TS_USE_HRW_GEOIP
-    c = new GeoIPConditionGeo();
-#elif TS_USE_HRW_MAXMINDDB
-    c = new MMConditionGeo();
-#else
-    c = new ConditionGeo();
-#endif
-  } else if (c_name == "ID") {
-    c = new ConditionId();
-  } else if (c_name == "CIDR") {
-    c = new ConditionCidr();
-  } else if (c_name == "INBOUND") {
-    c = new ConditionInbound();
-  } else if (c_name == "SSN-TXN-COUNT") {
-    c = new ConditionSessionTransactCount();
-  } else if (c_name == "TCP-INFO") {
-    c = new ConditionTcpInfo();
-  } else if (c_name == "CACHE") {
-    c = new ConditionCache();
-  } else if (c_name == "NEXT-HOP") { // This condition adapts to the hook
-    c = new ConditionNextHop();
-  } else if (c_name == "HTTP-CNTL") {
-    c = new ConditionHttpCntl();
-  } else if (c_name == "GROUP") {
-    c = new ConditionGroup();
-  } else if (c_name == "STATE-FLAG") {
-    c = new ConditionStateFlag();
-  } else if (c_name == "STATE-INT8") {
-    c = new ConditionStateInt8();
-  } else if (c_name == "STATE-INT16") {
-    c = new ConditionStateInt16();
-  } else if (c_name == "SESSION-FLAG") {
-    c = new ConditionStateFlag(TS_USER_ARGS_SSN);
-  } else if (c_name == "SESSION-INT8") {
-    c = new ConditionStateInt8(TS_USER_ARGS_SSN);
-  } else if (c_name == "SESSION-INT16") {
-    c = new ConditionStateInt16(TS_USER_ARGS_SSN);
-  } else if (c_name == "LAST-CAPTURE") {
-    c = new ConditionLastCapture();
-  } else {
-    TSError("[%s] Unknown condition %s", PLUGIN_NAME, c_name.c_str());
+  auto it =
+    std::find_if(std::begin(CONDITIONS), std::end(CONDITIONS), [c_name](const ConditionEntry &e) { return e.first == c_name; });
+
+  if (it == std::end(CONDITIONS)) {
+    TSError("[%s] Unknown condition %.*s", PLUGIN_NAME, static_cast<int>(c_name.size()), c_name.data());
     return nullptr;
   }
+
+  Condition *c = it->second();
 
   if (c_qual != "") {
     c->set_qualifier(c_qual);
