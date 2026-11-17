@@ -73,7 +73,13 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
     zret = inet_ntop(AF_INET6, &ats_ip6_addr_cast(addr), dst, size);
     break;
   case AF_UNIX:
-    zret = strncpy(dst, ats_unix_cast(addr)->sun_path, size);
+    // A kernel sockaddr_un may carry a full, unterminated sun_path.
+    if (size > 0) {
+      size_t n = std::min(size - 1, TS_UNIX_SIZE);
+      strncpy(dst, ats_unix_cast(addr)->sun_path, n);
+      dst[n] = '\0';
+    }
+    zret = dst;
     break;
   default:
     zret = dst;
@@ -804,7 +810,7 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, sockaddr const *addr)
       bwformat(w, spec, ats_ip6_addr_cast(addr));
       break;
     case AF_UNIX:
-      bwformat(w, spec, ats_unix_cast(addr)->sun_path);
+      bwformat(w, spec, std::string_view(ats_unix_cast(addr)->sun_path, strnlen(ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE)));
       port_p = false;
       break;
     default:

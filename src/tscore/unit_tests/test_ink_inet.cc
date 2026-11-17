@@ -364,3 +364,33 @@ TEST_CASE("ink_inet_unix", "[libts][inet][unix]")
   UnAddr copied_null(from_null_sa);
   REQUIRE(copied_null._path[0] == '\0');
 }
+
+TEST_CASE("ink_inet_unix full sun_path", "[libts][inet][unix]")
+{
+  // A kernel sockaddr_un may carry a full, unterminated sun_path, so none of the guard bytes after it may reach the output.
+  struct {
+    sockaddr_un sun;
+    char        guard[16];
+  } raw;
+  memset(&raw, 'g', sizeof(raw));
+  raw.guard[sizeof(raw.guard) - 1] = '\0';
+  raw.sun.sun_family               = AF_UNIX;
+  memset(raw.sun.sun_path, 'z', TS_UNIX_SIZE);
+  auto const       *sa = reinterpret_cast<sockaddr const *>(&raw.sun);
+  std::string const full(TS_UNIX_SIZE, 'z');
+
+  char dst[256];
+  REQUIRE(ats_ip_ntop(sa, dst, sizeof(dst)) == dst);
+  CHECK(std::string_view(dst) == full);
+
+  // A destination too small for the path gets a terminated prefix of it.
+  char small[INET6_ADDRSTRLEN + 8];
+  memset(small, 'x', sizeof(small));
+  REQUIRE(ats_ip_ntop(sa, small, INET6_ADDRSTRLEN) == small);
+  CHECK(small[INET6_ADDRSTRLEN - 1] == '\0');
+  CHECK(strlen(small) == INET6_ADDRSTRLEN - 1);
+
+  swoc::LocalBufferWriter<1024> w;
+  w.print("{}", sa);
+  CHECK(w.view() == full);
+}
