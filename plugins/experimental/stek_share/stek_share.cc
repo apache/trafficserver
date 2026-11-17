@@ -160,16 +160,21 @@ cert_verification(const std::string &sn)
 int
 init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<PluginConfig> config)
 {
+  // The launcher gets these local references, not the shared members: reset() on the shutdown hook's thread can clear those
+  // under their own mutexes while a reload is still here.
+  nuraft::ptr<nuraft::state_mgr> smgr_instance =
+    nuraft::cs_new<STEKShareSMGR>(config->server_id, config->endpoint, config->server_list);
+
   // State manager.
   {
     std::unique_lock lock(stek_share_server.smgr_mutex);
-    stek_share_server.smgr_instance = nuraft::cs_new<STEKShareSMGR>(config->server_id, config->endpoint, config->server_list);
+    stek_share_server.smgr_instance = smgr_instance;
   }
 
   // State machine.
   {
     std::unique_lock lock(stek_share_server.sm_mutex);
-    stek_share_server.sm_instance = std::move(sm_instance);
+    stek_share_server.sm_instance = sm_instance;
   }
 
   // ASIO options.
@@ -196,8 +201,8 @@ init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<Plugin
   // Initialize Raft server.
   {
     std::unique_lock lock(stek_share_server.raft_mutex);
-    stek_share_server.raft_instance = stek_share_server.raft_launcher.init(
-      stek_share_server.sm_instance, stek_share_server.smgr_instance, nullptr, config->port, asio_opts, params);
+    stek_share_server.raft_instance =
+      stek_share_server.raft_launcher.init(sm_instance, smgr_instance, nullptr, config->port, asio_opts, params);
   }
 
   std::shared_lock lock(stek_share_server.raft_mutex);
