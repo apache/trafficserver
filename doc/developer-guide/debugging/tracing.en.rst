@@ -70,3 +70,23 @@ Example with bpftrace
          exit();
       }
    }
+
+Dispatch tracepoints
+====================
+
+These tracepoints bracket the places where the event loop calls a handler. They name the handler that a thread is
+running, so a thread that does not return to its event loop can be traced to the handler that holds it. Each
+``handler`` argument is the address of a function whose symbol names the handler member function, so
+``usym(handler)`` in bpftrace gives its name. The end tracepoints repeat the begin arguments: the handler can free the
+continuation, so do not read memory through ``cont`` after it returns.
+
+``event_dispatch_begin(EThread *thread, Continuation *cont, void *handler, int event)`` and ``event_dispatch_end`` with the same arguments
+   The thread calls the handler of a scheduled event.
+
+``vio_dispatch_begin(UnixNetVConnection *vc, Continuation *cont, void *handler, int event, int op)`` and ``vio_dispatch_end`` with the same arguments
+   The thread signals the continuation of a read (``op`` 1) or write (``op`` 2) VIO on ``vc``.
+
+``plugin_dispatch_begin(TSCont contp, TSEventFunc func, int event, void *edata)`` and ``plugin_dispatch_end(TSCont contp, TSEventFunc func, int event, int result)``
+   The thread calls the event function of a plugin continuation. ``func`` is the plugin's own function.
+
+These tracepoints fire for each dispatched event, so attach them only for short periods on a busy server.

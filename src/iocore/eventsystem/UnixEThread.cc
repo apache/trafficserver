@@ -36,6 +36,7 @@
 #include "iocore/eventsystem/Lock.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_atomic.h"
+#include "ts/ats_probe.h"
 
 #if HAVE_EVENTFD
 #include <sys/eventfd.h>
@@ -169,7 +170,11 @@ EThread::process_event(Event *e, int calling_code, ink_hrtime event_time)
     // Restore the client IP debugging flags
     set_cont_flags(e->continuation->control_flags);
 
+    [[maybe_unused]] void const *handler = c_temp->handler.address();
+    ATS_PROBE4(event_dispatch_begin, this, c_temp, handler, calling_code);
     e->continuation->handleEvent(calling_code, e);
+    // The handler may have freed the continuation, so pass only values saved before the call.
+    ATS_PROBE4(event_dispatch_end, this, c_temp, handler, calling_code);
     if (loop_time_update_probability == 100) {
       event_time = ink_get_hrtime();
     } else if (loop_time_update_probability > 0) {

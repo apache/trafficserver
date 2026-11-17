@@ -189,6 +189,20 @@ public:
     return this->handler(c, event, data);
   }
 
+  /**
+    Returns the address of the function this ContinuationHandler calls,
+    or null. The function is the trampoline for the bound member
+    function, so its symbol names that member function.
+
+    @par Thread Safety
+    Same as @c operator().
+  */
+  void const *
+  address() const
+  {
+    return reinterpret_cast<void const *>(this->handler);
+  }
+
 private:
   template <typename> struct handler_traits;
 
