@@ -30,4 +30,8 @@ if(BUILD_TESTING)
   add_executable(test_cache_tool_doc test_CacheDoc.cc)
   target_link_libraries(test_cache_tool_doc PRIVATE ts::tscore ts::tsutil Catch2::Catch2WithMain)
   add_test(NAME test_cache_tool_doc COMMAND test_cache_tool_doc)
+
+  add_executable(test_cache_tool_stripe test_CacheStripe.cc CacheDefs.cc)
+  target_link_libraries(test_cache_tool_stripe PRIVATE ts::tscore libswoc::libswoc ts::tsutil Catch2::Catch2WithMain)
+  add_test(NAME test_cache_tool_stripe COMMAND test_cache_tool_stripe)
 endif()

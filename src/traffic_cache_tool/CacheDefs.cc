@@ -23,6 +23,7 @@
 
 #include "CacheDefs.h"
 
+#include <algorithm>
 #include <iostream>
 #include <fcntl.h>
 
@@ -356,8 +357,10 @@ StripeSM::vol_dirlen()
 void
 StripeSM::vol_init_data_internal()
 {
-  this->_buckets =
-    ((this->_len.count() * 8192 - (this->_content - this->_start)) / cache_config_min_average_object_size) / DIR_DEPTH;
+  // A stripe with room for fewer objects than one bucket holds still needs a bucket, or the segment count is
+  // zero and the next line divides by it.
+  this->_buckets = std::max<int64_t>(
+    ((this->_len.count() * 8192 - (this->_content - this->_start)) / cache_config_min_average_object_size) / DIR_DEPTH, 1);
   this->_segments = (this->_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
   this->_buckets  = (this->_buckets + this->_segments - 1) / this->_segments;
   this->_content  = this->_start + Bytes(2 * vol_dirlen());
