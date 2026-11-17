@@ -232,17 +232,27 @@ RecMessageReadFromDisk(const char *fpath)
   RecMessage   *msg = nullptr;
   RecHandle     h_file;
   int           bytes_read;
+  struct stat   file_stat;
 
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
     goto Lerror;
   }
-  if (RecFileRead(h_file, reinterpret_cast<char *>(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
+  if (RecSnapFileRead(h_file, reinterpret_cast<char *>(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL ||
+      bytes_read != static_cast<int>(sizeof(RecMessageHdr))) {
     goto Lerror;
   }
-  msg = static_cast<RecMessage *>(ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr)));
-  memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
-  if (RecSnapFileRead(h_file, reinterpret_cast<char *>(msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start, &bytes_read) ==
-      REC_ERR_FAIL) {
+  if (fstat(h_file, &file_stat) != 0) {
+    goto Lerror;
+  }
+  // RecMessageWriteToDisk() puts the message, header included, after the version bytes, with
+  // o_start at the end of the header and o_end at the end of the message.
+  if (msg_hdr.o_start != static_cast<int>(sizeof(RecMessageHdr)) || msg_hdr.o_end < msg_hdr.o_start ||
+      msg_hdr.o_end > file_stat.st_size - static_cast<off_t>(VERSION_HDR_SIZE)) {
+    goto Lerror;
+  }
+  msg = static_cast<RecMessage *>(ats_malloc(msg_hdr.o_end));
+  if (RecSnapFileRead(h_file, reinterpret_cast<char *>(msg), msg_hdr.o_end, &bytes_read) == REC_ERR_FAIL ||
+      bytes_read != msg_hdr.o_end) {
     goto Lerror;
   }
 
