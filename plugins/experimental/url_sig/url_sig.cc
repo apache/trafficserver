@@ -24,6 +24,7 @@
 #include <cstring>
 #include <sys/types.h>
 #include <ctime>
+#include <openssl/crypto.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 #include <sys/socket.h>
@@ -515,7 +516,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   uint64_t     expiration      = 0;
   int          algorithm       = -1;
   int          keyindex        = -1;
-  int          cmp_res;
   int          rval;
   unsigned int i               = 0;
   int          j               = 0;
@@ -819,9 +819,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
             Dbg(dbg_ctl, "Expected signature: %s", sig_string);
 
-            /* and compare to signature that was sent */
-            cmp_res = strncmp(sig_string, signature, sig_len * 2);
-            if (cmp_res != 0) {
+            /* and compare to signature that was sent, in constant time so the
+               mismatch position does not leak the expected HMAC */
+            if (strlen(signature) < sig_len * 2 || CRYPTO_memcmp(sig_string, signature, sig_len * 2) != 0) {
               err_log(url, url_len, "Signature check failed");
               goto deny;
             } else {
