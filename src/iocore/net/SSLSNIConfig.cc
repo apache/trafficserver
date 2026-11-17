@@ -62,8 +62,9 @@ is_port_in_the_ranges(const std::vector<ts::port_range_t> &port_ranges, in_port_
                      [port](ts::port_range_t const &port_range) { return port_range.contains(port); });
 }
 
-// prewarmManager sets this from its constructor during static initialization, which may run
-// before this file's own initializers, so the callback cannot be a namespace-scope object.
+// prewarmManager sets this from its constructor while globals are still being constructed,
+// possibly before this file's. std::function has no constant initializer, so a global here
+// would be reset by its own initializer; a function-local static is built on first use.
 std::function<void()> &
 on_reconfigure()
 {
