@@ -467,7 +467,8 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
   } else if (ats_is_unix(ip)) {
     if (dest) {
       data._un._family = AF_UNIX;
-      // Unmarshaling reads _path as a C string, but a kernel sockaddr_un may carry a full, unterminated sun_path.
+      // Readers of the unmarshaled address treat the path as a C string, but a kernel sockaddr_un may fill sun_path with no
+      // terminator.
       strncpy(data._un._path, ats_unix_cast(ip)->sun_path, TS_UNIX_SIZE - 1);
       data._un._path[TS_UNIX_SIZE - 1] = '\0';
     }

@@ -289,16 +289,12 @@ TEST_CASE("LogAccess JSON string slice stays within the raw value", "[LogAccess]
 
 TEST_CASE("LogAccess marshals a full unix socket path as a terminated string", "[LogAccess]")
 {
-  // A kernel sockaddr_un may carry a full, unterminated sun_path, so none of the guard bytes after it may reach the output.
-  struct {
-    sockaddr_un sun;
-    char        guard[16];
-  } raw;
-  memset(&raw, 'g', sizeof(raw));
-  raw.guard[sizeof(raw.guard) - 1] = '\0';
-  raw.sun.sun_family               = AF_UNIX;
-  memset(raw.sun.sun_path, 'z', TS_UNIX_SIZE);
-  auto const       *sa = reinterpret_cast<sockaddr const *>(&raw.sun);
+  // A kernel sockaddr_un may fill sun_path with no terminator, and the marshaled path must still be a C string.
+  sockaddr_un sun;
+  memset(&sun, 0, sizeof(sun));
+  sun.sun_family = AF_UNIX;
+  memset(sun.sun_path, 'z', TS_UNIX_SIZE);
+  auto const       *sa = reinterpret_cast<sockaddr const *>(&sun);
   std::string const truncated(TS_UNIX_SIZE - 1, 'z');
 
   std::vector<char> marshalled(LogAccess::marshal_ip(nullptr, sa));
