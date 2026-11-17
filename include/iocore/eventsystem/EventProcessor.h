@@ -316,8 +316,10 @@ public:
   EThread *assign_affinity_by_type(Continuation *cont, EventType etype);
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
-  int      n_dthreads       = 0; // No. of dedicated threads
-  int      thread_data_used = 0;
+  /// No. of dedicated threads. Readers walk all_dthreads without the spawn lock, so
+  /// the count is published only after the element it covers.
+  std::atomic<int> n_dthreads{0};
+  int              thread_data_used = 0;
 
   /// Provide container style access to just the active threads, not the entire array.
   class active_threads_type
@@ -354,7 +356,7 @@ public:
   active_threads_type
   active_dthreads() const
   {
-    return {all_dthreads, n_dthreads};
+    return {all_dthreads, n_dthreads.load(std::memory_order_acquire)};
   }
 
   active_threads_type

@@ -574,8 +574,9 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
 
      This logic covers both situations. For write/write the actual array update is locked. The
      potentially expensive set up is done outside the lock making the time spent locked small. For
-     read/write it suffices to do the active count increment after initializing the array
-     element. It's not a problem if, for one cycle, a new thread is skipped.
+     read/write it suffices to publish the active count with release ordering after initializing
+     the array element, which readers load with acquire ordering. It's not a problem if, for one
+     cycle, a new thread is skipped.
   */
 
   // Do as much as possible outside the lock. Until the array element and count is changed
@@ -587,9 +588,10 @@ EventProcessor::spawn_thread(Continuation *cont, const char *thr_name, size_t st
   cont->mutex = e->ethread->mutex;
   {
     ink_scoped_mutex_lock lock(dedicated_thread_spawn_mutex);
-    ink_release_assert(n_dthreads < MAX_EVENT_THREADS);
-    all_dthreads[n_dthreads] = e->ethread;
-    ++n_dthreads; // Be very sure this is after the array element update.
+    int const             n = n_dthreads.load(std::memory_order_relaxed);
+    ink_release_assert(n < MAX_EVENT_THREADS);
+    all_dthreads[n] = e->ethread;
+    n_dthreads.store(n + 1, std::memory_order_release);
   }
 
   e->ethread->start(thr_name, nullptr, stacksize);
