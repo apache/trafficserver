@@ -84,11 +84,11 @@ TEST_CASE("RecMessageReadFromDisk reads back what RecMessageWriteToDisk wrote", 
   std::filesystem::remove(path);
 }
 
-TEST_CASE("RecMessageReadFromDisk rejects a corrupt snapshot", "[librecords][RecMessage]")
+TEST_CASE("RecMessageReadFromDisk rejects a corrupt snapshot header", "[librecords][RecMessage]")
 {
   RecMessageHdr hdr{};
 
-  SECTION("every header field out of range")
+  SECTION("garbage in every header field")
   {
     const int msg_type = 16;
 
@@ -96,6 +96,11 @@ TEST_CASE("RecMessageReadFromDisk rejects a corrupt snapshot", "[librecords][Rec
     hdr.o_start = 1 << 24;
     hdr.o_write = 16;
     hdr.o_end   = 0;
+  }
+  SECTION("negative start offset")
+  {
+    hdr.o_start = -8;
+    hdr.o_write = hdr.o_end = sizeof(RecMessageHdr);
   }
   SECTION("start offset past the header")
   {
