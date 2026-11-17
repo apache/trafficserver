@@ -471,6 +471,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
   // Polling event by PollCont
   PollCont  *p        = get_PollCont(this->thread);
   ink_hrtime pre_poll = ink_get_hrtime();
+  ATS_PROBE3(eventloop_sleep, this->thread, this->thread->id, timeout);
   {
     // Only do_poll blocks. Everything else in this function - the enabled list, dispatching ready
     // descriptors below, the ready list - is work the event loop is awake for.
@@ -482,6 +483,7 @@ NetHandler::waitForActivity(ink_hrtime timeout)
 
   // Get & Process polling result
   PollDescriptor *pd = get_PollDescriptor(this->thread);
+  ATS_PROBE4(eventloop_wake, this->thread, this->thread->id, poll_time, pd->result);
   for (int x = 0; x < pd->result; x++) {
     epd                                = static_cast<EventIO *> get_ev_data(pd, x);
     int                          flags = get_ev_events(pd, x);
