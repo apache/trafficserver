@@ -25,45 +25,85 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <atomic>
 #include <cstdlib>
 #include <filesystem>
 #include <string>
+#include <system_error>
 #include <thread>
 
-// traffic_server rolls diags.log from a periodic task thread and reopens it
-// from the SIGUSR2 handler on a net thread, so the two must be safe to run at
-// the same time on one Diags instance.
-TEST_CASE("Diags rolls and reseats diags.log from two threads", "[Diags]")
+namespace
 {
-  char tmpl[] = "/tmp/test_Diags.XXXXXX";
-  REQUIRE(mkdtemp(tmpl) != nullptr);
-  std::filesystem::path const dir{tmpl};
-  std::string const           path = (dir / "diags.log").string();
 
+/// A private directory under the system temp directory, removed with its contents on scope exit.
+class TempDir
+{
+public:
+  TempDir()
   {
-    Diags diags("test_Diags", nullptr, nullptr, new BaseLogFile(path.c_str()));
-    REQUIRE(diags.diags_log != nullptr);
-
-    // A zero size threshold is met by every check, so each call rolls.
-    diags.config_roll_diagslog(RollingEnabledValues::ROLL_ON_SIZE, -1, 0);
-
-    constexpr int ITERATIONS = 500;
-    std::thread   roller([&diags]() {
-      for (int i = 0; i < ITERATIONS; ++i) {
-        diags.should_roll_diagslog();
-      }
-    });
-    std::thread   reseater([&diags]() {
-      for (int i = 0; i < ITERATIONS; ++i) {
-        diags.reseat_diagslog();
-      }
-    });
-    roller.join();
-    reseater.join();
-
-    REQUIRE(diags.diags_log != nullptr);
-    CHECK(diags.diags_log->is_init());
+    std::string tmpl = (std::filesystem::temp_directory_path() / "test_Diags.XXXXXX").string();
+    if (mkdtemp(tmpl.data()) != nullptr) {
+      _path = tmpl;
+    }
   }
 
-  std::filesystem::remove_all(dir);
+  ~TempDir()
+  {
+    std::error_code ec; // Best effort: cleanup must not throw out of a destructor.
+    if (!_path.empty()) {
+      std::filesystem::remove_all(_path, ec);
+    }
+  }
+
+  TempDir(TempDir const &)            = delete;
+  TempDir &operator=(TempDir const &) = delete;
+
+  std::filesystem::path const &
+  path() const
+  {
+    return _path;
+  }
+
+private:
+  std::filesystem::path _path;
+};
+
+} // namespace
+
+// traffic_server rolls diags.log from a periodic task thread and reopens it
+// from SignalContinuation, which handles SIGUSR2 on a net thread, so the two
+// must be safe to run at the same time on one Diags instance.
+TEST_CASE("Diags rolls and reseats diags.log from two threads", "[Diags]")
+{
+  TempDir dir;
+  REQUIRE(!dir.path().empty());
+  std::string const path = (dir.path() / "diags.log").string();
+
+  Diags diags("test_Diags", nullptr, nullptr, new BaseLogFile(path.c_str()));
+  REQUIRE(diags.diags_log != nullptr);
+
+  // A zero size threshold is met by every check, so each call rolls.
+  diags.config_roll_diagslog(RollingEnabledValues::ROLL_ON_SIZE, -1, 0);
+
+  constexpr int    ITERATIONS = 500;
+  std::atomic<int> rolls{0};
+  std::thread      roller([&diags, &rolls]() {
+    for (int i = 0; i < ITERATIONS; ++i) {
+      if (diags.should_roll_diagslog()) {
+        rolls.fetch_add(1, std::memory_order_relaxed);
+      }
+    }
+  });
+  std::thread      reseater([&diags]() {
+    for (int i = 0; i < ITERATIONS; ++i) {
+      diags.reseat_diagslog();
+    }
+  });
+  roller.join();
+  reseater.join();
+
+  // Every check must have rolled, or the two threads were not racing on rolls.
+  CHECK(rolls.load() == ITERATIONS);
+  REQUIRE(diags.diags_log != nullptr);
+  CHECK(diags.diags_log->is_init());
 }

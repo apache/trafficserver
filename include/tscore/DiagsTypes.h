@@ -218,12 +218,12 @@ private:
  *   mutation methods (activate_taglist,
  *   deactivate_all) acquire tag_table_lock internally. Log-pointer swap methods
  *   (reseat_diagslog, should_roll_diagslog, should_roll_outputlog and
- *   set_std_output) are serialized against each other, and acquire
- *   tag_table_lock only for their pointer swap step; file operations run
- *   outside that lock.
- *   set_std_output (and should_roll_outputlog through it) additionally holds
- *   the lock across the dup2() rebinding of the standard stream descriptor on
- *   success. setup_diagslog() acquires no lock; callers must serialize it.
+ *   set_std_output) are serialized against each other by rotation_lock, and
+ *   acquire tag_table_lock only for their pointer swap step; file operations
+ *   run outside that lock. set_std_output and should_roll_outputlog (both
+ *   through bind_std_output) additionally hold tag_table_lock across the
+ *   dup2() rebinding of the standard stream descriptor on success.
+ *   setup_diagslog() acquires no lock; callers must serialize it.
  *   Rolling-policy configuration methods (config_roll_diagslog,
  *   config_roll_outputlog) and dump() do not acquire any lock; see the
  *   per-method @par Thread safety paragraphs below for details.
