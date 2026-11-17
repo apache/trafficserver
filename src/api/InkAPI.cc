@@ -8173,6 +8173,9 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
     set_txn_string(s->t_state.my_txn_conf().ssl_client_ca_cert_path, s->t_state.my_txn_conf().ssl_client_ca_cert_path_len);
     break;
+  case TS_CONFIG_SSL_CLIENT_CA_RPK_FILENAME:
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_ca_rpk_filename, s->t_state.my_txn_conf().ssl_client_ca_rpk_filename_len);
+    break;
   case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
     set_txn_string(s->t_state.my_txn_conf().ssl_client_alpn_protocols, s->t_state.my_txn_conf().ssl_client_alpn_protocols_len);
     break;
@@ -8277,6 +8280,10 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
     *value  = sm->t_state.txn_conf->ssl_client_ca_cert_path;
     *length = sm->t_state.txn_conf->ssl_client_ca_cert_path_len;
+    break;
+  case TS_CONFIG_SSL_CLIENT_CA_RPK_FILENAME:
+    *value  = sm->t_state.txn_conf->ssl_client_ca_rpk_filename;
+    *length = sm->t_state.txn_conf->ssl_client_ca_rpk_filename_len;
     break;
   case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
     *value  = sm->t_state.txn_conf->ssl_client_alpn_protocols;

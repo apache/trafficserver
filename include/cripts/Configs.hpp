@@ -345,8 +345,15 @@ private:
             cripts::StringConfig path{"proxy.config.ssl.client.CA.cert.path"};
           }; // End class Cert
 
+          class Rpk
+          {
+          public:
+            cripts::StringConfig filename{"proxy.config.ssl.client.CA.rpk.filename"};
+          }; // End class Rpk
+
         public:
           Cert cert;
+          Rpk  rpk;
 
         }; // End class Ca
 

@@ -27,10 +27,16 @@
 #include "iocore/net/SSLTypes.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "tscore/ink_inet.h"
+#include "tscore/Ptr.h"
 
+#include <memory>
 #include <string>
+#include <string_view>
+#include <utility>
 #include "swoc/TextView.h"
 #include <vector>
+
+struct ClientTrust;
 
 class SSLNetVConnection;
 
@@ -209,9 +215,19 @@ class VerifyClient : public ActionItem
   uint8_t     mode;
   std::string ca_file;
   std::string ca_dir;
+  /// The trust a connection this entry covers gets in place of the global settings, or null if the
+  /// entry names no trusted credentials of its own.
+  Ptr<ClientTrust> trust;
 
 public:
-  VerifyClient(uint8_t param, std::string_view file, std::string_view dir) : mode(param), ca_file(file), ca_dir(dir) {}
+  /** @param param The verify_client level, the same values as proxy.config.ssl.client.certification_level.
+      @param file The entry's CA file from verify_client_ca_certs, or empty if it names none.
+      @param dir The entry's CA directory from verify_client_ca_certs, or empty if it names none.
+      @param keys The client raw public keys the entry trusts, or nullptr if it names none.
+      @param digest Identifies @a keys in the session id context.
+   */
+  VerifyClient(uint8_t param, std::string_view file, std::string_view dir,
+               std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys = nullptr, std::string_view digest = {});
   VerifyClient(const char *param, std::string_view file, std::string_view dir) : VerifyClient(atoi(param), file, dir) {}
   ~VerifyClient() override;
 

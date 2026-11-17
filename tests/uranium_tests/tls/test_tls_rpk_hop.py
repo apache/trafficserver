@@ -48,6 +48,9 @@ NEW_ORIGIN_SESSION = "new session to origin server"
 PIN_MISMATCH = r"Origin authenticated with a raw public key \(RFC 7250\), pin match=no"
 REUSED_ORIGIN_SESSION = "reused session to origin server"
 
+# The reload task that must run when a pinned set's file changes, keyed by where the set is configured.
+PIN_RELOAD_TASK = {"sni.yaml": "sni.yaml", "records.yaml": "SSLConfig"}
+
 
 @pytest.fixture(autouse=True)
 def require_rpk(ats_factory: ATSFactory) -> None:
@@ -84,6 +87,7 @@ def configure_parent(
     client_cert_level: int = 0,
     client_ca_file: str | None = None,
     sni_client_ca_file: str | None = None,
+    sni_client_rpk_ca_file: str | None = None,
     server_cert: str = "server.pem",
     server_key: str = "server.key",
     plugin: str | None = None,
@@ -94,22 +98,28 @@ def configure_parent(
     :param name: Unique ATS name within the test.
     :param origin: Origin the parent forwards to.
     :param rpk_enabled: Whether the parent offers its raw public key alongside X.509.
-    :param client_rpk_ca_file: File of trusted client raw public keys (ssl_client_rpk_ca_name) that
-        pins the edge's key for mTLS, or None for no pinning.
+    :param client_rpk_ca_file: File of trusted client raw public keys
+        (proxy.config.ssl.CA.rpk.filename) that pins the edge's key for mTLS, or None for no pinning.
     :param client_cert_level: proxy.config.ssl.client.certification_level; 2 requires a client
         certificate and 0 leaves the record unset.
     :param client_ca_file: CA bundle that X.509 client certificates are verified against.
     :param sni_client_ca_file: CA bundle carried by a sni.yaml verify_client action as a
         per-connection override, which is what installs a per-connection verify store.
+    :param sni_client_rpk_ca_file: Trusted client raw public keys the same sni.yaml entry names
+        (verify_client_rpk_ca), so that its connections pin raw public keys as well. Requires
+        sni_client_ca_file, which writes that entry.
     :param server_cert: Certificate the parent serves, and whose key it offers as a raw public key.
     :param server_key: Private key for server_cert.
     :param plugin: plugin.config line for a test plugin to load, or None.
     """
 
+    assert sni_client_rpk_ca_file is None or sni_client_ca_file is not None, (
+        "this helper writes the sni.yaml entry only with sni_client_ca_file"
+    )
     ats = ats_factory.create(name, enable_tls=True, enable_cache=False)
     ats.copy_to_ssl(SSL_DIRECTORY / server_cert, SSL_DIRECTORY / server_key)
     load_test_plugin(ats, plugin)
-    for filename in (client_rpk_ca_file, client_ca_file, sni_client_ca_file):
+    for filename in (client_rpk_ca_file, client_ca_file, sni_client_ca_file, sni_client_rpk_ca_file):
         if filename is not None:
             ats.copy_to_ssl(SSL_DIRECTORY / filename)
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
@@ -117,10 +127,6 @@ def configure_parent(
     entry: dict[str, object] = dict(DEFAULT_MULTICERT_ENTRY, ssl_cert_name=server_cert, ssl_key_name=server_key)
     if rpk_enabled:
         entry["ssl_rpk_enabled"] = 1
-    if client_rpk_ca_file is not None:
-        # Deliberately bare, not prefixed with the SSL directory: ssl_client_rpk_ca_name resolves
-        # against proxy.config.ssl.CA.cert.path, matching the resolution ssl_ca_name already gets.
-        entry["ssl_client_rpk_ca_name"] = client_rpk_ca_file
     ats.set_ssl_multicert_yaml({"ssl_multicert": [entry]})
 
     if sni_client_ca_file is not None:
@@ -131,7 +137,8 @@ def configure_parent(
             "sni:\n"
             "- fqdn: random.server.com\n"
             "  verify_client: STRICT\n"
-            f"  verify_client_ca_certs: {ats.ssl_directory / sni_client_ca_file}\n",
+            f"  verify_client_ca_certs: {ats.ssl_directory / sni_client_ca_file}\n"
+            + (f"  verify_client_rpk_ca: {sni_client_rpk_ca_file}\n" if sni_client_rpk_ca_file is not None else ""),
         )
 
     records: dict[str, object] = {
@@ -144,6 +151,10 @@ def configure_parent(
         records["proxy.config.ssl.client.certification_level"] = client_cert_level
     if client_ca_file is not None:
         records["proxy.config.ssl.CA.cert.filename"] = client_ca_file
+    if client_rpk_ca_file is not None:
+        # Deliberately bare, so it has to resolve against proxy.config.ssl.CA.cert.path as
+        # proxy.config.ssl.CA.cert.filename does.
+        records["proxy.config.ssl.CA.rpk.filename"] = client_rpk_ca_file
     ats.records.update(records)
     return ats
 
@@ -164,13 +175,14 @@ def configure_edge(
     properties: str = "SIGNATURE",
     plugin: str | None = None,
     offer_client_rpk_without_key: bool = False,
+    global_pin_file: str | None = None,
 ) -> ATS:
     """Configure a downstream (edge) ATS that connects to the parent over TLS, pinning its raw public key.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param name: Unique ATS name within the test.
     :param parent: Parent the edge forwards to.
-    :param pin_file: Trusted parent raw public keys (sni.yaml server_rpk_ca), or None for no pin.
+    :param pin_file: Trusted parent raw public keys (sni.yaml verify_server_rpk_ca), or None for no pin.
     :param policy: proxy.config.ssl.client.verify.server.policy toward the parent.
     :param offer_client_rpk: Offer a raw public key derived from server.pem/server.key, the same
         identity the edge serves inbound, as the edge's client credential toward the parent.
@@ -184,6 +196,8 @@ def configure_edge(
     :param plugin: plugin.config line for a test plugin to load, or None.
     :param offer_client_rpk_without_key: Set client_rpk_enabled with no client certificate or key
         anywhere, so there is nothing to offer.
+    :param global_pin_file: Trusted parent raw public keys for every next hop without its own
+        (proxy.config.ssl.client.CA.rpk.filename), or None for none.
     """
 
     ats = ats_factory.create(name, enable_tls=True, enable_cache=False)
@@ -219,10 +233,19 @@ def configure_edge(
                 "proxy.config.ssl.client.CA.cert.filename": server_ca_file,
             }
         )
+    if global_pin_file is not None:
+        # Deliberately bare, so it has to resolve against proxy.config.ssl.client.CA.cert.path as
+        # proxy.config.ssl.client.CA.cert.filename does.
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.CA.rpk.filename": global_pin_file,
+            }
+        )
     if pin_file is not None or offer_client_rpk or offer_client_x509 or offer_client_rpk_without_key:
         sni_lines = ["sni:", "- fqdn: 127.0.0.1"]
         if pin_file is not None:
-            sni_lines.append(f"  server_rpk_ca: {ats.ssl_directory / pin_file}")
+            sni_lines.append(f"  verify_server_rpk_ca: {ats.ssl_directory / pin_file}")
         if offer_client_rpk:
             sni_lines += [
                 "  client_cert: server.pem",
@@ -238,6 +261,21 @@ def configure_edge(
             sni_lines.append("  client_rpk_enabled: true")
         ats.write_config_file("sni.yaml", "\n".join(sni_lines) + "\n")
     return ats
+
+
+def configure_pinning_edge(ats_factory: ATSFactory, name: str, parent: ATS, pin_source: str) -> ATS:
+    """Configure an edge that pins server.pubkey.pem, the parent's key, from sni.yaml or records.yaml.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param name: Unique ATS name within the test.
+    :param parent: Parent the edge forwards to.
+    :param pin_source: "sni.yaml" for verify_server_rpk_ca, or "records.yaml" for
+        proxy.config.ssl.client.CA.rpk.filename.
+    """
+
+    if pin_source == "sni.yaml":
+        return configure_edge(ats_factory, name, parent, "server.pubkey.pem")
+    return configure_edge(ats_factory, name, parent, None, global_pin_file="server.pubkey.pem")
 
 
 def limit_hop_tls_version(edge: ATS, tls_version: str) -> None:
@@ -492,6 +530,360 @@ def test_rpk_hop_pin_mismatch_permissive(ats_factory: ATSFactory, services: Serv
     )
 
 
+@pytest.mark.parametrize(
+    "pin_file,served", (("server.pubkey.pem", True), ("server.wrongpubkey.pem", False)), ids=("match", "mismatch")
+)
+def test_rpk_hop_global_pin(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, pin_file: str, served: bool) -> None:
+    """With no sni.yaml entry for the parent, its key is pinned against the records.yaml set.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    :param pin_file: The edge's global trusted set.
+    :param served: Whether that set trusts the parent's key.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(ats_factory, "edge_global_pin", parent, None, global_pin_file=pin_file)
+    start_hop(origin, parent, edge)
+
+    result = request_through(curl, edge)
+    stop_tiers(edge, parent)
+
+    assert ("origin response" in result.output) == served, result.output
+    assert_log_contains(
+        edge.traffic_out,
+        f"Origin authenticated with a raw public key .*pin match={'yes' if served else 'no'}",
+        "the hop should use RPK and pin the key against the global set",
+    )
+
+
+@pytest.mark.parametrize(
+    "sni_pin_file,global_pin_file,served",
+    (
+        ("server.pubkey.pem", "server.wrongpubkey.pem", True),
+        ("server.wrongpubkey.pem", "server.pubkey.pem", False),
+    ),
+    ids=("sni_trusts", "sni_distrusts"),
+)
+def test_rpk_hop_sni_pin_overrides_global(
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, sni_pin_file: str, global_pin_file: str, served: bool
+) -> None:
+    """A next hop's sni.yaml trusted set replaces the records.yaml one rather than adding to it.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    :param sni_pin_file: The verify_server_rpk_ca of the edge's sni.yaml entry for the parent.
+    :param global_pin_file: The edge's global trusted set.
+    :param served: Whether the sni.yaml set trusts the parent's key.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(ats_factory, "edge_sni_over_global", parent, sni_pin_file, global_pin_file=global_pin_file)
+    start_hop(origin, parent, edge)
+
+    result = request_through(curl, edge)
+    stop_tiers(edge, parent)
+
+    assert ("origin response" in result.output) == served, result.output
+    assert_log_contains(
+        edge.traffic_out,
+        f"Origin authenticated with a raw public key .*pin match={'yes' if served else 'no'}",
+        "the key must be pinned against the sni.yaml set, not the records.yaml one",
+    )
+
+
+def test_rpk_hop_sni_entry_without_pin_uses_global(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A next hop whose sni.yaml entry names no trusted keys is pinned against the records.yaml set.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    # The entry exists only to offer the edge's own raw public key.
+    edge = configure_edge(
+        ats_factory, "edge_entry_without_pin", parent, None, offer_client_rpk=True, global_pin_file="server.pubkey.pem"
+    )
+    start_hop(origin, parent, edge)
+
+    result = request_through(curl, edge)
+    stop_tiers(edge, parent)
+
+    assert "origin response" in result.output, result.output
+    assert_log_contains(
+        edge.traffic_out,
+        "Origin authenticated with a raw public key .*pin match=yes",
+        "the hop should use RPK and pin the key against the global set",
+    )
+
+
+def test_rpk_hop_unloadable_global_pin_set_trusts_nothing(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A records.yaml pin set that fails to load fails the reload and trusts no key through it.
+
+    The edge does not trust the parent's certificate either, so once the set is gone nothing
+    authenticates the parent, and restoring the file brings the hop back.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(ats_factory, "edge_unloadable_pin", parent, None, global_pin_file="server.pubkey.pem")
+    # A new connection per request, with no session to resume, so each request is authenticated
+    # against the set in force.
+    edge.records.update(
+        {
+            "proxy.config.http.server_session_sharing.match": "none",
+            "proxy.config.ssl.origin_session_cache.enabled": 0,
+        }
+    )
+    # The malformed file is reported as errors, which is what this test expects.
+    edge.allow_errors(
+        r"failed to read a PEM block|failed to load the raw public keys proxy\.config\.ssl\.client\.CA\.rpk\.filename"
+    )
+    start_hop(origin, parent, edge)
+    pin_file = edge.ssl_directory / "server.pubkey.pem"
+    pin_set = pin_file.read_text()
+
+    assert "origin response" in request_through(curl, edge).output, "the loaded set should trust the parent's key"
+
+    rewrite_watched_file(pin_file, "not a public key\n")
+    result = edge.traffic_ctl("config", "reload", "-m", "-t", "unloadable-pin-set", "-w", "1", "-r", "0.5", "-T", "30s")
+    assert result.returncode == 2, result.output
+    statuses = reload_task_statuses(edge, "unloadable-pin-set")
+    assert statuses.get("SSLConfig") == "fail", statuses
+    assert "origin response" not in request_through(curl, edge).output, "no key may be trusted through a set that failed to load"
+    # With no set loaded, no raw public key is negotiated, so the hop fails on the parent's untrusted
+    # certificate rather than on a pin check.
+    wait_for_file_lines(edge.diags_log, r"Core server certificate verification failed.*Action=Terminate", 1)
+
+    rewrite_watched_file(pin_file, pin_set)
+    statuses = reload_config(edge, "restored-pin-set")
+    assert statuses.get("SSLConfig") == "success", statuses
+    assert "origin response" in request_through(curl, edge).output, "the restored set should trust the parent's key again"
+    stop_tiers(edge, parent)
+
+
+def txn_pin_rule(parent: ATS, prefix: str, pin_file: str, ca_path: Path | None = None) -> str:
+    """Build a remap rule whose transactions override the edge's trusted parent keys.
+
+    :param parent: Parent the rule forwards to.
+    :param prefix: Request path prefix the rule matches, such as "/override/".
+    :param pin_file: The transactions' proxy.config.ssl.client.CA.rpk.filename.
+    :param ca_path: The transactions' proxy.config.ssl.client.CA.cert.path, or None to keep the
+        edge's own.
+    """
+
+    rule = (
+        f"map {prefix} https://127.0.0.1:{parent.https_port}/ @plugin=conf_remap.so"
+        f" @pparam=proxy.config.ssl.client.CA.rpk.filename={pin_file}"
+    )
+    if ca_path is not None:
+        rule += f" @pparam=proxy.config.ssl.client.CA.cert.path={ca_path}"
+    return rule
+
+
+def request_path_through(curl: Curl, edge: ATS, path: str) -> CommandResult:
+    """Send one request for a path to the edge's TLS listener.
+
+    :param curl: Curl command runner.
+    :param edge: Edge tier receiving the request.
+    :param path: Request path, such as "/override/".
+    """
+
+    result = curl.run(f"-k https://127.0.0.1:{edge.https_port}{path}", timeout=30)
+    assert result.returncode == 0, result.output
+    return result
+
+
+@pytest.mark.parametrize(
+    "txn_pin_file,sni_pin_file,global_pin_file",
+    (
+        ("server.pubkey.pem", "server.wrongpubkey.pem", None),
+        ("server.wrongpubkey.pem", "server.pubkey.pem", None),
+        ("server.pubkey.pem", None, "server.wrongpubkey.pem"),
+        ("server.wrongpubkey.pem", None, "server.pubkey.pem"),
+    ),
+    ids=("trusts_over_sni", "distrusts_over_sni", "trusts_over_global", "distrusts_over_global"),
+)
+def test_rpk_hop_txn_pin_takes_precedence(
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    curl: Curl,
+    txn_pin_file: str,
+    sni_pin_file: str | None,
+    global_pin_file: str | None,
+) -> None:
+    """A transaction's trusted parent keys replace the sni.yaml and records.yaml sets, as for X.509.
+
+    Each case pairs a transaction set with an sni.yaml or records.yaml set that decides the other way,
+    so a request outside the overriding rule checks that the replaced set is in force there.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    :param txn_pin_file: The overriding rule's proxy.config.ssl.client.CA.rpk.filename.
+    :param sni_pin_file: The verify_server_rpk_ca of the edge's sni.yaml entry, or None.
+    :param global_pin_file: The edge's global trusted set, or None.
+    """
+
+    served = txn_pin_file == "server.pubkey.pem"
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(
+        ats_factory,
+        "edge_txn_pin",
+        parent,
+        sni_pin_file,
+        global_pin_file=global_pin_file,
+        extra_remap_rules=[txn_pin_rule(parent, "/override/", txn_pin_file)],
+    )
+    # A new connection per request, with no session to resume, so each request is authenticated
+    # against its own set.
+    edge.records.update(
+        {
+            "proxy.config.ssl.client.CA.cert.path": str(edge.ssl_directory),
+            "proxy.config.http.server_session_sharing.match": "none",
+            "proxy.config.ssl.origin_session_cache.enabled": 0,
+        }
+    )
+    start_hop(origin, parent, edge)
+
+    replaced = request_through(curl, edge)
+    overriding = request_path_through(curl, edge, "/override/")
+    stop_tiers(edge, parent)
+
+    assert ("origin response" in replaced.output) != served, "outside the rule, the replaced set should decide"
+    assert ("origin response" in overriding.output) == served, "under the rule, the transaction's set should decide"
+
+
+def test_rpk_hop_txn_pin_resolves_against_txn_ca_path(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A relative transaction pin file resolves against the transaction's own CA path override.
+
+    The edge's records.yaml CA path, left at its default, does not hold the file, so the hop works
+    only if the transaction's proxy.config.ssl.client.CA.cert.path is the base.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(
+        ats_factory,
+        "edge_txn_ca_path",
+        parent,
+        None,
+        extra_remap_rules=[txn_pin_rule(parent, "/override/", "server.pubkey.pem", ca_path=SSL_DIRECTORY)],
+    )
+    start_hop(origin, parent, edge)
+
+    result = request_path_through(curl, edge, "/override/")
+    stop_tiers(edge, parent)
+
+    assert "origin response" in result.output, result.output
+    assert_log_contains(
+        edge.traffic_out,
+        r"Origin authenticated with a raw public key .*pin match=yes",
+        "the key should be pinned against the file under the transaction's CA path",
+    )
+
+
+def test_rpk_hop_unloadable_txn_pin_set_trusts_nothing(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A transaction pin file that cannot be loaded trusts no key, rather than falling back to another set.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(
+        ats_factory,
+        "edge_txn_unloadable",
+        parent,
+        "server.pubkey.pem",
+        global_pin_file="server.pubkey.pem",
+        extra_remap_rules=[txn_pin_rule(parent, "/override/", "missing.pubkey.pem")],
+    )
+    edge.records.update(
+        {
+            "proxy.config.http.server_session_sharing.match": "none",
+            "proxy.config.ssl.origin_session_cache.enabled": 0,
+        }
+    )
+    # The missing file is reported as errors, by the TLS library as well, which is what this test expects.
+    edge.allow_errors(
+        r"(?i)no[ _]such[ _]file|failed to open trusted raw public key file|failed to load the raw public keys a transaction's"
+    )
+    start_hop(origin, parent, edge)
+
+    assert "origin response" in request_through(curl, edge).output, "outside the rule, the parent's key is trusted"
+    assert "origin response" not in request_path_through(curl, edge, "/override/").output, (
+        "no key may be trusted through a transaction set that failed to load"
+    )
+    stop_tiers(edge, parent)
+    assert_log_contains(
+        edge.diags_log,
+        r"failed to load the raw public keys a transaction's proxy\.config\.ssl\.client\.CA\.rpk\.filename names",
+        "the unloadable file should be reported",
+    )
+
+
+def test_rpk_hop_pooled_connection_checked_against_txn_pin(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A pooled origin connection carries a request only if that request's own trusted set has its key.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(
+        ats_factory,
+        "edge_txn_pool",
+        parent,
+        "server.pubkey.pem",
+        extra_remap_rules=[
+            txn_pin_rule(parent, "/trusting/", "server.pubkey.pem"),
+            txn_pin_rule(parent, "/distrusting/", "server.wrongpubkey.pem"),
+        ],
+    )
+    # The pool is per thread, so one thread keeps every request in reach of the pooled connection.
+    edge.records.update(
+        {
+            "proxy.config.ssl.client.CA.cert.path": str(edge.ssl_directory),
+            "proxy.config.exec_thread.autoconfig.enabled": 0,
+            "proxy.config.exec_thread.limit": 1,
+        }
+    )
+    start_hop(origin, parent, edge)
+
+    assert "origin response" in request_through(curl, edge).output
+    assert "origin response" in request_path_through(curl, edge, "/trusting/").output
+    assert inbound_handshakes(parent) == 1, "a request whose own set trusts the key should reuse the pooled connection"
+    result = request_path_through(curl, edge, "/distrusting/")
+    stop_tiers(edge, parent)
+
+    assert "origin response" not in result.output, "a request whose own set lacks the key must not reuse the connection"
+    assert_log_contains(
+        edge.diags_log,
+        "Origin raw public key did not match any trusted key. Action=Terminate",
+        "the request must be refused by a new handshake against its own set",
+    )
+
+
 @pytest.mark.parametrize("tls_version", ("1.3", "1.2"))
 def test_rpk_hop_mtls_pin_matches(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, tls_version: str) -> None:
     """The parent requires and pins the edge's raw public key, and the pin matches.
@@ -554,68 +946,11 @@ def test_rpk_hop_mtls_pin_mismatch(ats_factory: ATSFactory, services: ServiceFac
     )
 
 
-def test_rpk_hop_mtls_per_entry_scoping(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A specific multicert entry's ssl_client_rpk_ca_name reaches the connection, not the default entry's.
-
-    The default ("dest_ip: *") entry stays plain X.509 mTLS, while the more specific
-    ("dest_ip: 127.0.0.1") entry pins the edge's raw public key. Every connection lands on the
-    specific entry because an IP match beats the wildcard, so this only succeeds if that entry's own
-    configuration reaches the connection rather than the X.509-only verify path of the default
-    entry that SSL_new() started the connection from.
-
-    :param ats_factory: Factory for isolated Traffic Server instances.
-    :param services: Factory owning support services and their cleanup.
-    :param curl: Curl command runner.
-    """
-
-    origin = configure_origin(services)
-    parent = ats_factory.create("parent_scoped", enable_tls=True, enable_cache=False)
-    parent.copy_to_ssl(SSL_DIRECTORY / "server.pem", SSL_DIRECTORY / "server.key", SSL_DIRECTORY / "server.pubkey.pem")
-    parent.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
-    parent.set_ssl_multicert_yaml(
-        {
-            "ssl_multicert": [
-                dict(DEFAULT_MULTICERT_ENTRY),
-                {
-                    "dest_ip": "127.0.0.1",
-                    "ssl_cert_name": "server.pem",
-                    "ssl_key_name": "server.key",
-                    "ssl_rpk_enabled": 1,
-                    "ssl_client_rpk_ca_name": "server.pubkey.pem",
-                },
-            ]
-        }
-    )
-    parent.records.update(
-        {
-            "proxy.config.ssl.client.certification_level": 2,
-            "proxy.config.ssl.CA.cert.path": str(parent.ssl_directory),
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "ssl_verify|ssl_load",
-        }
-    )
-    edge = configure_edge(ats_factory, "edge_scoped", parent, "server.pubkey.pem", offer_client_rpk=True)
-    start_hop(origin, parent, edge)
-
-    result = request_through(curl, edge)
-    stop_tiers(edge, parent)
-
-    assert "origin response" in result.output, "the request should succeed on the specific entry, not the default entry"
-    # The default entry has no ssl_client_rpk_ca_name, so if settings leaked from it the RPK-aware verify path
-    # would never run and the X.509-only path would reject the edge's raw public key outright.
-    # BoringSSL takes the custom_verify path; OpenSSL's classic callback logs the RPK branch directly.
-    assert_log_contains(
-        parent.traffic_out,
-        "Callback: custom verify client cert|Client authenticated with a raw public key",
-        "the matched entry, not the default entry, must drive verification",
-    )
-
-
 def test_rpk_hop_mtls_x509_fallback(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A classic X.509 client certificate still verifies on an RPK-enabled entry.
+    """A classic X.509 client certificate still verifies on a connection that pins client raw public keys.
 
     Installing custom_verify, without which the RPK branch cannot run at all, disables BoringSSL's automatic
-    X.509 verification for the context, so ssl_custom_verify_client_callback()'s X.509 fallback has
+    X.509 verification for the connection, so ssl_custom_verify_client_callback()'s X.509 fallback has
     to accept the chain itself from BoringSSL's already-parsed copy.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
@@ -641,14 +976,14 @@ def test_rpk_hop_mtls_x509_fallback(ats_factory: ATSFactory, services: ServiceFa
     result = request_through(curl, edge)
     stop_tiers(edge, parent)
 
-    assert "origin response" in result.output, "a valid X.509 client cert should still verify on an RPK-enabled entry"
-    # Confirms the verification this entry needs engaged, rather than another path accepting the
+    assert "origin response" in result.output, "a valid X.509 client cert should still verify where raw public keys are pinned"
+    # Confirms the verification this connection needs engaged, rather than another path accepting the
     # chain. BoringSSL must take its custom_verify fallback; OpenSSL has no such split: one classic
     # callback handles both RPK and X.509.
     expected_callback = (
         "Callback: custom verify client cert" if "BoringSSL" in ats_factory.tls_library() else "Callback: verify client cert"
     )
-    assert_log_contains(parent.traffic_out, expected_callback, "the client-cert verify callback for this entry must run")
+    assert_log_contains(parent.traffic_out, expected_callback, "the client-cert verify callback for this connection must run")
     assert_log_excludes(
         parent.traffic_out, "client certificate chain verification failed", "the X.509 fallback must accept a validly-signed chain"
     )
@@ -802,9 +1137,9 @@ def test_rpk_hop_outbound_x509_trusted(ats_factory: ATSFactory, services: Servic
 
 
 def test_rpk_hop_sni_client_ca_override(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """The X.509 fallback honors a per-SNI client CA override on an RPK-enabled entry.
+    """The X.509 fallback honors a per-SNI client CA override where raw public keys are pinned.
 
-    The verify_client action overrides the client CA on an entry that also pins raw public keys, so
+    The verify_client action overrides the client CA on a connection that also pins raw public keys, so
     the fallback has to verify against the store that action installed rather than the one on the
     SSL_CTX. The global CA (server.pem) does not sign this client's certificate and the per-SNI
     override (signer.pem) does, so the connection only succeeds if the per-connection store is what
@@ -827,6 +1162,7 @@ def test_rpk_hop_sni_client_ca_override(ats_factory: ATSFactory, services: Servi
         client_cert_level=2,
         client_ca_file="server.pem",
         sni_client_ca_file="signer.pem",
+        sni_client_rpk_ca_file="server.pubkey.pem",
     )
     origin.start()
     parent.start()
@@ -847,11 +1183,18 @@ def test_rpk_hop_sni_client_ca_override(ats_factory: ATSFactory, services: Servi
         parent.diags_log, "no per-connection client CA store", "the per-connection store must be readable from the callback"
     )
     assert_log_excludes(parent.traffic_out, "client certificate chain verification failed", "the override must verify this chain")
+    # The entry pins raw public keys too, so on BoringSSL the custom verify callback's fallback is
+    # what verified the chain. OpenSSL has a single callback, so there is nothing to tell apart.
+    if "BoringSSL" in ats_factory.tls_library():
+        assert_log_contains(
+            parent.traffic_out, "Callback: custom verify client cert", "the custom verify callback must verify this chain"
+        )
 
 
+@pytest.mark.parametrize("pin_source", ("sni.yaml", "records.yaml"))
 @pytest.mark.parametrize("tls_version", ("1.3", "1.2"))
 def test_rpk_hop_replaced_pin_set_retires_origin_sessions(
-    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, tls_version: str
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, tls_version: str, pin_source: str
 ) -> None:
     """Replacing the edge's pinned set stops a cached origin session from being resumed.
 
@@ -862,11 +1205,12 @@ def test_rpk_hop_replaced_pin_set_retires_origin_sessions(
     :param services: Factory owning support services and their cleanup.
     :param curl: Curl command runner.
     :param tls_version: TLS version of the hop between the edge and the parent.
+    :param pin_source: Where the edge's pinned set is configured.
     """
 
     origin = configure_origin(services)
     parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
-    edge = configure_edge(ats_factory, "edge_resume", parent, "server.pubkey.pem")
+    edge = configure_pinning_edge(ats_factory, "edge_resume", parent, pin_source)
     edge.records.update(
         {
             # A connection per request, so that each one offers the cached session.
@@ -885,7 +1229,7 @@ def test_rpk_hop_replaced_pin_set_retires_origin_sessions(
 
     rewrite_watched_file(edge.ssl_directory / "server.pubkey.pem", WIDENED_PIN_SET)
     statuses = reload_config(edge, "replace-pin-set")
-    assert "sni.yaml" in statuses, statuses
+    assert PIN_RELOAD_TASK[pin_source] in statuses, statuses
 
     assert "origin response" in request_through(curl, edge).output
     content = wait_for_file_lines(edge.traffic_out, NEW_ORIGIN_SESSION, 2)
@@ -899,9 +1243,10 @@ def test_rpk_hop_replaced_pin_set_retires_origin_sessions(
     assert digests[0] == digests[1] != digests[2], keys
 
 
+@pytest.mark.parametrize("pin_source", ("sni.yaml", "records.yaml"))
 @pytest.mark.parametrize("match", ("both", "host"))
 def test_rpk_hop_replaced_pin_set_retires_pooled_connections(
-    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, match: str
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, match: str, pin_source: str
 ) -> None:
     """A pooled origin connection is reused only while the edge still pins the key that authenticated it.
 
@@ -914,11 +1259,12 @@ def test_rpk_hop_replaced_pin_set_retires_pooled_connections(
     :param match: proxy.config.http.server_session_sharing.match. The session pool searches by
         address for "both" and by hostname alone for "host", and either way the pool checks the
         presented key, not a name.
+    :param pin_source: Where the edge's pinned set is configured.
     """
 
     origin = configure_origin(services)
     parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
-    edge = configure_edge(ats_factory, "edge_pool", parent, "server.pubkey.pem")
+    edge = configure_pinning_edge(ats_factory, "edge_pool", parent, pin_source)
     # The pool is per thread, so one thread keeps every request in reach of the pooled connection.
     edge.records.update(
         {
@@ -937,20 +1283,20 @@ def test_rpk_hop_replaced_pin_set_retires_pooled_connections(
 
     rewrite_watched_file(pin_file, pin_file.read_text())
     statuses = reload_config(edge, "unchanged-pin-set")
-    assert "sni.yaml" in statuses, statuses
+    assert PIN_RELOAD_TASK[pin_source] in statuses, statuses
     assert "origin response" in request_through(curl, edge).output
     assert inbound_handshakes(parent) == 1, "an unchanged pinned set should keep its pooled connection"
 
     # Adding a key for rotation leaves the one that authenticated the connection trusted.
     rewrite_watched_file(pin_file, WIDENED_PIN_SET)
     statuses = reload_config(edge, "rotate-pin-set")
-    assert "sni.yaml" in statuses, statuses
+    assert PIN_RELOAD_TASK[pin_source] in statuses, statuses
     assert "origin response" in request_through(curl, edge).output
     assert inbound_handshakes(parent) == 1, "a set that still trusts the key should keep its pooled connection"
 
     rewrite_watched_file(pin_file, (SSL_DIRECTORY / "server.wrongpubkey.pem").read_text())
     statuses = reload_config(edge, "replace-pin-set")
-    assert "sni.yaml" in statuses, statuses
+    assert PIN_RELOAD_TASK[pin_source] in statuses, statuses
     assert "origin response" not in request_through(curl, edge).output, (
         "a request whose set no longer trusts the key must not reuse the connection that key authenticated"
     )
@@ -1062,14 +1408,14 @@ def test_rpk_hop_mtls_replaced_pin_set_retires_sessions(
     # The identity is derived from the keys, so a reload that leaves them unchanged keeps resuming.
     rewrite_watched_file(pin_file, pin_file.read_text())
     statuses = reload_config(parent, "unchanged-pin-set")
-    assert "ssl_multicert.yaml" in statuses, statuses
+    assert "SSLConfig" in statuses, statuses
     assert "origin response" in request_through(curl, edge).output
     content = wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 2)
     assert content.count(NEW_ORIGIN_SESSION) == 1, content
 
     rewrite_watched_file(pin_file, WIDENED_PIN_SET)
     statuses = reload_config(parent, "replace-pin-set")
-    assert "ssl_multicert.yaml" in statuses, statuses
+    assert "SSLConfig" in statuses, statuses
     assert "origin response" in request_through(curl, edge).output
     content = wait_for_file_lines(edge.traffic_out, NEW_ORIGIN_SESSION, 2)
     assert content.count(REUSED_ORIGIN_SESSION) == 2, content
@@ -1269,12 +1615,11 @@ def test_rpk_hop_verify_client_hook_rejects_pinned_key(ats_factory: ATSFactory, 
     )
 
 
-def test_rpk_hop_mtls_reverse_scoping(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A specific X.509-only entry does not take raw public keys from an RPK default entry.
+def test_rpk_hop_mtls_unpinned_parent_takes_x509(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A parent that trusts no client raw public keys does not negotiate one, though it offers its own server key.
 
-    The default entry pins client raw public keys and the more specific entry the connection lands
-    on does not, so the edge's offered raw public key must not be negotiated there; it falls back to
-    its X.509 client certificate, which the specific entry verifies.
+    The edge offers its raw public key and falls back to its X.509 client certificate, which the
+    parent verifies.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -1282,35 +1627,18 @@ def test_rpk_hop_mtls_reverse_scoping(ats_factory: ATSFactory, services: Service
     """
 
     origin = configure_origin(services)
-    parent = ats_factory.create("parent_reverse", enable_tls=True, enable_cache=False)
-    parent.copy_to_ssl(SSL_DIRECTORY / "server.pem", SSL_DIRECTORY / "server.key", SSL_DIRECTORY / "server.pubkey.pem")
-    parent.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}")
-    parent.set_ssl_multicert_yaml(
-        {
-            "ssl_multicert": [
-                dict(DEFAULT_MULTICERT_ENTRY, ssl_rpk_enabled=1, ssl_client_rpk_ca_name="server.pubkey.pem"),
-                {"dest_ip": "127.0.0.1", "ssl_cert_name": "server.pem", "ssl_key_name": "server.key"},
-            ]
-        }
+    parent = configure_parent(
+        ats_factory, "parent_unpinned", origin, rpk_enabled=True, client_cert_level=2, client_ca_file="server.pem"
     )
-    parent.records.update(
-        {
-            "proxy.config.ssl.client.certification_level": 2,
-            "proxy.config.ssl.CA.cert.path": str(parent.ssl_directory),
-            "proxy.config.ssl.CA.cert.filename": "server.pem",
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "ssl_verify|ssl_load",
-        }
-    )
-    edge = configure_edge(ats_factory, "edge_reverse", parent, None, offer_client_rpk=True, server_ca_file="server.pem")
+    edge = configure_edge(ats_factory, "edge_unpinned", parent, None, offer_client_rpk=True, server_ca_file="server.pem")
     start_hop(origin, parent, edge)
 
     result = request_through(curl, edge)
     stop_tiers(edge, parent)
 
-    assert "origin response" in result.output, "the edge's X.509 client certificate should authenticate on the specific entry"
+    assert "origin response" in result.output, "the edge's X.509 client certificate should authenticate"
     assert_log_excludes(
-        parent.traffic_out, "Client authenticated with a raw public key", "the specific entry must not negotiate a raw public key"
+        parent.traffic_out, "Client authenticated with a raw public key", "the parent must not negotiate a raw public key"
     )
 
 

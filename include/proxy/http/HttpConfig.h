@@ -801,6 +801,8 @@ struct OverridableHttpConfigParams {
   size_t ssl_client_ca_cert_filename_len     = 0;
   char  *ssl_client_ca_cert_path             = nullptr;
   size_t ssl_client_ca_cert_path_len         = 0;
+  char  *ssl_client_ca_rpk_filename          = nullptr;
+  size_t ssl_client_ca_rpk_filename_len      = 0;
   char  *ssl_client_alpn_protocols           = nullptr;
   size_t ssl_client_alpn_protocols_len       = 0;
 
@@ -1063,6 +1065,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.ssl_client_private_key_filename);
   ats_free(oride.ssl_client_ca_cert_filename);
   ats_free(oride.ssl_client_ca_cert_path);
+  ats_free(oride.ssl_client_ca_rpk_filename);
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);

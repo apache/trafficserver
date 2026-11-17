@@ -26,6 +26,7 @@
 #include "iocore/net/TLSBasicSupport.h"
 #include "swoc/MemSpan.h"
 #include "tscore/Diags.h"
+#include "tscore/Ptr.h"
 
 #ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 #include <openssl/decoder.h>
@@ -40,6 +41,7 @@
 #include <optional>
 #include <string_view>
 #include <string>
+#include <utility>
 
 class SSLNetVConnection;
 
@@ -101,6 +103,38 @@ SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 
 void setClientCertLevel(SSL *ssl, uint8_t certLevel);
 void setClientCertCACerts(SSL *ssl, const char *file, const char *dir);
+
+/** The client credentials a connection trusts beyond the global X.509 settings: those of the sni.yaml
+    verify_client action that covered it, or else the raw public keys proxy.config.ssl.CA.rpk.filename
+    names.
+
+    Built once when the configuration is loaded and shared by every connection it covers. Each
+    connection holds a reference, so a reload during a handshake cannot free it.
+ */
+struct ClientTrust : public RefCountObjInHeap {
+  ClientTrust(std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys, std::string digest, bool x509)
+    : rpk_keys(std::move(keys)), rpk_digest(std::move(digest)), x509(x509)
+  {
+  }
+
+  /// The raw public keys a client may present, or nullptr if the connection accepts none.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> const rpk_keys;
+  /// Identifies rpk_keys in the session id context, taken once when the set was loaded.
+  std::string const rpk_digest;
+  /// Whether an X.509 client certificate may authenticate at all. False where a host names only raw
+  /// public keys; that set then replaces proxy.config.ssl.CA.cert.filename as well.
+  bool const x509;
+};
+
+/** Attach @a trust to @a ssl's connection, in place of the global settings and of any trust attached
+    earlier.
+
+    @param ssl The connection the trust applies to.
+    @param trust The trust to attach; the connection takes a reference to it.
+    @return false if the trust could not be attached, or raw public keys were given to a build
+      without raw public key support.
+ */
+bool setClientTrust(SSL *ssl, ClientTrust *trust);
 
 /** Digest the client CA scope named by @a file and @a dir, for the session id context.
 

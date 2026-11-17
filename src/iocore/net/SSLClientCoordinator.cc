@@ -61,7 +61,7 @@ SSLClientCoordinator::startup()
      "proxy.config.ssl.client.cert.filename", "proxy.config.ssl.client.private_key.path",
      "proxy.config.ssl.client.private_key.filename", "proxy.config.ssl.keylog_file", "proxy.config.ssl.server.cert.path",
      "proxy.config.ssl.server.private_key.path", "proxy.config.ssl.server.cert_chain.filename",
-     "proxy.config.ssl.server.session_ticket.enable"});
+     "proxy.config.ssl.server.session_ticket.enable", "proxy.config.ssl.client.CA.rpk.filename"});
 
   // Track sni.yaml — FileManager watches for mtime changes, record wired to trigger reload.
   // When enabled, the "sni" dep_key makes this routable for RPC inline content.

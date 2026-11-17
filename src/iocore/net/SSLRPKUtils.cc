@@ -213,4 +213,24 @@ digestTrustedKeys(const TrustedKeySet &keys)
   return hex;
 }
 
+bool
+loadTrustedKeyFile(const char *path, std::shared_ptr<const TrustedKeySet> &keys, std::string &digest)
+{
+  auto loaded = std::make_shared<TrustedKeySet>();
+
+  if (!loadTrustedKeys(path, *loaded)) {
+    return false;
+  }
+
+  std::string loaded_digest = digestTrustedKeys(*loaded);
+
+  if (loaded_digest.empty()) {
+    SSLError("SSLRPKUtils: failed to digest the trusted raw public keys from %s", path);
+    return false;
+  }
+  keys   = std::move(loaded);
+  digest = std::move(loaded_digest);
+  return true;
+}
+
 } // namespace SSLRPKUtils

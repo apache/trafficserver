@@ -29,6 +29,7 @@
 #include "SNIActionPerformer.h"
 
 #include "P_SSLNetVConnection.h"
+#include "P_SSLUtils.h"
 
 #if TS_USE_QUIC == 1
 #include "P_QUICNetVConnection.h"
@@ -295,6 +296,21 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
   return real_dst;
 }
 
+VerifyClient::VerifyClient(uint8_t param, std::string_view file, std::string_view dir,
+                           std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys, std::string_view digest)
+  : mode(param), ca_file(file), ca_dir(dir)
+{
+  // Trust that a host names for either credential type replaces both global settings for that host,
+  // so it accepts only what it names.
+  bool const x509_override = !ca_file.empty() || !ca_dir.empty();
+
+  if (x509_override || keys != nullptr) {
+    trust = make_ptr(new ClientTrust(std::move(keys), std::string{digest}, x509_override));
+  }
+}
+
+VerifyClient::~VerifyClient() {}
+
 int
 VerifyClient::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
 {
@@ -310,6 +326,9 @@ VerifyClient::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
   setClientCertLevel(ssl_vc->ssl, this->mode);
   ssl_vc->set_ca_cert_file(ca_file, ca_dir);
   setClientCertCACerts(ssl_vc->ssl, ssl_vc->get_ca_cert_file(), ssl_vc->get_ca_cert_dir());
+  if (trust && !setClientTrust(ssl_vc->ssl, trust.get())) {
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  }
 
   return SSL_TLSEXT_ERR_OK;
 }

@@ -577,6 +577,7 @@ PreWarmSM::_connect(const IpEndpoint &addr)
     opt.ssl_client_private_key_name = http_conf_params->oride.ssl_client_private_key_filename;
     opt.ssl_client_ca_cert_name     = http_conf_params->oride.ssl_client_ca_cert_filename;
     opt.ssl_client_ca_cert_path     = http_conf_params->oride.ssl_client_ca_cert_path;
+    opt.ssl_client_ca_rpk_name      = http_conf_params->oride.ssl_client_ca_rpk_filename;
 
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     connect_action_handle = sslNetProcessor.connect_re(this, &addr.sa, opt);
