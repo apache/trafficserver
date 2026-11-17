@@ -29,6 +29,9 @@
 #include "iocore/net/NetVConnection.h"
 #include "proxy/http/HttpConfig.h"
 
+#include <cstring>
+#include <string>
+
 namespace
 {
 bool
@@ -48,6 +51,62 @@ proto_is_http2(IOBufferReader *reader)
 
   ink_assert(nbytes <= (int64_t)HTTP2_CONNECTION_PREFACE_LEN);
   return memcmp(HTTP2_CONNECTION_PREFACE, buf, nbytes) == 0;
+}
+
+/** Render @a addr for a diagnostic message.
+
+    This is the IP address for IP sockets and "unix:<path>" for Unix domain sockets. A client's Unix socket is usually
+    unbound, so its path is reported as "(unnamed)".
+ */
+std::string
+addr_to_text(sockaddr const *addr)
+{
+  if (ats_is_ip(addr)) {
+    ip_text_buffer buf;
+    return ats_ip_ntop(addr, buf, sizeof(buf));
+  }
+  if (addr->sa_family == AF_UNIX) {
+    char const  *path = ats_unix_cast(addr)->sun_path;
+    size_t const len  = strnlen(path, TS_UNIX_SIZE);
+    return len == 0 ? std::string{"unix:(unnamed)"} : "unix:" + std::string{path, len};
+  }
+  return "unknown";
+}
+
+/** Warn that the probe is closing @a netvc because its port has no acceptor for the protocol the client used.
+
+    @a key is the protocol group the probe selected. @a h2_preface_on_tls is true if the client sent the HTTP/2
+    connection preface over TLS without negotiating h2 via ALPN, which the probe handles as HTTP/1.x.
+ */
+void
+warn_unregistered_protocol(NetVConnection *netvc, ProtocolProbeSessionAcceptEnums::ProtoGroupKey key, bool h2_preface_on_tls)
+{
+  // Behind a PROXY protocol load balancer the TCP peer is the balancer, so name the client the header reports.
+  std::string client = addr_to_text(netvc->get_remote_addr());
+  if (netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
+    if (sockaddr const *pp_src = netvc->get_proxy_protocol_src_addr(); pp_src != nullptr) {
+      client = addr_to_text(pp_src) + " (peer " + client + ")";
+    }
+  }
+
+  sockaddr const *local = netvc->get_local_addr();
+  std::string     listener =
+    ats_is_ip(local) ? "local port " + std::to_string(ats_ip_port_host_order(local)) : "listener " + addr_to_text(local);
+
+  char const *detected = nullptr;
+  char const *advice   = "Check the protocols for this port in proxy.config.http.server_ports (proto=...).";
+  if (key == ProtocolProbeSessionAcceptEnums::ProtoGroupKey::HTTP2) {
+    detected = "sent an HTTP/2 connection preface (h2c prior knowledge), but this port does not enable HTTP/2";
+  } else if (h2_preface_on_tls) {
+    // Enabling HTTP/1.x would not help: the client must negotiate h2 via ALPN instead.
+    detected = "sent an HTTP/2 connection preface over TLS without negotiating h2 via ALPN, which RFC 9113 forbids, so it was "
+               "handled as HTTP/1.x, which this port does not enable";
+    advice   = "The client must negotiate h2 via ALPN.";
+  } else {
+    detected = "did not send an HTTP/2 connection preface, so it was handled as HTTP/1.x, which this port does not enable";
+  }
+
+  Warning("Closing connection from client_ip=%s on %s: the client %s. %s", client.c_str(), listener.c_str(), detected, advice);
 }
 
 DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
@@ -74,8 +133,9 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   {
     VIO            *vio;
     NetVConnection *netvc;
-    SessionAccept  *acceptor = nullptr;
-    ProtoGroupKey   key      = ProtoGroupKey::N_GROUPS; // use this as an invalid value.
+    SessionAccept  *acceptor          = nullptr;
+    ProtoGroupKey   key               = ProtoGroupKey::N_GROUPS; // use this as an invalid value.
+    bool            h2_preface_on_tls = false;
 
     vio   = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
@@ -149,7 +209,8 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       } else {
         // RFC 9113 Section 3.3: Prior knowledge is only permissible for HTTP/2 over plaintext (non-TLS) connections.
         Dbg(dbg_ctl_http, "HTTP/2 prior knowledge was used on a TLS connection (protocol violation). Selecting HTTP/1 instead.");
-        key = ProtoGroupKey::HTTP;
+        key               = ProtoGroupKey::HTTP;
+        h2_preface_on_tls = true;
       }
     } else {
       key = ProtoGroupKey::HTTP;
@@ -157,7 +218,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 
     acceptor = probeParent->endpoint[static_cast<int>(key)];
     if (acceptor == nullptr) {
-      Warning("Unregistered protocol type %d", static_cast<int>(key));
+      warn_unregistered_protocol(netvc, key, h2_preface_on_tls);
       goto done;
     }
 
