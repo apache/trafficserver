@@ -355,7 +355,7 @@ CacheVC::handleWriteLock(int /* event ATS_UNUSED */, Event *e)
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
     if (!lock.is_locked()) {
       ts::Metrics::Counter::increment(cache_rsb.stripe_lock_contention);
-      if (stripe && stripe->cache_vol) {
+      if (stripe->cache_vol) {
         ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.stripe_lock_contention);
       }
       set_agg_write_in_progress();
