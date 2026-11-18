@@ -79,7 +79,7 @@ public:
   static std::shared_ptr<T>
   load_leased()
   {
-    uint64_t const generation = _generation.load(std::memory_order_acquire);
+    uint64_t const generation = _generation.value.load(std::memory_order_acquire);
 
     if (_lease.generation == generation) {
       if (auto value = _lease.value.lock(); value) {
@@ -113,11 +113,17 @@ private:
   static void
   bump_generation() noexcept
   {
-    _generation.fetch_add(1, std::memory_order_release);
+    _generation.value.fetch_add(1, std::memory_order_release);
   }
 
   static inline constinit AtomicSharedPtr<T> _ptr;
-  // Read by every load_leased(), so it gets a cache line to itself.
-  alignas(64) static inline constinit std::atomic<uint64_t> _generation{0};
-  static inline thread_local Lease _lease;
+  // Read by every load_leased(). Aligning the type rather than the variable pads it to a whole cache
+  // line, so the linker cannot place other globals beside it.
+  struct alignas(64) Generation {
+    std::atomic<uint64_t> value{0};
+  };
+  static_assert(sizeof(Generation) == 64);
+
+  static inline constinit Generation _generation;
+  static inline thread_local Lease   _lease;
 };
