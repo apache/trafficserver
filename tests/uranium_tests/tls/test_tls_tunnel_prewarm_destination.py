@@ -66,6 +66,10 @@ def test_tls_tunnel_prewarm_destination(ats_factory: ATSFactory, services: Servi
     assert diags.count(WARNING) == 3, diags
     assert _ats.is_running
 
+    # Only the valid route gets a pool: one destination registers 7 stats.
+    stats = wait_for_file_lines(_ats.diags_log, "dynamic stats are registered for pre-warming tunnel", 1)
+    assert "7 dynamic stats are registered for pre-warming tunnel" in stats, stats
+
     # The valid route is parsed, so its pre-warm stats are registered.
     metric = f"proxy.process.tunnel.prewarm.127.0.0.1:{origin_port}.tcp.total_miss"
     result = _ats.traffic_ctl("metric", "get", metric)

@@ -137,7 +137,7 @@ using StatsIdMap        = std::unordered_map<SPtrConstDst, SPtrConstStatsIds, Ds
 
     An IPv6 address needs brackets to carry a port; @a fqdn excludes them.
 
-    @param[out] fqdn Set to the host when the destination can be pre-warmed.
+    @param[out] fqdn Set to the host on success.
     @param[out] port Set to the port, or -1 when the destination has none.
     @param[in] authority The destination, such as "example.com:443" or "[::1]:443".
     @return @c false if the destination has no host, or has a port that is not

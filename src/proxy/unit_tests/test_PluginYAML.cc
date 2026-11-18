@@ -270,7 +270,7 @@ TEST_CASE("parse_plugin_yaml - malformed entry is a config error", "[plugin_yaml
   auto result = parse_plugin_yaml(yaml.path());
 
   REQUIRE_FALSE(result.ok());
-  CHECK(std::string(result.errata.front().text()).find("plugin entry #2") != std::string::npos);
+  CHECK(std::string(result.errata.front().text()).find("plugin entry #2:") != std::string::npos);
 }
 
 TEST_CASE("parse_plugin_yaml - missing plugins key", "[plugin_yaml]")
