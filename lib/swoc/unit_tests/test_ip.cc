@@ -2222,6 +2222,105 @@ TEST_CASE("IPRangeSet", "[libswoc][iprangeset]") {
   REQUIRE(valid_p);
 }
 
+TEST_CASE("IPRangeSet erase from before the first range", "[libswoc][iprangeset][erase]") {
+  // erase() must remove ranges even when the erased range starts below every range in the set.
+  auto contains = [](IPRangeSet const &s, TextView addr) { return s.contains(IPAddr{addr}); };
+
+  SECTION("network covering several hosts") {
+    IPRangeSet s;
+    s.mark(IPRange{"192.168.1.10"});
+    s.mark(IPRange{"192.168.1.20"});
+    s.mark(IPRange{"192.168.1.30"});
+    REQUIRE(s.count() == 3);
+    s.erase(IPRange{"192.168.1.0/24"});
+    CHECK(s.count() == 0);
+    CHECK(s.empty());
+    CHECK_FALSE(contains(s, "192.168.1.10"));
+    CHECK_FALSE(contains(s, "192.168.1.20"));
+    CHECK_FALSE(contains(s, "192.168.1.30"));
+  }
+
+  SECTION("range covering one range") {
+    IPRangeSet s;
+    s.mark(IPRange{"10.0.0.2-10.0.0.3"});
+    s.erase(IPRange{"10.0.0.1-10.0.0.254"});
+    CHECK(s.empty());
+    CHECK_FALSE(contains(s, "10.0.0.2"));
+  }
+
+  SECTION("loopback network covering the loopback address") {
+    IPRangeSet s;
+    s.mark(IPRange{"127.0.0.1"});
+    s.erase(IPRange{"127.0.0.0/8"});
+    CHECK(s.empty());
+    CHECK_FALSE(contains(s, "127.0.0.1"));
+  }
+
+  SECTION("IPv6 network covering the loopback address") {
+    IPRangeSet s;
+    s.mark(IPRange{"::1"});
+    s.erase(IPRange{"::/64"});
+    CHECK(s.empty());
+    CHECK_FALSE(contains(s, "::1"));
+  }
+
+  SECTION("clip the left end of the first range") {
+    IPRangeSet s;
+    s.mark(IPRange{"10.0.0.5-10.0.0.20"});
+    s.erase(IPRange{"10.0.0.1-10.0.0.10"});
+    REQUIRE(s.count() == 1);
+    CHECK_FALSE(contains(s, "10.0.0.10"));
+    CHECK(contains(s, "10.0.0.11"));
+    CHECK(contains(s, "10.0.0.20"));
+  }
+
+  SECTION("payload space, clip the left end of the first range") {
+    IPSpace<unsigned> space;
+    space.mark(IPRange{"2.2.2.10-2.2.2.20"}, 1);
+    space.mark(IPRange{"2.2.2.30-2.2.2.40"}, 2);
+    space.erase(IPRange{"2.2.2.0-2.2.2.15"});
+    REQUIRE(space.count() == 2);
+    auto spot     = space.begin();
+    auto [r0, p0] = *spot;
+    CHECK(r0 == IPRange{"2.2.2.16-2.2.2.20"});
+    CHECK(p0 == 1);
+  }
+
+  // Controls, which hold with or without the fix.
+  SECTION("a range below the erased range") {
+    IPRangeSet s;
+    s.mark(IPRange{"10.0.0.0"});
+    s.mark(IPRange{"10.0.0.2-10.0.0.3"});
+    s.erase(IPRange{"10.0.0.1-10.0.0.254"});
+    REQUIRE(s.count() == 1);
+    CHECK(contains(s, "10.0.0.0"));
+    CHECK_FALSE(contains(s, "10.0.0.2"));
+  }
+
+  SECTION("the exact range") {
+    IPRangeSet s;
+    s.mark(IPRange{"127.0.0.1"});
+    s.erase(IPRange{"127.0.0.1"});
+    CHECK(s.empty());
+  }
+
+  SECTION("an erased range entirely below the first range") {
+    IPRangeSet s;
+    s.mark(IPRange{"10.0.0.50"});
+    s.mark(IPRange{"10.0.0.60"});
+    s.erase(IPRange{"10.0.0.1-10.0.0.10"});
+    CHECK(s.count() == 2);
+    CHECK(contains(s, "10.0.0.50"));
+    CHECK(contains(s, "10.0.0.60"));
+  }
+
+  SECTION("an empty set") {
+    IPRangeSet s;
+    s.erase(IPRange{"10.0.0.0/8"});
+    CHECK(s.empty());
+  }
+}
+
 TEST_CASE("IPSpace mark_bulk", "[libswoc][ipspace][mark_bulk]") {
   using PAYLOAD = unsigned;
   using Space   = swoc::IPSpace<PAYLOAD>;
