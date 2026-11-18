@@ -1,6 +1,6 @@
 /** @file
 
-  Catch2 unit tests for the deferred release helpers in Freer.h.
+  Catch2 unit tests for DereferContinuation in Freer.h.
 
   @section license License
 
@@ -43,7 +43,7 @@ private:
   bool &_deleted;
 };
 
-// Run the continuation that new_Derefer schedules, without waiting for the delay.
+// Call DereferContinuation's handler directly on this thread instead of scheduling it through new_Derefer.
 void
 run_derefer(Tracked *p)
 {
