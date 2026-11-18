@@ -49,6 +49,11 @@ namespace
 {
 constexpr ink_hrtime OPENSSL_QUIC_EVENT_INTERVAL = HRTIME_MSECONDS(2);
 
+// The least a stream's share of the connection send limit can fall to, so that a connection
+// with many streams still hands OpenSSL each one's data in useful amounts. Past this floor
+// the shares add up to more than the limit, which then decides alone, in pass order.
+constexpr uint64_t OPENSSL_MIN_STREAM_SEND_SHARE = 16 * 1024;
+
 DbgCtl dbg_ctl_quic_net{"quic_net"};
 DbgCtl dbg_ctl_v_quic_net{"v_quic_net"};
 
@@ -117,6 +122,11 @@ QUICNetVConnection::init(SSL *ssl, QUICPacketHandler *packet_handler)
   SSL_set_feature_request_uint(ssl, SSL_VALUE_QUIC_IDLE_TIMEOUT, params->no_activity_timeout_in());
   SSL_set_feature_request_uint(ssl, SSL_VALUE_QUIC_STREAM_BIDI_LOCAL_AVAIL, params->initial_max_streams_bidi_in());
   SSL_set_feature_request_uint(ssl, SSL_VALUE_QUIC_STREAM_UNI_LOCAL_AVAIL, params->initial_max_streams_uni_in());
+
+  this->_max_stream_send_buffer     = params->max_stream_send_buffer();
+  this->_max_connection_send_buffer = params->max_connection_send_buffer();
+  this->_openssl_send_buffered      = 0;
+  this->_openssl_streams_with_data  = 0;
 
   this->_bindSSLObject();
   if (auto const servername = quic_sni_server_name(ssl); !servername.empty()) {
@@ -188,7 +198,8 @@ QUICNetVConnection::set_local_addr()
 void
 QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
 {
-  QUICConDebug("Free connection, %zu stream objects still held", this->_openssl_streams.size());
+  QUICConDebug("Free connection, %zu stream objects still held, %zu of them draining", this->_openssl_streams.size(),
+               this->_openssl_draining_streams.size());
 
   this->_unschedule_openssl_event();
 
@@ -196,6 +207,8 @@ QUICNetVConnection::free_thread(EThread * /* t ATS_UNUSED */)
     SSL_free(stream_ssl);
   }
   this->_openssl_streams.clear();
+  this->_openssl_draining_streams.clear();
+  this->_openssl_write_closed_streams.clear();
 
   if (this->_ssl != nullptr) {
     this->_unbindSSLObject();
@@ -732,9 +745,46 @@ QUICNetVConnection::_process_openssl_streams()
 {
   std::vector<QUICStreamId> stream_ids;
   stream_ids.reserve(this->_openssl_streams.size());
-  for (auto const &entry : this->_openssl_streams) {
-    stream_ids.push_back(entry.first);
+  std::vector<QUICStreamId> drained_ids;
+  size_t                    streams_with_data = 0;
+  this->_openssl_send_buffered                = 0;
+  for (auto const &[stream_id, stream_ssl] : this->_openssl_streams) {
+    if (this->_openssl_draining_streams.count(stream_id) != 0) {
+      uint64_t const held = this->_openssl_stream_held(stream_id, stream_ssl);
+      if (held == 0) {
+        drained_ids.push_back(stream_id);
+      }
+      this->_openssl_send_buffered += held;
+      continue;
+    }
+
+    stream_ids.push_back(stream_id);
+    if ((SSL_get_stream_type(stream_ssl) & SSL_STREAM_TYPE_WRITE) == 0) {
+      continue;
+    }
+    this->_openssl_send_buffered += this->_openssl_stream_held(stream_id, stream_ssl);
+
+    QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
+    if (stream != nullptr && stream->has_data_to_send() && !this->_openssl_stream_write_closed(stream_id, stream_ssl)) {
+      ++streams_with_data;
+    }
   }
+
+  this->_openssl_streams_with_data = streams_with_data;
+
+  for (QUICStreamId stream_id : drained_ids) {
+    if (auto it = this->_openssl_streams.find(stream_id); it != this->_openssl_streams.end()) {
+      SSL_free(it->second);
+      this->_openssl_streams.erase(it);
+    }
+    this->_openssl_draining_streams.erase(stream_id);
+  }
+
+  // Share one pass's sending among the streams that have data, so that a stream with a large
+  // response cannot hold up the others, and each write does not wait behind a long run of
+  // writes to other streams.
+  size_t const budget       = QUICStream::compute_fair_send_budget(streams_with_data);
+  bool         more_to_send = false;
 
   for (QUICStreamId stream_id : stream_ids) {
     auto stream_it = this->_openssl_streams.find(stream_id);
@@ -745,12 +795,18 @@ QUICNetVConnection::_process_openssl_streams()
     SSL        *stream_ssl = stream_it->second;
     QUICStream *stream     = static_cast<QUICStream *>(this->_stream_manager->find_stream(stream_id));
     if (stream == nullptr) {
-      // Keeping a deleted stream's SSL object would make every later pass here walk every stream the
-      // connection has ever opened. The application deletes a stream only once each direction it has
-      // is done (the peer's FIN read, ours handed to OpenSSL), and SSL_free does not reset a stream
-      // part that was already concluded, so OpenSSL still delivers what it has buffered.
-      SSL_free(stream_ssl);
-      this->_openssl_streams.erase(stream_it);
+      this->_openssl_write_closed_streams.erase(stream_id);
+      // The application deletes a stream only once each direction it has is done (the peer's
+      // FIN read, ours handed to OpenSSL), and SSL_free does not reset a stream part that was
+      // already concluded, so OpenSSL still delivers what it has buffered. Until it has, the
+      // SSL object stays so that data counts toward the connection limit; keeping it any longer
+      // would make every later pass here walk every stream the connection has ever opened.
+      if ((SSL_get_stream_type(stream_ssl) & SSL_STREAM_TYPE_WRITE) != 0 && this->_openssl_stream_held(stream_id, stream_ssl) > 0) {
+        this->_openssl_draining_streams.insert(stream_id);
+      } else {
+        SSL_free(stream_ssl);
+        this->_openssl_streams.erase(stream_it);
+      }
       continue;
     }
 
@@ -758,14 +814,53 @@ QUICNetVConnection::_process_openssl_streams()
     if ((stream_type & SSL_STREAM_TYPE_READ) != 0) {
       stream->receive_data(*this);
     }
+    // OpenSSL takes nothing more for a stream whose sending side was reset or whose
+    // connection closed, so trying again on every pass would only fail again.
+    if (this->_openssl_write_closed_streams.count(stream_id) != 0) {
+      continue;
+    }
     if ((stream_type & SSL_STREAM_TYPE_WRITE) != 0 || stream->has_data_to_send()) {
-      if (stream->has_data_to_send()) {
-        while (stream->has_data_to_send() && stream->send_data(*this, QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT) > 0) {}
-      } else {
-        stream->send_data(*this, QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT);
+      if (static_cast<size_t>(stream->send_data(*this, budget)) >= budget && stream->has_data_to_send()) {
+        more_to_send = true;
       }
     }
   }
+
+  // A stream that used its whole budget stopped short of what OpenSSL would take, so run
+  // again rather than wait for the next packet or timer.
+  if (more_to_send) {
+    this->_schedule_packet_write_ready();
+  }
+}
+
+bool
+QUICNetVConnection::_openssl_stream_write_closed(QUICStreamId stream_id, SSL *stream_ssl)
+{
+  if (this->_openssl_write_closed_streams.count(stream_id) != 0) {
+    return true;
+  }
+
+  int const state = SSL_get_stream_write_state(stream_ssl);
+  if (state != SSL_STREAM_STATE_RESET_LOCAL && state != SSL_STREAM_STATE_RESET_REMOTE && state != SSL_STREAM_STATE_CONN_CLOSED) {
+    return false;
+  }
+
+  QUICConDebug("stream %" PRIu64 ": cannot write, the sending side is reset or the connection is closed (state %d)", stream_id,
+               state);
+  this->_openssl_write_closed_streams.insert(stream_id);
+  return true;
+}
+
+uint64_t
+QUICNetVConnection::_openssl_stream_held(QUICStreamId stream_id, SSL *stream_ssl)
+{
+  uint64_t used = 0;
+  if (SSL_get_stream_write_buf_used(stream_ssl, &used) != 1) {
+    unsigned long const error = ERR_get_error();
+    QUICConDebug("stream %" PRIu64 ": cannot read OpenSSL's send buffer use: %s", stream_id, ERR_error_string(error, nullptr));
+    return 0;
+  }
+  return used;
 }
 
 void
@@ -893,12 +988,39 @@ QUICNetVConnection::stream_write_capacity(QUICStreamId stream_id)
     return -1;
   }
 
-  uint64_t avail = 0;
-  if (SSL_get_stream_write_buf_avail(it->second, &avail) == 1) {
-    return std::min<uint64_t>(avail, 16 * 1024);
+  // OpenSSL starts a stream's send buffer small and grows it only when one write
+  // offers more than the buffer has free. The buffer keeps data until the peer
+  // acknowledges it, so offering no more than the free room would hold the stream to
+  // one initial buffer in flight. Offer room up to the configured limits for the
+  // stream and for the connection instead; OpenSSL takes less if the stream's flow
+  // control window allows less.
+  uint64_t size = 0;
+  uint64_t used = 0;
+  if (SSL_get_stream_write_buf_size(it->second, &size) != 1 || SSL_get_stream_write_buf_used(it->second, &used) != 1) {
+    unsigned long const error = ERR_get_error();
+    QUICConDebug("stream %" PRIu64 ": cannot read OpenSSL's send buffer state: %s", stream_id, ERR_error_string(error, nullptr));
+    return -1;
   }
 
-  return 0;
+  // OpenSSL frees the send buffer once the peer has acknowledged everything up to the
+  // FIN, and when the sending side is reset. Either way nothing more can be written. A
+  // write can process incoming packets, so the reset may arrive partway through a pass.
+  if (size == 0) {
+    return this->_openssl_stream_write_closed(stream_id, it->second) ? -1 : 0;
+  }
+
+  // Once the connection limit binds, room frees a little at a time as the peer acknowledges
+  // data, and every pass offers it to the streams in the same order. Holding each stream with
+  // data to an equal share of the limit leaves that room to the streams below their share, so
+  // no stream can take it all while another waits.
+  uint64_t const share = std::max(this->_max_connection_send_buffer / std::max<uint64_t>(this->_openssl_streams_with_data, 1),
+                                  OPENSSL_MIN_STREAM_SEND_SHARE);
+  uint64_t const stream_limit    = std::min(this->_max_stream_send_buffer, share);
+  uint64_t const stream_room     = used < stream_limit ? stream_limit - used : 0;
+  uint64_t const connection_room = this->_openssl_send_buffered < this->_max_connection_send_buffer ?
+                                     this->_max_connection_send_buffer - this->_openssl_send_buffered :
+                                     0;
+  return std::min(stream_room, connection_room);
 }
 
 int64_t
@@ -921,6 +1043,20 @@ QUICNetVConnection::write_stream(QUICStreamId stream_id, uint8_t const *buf, siz
   size_t         written_len = 0;
   const uint64_t flags       = fin ? SSL_WRITE_FLAG_CONCLUDE : 0;
   if (SSL_write_ex2(it->second, buf, len, flags, &written_len) == 1) {
+    this->_openssl_send_buffered += written_len;
+    if (dbg_ctl_v_quic_net.on()) {
+      uint64_t size = 0;
+      uint64_t used = 0;
+      if (SSL_get_stream_write_buf_size(it->second, &size) == 1 && SSL_get_stream_write_buf_used(it->second, &used) == 1) {
+        QUICConVDebug("stream %" PRIu64 ": OpenSSL holds %" PRIu64 " bytes to send or to be acknowledged in a %" PRIu64
+                      "-byte buffer, %" PRIu64 " for the connection",
+                      stream_id, used, size, this->_openssl_send_buffered);
+      } else {
+        unsigned long const error = ERR_get_error();
+        QUICConVDebug("stream %" PRIu64 ": cannot read OpenSSL's send buffer state: %s", stream_id,
+                      ERR_error_string(error, nullptr));
+      }
+    }
     return written_len;
   }
 

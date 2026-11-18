@@ -131,6 +131,9 @@ public:
   uint32_t get_max_send_udp_payload_size_in() const;
   uint32_t get_max_send_udp_payload_size_out() const;
 
+  uint32_t max_stream_send_buffer() const;
+  uint32_t max_connection_send_buffer() const;
+
   static int     connection_table_size();
   static uint8_t scid_len();
 
@@ -191,6 +194,9 @@ private:
 
   uint32_t _max_send_udp_payload_size_in  = 0;
   uint32_t _max_send_udp_payload_size_out = 0;
+
+  uint32_t _max_stream_send_buffer     = 0;
+  uint32_t _max_connection_send_buffer = 0;
 
   uint32_t _disable_http_0_9 = 1;
 

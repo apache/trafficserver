@@ -192,11 +192,12 @@ QUICStream::send_data(QUICStreamIO &stream_io, size_t max_bytes_this_event)
 
     Ptr<IOBufferBlock> block = this->_pending_send_block;
     // A pending block may have been carried over from a previous event, sized under
-    // that event's (possibly larger) budget. Cap what we submit here to what's left
-    // of this event's budget, and only claim fin if the whole remaining block is
-    // included in this submission.
+    // that event's (possibly larger) budget and write capacity; other streams may have
+    // used the room since. Cap what we submit here to what's left of this event's
+    // budget and to the capacity just read, and only claim fin if the whole remaining
+    // block is included in this submission.
     size_t remaining_budget = max_bytes_this_event - written_this_event;
-    size_t to_write         = std::min(static_cast<size_t>(block->size()), remaining_budget);
+    size_t to_write         = std::min({static_cast<size_t>(block->size()), remaining_budget, static_cast<size_t>(len)});
     fin                     = this->_pending_send_fin && to_write == static_cast<size_t>(block->size());
     if (block->size() == 0 && !fin) {
       this->_pending_send_block = nullptr;

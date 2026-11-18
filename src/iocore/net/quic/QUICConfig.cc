@@ -338,6 +338,8 @@ QUICConfigParams::initialize(ConfigContext ctx)
   RecEstablishStaticConfigUInt32(this->_max_recv_udp_payload_size_out, "proxy.config.quic.max_recv_udp_payload_size_out");
   RecEstablishStaticConfigUInt32(this->_max_send_udp_payload_size_in, "proxy.config.quic.max_send_udp_payload_size_in");
   RecEstablishStaticConfigUInt32(this->_max_send_udp_payload_size_out, "proxy.config.quic.max_send_udp_payload_size_out");
+  RecEstablishStaticConfigUInt32(this->_max_stream_send_buffer, "proxy.config.quic.max_stream_send_buffer");
+  RecEstablishStaticConfigUInt32(this->_max_connection_send_buffer, "proxy.config.quic.max_connection_send_buffer");
   RecEstablishStaticConfigUInt32(this->_disable_http_0_9, "proxy.config.quic.disable_http_0_9");
   RecEstablishStaticConfigUInt32(this->_cc_algorithm, "proxy.config.quic.cc_algorithm");
 
@@ -554,6 +556,18 @@ uint32_t
 QUICConfigParams::get_max_send_udp_payload_size_out() const
 {
   return this->_max_send_udp_payload_size_out;
+}
+
+uint32_t
+QUICConfigParams::max_stream_send_buffer() const
+{
+  return this->_max_stream_send_buffer;
+}
+
+uint32_t
+QUICConfigParams::max_connection_send_buffer() const
+{
+  return this->_max_connection_send_buffer;
 }
 
 const char *

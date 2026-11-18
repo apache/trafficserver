@@ -83,6 +83,10 @@ protected:
   Ptr<IOBufferBlock>
   _read(size_t len) override
   {
+    // Like QUICStreamVCAdapter, hand out no block at all once everything has been read.
+    if (_remaining == 0) {
+      return Ptr<IOBufferBlock>();
+    }
     len                      = std::min(len, _remaining);
     Ptr<IOBufferBlock> block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
     block->alloc(iobuffer_size_to_index(std::max<size_t>(len, 1), BUFFER_SIZE_INDEX_128));
@@ -127,6 +131,12 @@ public:
     last_requested_len = len;
     last_fin           = fin;
     size_t accepted    = std::min(len, accept_up_to);
+    ++write_calls;
+    total_accepted += accepted;
+    // OpenSSL concludes the stream only when it takes every byte of a write that asks for it.
+    if (fin && accepted == len) {
+      ++fins_accepted;
+    }
     return static_cast<int64_t>(accepted);
   }
 
@@ -134,6 +144,9 @@ public:
   size_t  accept_up_to       = std::numeric_limits<size_t>::max();
   size_t  last_requested_len = 0;
   bool    last_fin           = false;
+  int     write_calls        = 0;
+  size_t  total_accepted     = 0;
+  int     fins_accepted      = 0;
 };
 
 } // namespace
@@ -162,6 +175,120 @@ TEST_CASE("QUICStream::send_data caps a carried-over pending block to the curren
   CHECK(written2 == static_cast<int64_t>(QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT));
   CHECK(io.last_requested_len == QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT);
   CHECK(io.last_fin == false);
+}
+
+TEST_CASE("QUICStream::send_data sends the FIN with the last byte after the last block is partly accepted")
+{
+  constexpr size_t   body_size = QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT + 44 * 1024;
+  QUICStream         stream(nullptr, 0);
+  BudgetTestAdapter  adapter(stream, body_size);
+  BudgetTestStreamIO io;
+
+  stream.set_io_adapter(&adapter);
+
+  // The first event's budget ends before the last block.
+  REQUIRE(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) ==
+          static_cast<int64_t>(QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT));
+  REQUIRE(io.fins_accepted == 0);
+
+  SECTION("The rest is accepted on the next event")
+  {
+    // The last block asks for the FIN, but the stream takes only part of it.
+    io.accept_up_to = 40 * 1024;
+    CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 40 * 1024);
+    CHECK(io.last_fin);
+    CHECK(io.fins_accepted == 0);
+    CHECK(stream.has_data_to_send());
+  }
+
+  SECTION("The stream takes nothing on one event, then the rest on the next")
+  {
+    io.accept_up_to = 40 * 1024;
+    CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 40 * 1024);
+
+    io.accept_up_to = 0;
+    CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 0);
+    CHECK(io.last_fin);
+    CHECK(io.fins_accepted == 0);
+    CHECK(stream.has_data_to_send());
+  }
+
+  io.accept_up_to = std::numeric_limits<size_t>::max();
+  CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 4 * 1024);
+  CHECK(io.last_fin);
+  CHECK(io.fins_accepted == 1);
+  CHECK(io.total_accepted == body_size);
+  CHECK_FALSE(stream.has_data_to_send());
+
+  // Nothing is left to send, the FIN included.
+  int const writes_so_far = io.write_calls;
+  CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 0);
+  CHECK(io.write_calls == writes_so_far);
+  CHECK(io.fins_accepted == 1);
+}
+
+TEST_CASE("QUICStream::send_data caps a carried-over pending block to the stream's current write capacity")
+{
+  constexpr size_t   body_size = 100 * 1024;
+  QUICStream         stream(nullptr, 0);
+  BudgetTestAdapter  adapter(stream, body_size);
+  BudgetTestStreamIO io;
+
+  stream.set_io_adapter(&adapter);
+
+  // The whole body fits the stream's room, but the stream takes only part of it, so the
+  // rest of the block, FIN included, waits for the next event.
+  io.write_capacity = body_size;
+  io.accept_up_to   = 40 * 1024;
+  REQUIRE(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 40 * 1024);
+
+  // Other streams have used most of the connection's room since then.
+  io.write_capacity = 10 * 1024;
+  io.accept_up_to   = std::numeric_limits<size_t>::max();
+  CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 10 * 1024);
+  CHECK(io.last_requested_len == 10 * 1024);
+  CHECK_FALSE(io.last_fin);
+  CHECK(io.fins_accepted == 0);
+
+  // Once there is room again, the rest goes with the FIN.
+  io.write_capacity = std::numeric_limits<int64_t>::max();
+  CHECK(stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT) == 50 * 1024);
+  CHECK(io.last_fin);
+  CHECK(io.fins_accepted == 1);
+  CHECK(io.total_accepted == body_size);
+  CHECK_FALSE(stream.has_data_to_send());
+}
+
+TEST_CASE("QUICStream::send_data withholds the FIN when the capacity drops to one byte before a retry")
+{
+  // The configured send limits are ATS policy: OpenSSL grows its buffer to take whatever
+  // it is offered, so only send_data() can hold a retry to the capacity.
+  constexpr size_t   body_size = 32 * 1024;
+  constexpr size_t   budget    = 256 * 1024;
+  QUICStream         stream(nullptr, 0);
+  BudgetTestAdapter  adapter(stream, body_size);
+  BudgetTestStreamIO io;
+
+  stream.set_io_adapter(&adapter);
+
+  // The whole body is the final block; the stream takes half of it.
+  io.accept_up_to = 16 * 1024;
+  REQUIRE(stream.send_data(io, budget) == 16 * 1024);
+
+  // One byte of room is left when the rest is retried, though the stream would take it all.
+  io.write_capacity = 1;
+  io.accept_up_to   = std::numeric_limits<size_t>::max();
+  CHECK(stream.send_data(io, budget) == 1);
+  CHECK(io.last_requested_len == 1);
+  CHECK_FALSE(io.last_fin);
+  CHECK(io.fins_accepted == 0);
+  CHECK(stream.has_data_to_send());
+
+  io.write_capacity = std::numeric_limits<int64_t>::max();
+  CHECK(stream.send_data(io, budget) == 16 * 1024 - 1);
+  CHECK(io.last_fin);
+  CHECK(io.fins_accepted == 1);
+  CHECK(io.total_accepted == body_size);
 }
 
 TEST_CASE("QUICStream::compute_fair_send_budget")
