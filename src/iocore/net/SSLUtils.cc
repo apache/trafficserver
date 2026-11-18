@@ -776,7 +776,8 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
         }
       } while (es->resuming_client_hello_hooks());
     }
-    if (SSLNetVConnection *netvc = SSLNetVCAccess(s); netvc && netvc->getSSLHandShakeRejected()) {
+    // QUIC never attaches a netvc to the SSL object, so look it up from the event support instead.
+    if (auto *netvc = dynamic_cast<SSLNetVConnection *>(es); netvc && netvc->getSSLHandShakeRejected()) {
       return CLIENT_HELLO_ERROR;
     }
   } else {
