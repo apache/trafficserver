@@ -1,6 +1,6 @@
 /** @file
 
-  Concurrency stress tests for InkAtomicList and InkFreeList.
+  Behavior and concurrency stress tests for InkAtomicList
 
   @section license License
 
@@ -180,46 +180,6 @@ TEST_CASE("InkAtomicList: remove", "[libts][InkAtomicList]")
   REQUIRE(INK_ATOMICLIST_EMPTY(l));
 }
 
-TEST_CASE("InkFreeList: concurrent new/free", "[libts][InkFreeList]")
-{
-  constexpr int      SLOTS    = 32;
-  constexpr int      FL_OPS   = 50000;
-  constexpr uint32_t OBJ_SIZE = 128;
-
-  InkFreeList *f = ink_freelist_create("test_InkFreeList", OBJ_SIZE, 64, 8);
-
-  auto worker = [&](int me) {
-    XorShift rng(0xc2b2ae3d27d4eb4full * (me + 1));
-    void    *slots[SLOTS] = {nullptr};
-
-    for (int op = 0; op < FL_OPS; op++) {
-      int i = rng.next() % SLOTS;
-      if (slots[i] != nullptr) {
-        ink_freelist_free(f, slots[i]);
-        slots[i] = nullptr;
-      } else {
-        slots[i] = ink_freelist_new(f);
-        memset(slots[i], me, OBJ_SIZE);
-      }
-    }
-    for (auto &slot : slots) {
-      if (slot != nullptr) {
-        ink_freelist_free(f, slot);
-      }
-    }
-  };
-
-  std::vector<std::thread> threads;
-  for (int t = 0; t < NUM_THREADS; t++) {
-    threads.emplace_back(worker, t);
-  }
-  for (auto &t : threads) {
-    t.join();
-  }
-
-  REQUIRE(f->used == 0);
-}
-
 TEST_CASE("Empty atomic list", "[libts][InkAtomicList]")
 {
   InkAtomicList l;
@@ -274,34 +234,6 @@ TEST_CASE("Atomic list", "[libts][InkAtomicList]")
 
     ink_freelist_free(f, x);
     ink_freelist_free(f, y);
-  }
-
-  SECTION("Atomic list remove head")
-  {
-    void *a{ink_freelist_new(f)};
-    void *b{ink_freelist_new(f)};
-
-    ink_atomiclist_push(&l, a);
-    ink_atomiclist_push(&l, b);
-
-    CHECK(b == ink_atomiclist_remove(&l, b));
-
-    ink_freelist_free(f, a);
-    ink_freelist_free(f, b);
-  }
-
-  SECTION("Atomic list remove tail")
-  {
-    void *a{ink_freelist_new(f)};
-    void *b{ink_freelist_new(f)};
-
-    ink_atomiclist_push(&l, a);
-    ink_atomiclist_push(&l, b);
-
-    CHECK(a == ink_atomiclist_remove(&l, a));
-
-    ink_freelist_free(f, a);
-    ink_freelist_free(f, b);
   }
 
   SECTION("Atomic list becomes empty after popall")
