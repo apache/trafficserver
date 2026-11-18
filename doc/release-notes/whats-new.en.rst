@@ -204,6 +204,8 @@ Configuration
 
 * Added :ts:cv:`proxy.config.http.negative_revalidating_list` to configure the
   list of status codes that apply to the negative revalidating feature
+* Added :ts:cv:`proxy.config.http.cache.query_method` to enable caching of
+  responses to the HTTP ``QUERY`` method
 * :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers` now defaults
   to ``CDN-Cache-Control``. Set it to an empty string to disable targeted cache
   control.

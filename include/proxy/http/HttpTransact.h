@@ -46,6 +46,7 @@
 #include "records/RecHttp.h"
 #include "proxy/ProxySession.h"
 #include "tscore/MgmtDefs.h"
+#include "tscore/CryptoHash.h"
 
 #include "swoc/bwf_ex.h"
 
@@ -499,6 +500,11 @@ public:
     URL              parent_selection_url_storage;
 
     const CacheHostRecord *volume_host_rec = nullptr;
+
+    // Digest of the buffered request content, mixed into the cache key for
+    // methods such as QUERY whose content is part of the resource identity.
+    CryptoHash request_body_digest;
+    bool       request_body_digest_valid = false;
 
     _CacheLookupInfo() {}
   };

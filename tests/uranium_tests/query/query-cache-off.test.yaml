@@ -1,0 +1,161 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Verify that QUERY does not use the cache when QUERY caching is off'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  # Put a GET response in the cache.
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, get-first]
+
+    proxy-request:
+      method: GET
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "10"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "get-answer"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "get-answer", as: equal}
+
+  # The QUERY goes to the origin both times, although its response has a lifetime.
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, query-first]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-a"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-a", as: equal}
+
+  - client-request:
+      delay: 100ms
+      method: QUERY
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, query-second]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      method: QUERY
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+        - [Cache-Control, "max-age=300"]
+      content:
+        data: "answer-b"
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "answer-b", as: equal}
+
+  # The QUERY did not remove or replace the cached GET response.
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /search
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, get-second]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 500
+      reason: Internal Server Error
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: "get-answer", as: equal}
