@@ -1274,11 +1274,11 @@ template <typename METRIC, typename PAYLOAD>
 void
 DiscreteSpace<METRIC, PAYLOAD>::remove(DiscreteSpace::Node *node, bool update_tree) {
   _list.erase(node);
-  _fa.destroy(node);
-  if (!update_tree) {
-    return;
+  // Unlink @a node from the tree before destroying it, since removal uses the node's links.
+  if (update_tree) {
+    _root = static_cast<Node *>(node->remove());
   }
-  _root = static_cast<Node *>(node->remove());
+  _fa.destroy(node);
 }
 
 template <typename METRIC, typename PAYLOAD>

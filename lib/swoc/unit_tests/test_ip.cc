@@ -2515,3 +2515,22 @@ TEST_CASE("IPSpace mark_bulk randomized", "[libswoc][ipspace][mark_bulk][randomi
       REQUIRE(p == payload);
   }
 }
+
+TEST_CASE("IPRangeSet mark over existing ranges", "[libswoc][iprangeset][remove]") {
+  // Marking a range that covers the existing ranges removes their nodes, which rebalances the
+  // tree. Each node must be taken out of the tree before it is destroyed.
+  IPRangeSet s;
+  for (auto rtxt : {"10.0.0.0/8"_tv, "192.168.1.0/24"_tv, "172.16.0.0/12"_tv}) {
+    s.mark(IPRange{rtxt});
+  }
+  REQUIRE(s.count() == 3);
+
+  s.mark(IPRange{"0.0.0.0/0"_tv});
+  REQUIRE(s.count() == 1);
+  CHECK(*s.begin() == IPRange{"0.0.0.0-255.255.255.255"_tv});
+  CHECK(s.contains(IPAddr{"10.1.2.3"_tv}));
+  CHECK(s.contains(IPAddr{"192.168.1.1"_tv}));
+  CHECK(s.contains(IPAddr{"172.16.0.1"_tv}));
+  CHECK(s.contains(IPAddr{"8.8.8.8"_tv}));
+  CHECK_FALSE(s.contains(IPAddr{"::1"_tv}));
+}
