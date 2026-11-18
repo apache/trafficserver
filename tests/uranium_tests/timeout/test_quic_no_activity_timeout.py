@@ -49,6 +49,7 @@ class IdleTimeoutCase:
     name: str
     no_activity_timeout_in: int
     default_inactivity_timeout: int | None = None
+    send_request: bool = True
     requires_quiche: bool = True
 
     @property
@@ -60,7 +61,9 @@ CASES = (
     IdleTimeoutCase("disabled", 0, requires_quiche=False),
     IdleTimeoutCase("idle-timeout", 3000),
     # QUIC must use its own timeout, not proxy.config.net.default_inactivity_timeout.
-    IdleTimeoutCase("ignores-default", 3000, default_inactivity_timeout=1),
+    # The client sends no request: a request's transaction sets its own
+    # inactivity timeout on the connection, which would hide the default.
+    IdleTimeoutCase("ignores-default", 3000, default_inactivity_timeout=1, send_request=False),
 )
 
 
@@ -128,6 +131,8 @@ def configure_client(services: ServiceFactory, *, _ats: ATS, _case: IdleTimeoutC
     ]
     if not _case.expect_idle_close:
         command.append("--request-after-quiet")
+    if not _case.send_request:
+        command.append("--no-request")
     return services.process("client", command)
 
 

@@ -18,7 +18,8 @@
 """Send one HTTP/3 request, then leave the connection silent for a while.
 
 aioquic sends no keep-alive PINGs, so after the response nothing crosses the
-connection until the quiet period ends.
+connection until the quiet period ends. With --no-request the client sends no
+request at all and goes silent once the handshake completes.
 """
 
 from __future__ import annotations
@@ -40,12 +41,20 @@ async def async_main() -> None:
         action="store_true",
         help="Send a second request on the same connection once the quiet period ends",
     )
+    parser.add_argument(
+        "--no-request",
+        action="store_true",
+        help="Send no request; stay silent from the end of the handshake",
+    )
     args = parser.parse_args()
+    if args.no_request and args.request_after_quiet:
+        parser.error("--no-request and --request-after-quiet are mutually exclusive")
 
     host, port_text = args.addr.rsplit(":", 1)
     request_case = RequestCase("py-get-small", b"GET", "/py-get-small", response_size=100)
     async with await connect_h3(host, int(port_text), args.server_name) as client:
-        verify_response(request_case, await client.request(args.authority, request_case))
+        if not args.no_request:
+            verify_response(request_case, await client.request(args.authority, request_case))
         # aioquic has no public view of the connection ID the server chose. It
         # names the server's qlog file for this connection.
         print(f"server connection id {client._quic._peer_cid.cid.hex()}", flush=True)
