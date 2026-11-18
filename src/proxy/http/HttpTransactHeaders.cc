@@ -192,7 +192,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   // FIXME: do we really want to append to old list, or replace old list?
 
   // step 5: attach new allow list to end of previous list
-  field->value_append(response->m_heap, response->m_mime, std::string_view{value_buffer, bytes});
+  field->value_append(response->m_heap, response->m_mime, std::string_view{value_buffer, bytes}, true);
 
   // step 6: free up temp storage
   ats_free(alloced_buffer);
