@@ -42,6 +42,15 @@ struct Client : Continuation {
   }
 };
 
+void
+init_hostdb()
+{
+  if (hostDB.refcountcache == nullptr) {
+    hostDB.refcountcache = new RefCountCache<HostDBRecord>(1);
+    hostDB.pending_dns   = new Queue<HostDBContinuation, Continuation::Link_link>[1];
+  }
+}
+
 HostDBContinuation *
 queue_lookup(Client *client)
 {
@@ -70,10 +79,7 @@ cancel_and_free(HostDBContinuation *c)
 
 TEST_CASE("A pending DNS waiter calls back one time on a timeout", "[hostdb]")
 {
-  if (hostDB.refcountcache == nullptr) {
-    hostDB.refcountcache = new RefCountCache<HostDBRecord>(1);
-    hostDB.pending_dns   = new Queue<HostDBContinuation, Continuation::Link_link>[1];
-  }
+  init_hostdb();
 
   Client              owner_client;
   Client              client;
@@ -103,5 +109,27 @@ TEST_CASE("A pending DNS waiter calls back one time on a timeout", "[hostdb]")
   }
 
   REQUIRE(hostDB.remove_from_pending_dns_for_hash(owner->hash.hash, owner));
+  cancel_and_free(owner);
+}
+
+TEST_CASE("The DNS owner frees a cancelled pending DNS waiter", "[hostdb]")
+{
+  init_hostdb();
+
+  Client              owner_client;
+  Client              client;
+  HostDBContinuation *owner  = queue_lookup(&owner_client);
+  HostDBContinuation *waiter = queue_lookup(&client);
+  int                 refs   = client.mutex->refcount();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, client.mutex, this_ethread());
+    waiter->action.cancel();
+  }
+  owner->remove_and_trigger_pending_dns();
+
+  CHECK(client.mutex->refcount() == refs - 1);
+  CHECK(client.callbacks == 0);
+
   cancel_and_free(owner);
 }
