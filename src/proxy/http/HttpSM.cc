@@ -6752,7 +6752,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   case VC_EVENT_ERROR:
     // The request content may have been consumed before a TLS read error. Only
     // an admitted not-processed retry can rearm it after the request was sent.
-    if (server_request_hdr_bytes_written > 0 && (t_state.method == HTTP_WKSIDX_QUERY || server_request_body_bytes > 0)) {
+    if (server_request_hdr_bytes_written > 0 && (t_state.method == HTTP_WKSIDX_QUERY || sent_content_is_consumed())) {
       t_state.current.state = this->prepare_for_origin_retry() ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
     } else {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;

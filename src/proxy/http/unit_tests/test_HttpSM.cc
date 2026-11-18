@@ -180,10 +180,11 @@ TEST_CASE("A read error after sent content does not permit a retry", "[http][ret
   http_rsb.origin_shutdown_cleanup_entry = Metrics::Counter::createPtr("proxy.process.http.test.header_write_cleanup");
   ts::PostScript restore_counter([&]() { http_rsb.origin_shutdown_cleanup_entry = counter; });
 
-  int const     method        = GENERATE(HTTP_WKSIDX_POST, HTTP_WKSIDX_PUT);
+  int const     method        = GENERATE(HTTP_WKSIDX_GET, HTTP_WKSIDX_POST, HTTP_WKSIDX_PUT);
   int64_t const written       = GENERATE(0, 100);
   int64_t const content_bytes = GENERATE(0, 23);
-  CAPTURE(method, written, content_bytes);
+  bool const    plugin_body   = GENERATE(false, true);
+  CAPTURE(method, written, content_bytes, plugin_body);
   HeaderWriteTransaction txn;
   TestableHttpSM         sm;
   VIO                    read;
@@ -193,9 +194,10 @@ TEST_CASE("A read error after sent content does not permit a retry", "[http][ret
   write.ndone      = written;
   sm.attach_for_error(txn, read, write);
   sm.set_sent_content(method, content_bytes);
+  sm.t_state.api_server_request_body_set = plugin_body;
   sm.handle_server_setup_error(VC_EVENT_ERROR, &read);
 
-  bool const content_sent = written > 0 && content_bytes > 0;
+  bool const content_sent = written > 0 && content_bytes > 0 && !plugin_body;
 
   CHECK(txn.closed);
   CHECK(sm.t_state.current.state == (content_sent ? HttpTransact::CONNECTION_CLOSED : HttpTransact::CONNECTION_ERROR));
