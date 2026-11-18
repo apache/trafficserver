@@ -22,13 +22,37 @@
  */
 
 #include "P_HostDB.h"
+#include "records/RecordsConfig.h"
+#include "tscore/Layout.h"
+
+#include "iocore/utils/diags.i"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
 
 extern ClassAllocator<HostDBContinuation, false> hostDBContAllocator;
 
 namespace
 {
+struct HostDBListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
+
+  void
+  testRunStarting(Catch::TestRunInfo const &) override
+  {
+    Layout::create();
+    init_diags("", nullptr);
+    RecProcessInit();
+    LibRecordsConfigInit();
+    ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
+    (new EThread)->set_specific();
+    hostDB.refcountcache = new RefCountCache<HostDBRecord>(1);
+    hostDB.pending_dns   = new Queue<HostDBContinuation, Continuation::Link_link>[1];
+  }
+};
+CATCH_REGISTER_LISTENER(HostDBListener);
+
 struct Client : Continuation {
   int callbacks = 0;
 
@@ -41,15 +65,6 @@ struct Client : Continuation {
     return EVENT_DONE;
   }
 };
-
-void
-init_hostdb()
-{
-  if (hostDB.refcountcache == nullptr) {
-    hostDB.refcountcache = new RefCountCache<HostDBRecord>(1);
-    hostDB.pending_dns   = new Queue<HostDBContinuation, Continuation::Link_link>[1];
-  }
-}
 
 HostDBContinuation *
 queue_lookup(Client *client)
@@ -79,8 +94,6 @@ cancel_and_free(HostDBContinuation *c)
 
 TEST_CASE("A pending DNS waiter calls back one time on a timeout", "[hostdb]")
 {
-  init_hostdb();
-
   Client              owner_client;
   Client              client;
   HostDBContinuation *owner  = queue_lookup(&owner_client);
@@ -114,8 +127,6 @@ TEST_CASE("A pending DNS waiter calls back one time on a timeout", "[hostdb]")
 
 TEST_CASE("The DNS owner frees a cancelled pending DNS waiter", "[hostdb]")
 {
-  init_hostdb();
-
   Client              owner_client;
   Client              client;
   HostDBContinuation *owner  = queue_lookup(&owner_client);
@@ -128,6 +139,7 @@ TEST_CASE("The DNS owner frees a cancelled pending DNS waiter", "[hostdb]")
   }
   owner->remove_and_trigger_pending_dns();
 
+  // A freed waiter releases its reference to the mutex of the client.
   CHECK(client.mutex->refcount() == refs - 1);
   CHECK(client.callbacks == 0);
 

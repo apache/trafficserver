@@ -19,7 +19,6 @@ add_executable(
   test_http
   main.cc
   "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc"
-  "${PROJECT_SOURCE_DIR}/src/iocore/hostdb/unit_tests/test_HostDBPending.cc"
   test_ChunkedHandler.cc
   test_ConnectingEntry.cc
   test_error_page_selection.cc
@@ -32,8 +31,6 @@ add_executable(
   test_PreWarm.cc
   test_ServerSessionPool.cc
 )
-
-target_include_directories(test_http PRIVATE "${PROJECT_SOURCE_DIR}/src/iocore/hostdb")
 
 target_link_libraries(
   test_http
