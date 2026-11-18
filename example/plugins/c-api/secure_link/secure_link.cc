@@ -58,7 +58,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   unsigned char       md[MD5_DIGEST_LENGTH];
   secure_link_info   *sli   = static_cast<secure_link_info *>(ih);
   char               *token = nullptr, *tokenptr = nullptr, *expire = nullptr, *expireptr = nullptr, *path = nullptr;
-  char               *s, *ptr, *saveptr = nullptr, *val, hash[32] = "";
+  char               *s, *ptr, *saveptr = nullptr, *val, hash[2 * MD5_DIGEST_LENGTH + 1] = "";
 
   in = (struct sockaddr_in *)TSHttpTxnClientAddrGet(rh);
   ip = inet_ntoa(in->sin_addr);
@@ -114,30 +114,30 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 #else
   ctx = EVP_MD_CTX_create();
 #endif
-  EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
-  EVP_DigestUpdate(ctx, sli->secret, strlen(sli->secret));
-  EVP_DigestUpdate(ctx, ip, strlen(ip));
-
-  if (path) {
-    EVP_DigestUpdate(ctx, path, strlen(path));
-  }
-  if (expire) {
-    EVP_DigestUpdate(ctx, expire, strlen(expire));
-  }
-  EVP_DigestFinal_ex(ctx, md, nullptr);
+  const bool digest_ok =
+    ctx != nullptr && EVP_DigestInit_ex(ctx, EVP_md5(), nullptr) == 1 &&
+    EVP_DigestUpdate(ctx, sli->secret, strlen(sli->secret)) == 1 && EVP_DigestUpdate(ctx, ip, strlen(ip)) == 1 &&
+    (path == nullptr || EVP_DigestUpdate(ctx, path, strlen(path)) == 1) &&
+    (expire == nullptr || EVP_DigestUpdate(ctx, expire, strlen(expire)) == 1) && EVP_DigestFinal_ex(ctx, md, nullptr) == 1;
 #ifdef HAVE_EVP_MD_CTX_FREE
   EVP_MD_CTX_free(ctx);
 #else
   EVP_MD_CTX_destroy(ctx);
 #endif
-  for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
-    snprintf(&hash[i * 2], sizeof(hash) - (i * 2), "%02x", md[i]);
+  if (digest_ok) {
+    for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
+      snprintf(&hash[i * 2], sizeof(hash) - (i * 2), "%02x", md[i]);
+    }
+  } else {
+    TSError("[%s] Failed to compute the MD5 digest", PLUGIN_NAME);
   }
   time(&t);
   e      = (nullptr == expire ? 0 : strtol(expire, nullptr, 16));
   status = TSREMAP_DID_REMAP;
-  if (e < t || (nullptr == token || 0 != strcmp(hash, token))) {
-    if (e < t) {
+  if (!digest_ok || e < t || (nullptr == token || 0 != strcmp(hash, token))) {
+    if (!digest_ok) {
+      Dbg(dbg_ctl, "no digest to check the token against");
+    } else if (e < t) {
       Dbg(dbg_ctl, "link expired: [%lu] vs [%lu]", t, e);
     } else {
       Dbg(dbg_ctl, "tokens mismatch: [%s] vs [%s]", hash, token);

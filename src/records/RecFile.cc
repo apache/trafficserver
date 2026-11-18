@@ -148,7 +148,9 @@ int
 RecFileGetSize(RecHandle h_file)
 {
   struct stat fileStats;
-  fstat(h_file, &fileStats);
+  if (fstat(h_file, &fileStats) != 0) {
+    return -1;
+  }
   return static_cast<int>(fileStats.st_size);
 }
 

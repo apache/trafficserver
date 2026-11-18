@@ -180,7 +180,8 @@ watchdog_apply_backlog(NetAccept *na)
 static void
 safe_delay(int msec)
 {
-  UnixSocket::poll(nullptr, 0, msec);
+  // A poll on no descriptors is only a sleep and has nothing to report.
+  (void)UnixSocket::poll(nullptr, 0, msec);
 }
 
 //

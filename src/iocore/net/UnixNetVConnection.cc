@@ -663,7 +663,8 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
 
   if (this->has_error()) {
     this->lerrno = this->error;
-    write_signal_and_update(VC_EVENT_ERROR, this);
+    // Nothing else is done for this VC either way, and on EVENT_DONE it has already been freed or queued to be freed.
+    (void)write_signal_and_update(VC_EVENT_ERROR, this);
     return;
   }
 
@@ -1201,7 +1202,10 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
     // eventfd or a regular file fd.  That is ok, because sock_type
     // is only used when setting up the socket.
     safe_getsockopt(fd, SOL_SOCKET, SO_TYPE, reinterpret_cast<char *>(&con.sock_type), &len);
-    sock.set_nonblocking();
+    if (sock.set_nonblocking() < 0) {
+      res = -errno;
+      goto fail;
+    }
     con.sock         = sock;
     con.is_connected = true;
     con.is_bound     = true;
