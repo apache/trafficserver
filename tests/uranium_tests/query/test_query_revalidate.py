@@ -55,18 +55,20 @@ def test_query_revalidate(ats_factory: ATSFactory, services: ServiceFactory, cur
     )
     ats.remap_config.add_line(f'map / http://127.0.0.1:{origin_port}/')
 
-    origin.stdout.contains('request method=QUERY conditional=False', 'The first QUERY must reach the origin.')
-    origin.stdout.contains('request method=QUERY conditional=True', 'ATS must revalidate the stale entry with If-None-Match.')
+    origin.stdout.contains('request method=QUERY path=/search conditional=False', 'The first QUERY must reach the origin.')
+    origin.stdout.contains(
+        'request method=QUERY path=/search conditional=True', 'ATS must revalidate the stale entry with If-None-Match.'
+    )
 
     origin.start()
     ats.start()
 
-    def query() -> str:
+    def query(path: str = '/search', options: str = '') -> str:
         result = curl.run_for(
             ats,
             "--silent --max-time 30 --write-out '\\n%{http_code}\\n' --request QUERY "
-            "--header 'Content-Type: application/sql' --data-binary 'select-r' "
-            f"http://127.0.0.1:{ats.http_port}/search",
+            f"--header 'Content-Type: application/sql' --data-binary 'select-r' {options} "
+            f"http://127.0.0.1:{ats.http_port}{path}",
             timeout=40,
         )
         assert result.returncode == 0, result.output
@@ -85,5 +87,20 @@ def test_query_revalidate(ats_factory: ATSFactory, services: ServiceFactory, cur
     # does not reach the origin.
     assert re.search(r'^answer\n200$', query(), re.MULTILINE)
 
+    # A 304 response without freshness information must also give the cached
+    # entry a new lifetime. The lifetime of this entry is two seconds.
+    assert re.search(r'^answer\n200$', query('/minimal'), re.MULTILINE)
+    time.sleep(4)
+    assert re.search(r'^answer\n200$', query('/minimal'), re.MULTILINE)
+    assert re.search(r'^answer\n200$', query('/minimal'), re.MULTILINE)
+
+    # The cached response has no validator, so the validator of the client must
+    # not go to the origin. A 304 response for it does not validate the entry.
+    assert re.search(r'^answer\n200$', query('/noetag'), re.MULTILINE)
+    time.sleep(3)
+    query('/noetag', "--header 'If-None-Match: \"client\"'")
+
     origin.close()
-    assert origin.stdout_text.count('request method=QUERY') == 2, origin.stdout_text
+    assert origin.stdout_text.count('path=/search') == 2, origin.stdout_text
+    assert origin.stdout_text.count('path=/minimal') == 2, origin.stdout_text
+    assert origin.stdout_text.count('path=/noetag conditional=False validator=None') == 2, origin.stdout_text

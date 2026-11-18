@@ -3169,6 +3169,11 @@ Cache Control
    ``Expires`` field, or a ``ttl-in-cache`` rule in :file:`cache.config`. |TS|
    does not apply heuristic freshness to a QUERY response.
 
+   A ``PURGE`` request, or a request with an unsafe method such as ``POST``,
+   does not remove the cached QUERY responses for the same URL. Those responses
+   stay in the cache until they are stale. To invalidate them all, change
+   :ts:cv:`proxy.config.http.cache.generation`.
+
    When a cached QUERY response is stale, |TS| sends a conditional QUERY to the
    origin with the validators of the cached response.
 

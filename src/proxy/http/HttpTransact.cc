@@ -548,8 +548,6 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
   }
 }
 
-// A QUERY gets here only when ATS did a cache lookup for it, which needs
-// proxy.config.http.cache.query_method.
 inline static bool
 is_method_conditionalizable(int method)
 {
@@ -6663,8 +6661,7 @@ HttpTransact::is_request_cache_lookupable(State *s)
   // The cache key of a QUERY includes a digest of the request content. Without
   // the digest the key is the key of a GET for the same URL, so a lookup can
   // find and replace an object that belongs to a different request.
-  if (s->method == HTTP_WKSIDX_QUERY && s->api_req_cacheable == false &&
-      (s->txn_conf->cache_query_method != 1 || !s->cache_info.request_body_digest_valid)) {
+  if (s->method == HTTP_WKSIDX_QUERY && (s->txn_conf->cache_query_method != 1 || !s->cache_info.request_body_digest_valid)) {
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
     return false;
   }
@@ -6879,7 +6876,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   // A QUERY response needs explicit freshness information, because heuristic
   // freshness is not defined for it. This check comes before the Cache-Control
   // indicators, since directives such as public do not give a lifetime.
-  if (req_method == HTTP_WKSIDX_QUERY && s->cache_control.ttl_in_cache <= 0 && !response->presence(MIME_PRESENCE_EXPIRES) &&
+  // A 304 response is exempt: the cached response that it validates passed this check.
+  if (req_method == HTTP_WKSIDX_QUERY && response_code != HTTPStatus::NOT_MODIFIED && s->cache_control.ttl_in_cache <= 0 &&
+      !response->presence(MIME_PRESENCE_EXPIRES) &&
       !(response->get_cooked_cc_mask() & (MIME_COOKED_MASK_CC_MAX_AGE | MIME_COOKED_MASK_CC_S_MAXAGE))) {
     TxnDbg(dbg_ctl_http_trans, "NO QUERY w/o Expires, max-age or a ttl");
     return false;
@@ -8310,7 +8309,10 @@ HttpTransact::handle_server_down(State *s)
 bool
 HttpTransact::is_request_likely_cacheable(State *s, HTTPHdr *request)
 {
-  if ((s->method == HTTP_WKSIDX_GET || s->api_req_cacheable) && !s->api_server_response_no_store &&
+  bool const cacheable_query =
+    s->method == HTTP_WKSIDX_QUERY && s->txn_conf->cache_query_method == 1 && s->cache_info.request_body_digest_valid;
+
+  if ((s->method == HTTP_WKSIDX_GET || cacheable_query || s->api_req_cacheable) && !s->api_server_response_no_store &&
       !request->presence(MIME_PRESENCE_AUTHORIZATION) &&
       (!request->presence(MIME_PRESENCE_RANGE) || s->txn_conf->cache_range_write)) {
     return true;
