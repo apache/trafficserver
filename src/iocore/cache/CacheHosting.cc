@@ -518,9 +518,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
           if (!is_vol_present) {
             Warning("%s discarding %s entry at line %d : bad volume number [%d]", "[CacheHosting]", config_file,
                     line_info->line_num, volume_number);
-            if (val != nullptr) {
-              ats_free(val);
-            }
+            ats_free(val);
             return -1;
           }
           if (c == '\0') {
