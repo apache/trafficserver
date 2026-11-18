@@ -79,7 +79,6 @@ struct UrlRewriteDeleter {
 } // end anonymous namespace
 
 // Global Ptrs
-ThreadLeasedSharedPtr<UrlRewrite> rewrite_table;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
 std::shared_ptr<UrlRewrite>
@@ -92,7 +91,7 @@ void
 shutdown_url_rewrite()
 {
   // Drain before flag: this ref destructs normally; later drops leak.
-  rewrite_table.exchange(nullptr);
+  RewriteTable::exchange(nullptr);
   rewrite_table_shutdown.store(true, std::memory_order_release);
 }
 
@@ -112,7 +111,7 @@ static void init_table_volume_host_records(UrlRewrite &table);
 int
 init_reverse_proxy()
 {
-  ink_assert(rewrite_table.load(std::memory_order_acquire) == nullptr);
+  ink_assert(RewriteTable::load(std::memory_order_acquire) == nullptr);
   reconfig_mutex      = new_ProxyMutex();
   auto  initial_table = std::make_unique<UrlRewrite>();
   auto &config_reg    = config::ConfigRegistry::Get_Instance();
@@ -151,7 +150,7 @@ init_reverse_proxy()
     init_table_volume_host_records(*initial_table);
   }
 
-  rewrite_table.store(make_managed_url_rewrite(std::move(initial_table)), std::memory_order_release);
+  RewriteTable::store(make_managed_url_rewrite(std::move(initial_table)), std::memory_order_release);
   ink_assert(0 == config_reg.attach("remap", "proxy.config.url_remap.filename"));
   ink_assert(0 == config_reg.attach("remap", "proxy.config.proxy_name"));
   ink_assert(0 == config_reg.attach("remap", "proxy.config.http.referer_default_redirect"));
@@ -217,7 +216,7 @@ reloadUrlRewrite(ConfigContext ctx)
   if (status) {
     swoc::bwprint(msg_buffer, "{} finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
-    rewrite_table.exchange(make_managed_url_rewrite(std::move(newTable)), std::memory_order_acq_rel);
+    RewriteTable::exchange(make_managed_url_rewrite(std::move(newTable)), std::memory_order_acq_rel);
 
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
     CfgLoadComplete(ctx, "%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
@@ -286,7 +285,7 @@ init_remap_volume_host_records()
     return;
   }
 
-  auto table = rewrite_table.load(std::memory_order_acquire);
+  auto table = RewriteTable::load(std::memory_order_acquire);
 
   if (!table) {
     return;
@@ -301,7 +300,7 @@ int
 url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
                void * /* cookie ATS_UNUSED */)
 {
-  if (auto table = rewrite_table.load(std::memory_order_acquire)) {
+  if (auto table = RewriteTable::load(std::memory_order_acquire)) {
     table->SetReverseFlag(data.rec_int);
   }
   return 0;
