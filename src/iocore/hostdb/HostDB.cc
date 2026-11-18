@@ -808,10 +808,10 @@ HostDBContinuation::dnsPendingEvent(int event, Event *e)
       timeout = eventProcessor.schedule_in(this, HOST_DB_RETRY_PERIOD);
       return EVENT_CONT;
     }
-    if (action.continuation) {
-      action.call_back(EVENT_HOST_DB_LOOKUP, nullptr);
-    }
     if (hostDB.remove_from_pending_dns_for_hash(hash.hash, this)) {
+      if (action.continuation) {
+        action.call_back(EVENT_HOST_DB_LOOKUP, nullptr);
+      }
       hostdb_cont_free(this);
     }
     return EVENT_DONE;

@@ -35,3 +35,20 @@ target_link_libraries(test_RefCountCache PRIVATE ts::tscore ts::tsutil ts::inkev
 # test_RefCountCache has its own main() and uses no Catch2 at all, so it cannot be
 # split into per-case ctest entries.
 add_test(NAME test_hostdb_RefCountCache COMMAND $<TARGET_FILE:test_RefCountCache>)
+
+# test_HostDBPending
+add_executable(test_HostDBPending test_HostDBPending.cc)
+target_include_directories(test_HostDBPending PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/..")
+target_link_libraries(
+  test_HostDBPending
+  PRIVATE
+    Catch2::Catch2WithMain
+    ts::inkhostdb
+    ts::inknet
+    ts::proxy
+    ts::tscore
+    ts::tsutil
+    ts::inkevent
+    configmanager
+)
+add_catch2_test(NAME test_hostdb_pending COMMAND $<TARGET_FILE:test_HostDBPending>)
