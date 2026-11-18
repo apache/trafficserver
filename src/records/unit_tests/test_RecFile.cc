@@ -45,6 +45,6 @@ TEST_CASE("RecFileGetSize", "[librecords][RecFile]")
   SECTION("a descriptor that cannot be stat'ed reports failure")
   {
     close(fd);
-    REQUIRE(RecFileGetSize(fd) == -1);
+    REQUIRE(RecFileGetSize(-1) == -1);
   }
 }
