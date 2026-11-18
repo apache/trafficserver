@@ -21,6 +21,7 @@
 */
 
 #include <string>
+#include <utility>
 
 #include "txn_box/common.h"
 #include "txn_box/yaml_util.h"
@@ -49,7 +50,7 @@ yaml_merge(YAML::Node root)
 
   if (root.IsSequence()) {
     for (auto child : root) {
-      yaml_merge(child);
+      yaml_merge(std::move(child));
     }
   } else if (root.IsMap()) {
     // Do all nested merges first, so the result is iteration order independent.

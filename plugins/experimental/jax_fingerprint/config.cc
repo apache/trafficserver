@@ -314,7 +314,7 @@ check_unique_entries(std::string const &path, PluginConfigs const &configs)
     std::string      registry{config->method.name};
     registry += '\0';
     registry += export_name;
-    if (!registries.insert(registry).second) {
+    if (!registries.insert(std::move(registry)).second) {
       TSError("[%s] %s: method %s is listed more than once for registry '%.*s'", PLUGIN_NAME, path.c_str(),
               config->method.name.data(), static_cast<int>(export_name.size()), export_name.data());
       return false;

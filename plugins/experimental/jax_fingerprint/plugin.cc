@@ -36,6 +36,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include <version>
 
@@ -467,7 +468,7 @@ TSPluginInit(int argc, char const **argv)
   // Global configurations live for the life of the process: the log field callbacks and the
   // continuations below keep references to them, so release them from their unique_ptrs here.
   // Each plugin.config line configured with a file has its own state so that each reloads its own file.
-  GlobalState *state = config_filename.empty() ? nullptr : new GlobalState{config_filename, {}};
+  GlobalState *state = config_filename.empty() ? nullptr : new GlobalState{std::move(config_filename), {}};
   for (auto &owned_config : configs) {
     PluginConfig *config = owned_config.release();
     if (state != nullptr) {

@@ -77,7 +77,10 @@ T
 read_optional(const YAML::Node &parent, const char *key, T default_value)
 {
   YAML::Node value = parent[key];
-  return value ? value.as<T>() : default_value;
+  if (value) {
+    return value.as<T>();
+  }
+  return default_value;
 }
 
 bool
