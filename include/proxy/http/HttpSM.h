@@ -557,15 +557,23 @@ public:
   int     server_connection_provided_cert = 0;
   int64_t client_request_body_bytes       = 0;
   int64_t server_request_body_bytes       = 0;
-  int64_t server_response_body_bytes      = 0;
-  int64_t client_response_body_bytes      = 0;
-  int64_t cache_response_body_bytes       = 0;
-  int64_t pushed_response_body_bytes      = 0;
-  bool    is_internal                     = false;
-  bool    server_ssl_reused               = false;
-  bool    server_connection_is_ssl        = false;
-  bool    is_waiting_for_full_body        = false;
-  bool    is_buffering_request_body       = false;
+
+  // True when the origin got request content that ATS cannot send again. A plugin body from
+  // TSHttpTxnServerRequestBodySet is added again on each attempt.
+  bool
+  sent_content_is_consumed() const
+  {
+    return server_request_body_bytes > 0 && !t_state.api_server_request_body_set;
+  }
+  int64_t server_response_body_bytes = 0;
+  int64_t client_response_body_bytes = 0;
+  int64_t cache_response_body_bytes  = 0;
+  int64_t pushed_response_body_bytes = 0;
+  bool    is_internal                = false;
+  bool    server_ssl_reused          = false;
+  bool    server_connection_is_ssl   = false;
+  bool    is_waiting_for_full_body   = false;
+  bool    is_buffering_request_body  = false;
   // Set once the client's request declared a body that ATS undertook to forward, and the
   // request head has been written to the origin.  Cleared once that body has reached the
   // origin in full, measured against the length in server_request.  While it is set the
