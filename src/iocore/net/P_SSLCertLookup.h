@@ -151,6 +151,7 @@ struct SSLCertLookup : public ConfigInfo {
       the same for RSA. A client classified as RSA-only gets the most specific entry for the address
       (address and port before address alone), and that entry's RSA context if it has one, else its EC
       one.
+      @param address The address the client connected to.
       @param ctxType The key type the client was classified as; GENERIC where contexts are not split by key type.
       @return @c A pointer to the matched context, @c nullptr if no match is found.
   */
