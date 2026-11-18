@@ -131,14 +131,14 @@ class TestRuntime:
             content = state.read().strip()
             try:
                 candidate = int(content)
-                if not 10000 <= candidate <= 30000:
+                if not 10000 <= candidate < 30000:
                     raise ValueError
             except ValueError:
                 raise RuntimeConfigError(f"Invalid port counter in {state_path}: {content!r}") from None
-            for _ in range(20000):
-                candidate += 1
-                if candidate >= 30000:
-                    break
+            # A full unsharded run allocates more ports than the range holds, so wrap back to the bottom.
+            # Ports from that far back belong to finished tests; the probe still skips any that are bound.
+            for _ in range(29999 - 10001 + 1):
+                candidate = candidate + 1 if candidate < 29999 else 10001
                 with socket.socket(socket.AF_INET, socket_type) as probe:
                     try:
                         probe.bind(("127.0.0.1", candidate))

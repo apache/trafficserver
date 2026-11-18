@@ -207,7 +207,7 @@ def test_sandbox_rejects_overlong_filesystem_component(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("content", [None, "", "garbage", "9999", "30000"])
-def test_port_counter_rejects_missing_corrupt_or_exhausted_state(tmp_path: Path, content: str | None) -> None:
+def test_port_counter_rejects_missing_corrupt_or_out_of_range_state(tmp_path: Path, content: str | None) -> None:
     """Never recycle reservations when the session counter is damaged.
 
     :param tmp_path: Isolated session root.
@@ -253,6 +253,49 @@ def test_port_probe_retries_only_occupied_ports(tmp_path: Path, monkeypatch: pyt
         with pytest.raises(RuntimeConfigError, match="127.0.0.1:10001"):
             runtime.allocate_port()
         assert len(attempted) == 1
+
+
+def test_port_counter_wraps_after_the_last_port(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Start again from the bottom of the range once a long session has used every port once.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so the probe never touches real ports.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    counter = tmp_path / ".port-counter"
+    counter.write_text("29998")
+    monkeypatch.setattr(socket.socket, "bind", lambda probe, address: None)
+    assert [runtime.allocate_port() for _ in range(3)] == [29999, 10001, 10002]
+    assert counter.read_text() == "10002"
+
+
+def test_port_counter_reports_exhaustion_when_every_port_is_occupied(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail after one full pass instead of cycling forever when no port in the range is free.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding with an always-occupied probe.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("20000")
+    attempted = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Report every probed port as already in use.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        attempted.append(address[1])
+        raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    with pytest.raises(RuntimeConfigError, match="Exhausted available test ports"):
+        runtime.allocate_port()
+    assert len(attempted) == 19999
+    assert sorted(attempted) == list(range(10001, 30000))
 
 
 def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
