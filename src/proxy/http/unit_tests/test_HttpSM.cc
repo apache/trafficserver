@@ -30,7 +30,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
-/// Supply origin I/O events while deferring the transaction continuation.
 class TestableHttpSM : public HttpSM
 {
 public:

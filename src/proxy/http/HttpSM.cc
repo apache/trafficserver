@@ -774,7 +774,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
         call_transact_and_set_next_state(HttpTransact::TooEarly);
         return 0;
       } else if (!SSLConfigParams::server_allow_early_data_params) {
-        // A QUERY carries its parameters in the content, not in the URL.
         bool const has_query_content =
           request.method_get_wksidx() == HTTP_WKSIDX_QUERY &&
           _ua.get_txn()->has_request_body(request.get_content_length(), request.presence(MIME_PRESENCE_TRANSFER_ENCODING) != 0);
