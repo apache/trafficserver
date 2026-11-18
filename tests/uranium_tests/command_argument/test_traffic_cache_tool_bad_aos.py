@@ -42,3 +42,18 @@ def test_traffic_cache_tool_bad_aos(ats_factory: ATSFactory) -> None:
     result = _ats.run("traffic_cache_tool", "--aos", "abc", "list")
     assert result.returncode == 1, result.output
     assert re.search(r"traffic_cache_tool: terminating on an unhandled std::\S*invalid_argument: \S", result.stderr), result.output
+
+
+def test_traffic_cache_tool_zero_aos(ats_factory: ATSFactory) -> None:
+    """A zero --aos is rejected before traffic_cache_tool lays out any stripe with it.
+
+    The stripe layout divides by the average object size, so the value must be positive.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+    _ats = configure_ats(ats_factory)
+
+    _ats.start()
+    result = _ats.run("traffic_cache_tool", "--aos", "0", "list")
+    assert result.returncode == 1, result.output
+    assert re.search(r"--aos must be a positive number of bytes", result.stderr), result.output

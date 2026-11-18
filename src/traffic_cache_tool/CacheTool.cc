@@ -746,18 +746,21 @@ Span::loadDevice()
       if (n >= BUFF_SIZE) {
         ts::SpanHeader &span_hdr = reinterpret_cast<ts::SpanHeader &>(buff);
         _base                    = round_up(offset);
+        // traffic_server sizes the header for one stripe per stripe block of the span, and never fewer than one,
+        // so a larger count cannot be real.
+        uint64_t const max_stripes = _geometry.totalsz / CacheStripeBlocks::SCALE + 1;
         // See if it looks valid
-        if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free) {
+        if (span_hdr.magic == ts::SpanHeader::MAGIC && span_hdr.num_diskvol_blks == span_hdr.num_used + span_hdr.num_free &&
+            span_hdr.num_diskvol_blks <= max_stripes) {
           int nspb      = span_hdr.num_diskvol_blks;
           span_hdr_size = round_up(sizeof(ts::SpanHeader) + (nspb - 1) * sizeof(ts::CacheStripeDescriptor));
           _header.reset(new (malloc(span_hdr_size)) ts::SpanHeader);
           if (span_hdr_size <= BUFF_SIZE) {
             memcpy(static_cast<void *>(_header.get()), buff, span_hdr_size);
           } else {
-            // TODO - check the pread return
             ssize_t n = pread(fd, _header.get(), span_hdr_size, offset);
             if (n < span_hdr_size) {
-              std::cout << "Failed to read the Span Header" << std::endl;
+              return Errata(n < 0 ? make_errno_code() : make_errno_code(EIO), "Failed to read the span header from {}", _path);
             }
           }
           _len = _header->num_blocks;
@@ -1419,6 +1422,11 @@ try {
   }
   if (auto data = arguments.get("aos")) {
     cache_config_min_average_object_size = std::stoi(data.value());
+    // The stripe layout divides by the average object size.
+    if (cache_config_min_average_object_size <= 0) {
+      std::cerr << "--aos must be a positive number of bytes, not " << data.value() << std::endl;
+      return 1;
+    }
   }
   if (auto data = arguments.get("device")) {
     inputFile = data.value();
