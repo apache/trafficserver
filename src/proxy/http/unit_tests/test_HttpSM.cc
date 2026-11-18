@@ -54,6 +54,13 @@ public:
   }
 
   void
+  set_sent_content(int method, int64_t content_bytes)
+  {
+    t_state.method            = method;
+    server_request_body_bytes = content_bytes;
+  }
+
+  void
   replace_write_vio(VIO &write)
   {
     server_entry->write_vio = &write;
@@ -158,4 +165,39 @@ TEST_CASE("QUERY header progress survives replacement by the body write VIO", "[
   CHECK(sm.written_header_bytes() == 100);
   CHECK(sm.t_state.current.state == HttpTransact::CONNECTION_CLOSED);
   CHECK_FALSE(HttpTransact::is_request_retryable(&sm.t_state));
+}
+
+TEST_CASE("A read error after sent content does not permit a retry", "[http][retry]")
+{
+  url_init();
+  mime_init();
+  http_init();
+  static int const config_id          = configProcessor.set(0, nullptr);
+  int const        previous_config_id = HttpConfig::m_id;
+  HttpConfig::m_id                    = config_id;
+  ts::PostScript restore_config([&]() { HttpConfig::m_id = previous_config_id; });
+  auto          *counter                 = http_rsb.origin_shutdown_cleanup_entry;
+  http_rsb.origin_shutdown_cleanup_entry = Metrics::Counter::createPtr("proxy.process.http.test.header_write_cleanup");
+  ts::PostScript restore_counter([&]() { http_rsb.origin_shutdown_cleanup_entry = counter; });
+
+  int const     method        = GENERATE(HTTP_WKSIDX_POST, HTTP_WKSIDX_PUT);
+  int64_t const written       = GENERATE(0, 100);
+  int64_t const content_bytes = GENERATE(0, 23);
+  CAPTURE(method, written, content_bytes);
+  HeaderWriteTransaction txn;
+  TestableHttpSM         sm;
+  VIO                    read;
+  VIO                    write;
+  txn.netvc.lerrno = EPIPE;
+  write.nbytes     = 100;
+  write.ndone      = written;
+  sm.attach_for_error(txn, read, write);
+  sm.set_sent_content(method, content_bytes);
+  sm.handle_server_setup_error(VC_EVENT_ERROR, &read);
+
+  bool const content_sent = written > 0 && content_bytes > 0;
+
+  CHECK(txn.closed);
+  CHECK(sm.t_state.current.state == (content_sent ? HttpTransact::CONNECTION_CLOSED : HttpTransact::CONNECTION_ERROR));
+  CHECK(HttpTransact::is_request_retryable(&sm.t_state) == !content_sent);
 }

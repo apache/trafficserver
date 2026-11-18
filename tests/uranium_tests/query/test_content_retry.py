@@ -13,7 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Verify QUERY retry admission before sending and after not-processed signals."""
+"""Verify retry admission for requests with content, before sending and after not-processed signals."""
 
 import re
 import shlex
@@ -28,14 +28,17 @@ from ..h2.origin_test_helpers import configure_h2_origin, finish_origin
 BODY = 'SELECT * FROM t WHERE a'
 
 
-@pytest.mark.parametrize('method,buffering', [('GET', False), ('QUERY', True), ('QUERY', False)])
+@pytest.mark.parametrize(
+    'method,buffering',
+    [('GET', False), ('QUERY', True), ('QUERY', False), ('POST', True), ('POST', False), ('PUT', True), ('PUT', False)],
+)
 @pytest.mark.parametrize('failure', ['close', 'tls-read-error', 'tls-handshake-error'])
-def test_query_retry(
+def test_content_retry(
     ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, method: str, buffering: bool, failure: str
 ) -> None:
-    """Retry GET across origin failures and QUERY only before sending.
+    """Retry GET across origin failures and requests with content only before sending.
 
-    A QUERY retry after upload requires both a not-processed signal and a
+    A retry after upload requires both a not-processed signal and a
     complete replayable body, as covered by test_query_not_processed_retry.
     These HTTP/1 origin failures provide no such signal, so buffering alone
     cannot admit a retry after upload.
@@ -43,8 +46,8 @@ def test_query_retry(
     :param ats_factory: Proxy factory.
     :param services: Custom origin factory.
     :param curl: Transport-aware HTTP client.
-    :param method: GET without content as the retry control, or QUERY with content.
-    :param buffering: Whether ATS buffers QUERY content; this alone cannot admit
+    :param method: GET without content as the retry control, or a method with content.
+    :param buffering: Whether ATS buffers the request content; this alone cannot admit
         a retry after upload without a not-processed signal.
     :param failure: Origin close or TLS read error after upload, or TLS handshake
         failure before any request bytes are sent.
@@ -73,11 +76,12 @@ def test_query_retry(
     scheme = 'https' if tls else 'http'
     ats.remap_config.add_line(f'map / {scheme}://127.0.0.1:{port}/')
 
-    if method == 'QUERY':
+    has_content = method != 'GET'
+    if has_content:
         origin.stdout.contains(
-            f'request attempt=1 method=QUERY body={re.escape(BODY)}', 'The origin must receive the QUERY and its content.'
+            f'request attempt=1 method={method} body={re.escape(BODY)}', 'The origin must receive the request and its content.'
         )
-        origin.stdout.excludes('request attempt=2 method=', 'ATS must not retry a QUERY after sending it.')
+        origin.stdout.excludes('request attempt=2 method=', 'ATS must not retry a request with content after sending it.')
     elif not before_request:
         origin.stdout.contains('request attempt=2 method=GET', 'ATS must retry GET after the origin closes.')
     if before_request:
@@ -85,12 +89,12 @@ def test_query_retry(
 
     origin.start()
     ats.start()
-    content = f"-H 'Content-Type: application/sql' --data-binary {shlex.quote(BODY)} " if method == 'QUERY' else ''
+    content = f"-H 'Content-Type: application/sql' --data-binary {shlex.quote(BODY)} " if has_content else ''
     result = curl.get(ats, '/search', options=f"-s --max-time 30 -o /dev/null -w '%{{http_code}}' -X {method} {content}")
     assert result.returncode == 0, result.output
-    assert result.stdout == ('502' if method == 'QUERY' and not before_request else '200'), result.output
-    if method == 'QUERY':
-        assert origin.stdout_text.count('request headers method=QUERY') == 1, origin.stdout_text
+    assert result.stdout == ('502' if has_content and not before_request else '200'), result.output
+    if has_content:
+        assert origin.stdout_text.count(f'request headers method={method}') == 1, origin.stdout_text
     if failure == 'tls-read-error':
         assert re.search(r'\[handle_server_setup_error, .*VC_EVENT_ERROR\]', ats.traffic_out.read_text())
 
