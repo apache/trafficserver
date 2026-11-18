@@ -264,6 +264,7 @@ public:
 class match_t
 {
 public:
+  /* buf must be NUL-terminated at buf[len]: strstr, strcasestr and regexec search up to the terminator, not len */
   virtual bool   find(const char *, size_t, size_t &, size_t &, const char *, std::string &) const = 0;
   virtual size_t cont_size() const                                                                 = 0;
   virtual ~match_t()                                                                               = default;
