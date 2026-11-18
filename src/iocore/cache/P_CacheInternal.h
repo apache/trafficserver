@@ -139,6 +139,7 @@ extern int cache_config_hit_evacuate_size_limit;
 extern int cache_config_force_sector_size;
 extern int cache_config_target_fragment_size;
 extern int cache_config_mutex_retry_delay;
+extern int cache_config_stripe_lock_trim;
 extern int cache_read_while_writer_retry_delay;
 extern int cache_config_read_while_writer_max_retries;
 
@@ -266,6 +267,9 @@ free_CacheEvacuateDocVC(CacheEvacuateDocVC *cont)
 inline int
 CacheVC::calluser(int event)
 {
+  if (stripe) {
+    Mutex_release_unadopted(stripe->mutex.get(), this_ethread());
+  }
   recursive++;
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
   vio.cont->handleEvent(event, &vio);
@@ -280,6 +284,9 @@ CacheVC::calluser(int event)
 inline int
 CacheVC::callcont(int event)
 {
+  if (stripe) {
+    Mutex_release_unadopted(stripe->mutex.get(), this_ethread());
+  }
   recursive++;
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
   _action.continuation->handleEvent(event, this);
