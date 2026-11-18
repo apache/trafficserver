@@ -197,8 +197,9 @@ struct Doc {
   char    *hdr();
   char    *data();
 
-  /// @return @c true if the fragment, and the header within it, lie in the first @a n bytes of the buffer the document
-  /// was read into.
+  /// Check that the lengths read from disk stay inside the bytes actually read.
+  /// @param[in] n Bytes read into the buffer that holds this document.
+  /// @return @c true if the fragment, and the header within it, lie in the first @a n bytes of that buffer.
   bool
   fits_in(int64_t n) const
   {

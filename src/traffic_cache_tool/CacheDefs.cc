@@ -358,7 +358,7 @@ void
 StripeSM::vol_init_data_internal()
 {
   // A stripe with room for fewer objects than one bucket holds still needs a bucket, or the segment count is
-  // zero and the next line divides by it.
+  // zero and the bucket count below is divided by it.
   this->_buckets = std::max<int64_t>(
     ((this->_len.count() * 8192 - (this->_content - this->_start)) / cache_config_min_average_object_size) / DIR_DEPTH, 1);
   this->_segments = (this->_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
