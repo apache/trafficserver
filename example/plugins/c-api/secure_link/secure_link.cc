@@ -58,7 +58,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   unsigned char       md[MD5_DIGEST_LENGTH];
   secure_link_info   *sli   = static_cast<secure_link_info *>(ih);
   char               *token = nullptr, *tokenptr = nullptr, *expire = nullptr, *expireptr = nullptr, *path = nullptr;
-  char               *s, *ptr, *saveptr = nullptr, *val, hash[32] = "";
+  char               *s, *ptr, *saveptr = nullptr, *val, hash[2 * MD5_DIGEST_LENGTH + 1] = "";
   bool                digest_ok;
 
   in = (struct sockaddr_in *)TSHttpTxnClientAddrGet(rh);
