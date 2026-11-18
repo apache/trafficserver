@@ -3630,13 +3630,6 @@ Cache Control
    used from the asynchronous IO threads when IO finishes and the ``CacheVC`` lock or stripe lock is
    required.
 
-.. ts:cv:: CONFIG proxy.config.cache.stripe_lock_trim INT 0
-   :reloadable:
-
-   When ``1``, a cache read served from memory takes its stripe lock once instead of twice on open,
-   and a single-fragment read closes without taking it. This reduces contention when many requests
-   read the same object.
-
 .. ts:cv:: CONFIG proxy.config.cache.max_disk_errors INT 5
 
    Cache disks sometimes fail due to hardware problems.  |TS| keeps count of

@@ -83,7 +83,6 @@ int     cache_config_enable_checksum                     = 0;
 int     cache_config_alt_rewrite_max_size                = 4096;
 int     cache_config_read_while_writer                   = 0;
 int     cache_config_mutex_retry_delay                   = 2;
-int     cache_config_stripe_lock_trim                    = 0;
 int     cache_read_while_writer_retry_delay              = 50;
 int     cache_config_read_while_writer_max_retries       = 10;
 int     cache_config_persist_bad_disks                   = false;
@@ -612,9 +611,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
     case EVENT_RETURN:
       // Served from memory: the next handler locks the stripe straight away, so pass it this hold rather than
       // letting another thread take the stripe in between.
-      if (cache_config_stripe_lock_trim) {
-        handed_off = lock.hand_off();
-      }
+      handed_off = lock.hand_off();
       goto Lcallreturn;
     default:
       return &c->_action;
@@ -937,7 +934,6 @@ ink_cache_init(ts::ModuleVersion v)
 
   RecEstablishStaticConfigInt32(cache_config_mutex_retry_delay, "proxy.config.cache.mutex_retry_delay");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.mutex_retry_delay = %dms", cache_config_mutex_retry_delay);
-  RecEstablishStaticConfigInt32(cache_config_stripe_lock_trim, "proxy.config.cache.stripe_lock_trim");
 
   RecEstablishStaticConfigInt32(cache_config_read_while_writer_max_retries, "proxy.config.cache.read_while_writer.max_retries");
   Dbg(dbg_ctl_cache_init, "proxy.config.cache.read_while_writer.max_retries = %d", cache_config_read_while_writer_max_retries);
