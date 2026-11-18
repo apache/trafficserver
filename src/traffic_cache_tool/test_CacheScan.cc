@@ -34,3 +34,20 @@ TEST_CASE("cache inspection rejects an alternate without a request URL", "[cache
 
   CHECK_FALSE(scan.check_url(mem, nullptr));
 }
+
+TEST_CASE("cache inspection accepts a request URL inside the document", "[cache_tool]")
+{
+  alignas(URLImpl) char buf[2 * sizeof(URLImpl)] = {};
+  swoc::MemSpan<char>   mem(buf, sizeof(buf));
+  ct::CacheScan         scan(nullptr);
+
+  auto *url     = reinterpret_cast<URLImpl *>(buf);
+  url->m_type   = static_cast<uint32_t>(HdrHeapObjType::URL);
+  url->m_length = sizeof(URLImpl);
+
+  CHECK(scan.check_url(mem, url));
+
+  // The same URL is rejected once it lies outside the bytes read.
+  swoc::MemSpan<char> elsewhere(buf + sizeof(URLImpl), sizeof(URLImpl));
+  CHECK_FALSE(scan.check_url(elsewhere, url));
+}

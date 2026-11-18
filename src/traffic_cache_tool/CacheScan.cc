@@ -380,7 +380,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
 bool
 CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
 {
-  if (url == nullptr) {
+  if (url == nullptr || !mem.contains(reinterpret_cast<char *>(url))) {
     return false;
   }
 
@@ -391,8 +391,7 @@ CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
     in_bound = true;
   }
 
-  return in_bound && mem.contains(reinterpret_cast<char *>(url)) &&
-         !(url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
+  return in_bound && !(url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
 }
 
 Errata
