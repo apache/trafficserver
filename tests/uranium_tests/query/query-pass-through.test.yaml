@@ -78,8 +78,8 @@ sessions:
     proxy-response:
       status: 200
 
-  # Caching of QUERY responses is off by default, even with the cache enabled,
-  # so the identical request goes to the origin again.
+  # ATS does not cache QUERY responses, even with the cache enabled, so the
+  # identical request goes to the origin again.
   - client-request:
       delay: 100ms
       method: QUERY

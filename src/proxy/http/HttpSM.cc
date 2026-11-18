@@ -765,18 +765,25 @@ HttpSM::state_read_client_request_header(int event, void *data)
     }
 
     if (_from_early_data) {
-      // Only allow early data for safe methods defined in RFC7231 Section 4.2.1.
-      // https://tools.ietf.org/html/rfc7231#section-4.2.1
-      SMDbg(dbg_ctl_ssl_early_data, "%d", t_state.hdr_info.client_request.method_get_wksidx());
-      if (!HttpTransactHeaders::is_method_safe(t_state.hdr_info.client_request.method_get_wksidx())) {
+      // Only allow early data for safe methods (RFC 9110, section 9.2.1, and QUERY).
+      HTTPHdr const &request = t_state.hdr_info.client_request;
+
+      SMDbg(dbg_ctl_ssl_early_data, "%d", request.method_get_wksidx());
+      if (!HttpTransactHeaders::is_method_safe(request.method_get_wksidx())) {
         SMDbg(dbg_ctl_http, "client request was from early data but is NOT safe");
         call_transact_and_set_next_state(HttpTransact::TooEarly);
         return 0;
-      } else if (!SSLConfigParams::server_allow_early_data_params &&
-                 t_state.hdr_info.client_request.m_http->u.req.m_url_impl->m_len_query > 0) {
-        SMDbg(dbg_ctl_http, "client request was from early data but HAS parameters");
-        call_transact_and_set_next_state(HttpTransact::TooEarly);
-        return 0;
+      } else if (!SSLConfigParams::server_allow_early_data_params) {
+        // A QUERY carries its parameters in the content, not in the URL.
+        bool const has_query_content =
+          request.method_get_wksidx() == HTTP_WKSIDX_QUERY &&
+          _ua.get_txn()->has_request_body(request.get_content_length(), request.presence(MIME_PRESENCE_TRANSFER_ENCODING) != 0);
+
+        if (request.m_http->u.req.m_url_impl->m_len_query > 0 || has_query_content) {
+          SMDbg(dbg_ctl_http, "client request was from early data but HAS parameters");
+          call_transact_and_set_next_state(HttpTransact::TooEarly);
+          return 0;
+        }
       }
       t_state.hdr_info.client_request.mark_early_data();
     }

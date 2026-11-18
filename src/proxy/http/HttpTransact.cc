@@ -7065,12 +7065,12 @@ HttpTransact::is_request_retryable(State *s)
     return false;
   }
 
-  // Safe methods (RFC 9110, section 9.2.1) can be retried irrespective of bytes sent or connection state. QUERY
-  // (draft-ietf-httpbis-safe-method-w-body) is safe too, but its content is not kept for replay on this path, so once
-  // any part of its request has been sent it is treated like an unsafe method, whether or not the content itself went
-  // out. A buffered QUERY can still be retried when the origin reports it was not processed, see
+  // Safe methods (RFC 9110, section 9.2.1) can be retried irrespective of bytes sent or connection state. An unsafe
+  // method cannot be retried after its request header is queued for the origin, unless the connection failed.
+  // QUERY (draft-ietf-httpbis-safe-method-w-body) is safe, but its content is not kept for replay on this path. It
+  // cannot be retried after a byte of its request header is written to the origin, whether or not the content itself
+  // went out. A buffered QUERY can still be retried when the origin reports it was not processed, see
   // HttpSM::prepare_for_origin_retry.
-  // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry
   bool const retry_only_before_sending = !HttpTransactHeaders::is_method_safe(s->method) || s->method == HTTP_WKSIDX_QUERY;
   bool const request_bytes_sent        = s->method == HTTP_WKSIDX_QUERY ? s->state_machine->server_request_hdr_bytes_written > 0 :
                                                                           s->state_machine->server_request_hdr_bytes > 0;

@@ -2657,7 +2657,7 @@ Origin Server Connect Attempts
 
 .. ts:cv:: CONFIG proxy.config.http.post.check.content_length.enabled INT 1
 
-    Enables (``1``) or disables (``0``) checking the Content-Length: Header for a POST request.
+    Enables (``1``) or disables (``0``) checking the Content-Length: Header for a POST, PUT, PUSH, or QUERY request.
 
 .. ts:cv:: CONFIG proxy.config.http.reject_head_with_content INT 1
    :reloadable:
@@ -5727,7 +5727,8 @@ TLS v1.3 0-RTT Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.allow_early_data_params INT 0
 
-   Set to ``1`` to allow HTTP parameters on early data requests.
+   Set to ``1`` to allow HTTP parameters on early data requests. The parameters
+   are the query string of the URL and the content of a ``QUERY`` request.
 
 SNI Routing
 -----------
