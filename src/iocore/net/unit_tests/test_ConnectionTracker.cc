@@ -328,3 +328,25 @@ TEST_CASE("Connection tracker client exempt list", "[libinknet][ConnectionTracke
   ConnectionTracker::clear_client_exempt_list();
   CHECK_FALSE(ConnectionTracker::is_client_exempt(addr_in));
 }
+
+TEST_CASE("Connection tracker client exempt list remove covering range", "[libinknet][ConnectionTracker]")
+{
+  test_config();
+
+  IpEndpoint addr;
+  REQUIRE(ats_ip_pton("192.168.1.100", &addr) == 0);
+
+  ConnectionTracker::clear_client_exempt_list();
+  swoc::IPRange host;
+  REQUIRE(host.load("192.168.1.100"));
+  ConnectionTracker::add_client_exempt_range(host);
+  REQUIRE(ConnectionTracker::is_client_exempt(addr));
+
+  // Removing a network that covers the address, and starts below it, un-exempts it.
+  swoc::IPRange net;
+  REQUIRE(net.load("192.168.1.0/24"));
+  ConnectionTracker::remove_client_exempt_range(net);
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(addr));
+
+  ConnectionTracker::clear_client_exempt_list();
+}
