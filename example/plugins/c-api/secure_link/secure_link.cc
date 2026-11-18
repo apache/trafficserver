@@ -59,7 +59,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   secure_link_info   *sli   = static_cast<secure_link_info *>(ih);
   char               *token = nullptr, *tokenptr = nullptr, *expire = nullptr, *expireptr = nullptr, *path = nullptr;
   char               *s, *ptr, *saveptr = nullptr, *val, hash[2 * MD5_DIGEST_LENGTH + 1] = "";
-  bool                digest_ok;
 
   in = (struct sockaddr_in *)TSHttpTxnClientAddrGet(rh);
   ip = inet_ntoa(in->sin_addr);
@@ -115,11 +114,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 #else
   ctx = EVP_MD_CTX_create();
 #endif
-  digest_ok = ctx != nullptr && EVP_DigestInit_ex(ctx, EVP_md5(), nullptr) == 1 &&
-              EVP_DigestUpdate(ctx, sli->secret, strlen(sli->secret)) == 1 && EVP_DigestUpdate(ctx, ip, strlen(ip)) == 1 &&
-              (path == nullptr || EVP_DigestUpdate(ctx, path, strlen(path)) == 1) &&
-              (expire == nullptr || EVP_DigestUpdate(ctx, expire, strlen(expire)) == 1) &&
-              EVP_DigestFinal_ex(ctx, md, nullptr) == 1;
+  const bool digest_ok =
+    ctx != nullptr && EVP_DigestInit_ex(ctx, EVP_md5(), nullptr) == 1 &&
+    EVP_DigestUpdate(ctx, sli->secret, strlen(sli->secret)) == 1 && EVP_DigestUpdate(ctx, ip, strlen(ip)) == 1 &&
+    (path == nullptr || EVP_DigestUpdate(ctx, path, strlen(path)) == 1) &&
+    (expire == nullptr || EVP_DigestUpdate(ctx, expire, strlen(expire)) == 1) && EVP_DigestFinal_ex(ctx, md, nullptr) == 1;
 #ifdef HAVE_EVP_MD_CTX_FREE
   EVP_MD_CTX_free(ctx);
 #else
