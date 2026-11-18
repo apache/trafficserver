@@ -115,7 +115,6 @@ template <class C> struct DereferContinuation : public Continuation {
   int
   dieEvent(int, Event *)
   {
-    p->refcount_dec();
     if (p->refcount_dec() == 0) {
       delete p;
     }
