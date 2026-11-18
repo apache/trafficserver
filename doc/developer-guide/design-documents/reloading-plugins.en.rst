@@ -129,7 +129,7 @@ reference counting, when continuations are destroyed, and to handle events.
 
 A thread from ``TSThreadCreate`` gets the plugin context of the code that created it, and holds a reference
 to that context until the thread function returns. Thus continuations that the thread creates are also
-reference counted.
+reference counted. A plugin that is not in use stays loaded until its threads return.
 
 
 TSUserArgs
