@@ -23,6 +23,8 @@
 
 #include "proxy/http3/Http3Config.h"
 
+#include <algorithm>
+
 int ts::Http3Config::_config_id = 0;
 
 //
@@ -38,10 +40,10 @@ ts::Http3ConfigParams::initialize()
   RecEstablishStaticConfigUInt32(this->_max_settings, "proxy.config.http3.max_settings");
 }
 
-uint32_t
+uint16_t
 ts::Http3ConfigParams::header_table_size() const
 {
-  return this->_header_table_size;
+  return std::min<uint32_t>(this->_header_table_size, UINT16_MAX);
 }
 
 uint32_t
@@ -50,10 +52,10 @@ ts::Http3ConfigParams::max_field_section_size() const
   return this->_max_field_section_size;
 }
 
-uint32_t
+uint16_t
 ts::Http3ConfigParams::qpack_blocked_streams() const
 {
-  return this->_qpack_blocked_streams;
+  return std::min<uint32_t>(this->_qpack_blocked_streams, UINT16_MAX);
 }
 
 uint32_t

@@ -677,12 +677,17 @@ Http3Transaction::on_header_decode_failed(Http3ErrorCode error_code)
   ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
-  // When decode() returned the failure as well, handle_frame() has already closed the stream and the connection.
-  if (this->_is_closed() || this->_is_stream_closed()) {
+  if (this->_header_decode_failed || this->_is_closed() || this->_is_stream_closed()) {
     return;
   }
+  this->_header_decode_failed = true;
 
   Http3TransDebug("Header decoding failed: error code 0x%x", static_cast<unsigned>(error_code));
+  ip_port_text_buffer ipb;
+  Error("HTTP/3 connection error code=0x%x client_ip=%s session_id=%" PRId64 " stream_id=%" PRIu64
+        " request header section could not be decoded",
+        static_cast<unsigned>(error_code), ats_ip_ntop(this->_proxy_ssn->get_remote_addr(), ipb, sizeof(ipb)),
+        this->_proxy_ssn->connection_id(), this->get_quic_stream_id());
   // The QUIC layer cannot reset a single stream, so the request is refused by closing the connection (RFC 9114,
   // Section 8). As in _process_write_vio(), the transaction is not marked done: the HttpSM waiting for the request still
   // holds it, and learns of the close from the session.

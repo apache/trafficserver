@@ -76,9 +76,10 @@ Http3HeaderVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame, Htt
   } else if (res < 0) {
     // decode() fails up front on an invalid Required Insert Count, on more blocked streams than we allow, or once the
     // encoder stream has failed. RFC 9204 Sections 2.1.2 and 4.5.1.1 make the first two connection errors of this type.
+    // This is reported like an asynchronous failure rather than returned as an Http3Error, because
+    // Http3Transaction::_handle_error() would close the stream under the HttpSM that is waiting for this request.
     Dbg(dbg_ctl_http3, "Error on decoding header (%d)", res);
-    return std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::QPACK_DECOMPRESSION_FAILED,
-                                        "header block could not be decoded");
+    this->_on_qpack_decode_failed(Http3ErrorCode::QPACK_DECOMPRESSION_FAILED);
   } else {
     ink_abort("should not be here");
   }

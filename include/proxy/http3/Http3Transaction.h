@@ -175,6 +175,10 @@ private:
   Http3DataFramer           _data_framer;
   Http3HeaderVIOAdaptor     _header_handler;
   Http3StreamDataVIOAdaptor _data_handler;
+
+  // Set once a header decode failure has closed the connection. A decoder that has already failed returns the failure
+  // from decode() and also reports it asynchronously, and only the first report should act.
+  bool _header_decode_failed = false;
 };
 
 /**
