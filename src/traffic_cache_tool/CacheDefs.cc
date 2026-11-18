@@ -471,8 +471,10 @@ StripeSM::dir_probe(CryptoHash *key, [[maybe_unused]] CacheDirEntry *result, [[m
     Bytes   offset = stripe_offset(e);
     int64_t size   = dir_approx_size(e);
     ssize_t n      = pread(fd, stripe_buff2, size, offset);
-    if (n < size) {
+    if (n < 0) {
       std::cout << "Failed to read content from the Stripe:" << strerror(errno) << std::endl;
+      free(stripe_buff2);
+      return 0;
     }
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
