@@ -2006,6 +2006,34 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
   }
 }
 
+#ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
+/** The entries of one certificate of a line, for a context that holds only that certificate.
+    @param data The entries of every certificate of the line.
+    @param index The position of the certificate in the line.
+    @return The certificate with its key, chain, OCSP response and key type, each where the line has one.
+*/
+static SSLMultiCertConfigLoader::CertLoadData
+certificate_load_data(SSLMultiCertConfigLoader::CertLoadData const &data, size_t index)
+{
+  SSLMultiCertConfigLoader::CertLoadData single;
+
+  single.cert_names_list.push_back(data.cert_names_list[index]);
+  if (index < data.key_list.size()) {
+    single.key_list.push_back(data.key_list[index]);
+  }
+  if (index < data.ca_list.size()) {
+    single.ca_list.push_back(data.ca_list[index]);
+  }
+  if (index < data.ocsp_list.size()) {
+    single.ocsp_list.push_back(data.ocsp_list[index]);
+  }
+  if (index < data.cert_type_list.size()) {
+    single.cert_type_list.push_back(data.cert_type_list[index]);
+  }
+  return single;
+}
+#endif
+
 /**
    Initialize SSL_CTX for server
    This is public function because of used by SSLCreateServerContext.
@@ -2013,49 +2041,39 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 std::vector<SSLLoadingContext>
 SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SSLMultiCertConfigParams *sslMultCertSettings)
 {
-  std::vector<std::vector<std::string>> cert_names;
-  std::vector<std::vector<std::string>> key_names;
-  std::vector<std::string>              key_names_list;
+  // The certificates of each context to create, with their keys, chains and OCSP responses.
+  std::vector<CertLoadData> contexts_data;
 
   bool generate_default_ctx = data.cert_names_list.empty();
   if (!generate_default_ctx) {
 #ifndef HAVE_NATIVE_DUAL_CERT_SUPPORT
-    for (auto const &name : data.cert_names_list) {
-      cert_names.emplace_back(std::vector({name}));
-    }
-    for (auto const &name : data.key_list) {
-      key_names.emplace_back(std::vector({name}));
+    for (size_t i = 0; i < data.cert_names_list.size(); i++) {
+      contexts_data.push_back(certificate_load_data(data, i));
     }
 #else
-    if (!data.cert_names_list.empty()) {
-      cert_names.emplace_back(data.cert_names_list);
-      key_names.emplace_back(data.key_list);
-    }
+    contexts_data.push_back(data);
 #endif
   } else {
     // In the case of no cert_names, we still want to create a
     // ctx with all the bells and whistles (as much as possible)
-    cert_names.emplace_back(std::vector({std::string("default")}));
-    key_names.emplace_back(std::vector({std::string("default")}));
+    CertLoadData default_data;
+
+    default_data.cert_names_list.emplace_back("default");
+    default_data.key_list.emplace_back("default");
+    contexts_data.push_back(std::move(default_data));
   }
 
   SSLCertContextType             ctx_type = SSLCertContextType::GENERIC;
   std::vector<SSLLoadingContext> ret;
-  unsigned int                   i   = 0;
   SSL_CTX                       *ctx = nullptr;
-  for (auto const &cert_names_list : cert_names) {
-    if (i < key_names.size()) {
-      key_names_list = key_names[i];
-    } else {
-      key_names_list.clear();
-    }
-
+  for (auto const &ctx_data : contexts_data) {
     ctx = this->default_server_ssl_ctx();
 
-    ctx_type = (!generate_default_ctx && i < data.cert_type_list.size()) ? data.cert_type_list[i] : SSLCertContextType::GENERIC;
+    ctx_type =
+      (!generate_default_ctx && !ctx_data.cert_type_list.empty()) ? ctx_data.cert_type_list[0] : SSLCertContextType::GENERIC;
 
-    Dbg(dbg_ctl_ssl_load, "Creating new context %p cert_count=%ld initial: %s", ctx, cert_names_list.size(),
-        cert_names_list[0].c_str());
+    Dbg(dbg_ctl_ssl_load, "Creating new context %p cert_count=%ld initial: %s", ctx, ctx_data.cert_names_list.size(),
+        ctx_data.cert_names_list[0].c_str());
 
     SSL_CTX_set_min_proto_version(ctx, TLS1_VERSION);
     SSL_CTX_set_options(ctx, _params->ssl_ctx_options);
@@ -2093,7 +2111,8 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
       }
 
       if (sslMultCertSettings->cert && !generate_default_ctx) {
-        if (!SSLMultiCertConfigLoader::load_certs(ctx, cert_names_list, key_names_list, data, _params, sslMultCertSettings)) {
+        if (!SSLMultiCertConfigLoader::load_certs(ctx, ctx_data.cert_names_list, ctx_data.key_list, ctx_data, _params,
+                                                  sslMultCertSettings)) {
           goto fail;
         }
       }
@@ -2181,7 +2200,6 @@ SSLMultiCertConfigLoader::init_server_ssl_ctx(CertLoadData const &data, const SS
     }
 
     ret.emplace_back(SSLLoadingContext(ctx, ctx_type));
-    i++;
   }
   return ret;
 
