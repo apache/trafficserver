@@ -127,6 +127,10 @@ would be set/switched accordingly before executing the plugin code.
 The continuations created by the plugin will have a context member added to them which will be used for
 reference counting, when continuations are destroyed, and to handle events.
 
+A thread from ``TSThreadCreate`` gets the plugin context of the code that created it, and holds a reference
+to that context until the thread function returns. Thus continuations that the thread creates are also
+reference counted.
+
 
 TSUserArgs
 ----------

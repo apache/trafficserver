@@ -32,6 +32,7 @@
 #include "ts/ts.h"
 #include "ts/InkAPIPrivateIOCore.h"
 #include "../iocore/net/P_UnixUDPConnection.h"
+#include "proxy/PluginThreadContext.h"
 
 // This assert is for internal API use only.
 #if TS_USE_FAST_SDK
@@ -83,6 +84,8 @@ sdk_sanity_check_iocore_structure(void *data)
 TSReturnCode sdk_sanity_check_continuation(TSCont cont);
 TSReturnCode sdk_sanity_check_null_ptr(void const *ptr);
 
+extern thread_local PluginThreadContext *pluginThreadContext;
+
 ////////////////////////////////////////////////////////////////////
 //
 // Threads
@@ -104,6 +107,9 @@ struct INKThreadInternal : public EThread {
   TSThreadFunc func = nullptr;
   void        *data = nullptr;
 
+  // The plugin context of the creator. The thread holds a reference to it while func runs.
+  PluginThreadContext *context = nullptr;
+
   struct {
     ink_mutex lock;
     ink_cond  signal;
@@ -118,7 +124,12 @@ ink_thread_trampoline(void *data)
   INKThreadInternal *ithread = static_cast<INKThreadInternal *>(data);
 
   ithread->set_specific();
-  retval = ithread->func(ithread->data);
+  pluginThreadContext = ithread->context;
+  retval              = ithread->func(ithread->data);
+  pluginThreadContext = nullptr;
+  if (ithread->context) {
+    ithread->context->release();
+  }
 
   ink_mutex_acquire(&ithread->completion.lock);
 
@@ -143,11 +154,18 @@ TSThreadCreate(TSThreadFunc func, void *data)
   ink_assert(thread->event_types == 0);
   ink_assert(thread->mutex->thread_holding == thread);
 
-  thread->func = func;
-  thread->data = data;
+  thread->func    = func;
+  thread->data    = data;
+  thread->context = pluginThreadContext;
+  if (thread->context) {
+    thread->context->acquire();
+  }
 
   ink_thread_create(&tid, ink_thread_trampoline, (void *)thread, 1, 0, nullptr);
   if (!tid) {
+    if (thread->context) {
+      thread->context->release();
+    }
     return (TSThread) nullptr;
   }
 
