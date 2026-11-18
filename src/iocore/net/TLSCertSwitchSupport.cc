@@ -89,7 +89,7 @@ TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType, co
 
   // If there's no match on the server name, try to match on the destination address.
   if (ctx == nullptr) {
-    ctx = this->_lookupContextByIP();
+    ctx = this->_lookupContextByIP(ctxType);
   }
 
   // BoringSSL needs a separate context for each key type. The initial default

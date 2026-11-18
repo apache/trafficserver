@@ -2108,7 +2108,7 @@ SSLNetVConnection::_lookupContextByName(const std::string &servername, SSLCertCo
 }
 
 shared_SSL_CTX
-SSLNetVConnection::_lookupContextByIP()
+SSLNetVConnection::_lookupContextByIP(SSLCertContextType ctxType)
 {
   shared_SSL_CTX                      ctx = nullptr;
   SSLCertificateConfig::scoped_config lookup;
@@ -2125,7 +2125,7 @@ SSLNetVConnection::_lookupContextByIP()
     ip = *proxy_protocol_dst;
     ip_port_text_buffer ipb1;
     ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
-    cc = lookup->find(ip);
+    cc = lookup->find_for_client(ip, ctxType);
     if (dbg_ctl_proxyprotocol.on()) {
       IpEndpoint          src;
       ip_port_text_buffer ipb2;
@@ -2140,7 +2140,7 @@ SSLNetVConnection::_lookupContextByIP()
       DbgPrint(dbg_ctl_proxyprotocol, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, default_ctx.get());
     }
   } else if (0 == safe_getsockname(this->get_socket(), &ip.sa, &namelen)) {
-    cc = lookup->find(ip);
+    cc = lookup->find_for_client(ip, ctxType);
   }
   if (cc) {
     ctx = cc->getCtx();

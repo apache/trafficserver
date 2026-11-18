@@ -364,7 +364,7 @@ protected:
 
   bool           _isTryingRenegotiation() const override;
   shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;
-  shared_SSL_CTX _lookupContextByIP() override;
+  shared_SSL_CTX _lookupContextByIP(SSLCertContextType ctxType) override;
 
   /// @return The PROXY protocol destination address, or null if the connection did not carry one.
   IpEndpoint const *_proxy_protocol_dst_endpoint() const;

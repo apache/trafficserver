@@ -47,7 +47,7 @@ protected:
 
   virtual bool           _isTryingRenegotiation() const                                                  = 0;
   virtual shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) = 0;
-  virtual shared_SSL_CTX _lookupContextByIP()                                                            = 0;
+  virtual shared_SSL_CTX _lookupContextByIP(SSLCertContextType ctxType)                                  = 0;
 
 private:
   static int _ex_data_index;

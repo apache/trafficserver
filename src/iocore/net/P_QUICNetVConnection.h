@@ -200,7 +200,7 @@ protected:
   // TLSCertSwitchSupport
   bool           _isTryingRenegotiation() const override;
   shared_SSL_CTX _lookupContextByName(std::string const &servername, SSLCertContextType ctxType) override;
-  shared_SSL_CTX _lookupContextByIP() override;
+  shared_SSL_CTX _lookupContextByIP(SSLCertContextType ctxType) override;
 
   // TLSEventSupport
   bool
