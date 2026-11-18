@@ -333,20 +333,28 @@ TEST_CASE("Connection tracker client exempt list remove covering range", "[libin
 {
   test_config();
 
-  IpEndpoint addr;
-  REQUIRE(ats_ip_pton("192.168.1.100", &addr) == 0);
+  IpEndpoint covered;
+  IpEndpoint above;
+  REQUIRE(ats_ip_pton("192.168.1.100", &covered) == 0);
+  REQUIRE(ats_ip_pton("192.168.2.1", &above) == 0);
 
   ConnectionTracker::clear_client_exempt_list();
   swoc::IPRange host;
   REQUIRE(host.load("192.168.1.100"));
-  ConnectionTracker::add_client_exempt_range(host);
-  REQUIRE(ConnectionTracker::is_client_exempt(addr));
+  CHECK(ConnectionTracker::add_client_exempt_range(host));
+  swoc::IPRange other;
+  REQUIRE(other.load("192.168.2.1"));
+  CHECK(ConnectionTracker::add_client_exempt_range(other));
+  REQUIRE(ConnectionTracker::is_client_exempt(covered));
+  REQUIRE(ConnectionTracker::is_client_exempt(above));
 
-  // Removing a network that covers the address, and starts below it, un-exempts it.
+  // Removing a network that starts below every entry un-exempts the entry it covers and
+  // leaves the entry above it.
   swoc::IPRange net;
   REQUIRE(net.load("192.168.1.0/24"));
-  ConnectionTracker::remove_client_exempt_range(net);
-  CHECK_FALSE(ConnectionTracker::is_client_exempt(addr));
+  CHECK(ConnectionTracker::remove_client_exempt_range(net));
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(covered));
+  CHECK(ConnectionTracker::is_client_exempt(above));
 
   ConnectionTracker::clear_client_exempt_list();
 }

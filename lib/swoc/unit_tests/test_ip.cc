@@ -2284,6 +2284,9 @@ TEST_CASE("IPRangeSet erase from before the first range", "[libswoc][iprangeset]
     auto [r0, p0] = *spot;
     CHECK(r0 == IPRange{"2.2.2.16-2.2.2.20"});
     CHECK(p0 == 1);
+    auto [r1, p1] = *++spot;
+    CHECK(r1 == IPRange{"2.2.2.30-2.2.2.40"});
+    CHECK(p1 == 2);
   }
 
   // Controls, which hold with or without the fix.

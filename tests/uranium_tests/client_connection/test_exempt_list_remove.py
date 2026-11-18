@@ -31,7 +31,8 @@ THROTTLED = "proxy.process.net.per_client.connections_throttled_in"
 EXEMPT = "proxy.process.net.per_client.connections_exempt_in"
 
 # Each case: the exempt list calls the Lua script makes at load, and whether a connection from 127.0.0.1 past the limit
-# is then refused.
+# is then served or refused. Only the remove-covering-* cases fail without the fix, because only they remove a range
+# that starts below every entry and covers one. The rest are controls.
 CASES = [
     pytest.param([], "refused", id="no-list"),
     pytest.param([("add", "127.0.0.1")], "served", id="add-only"),
@@ -42,16 +43,18 @@ CASES = [
     pytest.param(
         [("add", "10.0.0.1"), ("add", "127.0.0.1"), ("remove", "127.0.0.0/8")], "refused", id="remove-net-with-lower-entry"
     ),
+    # Ranges below every entry that do not cover 127.0.0.1, which must stay exempt.
+    pytest.param([("add", "127.0.0.1"), ("remove", "10.0.0.0/8")], "served", id="remove-below-keeps"),
+    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.0")], "served", id="remove-adjacent-below-keeps"),
 ]
 
 
 def lua_script(calls: list[tuple[str, str]]) -> str:
-    """Return a global Lua script that makes @a calls to the exempt list API at load and logs each result."""
+    """Return a global Lua script that makes @a calls to the exempt list API at load and fails the load if any fails."""
 
     lines = []
     for op, ranges in calls:
-        lines.append(f"local ok = ts.connection_limit_exempt_list_{op}('{ranges}')")
-        lines.append(f"ts.debug('exempt_list_{op}({ranges}) returned ' .. tostring(ok))")
+        lines.append(f"assert(ts.connection_limit_exempt_list_{op}('{ranges}'), 'exempt_list_{op}({ranges}) failed')")
     return "\n".join(lines) + "\n"
 
 
@@ -107,11 +110,13 @@ def test_exempt_list_remove(ats_factory: ATSFactory, calls: list[tuple[str, str]
     try:
         wait_for_metrics(ats, {OPEN: LIMIT, THROTTLED: 0})
         outcome = attempt("127.0.0.1", ats.http_port)
-        time.sleep(1)  # Let the counters settle after the attempt.
-        counters = metrics(ats, (THROTTLED, EXEMPT))
-        print(f"RESULT calls={calls} outcome={outcome} expected={expected} counters={counters}")
+        print(f"RESULT calls={calls} outcome={outcome} expected={expected}")
         assert outcome == expected, f"Connection {LIMIT + 1} from 127.0.0.1 was {outcome}, expected {expected}"
-        assert counters[THROTTLED] == (1 if expected == "refused" else 0), counters
+        # An exempt address is counted on every accept, and a refusal is counted as a throttle.
+        if expected == "served":
+            wait_for_metrics(ats, {THROTTLED: 0, EXEMPT: LIMIT + 1})
+        else:
+            wait_for_metrics(ats, {THROTTLED: 1, EXEMPT: 0})
     finally:
         for sock in held:
             sock.close()
