@@ -372,6 +372,17 @@ When plugins are loaded from :file:`plugin.yaml`, each plugin produces a
    [NOTE] plugin #2 loading: header_rewrite.so
    [NOTE] plugin #3 skipped: experimental_plugin.so (enabled: false)
 
+Load Errors
+===========
+
+If :file:`plugin.yaml` exists but cannot be loaded as written, |TS| does
+not start. This covers a file that cannot be read, invalid YAML, an entry
+with no ``path``, a value of the wrong type (such as ``enabled: maybe``),
+and a plugin that fails to load. The error is logged at ``EMERGENCY``
+level and :program:`traffic_server` exits with status 33, so a process
+manager does not restart it into the same error. ``traffic_server -C
+verify_config`` reports the same errors without exiting early.
+
 See Also
 ========
 

@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -639,11 +640,23 @@ plugin_yaml_init(bool validateOnly)
     cleanup_inline_configs();
   }
 
+  // A plugin.yaml that cannot be loaded as written stops startup, rather than
+  // leaving traffic_server running without the plugins it names. Emergency
+  // exits with UNRECOVERABLE_EXIT, so the process manager does not restart
+  // into the same error. A config check only reports it.
+  auto fail = [validateOnly](const std::string &message) {
+    if (validateOnly) {
+      Error("%s", message.c_str());
+    } else {
+      Emergency("%s", message.c_str());
+    }
+    return false;
+  };
+
   yaml_path = RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN_YAML);
   if (access(yaml_path, R_OK) != 0) {
     if (errno != ENOENT) {
-      Error("%s: %s", ts::filename::PLUGIN_YAML, strerror(errno));
-      return false;
+      return fail(std::string(ts::filename::PLUGIN_YAML) + ": " + strerror(errno));
     }
     return plugin_init(validateOnly);
   }
@@ -652,8 +665,7 @@ plugin_yaml_init(bool validateOnly)
 
   auto result = parse_plugin_yaml(yaml_path.get());
   if (!result.ok()) {
-    Error("%s: %s", ts::filename::PLUGIN_YAML, std::string(result.errata.front().text()).c_str());
-    return false;
+    return fail(std::string(ts::filename::PLUGIN_YAML) + ": " + std::string(result.errata.front().text()));
   }
 
   s_plugin_load_summary.source = ts::filename::PLUGIN_YAML;
@@ -676,7 +688,7 @@ plugin_yaml_init(bool validateOnly)
 
     auto args = build_plugin_args(entry, index);
     if (!args) {
-      return false;
+      return fail(std::string(ts::filename::PLUGIN_YAML) + " failed to load");
     }
 
     if (args->size() > MAX_PLUGIN_ARGS) {
@@ -713,10 +725,9 @@ plugin_yaml_init(bool validateOnly)
     }
   }
 
-  if (retVal) {
-    log_plugin_load_summary(loaded, disabled);
-  } else {
-    Error("%s failed to load", ts::filename::PLUGIN_YAML);
+  if (!retVal) {
+    return fail(std::string(ts::filename::PLUGIN_YAML) + " failed to load");
   }
-  return retVal;
+  log_plugin_load_summary(loaded, disabled);
+  return true;
 }
