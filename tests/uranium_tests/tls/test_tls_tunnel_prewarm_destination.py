@@ -14,11 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import re
+
 from tools.uranium.services import ATS, ATSFactory, ServiceFactory, wait_for_file_lines
 
 WARNING = "not pre-warming tunnel destination"
 
-# Destinations whose port std::stoi cannot read. Each one logs WARNING.
+# Destinations whose port std::stoi cannot read. Each one logs WARNING once,
+# including the one with two ALPN ids.
 SKIPPED_SNI = (
     "  - fqdn: template.example.com\n"
     "    forward_route: 127.0.0.1:{inbound_local_port}\n"
@@ -28,6 +31,7 @@ SKIPPED_SNI = (
     "    tunnel_prewarm: true\n"
     "  - fqdn: empty.example.com\n"
     '    partial_blind_route: "127.0.0.1:"\n'
+    "    tunnel_alpn: [h2, http/1.1]\n"
     "    tunnel_prewarm: true\n"
     "  - fqdn: huge.example.com\n"
     "    forward_route: 127.0.0.1:99999999999\n"
@@ -70,9 +74,9 @@ def test_tls_tunnel_prewarm_destination(ats_factory: ATSFactory, services: Servi
     assert diags.count(WARNING) == 4, diags
     assert _ats.is_running
 
-    # Only the valid route gets a pool: one destination registers 7 stats.
+    # Only the valid route registers pre-warm stats: one destination has 7.
     stats = wait_for_file_lines(_ats.diags_log, "dynamic stats are registered for pre-warming tunnel", 1)
-    assert "7 dynamic stats are registered for pre-warming tunnel" in stats, stats
+    assert re.search(r"\b7 dynamic stats are registered for pre-warming tunnel", stats), stats
 
     # The valid route is parsed, so its pre-warm stats are registered.
     metric = f"proxy.process.tunnel.prewarm.127.0.0.1:{origin_port}.tcp.total_miss"

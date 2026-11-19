@@ -77,9 +77,10 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
-// Returns false when std::stoi cannot read the port, as with a
-// {inbound_local_port} template, an empty port or one too large for an int.
-bool
+// Returns false when std::stoi cannot read the text after the first colon, as
+// with a {inbound_local_port} template, an empty port or one too large for an
+// int.
+[[nodiscard]] bool
 parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
 {
   if (auto pos = authority.find(':'); pos != std::string::npos) {
@@ -1101,6 +1102,22 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
       continue;
     }
 
+    std::string dst_fqdn;
+    int32_t     port;
+    if (!parse_authority(dst_fqdn, port, item.tunnel_destination)) {
+      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": its port cannot be read", item.fqdn.c_str(),
+              item.tunnel_destination.c_str());
+      continue;
+    }
+
+    if (port < 0) {
+      if (item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
+        port = 443;
+      } else {
+        port = 80;
+      }
+    }
+
     std::vector<int> alpn_ids = {SessionProtocolNameRegistry::INVALID};
     if (!item.tunnel_alpn.empty() && item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
       for (auto &id : item.tunnel_alpn) {
@@ -1112,22 +1129,6 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
       Dbg(dbg_ctl_prewarm_m, "sni=%s dst=%s type=%d alpn=%d min=%d max=%d c_timeout=%d i_timeout=%d srv=%d", item.fqdn.c_str(),
           item.tunnel_destination.c_str(), (int)item.tunnel_type, id, (int)item.tunnel_prewarm_min, (int)item.tunnel_prewarm_max,
           (int)item.tunnel_prewarm_connect_timeout, (int)item.tunnel_prewarm_inactive_timeout, item.tunnel_prewarm_srv);
-
-      std::string dst_fqdn;
-      int32_t     port;
-      if (!parse_authority(dst_fqdn, port, item.tunnel_destination)) {
-        Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": its port is not a number", item.fqdn.c_str(),
-                item.tunnel_destination.c_str());
-        continue;
-      }
-
-      if (port < 0) {
-        if (item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
-          port = 443;
-        } else {
-          port = 80;
-        }
-      }
 
       PreWarm::SPtrConstDst dst = std::make_shared<const PreWarm::Dst>(dst_fqdn, port, item.tunnel_type, id);
 
