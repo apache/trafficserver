@@ -164,10 +164,12 @@ class TunnelDestination : public ActionItem
     MAP_WITH_PROXY_PROTOCOL_PORT, // Use port from the proxy protocol
     MAX                           // Always at the end and do not change the value of the above items.
   };
+
+public:
+  // The sni.yaml loader checks a destination port against these too.
   static constexpr std::string_view MAP_WITH_RECV_PORT_STR           = "{inbound_local_port}";
   static constexpr std::string_view MAP_WITH_PROXY_PROTOCOL_PORT_STR = "{proxy_protocol_port}";
 
-public:
   TunnelDestination(const std::string_view &dest, SNIRoutingType type, YamlSNIConfig::TunnelPreWarm prewarm,
                     const std::vector<int> &alpn);
   ~TunnelDestination() override {}

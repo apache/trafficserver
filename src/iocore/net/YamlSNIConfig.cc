@@ -29,6 +29,8 @@
 #include <exception>
 #include <cstdint>
 #include <algorithm>
+#include <cctype>
+#include <optional>
 
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
@@ -69,6 +71,54 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
     } else {
       dst.push_back(index);
     }
+  }
+}
+
+// The port text of a tunnel destination, split the way TLSTunnelSupport splits
+// it when it connects, or nullopt when the destination names no port. An
+// unbracketed IPv6 address has several colons and so names no port.
+std::optional<std::string_view>
+tunnel_port_text(std::string_view destination)
+{
+  if (!destination.empty() && destination.front() == '[') {
+    auto close = destination.find(']');
+    if (close == std::string_view::npos || close + 1 >= destination.size() || destination[close + 1] != ':') {
+      return std::nullopt;
+    }
+    return destination.substr(close + 2);
+  }
+  auto colon = destination.find(':');
+  if (colon == std::string_view::npos || colon != destination.rfind(':')) {
+    return std::nullopt;
+  }
+  return destination.substr(colon + 1);
+}
+
+// A port is a number from 1 to 65535 or one of the port templates. A match
+// group such as $2 is filled in from the fqdn for each connection, so it is
+// left for then.
+bool
+is_valid_tunnel_port(std::string_view port)
+{
+  if (port == TunnelDestination::MAP_WITH_RECV_PORT_STR || port == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR ||
+      port.find('$') != std::string_view::npos) {
+    return true;
+  }
+  if (port.empty() || port.size() > 5 || !std::all_of(port.begin(), port.end(), [](char c) { return std::isdigit(c); })) {
+    return false;
+  }
+  auto value = swoc::svtou(port);
+  return value >= 1 && value <= std::numeric_limits<in_port_t>::max();
+}
+
+void
+check_tunnel_port(const YAML::Node &route, const std::string &fqdn, const std::string &destination)
+{
+  if (auto port = tunnel_port_text(destination); port && !is_valid_tunnel_port(*port)) {
+    throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination +
+                                                "\": expected a number from 1 to 65535, " +
+                                                std::string(TunnelDestination::MAP_WITH_RECV_PORT_STR) + " or " +
+                                                std::string(TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR));
   }
 }
 
@@ -457,6 +507,12 @@ template <> struct convert<YamlSNIConfig::Item> {
       if (node[TS_tunnel_alpn]) {
         load_tunnel_alpn(item.tunnel_alpn, node[TS_tunnel_alpn]);
       }
+    }
+    if (!item.tunnel_destination.empty()) {
+      const YAML::Node route = node[TS_tunnel_route]  ? node[TS_tunnel_route] :
+                               node[TS_forward_route] ? node[TS_forward_route] :
+                                                        node[TS_partial_blind_route];
+      check_tunnel_port(route, item.fqdn, item.tunnel_destination);
     }
 
     if (node[TS_verify_server_policy]) {
