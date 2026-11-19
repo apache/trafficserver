@@ -571,7 +571,9 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
       // forwarding on the handshake buffer, so the
       // SSLNextProtocolTrampoline has a chance to do its
       // thing before forwarding the buffers.
-      this->readSignalDone(VC_EVENT_READ_COMPLETE, nh);
+      if (this->readSignalDone(VC_EVENT_READ_COMPLETE, nh) == EVENT_DONE) {
+        return;
+      }
 
       // If the handshake isn't set yet, this means the tunnel
       // decision was make in the SNI callback.  We must move
