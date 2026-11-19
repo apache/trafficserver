@@ -331,6 +331,10 @@ TEST_CASE("Connection tracker client exempt list", "[libinknet][ConnectionTracke
 
 TEST_CASE("Connection tracker client exempt list remove covering range", "[libinknet][ConnectionTracker]")
 {
+#if defined(TS_TEST_EXTERNAL_LIBSWOC)
+  // The erase fix is in lib/swoc/include/swoc/DiscreteRange.h, which this build does not use.
+  SKIP("built against an external libswoc, which may not have the DiscreteSpace::erase fix");
+#endif
   test_config();
 
   IpEndpoint covered;
