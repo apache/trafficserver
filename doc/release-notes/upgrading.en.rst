@@ -396,6 +396,14 @@ check at or after its deadline. So a value raised to relieve load now only
 delays timeouts by up to that interval. If you tuned it for that reason,
 returning it to the default of 1 costs nothing and restores accuracy.
 
+The following :file:`sni.yaml` change has been made:
+
+- A ``tunnel_route``, ``forward_route`` or ``partial_blind_route`` port must be a number from 1 to 65535 with no
+  leading zero, a port template, or a match group that names a ``*`` in a wildcard ``fqdn``. Before, an empty port,
+  ``0``, a multiple of 65536 or a misspelled template such as ``{inbound_port}`` fell back to the inbound port, any
+  other port above 65535 wrapped around, a leading zero was read as octal, and text after the digits was dropped. Any
+  of those now stops |TS| at startup, or fails a reload of :file:`sni.yaml` and keeps the previous configuration.
+
 Plugins
 -------
 
@@ -649,11 +657,6 @@ The following changes have been made to the :file:`sni.yaml` file:
   * Do NOT support regex
   * Allow ``$1`` (capturing) support in the ``tunnel_route`` field
   * Matching depends on the order of entries (like :file:`remap.config`)
-
-- A ``tunnel_route``, ``forward_route`` or ``partial_blind_route`` port must be a number from 1 to 65535, a port
-  template or a match group. An empty port, ``0`` or a misspelled template such as ``{inbound_port}`` used to fall back
-  to the inbound port, a port above 65535 wrapped around, and text after the digits was dropped. Any of those now stops
-  |TS| at startup, or fails a reload of :file:`sni.yaml` and keeps the previous configuration.
 
 Plugins
 -------

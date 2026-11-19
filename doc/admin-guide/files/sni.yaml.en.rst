@@ -396,10 +396,12 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    strings can be specified. The match group number can be used in combination with either
                                                    one of those.
 
-                                                   If the destination names a port, the port must be a number from 1 to 65535,
-                                                   ``{inbound_local_port}``, ``{proxy_protocol_port}``, or a match group such as ``$2``.
-                                                   Any other port, such as ``443x`` or ``99999``, stops |TS| at startup. On a reload of
-                                                   :file:`sni.yaml` it fails the reload, and |TS| keeps the previous configuration.
+                                                   If the destination names a port, the port must be a number from 1 to 65535 with no
+                                                   leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``, or a match group
+                                                   such as ``$1``, optionally after some digits. A match group in the port must name a
+                                                   ``*`` in a wildcard ``fqdn``. Any other port, such as ``443x``, ``0443`` or ``99999``,
+                                                   stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the reload, and |TS|
+                                                   keeps the previous configuration.
 
                                                    For each of these tunnel targets, unless the port is explicitly specified in the target
                                                    (e.g., if the port is derived from the Proxy Protocol header), the port must be

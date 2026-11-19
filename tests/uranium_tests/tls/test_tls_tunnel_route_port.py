@@ -23,7 +23,7 @@ TEST_DIRECTORY = Path(__file__).parent
 
 BAD_PORT = r"bad port in tunnel destination"
 
-# Each route names a port Traffic Server cannot connect to.
+# Each route names a port the tunnel would misread.
 BAD_ROUTES = {
     "empty": ("forward_route", "127.0.0.1:"),
     "zero": ("forward_route", "127.0.0.1:0"),
@@ -32,12 +32,13 @@ BAD_ROUTES = {
     "trailing_text": ("tunnel_route", "127.0.0.1:443x"),
     "misspelled_template": ("partial_blind_route", "127.0.0.1:{inbound_port}"),
     "ipv6_empty": ("tunnel_route", "[::1]:"),
+    "leading_zero": ("tunnel_route", "127.0.0.1:0443"),
 }
 
 
 @pytest.mark.parametrize("key,destination", BAD_ROUTES.values(), ids=BAD_ROUTES.keys())
 def test_tunnel_route_bad_port_stops_startup(ats_factory: ATSFactory, key: str, destination: str) -> None:
-    """An sni.yaml route with a port Traffic Server cannot connect to stops startup.
+    """An sni.yaml route with a port the tunnel would misread stops startup.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param key: The sni.yaml route key under test.
@@ -106,7 +107,7 @@ def test_tunnel_route_bad_port_on_reload_keeps_old_config(ats_factory: ATSFactor
     # Port 1 rather than the working port with text after it: a reload that took
     # this route would read the leading digits and keep tunnelling to the old port.
     (ats.config_directory / "sni.yaml").write_text("sni:\n- fqdn: bar.com\n  forward_route: localhost:1x\n")
-    result = ats.traffic_ctl("config", "reload", "-m", "-t", "bad-tunnel-port", "-w", "1", "-r", "0.5", "-T", "30s")
+    result = ats.traffic_ctl("config", "reload", "-m", "-t", "bad-tunnel-port", "-r", "0.5", "-T", "30s")
     assert result.returncode == 2, result.output
     diags = wait_for_file_lines(ats.diags_log, r"sni\.yaml failed to load", 1)
     assert BAD_PORT in diags, diags

@@ -43,6 +43,7 @@
 #include "SNIActionPerformer.h"
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
+#include "P_SSLUtils.h"
 
 #include "tsutil/ts_ip.h"
 
@@ -76,16 +77,23 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
 
 // The port text of a tunnel destination, split the way TLSTunnelSupport splits
 // it when it connects, or nullopt when the destination names no port. An
-// unbracketed IPv6 address has several colons and so names no port.
+// unbracketed IPv6 address has several colons and so names no port. Text after
+// a bracketed address that is not a port, or a bracket that never closes, comes
+// back as the port so that the check refuses it: the connection would read it
+// as no port and fall back to the inbound one.
 std::optional<std::string_view>
 tunnel_port_text(std::string_view destination)
 {
   if (!destination.empty() && destination.front() == '[') {
     auto close = destination.find(']');
-    if (close == std::string_view::npos || close + 1 >= destination.size() || destination[close + 1] != ':') {
+    if (close == std::string_view::npos) {
+      return destination;
+    }
+    auto tail = destination.substr(close + 1);
+    if (tail.empty()) {
       return std::nullopt;
     }
-    return destination.substr(close + 2);
+    return tail.front() == ':' ? tail.substr(1) : tail;
   }
   auto colon = destination.find(':');
   if (colon == std::string_view::npos || colon != destination.rfind(':')) {
@@ -100,14 +108,31 @@ is_digit(char c)
   return std::isdigit(static_cast<unsigned char>(c)) != 0;
 }
 
-// A port is a number from 1 to 65535, one of the port templates, or a match
-// group such as $2, optionally after some digits. A match group is filled in
-// from the fqdn for each connection, so its value is left for then. The group
-// number runs to the end of the destination, which is how
-// TunnelDestination::replace_match_groups reads it; anything else after the '$'
-// would reach the connection as text.
+// Digits with no leading zero, which svtou would read as octal.
 bool
-is_valid_tunnel_port(std::string_view port)
+is_decimal(std::string_view text)
+{
+  return !text.empty() && text.front() != '0' && std::all_of(text.begin(), text.end(), is_digit);
+}
+
+// The number of match groups a connection to this fqdn captures: one for each
+// '*' when the fqdn is a wildcard that SNIConfigParams files as a glob, and
+// none for a name it matches exactly.
+size_t
+match_group_count(const std::string &fqdn)
+{
+  const ats_wildcard_matcher wildcard;
+  return wildcard.match(fqdn.c_str()) ? std::count(fqdn.begin(), fqdn.end(), '*') : 0;
+}
+
+// A port is a number from 1 to 65535, one of the port templates, or a match
+// group such as $1, optionally after some digits. A match group is filled in
+// from the fqdn for each connection, so its value is left for then, but it must
+// name a group the fqdn captures. In the port the group number runs to the end
+// of the destination, which is how TunnelDestination::replace_match_groups
+// reads it, and it is one digit because no fqdn captures ten groups.
+bool
+is_valid_tunnel_port(std::string_view port, size_t groups)
 {
   if (port == TunnelDestination::MAP_WITH_RECV_PORT_STR || port == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR) {
     return true;
@@ -115,22 +140,22 @@ is_valid_tunnel_port(std::string_view port)
   if (auto dollar = port.find('$'); dollar != std::string_view::npos) {
     auto digits = port.substr(0, dollar);
     auto group  = port.substr(dollar + 1);
-    return !group.empty() && group.front() != '0' && std::all_of(digits.begin(), digits.end(), is_digit) &&
-           std::all_of(group.begin(), group.end(), is_digit);
+    return (digits.empty() || is_decimal(digits)) && group.size() == 1 && group.front() >= '1' &&
+           static_cast<size_t>(group.front() - '0') <= groups;
   }
-  if (port.empty() || port.size() > 5 || !std::all_of(port.begin(), port.end(), is_digit)) {
+  if (port.size() > 5 || !is_decimal(port)) {
     return false;
   }
-  auto value = swoc::svtou(port);
-  return value >= 1 && value <= std::numeric_limits<in_port_t>::max();
+  return swoc::svtou(port) <= std::numeric_limits<in_port_t>::max();
 }
 
 void
 check_tunnel_port(const YAML::Node &route, const std::string &fqdn, const std::string &destination)
 {
-  if (auto port = tunnel_port_text(destination); port && !is_valid_tunnel_port(*port)) {
+  if (auto port = tunnel_port_text(destination); port && !is_valid_tunnel_port(*port, match_group_count(fqdn))) {
     throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination +
-                                                "\": expected a number from 1 to 65535, a match group such as $1, " +
+                                                "\": expected a number from 1 to 65535 with no leading zero, a match group such "
+                                                "as $1 that the fqdn captures, " +
                                                 std::string(TunnelDestination::MAP_WITH_RECV_PORT_STR) + " or " +
                                                 std::string(TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR));
   }
