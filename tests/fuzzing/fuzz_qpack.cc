@@ -21,13 +21,15 @@
 #include "proxy/http3/QPACK.h"
 #include "proxy/http3/Http3Config.h"
 
+#include "iocore/eventsystem/EventSystem.h"
+#include "proxy/hdrs/HTTP.h"
 #include "records/RecordsConfig.h"
 #include "tscore/Layout.h"
 
 #include <string>
 #include <vector>
 
-#define kMinInputLength 4
+#define kMinInputLength 3
 #define kMaxInputLength 1024
 
 #define TEST_THREADS 1
@@ -61,6 +63,19 @@ DoInitialization()
 
   ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
   eventProcessor.start(TEST_THREADS);
+
+  // The thread libFuzzer calls in on is not an event thread; register it so
+  // that the header allocators see a valid thread instead of dereferencing a
+  // null one, exactly like src/proxy/http3/test/main_qpack.cc does.
+  Thread *main_thread = new EThread;
+  main_thread->set_specific();
+
+  // Set up the well-known header token tables; without them a recognized
+  // field name decodes to a null pointer with a non-zero length.
+  url_init();
+  mime_init();
+  http_init();
+
   ts::Http3Config::startup();
 
   return true;
@@ -116,9 +131,11 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   // HTTP/3 endpoint negotiates through SETTINGS.
   uint8_t const  settings               = input_data[0];
   uint64_t const stream_id              = (settings >> 7) & 0x1;
-  uint16_t const max_table_size         = (1u << ((settings >> 5) & 0x3)) << 7; // {0, 256, 512, 1024}
-  uint32_t const header_field_max_size  = (1u << ((settings >> 3) & 0x3)) << 7; // {0, 256, 512, 1024}
-  uint32_t const max_field_section_size = (1u << ((settings >> 1) & 0x3)) << 7; // {0, 256, 512, 1024}
+  // {0, 256, 512, 1024}, including the default dynamic table size of zero.
+  constexpr uint32_t kSizes[]           = {0, 256, 512, 1024};
+  uint16_t const max_table_size         = static_cast<uint16_t>(kSizes[(settings >> 5) & 0x3]);
+  uint32_t const header_field_max_size  = kSizes[(settings >> 3) & 0x3];
+  uint32_t const max_field_section_size = kSizes[(settings >> 1) & 0x3];
   bool const     encode_mode            = (settings & 0x1) != 0;
 
   HTTPHdr headers;
@@ -139,23 +156,47 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
     if (headers.fields_count() > 0) {
       MIOBuffer *header_block     = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
       uint64_t   header_block_len = 0;
+      // Allocate the reader before encoding so that it starts at the two byte
+      // stream header prefix; allocated afterwards it would only see the tail
+      // of the block and decode() would never run.
+      IOBufferReader *reader = header_block->alloc_reader();
       if (qpack.encode(stream_id, headers, header_block, header_block_len) == 0 && header_block_len > 0) {
-        IOBufferReader      *reader = header_block->alloc_reader();
         std::vector<uint8_t> block(header_block_len, 0);
         if (reader->read_avail() >= static_cast<int64_t>(header_block_len)) {
           reader->memcpy(block.data(), header_block_len);
 
           HTTPHdr decoded;
           decoded.create(HTTPType::REQUEST);
-          qpack.decode(stream_id, block.data(), block.size(), decoded, &test_cont, ethread);
 
-          // With both limits large enough for the input the round trip has
-          // to reproduce every field; anything else is a codec bug.
-          if (header_field_max_size >= size_data && max_field_section_size >= size_data &&
-              decoded.fields_count() != headers.fields_count()) {
-            fprintf(stderr, "QPACK round trip lost fields: %zu of %zu decoded\n", static_cast<size_t>(decoded.fields_count()),
-                    static_cast<size_t>(headers.fields_count()));
-            abort();
+          int decode_result;
+          {
+            // Scheduling the decode event writes the continuation's
+            // non-atomic control flags while the event thread reads them when
+            // dispatching, so both sides have to hold the mutex.
+            SCOPED_MUTEX_LOCK(lock, test_cont.mutex, this_ethread());
+            decode_result = qpack.decode(stream_id, block.data(), block.size(), decoded, &test_cont, ethread);
+          }
+
+          // The decoder legitimately refuses to run when the block needs
+          // blocked decoding (max blocking streams is zero) or when the
+          // encoded section or a single field exceeds the negotiated limits;
+          // Huffman coding can grow the wire size beyond the raw input, so
+          // the raw length does not bound it.  Neither is a codec bug, so
+          // only compare the round trip when decoding fully succeeded under
+          // limits that cover the whole encoded block (a single field is at
+          // most as large as the block itself).
+          if (decode_result == 0 && header_field_max_size >= block.size() && max_field_section_size >= block.size()) {
+            bool match = decoded.fields_count() == headers.fields_count();
+            auto e     = headers.begin();
+            auto d     = decoded.begin();
+            for (; match && e != headers.end() && d != decoded.end(); ++e, ++d) {
+              match = e->name_get() == d->name_get() && e->value_get() == d->value_get();
+            }
+            if (!match) {
+              fprintf(stderr, "QPACK round trip lost fields: %zu of %zu decoded\n", static_cast<size_t>(decoded.fields_count()),
+                      static_cast<size_t>(headers.fields_count()));
+              abort();
+            }
           }
           decoded.destroy();
         }
@@ -166,7 +207,11 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   } else {
     // Feed the payload directly to the decoder: this is the compressed
     // header block a malicious HTTP/3 peer controls on the wire.
-    qpack.decode(stream_id, input_data + 1, size_data - 1, headers, &test_cont, ethread);
+    {
+      // As in encode mode: scheduling has to hold the continuation's mutex.
+      SCOPED_MUTEX_LOCK(lock, test_cont.mutex, this_ethread());
+      qpack.decode(stream_id, input_data + 1, size_data - 1, headers, &test_cont, ethread);
+    }
 
     // Touch the decoded fields.
     size_t total = 0;
