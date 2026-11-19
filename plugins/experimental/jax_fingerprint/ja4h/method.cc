@@ -54,7 +54,9 @@ private:
 
 TxnDatasource::TxnDatasource(TSHttpTxn txnp) : _txn(txnp)
 {
-  TSHttpTxnClientReqGet(txnp, &(this->_request), &(this->_req_hdr));
+  // This only runs at READ_REQUEST_HDR or remap, after the client request has
+  // been parsed, so the request is always there.
+  (void)TSHttpTxnClientReqGet(txnp, &(this->_request), &(this->_req_hdr));
 }
 
 TxnDatasource::~TxnDatasource()

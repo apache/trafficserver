@@ -1773,7 +1773,7 @@ ComparisonGroupBase::load(Config &cfg, YAML::Node node)
     }
   } else if (node.IsSequence()) {
     for (auto child : node) {
-      if (auto errata{this->load_case(cfg, child)}; !errata.is_ok()) {
+      if (auto errata{this->load_case(cfg, std::move(child))}; !errata.is_ok()) {
         return errata;
       }
     }

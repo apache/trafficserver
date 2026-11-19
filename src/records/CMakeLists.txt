@@ -52,6 +52,7 @@ if(BUILD_TESTING)
     unit_tests/test_ReloadDirectives.cc
     unit_tests/test_RecDumpRecords.cc
     unit_tests/test_RecHiddenMetricLookup.cc
+    unit_tests/test_RecFile.cc
   )
   target_link_libraries(test_records PRIVATE records configmanager inkevent Catch2::Catch2 ts::tscore libswoc::libswoc)
   add_catch2_test(NAME test_records COMMAND test_records)

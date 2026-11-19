@@ -23,6 +23,7 @@
 
 #include "CacheDefs.h"
 
+#include <algorithm>
 #include <iostream>
 #include <fcntl.h>
 
@@ -356,8 +357,10 @@ StripeSM::vol_dirlen()
 void
 StripeSM::vol_init_data_internal()
 {
-  this->_buckets =
-    ((this->_len.count() * 8192 - (this->_content - this->_start)) / cache_config_min_average_object_size) / DIR_DEPTH;
+  // A stripe with room for fewer objects than one bucket holds still needs a bucket, or the segment count is
+  // zero and the bucket count below is divided by it.
+  this->_buckets = std::max<int64_t>(
+    ((this->_len.count() * 8192 - (this->_content - this->_start)) / cache_config_min_average_object_size) / DIR_DEPTH, 1);
   this->_segments = (this->_buckets + (((1 << 16) - 1) / DIR_DEPTH)) / ((1 << 16) / DIR_DEPTH);
   this->_buckets  = (this->_buckets + this->_segments - 1) / this->_segments;
   this->_content  = this->_start + Bytes(2 * vol_dirlen());
@@ -468,11 +471,18 @@ StripeSM::dir_probe(CryptoHash *key, [[maybe_unused]] CacheDirEntry *result, [[m
     Bytes   offset = stripe_offset(e);
     int64_t size   = dir_approx_size(e);
     ssize_t n      = pread(fd, stripe_buff2, size, offset);
-    if (n < size) {
+    if (n < 0) {
       std::cout << "Failed to read content from the Stripe:" << strerror(errno) << std::endl;
+      free(stripe_buff2);
+      return 0;
     }
 
     doc = reinterpret_cast<Doc *>(stripe_buff2);
+    if (!doc->fits_in(n)) {
+      std::cout << "The document's lengths do not fit in the " << n << " bytes read from the Stripe" << std::endl;
+      free(stripe_buff2);
+      return 0;
+    }
     std::string hdr(doc->hdr(), doc->hlen);
 
     std::string data_(doc->data(), doc->data_len());

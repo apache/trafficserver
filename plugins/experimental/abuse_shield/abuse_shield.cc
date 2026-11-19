@@ -1141,7 +1141,7 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
           bool runtime_enabled = g_config->enabled();
           new_config->set_config_path(config_path);
           new_config->set_enabled(runtime_enabled);
-          g_config = new_config;
+          g_config = std::move(new_config);
           prune_rule_buckets(*g_config);
           g_prune_passes_remaining.store(PRUNE_PASSES_AFTER_RELOAD, std::memory_order_relaxed);
           TSNote("[%s] Configuration reloaded successfully", PLUGIN_NAME);

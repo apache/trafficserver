@@ -196,6 +196,15 @@ struct Doc {
   int      single_fragment();
   char    *hdr();
   char    *data();
+
+  /// Check that the lengths read from disk stay inside the bytes actually read.
+  /// @param[in] n Bytes read into the buffer that holds this document.
+  /// @return @c true if the fragment, and the header within it, lie in the first @a n bytes of that buffer.
+  bool
+  fits_in(int64_t n) const
+  {
+    return n >= static_cast<int64_t>(sizeof(Doc)) && len <= n && len >= sizeof(Doc) && hlen <= len - sizeof(Doc);
+  }
 };
 
 /*

@@ -377,7 +377,7 @@ append_log(const void *data, int data_len)
 
   // Do append.
   std::shared_lock         lock(stek_share_server.raft_mutex);
-  nuraft::ptr<raft_result> ret = stek_share_server.raft_instance->append_entries({new_log});
+  nuraft::ptr<raft_result> ret = stek_share_server.raft_instance->append_entries({std::move(new_log)});
 
   if (!ret->get_accepted()) {
     // Log append rejected, usually because this node is not a leader.

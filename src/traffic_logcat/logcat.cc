@@ -470,28 +470,16 @@ process_file(int in_fd, int out_fd)
 int
 open_output_file(char *output_file_p)
 {
-  int file_desc = 0;
+  // O_EXCL makes the existence check part of the open, and also refuses a symbolic link at the path.
+  int file_desc = open(output_file_p, O_WRONLY | O_CREAT | (overwrite_existing_file ? O_TRUNC : O_EXCL), 0640);
 
-  if (!overwrite_existing_file) {
-    if (access(output_file_p, F_OK)) {
-      if (errno != ENOENT) {
-        fprintf(stderr, "Error accessing output file %s: ", output_file_p);
-        perror(nullptr);
-        file_desc = -1;
-      }
-    } else {
+  if (file_desc < 0) {
+    if (errno == EEXIST) {
       fprintf(stderr,
               "Error, output file %s already exists.\n"
               "Select a different filename or use the -w flag\n",
               output_file_p);
-      file_desc = -1;
-    }
-  }
-
-  if (file_desc == 0) {
-    file_desc = open(output_file_p, O_WRONLY | O_TRUNC | O_CREAT, 0640);
-
-    if (file_desc < 0) {
+    } else {
       fprintf(stderr, "Error while opening output file %s: ", output_file_p);
       perror(nullptr);
     }
