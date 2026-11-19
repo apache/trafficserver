@@ -766,8 +766,9 @@ and cookie names must be HTTP tokens: no spaces, ``:``, ``=``, or ``%``. A
 header name can start with ``@``; a cookie name can't. Query param and cookie
 names are case-sensitive, except in ``cache.key.cookies.exists()``; header
 names are not. ``keep()``, ``remove()`` and ``query = ""`` can't be combined. A
-missing or empty header, cookie, or ``cache.key +=`` value adds nothing to the
-key.
+missing header or cookie, an empty header, or an empty ``cache.key +=`` value
+adds nothing to the key. A cookie sent as ``sid=`` gets its own key, apart from
+requests without ``sid``.
 
 ``exists()`` keys on whether each name is there, not on its value, and takes
 ``@`` headers too. An empty header, or a cookie sent as ``sid=``, counts as
@@ -837,9 +838,8 @@ and its conditions see headers and cookies as `REMAP` left them. URL conditions
 are the exception: ``inbound.url.*`` reads the URL the client sent, while the
 key starts from the URL `REMAP` left. After `REMAP` rewrites ``/legacy/*`` to
 ``/v2/*``, a `CACHEKEY` branch on ``/v2/`` never matches; test ``/legacy/``. To
-key on a
-computed value that other rules also need, set it into an ``@`` header in
-`REMAP` and add that header with ``cache.key.headers.add()``.
+key on a computed value that other rules also need, set it into an ``@`` header
+in `REMAP` and add that header with ``cache.key.headers.add()``.
 
 To skip the cache entirely, call ``cache.bypass()`` in `REMAP`. It compiles to
 ``set-config "proxy.config.http.cache.http" 0``::

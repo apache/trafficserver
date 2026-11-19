@@ -1146,10 +1146,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     def _check_outside_cachekey(self, ctx: hrw4uParser.StatementContext, func: str | None, args: list[str]) -> None:
         """Raise if a statement outside CACHEKEY breaks a CACHEKEY rule.
 
-        func and args are the statement's parsed call, or None and [] if it isn't one.
+        func and args are the statement's function name and arguments, or None and [] if it isn't a
+        function call.
         cache.* key operators belong in CACHEKEY. With a CACHEKEY section, a break in REMAP would
-        skip it, a hand-written run-plugin cachekey.so would set the key twice, the later
-        instance overriding the earlier, and a write to an @Hrw4u- header would forge a key part.
+        skip it, a hand-written run-plugin cachekey.so would try to set the key a second time
+        (ATS keeps only the first), and a write to an @Hrw4u- header would forge a key part.
         """
         if ctx.BREAK():
             if self.current_section is SectionType.REMAP and self._program_has_cachekey:

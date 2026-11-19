@@ -301,22 +301,20 @@ class ConflictError(SymbolResolutionError):
 
 
 def check_conflicts(statements: Sequence[CacheKeyStatement]) -> None:
-    """Raise ConflictError if statements that lower to one run-plugin contradict each other.
+    """Raise ConflictError at the first statement that contradicts an earlier one on one run-plugin line.
 
     That covers the CONFLICTS pairs and two different values for one single-valued flag.
     """
-    first_value: dict[str, CacheKeyStatement] = {}
+    seen: dict[str, CacheKeyStatement] = {}
     for stmt in statements:
-        if CACHEKEY_STATEMENTS[stmt.name].takes_value:
-            first = first_value.setdefault(stmt.name, stmt)
-            if first.items != stmt.items:
-                raise ConflictError(stmt, first)
-
-    last_seen = {stmt.name: (index, stmt) for index, stmt in enumerate(statements)}
-    for first, second in CONFLICTS:
-        if first in last_seen and second in last_seen:
-            (_, earlier), (_, later) = sorted((last_seen[first], last_seen[second]), key=lambda seen: seen[0])
-            raise ConflictError(later, earlier)
+        first = seen.setdefault(stmt.name, stmt)
+        if CACHEKEY_STATEMENTS[stmt.name].takes_value and first.items != stmt.items:
+            raise ConflictError(stmt, first)
+        for pair in CONFLICTS:
+            if stmt.name in pair:
+                other = pair[1] if stmt.name == pair[0] else pair[0]
+                if other in seen:
+                    raise ConflictError(stmt, seen[other])
 
 
 def _as_written(stmt: CacheKeyStatement) -> str:
@@ -346,7 +344,7 @@ def merge(statements: Iterable[CacheKeyStatement]) -> list[str]:
     return flags
 
 
-def render(flags: list[str]) -> str:
+def run_plugin_line(flags: list[str]) -> str:
     """The run-plugin cachekey.so operator line for a merged flag list."""
     return " ".join([f'run-plugin "{PLUGIN}"', *(f'"{flag}"' for flag in flags)])
 
@@ -385,7 +383,7 @@ class KeyParts:
         """The set-header for each computed part, then the run-plugin cachekey.so line."""
         pad = INDENT * depth
         lines = [f"{pad}set-header {part.header} {part.value}" for part in self.computed]
-        lines.append(pad + render(merge(self.statements)))
+        lines.append(pad + run_plugin_line(merge(self.statements)))
         return lines
 
 
@@ -529,11 +527,13 @@ class CacheKeySection:
         except ConflictError as error:
             return [error]
 
-        # The shared parts come first in each line, wherever they sit, so check in source order.
         errors = []
         for branch in self.chain:
+            # The shared statements come first in shared + branch.parts, even ones written after the
+            # chain. Sort back to source order so the error points at the first clash as written.
+            statements = sorted((self.shared + branch.parts).statements, key=attrgetter("order"))
             try:
-                check_conflicts(sorted((self.shared + branch.parts).statements, key=attrgetter("order")))
+                check_conflicts(statements)
             except ConflictError as error:
                 errors.append(error)
         return errors

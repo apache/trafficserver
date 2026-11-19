@@ -37,7 +37,7 @@ from hrw4u.cachekey import (
     names_reserved_header,
     parse_assignment,
     parse_statement,
-    render,
+    run_plugin_line,
 )
 from hrw4u.errors import SymbolResolutionError
 from hrw4u.states import SectionType
@@ -210,6 +210,26 @@ class TestCheckConflicts:
             check_conflicts(stmts)
         assert error.value.statement is stmts[-1]
 
+    @pytest.mark.parametrize(
+        "stmts",
+        [
+            [
+                parse_statement("cache.url.query.keep", ['"a"']),
+                parse_statement("cache.url.query.remove", ['"b"']),
+                parse_statement("cache.url.query.keep", ['"c"']),
+            ],
+            [
+                parse_assignment("cache.key.prefix", '"a"'),
+                parse_statement("cache.url.canonical", []),
+                parse_assignment("cache.key.prefix", '"b"'),
+            ],
+        ],
+    )
+    def test_points_at_the_first_clash(self, stmts: list[CacheKeyStatement]) -> None:
+        with pytest.raises(ConflictError) as error:
+            check_conflicts(stmts)
+        assert error.value.statement is stmts[1]
+
     def test_compatible(self) -> None:
         check_conflicts(
             [
@@ -291,18 +311,18 @@ class TestMerge:
         assert merge(statements) == expected
 
 
-class TestRender:
+class TestRunPluginLine:
     def test_quotes_each_flag(self) -> None:
         assert (
-            render(["--static-prefix=a", "--uri-type=pristine"])
+            run_plugin_line(["--static-prefix=a", "--uri-type=pristine"])
             == 'run-plugin "cachekey.so" "--static-prefix=a" "--uri-type=pristine"'
         )
 
     def test_no_flags(self) -> None:
-        assert render([]) == 'run-plugin "cachekey.so"'
+        assert run_plugin_line([]) == 'run-plugin "cachekey.so"'
 
     def test_no_statements(self) -> None:
-        assert render(merge([])) == 'run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url"'
+        assert run_plugin_line(merge([])) == 'run-plugin "cachekey.so" "--key-type=cache_key,parent_selection_url"'
 
 
 class TestParseStatementErrors:
