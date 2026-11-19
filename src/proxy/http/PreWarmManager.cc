@@ -34,6 +34,7 @@
 #include "tsutil/PostScript.h"
 
 #include <algorithm>
+#include <stdexcept>
 #include <utility>
 
 #define PreWarmSMDbg(fmt, ...)  Dbg(dbg_ctl_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
@@ -76,16 +77,23 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
-void
+// Returns false when std::stoi cannot read the port, as with a
+// {inbound_local_port} template, an empty port or one too large for an int.
+bool
 parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
 {
   if (auto pos = authority.find(':'); pos != std::string::npos) {
     fqdn = authority.substr(0, pos);
-    port = static_cast<in_port_t>(std::stoi(authority.substr(pos + 1).data()));
+    try {
+      port = static_cast<in_port_t>(std::stoi(authority.substr(pos + 1).data()));
+    } catch (const std::logic_error &) {
+      return false;
+    }
   } else {
     fqdn = authority;
     port = -1;
   }
+  return true;
 }
 
 ////
@@ -1107,7 +1115,11 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
 
       std::string dst_fqdn;
       int32_t     port;
-      parse_authority(dst_fqdn, port, item.tunnel_destination);
+      if (!parse_authority(dst_fqdn, port, item.tunnel_destination)) {
+        Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": its port is not a number", item.fqdn.c_str(),
+                item.tunnel_destination.c_str());
+        continue;
+      }
 
       if (port < 0) {
         if (item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
