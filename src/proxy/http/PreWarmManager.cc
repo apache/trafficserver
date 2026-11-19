@@ -33,11 +33,7 @@
 #include "tscore/ink_time.h"
 #include "tsutil/PostScript.h"
 
-#include "swoc/IPEndpoint.h"
-#include "swoc/TextView.h"
-
 #include <algorithm>
-#include <limits>
 #include <utility>
 
 #define PreWarmSMDbg(fmt, ...)  Dbg(dbg_ctl_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
@@ -80,6 +76,18 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
+void
+parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
+{
+  if (auto pos = authority.find(':'); pos != std::string::npos) {
+    fqdn = authority.substr(0, pos);
+    port = static_cast<in_port_t>(std::stoi(authority.substr(pos + 1).data()));
+  } else {
+    fqdn = authority;
+    port = -1;
+  }
+}
+
 ////
 // Stats
 //
@@ -102,36 +110,6 @@ constexpr std::string_view GAUGE_STAT_ENTRIES[] = {
 // clang-format on
 
 } // namespace
-
-bool
-PreWarm::parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
-{
-  std::string_view host;
-  std::string_view port_text;
-  std::string_view rest;
-
-  // Split with IPEndpoint::tokenize, as TLSTunnelSupport::set_tunnel_destination
-  // does, so an explicit host and port are the ones a tunnel looks up. Anything
-  // left over (a port variable such as {inbound_local_port}, or a non-numeric
-  // port) has no fixed value to pre-warm.
-  if (!swoc::IPEndpoint::tokenize(authority, &host, &port_text, &rest) || !rest.empty()) {
-    return false;
-  }
-
-  int32_t parsed_port = -1;
-
-  if (!port_text.empty()) {
-    // svtou clamps an overflow to its maximum, which the range check rejects.
-    auto n = swoc::svtou(port_text);
-    if (n < 1 || n > std::numeric_limits<in_port_t>::max()) {
-      return false;
-    }
-    parsed_port = static_cast<int32_t>(n);
-  }
-  fqdn = host;
-  port = parsed_port;
-  return true;
-}
 
 ////
 // PreWarmSM
@@ -1115,23 +1093,6 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
       continue;
     }
 
-    std::string dst_fqdn;
-    int32_t     port = -1;
-
-    if (!PreWarm::parse_authority(dst_fqdn, port, item.tunnel_destination)) {
-      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": it has no host, or its port is not a fixed "
-              "number from 1 to 65535",
-              item.fqdn.c_str(), item.tunnel_destination.c_str());
-      continue;
-    }
-    if (port < 0) {
-      if (item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
-        port = 443;
-      } else {
-        port = 80;
-      }
-    }
-
     std::vector<int> alpn_ids = {SessionProtocolNameRegistry::INVALID};
     if (!item.tunnel_alpn.empty() && item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
       for (auto &id : item.tunnel_alpn) {
@@ -1143,6 +1104,18 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
       Dbg(dbg_ctl_prewarm_m, "sni=%s dst=%s type=%d alpn=%d min=%d max=%d c_timeout=%d i_timeout=%d srv=%d", item.fqdn.c_str(),
           item.tunnel_destination.c_str(), (int)item.tunnel_type, id, (int)item.tunnel_prewarm_min, (int)item.tunnel_prewarm_max,
           (int)item.tunnel_prewarm_connect_timeout, (int)item.tunnel_prewarm_inactive_timeout, item.tunnel_prewarm_srv);
+
+      std::string dst_fqdn;
+      int32_t     port;
+      parse_authority(dst_fqdn, port, item.tunnel_destination);
+
+      if (port < 0) {
+        if (item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
+          port = 443;
+        } else {
+          port = 80;
+        }
+      }
 
       PreWarm::SPtrConstDst dst = std::make_shared<const PreWarm::Dst>(dst_fqdn, port, item.tunnel_type, id);
 

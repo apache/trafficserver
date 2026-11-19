@@ -29,7 +29,6 @@ add_executable(
   test_HttpTransactHeaders.cc
   test_HttpUserAgent.cc
   test_PreWarm.cc
-  test_PreWarmManager.cc
   test_ServerSessionPool.cc
 )
 
