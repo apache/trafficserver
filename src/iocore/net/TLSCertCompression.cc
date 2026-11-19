@@ -218,7 +218,7 @@ cert_compress_cache_invalidate(SSL_CTX *ctx)
 #endif
 
 #if HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
-void
+static void
 cert_compress_compress_certs(SSL_CTX *ctx)
 {
   for (unsigned int i = 0; i < countof(supported_algs); ++i) {
@@ -233,12 +233,13 @@ cert_compress_compress_certs(SSL_CTX *ctx)
 #endif
 
 void
-cert_compress_invalidate_or_recompress(SSL_CTX *ctx)
+cert_compress_invalidate(SSL_CTX *ctx)
 {
 #if HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG
   cert_compress_cache_invalidate(ctx);
 #elif HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
-  cert_compress_compress_certs(ctx);
+  // OpenSSL compresses ahead of time without the OCSP staple, so its compressed messages never go stale.
+  (void)ctx;
 #else
   (void)ctx;
 #endif
