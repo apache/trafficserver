@@ -20,27 +20,22 @@ from tools.uranium.services import ATS, ATSFactory, ServiceFactory, wait_for_fil
 
 WARNING = "not pre-warming tunnel destination"
 
-# Destinations whose port std::stoi cannot read. Each one logs WARNING once,
-# including the one with two ALPN ids.
+# Destinations whose port is a template, filled in per connection, so there is
+# nothing to pre-warm. Each one logs WARNING once, including the one with two
+# ALPN ids.
 SKIPPED_SNI = (
     "  - fqdn: template.example.com\n"
     "    forward_route: 127.0.0.1:{inbound_local_port}\n"
     "    tunnel_prewarm: true\n"
     "  - fqdn: pp.example.com\n"
-    "    forward_route: 127.0.0.1:{proxy_protocol_port}\n"
-    "    tunnel_prewarm: true\n"
-    "  - fqdn: empty.example.com\n"
-    '    partial_blind_route: "127.0.0.1:"\n'
+    "    partial_blind_route: 127.0.0.1:{proxy_protocol_port}\n"
     "    tunnel_alpn: [h2, http/1.1]\n"
-    "    tunnel_prewarm: true\n"
-    "  - fqdn: huge.example.com\n"
-    "    forward_route: 127.0.0.1:99999999999\n"
     "    tunnel_prewarm: true\n"
 )
 
 
 def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
-    """Configure pre-warmed tunnel routes with a readable port and without one.
+    """Configure pre-warmed tunnel routes with a fixed port and with a template port.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param _origin_port: Port for the valid route's destination.
@@ -57,7 +52,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
 
 
 def test_tls_tunnel_prewarm_destination(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A pre-warm destination whose port cannot be read is skipped at startup, and a valid one is registered.
+    """A pre-warm destination with a template port is skipped at startup, and a fixed one is registered.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -66,12 +61,10 @@ def test_tls_tunnel_prewarm_destination(ats_factory: ATSFactory, services: Servi
     _ats = configure_ats(ats_factory, _origin_port=origin_port)
 
     _ats.start()
-    diags = wait_for_file_lines(_ats.diags_log, WARNING, 4)
+    diags = wait_for_file_lines(_ats.diags_log, WARNING, 2)
     assert '"127.0.0.1:{inbound_local_port}"' in diags
     assert '"127.0.0.1:{proxy_protocol_port}"' in diags
-    assert '"127.0.0.1:"' in diags
-    assert '"127.0.0.1:99999999999"' in diags
-    assert diags.count(WARNING) == 4, diags
+    assert diags.count(WARNING) == 2, diags
     assert _ats.is_running
 
     # Only the valid route registers pre-warm stats: one destination has 7.
