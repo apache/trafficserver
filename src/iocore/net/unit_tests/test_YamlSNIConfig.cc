@@ -217,7 +217,7 @@ TEST_CASE("YamlSNIConfig accepts a tunnel destination port it can connect to")
   std::string destination{GENERATE("backend.example.com", "backend.example.com:1", "backend.example.com:443",
                                    "backend.example.com:65535", "backend.example.com:{inbound_local_port}",
                                    "backend.example.com:{proxy_protocol_port}", "$1.example.com:443", "backend.example.com:$2",
-                                   "[::1]:443", "[::1]", "::1")};
+                                   "backend.example.com:4$1", "[::1]:443", "[::1]", "::1")};
 
   CAPTURE(key, destination);
   CHECK(load_route(key, destination).empty());
@@ -229,7 +229,8 @@ TEST_CASE("YamlSNIConfig rejects a tunnel destination port it cannot connect to"
   std::string destination{GENERATE("backend.example.com:", "backend.example.com:0", "backend.example.com:65536",
                                    "backend.example.com:99999999999", "backend.example.com:443x", "backend.example.com:-443",
                                    "backend.example.com:{inbound_port}", "backend.example.com:{inbound_local_port}x",
-                                   "[::1]:", "[::1]:https")};
+                                   "backend.example.com:$", "backend.example.com:$x", "backend.example.com:$1x",
+                                   "backend.example.com:$1$2", "backend.example.com:$0", "[::1]:", "[::1]:https")};
 
   CAPTURE(key, destination);
   auto error = load_route(key, destination);

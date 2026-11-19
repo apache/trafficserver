@@ -94,17 +94,31 @@ tunnel_port_text(std::string_view destination)
   return destination.substr(colon + 1);
 }
 
-// A port is a number from 1 to 65535 or one of the port templates. A match
-// group such as $2 is filled in from the fqdn for each connection, so it is
-// left for then.
+bool
+is_digit(char c)
+{
+  return std::isdigit(static_cast<unsigned char>(c)) != 0;
+}
+
+// A port is a number from 1 to 65535, one of the port templates, or a match
+// group such as $2, optionally after some digits. A match group is filled in
+// from the fqdn for each connection, so its value is left for then. The group
+// number runs to the end of the destination, which is how
+// TunnelDestination::replace_match_groups reads it; anything else after the '$'
+// would reach the connection as text.
 bool
 is_valid_tunnel_port(std::string_view port)
 {
-  if (port == TunnelDestination::MAP_WITH_RECV_PORT_STR || port == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR ||
-      port.find('$') != std::string_view::npos) {
+  if (port == TunnelDestination::MAP_WITH_RECV_PORT_STR || port == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR) {
     return true;
   }
-  if (port.empty() || port.size() > 5 || !std::all_of(port.begin(), port.end(), [](char c) { return std::isdigit(c); })) {
+  if (auto dollar = port.find('$'); dollar != std::string_view::npos) {
+    auto digits = port.substr(0, dollar);
+    auto group  = port.substr(dollar + 1);
+    return !group.empty() && group.front() != '0' && std::all_of(digits.begin(), digits.end(), is_digit) &&
+           std::all_of(group.begin(), group.end(), is_digit);
+  }
+  if (port.empty() || port.size() > 5 || !std::all_of(port.begin(), port.end(), is_digit)) {
     return false;
   }
   auto value = swoc::svtou(port);
@@ -116,7 +130,7 @@ check_tunnel_port(const YAML::Node &route, const std::string &fqdn, const std::s
 {
   if (auto port = tunnel_port_text(destination); port && !is_valid_tunnel_port(*port)) {
     throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination +
-                                                "\": expected a number from 1 to 65535, " +
+                                                "\": expected a number from 1 to 65535, a match group such as $1, " +
                                                 std::string(TunnelDestination::MAP_WITH_RECV_PORT_STR) + " or " +
                                                 std::string(TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR));
   }

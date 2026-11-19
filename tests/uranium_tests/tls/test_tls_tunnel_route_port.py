@@ -103,9 +103,11 @@ def test_tunnel_route_bad_port_on_reload_keeps_old_config(ats_factory: ATSFactor
     ats.start()
     assert "This is a reply" in tunnel_reply(services, "client-before", _ats=ats, _forward_port=forward_port)
 
-    ats.write_config_file("sni.yaml", f"sni:\n- fqdn: bar.com\n  forward_route: localhost:{forward_port}x\n")
-    result = ats.traffic_ctl("config", "reload")
-    assert result.returncode == 0, result.output
+    # Port 1 rather than the working port with text after it: a reload that took
+    # this route would read the leading digits and keep tunnelling to the old port.
+    (ats.config_directory / "sni.yaml").write_text("sni:\n- fqdn: bar.com\n  forward_route: localhost:1x\n")
+    result = ats.traffic_ctl("config", "reload", "-m", "-t", "bad-tunnel-port", "-w", "1", "-r", "0.5", "-T", "30s")
+    assert result.returncode == 2, result.output
     diags = wait_for_file_lines(ats.diags_log, r"sni\.yaml failed to load", 1)
     assert BAD_PORT in diags, diags
 

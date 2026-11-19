@@ -77,9 +77,10 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
-// Returns false when std::stoi cannot read the text after the first colon, as
-// with a {inbound_local_port} template, an empty port or one too large for an
-// int.
+// Returns false when std::stoi cannot read the text after the first colon. The
+// sni.yaml loader has already refused any other bad port, so here that means a
+// port template, a match group or a bracketed IPv6 address, none of which has
+// a port to pre-warm until a connection arrives.
 [[nodiscard]] bool
 parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
 {

@@ -650,6 +650,11 @@ The following changes have been made to the :file:`sni.yaml` file:
   * Allow ``$1`` (capturing) support in the ``tunnel_route`` field
   * Matching depends on the order of entries (like :file:`remap.config`)
 
+- A ``tunnel_route``, ``forward_route`` or ``partial_blind_route`` port must be a number from 1 to 65535, a port
+  template or a match group. An empty port, ``0`` or a misspelled template such as ``{inbound_port}`` used to fall back
+  to the inbound port, a port above 65535 wrapped around, and text after the digits was dropped. Any of those now stops
+  |TS| at startup, or fails a reload of :file:`sni.yaml` and keeps the previous configuration.
+
 Plugins
 -------
 
