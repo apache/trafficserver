@@ -323,6 +323,21 @@ plugins: []
   CHECK(result.value.empty());
 }
 
+TEST_CASE("parse_plugin_yaml - a file that names no plugins", "[plugin_yaml]")
+{
+  // An empty file, a comment-only file, and a plugins key with every entry
+  // commented out all load no plugins, the same as plugins: [].
+  auto content = GENERATE(as<std::string>{}, "", "# no plugins yet\n", "plugins:\n#  - path: foo.so\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE(result.ok());
+  CHECK(result.value.empty());
+}
+
 TEST_CASE("parse_plugin_yaml - multiple plugins mixed features", "[plugin_yaml]")
 {
   TempYAML yaml(R"(

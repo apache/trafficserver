@@ -41,3 +41,25 @@ def test_plugin_yaml_bad_config_stops_startup(ats_factory: ATSFactory, content: 
     ats.write_config_file("plugin.yaml", content)
     ats.expect_start_failure(r"EMERGENCY: plugin\.yaml")
     ats.start()
+
+
+# Each document names no plugins, so it loads none, the same as plugins: [].
+EMPTY_PLUGIN_YAML = {
+    "empty_file": "",
+    "comment_only": "# no plugins yet\n",
+    "entries_commented_out": "plugins:\n#  - path: libfoo.so\n",
+}
+
+
+@pytest.mark.parametrize("content", EMPTY_PLUGIN_YAML.values(), ids=EMPTY_PLUGIN_YAML.keys())
+def test_plugin_yaml_naming_no_plugins_starts(ats_factory: ATSFactory, content: str) -> None:
+    """A plugin.yaml that names no plugins starts with none loaded.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param content: The plugin.yaml document under test.
+    """
+
+    ats = ats_factory.create("ts", enable_cache=False)
+    ats.write_config_file("plugin.yaml", content)
+    ats.start()
+    assert ats.is_running

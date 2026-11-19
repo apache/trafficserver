@@ -459,6 +459,12 @@ parse_plugin_yaml(const char *yaml_path)
     return result;
   }
 
+  // An empty file, or a plugins key whose entries are all commented out, names
+  // no plugins. Treat it like an empty list rather than as an error.
+  if (root.IsNull() || (root.IsMap() && root["plugins"] && root["plugins"].IsNull())) {
+    return result;
+  }
+
   // Subscripting a scalar document throws, so check for a map first.
   if (!root.IsMap() || !root["plugins"] || !root["plugins"].IsSequence()) {
     result.errata.note("missing or invalid 'plugins' sequence");
@@ -641,9 +647,8 @@ plugin_yaml_init(bool validateOnly)
   }
 
   // A plugin.yaml that cannot be loaded as written stops startup, rather than
-  // leaving traffic_server running without the plugins it names. Emergency
-  // exits with UNRECOVERABLE_EXIT, so the process manager does not restart
-  // into the same error. A config check only reports it.
+  // leaving traffic_server running without the plugins it names. A config
+  // check only reports it.
   auto fail = [validateOnly](const std::string &message) {
     if (validateOnly) {
       Error("%s", message.c_str());
