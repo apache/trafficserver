@@ -2515,3 +2515,34 @@ TEST_CASE("IPSpace mark_bulk randomized", "[libswoc][ipspace][mark_bulk][randomi
       REQUIRE(p == payload);
   }
 }
+
+TEST_CASE("IPRangeSet mark over existing ranges", "[libswoc][iprangeset][remove]") {
+  // Marking a range that covers every existing range reuses the first node and removes the
+  // others through DiscreteSpace::remove(), which must take each node out of the tree before
+  // destroying it. The results are correct either way, so the old order shows up only as a
+  // member call on a destroyed object under UBSan's vptr check.
+  IPRangeSet s;
+  for (auto rtxt : {"10.0.0.0/8"_tv, "192.168.1.0/24"_tv, "172.16.0.0/12"_tv}) {
+    s.mark(IPRange{rtxt});
+  }
+  REQUIRE(s.count() == 3);
+
+  s.mark(IPRange{"0.0.0.0/0"_tv});
+  REQUIRE(s.count() == 1);
+  CHECK(*s.begin() == IPRange{"0.0.0.0-255.255.255.255"_tv});
+  CHECK(s.contains(IPAddr{"10.1.2.3"_tv}));
+  CHECK(s.contains(IPAddr{"192.168.1.1"_tv}));
+  CHECK(s.contains(IPAddr{"172.16.0.1"_tv}));
+  CHECK(s.contains(IPAddr{"8.8.8.8"_tv}));
+  CHECK_FALSE(s.contains(IPAddr{"::1"_tv}));
+
+  // The tree must still be usable after the removals.
+  s.erase(IPRange{"172.16.0.0/12"_tv});
+  CHECK(s.count() == 2);
+  CHECK_FALSE(s.contains(IPAddr{"172.16.0.1"_tv}));
+  CHECK_FALSE(s.contains(IPAddr{"172.31.255.255"_tv}));
+  CHECK(s.contains(IPAddr{"172.15.255.255"_tv}));
+  CHECK(s.contains(IPAddr{"172.32.0.0"_tv}));
+  CHECK(s.contains(IPAddr{"10.1.2.3"_tv}));
+  CHECK(s.contains(IPAddr{"192.168.1.1"_tv}));
+}

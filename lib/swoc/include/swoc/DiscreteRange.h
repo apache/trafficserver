@@ -1274,11 +1274,12 @@ template <typename METRIC, typename PAYLOAD>
 void
 DiscreteSpace<METRIC, PAYLOAD>::remove(DiscreteSpace::Node *node, bool update_tree) {
   _list.erase(node);
-  _fa.destroy(node);
-  if (!update_tree) {
-    return;
+  // Take @a node out of the tree while it is still alive: destroy() ends its lifetime and
+  // overwrites its vtable pointer with the free list link.
+  if (update_tree) {
+    _root = static_cast<Node *>(node->remove());
   }
-  _root = static_cast<Node *>(node->remove());
+  _fa.destroy(node);
 }
 
 template <typename METRIC, typename PAYLOAD>
