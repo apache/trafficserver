@@ -38,6 +38,7 @@ H2_PREFACE = bytes.fromhex('505249202a20485454502f322e300d0a0d0a534d0d0a0d0a')
 
 RESERVED_BIT_MASK = 0x7FFFFFFF
 
+TYPE_DATA_FRAME = 0x00
 TYPE_HEADERS_FRAME = 0x01
 TYPE_SETTINGS_FRAME = 0x04
 TYPE_WINDOW_UPDATE_FRAME = 0x08
@@ -48,6 +49,8 @@ SETTINGS_MAX_CONCURRENT_STREAMS = 0x03
 SETTINGS_INITIAL_WINDOW_SIZE = 0x04
 SETTINGS_MAX_FRAME_SIZE = 0x05
 SETTINGS_MAX_HEADER_LIST_SIZE = 0x06
+
+DATA_FLAG_END_STREAM = 0x01
 
 HEADERS_FLAG_END_STREAM = 0x01
 HEADERS_FLAG_END_HEADERS = 0x04
@@ -106,7 +109,17 @@ def make_window_update_frame():
     return frame
 
 
-def make_headers_frame(method, path='', stream_id=0x01):
+def make_data_frame(content, stream_id=0x01):
+    return make_frame(
+        frame_length=len(content),
+        frame_type=TYPE_DATA_FRAME,
+        frame_flags=DATA_FLAG_END_STREAM,
+        frame_stream_id=stream_id,
+        frame_payload=content,
+    )
+
+
+def make_headers_frame(method, path='', stream_id=0x01, end_stream=True):
     headers = []
     if method == 'get':
         headers.append((':method', 'GET'))
@@ -120,6 +133,9 @@ def make_headers_frame(method, path='', stream_id=0x01):
             headers.append((':path', path))
         else:
             headers.append((':path', '/early_post'))
+    elif method == 'query':
+        headers.append((':method', 'QUERY'))
+        headers.append((':path', path if path != '' else '/early_query'))
 
     headers.extend([(':scheme', 'https'), (':authority', '127.0.0.1'), ('host', '127.0.0.1'), ('accept', '*/*')])
 
@@ -128,7 +144,7 @@ def make_headers_frame(method, path='', stream_id=0x01):
     frame = make_frame(
         frame_length=len(headers_encoded),
         frame_type=TYPE_HEADERS_FRAME,
-        frame_flags=HEADERS_FLAG_END_STREAM | HEADERS_FLAG_END_HEADERS,
+        frame_flags=HEADERS_FLAG_END_HEADERS | (HEADERS_FLAG_END_STREAM if end_stream else 0),
         frame_stream_id=stream_id,
         frame_payload=headers_encoded,
     )
@@ -140,6 +156,10 @@ def make_h2_req(test):
     h2_req = H2_PREFACE
     if test == 'get' or test == 'post':
         frames = [make_settins_frame(ack=True), make_headers_frame(test)]
+        for frame in frames:
+            h2_req += frame
+    elif test == 'query':
+        frames = [make_settins_frame(ack=True), make_headers_frame(test, end_stream=False), make_data_frame(b'knock knock')]
         for frame in frames:
             h2_req += frame
     elif test == 'multi1':
