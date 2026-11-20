@@ -228,3 +228,12 @@ using scoped_PKEY = std::unique_ptr<EVP_PKEY, ssl::detail::PKEYDeleter>;
 using scoped_PKEY_CTX    = std::unique_ptr<EVP_PKEY_CTX, ssl::detail::PKEYCTXDeleter>;
 using scoped_Decoder_CTX = std::unique_ptr<OSSL_DECODER_CTX, ssl::detail::DecoderCTXDeleter>;
 #endif
+
+/** Reads the PEM private key in @a secret, decrypting it with the password callback of @a ctx.
+
+    Nothing is set on @a ctx.
+
+    @param key_path The configured key path, used only in debug messages; empty when none is configured.
+    @return The key, or null if @a secret holds none that can be read.
+ */
+scoped_PKEY TLSReadPrivateKey(SSL_CTX *ctx, std::string_view key_path, std::string_view secret);

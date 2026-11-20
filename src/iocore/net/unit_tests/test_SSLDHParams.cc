@@ -7,8 +7,8 @@
       invokes ssl_context_enable_dhe and (when a file is configured)
       load_dhparams_file.
 
-    * The private key handling of load_certs, which transitively invokes the
-      file-static SSLPrivateKeyHandler.
+    * The private key handling of load_certs, which reads the key with
+      TLSReadPrivateKey and sets it on the SSL_CTX.
 
   @section license License
 
@@ -205,7 +205,7 @@ init_with_dhparams(char const *dhparams_file)
   return ok;
 }
 
-// A fixed-passphrase callback, matching how SSLPrivateKeyHandler consults the
+// A fixed-passphrase callback, matching how TLSReadPrivateKey consults the
 // SSL_CTX default password callback to decrypt an encrypted private key.
 char test_passphrase[]{"ats-secret-pass"};
 
@@ -220,7 +220,7 @@ fixed_passphrase_cb(char *buf, int size, int /* rwflag */, void * /* u */)
   return len;
 }
 
-// Drives SSLPrivateKeyHandler via the public static load_certs boundary,
+// Drives the private key handling via the public static load_certs boundary,
 // holding the certificate fixed and valid so the only variable under test is
 // the private key material. The certificate and key are read from real files,
 // exactly as a production ssl_multicert entry would be, so that the file-load
@@ -299,7 +299,7 @@ TEST_CASE("ssl_context_enable_dhe: truncated DH PEM (missing END marker) is reje
   CHECK_FALSE(init_with_dhparams(truncated.get_path()));
 }
 
-TEST_CASE("SSLPrivateKeyHandler: a key file matching the certificate is loaded")
+TEST_CASE("load_certs: a key file matching the certificate is loaded")
 {
   CertAndKey ck = make_cert_and_key();
   TempFile   cert{ck.cert_pem};
@@ -307,28 +307,28 @@ TEST_CASE("SSLPrivateKeyHandler: a key file matching the certificate is loaded")
   CHECK(load_key_via_load_certs(cert.get_path(), key.get_path()));
 }
 
-TEST_CASE("SSLPrivateKeyHandler: an empty key path loads the key bundled in the certificate file")
+TEST_CASE("load_certs: an empty key path loads the key bundled in the certificate file")
 {
   CertAndKey ck = make_cert_and_key();
   TempFile   cert{ck.cert_pem + ck.key_pem};
   CHECK(load_key_via_load_certs(cert.get_path(), ""));
 }
 
-TEST_CASE("SSLPrivateKeyHandler: a valid key file not matching the certificate is rejected")
+TEST_CASE("load_certs: a valid key file not matching the certificate is rejected")
 {
   TempFile cert{make_cert_and_key().cert_pem};
   TempFile key{make_cert_and_key().key_pem};
   CHECK_FALSE(load_key_via_load_certs(cert.get_path(), key.get_path()));
 }
 
-TEST_CASE("SSLPrivateKeyHandler: an unparseable key file is rejected")
+TEST_CASE("load_certs: an unparseable key file is rejected")
 {
   TempFile cert{make_cert_and_key().cert_pem};
   TempFile key{"-----BEGIN PRIVATE KEY-----\nnot base64\n-----END PRIVATE KEY-----\n"};
   CHECK_FALSE(load_key_via_load_certs(cert.get_path(), key.get_path()));
 }
 
-TEST_CASE("SSLPrivateKeyHandler: an encrypted key file is decrypted via the SSL_CTX password callback")
+TEST_CASE("load_certs: an encrypted key file is decrypted via the SSL_CTX password callback")
 {
   CertAndKey ck = make_cert_and_key(EVP_aes_256_cbc(), test_passphrase);
   TempFile   cert{ck.cert_pem};
@@ -336,7 +336,7 @@ TEST_CASE("SSLPrivateKeyHandler: an encrypted key file is decrypted via the SSL_
   CHECK(load_key_via_load_certs(cert.get_path(), key.get_path(), fixed_passphrase_cb));
 }
 
-TEST_CASE("SSLPrivateKeyHandler: an encrypted key file with the wrong passphrase is rejected")
+TEST_CASE("load_certs: an encrypted key file with the wrong passphrase is rejected")
 {
   char       wrong_pass[]{"the-wrong-passphrase"};
   CertAndKey ck = make_cert_and_key(EVP_aes_256_cbc(), wrong_pass);

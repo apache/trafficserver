@@ -161,6 +161,7 @@ if(BUILD_TESTING)
     unit_tests/test_TLSSNISupport.cc
     unit_tests/test_YamlSNIConfig.cc
     unit_tests/test_OCSPStapling.cc
+    unit_tests/test_TLSReadPrivateKey.cc
     unit_tests/unit_test_main.cc
     unit_tests/benchmark_TLSCertCompression.cc
     unit_tests/test_TLSCertCompressionCache.cc
