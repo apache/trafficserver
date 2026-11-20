@@ -396,6 +396,14 @@ ParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
 ParseResult http2_convert_header_from_1_1_to_2(HTTPHdr *);
 void        http2_init();
 
+/** Copy @a src, a header HttpSM built, into @a send_hdr for sending on an HTTP/2 stream.
+ *
+ * Field by field, since HTTPHdr::copy() would drop the pseudo-header fields that
+ * create(HTTP_2_0) reserved in @a send_hdr. The method keeps the index parse_req() gave it, and
+ * values are trimmed, as HTTP/2 peers reject surrounding whitespace (RFC 9113 8.2.1).
+ */
+void http2_copy_send_header(HTTPHdr *send_hdr, HTTPHdr *src);
+
 /** Each of these values correspond to the flow control policy described in or
  * records.yaml documentation for proxy.config.http2.flow_control.policy_in.
  */
