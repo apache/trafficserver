@@ -44,7 +44,6 @@ timestamp()
   return (long)time(nullptr);
 }
 
-int      timestamp_to_str(long timestamp, char *buf, int size);
 char    *timestamp_to_netscape_str(long timestamp);
 char    *timestamp_to_date_str(long timestamp);
 char    *timestamp_to_time_str(long timestamp);

@@ -157,9 +157,9 @@ transaction thereafter::
 The file ``tcp-metrics.log`` will contain the following log format (with client and server both on 127.0.0.1)::
 
   timestamp event client server rtt
-  20140414.17h40m14s ssn_start 127.0.0.1 127.0.0.1 153859
-  20140414.17h40m14s txn_start 127.0.0.1 127.0.0.1 181018
-  20140414.17h40m16s ssn_start 127.0.0.1 127.0.0.1 86869
-  20140414.17h40m16s txn_start 127.0.0.1 127.0.0.1 19088
-  20140414.17h40m16s ssn_start 127.0.0.1 127.0.0.1 85718
-  20140414.17h40m16s txn_start 127.0.0.1 127.0.0.1 38059
+  2014-04-14T17:40:14.208Z ssn_start 127.0.0.1 127.0.0.1 153859
+  2014-04-14T17:40:14.571Z txn_start 127.0.0.1 127.0.0.1 181018
+  2014-04-14T17:40:16.034Z ssn_start 127.0.0.1 127.0.0.1 86869
+  2014-04-14T17:40:16.362Z txn_start 127.0.0.1 127.0.0.1 19088
+  2014-04-14T17:40:16.745Z ssn_start 127.0.0.1 127.0.0.1 85718
+  2014-04-14T17:40:16.911Z txn_start 127.0.0.1 127.0.0.1 38059

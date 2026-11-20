@@ -38,6 +38,7 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_thread_safety.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/YamlCfg.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_ip.h
+    ${PROJECT_SOURCE_DIR}/include/tsutil/ts_iso8601.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_meta.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_time_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_unit_parser.h
@@ -52,6 +53,7 @@ add_library(
   SourceLocation.cc
   ts_diags.cc
   ts_ip.cc
+  ts_iso8601.cc
   YamlCfg.cc
   ts_unit_parser.cc
   Regex.cc
@@ -88,6 +90,7 @@ if(BUILD_TESTING)
     unit_tests/test_ts_meta.cc
     unit_tests/test_thread_safety.cc
     unit_tests/test_time_parser.cc
+    unit_tests/test_ts_iso8601.cc
     unit_tests/test_UdiTable.cc
   )
 
