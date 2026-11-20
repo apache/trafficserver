@@ -53,7 +53,7 @@ public:
     void                     *byte_array = bs_data.get_bytes(len);
     // Dbg(dbg_ctl, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
 
-    // The length is whatever the leader put in the entry, so it must be checked in release builds too.
+    // The length is whatever the leader put in the entry, so it must be checked explicitly.
     if (len != SSL_TICKET_KEY_SIZE) {
       TSError("[%s] Ignoring a replicated STEK of %zu bytes, expected %zu", PLUGIN_NAME, len, SSL_TICKET_KEY_SIZE);
     } else {
@@ -135,7 +135,7 @@ public:
     nuraft::buffer_serializer bs_data(data);
     void                     *byte_array = bs_data.get_bytes(len);
 
-    // The length is whatever the leader put in the snapshot object, so it must be checked in release builds too.
+    // The length is whatever the leader put in the snapshot object, so it must be checked explicitly.
     if (len != SSL_TICKET_KEY_SIZE) {
       TSError("[%s] Ignoring a snapshot STEK of %zu bytes, expected %zu", PLUGIN_NAME, len, SSL_TICKET_KEY_SIZE);
       return;
