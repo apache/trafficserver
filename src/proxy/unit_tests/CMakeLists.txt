@@ -21,6 +21,7 @@ add_executable(
   test_ControlBase.cc
   test_ControlMatcher.cc
   test_FetchSM.cc
+  test_HostStatus.cc
   test_ParentHashConfig.cc
   test_PluginYAML.cc
   stub.cc

@@ -38,6 +38,7 @@
 
 #include <ctime>
 #include <string>
+#include <string_view>
 #include <sstream>
 #include <unordered_map>
 
@@ -90,6 +91,10 @@ struct Reason {
     // default is MANUAL
     return MANUAL;
   }
+
+  // Render a reason mask for diagnostics. Unknown bits render as @c unknown(0x..) instead of
+  // vanishing, because @c TSHostStatusSet passes masks through unvalidated.
+  static std::string getReasonName(const unsigned int reason);
 };
 
 struct HostStatuses {
