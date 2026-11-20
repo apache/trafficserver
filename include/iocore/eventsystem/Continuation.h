@@ -55,7 +55,7 @@ extern EThread *this_event_thread();
   event codes (e.g., @c EVENT_IMMEDIATE, @c VC_EVENT_READ_READY) that
   handlers dispatch on.
 */
-#define CONTINUATION_EVENT_NONE 0
+inline constexpr int CONTINUATION_EVENT_NONE = 0;
 
 /**
   Handler return code signaling, by convention, that the state machine has
@@ -66,7 +66,7 @@ extern EThread *this_event_thread();
   meaningful only to callers that invoke @c handleEvent directly and define
   a convention for it.
 */
-#define CONTINUATION_DONE 0
+inline constexpr int CONTINUATION_DONE = 0;
 
 /**
   Handler return code signaling, by convention, that the state machine has
@@ -77,13 +77,7 @@ extern EThread *this_event_thread();
   meaningful only to callers that invoke @c handleEvent directly and define
   a convention for it.
 */
-#define CONTINUATION_CONT 1
-
-class force_VFPT_to_top
-{
-public:
-  virtual ~force_VFPT_to_top() {}
-};
+inline constexpr int CONTINUATION_CONT = 1;
 
 /**
   A copyable binding to an event-handler member function of
@@ -238,9 +232,11 @@ private:
   too, except where a member documents otherwise. While @c mutex is
   null, handler invocations may run concurrently on different threads.
 */
-class Continuation : private force_VFPT_to_top
+class Continuation
 {
 public:
+  virtual ~Continuation() = default;
+
   /**
     The member function that @c handleEvent invokes for each event
     dispatched to this Continuation, or null.
@@ -489,7 +485,7 @@ protected:
     references to the same @c ProxyMutex. @p amutex itself MUST NOT
     be written concurrently with this call.
   */
-  explicit Continuation(Ptr<ProxyMutex> &amutex);
+  explicit Continuation(const Ptr<ProxyMutex> &amutex);
 };
 
 /**
@@ -553,7 +549,7 @@ protected:
 #define SET_CONTINUATION_HANDLER(_c, _h) ((_c)->handler.template set<_h>())
 #endif
 
-inline Continuation::Continuation(Ptr<ProxyMutex> &amutex) : mutex(amutex)
+inline Continuation::Continuation(const Ptr<ProxyMutex> &amutex) : mutex(amutex)
 {
   // Pick up the control flags from the creating thread
   this->control_flags.set_flags(get_cont_flags().get_flags());
