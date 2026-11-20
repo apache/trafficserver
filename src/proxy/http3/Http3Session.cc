@@ -25,6 +25,7 @@
 #include "iocore/net/QUICSupport.h"
 
 #include "proxy/http3/Http3.h"
+#include "proxy/http3/Http3Config.h"
 #include "proxy/http3/Http3Types.h"
 #include "proxy/http/HttpConfig.h"
 
@@ -206,10 +207,14 @@ Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
     HttpConfig::release(http_config);
   }
 
-  this->_local_qpack  = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
-                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
-  this->_remote_qpack = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
-                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
+  ts::Http3Config::scoped_config h3_params;
+
+  this->_local_qpack = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
+                                 HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
+  // The decoder is built from the same values Http3SettingsFramer advertises to the peer. Of these it enforces the field
+  // section size and the blocked stream count; Set Dynamic Table Capacity is not yet checked against the table size.
+  this->_remote_qpack = new QPACK(qc, h3_params->max_field_section_size(), h3_params->header_table_size(),
+                                  h3_params->qpack_blocked_streams(), header_field_max_size);
 }
 
 Http3Session::~Http3Session()

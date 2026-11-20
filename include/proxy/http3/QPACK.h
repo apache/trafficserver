@@ -44,6 +44,7 @@ class HTTPHdr;
 enum {
   QPACK_EVENT_DECODE_COMPLETE = QPACK_EVENT_EVENTS_START,
   QPACK_EVENT_DECODE_FAILED,
+  QPACK_EVENT_DECODE_FIELD_SECTION_TOO_LARGE,
 };
 
 class QPACK : public QUICApplication
@@ -65,11 +66,14 @@ public:
   int encode(uint64_t stream_id, HTTPHdr &header_set, MIOBuffer *header_block, uint64_t &header_block_len);
 
   /*
-   * This will emit either of two events below, on the thread decode() is
-   * called on:
+   * This will emit one of the events below, on the thread decode() is called
+   * on:
    * - QPACK_EVENT_DECODE_COMPLETE (the event's cookie is &hdr)
-   * - QPACK_EVENT_DECODE_FAILED (the event's cookie is &hdr, or nullptr if the
-   *   decoder had already failed)
+   * - QPACK_EVENT_DECODE_FAILED when the field section is malformed (the
+   *   event's cookie is &hdr, or nullptr if the decoder had already failed)
+   * - QPACK_EVENT_DECODE_FIELD_SECTION_TOO_LARGE when the field section is
+   *   well formed so far but larger than max_field_section_size (the event's
+   *   cookie is &hdr)
    *
    * Every decode() and cancel() on one QPACK has to run on the same thread:
    * QPACK keeps the decodes it has not reported yet on lists that only that
