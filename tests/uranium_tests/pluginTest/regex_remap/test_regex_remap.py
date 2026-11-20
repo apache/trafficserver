@@ -290,3 +290,53 @@ def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
     alpha_bravo_error = r'\[regex_remap\] Bad regular expression result -46 .* from "\^/alpha/bravo/'
     assert not re.search(rf"ERROR: (?!{match_limit_error}|{alpha_bravo_error})", log), log
     assert not re.search(r"FATAL:|Unrecognized configuration value", log), log
+
+
+def test_regex_remap_crlf_blank_lines(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """regex_remap successfully loads rules from CRLF files with blank lines."""
+    _origin = configure_server(_services=services, _transactions=load_transactions(_services=services))
+    _dns = configure_dns(_services=services)
+    ats = ats_factory.create("ats-crlf", enable_cache=False)
+    if not ats.plugin_exists("regex_remap.so"):
+        pytest.skip("regex_remap.so is not installed")
+    crlf_content = "^/ http://example.test/ @status=302\r\n\r\n^/alpha/bravo/.*$ http://127.0.0.1\r\n"
+    ats.write_config_file("regex_remap_crlf.conf", crlf_content)
+    ats.remap_config.add_line(
+        f"map http://crlf.example.com/ http://127.0.0.1:{_origin.port}/ @plugin=regex_remap.so @pparam=regex_remap_crlf.conf"
+    )
+    _curl = Curl(ats_factory.run_directory)
+    _origin.start()
+    _dns.start()
+    ats.start()
+    output = _request("http://crlf.example.com/", _ats=ats, _curl=_curl)
+    assert "HTTP/1.1 302" in output and "Location: http://example.test/" in output
+    diags = (ats.diags_log.read_text(errors="replace") if ats.diags_log.exists() else "") + (
+        ats.traffic_out.read_text(errors="replace") if ats.traffic_out.exists() else ""
+    )
+    assert "Traffic Server is fully initialized" in diags
+
+
+def test_regex_remap_bad_config(ats_factory: ATSFactory) -> None:
+    """Invalid regex_remap configurations fail instance initialization."""
+    cases = (
+        ("missing-config", "", r"missing configuration file"),
+        ("invalid-option", "@pparam=rules.conf @pparam=invalid_opt", r"invalid option 'invalid_opt'"),
+        ("missing-file", "@pparam=nonexistent.conf", r"failed to stat.*nonexistent\.conf"),
+        ("bad-regex", "@pparam=bad_regex.conf", r"Regex compile failed"),
+        ("bad-rule-option", "@pparam=bad_rule_option.conf", r"can't create a new regex remap rule"),
+    )
+    for name, params, error_marker in cases:
+        ats = ats_factory.create(f"ats-bad-{name}", enable_cache=False)
+        if not ats.plugin_exists("regex_remap.so"):
+            pytest.skip("regex_remap.so is not installed")
+        if name == "invalid-option":
+            ats.write_config_file("rules.conf", "^/ http://127.0.0.1/\n")
+        elif name == "bad-regex":
+            ats.write_config_file("bad_regex.conf", "[invalid(regex http://127.0.0.1/\n")
+        elif name == "bad-rule-option":
+            ats.write_config_file("bad_rule_option.conf", "^/ http://127.0.0.1/ @bogus=1\n")
+        ats.remap_config.add_line(f"map http://{name}.example.com/ http://127.0.0.1/ @plugin=regex_remap.so {params}")
+        ats.expect_start_failure(error_marker)
+        ats.start()
+        traffic_out = ats.traffic_out.read_text(errors="replace") if ats.traffic_out.exists() else ""
+        assert "Traffic Server is fully initialized" not in traffic_out
