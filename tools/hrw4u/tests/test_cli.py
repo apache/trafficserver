@@ -490,3 +490,114 @@ def test_cli_bulk_stop_on_error_keeps_the_pairs_before_it(tmp_path: Path) -> Non
     assert result.returncode != 0
     assert "X-Ok" in good_out.read_text()
     assert bad_out.read_text() == previous
+
+
+@pytest.fixture
+def arity_procedure(tmp_path: Path) -> Path:
+    """A procedures path holding `t::p`, which takes exactly one argument."""
+    procs = tmp_path / "procs"
+    (procs / "t").mkdir(parents=True)
+    (procs / "t" / "p.hrw4u").write_text("procedure t::p($a) {\n    inbound.req.X-A = $a;\n}\n")
+    return procs
+
+
+def test_cli_reports_a_procedure_error_at_the_call(arity_procedure: Path, tmp_path: Path) -> None:
+    """A procedure misuse is a mistake at the call, so that is the position and line the diagnostic shows."""
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::p\nREMAP {\n    t::p(\"1\", \"2\");\n}\n")
+
+    result = run_hrw4u(["--procedures-path", str(arity_procedure), str(main)])
+
+    assert result.returncode != 0
+    assert f"{main}:3:4: error: procedure 't::p': expected 1 arg(s), got 2" in result.stderr
+    assert "3 |     t::p(\"1\", \"2\");" in result.stderr
+    assert "Visitor error" not in result.stderr
+
+
+def test_cli_output_hrw4u_inlines_procedures(arity_procedure: Path, tmp_path: Path) -> None:
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::p\nREMAP {\n    t::p(\"v\");\n}\n")
+
+    result = run_hrw4u(["--procedures-path", str(arity_procedure), "--output", "hrw4u", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert "inbound.req.X-A = " in result.stdout
+    assert "t::p" not in result.stdout
+
+
+def test_cli_output_hrw4u_writes_nothing_for_an_invalid_program(arity_procedure: Path, tmp_path: Path) -> None:
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::p\nREMAP {\n    t::p(\"v\");\n    no.such.symbol = \"1\";\n}\n")
+
+    result = run_hrw4u(["--procedures-path", str(arity_procedure), "--output", "hrw4u", str(main)])
+
+    assert result.returncode != 0
+    assert result.stdout == ""
+    assert f"{main}:4:" in result.stderr
+
+
+def test_cli_output_hrw4u_keeps_session_vars(tmp_path: Path) -> None:
+    main = tmp_path / "main.hrw4u"
+    main.write_text("SESSION_VARS {\n    marked: bool;\n}\nREMAP {\n    marked = true;\n}\n")
+
+    result = run_hrw4u(["--output", "hrw4u", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "SESSION_VARS {\n    marked: bool;\n}\n\nREMAP {\n    marked = true;\n}\n"
+
+
+def test_cli_output_hrw4u_puts_a_trailing_comment_on_its_own_line(tmp_path: Path) -> None:
+    main = tmp_path / "main.hrw4u"
+    main.write_text("REMAP {\n    inbound.req.X-A = \"1\";  # why\n}\n")
+
+    result = run_hrw4u(["--output", "hrw4u", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "REMAP {\n    inbound.req.X-A = \"1\";\n    # why\n}\n"
+
+
+def test_cli_output_hrw4u_keeps_a_unicode_line_separator_inside_a_comment(tmp_path: Path) -> None:
+    source = "# off\u2028REMAP { inbound.req.X-B = \"1\"; }\nREMAP {\n    inbound.req.X-A = \"1\";\n}\n"
+    main = tmp_path / "main.hrw4u"
+    main.write_text(source, encoding="utf-8")
+
+    result = run_hrw4u(["--output", "hrw4u", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == source
+
+
+def test_cli_output_hrw4u_no_comments_drops_procedure_comments(tmp_path: Path) -> None:
+    procs = tmp_path / "procs"
+    (procs / "t").mkdir(parents=True)
+    (procs / "t" / "p.hrw4u").write_text("procedure t::p() {\n    # inside\n    inbound.req.X-A = \"1\";\n}\n")
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::p\n# outside\nREMAP {\n    t::p();\n}\n")
+
+    result = run_hrw4u(["--procedures-path", str(procs), "--output", "hrw4u", "--no-comments", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "REMAP {\n    inbound.req.X-A = \"1\";\n}\n"
+
+
+def test_cli_output_hrw4u_drops_a_section_left_empty(tmp_path: Path) -> None:
+    procs = tmp_path / "procs"
+    (procs / "t").mkdir(parents=True)
+    (procs / "t" / "e.hrw4u").write_text("procedure t::e() {\n}\n")
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::e\nVARS {\n    # only\n}\nREMAP {\n    t::e();\n}\nSEND_RESPONSE {\n    inbound.resp.X-A = \"1\";\n}\n")
+
+    result = run_hrw4u(["--procedures-path", str(procs), "--output", "hrw4u", "--no-comments", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "SEND_RESPONSE {\n    inbound.resp.X-A = \"1\";\n}\n"
+
+
+def test_cli_output_hrw4u_prints_nothing_for_an_empty_program(arity_procedure: Path, tmp_path: Path) -> None:
+    main = tmp_path / "main.hrw4u"
+    main.write_text("use t::p\n")
+
+    result = run_hrw4u(["--procedures-path", str(arity_procedure), "--output", "hrw4u", str(main)])
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""

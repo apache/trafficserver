@@ -26,6 +26,7 @@ from typing import Final, Iterator
 import pytest
 from antlr4 import InputStream, CommonTokenStream
 from hrw4u.hrw4uLexer import hrw4uLexer
+from hrw4u.common import compile_to_conf, compile_to_hrw4u
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor
 from hrw4u.sandbox import SandboxConfig
@@ -553,28 +554,23 @@ def run_procedure_output_test(input_file: Path, output_file: Path) -> None:
     assert actual_output == expected_output, f"Output mismatch in {input_file}"
 
 
+def _flatten(input_file: Path) -> str:
+    text = input_file.read_text()
+    _, tree = parse_input_text(text)
+    return "\n".join(compile_to_hrw4u(tree, str(input_file), text, proc_search_paths=[_procs_dir(input_file)]))
+
+
 def run_procedure_flatten_test(input_file: Path, flatten_file: Path) -> None:
-    procs_dir = _procs_dir(input_file)
-    input_text = input_file.read_text()
-    parser, tree = parse_input_text(input_text)
-    visitor = HRW4UVisitor(filename=str(input_file), proc_search_paths=[procs_dir])
-    actual_output = "\n".join(visitor.flatten(tree, input_text)).strip()
+    actual_output = _flatten(input_file).strip()
     expected_output = flatten_file.read_text().strip()
     assert actual_output == expected_output, f"Flatten mismatch in {input_file}"
 
 
 def run_procedure_flatten_roundtrip_test(input_file: Path, output_file: Path) -> None:
-    """Verify that flattened output compiles to the same header_rewrite as the original."""
-    procs_dir = _procs_dir(input_file)
-    input_text = input_file.read_text()
-    parser, tree = parse_input_text(input_text)
-    visitor = HRW4UVisitor(filename=str(input_file), proc_search_paths=[procs_dir])
-    flattened = "\n".join(visitor.flatten(tree, input_text))
-
-    # Compile the flattened output (no procedures needed — it's self-contained)
-    parser2, tree2 = parse_input_text(flattened)
-    visitor2 = HRW4UVisitor(filename=str(input_file))
-    actual_output = "\n".join(visitor2.visit(tree2)).strip()
+    """Verify that flattened output compiles, with no procedures path, to the same header_rewrite as the original."""
+    flattened = _flatten(input_file)
+    _, tree = parse_input_text(flattened)
+    actual_output = "\n".join(compile_to_conf(tree, str(input_file), flattened)).strip()
     expected_output = output_file.read_text().strip()
     assert actual_output == expected_output, (
         f"Flatten roundtrip mismatch in {input_file}\nFlattened hrw4u compiles to different output than original"
