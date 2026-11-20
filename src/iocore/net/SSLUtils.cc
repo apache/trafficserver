@@ -1540,7 +1540,7 @@ TLSReadPrivateKey(SSL_CTX *ctx, std::string_view key_path, std::string_view secr
   return pkey;
 }
 
-/// Sets @a pkey, read from @a key_path, as the private key of @a ctx and checks that it matches the certificate already set.
+// Sets the key as the context's private key and checks that it matches the certificate already set.
 static bool
 TLSUsePrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey, std::string_view key_path)
 {

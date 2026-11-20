@@ -59,7 +59,7 @@ constexpr std::string_view CERT_PEM = "-----BEGIN CERTIFICATE-----\n"
 
 char passphrase[]{"ats-secret-pass"};
 
-/// Password callback that always supplies @c passphrase.
+// Password callback that always supplies the passphrase above.
 int
 passphrase_cb(char *buf, int size, int /* rwflag */, void * /* u */)
 {
@@ -69,7 +69,7 @@ passphrase_cb(char *buf, int size, int /* rwflag */, void * /* u */)
   return length;
 }
 
-/// Returns KEY_PEM encrypted with AES-256-CBC under @a pass.
+// Returns KEY_PEM encrypted with AES-256-CBC under the given passphrase.
 std::string
 encrypted_key_pem(char *pass)
 {
@@ -86,14 +86,9 @@ encrypted_key_pem(char *pass)
   return std::string{buffer->data, buffer->length};
 }
 
-/** Reads @a secret with TLSReadPrivateKey on a context that has neither a certificate nor a key.
-
-    Fails the test if the context has a key afterwards, since reading must not set one.
-
-    @param secret What TLSReadPrivateKey reads, as load_certs would pass it.
-    @param passwd_cb The context's default password callback, if not null.
-    @return Whether a key was read and it is the key of CERT_PEM.
- */
+// Reads the secret, as load_certs would pass it, with TLSReadPrivateKey on a context that has neither a certificate
+// nor a key, and with passwd_cb as its default password callback if one is given. Returns whether a key was read and
+// it is the key of CERT_PEM. Fails the test if the context has a key afterwards, since reading must not set one.
 bool
 read_key_of_cert(std::string_view secret, pem_password_cb *passwd_cb = nullptr)
 {
