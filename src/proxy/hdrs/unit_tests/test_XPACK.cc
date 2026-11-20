@@ -127,6 +127,9 @@ TEST_CASE("XPACK_String", "[xpack]")
     {(char *)"\xff\xff\xff\xff",        4,
      (uint8_t *)"\x04"
                 "\xff\xff\xff\xff",                                                                     5 },
+    {(char *)"XZ",                      2,
+     (uint8_t *)"\x02"
+                "XZ",                                                                                   3 },
   };
 
   SECTION("Encoding")
