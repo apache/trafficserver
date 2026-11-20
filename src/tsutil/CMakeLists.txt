@@ -78,6 +78,7 @@ if(BUILD_TESTING)
     test_tsutil
     unit_tests/test_AtomicSharedPtr.cc
     unit_tests/test_Bravo.cc
+    unit_tests/test_DbgCtl.cc
     unit_tests/test_LocalBuffer.cc
     unit_tests/test_Metrics.cc
     unit_tests/test_PostScript.cc
