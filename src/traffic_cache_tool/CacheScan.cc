@@ -380,6 +380,10 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
 bool
 CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
 {
+  if (url == nullptr || !mem.contains(reinterpret_cast<char *>(url))) {
+    return false;
+  }
+
   bool in_bound = false; // boolean to check if address in bound
   if (!url->m_ptr_scheme) {
     in_bound = true; // nullptr is valid
@@ -387,8 +391,7 @@ CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
     in_bound = true;
   }
 
-  return in_bound && mem.contains(reinterpret_cast<char *>(url)) &&
-         !(url == nullptr || url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
+  return in_bound && !(url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
 }
 
 Errata

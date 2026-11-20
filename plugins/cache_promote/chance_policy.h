@@ -57,11 +57,6 @@ public:
       {"total_requests", &_total_requests_id},
     };
 
-    if (nullptr == remap_id) {
-      TSError("[%s] no remap identifier specified for stats, no stats will be used", PLUGIN_NAME);
-      return false;
-    }
-
     for (int ii = 0; ii < 3; ii++) {
       std::string_view name = std::get<0>(stats[ii]);
       int             *id   = std::get<1>(stats[ii]);
