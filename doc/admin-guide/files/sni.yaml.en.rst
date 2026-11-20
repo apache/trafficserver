@@ -513,18 +513,21 @@ does not support RFC 7250 falls back to a normal certificate exchange, and the u
 checks apply.
 
 Replacing the file ``verify_server_rpk_ca`` or the record names and running
-:option:`traffic_ctl config reload` takes effect for requests that follow. An origin connection taken from the session pool, or an HTTP/2 connection shared with
+:option:`traffic_ctl config reload` takes effect for requests that follow. An origin connection
+taken from the session pool, or an HTTP/2 connection shared with
 requests that waited for it to open, carries a request verified under :code:`ENFORCED` only while
 the set that request would pin still contains the key the connection presented. Adding a key for
 rotation keeps existing connections, while removing a key retires the connections that presented it.
-Such a connection accepted under :code:`PERMISSIVE` with a key outside the set, or opened under
-:code:`DISABLED`, never carries a request verified under :code:`ENFORCED`. A request verified under
-:code:`PERMISSIVE` would accept the key in a new handshake anyway, so it may use the connection
-either way. These checks do not cover a server session kept with its client connection, such as a
-private session, or an HTTP/1.1 connection handed to a request that waited for it to open; both are
-reused as they are for a certificate. Cached TLS sessions are keyed on the whole set, so any change
-to it makes the next connection to that next hop a full handshake. Requests already in progress on
-an existing connection are not interrupted.
+Such a connection accepted under :code:`PERMISSIVE` despite a failed check, such as a key outside
+the set or a rejection by a ``TS_SSL_VERIFY_SERVER_HOOK`` plugin, never carries a request verified
+under :code:`ENFORCED`, even after a reload adds its key to the set. Neither does one opened under
+:code:`DISABLED`. A request verified under :code:`PERMISSIVE` would accept the key in a new
+handshake anyway, so it may use the connection either way. These checks do not cover a server
+session kept with its client connection, such as a private session, or an HTTP/1.1 connection
+handed to a request that waited for it to open; both are reused as they are for a certificate.
+Cached TLS sessions are keyed on the whole set, so any change to it makes the next connection to
+that next hop a full handshake. Requests already in progress on an existing connection are not
+interrupted.
 
 If ``tunnel_route`` is specified, none of the certificate verification will be done because the TLS
 negotiation will be tunneled to the upstream target, making those values irrelevant for that

@@ -84,7 +84,8 @@ public:
       Only a pinned key set can vouch for such a session, so this checks the key the origin
       presented on it against the set @a sm's own connection would pin, under @a sm's policy, rather
       than inferring a match from a name. Under ENFORCED the key must also have been recorded, which
-      a connection opened under DISABLED never does.
+      a connection opened under DISABLED never does, and the handshake must not have continued past a
+      check that failed under PERMISSIVE.
 
       @param sm The transaction looking for a session.
       @param netvc A pooled origin connection for which origin_presented_raw_public_key() is true.
