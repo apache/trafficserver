@@ -222,14 +222,35 @@ class ManagedProcess:
         return_code = self._process.poll()
         if return_code is None:
             try:
-                os.killpg(self._process.pid, signal.SIGTERM)
-                self._process.wait(timeout=timeout)
-            except ProcessLookupError:
-                pass
+                if self.signal_group(signal.SIGTERM, timeout):
+                    self._process.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
-                os.killpg(self._process.pid, signal.SIGKILL)
-                self._process.wait(timeout=timeout)
+                if self.signal_group(signal.SIGKILL, timeout):
+                    self._process.wait(timeout=timeout)
         self._close_streams()
+
+    def signal_group(self, signal_number: int, timeout: float = 5.0) -> bool:
+        """Send @a signal_number to the process group.
+
+        :param signal_number: Signal to send.
+        :param timeout: Seconds to wait for a leader that refuses the signal because it is exiting.
+        :returns: False when the group had already exited, so there is nothing to wait for.
+        """
+
+        if self._process is None:
+            raise ProcessError(f"{self.name} has not been started")
+        try:
+            os.killpg(self._process.pid, signal_number)
+        except ProcessLookupError:
+            return False
+        except PermissionError as error:
+            # Darwin fails with EPERM, not ESRCH, while the leader is exiting or not yet reaped.
+            try:
+                self._process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                raise error
+            return False
+        return True
 
     def output(self) -> str:
         """Return the captured stdout and stderr for diagnostics."""

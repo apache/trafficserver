@@ -14,6 +14,16 @@
 --  See the License for the specific language governing permissions and
 --  limitations under the License.
 
+-- AF_INET6 is 10 on Linux and 30 on macOS, so report the family by its exported constant.
+local function family_name(family)
+    if family == TS_LUA_AF_INET then
+        return "TS_LUA_AF_INET"
+    elseif family == TS_LUA_AF_INET6 then
+        return "TS_LUA_AF_INET6"
+    end
+    return tostring(family)
+end
+
 function do_remap()
     local result = ""
 
@@ -36,7 +46,7 @@ function do_remap()
             -- Test 3: Get the verified address we just set
             local ip2, family2 = ts.client_request.client_addr.get_verified_addr()
             if ip2 then
-                result = result .. "get:" .. ip2 .. ":" .. tostring(family2) .. ";"
+                result = result .. "get:" .. ip2 .. ":" .. family_name(family2) .. ";"
             else
                 result = result .. "get:failed;"
             end
@@ -58,7 +68,7 @@ function do_remap()
             -- Get the IPv6 verified address
             local ip3, family3 = ts.client_request.client_addr.get_verified_addr()
             if ip3 then
-                result = result .. "getv6:" .. ip3 .. ":" .. tostring(family3) .. ";"
+                result = result .. "getv6:" .. ip3 .. ":" .. family_name(family3) .. ";"
             else
                 result = result .. "getv6:failed;"
             end

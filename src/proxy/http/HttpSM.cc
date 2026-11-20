@@ -1961,6 +1961,8 @@ HttpSM::state_http_server_open(int event, void *data)
 
     if (this->plugin_tunnel_type == HttpPluginTunnel_t::NONE) {
       SMDbg(dbg_ctl_http_connect, "setting handler for connection handshake timeout %" PRId64, this->get_server_connect_timeout());
+      // kqueue reports the origin's TLS handshake reply only as a read event.
+      _netvc->do_io_read(this, 0, _netvc_read_buffer);
       // Just want to get a write-ready event so we know that the connection handshake is complete.
       // The buffer we create will be handed over to the eventually created server session
       _netvc->do_io_write(this, 1, _netvc_reader);
