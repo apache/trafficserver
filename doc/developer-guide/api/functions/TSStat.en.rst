@@ -54,8 +54,10 @@ Description
 
 A plugin statistic is created by :func:`TSStatCreate`. The :arg:`name` must be globally unique and
 should follow the standard dotted tag form. To avoid collisions and for easy of use the first tag
-should be the plugin name or something easily derived from it. Currently only integers are supported
-therefore :arg:`type` must be :enumerator:`TS_RECORDDATATYPE_INT`. The return value is
+should be the plugin name or something easily derived from it. The :arg:`type` specifies the data type of the statistic and must be either
+:enumerator:`TS_RECORDDATATYPE_INT` or :enumerator:`TS_RECORDDATATYPE_COUNTER`.
+:enumerator:`TS_RECORDDATATYPE_INT` creates a gauge statistic, while
+:enumerator:`TS_RECORDDATATYPE_COUNTER` creates a counter statistic. The return value is
 the index of the statistic. In general this should work but if it doesn't it will :code:`assert`. In
 particular, creating the same statistic twice will fail in this way, which can happen if statistics
 are created as part of or based on configuration files and |TS| is reloaded.
