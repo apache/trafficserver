@@ -53,11 +53,12 @@ public:
     void                     *byte_array = bs_data.get_bytes(len);
     // Dbg(dbg_ctl, "commit %lu: %s", log_idx, hex_str(std::string(reinterpret_cast<char *>(byte_array), len)).c_str());
 
-    assert(len == SSL_TICKET_KEY_SIZE);
-
-    {
+    // The length is whatever the leader put in the entry, so it must be checked explicitly.
+    if (len != SSL_TICKET_KEY_SIZE) {
+      TSError("[%s] Ignoring a replicated STEK of %zu bytes, expected %zu", PLUGIN_NAME, len, SSL_TICKET_KEY_SIZE);
+    } else {
       std::lock_guard<std::mutex> l(stek_lock_);
-      std::memcpy(&stek_, byte_array, len);
+      std::memcpy(&stek_, byte_array, SSL_TICKET_KEY_SIZE);
       received_stek_ = true;
     }
 
@@ -134,10 +135,14 @@ public:
     nuraft::buffer_serializer bs_data(data);
     void                     *byte_array = bs_data.get_bytes(len);
 
-    assert(len == SSL_TICKET_KEY_SIZE);
+    // The length is whatever the leader put in the snapshot object, so it must be checked explicitly.
+    if (len != SSL_TICKET_KEY_SIZE) {
+      TSError("[%s] Ignoring a snapshot STEK of %zu bytes, expected %zu", PLUGIN_NAME, len, SSL_TICKET_KEY_SIZE);
+      return;
+    }
 
     ssl_ticket_key_t local_stek;
-    std::memcpy(&local_stek, byte_array, len);
+    std::memcpy(&local_stek, byte_array, SSL_TICKET_KEY_SIZE);
 
     nuraft::ptr<nuraft::buffer>      snp_buf = s.serialize();
     nuraft::ptr<nuraft::snapshot>    ss      = nuraft::snapshot::deserialize(*snp_buf);
