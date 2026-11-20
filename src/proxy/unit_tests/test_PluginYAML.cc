@@ -22,6 +22,7 @@
 */
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <atomic>
 #include <filesystem>
 #include <fstream>
@@ -251,12 +252,48 @@ plugins:
   CHECK(std::string(result.errata.front().text()).find("missing required 'path' field") != std::string::npos);
 }
 
+TEST_CASE("parse_plugin_yaml - malformed entry is a config error", "[plugin_yaml]")
+{
+  // Each case has a good first entry, so the error must name entry #2.
+  auto content = GENERATE(as<std::string>{},
+                          // A bare scalar instead of a mapping.
+                          "plugins:\n  - path: good.so\n  - libfoo.so\n",
+                          // Values of the wrong type.
+                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    enabled: maybe\n",
+                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    load_order: x\n",
+                          "plugins:\n  - path: good.so\n  - path: [libfoo.so]\n",
+                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    params:\n      - {a: b}\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("plugin entry #2:") != std::string::npos);
+}
+
 TEST_CASE("parse_plugin_yaml - missing plugins key", "[plugin_yaml]")
 {
   TempYAML yaml(R"(
 something_else:
   - path: foo.so
 )");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("missing or invalid 'plugins' sequence") != std::string::npos);
+}
+
+TEST_CASE("parse_plugin_yaml - document is not a map", "[plugin_yaml]")
+{
+  // plugin.config lines pasted into plugin.yaml parse as one plain scalar, and
+  // subscripting a scalar throws. A top-level sequence is not a map either.
+  auto content = GENERATE(as<std::string>{}, "header_rewrite.so rules.conf\nfoo.so\n", "- path: foo.so\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
 
   auto result = parse_plugin_yaml(yaml.path());
 
@@ -279,6 +316,21 @@ TEST_CASE("parse_plugin_yaml - empty plugins list", "[plugin_yaml]")
   TempYAML yaml(R"(
 plugins: []
 )");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE(result.ok());
+  CHECK(result.value.empty());
+}
+
+TEST_CASE("parse_plugin_yaml - a file that names no plugins", "[plugin_yaml]")
+{
+  // An empty file, a comment-only file, and a plugins key with every entry
+  // commented out all load no plugins, the same as plugins: [].
+  auto content = GENERATE(as<std::string>{}, "", "# no plugins yet\n", "plugins:\n#  - path: foo.so\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
 
   auto result = parse_plugin_yaml(yaml.path());
 
