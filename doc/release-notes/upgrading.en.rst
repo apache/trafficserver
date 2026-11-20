@@ -328,6 +328,25 @@ Plugins
 
 Configuration Changes
 ---------------------
+:file:`cache.yaml` is now the default file selected by
+``proxy.config.cache.control.filename``. Existing deployments that provide
+only :file:`cache.config` must either retain the legacy file by setting that
+record to ``cache.config`` or convert the file:
+
+.. code-block:: bash
+
+   traffic_ctl config convert cache cache.config cache.yaml
+
+Review overlapping rules before deploying a conversion. Legacy
+:file:`cache.config` combines actions from every matching rule, while
+:file:`cache.yaml` applies only the first matching rule.
+
+An upgrade that installs the default, rule-free :file:`cache.yaml` beside an
+existing :file:`cache.config` leaves the legacy rules unused. |TS| logs a
+warning at startup and on reload when the configured :file:`cache.yaml` is
+missing or has no rules while a :file:`cache.config` containing rules sits in
+the same directory.
+
 The following :file:`records.yaml` changes have been made:
 
 - The slow log feature has been removed, and the following settings are removed:
