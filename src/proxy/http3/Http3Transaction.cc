@@ -34,6 +34,8 @@
 #include "proxy/http3/Http3ProtocolEnforcer.h"
 #include "proxy/http/HttpSM.h"
 
+#include <utility>
+
 #define NetVC2QUICCon(netvc) netvc->get_service<QUICSupport>()->get_quic_connection()
 
 #define Http3TransDebug(fmt, ...)                                                                                  \
@@ -547,17 +549,20 @@ Http3Transaction::state_stream_open(int event, Event *edata)
   this->_event_handler_active = true;
 
   switch (event) {
-  case VC_EVENT_READ_READY:
+  case VC_EVENT_READ_READY: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_close_read_ready_event(edata);
-    // if no progress, don't need to signal
-    if (this->_process_read_vio() > 0) {
+    // Signal only on progress: new bytes, or a header block that finished decoding after its frame was read.
+    int64_t const nread          = this->_process_read_vio();
+    bool const    header_decoded = std::exchange(this->_header_decoded_unsignaled, false);
+    if (nread > 0 || header_decoded) {
       this->_signal_read_event();
     }
     if (!this->_is_closed()) {
       this->_info.read_vio->reenable();
     }
     break;
+  }
   case VC_EVENT_READ_COMPLETE: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_close_read_complete_event(edata);
@@ -668,6 +673,7 @@ Http3Transaction::_is_closed() const
 void
 Http3Transaction::on_header_decode_complete()
 {
+  this->_header_decoded_unsignaled = true;
   this->_schedule_read_event();
 }
 

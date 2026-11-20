@@ -296,13 +296,20 @@ def quic_configuration(server_name: str, max_data: int | None = None, max_stream
     return configuration
 
 
-async def connect_h3(host: str, port: int, server_name: str, max_data: int | None = None, max_stream_data: int | None = None):
-    """Open an HTTP/3 connection using the test protocol."""
+async def connect_h3(
+    host: str,
+    port: int,
+    server_name: str,
+    max_data: int | None = None,
+    max_stream_data: int | None = None,
+    protocol: type[H3ClientProtocol] = H3ClientProtocol,
+):
+    """Open an HTTP/3 connection using the test protocol or a subclass of it."""
     return connect(
         host,
         port,
         configuration=quic_configuration(server_name, max_data=max_data, max_stream_data=max_stream_data),
-        create_protocol=H3ClientProtocol,
+        create_protocol=protocol,
     )
 
 
