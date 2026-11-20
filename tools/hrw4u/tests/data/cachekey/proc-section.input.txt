@@ -1,0 +1,8 @@
+procedure local::region() {
+    cache.key.headers.add("X-Region");
+}
+
+CACHEKEY {
+    cache.url.pristine();
+    local::region();
+}

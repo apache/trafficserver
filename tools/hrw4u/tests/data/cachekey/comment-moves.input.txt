@@ -1,0 +1,9 @@
+# Key on the region
+CACHEKEY {
+    cache.key.headers.add("X-Region");
+}
+
+# Tag every request
+REMAP {
+    inbound.req.X-Tag = "1";
+}

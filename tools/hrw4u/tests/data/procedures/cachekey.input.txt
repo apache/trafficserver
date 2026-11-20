@@ -1,0 +1,9 @@
+use test::cache-parts
+
+REMAP {
+    inbound.req.X-Seen = "yes";
+}
+
+CACHEKEY {
+    test::cache-parts(X-Region);
+}

@@ -1,0 +1,7 @@
+REMAP {
+    inbound.req.@Hrw4u-Header-X-User-Id = "1";
+}
+
+CACHEKEY {
+    cache.key.headers.exists("X-User-Id");
+}

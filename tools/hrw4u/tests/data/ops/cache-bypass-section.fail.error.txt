@@ -1,0 +1,1 @@
+tests/data/ops/cache-bypass-section.fail.input.txt:2:4: error: cache.bypass is not available in the SEND_RESPONSE section

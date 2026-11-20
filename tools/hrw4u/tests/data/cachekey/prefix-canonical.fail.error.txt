@@ -1,0 +1,1 @@
+tests/data/cachekey/prefix-canonical.fail.input.txt:3:4: error: cache.url.canonical() can't be used with cache.key.prefix = "assets.example.com"

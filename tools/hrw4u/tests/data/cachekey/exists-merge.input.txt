@@ -1,0 +1,6 @@
+CACHEKEY {
+    cache.key.headers.add("X-User-Id");
+    cache.key.headers.exists("X-User-Id", "x-user-id");
+    cache.key.cookies.exists("session");
+    cache.key.cookies.exists("session");
+}

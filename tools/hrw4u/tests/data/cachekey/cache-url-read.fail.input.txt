@@ -1,0 +1,5 @@
+CACHEKEY {
+    if cache.url.path == "x" {
+        cache.url.pristine();
+    }
+}

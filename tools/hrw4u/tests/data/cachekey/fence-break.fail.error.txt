@@ -1,0 +1,1 @@
+tests/data/cachekey/fence-break.fail.input.txt:3:4: error: operator 'break' not allowed in CACHEKEY: it would end the rule set before cachekey.so runs

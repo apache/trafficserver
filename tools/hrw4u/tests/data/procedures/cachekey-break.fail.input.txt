@@ -1,0 +1,10 @@
+use test::stop
+
+REMAP {
+    inbound.req.X-Seen = "yes";
+    test::stop();
+}
+
+CACHEKEY {
+    cache.key.headers.add("X-Region");
+}

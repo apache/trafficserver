@@ -1,0 +1,4 @@
+CACHEKEY {
+    cache.key.cookies.exists("sid");
+    cache.key.cookies.exists("SID");
+}

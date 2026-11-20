@@ -1,0 +1,6 @@
+CACHEKEY {
+    cache.key.prefix = "assets.example.com";
+    if inbound.req.Host == "img.example.com" {
+        cache.key.prefix = "img.example.com";
+    }
+}

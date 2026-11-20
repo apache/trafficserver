@@ -1,0 +1,11 @@
+procedure local::search() {
+    if inbound.url.path ~ /^search/ {
+        cache.url.query.keep("q");
+    }
+}
+
+CACHEKEY {
+    if inbound.req.Host == "a.example.com" {
+        local::search();
+    }
+}

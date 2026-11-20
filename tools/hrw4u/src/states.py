@@ -36,6 +36,17 @@ class SectionType(str, Enum):
     TXN_START = intern_section("TXN_START")
     TXN_CLOSE = intern_section("TXN_CLOSE")
     VARS = intern_section("VARS")
+    # Not an ATS hook: the compiler emits it as REMAP rules, after every REMAP rule set.
+    CACHEKEY = intern_section("CACHEKEY")
+
+    @property
+    def emits_as(self) -> Self:
+        """The section whose hook runs this one's rules, so whose symbols it can read: REMAP for CACHEKEY, itself for the rest."""
+        return SectionType.REMAP if self is SectionType.CACHEKEY else self
+
+    @property
+    def has_own_hook(self) -> bool:
+        return self.emits_as is self
 
     @property
     def hook_name(self) -> str:
@@ -50,18 +61,25 @@ class SectionType(str, Enum):
             SectionType.TXN_CLOSE: intern_hook("TXN_CLOSE_HOOK"),
             SectionType.VARS: intern_hook("VARS_SECTION"),
         }
-        return hook_map[self]
+        return hook_map[self.emits_as]
+
+    @property
+    def hook_note(self) -> str:
+        """Appended where the LSP shows the hook, for a section with no hook of its own."""
+        return "" if self.has_own_hook else f", after every {self.emits_as.value} rule"
 
     @property
     def lsp_description(self) -> str:
         if self == SectionType.VARS:
             return "This section declares variables that can be used throughout the configuration."
+        if self == SectionType.CACHEKEY:
+            return "This section sets the cache key and parent selection URL, as `run-plugin cachekey.so` after every `REMAP` rule."
         return f"This section processes requests/responses at the `{self.hook_name}` hook point in ATS."
 
     @classmethod
     def from_hook(cls, hook_name: str) -> Self:
         for section in cls:
-            if section.hook_name == hook_name:
+            if section.has_own_hook and section.hook_name == hook_name:
                 return section
         raise ValueError(f"No section found for hook '{hook_name}'")
 

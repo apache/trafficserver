@@ -1,0 +1,1 @@
+tests/data/cachekey/exists-bad-name.fail.input.txt:2:4: error: cache.key.headers.exists() name "X-User:Id" is not a valid header name

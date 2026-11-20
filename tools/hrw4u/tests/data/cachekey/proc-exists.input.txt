@@ -1,0 +1,9 @@
+procedure local::flag($h) {
+    cache.key.headers.exists("$h");
+}
+
+CACHEKEY {
+    if inbound.req.Host == "a.example.com" {
+        local::flag("X-User-Id");
+    }
+}

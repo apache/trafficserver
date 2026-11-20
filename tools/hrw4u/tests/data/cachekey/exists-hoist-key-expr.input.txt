@@ -1,0 +1,6 @@
+CACHEKEY {
+    cache.key.headers.exists("X-User-Id");
+    if inbound.req.Host == "a.example.com" {
+        cache.key += "{geo.COUNTRY}";
+    }
+}

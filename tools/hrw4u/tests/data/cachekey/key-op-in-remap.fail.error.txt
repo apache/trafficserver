@@ -1,0 +1,1 @@
+tests/data/cachekey/key-op-in-remap.fail.input.txt:2:4: error: cache.* key operators are only allowed in CACHEKEY

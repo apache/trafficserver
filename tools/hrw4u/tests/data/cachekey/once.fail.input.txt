@@ -1,0 +1,7 @@
+CACHEKEY {
+    cache.url.pristine();
+}
+
+CACHEKEY {
+    cache.url.query.sort();
+}

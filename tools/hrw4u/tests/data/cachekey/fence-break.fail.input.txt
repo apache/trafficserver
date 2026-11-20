@@ -1,0 +1,4 @@
+CACHEKEY {
+    cache.url.pristine();
+    break;
+}

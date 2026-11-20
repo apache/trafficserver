@@ -1,0 +1,6 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    run-plugin "cachekey.so" "--canonical-prefix=true"
+
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CLIENT-HEADER:X-Stop} ="" [NOT]
+    no-op [L]

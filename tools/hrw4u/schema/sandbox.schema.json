@@ -46,7 +46,8 @@
               "SEND_RESPONSE",
               "TXN_CLOSE",
               "VARS",
-              "SESSION_VARS"
+              "SESSION_VARS",
+              "CACHEKEY"
             ]
           },
           "uniqueItems": true
@@ -60,6 +61,7 @@
               "access",
               "add-header",
               "cache",
+              "cache.bypass",
               "cidr",
               "counter",
               "internal",

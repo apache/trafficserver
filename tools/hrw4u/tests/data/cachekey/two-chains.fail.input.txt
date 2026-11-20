@@ -1,0 +1,8 @@
+CACHEKEY {
+    if inbound.req.Host == "a.example.com" {
+        cache.key.headers.add("X-A");
+    }
+    if inbound.url.path ~ /^search/ {
+        cache.url.query.keep("q");
+    }
+}

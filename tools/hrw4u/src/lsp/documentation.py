@@ -944,6 +944,168 @@ LSP_FUNCTION_DOCUMENTATION: Final[dict[str, FunctionDoc]] = {
         usage_context="Used in conditional expressions for cache-based routing and debugging",
         examples=["if cache() {\n    // Handle cached response\n}", "!cache() && inbound.method == \"GET\""],
     ),
+    "cache.bypass": FunctionDoc(
+        name="Cache Bypass",
+        category="Cache Statement",
+        description="Skips the cache for this request: no lookup and no store.",
+        syntax="cache.bypass()",
+        maps_to="set-config \"proxy.config.http.cache.http\" 0",
+        usage_context="REMAP only. Allowed inside an if.",
+        examples=["if !inbound.req.X-Region {\n    cache.bypass();\n}"],
+    ),
+    "cache.url.pristine": FunctionDoc(
+        name="Cache Key Pristine URL",
+        category="Cache Key Statement",
+        description="Builds the cache key from the client's original URL, so URL edits in REMAP don't change the key.",
+        syntax="cache.url.pristine()",
+        maps_to="cachekey.so --uri-type=pristine",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        examples=["cache.url.pristine();"],
+    ),
+    "cache.url.canonical": FunctionDoc(
+        name="Cache Key Canonical Prefix",
+        category="Cache Key Statement",
+        description="Starts the key with scheme://host:port instead of cachekey.so's default /host/port. Can't be combined with cache.key.prefix.",
+        syntax="cache.url.canonical()",
+        maps_to="cachekey.so --canonical-prefix=true",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        examples=["cache.url.canonical();"],
+    ),
+    "cache.key.prefix": FunctionDoc(
+        name="Cache Key Prefix",
+        category="Cache Key Assignment",
+        description="Replaces the /host/port at the start of the key with a fixed string, so several hosts can share cache entries. Static: no {...} values. One value per branch. Can't be combined with cache.url.canonical().",
+        syntax="cache.key.prefix = \"<prefix>\"",
+        maps_to="cachekey.so --static-prefix=<prefix>",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        examples=["cache.key.prefix = \"assets.example.com/443\";"],
+    ),
+    "cache.url.query.remove": FunctionDoc(
+        name="Cache Key Query Remove",
+        category="Cache Key Statement",
+        description="Drops the named query parameters from the cache key. Can't be combined with cache.url.query.keep() or cache.url.query = \"\".",
+        syntax="cache.url.query.remove(\"a\", \"b\")",
+        maps_to="cachekey.so --exclude-params=a,b",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc("names", "string", "One or more names, each its own argument, case-sensitive. Static: no {...} values.")
+        ],
+        examples=["cache.url.query.remove(\"guid\", \"utm_source\");"],
+    ),
+    "cache.url.query.keep": FunctionDoc(
+        name="Cache Key Query Keep",
+        category="Cache Key Statement",
+        description="Keeps only the named query parameters in the cache key and drops the rest. Can't be combined with cache.url.query.remove() or cache.url.query = \"\".",
+        syntax="cache.url.query.keep(\"a\", \"b\")",
+        maps_to="cachekey.so --include-params=a,b",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc("names", "string", "One or more names, each its own argument, case-sensitive. Static: no {...} values.")
+        ],
+        examples=["cache.url.query.keep(\"term\", \"media\");"],
+    ),
+    "cache.url.query.sort": FunctionDoc(
+        name="Cache Key Query Sort",
+        category="Cache Key Statement",
+        description="Sorts the query parameters in the cache key, so parameter order doesn't split the cache.",
+        syntax="cache.url.query.sort()",
+        maps_to="cachekey.so --sort-params=true",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        examples=["cache.url.query.sort();"],
+    ),
+    "cache.url.query": FunctionDoc(
+        name="Cache Key Query",
+        category="Cache Key Assignment",
+        description="Set to \"\" to drop the whole query string from the cache key. \"\" is the only value allowed. Can't be combined with cache.url.query.keep() or remove().",
+        syntax="cache.url.query = \"\"",
+        maps_to="cachekey.so --remove-all-params=true",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        examples=["cache.url.query = \"\";"],
+    ),
+    "cache.url.path": FunctionDoc(
+        name="Cache Key Path",
+        category="Cache Key Assignment",
+        description="Set to \"\" to drop the URL path from the cache key. \"\" is the only value allowed.",
+        syntax="cache.url.path = \"\"",
+        maps_to="cachekey.so --remove-path=true",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        examples=["cache.url.path = \"\";"],
+    ),
+    "cache.key.headers.add": FunctionDoc(
+        name="Cache Key Headers",
+        category="Cache Key Statement",
+        description="Adds the named request headers to the cache key. @ headers work, so a value set earlier in REMAP can be keyed on.",
+        syntax="cache.key.headers.add(\"H1\", \"H2\")",
+        maps_to="cachekey.so --include-headers=H1,H2",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc(
+                "names",
+                "string",
+                "One or more header names, each its own argument, case-insensitive. @Hrw4u- names are the compiler's. "
+                "Static: no {...} values.",
+            )
+        ],
+        examples=["cache.key.headers.add(\"X-Region\", \"@Geo-Country\");"],
+    ),
+    "cache.key.cookies.add": FunctionDoc(
+        name="Cache Key Cookies",
+        category="Cache Key Statement",
+        description="Adds the named cookies to the cache key. A missing cookie is left out of the key.",
+        syntax="cache.key.cookies.add(\"c1\", \"c2\")",
+        maps_to="cachekey.so --include-cookies=c1,c2",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc("names", "string", "One or more names, each its own argument, case-sensitive. Static: no {...} values.")
+        ],
+        examples=["cache.key.cookies.add(\"session\", \"locale\");"],
+    ),
+    "cache.key.headers.exists": FunctionDoc(
+        name="Cache Key Header Presence",
+        category="Cache Key Statement",
+        description=("Keys on whether each named request header is present, not on its value. An empty header counts as absent."),
+        syntax="cache.key.headers.exists(\"H1\", \"H2\")",
+        maps_to="set-header @Hrw4u-Header-H1 \"1\" if H1 is present; cachekey.so --include-headers=@Hrw4u-Header-H1",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc(
+                "names",
+                "string",
+                "One or more header names, each its own argument, case-insensitive. @ headers work too, except the compiler's "
+                "@Hrw4u- ones. Static: no {...} values.",
+            )
+        ],
+        examples=["cache.key.headers.exists(\"X-User-Id\");"],
+    ),
+    "cache.key.cookies.exists": FunctionDoc(
+        name="Cache Key Cookie Presence",
+        category="Cache Key Statement",
+        description=("Keys on whether each named cookie is present, not on its value. An empty cookie (name=) counts as absent."),
+        syntax="cache.key.cookies.exists(\"c1\", \"c2\")",
+        maps_to="set-header @Hrw4u-Cookie-c1 \"1\" if c1 is present; cachekey.so --include-headers=@Hrw4u-Cookie-c1",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        parameters=[
+            ParameterDoc(
+                "names",
+                "string",
+                "One or more cookie names, each its own argument. Two names that differ only in case are an error. "
+                "Static: no {...} values.",
+            )
+        ],
+        examples=["cache.key.cookies.exists(\"session\");"],
+    ),
+    "cache.key": FunctionDoc(
+        name="Cache Key",
+        category="Cache Key Assignment",
+        description=(
+            "Adds a computed value to the key: the compiler copies it to a numbered @Hrw4u-Key-NN header and keys on that "
+            "header. A CACHEKEY section allows at most 99 values."
+        ),
+        syntax="cache.key += \"<expr>\"",
+        maps_to="set-header @Hrw4u-Key-01 \"<expr>\" and cachekey.so --include-headers=@Hrw4u-Key-01",
+        usage_context="CACHEKEY only. Allowed in its if/elif/else chain.",
+        examples=["cache.key += \"{inbound.req.@Geo-Country}\";"],
+    ),
     "cidr": FunctionDoc(
         name="CIDR Network Function",
         category="Network Function",

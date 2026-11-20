@@ -1,0 +1,4 @@
+CACHEKEY {
+    cache.key.prefix = "assets.example.com";
+    cache.url.canonical();
+}

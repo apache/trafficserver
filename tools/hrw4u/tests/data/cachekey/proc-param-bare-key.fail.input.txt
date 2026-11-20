@@ -1,0 +1,7 @@
+procedure local::part($v) {
+    cache.key += $v;
+}
+
+CACHEKEY {
+    local::part("x");
+}

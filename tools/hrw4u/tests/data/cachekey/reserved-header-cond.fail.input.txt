@@ -1,0 +1,5 @@
+CACHEKEY {
+    if inbound.req.@Hrw4u-Key-01 == "GET" {
+        cache.key += "{inbound.req.X-Region}";
+    }
+}
