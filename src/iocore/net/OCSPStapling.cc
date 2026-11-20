@@ -21,6 +21,8 @@
 
 #include "P_OCSPStapling.h"
 
+#include <algorithm>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -762,13 +764,11 @@ certinfo_map_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*i
     return;
   }
 
-#ifdef OPENSSL_IS_BORINGSSL
-  // The map owns a reference on each X509 key under BoringSSL; the certinfo
-  // values are freed by their unique_ptr destructors when the map is deleted.
+  // The map owns a reference on each X509 key; the certinfo values are freed by their unique_ptr destructors when the map
+  // is deleted.
   for (auto &iter : *map) {
     X509_free(iter.first);
   }
-#endif
   delete map;
 }
 
@@ -961,9 +961,8 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
     goto err;
   }
 
-#ifdef OPENSSL_IS_BORINGSSL
+  // Hold the certificate, so the key stays valid after the context stops serving it.
   X509_up_ref(cert);
-#endif
 
   map->emplace(cert, std::move(cinf_ptr));
   SSL_CTX_set_ex_data(ctx, ssl_stapling_index, map);
@@ -984,6 +983,46 @@ err:
   }
 
   return false;
+}
+
+void
+ssl_stapling_remove_replaced_certs(SSL_CTX *ctx)
+{
+  auto *map = static_cast<certinfo_map *>(SSL_CTX_get_ex_data(ctx, ssl_stapling_index));
+  if (map == nullptr) {
+    return;
+  }
+
+#ifdef HAVE_NATIVE_DUAL_CERT_SUPPORT
+  // The context can serve several certificates and holds the very objects stapling was set up with, so identity tells which
+  // it still serves, as in ssl_callback_ocsp_stapling. Walking them moves the context's current certificate; put it back.
+  std::vector<X509 *> served;
+  X509               *current = SSL_CTX_get0_certificate(ctx);
+  for (int more = SSL_CTX_set_current_cert(ctx, SSL_CERT_SET_FIRST); more;
+       more     = SSL_CTX_set_current_cert(ctx, SSL_CERT_SET_NEXT)) {
+    if (X509 *cert = SSL_CTX_get0_certificate(ctx); cert != nullptr) {
+      served.push_back(cert);
+    }
+  }
+  if (current != nullptr && !SSL_CTX_select_current_cert(ctx, current)) {
+    Warning("OCSP: could not restore the current certificate of SSL_CTX %p", ctx);
+  }
+  auto is_served = [&served](X509 *cert) { return std::find(served.begin(), served.end(), cert) != served.end(); };
+#else
+  // The context serves one certificate, the replacement just loaded, so every entry belongs to a certificate it no longer
+  // serves. Matching by content would keep a byte-identical replacement's old entry beside the new one.
+  auto is_served = [](X509 *) { return false; };
+#endif
+
+  for (auto iter = map->begin(); iter != map->end();) {
+    if (!is_served(iter->first)) {
+      Dbg(dbg_ctl_ssl_ocsp, "stopped stapling for %s, which the SSL_CTX %p no longer serves", iter->second->certname, ctx);
+      X509_free(iter->first);
+      iter = map->erase(iter);
+    } else {
+      ++iter;
+    }
+  }
 }
 
 static certinfo_map *
