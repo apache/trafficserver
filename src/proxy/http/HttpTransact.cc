@@ -5876,7 +5876,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
     if (!HttpTransactHeaders::is_this_method_supported(scheme, method)) {
       return RequestError_t::METHOD_NOT_SUPPORTED;
     }
-    if ((method == HTTP_WKSIDX_CONNECT) && !s->transparent_passthrough &&
+    if ((method == HTTP_WKSIDX_CONNECT) && !s->transparent_passthrough && s->txn_conf->forward_connect_method != 1 &&
         (!is_port_in_range(incoming_hdr->url_get()->port_get(), s->http_config_param->connect_ports))) {
       TxnDbg(dbg_ctl_http_trans, "Rejected a CONNECT to port %d not in connect_ports", incoming_hdr->url_get()->port_get());
       return RequestError_t::BAD_CONNECT_PORT;
