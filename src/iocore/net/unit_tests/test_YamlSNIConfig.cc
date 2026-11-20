@@ -34,6 +34,8 @@
 
 #include "swoc/bwf_base.h"
 #include <netinet/in.h>
+#include <cstdlib>
+#include <unistd.h>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 
@@ -185,4 +187,94 @@ TEST_CASE("YamlConfig handles bad ports appropriately.")
   std::string expected;
   swoc::bwprint(expected, "Error: exception - yaml-cpp: error at line 20, column 5: bad port range: {}\n", port_str);
   CHECK(errorstream.str() == expected);
+}
+
+namespace
+{
+// Load an sni.yaml holding one route and return the loader's error text, which
+// is empty when the file loads.
+std::string
+load_route(std::string const &fqdn, std::string const &key, std::string const &destination)
+{
+  char path[] = "/tmp/test_YamlSNIConfig_route_XXXXXX";
+  int  fd     = mkstemp(path);
+  REQUIRE(fd >= 0);
+  std::string body = "sni:\n- fqdn: \"" + fqdn + "\"\n  " + key + ": \"" + destination + "\"\n";
+  REQUIRE(write(fd, body.data(), body.size()) == static_cast<ssize_t>(body.size()));
+  close(fd);
+
+  YamlSNIConfig     conf{};
+  std::stringstream errorstream;
+  errorstream << conf.loader(path);
+  unlink(path);
+  return errorstream.str();
+}
+
+std::string
+bad_port_error(std::string const &fqdn, std::string const &destination)
+{
+  return "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination + "\"";
+}
+} // namespace
+
+TEST_CASE("YamlSNIConfig accepts a tunnel destination port the tunnel reads as written")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  std::string destination{GENERATE("backend.example.com", "backend.example.com:1", "backend.example.com:443",
+                                   "backend.example.com:65535", "backend.example.com:{inbound_local_port}",
+                                   "backend.example.com:{proxy_protocol_port}", "[::1]:443", "[::1]", "::1")};
+
+  CAPTURE(key, destination);
+  CHECK(load_route("route.example.com", key, destination).empty());
+}
+
+TEST_CASE("YamlSNIConfig accepts a tunnel destination port filled in from a wildcard fqdn")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  auto [fqdn, destination] = GENERATE(table<std::string, std::string>({
+    {"*.example.com", "$1.backend.example.com:443"},
+    {"*.example.com", "backend.example.com:$1"    },
+    {"*.example.com", "backend.example.com:4$1"   },
+    {"*.example.*",   "backend.example.com:$2"    },
+    {"*.example.com", "[::1]:$1"                  },
+  }));
+
+  CAPTURE(key, fqdn, destination);
+  CHECK(load_route(fqdn, key, destination).empty());
+}
+
+TEST_CASE("YamlSNIConfig rejects a tunnel destination port the tunnel would misread")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  auto [fqdn, destination] = GENERATE(table<std::string, std::string>({
+    {"route.example.com", "backend.example.com:"                     },
+    {"route.example.com", "backend.example.com:0"                    },
+    {"route.example.com", "backend.example.com:65536"                },
+    {"route.example.com", "backend.example.com:99999999999"          },
+    {"route.example.com", "backend.example.com:443x"                 },
+    {"route.example.com", "backend.example.com:-443"                 },
+    {"route.example.com", "backend.example.com:0443"                 },
+    {"route.example.com", "backend.example.com:08080"                },
+    {"route.example.com", "backend.example.com:{inbound_port}"       },
+    {"route.example.com", "backend.example.com:{inbound_local_port}x"},
+    {"route.example.com", "[::1]:"                                   },
+    {"route.example.com", "[::1]:https"                              },
+    {"route.example.com", "[::1]x"                                   },
+    {"route.example.com", "[::1"                                     },
+    {"route.example.com", "backend.example.com:$1"                   },
+    {"*.example.com",     "backend.example.com:$"                    },
+    {"*.example.com",     "backend.example.com:$x"                   },
+    {"*.example.com",     "backend.example.com:$1x"                  },
+    {"*.example.com",     "backend.example.com:x$1"                  },
+    {"*.example.com",     "backend.example.com:0$1"                  },
+    {"*.example.com",     "backend.example.com:$1$1"                 },
+    {"*.example.com",     "backend.example.com:$0"                   },
+    {"*.example.com",     "backend.example.com:$2"                   },
+    {"*.example.com",     "backend.example.com:$10"                  },
+    {"*.example.com",     "backend.example.com:$4294967296"          },
+    {"a.*.example.com",   "backend.example.com:$1"                   },
+  }));
+
+  CAPTURE(key, fqdn, destination);
+  CHECK(load_route(fqdn, key, destination).find(bad_port_error(fqdn, destination)) != std::string::npos);
 }

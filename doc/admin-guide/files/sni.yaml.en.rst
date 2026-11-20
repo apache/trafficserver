@@ -396,6 +396,13 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    strings can be specified. The match group number can be used in combination with either
                                                    one of those.
 
+                                                   If the destination names a port, the port must be a number from 1 to 65535 with no
+                                                   leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``, or a match group
+                                                   such as ``$1``, optionally after some digits. A match group in the port must name a
+                                                   ``*`` in a wildcard ``fqdn``. Any other port, such as ``443x``, ``0443`` or ``99999``,
+                                                   stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the reload, and |TS|
+                                                   keeps the previous configuration.
+
                                                    For each of these tunnel targets, unless the port is explicitly specified in the target
                                                    (e.g., if the port is derived from the Proxy Protocol header), the port must be
                                                    specified in the :ts:cv:`proxy.config.http.connect_ports` configuration in order for
@@ -407,7 +414,8 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    intentionally tunnel to one of those ranges, add an explicit outbound allow rule
                                                    before the default deny rule.
 
-forward_route                            Inbound   Destination as an FQDN and port, separated by a colon ``:``.
+forward_route                            Inbound   Destination as an FQDN and port, separated by a colon ``:``. The port follows
+                                                   the same rules as for ``tunnel_route``.
 
                                                    This is similar to tunnel_route, but it terminates the TLS connection and forwards the
                                                    decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not
@@ -415,7 +423,8 @@ forward_route                            Inbound   Destination as an FQDN and po
                                                    The upstream destination is subject to outbound :file:`ip_allow.yaml` policy before
                                                    |TS| opens the connection.
 
-partial_blind_route                      Inbound   Destination as an FQDN and port, separated by a colon ``:``.
+partial_blind_route                      Inbound   Destination as an FQDN and port, separated by a colon ``:``. The port follows
+                                                   the same rules as for ``tunnel_route``.
 
                                                    This is similar to forward_route in that |TS| terminates the incoming TLS connection.
                                                    In addition partial_blind_route creates a new TLS connection to the specified origin.
