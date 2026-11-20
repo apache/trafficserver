@@ -1329,6 +1329,9 @@ template <typename METRIC, typename PAYLOAD>
 DiscreteSpace<METRIC, PAYLOAD> &
 DiscreteSpace<METRIC, PAYLOAD>::erase(DiscreteSpace::range_type const &range) {
   Node *n = this->lower_node(range.min()); // current node.
+  if (nullptr == n) { // @a range starts before every range, so start at the first one.
+    n = this->head();
+  }
   while (n) {
     auto nn = next(n);            // cache in case @a n disappears.
     if (n->min() > range.max()) { // cleared the target range, done.

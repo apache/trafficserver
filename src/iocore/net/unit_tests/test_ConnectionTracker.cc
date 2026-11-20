@@ -328,3 +328,37 @@ TEST_CASE("Connection tracker client exempt list", "[libinknet][ConnectionTracke
   ConnectionTracker::clear_client_exempt_list();
   CHECK_FALSE(ConnectionTracker::is_client_exempt(addr_in));
 }
+
+TEST_CASE("Connection tracker client exempt list remove covering range", "[libinknet][ConnectionTracker]")
+{
+#if defined(TS_TEST_EXTERNAL_LIBSWOC)
+  // The erase fix is in lib/swoc/include/swoc/DiscreteRange.h, which this build does not use.
+  SKIP("built against an external libswoc, which may not have the DiscreteSpace::erase fix");
+#endif
+  test_config();
+
+  IpEndpoint covered;
+  IpEndpoint above;
+  REQUIRE(ats_ip_pton("192.168.1.100", &covered) == 0);
+  REQUIRE(ats_ip_pton("192.168.2.1", &above) == 0);
+
+  ConnectionTracker::clear_client_exempt_list();
+  swoc::IPRange host;
+  REQUIRE(host.load("192.168.1.100"));
+  CHECK(ConnectionTracker::add_client_exempt_range(host));
+  swoc::IPRange other;
+  REQUIRE(other.load("192.168.2.1"));
+  CHECK(ConnectionTracker::add_client_exempt_range(other));
+  REQUIRE(ConnectionTracker::is_client_exempt(covered));
+  REQUIRE(ConnectionTracker::is_client_exempt(above));
+
+  // Removing a network that starts below every entry un-exempts the entry it covers and
+  // leaves the entry above it.
+  swoc::IPRange net;
+  REQUIRE(net.load("192.168.1.0/24"));
+  CHECK(ConnectionTracker::remove_client_exempt_range(net));
+  CHECK_FALSE(ConnectionTracker::is_client_exempt(covered));
+  CHECK(ConnectionTracker::is_client_exempt(above));
+
+  ConnectionTracker::clear_client_exempt_list();
+}
