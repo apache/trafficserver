@@ -117,7 +117,8 @@ TS_SSL_VERIFY_CLIENT_HOOK
 This hook is called when a client connects to |TS| and presents a client certificate in the case of
 a mutual TLS handshake.  The callback can use the TSVConn argument and fetch the TSSslVerifyCTX
 object using the :func:`TSVConnSslVerifyCTXGet()` method and fetch the peer's certificates to make
-any additional checks.
+any additional checks.  This hook is certificate-only and is not invoked when the client
+authenticates with an RFC 7250 raw public key.
 
 Processing will continue regardless of whether the hook callback executes
 :func:`TSVConnReenable()` since the OpenSSL implementation does not allow for pausing processing
@@ -130,7 +131,8 @@ TS_SSL_VERIFY_SERVER_HOOK
 This hook is called when a Traffic Server connects to an origin and the origin presents a
 certificate.  The callback can use the TSVConn argument and fetch the TSSslVerifyCTX object using
 the :func:`TSVConnSslVerifyCTXGet()` method and fetch the peer's certificates to make any
-additional checks.
+additional checks.  This hook is certificate-only and is not invoked when the origin
+authenticates with an RFC 7250 raw public key.
 
 Processing will continue regardless of whether the hook callback executes
 :func:`TSVConnReenable()` since the OpenSSL implementation does not allow for pausing processing

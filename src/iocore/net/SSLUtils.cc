@@ -403,8 +403,8 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   if (EVP_PKEY *peer_rpk = X509_STORE_CTX_get0_rpk(ctx); peer_rpk != nullptr) {
     // The client presented a raw public key instead of a certificate: there's no chain and no
     // hostname to check, so pinning against the configured trusted keys stands in for preverify_ok.
-    // The hook runs for every key that reaches the pin decision, and may add further rejection, but
-    // can't turn a failed pin match into acceptance.
+    //
+    // Legacy TS_SSL_VERIFY_CLIENT_HOOK is certificate-only and is not invoked for a raw public key.
     //
     // x509_verify_rpk() in crypto/x509/x509_vfy.c may first invoke this callback for a key below the
     // security level; that invocation is refused without calling the hook. Only the invocation that follows, with
@@ -421,11 +421,6 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
       X509_STORE_CTX_set_error(ctx, X509_V_OK);
     } else {
       warn_client_rpk_mismatch(servername);
-    }
-    // No store context for the hook, as on BoringSSL: there is no certificate in it to inspect.
-    if (tbs->verify_certificate(nullptr) == 1) {
-      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client raw public key check for %s.", servername);
-      return false;
     }
     return pin_ok;
   }
@@ -491,14 +486,6 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     Dbg(dbg_ctl_ssl_verify, "Client authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (!pin_ok) {
       warn_client_rpk_mismatch(servername);
-    }
-    // As above: the hook always runs, and can add rejection but not override a failed pin match.
-    if (tbs->verify_certificate(nullptr) == 1) {
-      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client raw public key check for %s.", servername);
-      *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
-      return ssl_verify_invalid;
-    }
-    if (!pin_ok) {
       *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
       return ssl_verify_invalid;
     }
