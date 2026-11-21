@@ -211,6 +211,7 @@ UrlRewrite::_destroyTable(std::unique_ptr<URLTable> &h_table)
     for (auto &it : *h_table) {
       delete it.second;
     }
+    h_table->clear();
   }
 }
 
@@ -277,7 +278,7 @@ UrlRewrite::_tableLookup(std::unique_ptr<URLTable> &h_table, URL *request_url, i
   url_mapping         *um        = nullptr;
   int                  ht_result = 0;
 
-  if (auto it = h_table->find(request_host); it != h_table->end()) {
+  if (auto it = h_table->find(std::string_view{request_host, static_cast<size_t>(request_host_len)}); it != h_table->end()) {
     ht_result = 1;
     ht_entry  = it->second;
   }
@@ -876,8 +877,8 @@ UrlRewrite::TableInsert(std::unique_ptr<URLTable> &h_table, url_mapping *mapping
       return false;
     }
   } else {
-    ht_contents = new UrlMappingPathIndex();
-    h_table->emplace(src_host, ht_contents);
+    ht_contents = new UrlMappingPathIndex(src_host);
+    h_table->emplace(ht_contents->host(), ht_contents);
   }
   if (!ht_contents->Insert(mapping)) {
     // Trie::Insert only fails due to an attempt to add a duplicate entry.

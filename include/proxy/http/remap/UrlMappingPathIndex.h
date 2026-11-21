@@ -25,6 +25,8 @@
 #include "tscore/ink_platform.h"
 
 #include <map>
+#include <string>
+#include <string_view>
 
 #include "proxy/hdrs/URL.h"
 #include "proxy/http/remap/UrlMapping.h"
@@ -33,8 +35,15 @@
 class UrlMappingPathIndex
 {
 public:
-  UrlMappingPathIndex() {}
+  explicit UrlMappingPathIndex(std::string_view host) : m_host(host) {}
   virtual ~UrlMappingPathIndex();
+
+  std::string_view
+  host() const
+  {
+    return m_host;
+  }
+
   bool         Insert(url_mapping *mapping);
   url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
   void         Print() const;
@@ -72,6 +81,7 @@ private:
 
   using UrlMappingGroup = std::map<UrlMappingTrieKey, UrlMappingTrie *>;
   UrlMappingGroup m_tries;
+  std::string     m_host;
 
   // make copy-constructor and assignment operator private
   // till we properly implement them

@@ -60,7 +60,7 @@ enum class mapping_type {
 class UrlRewrite
 {
 public:
-  using URLTable = std::unordered_map<std::string, UrlMappingPathIndex *>;
+  using URLTable = std::unordered_map<std::string_view, UrlMappingPathIndex *>;
   UrlRewrite()   = default;
   ~UrlRewrite();
 
