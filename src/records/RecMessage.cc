@@ -308,6 +308,11 @@ RecMessageReadFromDisk(const char *fpath)
       bytes_read != msg_hdr.o_end) {
     goto Lerror;
   }
+  // Every later bound comes from the header in msg, so it must be the one checked above, not a copy of a file
+  // that changed between the two reads.
+  if (memcmp(msg, &msg_hdr, sizeof(msg_hdr)) != 0) {
+    goto Lerror;
+  }
 
   goto Ldone;
 
