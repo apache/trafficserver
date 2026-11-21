@@ -190,9 +190,13 @@ resolve_string(RecMessage *msg, const RecRecord *r, Char *&str)
     return true;
   }
 
-  intptr_t const rel    = reinterpret_cast<intptr_t>(str);
+  // Bound rel before adding it, so a wild offset from the file cannot overflow the sum.
+  intptr_t const rel = reinterpret_cast<intptr_t>(str);
+  if (rel < 0 || rel > msg->o_end) {
+    return false;
+  }
   intptr_t const offset = (reinterpret_cast<const char *>(r) - reinterpret_cast<const char *>(msg)) + rel;
-  if (rel < 0 || rel > msg->o_end || !fits_in_message(msg, offset, 1)) {
+  if (!fits_in_message(msg, offset, 1)) {
     return false;
   }
 
