@@ -52,12 +52,13 @@ format_iso8601_utc(time_t epoch_secs, int ms, char *buf, size_t size)
     return 0;
   }
 
-  int year = utc.tm_year + 1900;
-
-  // The format has room for exactly four year digits.
-  if (year < 0 || year > 9999) {
+  // The format has room for exactly four year digits. tm_year counts from 1900 and is compared before adding 1900, because
+  // a far time_t can leave it close to INT_MAX.
+  if (utc.tm_year < -1900 || utc.tm_year > 9999 - 1900) {
     return 0;
   }
+
+  int year = utc.tm_year + 1900;
 
   // Built from the fields rather than with strftime, because %Y does not zero pad years before 1000 in every C library.
   snprintf(buf, size, "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", year, utc.tm_mon + 1, utc.tm_mday, utc.tm_hour, utc.tm_min, utc.tm_sec,

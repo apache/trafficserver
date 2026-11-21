@@ -79,6 +79,20 @@ TEST_CASE("ISO 8601 UTC timestamps", "[iso8601]")
     REQUIRE(format(-1) == "1969-12-31T23:59:59.999Z");
   }
 
+  SECTION("sub-millisecond parts are truncated, not rounded")
+  {
+    char   buf[ts::ISO8601_TIMESTAMP_LEN + 1];
+    size_t n = ts::format_iso8601_utc(system_clock::time_point{microseconds{999'999}}, buf, sizeof(buf));
+
+    REQUIRE(std::string(buf, n) == "1970-01-01T00:00:00.999Z");
+  }
+
+  SECTION("years whose tm_year is near INT_MAX are rejected")
+  {
+    // gmtime_r succeeds here with a tm_year of INT_MAX - 100, so adding 1900 to it would overflow.
+    REQUIRE(format(time_t{67'768'033'004'467'200}, 0).empty());
+  }
+
   SECTION("years are zero padded to four digits")
   {
     REQUIRE(format(time_t{-30'627'458'704}, 789) == "0999-06-15T12:34:56.789Z");

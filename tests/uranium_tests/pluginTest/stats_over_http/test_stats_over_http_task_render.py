@@ -55,7 +55,8 @@ def check_task_thread_renders(ats: ATS) -> None:
     output = ats.traffic_out.read_text(errors="replace")
     assert re.search(r"\[ET_TASK \d+\] .*Rendered stats instance", output), \
         f"{ats.name} should render the stats on a task thread."
-    assert not re.search(r"^\[[^\]]*\] (?!\[ET_TASK \d+\] ).*Rendered stats instance", output, re.MULTILINE), \
+    assert not re.search(
+        r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z (?!\[ET_TASK \d+\] ).*Rendered stats instance", output, re.MULTILINE), \
         f"{ats.name} should render the stats only on a task thread."
 
 
