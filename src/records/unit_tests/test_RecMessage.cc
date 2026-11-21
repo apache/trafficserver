@@ -236,9 +236,11 @@ TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the sna
   }
   SECTION("a name that is not terminated inside the snapshot")
   {
-    RecMessage *msg  = marshal_records(1);
-    RecRecord  *r    = element_record(first_element(msg));
-    char       *last = reinterpret_cast<char *>(msg) + msg->o_end - 1;
+    RecMessage *msg = marshal_records(1);
+    RecRecord  *r   = element_record(first_element(msg));
+    // o_end still spans the whole allocation, but only the bytes up to o_write reach the file, so the name must
+    // point at the last of those for the read-back offset to pass the bounds check and leave one unterminated byte.
+    char *last = reinterpret_cast<char *>(msg) + msg->o_write - 1;
 
     *last   = 'x';
     r->name = reinterpret_cast<const char *>(last - reinterpret_cast<char *>(r));
