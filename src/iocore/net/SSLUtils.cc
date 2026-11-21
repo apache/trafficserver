@@ -1520,25 +1520,33 @@ SSLMultiCertConfigLoader::default_server_ssl_ctx()
   return SSL_CTX_new(SSLv23_server_method());
 }
 
-static bool
-SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data, int secret_data_len)
+scoped_PKEY
+TLSReadPrivateKey(SSL_CTX *ctx, std::string_view key_path, std::string_view secret)
 {
-  // SSL_CTX_use_PrivateKey() takes its own reference on the key, so this
-  // reference must be released on every exit.
-  scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
+  scoped_BIO bio(BIO_new_mem_buf(secret.data(), secret.size()));
+  if (bio == nullptr) {
+    return nullptr;
+  }
 
   pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
   void            *u           = SSL_CTX_get_default_passwd_cb_userdata(ctx);
 
-  scoped_PKEY const pkey{PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u)};
-  if (nullptr == pkey) {
-    Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
-        secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
-    return false;
+  scoped_PKEY pkey{PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u)};
+  if (pkey == nullptr) {
+    std::string_view const source = key_path.empty() ? std::string_view{"[empty key path]"} : key_path;
+    Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %.*s",
+        static_cast<int>(std::min(secret.size(), size_t{50})), secret.data(), static_cast<int>(source.size()), source.data());
   }
-  if (!SSL_CTX_use_PrivateKey(ctx, pkey.get())) {
-    Dbg(dbg_ctl_ssl_load, "failed to attach server private key loaded from %s",
-        (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+  return pkey;
+}
+
+// Sets the key as the context's private key and checks that it matches the certificate already set.
+static bool
+TLSUsePrivateKey(SSL_CTX *ctx, EVP_PKEY *pkey, std::string_view key_path)
+{
+  if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
+    std::string_view const source = key_path.empty() ? std::string_view{"[empty key path]"} : key_path;
+    Dbg(dbg_ctl_ssl_load, "failed to attach server private key loaded from %.*s", static_cast<int>(source.size()), source.data());
     return false;
   }
   if (!SSL_CTX_check_private_key(ctx)) {
@@ -3225,7 +3233,8 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       Dbg(dbg_ctl_ssl_load, "empty private key for public key %s", cert_names_list[i].c_str());
       secret_key_data = std::move(secret_data);
     }
-    if (!SSLPrivateKeyHandler(ctx, keyPath.c_str(), secret_key_data.data(), secret_key_data.size())) {
+    if (scoped_PKEY const pkey = TLSReadPrivateKey(ctx, keyPath, secret_key_data);
+        pkey == nullptr || !TLSUsePrivateKey(ctx, pkey.get(), keyPath)) {
       SSLError("failed to load certificate: %s of length %ld with key path: %s", cert_names_list[i].c_str(), secret_key_data.size(),
                keyPath.empty() ? "[empty key path]" : keyPath.c_str());
       return false;
