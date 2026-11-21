@@ -141,7 +141,7 @@ TEST_CASE("RecMessageReadFromDisk rejects a truncated header", "[librecords][Rec
 namespace
 {
 RecMessage *
-marshal_records(int count)
+marshal_records(int count, const char *name = "proxy.process.test.snapshot")
 {
   RecMessage *msg = RecMessageAlloc(RECG_NULL);
 
@@ -151,7 +151,7 @@ marshal_records(int count)
     RecRecordInit(&rec);
     rec.rec_type     = RECT_PROCESS;
     rec.data_type    = RECD_INT;
-    rec.name         = "proxy.process.test.snapshot";
+    rec.name         = name;
     rec.data.rec_int = i;
     msg              = RecMessageMarshal_Realloc(msg, &rec);
   }
@@ -204,7 +204,9 @@ TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the sna
   }
   SECTION("a next element that does not come after the current one")
   {
-    RecMessage *msg = marshal_records(2);
+    // A record without a name has no string offset to resolve, so reading the first element again would succeed;
+    // only the ordering check can reject it.
+    RecMessage *msg = marshal_records(2, nullptr);
 
     first_element(msg)->o_next = msg->o_start;
 
