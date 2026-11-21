@@ -130,11 +130,9 @@ Log::change_configuration()
   // Make the new LogConfig active.
   ink_atomic_swap(&Log::config, new_config);
 
-  // XXX There is a race condition with API objects. If TSTextLogObjectCreate()
-  // is called before the Log::config swap, then it will be blocked on the lock
-  // on the *old* LogConfig and register it's LogObject with that manager. If
-  // this happens, then the new TextLogObject will be immediately lost. Traffic
-  // Server would crash the next time the plugin referenced the freed object.
+  // TSTextLogObjectCreate() can wait for this mutex with a pointer to prev_config.
+  // The retired manager makes it use the new config instead.
+  prev_config->log_object_manager.retire();
 
   ink_mutex_release(prev_config->log_object_manager._APImutex);
   Dbg(dbg_ctl_log_api_mutex, "Log::change_configuration released api mutex");

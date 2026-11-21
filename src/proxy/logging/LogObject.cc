@@ -941,6 +941,10 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
 {
   if (is_api_object) {
     ACQUIRE_API_MUTEX("A LogObjectManager::_manage_object");
+    if (_retired) {
+      RELEASE_API_MUTEX("R LogObjectManager::_manage_object");
+      return MANAGER_RETIRED;
+    }
   }
 
   int retVal = _solve_internal_filename_conflicts(log_object, maxConflicts);
