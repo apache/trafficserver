@@ -218,7 +218,7 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
   intptr_t const    ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecord);
 
   auto corrupt = []() {
-    Warning("Persistent statistics file records.stat is corrupted. Ignoring the rest of the file\n");
+    Warning("Persistent statistics file records.snap is corrupted. Ignoring the rest of the file\n");
     return REC_ERR_FAIL;
   };
 
