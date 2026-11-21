@@ -248,8 +248,15 @@ IncludeUrlValidator::splitUrl(string_view url, string_view &scheme, string_view 
     }
     host = authority.substr(1, rb - 1);
   } else {
+    // Outside brackets only one ':' (the port separator) is valid. The ATS URL
+    // parser takes an unbracketed multi-colon authority such as
+    // "fd00:ec2::254" as an IPv6 host, so stopping at the first ':' here would
+    // classify "fd00" instead of the address that is actually fetched.
     auto colon = authority.find(':');
-    host       = (colon == string_view::npos) ? authority : authority.substr(0, colon);
+    if (colon != string_view::npos && authority.find(':', colon + 1) != string_view::npos) {
+      return false;
+    }
+    host = (colon == string_view::npos) ? authority : authority.substr(0, colon);
   }
   return !host.empty();
 }

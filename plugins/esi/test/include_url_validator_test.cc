@@ -61,6 +61,13 @@ TEST_CASE("splitUrl parses scheme and host")
   REQUIRE(host == "2001:db8::1");
   REQUIRE(IncludeUrlValidator::splitUrl("http://[::1]", scheme, host));
   REQUIRE(host == "::1");
+
+  // An unbracketed IPv6 literal is fetched as that address, so it must not be
+  // split at its first ':' into a hostname such as "fd00".
+  REQUIRE_FALSE(IncludeUrlValidator::splitUrl("http://fd00:ec2::254/latest/meta-data/", scheme, host));
+  REQUIRE_FALSE(IncludeUrlValidator::splitUrl("http://fe80::1/", scheme, host));
+  REQUIRE_FALSE(IncludeUrlValidator::splitUrl("http://fc00:0:0:0:0:0:0:1:8080/x", scheme, host));
+  REQUIRE_FALSE(IncludeUrlValidator::splitUrl("http://user:pw@example.com:80:80/x", scheme, host));
 }
 
 TEST_CASE("isPrivateHost recognizes private ranges")
@@ -134,6 +141,9 @@ TEST_CASE("validate enforces scheme and private-host denylist by default")
   // RFC 6874 IPv6 zone id: URL-encoded "%25" appears in the host after
   // splitUrl strips the brackets; the scoped form must be rejected.
   REQUIRE(v.validate("http://[fe80::1%25eth0]/x") == IncludeUrlValidator::PRIVATE_HOST);
+  // Unbracketed IPv6 literals in private ranges must not pass as hostnames.
+  REQUIRE(v.validate("http://fd00:ec2::254/latest/meta-data/") == IncludeUrlValidator::MALFORMED);
+  REQUIRE(v.validate("http://fe80::1/admin") == IncludeUrlValidator::MALFORMED);
 }
 
 TEST_CASE("validate respects allow-private-hosts escape hatch")
