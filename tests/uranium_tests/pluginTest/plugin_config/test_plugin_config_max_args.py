@@ -16,16 +16,18 @@
 
 from tools.uranium.services import ATS, Curl
 
-# plugin.config accepts up to 64 tokens per line, the plugin path included.
+# plugin.config accepts up to 64 tokens per line, the plugin path included. This mirrors MAX_PLUGIN_ARGS in
+# src/proxy/Plugin.cc and must change with it.
 MAX_PLUGIN_ARGS = 64
 
 
 def test_plugin_config_line_with_max_args(ats: ATS, curl: Curl) -> None:
     """A plugin.config line with the maximum number of tokens passes every one to the plugin.
 
-    The filler tokens make the line exactly that long, which puts the last token in the final slot
-    of the argument vector. It is the only token that enables an xdebug feature, so the X-Cache
-    header in the response shows that it reached the plugin, and nothing may be reported dropped.
+    The filler tokens make the line exactly that long, so the last token lands in the last argument
+    slot, just before the terminating nullptr. It is the only token that enables an xdebug feature,
+    so the X-Cache header in the response shows that it reached the plugin, and nothing may be
+    reported dropped.
 
     :param ats: Traffic Server instance configured or queried by this step.
     :param curl: Transport-aware curl command runner.
