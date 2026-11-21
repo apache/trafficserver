@@ -124,3 +124,24 @@ TEST_CASE("A pending DNS waiter calls back one time on a timeout", "[hostdb]")
   REQUIRE(hostDB.remove_from_pending_dns_for_hash(owner->hash.hash, owner));
   cancel_and_free(owner);
 }
+
+TEST_CASE("The DNS owner frees a cancelled pending DNS waiter", "[hostdb]")
+{
+  Client              owner_client;
+  Client              client;
+  HostDBContinuation *owner  = queue_lookup(&owner_client);
+  HostDBContinuation *waiter = queue_lookup(&client);
+  int                 refs   = client.mutex->refcount();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, client.mutex, this_ethread());
+    waiter->action.cancel();
+  }
+  owner->remove_and_trigger_pending_dns();
+
+  // A freed waiter releases its reference to the mutex of the client.
+  CHECK(client.mutex->refcount() == refs - 1);
+  CHECK(client.callbacks == 0);
+
+  cancel_and_free(owner);
+}
