@@ -570,9 +570,10 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
 
   StripeSM     *stripe = key_to_stripe(key, hostname, volume_host_rec);
   Dir           result, *last_collision = nullptr;
-  ProxyMutex   *mutex = cont->mutex.get();
-  OpenDirEntry *od    = nullptr;
-  CacheVC      *c     = nullptr;
+  ProxyMutex   *mutex      = cont->mutex.get();
+  OpenDirEntry *od         = nullptr;
+  CacheVC      *c          = nullptr;
+  bool          handed_off = false;
 
   {
     CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
@@ -608,6 +609,9 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
     case EVENT_DONE:
       return ACTION_RESULT_DONE;
     case EVENT_RETURN:
+      // Served from memory: the next handler locks the stripe straight away, so pass it this hold rather than
+      // letting another thread take the stripe in between.
+      handed_off = lock.hand_off();
       goto Lcallreturn;
     default:
       return &c->_action;
@@ -625,11 +629,16 @@ Lwriter:
     return ACTION_RESULT_DONE;
   }
   return &c->_action;
-Lcallreturn:
-  if (c->handleEvent(AIO_EVENT_DONE, nullptr) == EVENT_DONE) {
+Lcallreturn: {
+  int ret = c->handleEvent(AIO_EVENT_DONE, nullptr);
+  if (handed_off) {
+    Mutex_release_unadopted(stripe->mutex.get(), this_ethread());
+  }
+  if (ret == EVENT_DONE) {
     return ACTION_RESULT_DONE;
   }
   return &c->_action;
+}
 }
 
 // main entry point for writing of http documents

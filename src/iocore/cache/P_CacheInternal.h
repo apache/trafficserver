@@ -266,6 +266,9 @@ free_CacheEvacuateDocVC(CacheEvacuateDocVC *cont)
 inline int
 CacheVC::calluser(int event)
 {
+  if (stripe) {
+    Mutex_release_unadopted(stripe->mutex.get(), this_ethread());
+  }
   recursive++;
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
   vio.cont->handleEvent(event, &vio);
@@ -280,6 +283,9 @@ CacheVC::calluser(int event)
 inline int
 CacheVC::callcont(int event)
 {
+  if (stripe) {
+    Mutex_release_unadopted(stripe->mutex.get(), this_ethread());
+  }
   recursive++;
   ink_assert(!stripe || this_ethread() != stripe->mutex->thread_holding);
   _action.continuation->handleEvent(event, this);

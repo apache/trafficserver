@@ -443,6 +443,11 @@ CacheVC::openReadClose(int event, Event * /* e ATS_UNUSED */)
     }
     set_io_not_in_progress();
   }
+  // begin_read never preserves a single-fragment document, so unless it was marked for evacuation there is no stripe
+  // state to release.
+  if (f.single_fragment && !f.hit_evacuate) {
+    return free_CacheVC(this);
+  }
   CACHE_TRY_LOCK(lock, stripe->mutex, mutex->thread_holding);
   if (!lock.is_locked()) {
     VC_SCHED_LOCK_RETRY();
