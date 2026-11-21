@@ -37,6 +37,8 @@
 #include <catch2/reporters/catch_reporter_registrars.hpp>
 #include <catch2/interfaces/catch_interfaces_config.hpp>
 
+#include <cstdlib>
+
 struct TestListener : Catch::EventListenerBase {
   using EventListenerBase::EventListenerBase;
 
@@ -52,6 +54,8 @@ struct TestListener : Catch::EventListenerBase {
     url_init();
     mime_init();
     http_init();
+    // strategy.yaml's '#include hosts.yaml' resolves against the configuration directory.
+    setenv("PROXY_CONFIG_CONFIG_DIR", TS_SRC_DIR, 1);
     Layout::create();
     RecProcessInit(diags());
     LibRecordsConfigInit();
@@ -63,9 +67,6 @@ CATCH_REGISTER_LISTENER(TestListener);
 
 SCENARIO("TSRemapNextHopStrategy APIs during rule loading", "[strategy][api]")
 {
-  // strategy.yaml '#include hosts.yaml' resolves relative to the cwd.
-  REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
-
   NextHopStrategyFactory factory(TS_SRC_DIR "/strategy.yaml");
   REQUIRE(factory.strategies_loaded);
 
@@ -199,8 +200,6 @@ struct TxnRemapScope {
 
 SCENARIO("TSHttpTxnNextHopStrategy Set and Get on a transaction", "[strategy][api]")
 {
-  REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
-
   GIVEN("A transaction whose rewrite table owns a loaded strategy factory")
   {
     auto *const   factory = new NextHopStrategyFactory(TS_SRC_DIR "/strategy.yaml");
@@ -262,8 +261,6 @@ SCENARIO("TSHttpTxnNextHopStrategy Set and Get on a transaction", "[strategy][ap
 
 SCENARIO("Deprecated 10.2 next hop strategy API", "[strategy][api]")
 {
-  REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
-
   GIVEN("A plugin written against the 10.2 API")
   {
     auto *const   factory = new NextHopStrategyFactory(TS_SRC_DIR "/strategy.yaml");

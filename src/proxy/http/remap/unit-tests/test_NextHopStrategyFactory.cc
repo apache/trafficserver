@@ -27,16 +27,165 @@
  */
 
 #include <catch2/catch_test_macros.hpp> /* catch unit-test framework */
-#include <fstream>                      /* ofstream */
+#include <catch2/generators/catch_generators.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream> /* ofstream */
 #include <memory>
+#include <stdexcept>
+#include <unistd.h>
 #include <utime.h>
 #include <yaml-cpp/yaml.h>
 
-#include "nexthop_test_stubs.h"
+#include "records/RecCore.h"
+#include "tscore/ink_platform.h"
+#include "tscore/Layout.h"
 #include "proxy/http/remap/NextHopSelectionStrategy.h"
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
-#include "proxy/http/remap/NextHopRoundRobin.h"
+
+namespace
+{
+std::filesystem::path
+make_temp_dir(std::string const &name)
+{
+  const auto temp_dir = std::filesystem::temp_directory_path();
+  const auto prefix   = name + "-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+
+  for (unsigned int attempt = 0; attempt < 100; ++attempt) {
+    auto dir = temp_dir / (prefix + "-" + std::to_string(attempt));
+    if (std::filesystem::create_directory(dir)) {
+      return dir;
+    }
+  }
+  throw std::runtime_error("unable to create a temporary directory in " + temp_dir.string());
+}
+
+// Copy the strategy.yaml fixture into a new temporary directory, with its '#include' replaced by include_target.
+std::filesystem::path
+write_strategy_with_include(std::string const &include_target)
+{
+  const auto    dir = make_temp_dir("nh_strategy_include_test");
+  std::ofstream out(dir / "strategy.yaml");
+  std::ifstream in(TS_SRC_DIR "/strategy.yaml");
+
+  if (!in || !out) {
+    throw std::runtime_error("unable to copy " TS_SRC_DIR "/strategy.yaml into " + dir.string());
+  }
+  out << "#include " << include_target << "\n";
+  for (std::string line; std::getline(in, line);) {
+    if (!line.starts_with("#include")) {
+      out << line << "\n";
+    }
+  }
+  return dir;
+}
+} // namespace
+
+// '#include' directives in strategy files resolve against the configuration
+// directory, so point it at a temporary directory outside the install prefix
+// containing the test fixtures. The install prefix holds copies for the legacy
+// prefix-relative fallback, and an invalid decoy at <prefix>/hosts.yaml that
+// must lose to the configuration directory's hosts.yaml.
+static std::filesystem::path config_root;
+static std::filesystem::path config_dir;
+
+struct ConfigDirListener : Catch::EventListenerBase {
+  using EventListenerBase::EventListenerBase;
+
+  void
+  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
+  {
+    config_root = make_temp_dir("nh_strategy_prefix_test");
+    config_dir  = make_temp_dir("nh_strategy_config_test");
+    setenv("PROXY_CONFIG_CONFIG_DIR", config_dir.c_str(), 1);
+    Layout::create(config_root.string());
+    if (Layout::get()->prefix != config_root.string()) {
+      throw std::runtime_error("the install prefix is " + Layout::get()->prefix + ", not " + config_root.string());
+    }
+    if (std::filesystem::path(RecConfigReadConfigDir()) != config_dir) {
+      throw std::runtime_error("the configuration directory is " + RecConfigReadConfigDir() + ", not " + config_dir.string());
+    }
+
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_dir / "hosts.yaml");
+    std::filesystem::create_directories(config_root / "etc" / "trafficserver");
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_root / "etc" / "trafficserver" / "hosts.yaml");
+    std::filesystem::create_directories(config_root / "var");
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_root / "var" / "hosts.yaml");
+    std::ofstream(config_dir / "lib") << "# not a directory\n";
+    std::filesystem::create_directories(config_root / "lib");
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_root / "lib" / "hosts.yaml");
+    std::filesystem::create_directories(config_dir / "locked");
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_dir / "locked" / "hosts.yaml");
+    std::filesystem::create_directories(config_root / "locked");
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_root / "locked" / "hosts.yaml");
+    std::ofstream(config_root / "hosts.yaml") << "# decoy: must never be included\nhosts: [\n";
+    // <prefix>/current and <config>/release are symlinks to <prefix>/releases/r1/sub, whose parent holds
+    // strategy_hosts.yaml. A '..' after either symlink must be resolved through it, not removed lexically, which
+    // would select the invalid decoy at <prefix>/strategy_hosts.yaml or find nothing in the configuration directory.
+    std::filesystem::create_directories(config_root / "releases" / "r1" / "sub");
+    std::filesystem::copy_file(TS_SRC_DIR "/hosts.yaml", config_root / "releases" / "r1" / "strategy_hosts.yaml");
+    std::filesystem::create_directory_symlink(config_root / "releases" / "r1" / "sub", config_root / "current");
+    std::filesystem::create_directory_symlink(config_root / "releases" / "r1" / "sub", config_dir / "release");
+    std::ofstream(config_root / "strategy_hosts.yaml") << "# decoy: must never be included\nhosts: [\n";
+  }
+
+  void
+  testRunEnded(Catch::TestRunStats const & /* testRunStats ATS_UNUSED */) override
+  {
+    unsetenv("PROXY_CONFIG_CONFIG_DIR");
+    std::filesystem::remove_all(config_dir);
+    std::filesystem::remove_all(config_root);
+  }
+};
+
+CATCH_REGISTER_LISTENER(ConfigDirListener);
+
+SCENARIO("factory resolves '#include' paths from a strategy outside the configuration directory", "[loadConfig]")
+{
+  // hosts.yaml is never next to the strategy. A bare 'hosts.yaml' must load the configuration directory's copy,
+  // not the invalid decoy at <prefix>/hosts.yaml. The other relative targets exist only under the prefix; for
+  // 'lib/hosts.yaml', <config>/lib is a regular file, so the configuration-directory lookup fails with ENOTDIR.
+  // The '..' targets follow the symlinks set up by ConfigDirListener: an absolute target, a configuration-directory
+  // target, and a target found only by the install-prefix fallback.
+  const std::string include_target =
+    GENERATE(std::string{TS_SRC_DIR "/hosts.yaml"}, std::string{"hosts.yaml"}, std::string{"etc/trafficserver/hosts.yaml"},
+             std::string{"./etc/trafficserver/hosts.yaml"}, std::string{"var/hosts.yaml"}, std::string{"lib/hosts.yaml"},
+             (config_root / "current" / ".." / "strategy_hosts.yaml").string(), std::string{"release/../strategy_hosts.yaml"},
+             std::string{"current/../strategy_hosts.yaml"});
+  CAPTURE(include_target);
+
+  const auto             dir = write_strategy_with_include(include_target);
+  NextHopStrategyFactory nhf((dir / "strategy.yaml").c_str());
+  std::filesystem::remove_all(dir);
+
+  REQUIRE(nhf.strategies_loaded == true);
+  REQUIRE(nhf.strategyInstance("strategy-1") != nullptr);
+  REQUIRE(nhf.strategyInstance("strategy-2") != nullptr);
+}
+
+SCENARIO("factory does not fall back to the install prefix for an include it cannot access", "[loadConfig]")
+{
+  if (geteuid() == 0) {
+    SKIP("root bypasses the directory permissions this scenario relies on");
+  }
+
+  // <config>/locked/hosts.yaml exists but its directory cannot be searched, so the lookup fails with EACCES. The
+  // load must fail rather than silently use <prefix>/locked/hosts.yaml.
+  const auto locked = config_dir / "locked";
+  const auto dir    = write_strategy_with_include("locked/hosts.yaml");
+
+  std::filesystem::permissions(locked, std::filesystem::perms::none);
+  NextHopStrategyFactory nhf((dir / "strategy.yaml").c_str());
+  std::filesystem::permissions(locked, std::filesystem::perms::owner_all);
+  std::filesystem::remove_all(dir);
+
+  REQUIRE(nhf.strategies_loaded == false);
+  REQUIRE(nhf.strategyInstance("strategy-1") == nullptr);
+}
 
 SCENARIO("factory tests loading yaml configs", "[loadConfig]")
 {
@@ -64,9 +213,31 @@ SCENARIO("factory tests loading yaml configs", "[loadConfig]")
     }
   }
 
+  GIVEN("Loading a strategies.yaml whose '#include' path exceeds the path length limit.")
+  {
+    const auto strategy_file = config_root / "long-include-strategy.yaml";
+    {
+      std::ofstream out(strategy_file);
+      std::ifstream in(TS_SRC_DIR "/strategy.yaml");
+
+      out << "#include " << std::string(PATH_NAME_MAX, 'a') << "\n";
+      for (std::string line; std::getline(in, line);) {
+        if (!line.starts_with("#include")) {
+          out << line << "\n";
+        }
+      }
+    }
+    NextHopStrategyFactory nhf(strategy_file.c_str());
+
+    THEN("the include fails to load instead of aborting, and no strategies load")
+    {
+      REQUIRE(nhf.strategies_loaded == false);
+      REQUIRE(nhf.strategyInstance("strategy-1") == nullptr);
+    }
+  }
+
   GIVEN("Loading the strategy.yaml with included 'hosts.yaml'.")
   {
-    REQUIRE(chdir(TS_SRC_DIR "/..") == 0);
     NextHopStrategyFactory nhf(TS_SRC_DIR "/strategy.yaml");
 
     WHEN("the two files are loaded.")

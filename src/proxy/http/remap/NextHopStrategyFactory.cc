@@ -23,14 +23,87 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <fstream>
-#include <cstring>
-#include <string_view>
+#include <sys/stat.h>
 
+#include <cerrno>
+#include <filesystem>
+#include <fstream>
+#include <algorithm>
+#include <cstring>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <utility>
+#include <vector>
+
+#include "records/RecCore.h"
+#include "tscore/Layout.h"
 #include "proxy/http/remap/NextHopStrategyFactory.h"
 #include "proxy/http/remap/NextHopConsistentHash.h"
 #include "proxy/http/remap/NextHopRoundRobin.h"
 #include <tsutil/YamlCfg.h>
+
+namespace
+{
+// Returns the path an include target is opened as: an absolute target unchanged, a relative one joined to the configuration
+// directory. The join is not normalized, so a '..' that follows a symlink is resolved through the symlink by the kernel.
+std::filesystem::path
+config_dir_include_path(std::string_view include_target)
+{
+  return std::filesystem::path{RecConfigReadConfigDir()} / include_target;
+}
+
+// Earlier releases opened a relative include from the traffic_server working directory, which is the install prefix.
+// Returns that path, not normalized for the same reason as config_dir_include_path(), or an empty path for an absolute
+// target. ToDo: Deprecated in 11.0.0, remove in 12.0.0
+std::filesystem::path
+legacy_include_path(std::string_view include_target)
+{
+  std::filesystem::path const target{include_target};
+
+  if (target.is_absolute()) {
+    return {};
+  }
+  return std::filesystem::path{Layout::get()->prefix} / target;
+}
+
+// Returns the elements of path without '.' and empty elements, which never change the file a path refers to. '..' elements
+// are kept because they follow symlinks.
+std::vector<std::filesystem::path>
+path_elements(std::filesystem::path const &path)
+{
+  std::vector<std::filesystem::path> elements;
+
+  for (auto const &element : path) {
+    if (!element.empty() && element != ".") {
+      elements.push_back(element);
+    }
+  }
+  return elements;
+}
+
+// Returns an '#include' target that config_dir_include_path() opens as the same file as resolved_path: the path relative to
+// the configuration directory when resolved_path lies under it, otherwise resolved_path itself.
+std::string
+recommended_include(std::filesystem::path const &resolved_path)
+{
+  auto const config_elements   = path_elements(RecConfigReadConfigDir());
+  auto const resolved_elements = path_elements(resolved_path);
+
+  if (resolved_elements.size() <= config_elements.size() ||
+      !std::equal(config_elements.begin(), config_elements.end(), resolved_elements.begin())) {
+    return resolved_path.string();
+  }
+
+  std::filesystem::path relative;
+
+  for (auto element = resolved_elements.begin() + config_elements.size(); element != resolved_elements.end(); ++element) {
+    relative /= *element;
+  }
+  return relative.string();
+}
+} // namespace
 
 NextHopStrategyFactory::NextHopStrategyFactory(const char *file) : fn(file)
 {
@@ -202,6 +275,7 @@ NextHopStrategyFactory::contains(NextHopSelectionStrategy const *strategy) const
  * directive, that 'file' is read into the document beginning at the point where the
  * '#include' was found. This allows the 'strategy' and 'hosts' yaml files to be separate.  The
  * 'strategy' yaml file would then normally have the '#include hosts.yml' in it's beginning.
+ * Relative included paths are resolved against the configuration directory.
  */
 void
 NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::stringstream &doc,
@@ -272,15 +346,39 @@ NextHopStrategyFactory::loadConfigFile(const std::string &fileName, std::strings
             }
             const auto        include_line = line_view.substr(include_start);
             const auto        include_end  = include_line.find_first_of(separators);
-            const std::string f{include_line.substr(0, include_end)};
+            const std::string include_target{include_line.substr(0, include_end)};
+            std::string       f                = config_dir_include_path(include_target).string();
+            bool              used_legacy_path = false;
+            std::string       legacy_path;
+
+            // Retry an include that is absent from the configuration directory relative to the install prefix, the way earlier
+            // releases resolved it. not_found covers a missing file and a path component that is not a directory. Other
+            // failures, such as a permission error, are left to fail the load so they are reported rather than silently
+            // replaced by a file from the install prefix.
+            std::error_code ec;
+            if (std::filesystem::status(f, ec).type() == std::filesystem::file_type::not_found) {
+              legacy_path = legacy_include_path(include_target).string();
+              if (!legacy_path.empty() && std::filesystem::exists(legacy_path, ec)) {
+                f                = legacy_path;
+                used_legacy_path = true;
+              }
+            }
+
             if (include_once.find(f) == include_once.end()) {
               include_once.insert(f);
               // try to load included file.
               try {
                 loadConfigFile(f, doc, include_once);
               } catch (const std::exception &ex) {
-                throw std::invalid_argument("Unable to load included file '" + f + "' from '" + fileName + "': " + ex.what());
+                std::string const also_tried =
+                  !used_legacy_path && !legacy_path.empty() ? " (also tried '" + legacy_path + "')" : "";
+                throw std::invalid_argument("Unable to load '#include " + include_target + "' from '" + fileName + "' as '" + f +
+                                            "'" + also_tried + ": " + ex.what());
               }
+            }
+            if (used_legacy_path) {
+              NH_Warn("Deprecated '#include %s' in '%s'; use '#include %s' instead. This fallback will be removed in 12.0.0.",
+                      include_target.c_str(), fileName.c_str(), recommended_include(f).c_str());
             }
           }
         } else {
