@@ -58,7 +58,7 @@ TEST_CASE("SimpleTokenizer keeps whitespace when asked", "[libts][SimpleTokenize
   CHECK(tok.getNumTokensRemaining() == 3);
 }
 
-TEST_CASE("SimpleTokenizer returns a leading null field", "[libts][SimpleTokenizer]")
+TEST_CASE("SimpleTokenizer returns an empty token for a null field", "[libts][SimpleTokenizer]")
 {
   unsigned const mode = GENERATE(as<unsigned>{}, SimpleTokenizer::CONSIDER_NULL_FIELDS,
                                  SimpleTokenizer::CONSIDER_NULL_FIELDS | SimpleTokenizer::KEEP_WHITESPACE_LEFT);
@@ -78,5 +78,25 @@ TEST_CASE("SimpleTokenizer returns a leading null field", "[libts][SimpleTokeniz
 
     CHECK(std::string(tok.getNext()) == "");
     CHECK(std::string(tok.getNext()) == "abc");
+  }
+
+  SECTION("after whitespace in the middle of the line")
+  {
+    SimpleTokenizer tok("a, ,b", ',', mode);
+
+    CHECK(std::string(tok.getNext()) == "a");
+    CHECK(std::string(tok.getNext()) == "");
+    CHECK(std::string(tok.getNext()) == "b");
+    CHECK(tok.getNext() == nullptr);
+  }
+
+  SECTION("after a run of whitespace in the middle of the line")
+  {
+    SimpleTokenizer tok("a,  ,b", ',', mode);
+
+    CHECK(std::string(tok.getNext()) == "a");
+    CHECK(std::string(tok.getNext()) == "");
+    CHECK(std::string(tok.getNext()) == "b");
+    CHECK(tok.getNext() == nullptr);
   }
 }
