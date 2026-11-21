@@ -50,4 +50,7 @@ response sent by the plugin should be cached, use
 :func:`TSHttpTxnIntercept` primary use is allow plugins to serve
 data about their functioning directly.
 
-:func:`TSHttpTxnIntercept` must only be called once per transaction.
+:func:`TSHttpTxnIntercept` must only be called once per transaction. If a
+plugin calls an intercept function again for the same transaction, the last
+call replaces the earlier one, and the continuation of the earlier call gets a
+:enumerator:`TS_EVENT_NET_ACCEPT_FAILED` event.
