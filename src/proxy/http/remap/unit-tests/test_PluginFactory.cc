@@ -438,6 +438,32 @@ SCENARIO("loading plugins", "[plugin][core]")
       teardownConfigPathTest();
     }
 
+    WHEN("plugin initialization reads the reference count of the plugin")
+    {
+      fs::path configPath = fs::path("plugin_init_hook.so");
+      fs::path buildPath  = pluginBuildDir / configPath;
+      setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
+
+      // Without a reference during TSRemapInit, a thread from TSThreadCreate that returns there
+      // releases the last reference and unloads the plugin.
+      static int references_in_init;
+      references_in_init = -1;
+      void (*hook)()     = [] { references_in_init = pluginThreadContext->refcount(); };
+      setenv("TS_TEST_REMAP_INIT_HOOK", std::to_string(reinterpret_cast<uintptr_t>(hook)).c_str(), 1);
+      auto             factory = getFactory(tempComponent);
+      RemapPluginInst *plugin  = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
+      unsetenv("TS_TEST_REMAP_INIT_HOOK");
+
+      THEN("expect the factory to hold a reference during the initialization")
+      {
+        CHECK(references_in_init == 1);
+        CHECK(nullptr != plugin);
+        CHECK(nullptr != PluginDso::loadedPlugins()->findByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
+      }
+
+      teardownConfigPathTest();
+    }
+
     WHEN("instance initialization fails")
     {
       fs::path configPath = fs::path("plugin_instinit_fail.so");

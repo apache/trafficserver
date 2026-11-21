@@ -52,6 +52,8 @@ target_compile_definitions(plugin_v2 PRIVATE PLUGINDSOVER=2)
 #
 add_plugin_ut_lib(plugin_init_fail plugin_init_fail.cc plugin_stub.cc)
 #
+add_plugin_ut_lib(plugin_init_hook plugin_init_hook.cc plugin_stub.cc)
+#
 add_plugin_ut_lib(plugin_instinit_fail plugin_instinit_fail.cc plugin_stub.cc)
 #
 add_plugin_ut_lib(plugin_required_cb plugin_required_cb.cc plugin_stub.cc)
