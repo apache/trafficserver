@@ -129,7 +129,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *client_tls13_cipher_suites;
   char *server_groups_list;
   char *client_groups_list;
-  // -1, the records default, leaves the protocol bound to the TLS library.
+  // -1, the records default, means no explicit bound: the context loaders skip setting that end.
   int server_tls_ver_min = -1;
   int server_tls_ver_max = -1;
   int client_tls_ver_min = -1;
