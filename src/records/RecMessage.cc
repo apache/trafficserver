@@ -231,7 +231,8 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     if (itr->next >= msg->entries) {
       return REC_ERR_FAIL;
     }
-    // Each element must start past the one before it, or its offsets would be resolved a second time.
+    // The next element must start after this element's header and record, or it would overlap a record whose
+    // string offsets have already been turned into pointers.
     intptr_t const current = reinterpret_cast<char *>(itr->ele_hdr) - reinterpret_cast<char *>(msg);
     offset                 = itr->ele_hdr->o_next;
     if (offset < current + ele_size) {
