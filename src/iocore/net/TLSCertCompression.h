@@ -90,8 +90,6 @@ void cert_compress_cache_try_publish(CertCompressionCache &cache, int alg, const
                                      const uint8_t *compressed, size_t compressed_len);
 #endif
 
-#if HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE
-void cert_compress_compress_certs(SSL_CTX *ctx);
-#endif
-
-void cert_compress_invalidate_or_recompress(SSL_CTX *ctx);
+/** Drop compressed Certificate messages of @a ctx that may embed an outdated OCSP staple.
+ */
+void cert_compress_invalidate(SSL_CTX *ctx);
