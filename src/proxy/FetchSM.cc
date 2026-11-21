@@ -28,6 +28,7 @@
 #include <cstdio>
 #include <cstring>
 #include "proxy/hdrs/HTTP.h"
+#include "proxy/hdrs/MIME.h"
 #include "proxy/PluginVC.h"
 #include "proxy/PluginHttpConnect.h"
 
@@ -704,7 +705,7 @@ FetchSM::ext_add_header(const char *name, int name_len, const char *value, int v
 {
   if (static_cast<int>(MIME_FIELD_CONTENT_LENGTH.length()) == name_len &&
       !strncasecmp(MIME_FIELD_CONTENT_LENGTH.c_str(), name, name_len)) {
-    req_content_length = atoll(value);
+    req_content_length = mime_parse_int64(value, value + value_len);
   }
 
   req_buffer->write(name, name_len);

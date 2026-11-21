@@ -91,3 +91,19 @@ TEST_CASE("FetchSM copies response headers across IOBufferBlocks", "[FetchSM]")
   fetch_sm->cleanUp();
   free_MIOBuffer(response_buffer);
 }
+
+TEST_CASE("FetchSM parses Content-Length within the given value length", "[FetchSM]")
+{
+  initialize_fetch_sm_once();
+
+  FetchSM *fetch_sm = FetchSMAllocator.alloc();
+  fetch_sm->init_comm();
+
+  // The digit after the value must not be read as part of it.
+  std::string_view const value = "697";
+  fetch_sm->ext_add_header("Content-Length", 14, value.data(), 2);
+
+  CHECK(fetch_sm->get_req_content_length() == 69);
+
+  fetch_sm->cleanUp();
+}
