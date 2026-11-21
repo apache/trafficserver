@@ -43,6 +43,13 @@ public:
 
   SourceLocation(const char *_file, const char *_func, int _line) : file(_file), func(_func), line(_line) {}
 
+  /// The location of the caller, when used as a default argument.
+  static SourceLocation
+  current(const char *_file = __builtin_FILE(), const char *_func = __builtin_FUNCTION(), int _line = __builtin_LINE())
+  {
+    return {_file, _func, _line};
+  }
+
   bool
   valid() const
   {
