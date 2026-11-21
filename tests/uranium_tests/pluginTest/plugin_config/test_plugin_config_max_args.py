@@ -45,11 +45,11 @@ def test_plugin_config_line_with_max_args(ats: ATS, curl: Curl) -> None:
 
 
 def test_plugin_config_line_over_max_args(ats: ATS, curl: Curl) -> None:
-    """A plugin.config line with one token too many keeps the first ones and reports the rest dropped.
+    """A plugin.config line with one token too many passes the first 64 and logs that it is too long.
 
     The line is the full line from the test above plus one more token. The plugin must still get
-    every token up to the limit, the one that enables X-Cache included, and the dropped token must
-    be reported. Seeing the warning here also shows that diags.log receives it, which the test above
+    the 64th token, the one that enables X-Cache, and the line must be reported as too long.
+    Seeing the warning here also shows that diags.log receives it, which the test above
     relies on when it checks for its absence.
 
     :param ats: Traffic Server instance configured or queried by this step.
