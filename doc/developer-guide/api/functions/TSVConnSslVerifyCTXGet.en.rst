@@ -30,6 +30,10 @@ Synopsis
 
 .. function:: TSSslVerifyCTX TSVConnSslVerifyCTXGet(TSVConn svc)
 
+.. deprecated:: 11.0.0
+   Use :func:`TSSslPeerVerifyCTXStoreCTXGet` or :func:`TSSslPeerVerifyCTXPeerRPKGet` with
+   :enumerator:`TS_SSL_PEER_VERIFY_CLIENT_HOOK` / :enumerator:`TS_SSL_PEER_VERIFY_SERVER_HOOK` instead.
+
 Description
 ===========
 
@@ -37,10 +41,11 @@ Get the TSSslVerifyCTX object that corresponds to the certificates being verifie
 corresponding to :arg:`svc`.
 
 This value is only meaningful during the peer certificate verification callbacks, specifically during callbacks
-invoked from the TS_SSL_VERIFY_SERVER_HOOK and TS_SSL_VERIFY_CLIENT_HOOK.
+invoked from the :enumerator:`TS_SSL_VERIFY_SERVER_HOOK` and :enumerator:`TS_SSL_VERIFY_CLIENT_HOOK`.
 
 :enumerator:`TS_SSL_VERIFY_CLIENT_HOOK` and :enumerator:`TS_SSL_VERIFY_SERVER_HOOK` are certificate-only hooks and are
-not invoked when the peer authenticates with an RFC 7250 raw public key.
+not invoked when the peer authenticates with an RFC 7250 raw public key. See :doc:`TSSslPeerVerifyCTX <TSSslPeerVerifyCTX.en>`
+for the modern peer verification API that supports both certificate chains and raw public keys.
 
 Types
 =====

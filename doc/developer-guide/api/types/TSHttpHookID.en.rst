@@ -96,6 +96,10 @@ Enumeration Members
 
    .. enumerator:: TS_SSL_VERIFY_SERVER_HOOK
 
+   .. enumerator:: TS_SSL_PEER_VERIFY_CLIENT_HOOK
+
+   .. enumerator:: TS_SSL_PEER_VERIFY_SERVER_HOOK
+
    .. enumerator:: TS_SSL_LAST_HOOK
 
    .. enumerator:: TS_HTTP_LAST_HOOK

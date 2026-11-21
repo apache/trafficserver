@@ -210,6 +210,12 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_RPK_UNTRUSTED);
       }
     }
+    TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
+    if (tbs != nullptr && tbs->verify_peer(ctx, peer_rpk, TS_SSL_PEER_CRED_RPK, pin_ok ? 1 : 0) == 1) {
+      Warning("TS_EVENT_SSL_PEER_VERIFY_SERVER plugin failed the origin RPK check for %s. Action=%s",
+              netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
+      return !enforce_mode;
+    }
     return pin_ok || !enforce_mode;
   }
 #endif
@@ -272,7 +278,7 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
     Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
     return false;
   }
-  if (tbs->verify_certificate(ctx) == 1) {
+  if (tbs->verify_peer(ctx, nullptr, TS_SSL_PEER_CRED_X509, 1) == 1) {
     // A TS_EVENT_SSL_VERIFY_SERVER plugin rejected the certificate.
     unsigned char *sni_name;
     char           buff[INET6_ADDRSTRLEN];
@@ -319,10 +325,19 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
   }
 
   if (SSL_get_peer_cert_type(ssl) == TLSEXT_cert_type_rpk) {
-    bool const pin_ok = ssl_pin_peer_rpk(ssl, SSL_get0_peer_rpk(ssl));
+    EVP_PKEY  *peer_rpk = SSL_get0_peer_rpk(ssl);
+    bool const pin_ok   = ssl_pin_peer_rpk(ssl, peer_rpk);
     Dbg(dbg_ctl_ssl_verify, "Origin authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (!pin_ok) {
       warn_origin_rpk_mismatch(enforce_mode, netvc);
+      if (enforce_mode) {
+        *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+        return ssl_verify_invalid;
+      }
+    }
+    if (tbs->verify_peer(nullptr, peer_rpk, TS_SSL_PEER_CRED_RPK, pin_ok ? 1 : 0) == 1) {
+      Warning("TS_EVENT_SSL_PEER_VERIFY_SERVER plugin failed the origin RPK check for %s. Action=%s",
+              netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
       if (enforce_mode) {
         *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
         return ssl_verify_invalid;
@@ -427,7 +442,7 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
 
     // As on the other paths, the hook always runs and may only add rejection. It runs once for the
     // whole chain here, where the library calls verify_callback() once per chain depth.
-    if (tbs->verify_certificate(store_ctx) == 1) {
+    if (tbs->verify_peer(store_ctx, nullptr, TS_SSL_PEER_CRED_X509, signature_ok ? 1 : 0) == 1) {
       Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for %s.  Action=%s SNI=%.*s",
               netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue", static_cast<int>(sni_name.length()),
               sni_name.data());

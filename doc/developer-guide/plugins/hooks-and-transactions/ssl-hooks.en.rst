@@ -125,6 +125,35 @@ Processing will continue regardless of whether the hook callback executes
 during the certificate verify callback.  The plugin can use the :func:`TSVConnReenableEx()`
 function to pass in the :enumerator:`TS_EVENT_ERROR` and stop the TLS handshake.
 
+TS_SSL_PEER_VERIFY_CLIENT_HOOK
+------------------------------
+
+This hook is called when a client connects to |TS| and presents credentials (either an X.509
+certificate chain or an RFC 7250 Raw Public Key) during mutual TLS.
+
+The callback receives an instance of :type:`TSSslPeerVerifyCTX` as its ``edata`` argument.
+The plugin can inspect the peer credential type using :func:`TSSslPeerVerifyCTXCredTypeGet()`,
+retrieve the X.509 store context via :func:`TSSslPeerVerifyCTXStoreCTXGet()`, or retrieve the raw
+public key via :func:`TSSslPeerVerifyCTXPeerRPKGet()`.
+
+As with :enumerator:`TS_SSL_VERIFY_CLIENT_HOOK`, TLS verification runs synchronously; plugins cannot
+pause the handshake during this hook. The plugin can use :func:`TSVConnReenableEx()` with
+:enumerator:`TS_EVENT_ERROR` to reject the connection and stop the TLS handshake.
+
+TS_SSL_PEER_VERIFY_SERVER_HOOK
+------------------------------
+
+This hook is called when Traffic Server connects to an origin server and the origin presents credentials
+(either an X.509 certificate chain or an RFC 7250 Raw Public Key).
+
+The callback receives an instance of :type:`TSSslPeerVerifyCTX` as its ``edata`` argument.
+The plugin can inspect the peer credential type using :func:`TSSslPeerVerifyCTXCredTypeGet()`,
+retrieve the X.509 store context via :func:`TSSslPeerVerifyCTXStoreCTXGet()`, or retrieve the raw
+public key via :func:`TSSslPeerVerifyCTXPeerRPKGet()`.
+
+The plugin can use :func:`TSVConnReenableEx()` with :enumerator:`TS_EVENT_ERROR` to reject the origin
+and stop the TLS handshake. stop the TLS handshake.
+
 TS_SSL_VERIFY_SERVER_HOOK
 -------------------------
 
@@ -137,7 +166,36 @@ authenticates with an RFC 7250 raw public key.
 Processing will continue regardless of whether the hook callback executes
 :func:`TSVConnReenable()` since the OpenSSL implementation does not allow for pausing processing
 during the certificate verify callback.  The plugin can use the :func:`TSVConnReenableEx()`
-function to pass in the :enumerator:`TS_EVENT_ERROR` and
+function to pass in the :enumerator:`TS_EVENT_ERROR` and stop the TLS handshake.
+
+TS_SSL_PEER_VERIFY_CLIENT_HOOK
+------------------------------
+
+This hook is called when a client connects to |TS| and presents credentials (either an X.509
+certificate chain or an RFC 7250 Raw Public Key) during mutual TLS.
+
+The callback receives an instance of :type:`TSSslPeerVerifyCTX` as its ``edata`` argument.
+The plugin can inspect the peer credential type using :func:`TSSslPeerVerifyCTXCredTypeGet()`,
+retrieve the X.509 store context via :func:`TSSslPeerVerifyCTXStoreCTXGet()`, or retrieve the raw
+public key via :func:`TSSslPeerVerifyCTXPeerRPKGet()`.
+
+As with :enumerator:`TS_SSL_VERIFY_CLIENT_HOOK`, TLS verification runs synchronously; plugins cannot
+pause the handshake during this hook. The plugin can use :func:`TSVConnReenableEx()` with
+:enumerator:`TS_EVENT_ERROR` to reject the connection and stop the TLS handshake.
+
+TS_SSL_PEER_VERIFY_SERVER_HOOK
+------------------------------
+
+This hook is called when Traffic Server connects to an origin server and the origin presents credentials
+(either an X.509 certificate chain or an RFC 7250 Raw Public Key).
+
+The callback receives an instance of :type:`TSSslPeerVerifyCTX` as its ``edata`` argument.
+The plugin can inspect the peer credential type using :func:`TSSslPeerVerifyCTXCredTypeGet()`,
+retrieve the X.509 store context via :func:`TSSslPeerVerifyCTXStoreCTXGet()`, or retrieve the raw
+public key via :func:`TSSslPeerVerifyCTXPeerRPKGet()`.
+
+The plugin can use :func:`TSVConnReenableEx()` with :enumerator:`TS_EVENT_ERROR` to reject the origin
+and stop the TLS handshake.
 
 TS_VCONN_OUTBOUND_START_HOOK
 ----------------------------

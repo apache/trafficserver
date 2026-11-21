@@ -422,6 +422,10 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
     } else {
       warn_client_rpk_mismatch(servername);
     }
+    if (tbs->verify_peer(ctx, peer_rpk, TS_SSL_PEER_CRED_RPK, pin_ok ? 1 : 0) == 1) {
+      Warning("TS_EVENT_SSL_PEER_VERIFY_CLIENT plugin failed the client raw public key check for %s.", servername);
+      return false;
+    }
     return pin_ok;
   }
 #endif
@@ -443,7 +447,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
         X509_verify_cert_error_string(X509_STORE_CTX_get_error(ctx)));
   }
 
-  if (tbs->verify_certificate(ctx) == 1) { // a plugin rejected the certificate
+  if (tbs->verify_peer(ctx, nullptr, TS_SSL_PEER_CRED_X509, preverify_ok) == 1) { // a plugin rejected the certificate
     Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
     return false;
   }
@@ -486,6 +490,11 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     Dbg(dbg_ctl_ssl_verify, "Client authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (!pin_ok) {
       warn_client_rpk_mismatch(servername);
+      *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+      return ssl_verify_invalid;
+    }
+    if (tbs->verify_peer(nullptr, peer_rpk, TS_SSL_PEER_CRED_RPK, 1) == 1) {
+      Warning("TS_EVENT_SSL_PEER_VERIFY_CLIENT plugin failed the client raw public key check for %s.", servername);
       *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
       return ssl_verify_invalid;
     }
@@ -562,7 +571,7 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   // nothing useful to hand a plugin if we couldn't even build one (an internal error, not a
   // normal verification outcome). It runs once for the whole chain here, where the library calls
   // the classic callback once per chain depth.
-  bool hook_ok = initialized && tbs->verify_certificate(store_ctx) == 0;
+  bool hook_ok = initialized && tbs->verify_peer(store_ctx, nullptr, TS_SSL_PEER_CRED_X509, verified ? 1 : 0) == 0;
 
   X509_STORE_CTX_free(store_ctx);
 

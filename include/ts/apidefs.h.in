@@ -369,15 +369,17 @@ enum TSEvent {
   TS_EVENT_LIFECYCLE_SHUTDOWN                   = 60107,
   TS_EVENT_LIFECYCLE_LOG_INITIALIZED            = 60108,
 
-  TS_EVENT_INTERNAL_60200    = 60200,
-  TS_EVENT_INTERNAL_60201    = 60201,
-  TS_EVENT_INTERNAL_60202    = 60202,
-  TS_EVENT_SSL_CERT          = 60203,
-  TS_EVENT_SSL_SERVERNAME    = 60204,
-  TS_EVENT_SSL_VERIFY_SERVER = 60205,
-  TS_EVENT_SSL_VERIFY_CLIENT = 60206,
-  TS_EVENT_SSL_CLIENT_HELLO  = 60207,
-  TS_EVENT_SSL_SECRET        = 60208,
+  TS_EVENT_INTERNAL_60200         = 60200,
+  TS_EVENT_INTERNAL_60201         = 60201,
+  TS_EVENT_INTERNAL_60202         = 60202,
+  TS_EVENT_SSL_CERT               = 60203,
+  TS_EVENT_SSL_SERVERNAME         = 60204,
+  TS_EVENT_SSL_VERIFY_SERVER      = 60205,
+  TS_EVENT_SSL_VERIFY_CLIENT      = 60206,
+  TS_EVENT_SSL_CLIENT_HELLO       = 60207,
+  TS_EVENT_SSL_SECRET             = 60208,
+  TS_EVENT_SSL_PEER_VERIFY_CLIENT = 60209,
+  TS_EVENT_SSL_PEER_VERIFY_SERVER = 60210,
 
   TS_EVENT_MGMT_UPDATE = 60300,
 };
@@ -498,7 +500,9 @@ enum TSHttpHookID {
   TS_SSL_SESSION_HOOK,
   TS_VCONN_OUTBOUND_START_HOOK,
   TS_VCONN_OUTBOUND_CLOSE_HOOK,
-  TS_SSL_LAST_HOOK = TS_VCONN_OUTBOUND_CLOSE_HOOK,
+  TS_SSL_PEER_VERIFY_CLIENT_HOOK,
+  TS_SSL_PEER_VERIFY_SERVER_HOOK,
+  TS_SSL_LAST_HOOK = TS_SSL_PEER_VERIFY_SERVER_HOOK,
   TS_HTTP_LAST_HOOK,
 };
 
@@ -1132,19 +1136,31 @@ static_assert(std::is_trivially_copyable_v<TSClientHello> == true);
 
 using TSFile = struct tsapi_file *;
 
-using TSMLoc          = struct tsapi_mloc *;
-using TSMBuffer       = struct tsapi_mbuffer *;
-using TSHttpSsn       = struct tsapi_httpssn *;
-using TSHttpTxn       = struct tsapi_httptxn *;
-using TSSslConnection = struct tsapi_ssl_obj *;
-using TSSslSession    = struct tsapi_ssl_session *;
-using TSHttpAltInfo   = struct tsapi_httpaltinfo *;
-using TSMimeParser    = struct tsapi_mimeparser *;
-using TSHttpParser    = struct tsapi_httpparser *;
-using TSCacheKey      = struct tsapi_cachekey *;
-using TSCacheHttpInfo = struct tsapi_cachehttpinfo *;
-using TSCacheTxn      = struct tsapi_cachetxn *;
-using TSSslVerifyCTX  = struct tsapi_x509_store_ctx *;
+using TSMLoc             = struct tsapi_mloc *;
+using TSMBuffer          = struct tsapi_mbuffer *;
+using TSHttpSsn          = struct tsapi_httpssn *;
+using TSHttpTxn          = struct tsapi_httptxn *;
+using TSSslConnection    = struct tsapi_ssl_obj *;
+using TSSslSession       = struct tsapi_ssl_session *;
+using TSHttpAltInfo      = struct tsapi_httpaltinfo *;
+using TSMimeParser       = struct tsapi_mimeparser *;
+using TSHttpParser       = struct tsapi_httpparser *;
+using TSCacheKey         = struct tsapi_cachekey *;
+using TSCacheHttpInfo    = struct tsapi_cachehttpinfo *;
+using TSCacheTxn         = struct tsapi_cachetxn *;
+using TSSslVerifyCTX     = struct tsapi_x509_store_ctx *;
+using TSSslPeerVerifyCTX = struct tsapi_ssl_peer_verify_ctx *;
+
+struct evp_pkey_st;
+#if !defined(OPENSSL_TYPES_H) && !defined(OSSL_TYPES_H) && !defined(HEADER_OPENSSL_TYPES_H)
+typedef struct evp_pkey_st EVP_PKEY;
+#endif
+
+typedef enum {
+  TS_SSL_PEER_CRED_NONE = 0,
+  TS_SSL_PEER_CRED_X509,
+  TS_SSL_PEER_CRED_RPK,
+} TSSslPeerCredType;
 
 using TSPortDescriptor   = struct tsapi_port *;
 using TSVIO              = struct tsapi_vio *;

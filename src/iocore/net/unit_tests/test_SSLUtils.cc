@@ -69,8 +69,20 @@ protected:
     return {};
   }
 
+  NetVConnection *
+  _get_netvc() const override
+  {
+    return nullptr;
+  }
+
   int
   _verify_certificate(X509_STORE_CTX *) override
+  {
+    return 0;
+  }
+
+  int
+  _verify_peer(tsapi_ssl_peer_verify_ctx &) override
   {
     return 0;
   }

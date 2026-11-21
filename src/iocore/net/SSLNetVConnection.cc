@@ -36,6 +36,7 @@
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/ProxyProtocol.h"
+#include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/SSLTypes.h"
@@ -2327,31 +2328,64 @@ SSLNetVConnection::_get_tls_negotiated_signature_algorithm() const
   return SSLGetNegotiatedSignatureAlgorithm(ssl);
 }
 
-int
-SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
+NetVConnection *
+SSLNetVConnection::_get_netvc() const
 {
-  // Currently, TS_EVENT_SSL_VERIFY_CLIENT/SERVER are invoked only with a NetVC instance.
-  // This requires plugins to call TSSslVerifyCTX in their event handler.
-  // We could pass a structure that has both a cert to verify and a NetVC.
-  // It would allow us to remove confusing TSSslVerifyCTX and its internal implementation that are only available during a very
-  // limited time.
+  return const_cast<SSLNetVConnection *>(this);
+}
+
+int
+SSLNetVConnection::_verify_peer(tsapi_ssl_peer_verify_ctx &peer_ctx)
+{
   SSLHandshakeStatus const status_before_hooks = this->sslHandshakeStatus;
 
-  if (get_context() == NET_VCONNECTION_IN) {
-    this->callHooks(TS_EVENT_SSL_VERIFY_CLIENT /* , ctx */);
-  } else {
-    this->callHooks(TS_EVENT_SSL_VERIFY_SERVER /* , ctx */);
+  // Legacy TS_SSL_VERIFY_CLIENT/SERVER_HOOK: certificate-only to protect legacy plugins
+  if (peer_ctx.cred_type == TS_SSL_PEER_CRED_X509) {
+    if (get_context() == NET_VCONNECTION_IN) {
+      this->callHooks(TS_EVENT_SSL_VERIFY_CLIENT);
+    } else {
+      this->callHooks(TS_EVENT_SSL_VERIFY_SERVER);
+    }
+
+    if (this->sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+      // The rejection reaches the handshake through the verify callback, which fails it or, for an
+      // origin under PERMISSIVE, lets it continue. Left in place, the error status would mark a
+      // continuing handshake complete before it is, so the steps that run when it completes would be skipped.
+      this->sslHandshakeStatus = status_before_hooks;
+      return 1;
+    }
   }
 
-  if (this->sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
-    // The rejection reaches the handshake through the verify callback, which fails it or, for an
-    // origin under PERMISSIVE, lets it continue. Left in place, the error status would mark a
-    // continuing handshake complete before it is, so the steps that run when it completes would be skipped.
-    this->sslHandshakeStatus = status_before_hooks;
-    return 1;
+  // Modern peer verify hooks: invoked for both X.509 and RFC 7250 raw public keys
+  TSEvent const peer_event =
+    (get_context() == NET_VCONNECTION_IN) ? TS_EVENT_SSL_PEER_VERIFY_CLIENT : TS_EVENT_SSL_PEER_VERIFY_SERVER;
+  TSHttpHookID const peer_hook =
+    (get_context() == NET_VCONNECTION_IN) ? TS_SSL_PEER_VERIFY_CLIENT_HOOK : TS_SSL_PEER_VERIFY_SERVER_HOOK;
+
+  for (APIHook *hook = SSLAPIHooks::instance()->get(TSSslHookInternalID(peer_hook)); hook != nullptr; hook = hook->next()) {
+    WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
+    hook->invoke(peer_event, &peer_ctx);
+
+    if (this->sslHandshakeStatus == SSLHandshakeStatus::SSL_HANDSHAKE_ERROR) {
+      this->sslHandshakeStatus = status_before_hooks;
+      return 1;
+    }
   }
 
   return 0;
+}
+
+int
+SSLNetVConnection::_verify_certificate(X509_STORE_CTX *ctx)
+{
+  tsapi_ssl_peer_verify_ctx peer_ctx;
+  peer_ctx.vc           = reinterpret_cast<TSVConn>(this);
+  peer_ctx.cred_type    = (ctx != nullptr) ? TS_SSL_PEER_CRED_X509 : TS_SSL_PEER_CRED_NONE;
+  peer_ctx.store_ctx    = ctx;
+  peer_ctx.peer_rpk     = nullptr;
+  peer_ctx.preverify_ok = 1;
+
+  return this->_verify_peer(peer_ctx);
 }
 
 ssl_error_t

@@ -298,14 +298,27 @@ TLSBasicSupport::set_groups_list(std::string const &groups_list)
 }
 
 int
-TLSBasicSupport::verify_certificate(X509_STORE_CTX *ctx)
+TLSBasicSupport::verify_peer(X509_STORE_CTX *ctx, EVP_PKEY *peer_rpk, TSSslPeerCredType cred_type, int preverify_ok)
 {
-  // See comments in SSLNetVConnection::_verify_certificate
   this->_cert_to_verify = ctx;
-  int ret               = this->_verify_certificate(ctx);
+
+  tsapi_ssl_peer_verify_ctx peer_ctx;
+  peer_ctx.vc           = reinterpret_cast<TSVConn>(this->_get_netvc());
+  peer_ctx.cred_type    = cred_type;
+  peer_ctx.store_ctx    = ctx;
+  peer_ctx.peer_rpk     = peer_rpk;
+  peer_ctx.preverify_ok = preverify_ok;
+
+  int ret               = this->_verify_peer(peer_ctx);
   this->_cert_to_verify = nullptr;
 
   return ret;
+}
+
+int
+TLSBasicSupport::verify_certificate(X509_STORE_CTX *ctx)
+{
+  return this->verify_peer(ctx, nullptr, ctx != nullptr ? TS_SSL_PEER_CRED_X509 : TS_SSL_PEER_CRED_NONE, 1);
 }
 
 X509_STORE_CTX *

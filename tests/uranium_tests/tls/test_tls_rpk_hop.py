@@ -1616,6 +1616,120 @@ def test_rpk_hop_verify_client_hook_skipped_for_rpk(ats_factory: ATSFactory, ser
     )
 
 
+def test_rpk_hop_peer_verify_server_hook(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """TS_SSL_PEER_VERIFY_SERVER_HOOK inspects the origin raw public key.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(ats_factory, "edge_peer_hook", parent, "server.pubkey.pem", plugin="ssl_peer_verify_test.so --server")
+    start_hop(origin, parent, edge)
+
+    result = request_through(curl, edge)
+    stop_tiers(edge, parent)
+
+    assert "origin response" in result.output, "peer verify server hook should allow valid RPK origin"
+    assert_log_contains(
+        edge.traffic_out,
+        "Peer presented RPK",
+        "peer verify server hook must receive RPK",
+    )
+
+
+def test_rpk_hop_peer_verify_server_hook_rejects_rpk(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """TS_SSL_PEER_VERIFY_SERVER_HOOK can reject an origin raw public key.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_edge(
+        ats_factory, "edge_peer_reject", parent, "server.pubkey.pem", plugin="ssl_peer_verify_test.so --server --reject-rpk"
+    )
+    start_hop(origin, parent, edge)
+
+    result = request_through(curl, edge)
+    stop_tiers(edge, parent)
+
+    assert "502" in result.output or "Connect-Failure" in result.output or "origin response" not in result.output
+    assert_log_contains(
+        edge.diags_log,
+        "TS_EVENT_SSL_PEER_VERIFY_SERVER plugin failed the origin RPK check",
+        "peer verify server hook must reject origin RPK",
+    )
+
+
+def test_rpk_hop_peer_verify_client_hook(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """TS_SSL_PEER_VERIFY_CLIENT_HOOK inspects the client raw public key during mTLS.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(
+        ats_factory,
+        "parent_peer_hook",
+        origin,
+        rpk_enabled=True,
+        client_rpk_ca_file="server.pubkey.pem",
+        client_cert_level=2,
+        plugin="ssl_peer_verify_test.so --client",
+    )
+    edge = configure_edge(ats_factory, "edge_mtls", parent, "server.pubkey.pem", offer_client_rpk=True)
+    start_hop(origin, parent, edge)
+
+    result = request_through(curl, edge)
+    stop_tiers(edge, parent)
+
+    assert "origin response" in result.output, "peer verify client hook should allow valid client RPK"
+    assert_log_contains(
+        parent.traffic_out,
+        "Peer presented RPK",
+        "peer verify client hook must receive RPK",
+    )
+
+
+def test_rpk_hop_peer_verify_client_hook_rejects_rpk(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """TS_SSL_PEER_VERIFY_CLIENT_HOOK can reject a client raw public key during mTLS.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(
+        ats_factory,
+        "parent_peer_reject",
+        origin,
+        rpk_enabled=True,
+        client_rpk_ca_file="server.pubkey.pem",
+        client_cert_level=2,
+        plugin="ssl_peer_verify_test.so --client --reject-rpk",
+    )
+    edge = configure_edge(ats_factory, "edge_mtls", parent, "server.pubkey.pem", offer_client_rpk=True)
+    start_hop(origin, parent, edge)
+
+    result = request_through(curl, edge)
+    stop_tiers(edge, parent)
+
+    assert "origin response" not in result.output, "rejected client RPK must fail handshake"
+    assert_log_contains(
+        parent.diags_log,
+        "TS_EVENT_SSL_PEER_VERIFY_CLIENT plugin failed the client raw public key check",
+        "peer verify client hook must reject client RPK",
+    )
+
+
 def test_rpk_hop_mtls_unpinned_parent_takes_x509(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
     """A parent that trusts no client raw public keys does not negotiate one, though it offers its own server key.
 

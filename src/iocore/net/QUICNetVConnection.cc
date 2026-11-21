@@ -917,36 +917,74 @@ QUICNetVConnection::_get_tls_negotiated_signature_algorithm() const
   return SSLGetNegotiatedSignatureAlgorithm(this->_ssl);
 }
 
-int
-QUICNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
+NetVConnection *
+QUICNetVConnection::_get_netvc() const
 {
-  TSEvent      eventId;
-  TSHttpHookID hookId;
-  APIHook     *hook = nullptr;
+  return const_cast<QUICNetVConnection *>(this);
+}
 
-  // TODO Simply call callHooks once QUICNetVC implements TLSEventSupport
-  if (get_context() == NET_VCONNECTION_IN) {
-    eventId = TS_EVENT_SSL_VERIFY_CLIENT;
-    hookId  = TS_SSL_VERIFY_CLIENT_HOOK;
-  } else {
-    eventId = TS_EVENT_SSL_VERIFY_SERVER;
-    hookId  = TS_SSL_VERIFY_SERVER_HOOK;
+int
+QUICNetVConnection::_verify_peer(tsapi_ssl_peer_verify_ctx &peer_ctx)
+{
+  if (peer_ctx.cred_type == TS_SSL_PEER_CRED_X509) {
+    TSEvent      legacyEvent;
+    TSHttpHookID legacyHookId;
+
+    if (this->get_context() == NET_VCONNECTION_IN) {
+      legacyEvent  = TS_EVENT_SSL_VERIFY_CLIENT;
+      legacyHookId = TS_SSL_VERIFY_CLIENT_HOOK;
+    } else {
+      legacyEvent  = TS_EVENT_SSL_VERIFY_SERVER;
+      legacyHookId = TS_SSL_VERIFY_SERVER_HOOK;
+    }
+
+    APIHook *hook = SSLAPIHooks::instance()->get(TSSslHookInternalID(legacyHookId));
+    if (hook != nullptr) {
+      this->_is_verifying_cert = true;
+      WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
+      hook->invoke(legacyEvent, this);
+      ink_assert(this->_is_verifying_cert == false);
+      if (this->_is_cert_verified) {
+        return 1;
+      }
+    }
   }
-  hook = SSLAPIHooks::instance()->get(TSSslHookInternalID(hookId));
-  if (hook != nullptr) {
+
+  TSEvent      peerEvent;
+  TSHttpHookID peerHookId;
+
+  if (this->get_context() == NET_VCONNECTION_IN) {
+    peerEvent  = TS_EVENT_SSL_PEER_VERIFY_CLIENT;
+    peerHookId = TS_SSL_PEER_VERIFY_CLIENT_HOOK;
+  } else {
+    peerEvent  = TS_EVENT_SSL_PEER_VERIFY_SERVER;
+    peerHookId = TS_SSL_PEER_VERIFY_SERVER_HOOK;
+  }
+
+  for (APIHook *hook = SSLAPIHooks::instance()->get(TSSslHookInternalID(peerHookId)); hook != nullptr; hook = hook->next()) {
     this->_is_verifying_cert = true;
     WEAK_SCOPED_MUTEX_LOCK(lock, hook->m_cont->mutex, this_ethread());
-    hook->invoke(eventId, this);
-  }
-
-  // According to the implementation in SSLNetVC,
-  // we can assume that reenable() is called during the event handling.
-  ink_assert(this->_is_verifying_cert == false);
-  if (this->_is_cert_verified) {
-    return 1;
+    hook->invoke(peerEvent, &peer_ctx);
+    ink_assert(this->_is_verifying_cert == false);
+    if (this->_is_cert_verified) {
+      return 1;
+    }
   }
 
   return 0;
+}
+
+int
+QUICNetVConnection::_verify_certificate(X509_STORE_CTX *ctx)
+{
+  tsapi_ssl_peer_verify_ctx peer_ctx;
+  peer_ctx.vc           = reinterpret_cast<TSVConn>(this);
+  peer_ctx.cred_type    = (ctx != nullptr) ? TS_SSL_PEER_CRED_X509 : TS_SSL_PEER_CRED_NONE;
+  peer_ctx.store_ctx    = ctx;
+  peer_ctx.peer_rpk     = nullptr;
+  peer_ctx.preverify_ok = 1;
+
+  return this->_verify_peer(peer_ctx);
 }
 
 in_port_t
