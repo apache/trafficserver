@@ -204,7 +204,7 @@ bool
 HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name, char *param_val, int param_val_length)
 {
   int         cnt;
-  const char *s, *t;
+  const char *s, *e, *t;
   Str        *param;
   bool        is_match;
 
@@ -213,9 +213,12 @@ HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name,
     // compare this parameter to the target param_name //
     /////////////////////////////////////////////////////
 
+    // A list built without copying points each cell into the raw header
+    // value, which is not NUL-terminated, so every scan stops at len.
     s = param->str; // source str
+    e = s + param->len;
     t = param_name; // target str
-    while (*s && *t && (ParseRules::ink_tolower(*s) == ParseRules::ink_tolower(*t))) {
+    while (s < e && *s && *t && (ParseRules::ink_tolower(*s) == ParseRules::ink_tolower(*t))) {
       ++s;
       ++t;
     }
@@ -225,7 +228,7 @@ HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name,
     // or points to space or '=' character.                       //
     ////////////////////////////////////////////////////////////////
 
-    is_match = ((!*t) && ((!*s) || ParseRules::is_ws(*s) || (*s == '=')));
+    is_match = ((!*t) && ((s == e) || (!*s) || ParseRules::is_ws(*s) || (*s == '=')));
 
     /////////////////////////////////////////////////////////////
     // copy text after '=' into param_val, up to length limits //
@@ -234,16 +237,16 @@ HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name,
     if (is_match) {
       param_val[0] = '\0';
 
-      while (*s && ParseRules::is_ws(*s)) {
+      while (s < e && *s && ParseRules::is_ws(*s)) {
         s++; // skip white
       }
-      if (*s == '=') {
+      if (s < e && *s == '=') {
         ++s; // skip '='
-        while (*s && ParseRules::is_ws(*s)) {
+        while (s < e && *s && ParseRules::is_ws(*s)) {
           s++; // skip white
         }
 
-        for (cnt = 0; *s && (cnt < param_val_length - 1); s++, cnt++) {
+        for (cnt = 0; s < e && *s && (cnt < param_val_length - 1); s++, cnt++) {
           param_val[cnt] = *s;
         }
         if (cnt < param_val_length) {
