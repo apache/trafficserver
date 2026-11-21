@@ -25,6 +25,7 @@
 #include "ts/InkAPIPrivateIOCore.h"
 
 #include "tscore/Allocator.h"
+#include "ts/ats_probe.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_atomic.h"
@@ -162,7 +163,10 @@ INKContInternal::handle_event(int event, void *edata)
     if (pluginThreadContext != nullptr) {
       pluginThreadContext->countInvocation();
     }
-    int retval          = m_event_func((TSCont)this, (TSEvent)event, edata);
+    TSEventFunc func = m_event_func;
+    ATS_PROBE4(plugin_dispatch_begin, this, func, event, edata);
+    int retval = func((TSCont)this, (TSEvent)event, edata);
+    ATS_PROBE4(plugin_dispatch_end, this, func, event, retval);
     pluginThreadContext = previousContext;
     if (edata && event == EVENT_INTERVAL) {
       Event *e = reinterpret_cast<Event *>(edata);
