@@ -258,6 +258,7 @@ nitpick_ignore = [
     ('cpp:identifier', 'YAML::Node'),
     ('cpp:identifier', 'swoc::TextView'),
     ('cpp:identifier', 'swoc::Errata'),
+    ('cpp:identifier', 'EVP_PKEY'),
     # Template arguments
     ('cpp:identifier', 'T'),
     ('cpp:identifier', 'F'),
@@ -291,6 +292,13 @@ nitpick_ignore = [
     ('cpp:enumerator', 'TS_SSL_SERVERNAME_HOOK'),
     ('cpp:enumerator', 'TS_SSL_SNI_HOOK'),
     ('cpp:enumerator', 'TS_SSL_CERT_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_VERIFY_CLIENT_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_VERIFY_SERVER_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_PEER_VERIFY_CLIENT_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_PEER_VERIFY_SERVER_HOOK'),
+    ('cpp:enumerator', 'TS_SSL_PEER_CRED_NONE'),
+    ('cpp:enumerator', 'TS_SSL_PEER_CRED_X509'),
+    ('cpp:enumerator', 'TS_SSL_PEER_CRED_RPK'),
     ('cpp:enumerator', 'TS_VCONN_START_HOOK'),
     # Lifecycle hooks
     ('cpp:enumerator', 'TS_LIFECYCLE_SSL_SECRET_HOOK'),

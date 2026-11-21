@@ -224,6 +224,14 @@ Enumeration Members
 
    Inbound TLS connection certificate verification (verifying the client certificate).
 
+.. enumerator:: TS_EVENT_SSL_PEER_VERIFY_CLIENT
+
+   Inbound TLS connection peer verification (verifying the client certificate or raw public key).
+
+.. enumerator:: TS_EVENT_SSL_PEER_VERIFY_SERVER
+
+   Outbound TLS connection peer verification (verifying the origin server certificate or raw public key).
+
 .. enumerator:: TS_EVENT_MGMT_UPDATE
 
 Description

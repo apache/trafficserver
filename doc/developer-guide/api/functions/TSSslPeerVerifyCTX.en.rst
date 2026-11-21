@@ -28,11 +28,11 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSVConn TSSslPeerVerifyCTXVConnGet(TSSslPeerVerifyCTX ctx)
-.. function:: TSSslPeerCredType TSSslPeerVerifyCTXCredTypeGet(TSSslPeerVerifyCTX ctx)
-.. function:: TSSslVerifyCTX TSSslPeerVerifyCTXStoreCTXGet(TSSslPeerVerifyCTX ctx)
-.. function:: EVP_PKEY *TSSslPeerVerifyCTXPeerRPKGet(TSSslPeerVerifyCTX ctx)
-.. function:: int TSSslPeerVerifyCTXPreverifyGet(TSSslPeerVerifyCTX ctx)
+    TSVConn TSSslPeerVerifyCTXVConnGet(TSSslPeerVerifyCTX ctx);
+    TSSslPeerCredType TSSslPeerVerifyCTXCredTypeGet(TSSslPeerVerifyCTX ctx);
+    TSSslVerifyCTX TSSslPeerVerifyCTXStoreCTXGet(TSSslPeerVerifyCTX ctx);
+    EVP_PKEY *TSSslPeerVerifyCTXPeerRPKGet(TSSslPeerVerifyCTX ctx);
+    int TSSslPeerVerifyCTXPreverifyGet(TSSslPeerVerifyCTX ctx);
 
 Description
 ===========
@@ -100,24 +100,24 @@ Types
 
    An opaque pointer to the peer verification context, valid only for the duration of the hook callback.
 
-.. type:: TSSslPeerCredType
+.. enum:: TSSslPeerCredType
 
-   An enumeration indicating the type of credential presented by the peer:
+   An enumeration indicating the type of credential presented by the peer.
 
-   .. enumerator:: TS_SSL_PEER_CRED_NONE
+.. enumerator:: TS_SSL_PEER_CRED_NONE
 
-      No peer credentials.
+   No peer credentials.
 
-   .. enumerator:: TS_SSL_PEER_CRED_X509
+.. enumerator:: TS_SSL_PEER_CRED_X509
 
-      X.509 certificate chain.
+   X.509 certificate chain.
 
-   .. enumerator:: TS_SSL_PEER_CRED_RPK
+.. enumerator:: TS_SSL_PEER_CRED_RPK
 
-      RFC 7250 Raw Public Key.
+   RFC 7250 Raw Public Key.
 
 See Also
 ========
 
 :func:`TSVConnSslVerifyCTXGet`,
-:doc:`TSHttpHookID <../types/TSHttpHookID.en>`
+:type:`TSHttpHookID`
