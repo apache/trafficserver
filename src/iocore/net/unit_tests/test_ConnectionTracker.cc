@@ -297,6 +297,29 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[libinknet][Connect
   }
 }
 
+TEST_CASE("ConnectionTracker keeps a group that a transaction did not reserve yet", "[libinknet][ConnectionTracker]")
+{
+  auto &txn = test_config();
+
+  IpEndpoint addr;
+  REQUIRE(ats_ip_pton("10.9.8.6:443", &addr) == 0);
+
+  auto first = ConnectionTracker::obtain_outbound(txn, FQDN, addr);
+  first.reserve();
+  auto connection = first.drop();
+
+  auto second = ConnectionTracker::obtain_outbound(txn, FQDN, addr);
+  connection->release();
+  connection.reset();
+  CHECK(second.reserve() == 1);
+
+  auto third = ConnectionTracker::obtain_outbound(txn, FQDN, addr);
+  CHECK(third.reserve() == 2);
+
+  third.drop()->release();
+  second.drop()->release();
+}
+
 TEST_CASE("Connection tracker client exempt list", "[libinknet][ConnectionTracker]")
 {
   test_config();
