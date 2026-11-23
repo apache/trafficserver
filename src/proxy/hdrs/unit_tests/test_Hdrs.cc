@@ -3322,6 +3322,15 @@ TEST_CASE("HTTPHdrImpl::recompute_wks_indices rebuilds from the stored strings",
   req.destroy();
 }
 
+TEST_CASE("A response status with more than three digits is not read as its first three", "[proxy][hdrtest]")
+{
+  HTTPHdr resp;
+
+  parse_response(resp, "HTTP/1.1 20040 OK\r\n\r\n"sv);
+  CHECK(resp.status_get() == HTTPStatus::NONE);
+  resp.destroy();
+}
+
 TEST_CASE("HTTPInfo::unmarshal rebuilds well-known string indices", "[proxy][hdrtest][wks]")
 {
   HTTPHdr req;

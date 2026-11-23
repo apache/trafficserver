@@ -1349,8 +1349,8 @@ http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const
 #if (ENABLE_PARSER_FAST_PATHS)
     // first try fast path
     if (end - cur >= 16) {
-      int http_match =
-        ((cur[0] ^ 'H') | (cur[1] ^ 'T') | (cur[2] ^ 'T') | (cur[3] ^ 'P') | (cur[4] ^ '/') | (cur[6] ^ '.') | (cur[8] ^ ' '));
+      int http_match = ((cur[0] ^ 'H') | (cur[1] ^ 'T') | (cur[2] ^ 'T') | (cur[3] ^ 'P') | (cur[4] ^ '/') | (cur[6] ^ '.') |
+                        (cur[8] ^ ' ') | (cur[12] ^ ' '));
       if ((http_match != 0) ||
           (!(ParseRules::is_digit(cur[5]) && ParseRules::is_digit(cur[7]) && ParseRules::is_digit(cur[9]) &&
              ParseRules::is_digit(cur[10]) && ParseRules::is_digit(cur[11]) && (!ParseRules::is_space(cur[13]))))) {
