@@ -7121,9 +7121,16 @@ TSTextLogObjectDestroy(TSTextLogObject the_object) noexcept
 try {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
-  if (Log::config->log_object_manager.unmanage_api_object(reinterpret_cast<TextLogObject *>(the_object))) {
-    return TS_SUCCESS;
-  }
+  LogConfig *config;
+
+  // A log configuration reload can retire the manager before it takes the object. Then the manager
+  // of the new config has the object.
+  do {
+    config = Log::config;
+    if (config->log_object_manager.unmanage_api_object(reinterpret_cast<TextLogObject *>(the_object))) {
+      return TS_SUCCESS;
+    }
+  } while (config != Log::config);
 
   return TS_ERROR;
 } catch (...) {
