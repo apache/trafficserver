@@ -487,13 +487,10 @@ URLImpl::set_port(HdrHeap *heap, std::string_view value, bool copy_string)
 
   this->m_port = 0;
   for (auto digit : value) {
-    if (!ParseRules::is_digit(digit)) {
-      break;
-    }
     unsigned int next = this->m_port * 10 + (digit - '0');
-    if (next > 65535) {
-      // Reject out-of-range port: drop the parsed text as well so the URL is
-      // fully treated as if no port were given.
+    if (!ParseRules::is_digit(digit) || next > 65535) {
+      // Reject a port that is out of range or not a number: drop the parsed text as well so the
+      // URL is fully treated as if no port were given.
       mime_str_u16_set(heap, {nullptr, 0}, &(this->m_ptr_port), &(this->m_len_port), copy_string);
       this->m_port = 0;
       return;

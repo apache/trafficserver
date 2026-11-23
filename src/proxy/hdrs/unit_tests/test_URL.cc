@@ -692,6 +692,9 @@ TEST_CASE("UrlParsePortStorage", "[proxy][parseurl]")
     {"https://www.example.com:65536/",  0,     false},
     {"https://www.example.com:99999/",  0,     false},
     {"https://www.example.com:131152/", 0,     false},
+    // Ports that are not a number clear both.
+    {"https://www.example.com:80abc/",  0,     false},
+    {"https://www.example.com:abc/",    0,     false},
   };
   // clang-format on
 
