@@ -650,12 +650,7 @@ ConnectionTracker::Group::release()
         // lock.
         return;
       }
-      // The table and the caller each hold one reference. One more means that a TxnState has this
-      // group and can reserve() on it, so the group must stay in the table.
-      if (auto loc = table._table.find(_key);
-          loc != table._table.end() && loc->second.get() == this && loc->second.use_count() <= 2) {
-        table._table.erase(loc);
-      }
+      table._table.erase(_key);
     }
   } else {
     // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.

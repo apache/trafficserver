@@ -542,6 +542,13 @@ inline int
 ConnectionTracker::TxnState::reserve()
 {
   _reserved_p = true;
+
+  // Group::release() erases a group with a count of zero, which can be this group or one that
+  // replaced it. With the table lock, the count goes to the group that the table has for the key.
+  TableSingleton             &table = _g->_direction == Group::DirectionType::INBOUND ? _inbound_table : _outbound_table;
+  std::lock_guard<std::mutex> lock(table._mutex);
+  _g = table._table.try_emplace(_g->_key, _g).first->second;
+
   // @a _count is always the authoritative count; the metrics, if enabled, only mirror it.
   auto count = ++_g->_count;
   if (_g->_count_metric != nullptr) {
