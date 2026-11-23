@@ -236,12 +236,12 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     intptr_t const current = reinterpret_cast<char *>(itr->ele_hdr) - reinterpret_cast<char *>(msg);
     offset                 = itr->ele_hdr->o_next;
     if (offset < current + ele_size) {
-      return corrupt("element out of order");
+      return corrupt("element overlaps the previous one");
     }
   }
 
   if (!fits_in_message(msg, offset, ele_size)) {
-    return corrupt("element outside the file");
+    return corrupt("element outside the snapshot");
   }
   eh = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + offset);
   if (itr != nullptr) {
@@ -261,7 +261,8 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
   if (!resolve_string(msg, r, r->name)) {
     return corrupt("bad record name");
   }
-  // RecSetRecord() reads RECD_NULL data as a string pointer, which the bytes from the file are not.
+  // RecSetRecord() reads RECD_NULL data as a string pointer, which the bytes from the file are not, and RecDataSet()
+  // asserts on any type past RECD_COUNTER.
   if (r->data_type <= RECD_NULL || r->data_type >= RECD_MAX) {
     return corrupt("bad data type");
   }

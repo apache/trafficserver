@@ -184,18 +184,50 @@ write_and_read(RecMessage *msg, const std::filesystem::path &path)
 
 TEST_CASE("RecMessageUnmarshalNext walks every element of a valid snapshot", "[librecords][RecMessage]")
 {
-  auto          path = snap_path("walk");
-  RecMessage   *in   = write_and_read(marshal_records(3), path);
+  auto        path = snap_path("walk");
+  RecMessage *msg  = RecMessageAlloc(RECG_NULL);
+  RecRecord   rec;
+
+  // One of each persisted stat type, so the data type bound must admit RECD_COUNTER, the last stored type.
+  RecRecordInit(&rec);
+  rec.rec_type     = RECT_PROCESS;
+  rec.data_type    = RECD_INT;
+  rec.name         = "proxy.process.test.int";
+  rec.data.rec_int = 7;
+  msg              = RecMessageMarshal_Realloc(msg, &rec);
+
+  RecRecordInit(&rec);
+  rec.rec_type       = RECT_PROCESS;
+  rec.data_type      = RECD_FLOAT;
+  rec.name           = "proxy.process.test.float";
+  rec.data.rec_float = 2.5;
+  msg                = RecMessageMarshal_Realloc(msg, &rec);
+
+  RecRecordInit(&rec);
+  rec.rec_type         = RECT_PROCESS;
+  rec.data_type        = RECD_COUNTER;
+  rec.name             = "proxy.process.test.counter";
+  rec.data.rec_counter = 11;
+  msg                  = RecMessageMarshal_Realloc(msg, &rec);
+
+  RecMessage   *in = write_and_read(msg, path);
   RecMessageItr itr;
   RecRecord    *got = nullptr;
 
   REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
-  CHECK(got->data.rec_int == 0);
-  for (int i = 1; i < 3; ++i) {
-    REQUIRE(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_OKAY);
-    CHECK(std::string(got->name) == "proxy.process.test.snapshot");
-    CHECK(got->data.rec_int == i);
-  }
+  CHECK(std::string(got->name) == "proxy.process.test.int");
+  CHECK(got->data.rec_int == 7);
+
+  REQUIRE(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_OKAY);
+  CHECK(std::string(got->name) == "proxy.process.test.float");
+  CHECK(got->data.rec_float == 2.5);
+
+  REQUIRE(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_OKAY);
+  CHECK(std::string(got->name) == "proxy.process.test.counter");
+  CHECK(got->data.rec_counter == 11);
+
+  // The walk ends because every entry was read, not because an element was rejected.
+  CHECK(itr.next == in->entries);
   CHECK(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_FAIL);
 
   ats_free(in);
