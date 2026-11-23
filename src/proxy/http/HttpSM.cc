@@ -3334,7 +3334,7 @@ HttpSM::tunnel_handler(int event, void * /* data ATS_UNUSED */)
 
   // If we had already received EOS, just go away. We would sometimes see
   // a WRITE event appear after receiving EOS from the server connection
-  if ((event == VC_EVENT_WRITE_READY || event == VC_EVENT_WRITE_COMPLETE) && server_entry->eos) {
+  if ((event == VC_EVENT_WRITE_READY || event == VC_EVENT_WRITE_COMPLETE) && server_entry != nullptr && server_entry->eos) {
     return 0;
   }
 
