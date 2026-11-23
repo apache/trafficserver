@@ -246,8 +246,8 @@ private:
         // CONSIDER_NULL_FIELDS flag is not set
         //
         // A null field, or a whitespace-only one kept by KEEP_WHITESPACE_LEFT, must not trim end back past the
-        // token's first character. Before it lies either the front of the data or skipped whitespace, which in the
-        // middle of a line follows the previous token; a terminator written there would leave the returned token
+        // token's first character. Before it lies either the front of the data, where a terminator would land outside
+        // the buffer, or what the scan skipped after the previous token, where it would leave the returned token
         // unterminated.
         size_t const first = next - _data;
 
