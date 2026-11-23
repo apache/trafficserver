@@ -374,6 +374,20 @@ PluginDso::LoadedPlugins::findByEffectivePath(const fs::path &path, bool dynamic
   return spot == _list.end() ? nullptr : static_cast<PluginDso *>(spot);
 }
 
+PluginDso *
+PluginDso::LoadedPlugins::acquireByEffectivePath(const fs::path &path, bool dynamicReloadEnabled)
+{
+  SCOPED_MUTEX_LOCK(lock, _mutex, this_ethread());
+
+  PluginDso *plugin = findByEffectivePath(path, dynamicReloadEnabled);
+  // A count of zero means that release() is about to remove and delete the plugin.
+  if (plugin != nullptr && plugin->refcount_inc() == 1) {
+    plugin->refcount_dec();
+    plugin = nullptr;
+  }
+  return plugin;
+}
+
 void
 PluginDso::LoadedPlugins::indicatePreReload(const char *factoryId)
 {

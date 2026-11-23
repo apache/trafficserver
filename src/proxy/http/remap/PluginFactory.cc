@@ -174,7 +174,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
   }
 
   /* Only one plugin with this effective path can be loaded by a plugin factory */
-  RemapPluginInfo *plugin = dynamic_cast<RemapPluginInfo *>(findByEffectivePath(effectivePath, dynamicReloadEnabled));
+  RemapPluginInfo *plugin = dynamic_cast<RemapPluginInfo *>(acquireByEffectivePath(effectivePath, dynamicReloadEnabled));
   RemapPluginInst *inst   = nullptr;
 
   if (nullptr == plugin) {
@@ -259,6 +259,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
     if (nullptr != inst) {
       _instList.append(inst);
     }
+    plugin->release();
   }
 
   return inst;
@@ -323,12 +324,12 @@ PluginFactory::cleanup()
  *
  * @param path effective (canonical) path
  * @param[in] dynamicReloadEnabled Whether to find a dynamically reloadable copy of the plugin.
- * @return plugin found or nullptr if not found
+ * @return plugin found, with a reference that the caller must release, or nullptr if not found
  */
 PluginDso *
-PluginFactory::findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled)
+PluginFactory::acquireByEffectivePath(const fs::path &path, bool dynamicReloadEnabled)
 {
-  return PluginDso::loadedPlugins()->findByEffectivePath(path, dynamicReloadEnabled);
+  return PluginDso::loadedPlugins()->acquireByEffectivePath(path, dynamicReloadEnabled);
 }
 
 /**

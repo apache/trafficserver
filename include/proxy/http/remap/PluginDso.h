@@ -108,6 +108,10 @@ public:
     void       add(PluginDso *plugin);
     void       remove(PluginDso *plugin);
     PluginDso *findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
+    /** Find a plugin as findByEffectivePath() does, and take a reference to it for the caller.
+     *  A plugin that is on its last release() is not found.
+     */
+    PluginDso *acquireByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
     void       indicatePreReload(const char *factoryId);
     void indicatePostReload(bool reloadSuccessful, const std::unordered_map<PluginDso *, int> &pluginUsed, const char *factoryId);
 
