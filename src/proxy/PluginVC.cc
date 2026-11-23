@@ -807,6 +807,8 @@ PluginVC::setup_event_cb(ink_hrtime in, Event **e_ptr)
 void
 PluginVC::set_active_timeout(ink_hrtime timeout_in)
 {
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+
   active_timeout = timeout_in;
 
   // FIX - Do we need to handle the case where the timeout is set
@@ -825,6 +827,8 @@ PluginVC::set_active_timeout(ink_hrtime timeout_in)
 void
 PluginVC::set_inactivity_timeout(ink_hrtime timeout_in)
 {
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+
   inactive_timeout = timeout_in;
   if (inactive_timeout != 0) {
     inactive_timeout_at = ink_get_hrtime() + inactive_timeout;
