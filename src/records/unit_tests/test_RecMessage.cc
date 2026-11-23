@@ -182,6 +182,26 @@ write_and_read(RecMessage *msg, const std::filesystem::path &path)
 }
 } // namespace
 
+TEST_CASE("RecMessageUnmarshalNext walks every element of a valid snapshot", "[librecords][RecMessage]")
+{
+  auto          path = snap_path("walk");
+  RecMessage   *in   = write_and_read(marshal_records(3), path);
+  RecMessageItr itr;
+  RecRecord    *got = nullptr;
+
+  REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
+  CHECK(got->data.rec_int == 0);
+  for (int i = 1; i < 3; ++i) {
+    REQUIRE(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_OKAY);
+    CHECK(std::string(got->name) == "proxy.process.test.snapshot");
+    CHECK(got->data.rec_int == i);
+  }
+  CHECK(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_FAIL);
+
+  ats_free(in);
+  std::filesystem::remove(path);
+}
+
 TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the snapshot", "[librecords][RecMessage]")
 {
   auto          path = snap_path("elements");
@@ -231,6 +251,36 @@ TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the sna
     RecMessage *msg = marshal_records(1);
 
     element_record(first_element(msg))->name = reinterpret_cast<const char *>(static_cast<intptr_t>(msg->o_end) * 2);
+
+    RecMessage *in = write_and_read(msg, path);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+  SECTION("a name offset that passes the offset bound but starts past the end")
+  {
+    RecMessage *msg = marshal_records(1);
+
+    // The read-back o_end is o_write, so this relative offset is in range but the name it locates is not.
+    element_record(first_element(msg))->name = reinterpret_cast<const char *>(static_cast<intptr_t>(msg->o_write));
+
+    RecMessage *in = write_and_read(msg, path);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+  SECTION("a data type that is not a stored type")
+  {
+    RecMessage *msg = marshal_records(1);
+    RecDataT    type{};
+
+    SECTION("RECD_NULL")
+    {
+      type = RECD_NULL;
+    }
+    SECTION("RECD_MAX")
+    {
+      type = RECD_MAX;
+    }
+    element_record(first_element(msg))->data_type = type;
 
     RecMessage *in = write_and_read(msg, path);
     CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);

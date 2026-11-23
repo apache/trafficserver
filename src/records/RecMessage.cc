@@ -217,8 +217,8 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
   intptr_t          offset;
   intptr_t const    ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecord);
 
-  auto corrupt = []() {
-    Warning("Persistent statistics file records.snap is corrupted. Ignoring the rest of the file\n");
+  auto corrupt = [](const char *why) {
+    Warning("Persistent statistics file records.snap is corrupted (%s). Ignoring the rest of the file\n", why);
     return REC_ERR_FAIL;
   };
 
@@ -236,12 +236,12 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     intptr_t const current = reinterpret_cast<char *>(itr->ele_hdr) - reinterpret_cast<char *>(msg);
     offset                 = itr->ele_hdr->o_next;
     if (offset < current + ele_size) {
-      return corrupt();
+      return corrupt("element out of order");
     }
   }
 
   if (!fits_in_message(msg, offset, ele_size)) {
-    return corrupt();
+    return corrupt("element outside the file");
   }
   eh = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + offset);
   if (itr != nullptr) {
@@ -253,21 +253,25 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 
   // If the file is corrupt, ignore the rest of the file.
   if (eh->magic != REC_MESSAGE_ELE_MAGIC) {
-    return corrupt();
+    return corrupt("bad element magic");
   }
 
   r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(eh) + sizeof(RecMessageEleHdr));
 
   if (!resolve_string(msg, r, r->name)) {
-    return corrupt();
+    return corrupt("bad record name");
+  }
+  // RecSetRecord() reads RECD_NULL data as a string pointer, which the bytes from the file are not.
+  if (r->data_type <= RECD_NULL || r->data_type >= RECD_MAX) {
+    return corrupt("bad data type");
   }
   if (r->data_type == RECD_STRING) {
     if (!resolve_string(msg, r, r->data.rec_string) || !resolve_string(msg, r, r->data_default.rec_string)) {
-      return corrupt();
+      return corrupt("bad string value");
     }
   }
   if (REC_TYPE_IS_CONFIG(r->rec_type) && !resolve_string(msg, r, r->config_meta.check_expr)) {
-    return corrupt();
+    return corrupt("bad check expression");
   }
 
   *record = r;
