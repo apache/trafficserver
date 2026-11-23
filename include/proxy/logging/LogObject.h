@@ -341,7 +341,8 @@ public:
     ERROR_ACCESSING_LOG_FILE,
     ERROR_DETERMINING_FILE_INFO,
     CANNOT_SOLVE_FILENAME_CONFLICTS,
-    ERROR_DOING_FILESYSTEM_CHECKS
+    ERROR_DOING_FILESYSTEM_CHECKS,
+    MANAGER_RETIRED
   };
 
 private:
@@ -349,6 +350,7 @@ private:
 
   LogObjectList _objects;    // array of configured objects
   LogObjectList _APIobjects; // array of API objects
+  bool          _retired = false;
 
 public:
   ink_mutex *_APImutex; // synchronize access to array of API objects
@@ -388,6 +390,14 @@ public:
 
   // return success
   bool unmanage_api_object(LogObject *logObject);
+
+  // A retired manager accepts no more API objects, because a new LogConfig replaced its LogConfig.
+  // The caller must hold _APImutex.
+  void
+  retire()
+  {
+    _retired = true;
+  }
 
   // Flush the buffers on all the managed log objects.
   void flush_all_objects();

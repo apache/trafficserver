@@ -224,3 +224,17 @@ TEST_CASE("a record written after a roll lands in the new file", "[logging][roll
   CHECK(slurp(rolled[0]) == "before the roll\n");
   CHECK(slurp(log) == "after the roll\n");
 }
+
+TEST_CASE("a retired manager accepts no API objects", "[logging][api]")
+{
+  RollingFixture    fx("retired");
+  auto              obj     = make_daily_object(fx, Log::NO_ROLLING);
+  LogObjectManager &manager = fx.cfg->log_object_manager;
+
+  ink_mutex_acquire(manager._APImutex);
+  manager.retire();
+  ink_mutex_release(manager._APImutex);
+
+  CHECK(manager.manage_api_object(obj.get()) == LogObjectManager::MANAGER_RETIRED);
+  CHECK_FALSE(manager.has_api_objects());
+}

@@ -7062,8 +7062,11 @@ TSTextLogObjectCreate(const char *filename, int mode, TSTextLogObject *new_objec
     return TS_ERROR;
   }
 
-  int err = (mode & TS_LOG_MODE_DO_NOT_RENAME ? Log::config->log_object_manager.manage_api_object(tlog, 0) :
-                                                Log::config->log_object_manager.manage_api_object(tlog));
+  int err;
+  do {
+    LogObjectManager &manager = Log::config->log_object_manager;
+    err = (mode & TS_LOG_MODE_DO_NOT_RENAME ? manager.manage_api_object(tlog, 0) : manager.manage_api_object(tlog));
+  } while (err == LogObjectManager::MANAGER_RETIRED);
   if (err != LogObjectManager::NO_FILENAME_CONFLICTS) {
     delete tlog;
     *new_object = nullptr;
