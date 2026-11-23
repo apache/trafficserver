@@ -245,9 +245,10 @@ private:
         // requested is larger than 1, remove them if the
         // CONSIDER_NULL_FIELDS flag is not set
         //
-        // A null field is empty, so neither trim may move end before the token's first character. Before it lies
-        // either the front of the data or skipped whitespace, which in the middle of a line follows the previous
-        // token; a terminator written there would leave the returned token unterminated.
+        // A null field, or a whitespace-only one kept by KEEP_WHITESPACE_LEFT, must not trim end back past the
+        // token's first character. Before it lies either the front of the data or skipped whitespace, which in the
+        // middle of a line follows the previous token; a terminator written there would leave the returned token
+        // unterminated.
         size_t const first = next - _data;
 
         if (!(_mode & CONSIDER_NULL_FIELDS)) {

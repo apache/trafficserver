@@ -381,7 +381,8 @@ plugin_init(bool validateOnly)
         break; // EOL
       }
 
-      // Check the limit only when another token follows, so the newline ending a full line does not trip it.
+      // Check the limit only when another token follows, so a full line's newline, trailing spaces or trailing
+      // # comment do not trip it.
       if (argc >= MAX_PLUGIN_ARGS) {
         Warning("Exceeded max number of args (%d) for plugin: [%s]", MAX_PLUGIN_ARGS, argc > 0 ? argv[0] : "???");
         break;

@@ -129,8 +129,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *client_tls13_cipher_suites;
   char *server_groups_list;
   char *client_groups_list;
-  // -1, the records default, means no explicit bound for that end. With both ends of a side at -1 the context
-  // loaders leave its version range alone; with only one, they open that end to the TLS library's limit.
+  // -1, the records default, means no explicit bound for that end of the side's TLS version range.
   int server_tls_ver_min = -1;
   int server_tls_ver_max = -1;
   int client_tls_ver_min = -1;
