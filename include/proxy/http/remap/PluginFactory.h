@@ -108,7 +108,7 @@ public:
   static void cleanup(); // For startup, clean out all temporary directory we may have left from before
 
 protected:
-  PluginDso *findByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
+  PluginDso *acquireByEffectivePath(const fs::path &path, bool dynamicReloadEnabled);
   fs::path   getEffectivePath(const fs::path &configPath);
 
   std::vector<fs::path> _searchDirs;   /** @brief ordered list of search paths where we look for plugins */

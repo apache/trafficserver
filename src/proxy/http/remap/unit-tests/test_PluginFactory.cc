@@ -464,6 +464,35 @@ SCENARIO("loading plugins", "[plugin][core]")
       teardownConfigPathTest();
     }
 
+    WHEN("a loaded plugin is looked up again")
+    {
+      fs::path configPath = pluginName;
+      setupConfigPathTest(configPath, buildPath, tempComponent, effectivePath, runtimePath);
+      auto             factory = getFactory(tempComponent);
+      RemapPluginInst *first   = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
+      REQUIRE(nullptr != first);
+      PluginDso &dso = first->_plugin;
+
+      THEN("expect a second instance to add one reference")
+      {
+        RemapPluginInst *second = factory->getRemapPlugin(configPath, 0, nullptr, error, isPluginDynamicReloadEnabled());
+        REQUIRE(nullptr != second);
+        CHECK(&second->_plugin == &dso);
+        CHECK(dso.refcount() == 2);
+      }
+
+      THEN("expect a plugin on its last release to not be found")
+      {
+        // The state between the decrement in PluginDso::release() and the removal from the list.
+        dso.refcount_dec();
+        CHECK(nullptr == PluginDso::loadedPlugins()->acquireByEffectivePath(effectivePath, isPluginDynamicReloadEnabled()));
+        CHECK(dso.refcount() == 0);
+        dso.refcount_inc();
+      }
+
+      teardownConfigPathTest();
+    }
+
     WHEN("instance initialization fails")
     {
       fs::path configPath = fs::path("plugin_instinit_fail.so");
