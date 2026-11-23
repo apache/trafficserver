@@ -41,7 +41,7 @@ that in |TS|, client contexts are stored in a 2-level mapping with CA paths and 
 path as keys. Hence every 2 null-terminated string in :arg:`result` can be used to lookup one context.
 :arg:`result` points to an user allocated array that will hold pointers to lookup key strings and
 :arg:`n` is the size for :arg:`result` array. :arg:`actual`, if valid, will be filled with actual number
-of lookup keys (2 for each context).
+of lookup keys (2 for each context). The strings stay valid until |TS| stops.
 
 :func:`TSSslClientContextFindByName` can be used to retrieve the client context pointed by the lookup
 key pairs. User should call :func:`TSSslClientContextsNamesGet` first to determine which lookup keys are

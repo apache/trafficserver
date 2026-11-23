@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <string_view>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -8768,6 +8769,18 @@ TSSslSecretGet(const char *secret_name, int secret_name_length, int *secret_data
   return data;
 }
 
+// Plugins keep the names from TSSslClientContextsNamesGet() across SSL configuration reloads, so
+// the names must live longer than the configuration that they come from.
+static const char *
+intern_client_context_name(const std::string &name)
+{
+  static std::mutex                      mutex;
+  static std::unordered_set<std::string> names;
+  std::lock_guard                        lock(mutex);
+
+  return names.insert(name).first->c_str();
+}
+
 /**
  * This function retrieves an array of lookup keys for client contexts loaded in
  * traffic server. Given a 2-level mapping for client contexts, every 2 lookup keys
@@ -8786,22 +8799,18 @@ TSSslClientContextsNamesGet(int n, const char **result, int *actual)
   if (params) {
     auto &ctx_map_lock = params->ctxMapLock;
     auto &ca_map       = params->top_level_ctx_map;
-    auto  mem          = static_cast<std::string_view *>(alloca(sizeof(std::string_view) * n));
     ink_mutex_acquire(&ctx_map_lock);
     for (auto &ca_pair : ca_map) {
-      // Populate mem array with 2 strings each time
+      // Populate the result array with 2 strings each time
       for (auto &ctx_pair : ca_pair.second) {
         if (idx + 1 < n) {
-          mem[idx++] = ca_pair.first;
-          mem[idx++] = ctx_pair.first;
+          result[idx++] = intern_client_context_name(ca_pair.first);
+          result[idx++] = intern_client_context_name(ctx_pair.first);
         }
         count += 2;
       }
     }
     ink_mutex_release(&ctx_map_lock);
-    for (int i = 0; i < idx; i++) {
-      result[i] = mem[i].data();
-    }
   }
   if (actual) {
     *actual = count;
