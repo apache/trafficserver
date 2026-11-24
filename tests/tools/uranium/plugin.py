@@ -33,6 +33,7 @@ from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
 from .runtime import TestRuntime
 from .services.ats import ATS, ATSFactory
+from .services.ats_config import ATSConfigError
 from .services.context import ProceduralContext
 from .services.curl import Curl
 from .services.service_factory import ServiceFactory
@@ -279,7 +280,7 @@ class ReplayItem(pytest.Item):
     def repr_failure(self, excinfo: pytest.ExceptionInfo[BaseException], style: str | None = None) -> str:
         """Present system-test failures without pytest's internal collector frames."""
 
-        if isinstance(excinfo.value, (AssertionError, ProcessError, ReplayConfigError)):
+        if isinstance(excinfo.value, (AssertionError, ATSConfigError, ProcessError, ReplayConfigError)):
             return str(excinfo.value)
         return super().repr_failure(excinfo, style=style)
 

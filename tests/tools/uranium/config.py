@@ -13,11 +13,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Replay test configuration loading and serialization."""
+"""Replay manifest loading and validation."""
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -143,57 +143,3 @@ def _deep_merge(base: Mapping[str, Any], overlay: Mapping[str, Any]) -> dict[str
         else:
             result[key] = copy.deepcopy(value)
     return result
-
-
-def merge_flat_records(records: Mapping[str, Any], defaults: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    """Convert legacy dotted record names to a nested records.yaml mapping."""
-
-    result: dict[str, Any] = copy.deepcopy(dict(defaults or {}))
-    for original_name, value in records.items():
-        name = original_name
-        for prefix in ("proxy.config.", "local.config."):
-            if name.startswith(prefix):
-                name = name[len(prefix) :]
-                break
-        cursor = result
-        parts = name.split(".")
-        for part in parts[:-1]:
-            child = cursor.setdefault(part, {})
-            if not isinstance(child, dict):
-                raise ReplayConfigError(f"Record {original_name} conflicts with an existing scalar")
-            cursor = child
-        cursor[parts[-1]] = value
-    return {"records": result}
-
-
-def write_yaml(path: Path, document: Any) -> None:
-    """Write one ATS YAML configuration document."""
-
-    path.write_text(yaml.safe_dump(document, sort_keys=False))
-
-
-def return_codes(config: Mapping[str, Any]) -> tuple[int, ...]:
-    """Return the exit statuses a process mapping accepts as success.
-
-    :param config: A manifest process mapping whose optional ``return_code``
-        is one status or a sequence of them; absent means only zero.
-    """
-
-    codes = config.get("return_code", 0)
-    return tuple(codes) if isinstance(codes, Sequence) and not isinstance(codes, str) else (codes,)
-
-
-def format_plugin_entry(entry: str | Mapping[str, Any]) -> str:
-    """Render one plugin.config entry."""
-
-    if isinstance(entry, str):
-        return entry
-    if isinstance(entry, Mapping):
-        return " ".join([str(entry["name"]), *(str(argument) for argument in entry.get("args", []))])
-    raise ReplayConfigError(f"Unsupported plugin_config entry: {entry!r}")
-
-
-def replace_server_ports(value: str, http_port: int, https_port: int) -> str:
-    """Replace server port placeholders in an ATS configuration value."""
-
-    return value.replace("{SERVER_HTTP_PORT}", str(http_port)).replace("{SERVER_HTTPS_PORT}", str(https_port))

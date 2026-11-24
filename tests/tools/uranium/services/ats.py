@@ -35,9 +35,9 @@ from typing import Any
 
 import yaml
 
-from ..config import ReplayConfigError, format_plugin_entry, merge_flat_records, return_codes, write_yaml
-from ..process import ManagedProcess
+from ..process import ManagedProcess, return_codes
 from ..utils import tcp_open
+from .ats_config import ATSConfigError, format_plugin_entry, merge_flat_records, write_yaml
 from .context import CommandResult, ProceduralContext
 
 
@@ -1076,7 +1076,7 @@ class ATS:
         for value in config.get("copy_to_ssl_dir", []):
             source = (self._test_directory / str(value)).resolve()
             if not source.is_file():
-                raise ReplayConfigError(f"TLS file does not exist: {source}")
+                raise ATSConfigError(f"TLS file does not exist: {source}")
             shutil.copy2(source, paths["ssl"] / source.name)
 
     def _write_configs(self, config: Mapping[str, Any], paths: dict[str, Path]) -> None:
@@ -1092,7 +1092,7 @@ class ATS:
         for plugin_value in config.get("copy_custom_plugin", []):
             source = self._context.runtime.resolve_artifact(self._test_directory, str(plugin_value))
             if not source.is_file():
-                raise ReplayConfigError(f"Custom plugin does not exist: {source}")
+                raise ATSConfigError(f"Custom plugin does not exist: {source}")
             destination = paths["plugin"] / source.name
             if destination.exists() or destination.is_symlink():
                 destination.unlink()
@@ -1155,7 +1155,7 @@ class ATS:
         for value in config.get("template_to_config_dir", []):
             source = (self._test_directory / str(value)).resolve()
             if not source.is_file():
-                raise ReplayConfigError(f"Configuration template does not exist: {source}")
+                raise ATSConfigError(f"Configuration template does not exist: {source}")
             destination = config_dir / Path(str(value)).name
             rendered = self.replace_placeholders(source.read_text())
             destination.write_text(rendered)

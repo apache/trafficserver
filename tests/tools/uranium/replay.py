@@ -26,7 +26,8 @@ import subprocess
 import time
 
 from .assertions import assert_matches_gold
-from .config import ReplayConfigError, ReplaySpec, return_codes
+from .config import ReplayConfigError, ReplaySpec
+from .process import return_codes
 from .runtime import TestRuntime
 from .services.ats import ATS
 from .services.context import ProceduralContext

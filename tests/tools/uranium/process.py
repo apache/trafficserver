@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 import os
@@ -30,6 +30,17 @@ from .expectations import StreamExpectations
 
 class ProcessError(RuntimeError):
     """Report an unexpected process exit or readiness failure."""
+
+
+def return_codes(config: Mapping[str, Any]) -> tuple[int, ...]:
+    """Return the exit statuses a process mapping accepts as success.
+
+    :param config: A manifest process mapping whose optional ``return_code``
+        is one status or a sequence of them; absent means only zero.
+    """
+
+    codes = config.get("return_code", 0)
+    return tuple(codes) if isinstance(codes, Sequence) and not isinstance(codes, str) else (codes,)
 
 
 class ManagedProcess:

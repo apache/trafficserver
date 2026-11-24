@@ -724,14 +724,19 @@ def normalized_command(service: ProcessService) -> list[str]:
     "module_name",
     ["tools.uranium.services", "tools.uranium.services.ats", "tools.uranium.services.service_factory"],
 )
-def test_services_do_not_depend_on_the_replay_engine(module_name: str) -> None:
-    """Keep dependencies pointing from the replay engine to the services, never back.
+def test_services_do_not_depend_on_higher_layers(module_name: str) -> None:
+    """Keep the services below the launcher, pytest plugin, manifest parser, and replay engine.
 
     :param module_name: Service module imported into a fresh interpreter.
     """
 
     tests_directory = Path(__file__).resolve().parents[3]
-    probe = f"import sys, {module_name}; assert 'tools.uranium.replay' not in sys.modules, sorted(sys.modules)"
+    higher_layers = ["tools.uranium.runner", "tools.uranium.plugin", "tools.uranium.config", "tools.uranium.replay"]
+    probe = (
+        f"import sys, {module_name}; "
+        f"loaded = [name for name in {higher_layers!r} if name in sys.modules]; "
+        "assert not loaded, loaded"
+    )
     result = subprocess.run([sys.executable, "-c", probe], cwd=tests_directory, capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr
 

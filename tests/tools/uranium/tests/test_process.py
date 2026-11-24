@@ -22,8 +22,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tools.uranium.process import ManagedProcess, ProcessError
-from tools.uranium.config import return_codes
+from tools.uranium.process import ManagedProcess, ProcessError, return_codes
 from tools.uranium.replay import ReplayTest
 from tools.uranium.services.ats import ATS
 from tools.uranium.services.process_service import ProcessService
