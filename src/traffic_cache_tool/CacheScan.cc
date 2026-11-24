@@ -229,7 +229,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
   ink_assert(hh->m_free_start == nullptr);
 
   // HdrHeap::marshal() always puts the objects right after the header, and the object walk below starts there.
-  if (reinterpret_cast<uintptr_t>(hh->m_data_start) != HDR_HEAP_HDR_SIZE.value()) {
+  if (reinterpret_cast<uintptr_t>(hh->m_data_start) != static_cast<uintptr_t>(HDR_HEAP_HDR_SIZE.value())) {
     std::cerr << "m_data_start is not right after the heap header" << std::endl;
     return zret;
   }
