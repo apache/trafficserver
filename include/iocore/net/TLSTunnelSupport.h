@@ -56,8 +56,16 @@ public:
   bool has_tunnel_destination() const;
 
   static constexpr bool PORT_IS_DYNAMIC = true;
-  void                  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
-                                               YamlSNIConfig::TunnelPreWarm prewarm);
+  /** Set where this connection tunnels to.
+   *
+   * @a destination has its match groups and port template filled in, so its port can come from
+   * the SNI or the connection rather than from sni.yaml.
+   *
+   * @return false if @a destination names a port that is not one parse_port() accepts. The
+   * connection then has no tunnel destination and should be refused.
+   */
+  bool set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
+                              YamlSNIConfig::TunnelPreWarm prewarm);
   YamlSNIConfig::TunnelPreWarm get_tunnel_prewarm_configuration() const;
 
   PreWarm::SPtrConstDst create_dst(int pid) const;

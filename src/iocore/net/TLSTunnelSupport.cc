@@ -70,7 +70,7 @@ TLSTunnelSupport::_clear()
 {
 }
 
-void
+bool
 TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
                                          YamlSNIConfig::TunnelPreWarm prewarm)
 {
@@ -78,12 +78,25 @@ TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SN
   _tunnel_prewarm  = prewarm;
   _port_is_dynamic = port_is_dynamic;
 
-  if (std::string_view host, port; swoc::IPEndpoint::tokenize(destination, &host, &port)) {
-    _tunnel_port = swoc::svtou(port);
-    _tunnel_host = host;
-  } else {
-    Warning("Invalid destination \"%.*s\" in SNI configuration.", int(destination.size()), destination.data());
+  auto const               authority = split_destination(destination);
+  std::optional<in_port_t> port;
+  if (authority && authority->port) {
+    port = parse_port(*authority->port);
   }
+  if (!authority || (authority->port && !port)) {
+    _tunnel_host.clear();
+    _tunnel_port = 0;
+    return false;
+  }
+
+  if (authority->host.empty()) {
+    Warning("Invalid destination \"%.*s\" in SNI configuration.", int(destination.size()), destination.data());
+  } else {
+    // No port leaves 0, for which the tunnel uses the inbound port.
+    _tunnel_port = port.value_or(0);
+    _tunnel_host = authority->host;
+  }
+  return true;
 }
 
 PreWarm::SPtrConstDst

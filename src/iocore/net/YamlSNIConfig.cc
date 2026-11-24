@@ -87,7 +87,7 @@ match_group_count(const std::string &fqdn)
 // A port is a number from 1 to 65535, one of the port templates, or a match
 // group such as $1, optionally after a number that the group continues. A
 // match group is filled in from the fqdn for each connection, so its value is
-// left for then, but it must name a group the fqdn captures. In the port the
+// checked then, but it must name a group the fqdn captures. In the port the
 // group number runs to the end of the destination, which is how
 // TunnelDestination::replace_match_groups reads it, and it is one digit
 // because no fqdn captures ten groups.
@@ -676,6 +676,14 @@ std::array<std::function<std::string(std::string_view,            // destination
         if (var_start_pos != std::string::npos) {
           const auto  local_port = vc->get_proxy_protocol_dst_port();
           std::string dst{destination.substr(0, var_start_pos)};
+          if (local_port == 0) {
+            // A connection with no Proxy Protocol header has no port to fill in. Drop the port
+            // separator too, so that the tunnel falls back to the inbound port.
+            if (!dst.empty() && dst.back() == ':') {
+              dst.pop_back();
+            }
+            return dst;
+          }
           dst += std::to_string(local_port);
           return dst;
         }

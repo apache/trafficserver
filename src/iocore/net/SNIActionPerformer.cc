@@ -206,7 +206,13 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
       fixed_dst        = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, has_dynamic_port);
       port_is_dynamic |= has_dynamic_port;
     }
-    tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
+    // The sni.yaml loader checks a port written in the destination, but not one a match group
+    // fills in from the SNI, which the client chooses.
+    if (!tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm)) {
+      Dbg(dbg_ctl_ssl_sni, "Refusing fqdn [%s]: destination [%s], configured [%s], names no usable port", servername,
+          fixed_dst.c_str(), destination.c_str());
+      return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
     Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
   }
 
