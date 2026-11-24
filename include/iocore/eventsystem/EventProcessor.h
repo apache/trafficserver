@@ -317,7 +317,8 @@ public:
 
   EThread *all_dthreads[MAX_EVENT_THREADS];
   /// Count of initialized entries in all_dthreads. Readers walk the array without the
-  /// spawn lock, so the release store also publishes the EThread each entry points to.
+  /// spawn lock, so the release store also publishes each entry and what was written to its
+  /// EThread before the store.
   std::atomic<int> n_dthreads{0};
   int              thread_data_used = 0;
 

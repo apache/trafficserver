@@ -55,19 +55,34 @@ private:
   std::atomic<int> &_started;
 };
 
+// Static so a handler that runs after a timed-out case has failed still has a counter to update.
+std::atomic<int> started{0};
+
+int
+count_active_dthreads()
+{
+  int n = 0;
+  for ([[maybe_unused]] EThread *et : eventProcessor.active_dthreads()) {
+    ++n;
+  }
+  return n;
+}
+
 } // namespace
 
 // The stats sync task walks the dedicated threads on its own thread while
 // accept and logging threads are still being spawned during startup. On x86
-// the null-entry check rarely trips even when the count is published without
-// ordering; ThreadSanitizer is what reports that race.
+// the null-entry check rarely trips even if the count were published without
+// ordering, so outside ThreadSanitizer this case only checks the walk.
 TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocore]")
 {
   constexpr int SPAWNS = 64;
 
+  // eventProcessor is shared by the whole binary, so count what earlier cases spawned.
+  int const already = count_active_dthreads();
+
   std::atomic<bool> is_spawning{true};
   std::atomic<int>  null_entries{0};
-  std::atomic<int>  started{0};
   std::thread       walker([&]() {
     while (is_spawning.load(std::memory_order_acquire)) {
       for (EThread *et : eventProcessor.active_dthreads()) {
@@ -91,6 +106,12 @@ TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocor
   while (started.load(std::memory_order_acquire) < SPAWNS && std::chrono::steady_clock::now() < deadline) {
     std::this_thread::yield();
   }
+  if (started.load(std::memory_order_acquire) < SPAWNS) {
+    // A handler that has not run yet still holds its continuation; keep them all alive.
+    for (auto &cont : conts) {
+      static_cast<void>(cont.release());
+    }
+  }
   REQUIRE(started.load(std::memory_order_acquire) == SPAWNS);
 
   CHECK(null_entries.load() == 0);
@@ -100,5 +121,5 @@ TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocor
     CHECK(et != nullptr);
     ++walked;
   }
-  CHECK(walked == SPAWNS);
+  CHECK(walked == already + SPAWNS);
 }
