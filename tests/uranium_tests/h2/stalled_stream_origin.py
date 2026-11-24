@@ -25,7 +25,10 @@ starting with /large-split do the same with a --large-split-size body in two
 DATA frames. Paths starting with /late-end get their whole response at once but
 END_STREAM only LATE_END_DELAY seconds later, in an empty DATA frame:
 /late-end-empty has no body, /late-end-body a short one and /late-end-large a
---large-split-size one. Everything else is answered at once.
+--large-split-size one. Paths starting with /held-late-end get the same
+--large-split-size response as /late-end-large, but HELD_RESPONSE_DELAY seconds
+after the request and with END_STREAM HELD_LATE_END_DELAY seconds after that.
+Everything else is answered at once.
 Every connection is numbered, and each line it prints starts with "conn N".
 """
 
@@ -45,6 +48,10 @@ from h2.events import ConnectionTerminated, RequestReceived, StreamReset
 PRINT_LOCK = threading.Lock()
 TRICKLE_INTERVAL = 0.5
 LATE_END_DELAY = 0.5
+# The test holds the transaction mutex on a task thread from 20 ms to 520 ms after the request, so the
+# response arrives while it is held and END_STREAM well after it is released.
+HELD_RESPONSE_DELAY = 0.2
+HELD_LATE_END_DELAY = 1.0
 
 
 def say(message: str) -> None:
@@ -53,11 +60,25 @@ def say(message: str) -> None:
         print(message, flush=True)
 
 
+def send_response_header(connection: H2Connection, stream_id: int, length: int) -> None:
+    """Send a 200 response header for a body of length bytes."""
+    connection.send_headers(stream_id, [(":status", "200"), ("content-length", str(length)), ("cache-control", "no-store")])
+
+
 def respond(connection: H2Connection, stream_id: int, path: str) -> None:
     """Answer one stream with a short 200 response."""
     body = f"ok {path}\n".encode()
-    connection.send_headers(stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")])
+    send_response_header(connection, stream_id, len(body))
     connection.send_data(stream_id, body, end_stream=True)
+
+
+def send_without_end(connection: H2Connection, stream_id: int, body: bytes) -> None:
+    """Send a 200 response with its whole body in up to two DATA frames, but without END_STREAM."""
+    send_response_header(connection, stream_id, len(body))
+    half = (len(body) + 1) // 2
+    for piece in (body[:half], body[half:]):
+        if piece:
+            connection.send_data(stream_id, piece)
 
 
 def serve_connection(
@@ -73,6 +94,8 @@ def serve_connection(
     slow: list[tuple[float, int, str, int]] = []
     # Each entry is (END_STREAM time, stream id, path).
     late: list[tuple[float, int, str]] = []
+    # Each entry is (response time, stream id, path).
+    held: list[tuple[float, int, str]] = []
     closed: set[int] = set()
     while not lifecycle.stopped:
         try:
@@ -93,20 +116,19 @@ def serve_connection(
                 if path.startswith("/stall"):
                     continue
                 if path.startswith("/partial"):
-                    connection.send_headers(
-                        event.stream_id, [(":status", "200"), ("content-length", "100"), ("cache-control", "no-store")]
-                    )
+                    send_response_header(connection, event.stream_id, 100)
                     connection.send_data(event.stream_id, b"x" * 10)
                     continue
                 if path.startswith("/large-split"):
                     body = b"x" * large_split_size
                     half = large_split_size // 2
-                    connection.send_headers(
-                        event.stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")]
-                    )
+                    send_response_header(connection, event.stream_id, len(body))
                     connection.send_data(event.stream_id, body[:half])
                     connection.send_data(event.stream_id, body[half:])
                     connection.send_data(event.stream_id, b"", end_stream=True)
+                    continue
+                if path.startswith("/held-late-end"):
+                    held.append((time.monotonic() + HELD_RESPONSE_DELAY, event.stream_id, path))
                     continue
                 if path.startswith("/late-end"):
                     if path.startswith("/late-end-empty"):
@@ -115,28 +137,18 @@ def serve_connection(
                         body = b"x" * large_split_size
                     else:
                         body = f"ok {path}\n".encode()
-                    connection.send_headers(
-                        event.stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")]
-                    )
-                    half = (len(body) + 1) // 2
-                    for piece in (body[:half], body[half:]):
-                        if piece:
-                            connection.send_data(event.stream_id, piece)
+                    send_without_end(connection, event.stream_id, body)
                     late.append((time.monotonic() + LATE_END_DELAY, event.stream_id, path))
                     continue
                 if path.startswith("/split"):
                     body = f"ok {path}\n".encode()
-                    connection.send_headers(
-                        event.stream_id, [(":status", "200"), ("content-length", str(len(body))), ("cache-control", "no-store")]
-                    )
+                    send_response_header(connection, event.stream_id, len(body))
                     connection.send_data(event.stream_id, body)
                     connection.send_data(event.stream_id, b"", end_stream=True)
                     continue
                 if path.startswith("/slow"):
                     pieces = max(1, round(slow_delay / TRICKLE_INTERVAL))
-                    connection.send_headers(
-                        event.stream_id, [(":status", "200"), ("content-length", str(pieces)), ("cache-control", "no-store")]
-                    )
+                    send_response_header(connection, event.stream_id, pieces)
                     slow.append((time.monotonic() + TRICKLE_INTERVAL, event.stream_id, path, pieces))
                     continue
                 respond(connection, event.stream_id, path)
@@ -147,6 +159,14 @@ def serve_connection(
                 say(f"conn {number} goaway error={int(event.error_code)}")
 
         now = time.monotonic()
+        for due in [entry for entry in held if entry[0] <= now]:
+            held.remove(due)
+            _, stream_id, path = due
+            if stream_id in closed:
+                continue
+            send_without_end(connection, stream_id, b"x" * large_split_size)
+            say(f"conn {number} answered stream={stream_id} path={path}")
+            late.append((now + HELD_LATE_END_DELAY, stream_id, path))
         for due in [entry for entry in late if entry[0] <= now]:
             late.remove(due)
             _, stream_id, path = due
