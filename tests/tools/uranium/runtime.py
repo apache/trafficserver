@@ -43,6 +43,25 @@ class RuntimeConfigError(ValueError):
     """Report an invalid Uranium test runtime."""
 
 
+def _is_port_free(port: int, socket_types: tuple[int, ...]) -> bool:
+    """Bind the loopback port once for each socket type.
+
+    :param port: Candidate port.
+    :param socket_types: Socket kinds the port must be free for.
+    :return: False when any bind reports the port in use.
+    """
+
+    for socket_type in socket_types:
+        with socket.socket(socket.AF_INET, socket_type) as probe:
+            try:
+                probe.bind(("127.0.0.1", port))
+            except OSError as error:
+                if error.errno == errno.EADDRINUSE:
+                    return False
+                raise RuntimeConfigError(f"Port probe for 127.0.0.1:{port} failed: {error}") from error
+    return True
+
+
 @dataclass(frozen=True)
 class TestRuntime:
     """Paths and build features shared by replay test items."""
@@ -117,18 +136,21 @@ class TestRuntime:
 
         return self.build_root / "tests" / "tools" / "plugins" / ".libs"
 
-    def allocate_port(self, socket_type: int = socket.SOCK_STREAM) -> int:
+    def allocate_port(self, *socket_types: int) -> int:
         """Allocate an available port, shared across xdist workers.
 
         Numbers count up from the session seed and wrap from LAST_TEST_PORT back
         to FIRST_TEST_PORT, so a number is not handed out twice until the counter
         has gone once around the range. After a wrap the bind probe is the only
         guard. It cannot see a port that a live test reserved but has not bound,
-        or one held only on IPv6 or only on the other socket type. A pass that
+        or one held only on IPv6 or only on a socket type not probed. A pass that
         finds every other port busy ends by probing the port handed out last.
 
-        :param socket_type: Socket kind to probe, normally TCP or UDP.
+        :param socket_types: Socket kinds the port must be free for, normally
+            TCP, UDP or both. TCP when none is given.
         """
+
+        socket_types = socket_types or (socket.SOCK_STREAM,)
 
         self.sandbox_root.mkdir(parents=True, exist_ok=True)
         state_path = self.sandbox_root / ".port-counter"
@@ -146,17 +168,10 @@ class TestRuntime:
                     raise ValueError
             except ValueError:
                 raise RuntimeConfigError(f"Invalid port counter in {state_path}: {content!r}") from None
-            # Unsharded CI runs went past the top of the range, so wrap back to the bottom.
-            # This assumes a port from a full cycle back belongs to a finished test; the probe skips any still bound.
             for _ in range(LAST_TEST_PORT - FIRST_TEST_PORT + 1):
                 candidate = candidate + 1 if candidate < LAST_TEST_PORT else FIRST_TEST_PORT
-                with socket.socket(socket.AF_INET, socket_type) as probe:
-                    try:
-                        probe.bind(("127.0.0.1", candidate))
-                    except OSError as error:
-                        if error.errno == errno.EADDRINUSE:
-                            continue
-                        raise RuntimeConfigError(f"Port probe for 127.0.0.1:{candidate} failed: {error}") from error
+                if not _is_port_free(candidate, socket_types):
+                    continue
                 state.seek(0)
                 state.truncate()
                 state.write(str(candidate))

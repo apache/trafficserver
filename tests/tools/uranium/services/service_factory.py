@@ -158,7 +158,8 @@ class ServiceFactory:
         """
 
         directory = self._directory(name)
-        port = int(options.pop("port", 0)) or self._context.runtime.allocate_port(socket.SOCK_DGRAM)
+        # microdns listens on UDP and TCP at this port.
+        port = int(options.pop("port", 0)) or self._context.runtime.allocate_port(socket.SOCK_DGRAM, socket.SOCK_STREAM)
         default = options.pop("default", None)
         otherwise = [default] if isinstance(default, str) else default
         zone_file = directory / "dns_file.json"
