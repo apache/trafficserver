@@ -43,6 +43,19 @@ def test_plugin_yaml_bad_config_stops_startup(ats_factory: ATSFactory, content: 
     ats.start()
 
 
+def test_plugin_yaml_directory_stops_startup(ats_factory: ATSFactory) -> None:
+    """A directory in place of plugin.yaml stops startup with a diagnostic.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    ats = ats_factory.create("ts", enable_cache=False)
+    # Writing a file beneath plugin.yaml makes plugin.yaml a directory.
+    ats.write_config_file("plugin.yaml/placeholder", "")
+    ats.expect_start_failure(r"EMERGENCY: plugin\.yaml: not a regular file")
+    ats.start()
+
+
 # Each document names no plugins, so it loads none, the same as plugins: [].
 EMPTY_PLUGIN_YAML = {
     "empty_file": "",

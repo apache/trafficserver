@@ -27,6 +27,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "proxy/Plugin.h"
@@ -52,6 +53,31 @@ public:
   {
     std::error_code ec; // Best effort: cleanup must not throw out of a destructor.
     std::filesystem::remove(_path, ec);
+  }
+
+  const char *
+  path() const
+  {
+    return _path.c_str();
+  }
+
+private:
+  std::filesystem::path _path;
+};
+
+/// A unique temporary path that is removed, whatever it became, on scope exit.
+class TempPath
+{
+public:
+  explicit TempPath(const std::string &tag)
+  {
+    _path = std::filesystem::temp_directory_path() / ("test_plugin_yaml." + std::to_string(getpid()) + "." + tag + ".yaml");
+  }
+
+  ~TempPath()
+  {
+    std::error_code ec;
+    std::filesystem::remove_all(_path, ec);
   }
 
   const char *
@@ -376,6 +402,32 @@ plugins:
 
   CHECK(result.value[3].path == "experimental.so");
   CHECK(result.value[3].enabled == false);
+}
+
+TEST_CASE("parse_plugin_yaml - directory is a config error", "[plugin_yaml]")
+{
+  // A directory passes the access() check at startup, and reading it fails
+  // with an exception that is not a YAML::Exception.
+  TempPath dir("dir");
+  REQUIRE(std::filesystem::create_directory(dir.path()));
+
+  auto result = parse_plugin_yaml(dir.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("not a regular file") != std::string::npos);
+}
+
+TEST_CASE("parse_plugin_yaml - FIFO is a config error", "[plugin_yaml]")
+{
+  // Opening a FIFO for reading blocks until a writer appears, so it must be
+  // rejected before the open rather than hang startup.
+  TempPath fifo("fifo");
+  REQUIRE(mkfifo(fifo.path(), 0600) == 0);
+
+  auto result = parse_plugin_yaml(fifo.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("not a regular file") != std::string::npos);
 }
 
 TEST_CASE("parse_plugin_yaml - nonexistent file", "[plugin_yaml]")

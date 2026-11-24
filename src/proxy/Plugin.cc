@@ -452,10 +452,21 @@ parse_plugin_yaml(const char *yaml_path)
   config::ConfigResult<PluginYAMLEntries> result;
   YAML::Node                              root;
 
+  // A directory passes access(R_OK) and opens, then fails on the first read,
+  // and opening a FIFO blocks startup until something writes to it.
+  if (struct stat st; stat(yaml_path, &st) == 0 && !S_ISREG(st.st_mode)) {
+    result.errata.note("not a regular file");
+    return result;
+  }
+
   try {
     root = YAML::LoadFile(yaml_path);
   } catch (const YAML::Exception &e) {
     result.errata.note("failed to parse: {}", e.what());
+    return result;
+  } catch (const std::exception &e) {
+    // A read error surfaces from the stream as std::ios_base::failure.
+    result.errata.note("failed to read: {}", e.what());
     return result;
   }
 
