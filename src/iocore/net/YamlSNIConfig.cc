@@ -84,6 +84,12 @@ match_group_count(const std::string &fqdn)
   return wildcard.match(fqdn.c_str()) ? std::count(fqdn.begin(), fqdn.end(), '*') : 0;
 }
 
+bool
+is_port_template(std::string_view text)
+{
+  return text == TunnelDestination::MAP_WITH_RECV_PORT_STR || text == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR;
+}
+
 // A port is a number from 1 to 65535, one of the port templates, or a match
 // group such as $1, optionally after a number that the group continues. A
 // match group is filled in from the fqdn for each connection, so its value is
@@ -94,7 +100,7 @@ match_group_count(const std::string &fqdn)
 bool
 is_valid_tunnel_port(std::string_view port, size_t groups)
 {
-  if (port == TunnelDestination::MAP_WITH_RECV_PORT_STR || port == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR) {
+  if (is_port_template(port)) {
     return true;
   }
   if (auto dollar = port.find('$'); dollar != std::string_view::npos) {
@@ -106,11 +112,30 @@ is_valid_tunnel_port(std::string_view port, size_t groups)
   return TLSTunnelSupport::parse_port(port).has_value();
 }
 
+size_t
+port_template_count(std::string_view destination)
+{
+  size_t count = 0;
+  for (auto name : {TunnelDestination::MAP_WITH_RECV_PORT_STR, TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR}) {
+    for (auto pos = destination.find(name); pos != std::string_view::npos; pos = destination.find(name, pos + name.size())) {
+      ++count;
+    }
+  }
+  return count;
+}
+
 void
 check_tunnel_port(const YAML::Node &route, const std::string &fqdn, const std::string &destination)
 {
-  if (auto authority = TLSTunnelSupport::split_destination(destination);
-      !authority || (authority->port && !is_valid_tunnel_port(*authority->port, match_group_count(fqdn)))) {
+  auto const authority = TLSTunnelSupport::split_destination(destination);
+  if (authority && authority->host.empty()) {
+    throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": no host in tunnel destination \"" + destination + "\"");
+  }
+  // TunnelDestination fills a port template in by putting the port in place of the template and
+  // everything after it, so a template reads as written only when it is the whole port.
+  bool const template_port = authority && authority->port && is_port_template(*authority->port);
+  if (!authority || (authority->port && !is_valid_tunnel_port(*authority->port, match_group_count(fqdn))) ||
+      port_template_count(destination) != (template_port ? 1 : 0)) {
     throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination +
                                                 "\": expected a number from 1 to 65535 with no leading zero, a match group such "
                                                 "as $1 that the fqdn captures, " +
