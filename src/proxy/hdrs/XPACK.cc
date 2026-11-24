@@ -130,6 +130,9 @@ xpack_decode_string(Arena &arena, char **str, uint64_t &str_length, const uint8_
   }
 
   if (isHuffman) {
+    if (encoded_string_len > UINT32_MAX / 2) {
+      return XPACK_ERROR_COMPRESSION_ERROR;
+    }
     // Allocate temporary area twice the size of before decoded data
     uint32_t const str_len = encoded_string_len * 2;
     char          *decoded = arena.str_alloc(str_len);
