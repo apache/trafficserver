@@ -26,6 +26,7 @@ BAD_PLUGIN_YAML = {
     "scalar_entry": "plugins:\n  - libfoo.so\n",
     "wrong_type": "plugins:\n  - path: libfoo.so\n    enabled: maybe\n",
     "not_a_map": "just a string\n",
+    "path_null": "plugins:\n  - path:\n",
     # xdebug.so starts with no arguments, so a dropped params value would not stop it.
     "params_scalar": "plugins:\n  - path: xdebug.so\n    params: --enable=x-cache\n",
     "params_mapping": "plugins:\n  - path: xdebug.so\n    params:\n      enable: x-cache\n",

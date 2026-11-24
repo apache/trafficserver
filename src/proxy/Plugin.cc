@@ -495,7 +495,9 @@ parse_plugin_yaml(const char *yaml_path)
 
     // A wrong node type or value (a scalar entry, "enabled: maybe") makes yaml-cpp throw.
     try {
-      if (!node["path"]) {
+      // as<std::string>() reads a null value as the text "null", so "path:" with
+      // nothing after it is as missing as no path key at all.
+      if (auto n = node["path"]; !n || n.IsNull()) {
         result.errata.note("plugin entry #{} missing required 'path' field", seq_idx + 1);
         return result;
       }

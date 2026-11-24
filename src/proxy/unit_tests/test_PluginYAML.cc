@@ -299,6 +299,21 @@ TEST_CASE("parse_plugin_yaml - malformed entry is a config error", "[plugin_yaml
   CHECK(std::string(result.errata.front().text()).find("plugin entry #2:") != std::string::npos);
 }
 
+TEST_CASE("parse_plugin_yaml - path with no value is missing", "[plugin_yaml]")
+{
+  // yaml-cpp converts a null to the string "null", which would become the path.
+  auto content = GENERATE(as<std::string>{}, "plugins:\n  - path: good.so\n  - path:\n",
+                          "plugins:\n  - path: good.so\n  - path: ~\n    enabled: true\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("plugin entry #2 missing required 'path' field") != std::string::npos);
+}
+
 TEST_CASE("parse_plugin_yaml - params that is not a list of values", "[plugin_yaml]")
 {
   // Each case has a good first entry, so the error must name entry #2.
