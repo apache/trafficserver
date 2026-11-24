@@ -1170,6 +1170,15 @@ Http2Stream::release()
     return;
   }
 
+  // An origin stream stays open here only to wait for the origin's END_STREAM. HttpSM has
+  // stopped handling events for it, but may still be writing the body to the client, and _sm
+  // stays set until transaction_done(). The read VIO still points at HttpSM, so a late END_STREAM
+  // would send its final read event to HttpSM's tunnel handler, which takes it for the end of
+  // the tunnel and cuts the client off. With the read VIO disabled, signal_final_read_event()
+  // holds that event, and transaction_done() closes the stream.
+  if (this->is_outbound_connection()) {
+    read_vio.disable();
+  }
   Http2StreamDebug("Delaying do_io_close() until stream is in the closed state");
 }
 

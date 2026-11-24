@@ -192,9 +192,12 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
       // frame after ATS has sent the whole request. Finish its body with READ_COMPLETE, as for
       // END_STREAM on a DATA frame with a payload, and not with the EOS that initiating_close()
       // sends: HttpSM checks a server EOS for truncation against server_response_body_bytes,
-      // which it fills in only when the write to the client finishes, so an EOS that runs first
-      // fails a complete response. If the transaction is already gone, nothing else will free
-      // the stream, so initiating_close() does.
+      // which it fills in only when the client write, a background fill or a transform
+      // finishes, so an EOS that runs first fails a complete response. If HttpSM has released
+      // the stream but is still running, release() disabled the read VIO, so the READ_COMPLETE
+      // is held and transaction_done() closes the stream. If the transaction is already gone,
+      // only the keep-alive timeout would free the stream, as a stream error that takes the
+      // whole origin connection with it, so initiating_close() frees it now.
       if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
           (!stream->is_outbound_connection() || stream->get_sm() == nullptr)) {
         stream->initiating_close();
