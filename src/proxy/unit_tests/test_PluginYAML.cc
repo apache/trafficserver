@@ -487,6 +487,18 @@ TEST_CASE("parse_plugin_yaml - FIFO is a config error", "[plugin_yaml]")
   CHECK(std::string(result.errata.front().text()).find("not a regular file") != std::string::npos);
 }
 
+#if defined(__linux__) && defined(__GLIBCXX__)
+TEST_CASE("parse_plugin_yaml - read error is a config error", "[plugin_yaml]")
+{
+  // /proc/self/mem is a regular file whose offset 0 is unmapped, so the first
+  // read fails with EIO, which libstdc++ throws as std::ios_base::failure.
+  auto result = parse_plugin_yaml("/proc/self/mem");
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("failed to read") != std::string::npos);
+}
+#endif
+
 TEST_CASE("parse_plugin_yaml - nonexistent file", "[plugin_yaml]")
 {
   auto result = parse_plugin_yaml("/tmp/nonexistent_plugin_yaml_test.yaml");
