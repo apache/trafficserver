@@ -351,7 +351,8 @@ TEST_CASE("parse_plugin_yaml - params with no value passes no arguments", "[plug
 
 TEST_CASE("parse_plugin_yaml - negative load_order is a config error", "[plugin_yaml]")
 {
-  // A negative value is the internal "unset" marker, so it would load last.
+  // A negative value reads as unset, so the plugin would load after every
+  // ordered plugin instead of before them.
   TempYAML yaml("plugins:\n  - path: good.so\n  - path: first.so\n    load_order: -1\n");
 
   auto result = parse_plugin_yaml(yaml.path());
@@ -467,8 +468,8 @@ plugins:
 
 TEST_CASE("parse_plugin_yaml - directory is a config error", "[plugin_yaml]")
 {
-  // A directory passes the access() check at startup, and reading it fails
-  // with an exception that is not a YAML::Exception.
+  // A directory passes the access() check at startup. The file type check
+  // rejects it before any read so the error names the cause.
   TempPath dir("dir");
   REQUIRE(std::filesystem::create_directory(dir.path()));
 

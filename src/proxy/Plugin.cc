@@ -461,8 +461,8 @@ parse_plugin_yaml(const char *yaml_path)
     return result;
   }
 
-  // Read the file here rather than with YAML::LoadFile(). A read error escapes
-  // yaml-cpp as std::ios_base::failure, and yaml-cpp leaks its buffer when it does.
+  // Read the file here rather than with YAML::LoadFile(). libstdc++ raises a read
+  // error as std::ios_base::failure, which would escape yaml-cpp and leak its buffer.
   std::string text;
   {
     std::ifstream in(yaml_path, std::ios::binary);
@@ -523,7 +523,8 @@ parse_plugin_yaml(const char *yaml_path)
       }
       if (auto n = node["load_order"]; n) {
         entry.load_order = n.as<int>();
-        // A negative value would read as unset and load last, not first.
+        // A negative value reads as unset, so the plugin would load after every
+        // ordered plugin instead of before them.
         if (entry.load_order < 0) {
           result.errata.note("plugin entry #{}: 'load_order' must not be negative", seq_idx + 1);
           return result;
