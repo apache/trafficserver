@@ -222,7 +222,7 @@ TEST_CASE("YamlSNIConfig accepts a tunnel destination port the tunnel reads as w
   std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
   std::string destination{GENERATE("backend.example.com", "backend.example.com:1", "backend.example.com:443",
                                    "backend.example.com:65535", "backend.example.com:{inbound_local_port}",
-                                   "backend.example.com:{proxy_protocol_port}", "[::1]:443", "[::1]", "::1")};
+                                   "backend.example.com:{proxy_protocol_port}", "[::1]:443", " [::1]:443", "[::1]", "::1")};
 
   CAPTURE(key, destination);
   CHECK(load_route("route.example.com", key, destination).empty());
@@ -260,6 +260,8 @@ TEST_CASE("YamlSNIConfig rejects a tunnel destination port the tunnel would misr
     {"route.example.com", "[::1]:"                                   },
     {"route.example.com", "[::1]:https"                              },
     {"route.example.com", "[::1]x"                                   },
+    {"route.example.com", "[::1]443"                                 },
+    {"route.example.com", " [::1]443"                                },
     {"route.example.com", "[::1"                                     },
     {"route.example.com", "backend.example.com:$1"                   },
     {"*.example.com",     "backend.example.com:$"                    },
@@ -268,6 +270,7 @@ TEST_CASE("YamlSNIConfig rejects a tunnel destination port the tunnel would misr
     {"*.example.com",     "backend.example.com:x$1"                  },
     {"*.example.com",     "backend.example.com:0$1"                  },
     {"*.example.com",     "backend.example.com:$1$1"                 },
+    {"*.example.com",     "[::1]$1"                                  },
     {"*.example.com",     "backend.example.com:$0"                   },
     {"*.example.com",     "backend.example.com:$2"                   },
     {"*.example.com",     "backend.example.com:$10"                  },
