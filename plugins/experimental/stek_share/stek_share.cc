@@ -50,6 +50,10 @@ static const nuraft::raft_params::return_method_type CALL_TYPE = nuraft::raft_pa
 
 static std::string conf_file_path;
 
+// The shutdown and reload continuations share one mutex, so a reload never overlaps the shutdown hook. A reload that
+// arrives after the hook sees this and returns: a raft server it started would never be stopped.
+static bool lifecycle_shut_down = false;
+
 std::shared_ptr<PluginConfig> plugin_config;
 std::shared_mutex             plugin_config_mutex;
 
@@ -92,6 +96,7 @@ static int
 shutdown_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
+    lifecycle_shut_down = true;
     // Stop the updater before tearing raft down: it calls into the raft server
     // and dereferences the state machine, which shutdown() stops and reset() frees.
     plugin_threads.terminate();
@@ -112,6 +117,10 @@ message_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
         if (strncmp(reinterpret_cast<char *>(const_cast<void *>(msg->data)), "reload", msg->data_size) == 0) {
           // TODO: If in the middle of generating a new STEK, maybe block until new STEK has been generated?
           //       Not a big problem since new STEK is only generated once every few hours.
+          if (lifecycle_shut_down) {
+            Dbg(dbg_ctl, "Ignoring reload during shutdown.");
+            return TS_EVENT_NONE;
+          }
           Dbg(dbg_ctl, "Reloading configurations...");
           if (load_config_from_file() == 0) {
             stek_share_server.config_reloading = true;
@@ -561,14 +570,15 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = (char *)("ats");
   info.support_email = (char *)("ats-devel@yahooinc.com");
 
-  TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(shutdown_handler, nullptr));
+  TSMutex lifecycle_mutex = TSMutexCreate();
+  TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(shutdown_handler, lifecycle_mutex));
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
     return;
   }
 
-  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(message_handler, nullptr));
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(message_handler, lifecycle_mutex));
 
   if (argc < 2) {
     TSError("[%s] Must specify config file.", PLUGIN_NAME);
