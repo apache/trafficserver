@@ -346,6 +346,15 @@ TEST_CASE("CONTINUATION header_blocks_length overflow guard", "[HTTP2]")
   }
 }
 
+TEST_CASE("The header blocks limit is double the header list size", "[HTTP2]")
+{
+  CHECK(http2_max_header_blocks_length(0) == 0);
+  CHECK(http2_max_header_blocks_length(32768) == 65536);
+  CHECK(http2_max_header_blocks_length(UINT32_MAX / 2) == UINT32_MAX - 1);
+  CHECK(http2_max_header_blocks_length(UINT32_MAX / 2 + 1) == UINT32_MAX);
+  CHECK(http2_max_header_blocks_length(UINT32_MAX) == UINT32_MAX);
+}
+
 namespace
 {
 // Print a header into a buffer of 4 KB blocks the same way Http2Stream::send_headers
