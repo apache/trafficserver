@@ -61,11 +61,12 @@ public:
    * @a destination has its match groups and port template filled in, so its port can come from
    * the SNI or the connection rather than from sni.yaml.
    *
-   * @return false if @a destination names a port that is not one parse_port() accepts. The
+   * @return false if @a destination does not split into a host and port (such as "[::1" or
+   * "[::1]443"), names no host, or names a port that is not one parse_port() accepts. The
    * connection then has no tunnel destination and should be refused.
    */
-  bool set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
-                              YamlSNIConfig::TunnelPreWarm prewarm);
+  [[nodiscard]] bool set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
+                                            YamlSNIConfig::TunnelPreWarm prewarm);
   YamlSNIConfig::TunnelPreWarm get_tunnel_prewarm_configuration() const;
 
   PreWarm::SPtrConstDst create_dst(int pid) const;

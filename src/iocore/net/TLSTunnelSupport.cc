@@ -83,19 +83,15 @@ TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SN
   if (authority && authority->port) {
     port = parse_port(*authority->port);
   }
-  if (!authority || (authority->port && !port)) {
+  if (!authority || authority->host.empty() || (authority->port && !port)) {
     _tunnel_host.clear();
     _tunnel_port = 0;
     return false;
   }
 
-  if (authority->host.empty()) {
-    Warning("Invalid destination \"%.*s\" in SNI configuration.", int(destination.size()), destination.data());
-  } else {
-    // No port leaves 0, for which the tunnel uses the inbound port.
-    _tunnel_port = port.value_or(0);
-    _tunnel_host = authority->host;
-  }
+  // No port leaves 0, for which the tunnel uses the inbound port.
+  _tunnel_port = port.value_or(0);
+  _tunnel_host = authority->host;
   return true;
 }
 
