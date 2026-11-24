@@ -31,7 +31,7 @@ import pytest
 from .config import ReplayConfigError, ReplaySpec
 from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
-from .runtime import TestRuntime
+from .runtime import PORT_COUNTER_NAME, PORT_RANGE_FIRST, PORT_RESERVATIONS_NAME, TestRuntime
 from .services.ats import ATS, ATSFactory
 from .services.context import ProceduralContext
 from .services.curl import Curl
@@ -46,6 +46,10 @@ class MarkableItem(Protocol):
 
     def add_marker(self, marker: str | pytest.MarkDecorator, append: bool = True) -> None:
         """Attach @a marker to this item."""
+
+
+# pytest.Config attribute caching the TestRuntime that get_runtime() builds.
+RUNTIME_CACHE_NAME = "_uranium_test_runtime"
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -111,7 +115,8 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         lock.close()
         raise pytest.UsageError(f"Cannot lock Uranium sandbox {directory}: {error}. Choose a different --sandbox.") from None
     config.add_cleanup(lock.close)
-    (directory / ".port-counter").write_text("10000")
+    (directory / PORT_COUNTER_NAME).write_text(str(PORT_RANGE_FIRST - 1))
+    (directory / PORT_RESERVATIONS_NAME).unlink(missing_ok=True)
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
@@ -191,7 +196,7 @@ def pytest_runtest_makereport(
     item: pytest.Item,
     call: pytest.CallInfo[None],
 ) -> Generator[None, pytest.TestReport, pytest.TestReport]:
-    """Discard successful Uranium sandboxes after fixture teardown.
+    """Discard successful Uranium sandboxes and release ports after fixture teardown.
 
     :param item: Pytest item whose phase just completed.
     :param call: Result information for the completed pytest phase.
@@ -199,6 +204,8 @@ def pytest_runtest_makereport(
 
     report = yield
     _update_sandbox_retention(item, report)
+    if report.when == "teardown" and (runtime := getattr(item.config, RUNTIME_CACHE_NAME, None)) is not None:
+        runtime.release_ports()
     return report
 
 
@@ -292,8 +299,7 @@ class ReplayItem(pytest.Item):
 def get_runtime(config: pytest.Config) -> TestRuntime:
     """Build and cache the runtime selected by pytest command-line options."""
 
-    cache_name = "_uranium_test_runtime"
-    cached = getattr(config, cache_name, None)
+    cached = getattr(config, RUNTIME_CACHE_NAME, None)
     if cached is not None:
         return cached
 
@@ -314,7 +320,7 @@ def get_runtime(config: pytest.Config) -> TestRuntime:
         verifier_bin=Path(values["verifier_bin"]),
         sandbox_root=Path(values["sandbox"]),
     )
-    setattr(config, cache_name, runtime)
+    setattr(config, RUNTIME_CACHE_NAME, runtime)
     return runtime
 
 
