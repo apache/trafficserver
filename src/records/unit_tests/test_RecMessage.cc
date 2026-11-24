@@ -336,3 +336,36 @@ TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the sna
 
   std::filesystem::remove(path);
 }
+
+TEST_CASE("RecMessageUnmarshalNext rejects a misaligned element", "[librecords][RecMessage]")
+{
+  auto          path = snap_path("misaligned");
+  RecMessageItr itr;
+  RecRecord    *got   = nullptr;
+  int           shift = 0;
+
+  // Both shifts keep the element inside the snapshot and after the first one. Four bytes still aligns the element
+  // header, so only the writer's own alignment rule rejects it.
+  SECTION("by one byte")
+  {
+    shift = 1;
+  }
+  SECTION("by four bytes")
+  {
+    shift = 4;
+  }
+
+  // Records without names have no string offsets, so the shifted copy is a complete element on its own.
+  RecMessage       *msg    = marshal_records(3, nullptr);
+  RecMessageEleHdr *first  = first_element(msg);
+  char             *second = reinterpret_cast<char *>(msg) + first->o_next;
+
+  std::memmove(second + shift, second, sizeof(RecMessageEleHdr) + sizeof(RecRecord));
+  first->o_next += shift;
+
+  RecMessage *in = write_and_read(msg, path);
+  REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
+  CHECK(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_FAIL);
+  ats_free(in);
+  std::filesystem::remove(path);
+}
