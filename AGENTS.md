@@ -113,12 +113,11 @@ cd build/tests
 ```
 
 Most Uranium test coverage is in `tests/uranium_tests/`. The CI system uses the
-container image `ci.trafficserver.apache.org/ats/fedora:44` (Fedora version
-updated regularly). The source-tree `tests/urtest.sh` defaults to this image,
-using Apple container on macOS, Podman on Linux, or Docker as a fallback. It
-runs directly instead when it detects that it is already inside a container or
-the Fedora 44 test environment. Use `--run-in-container` or
-`--no-run-in-container` to override.
+container image named in `tests/urtest_docker_image.txt`. The source-tree
+`tests/urtest.sh` defaults to this image, using Apple container on macOS,
+Podman on Linux, or Docker as a fallback. It runs directly instead when it
+detects that it is already inside a container or on that image's OS release.
+Use `--run-in-container` or `--no-run-in-container` to override.
 
 ### Writing Uranium Tests
 
