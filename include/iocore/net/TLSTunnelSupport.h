@@ -32,6 +32,9 @@
 #include "tscore/ink_inet.h"
 #include "iocore/net/YamlSNIConfig.h"
 
+#include <optional>
+#include <string_view>
+
 class TLSTunnelSupport
 {
 public:
@@ -58,6 +61,30 @@ public:
   YamlSNIConfig::TunnelPreWarm get_tunnel_prewarm_configuration() const;
 
   PreWarm::SPtrConstDst create_dst(int pid) const;
+
+  /// The host and port of a tunnel destination.
+  struct Authority {
+    std::string_view host;
+    /// The text after the port separator, or nullopt if the destination names no port.
+    std::optional<std::string_view> port;
+  };
+
+  /** Split a tunnel destination into host and port where a tunnel connection splits it.
+   *
+   * The sni.yaml loader and tunnel pre-warming split a configured destination with this too, so
+   * that each of them takes the same text for the port as the connection does.
+   *
+   * @return nullopt if @a destination is a bracketed address that does not close, or that is
+   * followed by text other than the port separator.
+   */
+  static std::optional<Authority> split_destination(std::string_view destination);
+
+  /** The port that all of @a text names: a number from 1 to 65535 with no leading zero, which
+   * svtou would read as octal.
+   *
+   * @return nullopt if @a text is anything else.
+   */
+  static std::optional<in_port_t> parse_port(std::string_view text);
 
 protected:
   void _clear();
