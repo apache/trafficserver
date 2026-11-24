@@ -73,17 +73,20 @@ count_active_dthreads()
 // The stats sync task walks the dedicated threads on its own thread while
 // accept and logging threads are still being spawned during startup. On x86
 // the null-entry check rarely trips even if the count were published without
-// ordering, so outside ThreadSanitizer this case only checks the walk.
+// ordering, so there this case mostly checks the walk; ThreadSanitizer reports
+// the race on any CPU.
 TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocore]")
 {
   constexpr int SPAWNS = 64;
 
-  // eventProcessor is shared by the whole binary, so count what earlier cases spawned.
+  // eventProcessor outlives this case and may already hold dedicated threads.
   int const already = count_active_dthreads();
 
   std::atomic<bool> is_spawning{true};
+  std::atomic<bool> is_walking{false};
   std::atomic<int>  null_entries{0};
   std::thread       walker([&]() {
+    is_walking.store(true, std::memory_order_release);
     while (is_spawning.load(std::memory_order_acquire)) {
       for (EThread *et : eventProcessor.active_dthreads()) {
         if (et == nullptr) {
@@ -92,6 +95,11 @@ TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocor
       }
     }
   });
+
+  // Spawn only once the walker runs, so the walks overlap the spawns.
+  while (!is_walking.load(std::memory_order_acquire)) {
+    std::this_thread::yield();
+  }
 
   std::vector<std::unique_ptr<StartContinuation>> conts;
   for (int i = 0; i < SPAWNS; ++i) {
@@ -106,13 +114,14 @@ TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocor
   while (started.load(std::memory_order_acquire) < SPAWNS && std::chrono::steady_clock::now() < deadline) {
     std::this_thread::yield();
   }
-  if (started.load(std::memory_order_acquire) < SPAWNS) {
-    // A handler that has not run yet still holds its continuation; keep them all alive.
+  int const ran = started.load(std::memory_order_acquire);
+  if (ran < SPAWNS) {
+    // The start event of a handler that has not run yet still points at its continuation; keep them all alive.
     for (auto &cont : conts) {
       static_cast<void>(cont.release());
     }
   }
-  REQUIRE(started.load(std::memory_order_acquire) == SPAWNS);
+  REQUIRE(ran == SPAWNS);
 
   CHECK(null_entries.load() == 0);
 

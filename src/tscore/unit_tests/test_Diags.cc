@@ -102,7 +102,7 @@ TEST_CASE("Diags rolls and reseats diags.log from two threads", "[Diags]")
   roller.join();
   reseater.join();
 
-  // Every check must have rolled; otherwise the rotation path this case is about never ran.
+  // Every check must have rolled, or the rotation path ran fewer times than this case needs.
   CHECK(rolls.load() == ITERATIONS);
   REQUIRE(diags.diags_log != nullptr);
   CHECK(diags.diags_log->is_init());
