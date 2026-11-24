@@ -35,6 +35,7 @@
 #include "tsutil/PostScript.h"
 
 #include <algorithm>
+#include <cctype>
 #include <utility>
 
 #define PreWarmSMDbg(fmt, ...)  Dbg(dbg_ctl_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
@@ -77,6 +78,19 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
+// Whether a destination has a match group, a '$' and a digit, that a
+// connection fills in from its server name.
+bool
+has_match_group(std::string_view destination)
+{
+  for (auto pos = destination.find('$'); pos != std::string_view::npos; pos = destination.find('$', pos + 1)) {
+    if (pos + 1 < destination.size() && std::isdigit(static_cast<unsigned char>(destination[pos + 1]))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Split a tunnel destination into the host and port to pre-warm, the way a
 // connection to it splits them. For a destination with a fixed port, the pool
 // then has the key TLSTunnelSupport::create_dst looks up. Returns false for a
@@ -88,9 +102,10 @@ alpn_name_for_stat(int alpn_id)
 parse_authority(std::string &fqdn, int32_t &port, std::string_view destination)
 {
   auto const authority = TLSTunnelSupport::split_destination(destination);
-  if (!authority || destination.find_first_of("${") != std::string_view::npos) {
+  if (!authority || has_match_group(destination)) {
     return false;
   }
+
   port = -1;
   if (authority->port) {
     auto const fixed = TLSTunnelSupport::parse_port(*authority->port);
@@ -1111,7 +1126,7 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
     std::string dst_fqdn;
     int32_t     port;
     if (!parse_authority(dst_fqdn, port, item.tunnel_destination)) {
-      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": it is filled in for each connection",
+      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": it has a match group or port template",
               item.fqdn.c_str(), item.tunnel_destination.c_str());
       continue;
     }

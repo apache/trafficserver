@@ -74,10 +74,6 @@ bool
 TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
                                          YamlSNIConfig::TunnelPreWarm prewarm)
 {
-  _tunnel_type     = type;
-  _tunnel_prewarm  = prewarm;
-  _port_is_dynamic = port_is_dynamic;
-
   auto const               authority = split_destination(destination);
   std::optional<in_port_t> port;
   if (authority && authority->port) {
@@ -90,8 +86,11 @@ TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SN
   }
 
   // No port leaves 0, for which the tunnel uses the inbound port.
-  _tunnel_port = port.value_or(0);
-  _tunnel_host = authority->host;
+  _tunnel_port     = port.value_or(0);
+  _tunnel_host     = authority->host;
+  _tunnel_type     = type;
+  _tunnel_prewarm  = prewarm;
+  _port_is_dynamic = port_is_dynamic;
   return true;
 }
 
