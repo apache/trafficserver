@@ -267,6 +267,11 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 
   r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(eh) + sizeof(RecMessageEleHdr));
 
+  // RecSyncStatsFile() writes only stats. RecReadStatsFile() would restore any other kind as a new record, where an
+  // unknown kind asserts in RecSetRecord() and a configuration kind aborts the later registration of that stat.
+  if (!REC_TYPE_IS_STAT(r->rec_type)) {
+    return corrupt("not a stat record");
+  }
   if (!resolve_string(msg, r, r->name)) {
     return corrupt("bad record name");
   }
@@ -279,9 +284,6 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     if (!resolve_string(msg, r, r->data.rec_string) || !resolve_string(msg, r, r->data_default.rec_string)) {
       return corrupt("bad string value");
     }
-  }
-  if (REC_TYPE_IS_CONFIG(r->rec_type) && !resolve_string(msg, r, r->config_meta.check_expr)) {
-    return corrupt("bad check expression");
   }
 
   *record = r;

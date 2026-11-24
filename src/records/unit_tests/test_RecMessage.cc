@@ -401,3 +401,83 @@ TEST_CASE("RecMessageUnmarshalNext rejects bad element magic without asserting",
 
   std::filesystem::remove(path);
 }
+
+TEST_CASE("RecMessageUnmarshalNext rejects a record that is not a stat", "[librecords][RecMessage]")
+{
+  auto          path = snap_path("rectype");
+  RecMessageItr itr;
+  RecRecord    *got = nullptr;
+  RecT          type{};
+
+  SECTION("RECT_NULL")
+  {
+    type = RECT_NULL;
+  }
+  SECTION("RECT_CONFIG")
+  {
+    type = RECT_CONFIG;
+  }
+  SECTION("RECT_LOCAL")
+  {
+    type = RECT_LOCAL;
+  }
+  SECTION("RECT_HIDDEN_METRIC")
+  {
+    type = RECT_HIDDEN_METRIC;
+  }
+  SECTION("a combination of stat kinds")
+  {
+    type = static_cast<RecT>(RECT_PROCESS | RECT_NODE);
+  }
+
+  RecMessage *msg = marshal_records(1);
+
+  element_record(first_element(msg))->rec_type = type;
+
+  RecMessage *in = write_and_read(msg, path);
+  CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+  ats_free(in);
+  std::filesystem::remove(path);
+}
+
+TEST_CASE("RecMessageUnmarshalNext accepts every stat kind the writer emits", "[librecords][RecMessage]")
+{
+  auto        path = snap_path("statkinds");
+  RecMessage *msg  = RecMessageAlloc(RECG_NULL);
+  RecRecord   rec;
+
+  RecRecordInit(&rec);
+  rec.rec_type     = RECT_NODE;
+  rec.data_type    = RECD_INT;
+  rec.name         = "proxy.node.test.int";
+  rec.data.rec_int = 3;
+  msg              = RecMessageMarshal_Realloc(msg, &rec);
+
+  // A raw stat may be registered with a string value, so the writer can emit one.
+  RecRecordInit(&rec);
+  rec.rec_type                = RECT_PLUGIN;
+  rec.data_type               = RECD_STRING;
+  rec.name                    = "plugin.test.string";
+  rec.data.rec_string         = const_cast<char *>("value");
+  rec.data_default.rec_string = const_cast<char *>("default");
+  msg                         = RecMessageMarshal_Realloc(msg, &rec);
+
+  RecMessage   *in = write_and_read(msg, path);
+  RecMessageItr itr;
+  RecRecord    *got = nullptr;
+
+  REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
+  CHECK(got->rec_type == RECT_NODE);
+  CHECK(std::string(got->name) == "proxy.node.test.int");
+  CHECK(got->data.rec_int == 3);
+
+  REQUIRE(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_OKAY);
+  CHECK(got->rec_type == RECT_PLUGIN);
+  CHECK(std::string(got->name) == "plugin.test.string");
+  CHECK(std::string(got->data.rec_string) == "value");
+  CHECK(std::string(got->data_default.rec_string) == "default");
+
+  CHECK(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_FAIL);
+  ats_free(in);
+  std::filesystem::remove(path);
+}
