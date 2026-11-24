@@ -377,16 +377,17 @@ Load Errors
 
 If :file:`plugin.yaml` exists but cannot be loaded as written, |TS| does
 not start. Examples are a file that cannot be read, a path that is not a
-regular file (such as a directory), invalid YAML, a ``plugins`` value that
-is not a list, an entry with no ``path``, and a value of the wrong type
-(such as ``enabled: maybe``). The error is logged at ``EMERGENCY`` level
-and :program:`traffic_server` exits with status 33.
+regular file (such as a directory), invalid YAML, a ``plugins`` or
+``params`` value that is not a list, an entry with no ``path``, and a
+value of the wrong type (such as ``enabled: maybe``). The error is logged
+at ``EMERGENCY`` level and :program:`traffic_server` exits with status 33.
 ``traffic_server -C verify_config`` logs the same error at ``ERROR``
 level. A plugin library that cannot be loaded is a fatal error, as it is
 with :file:`plugin.config`.
 
 A file that names no plugins, such as an empty file or a ``plugins`` key
 with every entry commented out, loads none, the same as ``plugins: []``.
+A ``params`` key with every item commented out passes no arguments.
 
 |TS| reads :file:`plugin.yaml` only at startup. A configuration reload
 does not reread it, so a change, including one that breaks the file,

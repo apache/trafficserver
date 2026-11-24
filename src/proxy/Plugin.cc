@@ -507,8 +507,21 @@ parse_plugin_yaml(const char *yaml_path)
       if (auto n = node["load_order"]; n) {
         entry.load_order = n.as<int>();
       }
-      if (auto n = node["params"]; n && n.IsSequence()) {
+      // A params key with no value passes no arguments, like an empty list. Any
+      // other value that is not a list would drop the plugin's arguments unseen.
+      if (auto n = node["params"]; n && !n.IsNull()) {
+        if (!n.IsSequence()) {
+          result.errata.note("plugin entry #{}: 'params' must be a list", seq_idx + 1);
+          return result;
+        }
+        int item = 0;
         for (const auto &p : n) {
+          ++item;
+          // A null item would reach the plugin as the argument "null".
+          if (p.IsNull()) {
+            result.errata.note("plugin entry #{}: 'params' item #{} is empty", seq_idx + 1, item);
+            return result;
+          }
           entry.params.emplace_back(p.as<std::string>());
         }
       }
