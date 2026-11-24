@@ -317,20 +317,21 @@ TEST_CASE("parse_plugin_yaml - path with no value is missing", "[plugin_yaml]")
 TEST_CASE("parse_plugin_yaml - params that is not a list of values", "[plugin_yaml]")
 {
   // Each case has a good first entry, so the error must name entry #2.
-  auto content = GENERATE(as<std::string>{},
-                          // A scalar or a mapping instead of a list.
-                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    params: --verbose\n",
-                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    params:\n      verbose: true\n",
-                          // A list item with no value.
-                          "plugins:\n  - path: good.so\n  - path: libfoo.so\n    params:\n      - --verbose\n      -\n");
+  auto [content, expected] = GENERATE(table<std::string, std::string>({
+    // A scalar or a mapping instead of a list.
+    {"plugins: [{path: good.so}, {path: libfoo.so, params: --verbose}]\n",       "plugin entry #2: 'params' must be a list"  },
+    {"plugins: [{path: good.so}, {path: libfoo.so, params: {verbose: true}}]\n", "plugin entry #2: 'params' must be a list"  },
+    // A list item with no value.
+    {"plugins: [{path: good.so}, {path: libfoo.so, params: [--verbose, ~]}]\n",  "plugin entry #2: 'params' item #2 is empty"},
+  }));
 
-  CAPTURE(content);
+  CAPTURE(content, expected);
   TempYAML yaml(content);
 
   auto result = parse_plugin_yaml(yaml.path());
 
   REQUIRE_FALSE(result.ok());
-  CHECK(std::string(result.errata.front().text()).find("plugin entry #2: 'params'") != std::string::npos);
+  CHECK(std::string(result.errata.front().text()) == expected);
 }
 
 TEST_CASE("parse_plugin_yaml - params with no value passes no arguments", "[plugin_yaml]")
