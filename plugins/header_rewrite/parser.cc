@@ -445,14 +445,24 @@ openConfig(const std::string &filename)
     int pipe_fds[2];
     int stderr_pipe[2];
 
-    if (pipe(pipe_fds) != 0 || pipe(stderr_pipe) != 0) {
+    if (pipe(pipe_fds) != 0) {
       TSError("[header_rewrite] failed to create pipe for hrw4u compiler: %s", strerror(errno));
+      return std::nullopt;
+    }
+    if (pipe(stderr_pipe) != 0) {
+      TSError("[header_rewrite] failed to create pipe for hrw4u compiler: %s", strerror(errno));
+      close(pipe_fds[0]);
+      close(pipe_fds[1]);
       return std::nullopt;
     }
 
     pid_t pid = fork();
     if (pid < 0) {
       TSError("[header_rewrite] failed to fork for hrw4u compiler: %s", strerror(errno));
+      close(pipe_fds[0]);
+      close(pipe_fds[1]);
+      close(stderr_pipe[0]);
+      close(stderr_pipe[1]);
       return std::nullopt;
     } else if (pid == 0) {
       dup2(pipe_fds[1], STDOUT_FILENO);
