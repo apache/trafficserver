@@ -115,12 +115,12 @@ message_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     if (strcmp(PLUGIN_NAME, msg->tag) == 0) { // Message is for us
       if (msg->data_size) {
         if (strncmp(reinterpret_cast<char *>(const_cast<void *>(msg->data)), "reload", msg->data_size) == 0) {
-          // TODO: If in the middle of generating a new STEK, maybe block until new STEK has been generated?
-          //       Not a big problem since new STEK is only generated once every few hours.
           if (lifecycle_shut_down) {
             Dbg(dbg_ctl, "Ignoring reload during shutdown.");
             return TS_EVENT_NONE;
           }
+          // TODO: If in the middle of generating a new STEK, maybe block until new STEK has been generated?
+          //       Not a big problem since new STEK is only generated once every few hours.
           Dbg(dbg_ctl, "Reloading configurations...");
           if (load_config_from_file() == 0) {
             stek_share_server.config_reloading = true;
@@ -169,9 +169,9 @@ cert_verification(const std::string &sn)
 int
 init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<PluginConfig> config)
 {
-  // Hand the launcher sm_instance and this smgr_instance, not the stek_share_server members, and judge the result by the
-  // server it returns: a reload runs on the RPC thread, and the shutdown hook's reset() can clear those members at any point
-  // after they are stored below.
+  // Hand the launcher sm_instance and this smgr_instance rather than reading the stek_share_server members back, and judge
+  // the result by the server it returns, so that a reset() between the steps below cannot hand it null pointers. Today the
+  // shared lifecycle mutex and the order of TSPluginInit keep reset() out, but nothing here depends on that.
   nuraft::ptr<nuraft::state_mgr> smgr_instance =
     nuraft::cs_new<STEKShareSMGR>(config->server_id, config->endpoint, config->server_list);
 
@@ -578,8 +578,6 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(message_handler, lifecycle_mutex));
-
   if (argc < 2) {
     TSError("[%s] Must specify config file.", PLUGIN_NAME);
   } else {
@@ -601,4 +599,8 @@ TSPluginInit(int argc, const char *argv[])
       TSError("[%s] Config load failed.", PLUGIN_NAME);
     }
   }
+
+  // Added after the init_raft() above, which runs without lifecycle_mutex: a reload delivered earlier could run a second
+  // init_raft() alongside it.
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(message_handler, lifecycle_mutex));
 }
