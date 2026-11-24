@@ -504,5 +504,5 @@ TEST_CASE("parse_plugin_yaml - nonexistent file", "[plugin_yaml]")
   auto result = parse_plugin_yaml("/tmp/nonexistent_plugin_yaml_test.yaml");
 
   REQUIRE_FALSE(result.ok());
-  CHECK(std::string(result.errata.front().text()).find("failed to parse") != std::string::npos);
+  CHECK(std::string(result.errata.front().text()).find("failed to open: No such file or directory") != std::string::npos);
 }

@@ -24,6 +24,8 @@
 #include <cstdio>
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -459,14 +461,27 @@ parse_plugin_yaml(const char *yaml_path)
     return result;
   }
 
+  // Read the file here rather than with YAML::LoadFile(). A read error escapes
+  // yaml-cpp as std::ios_base::failure, and yaml-cpp leaks its buffer when it does.
+  std::string text;
+  {
+    std::ifstream in(yaml_path, std::ios::binary);
+    if (!in) {
+      result.errata.note("failed to open: {}", strerror(errno));
+      return result;
+    }
+    try {
+      text.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    } catch (const std::ios_base::failure &e) {
+      result.errata.note("failed to read: {}", e.what());
+      return result;
+    }
+  }
+
   try {
-    root = YAML::LoadFile(yaml_path);
+    root = YAML::Load(text);
   } catch (const YAML::Exception &e) {
     result.errata.note("failed to parse: {}", e.what());
-    return result;
-  } catch (const std::exception &e) {
-    // A read error surfaces from the stream as std::ios_base::failure.
-    result.errata.note("failed to read: {}", e.what());
     return result;
   }
 
