@@ -158,15 +158,7 @@ class ServiceFactory:
         """
 
         directory = self._directory(name)
-        port = int(options.pop("port", 0))
-        while not port:
-            candidate = self._context.runtime.allocate_port()
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
-                try:
-                    probe.bind(("127.0.0.1", candidate))
-                except OSError:
-                    continue
-            port = candidate
+        port = int(options.pop("port", 0)) or self._context.runtime.allocate_port(socket.SOCK_DGRAM)
         default = options.pop("default", None)
         otherwise = [default] if isinstance(default, str) else default
         zone_file = directory / "dns_file.json"

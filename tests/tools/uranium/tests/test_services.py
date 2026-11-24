@@ -298,6 +298,44 @@ def test_port_counter_reports_exhaustion_when_every_port_is_occupied(tmp_path: P
     assert sorted(attempted) == list(range(10001, 30000))
 
 
+def test_dns_reports_a_udp_probe_error_instead_of_retrying(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail at the first UDP probe error instead of drawing ports until one binds.
+
+    The port counter wraps, so a retry loop that skips every UDP error never ends.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so UDP probes are refused and TCP probes succeed.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    test_path = tmp_path / "test_example.py"
+    test_path.touch()
+    run_directory = tmp_path / "run"
+    run_directory.mkdir()
+    factory = ServiceFactory(ProceduralContext(runtime, "test_example", test_path, run_directory))
+    udp_probes = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Refuse every UDP bind, and stop the test if a second port is tried.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        if probe.type != socket.SOCK_DGRAM:
+            return
+        udp_probes.append(address[1])
+        if len(udp_probes) > 1:
+            raise AssertionError(f"dns() kept drawing ports after a UDP probe error: {udp_probes}")
+        raise OSError(errno.EACCES, os.strerror(errno.EACCES))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    with pytest.raises(RuntimeConfigError, match="Port probe for 127.0.0.1:10001 failed"):
+        factory.dns("dns")
+    assert udp_probes == [10001]
+
+
 def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Give each embedded replay its own directory under the native test.
 
