@@ -31,7 +31,7 @@ import pytest
 from .config import ReplayConfigError, ReplaySpec
 from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
-from .runtime import TestRuntime
+from .runtime import FIRST_TEST_PORT, TestRuntime
 from .services.ats import ATS, ATSFactory
 from .services.context import ProceduralContext
 from .services.curl import Curl
@@ -111,7 +111,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         lock.close()
         raise pytest.UsageError(f"Cannot lock Uranium sandbox {directory}: {error}. Choose a different --sandbox.") from None
     config.add_cleanup(lock.close)
-    (directory / ".port-counter").write_text("10000")
+    (directory / ".port-counter").write_text(str(FIRST_TEST_PORT - 1))
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:

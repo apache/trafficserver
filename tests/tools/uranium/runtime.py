@@ -34,6 +34,10 @@ import fcntl
 
 from .utils import version_tuple
 
+# Test ports come from this range. The session seeds the counter one below it.
+FIRST_TEST_PORT = 10001
+LAST_TEST_PORT = 29999
+
 
 class RuntimeConfigError(ValueError):
     """Report an invalid Uranium test runtime."""
@@ -114,7 +118,14 @@ class TestRuntime:
         return self.build_root / "tests" / "tools" / "plugins" / ".libs"
 
     def allocate_port(self, socket_type: int = socket.SOCK_STREAM) -> int:
-        """Allocate a unique available port across all xdist workers.
+        """Allocate an available port, shared across xdist workers.
+
+        Numbers count up from the session seed and wrap from LAST_TEST_PORT back
+        to FIRST_TEST_PORT, so a number is not handed out twice until the counter
+        has gone once around the range. After a wrap the bind probe is the only
+        guard. It cannot see a port that a live test reserved but has not bound,
+        or one held only on IPv6 or only on the other socket type. A pass that
+        finds every other port busy ends by probing the port handed out last.
 
         :param socket_type: Socket kind to probe, normally TCP or UDP.
         """
@@ -131,14 +142,14 @@ class TestRuntime:
             content = state.read().strip()
             try:
                 candidate = int(content)
-                if not 10000 <= candidate < 30000:
+                if not FIRST_TEST_PORT - 1 <= candidate <= LAST_TEST_PORT:
                     raise ValueError
             except ValueError:
                 raise RuntimeConfigError(f"Invalid port counter in {state_path}: {content!r}") from None
-            # A full unsharded run allocates more ports than the range holds, so wrap back to the bottom.
-            # Ports from that far back belong to finished tests; the probe still skips any that are bound.
-            for _ in range(29999 - 10001 + 1):
-                candidate = candidate + 1 if candidate < 29999 else 10001
+            # Unsharded CI runs went past the top of the range, so wrap back to the bottom.
+            # This assumes a port from a full cycle back belongs to a finished test; the probe skips any still bound.
+            for _ in range(LAST_TEST_PORT - FIRST_TEST_PORT + 1):
+                candidate = candidate + 1 if candidate < LAST_TEST_PORT else FIRST_TEST_PORT
                 with socket.socket(socket.AF_INET, socket_type) as probe:
                     try:
                         probe.bind(("127.0.0.1", candidate))
@@ -153,7 +164,7 @@ class TestRuntime:
                 fcntl.flock(state, fcntl.LOCK_UN)
                 return candidate
             fcntl.flock(state, fcntl.LOCK_UN)
-        raise RuntimeConfigError(f"Exhausted available test ports in 10001..29999; counter: {state_path}")
+        raise RuntimeConfigError(f"Exhausted available test ports in {FIRST_TEST_PORT}..{LAST_TEST_PORT}; counter: {state_path}")
 
     @contextmanager
     def execution_lock(self, is_exclusive: bool) -> Iterator[None]:

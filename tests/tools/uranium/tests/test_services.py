@@ -208,7 +208,7 @@ def test_sandbox_rejects_overlong_filesystem_component(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("content", [None, "", "garbage", "9999", "30000"])
 def test_port_counter_rejects_missing_corrupt_or_out_of_range_state(tmp_path: Path, content: str | None) -> None:
-    """Never recycle reservations when the session counter is damaged.
+    """Refuse to guess a restart point when the session counter is missing, corrupt or out of range.
 
     :param tmp_path: Isolated session root.
     :param content: Counter contents, or None to leave the file absent.
@@ -256,7 +256,7 @@ def test_port_probe_retries_only_occupied_ports(tmp_path: Path, monkeypatch: pyt
 
 
 def test_port_counter_wraps_after_the_last_port(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Start again from the bottom of the range once a long session has used every port once.
+    """Start again from the bottom of the range after handing out the last port.
 
     :param tmp_path: Isolated session root.
     :param monkeypatch: Replace socket binding so the probe never touches real ports.
