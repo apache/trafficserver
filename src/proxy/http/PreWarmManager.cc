@@ -28,13 +28,13 @@
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/NetProcessor.h"
 #include "iocore/net/PreWarm.h"
+#include "iocore/net/TLSTunnelSupport.h"
 
 #include "tsutil/Metrics.h"
 #include "tscore/ink_time.h"
 #include "tsutil/PostScript.h"
 
 #include <algorithm>
-#include <stdexcept>
 #include <utility>
 
 #define PreWarmSMDbg(fmt, ...)  Dbg(dbg_ctl_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
@@ -77,24 +77,29 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
-// Returns false when std::stoi cannot read the text after the first colon: a
-// port template, a port that starts with a match group, or a bracketed IPv6
-// address, whose first colon is inside the brackets. The sni.yaml loader has
-// already refused any other port std::stoi cannot read.
+// Split a tunnel destination into the host and port of the pre-warm pool that
+// a connection to it looks up, which TLSTunnelSupport::create_dst keys by the
+// host and port the connection splits from it. Returns false for a destination
+// whose host or port a match group or port template fills in for each
+// connection, which names no fixed endpoint to pre-warm; the sni.yaml loader
+// has already refused any other destination this cannot read. A port of -1
+// means the destination names none.
 [[nodiscard]] bool
-parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
+parse_authority(std::string &fqdn, int32_t &port, std::string_view destination)
 {
-  if (auto pos = authority.find(':'); pos != std::string::npos) {
-    fqdn = authority.substr(0, pos);
-    try {
-      port = static_cast<in_port_t>(std::stoi(authority.substr(pos + 1).data()));
-    } catch (const std::logic_error &) {
+  auto const authority = TLSTunnelSupport::split_destination(destination);
+  if (!authority || authority->host.find('$') != std::string_view::npos) {
+    return false;
+  }
+  port = -1;
+  if (authority->port) {
+    auto const fixed = TLSTunnelSupport::parse_port(*authority->port);
+    if (!fixed) {
       return false;
     }
-  } else {
-    fqdn = authority;
-    port = -1;
+    port = *fixed;
   }
+  fqdn = authority->host;
   return true;
 }
 
@@ -1106,8 +1111,8 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
     std::string dst_fqdn;
     int32_t     port;
     if (!parse_authority(dst_fqdn, port, item.tunnel_destination)) {
-      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": its port cannot be read", item.fqdn.c_str(),
-              item.tunnel_destination.c_str());
+      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": it is filled in for each connection",
+              item.fqdn.c_str(), item.tunnel_destination.c_str());
       continue;
     }
 
