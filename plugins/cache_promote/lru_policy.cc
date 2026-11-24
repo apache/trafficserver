@@ -257,6 +257,7 @@ bool
 LRUPolicy::stats_add(const char *remap_id)
 
 {
+  TSAssert(remap_id != nullptr);
   std::string_view                          remap_identifier = remap_id;
   const std::tuple<std::string_view, int *> stats[]          = {
     {"cache_hits",     &_cache_hits_id    },

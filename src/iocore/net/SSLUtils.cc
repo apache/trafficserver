@@ -2471,6 +2471,7 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams  &
 bool
 SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings)
 {
+  ink_assert(sslMultCertSettings);
   bool                                           retval = true;
   std::set<std::string>                          common_names;
   std::unordered_map<int, std::set<std::string>> unique_names;

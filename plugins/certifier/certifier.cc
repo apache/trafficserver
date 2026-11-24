@@ -194,6 +194,7 @@ public:
   void
   prepend(SslData *data)
   {
+    TSAssert(data != nullptr);
     TSMutexLock(list_mutex);
     std::unique_ptr<SslData> local = nullptr;
     // If data is the most recent node in the list,

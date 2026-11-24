@@ -50,6 +50,7 @@ public:
   bool
   stats_add(const char *remap_id) override
   {
+    TSAssert(remap_id != nullptr);
     std::string_view                          remap_identifier = remap_id;
     const std::tuple<std::string_view, int *> stats[]          = {
       {"cache_hits",     &_cache_hits_id    },

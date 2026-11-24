@@ -277,6 +277,7 @@ LogObject::add_filter(LogFilter *filter, bool copy)
 uint64_t
 LogObject::compute_signature(LogFormat *format, char *filename, unsigned int flags)
 {
+  ink_assert(format && filename);
   std::string_view filename_sv{filename};
   if (filename_sv == "stdout" || filename_sv == "stderr") {
     return 0;
