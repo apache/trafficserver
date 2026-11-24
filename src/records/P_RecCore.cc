@@ -357,12 +357,6 @@ RecReadStatsFile()
           continue;
         }
 
-        if (!REC_TYPE_IS_STAT(r->rec_type)) {
-          // This should not happen, but be defensive against records changing their type ..
-          RecLog(DL_Warning, "skipping restore of non-stat record '%s'", r->name);
-          continue;
-        }
-
         // Check whether the persistence type was changed by a new software version. If the record is
         // already registered with an updated persistence type, then we don't want to set it. We should
         // keep the registered value.
