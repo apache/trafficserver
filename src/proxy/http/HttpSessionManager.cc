@@ -97,13 +97,16 @@ ServerSessionPool::requestPurge()
 void
 ServerSessionPool::removeSessionsOf(EThread *thread, std::vector<PoolableSession *> &sessions)
 {
+  size_t const first = sessions.size();
+
   for (PoolableSession &ssn : m_ip_pool) {
-    if (NetVConnection *vc = ssn.get_netvc(); vc != nullptr && vc->thread == thread) {
+    // A multiplexing session stays in its pool while it has transactions.
+    if (NetVConnection *vc = ssn.get_netvc(); vc != nullptr && vc->thread == thread && !ssn.is_multiplexing()) {
       sessions.push_back(&ssn);
     }
   }
-  for (PoolableSession *ssn : sessions) {
-    this->removeSession(ssn);
+  for (size_t i = first; i < sessions.size(); ++i) {
+    this->removeSession(sessions[i]);
   }
 }
 
@@ -467,8 +470,6 @@ HttpSessionManager::init()
   eventProcessor.schedule_spawn(&initialize_thread_for_http_sessions, ET_NET);
 }
 
-// Only the shared pool is purged, not the per thread pools.
-//
 // A session is closed by the thread that owns its connection, so this asks every thread to close
 // its own. That keeps the closes out of the pool lock and away from other threads' connections.
 // This thread's sessions are closed right away so that a retry of the request that hit the
@@ -495,18 +496,24 @@ HttpSessionManager::purge_thread_keepalives()
 {
   EThread                       *ethread = this_ethread();
   std::vector<PoolableSession *> sessions;
+  bool                           purged_shared = false;
+
+  if (ServerSessionPool *pool = ethread->server_session_pool; pool != nullptr) {
+    SCOPED_MUTEX_LOCK(lock, pool->mutex, ethread);
+    pool->removeSessionsOf(ethread, sessions);
+  }
 
   {
     MUTEX_TRY_LOCK(lock, m_g_pool->mutex, ethread);
-    if (!lock.is_locked()) {
-      return false;
+    if (lock.is_locked()) {
+      m_g_pool->removeSessionsOf(ethread, sessions);
+      purged_shared = true;
     }
-    m_g_pool->removeSessionsOf(ethread, sessions);
   }
 
   Dbg(dbg_ctl_http_ss, "[purge keepalives] closing %zu sessions owned by this thread", sessions.size());
   ServerSessionPool::closeSessions(sessions);
-  return true;
+  return purged_shared;
 }
 
 HSMresult_t

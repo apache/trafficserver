@@ -158,15 +158,16 @@ public:
    */
   bool releaseSession(PoolableSession *ss);
 
-  /** Ask the thread that owns this pool to close its sessions in the shared pool.
+  /** Ask the thread that owns this pool to close its sessions in this pool and in the shared pool.
 
       This can be called from any thread.
    */
   void requestPurge();
 
-  /** Remove the sessions whose connections belong to @a thread.
+  /** Remove the sessions whose connections belong to @a thread, except multiplexing sessions.
 
-      The caller must hold the pool lock and is responsible for closing the sessions.
+      The removed sessions are appended to @a sessions. The caller must hold the pool lock and is
+      responsible for closing the sessions.
    */
   void removeSessionsOf(EThread *thread, std::vector<PoolableSession *> &sessions);
 
@@ -203,15 +204,15 @@ public:
   ~HttpSessionManager() {}
   HSMresult_t acquire_session(HttpSM *sm, sockaddr const *addr, const char *hostname, ProxyTransaction *ua_txn);
   HSMresult_t release_session(PoolableSession *to_release);
-  /** Close the keep-alive sessions in the shared pool.
+  /** Close the keep-alive sessions in the shared pool and in the per thread pools.
 
-      Each thread closes its own sessions. The current thread's are closed before this returns if
-      the shared pool lock is free, the others when their thread next runs.
+      Each thread closes its own sessions. The current thread's are closed before this returns,
+      except those in the shared pool if its lock is busy, the others when their thread next runs.
    */
   void purge_keepalives();
-  /** Close the shared pool sessions whose connections belong to the current thread.
+  /** Close the pooled sessions whose connections belong to the current thread.
 
-      @return @c false if the shared pool was locked by another thread and nothing was done.
+      @return @c false if the shared pool was locked by another thread, so its sessions stay open.
    */
   bool purge_thread_keepalives();
   void init();
