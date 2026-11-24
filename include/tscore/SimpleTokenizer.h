@@ -245,18 +245,22 @@ private:
         // requested is larger than 1, remove them if the
         // CONSIDER_NULL_FIELDS flag is not set
         //
+        // A null field, or a whitespace-only one kept by KEEP_WHITESPACE_LEFT, must not trim end back past the
+        // token's first character. Before it lies either the front of the data, where a terminator would land outside
+        // the buffer, or what the scan skipped after the previous token, where it would leave the returned token
+        // unterminated.
+        size_t const first = next - _data;
+
         if (!(_mode & CONSIDER_NULL_FIELDS)) {
-          while (_data[--end] == delimiter) {
-            // do nothing
+          while (end > first && _data[end - 1] == delimiter) {
+            --end;
           }
-          ++end;
         }
 
         if (!(_mode & KEEP_WHITESPACE_RIGHT)) {
-          while (isspace(_data[--end])) {
-            // do nothing
+          while (end > first && isspace(_data[end - 1])) {
+            --end;
           }
-          ++end;
         }
 
         if (!countOnly) {

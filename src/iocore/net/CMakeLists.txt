@@ -152,6 +152,7 @@ if(BUILD_TESTING)
     unit_tests/test_NetHandler.cc
     unit_tests/test_ProxyProtocol.cc
     unit_tests/test_SSLCertLookup.cc
+    unit_tests/test_SSLConfigParams.cc
     unit_tests/test_SSLNetVConnectionAsyncEp.cc
     unit_tests/test_SSLRPKUtils.cc
     unit_tests/test_SSLSecret.cc

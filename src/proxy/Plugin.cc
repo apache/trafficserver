@@ -339,7 +339,7 @@ plugin_init(bool validateOnly)
 {
   ats_scoped_str path;
   char           line[1024], *p;
-  char          *argv[MAX_PLUGIN_ARGS];
+  char          *argv[MAX_PLUGIN_ARGS + 1]; // a full line still leaves room for the terminating nullptr
   char          *vars[MAX_PLUGIN_ARGS];
   int            argc;
   int            fd;
@@ -374,16 +374,18 @@ plugin_init(bool validateOnly)
 
     // not comment or blank, so rip line into tokens
     while (true) {
-      if (argc >= MAX_PLUGIN_ARGS) {
-        Warning("Exceeded max number of args (%d) for plugin: [%s]", MAX_PLUGIN_ARGS, argc > 0 ? argv[0] : "???");
-        break;
-      }
-
       while (*p && ParseRules::is_wslfcr(*p)) {
         ++p;
       }
       if ((*p == '\0') || (*p == '#')) {
         break; // EOL
+      }
+
+      // Check the limit only when another token follows, so the trailing whitespace or # comment of a line with
+      // exactly MAX_PLUGIN_ARGS tokens does not trip it.
+      if (argc >= MAX_PLUGIN_ARGS) {
+        Warning("Exceeded max number of args (%d) for plugin: [%s]", MAX_PLUGIN_ARGS, argc > 0 ? argv[0] : "???");
+        break;
       }
 
       if (*p == '\"') {
@@ -418,11 +420,7 @@ plugin_init(bool validateOnly)
       }
     }
 
-    if (argc < MAX_PLUGIN_ARGS) {
-      argv[argc] = nullptr;
-    } else {
-      argv[MAX_PLUGIN_ARGS - 1] = nullptr;
-    }
+    argv[argc] = nullptr;
 
     ++load_index;
     std::string plugin_name = (argc > 0) ? argv[0] : "unknown";
