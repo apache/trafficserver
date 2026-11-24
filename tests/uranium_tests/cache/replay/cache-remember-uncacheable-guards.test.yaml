@@ -43,7 +43,7 @@ urtest:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: 'http_trans|http_cache'
       proxy.config.http.cache.remember_uncacheable: 60
-      # Off by default, so a client no-store would otherwise be ignored and the response stored.
+      # The default of 1 ignores a client no-store, so honor it here for the no-store guard to matter.
       proxy.config.http.cache.ignore_client_no_cache: 0
     remap_config:
       - from: "http://example.com/"

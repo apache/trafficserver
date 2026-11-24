@@ -3960,7 +3960,7 @@ Dynamic Content & Content Negotiation
     after all. The URL is forgotten once a response for it is stored. Every further uncacheable
     response to a plain ``GET`` miss renews the memory; error responses, range requests, other
     methods, and responses kept out of the cache by the request, a plugin or a cache rule do
-    not. ``0`` or less turns the memory off.
+    not. ``0`` turns the memory off. The maximum is ``86400``.
 
     Without this, every miss takes the write lock before contacting the origin so that
     concurrent requests for the same URL wait for one origin fetch. For a URL whose responses
@@ -3973,8 +3973,9 @@ Dynamic Content & Content Negotiation
     still costs one origin fetch. The cost of remembering is that a response that becomes
     cacheable while its URL is remembered is stored by the first request that sees it but is
     not collapsed, and a miss on a remembered URL is never subject to
-    :ts:cv:`proxy.config.http.cache.open_write_fail_action`: if it takes the lock late and
-    loses it, it serves the response it already has. The memory holds at most 65,536 URLs and a
+    :ts:cv:`proxy.config.http.cache.open_write_fail_action`: if it cannot get the lock after its
+    write retries, it serves the response it already has, and the miss still counts in
+    ``proxy.process.http.cache_open_write_fail_count``. The memory holds at most 65,536 URLs and a
     newer URL can displace an older one.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.defer_write_on_miss INT 0

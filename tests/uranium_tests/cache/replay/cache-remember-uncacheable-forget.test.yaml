@@ -1,0 +1,171 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# A remembered URL is forgotten once a response for it is stored. The first
+# /flip miss answers no-store and is remembered; the second is deferred, gets
+# a cacheable response and stores it. After a PURGE the next miss must take
+# the write lock before the origin again, as a URL that was never remembered
+# does, so only the second miss counts as deferred. Without the forget it
+# would still be remembered and deferred a second time.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Storing a response forgets that its URL was uncacheable'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.remember_uncacheable: 60
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+    metric_checks:
+      - metric: proxy.process.http.cache_open_write_deferred
+        value: 1
+      - metric: proxy.process.http.cache_hit_fresh
+        value: 1
+        delay: 0
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-nostore]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-stored]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: PURGE
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Length, "0"]
+        - [uuid, flip-purge]
+    # A purge is answered from the cache and never reaches the origin.
+    proxy-request:
+      expect: absent
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-after-purge]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, third]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: third, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-hit]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: third, as: equal}]

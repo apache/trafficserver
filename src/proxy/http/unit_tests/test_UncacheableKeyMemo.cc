@@ -109,6 +109,15 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     CHECK(memo->contains(zero, now));
   }
 
+  SECTION("a forgotten slot does not match a key with a zero hash")
+  {
+    // Forgetting zeroes the tag but leaves the expiry, so a zero tag must never be a key's.
+    CryptoHash const zero = make_key(0, 0);
+    memo->remember(zero, now, ttl);
+    memo->forget(zero);
+    CHECK_FALSE(memo->contains(zero, now));
+  }
+
   SECTION("a non-positive ttl neither remembers nor evicts")
   {
     memo->remember(key, now, ttl);
