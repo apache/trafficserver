@@ -97,7 +97,7 @@ is_port_template(std::string_view text)
 // each connection, so its value is checked then, but it must name a group the
 // fqdn captures. In the port the group number runs to the end of the
 // destination, which is how TunnelDestination::replace_match_groups reads it,
-// and it is one digit because no fqdn captures ten groups.
+// and it is one digit because groups above 9 are not supported.
 bool
 is_valid_tunnel_port(std::string_view port, size_t groups)
 {
@@ -113,24 +113,33 @@ is_valid_tunnel_port(std::string_view port, size_t groups)
   return TLSTunnelSupport::parse_port(port).has_value();
 }
 
-// Whether each match group in a destination, a '$' and a digit, names a group
-// the fqdn captures. TunnelDestination::replace_match_groups reads the group
-// number up to the next '.' or ':', and leaves anything it cannot fill in as
-// written, so the number must be one digit from 1 to the group count.
-bool
-is_valid_match_groups(std::string_view destination, size_t groups)
+// Why the match groups in a destination cannot be filled in as written, or an
+// empty string if they can. TunnelDestination::replace_match_groups reads the
+// number after each '$' up to the next '.' anywhere after it, or up to the next
+// ':' when no '.' follows, or to the end. It leaves a '$' it cannot fill in as
+// written, which is not valid in a host name, so every '$' must start a group
+// number of one digit naming a group the fqdn captures. Groups above 9 are not
+// supported.
+std::string
+match_group_error(std::string_view destination, size_t groups)
 {
   for (auto pos = destination.find('$'); pos != std::string_view::npos; pos = destination.find('$', pos + 1)) {
-    auto const rest = destination.substr(pos + 1);
-    if (rest.empty() || !std::isdigit(static_cast<unsigned char>(rest.front()))) {
-      continue;
+    auto const dot    = destination.find('.', pos);
+    auto const end    = dot != std::string_view::npos ? dot : destination.find(':', pos);
+    auto const number = destination.substr(pos + 1, end == std::string_view::npos ? end : end - pos - 1);
+    if (number.empty() || !std::isdigit(static_cast<unsigned char>(number.front()))) {
+      return "'$' is not followed by a match group number such as $1";
     }
-    auto const number = rest.substr(0, rest.find_first_of(".:"));
-    if (number.size() != 1 || number.front() < '1' || static_cast<size_t>(number.front() - '0') > groups) {
-      return false;
+    if (number.size() != 1) {
+      return "match group \"$" + std::string(number) +
+             "\" is not one digit followed by '.', ':' or the end of the destination; groups above 9 are not supported";
+    }
+    if (number.front() == '0' || static_cast<size_t>(number.front() - '0') > groups) {
+      return "match group \"$" + std::string(number) + "\" names no group: the fqdn captures " + std::to_string(groups) +
+             (groups == 1 ? " match group" : " match groups");
     }
   }
-  return true;
+  return {};
 }
 
 size_t
@@ -164,10 +173,9 @@ check_tunnel_port(const YAML::Node &route, const std::string &fqdn, const std::s
                                                 std::string(TunnelDestination::MAP_WITH_RECV_PORT_STR) + " or " +
                                                 std::string(TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR));
   }
-  if (auto const groups = match_group_count(fqdn); !is_valid_match_groups(destination, groups)) {
-    throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad match group in tunnel destination \"" + destination +
-                                                "\": the fqdn captures " + std::to_string(groups) +
-                                                (groups == 1 ? " match group" : " match groups"));
+  if (auto const error = match_group_error(destination, match_group_count(fqdn)); !error.empty()) {
+    throw YAML::ParserException(route.Mark(),
+                                "fqdn \"" + fqdn + "\": bad match group in tunnel destination \"" + destination + "\": " + error);
   }
 }
 

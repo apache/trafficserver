@@ -406,10 +406,12 @@ The following :file:`sni.yaml` changes have been made:
   to the server name. Any of those now stops |TS| at startup, or fails a reload of :file:`sni.yaml` and keeps the
   previous configuration.
 - A match group anywhere in a destination, in the host as well as the port, must be ``$`` and one digit that names a
-  ``*`` in a wildcard ``fqdn``. Before, a match group under an ``fqdn`` with no ``*``, such as
-  ``$1.backend.example.com:443`` for ``route.example.com``, logged a warning on each connection and tunnelled to the
-  server name, and one naming no ``*`` the ``fqdn`` has, such as ``$0`` or ``$2`` in the host for ``*.example.com``,
-  was not filled in as configured. These now stop |TS| at startup, or fail a reload of :file:`sni.yaml`.
+  ``*`` in a wildcard ``fqdn``, and any other ``$`` is refused. Before, a match group under an ``fqdn`` with no ``*``,
+  such as ``$1.backend.example.com:443`` for ``route.example.com``, logged a warning on each connection and tunnelled
+  to the server name, and one naming a ``*`` the ``fqdn`` does not have, such as ``$0`` or ``$2`` in the host for
+  ``*.example.com``, was not filled in as configured. A ``$`` that starts no match group, such as ``${1}`` or
+  ``back$end``, was kept as written under a wildcard ``fqdn``, and under an exact one the connection tunnelled to the
+  server name. These now stop |TS| at startup, or fail a reload of :file:`sni.yaml`.
 - A destination filled in from a match group must keep the shape it was configured with, name a host, and have a port
   from 1 to 65535 with no leading zero once the server name fills it in, or |TS| fails the TLS handshake. Before, |TS|
   tunnelled to the port's leading digits, wrapped a port above 65535 around, read a leading zero as octal, or fell

@@ -233,9 +233,10 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
         return SSL_TLSEXT_ERR_ALERT_FATAL;
       }
     }
-    // The sni.yaml loader checks the host and port written in the destination, but not what a
-    // match group fills in from the SNI, which the client chooses. This refuses a filled-in
-    // destination with an empty host as well as one whose port is not a port.
+    // The sni.yaml loader checks the port written in the destination, and that the host is not
+    // empty and its match groups name groups the fqdn captures. It cannot check what a match
+    // group fills in from the SNI, which the client chooses, so this refuses a filled-in
+    // destination with an empty host or with a port that parse_port() does not accept.
     if (!tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm)) {
       Dbg(dbg_ctl_ssl_sni, "Refusing fqdn [%s]: destination [%s], configured [%s], is not usable", servername, fixed_dst.c_str(),
           destination.c_str());

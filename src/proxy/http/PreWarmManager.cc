@@ -35,7 +35,6 @@
 #include "tsutil/PostScript.h"
 
 #include <algorithm>
-#include <cctype>
 #include <utility>
 
 #define PreWarmSMDbg(fmt, ...)  Dbg(dbg_ctl_prewarm_sm, "[%p] " fmt, this, ##__VA_ARGS__);
@@ -78,17 +77,12 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
-// Whether a destination has a match group, a '$' and a digit, that a
-// connection fills in from its server name.
+// Whether a destination has a match group that a connection fills in from its
+// server name. The sni.yaml loader refuses any '$' that does not start one.
 bool
 has_match_group(std::string_view destination)
 {
-  for (auto pos = destination.find('$'); pos != std::string_view::npos; pos = destination.find('$', pos + 1)) {
-    if (pos + 1 < destination.size() && std::isdigit(static_cast<unsigned char>(destination[pos + 1]))) {
-      return true;
-    }
-  }
-  return false;
+  return destination.find('$') != std::string_view::npos;
 }
 
 // Split a tunnel destination into the host and port to pre-warm, the way a

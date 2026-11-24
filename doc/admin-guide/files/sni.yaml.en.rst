@@ -396,18 +396,20 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    strings can be specified. The match group number can be used in combination with either
                                                    one of those.
 
-                                                   The destination must name a host. If it names a port, the port must be a number from
-                                                   1 to 65535 with no leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``,
-                                                   or a match group such as ``$1``. Digits before a match group must themselves be such a
+                                                   The destination must name a host. If it names a port, the port must be a number from 1
+                                                   to 65535 with no leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``, or
+                                                   a match group such as ``$1``. Digits before a match group must themselves be such a
                                                    number, so ``4$1`` is accepted but ``0$1`` and ``70000$1`` are not. A match group, in
                                                    the host or the port, is ``$`` and one digit that names a ``*`` in a wildcard
-                                                   ``fqdn``, such as ``$1`` for ``*.example.com``. A port template must be the whole
-                                                   port, and cannot appear anywhere else in the destination. An IPv6 address with a port
-                                                   goes in brackets, with the port after ``]:``, such as ``[::1]:443``. Any other
-                                                   destination, such as ``:443``, ``backend:443x``, ``backend:0443``,
-                                                   ``backend:99999``, ``backend{inbound_local_port}``, ``[::1]443``, or ``$2.backend``
-                                                   for ``*.example.com``, stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the reload, and |TS| keeps the
-                                                   previous configuration.
+                                                   ``fqdn``, such as ``$1`` for ``*.example.com``, followed by ``.``, ``:`` or the end of
+                                                   the destination. Groups above ``$9`` are not supported, and a ``$`` that does not
+                                                   start a match group is refused. A port template must be the whole port, and cannot
+                                                   appear anywhere else in the destination. An IPv6 address with a port goes in brackets,
+                                                   with the port after ``]:``, such as ``[::1]:443``. Any other destination, such as
+                                                   ``:443``, ``backend:443x``, ``backend:0443``, ``backend:99999``,
+                                                   ``backend{inbound_local_port}``, ``[::1]443``, ``$2.backend`` for ``*.example.com`` or
+                                                   ``back$end``, stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the
+                                                   reload, and |TS| keeps the previous configuration.
 
                                                    A destination filled in from a match group is checked for each connection. It must
                                                    keep the shape it was configured with: ``$1`` filled in as ``10.0.0.1:22`` gains a
