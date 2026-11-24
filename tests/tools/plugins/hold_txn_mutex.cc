@@ -140,5 +140,6 @@ TSPluginInit(int argc, const char **argv)
   hold_ms       = std::atoi(argv[3]);
   read_response = argc == 5;
 
-  TSHttpHookAdd(read_response ? TS_HTTP_READ_RESPONSE_HDR_HOOK : TS_HTTP_SEND_REQUEST_HDR_HOOK, TSContCreate(global_handler, nullptr));
+  TSHttpHookAdd(read_response ? TS_HTTP_READ_RESPONSE_HDR_HOOK : TS_HTTP_SEND_REQUEST_HDR_HOOK,
+                TSContCreate(global_handler, nullptr));
 }
