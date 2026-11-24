@@ -58,12 +58,13 @@ namespace
     return obj != nullptr && reinterpret_cast<uintptr_t>(obj) % alignof(T) == 0 && span_fits(mem, obj, sizeof(T));
   }
 
-  // The marshalled header heap stored at offset in an alternate of alt_len bytes, or nullptr if a whole, aligned HdrHeap
-  // header does not fit there. room is set to the bytes from the heap to the end of the alternate.
+  // The marshalled header heap at offset bytes into buf, whose alt_len bytes run from this alternate to the end of the
+  // document. nullptr when the heap would overlap the alternate's fixed part, is not aligned for HdrHeap, or leaves too
+  // few bytes for a whole HdrHeap header. On success room is set to the bytes from the heap to the end of buf.
   HdrHeap *
   heap_at(char *buf, int alt_len, intptr_t offset, int &room)
   {
-    if (offset <= 0 || offset > alt_len - static_cast<intptr_t>(sizeof(HdrHeap)) ||
+    if (offset < static_cast<intptr_t>(sizeof(HTTPCacheAlt)) || offset > alt_len - static_cast<intptr_t>(sizeof(HdrHeap)) ||
         reinterpret_cast<uintptr_t>(buf + offset) % alignof(HdrHeap) != 0) {
       return nullptr;
     }
@@ -227,6 +228,12 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   ink_assert(hh->m_free_start == nullptr);
 
+  // HdrHeap::marshal() always puts the objects right after the header, and the object walk below starts there.
+  if (reinterpret_cast<uintptr_t>(hh->m_data_start) != HDR_HEAP_HDR_SIZE.value()) {
+    std::cerr << "m_data_start is not right after the heap header" << std::endl;
+    return zret;
+  }
+
   // Convert Heap offsets to pointers
   hh->m_data_start                 = (reinterpret_cast<char *>(hh)) + (intptr_t)hh->m_data_start;
   hh->m_free_start                 = (reinterpret_cast<char *>(hh)) + hh->m_size;
@@ -371,7 +378,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
   if (alt->m_request_hdr.m_heap != nullptr) {
     heap = heap_at(buf, orig_len, reinterpret_cast<intptr_t>(alt->m_request_hdr.m_heap), room);
     if (heap == nullptr) {
-      zret.note("HTTPInfo::request header heap is outside the alternate");
+      zret.note("HTTPInfo::request header heap offset is invalid");
       return zret;
     }
     tmp = this->unmarshal(heap, std::min(len, room), static_cast<int>(HdrHeapObjType::HTTP_HEADER),
@@ -392,7 +399,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
   if (alt->m_response_hdr.m_heap != nullptr) {
     heap = heap_at(buf, orig_len, reinterpret_cast<intptr_t>(alt->m_response_hdr.m_heap), room);
     if (heap == nullptr) {
-      zret.note("HTTPInfo::response header heap is outside the alternate");
+      zret.note("HTTPInfo::response header heap offset is invalid");
       return zret;
     }
     tmp = this->unmarshal(heap, std::min(len, room), static_cast<int>(HdrHeapObjType::HTTP_HEADER),

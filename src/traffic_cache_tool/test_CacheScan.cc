@@ -23,8 +23,10 @@
 
 #include "CacheScan.h"
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <cstring>
+#include <sstream>
 
 TEST_CASE("cache inspection rejects an alternate without a request URL", "[cache_tool]")
 {
@@ -154,10 +156,15 @@ TEST_CASE("cache inspection checks every URL component it prints", "[cache_tool]
   }
 }
 
-TEST_CASE("cache inspection rejects a header heap that is not inside the alternate", "[cache_tool]")
+TEST_CASE("cache inspection checks where each header heap starts", "[cache_tool]")
 {
-  // An alternate with room for nothing past its own fixed part except a few bytes at the end.
-  alignas(HTTPCacheAlt) char buf[sizeof(HTTPCacheAlt) + 64] = {};
+  static constexpr int HEAP_HDR = HDR_HEAP_HDR_SIZE.value();
+  static constexpr int ALT_LEN  = sizeof(HTTPCacheAlt) + 2 * HEAP_HDR;
+  static constexpr int BEFORE   = 128;
+
+  // The alternate sits inside a larger array so that offsets before it point at real memory the test owns.
+  alignas(HTTPCacheAlt) char backing[BEFORE + ALT_LEN] = {};
+  char                      *buf                       = backing + BEFORE;
   ct::CacheScan              scan(nullptr);
 
   auto *alt                = reinterpret_cast<HTTPCacheAlt *>(buf);
@@ -166,28 +173,76 @@ TEST_CASE("cache inspection rejects a header heap that is not inside the alterna
   alt->m_unmarshal_len     = -1;
   alt->m_frag_offset_count = 0;
 
-  // A heap header that starts in the last eight bytes, so its magic and size can be read but the rest of it cannot.
-  intptr_t const late = sizeof(buf) - 8;
-  auto const     magic{HdrBufMagic::MARSHALED};
-  uint32_t const size{4096};
-  std::memcpy(buf + late, &magic, sizeof(magic));
-  std::memcpy(buf + late + sizeof(magic), &size, sizeof(size));
+  // Write a valid magic at offset so that only where the heap starts can reject it.
+  auto put_magic = [&](intptr_t offset) {
+    auto const magic{HdrBufMagic::MARSHALED};
+    std::memcpy(buf + offset, &magic, sizeof(magic));
+  };
+  auto notes = [&]() {
+    std::ostringstream out;
+    out << scan.unmarshal(buf, ALT_LEN, nullptr, ts::VersionNumber{});
+    return out.str();
+  };
+  auto const invalid = Catch::Matchers::ContainsSubstring("header heap offset is invalid");
 
-  SECTION("a request heap that runs past the end")
+  SECTION("an empty heap whose header ends on the document's last byte")
   {
-    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(late);
-    CHECK(scan.unmarshal(buf, sizeof(buf), nullptr, ts::VersionNumber{}).length() > 0);
+    intptr_t const last                = ALT_LEN - HEAP_HDR;
+    auto          *heap                = reinterpret_cast<HdrHeap *>(buf + last);
+    heap->m_magic                      = HdrBufMagic::MARSHALED;
+    heap->m_size                       = HEAP_HDR;
+    heap->m_data_start                 = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
+    heap->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
+    heap->m_ronly_heap[0].m_heap_len   = 0;
+    alt->m_request_hdr.m_heap          = reinterpret_cast<HdrHeap *>(last);
+    // The heap is accepted, then the scan finds no request header in it.
+    auto const text = notes();
+    CHECK_THAT(text, !invalid);
+    CHECK_THAT(text, Catch::Matchers::ContainsSubstring("request unmarshal failed"));
+  }
+
+  SECTION("a request heap one step too close to the end")
+  {
+    intptr_t const offset = ALT_LEN - HEAP_HDR + 8;
+    put_magic(offset);
+    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(offset);
+    CHECK_THAT(notes(), invalid);
+  }
+
+  SECTION("a request heap with room for only its magic")
+  {
+    intptr_t const offset = ALT_LEN - 8;
+    put_magic(offset);
+    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(offset);
+    CHECK_THAT(notes(), invalid);
+  }
+
+  SECTION("a misaligned request heap")
+  {
+    intptr_t const offset = sizeof(HTTPCacheAlt) + 4;
+    put_magic(offset);
+    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(offset);
+    CHECK_THAT(notes(), invalid);
+  }
+
+  SECTION("a request heap inside the alternate's fixed part")
+  {
+    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(intptr_t{8});
+    CHECK_THAT(notes(), invalid);
   }
 
   SECTION("a request heap before the alternate")
   {
+    put_magic(-64);
     alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(intptr_t{-64});
-    CHECK(scan.unmarshal(buf, sizeof(buf), nullptr, ts::VersionNumber{}).length() > 0);
+    CHECK_THAT(notes(), invalid);
   }
 
-  SECTION("a response heap that runs past the end")
+  SECTION("a response heap with room for only its magic")
   {
-    alt->m_response_hdr.m_heap = reinterpret_cast<HdrHeap *>(late);
-    CHECK(scan.unmarshal(buf, sizeof(buf), nullptr, ts::VersionNumber{}).length() > 0);
+    intptr_t const offset = ALT_LEN - 8;
+    put_magic(offset);
+    alt->m_response_hdr.m_heap = reinterpret_cast<HdrHeap *>(offset);
+    CHECK_THAT(notes(), invalid);
   }
 }
