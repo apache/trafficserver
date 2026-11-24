@@ -371,7 +371,8 @@ DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_wri
   format_writer.print("{}", format_string);
 
   format_writer.restore(2); // restore the space for required termination.
-  // The view is empty when the writer had no room beyond the 2 reserved bytes.
+  // An empty writer with only the 2 reserved bytes of room reaches here with an
+  // empty view.
   if (!format_writer.view().ends_with('\n')) {
     format_writer.write('\n');
   }
