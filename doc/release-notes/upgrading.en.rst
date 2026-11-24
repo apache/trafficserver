@@ -403,6 +403,11 @@ The following :file:`sni.yaml` change has been made:
   ``0``, a multiple of 65536 or a misspelled template such as ``{inbound_port}`` fell back to the inbound port, any
   other port above 65535 wrapped around, a leading zero was read as octal, and text after the digits was dropped. Any
   of those now stops |TS| at startup, or fails a reload of :file:`sni.yaml` and keeps the previous configuration.
+- A port filled in from a match group must be a number from 1 to 65535 with no leading zero once the server name fills
+  it in, or |TS| fails the TLS handshake. Before, |TS| tunnelled to the port's leading digits, wrapped a port above
+  65535 around, read a leading zero as octal, or fell back to the inbound port.
+- A ``tunnel_prewarm`` destination whose host or port is filled in for each connection is no longer pre-warmed, and
+  a fixed bracketed IPv6 destination such as ``[::1]:443`` now is.
 
 Plugins
 -------

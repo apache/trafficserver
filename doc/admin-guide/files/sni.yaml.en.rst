@@ -399,9 +399,14 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    If the destination names a port, the port must be a number from 1 to 65535 with no
                                                    leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``, or a match group
                                                    such as ``$1``, optionally after some digits. A match group in the port must name a
-                                                   ``*`` in a wildcard ``fqdn``. Any other port, such as ``443x``, ``0443`` or ``99999``,
-                                                   stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the reload, and |TS|
-                                                   keeps the previous configuration.
+                                                   ``*`` in a wildcard ``fqdn``. An IPv6 address goes in brackets, with the port after
+                                                   ``]:``, such as ``[::1]:443``. Any other port, such as ``443x``, ``0443``, ``99999``
+                                                   or ``[::1]443``, stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the
+                                                   reload, and |TS| keeps the previous configuration.
+
+                                                   A port filled in from a match group is checked for each connection. If the server
+                                                   name does not fill it in as a number from 1 to 65535 with no leading zero, |TS| fails
+                                                   the TLS handshake.
 
                                                    For each of these tunnel targets, unless the port is explicitly specified in the target
                                                    (e.g., if the port is derived from the Proxy Protocol header), the port must be
@@ -449,7 +454,9 @@ Pre-warming TLS Tunnel
 =============================== ========================================================================================
 Key                             Meaning
 =============================== ========================================================================================
-tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm.enabled` in records.yaml.
+tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm.enabled` in records.yaml. A destination
+                                whose host or port is filled in for each connection, from a match group or a port
+                                template, is not pre-warmed.
 
 tunnel_prewarm_srv              Enable SRV record lookup on pre-warming. Default is ``false``.
 
