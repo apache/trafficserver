@@ -69,6 +69,7 @@ class FakeProcess:
     def __init__(self) -> None:
         self.return_code: int | None = None
         self.was_stopped = False
+        self.config: dict[str, Any] = {}
 
     def stop(self) -> None:
         self.was_stopped = True
@@ -96,7 +97,17 @@ def attach_process(ats: ATS) -> FakeProcess:
     process = FakeProcess()
     ats.log_directory.mkdir(parents=True, exist_ok=True)
     ats.diags_log.write_text("ATS initialized\n")
-    ats._runner._start_ats = lambda: process  # type: ignore[method-assign,return-value]
+
+    def launch(config: dict[str, Any]) -> FakeProcess:
+        """Record the staged configuration ATS would have materialized.
+
+        :param config: Configuration in the ``urtest.ats`` schema.
+        """
+
+        process.config = config
+        return process
+
+    ats._launch = launch  # type: ignore[method-assign,assignment]
     return process
 
 
@@ -317,7 +328,7 @@ def test_long_names_allow_both_unix_sockets(tmp_path: Path) -> None:
     ats._context.runtime.layout = {"BINDIR": str(installation), "PLUGINDIR": str(installation), "SYSCONFDIR": str(installation)}
     ats._context.runtime.repository_root = Path(__file__).parents[4]
     try:
-        paths = ats._runner._prepare_ats_tree(ats.run_directory)
+        paths = ats._prepare_tree()
         for path in (paths["rpc_runtime"] / "jsonrpc20.sock", Path(ats.uds_path)):
             assert len(os.fsencode(path)) < 104
             with socket.socket(socket.AF_UNIX) as listener:
@@ -344,7 +355,7 @@ def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
 
     ats.start()
     assert ats.is_running
-    assert ats._runner.spec.urtest["ats"]["records_config"] == {"proxy.config.http.server_ports": "12345"}
+    assert process.config["records_config"] == {"proxy.config.http.server_ports": "12345"}
 
     ats.close()
     assert process.was_stopped
@@ -377,14 +388,14 @@ def test_uds_mode_adds_the_socket_to_the_default_listeners(tmp_path: Path, optio
     """Without a configured server_ports, UDS mode keeps every default listener and adds the socket."""
 
     ats = make_uds_ats(tmp_path, **options)
-    attach_process(ats)
+    process = attach_process(ats)
 
     ats.start()
 
     expected = listeners.format(
         http=ats.http_port, https=ats.https_port, pp=ats.proxy_protocol_port, pp_https=ats.proxy_protocol_https_port
     )
-    assert ats._runner.spec.urtest["ats"]["records_config"]["proxy.config.http.server_ports"] == f"{expected} {ats.uds_path}"
+    assert process.config["records_config"]["proxy.config.http.server_ports"] == f"{expected} {ats.uds_path}"
     ats.close()
 
 
@@ -393,7 +404,7 @@ def test_uds_mode_adds_only_the_socket_to_configured_listeners(tmp_path: Path, w
     """A configured server_ports gets the socket once and none of the default TLS or PROXY protocol listeners."""
 
     ats = make_uds_ats(tmp_path, enable_tls=True, enable_proxy_protocol=True)
-    attach_process(ats)
+    process = attach_process(ats)
     configured = f"{ats.http_port} {ats.ipv6_port}:ipv6 {ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6"
     if with_socket:
         configured += f" {ats.uds_path}"
@@ -402,7 +413,7 @@ def test_uds_mode_adds_only_the_socket_to_configured_listeners(tmp_path: Path, w
     ats.start()
 
     expected = configured if with_socket else f"{configured} {ats.uds_path}"
-    assert ats._runner.spec.urtest["ats"]["records_config"]["proxy.config.http.server_ports"] == expected
+    assert process.config["records_config"]["proxy.config.http.server_ports"] == expected
     ats.close()
 
 
@@ -421,7 +432,7 @@ def test_ats_factory_owns_multiple_process_lifecycles(tmp_path: Path) -> None:
 
     first.start()
     second.start()
-    assert second._runner.spec.urtest["ats"]["process_config"] == {"enable_cache": False}
+    assert second_process.config["process_config"] == {"enable_cache": False}
     factory.close()
 
     assert first_process.was_stopped
@@ -747,19 +758,62 @@ def normalized_command(service: ProcessService) -> list[str]:
 
 @pytest.mark.parametrize(
     "module_name",
-    ["tools.uranium.replay", "tools.uranium.services", "tools.uranium.services.ats", "tools.uranium.plugin"],
+    ["tools.uranium.services", "tools.uranium.services.ats", "tools.uranium.services.service_factory"],
 )
-def test_replay_and_services_import_in_either_order(module_name: str) -> None:
-    """Keep the replay engine and the services importable as a fresh interpreter's first import.
+def test_services_do_not_depend_on_the_replay_engine(module_name: str) -> None:
+    """Keep dependencies pointing from the replay engine to the services, never back.
 
-    :param module_name: Module imported first.
+    :param module_name: Service module imported into a fresh interpreter.
     """
 
     tests_directory = Path(__file__).resolve().parents[3]
-    result = subprocess.run(
-        [sys.executable, "-c", f"import {module_name}"], cwd=tests_directory, capture_output=True, text=True, check=False
-    )
+    probe = f"import sys, {module_name}; assert 'tools.uranium.replay' not in sys.modules, sorted(sys.modules)"
+    result = subprocess.run([sys.executable, "-c", probe], cwd=tests_directory, capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr
+
+
+def test_replay_and_procedural_tests_stage_ats_identically(tmp_path: Path) -> None:
+    """Hand ATS the same staged configuration whether a manifest or a procedural test configures it.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    """
+
+    manifest = {
+        "name": "ts",
+        "process_config": {"enable_tls": True},
+        "records_config": {"proxy.config.diags.debug.enabled": 1},
+        "remap_config": ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/"],
+    }
+    replay = make_replay(tmp_path, {"server": {}, "client": {}, "ats": manifest})
+    from_manifest = attach_process(replay.ats)
+
+    procedural = ATS(ProceduralContext.create(replay.runtime, "native", replay.spec.path), "ts", enable_tls=True)
+    from_methods = attach_process(procedural)
+    procedural.records.update({"proxy.config.diags.debug.enabled": 1})
+    procedural.remap_config.add_line("map / http://127.0.0.1:{SERVER_HTTP_PORT}/")
+
+    replay.ats.start()
+    procedural.start()
+
+    assert from_manifest.config == from_methods.config
+    assert replay.spec.urtest["ats"] == manifest, "staging must not modify the manifest"
+    assert replay.ats.run_directory == replay.sandbox / "ts"
+
+
+def test_manifest_startup_failure_skips_diagnostic_checks(tmp_path: Path) -> None:
+    """Treat a manifest's startup_failure like expect_start_failure, which expects fatal diagnostics.
+
+    :param tmp_path: Runtime roots and sandboxes.
+    """
+
+    ats = ATS.from_manifest(make_context(tmp_path), {"startup_failure": "bad config"}, test_directory=tmp_path)
+    process = attach_process(ats)
+    process.return_code = 33
+
+    ats.start()
+    ats.close()
+
+    assert process.was_stopped
 
 
 def test_replay_and_factory_build_the_same_verifier_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -784,16 +838,16 @@ def test_replay_and_factory_build_the_same_verifier_client(tmp_path: Path, monke
     from_factory = factory.verifier_client(
         "client",
         replay.spec.path,
-        http_ports=[replay.proxy_protocol_port],
-        https_ports=[replay.https_port],
-        http3_ports=[replay.https_port],
+        http_ports=[replay.ats.proxy_protocol_port],
+        https_ports=[replay.ats.https_port],
+        http3_ports=[replay.ats.https_port],
         keys="1 2",
         poll_timeout=5,
     )
 
     command = normalized_command(from_replay)
     assert command == normalized_command(from_factory)
-    assert command[command.index("--connect-http") + 1] == f"127.0.0.1:{replay.proxy_protocol_port}"
+    assert command[command.index("--connect-http") + 1] == f"127.0.0.1:{replay.ats.proxy_protocol_port}"
     for flag in ("--connect-https", "--connect-http3", "--qlog-dir", "--tls-secrets-log-file"):
         assert flag in command
     # Anything after --keys would be read as another key.

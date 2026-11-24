@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -170,6 +170,17 @@ def write_yaml(path: Path, document: Any) -> None:
     """Write one ATS YAML configuration document."""
 
     path.write_text(yaml.safe_dump(document, sort_keys=False))
+
+
+def return_codes(config: Mapping[str, Any]) -> tuple[int, ...]:
+    """Return the exit statuses a process mapping accepts as success.
+
+    :param config: A manifest process mapping whose optional ``return_code``
+        is one status or a sequence of them; absent means only zero.
+    """
+
+    codes = config.get("return_code", 0)
+    return tuple(codes) if isinstance(codes, Sequence) and not isinstance(codes, str) else (codes,)
 
 
 def format_plugin_entry(entry: str | Mapping[str, Any]) -> str:

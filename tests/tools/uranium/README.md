@@ -10,15 +10,16 @@ for test-authoring guidance.
 
 ## Mental model
 
-The framework has five layers:
+The framework has six layers:
 
 | Layer | Main module | Responsibility |
 |---|---|---|
 | Command entry point | [`runner.py`](runner.py) | Select the host or container environment and invoke pytest. |
 | Pytest integration | [`plugin.py`](plugin.py) | Collect replay files, create pytest items, apply markers, and provide fixtures. |
 | Test specification | [`config.py`](config.py) | Parse and validate replay metadata into `ReplaySpec` objects. |
-| Test execution | [`replay.py`](replay.py) | Materialize a sandbox, run the declared processes, and validate results. |
-| Runtime primitives | [`runtime.py`](runtime.py), [`process.py`](process.py), [`expectations.py`](expectations.py), and [`services/`](services/) | Discover programs, own processes, express expected output, and provide procedural-test APIs. |
+| Test execution | [`replay.py`](replay.py) | Translate a replay manifest into services, run them in order, and apply the manifest's checks. |
+| Services | [`services/`](services/) | Build, start, and validate each kind of process: ATS, microDNS, Proxy Verifier, origins, curl. Both test styles use them. |
+| Runtime primitives | [`runtime.py`](runtime.py), [`process.py`](process.py), and [`expectations.py`](expectations.py) | Discover programs, allocate ports and sandboxes, own subprocesses, and express expected output. |
 
 The short distinction between the three replay-facing modules is:
 
@@ -49,13 +50,14 @@ The execution path is:
    per variant, and applies replay and manual markers.
 5. `ReplayItem.runtest()` obtains a [`TestRuntime`](runtime.py) and passes the
    validated specification to `replay.py::ReplayTest`.
-6. `ReplayTest.run()` creates the sandbox, starts DNS and Proxy Verifier as
-   requested, materializes and starts ATS, runs the client, validates files,
-   metrics, logs, and process output, and finally stops every process.
+6. `ReplayTest.run()` creates the sandbox and starts the declared services:
+   microDNS, verifier-server, ATS, and verifier-client. It then validates
+   files, metrics, logs, and process output, and finally stops every process.
 
 `config.py` also contains small ATS-configuration serialization helpers used
-by `replay.py`, such as flat-record conversion and YAML writing. Those helpers
-operate on data; process orchestration remains in `replay.py`.
+by `services/ats.py`, such as flat-record conversion and YAML writing. Those
+helpers operate on data; process orchestration lives in `services/` and
+`replay.py`.
 
 ## Procedural test flow
 
@@ -74,22 +76,30 @@ instances are ordinary `test_*.py` modules:
    output capture, and [`runtime.py`](runtime.py) for installed paths, features,
    ports, and sandboxes.
 
-Both test styles launch each kind of process through one implementation, so a
-replay manifest and a procedural test asking for the same process get the same
-command line, readiness check, and output validation:
+## How the two styles share services
 
-- `ReplayTest` builds its microDNS, verifier-server, and verifier-client
-  processes with `DNSServer.create()`, `VerifierServer.create()`, and
-  `VerifierClient.create()` from `services/`, the same constructors
-  `ServiceFactory` uses. `ReplayTest` only translates manifest keys and
-  allocated ports into their arguments.
-- The procedural `ATS` service reuses ATS setup and startup functionality from
-  `ReplayTest`, so `replay.py` is also an implementation dependency of
-  procedural tests.
+Both test styles launch each kind of process through one implementation in
+`services/`, so a replay manifest and a procedural test asking for the same
+process get the same command line, run root, readiness check, and output
+validation. Dependencies point one way: `replay.py` uses `services/`, and
+`services/` never imports `replay.py`.
 
-`services/ats.py` imports `replay.py` as a module rather than importing
-`ReplayTest` by name, because `replay.py` in turn imports the DNS and verifier
-services; this lets either module be imported first.
+| Process | Service | Procedural tests get it from | `ReplayTest` builds it with |
+|---|---|---|---|
+| Traffic Server | `ATS` | `ats`, `ats_factory` fixtures | `ATS.from_manifest()` |
+| microDNS | `DNSServer` | `ServiceFactory.dns()` | `DNSServer.create()` |
+| verifier-server | `VerifierServer` | `ServiceFactory.verifier_server()` | `VerifierServer.create()` |
+| verifier-client | `VerifierClient` | `ServiceFactory.verifier_client()` | `VerifierClient.create()` |
+
+`ATS` stages its configuration in the schema of a manifest's `urtest.ats`
+mapping, whether a procedural test fills it through methods such as `records`
+and `remap_config` or `ATS.from_manifest()` copies a manifest's mapping. Its
+`start()` builds the run root from that one shape.
+
+`ReplayTest` keeps only what is specific to a manifest: translating manifest
+keys into service options, the ports of the processes ATS proxies to (passed
+to ATS with `define_placeholders()`), the order processes start and stop in,
+and the manifest's `file_checks`, `metric_checks`, and `log_validation` rules.
 
 ## Top-level modules
 
@@ -133,11 +143,10 @@ cleanup.
 
 ### `replay.py`
 
-Defines the direct-replay execution engine. It prepares ATS configuration and
-run-root files, launches the declared server, ATS, DNS, and client processes
-(the non-ATS ones through the shared `services/` constructors),
-runs lifecycle commands, replaces runtime placeholders, and validates expected
-outputs.
+Defines the direct-replay execution engine. It builds the manifest's ATS,
+microDNS, and Proxy Verifier processes through `services/`, starts them in
+order, runs the manifest's lifecycle commands, and applies its file, metric,
+and log checks.
 
 ### `runner.py`
 
@@ -172,7 +181,7 @@ The implementations are divided by responsibility:
 
 | Module | Responsibility |
 |---|---|
-| [`ats.py`](services/ats.py) | ATS configuration, lifecycle, tools, logs, signals, and `ATSFactory`. |
+| [`ats.py`](services/ats.py) | ATS run roots, configuration, placeholders, lifecycle, tools, diagnostics, and `ATSFactory`, for both test styles. |
 | [`context.py`](services/context.py) | `ProceduralContext` sandbox state and `CommandResult` values. |
 | [`curl.py`](services/curl.py) | Curl execution and ATS-aware TCP or Unix-domain-socket transport. |
 | [`process_service.py`](services/process_service.py) | Service wrapper around `ManagedProcess`, adding readiness and output validation. |
@@ -218,8 +227,10 @@ Contains fast framework tests rather than Traffic Server scenarios:
 
 - Put replay metadata parsing or validation in `config.py`.
 - Put pytest collection, selection, markers, or fixtures in `plugin.py`.
-- Put direct replay lifecycle and validation behavior in `replay.py`.
+- Put how a process is built, started, or validated in its `services/` module,
+  so both test styles get it.
+- Put manifest-only behavior, such as translating manifest keys, start order,
+  and manifest-declared checks, in `replay.py`.
 - Put environment discovery, ports, or sandbox allocation in `runtime.py`.
 - Put generic subprocess behavior in `process.py`.
-- Put procedural-test APIs in the appropriate `services/` module.
 - Put framework regression tests in `tests/`.
