@@ -340,13 +340,13 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagThreadname cons
 
 } // namespace
 
-// noexcept because nothing here can throw. swoc's print() throws when it
-// cannot parse its format string or when an argument's formatter throws. Every
-// format string here and in the bwformat overloads it reaches is a fixed
-// literal with positional arguments, and none of the formatters for these
-// arguments throw. The caller's format_string is printed as the argument to
-// "{}" and is never parsed by swoc. restrict(2) throws only when the writer has
-// less than 2 bytes of capacity left.
+// noexcept because nothing here throws while the header's precondition holds.
+// swoc's print() throws when it cannot parse its format string or when an
+// argument's formatter throws. Every format string here and in the bwformat
+// overloads it reaches is a fixed literal with positional arguments, and none
+// of the formatters for these arguments throw. The caller's format_string is
+// printed as the argument to "{}" and is never parsed by swoc. restrict(2)
+// throws only when capacity() is below 2, which remaining() >= 2 rules out.
 size_t
 DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_writer, const char *debug_tag, DiagsLevel diags_level,
                                        const SourceLocation *loc, DiagsShowLocation show_location,

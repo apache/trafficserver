@@ -49,7 +49,8 @@ public:
   static void            set_instance(DebugInterface *);
 
   // Generate the default diagnostics format string for the given parameters.
-  // @a format_writer must have at least 2 bytes of capacity left.
+  // @a format_writer must have remaining() >= 2, room for the newline and NUL
+  // after any earlier output.
   // @return The offset in the format string of the timestamp (in case the caller doesn't want to include that)
   static size_t generate_format_string(swoc::LocalBufferWriter<1024> &format_writer, const char *debug_tag, DiagsLevel diags_level,
                                        const SourceLocation *loc, DiagsShowLocation show_location,
