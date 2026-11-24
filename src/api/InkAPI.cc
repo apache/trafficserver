@@ -4262,6 +4262,8 @@ TSHttpSsnTransactionCount(TSHttpSsn ssnp)
 TSVConn
 TSHttpSsnClientVConnGet(TSHttpSsn ssnp)
 {
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+
   ProxySession *cs = reinterpret_cast<ProxySession *>(ssnp);
   return reinterpret_cast<TSVConn>(cs->get_netvc());
 }
@@ -8579,6 +8581,8 @@ TSVConnTunnel(TSVConn sslp)
 TSSslConnection
 TSVConnSslConnectionGet(TSVConn sslp)
 {
+  sdk_assert(sdk_sanity_check_null_ptr(sslp) == TS_SUCCESS);
+
   TSSslConnection ssl   = nullptr;
   NetVConnection *netvc = reinterpret_cast<NetVConnection *>(sslp);
   if (auto tbs = netvc->get_service<TLSBasicSupport>(); tbs) {
@@ -8651,6 +8655,8 @@ TSClientHelloExtensionGet(TSClientHello ch, unsigned int type, const unsigned ch
 TSSslVerifyCTX
 TSVConnSslVerifyCTXGet(TSVConn sslp)
 {
+  sdk_assert(sdk_sanity_check_null_ptr(sslp) == TS_SUCCESS);
+
   NetVConnection  *vc    = reinterpret_cast<NetVConnection *>(sslp);
   TLSBasicSupport *tlsbs = vc->get_service<TLSBasicSupport>();
   if (tlsbs != nullptr) {
@@ -9555,6 +9561,9 @@ TSHostStatusSet(const char *hostname, const size_t hostname_len, TSHostStatus st
 void
 TSHttpTxnResponseActionSet(TSHttpTxn txnp, TSResponseAction *action)
 {
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(action) == TS_SUCCESS);
+
   HttpSM              *sm    = reinterpret_cast<HttpSM *>(txnp);
   HttpTransact::State *s     = &(sm->t_state);
   s->response_action.handled = true;
@@ -9571,6 +9580,9 @@ TSHttpTxnResponseActionSet(TSHttpTxn txnp, TSResponseAction *action)
 void
 TSHttpTxnResponseActionGet(TSHttpTxn txnp, TSResponseAction *action)
 {
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr(action) == TS_SUCCESS);
+
   HttpSM              *sm = reinterpret_cast<HttpSM *>(txnp);
   HttpTransact::State *s  = &(sm->t_state);
   if (!s->response_action.handled) {
