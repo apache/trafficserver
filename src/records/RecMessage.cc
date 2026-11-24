@@ -171,7 +171,7 @@ RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record
 //-------------------------------------------------------------------------
 
 // The buffer comes from malloc, so an element offset that is a multiple of INK_MIN_ALIGN is enough to align both
-// structures read from it.
+// structures read from it. The header size keeps every offset the writer produces a multiple too.
 static_assert(sizeof(RecMessageHdr) % INK_MIN_ALIGN == 0);
 static_assert(alignof(RecMessageEleHdr) <= INK_MIN_ALIGN && alignof(RecRecord) <= INK_MIN_ALIGN);
 static_assert(sizeof(RecMessageEleHdr) % alignof(RecRecord) == 0);
@@ -250,7 +250,7 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     return corrupt("element outside the snapshot");
   }
   // RecMessageMarshal_Realloc() starts the first element right after the header and rounds every element up to
-  // INK_MIN_ALIGN, so any other offset would make the element header and record reads below misaligned.
+  // INK_MIN_ALIGN. At any other offset the element header or the record behind it is read misaligned.
   if (offset % INK_MIN_ALIGN != 0) {
     return corrupt("misaligned element");
   }
