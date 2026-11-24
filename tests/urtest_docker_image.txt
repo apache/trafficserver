@@ -1,1 +1,1 @@
-ci.trafficserver.apache.org/ats/fedora:44
+ci.trafficserver.apache.org/ats/fedora:45
