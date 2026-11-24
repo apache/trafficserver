@@ -246,8 +246,8 @@ TEST_CASE("Test SSLSNIConfig")
 namespace
 {
 // PreWarmManager registers its callback from a global's constructor, before globals in other
-// files are guaranteed to be built. This object does the same so the case below exercises that
-// order; it must run before any case that replaces the callback.
+// files are guaranteed to be built. This object does the same, so the case below can check that
+// the callback survives that order.
 int startup_callback_calls{0};
 
 struct RegisterCallbackAtStartup {
@@ -258,15 +258,6 @@ struct RegisterCallbackAtStartup {
 } register_callback_at_startup;
 } // namespace
 
-TEST_CASE("SNIConfig keeps a callback registered during static initialization")
-{
-  RecSetRecordString("proxy.config.ssl.servername.filename", _XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml",
-                     REC_SOURCE_EXPLICIT);
-
-  SNIConfig::reconfigure();
-  CHECK(startup_callback_calls == 1);
-}
-
 TEST_CASE("SNIConfig reconfigure callback is invoked")
 {
   // Point the config to the test file so reconfigure() doesn't depend on the
@@ -274,10 +265,14 @@ TEST_CASE("SNIConfig reconfigure callback is invoked")
   RecSetRecordString("proxy.config.ssl.servername.filename", _XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml",
                      REC_SOURCE_EXPLICIT);
 
+  // Checked before the callback is replaced below, in one case so that test order cannot change it.
+  REQUIRE(SNIConfig::reconfigure() == 1);
+  CHECK(startup_callback_calls == 1);
+
   int  result{0};
   auto set_result{[&result]() { result = 42; }};
   SNIConfig::set_on_reconfigure_callback(set_result);
-  SNIConfig::reconfigure();
+  REQUIRE(SNIConfig::reconfigure() == 1);
   CHECK(result == 42);
 }
 
