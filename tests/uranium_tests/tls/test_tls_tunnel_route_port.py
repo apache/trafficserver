@@ -118,7 +118,7 @@ def test_tunnel_route_bad_port_on_reload_keeps_old_config(ats_factory: ATSFactor
 
 
 def configure_match_group_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
-    """Route each SNI to the port its first label names, and one SNI to the Proxy Protocol port.
+    """Route an SNI to the port or the host its first labels name, and one SNI to the Proxy Protocol port.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param _origin: Test-local origin configured by the test.
@@ -139,6 +139,8 @@ def configure_match_group_ats(ats_factory: ATSFactory, *, _origin: OriginServer)
         "sni:\n"
         "- fqdn: '*.port.example'\n"
         "  forward_route: 127.0.0.1:$1\n"
+        "- fqdn: '*.host.example'\n"
+        "  forward_route: $1\n"
         "- fqdn: pp.example\n"
         "  forward_route: 127.0.0.1:{proxy_protocol_port}\n",
     )
@@ -156,6 +158,21 @@ def forward_request(sni: str, *, _ats: ATS, _curl: Curl) -> tuple[int, str]:
     arguments = ["--verbose", "--http1.1", "--insecure", "--resolve", f"{sni}:{_ats.https_port}:127.0.0.1"]
     result = _curl.run_for(_ats, f"{shlex.join(arguments)} 'https://{sni}:{_ats.https_port}/'")
     return result.returncode, result.output
+
+
+def handshake(services: ServiceFactory, name: str, sni: str, *, _ats: ATS) -> int:
+    """Complete a TLS handshake with sni, which may hold a colon, and return openssl's exit status.
+
+    :param services: Factory owning support services and their cleanup.
+    :param name: Unique name for the client process.
+    :param sni: The server name the client sends.
+    :param _ats: Test-local ats configured by the test.
+    """
+
+    command = f"openssl s_client -connect 127.0.0.1:{_ats.https_port} -servername {shlex.quote(sni)} < /dev/null"
+    client = services.process(name, ("sh", "-c", command))
+    client.expect_return_codes(0, 1)
+    return client.run(timeout=30).returncode
 
 
 def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -179,13 +196,21 @@ def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: Servic
     returncode, output = forward_request(f"{port}.port.example", _ats=ats, _curl=curl)
     assert returncode == 0 and "forwarded ok" in output, output
 
-    # The handshake must fail for each of these, rather than tunnel to the
-    # port's leading digits, to the port narrowed to 16 bits, to a leading zero
-    # read as octal, or to the inbound port for a port that is not a number.
+    # A filled-in port must be a whole port number: the handshake fails for
+    # text after the digits, a port above 65535, a leading zero and a name.
     for label in (f"{port}x", str(port + 65536), "0" + format(port, "o"), "https"):
         returncode, output = forward_request(f"{label}.port.example", _ats=ats, _curl=curl)
         assert returncode == 35, f"{label}: {output}"
         assert "forwarded ok" not in output, f"{label}: {output}"
+    assert ats.is_running
+
+    # A match group must keep the shape the destination was configured with:
+    # "1:2" leaves "127.0.0.1:$1" with no port, and "127.0.0.1:<port>" gives
+    # "$1" a port it was configured without. The handshake fails for both, and
+    # goes on for a port that keeps the shape.
+    assert handshake(services, "shape-kept", f"{port}.port.example", _ats=ats) == 0
+    assert handshake(services, "port-dropped", "1:2.port.example", _ats=ats) == 1
+    assert handshake(services, "port-gained", f"127.0.0.1:{port}.host.example", _ats=ats) == 1
     assert ats.is_running
 
     # A connection without a Proxy Protocol header has no port to fill in, so
