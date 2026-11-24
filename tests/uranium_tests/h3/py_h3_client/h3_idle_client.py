@@ -15,11 +15,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Send an HTTP/3 request, then leave the connection silent for a while.
+"""Open an HTTP/3 connection, then leave it silent for a while.
 
-aioquic sends no keep-alive PINGs, so after the response nothing crosses the
-connection until the quiet period ends. With --no-request the client sends no
-request at all and goes silent once the handshake completes. With
+The client sends one request, or none with --no-request, and goes silent after
+the response or the handshake. aioquic sends no keep-alive PINGs, so nothing
+crosses the connection until the quiet period ends. When the server advertises
+a shorter idle timeout than aioquic's own 60 s, aioquic adopts it and expires
+its side silently at about the same time as the server. With
 --request-after-quiet it sends a second request once the quiet period ends.
 """
 
@@ -30,7 +32,9 @@ import asyncio
 
 from h3_client import RequestCase, connect_h3, verify_response
 
-# Seconds to wait for each response, well inside the harness's own timeout.
+# Seconds to wait for each response. This is deliberately tighter than the 30 s
+# inside request(), so a hung response fails here, with output, before the
+# harness kills the client.
 RESPONSE_TIMEOUT = 5
 
 

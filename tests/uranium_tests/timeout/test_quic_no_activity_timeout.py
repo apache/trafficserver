@@ -43,8 +43,9 @@ QUIET_SECONDS = 5
 QLOG_SLACK_MS = 50
 
 # How late after the timeout the idle close may come, in milliseconds. The
-# client stays silent until its quiet period ends, so nothing can legitimately
-# push the close later.
+# client stays silent until its quiet period ends. The server restarting its
+# timer on its own last send, and the 3 x PTO floor of RFC 9000 section 10.1,
+# can push the close later, but on loopback by far less than this.
 IDLE_CLOSE_LATENESS_MS = 1000
 
 
@@ -56,7 +57,6 @@ class IdleTimeoutCase:
     no_activity_timeout_in: int
     default_inactivity_timeout: int | None = None
     send_request: bool = True
-    requires_quiche: bool = True
 
     @property
     def expect_idle_close(self) -> bool:
@@ -64,7 +64,7 @@ class IdleTimeoutCase:
 
 
 CASES = (
-    IdleTimeoutCase("disabled", 0, requires_quiche=False),
+    IdleTimeoutCase("disabled", 0),
     IdleTimeoutCase("idle-timeout", 3000),
     # QUIC must use its own timeout, not proxy.config.net.default_inactivity_timeout.
     # The client sends no request: a request's transaction sets its own
@@ -81,7 +81,9 @@ def configure_origin(services: ServiceFactory) -> VerifierServer:
 
     # The second request in disabled comes QUIET_SECONDS after the first. Keep the
     # origin's pooled session open past verifier-server's 5 s default poll timeout.
-    return services.verifier_server("origin", "replay/quic_no_activity_timeout.replay.yaml", https_ports=[], poll_timeout=30000)
+    return services.verifier_server(
+        "origin", "replay/quic_no_activity_timeout.replay.yaml", https_ports=[], other_args="--poll-timeout 30000"
+    )
 
 
 def configure_ats(ats_factory: ATSFactory, *, _case: IdleTimeoutCase, _origin: VerifierServer) -> ATS:
@@ -107,6 +109,8 @@ def configure_ats(ats_factory: ATSFactory, *, _case: IdleTimeoutCase, _origin: V
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "quic|inactivity_cop",
             "proxy.config.quic.qlog.file_base": str(ats.log_directory / "qlog"),
+            # The default, set so the qlog stays named for the connection ID the
+            # client prints: a Retry would make the server pick a new one.
             "proxy.config.quic.server.stateless_retry_enabled": 0,
             "proxy.config.quic.no_activity_timeout_in": _case.no_activity_timeout_in,
         }
@@ -125,7 +129,8 @@ def configure_client(services: ServiceFactory, *, _ats: ATS, _case: IdleTimeoutC
     :param services: Factory owning support services and their cleanup.
     """
 
-    # A case with no idle close sends a request after the quiet period, so it must send the first one too.
+    # The client rejects --request-after-quiet with --no-request, so a case with
+    # no idle close, which requests after the quiet period, must send the first request too.
     assert _case.send_request or _case.expect_idle_close, _case
 
     command: list[str | Path] = [
@@ -173,7 +178,9 @@ def verify(result: CommandResult, *, _ats: ATS, _case: IdleTimeoutCase) -> None:
     assert idle, result.output
     # An absent parameter and 0 both mean no idle timeout (RFC 9000, section 18.2).
     advertised_ms = 0 if idle.group(1) == "None" else round(float(idle.group(1)) * 1000)
-    assert advertised_ms == _case.no_activity_timeout_in, f"ATS advertised max_idle_timeout {advertised_ms} ms"
+    assert advertised_ms == _case.no_activity_timeout_in, (
+        f"ATS advertised max_idle_timeout {advertised_ms} ms, expected {_case.no_activity_timeout_in} ms"
+    )
     if not _case.expect_idle_close:
         assert f"ok request after {QUIET_SECONDS} seconds of silence" in result.stdout, result.output
         return
@@ -194,11 +201,15 @@ def verify(result: CommandResult, *, _ats: ATS, _case: IdleTimeoutCase) -> None:
         event for event in packets if any(frame["frame_type"] == "connection_close" for frame in event["data"].get("frames", ()))
     ]
     assert not close_frames, close_frames
+    # The check above means nothing unless the qlog lists packet frames at all.
+    assert any(event["data"].get("frames") for event in packets), "the qlog packet events carry no frames"
     last_received = max((event["time"] for event in packets if event["name"] == "transport:packet_received"), default=None)
     assert last_received is not None, f"no packet received before the close: {sorted({event['name'] for event in events})}"
     silence = closed["time"] - last_received
-    assert silence >= _case.no_activity_timeout_in - QLOG_SLACK_MS, f"closed after {silence:.0f} ms of silence"
-    assert silence < _case.no_activity_timeout_in + IDLE_CLOSE_LATENESS_MS, f"closed after {silence:.0f} ms of silence"
+    earliest = _case.no_activity_timeout_in - QLOG_SLACK_MS
+    latest = _case.no_activity_timeout_in + IDLE_CLOSE_LATENESS_MS
+    assert silence >= earliest, f"closed after {silence:.0f} ms of silence, earlier than {earliest} ms"
+    assert silence < latest, f"closed after {silence:.0f} ms of silence, not before {latest} ms"
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.name)
@@ -211,7 +222,9 @@ def test_quic_no_activity_timeout(case: IdleTimeoutCase, ats_factory: ATSFactory
     """
     if not ats_factory.has_feature("TS_USE_QUIC"):
         pytest.skip("ATS was built without QUIC")
-    if case.requires_quiche and not ats_factory.has_feature("TS_HAS_QUICHE"):
+    # On OpenSSL's QUIC stack ATS advertises OpenSSL's 30 s default whatever
+    # no_activity_timeout_in says (seen for 0 and 3000 with OpenSSL 4.0.3).
+    if not ats_factory.has_feature("TS_HAS_QUICHE"):
         pytest.skip("ATS with quiche is required")
     _origin = configure_origin(services)
     _ats = configure_ats(ats_factory, _case=case, _origin=_origin)
