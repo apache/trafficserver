@@ -38,17 +38,23 @@ from .utils import version_tuple
 FIRST_TEST_PORT = 10001
 LAST_TEST_PORT = 29999
 
+# microDNS listens on UDP and TCP at the same port.
+MICRODNS_SOCKET_TYPES = (socket.SOCK_DGRAM, socket.SOCK_STREAM)
+
+_SOCKET_TYPE_NAMES = {socket.SOCK_STREAM: "TCP", socket.SOCK_DGRAM: "UDP"}
+
 
 class RuntimeConfigError(ValueError):
     """Report an invalid Uranium test runtime."""
 
 
 def _is_port_free(port: int, socket_types: tuple[int, ...]) -> bool:
-    """Bind the loopback port once for each socket type.
+    """Bind the loopback port for each socket type in turn, stopping at the first busy one.
 
     :param port: Candidate port.
     :param socket_types: Socket kinds the port must be free for.
-    :return: False when any bind reports the port in use.
+    :return: False when a bind reports the port in use.
+    :raises RuntimeConfigError: A bind failed for any other reason.
     """
 
     for socket_type in socket_types:
@@ -58,7 +64,8 @@ def _is_port_free(port: int, socket_types: tuple[int, ...]) -> bool:
             except OSError as error:
                 if error.errno == errno.EADDRINUSE:
                     return False
-                raise RuntimeConfigError(f"Port probe for 127.0.0.1:{port} failed: {error}") from error
+                kind = _SOCKET_TYPE_NAMES.get(socket_type, str(socket_type))
+                raise RuntimeConfigError(f"{kind} port probe for 127.0.0.1:{port} failed: {error}") from error
     return True
 
 
