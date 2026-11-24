@@ -1170,7 +1170,7 @@ Http2Stream::release()
     return;
   }
 
-  // An origin stream stays open here only to wait for the origin's END_STREAM. HttpSM has
+  // An origin stream usually stays open here only to wait for the origin's END_STREAM. HttpSM has
   // stopped handling events for it, but may still be writing the body to the client, and _sm
   // stays set until transaction_done(). The read VIO still points at HttpSM, so a late END_STREAM
   // would send its final read event to HttpSM's tunnel handler, which takes it for the end of

@@ -7709,7 +7709,12 @@ HttpSM::server_transfer_init(MIOBuffer *buf, int hdr_size)
 
   ink_assert(t_state.current.server != nullptr); // should have been set up if we're doing a transfer.
 
-  if (server_entry->eos == true) {
+  // A response with no length ends when the server ends it. If an HTTP/2 origin has already
+  // ended the stream, no later event will say so, since the stream has delivered or dropped
+  // its final read event, so take that like an EOS. is_read_closed() is false for every other
+  // server transaction.
+  if (server_entry->eos == true ||
+      (t_state.hdr_info.response_content_length == HTTP_UNDEFINED_CL && server_txn->is_read_closed())) {
     // The server has shutdown on us already so the only data
     //  we'll get is already in the buffer
     nbytes = server_txn->get_remote_reader()->read_avail() + hdr_size;

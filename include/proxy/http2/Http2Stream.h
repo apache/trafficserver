@@ -192,6 +192,7 @@ public:
   void             set_peer_rwnd(Http2WindowSize new_size);
   void             set_local_rwnd(Http2WindowSize new_size);
   bool             trailing_header_is_possible() const;
+  bool             has_received_header() const;
   void             set_trailing_header_is_possible();
   void             set_receive_headers(HTTPHdr &h2_headers);
   void             reset_receive_headers();
@@ -416,6 +417,13 @@ inline bool
 Http2Stream::trailing_header_is_possible() const
 {
   return _trailing_header_is_possible;
+}
+
+/** Whether the header block, not counting interim responses and trailers, has been handed to the SM. */
+inline bool
+Http2Stream::has_received_header() const
+{
+  return _received_header;
 }
 
 inline void
