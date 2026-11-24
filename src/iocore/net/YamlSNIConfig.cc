@@ -702,8 +702,9 @@ std::array<std::function<std::string(std::string_view,            // destination
           const auto  local_port = vc->get_proxy_protocol_dst_port();
           std::string dst{destination.substr(0, var_start_pos)};
           if (local_port == 0) {
-            // A connection with no Proxy Protocol header has no port to fill in. Drop the port
-            // separator too, so that the tunnel falls back to the inbound port.
+            // A connection with no Proxy Protocol header, or with one whose port is 0, has no port
+            // to fill in. Drop the port separator too, so that the tunnel falls back to the inbound
+            // port.
             if (!dst.empty() && dst.back() == ':') {
               dst.pop_back();
             }

@@ -78,12 +78,12 @@ alpn_name_for_stat(int alpn_id)
 }
 
 // Split a tunnel destination into the host and port to pre-warm, the way a
-// connection to it splits them, so that for a destination with a fixed port
-// the pool has the key TLSTunnelSupport::create_dst looks up. Returns false
-// for a destination that has a match group or a port template, which is
-// filled in for each connection and names no fixed endpoint to pre-warm; the
-// sni.yaml loader has already refused any other destination this cannot read.
-// A port of -1 means the destination names none.
+// connection to it splits them. For a destination with a fixed port, the pool
+// then has the key TLSTunnelSupport::create_dst looks up. Returns false for a
+// destination that has a match group or a port template, which is filled in
+// for each connection and names no fixed endpoint to pre-warm; the sni.yaml
+// loader has already refused any other destination this cannot read. A port
+// of -1 means the destination names none, and the caller picks a default.
 [[nodiscard]] bool
 parse_authority(std::string &fqdn, int32_t &port, std::string_view destination)
 {

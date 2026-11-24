@@ -71,7 +71,7 @@ public:
 
   PreWarm::SPtrConstDst create_dst(int pid) const;
 
-  /// The host and port of a tunnel destination.
+  /// The host and port of a tunnel destination, as views into the destination it was split from.
   struct Authority {
     std::string_view host;
     /// The text after the port separator, or nullopt if the destination names no port.
@@ -80,16 +80,13 @@ public:
 
   /** Split a tunnel destination into host and port where a tunnel connection splits it.
    *
-   * The sni.yaml loader and tunnel pre-warming split a configured destination with this too, so
-   * that each of them takes the same text for the port as the connection does.
-   *
    * @return nullopt if @a destination is a bracketed address that does not close, or that is
    * followed by text other than the port separator.
    */
   static std::optional<Authority> split_destination(std::string_view destination);
 
-  /** The port that all of @a text names: a number from 1 to 65535 with no leading zero, which
-   * svtou would read as octal.
+  /** Read all of @a text as a port: a number from 1 to 65535 with no leading zero (svtou would
+   * read a leading zero as octal).
    *
    * @return nullopt if @a text is anything else.
    */

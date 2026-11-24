@@ -399,15 +399,20 @@ returning it to the default of 1 costs nothing and restores accuracy.
 The following :file:`sni.yaml` change has been made:
 
 - A ``tunnel_route``, ``forward_route`` or ``partial_blind_route`` port must be a number from 1 to 65535 with no
-  leading zero, a port template, or a match group that names a ``*`` in a wildcard ``fqdn``. Before, an empty port,
-  ``0``, a multiple of 65536 or a misspelled template such as ``{inbound_port}`` fell back to the inbound port, any
-  other port above 65535 wrapped around, a leading zero was read as octal, and text after the digits was dropped. Any
-  of those now stops |TS| at startup, or fails a reload of :file:`sni.yaml` and keeps the previous configuration.
-- A port filled in from a match group must be a number from 1 to 65535 with no leading zero once the server name fills
-  it in, or |TS| fails the TLS handshake. Before, |TS| tunnelled to the port's leading digits, wrapped a port above
-  65535 around, read a leading zero as octal, or fell back to the inbound port.
-- A ``tunnel_prewarm`` destination whose host or port is filled in for each connection is no longer pre-warmed, and
-  a fixed bracketed IPv6 destination such as ``[::1]:443`` now is.
+  leading zero, a port template that is the whole port, or a match group that names a ``*`` in a wildcard ``fqdn``.
+  Before, an empty port, ``0``, a multiple of 65536 or a misspelled template such as ``{inbound_port}`` fell back to
+  the inbound port, any other port above 65535 wrapped around, a leading zero was read as octal, and text after the
+  digits was dropped. A destination with no host, such as ``:443``, logged a warning on each connection and tunnelled
+  to the server name. Any of those now stops |TS| at startup, or fails a reload of :file:`sni.yaml` and keeps the
+  previous configuration.
+- A destination filled in from a match group must keep the shape it was configured with, name a host, and have a port
+  from 1 to 65535 with no leading zero once the server name fills it in, or |TS| fails the TLS handshake. Before, |TS|
+  tunnelled to the port's leading digits, wrapped a port above 65535 around, read a leading zero as octal, or fell
+  back to the inbound port.
+- With pre-warming on, a ``tunnel_prewarm`` destination with a match group was pre-warmed at the wrong destination:
+  ``127.0.0.1:4$1`` at port 4, and ``$1.example.com`` as that literal host. A port template, or a bracketed IPv6
+  destination such as ``[::1]:443``, stopped |TS| at startup with an uncaught exception. A destination whose host or
+  port is filled in for each connection is now not pre-warmed, and a fixed bracketed IPv6 destination is.
 
 Plugins
 -------

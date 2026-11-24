@@ -176,7 +176,7 @@ def handshake(services: ServiceFactory, name: str, sni: str, *, _ats: ATS) -> in
 
 
 def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A port filled in from the SNI is used only if all of it names a port.
+    """A destination filled in from the SNI is used only if its port is a whole port number and it keeps its shape.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.

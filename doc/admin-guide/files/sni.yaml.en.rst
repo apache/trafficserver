@@ -396,17 +396,23 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    strings can be specified. The match group number can be used in combination with either
                                                    one of those.
 
-                                                   If the destination names a port, the port must be a number from 1 to 65535 with no
-                                                   leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``, or a match group
-                                                   such as ``$1``, optionally after some digits. A match group in the port must name a
-                                                   ``*`` in a wildcard ``fqdn``. An IPv6 address goes in brackets, with the port after
-                                                   ``]:``, such as ``[::1]:443``. Any other port, such as ``443x``, ``0443``, ``99999``
-                                                   or ``[::1]443``, stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the
-                                                   reload, and |TS| keeps the previous configuration.
+                                                   The destination must name a host. If it names a port, the port must be a number from
+                                                   1 to 65535 with no leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``,
+                                                   or a match group such as ``$1``. Digits before a match group must themselves be such a
+                                                   number, so ``4$1`` is accepted but ``0$1`` and ``70000$1`` are not. A match group in
+                                                   the port must name a ``*`` in a wildcard ``fqdn``. A port template must be the whole
+                                                   port, and cannot appear anywhere else in the destination. An IPv6 address with a port
+                                                   goes in brackets, with the port after ``]:``, such as ``[::1]:443``. Any other
+                                                   destination, such as ``:443``, ``backend:443x``, ``backend:0443``,
+                                                   ``backend:99999``, ``backend{inbound_local_port}`` or ``[::1]443``, stops |TS| at
+                                                   startup. On a reload of :file:`sni.yaml` it fails the reload, and |TS| keeps the
+                                                   previous configuration.
 
-                                                   A port filled in from a match group is checked for each connection. If the server
-                                                   name does not fill it in as a number from 1 to 65535 with no leading zero, |TS| fails
-                                                   the TLS handshake.
+                                                   A destination filled in from a match group is checked for each connection. It must
+                                                   keep the shape it was configured with: ``$1`` filled in as ``10.0.0.1:22`` gains a
+                                                   port, and ``127.0.0.1:$1`` filled in as ``127.0.0.1:1:2`` loses one. If the filled-in
+                                                   destination changes shape, names no host, or has a port that is not a number from 1
+                                                   to 65535 with no leading zero, |TS| fails the TLS handshake.
 
                                                    For each of these tunnel targets, unless the port is explicitly specified in the target
                                                    (e.g., if the port is derived from the Proxy Protocol header), the port must be
