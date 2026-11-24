@@ -370,6 +370,7 @@ TEST_CASE("RecMessageUnmarshalNext rejects a misaligned element", "[librecords][
   std::filesystem::remove(path);
 }
 
+// An assertion on the magic aborts only where ink_assert is live, as in a Debug build, so only such a build can catch one.
 TEST_CASE("RecMessageUnmarshalNext rejects bad element magic without asserting", "[librecords][RecMessage]")
 {
   auto          path = snap_path("magic");
@@ -447,6 +448,13 @@ TEST_CASE("RecMessageUnmarshalNext accepts every stat kind the writer emits", "[
   RecRecord   rec;
 
   RecRecordInit(&rec);
+  rec.rec_type         = RECT_PROCESS;
+  rec.data_type        = RECD_COUNTER;
+  rec.name             = "proxy.process.test.counter";
+  rec.data.rec_counter = 5;
+  msg                  = RecMessageMarshal_Realloc(msg, &rec);
+
+  RecRecordInit(&rec);
   rec.rec_type     = RECT_NODE;
   rec.data_type    = RECD_INT;
   rec.name         = "proxy.node.test.int";
@@ -467,6 +475,11 @@ TEST_CASE("RecMessageUnmarshalNext accepts every stat kind the writer emits", "[
   RecRecord    *got = nullptr;
 
   REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
+  CHECK(got->rec_type == RECT_PROCESS);
+  CHECK(std::string(got->name) == "proxy.process.test.counter");
+  CHECK(got->data.rec_counter == 5);
+
+  REQUIRE(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_OKAY);
   CHECK(got->rec_type == RECT_NODE);
   CHECK(std::string(got->name) == "proxy.node.test.int");
   CHECK(got->data.rec_int == 3);
