@@ -176,9 +176,6 @@ public:
 
   int SNIAction(SSL &ssl, const Context &ctx) const override;
 
-private:
-  static bool is_number(std::string_view s);
-
   /**
    * `tunnel_route` may contain matching groups ie: `$1` which needs to be replaced by the corresponding
    * captured group from the `fqdn`, this function will replace them using proper group string. Matching
@@ -186,6 +183,9 @@ private:
    */
   static std::string replace_match_groups(std::string_view dst, const ActionItem::Context::CapturedGroupViewVec &groups,
                                           bool &port_is_dynamic);
+
+private:
+  static bool is_number(std::string_view s);
 
   std::string destination;
 

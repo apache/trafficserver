@@ -23,6 +23,7 @@ from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServe
 TEST_DIRECTORY = Path(__file__).parent
 
 BAD_PORT = r"bad port in tunnel destination"
+BAD_MATCH_GROUP = r"bad match group in tunnel destination"
 
 # Each route names a port the tunnel would misread.
 BAD_ROUTES = {
@@ -50,6 +51,29 @@ def test_tunnel_route_bad_port_stops_startup(ats_factory: ATSFactory, key: str, 
     ats.add_default_ssl_files()
     ats.write_config_file("sni.yaml", f'sni:\n- fqdn: bar.com\n  {key}: "{destination}"\n')
     ats.expect_start_failure(rf"EMERGENCY: .*sni\.yaml failed to load: .*{BAD_PORT}")
+    ats.start()
+
+
+# Each route has a match group that cannot be filled in as written.
+BAD_MATCH_GROUP_ROUTES = {
+    "exact_fqdn": ("bar.com", "$1.backend.example.com:443"),
+    "not_a_group": ("*.bar.com", "${1}.backend.example.com:443"),
+}
+
+
+@pytest.mark.parametrize("fqdn,destination", BAD_MATCH_GROUP_ROUTES.values(), ids=BAD_MATCH_GROUP_ROUTES.keys())
+def test_tunnel_route_bad_match_group_stops_startup(ats_factory: ATSFactory, fqdn: str, destination: str) -> None:
+    """An sni.yaml route with a match group the fqdn does not capture stops startup.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param fqdn: The route's fqdn.
+    :param destination: The route's destination.
+    """
+
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.add_default_ssl_files()
+    ats.write_config_file("sni.yaml", f'sni:\n- fqdn: "{fqdn}"\n  forward_route: "{destination}"\n')
+    ats.expect_start_failure(rf"EMERGENCY: .*sni\.yaml failed to load: .*{BAD_MATCH_GROUP}")
     ats.start()
 
 
@@ -90,11 +114,26 @@ def tunnel_reply(services: ServiceFactory, name: str, *, _ats: ATS, _forward_por
     return result.output
 
 
-def test_tunnel_route_bad_port_on_reload_keeps_old_config(ats_factory: ATSFactory, services: ServiceFactory) -> None:
-    """A bad route port in a reloaded sni.yaml fails the reload and keeps the old routes.
+# Each reloaded sni.yaml has a route that cannot load, with the error it gives.
+BAD_RELOADS = {
+    # Port 1x rather than the working port with text after it: a reload that read
+    # only the leading digits of the working port would still tunnel there, and
+    # the last check could not tell that the reload had been taken.
+    "bad_port": ("sni:\n- fqdn: bar.com\n  forward_route: localhost:1x\n", BAD_PORT),
+    "bad_match_group": ('sni:\n- fqdn: bar.com\n  forward_route: "$1.localhost:1"\n', BAD_MATCH_GROUP),
+}
+
+
+@pytest.mark.parametrize("sni_yaml,error", BAD_RELOADS.values(), ids=BAD_RELOADS.keys())
+def test_tunnel_route_bad_reload_keeps_old_config(
+    ats_factory: ATSFactory, services: ServiceFactory, sni_yaml: str, error: str
+) -> None:
+    """A route that cannot load in a reloaded sni.yaml fails the reload and keeps the old routes.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
+    :param sni_yaml: The sni.yaml to reload.
+    :param error: The loader error the reload must log.
     """
 
     forward_port = services.allocate_port()
@@ -105,14 +144,11 @@ def test_tunnel_route_bad_port_on_reload_keeps_old_config(ats_factory: ATSFactor
     ats.start()
     assert "This is a reply" in tunnel_reply(services, "client-before", _ats=ats, _forward_port=forward_port)
 
-    # Port 1x rather than the working port with text after it: a reload that read
-    # only the leading digits of the working port would still tunnel there, and
-    # the last check could not tell that the reload had been taken.
-    (ats.config_directory / "sni.yaml").write_text("sni:\n- fqdn: bar.com\n  forward_route: localhost:1x\n")
-    result = ats.traffic_ctl("config", "reload", "-m", "-t", "bad-tunnel-port", "-r", "0.5", "-T", "30s")
+    (ats.config_directory / "sni.yaml").write_text(sni_yaml)
+    result = ats.traffic_ctl("config", "reload", "-m", "-t", "bad-tunnel-route", "-r", "0.5", "-T", "30s")
     assert result.returncode == 2, result.output
     diags = wait_for_file_lines(ats.diags_log, r"sni\.yaml failed to load", 1)
-    assert BAD_PORT in diags, diags
+    assert error in diags, diags
 
     assert ats.is_running
     assert "This is a reply" in tunnel_reply(services, "client-after", _ats=ats, _forward_port=forward_port)

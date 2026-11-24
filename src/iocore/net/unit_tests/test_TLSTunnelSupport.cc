@@ -22,6 +22,7 @@
  */
 
 #include "iocore/net/TLSTunnelSupport.h"
+#include "../SNIActionPerformer.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -118,4 +119,24 @@ TEST_CASE("TLSTunnelSupport refuses a filled-in destination port a connection ca
   CHECK_FALSE(connect_to(tunnel, destination));
   CHECK_FALSE(tunnel.has_tunnel_destination());
   CHECK(tunnel.get_tunnel_port() == 0);
+  CHECK(tunnel.get_tunnel_type() == SNIRoutingType::NONE);
+  CHECK_FALSE(tunnel.tunnel_port_is_dynamic());
+}
+
+TEST_CASE("TunnelDestination leaves a '$' it cannot fill in as written")
+{
+  ActionItem::Context::CapturedGroupViewVec const groups{"a", "8443"};
+  auto [destination, filled, port_is_dynamic] = GENERATE(table<std::string, std::string, bool>({
+    {"$0.x",           "$0.x",           false},
+    {"$$1",            "$a",             false},
+    {"abc$",           "abc$",           false},
+    {"$3.x",           "$3.x",           false},
+    {"$1.backend:$2",  "a.backend:8443", true },
+    {"backend.$1:443", "backend.a:443",  false},
+  }));
+
+  CAPTURE(destination);
+  bool dynamic = !port_is_dynamic;
+  CHECK(TunnelDestination::replace_match_groups(destination, groups, dynamic) == filled);
+  CHECK(dynamic == port_is_dynamic);
 }

@@ -308,13 +308,40 @@ TEST_CASE("YamlSNIConfig rejects a match group in the host that the fqdn does no
     {"route.example.com", "$1.backend.example.com:443"},
     {"*.example.com",     "$0.backend.example.com:443"},
     {"*.example.com",     "$2.backend.example.com:443"},
-    {"*.example.com",     "$10.backend.example.com"   },
-    {"*.example.com",     "$1x.backend.example.com"   },
     {"*.example.com",     "$2"                        },
   }));
 
   CAPTURE(key, fqdn, destination);
-  CHECK(load_route(fqdn, key, destination).find(bad_group_error(fqdn, destination)) != std::string::npos);
+  auto const error = load_route(fqdn, key, destination);
+  CHECK(error.find(bad_group_error(fqdn, destination)) != std::string::npos);
+  CHECK(error.find("names no group") != std::string::npos);
+}
+
+TEST_CASE("YamlSNIConfig rejects a match group followed by anything but a dot, a colon or the end")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  std::string destination{GENERATE("$10.backend.example.com", "$1x.backend.example.com", "$1-backend.example.com:443")};
+
+  CAPTURE(key, destination);
+  auto const error = load_route("*.example.com", key, destination);
+  CHECK(error.find(bad_group_error("*.example.com", destination)) != std::string::npos);
+  CHECK(error.find("is not one digit followed by") != std::string::npos);
+}
+
+TEST_CASE("YamlSNIConfig rejects a '$' that does not start a match group")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  auto [fqdn, destination] = GENERATE(table<std::string, std::string>({
+    {"*.example.com",     "${1}.backend.example.com:443"},
+    {"*.example.com",     "$.backend.example.com:443"   },
+    {"*.example.com",     "backend$.example.com"        },
+    {"route.example.com", "back$end.example.com:443"    },
+  }));
+
+  CAPTURE(key, fqdn, destination);
+  auto const error = load_route(fqdn, key, destination);
+  CHECK(error.find(bad_group_error(fqdn, destination)) != std::string::npos);
+  CHECK(error.find("is not followed by a match group number") != std::string::npos);
 }
 
 TEST_CASE("YamlSNIConfig rejects a tunnel destination with no host")

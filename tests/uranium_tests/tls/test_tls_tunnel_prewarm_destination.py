@@ -20,6 +20,10 @@ from tools.uranium.services import ATS, ATSFactory, ServiceFactory, wait_for_fil
 
 WARNING = "not pre-warming tunnel destination"
 
+# A fixed host holding a '{' that starts no port template: a connection uses it
+# as written, so it is pre-warmed as written too.
+LITERAL_HOST = "{literal}.backend.example.com"
+
 # Destinations whose port or host is filled in per connection, from a port
 # template or a match group, so there is nothing to pre-warm. Each one logs
 # WARNING once, including the one with two ALPN ids.
@@ -64,6 +68,9 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
         "  - fqdn: ipv6.example.com\n"
         f"    forward_route: '[::1]:{_origin_port}'\n"
         "    tunnel_prewarm: true\n"
+        "  - fqdn: literal.example.com\n"
+        f"    forward_route: '{LITERAL_HOST}:{_origin_port}'\n"
+        "    tunnel_prewarm: true\n"
         f"{SKIPPED_SNI}"
     )
     ats.write_config_file("sni.yaml", sni_yaml)
@@ -86,12 +93,12 @@ def test_tls_tunnel_prewarm_destination(ats_factory: ATSFactory, services: Servi
     assert diags.count(WARNING) == len(SKIPPED_DESTINATIONS), diags
     assert _ats.is_running
 
-    # Only the two fixed routes register pre-warm stats: each destination has 7.
+    # Only the three fixed routes register pre-warm stats: each destination has 7.
     stats = wait_for_file_lines(_ats.diags_log, "dynamic stats are registered for pre-warming tunnel", 1)
-    assert re.search(r"\b14 dynamic stats are registered for pre-warming tunnel", stats), stats
+    assert re.search(r"\b21 dynamic stats are registered for pre-warming tunnel", stats), stats
 
     # Each fixed route is registered under the host and port a connection to it uses.
-    for host in ("127.0.0.1", "::1"):
+    for host in ("127.0.0.1", "::1", LITERAL_HOST):
         metric = f"proxy.process.tunnel.prewarm.{host}:{origin_port}.tcp.total_miss"
         result = _ats.traffic_ctl("metric", "get", metric)
         assert result.returncode == 0 and metric in result.stdout, result.output
