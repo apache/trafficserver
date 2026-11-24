@@ -215,6 +215,12 @@ bad_port_error(std::string const &fqdn, std::string const &destination)
 {
   return "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination + "\"";
 }
+
+std::string
+no_host_error(std::string const &fqdn, std::string const &destination)
+{
+  return "fqdn \"" + fqdn + "\": no host in tunnel destination \"" + destination + "\"";
+}
 } // namespace
 
 TEST_CASE("YamlSNIConfig accepts a tunnel destination port the tunnel reads as written")
@@ -247,37 +253,53 @@ TEST_CASE("YamlSNIConfig rejects a tunnel destination port the tunnel would misr
 {
   std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
   auto [fqdn, destination] = GENERATE(table<std::string, std::string>({
-    {"route.example.com", "backend.example.com:"                     },
-    {"route.example.com", "backend.example.com:0"                    },
-    {"route.example.com", "backend.example.com:65536"                },
-    {"route.example.com", "backend.example.com:99999999999"          },
-    {"route.example.com", "backend.example.com:443x"                 },
-    {"route.example.com", "backend.example.com:-443"                 },
-    {"route.example.com", "backend.example.com:0443"                 },
-    {"route.example.com", "backend.example.com:08080"                },
-    {"route.example.com", "backend.example.com:{inbound_port}"       },
-    {"route.example.com", "backend.example.com:{inbound_local_port}x"},
-    {"route.example.com", "[::1]:"                                   },
-    {"route.example.com", "[::1]:https"                              },
-    {"route.example.com", "[::1]x"                                   },
-    {"route.example.com", "[::1]443"                                 },
-    {"route.example.com", " [::1]443"                                },
-    {"route.example.com", "[::1"                                     },
-    {"route.example.com", "backend.example.com:$1"                   },
-    {"*.example.com",     "backend.example.com:$"                    },
-    {"*.example.com",     "backend.example.com:$x"                   },
-    {"*.example.com",     "backend.example.com:$1x"                  },
-    {"*.example.com",     "backend.example.com:x$1"                  },
-    {"*.example.com",     "backend.example.com:0$1"                  },
-    {"*.example.com",     "backend.example.com:$1$1"                 },
-    {"*.example.com",     "[::1]$1"                                  },
-    {"*.example.com",     "backend.example.com:$0"                   },
-    {"*.example.com",     "backend.example.com:$2"                   },
-    {"*.example.com",     "backend.example.com:$10"                  },
-    {"*.example.com",     "backend.example.com:$4294967296"          },
-    {"a.*.example.com",   "backend.example.com:$1"                   },
+    {"route.example.com", "backend.example.com:"                                         },
+    {"route.example.com", "backend.example.com:0"                                        },
+    {"route.example.com", "backend.example.com:65536"                                    },
+    {"route.example.com", "backend.example.com:99999999999"                              },
+    {"route.example.com", "backend.example.com:443x"                                     },
+    {"route.example.com", "backend.example.com:-443"                                     },
+    {"route.example.com", "backend.example.com:0443"                                     },
+    {"route.example.com", "backend.example.com:08080"                                    },
+    {"route.example.com", "backend.example.com:{inbound_port}"                           },
+    {"route.example.com", "backend.example.com:{inbound_local_port}x"                    },
+    {"route.example.com", "backend{inbound_local_port}"                                  },
+    {"route.example.com", "::1:{inbound_local_port}"                                     },
+    {"route.example.com", "{proxy_protocol_port}.example.com:443"                        },
+    {"route.example.com", "a{proxy_protocol_port}.example.com:{inbound_local_port}"      },
+    {"route.example.com", "backend.example.com:{inbound_local_port}{proxy_protocol_port}"},
+    {"route.example.com", "[::1]:"                                                       },
+    {"route.example.com", "[::1]:https"                                                  },
+    {"route.example.com", "[::1]x"                                                       },
+    {"route.example.com", "[::1]443"                                                     },
+    {"route.example.com", " [::1]443"                                                    },
+    {"route.example.com", "[::1"                                                         },
+    {"route.example.com", "backend.example.com:$1"                                       },
+    {"*.example.com",     "backend.example.com:$"                                        },
+    {"*.example.com",     "backend.example.com:$x"                                       },
+    {"*.example.com",     "backend.example.com:$1x"                                      },
+    {"*.example.com",     "backend.example.com:x$1"                                      },
+    {"*.example.com",     "backend.example.com:0$1"                                      },
+    {"*.example.com",     "backend.example.com:70000$1"                                  },
+    {"*.example.com",     "backend.example.com:$1$1"                                     },
+    {"*.example.com",     "[::1]$1"                                                      },
+    {"*.example.com",     "backend.example.com:$0"                                       },
+    {"*.example.com",     "backend.example.com:$2"                                       },
+    {"*.example.com",     "backend.example.com:$10"                                      },
+    {"*.example.com",     "backend.example.com:$4294967296"                              },
+    {"a.*.example.com",   "backend.example.com:$1"                                       },
   }));
 
   CAPTURE(key, fqdn, destination);
   CHECK(load_route(fqdn, key, destination).find(bad_port_error(fqdn, destination)) != std::string::npos);
+}
+
+TEST_CASE("YamlSNIConfig rejects a tunnel destination with no host")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  std::string destination{GENERATE(":443", "[]:443", "[]", ":{inbound_local_port}")};
+
+  CAPTURE(key, destination);
+  CHECK(load_route("route.example.com", key, destination).find(no_host_error("route.example.com", destination)) !=
+        std::string::npos);
 }
