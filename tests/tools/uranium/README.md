@@ -74,10 +74,22 @@ instances are ordinary `test_*.py` modules:
    output capture, and [`runtime.py`](runtime.py) for installed paths, features,
    ports, and sandboxes.
 
-The procedural `ATS` service reuses ATS setup and startup functionality from
-`ReplayTest`. This keeps direct replay and procedural ATS behavior consistent,
-although it means `replay.py` is also an implementation dependency of
-procedural tests.
+Both test styles launch each kind of process through one implementation, so a
+replay manifest and a procedural test asking for the same process get the same
+command line, readiness check, and output validation:
+
+- `ReplayTest` builds its microDNS, verifier-server, and verifier-client
+  processes with `DNSServer.create()`, `VerifierServer.create()`, and
+  `VerifierClient.create()` from `services/`, the same constructors
+  `ServiceFactory` uses. `ReplayTest` only translates manifest keys and
+  allocated ports into their arguments.
+- The procedural `ATS` service reuses ATS setup and startup functionality from
+  `ReplayTest`, so `replay.py` is also an implementation dependency of
+  procedural tests.
+
+`services/ats.py` imports `replay.py` as a module rather than importing
+`ReplayTest` by name, because `replay.py` in turn imports the DNS and verifier
+services; this lets either module be imported first.
 
 ## Top-level modules
 
@@ -122,7 +134,8 @@ cleanup.
 ### `replay.py`
 
 Defines the direct-replay execution engine. It prepares ATS configuration and
-run-root files, launches the declared server, ATS, DNS, and client processes,
+run-root files, launches the declared server, ATS, DNS, and client processes
+(the non-ATS ones through the shared `services/` constructors),
 runs lifecycle commands, replaces runtime placeholders, and validates expected
 outputs.
 
@@ -162,19 +175,20 @@ The implementations are divided by responsibility:
 | [`ats.py`](services/ats.py) | ATS configuration, lifecycle, tools, logs, signals, and `ATSFactory`. |
 | [`context.py`](services/context.py) | `ProceduralContext` sandbox state and `CommandResult` values. |
 | [`curl.py`](services/curl.py) | Curl execution and ATS-aware TCP or Unix-domain-socket transport. |
-| [`process_service.py`](services/process_service.py) | Procedural wrapper around `ManagedProcess`, adding readiness and output validation. |
+| [`process_service.py`](services/process_service.py) | Service wrapper around `ManagedProcess`, adding readiness and output validation. |
 | [`origin.py`](services/origin.py) | Microserver lifecycle and programmatic request/response sessions. |
-| [`dns.py`](services/dns.py) | MicroDNS lifecycle, readiness, and record updates. |
+| [`dns.py`](services/dns.py) | MicroDNS zone files, lifecycle, readiness, and record updates, for both test styles. |
 | [`httpbin.py`](services/httpbin.py) | `go-httpbin` lifecycle and readiness. |
-| [`verifier.py`](services/verifier.py) | Proxy Verifier server lifecycle and violation checks. |
+| [`verifier.py`](services/verifier.py) | Proxy Verifier server and client command lines, readiness, and violation checks, for both test styles. |
 | [`service_factory.py`](services/service_factory.py) | Creation and cleanup of non-ATS services and arbitrary support processes. |
 | [`service_utils.py`](services/service_utils.py) | File polling, TCP requests, and metric polling. |
 
 The distinction between the two process layers is intentional:
 
 - `process.py::ManagedProcess` is the general subprocess primitive.
-- `services/process_service.py::ProcessService` adds behavior expected by
-  procedural pytest scenarios.
+- `services/process_service.py::ProcessService` adds readiness and output
+  validation for support services, whether a replay or a procedural test
+  started them.
 
 ## Supporting directories
 

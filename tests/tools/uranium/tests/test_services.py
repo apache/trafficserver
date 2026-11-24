@@ -23,6 +23,7 @@ import os
 import subprocess
 import socket
 import errno
+import sys
 from typing import Any
 
 import pytest
@@ -30,7 +31,18 @@ import pytest
 from tools.uranium import services as service_api
 from tools.uranium.runtime import TestRuntime as UraniumRuntime
 from tools.uranium.runtime import RuntimeConfigError
-from tools.uranium.services import ATS, ATSFactory, Curl, ProceduralContext, ServiceFactory
+from tools.uranium.config import ReplaySpec
+from tools.uranium.process import ManagedProcess
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    Curl,
+    DNSServer,
+    ProceduralContext,
+    ProcessService,
+    ServiceFactory,
+    VerifierServer,
+)
 from tools.uranium.plugin import uranium_replay
 from tools.uranium.replay import ReplayTest
 
@@ -104,6 +116,7 @@ def test_services_facade_reexports_focused_implementations() -> None:
         "ProcessService": "tools.uranium.services.process_service",
         "RecordsConfig": "tools.uranium.services.ats",
         "ServiceFactory": "tools.uranium.services.service_factory",
+        "VerifierClient": "tools.uranium.services.verifier",
         "VerifierServer": "tools.uranium.services.verifier",
         "assert_matches_gold": "tools.uranium.assertions",
         "send_tcp": "tools.uranium.services.service_utils",
@@ -696,3 +709,180 @@ def test_curl_accepts_seclevel_follows_the_active_tls_backend(
     monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
 
     assert Curl.accepts_seclevel() is expected
+
+
+def make_runtime(tmp_path: Path) -> UraniumRuntime:
+    """Create a real runtime whose port allocator works without an ATS installation.
+
+    :param tmp_path: Directory standing in for the source, build, and sandbox roots.
+    """
+
+    (tmp_path / ".port-counter").write_text("10000")
+    return UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+
+
+def make_replay(tmp_path: Path, urtest: dict[str, Any]) -> ReplayTest:
+    """Create a replay whose sandbox exists, without running it.
+
+    :param tmp_path: Directory holding the runtime roots and the manifest.
+    :param urtest: The manifest's ``urtest`` mapping.
+    """
+
+    manifest = tmp_path / "example.test.yaml"
+    manifest.write_text("sessions: []\n")
+    replay = ReplayTest(ReplaySpec(manifest, {}, urtest), make_runtime(tmp_path), "example")
+    replay.sandbox.mkdir()
+    return replay
+
+
+def normalized_command(service: ProcessService) -> list[str]:
+    """Return the service's command with its own output directory made generic.
+
+    :param service: Unstarted service whose command is compared.
+    """
+
+    directory = str(service.run_directory)
+    return [argument.replace(directory, "<run>") for argument in service.command]
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    ["tools.uranium.replay", "tools.uranium.services", "tools.uranium.services.ats", "tools.uranium.plugin"],
+)
+def test_replay_and_services_import_in_either_order(module_name: str) -> None:
+    """Keep the replay engine and the services importable as a fresh interpreter's first import.
+
+    :param module_name: Module imported first.
+    """
+
+    tests_directory = Path(__file__).resolve().parents[3]
+    result = subprocess.run(
+        [sys.executable, "-c", f"import {module_name}"], cwd=tests_directory, capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_replay_and_factory_build_the_same_verifier_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Build one verifier-client command line whether a manifest or a procedural test asks for it.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    :param monkeypatch: Keep the replay from launching verifier-client.
+    """
+
+    monkeypatch.setattr(ProcessService, "run", lambda _service, timeout=60: None)
+    replay = make_replay(
+        tmp_path,
+        {
+            "server": {},
+            "client": {"process_config": {"http_ports": ["{ATS_PROXY_PROTOCOL_PORT}"], "keys": "1 2", "poll_timeout": 5}},
+            "ats": {"process_config": {"enable_tls": True, "enable_quic": True}},
+        },
+    )
+    from_replay = replay._run_verifier_client()
+
+    factory = ServiceFactory(ProceduralContext.create(replay.runtime, "native", replay.spec.path))
+    from_factory = factory.verifier_client(
+        "client",
+        replay.spec.path,
+        http_ports=[replay.proxy_protocol_port],
+        https_ports=[replay.https_port],
+        http3_ports=[replay.https_port],
+        keys="1 2",
+        poll_timeout=5,
+    )
+
+    command = normalized_command(from_replay)
+    assert command == normalized_command(from_factory)
+    assert command[command.index("--connect-http") + 1] == f"127.0.0.1:{replay.proxy_protocol_port}"
+    for flag in ("--connect-https", "--connect-http3", "--qlog-dir", "--tls-secrets-log-file"):
+        assert flag in command
+    # Anything after --keys would be read as another key.
+    assert command[-3:] == ["--keys", "1", "2"]
+    assert command[command.index("--thread-limit") + 1] == "1"
+
+
+def test_replay_and_factory_build_the_same_verifier_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Build one verifier-server command line whether a manifest or a procedural test asks for it.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    :param monkeypatch: Keep the replay from launching verifier-server.
+    """
+
+    monkeypatch.setattr(VerifierServer, "start", lambda _service: None)
+    replay = make_replay(
+        tmp_path,
+        {"server": {"process_config": {"listen_extra_http": True, "other_args": "--format '{url}'"}}, "client": {}, "ats": {}},
+    )
+    from_replay = replay._start_verifier_server()
+    assert from_replay is not None
+
+    factory = ServiceFactory(ProceduralContext.create(replay.runtime, "native", replay.spec.path))
+    from_factory = factory.verifier_server(
+        "server",
+        replay.spec.path,
+        http_ports=[replay.server_http_port, replay.server_extra_http_port],
+        https_ports=[replay.server_https_port],
+        other_args="--format '{url}'",
+    )
+
+    assert normalized_command(from_replay) == normalized_command(from_factory)
+    assert from_factory.http_port == replay.server_http_port
+    assert "--tls-secrets-log-file" in from_factory.command
+
+
+@pytest.mark.parametrize(
+    ("http_ports", "https_ports", "probed"),
+    [
+        pytest.param([1, 2], [3], [1, 2], id="every_clear_text_listener"),
+        pytest.param([], [3, 4], [3], id="first_tls_listener"),
+    ],
+)
+def test_verifier_server_waits_for_its_listeners(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, http_ports: list[int], https_ports: list[int], probed: list[int]
+) -> None:
+    """Wait for every clear-text listener, and probe a TLS listener only when no other exists.
+
+    :param tmp_path: Directory receiving the unlaunched server's output.
+    :param monkeypatch: Replace process launch and the TCP probe.
+    :param http_ports: Clear-text listener ports.
+    :param https_ports: TLS listener ports.
+    :param probed: Ports expected to be probed for readiness.
+    """
+
+    attempted: list[int] = []
+    monkeypatch.setattr(ManagedProcess, "start", lambda _process: None)
+    monkeypatch.setattr(ManagedProcess, "wait_until", lambda _process, ready, _timeout, _description: ready())
+    monkeypatch.setattr("tools.uranium.services.verifier.tcp_open", lambda port: attempted.append(port) or True)
+
+    server = VerifierServer.create(
+        make_runtime(tmp_path), "server", tmp_path, tmp_path / "replay.yaml", http_ports=http_ports, https_ports=https_ports
+    )
+    server.start()
+
+    assert attempted == probed
+
+
+def test_replay_and_factory_write_the_same_dns_zone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Write one zone document whether a manifest or a procedural test configures microDNS.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    :param monkeypatch: Keep microDNS from launching.
+    """
+
+    monkeypatch.setattr(DNSServer, "start", lambda _service: None)
+    replay = make_replay(
+        tmp_path,
+        {"dns": {"records": {"origin.test": ["127.0.0.1"], "root.test.": ["::1"]}}, "server": {}, "client": {}, "ats": {}},
+    )
+    from_replay = replay._start_dns()
+    assert from_replay is not None
+    assert replay.dns_port == from_replay.port
+
+    factory = ServiceFactory(ProceduralContext.create(replay.runtime, "native", replay.spec.path))
+    from_factory = factory.dns("dns", default="127.0.0.1")
+    from_factory.add_records({"origin.test": ["127.0.0.1"], "root.test.": "::1"})
+
+    zone = json.loads((from_replay.run_directory / "dns_file.json").read_text())
+    assert zone == json.loads((from_factory.run_directory / "dns_file.json").read_text())
+    assert zone == {"mappings": [{"origin.test.": ["127.0.0.1"]}, {"root.test.": ["::1"]}], "otherwise": ["127.0.0.1"]}
+    assert "otherwise" not in json.loads((factory.dns("refusing").run_directory / "dns_file.json").read_text())

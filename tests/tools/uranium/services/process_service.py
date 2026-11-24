@@ -68,6 +68,18 @@ class ProcessService:
         return self._process.return_code is None if self._was_started else False
 
     @property
+    def return_code(self) -> int | None:
+        """Return the exit status, or None while the process is running or unstarted."""
+
+        return self._process.return_code
+
+    @property
+    def command(self) -> tuple[str, ...]:
+        """Return the executable and arguments this service runs."""
+
+        return tuple(self._process.command)
+
+    @property
     def stdout(self) -> StreamExpectations:
         """Return the read-only standard-output expectation API."""
 
@@ -174,8 +186,8 @@ class ProcessService:
 
         self._was_validated = True
         self._process.wait(timeout)
-        self._validate_output()
-        return CommandResult(tuple(self._process.command), int(self._process.return_code or 0), self.stdout_text, self.stderr_text)
+        self.validate_output()
+        return CommandResult(self.command, int(self._process.return_code or 0), self.stdout_text, self.stderr_text)
 
     def run(self, timeout: float = 60) -> CommandResult:
         """Start the process and wait for completion.
@@ -196,9 +208,11 @@ class ProcessService:
 
         self.stop()
         if self._was_started and not self._was_validated:
-            self._validate_output()
+            self.validate_output()
 
-    def _validate_output(self) -> None:
+    def validate_output(self) -> None:
+        """Reject forbidden diagnostics, then apply registered stream expectations."""
+
         if self._reject_expression and re.search(self._reject_expression, self.output):
             raise AssertionError(f"Unexpected diagnostic in {self.name}:\n{self.output}")
         self._process.validate_output()

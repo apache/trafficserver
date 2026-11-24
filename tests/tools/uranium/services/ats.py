@@ -31,7 +31,11 @@ from typing import Any
 
 from ..config import ReplaySpec
 from ..process import ManagedProcess
-from ..replay import ReplayTest
+
+# Imported as a module because replay.py imports the DNS and verifier
+# services from this package; resolving ReplayTest at call time lets either
+# module be imported first.
+from .. import replay as replay_engine
 from .context import CommandResult, ProceduralContext
 
 
@@ -129,7 +133,7 @@ class ATS:
             document={},
             urtest={"server": {}, "client": {}, "ats": {}},
         )
-        self._runner = ReplayTest(spec, context.runtime, f"{context.node_name}-{name}")
+        self._runner = replay_engine.ReplayTest(spec, context.runtime, f"{context.node_name}-{name}")
         self._runner.sandbox = context.run_directory
         self._name = name
         self._root = context.run_directory / name

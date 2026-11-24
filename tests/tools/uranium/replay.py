@@ -22,26 +22,25 @@ from pathlib import Path
 from typing import Any
 import glob
 import grp
-import json
 import os
 import pwd
 import re
-import shlex
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
 import time
 
-from dnslib import DNSRecord
 import yaml
 
 from .assertions import assert_matches_gold
 from .config import ReplayConfigError, ReplaySpec, format_plugin_entry, merge_flat_records, write_yaml
 from .process import ManagedProcess
 from .runtime import TestRuntime
-from .utils import loopback_addresses, python_environment_executable, tcp_open
+from .services.dns import DNSServer
+from .services.process_service import ProcessService
+from .services.verifier import VerifierClient, VerifierServer
+from .utils import tcp_open
 
 
 class ReplaySkip(RuntimeError):
@@ -69,7 +68,7 @@ class ReplayTest:
         self._sandbox_parent = sandbox_parent
         if sandbox_parent is not None:
             self.sandbox = sandbox_parent / runtime.sandbox_name(self.node_name)
-        self.processes: list[ManagedProcess] = []
+        self.processes: list[ManagedProcess | ProcessService] = []
         self._temporary_directories: list[Path] = []
         self.http_port = runtime.allocate_port()
         self.https_port = runtime.allocate_port()
@@ -124,95 +123,61 @@ class ReplayTest:
                 shutil.rmtree(directory, ignore_errors=True)
 
         if client is not None:
-            client_excludes = (
-                "" if self.spec.urtest["client"].get("process_config", {}).get("allow_errors") else "Violation|Invalid status"
-            )
-            self._validate_process_output(client, self.spec.urtest["client"], client_excludes)
+            self._validate_process_output(client, self.spec.urtest["client"])
         if server is not None:
-            self._validate_process_output(server, self.spec.urtest["server"], "Violation")
+            server.validate_output()
+            self._validate_process_output(server, self.spec.urtest["server"])
         if ats is not None:
             self._validate_ats_logs()
 
-    def _start_dns(self) -> ManagedProcess | None:
+    def _start_dns(self) -> DNSServer | None:
         config = self.spec.urtest.get("dns")
         if config is None:
             return None
-        self.dns_port = self.runtime.allocate_port(socket.SOCK_DGRAM)
         name = str(config.get("name", "dns"))
         directory = self.sandbox / name
         directory.mkdir()
-        default = config.get("process_config", {}).get("default", "127.0.0.1")
-        otherwise = [default] if isinstance(default, str) else default
-        mappings = []
-        for hostname, addresses in config.get("records", {}).items():
-            mappings.append({hostname if hostname.endswith(".") else hostname + ".": addresses})
-        zone_file = directory / "dns_file.json"
-        zone_file.write_text(json.dumps({"mappings": mappings, "otherwise": otherwise}))
-        process = ManagedProcess(
+        dns = DNSServer.create(
+            self.runtime,
             name,
-            [python_environment_executable("microdns"), "INADDR_LOOPBACK", str(self.dns_port), str(zone_file)],
             directory,
+            default=config.get("process_config", {}).get("default", "127.0.0.1"),
+            records=config.get("records", {}),
+            test_directory=self.test_directory,
         )
-        process.start()
-        self.processes.append(process)
+        self.dns_port = dns.port
+        self.processes.append(dns)
+        dns.start()
+        return dns
 
-        def responds() -> bool:
-            try:
-                query = DNSRecord.question("pytest-readiness.invalid")
-                query.send("127.0.0.1", self.dns_port or 0, timeout=0.1)
-                return True
-            except (OSError, socket.timeout):
-                return False
-
-        process.wait_until(responds, 10, f"DNS replies on 127.0.0.1:{self.dns_port}")
-        return process
-
-    def _start_verifier_server(self) -> ManagedProcess | None:
+    def _start_verifier_server(self) -> VerifierServer | None:
         config = self.spec.urtest["server"]
         if not config.get("enabled", True):
             return None
-        process_config = dict(config.get("process_config", {}))
+        process_config = config.get("process_config", {})
         name = str(config.get("name", "server"))
         directory = self.sandbox / name
         directory.mkdir()
-        ssl_dir = self.runtime.test_tools / "proxy-verifier" / "ssl"
-        server_cert = self._resolve_test_path(process_config.get("ssl_cert"), ssl_dir / "server.pem")
-        ca_certs = self._resolve_test_path(process_config.get("ca_cert"), ssl_dir / "ca.pem")
         http_ports = [self.server_http_port]
         if process_config.get("listen_extra_http", False):
             http_ports.append(self.server_extra_http_port)
-        command = [
-            self.runtime.verifier_bin / "verifier-server",
-            "run",
-            "--listen-http",
-            loopback_addresses(http_ports),
-            "--listen-https",
-            f"127.0.0.1:{self.server_https_port}",
-            "--server-cert",
-            server_cert,
-            "--ca-certs",
-            ca_certs,
-            "--tls-secrets-log-file",
-            directory / "tls_secrets.txt",
-            self._process_replay_path(config),
-        ]
-        if process_config.get("verbose", True):
-            command.extend(["--verbose", "diag"])
-        command.extend(shlex.split(str(process_config.get("other_args", ""))))
-        process = ManagedProcess(
+        server = VerifierServer.create(
+            self.runtime,
             name,
-            command,
             directory,
-            expected_return_codes=self._return_codes(config),
+            self._process_replay_path(config),
+            http_ports=http_ports,
+            https_ports=[self.server_https_port],
+            ssl_cert=self._resolve_test_path(process_config.get("ssl_cert")),
+            ca_cert=self._resolve_test_path(process_config.get("ca_cert")),
+            verbose=process_config.get("verbose", True),
+            other_args=str(process_config.get("other_args", "")),
+            return_codes=self._return_codes(config),
+            test_directory=self.test_directory,
         )
-        process.start()
-        self.processes.append(process)
-        process.wait_until(
-            lambda: all(tcp_open(port) for port in http_ports),
-            10,
-            f"HTTP listeners on {loopback_addresses(http_ports)}",
-        )
-        return process
+        self.processes.append(server)
+        server.start()
+        return server
 
     def _start_ats(self) -> ManagedProcess:
         config = self.spec.urtest["ats"]
@@ -353,66 +318,45 @@ class ReplayTest:
         )
         return process
 
-    def _run_verifier_client(self) -> ManagedProcess:
+    def _run_verifier_client(self) -> VerifierClient:
         config = self.spec.urtest["client"]
-        process_config = dict(config.get("process_config", {}))
+        process_config = config.get("process_config", {})
         name = str(config.get("name", "client"))
         directory = self.sandbox / name
         directory.mkdir()
         ats_process_config = self.spec.urtest["ats"].get("process_config", {})
         enable_tls = bool(ats_process_config.get("enable_tls", False))
         enable_quic = bool(ats_process_config.get("enable_quic", False))
-        ssl_dir = self.runtime.test_tools / "proxy-verifier" / "ssl"
-        http_ports = process_config.pop("http_ports", [self.http_port])
-        https_ports = process_config.pop("https_ports", [self.https_port] if enable_tls else [])
-        http3_ports = process_config.pop("http3_ports", [self.https_port] if enable_quic else [])
-        command: list[str | Path] = [self.runtime.verifier_bin / "verifier-client", "run", self._process_replay_path(config)]
-        if http_ports:
-            command.extend(["--connect-http", self._replace_port_placeholders(loopback_addresses(http_ports))])
-        if https_ports:
-            command.extend(["--connect-https", self._replace_port_placeholders(loopback_addresses(https_ports))])
-        if http3_ports:
-            qlog = directory / "qlog_directory"
-            qlog.mkdir()
-            command.extend(
-                ["--connect-http3", self._replace_port_placeholders(loopback_addresses(http3_ports)), "--qlog-dir", qlog]
-            )
-        if https_ports or http3_ports:
-            client_cert = self._resolve_test_path(process_config.get("ssl_cert"), ssl_dir / "client.pem")
-            ca_certs = self._resolve_test_path(process_config.get("ca_cert"), ssl_dir / "ca.pem")
-            command.extend(
-                [
-                    "--client-cert",
-                    client_cert,
-                    "--ca-certs",
-                    ca_certs,
-                    "--tls-secrets-log-file",
-                    directory / "tls_secrets.txt",
-                ]
-            )
-        if process_config.get("verbose", True):
-            command.extend(["--verbose", "diag"])
-        other_args = str(process_config.get("other_args", ""))
-        command.extend(shlex.split(other_args))
-        keys = process_config.get("keys")
-        if keys:
-            command.append("--keys")
-            command.extend(shlex.split(keys) if isinstance(keys, str) else [str(key) for key in keys])
-        poll_timeout = process_config.get("poll_timeout")
-        if poll_timeout is not None:
-            command.extend(["--poll-timeout", str(poll_timeout)])
-        if "thread-limit" not in other_args and not process_config.get("run_parallel", False):
-            command.extend(["--thread-limit", "1"])
-        process = ManagedProcess(
+        client = VerifierClient.create(
+            self.runtime,
             name,
-            command,
             directory,
-            expected_return_codes=self._return_codes(config),
+            self._process_replay_path(config),
+            http_ports=self._client_ports(process_config.get("http_ports", [self.http_port])),
+            https_ports=self._client_ports(process_config.get("https_ports", [self.https_port] if enable_tls else [])),
+            http3_ports=self._client_ports(process_config.get("http3_ports", [self.https_port] if enable_quic else [])),
+            ssl_cert=self._resolve_test_path(process_config.get("ssl_cert")),
+            ca_cert=self._resolve_test_path(process_config.get("ca_cert")),
+            keys=process_config.get("keys"),
+            verbose=process_config.get("verbose", True),
+            poll_timeout=process_config.get("poll_timeout"),
+            other_args=str(process_config.get("other_args", "")),
+            run_parallel=bool(process_config.get("run_parallel", False)),
+            allow_errors=bool(process_config.get("allow_errors", False)),
+            return_codes=self._return_codes(config),
+            test_directory=self.test_directory,
         )
-        process.start()
-        self.processes.append(process)
-        process.wait(timeout=float(config.get("timeout", 60)))
-        return process
+        self.processes.append(client)
+        client.run(timeout=float(config.get("timeout", 60)))
+        return client
+
+    def _client_ports(self, ports: Sequence[object]) -> list[int]:
+        """Resolve client target ports, which a manifest may name by placeholder.
+
+        :param ports: Port numbers or placeholders such as ``{ATS_PROXY_PROTOCOL_PORT}``.
+        """
+
+        return [int(self._replace_port_placeholders(str(port))) for port in ports]
 
     def _process_replay_path(self, config: Mapping[str, Any]) -> Path:
         """Resolve and optionally render a process-specific replay file."""
@@ -429,11 +373,14 @@ class ReplayTest:
         destination.write_text(self._replace_port_placeholders(source.read_text()))
         return destination
 
-    def _resolve_test_path(self, value: Any, default: Path) -> Path:
-        """Resolve an optional test-relative process input path."""
+    def _resolve_test_path(self, value: Any) -> Path | None:
+        """Resolve an optional test-relative process input path, or None when it is absent.
+
+        :param value: Absolute path, path relative to the test directory, or None.
+        """
 
         if value is None:
-            return default
+            return None
         path = Path(str(value))
         return path if path.is_absolute() else (self.test_directory / path).resolve()
 
@@ -792,7 +739,7 @@ class ReplayTest:
                 if count < int(check["line_count_min"]):
                     raise AssertionError(f"Expected at least {check['line_count_min']} lines in {pattern}, found {count}")
 
-    def _validate_background_processes(self, server: ManagedProcess | None, ats: ManagedProcess) -> None:
+    def _validate_background_processes(self, server: VerifierServer | None, ats: ManagedProcess) -> None:
         """Detect a server or unit-under-test exit before intentional teardown."""
 
         if ats.return_code is not None:
@@ -800,17 +747,17 @@ class ReplayTest:
         if server is not None and server.return_code is not None and server.return_code not in server.return_codes:
             raise AssertionError(
                 f"Proxy Verifier server exited with status {server.return_code}; expected "
-                f"{sorted(server.return_codes)}.\n{server.output()}"
+                f"{sorted(server.return_codes)}.\n{server.output}"
             )
 
-    def _validate_process_output(self, process: ManagedProcess, config: Mapping[str, Any], default_excludes: str) -> None:
-        output = ""
-        for path in (process.stdout_path, process.stderr_path):
-            if path.exists():
-                output += path.read_text(errors="replace")
-        if default_excludes and re.search(default_excludes, output):
-            raise AssertionError(f"Unexpected Proxy Verifier diagnostic in {process.name}:\n{output}")
-        self._validate_text(output, config.get("log_validation", {}), process.name)
+    def _validate_process_output(self, service: ProcessService, config: Mapping[str, Any]) -> None:
+        """Apply a manifest's ``log_validation`` rules to a Proxy Verifier process's output.
+
+        :param service: Stopped Proxy Verifier process.
+        :param config: The process's ``urtest.client`` or ``urtest.server`` mapping.
+        """
+
+        self._validate_text(service.output, config.get("log_validation", {}), service.name)
 
     def _validate_ats_logs(self) -> None:
         config = self.spec.urtest["ats"]

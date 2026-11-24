@@ -214,6 +214,9 @@ or a specific output marker before sending test traffic.
 .. autoclass:: tools.uranium.services.VerifierServer
    :members:
 
+.. autoclass:: tools.uranium.services.VerifierClient
+   :members:
+
 Results and context
 -------------------
 
