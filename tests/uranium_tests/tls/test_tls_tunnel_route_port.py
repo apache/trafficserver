@@ -15,9 +15,10 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 import pytest
-from tools.uranium.services import ATS, ATSFactory, DNSServer, ServiceFactory, wait_for_file_lines
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory, wait_for_file_lines
 
 TEST_DIRECTORY = Path(__file__).parent
 
@@ -114,3 +115,80 @@ def test_tunnel_route_bad_port_on_reload_keeps_old_config(ats_factory: ATSFactor
 
     assert ats.is_running
     assert "This is a reply" in tunnel_reply(services, "client-after", _ats=ats, _forward_port=forward_port)
+
+
+def configure_match_group_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
+    """Route each SNI to the port its first label names, and one SNI to the Proxy Protocol port.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param _origin: Test-local origin configured by the test.
+    """
+
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.add_default_ssl_files()
+    ats.records.update(
+        {
+            "proxy.config.http.connect_ports": f"{ats.https_port} {_origin.http_port}",
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http",
+        }
+    )
+    ats.allow_private_connect()
+    ats.write_config_file(
+        "sni.yaml",
+        "sni:\n"
+        "- fqdn: '*.port.example'\n"
+        "  forward_route: 127.0.0.1:$1\n"
+        "- fqdn: pp.example\n"
+        "  forward_route: 127.0.0.1:{proxy_protocol_port}\n",
+    )
+    return ats
+
+
+def forward_request(sni: str, *, _ats: ATS, _curl: Curl) -> tuple[int, str]:
+    """Send one request through the forward route that sni selects.
+
+    :param sni: The server name the client sends.
+    :param _ats: Test-local ats configured by the test.
+    :param _curl: Test-local curl configured by the test.
+    """
+
+    arguments = ["--verbose", "--http1.1", "--insecure", "--resolve", f"{sni}:{_ats.https_port}:127.0.0.1"]
+    result = _curl.run_for(_ats, f"{shlex.join(arguments)} 'https://{sni}:{_ats.https_port}/'")
+    return result.returncode, result.output
+
+
+def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A port filled in from the SNI is used only if all of it names a port.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    origin = services.origin("origin")
+    origin.add_response(
+        {"headers": "GET / HTTP/1.1\r\nHost: origin\r\n\r\n"},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "forwarded ok"},
+    )
+    ats = configure_match_group_ats(ats_factory, _origin=origin)
+    origin.start()
+    ats.start()
+
+    port = origin.http_port
+    returncode, output = forward_request(f"{port}.port.example", _ats=ats, _curl=curl)
+    assert returncode == 0 and "forwarded ok" in output, output
+
+    # The handshake must fail for each of these, rather than tunnel to the
+    # port's leading digits, to the port narrowed to 16 bits, to a leading zero
+    # read as octal, or to the inbound port for a port that is not a number.
+    for label in (f"{port}x", str(port + 65536), "0" + format(port, "o"), "https"):
+        returncode, output = forward_request(f"{label}.port.example", _ats=ats, _curl=curl)
+        assert returncode == 35, f"{label}: {output}"
+        assert "forwarded ok" not in output, f"{label}: {output}"
+    assert ats.is_running
+
+    # A connection without a Proxy Protocol header has no port to fill in, so
+    # the tunnel falls back to the inbound port.
+    forward_request("pp.example", _ats=ats, _curl=curl)
+    wait_for_file_lines(ats.traffic_out, rf"CONNECT tunnel://127\.0\.0\.1:{ats.https_port} HTTP/1\.1", 1)
