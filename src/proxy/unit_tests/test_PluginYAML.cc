@@ -24,10 +24,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <atomic>
+#include <chrono>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <sys/stat.h>
+#include <thread>
 #include <unistd.h>
 
 #include "proxy/Plugin.h"
@@ -481,6 +484,29 @@ TEST_CASE("parse_plugin_yaml - FIFO is a config error", "[plugin_yaml]")
   // rejected before the open rather than hang startup.
   TempPath fifo("fifo");
   REQUIRE(mkfifo(fifo.path(), 0600) == 0);
+
+  // Should the check regress, opening the write end unblocks the reader, so
+  // the test fails on its checks instead of hanging until the ctest timeout.
+  // A non-blocking open for writing succeeds only once a reader is waiting.
+  std::atomic<bool> done{false};
+  std::thread       watchdog([&fifo, &done] {
+    for (int i = 0; i < 20 && !done; ++i) {
+      if (int fd = open(fifo.path(), O_WRONLY | O_NONBLOCK); fd >= 0) {
+        close(fd);
+        return;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+  });
+  struct Join {
+    std::thread       &thread;
+    std::atomic<bool> &done;
+    ~Join()
+    {
+      done = true;
+      thread.join();
+    }
+  } join{watchdog, done};
 
   auto result = parse_plugin_yaml(fifo.path());
 
