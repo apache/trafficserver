@@ -18,6 +18,8 @@
 A stalled stream must be reset so the origin can free it. A stream that ends with an empty
 END_STREAM DATA frame must deliver its whole body, and must be freed without disturbing the
 pooled origin connection, whether or not its transaction is still running.
+
+Every client here speaks HTTP/1.1, so every HTTP/2 stream and stream error is on the origin session.
 """
 
 import http.client
@@ -70,6 +72,25 @@ def get_slowly(ats: ATS, path: str, wait: Callable[[], object] = lambda: time.sl
         connection.close()
 
 
+def get_timed(ats: ATS, path: str) -> tuple[int, int, float]:
+    """Send one HTTP/1.1 request through ATS and return the status, the body length and the seconds it took.
+
+    A body that ATS cuts off counts the bytes that arrived before the cut.
+    """
+    start = time.monotonic()
+    connection = http.client.HTTPConnection("127.0.0.1", ats.http_port, timeout=30)
+    try:
+        connection.request("GET", path, headers={"Host": "origin.example.com"})
+        response = connection.getresponse()
+        try:
+            length = len(response.read())
+        except http.client.IncompleteRead as error:
+            length = len(error.partial)
+        return response.status, length, time.monotonic() - start
+    finally:
+        connection.close()
+
+
 def metric(ats: ATS, name: str) -> int:
     """Return the current value of one ATS metric."""
     result = ats.traffic_ctl("metric", "get", name)
@@ -79,12 +100,17 @@ def metric(ats: ATS, name: str) -> int:
     return int(value)
 
 
+def wait_for_value(read: Callable[[], int], expected: int, what: str, timeout: float = 1.5) -> None:
+    """Wait for read() to return a value, and fail with its last value if it does not."""
+    deadline = time.monotonic() + timeout
+    while (value := read()) != expected and time.monotonic() < deadline:
+        time.sleep(0.1)
+    assert value == expected, f"{what} is {value}, expected {expected}"
+
+
 def wait_for_metric(ats: ATS, name: str, expected: int, timeout: float = 1.5) -> None:
     """Wait for a metric to reach a value, and fail with its last value if it does not."""
-    deadline = time.monotonic() + timeout
-    while (value := metric(ats, name)) != expected and time.monotonic() < deadline:
-        time.sleep(0.1)
-    assert value == expected, f"{name} is {value}, expected {expected}"
+    wait_for_value(lambda: metric(ats, name), expected, name, timeout)
 
 
 def start_origin(
@@ -148,13 +174,9 @@ def assert_clean_origin_session(ats: ATS, origin: ProcessService, paths: list[st
     assert "reset stream=" not in origin.output, origin.output
     assert "goaway" not in origin.output, origin.output
     # current_server_streams drops when the transaction lets go of the stream, not when the stream is freed, so
-    # also count the streams that were freed. The client side is HTTP/1.1, so every stream here is an origin one.
+    # also count the streams that were freed.
     wait_for_metric(ats, "proxy.process.http2.current_server_streams", 0)
-    deadline = time.monotonic() + 1.5
-    while (freed := len(destroyed_streams(ats))) != len(paths) and time.monotonic() < deadline:
-        time.sleep(0.1)
-    assert freed == len(paths), f"{freed} of {len(paths)} origin streams freed"
-    # The client side is HTTP/1.1, so every stream error here would be on the origin session.
+    wait_for_value(lambda: len(destroyed_streams(ats)), len(paths), "the number of origin streams freed")
     assert metric(ats, "proxy.process.http2.stream_errors") == 0
 
 
@@ -190,7 +212,6 @@ def test_h2_origin_stalled_stream_is_reset(ats_factory: ATSFactory, services: Se
     output = origin.wait_for_output(rf"^conn {stalled[1]} reset stream={stalled[2]} error={CANCEL}$")
     assert get(ats, "/ok-after") == 200
 
-    # The client side is HTTP/1.1, so every stream error here would be on the origin session.
     assert metric(ats, "proxy.process.http2.stream_errors") == 0
 
     finish_origin(services, origin, stop)
@@ -234,7 +255,7 @@ def test_h2_origin_late_empty_end_stream_frees_stream(ats_factory: ATSFactory, s
     /late-end-empty has no body, so its transaction releases the stream and finishes before the
     END_STREAM arrives, and nothing else is left to free the stream. A stream left behind would
     time out at the keep-alive timeout as an HTTP/2 stream error and take the pooled origin
-    connection down with it. An HTTP/2 origin body ends only at END_STREAM, so for /late-end-body
+    connection down with it. An HTTP/2 origin body normally ends only at END_STREAM, so for /late-end-body
     and /late-end-large the transaction is still reading the body from the stream when the
     END_STREAM arrives, and must finish the body from it. For /late-end-large the client also reads
     only after the END_STREAM, so ATS is still writing the body to it then.
@@ -315,6 +336,8 @@ def test_h2_origin_late_empty_end_stream_after_buffered_body(ats_factory: ATSFac
         "the body was not all buffered before the tunnel started"
     )
     assert "[tunnel_handler, VC_EVENT_READ_COMPLETE" not in traffic
+    # release() disabled the read VIO, so the stream held the READ_COMPLETE for END_STREAM.
+    assert "defer VC_EVENT_READ_COMPLETE until the read VIO is re-enabled" in traffic
 
     paths.append("/ok-after")
     assert get(ats, "/ok-after") == 200
@@ -323,4 +346,130 @@ def test_h2_origin_late_empty_end_stream_after_buffered_body(ats_factory: ATSFac
     finish_origin(services, origin, stop)
     ats.stop()
     assert "Traceback" not in origin.output, origin.output
+    assert_clean_diags(ats)
+
+
+def test_h2_origin_end_stream_without_length_while_header_waits(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Finish a response with no content-length whose END_STREAM arrives while its header waits to be read.
+
+    The hold_txn_mutex plugin holds the transaction's mutex on a task thread while the origin sends a
+    response header with no content-length, the whole body and an empty END_STREAM DATA frame. The
+    header's read event misses its try-lock and is retried, and the READ_COMPLETE for END_STREAM
+    takes its place, so the transaction reads the header knowing the origin has ended the stream.
+    No more frames will come for the stream, so the transaction must take the buffered body as the
+    whole body and not wait for more until the inactivity timeout cuts the client off.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Runs the origin.
+    """
+    inactivity_timeout = 2
+    ats, origin, stop = start_origin(
+        ats_factory,
+        services,
+        plugin="hold_txn_mutex.so held-late-end 20 500",
+        **{
+            "proxy.config.http.transaction_no_activity_timeout_out": inactivity_timeout,
+            "proxy.config.diags.debug.tags": "http|http2|hold_txn_mutex",
+        },
+    )
+
+    # The first request opens the origin connection and settles its SETTINGS.
+    paths = ["/ok-before", "/held-late-end-nocl"]
+    assert get(ats, "/ok-before") == 200
+    status, length, seconds = get_timed(ats, "/held-late-end-nocl")
+    assert (status, length) == (200, LARGE_SPLIT_SIZE)
+    assert seconds < inactivity_timeout - 0.5, f"the response took {seconds:.2f} s"
+
+    # Check that the test reached the window it is for: the header was read on the READ_COMPLETE.
+    traffic = ats.traffic_out.read_text(errors="replace")
+    held = re.search(r"\(hold_txn_mutex\) \[(\d+)\] holding the transaction mutex", traffic)
+    assert held is not None, "the plugin never held the transaction mutex"
+    assert re.search(rf"\(http\) \[{held[1]}\] \[state_read_server_response_header, VC_EVENT_READ_COMPLETE", traffic), (
+        "the response header was not read on the READ_COMPLETE for END_STREAM"
+    )
+
+    paths.append("/ok-after")
+    assert get(ats, "/ok-after") == 200
+    assert_clean_origin_session(ats, origin, paths)
+
+    finish_origin(services, origin, stop)
+    ats.stop()
+    assert "Traceback" not in origin.output, origin.output
+    assert_clean_diags(ats)
+
+
+def test_h2_origin_end_stream_without_length_while_hook_waits(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Finish a response with no content-length whose END_STREAM arrives while a plugin holds the header hook.
+
+    The origin sends a response header with no content-length at once, and the whole body and an
+    empty END_STREAM DATA frame while the hold_txn_mutex plugin keeps the transaction at the read
+    response header hook. The transaction reads nothing from the stream there, so the stream drops
+    the READ_COMPLETE for END_STREAM. When the hook is done, the body is already buffered and no
+    more frames will come, so the transaction must take the buffered body as the whole body.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Runs the origin.
+    """
+    inactivity_timeout = 2
+    ats, origin, stop = start_origin(
+        ats_factory,
+        services,
+        plugin="hold_txn_mutex.so held-body-nocl 0 500 read-response",
+        **{
+            "proxy.config.http.transaction_no_activity_timeout_out": inactivity_timeout,
+            "proxy.config.diags.debug.tags": "http|http2|hold_txn_mutex",
+        },
+    )
+
+    paths = ["/ok-before", "/held-body-nocl"]
+    assert get(ats, "/ok-before") == 200
+    status, length, seconds = get_timed(ats, "/held-body-nocl")
+    assert (status, length) == (200, LARGE_SPLIT_SIZE)
+    assert seconds < inactivity_timeout - 0.5, f"the response took {seconds:.2f} s"
+
+    # Check that the test reached the window it is for: END_STREAM arrived during the hold.
+    origin.wait_for_output(r"^conn \d+ ended stream=\d+ path=/held-body-nocl$")
+    traffic = ats.traffic_out.read_text(errors="replace")
+    held = re.search(r"\(hold_txn_mutex\) \[(\d+)\] holding the transaction mutex", traffic)
+    assert held is not None, "the plugin never held the transaction mutex"
+    released = traffic.index(f"[{held[1]}] releasing the transaction mutex", held.end())
+    assert "Received DATA frame" in traffic[held.end() : released], "the body did not arrive while the plugin held the transaction"
+
+    paths.append("/ok-after")
+    assert get(ats, "/ok-after") == 200
+    assert_clean_origin_session(ats, origin, paths)
+
+    finish_origin(services, origin, stop)
+    ats.stop()
+    assert "Traceback" not in origin.output, origin.output
+    assert_clean_diags(ats)
+
+
+def test_h2_origin_end_stream_before_header_fails_at_once(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Fail a response at once when the origin ends the stream with an empty DATA frame and no header.
+
+    No header will come for the stream, so the transaction must not wait for the inactivity
+    timeout.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Runs the origin.
+    """
+    inactivity_timeout = 2
+    ats, origin, stop = start_origin(
+        ats_factory, services, **{"proxy.config.http.transaction_no_activity_timeout_out": inactivity_timeout}
+    )
+
+    assert get(ats, "/ok-before") == 200
+    status, _, seconds = get_timed(ats, "/end-no-header")
+    assert status == 502
+    assert seconds < inactivity_timeout - 0.5, f"the response took {seconds:.2f} s"
+    origin.wait_for_output(r"^conn \d+ ended stream=\d+ path=/end-no-header$")
+    assert get(ats, "/ok-after") == 200
+    assert metric(ats, "proxy.process.http2.stream_errors") == 0
+
+    finish_origin(services, origin, stop)
+    ats.stop()
+    assert "Traceback" not in origin.output, origin.output
+    error_log = ats.error_log.read_text(errors="replace")
+    assert "Server closed connection while reading response header." in error_log, error_log
     assert_clean_diags(ats)
