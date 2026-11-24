@@ -98,9 +98,9 @@ modification.
 ``load_order``
 --------------
 
-**Optional.** Integer. Provides explicit control over the order in which
-plugins are loaded and therefore the order in which they are chained for
-request processing.
+**Optional.** Integer, zero or greater. Provides explicit control over
+the order in which plugins are loaded and therefore the order in which
+they are chained for request processing.
 
 The loading rules are:
 

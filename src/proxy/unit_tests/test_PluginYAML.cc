@@ -345,6 +345,17 @@ TEST_CASE("parse_plugin_yaml - params with no value passes no arguments", "[plug
   CHECK(result.value[0].params.empty());
 }
 
+TEST_CASE("parse_plugin_yaml - negative load_order is a config error", "[plugin_yaml]")
+{
+  // A negative value is the internal "unset" marker, so it would load last.
+  TempYAML yaml("plugins:\n  - path: good.so\n  - path: first.so\n    load_order: -1\n");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("plugin entry #2: 'load_order' must not be negative") != std::string::npos);
+}
+
 TEST_CASE("parse_plugin_yaml - missing plugins key", "[plugin_yaml]")
 {
   TempYAML yaml(R"(

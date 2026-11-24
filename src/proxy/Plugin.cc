@@ -508,6 +508,11 @@ parse_plugin_yaml(const char *yaml_path)
       }
       if (auto n = node["load_order"]; n) {
         entry.load_order = n.as<int>();
+        // A negative value would read as unset and load last, not first.
+        if (entry.load_order < 0) {
+          result.errata.note("plugin entry #{}: 'load_order' must not be negative", seq_idx + 1);
+          return result;
+        }
       }
       // A params key with no value passes no arguments, like an empty list. Any
       // other value that is not a list would drop the plugin's arguments unseen.
