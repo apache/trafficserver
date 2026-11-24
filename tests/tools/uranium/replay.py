@@ -42,24 +42,18 @@ class ReplaySkip(RuntimeError):
 class ReplayTest:
     """Run one replay file as one independently reportable test item."""
 
-    def __init__(
-        self, spec: ReplaySpec, runtime: TestRuntime, node_name: str | None = None, *, sandbox_parent: Path | None = None
-    ) -> None:
+    def __init__(self, spec: ReplaySpec, runtime: TestRuntime, node_name: str | None = None) -> None:
         """Prepare service state without touching the scenario's sandbox.
 
         :param spec: Validated replay manifest and selected variant.
         :param runtime: Installed tools and shared session configuration.
         :param node_name: Pytest node identifier, defaulting to the file stem.
-        :param sandbox_parent: Native test sandbox containing embedded replays.
         """
 
         self.spec = spec
         self.runtime = runtime
         self.node_name = node_name or spec.path.stem
         self.sandbox = runtime.item_sandbox(self.node_name)
-        self._sandbox_parent = sandbox_parent
-        if sandbox_parent is not None:
-            self.sandbox = sandbox_parent / runtime.sandbox_name(self.node_name)
         # Every process the replay starts, in start order, so teardown can stop them in reverse.
         self.processes: list[ATS | ProcessService] = []
         self.ats = ATS.from_manifest(
@@ -88,7 +82,7 @@ class ReplayTest:
         reason = self.runtime.requirement_failure(self.spec.urtest.get("requires", {}))
         if reason:
             raise ReplaySkip(reason)
-        self.runtime.prepare_sandbox(self.sandbox, parent=self._sandbox_parent)
+        self.runtime.prepare_sandbox(self.sandbox)
 
         server = None
         client = None

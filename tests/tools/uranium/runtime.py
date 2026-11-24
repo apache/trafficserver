@@ -187,16 +187,15 @@ class TestRuntime:
         label = "__".join(parts[1:]) if len(parts) > 1 else node_name
         return re.sub(r"[^A-Za-z0-9_.\[\]-]+", "_", label).strip("_.-") or "test"
 
-    def prepare_sandbox(self, path: Path, *, parent: Path | None = None) -> None:
-        """Create an empty sandbox below its owning test or the session root.
+    def prepare_sandbox(self, path: Path) -> None:
+        """Create an empty sandbox directly below the session root.
 
-        :param path: Directory for this item or embedded replay.
-        :param parent: Owning native test directory for an embedded replay.
+        :param path: Directory for this test item.
         """
 
         resolved = path.resolve()
-        owner = self.sandbox_root if parent is None else parent.resolve()
-        if not owner.is_relative_to(self.sandbox_root) or resolved.parent != owner or resolved == self.sandbox_root:
+        owner = self.sandbox_root
+        if resolved.parent != owner or resolved == self.sandbox_root:
             raise RuntimeConfigError(f"Refusing to clean unsafe sandbox path: {resolved}")
         if len(os.fsencode(path.name)) > os.pathconf(owner, "PC_NAME_MAX"):
             raise RuntimeConfigError(f"Sandbox name exceeds the filesystem component limit: {path.name!r}")

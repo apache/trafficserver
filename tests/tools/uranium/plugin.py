@@ -326,32 +326,6 @@ def uranium_test_runtime(pytestconfig: pytest.Config) -> TestRuntime:
 
 
 @pytest.fixture
-def uranium_replay(procedural_context: ProceduralContext) -> Callable[[Path], None]:
-    """Return a helper that executes a replay file from a handwritten pytest test.
-
-    :param procedural_context: Owning native scenario and sandbox.
-    """
-
-    count = 0
-
-    def run(path: Path) -> None:
-        """Run variants in separate children without touching live sibling services.
-
-        :param path: Replay manifest selected by the native scenario.
-        """
-
-        nonlocal count
-        for spec in ReplaySpec.load_all(path):
-            count += 1
-            name = f"replay-{count}-{path.stem}"
-            if spec.variant_name:
-                name += f"-{spec.variant_name}"
-            ReplayTest(spec, procedural_context.runtime, name, sandbox_parent=procedural_context.run_directory).run()
-
-    return run
-
-
-@pytest.fixture
 def procedural_context(
     uranium_test_runtime: TestRuntime,
     request: pytest.FixtureRequest,

@@ -40,7 +40,6 @@ def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_af
     replay.runtime = Mock()
     replay.runtime.requirement_failure.return_value = None
     replay.sandbox = tmp_path
-    replay._sandbox_parent = tmp_path.parent
     server = replay._start_verifier_server.return_value
     order = Mock()
     order.attach_mock(replay._validate_background_processes, "validate")
@@ -51,7 +50,7 @@ def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_af
 
     ReplayTest.run(replay)
 
-    replay.runtime.prepare_sandbox.assert_called_once_with(tmp_path, parent=tmp_path.parent)
+    replay.runtime.prepare_sandbox.assert_called_once_with(tmp_path)
     expected = [call.validate(server)]
     if stop_after_client:
         expected.append(call.stop())

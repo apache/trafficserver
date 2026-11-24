@@ -43,7 +43,6 @@ from tools.uranium.services import (
     ServiceFactory,
     VerifierServer,
 )
-from tools.uranium.plugin import uranium_replay
 from tools.uranium.replay import ReplayTest
 
 
@@ -277,41 +276,6 @@ def test_port_probe_retries_only_occupied_ports(tmp_path: Path, monkeypatch: pyt
         with pytest.raises(RuntimeConfigError, match="127.0.0.1:10001"):
             runtime.allocate_port()
         assert len(attempted) == 1
-
-
-def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Give each embedded replay its own directory under the native test.
-
-    :param tmp_path: Isolated session root.
-    :param monkeypatch: Replace network execution with evidence creation.
-    """
-
-    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
-    (tmp_path / ".port-counter").write_text("10000")
-    manifest = tmp_path / "example.yaml"
-    manifest.write_text(
-        "urtest:\n  description: example\n  server: {}\n  client: {}\n  ats: {}\n  variants:\n    - name: one\n    - name: two\n"
-    )
-    context = ProceduralContext.create(runtime, "native-test", manifest)
-    live = context.run_directory / "live-service"
-    live.mkdir()
-    (live / "log").write_text("do not delete")
-
-    def run(replay: ReplayTest) -> None:
-        """Materialize the replay sandbox without starting network services.
-
-        :param replay: Replay carrying the fixture's ownership information.
-        """
-
-        runtime.prepare_sandbox(replay.sandbox, parent=replay._sandbox_parent)
-        (replay.sandbox / "result").write_text(replay.spec.variant_name)
-
-    monkeypatch.setattr(ReplayTest, "run", run)
-    invoke = uranium_replay.__wrapped__(context)
-    invoke(manifest)
-    invoke(manifest)
-    assert (live / "log").read_text() == "do not delete"
-    assert sorted(path.read_text() for path in context.run_directory.glob("replay-*/result")) == ["one", "one", "two", "two"]
 
 
 def test_long_names_allow_both_unix_sockets(tmp_path: Path) -> None:
