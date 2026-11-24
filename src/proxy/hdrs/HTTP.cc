@@ -59,6 +59,7 @@ c_str_view HTTP_METHOD_PURGE;
 c_str_view HTTP_METHOD_PUT;
 c_str_view HTTP_METHOD_TRACE;
 c_str_view HTTP_METHOD_PUSH;
+c_str_view HTTP_METHOD_QUERY;
 
 int HTTP_WKSIDX_CONNECT;
 int HTTP_WKSIDX_DELETE;
@@ -70,6 +71,7 @@ int HTTP_WKSIDX_PURGE;
 int HTTP_WKSIDX_PUT;
 int HTTP_WKSIDX_TRACE;
 int HTTP_WKSIDX_PUSH;
+int HTTP_WKSIDX_QUERY;
 int HTTP_WKSIDX_METHODS_CNT = 0;
 
 c_str_view HTTP_VALUE_BYTES;
@@ -154,6 +156,7 @@ http_init()
     HTTP_METHOD_PUT     = hdrtoken_string_to_wks_sv("PUT");
     HTTP_METHOD_TRACE   = hdrtoken_string_to_wks_sv("TRACE");
     HTTP_METHOD_PUSH    = hdrtoken_string_to_wks_sv("PUSH");
+    HTTP_METHOD_QUERY   = hdrtoken_string_to_wks_sv("QUERY");
 
     // HTTP methods index calculation. Don't forget to count them!
     // Don't change the order of calculation! Each index has related bitmask (see http quick filter)
@@ -176,6 +179,8 @@ http_init()
     HTTP_WKSIDX_TRACE = hdrtoken_wks_to_index(HTTP_METHOD_TRACE.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
     HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH.c_str());
+    HTTP_WKSIDX_METHODS_CNT++;
+    HTTP_WKSIDX_QUERY = hdrtoken_wks_to_index(HTTP_METHOD_QUERY.c_str());
     HTTP_WKSIDX_METHODS_CNT++;
 
     HTTP_VALUE_BYTES                = hdrtoken_string_to_wks_sv("bytes");

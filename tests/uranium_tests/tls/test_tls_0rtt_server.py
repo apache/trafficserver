@@ -123,8 +123,10 @@ def configure_client_files(run_directory: Path) -> Path:
     for filename in (
         "early_h1_get.txt",
         "early_h1_post.txt",
+        "early_h1_query.txt",
         "early_h2_get.txt",
         "early_h2_post.txt",
+        "early_h2_query.txt",
         "early_h2_multi1.txt",
         "early_h2_multi2.txt",
     ):
@@ -219,6 +221,17 @@ def verify_enabled_policy(*, _client_directory: Path, _enabled: ATS) -> None:
     )
     assert_output(
         run_client(_enabled, "h2", "post", _client_directory=_client_directory),
+        contains=(":status 425",),
+        excludes=("curl test", "early data accepted"),
+    )
+    # QUERY is safe, but its content is its parameters, and allow_early_data_params is 0.
+    assert_output(
+        run_client(_enabled, "h1", "query", _client_directory=_client_directory),
+        contains=("HTTP/1.1 425 Too Early",),
+        excludes=("curl test", "early data accepted"),
+    )
+    assert_output(
+        run_client(_enabled, "h2", "query", _client_directory=_client_directory),
         contains=(":status 425",),
         excludes=("curl test", "early data accepted"),
     )

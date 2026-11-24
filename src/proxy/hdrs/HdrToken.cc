@@ -105,7 +105,7 @@ constexpr std::string_view _hdrtoken_strs[] = {
   "rtsp", "mmsu", "mmst", "mms", "wss", "ws",
 
   // HTTP methods
-  "CONNECT", "DELETE", "GET", "POST", "HEAD", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH",
+  "CONNECT", "DELETE", "GET", "POST", "HEAD", "OPTIONS", "PURGE", "PUT", "TRACE", "PUSH", "QUERY",
 
   // Header extensions
   "X-ID", "X-Forwarded-For", "TE", "Strict-Transport-Security", "100-continue",
@@ -160,6 +160,7 @@ constexpr HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"PUT",                  HdrTokenType::METHOD        },
   {"TRACE",                HdrTokenType::METHOD        },
   {"PUSH",                 HdrTokenType::METHOD        },
+  {"QUERY",                HdrTokenType::METHOD        },
 
   {"max-age",              HdrTokenType::CACHE_CONTROL },
   {"max-stale",            HdrTokenType::CACHE_CONTROL },
