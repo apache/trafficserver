@@ -370,8 +370,9 @@ DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_wri
 
   format_writer.print("{}", format_string);
 
-  format_writer.restore(2);                  // restore the space for required termination.
-  if (format_writer.view().back() != '\n') { // safe because always some chars in the buffer.
+  format_writer.restore(2); // restore the space for required termination.
+  // The view is empty when the writer had no room beyond the 2 reserved bytes.
+  if (!format_writer.view().ends_with('\n')) {
     format_writer.write('\n');
   }
   format_writer.write('\0');

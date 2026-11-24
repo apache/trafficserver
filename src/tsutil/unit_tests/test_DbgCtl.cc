@@ -116,3 +116,31 @@ TEST_CASE("generate_format_string truncates a long format and still terminates i
   REQUIRE(body.size() < fmt.size());
   REQUIRE(body == std::string_view{fmt}.substr(0, body.size()));
 }
+
+TEST_CASE("generate_format_string terminates a writer with only 2 bytes of room", "[DbgCtl]")
+{
+  swoc::LocalBufferWriter<1024> w;
+
+  SECTION("empty writer")
+  {
+    // Nothing fits ahead of the termination, so the view is empty when the
+    // newline check runs.
+    w.restrict(w.capacity() - 2);
+
+    REQUIRE_NOTHROW(DebugInterface::generate_format_string(w, nullptr, DL_Diag, nullptr, SHOW_LOCATION_NONE, BRACES.data()));
+
+    REQUIRE_FALSE(w.error());
+    REQUIRE(w.view() == std::string_view{"\n\0", 2});
+  }
+  SECTION("writer with earlier output")
+  {
+    constexpr std::string_view EARLIER = "earlier";
+    w.write(EARLIER);
+    w.restrict(w.remaining() - 2);
+
+    REQUIRE_NOTHROW(DebugInterface::generate_format_string(w, nullptr, DL_Diag, nullptr, SHOW_LOCATION_NONE, BRACES.data()));
+
+    REQUIRE_FALSE(w.error());
+    REQUIRE(w.view() == std::string{EARLIER} + "\n" + '\0');
+  }
+}
