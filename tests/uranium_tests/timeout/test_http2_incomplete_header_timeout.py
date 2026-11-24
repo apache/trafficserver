@@ -53,8 +53,9 @@ class IncompleteHeaderCase:
 
 CASES = (
     IncompleteHeaderCase("times-out", 3, "/incomplete", "incomplete_header", min_elapsed=2.5, max_elapsed=7, expect_timeout=True),
-    # A poll event on every ET_NET thread, as in a QUIC build, runs the FINI the
-    # timeout schedules before the net handler writes the GOAWAY.
+    # A poll event on every ET_NET thread, as in a QUIC build, can run the FINI
+    # the timeout schedules before the net handler writes the GOAWAY. The FINI
+    # must then wait for the GOAWAY to be written before it closes.
     IncompleteHeaderCase(
         "times-out-poll-event",
         3,
@@ -147,6 +148,10 @@ def verify(result: CommandResult, *, _ats: ATS, _case: IncompleteHeaderCase) -> 
         wait_for_file_lines(_ats.traffic_out, r"scheduled a poll event on [1-9][0-9]* ET_NET threads", 1)
     timeout_error = "ERROR: HTTP/2 stream error timeout"
     if _case.expect_timeout:
+        if _case.poll_event:
+            # Prove the FINI took the wait branch and the GOAWAY left in time.
+            wait_for_file_lines(_ats.traffic_out, r"waiting for queued frames to be written before closing", 1)
+            assert "bytes still unsent" not in _ats.traffic_out.read_text(errors="replace")
         assert f"GOAWAY error_code={HTTP2_ERROR_COMPRESSION_ERROR} last_stream_id=1" in result.stdout
         wait_for_file_lines(_ats.traffic_out, f"timeout event={VC_EVENT_ACTIVE_TIMEOUT}", 1)
         wait_for_file_lines(_ats.diags_log, timeout_error, 1)
