@@ -217,6 +217,12 @@ bad_port_error(std::string const &fqdn, std::string const &destination)
 }
 
 std::string
+bad_group_error(std::string const &fqdn, std::string const &destination)
+{
+  return "fqdn \"" + fqdn + "\": bad match group in tunnel destination \"" + destination + "\"";
+}
+
+std::string
 no_host_error(std::string const &fqdn, std::string const &destination)
 {
   return "fqdn \"" + fqdn + "\": no host in tunnel destination \"" + destination + "\"";
@@ -243,6 +249,7 @@ TEST_CASE("YamlSNIConfig accepts a tunnel destination port filled in from a wild
     {"*.example.com", "backend.example.com:4$1"   },
     {"*.example.*",   "backend.example.com:$2"    },
     {"*.example.com", "[::1]:$1"                  },
+    {"*.example.*",   "$1.backend.$2:443"         },
   }));
 
   CAPTURE(key, fqdn, destination);
@@ -292,6 +299,22 @@ TEST_CASE("YamlSNIConfig rejects a tunnel destination port the tunnel would misr
 
   CAPTURE(key, fqdn, destination);
   CHECK(load_route(fqdn, key, destination).find(bad_port_error(fqdn, destination)) != std::string::npos);
+}
+
+TEST_CASE("YamlSNIConfig rejects a match group in the host that the fqdn does not capture")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  auto [fqdn, destination] = GENERATE(table<std::string, std::string>({
+    {"route.example.com", "$1.backend.example.com:443"},
+    {"*.example.com",     "$0.backend.example.com:443"},
+    {"*.example.com",     "$2.backend.example.com:443"},
+    {"*.example.com",     "$10.backend.example.com"   },
+    {"*.example.com",     "$1x.backend.example.com"   },
+    {"*.example.com",     "$2"                        },
+  }));
+
+  CAPTURE(key, fqdn, destination);
+  CHECK(load_route(fqdn, key, destination).find(bad_group_error(fqdn, destination)) != std::string::npos);
 }
 
 TEST_CASE("YamlSNIConfig rejects a tunnel destination with no host")

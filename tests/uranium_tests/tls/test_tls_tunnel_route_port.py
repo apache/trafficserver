@@ -105,8 +105,9 @@ def test_tunnel_route_bad_port_on_reload_keeps_old_config(ats_factory: ATSFactor
     ats.start()
     assert "This is a reply" in tunnel_reply(services, "client-before", _ats=ats, _forward_port=forward_port)
 
-    # Port 1 rather than the working port with text after it: a reload that took
-    # this route would read the leading digits and keep tunnelling to the old port.
+    # Port 1x rather than the working port with text after it: a reload that read
+    # only the leading digits of the working port would still tunnel there, and
+    # the last check could not tell that the reload had been taken.
     (ats.config_directory / "sni.yaml").write_text("sni:\n- fqdn: bar.com\n  forward_route: localhost:1x\n")
     result = ats.traffic_ctl("config", "reload", "-m", "-t", "bad-tunnel-port", "-r", "0.5", "-T", "30s")
     assert result.returncode == 2, result.output
@@ -175,12 +176,11 @@ def handshake(services: ServiceFactory, name: str, sni: str, *, _ats: ATS) -> in
     return client.run(timeout=30).returncode
 
 
-def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """A destination filled in from the SNI is used only if its port is a whole port number and it keeps its shape.
+def start_match_group_ats(ats_factory: ATSFactory, services: ServiceFactory) -> tuple[ATS, int]:
+    """Start an origin and a Traffic Server with the match group routes, and return ats and the origin's port.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
-    :param curl: Transport-aware curl command runner.
     """
 
     origin = services.origin("origin")
@@ -191,29 +191,74 @@ def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: Servic
     ats = configure_match_group_ats(ats_factory, _origin=origin)
     origin.start()
     ats.start()
+    return ats, origin.http_port
 
-    port = origin.http_port
+
+# Labels that fill in "127.0.0.1:$1" with something that is not a whole port
+# number, from the origin's port.
+BAD_PORT_LABELS = {
+    "trailing_text": lambda port: f"{port}x",
+    "above_65535": lambda port: str(port + 65536),
+    "leading_zero": lambda port: "0" + format(port, "o"),
+    "name": lambda port: "https",
+}
+
+
+@pytest.mark.parametrize("label", BAD_PORT_LABELS.values(), ids=BAD_PORT_LABELS.keys())
+def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, label) -> None:
+    """A port filled in from the SNI is used only if it is a whole port number from 1 to 65535.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    :param label: Makes the first SNI label from the origin's port.
+    """
+
+    ats, port = start_match_group_ats(ats_factory, services)
     returncode, output = forward_request(f"{port}.port.example", _ats=ats, _curl=curl)
     assert returncode == 0 and "forwarded ok" in output, output
 
-    # A filled-in port must be a whole port number: the handshake fails for
-    # text after the digits, a port above 65535, a leading zero and a name.
-    for label in (f"{port}x", str(port + 65536), "0" + format(port, "o"), "https"):
-        returncode, output = forward_request(f"{label}.port.example", _ats=ats, _curl=curl)
-        assert returncode == 35, f"{label}: {output}"
-        assert "forwarded ok" not in output, f"{label}: {output}"
+    bad = label(port)
+    returncode, output = forward_request(f"{bad}.port.example", _ats=ats, _curl=curl)
+    assert returncode == 35, f"{bad}: {output}"
+    assert "forwarded ok" not in output, f"{bad}: {output}"
     assert ats.is_running
 
-    # A match group must keep the shape the destination was configured with:
-    # "1:2" leaves "127.0.0.1:$1" with no port, and "127.0.0.1:<port>" gives
-    # "$1" a port it was configured without. The handshake fails for both, and
-    # goes on for a port that keeps the shape.
-    assert handshake(services, "shape-kept", f"{port}.port.example", _ats=ats) == 0
-    assert handshake(services, "port-dropped", "1:2.port.example", _ats=ats) == 1
-    assert handshake(services, "port-gained", f"127.0.0.1:{port}.host.example", _ats=ats) == 1
+
+# A match group must keep the shape the destination was configured with: "1:2"
+# leaves "127.0.0.1:$1" with no port, and "127.0.0.1:<port>" gives "$1" a port
+# it was configured without. Each SNI is made from the origin's port, with the
+# handshake's expected openssl exit status.
+SHAPE_CASES = {
+    "port_kept": (lambda port: f"{port}.port.example", 0),
+    "port_dropped": (lambda port: "1:2.port.example", 1),
+    "port_gained": (lambda port: f"127.0.0.1:{port}.host.example", 1),
+}
+
+
+@pytest.mark.parametrize("sni,returncode", SHAPE_CASES.values(), ids=SHAPE_CASES.keys())
+def test_tunnel_route_match_group_keeps_shape(ats_factory: ATSFactory, services: ServiceFactory, sni, returncode: int) -> None:
+    """The handshake fails when a match group changes whether the destination names a port.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param sni: Makes the server name from the origin's port.
+    :param returncode: The openssl exit status the handshake must give.
+    """
+
+    ats, port = start_match_group_ats(ats_factory, services)
+    assert handshake(services, "client", sni(port), _ats=ats) == returncode
     assert ats.is_running
 
-    # A connection without a Proxy Protocol header has no port to fill in, so
-    # the tunnel falls back to the inbound port.
+
+def test_tunnel_route_proxy_protocol_port_without_header(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A connection without a Proxy Protocol header has no port to fill in, so the tunnel falls back to the inbound port.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Transport-aware curl command runner.
+    """
+
+    ats, _ = start_match_group_ats(ats_factory, services)
     forward_request("pp.example", _ats=ats, _curl=curl)
     wait_for_file_lines(ats.traffic_out, rf"CONNECT tunnel://127\.0\.0\.1:{ats.https_port} HTTP/1\.1", 1)
