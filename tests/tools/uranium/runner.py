@@ -28,7 +28,12 @@ import stat
 import subprocess
 import sys
 
-DEFAULT_IMAGE = "ci.trafficserver.apache.org/ats/fedora:44"
+# The official urtest image, named in one place so that an OS upgrade is a
+# one-line change. Its "<distro>:<version>" tag also identifies the
+# os-release that marks a host as that official environment.
+IMAGE_FILE = Path(__file__).resolve().parents[2] / "urtest_docker_image.txt"
+DEFAULT_IMAGE = IMAGE_FILE.read_text().strip()
+OFFICIAL_OS_ID, _, OFFICIAL_OS_VERSION = DEFAULT_IMAGE.rsplit("/", 1)[-1].partition(":")
 CONTAINER_MARKER = "ATS_URTEST_IN_CONTAINER"
 
 
@@ -203,7 +208,8 @@ urtest.sh options (consumed before pytest; these spellings take precedence):
   --no-run-in-docker            Alias for --no-run-in-container.
 
 Container execution is the default unless urtest.sh detects that it is already
-running in a container or the Fedora 44 test environment. The launcher prefers
+running in a container or the {DEFAULT_IMAGE}
+environment. The launcher prefers
 Apple container on macOS, Podman on Linux, and Docker as a fallback.
 Any argument not consumed above is passed to pytest.
 Common pytest options include -k for selection, -n for parallel workers, and
@@ -237,23 +243,17 @@ def choose_container_mode(arguments: Sequence[str], root: Path = Path("/")) -> t
 
     if requested is not None:
         return requested, remaining
-    return not (is_container(root) or is_fedora_44(root)), remaining
+    return not (is_container(root) or is_official_test_container(root)), remaining
 
 
 def is_official_test_container(root: Path = Path("/")) -> bool:
-    """Recognize the Fedora 44 test environment across container runtimes."""
-
-    return is_fedora_44(root)
-
-
-def is_fedora_44(root: Path = Path("/")) -> bool:
-    """Check whether a filesystem root identifies Fedora 44.
+    """Recognize the official image's OS across container runtimes.
 
     :param root: Filesystem root containing ``etc/os-release``.
     """
 
     release = read_os_release(root / "etc" / "os-release")
-    return release.get("ID") == "fedora" and release.get("VERSION_ID") == "44"
+    return release.get("ID") == OFFICIAL_OS_ID and release.get("VERSION_ID") == OFFICIAL_OS_VERSION
 
 
 def is_container(root: Path = Path("/")) -> bool:
@@ -318,7 +318,7 @@ def launch_container(source_root: Path, arguments: Sequence[str]) -> int:
     if runtime is None:
         raise RunnerError(
             "A supported container runtime is required by the default execution mode. Install Apple container "
-            "on macOS, Podman or Docker, run inside the Fedora 44 test environment, or pass "
+            f"on macOS, Podman or Docker, run inside the {DEFAULT_IMAGE} environment, or pass "
             "--no-run-in-container to use the current environment."
         )
     runtime_name, executable = runtime

@@ -49,11 +49,10 @@ cmake -B build -DENABLE_URTEST=ON -DURTEST_OPTIONS="-n 4 -k cache"
 ### The `urtest.sh` entry point
 
 `tests/urtest.sh` is the portable source-tree entry point. On a normal host it
-starts the official `ci.trafficserver.apache.org/ats/fedora:44` image with
-Apple container on macOS, Podman on Linux, or Docker as a fallback. It builds
-incrementally in `build-urtest-container` and runs the tests there. In a
-Fedora 44 test environment it runs directly, which is also the Jenkins CI
-behavior.
+starts the official image named in `tests/urtest_docker_image.txt` with Apple
+container on macOS, Podman on Linux, or Docker as a fallback. It builds
+incrementally in `build-urtest-container` and runs the tests there. On that
+image's OS release it runs directly, which is also the Jenkins CI behavior.
 
 Force either mode when needed:
 

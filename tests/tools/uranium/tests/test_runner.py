@@ -22,6 +22,8 @@ import subprocess
 import pytest
 
 from tools.uranium.runner import (
+    OFFICIAL_OS_ID,
+    OFFICIAL_OS_VERSION,
     RunnerError,
     _cmake_cache_value,
     _copy_sandbox_artifacts,
@@ -53,18 +55,18 @@ def test_conflicting_container_modes_fail() -> None:
         choose_container_mode(["--run-in-container", "--no-run-in-docker"])
 
 
-def test_official_environment_recognizes_fedora_44_without_runtime_marker(tmp_path: Path) -> None:
+def test_official_environment_recognizes_the_image_os_without_runtime_marker(tmp_path: Path) -> None:
     """Recognize Apple containers, which do not add an OCI marker.
 
-    :param tmp_path: Stand-in filesystem root for the Fedora release file.
+    :param tmp_path: Stand-in filesystem root for the os-release file.
     """
 
     os_release = tmp_path / "etc" / "os-release"
     os_release.parent.mkdir()
-    os_release.write_text('ID="fedora"\nVERSION_ID="44"\n')
+    os_release.write_text(f'ID="{OFFICIAL_OS_ID}"\nVERSION_ID="{OFFICIAL_OS_VERSION}"\n')
     assert is_official_test_container(tmp_path)
 
-    os_release.write_text('ID="fedora"\nVERSION_ID="45"\n')
+    os_release.write_text(f'ID="{OFFICIAL_OS_ID}"\nVERSION_ID="{OFFICIAL_OS_VERSION}0"\n')
     assert not is_official_test_container(tmp_path)
 
 
@@ -78,15 +80,15 @@ def test_any_container_runs_directly_by_default(tmp_path: Path) -> None:
     assert choose_container_mode(["-q"], tmp_path) == (False, ["-q"])
 
 
-def test_fedora_44_runs_directly_without_a_runtime_marker(tmp_path: Path) -> None:
+def test_official_image_os_runs_directly_without_a_runtime_marker(tmp_path: Path) -> None:
     """Avoid nesting from an Apple container running the official image.
 
-    :param tmp_path: Stand-in filesystem root for the Fedora release file.
+    :param tmp_path: Stand-in filesystem root for the os-release file.
     """
 
     os_release = tmp_path / "etc" / "os-release"
     os_release.parent.mkdir()
-    os_release.write_text('ID="fedora"\nVERSION_ID="44"\n')
+    os_release.write_text(f'ID="{OFFICIAL_OS_ID}"\nVERSION_ID="{OFFICIAL_OS_VERSION}"\n')
 
     assert choose_container_mode(["-q"], tmp_path) == (False, ["-q"])
 
