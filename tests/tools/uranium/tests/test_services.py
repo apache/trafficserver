@@ -206,20 +206,31 @@ def test_sandbox_rejects_overlong_filesystem_component(tmp_path: Path) -> None:
         runtime.prepare_sandbox(path)
 
 
-@pytest.mark.parametrize("content", [None, "", "garbage", "9999", "30000"])
-def test_port_counter_rejects_missing_corrupt_or_out_of_range_state(tmp_path: Path, content: str | None) -> None:
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (None, "Missing port counter"),
+        ("", "Invalid port counter"),
+        ("garbage", "Invalid port counter"),
+        ("9999", "Invalid port counter"),
+        ("30000", "Invalid port counter"),
+    ],
+)
+def test_port_counter_rejects_missing_corrupt_or_out_of_range_state(tmp_path: Path, content: str | None, message: str) -> None:
     """Refuse to guess a restart point when the session counter is missing, corrupt or out of range.
 
     :param tmp_path: Isolated session root.
     :param content: Counter contents, or None to leave the file absent.
+    :param message: Start of the expected error.
     """
 
     runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
     counter = tmp_path / ".port-counter"
     if content is not None:
         counter.write_text(content)
-    with pytest.raises(RuntimeConfigError, match=str(counter)):
+    with pytest.raises(RuntimeConfigError, match=message) as error:
         runtime.allocate_port()
+    assert str(counter) in str(error.value)
 
 
 @pytest.mark.parametrize("error_number", [errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOBUFS])
@@ -270,6 +281,35 @@ def test_port_counter_wraps_after_the_last_port(tmp_path: Path, monkeypatch: pyt
     assert counter.read_text() == "10002"
 
 
+def test_port_counter_skips_busy_ports_across_the_wrap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep skipping occupied ports when the search wraps from the top of the range to the bottom.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so only chosen ports read as occupied.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    counter = tmp_path / ".port-counter"
+    counter.write_text("29998")
+    attempted = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Report 29999 and 10001 as already in use.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        attempted.append(address[1])
+        if address[1] in (29999, 10001):
+            raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    assert runtime.allocate_port() == 10002
+    assert attempted == [29999, 10001, 10002]
+    assert counter.read_text() == "10002"
+
+
 def test_port_counter_reports_exhaustion_when_every_port_is_occupied(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Fail after one full pass instead of cycling forever when no port in the range is free.
 
@@ -294,8 +334,8 @@ def test_port_counter_reports_exhaustion_when_every_port_is_occupied(tmp_path: P
     monkeypatch.setattr(socket.socket, "bind", bind)
     with pytest.raises(RuntimeConfigError, match="Exhausted available test ports"):
         runtime.allocate_port()
-    assert len(attempted) == 19999
-    assert sorted(attempted) == list(range(10001, 30000))
+    # One pass in order: up to the top, wrap, then back to the counter's own value.
+    assert attempted == list(range(20001, 30000)) + list(range(10001, 20001))
 
 
 def test_dns_reports_a_udp_probe_error_instead_of_retrying(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
