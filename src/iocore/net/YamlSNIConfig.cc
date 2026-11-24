@@ -29,6 +29,7 @@
 #include <exception>
 #include <cstdint>
 #include <algorithm>
+#include <cctype>
 
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
@@ -90,13 +91,13 @@ is_port_template(std::string_view text)
   return text == TunnelDestination::MAP_WITH_RECV_PORT_STR || text == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR;
 }
 
-// A port is a number from 1 to 65535, one of the port templates, or a match
-// group such as $1, optionally after a number that the group continues. A
-// match group is filled in from the fqdn for each connection, so its value is
-// checked then, but it must name a group the fqdn captures. In the port the
-// group number runs to the end of the destination, which is how
-// TunnelDestination::replace_match_groups reads it, and it is one digit
-// because no fqdn captures ten groups.
+// A port is a number from 1 to 65535 with no leading zero, one of the port
+// templates, or a match group such as $1, optionally after such a number that
+// the group continues. A match group is filled in from the server name for
+// each connection, so its value is checked then, but it must name a group the
+// fqdn captures. In the port the group number runs to the end of the
+// destination, which is how TunnelDestination::replace_match_groups reads it,
+// and it is one digit because no fqdn captures ten groups.
 bool
 is_valid_tunnel_port(std::string_view port, size_t groups)
 {
@@ -110,6 +111,26 @@ is_valid_tunnel_port(std::string_view port, size_t groups)
            static_cast<size_t>(group.front() - '0') <= groups;
   }
   return TLSTunnelSupport::parse_port(port).has_value();
+}
+
+// Whether each match group in a destination, a '$' and a digit, names a group
+// the fqdn captures. TunnelDestination::replace_match_groups reads the group
+// number up to the next '.' or ':', and leaves anything it cannot fill in as
+// written, so the number must be one digit from 1 to the group count.
+bool
+is_valid_match_groups(std::string_view destination, size_t groups)
+{
+  for (auto pos = destination.find('$'); pos != std::string_view::npos; pos = destination.find('$', pos + 1)) {
+    auto const rest = destination.substr(pos + 1);
+    if (rest.empty() || !std::isdigit(static_cast<unsigned char>(rest.front()))) {
+      continue;
+    }
+    auto const number = rest.substr(0, rest.find_first_of(".:"));
+    if (number.size() != 1 || number.front() < '1' || static_cast<size_t>(number.front() - '0') > groups) {
+      return false;
+    }
+  }
+  return true;
 }
 
 size_t
@@ -128,19 +149,25 @@ void
 check_tunnel_port(const YAML::Node &route, const std::string &fqdn, const std::string &destination)
 {
   auto const authority = TLSTunnelSupport::split_destination(destination);
+
   if (authority && authority->host.empty()) {
     throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": no host in tunnel destination \"" + destination + "\"");
   }
   // TunnelDestination fills a port template in by putting the port in place of the template and
   // everything after it, so a template reads as written only when it is the whole port.
-  bool const template_port = authority && authority->port && is_port_template(*authority->port);
+  bool const is_template_port = authority && authority->port && is_port_template(*authority->port);
   if (!authority || (authority->port && !is_valid_tunnel_port(*authority->port, match_group_count(fqdn))) ||
-      port_template_count(destination) != (template_port ? 1 : 0)) {
+      port_template_count(destination) != (is_template_port ? 1 : 0)) {
     throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination +
                                                 "\": expected a number from 1 to 65535 with no leading zero, a match group such "
                                                 "as $1 that the fqdn captures, " +
                                                 std::string(TunnelDestination::MAP_WITH_RECV_PORT_STR) + " or " +
                                                 std::string(TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR));
+  }
+  if (auto const groups = match_group_count(fqdn); !is_valid_match_groups(destination, groups)) {
+    throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad match group in tunnel destination \"" + destination +
+                                                "\": the fqdn captures " + std::to_string(groups) +
+                                                (groups == 1 ? " match group" : " match groups"));
   }
 }
 

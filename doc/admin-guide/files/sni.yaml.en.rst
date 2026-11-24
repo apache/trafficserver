@@ -399,13 +399,14 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    The destination must name a host. If it names a port, the port must be a number from
                                                    1 to 65535 with no leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``,
                                                    or a match group such as ``$1``. Digits before a match group must themselves be such a
-                                                   number, so ``4$1`` is accepted but ``0$1`` and ``70000$1`` are not. A match group in
-                                                   the port must name a ``*`` in a wildcard ``fqdn``. A port template must be the whole
+                                                   number, so ``4$1`` is accepted but ``0$1`` and ``70000$1`` are not. A match group, in
+                                                   the host or the port, is ``$`` and one digit that names a ``*`` in a wildcard
+                                                   ``fqdn``, such as ``$1`` for ``*.example.com``. A port template must be the whole
                                                    port, and cannot appear anywhere else in the destination. An IPv6 address with a port
                                                    goes in brackets, with the port after ``]:``, such as ``[::1]:443``. Any other
                                                    destination, such as ``:443``, ``backend:443x``, ``backend:0443``,
-                                                   ``backend:99999``, ``backend{inbound_local_port}`` or ``[::1]443``, stops |TS| at
-                                                   startup. On a reload of :file:`sni.yaml` it fails the reload, and |TS| keeps the
+                                                   ``backend:99999``, ``backend{inbound_local_port}``, ``[::1]443``, or ``$2.backend``
+                                                   for ``*.example.com``, stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the reload, and |TS| keeps the
                                                    previous configuration.
 
                                                    A destination filled in from a match group is checked for each connection. It must
@@ -425,8 +426,8 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    intentionally tunnel to one of those ranges, add an explicit outbound allow rule
                                                    before the default deny rule.
 
-forward_route                            Inbound   Destination as an FQDN and port, separated by a colon ``:``. The port follows
-                                                   the same rules as for ``tunnel_route``.
+forward_route                            Inbound   Destination as an FQDN and port, separated by a colon ``:``. The destination
+                                                   follows the same rules as for ``tunnel_route``.
 
                                                    This is similar to tunnel_route, but it terminates the TLS connection and forwards the
                                                    decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not
@@ -434,8 +435,8 @@ forward_route                            Inbound   Destination as an FQDN and po
                                                    The upstream destination is subject to outbound :file:`ip_allow.yaml` policy before
                                                    |TS| opens the connection.
 
-partial_blind_route                      Inbound   Destination as an FQDN and port, separated by a colon ``:``. The port follows
-                                                   the same rules as for ``tunnel_route``.
+partial_blind_route                      Inbound   Destination as an FQDN and port, separated by a colon ``:``. The destination
+                                                   follows the same rules as for ``tunnel_route``.
 
                                                    This is similar to forward_route in that |TS| terminates the incoming TLS connection.
                                                    In addition partial_blind_route creates a new TLS connection to the specified origin.

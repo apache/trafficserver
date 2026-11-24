@@ -223,6 +223,7 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
       // A capture from the SNI can hold a colon or a bracket, so filling it in could add a port
       // the destination was configured without, or take away the one it was configured with.
       auto const shape = fnArrIndex == OpId::MATCH_GROUPS ? names_port(fixed_dst) : std::nullopt;
+
       // Dispatch to the correct tunnel destination port function.
       fixed_dst        = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, has_dynamic_port);
       port_is_dynamic |= has_dynamic_port;
@@ -232,8 +233,9 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
         return SSL_TLSEXT_ERR_ALERT_FATAL;
       }
     }
-    // The sni.yaml loader checks a port written in the destination, but not one a match group
-    // fills in from the SNI, which the client chooses.
+    // The sni.yaml loader checks the host and port written in the destination, but not what a
+    // match group fills in from the SNI, which the client chooses. This refuses a filled-in
+    // destination with an empty host as well as one whose port is not a port.
     if (!tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm)) {
       Dbg(dbg_ctl_ssl_sni, "Refusing fqdn [%s]: destination [%s], configured [%s], is not usable", servername, fixed_dst.c_str(),
           destination.c_str());
@@ -306,7 +308,7 @@ TunnelDestination::replace_match_groups(std::string_view dst, const ActionItem::
         continue;
       }
       const int group_index = swoc::svtoi(number_str);
-      if ((group_index - 1) < static_cast<int>(groups.size())) {
+      if (group_index >= 1 && (group_index - 1) < static_cast<int>(groups.size())) {
         // place the captured group.
         real_dst += groups[group_index - 1];
         if (is_writing_port) {
