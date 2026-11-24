@@ -278,9 +278,19 @@ StripeSM::handle_dir_read(int event, void *data)
     clear_dir_aio();
     return EVENT_DONE;
   }
+  const off_t data_end = skip + len;
+
+  if (directory.header->write_pos < start || directory.header->write_pos > data_end || directory.header->last_write_pos < start ||
+      directory.header->last_write_pos > data_end || directory.header->agg_pos < start || directory.header->agg_pos > data_end) {
+    Warning("write position outside the stripe in cache directory for '%s', clearing", hash_text.get());
+    clear_dir_aio();
+    return EVENT_DONE;
+  }
   // A directory torn by a crash can pass the magic and sync-serial checks yet hold links recovery cannot clean safely.
-  if (int cleared = directory.clear_corrupt_segments(); cleared > 0) {
-    Warning("cleared %d of %d cache directory segments with corrupt links on '%s'", cleared, directory.segments, hash_text.get());
+  // CacheVC::handleRead() does not bound an entry offset, so an offset past the stripe gives a read past the stripe.
+  if (int cleared = directory.clear_corrupt_segments((data_end - start + CACHE_BLOCK_SIZE - 1) / CACHE_BLOCK_SIZE); cleared > 0) {
+    Warning("cleared %d of %d cache directory segments with corrupt links or offsets on '%s'", cleared, directory.segments,
+            hash_text.get());
   }
   CHECK_DIR(this);
 
