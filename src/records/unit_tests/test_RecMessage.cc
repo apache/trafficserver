@@ -369,3 +369,35 @@ TEST_CASE("RecMessageUnmarshalNext rejects a misaligned element", "[librecords][
   ats_free(in);
   std::filesystem::remove(path);
 }
+
+TEST_CASE("RecMessageUnmarshalNext rejects bad element magic without asserting", "[librecords][RecMessage]")
+{
+  auto          path = snap_path("magic");
+  RecMessageItr itr;
+  RecRecord    *got = nullptr;
+
+  SECTION("in the first element")
+  {
+    RecMessage *msg = marshal_records(1);
+
+    first_element(msg)->magic = ~REC_MESSAGE_ELE_MAGIC;
+
+    RecMessage *in = write_and_read(msg, path);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+  SECTION("in a later element")
+  {
+    RecMessage *msg    = marshal_records(2);
+    auto       *second = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + first_element(msg)->o_next);
+
+    second->magic = ~REC_MESSAGE_ELE_MAGIC;
+
+    RecMessage *in = write_and_read(msg, path);
+    REQUIRE(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_OKAY);
+    CHECK(RecMessageUnmarshalNext(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
+
+  std::filesystem::remove(path);
+}

@@ -260,8 +260,6 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
     itr->next    += 1;
   }
 
-  ink_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);
-
   // If the file is corrupt, ignore the rest of the file.
   if (eh->magic != REC_MESSAGE_ELE_MAGIC) {
     return corrupt("bad element magic");
