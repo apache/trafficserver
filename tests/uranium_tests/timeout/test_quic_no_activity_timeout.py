@@ -35,11 +35,17 @@ from tools.uranium.services import (
 TEST_DIRECTORY = Path(__file__).parent
 H3_IDLE_CLIENT = TEST_DIRECTORY.parent / "h3" / "py_h3_client" / "h3_idle_client.py"
 
-# How long the client stays silent after its first response, in seconds.
+# How long the client stays silent after its first response, or after the
+# handshake when the case sends no request, in seconds.
 QUIET_SECONDS = 5
 
 # Allowance for qlog timestamps when comparing a gap to a timeout, in milliseconds.
 QLOG_SLACK_MS = 50
+
+# How late after the timeout the idle close may come, in milliseconds. The
+# client stays silent until its quiet period ends, so nothing can legitimately
+# push the close later.
+IDLE_CLOSE_LATENESS_MS = 1000
 
 
 @dataclass(frozen=True)
@@ -68,12 +74,14 @@ CASES = (
 
 
 def configure_origin(services: ServiceFactory) -> VerifierServer:
-    """Serve the request the client sends before and after its quiet period.
+    """Serve the GET the client sends, if any, before or after its quiet period.
 
     :param services: Factory owning support services and their cleanup.
     """
 
-    return services.verifier_server("origin", "replay/quic_no_activity_timeout.replay.yaml", https_ports=[])
+    # The second request in disabled comes QUIET_SECONDS after the first. Keep the
+    # origin's pooled session open past verifier-server's 5 s default poll timeout.
+    return services.verifier_server("origin", "replay/quic_no_activity_timeout.replay.yaml", https_ports=[], poll_timeout=30000)
 
 
 def configure_ats(ats_factory: ATSFactory, *, _case: IdleTimeoutCase, _origin: VerifierServer) -> ATS:
@@ -110,12 +118,15 @@ def configure_ats(ats_factory: ATSFactory, *, _case: IdleTimeoutCase, _origin: V
 
 
 def configure_client(services: ServiceFactory, *, _ats: ATS, _case: IdleTimeoutCase) -> ProcessService:
-    """Build the aioquic client that goes quiet after one request.
+    """Build the aioquic client that goes silent after its first response, or after the handshake when the case sends no request.
 
     :param _ats: Test-local ats configured by the test.
     :param _case: Test-local case configured by the test.
     :param services: Factory owning support services and their cleanup.
     """
+
+    # A case with no idle close sends a request after the quiet period, so it must send the first one too.
+    assert _case.send_request or _case.expect_idle_close, _case
 
     command: list[str | Path] = [
         sys.executable,
@@ -158,12 +169,18 @@ def verify(result: CommandResult, *, _ats: ATS, _case: IdleTimeoutCase) -> None:
     assert result.returncode == 0, result.output
     match = re.search(r"^server connection id ([0-9a-f]+)$", result.stdout, re.MULTILINE)
     assert match, result.output
+    idle = re.search(r"^server max_idle_timeout (None|[0-9.]+)$", result.stdout, re.MULTILINE)
+    assert idle, result.output
+    # An absent parameter and 0 both mean no idle timeout (RFC 9000, section 18.2).
+    advertised_ms = 0 if idle.group(1) == "None" else round(float(idle.group(1)) * 1000)
+    assert advertised_ms == _case.no_activity_timeout_in, f"ATS advertised max_idle_timeout {advertised_ms} ms"
     if not _case.expect_idle_close:
         assert f"ok request after {QUIET_SECONDS} seconds of silence" in result.stdout, result.output
         return
 
-    # quiche writes one qlog per connection, named for the connection ID it
-    # chose. The file is buffered, so wait for the whole close record.
+    # ATS names each connection's qlog after quiche's trace ID, the hex of the
+    # server's connection ID, which is the ID the client prints. The file is
+    # buffered, so wait for the whole close record.
     qlog = _ats.log_directory / f"qlog-{match.group(1)}.sqlog"
     events = read_qlog_events(wait_for_file_lines(qlog, r'"name":"connectivity:connection_closed".*\n', 1))
     closed = next(event for event in events if event["name"] == "connectivity:connection_closed")
@@ -177,9 +194,11 @@ def verify(result: CommandResult, *, _ats: ATS, _case: IdleTimeoutCase) -> None:
         event for event in packets if any(frame["frame_type"] == "connection_close" for frame in event["data"].get("frames", ()))
     ]
     assert not close_frames, close_frames
-    last_received = max(event["time"] for event in packets if event["name"] == "transport:packet_received")
+    last_received = max((event["time"] for event in packets if event["name"] == "transport:packet_received"), default=None)
+    assert last_received is not None, f"no packet received before the close: {sorted({event['name'] for event in events})}"
     silence = closed["time"] - last_received
     assert silence >= _case.no_activity_timeout_in - QLOG_SLACK_MS, f"closed after {silence:.0f} ms of silence"
+    assert silence < _case.no_activity_timeout_in + IDLE_CLOSE_LATENESS_MS, f"closed after {silence:.0f} ms of silence"
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case.name)

@@ -15,11 +15,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Send one HTTP/3 request, then leave the connection silent for a while.
+"""Send an HTTP/3 request, then leave the connection silent for a while.
 
 aioquic sends no keep-alive PINGs, so after the response nothing crosses the
 connection until the quiet period ends. With --no-request the client sends no
-request at all and goes silent once the handshake completes.
+request at all and goes silent once the handshake completes. With
+--request-after-quiet it sends a second request once the quiet period ends.
 """
 
 from __future__ import annotations
@@ -29,13 +30,21 @@ import asyncio
 
 from h3_client import RequestCase, connect_h3, verify_response
 
+# Seconds to wait for each response, well inside the harness's own timeout.
+RESPONSE_TIMEOUT = 5
+
 
 async def async_main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--addr", required=True, help="ATS HTTP/3 address in host:port form")
     parser.add_argument("--authority", required=True, help="HTTP/3 request authority")
     parser.add_argument("--server-name", required=True, help="TLS SNI server name")
-    parser.add_argument("--quiet", type=float, required=True, help="Seconds to stay silent after the first response")
+    parser.add_argument(
+        "--quiet",
+        type=float,
+        required=True,
+        help="Seconds to stay silent after the first response, or after the handshake with --no-request",
+    )
     parser.add_argument(
         "--request-after-quiet",
         action="store_true",
@@ -54,10 +63,13 @@ async def async_main() -> None:
     request_case = RequestCase("py-get-small", b"GET", "/py-get-small", response_size=100)
     async with await connect_h3(host, int(port_text), args.server_name) as client:
         if not args.no_request:
-            verify_response(request_case, await client.request(args.authority, request_case))
-        # aioquic has no public view of the connection ID the server chose. It
-        # names the server's qlog file for this connection.
+            verify_response(request_case, await asyncio.wait_for(client.request(args.authority, request_case), RESPONSE_TIMEOUT))
+        # aioquic has no public accessor for the server's connection ID, so read
+        # _peer_cid. ATS names its qlog for this connection after that ID.
         print(f"server connection id {client._quic._peer_cid.cid.hex()}", flush=True)
+        # Read the server's max_idle_timeout transport parameter the same way.
+        # It is in seconds, and None means the server did not send one.
+        print(f"server max_idle_timeout {client._quic._remote_max_idle_timeout}", flush=True)
 
         await asyncio.sleep(args.quiet)
 
@@ -65,7 +77,7 @@ async def async_main() -> None:
             if client._terminated.done():
                 terminated = client._terminated.result()
                 raise AssertionError(f"connection closed during the quiet period: {terminated.reason_phrase}")
-            verify_response(request_case, await client.request(args.authority, request_case))
+            verify_response(request_case, await asyncio.wait_for(client.request(args.authority, request_case), RESPONSE_TIMEOUT))
             print(f"ok request after {args.quiet:g} seconds of silence")
 
 

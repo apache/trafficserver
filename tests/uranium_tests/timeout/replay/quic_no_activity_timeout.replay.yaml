@@ -14,9 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# The client side of this transaction is driven by
-# ../h3/py_h3_client/h3_idle_client.py, which goes quiet after its first
-# request. Only the server side of this file is used.
+# The client is tests/uranium_tests/h3/py_h3_client/h3_idle_client.py, not
+# Proxy Verifier. It sends this GET zero, one or two times depending on the
+# case. Only the server response and the client-request uuid key are used.
 
 meta:
   version: "1.0"
