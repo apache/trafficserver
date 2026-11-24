@@ -376,22 +376,42 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
   return zret;
 }
 
+namespace
+{
+  // Whether the n bytes at p all lie inside mem. An empty range never reads p, so it always fits.
+  bool
+  span_fits(swoc::MemSpan<char> const &mem, void const *p, size_t n)
+  {
+    if (n == 0) {
+      return true;
+    }
+    auto const begin = reinterpret_cast<uintptr_t>(mem.data());
+    auto const end   = begin + mem.size();
+    auto const addr  = reinterpret_cast<uintptr_t>(p);
+    return p != nullptr && begin <= addr && addr <= end && n <= end - addr;
+  }
+
+  // Whether obj is aligned for T and every byte of it lies inside mem, so its fields can be read.
+  template <typename T>
+  bool
+  object_fits(swoc::MemSpan<char> const &mem, T const *obj)
+  {
+    return obj != nullptr && reinterpret_cast<uintptr_t>(obj) % alignof(T) == 0 && span_fits(mem, obj, sizeof(T));
+  }
+} // namespace
+
 // check if the url looks valid
 bool
 CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
 {
-  if (url == nullptr || !mem.contains(reinterpret_cast<char *>(url))) {
+  if (!object_fits(mem, url) || url->m_length == 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL) {
     return false;
   }
 
-  bool in_bound = false; // boolean to check if address in bound
-  if (!url->m_ptr_scheme) {
-    in_bound = true; // nullptr is valid
-  } else if (mem.contains(const_cast<char *>(url->m_ptr_scheme))) {
-    in_bound = true;
-  }
-
-  return in_bound && !(url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
+  // get_alternates() prints these components, so each must lie inside the document as well.
+  return span_fits(mem, url->m_ptr_scheme, url->m_len_scheme) && span_fits(mem, url->m_ptr_host, url->m_len_host) &&
+         span_fits(mem, url->m_ptr_port, url->m_len_port) && span_fits(mem, url->m_ptr_path, url->m_len_path) &&
+         span_fits(mem, url->m_ptr_query, url->m_len_query);
 }
 
 Errata
@@ -415,7 +435,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search, ts::VersionN
       } else if (!a->m_request_hdr.m_http) {
         std::cerr << "no http object found in the request header object" << std::endl;
         return zret;
-      } else if (!doc_mem.contains(reinterpret_cast<char *>(a->m_request_hdr.m_http))) {
+      } else if (!object_fits(doc_mem, a->m_request_hdr.m_http)) {
         std::cerr << "out of bounds request header in the alternate" << std::endl;
         return zret;
       }
