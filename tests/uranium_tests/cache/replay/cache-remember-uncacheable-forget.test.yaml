@@ -45,11 +45,12 @@ urtest:
       - from: "http://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
 
+    # The PURGE's own lookup counts as a fresh hit, as does the last GET.
     metric_checks:
       - metric: proxy.process.http.cache_open_write_deferred
         value: 1
       - metric: proxy.process.http.cache_hit_fresh
-        value: 1
+        value: 2
         delay: 0
 
 sessions:
