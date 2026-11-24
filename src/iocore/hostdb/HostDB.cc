@@ -1468,6 +1468,7 @@ struct HostDBRegressionContinuation : public Continuation {
   int success;
   int failure;
   int local_failure;
+  int network_success;
   int outstanding;
   int i;
 
@@ -1494,8 +1495,11 @@ struct HostDBRegressionContinuation : public Continuation {
           rprintf(test, "hostdbinfo RR%d ip=%s\n", x, ip_buf);
         }
         ++success;
+        if (host.needs_network) {
+          ++network_success;
+        }
       } else {
-        rprintf(test, "lookup of %s failed%s\n", host.name, host.needs_network ? " (needs outside DNS, not counted)" : "");
+        rprintf(test, "lookup of %s failed%s\n", host.name, host.needs_network ? " (needs outside DNS)" : "");
         ++failure;
         if (!host.needs_network) {
           ++local_failure;
@@ -1507,8 +1511,9 @@ struct HostDBRegressionContinuation : public Continuation {
       hostDBProcessor.getbyname_re(this, hostnames[i++].name, 0);
       return EVENT_CONT;
     } else {
-      rprintf(test, "HostDBTestRR: %d outstanding %d success %d failure\n", outstanding, success, failure);
-      if (local_failure == 0) {
+      rprintf(test, "HostDBTestRR: %d outstanding %d success %d failure, %d IP literal failures, %d names resolved through DNS\n",
+              outstanding, success, failure, local_failure, network_success);
+      if (local_failure == 0 && network_success > 0) {
         *status = REGRESSION_TEST_PASSED;
       } else {
         *status = REGRESSION_TEST_FAILED;
@@ -1527,6 +1532,7 @@ struct HostDBRegressionContinuation : public Continuation {
       success(0),
       failure(0),
       local_failure(0),
+      network_success(0),
       i(0)
   {
     outstanding = ahosts;
@@ -1534,15 +1540,17 @@ struct HostDBRegressionContinuation : public Continuation {
   }
 };
 
-// A failed lookup of a name that needs outside DNS is reported but does not
-// fail the test: the CI hosts' resolvers drop one now and then.
+// The CI hosts' resolvers drop one of the names that need outside DNS now and
+// then, so a failed lookup of one is reported but does not fail the test. At
+// least one of them must resolve: the IP literals are answered without DNS, so
+// they alone would not exercise the HostDB DNS path.
 static const HostDBRegressionHost dns_test_hosts[] = {
   {"www.apple.com",     true },
   {"www.ibm.com",       true },
   {"www.microsoft.com", true },
   {"yahoo.com",         true }, // RR record
-  {"4.2.2.2",           false}, // An IP-- since we don't expect resolution
-  {"127.0.0.1",         false}, // loopback since it has some special handling
+  {"4.2.2.2",           false}, // IP literal, answered without DNS
+  {"127.0.0.1",         false}, // IP literal, answered without DNS
 };
 
 REGRESSION_TEST(HostDBProcessor)(RegressionTest *t, int atype, int *pstatus)
