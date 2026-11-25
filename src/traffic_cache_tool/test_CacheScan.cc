@@ -456,7 +456,7 @@ TEST_CASE("cache inspection holds each header heap to the document bytes left fo
     holds_to(offset, DOC_LEN - offset, false);
   }
 
-  SECTION("a heap over the fragment offset table gets only the bytes the table leaves")
+  SECTION("a heap that ends where a fragment offset table starts gets only the bytes the table leaves")
   {
     // The table is at the end of the document, so more bytes follow this heap than the document has left once the
     // fixed part and the table are taken out.
@@ -616,7 +616,7 @@ TEST_CASE("cache inspection stops at a request header object that runs past the 
     CHECK_THAT(out, Catch::Matchers::ContainsSubstring("://example.com:"));
   }
 
-  SECTION("a request header object that runs past the end of the document is not read")
+  SECTION("a request header object that runs past the end of the document is not followed to its URL")
   {
     auto const [out, err] = scan_doc(DOC_LEN);
     CHECK_THAT(out, !Catch::Matchers::ContainsSubstring("example.com"));
