@@ -306,3 +306,47 @@ TEST_CASE("cache inspection reads a request heap that starts right after the alt
   CHECK(scan.check_url(mem, found));
   CHECK(std::string_view(found->m_ptr_host, found->m_len_host) == host);
 }
+
+TEST_CASE("cache inspection rejects a header heap whose objects do not start right after its header", "[cache_tool]")
+{
+  static constexpr int HEAP_HDR = HDR_HEAP_HDR_SIZE.value();
+  static constexpr int HDR_OBJ  = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPHdrImpl))}.value();
+  static constexpr int HEAP_LEN = HEAP_HDR + HDR_OBJ;
+
+  alignas(HdrHeap) char buf[HEAP_LEN] = {};
+  ct::CacheScan         scan(nullptr);
+  HdrHeapObjImpl       *found = nullptr;
+
+  // A marshalled heap holding one response header, with its objects said to start at data_start. Unmarshalling
+  // rewrites the heap in place, so each call builds it afresh.
+  auto unmarshal_with = [&](uintptr_t data_start) {
+    std::memset(buf, 0, sizeof(buf));
+    auto *heap                         = reinterpret_cast<HdrHeap *>(buf);
+    heap->m_magic                      = HdrBufMagic::MARSHALED;
+    heap->m_size                       = HEAP_LEN;
+    heap->m_data_start                 = reinterpret_cast<char *>(data_start);
+    heap->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_LEN));
+    heap->m_ronly_heap[0].m_heap_len   = 0;
+
+    auto *hdr       = reinterpret_cast<HTTPHdrImpl *>(buf + HEAP_HDR);
+    hdr->m_type     = static_cast<uint32_t>(HdrHeapObjType::HTTP_HEADER);
+    hdr->m_length   = HDR_OBJ;
+    hdr->m_polarity = HTTPType::RESPONSE;
+
+    return scan.unmarshal(heap, HEAP_LEN, static_cast<int>(HdrHeapObjType::HTTP_HEADER), &found, nullptr);
+  };
+
+  SECTION("objects right after the header are found")
+  {
+    CHECK(unmarshal_with(HEAP_HDR) == HEAP_LEN);
+    CHECK(found == reinterpret_cast<HdrHeapObjImpl *>(buf + HEAP_HDR));
+  }
+
+  SECTION("objects said to start past the header are rejected")
+  {
+    // A walk starting there would skip the response header and still report the heap's full size, so only the check on
+    // where the objects start rejects this heap.
+    CHECK(unmarshal_with(HEAP_LEN) == -1);
+    CHECK(found == nullptr);
+  }
+}
