@@ -46,6 +46,7 @@
 #include "iocore/net/TLSTunnelSupport.h"
 
 #include "tsutil/ts_ip.h"
+#include "tsutil/YamlCfg.h"
 
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
@@ -573,7 +574,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       const YAML::Node route = node[route_key];
       // yaml-cpp reads a null value as the string "null", which would load as a host name, and gives
       // a value tagged !!null back as a string of the text after the tag, so the tag is checked too.
-      if (route.IsNull() || route.Tag() == "tag:yaml.org,2002:null") {
+      if (route.IsNull() || route.Tag() == ts::Yaml::YAML_NULL_TAG_URI) {
         throw YAML::ParserException(route.Mark(), "fqdn \"" + item.fqdn + "\": " + route_key + " has no tunnel destination");
       }
       item.tunnel_destination = route.as<std::string>();
