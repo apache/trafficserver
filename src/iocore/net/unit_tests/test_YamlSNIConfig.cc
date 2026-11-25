@@ -388,9 +388,20 @@ TEST_CASE("YamlSNIConfig rejects an empty tunnel destination")
 TEST_CASE("YamlSNIConfig rejects a null tunnel destination")
 {
   std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
-  std::string value{GENERATE("", "~", "null")};
+  // yaml-cpp gives a value tagged !!null back as a string of the text after the tag, so the
+  // tagged spellings name no destination only if the loader reads the tag.
+  std::string value{GENERATE("", "~", "null", "!!null", "!!null \"\"", "!!null null", "!<tag:yaml.org,2002:null>")};
 
   CAPTURE(key, value);
   CHECK(load_route_value("route.example.com", key, value).find(no_destination_error("route.example.com", key)) !=
         std::string::npos);
+}
+
+TEST_CASE("YamlSNIConfig accepts a tunnel destination of \"null\" written as a string")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  std::string value{GENERATE("\"null\"", "!!str null")};
+
+  CAPTURE(key, value);
+  CHECK(load_route_value("route.example.com", key, value).empty());
 }

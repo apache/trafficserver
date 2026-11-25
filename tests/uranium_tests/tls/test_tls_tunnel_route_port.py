@@ -86,6 +86,7 @@ NO_DESTINATION_ROUTES = {
     "empty": ('forward_route: ""', NO_HOST),
     "null": ("tunnel_route:", NO_DESTINATION),
     "tilde": ("partial_blind_route: ~", NO_DESTINATION),
+    "tagged_null": ("forward_route: !!null", NO_DESTINATION),
 }
 
 
