@@ -81,7 +81,10 @@ TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SN
   }
   if (!authority || authority->host.empty() || (authority->port && !port)) {
     _tunnel_host.clear();
-    _tunnel_port = 0;
+    _tunnel_port     = 0;
+    _tunnel_type     = SNIRoutingType::NONE;
+    _tunnel_prewarm  = YamlSNIConfig::TunnelPreWarm::UNSET;
+    _port_is_dynamic = false;
     return false;
   }
 
