@@ -24,6 +24,8 @@ TEST_DIRECTORY = Path(__file__).parent
 
 BAD_PORT = r"bad port in tunnel destination"
 BAD_MATCH_GROUP = r"bad match group in tunnel destination"
+NO_HOST = r"no host in tunnel destination"
+NO_DESTINATION = r"has no tunnel destination"
 
 # Each route names a port the tunnel would misread.
 BAD_ROUTES = {
@@ -77,6 +79,31 @@ def test_tunnel_route_bad_match_group_stops_startup(ats_factory: ATSFactory, fqd
     ats.start()
 
 
+# Each route key has no destination, with the error it gives. An empty one would
+# load with no route installed, and a YAML null would load as the host "null".
+NO_DESTINATION_ROUTES = {
+    "empty": ('forward_route: ""', NO_HOST),
+    "null": ("tunnel_route:", NO_DESTINATION),
+    "tilde": ("partial_blind_route: ~", NO_DESTINATION),
+}
+
+
+@pytest.mark.parametrize("route,error", NO_DESTINATION_ROUTES.values(), ids=NO_DESTINATION_ROUTES.keys())
+def test_tunnel_route_no_destination_stops_startup(ats_factory: ATSFactory, route: str, error: str) -> None:
+    """An sni.yaml route key with an empty or null destination stops startup.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param route: The sni.yaml route key and its value.
+    :param error: The loader error startup must stop with.
+    """
+
+    ats = ats_factory.create("ts", enable_tls=True)
+    ats.add_default_ssl_files()
+    ats.write_config_file("sni.yaml", f"sni:\n- fqdn: bar.com\n  {route}\n")
+    ats.expect_start_failure(rf"EMERGENCY: .*sni\.yaml failed to load: .*{error}")
+    ats.start()
+
+
 def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _forward_port: int) -> ATS:
     """Route the bar.com TLS stream to a raw TCP listener.
 
@@ -121,6 +148,8 @@ BAD_RELOADS = {
     # the last check could not tell that the reload had been taken.
     "bad_port": ("sni:\n- fqdn: bar.com\n  forward_route: localhost:1x\n", BAD_PORT),
     "bad_match_group": ('sni:\n- fqdn: bar.com\n  forward_route: "$1.localhost:1"\n', BAD_MATCH_GROUP),
+    "empty_route": ('sni:\n- fqdn: bar.com\n  forward_route: ""\n', NO_HOST),
+    "null_route": ("sni:\n- fqdn: bar.com\n  forward_route:\n", NO_DESTINATION),
 }
 
 

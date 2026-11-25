@@ -191,15 +191,16 @@ TEST_CASE("YamlConfig handles bad ports appropriately.")
 
 namespace
 {
-// Load an sni.yaml holding one route and return the loader's error text, which
-// is empty when the file loads.
+// Load an sni.yaml holding one route whose value is written as value, which can
+// be empty, and return the loader's error text, which is empty when the file
+// loads.
 std::string
-load_route(std::string const &fqdn, std::string const &key, std::string const &destination)
+load_route_value(std::string const &fqdn, std::string const &key, std::string const &value)
 {
   char path[] = "/tmp/test_YamlSNIConfig_route_XXXXXX";
   int  fd     = mkstemp(path);
   REQUIRE(fd >= 0);
-  std::string body = "sni:\n- fqdn: \"" + fqdn + "\"\n  " + key + ": \"" + destination + "\"\n";
+  std::string body = "sni:\n- fqdn: \"" + fqdn + "\"\n  " + key + ":" + (value.empty() ? "" : " " + value) + "\n";
   REQUIRE(write(fd, body.data(), body.size()) == static_cast<ssize_t>(body.size()));
   close(fd);
 
@@ -208,6 +209,13 @@ load_route(std::string const &fqdn, std::string const &key, std::string const &d
   errorstream << conf.loader(path);
   unlink(path);
   return errorstream.str();
+}
+
+// Load an sni.yaml holding one route to destination, quoted.
+std::string
+load_route(std::string const &fqdn, std::string const &key, std::string const &destination)
+{
+  return load_route_value(fqdn, key, "\"" + destination + "\"");
 }
 
 std::string
@@ -227,6 +235,12 @@ no_host_error(std::string const &fqdn, std::string const &destination)
 {
   return "fqdn \"" + fqdn + "\": no host in tunnel destination \"" + destination + "\"";
 }
+
+std::string
+no_destination_error(std::string const &fqdn, std::string const &key)
+{
+  return "fqdn \"" + fqdn + "\": " + key + " has no tunnel destination";
+}
 } // namespace
 
 TEST_CASE("YamlSNIConfig accepts a tunnel destination port the tunnel reads as written")
@@ -234,7 +248,9 @@ TEST_CASE("YamlSNIConfig accepts a tunnel destination port the tunnel reads as w
   std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
   std::string destination{GENERATE("backend.example.com", "backend.example.com:1", "backend.example.com:443",
                                    "backend.example.com:65535", "backend.example.com:{inbound_local_port}",
-                                   "backend.example.com:{proxy_protocol_port}", "[::1]:443", " [::1]:443", "[::1]", "::1")};
+                                   "backend.example.com:{proxy_protocol_port}", "[::1]:443", " [::1]:443", "[::1]", "::1",
+                                   // Quoted, so a string and not a YAML null.
+                                   "null")};
 
   CAPTURE(key, destination);
   CHECK(load_route("route.example.com", key, destination).empty());
@@ -351,5 +367,25 @@ TEST_CASE("YamlSNIConfig rejects a tunnel destination with no host")
 
   CAPTURE(key, destination);
   CHECK(load_route("route.example.com", key, destination).find(no_host_error("route.example.com", destination)) !=
+        std::string::npos);
+}
+
+TEST_CASE("YamlSNIConfig rejects an empty tunnel destination")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  std::string destination{GENERATE("", " ")};
+
+  CAPTURE(key, destination);
+  CHECK(load_route("route.example.com", key, destination).find(no_host_error("route.example.com", destination)) !=
+        std::string::npos);
+}
+
+TEST_CASE("YamlSNIConfig rejects a null tunnel destination")
+{
+  std::string key{GENERATE("tunnel_route", "forward_route", "partial_blind_route")};
+  std::string value{GENERATE("", "~", "null")};
+
+  CAPTURE(key, value);
+  CHECK(load_route_value("route.example.com", key, value).find(no_destination_error("route.example.com", key)) !=
         std::string::npos);
 }
