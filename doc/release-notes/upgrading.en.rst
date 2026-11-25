@@ -407,7 +407,8 @@ The following :file:`sni.yaml` changes have been made:
   ``forward_route:``, routed to a host named ``null``. Any of those now stops |TS| at startup, or fails a reload of
   :file:`sni.yaml` and keeps the previous configuration.
 - A match group anywhere in a destination, in the host as well as the port, must be ``$`` and one digit that names a
-  ``*`` in a wildcard ``fqdn``, and any other ``$`` is refused. Before, a match group under an ``fqdn`` with no ``*``,
+  ``*`` in a wildcard ``fqdn``, followed by ``.``, ``:`` or the end of the destination, and any other ``$`` is
+  refused, so ``$1-backend.example.com:443`` no longer loads. Before, a match group under an ``fqdn`` with no ``*``,
   such as ``$1.backend.example.com:443`` for ``route.example.com``, logged a warning on each connection and tunnelled
   to the server name, and one naming a ``*`` the ``fqdn`` does not have, such as ``$0`` or ``$2`` in the host for
   ``*.example.com``, was not filled in as configured. A ``$`` that starts no match group, such as ``${1}`` or

@@ -116,10 +116,11 @@ is_valid_tunnel_port(std::string_view port, size_t groups)
 // Why the match groups in a destination cannot be filled in as written, or an
 // empty string if they can. TunnelDestination::replace_match_groups reads the
 // number after each '$' up to the next '.' anywhere after it, or up to the next
-// ':' when no '.' follows, or to the end. It leaves a '$' it cannot fill in as
-// written, which is not valid in a host name, so every '$' must start a group
-// number of one digit naming a group the fqdn captures. Groups above 9 are not
-// supported.
+// ':' when no '.' follows, or to the end. Under a wildcard fqdn it leaves a '$'
+// it cannot fill in as written, which is not valid in a host name, and under an
+// exact fqdn, which captures no groups, the destination is filled in as empty.
+// So every '$' must start a group number of one digit naming a group the fqdn
+// captures. Groups above 9 are not supported.
 std::string
 match_group_error(std::string_view destination, size_t groups)
 {
