@@ -23,7 +23,9 @@
 
 #pragma once
 
+#include <cstring>
 #include <map>
+#include <memory>
 #include <unordered_map>
 
 #include "swoc/IntrusiveDList.h"
@@ -123,22 +125,25 @@ private:
   class DecodeRequest
   {
   public:
-    DecodeRequest(uint16_t largest_reference, EThread *thread, Continuation *continuation, uint64_t stream_id,
+    DecodeRequest(uint32_t required_insert_count, EThread *thread, Continuation *continuation, uint64_t stream_id,
                   const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr)
-      : _largest_reference(largest_reference),
+      : _required_insert_count(required_insert_count),
         _thread(thread),
         _continuation(continuation),
         _stream_id(stream_id),
-        _header_block(header_block),
+        _header_block(new uint8_t[header_block_len]),
         _header_block_len(header_block_len),
         _hdr(hdr)
     {
+      // The caller's buffer belongs to the HEADERS frame, which can be freed or reused before the request is unblocked.
+      memcpy(this->_header_block.get(), header_block, header_block_len);
     }
 
-    uint16_t
-    largest_reference() const
+    // The Required Insert Count reconstructed from the header block's prefix when it arrived.
+    uint32_t
+    required_insert_count() const
     {
-      return this->_largest_reference;
+      return this->_required_insert_count;
     }
 
     EThread *
@@ -162,7 +167,7 @@ private:
     const uint8_t *
     header_block() const
     {
-      return this->_header_block;
+      return this->_header_block.get();
     }
 
     size_t
@@ -193,13 +198,13 @@ private:
     };
 
   private:
-    uint16_t       _largest_reference;
-    EThread       *_thread;
-    Continuation  *_continuation;
-    uint64_t       _stream_id;
-    const uint8_t *_header_block;
-    size_t         _header_block_len;
-    HTTPHdr       &_hdr;
+    uint32_t                   _required_insert_count;
+    EThread                   *_thread;
+    Continuation              *_continuation;
+    uint64_t                   _stream_id;
+    std::unique_ptr<uint8_t[]> _header_block;
+    size_t                     _header_block_len;
+    HTTPHdr                   &_hdr;
 
     // For IntrusiveDList support
     DecodeRequest *_next = nullptr;
@@ -273,8 +278,10 @@ private:
   uint16_t                                                      _max_blocking_streams   = 0;
 
   Continuation *_event_handler = nullptr;
-  void          _resume_decode();
-  void          _abort_decode();
+  // Whether a header block with @a required_insert_count references dynamic table entries not yet inserted.
+  bool _is_blocked(uint32_t required_insert_count) const;
+  void _resume_decode();
+  void _abort_decode();
 
   bool _invalid = false;
 
@@ -315,8 +322,24 @@ private:
   int _write_stream_cancellation(uint64_t stream_id);
 
   // Request and Push Streams
-  int _encode_prefix(uint16_t largest_reference, uint16_t base_index, IOBufferBlock *prefix);
-  int _encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock *compressed_header, uint16_t &referred_index);
+
+  // The most entries the dynamic table can hold (RFC 9204 Section 3.2.2), which sizes the window the encoded Required Insert
+  // Count wraps around in.
+  uint32_t _max_entries() const;
+
+  /*
+   * Reconstructs the Required Insert Count of a header block from @a encoded_insert_count, its prefix (RFC 9204 Section
+   * 4.5.1.1), against the entries inserted so far. Returns -1 for a value no conformant encoder could have sent.
+   */
+  int _decode_required_insert_count(uint64_t encoded_insert_count, uint32_t &required_insert_count) const;
+
+  // Writes the header block prefix for a block that references entries below @a required_insert_count and whose relative and
+  // post-base indices count from @a base.
+  int _encode_prefix(uint16_t required_insert_count, uint16_t base, IOBufferBlock *prefix);
+  // @a required_insert_count is set to one more than the absolute index of the dynamic table entry the field references, or to
+  // zero if it references none.
+  int _encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock *compressed_header,
+                     uint16_t &required_insert_count);
   int _encode_indexed_header_field(uint16_t index, uint16_t base_index, bool dynamic_table, IOBufferBlock *compressed_header);
   int _encode_indexed_header_field_with_postbase_index(uint16_t index, uint16_t base_index, bool never_index,
                                                        IOBufferBlock *compressed_header);
@@ -327,24 +350,35 @@ private:
   int _encode_literal_header_field_with_postbase_name_ref(uint16_t index, uint16_t base_index, const char *value, int value_len,
                                                           bool never_index, IOBufferBlock *compressed_header);
 
-  void _decode(EThread *ethread, Continuation *cont, uint64_t stream_id, const uint8_t *header_block, size_t header_block_len,
-               HTTPHdr &hdr);
-  int  _decode_header(const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr);
-  int  _decode_indexed_header_field(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
-  int  _decode_indexed_header_field_with_postbase_index(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                        uint32_t &header_len);
-  int  _decode_literal_header_field_with_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                  uint32_t &header_len);
+  // @a required_insert_count is the one _decode_required_insert_count() reconstructed from @a header_block's prefix.
+  void _decode(EThread *ethread, Continuation *cont, uint64_t stream_id, uint32_t required_insert_count,
+               const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr);
+  int  _decode_header(uint32_t required_insert_count, const uint8_t *header_block, size_t header_block_len, HTTPHdr &hdr);
+  int  _decode_indexed_header_field(uint32_t base, uint32_t required_insert_count, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
+                                    uint32_t &header_len);
+  int  _decode_indexed_header_field_with_postbase_index(uint32_t base, uint32_t required_insert_count, const uint8_t *buf,
+                                                        size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
+  int  _decode_literal_header_field_with_name_ref(uint32_t base, uint32_t required_insert_count, const uint8_t *buf, size_t buf_len,
+                                                  HTTPHdr &hdr, uint32_t &header_len);
   int  _decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
-  int  _decode_literal_header_field_with_postbase_name_ref(int16_t base_index, const uint8_t *buf, size_t buf_len, HTTPHdr &hdr,
-                                                           uint32_t &header_len);
+  int  _decode_literal_header_field_with_postbase_name_ref(uint32_t base, uint32_t required_insert_count, const uint8_t *buf,
+                                                           size_t buf_len, HTTPHdr &hdr, uint32_t &header_len);
 
   // Utilities
-  uint16_t _calc_absolute_index_from_relative_index(uint16_t base_index, uint16_t relative_index);
-  uint16_t _calc_absolute_index_from_postbase_index(uint16_t base_index, uint16_t postbase_index);
-  uint16_t _calc_relative_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index);
-  uint16_t _calc_postbase_index_from_absolute_index(uint16_t base_index, uint16_t absolute_index);
-  void     _attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index);
+
+  /*
+   * Map an index in a field line to the absolute index of the dynamic table entry it names (RFC 9204 Section 3.2.5). They
+   * return false for an index that names no entry below @a required_insert_count, which Section 2.2.3 makes an error.
+   */
+  static bool _calc_absolute_index_from_relative_index(uint32_t base, uint32_t required_insert_count, uint64_t relative_index,
+                                                       uint32_t &absolute_index);
+  static bool _calc_absolute_index_from_postbase_index(uint32_t base, uint32_t required_insert_count, uint64_t postbase_index,
+                                                       uint32_t &absolute_index);
+  // The encoder's inverses of the above. A relative index needs @a absolute_index below @a base, a post-base index needs it at
+  // or above.
+  static uint16_t _calc_relative_index_from_absolute_index(uint16_t base, uint16_t absolute_index);
+  static uint16_t _calc_postbase_index_from_absolute_index(uint16_t base, uint16_t absolute_index);
+  void            _attach_header(HTTPHdr &hdr, const char *name, int name_len, const char *value, int value_len, bool never_index);
 
   int _on_read_ready(VIO *vio);
   int _on_decoder_stream_read_ready(IOBufferReader &reader);

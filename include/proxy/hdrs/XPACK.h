@@ -233,6 +233,8 @@ public:
   bool                    is_empty() const;
   uint32_t                largest_index() const;
   uint32_t                count() const;
+  // The number of entries ever inserted, evicted ones included: the Insert Count of RFC 9204 Section 3.2.4.
+  uint32_t entries_inserted() const;
 
 private:
   static constexpr uint8_t ADDITIONAL_32_BYTES = 32;
