@@ -352,6 +352,11 @@ TEST_CASE("YamlSNIConfig rejects a '$' that does not start a match group")
     {"*.example.com",     "$.backend.example.com:443"   },
     {"*.example.com",     "backend$.example.com"        },
     {"route.example.com", "back$end.example.com:443"    },
+    // A '$' after a group that fills in, at the end, before the port, and doubled.
+    {"*.example.com",     "$1.back$end.example.com:443" },
+    {"*.example.com",     "backend.example.com$"        },
+    {"*.example.com",     "backend$x:443"               },
+    {"*.example.com",     "$$1.backend.example.com:443" },
   }));
 
   CAPTURE(key, fqdn, destination);

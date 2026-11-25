@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from collections.abc import Callable
 from pathlib import Path
 import shlex
 
@@ -56,7 +57,7 @@ def test_tunnel_route_bad_port_stops_startup(ats_factory: ATSFactory, key: str, 
     ats.start()
 
 
-# Each route has a match group that cannot be filled in as written.
+# Each route has a match group the fqdn does not capture, or a '$' that starts none.
 BAD_MATCH_GROUP_ROUTES = {
     "exact_fqdn": ("bar.com", "$1.backend.example.com:443"),
     "not_a_group": ("*.bar.com", "${1}.backend.example.com:443"),
@@ -65,7 +66,7 @@ BAD_MATCH_GROUP_ROUTES = {
 
 @pytest.mark.parametrize("fqdn,destination", BAD_MATCH_GROUP_ROUTES.values(), ids=BAD_MATCH_GROUP_ROUTES.keys())
 def test_tunnel_route_bad_match_group_stops_startup(ats_factory: ATSFactory, fqdn: str, destination: str) -> None:
-    """An sni.yaml route with a match group the fqdn does not capture stops startup.
+    """An sni.yaml route with a match group the fqdn does not capture, or a '$' that starts none, stops startup.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param fqdn: The route's fqdn.
@@ -148,6 +149,7 @@ BAD_RELOADS = {
     # the last check could not tell that the reload had been taken.
     "bad_port": ("sni:\n- fqdn: bar.com\n  forward_route: localhost:1x\n", BAD_PORT),
     "bad_match_group": ('sni:\n- fqdn: bar.com\n  forward_route: "$1.localhost:1"\n', BAD_MATCH_GROUP),
+    "not_a_group": ('sni:\n- fqdn: "*.bar.com"\n  forward_route: "${1}.localhost:1"\n', BAD_MATCH_GROUP),
     "empty_route": ('sni:\n- fqdn: bar.com\n  forward_route: ""\n', NO_HOST),
     "null_route": ("sni:\n- fqdn: bar.com\n  forward_route:\n", NO_DESTINATION),
 }
@@ -270,7 +272,9 @@ BAD_PORT_LABELS = {
 
 
 @pytest.mark.parametrize("label", BAD_PORT_LABELS.values(), ids=BAD_PORT_LABELS.keys())
-def test_tunnel_route_match_group_port(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, label) -> None:
+def test_tunnel_route_match_group_port(
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, label: Callable[[int], str]
+) -> None:
     """A port filled in from the SNI is used only if it is a whole port number from 1 to 65535.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
@@ -302,7 +306,9 @@ SHAPE_CASES = {
 
 
 @pytest.mark.parametrize("sni,returncode", SHAPE_CASES.values(), ids=SHAPE_CASES.keys())
-def test_tunnel_route_match_group_keeps_shape(ats_factory: ATSFactory, services: ServiceFactory, sni, returncode: int) -> None:
+def test_tunnel_route_match_group_keeps_shape(
+    ats_factory: ATSFactory, services: ServiceFactory, sni: Callable[[int], str], returncode: int
+) -> None:
     """The handshake fails when a match group changes whether the destination names a port.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
