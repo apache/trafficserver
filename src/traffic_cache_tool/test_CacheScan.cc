@@ -532,3 +532,89 @@ TEST_CASE("cache inspection rejects a request URL object with no length or of an
     CHECK_FALSE(scan.check_url(mem, url));
   }
 }
+
+TEST_CASE("cache inspection stops at a request header object that runs past the end of the document", "[cache_tool]")
+{
+  static constexpr int  ALT_SIZE = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPCacheAlt))}.value();
+  static constexpr int  HEAP_HDR = HDR_HEAP_HDR_SIZE.value();
+  static constexpr int  HDR_OBJ  = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPHdrImpl))}.value();
+  static constexpr int  URL_OBJ  = HdrHeapMarshalBlocks{swoc::round_up(sizeof(URLImpl))}.value();
+  static constexpr int  STR_OBJ  = 24;
+  static constexpr int  INSIDE   = 8;
+  static constexpr int  HEAP_LEN = HEAP_HDR + URL_OBJ + STR_OBJ + INSIDE;
+  static constexpr int  DOC_LEN  = ALT_SIZE + HEAP_LEN;
+  static constexpr char host[]   = "example.com";
+  static_assert(sizeof(host) - 1 <= STR_OBJ - 8);
+
+  // The heap ends with the first INSIDE bytes of the request header object, which is where the object walk lets it
+  // start; the rest of the object lies past the heap. The array runs on past the heap so that every byte of the object
+  // is memory the test owns.
+  alignas(HTTPCacheAlt) char buf[DOC_LEN + HDR_OBJ] = {};
+  ct::Span                   span(swoc::file::path("/dev/null"));
+  ct::StripeSM               stripe(&span, Bytes(0), CacheStoreBlocks(CacheStripeBlocks::SCALE / CacheStoreBlocks::SCALE));
+  ct::CacheScan              scan(&stripe);
+
+  // Builds the document, scans its doc_len bytes, and returns what the scan printed to stdout and stderr.
+  auto scan_doc = [&](int doc_len) {
+    std::memset(buf, 0, sizeof(buf));
+    auto *alt                 = reinterpret_cast<HTTPCacheAlt *>(buf);
+    alt->m_magic              = CacheAltMagic::MARSHALED;
+    alt->m_unmarshal_len      = -1;
+    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(intptr_t{ALT_SIZE});
+
+    // Every pointer in the heap is stored as an offset from the start of the heap.
+    char *heap_base                    = buf + ALT_SIZE;
+    auto *heap                         = reinterpret_cast<HdrHeap *>(heap_base);
+    heap->m_magic                      = HdrBufMagic::MARSHALED;
+    heap->m_size                       = HEAP_LEN;
+    heap->m_data_start                 = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
+    heap->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_LEN));
+
+    auto *url       = reinterpret_cast<URLImpl *>(heap_base + HEAP_HDR);
+    url->m_type     = static_cast<uint32_t>(HdrHeapObjType::URL);
+    url->m_length   = URL_OBJ;
+    url->m_ptr_host = reinterpret_cast<char const *>(static_cast<uintptr_t>(HEAP_HDR + URL_OBJ + 8));
+    url->m_len_host = sizeof(host) - 1;
+
+    // An empty object whose bytes past its own header hold the host string.
+    auto *strings     = reinterpret_cast<HdrHeapObjImpl *>(heap_base + HEAP_HDR + URL_OBJ);
+    strings->m_type   = static_cast<uint32_t>(HdrHeapObjType::EMPTY);
+    strings->m_length = STR_OBJ;
+    std::memcpy(heap_base + HEAP_HDR + URL_OBJ + 8, host, sizeof(host) - 1);
+
+    auto *hdr             = reinterpret_cast<HTTPHdrImpl *>(heap_base + HEAP_LEN - INSIDE);
+    hdr->m_type           = static_cast<uint32_t>(HdrHeapObjType::HTTP_HEADER);
+    hdr->m_length         = HDR_OBJ;
+    hdr->m_polarity       = HTTPType::REQUEST;
+    hdr->u.req.m_url_impl = reinterpret_cast<URLImpl *>(static_cast<uintptr_t>(HEAP_HDR));
+
+    std::ostringstream out;
+    std::ostringstream err;
+    struct Redirect {
+      std::ostream   &stream;
+      std::streambuf *saved;
+      Redirect(std::ostream &s, std::ostream &to) : stream(s), saved(s.rdbuf(to.rdbuf())) {}
+      ~Redirect() { stream.rdbuf(saved); }
+    };
+    {
+      Redirect const to_out(std::cout, out);
+      Redirect const to_err(std::cerr, err);
+      scan.get_alternates(buf, doc_len, false, ts::VersionNumber{});
+    }
+    return std::make_pair(out.str(), err.str());
+  };
+
+  SECTION("a request header object wholly inside the document has its URL printed")
+  {
+    auto const [out, err] = scan_doc(DOC_LEN - INSIDE + HDR_OBJ);
+    INFO(err);
+    CHECK_THAT(out, Catch::Matchers::ContainsSubstring("://example.com:"));
+  }
+
+  SECTION("a request header object that runs past the end of the document is not read")
+  {
+    auto const [out, err] = scan_doc(DOC_LEN);
+    CHECK_THAT(out, !Catch::Matchers::ContainsSubstring("example.com"));
+    CHECK_THAT(err, Catch::Matchers::ContainsSubstring("out of bounds request header"));
+  }
+}
