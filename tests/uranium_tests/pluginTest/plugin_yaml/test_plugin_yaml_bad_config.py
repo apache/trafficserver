@@ -34,6 +34,7 @@ BAD_PLUGIN_YAML = {
     # A file with a second document is an error, so neither document is dropped unseen.
     "null_first_document": "---\n---\nplugins:\n  - path: xdebug.so\n",
     "malformed_second_document": "plugins:\n  - path: xdebug.so\n---\nplugins: [unclosed\n",
+    "stray_token_after_document": "plugins:\n  - path: xdebug.so\n--- ,\n",
 }
 
 

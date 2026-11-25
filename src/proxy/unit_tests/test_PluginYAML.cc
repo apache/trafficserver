@@ -470,6 +470,22 @@ TEST_CASE("parse_plugin_yaml - malformed second document is a config error", "[p
   CHECK(std::string(result.errata.front().text()).find("failed to parse") != std::string::npos);
 }
 
+TEST_CASE("parse_plugin_yaml - stray token after a document is a config error", "[plugin_yaml]")
+{
+  // yaml-cpp reads a token that cannot start a node as an empty document and
+  // leaves it in place, so the document walk must stop rather than loop.
+  auto content =
+    GENERATE(as<std::string>{}, "plugins:\n  - path: foo.so\n--- ,\n", "plugins:\n  - path: foo.so\n...\n ,\n", " ,\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("failed to parse") != std::string::npos);
+}
+
 TEST_CASE("parse_plugin_yaml - one document with start and end markers", "[plugin_yaml]")
 {
   TempYAML yaml("---\nplugins:\n  - path: foo.so\n...\n");

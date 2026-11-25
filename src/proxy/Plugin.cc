@@ -458,9 +458,17 @@ public:
   std::vector<bool> empty;
 
   void
-  OnDocumentStart(const YAML::Mark &) override
+  OnDocumentStart(const YAML::Mark &mark) override
   {
-    _root_seen = false;
+    // yaml-cpp reports a token that cannot start a node, such as a stray ","
+    // after "---", as an empty document without consuming it, so the next
+    // document starts at the same place and the walk would never end.
+    if (_started && mark.pos <= _last_start) {
+      throw YAML::ParserException(mark, "unexpected token");
+    }
+    _started    = true;
+    _last_start = mark.pos;
+    _root_seen  = false;
   }
   void
   OnDocumentEnd() override
@@ -512,7 +520,9 @@ private:
     }
   }
 
-  bool _root_seen = false;
+  bool _root_seen  = false;
+  bool _started    = false;
+  int  _last_start = 0;
 };
 
 /// Return, for each YAML document in @a text, whether it is empty. Throws
