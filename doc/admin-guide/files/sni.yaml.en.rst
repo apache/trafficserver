@@ -396,8 +396,9 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    strings can be specified. The match group number can be used in combination with either
                                                    one of those.
 
-                                                   The destination must name a host. If it names a port, the port must be a number from 1
-                                                   to 65535 with no leading zero, ``{inbound_local_port}``, ``{proxy_protocol_port}``, or
+                                                   The destination must name a host, so it cannot be empty or left out after the key. If
+                                                   it names a port, the port must be a number from 1 to 65535 with no leading zero,
+                                                   ``{inbound_local_port}``, ``{proxy_protocol_port}``, or
                                                    a match group such as ``$1``. Digits before a match group must themselves be such a
                                                    number, so ``4$1`` is accepted but ``0$1`` and ``70000$1`` are not. A match group, in
                                                    the host or the port, is ``$`` and one digit that names a ``*`` in a wildcard

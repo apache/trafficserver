@@ -537,11 +537,12 @@ template <> struct convert<YamlSNIConfig::Item> {
       t_srv = node[TS_tunnel_prewarm_srv].as<bool>();
     }
 
+    char const *route_key = nullptr;
     if (node[TS_tunnel_route]) {
-      item.tunnel_destination = node[TS_tunnel_route].as<std::string>();
-      item.tunnel_type        = SNIRoutingType::BLIND;
+      route_key        = TS_tunnel_route;
+      item.tunnel_type = SNIRoutingType::BLIND;
     } else if (node[TS_forward_route]) {
-      item.tunnel_destination              = node[TS_forward_route].as<std::string>();
+      route_key                            = TS_forward_route;
       item.tunnel_type                     = SNIRoutingType::FORWARD;
       item.tunnel_prewarm                  = t_prewarm;
       item.tunnel_prewarm_min              = t_min;
@@ -551,7 +552,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.tunnel_prewarm_inactive_timeout = t_inactive_timeout;
       item.tunnel_prewarm_srv              = t_srv;
     } else if (node[TS_partial_blind_route]) {
-      item.tunnel_destination              = node[TS_partial_blind_route].as<std::string>();
+      route_key                            = TS_partial_blind_route;
       item.tunnel_type                     = SNIRoutingType::PARTIAL_BLIND;
       item.tunnel_prewarm                  = t_prewarm;
       item.tunnel_prewarm_min              = t_min;
@@ -565,10 +566,15 @@ template <> struct convert<YamlSNIConfig::Item> {
         load_tunnel_alpn(item.tunnel_alpn, node[TS_tunnel_alpn]);
       }
     }
-    if (!item.tunnel_destination.empty()) {
-      const YAML::Node route = node[TS_tunnel_route]  ? node[TS_tunnel_route] :
-                               node[TS_forward_route] ? node[TS_forward_route] :
-                                                        node[TS_partial_blind_route];
+    // A route key sets the routing type whatever its value, and an empty destination installs no
+    // route, so the destination is checked whenever the key is present.
+    if (route_key != nullptr) {
+      const YAML::Node route = node[route_key];
+      // yaml-cpp reads a null value as the string "null", which would load as a host name.
+      if (route.IsNull()) {
+        throw YAML::ParserException(route.Mark(), "fqdn \"" + item.fqdn + "\": " + route_key + " has no tunnel destination");
+      }
+      item.tunnel_destination = route.as<std::string>();
       check_tunnel_port(route, item.fqdn, item.tunnel_destination);
     }
 
