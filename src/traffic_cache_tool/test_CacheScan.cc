@@ -31,7 +31,6 @@
 #include <sstream>
 #include <string>
 
-#include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -40,11 +39,12 @@ namespace
 constexpr int CHILD_READ     = 3;
 constexpr int CHILD_REJECTED = 4;
 constexpr int CHILD_OTHER    = 5;
+constexpr int CHILD_ABORTED  = 6;
 
 // Unmarshals the alternate at the start of buf in a child process and says what became of the header on the given
 // side: "read", "rejected", or the child's status and output. The child is needed because a header heap longer than
-// the bytes it may use fails an assertion in a Debug build, which ends the process; a release build notes a failed
-// unmarshal instead. Either counts as rejected.
+// the bytes it may use fails an assertion in a Debug build, which aborts; a release build notes a failed unmarshal
+// instead. Either counts as rejected.
 std::string
 unmarshal_in_child(char *buf, int len, ts::VersionNumber version, HTTPHdr HTTPCacheAlt::*side)
 {
@@ -56,10 +56,9 @@ unmarshal_in_child(char *buf, int len, ts::VersionNumber version, HTTPHdr HTTPCa
     ::close(out[0]);
     ::dup2(out[1], STDOUT_FILENO);
     ::dup2(out[1], STDERR_FILENO);
-    // End on an assertion without going through the test framework's signal handler, and without a core file.
-    std::signal(SIGABRT, SIG_DFL);
-    rlimit const no_core{0, 0};
-    ::setrlimit(RLIMIT_CORE, &no_core);
+    // Leave on an assertion's abort with an exit code, so that neither the test framework's handler nor the system's
+    // crash reporting sees it.
+    std::signal(SIGABRT, [](int) { ::_exit(CHILD_ABORTED); });
 
     ct::CacheScan      scan(nullptr);
     swoc::Errata const errata = scan.unmarshal(buf, len, nullptr, version);
@@ -82,11 +81,12 @@ unmarshal_in_child(char *buf, int len, ts::VersionNumber version, HTTPHdr HTTPCa
   int status = 0;
   REQUIRE(::waitpid(pid, &status, 0) == pid);
 
-  bool const exited = WIFEXITED(status);
-  if (exited && WEXITSTATUS(status) == CHILD_READ) {
+  int const  code     = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+  bool const asserted = code == CHILD_ABORTED && text.find("HdrHeap::unmarshal truncated header") != std::string::npos;
+  if (code == CHILD_READ) {
     return "read";
   }
-  if ((exited && WEXITSTATUS(status) == CHILD_REJECTED) || text.find("HdrHeap::unmarshal truncated header") != std::string::npos) {
+  if (code == CHILD_REJECTED || asserted) {
     return "rejected";
   }
   return "status " + std::to_string(status) + ": " + text;
