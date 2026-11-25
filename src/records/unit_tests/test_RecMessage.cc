@@ -26,6 +26,7 @@
 #include "../P_RecFile.h"
 #include "../P_RecMessage.h"
 #include "../P_RecUtils.h"
+#include "test_Diags.h"
 #include "tscore/ink_memory.h"
 
 #include <cstring>
@@ -53,6 +54,20 @@ write_snap(const std::filesystem::path &path, const void *msg, size_t len)
 
   out.write(version, sizeof(version));
   out.write(static_cast<const char *>(msg), len);
+}
+
+// A rejected header drops every persistent stat, so the reader must say which file it rejected.
+bool
+read_rejected_with_warning(const std::filesystem::path &path)
+{
+  auto *cdiag = static_cast<CatchDiags *>(diags());
+
+  cdiag->messages.clear();
+  if (RecMessage *msg = RecMessageReadFromDisk(path.c_str()); msg != nullptr) {
+    ats_free(msg);
+    return false;
+  }
+  return cdiag->messages.size() == 1 && cdiag->messages.front().find(path.string()) != std::string::npos;
 }
 } // namespace
 
@@ -122,7 +137,7 @@ TEST_CASE("RecMessageReadFromDisk rejects a corrupt snapshot header", "[librecor
 
   auto path = snap_path("corrupt");
   write_snap(path, &hdr, sizeof(hdr));
-  CHECK(RecMessageReadFromDisk(path.c_str()) == nullptr);
+  CHECK(read_rejected_with_warning(path));
   std::filesystem::remove(path);
 }
 
@@ -135,8 +150,19 @@ TEST_CASE("RecMessageReadFromDisk rejects a truncated header", "[librecords][Rec
 
   auto path = snap_path("truncated");
   write_snap(path, &hdr, sizeof(hdr) / 2);
-  CHECK(RecMessageReadFromDisk(path.c_str()) == nullptr);
+  CHECK(read_rejected_with_warning(path));
   std::filesystem::remove(path);
+}
+
+TEST_CASE("RecMessageReadFromDisk is quiet when there is no snapshot", "[librecords][RecMessage]")
+{
+  auto  path  = snap_path("missing");
+  auto *cdiag = static_cast<CatchDiags *>(diags());
+
+  std::filesystem::remove(path);
+  cdiag->messages.clear();
+  CHECK(RecMessageReadFromDisk(path.c_str()) == nullptr);
+  CHECK(cdiag->messages.empty());
 }
 
 namespace

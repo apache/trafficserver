@@ -33,6 +33,7 @@
 #include "tscore/Layout.h"
 #include "swoc/MemSpan.h"
 
+#include <cerrno>
 #include <cstring>
 #include <type_traits>
 
@@ -318,37 +319,51 @@ RecMessageReadFromDisk(const char *fpath)
   RecHandle     h_file;
   int           bytes_read;
   struct stat   file_stat;
+  const char   *why = nullptr;
 
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
+    // No file is the normal state before the first snapshot is written.
+    if (errno != ENOENT) {
+      why = "cannot open it";
+    }
     goto Lerror;
   }
   if (RecSnapFileRead(h_file, reinterpret_cast<char *>(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL ||
       bytes_read != static_cast<int>(sizeof(RecMessageHdr))) {
+    why = "truncated header";
     goto Lerror;
   }
   if (fstat(h_file, &file_stat) != 0) {
+    why = "cannot stat it";
     goto Lerror;
   }
   // RecMessageWriteToDisk() puts the message, header included, after the version bytes, with
   // o_start at the end of the header and o_end at the end of the message.
   if (msg_hdr.o_start != static_cast<int>(sizeof(RecMessageHdr)) || msg_hdr.o_end < msg_hdr.o_start ||
       msg_hdr.o_end > file_stat.st_size - static_cast<off_t>(VERSION_HDR_SIZE)) {
+    why = "header does not match the file";
     goto Lerror;
   }
   msg = static_cast<RecMessage *>(ats_malloc(msg_hdr.o_end));
   if (RecSnapFileRead(h_file, reinterpret_cast<char *>(msg), msg_hdr.o_end, &bytes_read) == REC_ERR_FAIL ||
       bytes_read != msg_hdr.o_end) {
+    why = "truncated message";
     goto Lerror;
   }
   // Every later bound comes from the header in msg, so it must be the one checked above, not a copy of a file
   // that changed between the two reads.
   if (memcmp(msg, &msg_hdr, sizeof(msg_hdr)) != 0) {
+    why = "file changed while reading it";
     goto Lerror;
   }
 
   goto Ldone;
 
 Lerror:
+  // Without the snapshot no persistent stat is restored, so say why it was not used.
+  if (why != nullptr) {
+    Warning("Persistent statistics file %s is not usable (%s). No persistent statistics are restored", fpath, why);
+  }
   ats_free(msg);
   msg = nullptr;
 
