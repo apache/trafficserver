@@ -508,8 +508,8 @@ TEST_CASE("cache inspection rejects a header heap whose objects do not start rig
 
   SECTION("objects said to start inside the header are rejected")
   {
-    // The header's last bytes are zero here, which a walk would read as an empty object and stop on, again reporting
-    // the heap's full size.
+    // The header's last bytes are zero here, which a walk would read as an object of length zero and stop on, again
+    // reporting the heap's full size.
     CHECK(unmarshal_with(HEAP_HDR - 8) == -1);
   }
 }
