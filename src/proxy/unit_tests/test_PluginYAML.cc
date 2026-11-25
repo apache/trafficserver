@@ -601,8 +601,8 @@ TEST_CASE("parse_plugin_yaml - FIFO is a config error", "[plugin_yaml]")
 TEST_CASE("parse_plugin_yaml - read error is a config error", "[plugin_yaml]")
 {
   // /proc/self/mem is a regular file whose offset 0 is unmapped, so the first
-  // read() fails with EIO. The message must carry that error, whichever C++
-  // library the build uses.
+  // read() fails with EIO. The message must carry that error rather than treat
+  // the failure as end of file.
   auto result = parse_plugin_yaml("/proc/self/mem");
 
   REQUIRE_FALSE(result.ok());

@@ -551,10 +551,9 @@ parse_plugin_yaml(const char *yaml_path)
     return result;
   }
 
-  // Read the file here rather than with YAML::LoadFile(), whose read errors
-  // escape as exceptions that are not YAML::Exception. A stream will not do:
-  // libc++ reports a failed read as end of file, which would hand an empty or
-  // truncated file to the parser as if it were the whole file.
+  // Read with read() rather than YAML::LoadFile() or any other stream read. A
+  // stream may report a failed read as end of file (libc++ does), which would
+  // hand an empty or truncated file to the parser as if it were the whole file.
   std::string text;
   for (char buf[4096];;) {
     ssize_t n = read(fd, buf, sizeof(buf));
