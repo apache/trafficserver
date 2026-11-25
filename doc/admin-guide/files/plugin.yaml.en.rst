@@ -380,7 +380,9 @@ not start. Examples are:
 
 - a file that cannot be read, or a path that is not a regular file (such
   as a directory)
-- invalid YAML, or more than one YAML document in the file
+- invalid YAML, a YAML document after the first that is not empty, or an
+  empty first document followed by another (an empty document after the
+  first, such as a trailing ``---``, is accepted)
 - a document with no ``plugins`` key, or one that is not a map (such as
   :file:`plugin.config` lines pasted into the file)
 - a ``plugins`` or ``params`` value that is not a list

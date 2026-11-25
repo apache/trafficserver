@@ -450,33 +450,42 @@ plugin_init(bool validateOnly)
 
 namespace
 {
-/// Discards every parse event, so a document can be checked without building it.
-class IgnoreYAMLEvents : public YAML::EventHandler
+/// Records whether each YAML document is empty, without building it.
+class YAMLDocumentEmptiness : public YAML::EventHandler
 {
 public:
+  /// One entry per document, true if the document is only a null.
+  std::vector<bool> empty;
+
   void
   OnDocumentStart(const YAML::Mark &) override
   {
+    _root_seen = false;
   }
   void
   OnDocumentEnd() override
   {
+    root(true);
   }
   void
   OnNull(const YAML::Mark &, YAML::anchor_t) override
   {
+    root(true);
   }
   void
   OnAlias(const YAML::Mark &, YAML::anchor_t) override
   {
+    root(false);
   }
   void
   OnScalar(const YAML::Mark &, const std::string &, YAML::anchor_t, const std::string &) override
   {
+    root(false);
   }
   void
   OnSequenceStart(const YAML::Mark &, const std::string &, YAML::anchor_t, YAML::EmitterStyle::value) override
   {
+    root(false);
   }
   void
   OnSequenceEnd() override
@@ -485,26 +494,38 @@ public:
   void
   OnMapStart(const YAML::Mark &, const std::string &, YAML::anchor_t, YAML::EmitterStyle::value) override
   {
+    root(false);
   }
   void
   OnMapEnd() override
   {
   }
+
+private:
+  // The first node event of a document is its root.
+  void
+  root(bool is_null)
+  {
+    if (!_root_seen) {
+      _root_seen = true;
+      empty.push_back(is_null);
+    }
+  }
+
+  bool _root_seen = false;
 };
 
-/// Count the YAML documents in @a text. Throws YAML::Exception if any document is malformed.
-int
-count_yaml_documents(const std::string &text)
+/// Return, for each YAML document in @a text, whether it is empty. Throws
+/// YAML::Exception if any document is malformed.
+std::vector<bool>
+yaml_document_emptiness(const std::string &text)
 {
-  std::istringstream in(text);
-  YAML::Parser       parser(in);
-  IgnoreYAMLEvents   events;
-  int                count = 0;
+  std::istringstream    in(text);
+  YAML::Parser          parser(in);
+  YAMLDocumentEmptiness events;
 
-  while (parser.HandleNextDocument(events)) {
-    ++count;
-  }
-  return count;
+  while (parser.HandleNextDocument(events)) {}
+  return events.empty;
 }
 } // namespace
 
@@ -548,12 +569,21 @@ parse_plugin_yaml(const char *yaml_path)
   }
 
   try {
-    // YAML::Load() builds only the first document and never reads the rest,
-    // so a null first document would load no plugins and a malformed later
-    // one would go unreported. YAML::LoadAll() stops at a null document too.
-    if (int documents = count_yaml_documents(text); documents > 1) {
-      result.errata.note("contains {} YAML documents, expected one", documents);
+    // YAML::Load() builds only the first document and never parses the rest,
+    // so plugins named in a later document would be dropped, a null first
+    // document would load none, and a malformed later one would go unreported.
+    // YAML::LoadAll() stops at a null document too. Empty documents after the
+    // first, such as a trailing "---", hold nothing to drop.
+    auto empty = yaml_document_emptiness(text);
+    if (empty.size() > 1 && empty[0]) {
+      result.errata.note("YAML document #1 is empty and another document follows");
       return result;
+    }
+    for (size_t i = 1; i < empty.size(); ++i) {
+      if (!empty[i]) {
+        result.errata.note("YAML document #{} is not empty, expected one document", i + 1);
+        return result;
+      }
     }
     root = YAML::Load(text);
   } catch (const YAML::Exception &e) {
