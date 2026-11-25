@@ -470,10 +470,12 @@ public:
     _last_start = mark.pos;
     _root_seen  = false;
   }
+  // A document always reports its root node before it ends, and a root alias
+  // fails as an undefined anchor before it is reported, so neither event can
+  // be a document's root.
   void
   OnDocumentEnd() override
   {
-    root(true);
   }
   void
   OnNull(const YAML::Mark &, YAML::anchor_t) override
@@ -483,7 +485,6 @@ public:
   void
   OnAlias(const YAML::Mark &, YAML::anchor_t) override
   {
-    root(false);
   }
   void
   OnScalar(const YAML::Mark &, const std::string &, YAML::anchor_t, const std::string &) override
