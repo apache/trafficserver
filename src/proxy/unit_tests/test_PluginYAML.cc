@@ -25,6 +25,7 @@
 #include <catch2/generators/catch_generators.hpp>
 #include <atomic>
 #include <chrono>
+#include <cstring>
 #include <fcntl.h>
 #include <filesystem>
 #include <fstream>
@@ -481,8 +482,8 @@ TEST_CASE("parse_plugin_yaml - directory is a config error", "[plugin_yaml]")
 
 TEST_CASE("parse_plugin_yaml - FIFO is a config error", "[plugin_yaml]")
 {
-  // Opening a FIFO for reading blocks until a writer appears, so it must be
-  // rejected before the open rather than hang startup.
+  // A blocking open of a FIFO for reading waits until a writer opens it, so
+  // startup would hang unless the file is opened without blocking and rejected.
   TempPath fifo("fifo");
   REQUIRE(mkfifo(fifo.path(), 0600) == 0);
 
@@ -515,15 +516,16 @@ TEST_CASE("parse_plugin_yaml - FIFO is a config error", "[plugin_yaml]")
   CHECK(std::string(result.errata.front().text()).find("not a regular file") != std::string::npos);
 }
 
-#if defined(__linux__) && defined(__GLIBCXX__)
+#if defined(__linux__)
 TEST_CASE("parse_plugin_yaml - read error is a config error", "[plugin_yaml]")
 {
   // /proc/self/mem is a regular file whose offset 0 is unmapped, so the first
-  // read fails with EIO, which libstdc++ throws as std::ios_base::failure.
+  // read() fails with EIO. The message must carry that error, whichever C++
+  // library the build uses.
   auto result = parse_plugin_yaml("/proc/self/mem");
 
   REQUIRE_FALSE(result.ok());
-  CHECK(std::string(result.errata.front().text()).find("failed to read") != std::string::npos);
+  CHECK(std::string(result.errata.front().text()) == std::string("failed to read: ") + strerror(EIO));
 }
 #endif
 

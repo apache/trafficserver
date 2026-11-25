@@ -24,8 +24,6 @@
 #include <cstdio>
 #include <algorithm>
 #include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -454,26 +452,35 @@ parse_plugin_yaml(const char *yaml_path)
   config::ConfigResult<PluginYAMLEntries> result;
   YAML::Node                              root;
 
-  // A directory passes access(R_OK) and opens, then fails on the first read,
-  // and opening a FIFO blocks startup until something writes to it.
-  if (struct stat st; stat(yaml_path, &st) == 0 && !S_ISREG(st.st_mode)) {
+  // O_NONBLOCK keeps the open of a FIFO from waiting for a writer, so the file
+  // type check below can reject it. Checking the descriptor rather than the
+  // path tests the file that is actually read.
+  ats_scoped_fd fd(open(yaml_path, O_RDONLY | O_CLOEXEC | O_NONBLOCK));
+  if (fd < 0) {
+    result.errata.note("failed to open: {}", strerror(errno));
+    return result;
+  }
+  if (struct stat st; fstat(fd, &st) != 0) {
+    result.errata.note("failed to stat: {}", strerror(errno));
+    return result;
+  } else if (!S_ISREG(st.st_mode)) {
     result.errata.note("not a regular file");
     return result;
   }
 
-  // Read the file here rather than with YAML::LoadFile(). libstdc++ raises a read
-  // error as std::ios_base::failure, which would escape yaml-cpp and leak its buffer.
+  // Read the file here rather than with YAML::LoadFile(), whose read errors
+  // escape as exceptions that are not YAML::Exception. A stream will not do:
+  // libc++ reports a failed read as end of file, which would hand an empty or
+  // truncated file to the parser as if it were the whole file.
   std::string text;
-  {
-    std::ifstream in(yaml_path, std::ios::binary);
-    if (!in) {
-      result.errata.note("failed to open: {}", strerror(errno));
-      return result;
-    }
-    try {
-      text.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
-    } catch (const std::ios_base::failure &e) {
-      result.errata.note("failed to read: {}", e.what());
+  for (char buf[4096];;) {
+    ssize_t n = read(fd, buf, sizeof(buf));
+    if (n > 0) {
+      text.append(buf, n);
+    } else if (n == 0) {
+      break;
+    } else if (errno != EINTR) {
+      result.errata.note("failed to read: {}", strerror(errno));
       return result;
     }
   }
