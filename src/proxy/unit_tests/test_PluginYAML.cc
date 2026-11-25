@@ -362,6 +362,20 @@ TEST_CASE("parse_plugin_yaml - negative load_order is a config error", "[plugin_
   CHECK(std::string(result.errata.front().text()).find("plugin entry #2: 'load_order' must not be negative") != std::string::npos);
 }
 
+TEST_CASE("parse_plugin_yaml - load_order zero is accepted", "[plugin_yaml]")
+{
+  // Zero is the lowest valid value, so it loads before an unordered plugin.
+  TempYAML yaml("plugins:\n  - path: unordered.so\n  - path: first.so\n    load_order: 0\n");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.size() == 2);
+  CHECK(result.value[0].path == "first.so");
+  CHECK(result.value[0].load_order == 0);
+  CHECK(result.value[1].path == "unordered.so");
+}
+
 TEST_CASE("parse_plugin_yaml - missing plugins key", "[plugin_yaml]")
 {
   TempYAML yaml(R"(
