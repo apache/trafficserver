@@ -319,6 +319,40 @@ TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the sna
     CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
     ats_free(in);
   }
+  SECTION("a string value that does not resolve")
+  {
+    RecMessage *msg = RecMessageAlloc(RECG_NULL);
+    RecRecord   rec;
+
+    // The default string stays valid, so only the value can reject the record. Its length leaves padding after it,
+    // which the unterminated case needs.
+    RecRecordInit(&rec);
+    rec.rec_type                = RECT_PROCESS;
+    rec.data_type               = RECD_STRING;
+    rec.name                    = "proxy.process.test.string";
+    rec.data.rec_string         = const_cast<char *>("value");
+    rec.data_default.rec_string = const_cast<char *>("dflt");
+    msg                         = RecMessageMarshal_Realloc(msg, &rec);
+
+    RecRecord *r = element_record(first_element(msg));
+
+    SECTION("an offset past the end of the snapshot")
+    {
+      r->data.rec_string = reinterpret_cast<char *>(static_cast<intptr_t>(msg->o_end) * 2);
+    }
+    SECTION("an offset to a string that is not terminated")
+    {
+      char *last        = reinterpret_cast<char *>(msg) + msg->o_write - 1;
+      char *default_end = reinterpret_cast<char *>(r) + reinterpret_cast<intptr_t>(r->data_default.rec_string) + sizeof("dflt");
+      REQUIRE(last >= default_end);
+      *last              = 'x';
+      r->data.rec_string = reinterpret_cast<char *>(last - reinterpret_cast<char *>(r));
+    }
+
+    RecMessage *in = write_and_read(msg, path);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
   SECTION("a name that is not terminated inside the snapshot")
   {
     RecMessage *msg = marshal_records(1);
