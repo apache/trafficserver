@@ -571,8 +571,9 @@ template <> struct convert<YamlSNIConfig::Item> {
     // route, so the destination is checked whenever the key is present.
     if (route_key != nullptr) {
       const YAML::Node route = node[route_key];
-      // yaml-cpp reads a null value as the string "null", which would load as a host name.
-      if (route.IsNull()) {
+      // yaml-cpp reads a null value as the string "null", which would load as a host name, and gives
+      // a value tagged !!null back as a string of the text after the tag, so the tag is checked too.
+      if (route.IsNull() || route.Tag() == "tag:yaml.org,2002:null") {
         throw YAML::ParserException(route.Mark(), "fqdn \"" + item.fqdn + "\": " + route_key + " has no tunnel destination");
       }
       item.tunnel_destination = route.as<std::string>();
