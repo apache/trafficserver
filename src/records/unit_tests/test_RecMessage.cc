@@ -32,6 +32,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <type_traits>
 
 #include <unistd.h>
 
@@ -434,6 +435,59 @@ TEST_CASE("RecMessageUnmarshalNext rejects a record that is not a stat", "[libre
   RecMessage *msg = marshal_records(1);
 
   element_record(first_element(msg))->rec_type = type;
+
+  RecMessage *in = write_and_read(msg, path);
+  CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+  ats_free(in);
+  std::filesystem::remove(path);
+}
+
+namespace
+{
+// Write the raw bytes, since storing a value outside the enum's range through the enum type is itself undefined.
+template <typename Enum>
+void
+store_raw(Enum *field, std::underlying_type_t<Enum> value)
+{
+  std::memcpy(field, &value, sizeof(value));
+}
+} // namespace
+
+// A value past an enum's range of values makes even loading the field undefined, which only a build with
+// -fsanitize=enum reports; the reader must reject it from the integer alone. A value just past the last enumerator is
+// inside the range and is rejected by the value checks.
+TEST_CASE("RecMessageUnmarshalNext rejects a type field outside its enum", "[librecords][RecMessage]")
+{
+  auto          path = snap_path("enumrange");
+  RecMessageItr itr;
+  RecRecord    *got = nullptr;
+  RecMessage   *msg = marshal_records(1);
+  RecRecord    *r   = element_record(first_element(msg));
+
+  SECTION("record kind just past the last enumerator")
+  {
+    store_raw(&r->rec_type, RECT_HIDDEN_METRIC + 1);
+  }
+  SECTION("record kind just past the range of RecT")
+  {
+    store_raw(&r->rec_type, 0x80);
+  }
+  SECTION("record kind of the largest int")
+  {
+    store_raw(&r->rec_type, 0x7fffffff);
+  }
+  SECTION("data type just past the last enumerator")
+  {
+    store_raw(&r->data_type, RECD_MAX + 1);
+  }
+  SECTION("data type just past the range of RecDataT")
+  {
+    store_raw(&r->data_type, 0x8);
+  }
+  SECTION("data type of the largest int")
+  {
+    store_raw(&r->data_type, 0x7fffffff);
+  }
 
   RecMessage *in = write_and_read(msg, path);
   CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);

@@ -33,6 +33,9 @@
 #include "tscore/Layout.h"
 #include "swoc/MemSpan.h"
 
+#include <cstring>
+#include <type_traits>
+
 //-------------------------------------------------------------------------
 // RecMessageAlloc
 //-------------------------------------------------------------------------
@@ -213,6 +216,17 @@ resolve_string(RecMessage *msg, const RecRecord *r, Char *&str)
   str = p;
   return true;
 }
+
+// RecT and RecDataT have no fixed underlying type, so loading a field from the file as the enum is undefined when its
+// bytes hold a value outside the enum's range. Copy the bytes out as the underlying integer and check that instead.
+template <typename Enum>
+std::underlying_type_t<Enum>
+stored_value(const Enum *field)
+{
+  std::underlying_type_t<Enum> value;
+  std::memcpy(&value, field, sizeof(value));
+  return value;
+}
 } // namespace
 
 int
@@ -269,7 +283,7 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 
   // RecSyncStatsFile() writes only stats. RecReadStatsFile() would restore any other kind as a new record, where an
   // unknown kind asserts in RecSetRecord() and a configuration kind aborts the later registration of that stat.
-  if (!REC_TYPE_IS_STAT(r->rec_type)) {
+  if (!REC_TYPE_IS_STAT(stored_value(&r->rec_type))) {
     return corrupt("not a stat record");
   }
   if (!resolve_string(msg, r, r->name)) {
@@ -277,10 +291,11 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
   }
   // RecSetRecord() reads RECD_NULL data as a string pointer, which the bytes from the file are not, and RecDataSet()
   // asserts on any type past RECD_COUNTER.
-  if (r->data_type <= RECD_NULL || r->data_type >= RECD_MAX) {
+  auto const data_type = stored_value(&r->data_type);
+  if (data_type <= RECD_NULL || data_type >= RECD_MAX) {
     return corrupt("bad data type");
   }
-  if (r->data_type == RECD_STRING) {
+  if (data_type == RECD_STRING) {
     if (!resolve_string(msg, r, r->data.rec_string) || !resolve_string(msg, r, r->data_default.rec_string)) {
       return corrupt("bad string value");
     }
