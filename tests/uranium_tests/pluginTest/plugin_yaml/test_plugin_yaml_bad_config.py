@@ -31,7 +31,7 @@ BAD_PLUGIN_YAML = {
     "params_scalar": "plugins:\n  - path: xdebug.so\n    params: --enable=x-cache\n",
     "params_mapping": "plugins:\n  - path: xdebug.so\n    params:\n      enable: x-cache\n",
     "params_empty_item": "plugins:\n  - path: xdebug.so\n    params:\n      - --enable=x-cache\n      -\n",
-    # A file with a second document is an error, so neither document is dropped unseen.
+    # A later document that is not empty or cannot be parsed is an error, so nothing in it is dropped unseen.
     "null_first_document": "---\n---\nplugins:\n  - path: xdebug.so\n",
     "malformed_second_document": "plugins:\n  - path: xdebug.so\n---\nplugins: [unclosed\n",
     "stray_token_after_document": "plugins:\n  - path: xdebug.so\n--- ,\n",
@@ -69,6 +69,7 @@ def test_plugin_yaml_directory_stops_startup(ats_factory: ATSFactory) -> None:
 EMPTY_PLUGIN_YAML = {
     "empty_file": "",
     "comment_only": "# no plugins yet\n",
+    "only_empty_documents": "---\n---\n",
     "entries_commented_out": "plugins:\n#  - path: libfoo.so\n",
 }
 

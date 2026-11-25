@@ -414,7 +414,7 @@ TEST_CASE("parse_plugin_yaml - invalid YAML syntax", "[plugin_yaml]")
   CHECK(std::string(result.errata.front().text()).find("failed to parse") != std::string::npos);
 }
 
-TEST_CASE("parse_plugin_yaml - empty first document followed by another is a config error", "[plugin_yaml]")
+TEST_CASE("parse_plugin_yaml - empty first document followed by plugins is a config error", "[plugin_yaml]")
 {
   // YAML::Load() returns only the first document, so a null first document
   // would load none of the plugins the second one names.
@@ -426,7 +426,7 @@ TEST_CASE("parse_plugin_yaml - empty first document followed by another is a con
   auto result = parse_plugin_yaml(yaml.path());
 
   REQUIRE_FALSE(result.ok());
-  CHECK(std::string(result.errata.front().text()) == "YAML document #1 is empty and another document follows");
+  CHECK(std::string(result.errata.front().text()) == "YAML document #2 is not empty, documents after the first must be empty");
 }
 
 TEST_CASE("parse_plugin_yaml - nonempty second document is a config error", "[plugin_yaml]")
@@ -441,7 +441,8 @@ TEST_CASE("parse_plugin_yaml - nonempty second document is a config error", "[pl
   auto result = parse_plugin_yaml(yaml.path());
 
   REQUIRE_FALSE(result.ok());
-  CHECK(std::string(result.errata.front().text()).find("is not empty, expected one document") != std::string::npos);
+  CHECK(std::string(result.errata.front().text()).find("is not empty, documents after the first must be empty") !=
+        std::string::npos);
 }
 
 TEST_CASE("parse_plugin_yaml - empty documents after the first are accepted", "[plugin_yaml]")
@@ -511,9 +512,10 @@ plugins: []
 
 TEST_CASE("parse_plugin_yaml - a file that names no plugins", "[plugin_yaml]")
 {
-  // An empty file, a comment-only file, and a plugins key with every entry
-  // commented out all load no plugins, the same as plugins: [].
-  auto content = GENERATE(as<std::string>{}, "", "# no plugins yet\n", "plugins:\n#  - path: foo.so\n");
+  // An empty file, a comment-only file, a file of only empty documents, and a
+  // plugins key with every entry commented out all load no plugins, the same
+  // as plugins: [].
+  auto content = GENERATE(as<std::string>{}, "", "# no plugins yet\n", "---\n---\n", "plugins:\n#  - path: foo.so\n");
 
   CAPTURE(content);
   TempYAML yaml(content);

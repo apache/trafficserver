@@ -579,18 +579,14 @@ parse_plugin_yaml(const char *yaml_path)
 
   try {
     // YAML::Load() builds only the first document and never parses the rest,
-    // so plugins named in a later document would be dropped, a null first
-    // document would load none, and a malformed later one would go unreported.
-    // YAML::LoadAll() stops at a null document too. Empty documents after the
-    // first, such as a trailing "---", hold nothing to drop.
+    // so anything in a later document would be dropped and a malformed later
+    // document would go unreported. YAML::LoadAll() stops at a null document
+    // too. So refuse any document after the first that is not empty, even
+    // when the first is empty, and accept empty ones such as a trailing "---".
     auto empty = yaml_document_emptiness(text);
-    if (empty.size() > 1 && empty[0]) {
-      result.errata.note("YAML document #1 is empty and another document follows");
-      return result;
-    }
     for (size_t i = 1; i < empty.size(); ++i) {
       if (!empty[i]) {
-        result.errata.note("YAML document #{} is not empty, expected one document", i + 1);
+        result.errata.note("YAML document #{} is not empty, documents after the first must be empty", i + 1);
         return result;
       }
     }
