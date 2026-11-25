@@ -380,7 +380,9 @@ not start. Examples are:
 
 - a file that cannot be read, or a path that is not a regular file (such
   as a directory)
-- invalid YAML
+- invalid YAML, or more than one YAML document in the file
+- a document with no ``plugins`` key, or one that is not a map (such as
+  :file:`plugin.config` lines pasted into the file)
 - a ``plugins`` or ``params`` value that is not a list
 - an entry with no ``path``, or with a ``path`` that has no value
 - a ``params`` item with no value
@@ -390,11 +392,12 @@ not start. Examples are:
 The error is logged at ``EMERGENCY`` level and :program:`traffic_server`
 exits with status 33. ``traffic_server -C verify_config`` logs the same
 error at ``ERROR`` level. A plugin library that cannot be loaded is a
-fatal error, as it is with :file:`plugin.config`.
+``FATAL`` error instead, and :program:`traffic_server` exits with status
+70, as it does with :file:`plugin.config`.
 
-A file that names no plugins, such as an empty file or a ``plugins`` key
-with every entry commented out, loads none, the same as ``plugins: []``.
-A ``params`` key with every item commented out passes no arguments.
+An empty file, a file of only comments, and a ``plugins`` key with every
+entry commented out load no plugins, the same as ``plugins: []``. A
+``params`` key with every item commented out passes no arguments.
 
 |TS| reads :file:`plugin.yaml` only at startup. A configuration reload
 does not reread it, so a change, including one that breaks the file,
