@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -39,6 +40,7 @@
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
 #include <yaml-cpp/yaml.h>
+#include <yaml-cpp/eventhandler.h>
 
 #define MAX_PLUGIN_ARGS 64
 
@@ -446,6 +448,66 @@ plugin_init(bool validateOnly)
   return retVal;
 }
 
+namespace
+{
+/// Discards every parse event, so a document can be checked without building it.
+class IgnoreYAMLEvents : public YAML::EventHandler
+{
+public:
+  void
+  OnDocumentStart(const YAML::Mark &) override
+  {
+  }
+  void
+  OnDocumentEnd() override
+  {
+  }
+  void
+  OnNull(const YAML::Mark &, YAML::anchor_t) override
+  {
+  }
+  void
+  OnAlias(const YAML::Mark &, YAML::anchor_t) override
+  {
+  }
+  void
+  OnScalar(const YAML::Mark &, const std::string &, YAML::anchor_t, const std::string &) override
+  {
+  }
+  void
+  OnSequenceStart(const YAML::Mark &, const std::string &, YAML::anchor_t, YAML::EmitterStyle::value) override
+  {
+  }
+  void
+  OnSequenceEnd() override
+  {
+  }
+  void
+  OnMapStart(const YAML::Mark &, const std::string &, YAML::anchor_t, YAML::EmitterStyle::value) override
+  {
+  }
+  void
+  OnMapEnd() override
+  {
+  }
+};
+
+/// Count the YAML documents in @a text. Throws YAML::Exception if any document is malformed.
+int
+count_yaml_documents(const std::string &text)
+{
+  std::istringstream in(text);
+  YAML::Parser       parser(in);
+  IgnoreYAMLEvents   events;
+  int                count = 0;
+
+  while (parser.HandleNextDocument(events)) {
+    ++count;
+  }
+  return count;
+}
+} // namespace
+
 config::ConfigResult<PluginYAMLEntries>
 parse_plugin_yaml(const char *yaml_path)
 {
@@ -486,6 +548,13 @@ parse_plugin_yaml(const char *yaml_path)
   }
 
   try {
+    // YAML::Load() builds only the first document and never reads the rest,
+    // so a null first document would load no plugins and a malformed later
+    // one would go unreported. YAML::LoadAll() stops at a null document too.
+    if (int documents = count_yaml_documents(text); documents > 1) {
+      result.errata.note("contains {} YAML documents, expected one", documents);
+      return result;
+    }
     root = YAML::Load(text);
   } catch (const YAML::Exception &e) {
     result.errata.note("failed to parse: {}", e.what());

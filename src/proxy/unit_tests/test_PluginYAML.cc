@@ -400,6 +400,43 @@ TEST_CASE("parse_plugin_yaml - invalid YAML syntax", "[plugin_yaml]")
   CHECK(std::string(result.errata.front().text()).find("failed to parse") != std::string::npos);
 }
 
+TEST_CASE("parse_plugin_yaml - more than one document is a config error", "[plugin_yaml]")
+{
+  // YAML::Load() returns only the first document, so a null first document
+  // would load none of the plugins the second one names.
+  auto content = GENERATE(as<std::string>{}, "---\n---\nplugins:\n  - path: foo.so\n", "~\n---\nplugins:\n  - path: foo.so\n",
+                          "plugins:\n  - path: foo.so\n---\nplugins:\n  - path: bar.so\n");
+
+  CAPTURE(content);
+  TempYAML yaml(content);
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()) == "contains 2 YAML documents, expected one");
+}
+
+TEST_CASE("parse_plugin_yaml - malformed second document is a config error", "[plugin_yaml]")
+{
+  TempYAML yaml("plugins:\n  - path: foo.so\n---\nplugins:\n  - path: [unclosed\n");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE_FALSE(result.ok());
+  CHECK(std::string(result.errata.front().text()).find("failed to parse") != std::string::npos);
+}
+
+TEST_CASE("parse_plugin_yaml - one document with start and end markers", "[plugin_yaml]")
+{
+  TempYAML yaml("---\nplugins:\n  - path: foo.so\n...\n");
+
+  auto result = parse_plugin_yaml(yaml.path());
+
+  REQUIRE(result.ok());
+  REQUIRE(result.value.size() == 1);
+  CHECK(result.value[0].path == "foo.so");
+}
+
 TEST_CASE("parse_plugin_yaml - empty plugins list", "[plugin_yaml]")
 {
   TempYAML yaml(R"(
