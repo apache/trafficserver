@@ -340,9 +340,17 @@ bwformat(swoc::BufferWriter &w, swoc::bwf::Spec const &spec, DiagThreadname cons
 
 } // namespace
 
+// noexcept because nothing here throws while the header's precondition holds.
+// swoc's print() throws when it cannot parse its format string or when an
+// argument's formatter throws. Every format string here and in the bwformat
+// overloads it reaches is a fixed literal with positional arguments, and none
+// of the formatters for these arguments throw. The caller's format_string is
+// printed as the argument to "{}" and is never parsed by swoc. restrict(2)
+// throws only when capacity() is below 2, which remaining() >= 2 rules out.
 size_t
 DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_writer, const char *debug_tag, DiagsLevel diags_level,
-                                       const SourceLocation *loc, DiagsShowLocation show_location, const char *format_string)
+                                       const SourceLocation *loc, DiagsShowLocation show_location,
+                                       const char *format_string) noexcept
 {
   // Save room for optional newline and terminating NUL bytes.
   format_writer.restrict(2);
@@ -362,8 +370,10 @@ DebugInterface::generate_format_string(swoc::LocalBufferWriter<1024> &format_wri
 
   format_writer.print("{}", format_string);
 
-  format_writer.restore(2);                  // restore the space for required termination.
-  if (format_writer.view().back() != '\n') { // safe because always some chars in the buffer.
+  format_writer.restore(2); // restore the space for required termination.
+  // An empty writer with only the 2 reserved bytes of room reaches here with an
+  // empty view.
+  if (!format_writer.view().ends_with('\n')) {
     format_writer.write('\n');
   }
   format_writer.write('\0');
