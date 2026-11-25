@@ -350,3 +350,27 @@ TEST_CASE("cache inspection rejects a header heap whose objects do not start rig
     CHECK(found == nullptr);
   }
 }
+
+TEST_CASE("cache inspection rejects a request URL object that is empty or of another type", "[cache_tool]")
+{
+  alignas(URLImpl) char buf[sizeof(URLImpl)] = {};
+  swoc::MemSpan<char>   mem(buf, sizeof(buf));
+  ct::CacheScan         scan(nullptr);
+
+  auto *url     = reinterpret_cast<URLImpl *>(buf);
+  url->m_type   = static_cast<uint32_t>(HdrHeapObjType::URL);
+  url->m_length = sizeof(URLImpl);
+  REQUIRE(scan.check_url(mem, url));
+
+  SECTION("an object with no length")
+  {
+    url->m_length = 0;
+    CHECK_FALSE(scan.check_url(mem, url));
+  }
+
+  SECTION("an object that is not a URL")
+  {
+    url->m_type = static_cast<uint32_t>(HdrHeapObjType::HTTP_HEADER);
+    CHECK_FALSE(scan.check_url(mem, url));
+  }
+}
