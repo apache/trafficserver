@@ -1452,17 +1452,23 @@ UpdateHostsFile(swoc::file::path const &path, ts_seconds interval)
 //
 // Take a started hostDB and fill it up and make sure it doesn't explode
 #if TS_HAS_TESTS
-struct HostDBRegressionContinuation;
+struct HostDBRegressionHost {
+  const char *name;
+  /// Resolving the name needs outside DNS, which the test host does not control.
+  bool needs_network;
+};
 
 struct HostDBRegressionContinuation : public Continuation {
-  int             hosts;
-  const char    **hostnames;
-  RegressionTest *test;
-  int             type;
-  int            *status;
+  int                         hosts;
+  const HostDBRegressionHost *hostnames;
+  RegressionTest             *test;
+  int                         type;
+  int                        *status;
 
   int success;
   int failure;
+  int local_failure;
+  int network_success;
   int outstanding;
   int i;
 
@@ -1475,6 +1481,8 @@ struct HostDBRegressionContinuation : public Continuation {
       rprintf(test, "hosts=%d success=%d failure=%d outstanding=%d i=%d\n", hosts, success, failure, outstanding, i);
     }
     if (event == EVENT_HOST_DB_LOOKUP) {
+      // Lookups run one at a time, so this result is for the name issued last.
+      const HostDBRegressionHost &host = hostnames[i - 1];
       --outstanding;
       if (r) {
         rprintf(test, "HostDBRecord r=%p\n", r);
@@ -1487,17 +1495,25 @@ struct HostDBRegressionContinuation : public Continuation {
           rprintf(test, "hostdbinfo RR%d ip=%s\n", x, ip_buf);
         }
         ++success;
+        if (host.needs_network) {
+          ++network_success;
+        }
       } else {
+        rprintf(test, "lookup of %s failed%s\n", host.name, host.needs_network ? " (needs outside DNS)" : "");
         ++failure;
+        if (!host.needs_network) {
+          ++local_failure;
+        }
       }
     }
 
     if (i < hosts) {
-      hostDBProcessor.getbyname_re(this, hostnames[i++], 0);
+      hostDBProcessor.getbyname_re(this, hostnames[i++].name, 0);
       return EVENT_CONT;
     } else {
-      rprintf(test, "HostDBTestRR: %d outstanding %d success %d failure\n", outstanding, success, failure);
-      if (success == hosts) {
+      rprintf(test, "HostDBTestRR: %d outstanding %d success %d failure, %d IP literal failures, %d names resolved through DNS\n",
+              outstanding, success, failure, local_failure, network_success);
+      if (local_failure == 0 && network_success > 0) {
         *status = REGRESSION_TEST_PASSED;
       } else {
         *status = REGRESSION_TEST_FAILED;
@@ -1506,7 +1522,7 @@ struct HostDBRegressionContinuation : public Continuation {
     }
   }
 
-  HostDBRegressionContinuation(int ahosts, const char **ahostnames, RegressionTest *t, int atype, int *astatus)
+  HostDBRegressionContinuation(int ahosts, const HostDBRegressionHost *ahostnames, RegressionTest *t, int atype, int *astatus)
     : Continuation(new_ProxyMutex()),
       hosts(ahosts),
       hostnames(ahostnames),
@@ -1515,6 +1531,8 @@ struct HostDBRegressionContinuation : public Continuation {
       status(astatus),
       success(0),
       failure(0),
+      local_failure(0),
+      network_success(0),
       i(0)
   {
     outstanding = ahosts;
@@ -1522,16 +1540,24 @@ struct HostDBRegressionContinuation : public Continuation {
   }
 };
 
-static const char *dns_test_hosts[] = {
-  "www.apple.com", "www.ibm.com", "www.microsoft.com",
-  "yahoo.com", // RR record
-  "4.2.2.2",   // An IP-- since we don't expect resolution
-  "127.0.0.1", // loopback since it has some special handling
+// The CI hosts' resolvers drop one of the names that need outside DNS now and
+// then, so a failed lookup of one is reported but does not fail the test. At
+// least one of them must resolve: the IP literals are answered without DNS, so
+// they alone would not exercise the HostDB DNS path.
+static const HostDBRegressionHost dns_test_hosts[] = {
+  {"www.apple.com",     true },
+  {"www.ibm.com",       true },
+  {"www.microsoft.com", true },
+  {"yahoo.com",         true }, // RR record
+  {"4.2.2.2",           false}, // IP literal, answered without DNS
+  {"127.0.0.1",         false}, // IP literal, answered without DNS
 };
 
 REGRESSION_TEST(HostDBProcessor)(RegressionTest *t, int atype, int *pstatus)
 {
-  eventProcessor.schedule_in(new HostDBRegressionContinuation(6, dns_test_hosts, t, atype, pstatus), HRTIME_SECONDS(1));
+  eventProcessor.schedule_in(
+    new HostDBRegressionContinuation(static_cast<int>(std::size(dns_test_hosts)), dns_test_hosts, t, atype, pstatus),
+    HRTIME_SECONDS(1));
 }
 
 #endif
