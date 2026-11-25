@@ -74,7 +74,7 @@ EMPTY_PLUGIN_YAML = {
 
 @pytest.mark.parametrize("content", EMPTY_PLUGIN_YAML.values(), ids=EMPTY_PLUGIN_YAML.keys())
 def test_plugin_yaml_naming_no_plugins_starts(ats_factory: ATSFactory, content: str) -> None:
-    """A plugin.yaml that names no plugins starts with none loaded.
+    """A plugin.yaml that names no plugins does not stop startup.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param content: The plugin.yaml document under test.
