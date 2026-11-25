@@ -243,6 +243,16 @@ TEST_CASE("cache inspection checks where each header heap starts", "[cache_tool]
     auto const magic{HdrBufMagic::MARSHALED};
     std::memcpy(buf + offset, &magic, sizeof(magic));
   };
+  // Write a valid empty heap at offset, which the scan reads through to a missing request header if it accepts where
+  // the heap starts.
+  auto put_empty_heap = [&](intptr_t offset) {
+    auto *heap                         = reinterpret_cast<HdrHeap *>(buf + offset);
+    heap->m_magic                      = HdrBufMagic::MARSHALED;
+    heap->m_size                       = HEAP_HDR;
+    heap->m_data_start                 = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
+    heap->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
+    heap->m_ronly_heap[0].m_heap_len   = 0;
+  };
   auto notes = [&]() {
     std::ostringstream out;
     out << scan.unmarshal(buf, ALT_LEN, nullptr, ts::VersionNumber{});
@@ -252,14 +262,9 @@ TEST_CASE("cache inspection checks where each header heap starts", "[cache_tool]
 
   SECTION("an empty heap whose header ends on the document's last byte")
   {
-    intptr_t const last                = ALT_LEN - HEAP_HDR;
-    auto          *heap                = reinterpret_cast<HdrHeap *>(buf + last);
-    heap->m_magic                      = HdrBufMagic::MARSHALED;
-    heap->m_size                       = HEAP_HDR;
-    heap->m_data_start                 = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
-    heap->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
-    heap->m_ronly_heap[0].m_heap_len   = 0;
-    alt->m_request_hdr.m_heap          = reinterpret_cast<HdrHeap *>(last);
+    intptr_t const last = ALT_LEN - HEAP_HDR;
+    put_empty_heap(last);
+    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(last);
     // The heap is accepted, then the scan finds no request header in it.
     auto const text = notes();
     CHECK_THAT(text, !invalid);
@@ -299,7 +304,7 @@ TEST_CASE("cache inspection checks where each header heap starts", "[cache_tool]
   SECTION("a request heap over the last bytes of the alternate's fixed part")
   {
     intptr_t const offset = sizeof(HTTPCacheAlt) - 8;
-    put_magic(offset);
+    put_empty_heap(offset);
     alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(offset);
     CHECK_THAT(notes(), invalid);
   }
