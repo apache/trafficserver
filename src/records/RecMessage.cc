@@ -265,8 +265,8 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
   if (!fits_in_message(msg, offset, ele_size)) {
     return corrupt("element outside the snapshot");
   }
-  // RecMessageMarshal_Realloc() starts the first element right after the header and rounds every element up to
-  // INK_MIN_ALIGN. At any other offset the element header or the record behind it is read misaligned.
+  // The writer starts the first element right after the header and rounds every element up to INK_MIN_ALIGN. At
+  // any other offset the element header or the record behind it is read misaligned.
   if (offset % INK_MIN_ALIGN != 0) {
     return corrupt("misaligned element");
   }
@@ -291,8 +291,8 @@ RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
   if (!resolve_string(msg, r, r->name)) {
     return corrupt("bad record name");
   }
-  // RecSetRecord() reads RECD_NULL data as a string pointer, which the bytes from the file are not, and RecDataSet()
-  // asserts on any type past RECD_COUNTER.
+  // For a name already in the table, RecSetRecord() reads RECD_NULL data as a string pointer, which the bytes from
+  // the file are not. RecDataSet() asserts on any type past RECD_COUNTER.
   auto const data_type = stored_value(&r->data_type);
   if (data_type <= RECD_NULL || data_type >= RECD_MAX) {
     return corrupt("bad data type");

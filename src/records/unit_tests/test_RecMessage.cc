@@ -215,7 +215,8 @@ TEST_CASE("RecMessageUnmarshalNext walks every element of a valid snapshot", "[l
   RecMessage *msg  = RecMessageAlloc(RECG_NULL);
   RecRecord   rec;
 
-  // One of each persisted stat type, so the data type bound must admit RECD_COUNTER, the last stored type.
+  // An int, a float and a counter, so the data type bound must admit RECD_COUNTER, the last stored type. The stat kind
+  // test below walks a string.
   RecRecordInit(&rec);
   rec.rec_type     = RECT_PROCESS;
   rec.data_type    = RECD_INT;
