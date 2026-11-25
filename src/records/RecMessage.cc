@@ -200,9 +200,10 @@ resolve_string(RecMessage *msg, const RecRecord *r, Char *&str)
     return true;
   }
 
-  // Bound rel before adding it, so a wild offset from the file cannot overflow the sum.
+  // Bound rel before adding it, so a wild offset from the file cannot overflow the sum. The writer puts every string
+  // after its record; a smaller offset lands in the record itself, whose string fields become pointers after this check.
   intptr_t const rel = reinterpret_cast<intptr_t>(str);
-  if (rel < 0 || rel > msg->o_end) {
+  if (rel < static_cast<intptr_t>(sizeof(RecRecord)) || rel > msg->o_end) {
     return false;
   }
   intptr_t const offset = (reinterpret_cast<const char *>(r) - reinterpret_cast<const char *>(msg)) + rel;

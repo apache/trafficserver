@@ -315,6 +315,17 @@ TEST_CASE("RecMessageUnmarshalNext stops at an element that does not fit the sna
     CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
     ats_free(in);
   }
+  SECTION("a name offset inside its own record")
+  {
+    RecMessage *msg = marshal_records(1);
+
+    // Byte 1 of the record is a zero byte of its record kind, so only the lower offset bound rejects this name.
+    element_record(first_element(msg))->name = reinterpret_cast<const char *>(static_cast<intptr_t>(1));
+
+    RecMessage *in = write_and_read(msg, path);
+    CHECK(RecMessageUnmarshalFirst(in, &itr, &got) == REC_ERR_FAIL);
+    ats_free(in);
+  }
   SECTION("a name offset that passes the offset bound but starts past the end")
   {
     RecMessage *msg = marshal_records(1);
