@@ -231,6 +231,14 @@ TEST_CASE("cache inspection checks where each header heap starts", "[cache_tool]
     CHECK_THAT(notes(), invalid);
   }
 
+  SECTION("a request heap over the last bytes of the alternate's fixed part")
+  {
+    intptr_t const offset = sizeof(HTTPCacheAlt) - 8;
+    put_magic(offset);
+    alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(offset);
+    CHECK_THAT(notes(), invalid);
+  }
+
   SECTION("a request heap before the alternate")
   {
     put_magic(-64);
@@ -250,7 +258,8 @@ TEST_CASE("cache inspection checks where each header heap starts", "[cache_tool]
 TEST_CASE("cache inspection reads a request heap that starts right after the alternate", "[cache_tool]")
 {
   // HTTPInfo::marshal() puts the request heap at this offset when there is no fragment offset table, so it is the
-  // smallest offset a real document carries.
+  // smallest offset a real document carries. It is also where the fixed part ends, because sizeof(HTTPCacheAlt) is already
+  // a whole number of marshal blocks; that is what lets this test catch a lower bound tightened by one byte.
   static constexpr int  ALT_SIZE = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPCacheAlt))}.value();
   static constexpr int  HEAP_HDR = HDR_HEAP_HDR_SIZE.value();
   static constexpr int  HDR_OBJ  = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPHdrImpl))}.value();
