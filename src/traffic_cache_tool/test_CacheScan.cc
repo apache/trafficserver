@@ -246,3 +246,63 @@ TEST_CASE("cache inspection checks where each header heap starts", "[cache_tool]
     CHECK_THAT(notes(), invalid);
   }
 }
+
+TEST_CASE("cache inspection reads a request heap that starts right after the alternate", "[cache_tool]")
+{
+  // HTTPInfo::marshal() puts the request heap at this offset when there is no fragment offset table, so it is the
+  // smallest offset a real document carries.
+  static constexpr int  ALT_SIZE = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPCacheAlt))}.value();
+  static constexpr int  HEAP_HDR = HDR_HEAP_HDR_SIZE.value();
+  static constexpr int  HDR_OBJ  = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTPHdrImpl))}.value();
+  static constexpr int  URL_OBJ  = HdrHeapMarshalBlocks{swoc::round_up(sizeof(URLImpl))}.value();
+  static constexpr int  STR_ROOM = 16;
+  static constexpr int  OBJS_END = HEAP_HDR + HDR_OBJ + URL_OBJ;
+  static constexpr int  DOC_LEN  = ALT_SIZE + OBJS_END + STR_ROOM;
+  static constexpr char host[]   = "example.com";
+
+  alignas(HTTPCacheAlt) char buf[DOC_LEN] = {};
+  swoc::MemSpan<char>        mem(buf, sizeof(buf));
+  ct::CacheScan              scan(nullptr);
+
+  auto *alt                 = reinterpret_cast<HTTPCacheAlt *>(buf);
+  alt->m_magic              = CacheAltMagic::MARSHALED;
+  alt->m_writeable          = 0;
+  alt->m_unmarshal_len      = -1;
+  alt->m_frag_offset_count  = 0;
+  alt->m_request_hdr.m_heap = reinterpret_cast<HdrHeap *>(intptr_t{ALT_SIZE});
+
+  // A marshalled heap holding a request header, its URL and the URL's host string, with every pointer stored as an
+  // offset from the start of the heap.
+  char *heap_base                    = buf + ALT_SIZE;
+  auto *heap                         = reinterpret_cast<HdrHeap *>(heap_base);
+  heap->m_magic                      = HdrBufMagic::MARSHALED;
+  heap->m_size                       = OBJS_END;
+  heap->m_data_start                 = reinterpret_cast<char *>(static_cast<uintptr_t>(HEAP_HDR));
+  heap->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<uintptr_t>(OBJS_END));
+  heap->m_ronly_heap[0].m_heap_len   = STR_ROOM;
+
+  auto *hdr             = reinterpret_cast<HTTPHdrImpl *>(heap_base + HEAP_HDR);
+  hdr->m_type           = static_cast<uint32_t>(HdrHeapObjType::HTTP_HEADER);
+  hdr->m_length         = HDR_OBJ;
+  hdr->m_polarity       = HTTPType::REQUEST;
+  hdr->u.req.m_url_impl = reinterpret_cast<URLImpl *>(static_cast<uintptr_t>(HEAP_HDR + HDR_OBJ));
+
+  auto *url       = reinterpret_cast<URLImpl *>(heap_base + HEAP_HDR + HDR_OBJ);
+  url->m_type     = static_cast<uint32_t>(HdrHeapObjType::URL);
+  url->m_length   = URL_OBJ;
+  url->m_ptr_host = reinterpret_cast<char const *>(static_cast<uintptr_t>(OBJS_END));
+  url->m_len_host = sizeof(host) - 1;
+  std::memcpy(heap_base + OBJS_END, host, sizeof(host) - 1);
+
+  swoc::Errata const errata = scan.unmarshal(buf, DOC_LEN, nullptr, ts::VersionNumber{});
+  std::ostringstream notes;
+  notes << errata;
+  INFO(notes.str());
+  CHECK(errata.empty());
+
+  REQUIRE(alt->m_request_hdr.m_http == hdr);
+  URLImpl *found = alt->m_request_hdr.m_http->u.req.m_url_impl;
+  REQUIRE(found == url);
+  CHECK(scan.check_url(mem, found));
+  CHECK(std::string_view(found->m_ptr_host, found->m_len_host) == host);
+}
