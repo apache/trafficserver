@@ -366,7 +366,7 @@ TEST_CASE("cache inspection rejects a header heap whose objects do not start rig
   }
 }
 
-TEST_CASE("cache inspection rejects a request URL object that is empty or of another type", "[cache_tool]")
+TEST_CASE("cache inspection rejects a request URL object with no length or of another type", "[cache_tool]")
 {
   alignas(URLImpl) char buf[sizeof(URLImpl)] = {};
   swoc::MemSpan<char>   mem(buf, sizeof(buf));
