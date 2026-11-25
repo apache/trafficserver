@@ -120,9 +120,13 @@ struct HttpProxyAcceptor {
     HttpAccept.
 
     The acceptors, and the session acceptors behind them, live as long as the
-    process. A session keeps a pointer to the acceptor that created it and reads
-    its options for every transaction, so they cannot be freed while the proxy
-    drains. The vector is never destroyed, so they are still reachable at exit.
+    process. A connection still in its protocol probe or TLS handshake reads its
+    acceptor when its first bytes arrive, and a session keeps a pointer to its
+    session acceptor (ProxySession::acceptor) and reads its options for every
+    transaction, so none of them can be freed while the proxy drains. The vector
+    is heap allocated and never destroyed on purpose: a plain global would be
+    destroyed at exit before LeakSanitizer runs, which would then report every
+    acceptor as leaked.
 */
 std::vector<HttpProxyAcceptor> &HttpProxyAcceptors = *new std::vector<HttpProxyAcceptor>;
 
@@ -496,8 +500,8 @@ start_HttpProxyServer()
 void
 stop_HttpProxyServer()
 {
-  // Only stop accepting. Connections already accepted keep running until the drain ends, and they still use the
-  // acceptors, so those are left in place (see HttpProxyAcceptors).
+  // Only stop accepting. Connections already accepted keep using the port and plugin acceptors until the drain ends,
+  // so nothing is freed here (see HttpProxyAcceptors).
   sslNetProcessor.stop_accept();
   netProcessor.stop_accept();
 }
