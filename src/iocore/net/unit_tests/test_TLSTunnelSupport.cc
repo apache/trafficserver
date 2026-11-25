@@ -123,6 +123,20 @@ TEST_CASE("TLSTunnelSupport refuses a filled-in destination port a connection ca
   CHECK_FALSE(tunnel.tunnel_port_is_dynamic());
 }
 
+TEST_CASE("TLSTunnelSupport refusing a destination clears the one it took before")
+{
+  TLSTunnelSupport tunnel;
+  REQUIRE(tunnel.set_tunnel_destination("backend.example.com:443", SNIRoutingType::PARTIAL_BLIND, TLSTunnelSupport::PORT_IS_DYNAMIC,
+                                        YamlSNIConfig::TunnelPreWarm::ENABLED));
+
+  CHECK_FALSE(connect_to(tunnel, "backend.example.com:443x"));
+  CHECK_FALSE(tunnel.has_tunnel_destination());
+  CHECK(tunnel.get_tunnel_port() == 0);
+  CHECK(tunnel.get_tunnel_type() == SNIRoutingType::NONE);
+  CHECK(tunnel.get_tunnel_prewarm_configuration() == YamlSNIConfig::TunnelPreWarm::UNSET);
+  CHECK_FALSE(tunnel.tunnel_port_is_dynamic());
+}
+
 TEST_CASE("TunnelDestination leaves a '$' it cannot fill in as written")
 {
   ActionItem::Context::CapturedGroupViewVec const groups{"a", "8443"};
