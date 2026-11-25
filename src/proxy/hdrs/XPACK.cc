@@ -196,21 +196,16 @@ xpack_encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *valu
 {
   uint8_t *p = buf_start;
 
-  uint32_t const                 max_expected_size = value_len * 4;
-  ts::LocalBuffer<uint8_t, 4096> local_buffer(max_expected_size);
+  ts::LocalBuffer<uint8_t, 4096> local_buffer(value_len);
   uint8_t                       *data     = local_buffer.data();
   int64_t                        data_len = 0;
 
   if (value_len) {
-    data_len = huffman_encode(data, max_expected_size, reinterpret_cast<const uint8_t *>(value), value_len);
+    // One byte short of the raw length, so the encode fails exactly when Huffman would not be shorter.
+    data_len = huffman_encode(data, value_len - 1, reinterpret_cast<const uint8_t *>(value), value_len);
   }
 
-  if (data_len < 0) {
-    return -1;
-  }
-
-  // Only use Huffman if the encoded representation is smaller than the raw string.
-  const bool    use_huffman = (value_len == 0 || static_cast<uint64_t>(data_len) < value_len);
+  const bool    use_huffman = (value_len == 0 || data_len >= 0);
   const int64_t payload_len = use_huffman ? data_len : static_cast<int64_t>(value_len);
 
   // Length
