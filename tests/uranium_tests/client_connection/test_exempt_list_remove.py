@@ -30,22 +30,22 @@ OPEN = "proxy.process.net.connections_currently_open"
 THROTTLED = "proxy.process.net.per_client.connections_throttled_in"
 EXEMPT = "proxy.process.net.per_client.connections_exempt_in"
 
-# Each case: the exempt list calls the Lua script makes at load, and whether a connection from 127.0.0.1 past the limit
-# is then served or refused. Only the remove-covering-* cases fail without the fix, because only they remove a range
-# that starts below every entry and covers one. The rest are controls.
+# Each case: the exempt list calls the Lua script makes at load, whether a connection from 127.0.0.1 past the limit is
+# then served or refused, and whether the case needs the libswoc fix. Only the remove-covering-* cases fail without the
+# fix, because only they remove a range that starts below every entry and covers one. The rest are controls.
 CASES = [
-    pytest.param([], "refused", id="no-list"),
-    pytest.param([("add", "127.0.0.1")], "served", id="add-only"),
-    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.1")], "refused", id="remove-exact"),
-    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.0/8")], "refused", id="remove-covering-net"),
-    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.0-127.0.0.255")], "refused", id="remove-covering-range"),
+    pytest.param([], "refused", False, id="no-list"),
+    pytest.param([("add", "127.0.0.1")], "served", False, id="add-only"),
+    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.1")], "refused", False, id="remove-exact"),
+    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.0/8")], "refused", True, id="remove-covering-net"),
+    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.0-127.0.0.255")], "refused", True, id="remove-covering-range"),
     # An entry below the removed range, so the erase starts from an existing node.
     pytest.param(
-        [("add", "10.0.0.1"), ("add", "127.0.0.1"), ("remove", "127.0.0.0/8")], "refused", id="remove-net-with-lower-entry"
+        [("add", "10.0.0.1"), ("add", "127.0.0.1"), ("remove", "127.0.0.0/8")], "refused", False, id="remove-net-with-lower-entry"
     ),
     # Ranges below every entry that do not cover 127.0.0.1, which must stay exempt.
-    pytest.param([("add", "127.0.0.1"), ("remove", "10.0.0.0/8")], "served", id="remove-below-keeps"),
-    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.0")], "served", id="remove-adjacent-below-keeps"),
+    pytest.param([("add", "127.0.0.1"), ("remove", "10.0.0.0/8")], "served", False, id="remove-below-keeps"),
+    pytest.param([("add", "127.0.0.1"), ("remove", "127.0.0.0")], "served", False, id="remove-adjacent-below-keeps"),
 ]
 
 
@@ -78,10 +78,13 @@ def wait_for_metrics(ats: ATS, expected: Mapping[str, int], timeout: float = 10)
     return values
 
 
-@pytest.mark.parametrize(("calls", "expected"), CASES)
-def test_exempt_list_remove(ats_factory: ATSFactory, calls: list[tuple[str, str]], expected: str) -> None:
+@pytest.mark.parametrize(("calls", "expected", "needs_fix"), CASES)
+def test_exempt_list_remove(ats_factory: ATSFactory, calls: list[tuple[str, str]], expected: str, needs_fix: bool) -> None:
     """Fill the per-client limit from 127.0.0.1, then check whether one more connection is served."""
 
+    # The fix is in lib/swoc, which a build against a system libswoc does not use.
+    if needs_fix and ats_factory.has_feature("TS_USE_EXTERNAL_LIBSWOC"):
+        pytest.skip("built against an external libswoc, which may not have the DiscreteSpace::erase fix")
     ats = ats_factory.create("ts")
     for plugin in ("statichit.so", "tslua.so"):
         if not ats.plugin_exists(plugin):
