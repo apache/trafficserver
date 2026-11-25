@@ -431,9 +431,14 @@ TEST_CASE("parse_plugin_yaml - empty first document followed by plugins is a con
 
 TEST_CASE("parse_plugin_yaml - nonempty second document is a config error", "[plugin_yaml]")
 {
-  // The plugins a second document names would be dropped.
-  auto content = GENERATE(as<std::string>{}, "plugins:\n  - path: foo.so\n---\nplugins:\n  - path: bar.so\n",
-                          "plugins:\n  - path: foo.so\n---\n---\nplugins:\n  - path: bar.so\n");
+  // Whatever a later document holds would be dropped, whether a map, a
+  // sequence or a scalar.
+  auto [content, doc] = GENERATE(table<std::string, int>({
+    {"plugins:\n  - path: foo.so\n---\nplugins:\n  - path: bar.so\n",      2},
+    {"plugins:\n  - path: foo.so\n---\n---\nplugins:\n  - path: bar.so\n", 3},
+    {"plugins:\n  - path: foo.so\n---\n- path: bar.so\n",                  2},
+    {"plugins:\n  - path: foo.so\n---\nbar.so arg\n",                      2},
+  }));
 
   CAPTURE(content);
   TempYAML yaml(content);
@@ -441,8 +446,8 @@ TEST_CASE("parse_plugin_yaml - nonempty second document is a config error", "[pl
   auto result = parse_plugin_yaml(yaml.path());
 
   REQUIRE_FALSE(result.ok());
-  CHECK(std::string(result.errata.front().text()).find("is not empty, documents after the first must be empty") !=
-        std::string::npos);
+  CHECK(std::string(result.errata.front().text()) ==
+        "YAML document #" + std::to_string(doc) + " is not empty, documents after the first must be empty");
 }
 
 TEST_CASE("parse_plugin_yaml - empty documents after the first are accepted", "[plugin_yaml]")
