@@ -15,11 +15,11 @@
 #  limitations under the License.
 
 # A remembered URL is forgotten once a response for it is stored. The first
-# /flip miss answers no-store and is remembered; the second is deferred, gets
-# a cacheable response and stores it. After a PURGE the next miss must take
-# the write lock before the origin again, as a URL that was never remembered
-# does, so only the second miss counts as deferred. Without the forget it
-# would still be remembered and deferred a second time.
+# two /flip misses answer no-store, so it is remembered; the third is deferred,
+# gets a cacheable response and stores it. After a PURGE the next miss must
+# take the write lock before the origin again, as a URL that was never
+# remembered does, so only the third miss counts as deferred. Without the
+# forget it would still be remembered and deferred a second time.
 
 meta:
   version: "1.0"
@@ -49,12 +49,39 @@ urtest:
     metric_checks:
       - metric: proxy.process.http.cache_open_write_deferred
         value: 1
+      - metric: proxy.process.http.cache.remember_uncacheable.admits
+        value: 1
       - metric: proxy.process.http.cache_hit_fresh
         value: 2
         delay: 0
 
 sessions:
 - transactions:
+  - client-request:
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-prime]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, prime]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: prime, as: equal}]
+
   - client-request:
       method: GET
       url: /flip

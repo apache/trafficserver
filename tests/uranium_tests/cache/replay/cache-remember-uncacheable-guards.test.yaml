@@ -14,12 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Only the origin's response may mark a URL as uncacheable. A response that
-# went unstored because the client said no-store, because the request was a
-# Range request, because a plugin refused the store, or because the origin
-# answered an error leaves no memory: the next plain GET on the same URL takes
-# the write lock as any miss does, stores the response, and the one after it
-# is a hit. The sessions run one after another.
+# Only the origin's response may mark a URL as uncacheable. Each URL first
+# answers no-store once, which a second such answer would turn into a memory.
+# A response that then goes unstored because the client said no-store, because
+# the request was a Range request, because a plugin refused the store, or
+# because the origin answered an error must not count as that second answer:
+# the next plain GET on the same URL takes the write lock as any miss does,
+# stores the response, and the one after it is a hit. The sessions run one
+# after another.
 
 meta:
   version: "1.0"
@@ -55,10 +57,13 @@ urtest:
           - name: header_rewrite.so
             args: ['cache-remember-server-no-store.conf']
 
-    # Four URLs, each: an unstored response for a reason that is not the
-    # origin's, a plain GET that must take the lock and store, and a hit.
+    # Four URLs, each: an origin no-store, an unstored response for a reason
+    # that is not the origin's, a plain GET that must take the lock and store,
+    # and a hit.
     metric_checks:
       - metric: proxy.process.http.cache_open_write_deferred
+        value: 0
+      - metric: proxy.process.http.cache.remember_uncacheable.admits
         value: 0
       - metric: proxy.process.http.cache_hit_fresh
         value: 4
@@ -66,6 +71,31 @@ urtest:
 
 sessions:
 - transactions:
+  - client-request:
+      method: GET
+      url: /client-no-store
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, client-no-store-prime]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, prime]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: prime, as: equal}]
+
   - client-request:
       method: GET
       url: /client-no-store
@@ -147,6 +177,31 @@ sessions:
       headers:
         fields:
         - [Host, example.com]
+        - [uuid, range-prime]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, prime]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: prime, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /range
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
         - [Range, bytes=0-1]
         - [uuid, range-first]
     server-response:
@@ -221,6 +276,31 @@ sessions:
       version: '1.1'
       headers:
         fields:
+        - [Host, example.com]
+        - [uuid, plugin-prime]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, prime]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: prime, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /plugin
+      version: '1.1'
+      headers:
+        fields:
         - [Host, plugin.example.com]
         - [uuid, plugin-first]
     server-response:
@@ -288,6 +368,31 @@ sessions:
         - [X-Response, {value: second, as: equal}]
 
 - transactions:
+  - client-request:
+      method: GET
+      url: /error
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, error-prime]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, prime]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: prime, as: equal}]
+
   - client-request:
       method: GET
       url: /error

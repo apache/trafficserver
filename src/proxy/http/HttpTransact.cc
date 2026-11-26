@@ -3612,7 +3612,11 @@ HttpTransact::should_defer_cache_write(State *s)
     return false;
   }
   CryptoHash hash;
-  return uncacheable_memo_key(s, hash) && uncacheableKeyMemo.contains(hash, ink_get_hrtime());
+  if (uncacheableKeyMemo == nullptr || !uncacheable_memo_key(s, hash) || !uncacheableKeyMemo->contains(hash, ink_get_hrtime())) {
+    return false;
+  }
+  Metrics::Counter::increment(http_rsb.remember_uncacheable_hits);
+  return true;
 }
 
 /** Whether this transaction may teach the memo anything about its key.
@@ -3652,14 +3656,28 @@ void
 HttpTransact::remember_uncacheable_response(State *s)
 {
   CryptoHash hash;
-  if (!can_remember_uncacheable(s) || HttpTransactHeaders::is_status_an_error_response(s->hdr_info.server_response.status_get()) ||
+  if (uncacheableKeyMemo == nullptr || !can_remember_uncacheable(s) ||
+      HttpTransactHeaders::is_status_an_error_response(s->hdr_info.server_response.status_get()) ||
       !uncacheable_memo_key(s, hash)) {
     return;
   }
   // A plugin override skips the records.yaml range check, so cap it there before it is scaled to nanoseconds.
-  int64_t const seconds = std::min<int64_t>(s->txn_conf->cache_remember_uncacheable, 86400);
-  TxnDbg(dbg_ctl_http_trans, "remembering the key as uncacheable for %" PRId64 " s", seconds);
-  uncacheableKeyMemo.remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
+  int64_t const                     seconds = std::min<int64_t>(s->txn_conf->cache_remember_uncacheable, 86400);
+  UncacheableKeyMemo::Outcome const outcome = uncacheableKeyMemo->remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
+  switch (outcome.what) {
+  case UncacheableKeyMemo::Remembered::ADMITTED:
+    TxnDbg(dbg_ctl_http_trans, "remembering the key as uncacheable for %" PRId64 " s", seconds);
+    Metrics::Counter::increment(http_rsb.remember_uncacheable_admits);
+    break;
+  case UncacheableKeyMemo::Remembered::SET_FULL:
+    Metrics::Counter::increment(http_rsb.remember_uncacheable_set_full);
+    break;
+  default:
+    break;
+  }
+  if (outcome.evicted) {
+    Metrics::Counter::increment(http_rsb.remember_uncacheable_evictions);
+  }
 }
 
 /** A key about to be stored is no longer uncacheable, whichever way its write lock was taken. */
@@ -3667,8 +3685,8 @@ void
 HttpTransact::forget_uncacheable_key(State *s)
 {
   CryptoHash hash;
-  if (s->txn_conf->cache_remember_uncacheable > 0 && uncacheable_memo_key(s, hash)) {
-    uncacheableKeyMemo.forget(hash);
+  if (uncacheableKeyMemo != nullptr && s->txn_conf->cache_remember_uncacheable > 0 && uncacheable_memo_key(s, hash)) {
+    uncacheableKeyMemo->forget(hash);
   }
 }
 

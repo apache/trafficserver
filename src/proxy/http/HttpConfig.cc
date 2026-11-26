@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <cstring>
 #include "proxy/http/HttpConfig.h"
+#include "proxy/http/UncacheableKeyMemo.h"
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/eventsystem/UnixSocket.h"
@@ -566,6 +567,11 @@ register_stat_callbacks()
   http_rsb.websocket_current_active_client_connections =
     Metrics::Gauge::createPtr("proxy.process.http.websocket.current_active_client_connections");
 
+  http_rsb.remember_uncacheable_hits      = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.hits");
+  http_rsb.remember_uncacheable_admits    = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.admits");
+  http_rsb.remember_uncacheable_evictions = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.evictions");
+  http_rsb.remember_uncacheable_set_full  = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.set_full");
+
   // Speed bucket stats for client and origin
   http_rsb.user_agent_speed_bytes_per_sec_100 =
     Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100");
@@ -950,6 +956,17 @@ HttpConfig::startup()
   HttpConfigParams &c = m_master;
 
   http_config_cont = new HttpConfigCont;
+
+  {
+    RecInt const requested =
+      RecGetRecordInt("proxy.config.http.cache.remember_uncacheable_entries").value_or(UncacheableKeyMemo::DEFAULT_ENTRIES);
+    // Never freed: transactions may still be reading it while the process exits.
+    uncacheableKeyMemo = new UncacheableKeyMemo(UncacheableKeyMemo::entries_for(requested));
+    if (uncacheableKeyMemo->entries() != requested) {
+      Warning("proxy.config.http.cache.remember_uncacheable_entries %" PRId64 " is not a power of two; using %" PRIu32, requested,
+              uncacheableKeyMemo->entries());
+    }
+  }
 
   HttpEstablishStaticConfigStringAlloc(c.proxy_hostname, "proxy.config.proxy_name");
   c.proxy_hostname_len = -1;

@@ -14,10 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# A remembered URL is forgotten in two ways. /flip answers no-store once and
+# A remembered URL is forgotten in two ways. /flip answers no-store twice and
 # then becomes cacheable: the next miss skips the write lock but still stores
 # the cacheable response, and the request after that is a hit. /expire answers
-# no-store and is asked again after the memory has lapsed: that miss takes the
+# no-store twice and is asked again after the memory has lapsed: that miss takes the
 # write lock as a plain miss would. On an unchanged build the counter is absent,
 # so this file documents the memory's lifecycle rather than catching the old wait.
 
@@ -45,17 +45,44 @@ urtest:
       - from: "http://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
 
-    # Only the second /flip request skips the write lock: the first /flip and
-    # /expire requests are plain misses, and the second /expire request comes
+    # Only the third /flip request skips the write lock: the first two /flip and
+    # /expire requests are plain misses, and the third /expire request comes
     # after the two second memory has lapsed. The sessions run one after another.
     metric_checks:
       - metric: proxy.process.http.cache_open_write_deferred
         value: 1
+      - metric: proxy.process.http.cache.remember_uncacheable.admits
+        value: 2
       - metric: proxy.process.http.cache_hit_fresh
         value: 1
 
 sessions:
 - transactions:
+  - client-request:
+      method: GET
+      url: /flip
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, flip-prime]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, prime]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: prime, as: equal}]
+
   - client-request:
       method: GET
       url: /flip
@@ -136,6 +163,31 @@ sessions:
         - [X-Response, {value: flip-cacheable, as: equal}]
 
 - transactions:
+  - client-request:
+      method: GET
+      url: /expire
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, expire-prime]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, prime]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: prime, as: equal}]
+
   - client-request:
       method: GET
       url: /expire

@@ -30,6 +30,8 @@
 
 namespace
 {
+using Remembered = UncacheableKeyMemo::Remembered;
+
 CryptoHash
 make_key(uint64_t a, uint64_t b)
 {
@@ -38,98 +40,230 @@ make_key(uint64_t a, uint64_t b)
   key.u64[1] = b;
   return key;
 }
+
+// Keys that share u64[1] share a set; u64[0] is the tag.
+CryptoHash
+in_set(uint64_t tag, uint64_t set)
+{
+  return make_key(tag << 2, set);
+}
 } // namespace
 
 TEST_CASE("UncacheableKeyMemo", "[http][cache]")
 {
-  // The table is a megabyte, too large for the stack.
   auto             memo  = std::make_unique<UncacheableKeyMemo>();
-  CryptoHash const key   = make_key(0x1111, 0x2222);
-  CryptoHash const other = make_key(0x3333, 0x4444);
-  // Sharing u64[1] means sharing a slot; u64[0] is the tag.
-  CryptoHash const neighbor = make_key(0x5555, key.u64[1]);
-  ink_hrtime const now      = HRTIME_SECONDS(1000);
-  ink_hrtime const ttl      = HRTIME_SECONDS(10);
+  CryptoHash const key   = make_key(0x1111 << 2, 0x2222);
+  CryptoHash const other = make_key(0x3333 << 2, 0x4444);
+  ink_hrtime const now   = HRTIME_SECONDS(1000);
+  ink_hrtime const ttl   = HRTIME_SECONDS(10);
+
+  // Two sightings within the lifetime make a key remembered.
+  auto admit = [&](CryptoHash const &k, ink_hrtime at) {
+    memo->remember(k, at, ttl);
+    return memo->remember(k, at, ttl).what;
+  };
 
   SECTION("an unknown key is not remembered")
   {
     CHECK_FALSE(memo->contains(key, now));
   }
 
-  SECTION("a remembered key is found until it expires")
+  SECTION("one sighting is not enough")
+  {
+    CHECK(memo->remember(key, now, ttl).what == Remembered::SEEN_ONCE);
+    CHECK_FALSE(memo->contains(key, now));
+  }
+
+  SECTION("a second sighting within the lifetime admits the key")
   {
     memo->remember(key, now, ttl);
+    CHECK(memo->remember(key, now + ttl - 1, ttl).what == Remembered::ADMITTED);
+    CHECK(memo->contains(key, now + ttl));
+    CHECK_FALSE(memo->contains(other, now));
+  }
+
+  SECTION("a second sighting after the first lapsed starts over")
+  {
+    memo->remember(key, now, ttl);
+    CHECK(memo->remember(key, now + ttl, ttl).what == Remembered::SEEN_ONCE);
+    CHECK_FALSE(memo->contains(key, now + ttl));
+  }
+
+  SECTION("a remembered key is found until it expires")
+  {
+    REQUIRE(admit(key, now) == Remembered::ADMITTED);
     CHECK(memo->contains(key, now));
     CHECK(memo->contains(key, now + ttl - 1));
     CHECK_FALSE(memo->contains(key, now + ttl));
-    CHECK_FALSE(memo->contains(other, now));
+  }
+
+  SECTION("a remembered key that lapses must be seen twice again")
+  {
+    admit(key, now);
+    CHECK(memo->remember(key, now + ttl, ttl).what == Remembered::SEEN_ONCE);
+    CHECK_FALSE(memo->contains(key, now + ttl));
   }
 
   SECTION("remembering again moves the expiry")
   {
-    memo->remember(key, now, HRTIME_SECONDS(1));
-    memo->remember(key, now, HRTIME_SECONDS(30));
+    admit(key, now);
+    CHECK(memo->remember(key, now + HRTIME_SECONDS(5), HRTIME_SECONDS(30)).what == Remembered::RENEWED);
     CHECK(memo->contains(key, now + HRTIME_SECONDS(20)));
   }
 
-  SECTION("a forgotten key is gone")
+  SECTION("a forgotten key is gone, remembered or seen once")
   {
-    memo->remember(key, now, ttl);
+    admit(key, now);
     memo->forget(key);
     CHECK_FALSE(memo->contains(key, now));
+    memo->remember(other, now, ttl);
+    memo->forget(other);
+    CHECK(memo->remember(other, now, ttl).what == Remembered::SEEN_ONCE);
   }
 
-  SECTION("forgetting a key that shares the slot leaves the remembered key alone")
+  SECTION("forgetting a key leaves the others in its set alone")
   {
-    memo->remember(key, now, ttl);
-    memo->forget(neighbor);
-    CHECK(memo->contains(key, now));
+    CryptoHash const a = in_set(1, 7);
+    CryptoHash const b = in_set(2, 7);
+    admit(a, now);
+    admit(b, now);
+    memo->forget(b);
+    CHECK(memo->contains(a, now));
+    CHECK_FALSE(memo->contains(b, now));
   }
 
-  SECTION("forgetting a displaced key leaves the slot's new owner alone")
+  SECTION("four keys share a set without displacing each other")
   {
-    memo->remember(key, now, ttl);
-    memo->remember(neighbor, now, ttl);
-    memo->forget(key);
-    CHECK(memo->contains(neighbor, now));
+    for (uint64_t t = 1; t <= UncacheableKeyMemo::WAYS; ++t) {
+      CHECK(admit(in_set(t, 7), now) == Remembered::ADMITTED);
+    }
+    for (uint64_t t = 1; t <= UncacheableKeyMemo::WAYS; ++t) {
+      CHECK(memo->contains(in_set(t, 7), now));
+    }
   }
 
-  SECTION("a key that shares a slot replaces the older one")
+  SECTION("a new key never displaces a live remembered key")
   {
-    memo->remember(key, now, ttl);
-    memo->remember(neighbor, now, ttl);
-    CHECK(memo->contains(neighbor, now));
-    CHECK_FALSE(memo->contains(key, now));
+    for (uint64_t t = 1; t <= UncacheableKeyMemo::WAYS; ++t) {
+      admit(in_set(t, 7), now);
+    }
+    UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + 1, ttl);
+    CHECK(outcome.what == Remembered::SET_FULL);
+    CHECK_FALSE(outcome.evicted);
+    for (uint64_t t = 1; t <= UncacheableKeyMemo::WAYS; ++t) {
+      CHECK(memo->contains(in_set(t, 7), now + 1));
+    }
+    CHECK(admit(in_set(9, 7), now + 1) == Remembered::SET_FULL);
+  }
+
+  SECTION("a new key takes an expired entry before a live seen-once one")
+  {
+    // Three remembered keys and one seen once, all live; then the first remembered one lapses.
+    admit(in_set(1, 7), now);
+    admit(in_set(2, 7), now + HRTIME_SECONDS(5));
+    admit(in_set(3, 7), now + HRTIME_SECONDS(5));
+    memo->remember(in_set(4, 7), now + HRTIME_SECONDS(5), ttl);
+    UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + ttl, ttl);
+    CHECK(outcome.what == Remembered::SEEN_ONCE);
+    CHECK_FALSE(outcome.evicted);
+    CHECK(memo->remember(in_set(4, 7), now + ttl, ttl).what == Remembered::ADMITTED);
+  }
+
+  SECTION("with no expired entry, the oldest seen-once key is displaced")
+  {
+    admit(in_set(1, 7), now);
+    admit(in_set(2, 7), now);
+    memo->remember(in_set(3, 7), now + 1, ttl);
+    memo->remember(in_set(4, 7), now + 2, ttl);
+    UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + 3, ttl);
+    CHECK(outcome.what == Remembered::SEEN_ONCE);
+    CHECK(outcome.evicted);
+    // The younger seen-once key survived, the older one has to start over, and the remembered keys stayed.
+    CHECK(memo->remember(in_set(4, 7), now + 4, ttl).what == Remembered::ADMITTED);
+    CHECK(memo->remember(in_set(3, 7), now + 4, ttl).what == Remembered::SEEN_ONCE);
+    CHECK_FALSE(memo->contains(in_set(3, 7), now + 4));
+    CHECK(memo->contains(in_set(1, 7), now + 4));
+    CHECK(memo->contains(in_set(2, 7), now + 4));
+  }
+
+  SECTION("a stream of keys seen once cannot displace a remembered one")
+  {
+    CryptoHash const hot = in_set(1, 7);
+    admit(hot, now);
+    for (uint64_t t = 100; t < 1100; ++t) {
+      memo->remember(in_set(t, 7), now + static_cast<ink_hrtime>(t), ttl);
+    }
+    CHECK(memo->contains(hot, now + 1100));
+  }
+
+  SECTION("keys in other sets do not count against a set")
+  {
+    for (uint64_t s = 0; s < 64; ++s) {
+      admit(in_set(1, s), now);
+    }
+    for (uint64_t s = 0; s < 64; ++s) {
+      CHECK(memo->contains(in_set(1, s), now));
+    }
   }
 
   SECTION("a key with a zero hash is still remembered")
   {
     CryptoHash const zero = make_key(0, 0);
-    memo->remember(zero, now, ttl);
+    admit(zero, now);
     CHECK(memo->contains(zero, now));
   }
 
-  SECTION("a forgotten slot does not match a key with a zero hash")
+  SECTION("a forgotten entry does not match a key with a zero hash")
   {
     // Forgetting zeroes the tag but leaves the expiry, so a zero tag must never be a key's.
     CryptoHash const zero = make_key(0, 0);
-    memo->remember(zero, now, ttl);
+    admit(zero, now);
     memo->forget(zero);
     CHECK_FALSE(memo->contains(zero, now));
   }
 
-  SECTION("a non-positive ttl neither remembers nor evicts")
+  SECTION("keys that differ only in the tag's flag bits stay apart")
   {
-    memo->remember(key, now, ttl);
-    memo->remember(neighbor, now, 0);
-    memo->remember(neighbor, now, -1);
-    CHECK(memo->contains(key, now));
-    CHECK_FALSE(memo->contains(neighbor, now));
+    CryptoHash const plain   = make_key(0x100, 7);
+    CryptoHash const flagged = make_key(0x103, 7);
+    admit(plain, now);
+    CHECK(memo->contains(plain, now));
+    // Both reduce to the same tag, so they are one key to the memo; that only costs a false positive.
+    CHECK(memo->contains(flagged, now));
+  }
+
+  SECTION("a non-positive ttl does nothing")
+  {
+    CHECK(memo->remember(key, now, 0).what == Remembered::NOTHING);
+    CHECK(memo->remember(key, now, -1).what == Remembered::NOTHING);
+    CHECK(memo->remember(key, now, ttl).what == Remembered::SEEN_ONCE);
   }
 
   SECTION("a ttl past the end of time still remembers the key")
   {
     memo->remember(key, now, std::numeric_limits<ink_hrtime>::max());
+    memo->remember(key, now, std::numeric_limits<ink_hrtime>::max());
     CHECK(memo->contains(key, std::numeric_limits<ink_hrtime>::max() - 1));
   }
+}
+
+TEST_CASE("UncacheableKeyMemo size", "[http][cache]")
+{
+  CHECK(UncacheableKeyMemo::entries_for(0) == UncacheableKeyMemo::WAYS);
+  CHECK(UncacheableKeyMemo::entries_for(5) == 8);
+  CHECK(UncacheableKeyMemo::entries_for(65536) == 65536);
+  CHECK(UncacheableKeyMemo::entries_for(65537) == 131072);
+  CHECK(UncacheableKeyMemo::entries_for(int64_t{1} << 40) == UncacheableKeyMemo::MAX_ENTRIES);
+  CHECK(UncacheableKeyMemo{}.entries() == UncacheableKeyMemo::DEFAULT_ENTRIES);
+
+  // One set: the fifth live remembered key has nowhere to go.
+  UncacheableKeyMemo small{4};
+  CHECK(small.entries() == 4);
+  ink_hrtime const now = HRTIME_SECONDS(1);
+  ink_hrtime const ttl = HRTIME_SECONDS(10);
+  for (uint64_t t = 1; t <= 4; ++t) {
+    small.remember(make_key(t << 2, t), now, ttl);
+    small.remember(make_key(t << 2, t), now, ttl);
+  }
+  CHECK(small.remember(make_key(5 << 2, 5), now, ttl).what == Remembered::SET_FULL);
 }
