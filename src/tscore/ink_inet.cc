@@ -73,13 +73,7 @@ ats_ip_ntop(const struct sockaddr *addr, char *dst, size_t size)
     zret = inet_ntop(AF_INET6, &ats_ip6_addr_cast(addr), dst, size);
     break;
   case AF_UNIX:
-    // A kernel sockaddr_un may carry a full, unterminated sun_path.
-    if (size > 0) {
-      size_t n = std::min(size - 1, TS_UNIX_SIZE);
-      strncpy(dst, ats_unix_cast(addr)->sun_path, n);
-      dst[n] = '\0';
-    }
-    zret = dst;
+    zret = strncpy(dst, ats_unix_cast(addr)->sun_path, size);
     break;
   default:
     zret = dst;

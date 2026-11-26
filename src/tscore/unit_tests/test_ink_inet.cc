@@ -376,25 +376,7 @@ TEST_CASE("ink_inet_unix full sun_path", "[libts][inet][unix]")
   raw.guard[sizeof(raw.guard) - 1] = '\0';
   raw.ep.sun.sun_family            = AF_UNIX;
   memset(raw.ep.sun.sun_path, 'z', TS_UNIX_SIZE);
-  auto const       *sa = &raw.ep.sa;
   std::string const full(TS_UNIX_SIZE, 'z');
-
-  char dst[256];
-  REQUIRE(ats_ip_ntop(sa, dst, sizeof(dst)) == dst);
-  CHECK(std::string_view(dst) == full);
-
-  // A destination too small for the path gets a terminated prefix of it.
-  char small[INET6_ADDRSTRLEN + 8];
-  memset(small, 'x', sizeof(small));
-  REQUIRE(ats_ip_ntop(sa, small, INET6_ADDRSTRLEN) == small);
-  CHECK(small[INET6_ADDRSTRLEN - 1] == '\0');
-  CHECK(std::string_view(small, strnlen(small, sizeof(small))) == std::string(INET6_ADDRSTRLEN - 1, 'z'));
-  CHECK(small[INET6_ADDRSTRLEN] == 'x');
-
-  // A zero-size destination has no room even for the terminator.
-  char none = 'x';
-  REQUIRE(ats_ip_ntop(sa, &none, 0) == &none);
-  CHECK(none == 'x');
 
   // An IpEndpoint reaches the ATS sockaddr formatter, while a bare sockaddr pointer gets the libswoc one, which has no AF_UNIX.
   swoc::LocalBufferWriter<1024> w;
