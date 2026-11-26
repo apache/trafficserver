@@ -37,10 +37,15 @@ JAxContext::JAxContext(const char *method_name, sockaddr const *s_sockaddr) : _m
   case AF_INET6:
     inet_ntop(AF_INET6, &reinterpret_cast<const sockaddr_in6 *>(s_sockaddr)->sin6_addr, _addr, INET6_ADDRSTRLEN);
     break;
-  case AF_UNIX:
-    strncpy(_addr, reinterpret_cast<const sockaddr_un *>(s_sockaddr)->sun_path, sizeof(_addr) - 1);
-    _addr[sizeof(_addr) - 1] = '\0';
+  case AF_UNIX: {
+    // sun_path need not be terminated when the path fills it.
+    auto const *un = reinterpret_cast<const sockaddr_un *>(s_sockaddr);
+
+    static_assert(sizeof(_addr) > sizeof(un->sun_path));
+    strncpy(_addr, un->sun_path, sizeof(un->sun_path));
+    _addr[sizeof(un->sun_path)] = '\0';
     break;
+  }
   default:
     break;
   }
