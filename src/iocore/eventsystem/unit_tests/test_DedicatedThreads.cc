@@ -72,9 +72,8 @@ count_active_dthreads()
 
 // The stats sync task walks the dedicated threads on its own thread while
 // accept and logging threads are still being spawned during startup. On x86
-// the null-entry check rarely trips even if the count were published without
-// ordering, so there this case mostly checks the walk; ThreadSanitizer reports
-// the race on any CPU.
+// the null-entry check rarely trips, so there this case mostly checks the walk;
+// ThreadSanitizer reports a missing ordering on any CPU.
 TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocore]")
 {
   constexpr int SPAWNS = 64;
