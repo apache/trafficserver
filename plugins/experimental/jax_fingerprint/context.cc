@@ -39,11 +39,11 @@ JAxContext::JAxContext(const char *method_name, sockaddr const *s_sockaddr) : _m
     break;
   case AF_UNIX: {
     // sun_path need not be terminated when the path fills it.
-    auto const *un = reinterpret_cast<const sockaddr_un *>(s_sockaddr);
+    constexpr size_t path_size = sizeof(sockaddr_un::sun_path);
 
-    static_assert(sizeof(_addr) > sizeof(un->sun_path));
-    strncpy(_addr, un->sun_path, sizeof(un->sun_path));
-    _addr[sizeof(un->sun_path)] = '\0';
+    static_assert(sizeof(_addr) > path_size);
+    strncpy(_addr, reinterpret_cast<const sockaddr_un *>(s_sockaddr)->sun_path, path_size);
+    _addr[path_size] = '\0';
     break;
   }
   default:
