@@ -169,9 +169,9 @@ cert_verification(const std::string &sn)
 int
 init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<PluginConfig> config)
 {
-  // Hand the launcher sm_instance and this smgr_instance, and judge the result by the server it returns, so that a reset()
-  // between the steps below cannot hand it null pointers. The shared lifecycle mutex and the order of TSPluginInit also keep
-  // reset() out, but nothing here depends on that.
+  // Pass the launcher these local pointers and judge success by the server it returns, never by reading the shared members
+  // back: the shutdown hook's reset() can clear them between the steps below. lifecycle_mutex keeps the shutdown hook out
+  // only on the reload path; the call from TSPluginInit holds no lock.
   nuraft::ptr<nuraft::state_mgr> smgr_instance =
     nuraft::cs_new<STEKShareSMGR>(config->server_id, config->endpoint, config->server_list);
 
