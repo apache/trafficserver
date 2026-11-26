@@ -287,25 +287,35 @@ TEST_CASE("LogAccess JSON string slice stays within the raw value", "[LogAccess]
   }
 }
 
-TEST_CASE("LogAccess marshals a full unix socket path as a terminated string", "[LogAccess]")
+TEST_CASE("LogAccess marshals a unix socket path as a terminated string", "[LogAccess]")
 {
-  // A kernel sockaddr_un may fill sun_path with no terminator, and the marshaled path must still be a C string.
   sockaddr_un sun;
   memset(&sun, 0, sizeof(sun));
   sun.sun_family = AF_UNIX;
-  memset(sun.sun_path, 'z', TS_UNIX_SIZE);
-  auto const       *sa = reinterpret_cast<sockaddr const *>(&sun);
-  std::string const truncated(TS_UNIX_SIZE - 1, 'z');
+  auto const *sa = reinterpret_cast<sockaddr const *>(&sun);
+  std::string expected;
+
+  SECTION("a path that fills sun_path")
+  {
+    // A kernel sockaddr_un may fill sun_path with no terminator, and the marshaled path must still be a C string.
+    memset(sun.sun_path, 'z', TS_UNIX_SIZE);
+    expected.assign(TS_UNIX_SIZE - 1, 'z');
+  }
+  SECTION("a shorter path")
+  {
+    strcpy(sun.sun_path, "/run/ats/client.sock");
+    expected = "/run/ats/client.sock";
+  }
 
   std::vector<char> marshalled(LogAccess::marshal_ip(nullptr, sa));
   LogAccess::marshal_ip(marshalled.data(), sa);
 
   auto const *un = reinterpret_cast<LogFieldUn const *>(marshalled.data());
-  CHECK(std::string_view(un->_path, strnlen(un->_path, TS_UNIX_SIZE)) == truncated);
+  CHECK(std::string_view(un->_path, strnlen(un->_path, TS_UNIX_SIZE)) == expected);
 
   char  dest[256];
   char *src = marshalled.data();
   int   len = LogAccess::unmarshal_ip_to_str(&src, dest, sizeof(dest));
   REQUIRE(len >= 0);
-  CHECK(std::string_view(dest, len) == truncated);
+  CHECK(std::string_view(dest, len) == expected);
 }

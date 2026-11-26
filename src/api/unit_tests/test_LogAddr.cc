@@ -32,26 +32,36 @@
 #include <string_view>
 #include <vector>
 
-TEST_CASE("TSLogAddrMarshal terminates a full unix socket path", "[api][log]")
+TEST_CASE("TSLogAddrMarshal stores a unix socket path as a terminated string", "[api][log]")
 {
-  // A kernel sockaddr_un may fill sun_path with no terminator, and the marshaled path must still be a C string.
   sockaddr_un sun;
   memset(&sun, 0, sizeof(sun));
   sun.sun_family = AF_UNIX;
-  memset(sun.sun_path, 'z', TS_UNIX_SIZE);
-  auto             *sa = reinterpret_cast<sockaddr *>(&sun);
-  std::string const truncated(TS_UNIX_SIZE - 1, 'z');
+  auto       *sa = reinterpret_cast<sockaddr *>(&sun);
+  std::string expected;
+
+  SECTION("a path that fills sun_path")
+  {
+    // A kernel sockaddr_un may fill sun_path with no terminator, and the marshaled path must still be a C string.
+    memset(sun.sun_path, 'z', TS_UNIX_SIZE);
+    expected.assign(TS_UNIX_SIZE - 1, 'z');
+  }
+  SECTION("a shorter path")
+  {
+    strcpy(sun.sun_path, "/run/ats/client.sock");
+    expected = "/run/ats/client.sock";
+  }
 
   std::vector<char> marshalled(TSLogAddrMarshal(nullptr, sa));
   REQUIRE(TSLogAddrMarshal(marshalled.data(), sa) == static_cast<int>(marshalled.size()));
 
   auto const *un = reinterpret_cast<LogFieldUn const *>(marshalled.data());
-  CHECK(std::string_view(un->_path, strnlen(un->_path, TS_UNIX_SIZE)) == truncated);
+  CHECK(std::string_view(un->_path, strnlen(un->_path, TS_UNIX_SIZE)) == expected);
 
   char  dest[256];
   char *src                 = marshalled.data();
   auto [read_len, text_len] = TSLogAddrUnmarshal(&src, dest, sizeof(dest));
   CHECK(read_len == static_cast<int>(marshalled.size()));
   REQUIRE(text_len >= 0);
-  CHECK(std::string_view(dest, text_len) == truncated);
+  CHECK(std::string_view(dest, text_len) == expected);
 }
