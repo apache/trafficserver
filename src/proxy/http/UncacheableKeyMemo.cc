@@ -105,30 +105,44 @@ UncacheableKeyMemo::remember(CryptoHash const &key, ink_hrtime now, ink_hrtime t
     return {what, false};
   }
 
-  // An empty or expired entry costs nothing to take. Failing that, the oldest seen-once entry.
-  Entry     *victim         = nullptr;
-  ink_hrtime victim_until   = std::numeric_limits<ink_hrtime>::max();
-  bool       victim_is_live = false;
+  // An empty or expired entry costs nothing to take. Failing that, the oldest seen-once entry,
+  // and only when all four are remembered, the one renewed longest ago. Every miss on a
+  // remembered key renews it when its uncacheable response comes back, so the earliest expiry
+  // marks the key asked for least recently, without a write on the lookup path.
+  Entry     *empty         = nullptr;
+  Entry     *seen_once     = nullptr;
+  Entry     *remembered    = nullptr;
+  ink_hrtime seen_until    = std::numeric_limits<ink_hrtime>::max();
+  ink_hrtime remembered_at = std::numeric_limits<ink_hrtime>::max();
   for (Entry &entry : set.ways) {
     uint64_t const   have       = entry.tag.load(std::memory_order_relaxed);
     ink_hrtime const have_until = entry.until.load(std::memory_order_relaxed);
     if (have == 0 || have_until <= now) {
-      victim         = &entry;
-      victim_is_live = false;
+      empty = &entry;
       break;
     }
-    if (!(have & ADMITTED) && have_until < victim_until) {
-      victim         = &entry;
-      victim_until   = have_until;
-      victim_is_live = true;
+    if (!(have & ADMITTED)) {
+      if (have_until < seen_until) {
+        seen_once  = &entry;
+        seen_until = have_until;
+      }
+    } else if (have_until < remembered_at) {
+      remembered    = &entry;
+      remembered_at = have_until;
     }
   }
-  if (victim == nullptr) {
-    return {Remembered::SET_FULL, false};
+  Outcome outcome{Remembered::SEEN_ONCE};
+  Entry  *victim = empty;
+  if (victim == nullptr && seen_once != nullptr) {
+    victim          = seen_once;
+    outcome.evicted = true;
+  } else if (victim == nullptr) {
+    victim            = remembered;
+    outcome.displaced = true;
   }
   victim->until.store(until, std::memory_order_relaxed);
   victim->tag.store(tag, std::memory_order_release);
-  return {Remembered::SEEN_ONCE, victim_is_live};
+  return outcome;
 }
 
 void

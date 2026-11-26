@@ -3995,8 +3995,9 @@ Dynamic Content & Content Negotiation
        a larger memory would help.
 
     ``proxy.process.http.cache.remember_uncacheable.set_full``
-       Uncacheable responses that could not be noted because the URLs sharing their place in
-       the memory were all remembered. Any steady rate means the memory is too small.
+       Remembered URLs pushed out to make room, because every URL sharing their place in the
+       memory was remembered and still live. The one asked for least recently goes. Any steady
+       rate means the memory is too small.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.remember_uncacheable_entries INT 65536
 

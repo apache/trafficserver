@@ -45,9 +45,10 @@
     The table is split into sets of four entries, one cache line each, picked by the low bits of
     the second 64-bit slice of the key's hash. An entry keeps the first slice as a tag, with the
     low bit set so it is never zero and the next bit marking a remembered key, plus an expiry
-    time. A new key takes an empty or expired entry first, then the oldest seen-once entry. It
-    never displaces a remembered key that is still live; when all four are, the sighting is
-    dropped, and the set frees up as soon as one of them goes a lifetime without being renewed.
+    time. A new key takes an empty or expired entry first, then the oldest seen-once entry, and
+    only when all four hold live remembered keys, the one renewed longest ago. A set therefore
+    keeps at most one seen-once key in front of its remembered ones: keys asked for once churn
+    through that entry, while the keys asked for most often stay put.
 
     Readers and writers use plain atomics with no lock, so two keys written into one entry at
     the same time can leave one key's tag next to the other's expiry until the entry is written
@@ -65,7 +66,6 @@ public:
   /// What a call to remember() did.
   enum class Remembered {
     NOTHING,   ///< A non-positive ttl.
-    SET_FULL,  ///< Every entry in the key's set held a live remembered key, so the sighting was dropped.
     SEEN_ONCE, ///< The key now has a seen-once entry.
     ADMITTED,  ///< A seen-once key answered uncacheable again and is now remembered.
     RENEWED,   ///< An already remembered key had its expiry moved out.
@@ -75,6 +75,8 @@ public:
     Remembered what = Remembered::NOTHING;
     /// A live seen-once entry of another key was overwritten to make room.
     bool evicted = false;
+    /// Every entry held a live remembered key, and the one renewed longest ago made room.
+    bool displaced = false;
   };
 
   /// @return @a requested rounded up to a power of two in [WAYS, MAX_ENTRIES].

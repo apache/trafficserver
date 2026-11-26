@@ -142,18 +142,35 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     }
   }
 
-  SECTION("a new key never displaces a live remembered key")
+  SECTION("with every entry remembered, the one renewed longest ago makes room")
   {
     for (uint64_t t = 1; t <= UncacheableKeyMemo::WAYS; ++t) {
-      admit(in_set(t, 7), now);
+      admit(in_set(t, 7), now + static_cast<ink_hrtime>(t));
     }
-    UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + 1, ttl);
-    CHECK(outcome.what == Remembered::SET_FULL);
+    CHECK(memo->remember(in_set(1, 7), now + 10, ttl).what == Remembered::RENEWED);
+    UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + 11, ttl);
+    CHECK(outcome.what == Remembered::SEEN_ONCE);
+    CHECK(outcome.displaced);
     CHECK_FALSE(outcome.evicted);
-    for (uint64_t t = 1; t <= UncacheableKeyMemo::WAYS; ++t) {
-      CHECK(memo->contains(in_set(t, 7), now + 1));
+    CHECK(memo->contains(in_set(1, 7), now + 11));
+    CHECK_FALSE(memo->contains(in_set(2, 7), now + 11));
+    CHECK(memo->contains(in_set(3, 7), now + 11));
+    CHECK(memo->contains(in_set(4, 7), now + 11));
+    CHECK(memo->remember(in_set(9, 7), now + 12, ttl).what == Remembered::ADMITTED);
+  }
+
+  SECTION("a key renewed by every request outlasts a stream of keys asked for twice")
+  {
+    CryptoHash const hot = in_set(1, 7);
+    admit(hot, now);
+    bool stayed = true;
+    for (uint64_t t = 100; t < 1100; ++t) {
+      ink_hrtime const at = now + static_cast<ink_hrtime>(t) * 10;
+      memo->remember(hot, at, ttl);
+      admit(in_set(t, 7), at + 1);
+      stayed = stayed && memo->contains(hot, at + 2);
     }
-    CHECK(admit(in_set(9, 7), now + 1) == Remembered::SET_FULL);
+    CHECK(stayed);
   }
 
   SECTION("a new key takes an expired entry before a live seen-once one")
@@ -186,14 +203,20 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     CHECK(memo->contains(in_set(2, 7), now + 4));
   }
 
-  SECTION("a stream of keys seen once cannot displace a remembered one")
+  SECTION("a stream of keys seen once costs a full set at most one remembered key")
   {
-    CryptoHash const hot = in_set(1, 7);
-    admit(hot, now);
-    for (uint64_t t = 100; t < 1100; ++t) {
-      memo->remember(in_set(t, 7), now + static_cast<ink_hrtime>(t), ttl);
+    for (uint64_t t = 1; t <= UncacheableKeyMemo::WAYS; ++t) {
+      admit(in_set(t, 7), now + static_cast<ink_hrtime>(t));
     }
-    CHECK(memo->contains(hot, now + 1100));
+    int displaced = 0;
+    for (uint64_t t = 100; t < 1100; ++t) {
+      displaced += memo->remember(in_set(t, 7), now + static_cast<ink_hrtime>(t), ttl).displaced;
+    }
+    CHECK(displaced == 1);
+    CHECK_FALSE(memo->contains(in_set(1, 7), now + 1100));
+    for (uint64_t t = 2; t <= UncacheableKeyMemo::WAYS; ++t) {
+      CHECK(memo->contains(in_set(t, 7), now + 1100));
+    }
   }
 
   SECTION("keys in other sets do not count against a set")
@@ -256,7 +279,7 @@ TEST_CASE("UncacheableKeyMemo size", "[http][cache]")
   CHECK(UncacheableKeyMemo::entries_for(int64_t{1} << 40) == UncacheableKeyMemo::MAX_ENTRIES);
   CHECK(UncacheableKeyMemo{}.entries() == UncacheableKeyMemo::DEFAULT_ENTRIES);
 
-  // One set: the fifth live remembered key has nowhere to go.
+  // One set: the fifth key pushes out the remembered key renewed longest ago.
   UncacheableKeyMemo small{4};
   CHECK(small.entries() == 4);
   ink_hrtime const now = HRTIME_SECONDS(1);
@@ -265,5 +288,5 @@ TEST_CASE("UncacheableKeyMemo size", "[http][cache]")
     small.remember(make_key(t << 2, t), now, ttl);
     small.remember(make_key(t << 2, t), now, ttl);
   }
-  CHECK(small.remember(make_key(5 << 2, 5), now, ttl).what == Remembered::SET_FULL);
+  CHECK(small.remember(make_key(5 << 2, 5), now, ttl).displaced);
 }

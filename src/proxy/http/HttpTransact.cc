@@ -3669,14 +3669,14 @@ HttpTransact::remember_uncacheable_response(State *s)
     TxnDbg(dbg_ctl_http_trans, "remembering the key as uncacheable for %" PRId64 " s", seconds);
     Metrics::Counter::increment(http_rsb.remember_uncacheable_admits);
     break;
-  case UncacheableKeyMemo::Remembered::SET_FULL:
-    Metrics::Counter::increment(http_rsb.remember_uncacheable_set_full);
-    break;
   default:
     break;
   }
   if (outcome.evicted) {
     Metrics::Counter::increment(http_rsb.remember_uncacheable_evictions);
+  }
+  if (outcome.displaced) {
+    Metrics::Counter::increment(http_rsb.remember_uncacheable_set_full);
   }
 }
 
