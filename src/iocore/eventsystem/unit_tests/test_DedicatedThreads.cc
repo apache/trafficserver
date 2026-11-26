@@ -71,9 +71,9 @@ count_active_dthreads()
 } // namespace
 
 // The stats sync task walks the dedicated threads on its own thread while
-// accept and logging threads are still being spawned during startup. On x86
-// the null-entry check rarely trips, so there this case mostly checks the walk;
-// ThreadSanitizer reports a missing ordering on any CPU.
+// accept and logging threads are still being spawned during startup. Without
+// release/acquire on n_dthreads, x86 ordering hides the race, so the null-entry
+// check rarely trips there; ThreadSanitizer reports the unordered access on any CPU.
 TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocore]")
 {
   constexpr int SPAWNS = 64;
@@ -103,7 +103,7 @@ TEST_CASE("active_dthreads can be walked while dedicated threads spawn", "[iocor
   std::vector<std::unique_ptr<StartContinuation>> conts;
   for (int i = 0; i < SPAWNS; ++i) {
     conts.push_back(std::make_unique<StartContinuation>(started));
-    REQUIRE(eventProcessor.spawn_thread(conts.back().get(), "[TEST_DTHREAD]") != nullptr);
+    CHECK(eventProcessor.spawn_thread(conts.back().get(), "[TEST_DTHREAD]") != nullptr);
   }
   is_spawning.store(false, std::memory_order_release);
   walker.join();

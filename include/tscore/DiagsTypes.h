@@ -648,10 +648,10 @@ public:
    *   (off by default).
    * @par Thread safety
    * Caller MUST serialize with all other reconfiguration
-   *   methods. reseat_diagslog() acquires tag_table_lock only for the
-   *   pointer swap that follows this call; setup_diagslog() itself is not
-   *   called under the lock. Direct callers must provide equivalent
-   *   serialization for the pointer swap.
+   *   methods. reseat_diagslog() and should_roll_diagslog() call it under
+   *   rotation_lock, and take tag_table_lock only for the pointer swap that
+   *   follows; setup_diagslog() itself is not called under tag_table_lock.
+   *   Direct callers must provide equivalent serialization for the pointer swap.
    */
   bool setup_diagslog(BaseLogFile *blf);
 
