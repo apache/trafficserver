@@ -255,6 +255,9 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   // Loop over objects and swizzle there pointer to
   //  live offsets
+  //
+  // Each object must start inside the heap, but nothing yet checks that the whole object fits inside it, or that a
+  // MIME field block's length stays inside the heap. Both checks are left for a separate change.
   char    *obj_data = hh->m_data_start;
   intptr_t offset   = (intptr_t)hh;
 
