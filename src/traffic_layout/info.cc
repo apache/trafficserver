@@ -163,6 +163,7 @@ produce_features(bool json)
   print_feature("TS_USE_DIAGS", TS_USE_DIAGS, json);
   print_feature("TS_USE_CACHE_SHM", TS_USE_CACHE_SHM, json);
   print_feature("TS_USE_EPOLL", TS_USE_EPOLL, json);
+  print_feature("TS_USE_EXTERNAL_LIBSWOC", TS_USE_EXTERNAL_LIBSWOC, json);
   print_feature("TS_USE_KQUEUE", TS_USE_KQUEUE, json);
   print_feature("TS_USE_POSIX_CAP", TS_USE_POSIX_CAP, json);
   print_feature("TS_USE_TPROXY", TS_USE_TPROXY, json);

@@ -494,6 +494,8 @@ if(EXTERNAL_LIBSWOC)
   message(STATUS "Looking for external libswoc")
   find_package(libswoc REQUIRED)
 endif()
+# Lets tests that need fixes made in lib/swoc skip on a system libswoc.
+set(TS_USE_EXTERNAL_LIBSWOC ${EXTERNAL_LIBSWOC})
 
 if(ENABLE_HIGHWAY_DISPATCH)
   if(EXTERNAL_HWY)
