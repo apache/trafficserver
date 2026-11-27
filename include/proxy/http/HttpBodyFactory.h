@@ -63,6 +63,7 @@
 #include "proxy/http/HttpTransact.h"
 #include "tscore/ink_sprintf.h"
 
+#include <atomic>
 #include <memory>
 #include <unordered_map>
 
@@ -257,8 +258,9 @@ private:
   /////////////////////////////////////
   // manager configuration variables //
   /////////////////////////////////////
-  int  enable_customizations = 0;    // 0:no custom,1:custom,2:language-targeted
-  bool enable_logging        = true; // the user wants body factory logging
+  int enable_customizations = 0; // 0:no custom,1:custom,2:language-targeted
+  // the user wants body factory logging; read without the factory lock
+  std::atomic<bool> enable_logging{true};
 
   ////////////////////
   // internal state //

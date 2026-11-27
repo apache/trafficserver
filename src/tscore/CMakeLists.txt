@@ -156,6 +156,7 @@ if(BUILD_TESTING)
     unit_tests/test_ArgParser.cc
     unit_tests/test_CryptoHash.cc
     unit_tests/test_Demangle.cc
+    unit_tests/test_Diags.cc
     unit_tests/test_Encoding.cc
     unit_tests/test_FrequencyCounter.cc
     unit_tests/test_HashAlgorithms.cc

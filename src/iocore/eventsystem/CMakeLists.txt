@@ -87,6 +87,10 @@ if(BUILD_TESTING)
   target_link_libraries(test_Lock ts::inkevent configmanager Catch2::Catch2WithMain)
   add_catch2_test(NAME test_Lock COMMAND test_Lock)
 
+  add_executable(test_DedicatedThreads unit_tests/test_DedicatedThreads.cc)
+  target_link_libraries(test_DedicatedThreads ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_DedicatedThreads COMMAND test_DedicatedThreads)
+
   add_executable(test_WatchdogPolicy unit_tests/test_WatchdogPolicy.cc)
   target_link_libraries(test_WatchdogPolicy ts::inkevent configmanager Catch2::Catch2WithMain)
   add_catch2_test(NAME test_WatchdogPolicy COMMAND test_WatchdogPolicy)

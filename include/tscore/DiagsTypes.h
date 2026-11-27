@@ -33,6 +33,7 @@
 
 #include <cstdarg>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include "tsutil/DbgCtl.h"
@@ -216,11 +217,13 @@ private:
  *   and reconfiguration are a data race on config.outputs. Tag-table
  *   mutation methods (activate_taglist,
  *   deactivate_all) acquire tag_table_lock internally. Log-pointer swap methods
- *   (reseat_diagslog, should_roll_diagslog) acquire tag_table_lock only for
- *   their pointer swap step; file operations run outside the lock.
- *   set_std_output (and should_roll_outputlog through it) additionally holds
- *   the lock across the dup2() rebinding of the standard stream descriptor on
- *   success. setup_diagslog() acquires no lock; callers must serialize it.
+ *   (reseat_diagslog, should_roll_diagslog, should_roll_outputlog and
+ *   set_std_output) are serialized against each other by rotation_lock, and
+ *   acquire tag_table_lock only for their pointer swap step; file operations
+ *   run outside that lock. set_std_output and should_roll_outputlog (both
+ *   through bind_std_output) additionally hold tag_table_lock across the
+ *   dup2() rebinding of the standard stream descriptor on success.
+ *   setup_diagslog() acquires no lock; callers must serialize it.
  *   Rolling-policy configuration methods (config_roll_diagslog,
  *   config_roll_outputlog) and dump() do not acquire any lock; see the
  *   per-method @par Thread safety paragraphs below for details.
@@ -645,10 +648,10 @@ public:
    *   (off by default).
    * @par Thread safety
    * Caller MUST serialize with all other reconfiguration
-   *   methods. reseat_diagslog() acquires tag_table_lock only for the
-   *   pointer swap that follows this call; setup_diagslog() itself is not
-   *   called under the lock. Direct callers must provide equivalent
-   *   serialization for the pointer swap.
+   *   methods. reseat_diagslog() and should_roll_diagslog() call it under
+   *   rotation_lock, and take tag_table_lock only for the pointer swap that
+   *   follows; setup_diagslog() itself is not called under tag_table_lock.
+   *   Direct callers must provide equivalent serialization for the pointer swap.
    */
   bool setup_diagslog(BaseLogFile *blf);
 
@@ -720,9 +723,10 @@ public:
    *   at LL_Error only when BASELOGFILE_DEBUG_MODE is enabled (off by
    *   default); in normal builds the failure is completely silent.
    * @par Thread safety
-   * The swap in step 4 is performed under tag_table_lock.
-   *   Concurrent emission either observes the pre-swap or post-swap log;
-   *   no message is lost or written to a destroyed FILE *.
+   * Serialized with the other log-pointer swap methods. The swap in step 4
+   *   is performed under tag_table_lock. Concurrent emission either observes
+   *   the pre-swap or post-swap log; no message is lost or written to a
+   *   destroyed FILE *.
    * @note When diagnostic output is disabled or redirected to a non-file
    *   sink (e.g., syslog), diags_log is null or uninitialized and the
    *   initialization guard causes an early false return.
@@ -750,10 +754,10 @@ public:
    * None signaled. fstat (size-based policy only) and reopen failures
    *   silently suppress replacement; a completed rename is never reversed.
    * @par Thread safety
-   * tag_table_lock is acquired only during the BaseLogFile
-   *   pointer swap. The rolling-condition checks and file operations execute
-   *   without a lock; the caller must ensure no concurrent reconfiguration
-   *   (see config_roll_diagslog()).
+   * Serialized with the other log-pointer swap methods. tag_table_lock is
+   *   acquired only during the BaseLogFile pointer swap. The rolling-condition
+   *   checks and file operations execute without that lock; the caller must
+   *   ensure no concurrent reconfiguration (see config_roll_diagslog()).
    */
   bool should_roll_diagslog();
 
@@ -790,10 +794,11 @@ public:
    *   they are silent. An fstat failure short-circuits the function and skips
    *   any time-based check.
    * @par Thread safety
-   * tag_table_lock is acquired only during the BaseLogFile pointer swap and
-   *   the dup2() rebinding of the standard stream. The rolling-condition
-   *   checks and file operations execute without a lock; the caller must
-   *   ensure no concurrent reconfiguration (see config_roll_outputlog()).
+   * Serialized with the other log-pointer swap methods. tag_table_lock is
+   *   acquired only during the BaseLogFile pointer swap and the dup2()
+   *   rebinding of the standard stream. The rolling-condition checks and file
+   *   operations execute without that lock; the caller must ensure no
+   *   concurrent reconfiguration (see config_roll_outputlog()).
    */
   bool should_roll_outputlog();
 
@@ -816,10 +821,11 @@ public:
    *   unbound (nullptr). Internal log_log_error messages are emitted only
    *   when BASELOGFILE_DEBUG_MODE is enabled (off by default).
    * @par Thread safety
-   * On success, tag_table_lock is held across both the pointer update and
-   *   the dup2() rebinding of the standard-stream file descriptor; on
-   *   file-open failure it is held only for the pointer update. The
-   *   empty-string early return does not acquire the lock.
+   * Serialized with the other log-pointer swap methods. On success,
+   *   tag_table_lock is held across both the pointer update and the dup2()
+   *   rebinding of the standard-stream file descriptor; on file-open failure
+   *   it is held only for the pointer update. The empty-string early return
+   *   does not acquire tag_table_lock.
    */
   bool set_std_output(StdStream stream, const char *file);
 
@@ -854,7 +860,16 @@ private:
   time_t               outputlog_time_last_roll;
   time_t               diagslog_time_last_roll;
 
+  /// Serializes the methods that replace diags_log, stdout_log or stderr_log.
+  /// They run on different threads (periodic rolling and the SIGUSR2 reopen),
+  /// and each one uses the current BaseLogFile outside tag_table_lock before
+  /// swapping in its replacement and deleting the old one.
+  std::mutex rotation_lock;
+
   bool rebind_std_stream(StdStream stream, int new_fd);
+
+  /// set_std_output() for callers that already hold rotation_lock.
+  bool bind_std_output(StdStream stream, const char *file);
 
   void
   lock() const
