@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <optional>
+#include <sstream>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -38,6 +40,7 @@
 #include "tscore/ink_cap.h"
 #include "tscore/Filenames.h"
 #include <yaml-cpp/yaml.h>
+#include <yaml-cpp/eventhandler.h>
 
 #define MAX_PLUGIN_ARGS 64
 
@@ -443,20 +446,163 @@ plugin_init(bool validateOnly)
   return retVal;
 }
 
+namespace
+{
+/// Records whether each YAML document is empty, without building it.
+class YAMLDocumentEmptiness : public YAML::EventHandler
+{
+public:
+  /// One entry per document, true if the document is only a null.
+  std::vector<bool> empty;
+
+  void
+  OnDocumentStart(const YAML::Mark &mark) override
+  {
+    // yaml-cpp reports a token that cannot start a node, such as a stray ","
+    // after "---", as an empty document without consuming it, so the next
+    // document starts at the same place and the walk would never end.
+    if (_started && mark.pos <= _last_start) {
+      throw YAML::ParserException(mark, "unexpected token");
+    }
+    _started    = true;
+    _last_start = mark.pos;
+    _root_seen  = false;
+  }
+  // A document always reports its root node before it ends, and a root alias
+  // fails as an undefined anchor before it is reported, so neither event can
+  // be a document's root.
+  void
+  OnDocumentEnd() override
+  {
+  }
+  void
+  OnNull(const YAML::Mark &, YAML::anchor_t) override
+  {
+    root(true);
+  }
+  void
+  OnAlias(const YAML::Mark &, YAML::anchor_t) override
+  {
+  }
+  void
+  OnScalar(const YAML::Mark &, const std::string &, YAML::anchor_t, const std::string &) override
+  {
+    root(false);
+  }
+  void
+  OnSequenceStart(const YAML::Mark &, const std::string &, YAML::anchor_t, YAML::EmitterStyle::value) override
+  {
+    root(false);
+  }
+  void
+  OnSequenceEnd() override
+  {
+  }
+  void
+  OnMapStart(const YAML::Mark &, const std::string &, YAML::anchor_t, YAML::EmitterStyle::value) override
+  {
+    root(false);
+  }
+  void
+  OnMapEnd() override
+  {
+  }
+
+private:
+  // The first node event of a document is its root.
+  void
+  root(bool is_null)
+  {
+    if (!_root_seen) {
+      _root_seen = true;
+      empty.push_back(is_null);
+    }
+  }
+
+  bool _root_seen  = false;
+  bool _started    = false;
+  int  _last_start = 0;
+};
+
+/// Return, for each YAML document in @a text, whether it is empty. Throws
+/// YAML::Exception if any document is malformed.
+std::vector<bool>
+yaml_document_emptiness(const std::string &text)
+{
+  std::istringstream    in(text);
+  YAML::Parser          parser(in);
+  YAMLDocumentEmptiness events;
+
+  while (parser.HandleNextDocument(events)) {}
+  return events.empty;
+}
+} // namespace
+
 config::ConfigResult<PluginYAMLEntries>
 parse_plugin_yaml(const char *yaml_path)
 {
   config::ConfigResult<PluginYAMLEntries> result;
   YAML::Node                              root;
 
+  // O_NONBLOCK keeps the open of a FIFO from waiting for a writer, so the file
+  // type check below can reject it. Checking the descriptor rather than the
+  // path tests the file that is actually read.
+  ats_scoped_fd fd(open(yaml_path, O_RDONLY | O_CLOEXEC | O_NONBLOCK));
+  if (fd < 0) {
+    result.errata.note("failed to open: {}", strerror(errno));
+    return result;
+  }
+  if (struct stat st; fstat(fd, &st) != 0) {
+    result.errata.note("failed to stat: {}", strerror(errno));
+    return result;
+  } else if (!S_ISREG(st.st_mode)) {
+    result.errata.note("not a regular file");
+    return result;
+  }
+
+  // Read with read() rather than YAML::LoadFile() or any other stream read. A
+  // stream may report a failed read as end of file (libc++ does), which would
+  // hand an empty or truncated file to the parser as if it were the whole file.
+  std::string text;
+  for (char buf[4096];;) {
+    ssize_t n = read(fd, buf, sizeof(buf));
+    if (n > 0) {
+      text.append(buf, n);
+    } else if (n == 0) {
+      break;
+    } else if (errno != EINTR) {
+      result.errata.note("failed to read: {}", strerror(errno));
+      return result;
+    }
+  }
+
   try {
-    root = YAML::LoadFile(yaml_path);
+    // YAML::Load() builds only the first document and never parses the rest,
+    // so anything in a later document would be dropped and a malformed later
+    // document would go unreported. YAML::LoadAll() stops at a null document
+    // too. So refuse any document after the first that is not empty, even
+    // when the first is empty, and accept empty ones such as a trailing "---".
+    auto empty = yaml_document_emptiness(text);
+    for (size_t i = 1; i < empty.size(); ++i) {
+      if (!empty[i]) {
+        result.errata.note("YAML document #{} is not empty, documents after the first must be empty", i + 1);
+        return result;
+      }
+    }
+    root = YAML::Load(text);
   } catch (const YAML::Exception &e) {
     result.errata.note("failed to parse: {}", e.what());
     return result;
   }
 
-  if (!root["plugins"] || !root["plugins"].IsSequence()) {
+  // An empty file, or a plugins key whose entries are all commented out, names
+  // no plugins. Treat it like an empty list rather than as an error.
+  if (root.IsNull() || (root.IsMap() && root["plugins"] && root["plugins"].IsNull())) {
+    return result;
+  }
+
+  // Subscripting a scalar document throws, so check for a map first.
+  if (!root.IsMap() || !root["plugins"] || !root["plugins"].IsSequence()) {
     result.errata.note("missing or invalid 'plugins' sequence");
     return result;
   }
@@ -472,30 +618,57 @@ parse_plugin_yaml(const char *yaml_path)
   for (const auto &node : root["plugins"]) {
     PluginYAMLEntry entry;
 
-    if (!node["path"]) {
-      result.errata.note("plugin entry #{} missing required 'path' field", seq_idx + 1);
-      return result;
-    }
-    entry.path = node["path"].as<std::string>();
-
-    if (auto n = node["enabled"]; n) {
-      entry.enabled = n.as<bool>();
-    }
-    if (auto n = node["load_order"]; n) {
-      entry.load_order = n.as<int>();
-    }
-    if (auto n = node["params"]; n && n.IsSequence()) {
-      for (const auto &p : n) {
-        entry.params.emplace_back(p.as<std::string>());
-      }
-    }
-    if (auto n = node["config"]; n) {
-      if (n.IsScalar()) {
-        entry.config_literal = n.as<std::string>();
-      } else {
-        result.errata.note("plugin '{}': 'config' must be a scalar (use literal block '|' for multi-line content)", entry.path);
+    // A wrong node type or value (a scalar entry, "enabled: maybe") makes yaml-cpp throw.
+    try {
+      // as<std::string>() reads a null value as the text "null", so "path:" with
+      // nothing after it is as missing as no path key at all.
+      if (auto n = node["path"]; !n || n.IsNull()) {
+        result.errata.note("plugin entry #{} missing required 'path' field", seq_idx + 1);
         return result;
       }
+      entry.path = node["path"].as<std::string>();
+
+      if (auto n = node["enabled"]; n) {
+        entry.enabled = n.as<bool>();
+      }
+      if (auto n = node["load_order"]; n) {
+        entry.load_order = n.as<int>();
+        // A negative value reads as unset, so the plugin would load after every
+        // ordered plugin instead of before them.
+        if (entry.load_order < 0) {
+          result.errata.note("plugin entry #{}: 'load_order' must not be negative", seq_idx + 1);
+          return result;
+        }
+      }
+      // A params key with no value passes no arguments, like an empty list. Any
+      // other value that is not a list would drop the plugin's arguments unseen.
+      if (auto n = node["params"]; n && !n.IsNull()) {
+        if (!n.IsSequence()) {
+          result.errata.note("plugin entry #{}: 'params' must be a list", seq_idx + 1);
+          return result;
+        }
+        int item = 0;
+        for (const auto &p : n) {
+          ++item;
+          // A null item would reach the plugin as the argument "null".
+          if (p.IsNull()) {
+            result.errata.note("plugin entry #{}: 'params' item #{} is empty", seq_idx + 1, item);
+            return result;
+          }
+          entry.params.emplace_back(p.as<std::string>());
+        }
+      }
+      if (auto n = node["config"]; n) {
+        if (n.IsScalar()) {
+          entry.config_literal = n.as<std::string>();
+        } else {
+          result.errata.note("plugin '{}': 'config' must be a scalar (use literal block '|' for multi-line content)", entry.path);
+          return result;
+        }
+      }
+    } catch (const YAML::Exception &e) {
+      result.errata.note("plugin entry #{}: {}", seq_idx + 1, e.what());
+      return result;
     }
 
     indexed.push_back({seq_idx++, std::move(entry)});
@@ -630,11 +803,22 @@ plugin_yaml_init(bool validateOnly)
     cleanup_inline_configs();
   }
 
+  // A plugin.yaml that cannot be loaded as written stops startup, rather than
+  // leaving traffic_server running without the plugins it names. A config
+  // check only reports it.
+  auto fail = [validateOnly](const std::string &message) {
+    if (validateOnly) {
+      Error("%s", message.c_str());
+    } else {
+      Emergency("%s", message.c_str());
+    }
+    return false;
+  };
+
   yaml_path = RecConfigReadConfigPath(nullptr, ts::filename::PLUGIN_YAML);
   if (access(yaml_path, R_OK) != 0) {
     if (errno != ENOENT) {
-      Error("%s: %s", ts::filename::PLUGIN_YAML, strerror(errno));
-      return false;
+      return fail(std::string(ts::filename::PLUGIN_YAML) + ": " + strerror(errno));
     }
     return plugin_init(validateOnly);
   }
@@ -643,8 +827,7 @@ plugin_yaml_init(bool validateOnly)
 
   auto result = parse_plugin_yaml(yaml_path.get());
   if (!result.ok()) {
-    Error("%s: %s", ts::filename::PLUGIN_YAML, std::string(result.errata.front().text()).c_str());
-    return false;
+    return fail(std::string(ts::filename::PLUGIN_YAML) + ": " + std::string(result.errata.front().text()));
   }
 
   s_plugin_load_summary.source = ts::filename::PLUGIN_YAML;
@@ -667,7 +850,7 @@ plugin_yaml_init(bool validateOnly)
 
     auto args = build_plugin_args(entry, index);
     if (!args) {
-      return false;
+      return fail(std::string(ts::filename::PLUGIN_YAML) + " failed to load");
     }
 
     if (args->size() > MAX_PLUGIN_ARGS) {
@@ -704,10 +887,9 @@ plugin_yaml_init(bool validateOnly)
     }
   }
 
-  if (retVal) {
-    log_plugin_load_summary(loaded, disabled);
-  } else {
-    Error("%s failed to load", ts::filename::PLUGIN_YAML);
+  if (!retVal) {
+    return fail(std::string(ts::filename::PLUGIN_YAML) + " failed to load");
   }
-  return retVal;
+  log_plugin_load_summary(loaded, disabled);
+  return true;
 }

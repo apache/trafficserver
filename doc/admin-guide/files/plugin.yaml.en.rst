@@ -98,9 +98,9 @@ modification.
 ``load_order``
 --------------
 
-**Optional.** Integer. Provides explicit control over the order in which
-plugins are loaded and therefore the order in which they are chained for
-request processing.
+**Optional.** Integer, zero or greater. Provides explicit control over
+the order in which plugins are loaded and therefore the order in which
+they are chained for request processing.
 
 The loading rules are:
 
@@ -371,6 +371,40 @@ When plugins are loaded from :file:`plugin.yaml`, each plugin produces a
    [NOTE] plugin #1 loading: certifier.so (load_order: 100)
    [NOTE] plugin #2 loading: header_rewrite.so
    [NOTE] plugin #3 skipped: experimental_plugin.so (enabled: false)
+
+Load Errors
+===========
+
+If :file:`plugin.yaml` exists but cannot be loaded as written, |TS| does
+not start. Examples are:
+
+- a file that cannot be read, or a path that is not a regular file (such
+  as a directory)
+- invalid YAML, or a YAML document after the first that is not empty
+  (an empty one, such as a trailing ``---``, is accepted)
+- a document with no ``plugins`` key, or one that is not a map (such as
+  :file:`plugin.config` lines pasted into the file)
+- a ``plugins`` or ``params`` value that is not a list
+- an entry with no ``path``, or with a ``path`` that has no value
+- a ``params`` item with no value
+- a negative ``load_order``
+- a value of the wrong type (such as ``enabled: maybe``)
+
+The error is logged at ``EMERGENCY`` level and :program:`traffic_server`
+exits with status 33. ``traffic_server -C verify_config`` logs the same
+error at ``ERROR`` level. A plugin library that cannot be loaded is a
+``FATAL`` error instead, and :program:`traffic_server` exits with status
+70, as it does with :file:`plugin.config`.
+
+An empty file, a file of only comments or of only empty documents, and a
+``plugins`` key with every entry commented out load no plugins, the same as
+``plugins: []``. A ``params`` key with every item commented out passes no
+arguments.
+
+|TS| reads :file:`plugin.yaml` only at startup. A configuration reload
+does not reread it, so a change, including one that breaks the file,
+takes effect at the next restart. Run ``traffic_server -C verify_config``
+before restarting to check the file.
 
 See Also
 ========

@@ -94,3 +94,23 @@ def test_verify_remap_plugin(ats_factory: ATSFactory) -> None:
     )
     verify("ssl_hook_test.so", return_code=1, diagnostic=r"missing required function TSRemapInit", _ats=_ats, _command=command)
     verify("conf_remap_stripped.so", return_code=0, diagnostic=r"verifying plugin .* Success", _ats=_ats, _command=command)
+
+
+def test_verify_config_reports_bad_plugin_yaml(ats_factory: ATSFactory) -> None:
+    """verify_config reports a plugin.yaml that cannot be loaded, then goes on to check the rest.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    """
+
+    _ats = ats_factory.create("ts")
+    _ats.allow_errors(r"plugin\.yaml: plugin entry #1")
+    _ats.start()
+    # Written after start, which this plugin.yaml would stop.
+    (_ats.config_directory / "plugin.yaml").write_text("plugins:\n  - libfoo.so\n")
+    result = _ats.run("traffic_server", "-C", "verify_config")
+    # Under ASAN, LeakSanitizer replaces the exit status, so check the status the command prints.
+    assert "ERROR: Failed to load plugins, exitStatus 4" in result.stderr, result.output
+    assert re.search(r"loaded remap\.config", result.stderr), result.output
+    diags = _ats.diags_log.read_text(errors="replace")
+    assert re.search(r"ERROR: plugin\.yaml: plugin entry #1", diags), diags
+    assert "EMERGENCY" not in result.output + diags, result.output + diags
