@@ -776,7 +776,7 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
         }
       } while (es->resuming_client_hello_hooks());
     }
-    if (SSLNetVConnection *netvc = SSLNetVCAccess(s); netvc && netvc->getSSLHandShakeRejected()) {
+    if (es->is_handshake_rejected()) {
       return CLIENT_HELLO_ERROR;
     }
   } else {
@@ -882,7 +882,7 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
         // stop the accept processing
         if (!reenabled) {
           retval = -1; // Pause
-        } else if (sslnetvc && sslnetvc->getSSLHandShakeRejected()) {
+        } else if (tes->is_handshake_rejected()) {
           retval = 0; // A plugin rejected the handshake
         }
       }

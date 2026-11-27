@@ -68,6 +68,14 @@ public:
   virtual Ptr<ProxyMutex> getMutexForTLSEvents()        = 0;
   virtual void            reenable(int event)           = 0;
 
+  /// Whether a plugin rejected the handshake by reenabling a TLS hook with TS_EVENT_ERROR. False unless the connection type
+  /// overrides it.
+  virtual bool
+  is_handshake_rejected() const
+  {
+    return false;
+  }
+
 protected:
   void clear();
 
