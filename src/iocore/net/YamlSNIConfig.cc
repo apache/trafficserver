@@ -29,6 +29,7 @@
 #include <exception>
 #include <cstdint>
 #include <algorithm>
+#include <cctype>
 
 #include <yaml-cpp/yaml.h>
 #include <openssl/ssl.h>
@@ -41,8 +42,11 @@
 #include "SNIActionPerformer.h"
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
+#include "P_SSLUtils.h"
+#include "iocore/net/TLSTunnelSupport.h"
 
 #include "tsutil/ts_ip.h"
+#include "tsutil/YamlCfg.h"
 
 #include "tscore/Diags.h"
 #include "tscore/EnumDescriptor.h"
@@ -69,6 +73,111 @@ load_tunnel_alpn(std::vector<int> &dst, const YAML::Node &node)
     } else {
       dst.push_back(index);
     }
+  }
+}
+
+// The number of match groups a connection to this fqdn captures: one for each
+// '*' when the fqdn is a wildcard that SNIConfigParams files as a glob, and
+// none for a name it matches exactly.
+size_t
+match_group_count(const std::string &fqdn)
+{
+  const ats_wildcard_matcher wildcard;
+  return wildcard.match(fqdn.c_str()) ? std::count(fqdn.begin(), fqdn.end(), '*') : 0;
+}
+
+bool
+is_port_template(std::string_view text)
+{
+  return text == TunnelDestination::MAP_WITH_RECV_PORT_STR || text == TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR;
+}
+
+// A port is a number from 1 to 65535 with no leading zero, one of the port
+// templates, or a match group such as $1, optionally after such a number that
+// the group continues. A match group is filled in from the server name for
+// each connection, so its value is checked then, but it must name a group the
+// fqdn captures. In the port the group number runs to the end of the
+// destination, which is how TunnelDestination::replace_match_groups reads it,
+// and it is one digit because groups above 9 are not supported.
+bool
+is_valid_tunnel_port(std::string_view port, size_t groups)
+{
+  if (is_port_template(port)) {
+    return true;
+  }
+  if (auto dollar = port.find('$'); dollar != std::string_view::npos) {
+    auto digits = port.substr(0, dollar);
+    auto group  = port.substr(dollar + 1);
+    return (digits.empty() || TLSTunnelSupport::parse_port(digits)) && group.size() == 1 && group.front() >= '1' &&
+           static_cast<size_t>(group.front() - '0') <= groups;
+  }
+  return TLSTunnelSupport::parse_port(port).has_value();
+}
+
+// Why the match groups in a destination cannot be filled in as written, or an
+// empty string if they can. TunnelDestination::replace_match_groups reads the
+// number after each '$' up to the next '.' anywhere after it, or up to the next
+// ':' when no '.' follows, or to the end. Under a wildcard fqdn it leaves a '$'
+// it cannot fill in as written, which is not valid in a host name, and under an
+// exact fqdn, which captures no groups, the destination is filled in as empty.
+// So every '$' must start a group number of one digit naming a group the fqdn
+// captures. Groups above 9 are not supported.
+std::string
+match_group_error(std::string_view destination, size_t groups)
+{
+  for (auto pos = destination.find('$'); pos != std::string_view::npos; pos = destination.find('$', pos + 1)) {
+    auto const dot    = destination.find('.', pos);
+    auto const end    = dot != std::string_view::npos ? dot : destination.find(':', pos);
+    auto const number = destination.substr(pos + 1, end == std::string_view::npos ? end : end - pos - 1);
+    if (number.empty() || !std::isdigit(static_cast<unsigned char>(number.front()))) {
+      return "'$' is not followed by a match group number such as $1";
+    }
+    if (number.size() != 1) {
+      return "match group \"$" + std::string(number) +
+             "\" is not one digit followed by '.', ':' or the end of the destination; groups above 9 are not supported";
+    }
+    if (number.front() == '0' || static_cast<size_t>(number.front() - '0') > groups) {
+      return "match group \"$" + std::string(number) + "\" names no group: the fqdn captures " + std::to_string(groups) +
+             (groups == 1 ? " match group" : " match groups");
+    }
+  }
+  return {};
+}
+
+size_t
+port_template_count(std::string_view destination)
+{
+  size_t count = 0;
+  for (auto name : {TunnelDestination::MAP_WITH_RECV_PORT_STR, TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR}) {
+    for (auto pos = destination.find(name); pos != std::string_view::npos; pos = destination.find(name, pos + name.size())) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+void
+check_tunnel_port(const YAML::Node &route, const std::string &fqdn, const std::string &destination)
+{
+  auto const authority = TLSTunnelSupport::split_destination(destination);
+
+  if (authority && authority->host.empty()) {
+    throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": no host in tunnel destination \"" + destination + "\"");
+  }
+  // TunnelDestination fills a port template in by putting the port in place of the template and
+  // everything after it, so a template reads as written only when it is the whole port.
+  bool const is_template_port = authority && authority->port && is_port_template(*authority->port);
+  if (!authority || (authority->port && !is_valid_tunnel_port(*authority->port, match_group_count(fqdn))) ||
+      port_template_count(destination) != (is_template_port ? 1 : 0)) {
+    throw YAML::ParserException(route.Mark(), "fqdn \"" + fqdn + "\": bad port in tunnel destination \"" + destination +
+                                                "\": expected a number from 1 to 65535 with no leading zero, a match group such "
+                                                "as $1 that the fqdn captures, " +
+                                                std::string(TunnelDestination::MAP_WITH_RECV_PORT_STR) + " or " +
+                                                std::string(TunnelDestination::MAP_WITH_PROXY_PROTOCOL_PORT_STR));
+  }
+  if (auto const error = match_group_error(destination, match_group_count(fqdn)); !error.empty()) {
+    throw YAML::ParserException(route.Mark(),
+                                "fqdn \"" + fqdn + "\": bad match group in tunnel destination \"" + destination + "\": " + error);
   }
 }
 
@@ -430,11 +539,12 @@ template <> struct convert<YamlSNIConfig::Item> {
       t_srv = node[TS_tunnel_prewarm_srv].as<bool>();
     }
 
+    char const *route_key = nullptr;
     if (node[TS_tunnel_route]) {
-      item.tunnel_destination = node[TS_tunnel_route].as<std::string>();
-      item.tunnel_type        = SNIRoutingType::BLIND;
+      route_key        = TS_tunnel_route;
+      item.tunnel_type = SNIRoutingType::BLIND;
     } else if (node[TS_forward_route]) {
-      item.tunnel_destination              = node[TS_forward_route].as<std::string>();
+      route_key                            = TS_forward_route;
       item.tunnel_type                     = SNIRoutingType::FORWARD;
       item.tunnel_prewarm                  = t_prewarm;
       item.tunnel_prewarm_min              = t_min;
@@ -444,7 +554,7 @@ template <> struct convert<YamlSNIConfig::Item> {
       item.tunnel_prewarm_inactive_timeout = t_inactive_timeout;
       item.tunnel_prewarm_srv              = t_srv;
     } else if (node[TS_partial_blind_route]) {
-      item.tunnel_destination              = node[TS_partial_blind_route].as<std::string>();
+      route_key                            = TS_partial_blind_route;
       item.tunnel_type                     = SNIRoutingType::PARTIAL_BLIND;
       item.tunnel_prewarm                  = t_prewarm;
       item.tunnel_prewarm_min              = t_min;
@@ -457,6 +567,18 @@ template <> struct convert<YamlSNIConfig::Item> {
       if (node[TS_tunnel_alpn]) {
         load_tunnel_alpn(item.tunnel_alpn, node[TS_tunnel_alpn]);
       }
+    }
+    // A route key sets the routing type whatever its value, and an empty destination installs no
+    // route, so the destination is checked whenever the key is present.
+    if (route_key != nullptr) {
+      const YAML::Node route = node[route_key];
+      // yaml-cpp reads a null value as the string "null", which would load as a host name, and gives
+      // a value tagged !!null back as a string of the text after the tag, so the tag is checked too.
+      if (route.IsNull() || route.Tag() == ts::Yaml::YAML_NULL_TAG_URI) {
+        throw YAML::ParserException(route.Mark(), "fqdn \"" + item.fqdn + "\": " + route_key + " has no tunnel destination");
+      }
+      item.tunnel_destination = route.as<std::string>();
+      check_tunnel_port(route, item.fqdn, item.tunnel_destination);
     }
 
     if (node[TS_verify_server_policy]) {
@@ -623,6 +745,15 @@ std::array<std::function<std::string(std::string_view,            // destination
         if (var_start_pos != std::string::npos) {
           const auto  local_port = vc->get_proxy_protocol_dst_port();
           std::string dst{destination.substr(0, var_start_pos)};
+          if (local_port == 0) {
+            // A connection with no Proxy Protocol header, or with one whose port is 0, has no port
+            // to fill in. Drop the port separator too, so that the tunnel falls back to the inbound
+            // port.
+            if (!dst.empty() && dst.back() == ':') {
+              dst.pop_back();
+            }
+            return dst;
+          }
           dst += std::to_string(local_port);
           return dst;
         }

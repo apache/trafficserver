@@ -28,6 +28,7 @@
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/NetProcessor.h"
 #include "iocore/net/PreWarm.h"
+#include "iocore/net/TLSTunnelSupport.h"
 
 #include "tsutil/Metrics.h"
 #include "tscore/ink_time.h"
@@ -76,16 +77,39 @@ alpn_name_for_stat(int alpn_id)
   }
 }
 
-void
-parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
+// Whether a destination has a match group that a connection fills in from its
+// server name. The sni.yaml loader refuses any '$' that does not start one.
+bool
+has_match_group(std::string_view destination)
 {
-  if (auto pos = authority.find(':'); pos != std::string::npos) {
-    fqdn = authority.substr(0, pos);
-    port = static_cast<in_port_t>(std::stoi(authority.substr(pos + 1).data()));
-  } else {
-    fqdn = authority;
-    port = -1;
+  return destination.find('$') != std::string_view::npos;
+}
+
+// Split a tunnel destination into the host and port to pre-warm, the way a
+// connection to it splits them. For a destination with a fixed port, the pool
+// then has the key TLSTunnelSupport::create_dst looks up. Returns false for a
+// destination that has a match group or a port template, which is filled in
+// for each connection and names no fixed endpoint to pre-warm; the sni.yaml
+// loader has already refused any other destination this cannot read. A port
+// of -1 means the destination names none, and the caller picks a default.
+[[nodiscard]] bool
+parse_authority(std::string &fqdn, int32_t &port, std::string_view destination)
+{
+  auto const authority = TLSTunnelSupport::split_destination(destination);
+  if (!authority || has_match_group(destination)) {
+    return false;
   }
+
+  port = -1;
+  if (authority->port) {
+    auto const fixed = TLSTunnelSupport::parse_port(*authority->port);
+    if (!fixed) {
+      return false;
+    }
+    port = *fixed;
+  }
+  fqdn = authority->host;
+  return true;
 }
 
 ////
@@ -1093,6 +1117,22 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
       continue;
     }
 
+    std::string dst_fqdn;
+    int32_t     port;
+    if (!parse_authority(dst_fqdn, port, item.tunnel_destination)) {
+      Warning("sni.yaml fqdn \"%s\": not pre-warming tunnel destination \"%s\": it has a match group or port template",
+              item.fqdn.c_str(), item.tunnel_destination.c_str());
+      continue;
+    }
+
+    if (port < 0) {
+      if (item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
+        port = 443;
+      } else {
+        port = 80;
+      }
+    }
+
     std::vector<int> alpn_ids = {SessionProtocolNameRegistry::INVALID};
     if (!item.tunnel_alpn.empty() && item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
       for (auto &id : item.tunnel_alpn) {
@@ -1104,18 +1144,6 @@ PreWarmManager::_parse_sni_conf(PreWarm::ParsedSNIConf &parsed_conf, const SNICo
       Dbg(dbg_ctl_prewarm_m, "sni=%s dst=%s type=%d alpn=%d min=%d max=%d c_timeout=%d i_timeout=%d srv=%d", item.fqdn.c_str(),
           item.tunnel_destination.c_str(), (int)item.tunnel_type, id, (int)item.tunnel_prewarm_min, (int)item.tunnel_prewarm_max,
           (int)item.tunnel_prewarm_connect_timeout, (int)item.tunnel_prewarm_inactive_timeout, item.tunnel_prewarm_srv);
-
-      std::string dst_fqdn;
-      int32_t     port;
-      parse_authority(dst_fqdn, port, item.tunnel_destination);
-
-      if (port < 0) {
-        if (item.tunnel_type == SNIRoutingType::PARTIAL_BLIND) {
-          port = 443;
-        } else {
-          port = 80;
-        }
-      }
 
       PreWarm::SPtrConstDst dst = std::make_shared<const PreWarm::Dst>(dst_fqdn, port, item.tunnel_type, id);
 

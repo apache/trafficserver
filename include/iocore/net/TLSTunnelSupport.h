@@ -32,6 +32,9 @@
 #include "tscore/ink_inet.h"
 #include "iocore/net/YamlSNIConfig.h"
 
+#include <optional>
+#include <string_view>
+
 class TLSTunnelSupport
 {
 public:
@@ -53,11 +56,41 @@ public:
   bool has_tunnel_destination() const;
 
   static constexpr bool PORT_IS_DYNAMIC = true;
-  void                  set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
-                                               YamlSNIConfig::TunnelPreWarm prewarm);
+  /** Set where this connection tunnels to.
+   *
+   * @a destination has its match groups and port template filled in, so its port can come from
+   * the SNI or the connection rather than from sni.yaml.
+   *
+   * @return false if @a destination does not split into a host and port (such as "[::1" or
+   * "[::1]443"), names no host, or names a port that is not one parse_port() accepts. The
+   * connection then has no tunnel destination and should be refused.
+   */
+  [[nodiscard]] bool set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
+                                            YamlSNIConfig::TunnelPreWarm prewarm);
   YamlSNIConfig::TunnelPreWarm get_tunnel_prewarm_configuration() const;
 
   PreWarm::SPtrConstDst create_dst(int pid) const;
+
+  /// The host and port of a tunnel destination, as views into the destination it was split from.
+  struct Authority {
+    std::string_view host;
+    /// The text after the port separator, or nullopt if the destination names no port.
+    std::optional<std::string_view> port;
+  };
+
+  /** Split a tunnel destination into host and port where a tunnel connection splits it.
+   *
+   * @return nullopt if @a destination is a bracketed address that does not close, or that is
+   * followed by text other than the port separator.
+   */
+  static std::optional<Authority> split_destination(std::string_view destination);
+
+  /** Read all of @a text as a port: a number from 1 to 65535 with no leading zero (svtou would
+   * read a leading zero as octal).
+   *
+   * @return nullopt if @a text is anything else.
+   */
+  static std::optional<in_port_t> parse_port(std::string_view text);
 
 protected:
   void _clear();

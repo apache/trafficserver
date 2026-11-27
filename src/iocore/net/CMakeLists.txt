@@ -160,6 +160,7 @@ if(BUILD_TESTING)
     unit_tests/test_SSLUtils.cc
     unit_tests/test_UnixNetVConnectionTimeouts.cc
     unit_tests/test_TLSSNISupport.cc
+    unit_tests/test_TLSTunnelSupport.cc
     unit_tests/test_YamlSNIConfig.cc
     unit_tests/test_OCSPStapling.cc
     unit_tests/test_TLSReadPrivateKey.cc

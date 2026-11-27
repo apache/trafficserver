@@ -29,7 +29,11 @@
 #include "tscore/Diags.h"
 
 #include "swoc/IPEndpoint.h"
+#include "swoc/TextView.h"
 
+#include <algorithm>
+#include <cctype>
+#include <limits>
 #include <memory>
 
 int TLSTunnelSupport::_ex_data_index = -1;
@@ -66,20 +70,31 @@ TLSTunnelSupport::_clear()
 {
 }
 
-void
+bool
 TLSTunnelSupport::set_tunnel_destination(const std::string_view &destination, SNIRoutingType type, bool port_is_dynamic,
                                          YamlSNIConfig::TunnelPreWarm prewarm)
 {
+  auto const               authority = split_destination(destination);
+  std::optional<in_port_t> port;
+  if (authority && authority->port) {
+    port = parse_port(*authority->port);
+  }
+  if (!authority || authority->host.empty() || (authority->port && !port)) {
+    _tunnel_host.clear();
+    _tunnel_port     = 0;
+    _tunnel_type     = SNIRoutingType::NONE;
+    _tunnel_prewarm  = YamlSNIConfig::TunnelPreWarm::UNSET;
+    _port_is_dynamic = false;
+    return false;
+  }
+
+  // No port leaves 0, for which the tunnel uses the inbound port.
+  _tunnel_port     = port.value_or(0);
+  _tunnel_host     = authority->host;
   _tunnel_type     = type;
   _tunnel_prewarm  = prewarm;
   _port_is_dynamic = port_is_dynamic;
-
-  if (std::string_view host, port; swoc::IPEndpoint::tokenize(destination, &host, &port)) {
-    _tunnel_port = swoc::svtou(port);
-    _tunnel_host = host;
-  } else {
-    Warning("Invalid destination \"%.*s\" in SNI configuration.", int(destination.size()), destination.data());
-  }
+  return true;
 }
 
 PreWarm::SPtrConstDst
@@ -87,4 +102,44 @@ TLSTunnelSupport::create_dst(int pid) const
 {
   return std::make_shared<const PreWarm::Dst>(get_tunnel_host(), get_tunnel_port(),
                                               is_upstream_tls() ? SNIRoutingType::PARTIAL_BLIND : SNIRoutingType::FORWARD, pid);
+}
+
+std::optional<TLSTunnelSupport::Authority>
+TLSTunnelSupport::split_destination(std::string_view destination)
+{
+  std::string_view host, digits, rest;
+  swoc::IPEndpoint::tokenize(destination, &host, &digits, &rest);
+
+  // tokenize takes everything after an unclosed bracket as the address, and leaves text after a
+  // closing bracket that is not a port in rest.
+  if (swoc::TextView{destination}.ltrim_if(&isspace).starts_with("[") && destination.find(']') == std::string_view::npos) {
+    return std::nullopt;
+  }
+  if (!digits.empty()) {
+    // The leading digits of the port, which rest continues.
+    return Authority{
+      host, std::string_view{digits.data(), digits.size() + rest.size()}
+    };
+  }
+  if (rest.empty()) {
+    return Authority{host, std::nullopt};
+  }
+  // With no digits after the separator, tokenize leaves the separator at the front of rest.
+  if (rest.front() != ':') {
+    return std::nullopt;
+  }
+  return Authority{host, rest.substr(1)};
+}
+
+std::optional<in_port_t>
+TLSTunnelSupport::parse_port(std::string_view text)
+{
+  if (text.empty() || text.size() > 5 || text.front() == '0' ||
+      !std::all_of(text.begin(), text.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)) != 0; })) {
+    return std::nullopt;
+  }
+  if (auto const port = swoc::svtou(text); port <= std::numeric_limits<in_port_t>::max()) {
+    return static_cast<in_port_t>(port);
+  }
+  return std::nullopt;
 }

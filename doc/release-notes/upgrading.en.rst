@@ -396,6 +396,33 @@ check at or after its deadline. So a value raised to relieve load now only
 delays timeouts by up to that interval. If you tuned it for that reason,
 returning it to the default of 1 costs nothing and restores accuracy.
 
+The following :file:`sni.yaml` changes have been made:
+
+- A ``tunnel_route``, ``forward_route`` or ``partial_blind_route`` port must be a number from 1 to 65535 with no
+  leading zero, a port template that is the whole port, or a match group that names a ``*`` in a wildcard ``fqdn``.
+  Before, an empty port, ``0``, a multiple of 65536 or a misspelled template such as ``{inbound_port}`` fell back to
+  the inbound port, any other port above 65535 wrapped around, a leading zero was read as octal, and text after the
+  digits was dropped. A destination with no host, such as ``:443``, logged a warning on each connection and tunnelled
+  to the server name. An empty destination loaded with no route, and a key with no value, such as
+  ``forward_route:``, routed to a host named ``null``. Any of those now stops |TS| at startup, or fails a reload of
+  :file:`sni.yaml` and keeps the previous configuration.
+- A match group anywhere in a destination, in the host as well as the port, must be ``$`` and one digit that names a
+  ``*`` in a wildcard ``fqdn``, followed by ``.``, ``:`` or the end of the destination, and any other ``$`` is
+  refused, so ``$1-backend.example.com:443`` no longer loads. Before, a match group under an ``fqdn`` with no ``*``,
+  such as ``$1.backend.example.com:443`` for ``route.example.com``, logged a warning on each connection and tunnelled
+  to the server name, and one naming a ``*`` the ``fqdn`` does not have, such as ``$0`` or ``$2`` in the host for
+  ``*.example.com``, was not filled in as configured. A ``$`` that starts no match group, such as ``${1}`` or
+  ``back$end``, was kept as written under a wildcard ``fqdn``, and under an exact one the connection tunnelled to the
+  server name. These now stop |TS| at startup, or fail a reload of :file:`sni.yaml`.
+- A destination filled in from a match group must keep the shape it was configured with, name a host, and have a port
+  from 1 to 65535 with no leading zero once the server name fills it in, or |TS| fails the TLS handshake. Before, |TS|
+  tunnelled to the port's leading digits, wrapped a port above 65535 around, read a leading zero as octal, or fell
+  back to the inbound port.
+- With pre-warming on, a ``tunnel_prewarm`` destination with a match group was pre-warmed at the wrong destination:
+  ``127.0.0.1:4$1`` at port 4, and ``$1.example.com`` as that literal host. A port template, or a bracketed IPv6
+  destination such as ``[::1]:443``, stopped |TS| at startup with an uncaught exception. A destination whose host or
+  port is filled in for each connection is now not pre-warmed, and a fixed bracketed IPv6 destination is.
+
 Plugins
 -------
 

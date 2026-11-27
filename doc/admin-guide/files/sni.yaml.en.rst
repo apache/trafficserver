@@ -396,6 +396,28 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    strings can be specified. The match group number can be used in combination with either
                                                    one of those.
 
+                                                   The destination must name a host, so it cannot be empty or left out after the key. If
+                                                   it names a port, the port must be a number from 1 to 65535 with no leading zero,
+                                                   ``{inbound_local_port}``, ``{proxy_protocol_port}``, or
+                                                   a match group such as ``$1``. Digits before a match group must themselves be such a
+                                                   number, so ``4$1`` is accepted but ``0$1`` and ``70000$1`` are not. A match group, in
+                                                   the host or the port, is ``$`` and one digit that names a ``*`` in a wildcard
+                                                   ``fqdn``, such as ``$1`` for ``*.example.com``, followed by ``.``, ``:`` or the end of
+                                                   the destination. Groups above ``$9`` are not supported, and a ``$`` that does not
+                                                   start a match group is refused. A port template must be the whole port, and cannot
+                                                   appear anywhere else in the destination. An IPv6 address with a port goes in brackets,
+                                                   with the port after ``]:``, such as ``[::1]:443``. Any other destination, such as
+                                                   ``:443``, ``backend:443x``, ``backend:0443``, ``backend:99999``,
+                                                   ``backend{inbound_local_port}``, ``[::1]443``, ``$2.backend`` for ``*.example.com`` or
+                                                   ``back$end``, stops |TS| at startup. On a reload of :file:`sni.yaml` it fails the
+                                                   reload, and |TS| keeps the previous configuration.
+
+                                                   A destination filled in from a match group is checked for each connection. It must
+                                                   keep the shape it was configured with: ``$1`` filled in as ``10.0.0.1:22`` gains a
+                                                   port, and ``127.0.0.1:$1`` filled in as ``127.0.0.1:1:2`` loses one. If the filled-in
+                                                   destination changes shape, names no host, or has a port that is not a number from 1
+                                                   to 65535 with no leading zero, |TS| fails the TLS handshake.
+
                                                    For each of these tunnel targets, unless the port is explicitly specified in the target
                                                    (e.g., if the port is derived from the Proxy Protocol header), the port must be
                                                    specified in the :ts:cv:`proxy.config.http.connect_ports` configuration in order for
@@ -407,7 +429,8 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    intentionally tunnel to one of those ranges, add an explicit outbound allow rule
                                                    before the default deny rule.
 
-forward_route                            Inbound   Destination as an FQDN and port, separated by a colon ``:``.
+forward_route                            Inbound   Destination as an FQDN and port, separated by a colon ``:``. The destination
+                                                   follows the same rules as for ``tunnel_route``.
 
                                                    This is similar to tunnel_route, but it terminates the TLS connection and forwards the
                                                    decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not
@@ -415,7 +438,8 @@ forward_route                            Inbound   Destination as an FQDN and po
                                                    The upstream destination is subject to outbound :file:`ip_allow.yaml` policy before
                                                    |TS| opens the connection.
 
-partial_blind_route                      Inbound   Destination as an FQDN and port, separated by a colon ``:``.
+partial_blind_route                      Inbound   Destination as an FQDN and port, separated by a colon ``:``. The destination
+                                                   follows the same rules as for ``tunnel_route``.
 
                                                    This is similar to forward_route in that |TS| terminates the incoming TLS connection.
                                                    In addition partial_blind_route creates a new TLS connection to the specified origin.
@@ -440,7 +464,9 @@ Pre-warming TLS Tunnel
 =============================== ========================================================================================
 Key                             Meaning
 =============================== ========================================================================================
-tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm.enabled` in records.yaml.
+tunnel_prewarm                  Override :ts:cv:`proxy.config.tunnel.prewarm.enabled` in records.yaml. A destination
+                                whose host or port is filled in for each connection, from a match group or a port
+                                template, is not pre-warmed.
 
 tunnel_prewarm_srv              Enable SRV record lookup on pre-warming. Default is ``false``.
 
