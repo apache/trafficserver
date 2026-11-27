@@ -46,7 +46,7 @@ urtest:
 
     # Only the third /flip request skips the write lock: the first two /flip and
     # /expire requests are plain misses, and the third /expire request comes
-    # after the two second memory has lapsed. The sessions run one after another.
+    # after the two-second memory has lapsed. The sessions run one after another.
     metric_checks:
       - metric: proxy.process.http.cache.remember_uncacheable.hits
         value: 1

@@ -70,7 +70,7 @@ urtest:
     log_validation:
       traffic_out:
         contains:
-          - expression: '\[hdcwc\] cache write lock failed'
+          - expression: '\[hdcwc\] cache write lock failed, continuing without cache'
             description: 'The miss on the remembered URL lost the late write lock'
           - expression: 'the key is being stored, so the uncacheable memo forgot it'
             description: 'The next miss on the remembered URL stored it and dropped it from the memo'
@@ -80,7 +80,9 @@ urtest:
       ats:
         records_config:
           proxy.config.http.cache.open_write_fail_action: 1
-    # Fail action 5 also ends in a plain lost lock here, as no object was read.
+    # Fail action 5 also ends in a plain lost lock here: the rule reports the
+    # loss straight to HttpSM, which records it as failed since no object was
+    # read.
     - name: read-retry
       ats:
         records_config:

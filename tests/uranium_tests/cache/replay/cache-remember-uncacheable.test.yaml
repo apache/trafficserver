@@ -21,7 +21,7 @@
 # The same sessions run twice. With the memory on, the overlapping no-store
 # requests neither lose the write lock nor wait behind a writer. With it off,
 # the third request waits behind the second as a busy reader and then loses
-# the lock, which is what every miss does with the memory off.
+# the lock, as any miss that overlaps a writer does.
 
 meta:
   version: "1.0"
@@ -55,7 +55,8 @@ urtest:
     # origin; neither takes the lock, so the third neither loses it nor waits
     # behind the second as a busy reader. The two /cacheable requests check
     # that collapsing and caching still work, and a last /nostore request, once
-    # the others are done, shows that neither no-store answer was stored.
+    # the others are done, still reaches the origin, so the answers fetched
+    # without the lock were not stored. It is the third hit.
     - name: memo-on
       ats:
         records_config:
@@ -79,7 +80,8 @@ urtest:
 
     # Every miss takes the lock before the origin. The third /nostore request
     # finds the second writing, retries the read until its retries run out,
-    # then loses the write lock.
+    # then loses the write lock. The last /nostore request shows that the
+    # second's answer, written under the lock, was not stored.
     - name: memo-off
       ats:
         records_config:

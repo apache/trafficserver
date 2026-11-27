@@ -3961,9 +3961,9 @@ Dynamic Content & Content Negotiation
     below. A cache miss on a remembered URL goes to the origin without first taking
     the cache write lock, and takes the lock only if the response turns out to be cacheable
     after all. The URL is forgotten once a response for it is stored. Every further uncacheable
-    response to a plain ``GET`` miss renews the memory; error responses, range requests, other
-    methods, and responses kept out of the cache by the request, a plugin or a cache rule do
-    not. ``0`` turns the memory off. The maximum is ``86400``.
+    response to a plain ``GET`` miss renews the memory; error (4xx and 5xx) responses, range
+    requests, other methods, and responses kept out of the cache by the request, a plugin or a
+    cache rule do not. ``0`` turns the memory off. The maximum is ``86400``.
 
     Without this, every miss takes the write lock before contacting the origin so that
     concurrent requests for the same URL wait for one origin fetch. For a URL whose responses
@@ -3981,8 +3981,9 @@ Dynamic Content & Content Negotiation
     ``proxy.process.http.cache_open_write_fail_count``. The memory holds
     :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` URLs.
 
-    Four metrics show whether the memory saves lock waits and whether
-    :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` is large enough:
+    These metrics show how much the memory is used (``hits`` and ``admits``) and whether
+    :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` is large enough (``evictions``
+    and ``set_full``):
 
     ``proxy.process.http.cache.remember_uncacheable.hits``
        Misses that skipped the write lock because their URL was remembered.
