@@ -61,7 +61,7 @@ urtest:
     # that is not the origin's, a plain GET that must take the lock and store,
     # and a hit.
     metric_checks:
-      - metric: proxy.process.http.cache_open_write_deferred
+      - metric: proxy.process.http.cache.remember_uncacheable.hits
         value: 0
       - metric: proxy.process.http.cache.remember_uncacheable.admits
         value: 0

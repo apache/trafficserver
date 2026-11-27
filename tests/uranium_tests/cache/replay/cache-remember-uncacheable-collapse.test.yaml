@@ -46,7 +46,7 @@ urtest:
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
 
     metric_checks:
-      - metric: proxy.process.http.cache_open_write_deferred
+      - metric: proxy.process.http.cache.remember_uncacheable.hits
         value: 0
 
 sessions:

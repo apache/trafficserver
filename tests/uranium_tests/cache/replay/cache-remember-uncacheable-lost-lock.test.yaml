@@ -61,9 +61,6 @@ urtest:
       - metric: proxy.process.http.cache.remember_uncacheable.hits
         value: 2
         delay: 0
-      - metric: proxy.process.http.cache_open_write_deferred
-        value: 2
-        delay: 0
       - metric: proxy.process.http.cache_open_write_fail_count
         value: 1
         delay: 0

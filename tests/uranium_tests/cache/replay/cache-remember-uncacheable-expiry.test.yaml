@@ -49,7 +49,7 @@ urtest:
     # /expire requests are plain misses, and the third /expire request comes
     # after the two second memory has lapsed. The sessions run one after another.
     metric_checks:
-      - metric: proxy.process.http.cache_open_write_deferred
+      - metric: proxy.process.http.cache.remember_uncacheable.hits
         value: 1
       - metric: proxy.process.http.cache.remember_uncacheable.admits
         value: 2

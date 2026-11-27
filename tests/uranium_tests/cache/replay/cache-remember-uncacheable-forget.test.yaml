@@ -15,11 +15,11 @@
 #  limitations under the License.
 
 # A remembered URL is forgotten once a response for it is stored. The first
-# two /flip misses answer no-store, so it is remembered; the third is deferred,
-# gets a cacheable response and stores it. After a PURGE the next miss must
-# take the write lock before the origin again, as a URL that was never
-# remembered does, so only the third miss counts as deferred. Without the
-# forget it would still be remembered and deferred a second time.
+# two /flip misses answer no-store, so it is remembered; the third skips the
+# write lock, gets a cacheable response and stores it. After a PURGE the next
+# miss must take the write lock before the origin again, as a URL that was
+# never remembered does, so only the third miss counts in hits. Without the
+# forget it would still be remembered and skip the lock a second time.
 
 meta:
   version: "1.0"
@@ -47,7 +47,7 @@ urtest:
 
     # The PURGE's own lookup counts as a fresh hit, as does the last GET.
     metric_checks:
-      - metric: proxy.process.http.cache_open_write_deferred
+      - metric: proxy.process.http.cache.remember_uncacheable.hits
         value: 1
       - metric: proxy.process.http.cache.remember_uncacheable.admits
         value: 1

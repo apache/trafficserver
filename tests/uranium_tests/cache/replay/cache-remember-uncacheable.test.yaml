@@ -60,8 +60,6 @@ urtest:
         records_config:
           proxy.config.http.cache.remember_uncacheable: 60
         metric_checks:
-          - metric: proxy.process.http.cache_open_write_deferred
-            value: 2
           - metric: proxy.process.http.cache.remember_uncacheable.admits
             value: 1
           - metric: proxy.process.http.cache.remember_uncacheable.hits
@@ -86,8 +84,6 @@ urtest:
         records_config:
           proxy.config.http.cache.remember_uncacheable: 0
         metric_checks:
-          - metric: proxy.process.http.cache_open_write_deferred
-            value: 0
           - metric: proxy.process.http.cache.remember_uncacheable.admits
             value: 0
           - metric: proxy.process.http.cache.remember_uncacheable.hits

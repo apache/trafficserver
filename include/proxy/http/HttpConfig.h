@@ -158,7 +158,6 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *cache_open_write_begin_time;
   Metrics::Counter::AtomicType *cache_open_write_end_time;
   Metrics::Counter::AtomicType *cache_open_write_fail_count;
-  Metrics::Counter::AtomicType *cache_open_write_deferred;
   Metrics::Counter::AtomicType *remember_uncacheable_hits;
   Metrics::Counter::AtomicType *remember_uncacheable_admits;
   Metrics::Counter::AtomicType *remember_uncacheable_evictions;

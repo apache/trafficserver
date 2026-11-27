@@ -3781,7 +3781,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     // turns out to be cacheable. Concurrent misses on this key are not collapsed.
     s->cache_open_write_deferred = true;
     s->cache_info.action         = CacheAction_t::NO_ACTION;
-    Metrics::Counter::increment(http_rsb.cache_open_write_deferred);
     TxnDbg(dbg_ctl_http_trans, "deferring the cache write until the response arrives");
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);

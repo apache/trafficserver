@@ -65,8 +65,6 @@ urtest:
             value: 2
           - metric: proxy.process.http.cache.remember_uncacheable.hits
             value: 1
-          - metric: proxy.process.http.cache_open_write_deferred
-            value: 1
         log_validation:
           diags_log:
             excludes:
