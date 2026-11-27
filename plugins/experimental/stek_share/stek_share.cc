@@ -50,6 +50,10 @@ static const nuraft::raft_params::return_method_type CALL_TYPE = nuraft::raft_pa
 
 static std::string conf_file_path;
 
+// The shutdown and reload continuations share one mutex, so a reload never overlaps the shutdown hook. A reload that
+// arrives after the hook sees this and returns: a raft server it started would never be stopped.
+static bool lifecycle_shut_down = false;
+
 std::shared_ptr<PluginConfig> plugin_config;
 std::shared_mutex             plugin_config_mutex;
 
@@ -92,6 +96,7 @@ static int
 shutdown_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   if (event == TS_EVENT_LIFECYCLE_SHUTDOWN) {
+    lifecycle_shut_down = true;
     // Stop the updater before tearing raft down: it calls into the raft server
     // and dereferences the state machine, which shutdown() stops and reset() frees.
     plugin_threads.terminate();
@@ -110,6 +115,10 @@ message_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     if (strcmp(PLUGIN_NAME, msg->tag) == 0) { // Message is for us
       if (msg->data_size) {
         if (strncmp(reinterpret_cast<char *>(const_cast<void *>(msg->data)), "reload", msg->data_size) == 0) {
+          if (lifecycle_shut_down) {
+            Dbg(dbg_ctl, "Ignoring reload during shutdown.");
+            return TS_EVENT_NONE;
+          }
           // TODO: If in the middle of generating a new STEK, maybe block until new STEK has been generated?
           //       Not a big problem since new STEK is only generated once every few hours.
           Dbg(dbg_ctl, "Reloading configurations...");
@@ -160,16 +169,22 @@ cert_verification(const std::string &sn)
 int
 init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<PluginConfig> config)
 {
+  // Pass the launcher these local pointers and judge success by the server it returns, never by reading the shared members
+  // back: the shutdown hook's reset() can clear them between the steps below. lifecycle_mutex keeps the shutdown hook out
+  // only on the reload path; the call from TSPluginInit holds no lock.
+  nuraft::ptr<nuraft::state_mgr> smgr_instance =
+    nuraft::cs_new<STEKShareSMGR>(config->server_id, config->endpoint, config->server_list);
+
   // State manager.
   {
     std::unique_lock lock(stek_share_server.smgr_mutex);
-    stek_share_server.smgr_instance = nuraft::cs_new<STEKShareSMGR>(config->server_id, config->endpoint, config->server_list);
+    stek_share_server.smgr_instance = smgr_instance;
   }
 
   // State machine.
   {
     std::unique_lock lock(stek_share_server.sm_mutex);
-    stek_share_server.sm_instance = std::move(sm_instance);
+    stek_share_server.sm_instance = sm_instance;
   }
 
   // ASIO options.
@@ -194,14 +209,14 @@ init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<Plugin
   params.return_method_ = CALL_TYPE;
 
   // Initialize Raft server.
+  nuraft::ptr<nuraft::raft_server> raft_instance;
   {
     std::unique_lock lock(stek_share_server.raft_mutex);
-    stek_share_server.raft_instance = stek_share_server.raft_launcher.init(
-      stek_share_server.sm_instance, stek_share_server.smgr_instance, nullptr, config->port, asio_opts, params);
+    raft_instance = stek_share_server.raft_launcher.init(sm_instance, smgr_instance, nullptr, config->port, asio_opts, params);
+    stek_share_server.raft_instance = raft_instance;
   }
 
-  std::shared_lock lock(stek_share_server.raft_mutex);
-  if (!stek_share_server.raft_instance) {
+  if (!raft_instance) {
     Dbg(dbg_ctl, "Failed to initialize launcher.");
     return -1;
   }
@@ -555,14 +570,13 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = (char *)("ats");
   info.support_email = (char *)("ats-devel@yahooinc.com");
 
-  TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(shutdown_handler, nullptr));
+  TSMutex lifecycle_mutex = TSMutexCreate();
+  TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, TSContCreate(shutdown_handler, lifecycle_mutex));
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] Plugin registration failed.", PLUGIN_NAME);
     return;
   }
-
-  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(message_handler, nullptr));
 
   if (argc < 2) {
     TSError("[%s] Must specify config file.", PLUGIN_NAME);
@@ -585,4 +599,8 @@ TSPluginInit(int argc, const char *argv[])
       TSError("[%s] Config load failed.", PLUGIN_NAME);
     }
   }
+
+  // Added after the init_raft() above, which runs without lifecycle_mutex: a reload delivered earlier could run a second
+  // init_raft() alongside it.
+  TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(message_handler, lifecycle_mutex));
 }
