@@ -256,9 +256,10 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
   // Loop over objects and swizzle their pointers to
   //  live offsets
   //
-  // The loop condition keeps each object's start inside the heap, but nothing yet checks that the whole object, by
-  // its m_length, ends before m_free_start. A MIME field block's unmarshal also bounds its slot loop by that same
-  // m_length, and checks only that each slot starts inside the block.
+  // The loop condition keeps each object's start inside the heap, but nothing yet checks that the object fits before
+  // m_free_start, either at its m_length or at the size of the type the switch below treats it as. A MIME field
+  // block's unmarshal also checks only that each slot starts inside the block. A damaged heap can therefore make the
+  // swizzle below read and write past its end.
   char    *obj_data = hh->m_data_start;
   intptr_t offset   = (intptr_t)hh;
 
