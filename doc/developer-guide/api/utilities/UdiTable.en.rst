@@ -29,6 +29,10 @@ its score. A new key competes with a slot selected by a rotating pointer; a
 losing contest weakens the selected entry, while a winning contest replaces
 it. Frequently observed keys therefore tend to remain in the table.
 
+The algorithm is described in the now expired `US Patent 7,533,414 B1
+<https://patents.google.com/patent/US7533414B1>`_, "Detecting system abuse,"
+by Erik J. Reed and Udi Manber, where the table is called a screening list.
+
 The implementation serializes table operations with one mutex. Data objects
 are held by ``std::shared_ptr``, so a pointer returned by ``find()`` or
 ``process_event()`` remains valid after its table entry is removed or evicted.
