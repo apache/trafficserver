@@ -148,6 +148,8 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.thread.max_heartbeat_mseconds", RECD_INT, "60", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1000]", RECA_READ_ONLY}
   ,
+  {RECT_CONFIG, "proxy.config.stats.deferred_counter_interval_ms", RECD_INT, "5", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1000]", RECA_NULL}
+  ,
 
   //##############################################################################
   //#

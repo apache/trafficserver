@@ -2307,7 +2307,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     EThread::default_wait_interval_ms = 10; // Default value for all platform.
   }
 
-  thread_max_heartbeat_mseconds = RecGetRecordInt("proxy.config.thread.max_heartbeat_mseconds").value_or(0);
+  thread_max_heartbeat_mseconds       = RecGetRecordInt("proxy.config.thread.max_heartbeat_mseconds").value_or(0);
+  thread_deferred_counter_interval_ms = RecGetRecordInt("proxy.config.stats.deferred_counter_interval_ms").value_or(0);
 
 #if TS_USE_LINUX_IO_URING
   configure_io_uring();
