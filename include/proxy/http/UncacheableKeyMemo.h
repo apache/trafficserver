@@ -2,7 +2,7 @@
 
   Remembers cache keys whose origin responses could not be stored.
 
-  @section license License
+  @par License
 
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
