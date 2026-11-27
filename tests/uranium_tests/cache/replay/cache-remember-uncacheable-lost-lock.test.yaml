@@ -80,9 +80,9 @@ urtest:
       ats:
         records_config:
           proxy.config.http.cache.open_write_fail_action: 1
-    # Fail action 5 also ends in a plain lost lock here: the rule reports the
-    # loss straight to HttpSM, which records it as failed since no object was
-    # read.
+    # Fail action 5 also ends in a plain lost lock here: with no write retries
+    # left, HttpCacheSM reports the loss straight to HttpSM instead of retrying
+    # the read, and HttpSM records it as failed since no object was read.
     - name: read-retry
       ats:
         records_config:

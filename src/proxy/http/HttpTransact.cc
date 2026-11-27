@@ -3596,9 +3596,10 @@ HttpTransact::uncacheable_memo_key(State *s, CryptoHash &hash)
 /** Whether a miss should fetch from the origin before taking the cache write lock.
 
     Yes when this key is remembered as uncacheable: waiting on the write lock would likely be
-    wasted, since the response is expected to be uncacheable again, and a cacheable one takes the
-    lock late. A yes increments proxy.process.http.cache.remember_uncacheable.hits. A transaction
-    that already holds the lock, as a followed redirect can, keeps using it.
+    wasted, since the response is expected to be uncacheable again. If it turns out cacheable, the
+    lock is taken once it arrives. A yes increments
+    proxy.process.http.cache.remember_uncacheable.hits. A transaction that already holds the lock,
+    as a followed redirect can, keeps using it.
  */
 bool
 HttpTransact::should_defer_cache_write(State *s)
