@@ -5977,7 +5977,7 @@ HTTP/2 Configuration
    were initialized, including for streams opened after the reload. Close and
    reopen a connection to use the new policy.
 
-.. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_out INT 0
+.. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_out INT 1
    :reloadable:
 
    Specifies the mechanism |TS| uses to maintain flow control via the HTTP/2

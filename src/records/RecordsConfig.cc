@@ -1385,7 +1385,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http2.flow_control.policy_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-2]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http2.flow_control.policy_out", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-2]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http2.flow_control.policy_out", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-2]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.max_frame_size", RECD_INT, "16384", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
