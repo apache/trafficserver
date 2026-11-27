@@ -1016,3 +1016,25 @@ TEST_CASE("8", "[TestsWithConfig]")
   config_delete(cfg);
   fprintf(stderr, "\n");
 }
+
+TEST_CASE("9", "[PercentDecodeTest]")
+{
+  INFO("TEST 9, Percent decoding reads only the component it is given");
+
+  // normalize_uri decodes one component of a longer URI at a time, so the bytes
+  // after the component are readable but belong to the next one.
+  char const uri[]                = "/a%4142";
+  char       decoded[sizeof(uri)] = {0};
+
+  SECTION("An escape cut short by the end of the component fails")
+  {
+    CHECK(percent_decode(uri, 4, decoded, false) < 0);
+  }
+
+  SECTION("An escape that ends the component decodes")
+  {
+    REQUIRE(percent_decode(uri, 5, decoded, false) == 3);
+    CHECK(std::string(decoded, 3) == "/aA");
+  }
+  fprintf(stderr, "\n");
+}

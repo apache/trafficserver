@@ -146,10 +146,10 @@ percent_decode(const char *uri, int uri_ct, char *decoded_uri, bool lower)
   for (i = 0; i < uri_ct; i++) {
     if (uri[i] == '%') {
       /* The next two characters are interpreted as the hex encoded value. Store in encodedVal */
-      if (uri_ct < i + 2) {
+      if (i + 2 >= uri_ct) {
         goto decode_failure;
       }
-      char encodedVal[2] = {0};
+      char encodedVal[3] = {0};
       int  j;
       for (j = 0; j < 2; j++) {
         if (isxdigit(uri[i + j + 1])) {
