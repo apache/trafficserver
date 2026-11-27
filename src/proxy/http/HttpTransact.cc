@@ -3694,8 +3694,9 @@ HttpTransact::forget_uncacheable_key(State *s)
 {
   CryptoHash hash;
   if (uncacheableKeyMemo != nullptr && s->txn_conf->cache_remember_uncacheable > 0 && uncacheable_memo_key(s, hash)) {
-    TxnDbg(dbg_ctl_http_trans, "the key is being stored, so the uncacheable memo forgets it");
-    uncacheableKeyMemo->forget(hash);
+    if (uncacheableKeyMemo->forget(hash)) {
+      TxnDbg(dbg_ctl_http_trans, "the key is being stored, so the uncacheable memo forgot it");
+    }
   }
 }
 

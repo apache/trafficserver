@@ -127,9 +127,10 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     CryptoHash const b = in_set(2, 7);
     admit(a, now);
     admit(b, now);
-    memo->forget(b);
+    CHECK(memo->forget(b));
     CHECK(memo->contains(a, now));
     CHECK_FALSE(memo->contains(b, now));
+    CHECK_FALSE(memo->forget(b));
   }
 
   SECTION("four keys share a set without displacing each other")
@@ -290,6 +291,7 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     CHECK(outcome.displaced);
     CHECK_FALSE(outcome.evicted);
     CHECK(memo->remember(in_set(9, 8), now, forever).what == Remembered::ADMITTED);
+    CHECK(memo->contains(in_set(9, 8), forever - 1));
   }
 
   SECTION("a full set gives up the remembered key closest to expiry, whatever its ttl")
@@ -298,8 +300,8 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     memo->remember(in_set(1, 7), now, HRTIME_SECONDS(60));
     memo->remember(in_set(1, 7), now, HRTIME_SECONDS(60));
     admit(in_set(2, 7), now + HRTIME_SECONDS(5));
-    admit(in_set(3, 7), now + HRTIME_SECONDS(5));
-    admit(in_set(4, 7), now + HRTIME_SECONDS(5));
+    admit(in_set(3, 7), now + HRTIME_SECONDS(5) + 1);
+    admit(in_set(4, 7), now + HRTIME_SECONDS(5) + 2);
     CHECK(memo->remember(in_set(9, 7), now + HRTIME_SECONDS(6), ttl).displaced);
     CHECK(memo->contains(in_set(1, 7), now + HRTIME_SECONDS(6)));
     CHECK_FALSE(memo->contains(in_set(2, 7), now + HRTIME_SECONDS(6)));
@@ -311,6 +313,7 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
   {
     admit(key, now);
     CHECK(memo->remember(key, now + 1, HRTIME_SECONDS(1)).what == Remembered::RENEWED);
+    CHECK(memo->contains(key, now + HRTIME_SECONDS(1)));
     CHECK_FALSE(memo->contains(key, now + 1 + HRTIME_SECONDS(1)));
   }
 

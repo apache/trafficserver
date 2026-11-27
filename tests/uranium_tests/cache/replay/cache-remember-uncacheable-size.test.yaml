@@ -24,7 +24,8 @@
 # pushed out, so its next miss takes the lock and its answer takes the place of
 # /f (evictions again); one more answer remembers /a again (a fifth admit). /b
 # was not pushed out, so its miss skips the lock (hits) and its answer renews
-# it. Had /b been pushed out instead, /a would count two hits and four admits.
+# it. Had /b been pushed out instead, /a would hit twice, /b would not be
+# remembered, and the totals would be two hits and four admits.
 
 meta:
   version: "1.0"
@@ -78,14 +79,17 @@ urtest:
               - expression: 'a seen-once key in the uncacheable memo made room'
                 description: 'The evictions case is traced'
               - expression: 'still uncacheable, remembered for another 60 s'
-                description: 'A renewal is traced'
+                description: 'A renewal after a deferred miss is traced'
 
     # Rounded up to 8 with a warning. Two sets, so where each URL lands depends
-    # on its hash and the counts are not checked.
+    # on its hash. Four URLs always fit, so at least four are admitted.
     - name: rounded
       ats:
         records_config:
           proxy.config.http.cache.remember_uncacheable_entries: 5
+        metric_checks:
+          - metric: proxy.process.http.cache.remember_uncacheable.admits
+            min: 4
         log_validation:
           diags_log:
             contains:

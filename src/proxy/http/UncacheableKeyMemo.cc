@@ -107,7 +107,7 @@ UncacheableKeyMemo::remember(CryptoHash const &key, ink_hrtime now, ink_hrtime t
   }
 
   // An empty or expired entry costs nothing to take. Failing that, the seen-once entry closest
-  // to expiry, and only when all four are remembered, the remembered one closest to expiry.
+  // to expiry, and only when every entry is remembered, the remembered one closest to expiry.
   // Each qualifying uncacheable response renews its key, so with one ttl for every key the
   // earliest expiry marks the key asked for least recently, without a write on the lookup path.
   Entry     *empty         = nullptr;
@@ -141,20 +141,29 @@ UncacheableKeyMemo::remember(CryptoHash const &key, ink_hrtime now, ink_hrtime t
     victim            = remembered;
     outcome.displaced = true;
   }
+  // Every live entry is seen once or remembered, so with at least one way a victim exists.
   ink_assert(victim != nullptr);
   victim->until.store(until, std::memory_order_relaxed);
   victim->tag.store(tag, std::memory_order_release);
   return outcome;
 }
 
-void
+bool
 UncacheableKeyMemo::forget(CryptoHash const &key)
 {
   uint64_t const tag = tag_of(key);
   // Every matching entry goes, since racing first answers can leave a key in two of them. A
-  // failed exchange reloads the tag, and the entry is retried while it still holds this key.
+  // failed exchange, whether another writer changed the entry or it failed spuriously, reloads
+  // the tag, so the entry is cleared only while it still holds this key.
+  bool dropped = false;
   for (Entry &entry : set_of(key).ways) {
     uint64_t have = entry.tag.load(std::memory_order_relaxed);
-    while ((have & ~ADMITTED) == tag && !entry.tag.compare_exchange_weak(have, 0, std::memory_order_relaxed)) {}
+    while ((have & ~ADMITTED) == tag) {
+      if (entry.tag.compare_exchange_weak(have, 0, std::memory_order_relaxed)) {
+        dropped = true;
+        break;
+      }
+    }
   }
+  return dropped;
 }

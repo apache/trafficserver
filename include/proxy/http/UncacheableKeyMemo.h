@@ -38,9 +38,9 @@
     while sparing uncacheable keys the lock and the waits behind it.
 
     A key is remembered only once it answers uncacheable twice within one ttl of the first
-    answer. The first answer leaves a seen-once entry, so a stream of URLs that are each asked
-    for once can hold at most one key per set out of the memory at a time, of the ones asked for
-    again and again, which are the ones that pile up behind the lock.
+    answer. The first answer leaves a seen-once entry, so a stream of URLs each asked for once
+    keeps at most one repeatedly requested key per set out of the memory at a time. Those
+    repeated keys are the ones that pile up behind the lock.
 
     The table is split into sets of four entries, one cache line each, picked by the low bits of
     the second 64-bit slice of the key's hash. An entry keeps the first slice as a tag, with the
@@ -100,7 +100,8 @@ public:
   Outcome remember(CryptoHash const &key, ink_hrtime now, ink_hrtime ttl);
 
   /// Drop every entry for @a key, remembered or seen once. Other keys in its set are left alone.
-  void forget(CryptoHash const &key);
+  /// @return @c true if an entry was dropped.
+  bool forget(CryptoHash const &key);
 
 private:
   static constexpr uint64_t PRESENT  = 1;
