@@ -186,7 +186,22 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
     // Pure END_STREAM
     if (payload_length == 0) {
-      if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED) {
+      // The stream is closed now only if it was half-closed (local), with END_STREAM already sent by
+      // ATS. A client stream gets here only after its response has gone out, so close it. An origin
+      // stream gets here when the origin ends its response with an empty DATA frame after ATS has
+      // sent the whole request. Finish its body with the same READ_COMPLETE that END_STREAM on a
+      // DATA frame with a payload sends, and not with the EOS that initiating_close() sends: HttpSM
+      // checks a server EOS for truncation against server_response_body_bytes, which it fills in
+      // only when the client write, a background fill or a transform finishes, so an EOS that runs
+      // first fails a complete response. If HttpSM has released the stream but is still running,
+      // release() disabled the read VIO, so the READ_COMPLETE is held and transaction_done() closes
+      // the stream. If the transaction is already gone, only the keep-alive timeout would free the
+      // stream, as a stream error that takes the whole origin connection with it, so
+      // initiating_close() frees it now. If the origin ends the stream before its final response
+      // header, there is no body to finish, and the EOS from initiating_close() fails the response
+      // at once as cut short.
+      if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED &&
+          (!stream->is_outbound_connection() || stream->get_sm() == nullptr || !stream->has_received_header())) {
         stream->initiating_close();
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
       }
