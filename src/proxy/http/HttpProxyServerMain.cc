@@ -118,8 +118,17 @@ struct HttpProxyAcceptor {
     @internal We use @c Continuation instead of @c HttpAccept because
     @c SSLNextProtocolAccept is a subclass of @c Cont instead of @c
     HttpAccept.
+
+    The acceptors, and the session acceptors behind them, live as long as the
+    process. A connection still in its protocol probe or TLS handshake reads its
+    acceptor when its first bytes arrive, and a session keeps a pointer to its
+    session acceptor (ProxySession::acceptor) and reads its options for every
+    transaction, so none of them can be freed while the proxy drains. The vector
+    is heap allocated and never destroyed on purpose: a plain global would be
+    destroyed at exit before LeakSanitizer runs, which would then report every
+    acceptor as leaked.
 */
-std::vector<HttpProxyAcceptor> HttpProxyAcceptors;
+std::vector<HttpProxyAcceptor> &HttpProxyAcceptors = *new std::vector<HttpProxyAcceptor>;
 
 // Called from InkAPI.cc
 NetProcessor::AcceptOptions
@@ -491,18 +500,8 @@ start_HttpProxyServer()
 void
 stop_HttpProxyServer()
 {
+  // Only stop accepting. Connections already accepted keep using the port and plugin acceptors until the drain ends,
+  // so nothing is freed here (see HttpProxyAcceptors).
   sslNetProcessor.stop_accept();
   netProcessor.stop_accept();
-
-  for (auto &acceptor : HttpProxyAcceptors) {
-    delete acceptor._accept;
-    acceptor._accept = nullptr;
-  }
-  HttpProxyAcceptors.clear();
-
-  delete plugin_http_accept;
-  plugin_http_accept = nullptr;
-
-  delete plugin_http_transparent_accept;
-  plugin_http_transparent_accept = nullptr;
 }
