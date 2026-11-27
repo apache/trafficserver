@@ -253,11 +253,12 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
     hh->m_ronly_heap[0].m_ref_count_ptr.swizzle(block_ref);
   }
 
-  // Loop over objects and swizzle there pointer to
+  // Loop over objects and swizzle their pointers to
   //  live offsets
   //
-  // Each object must start inside the heap, but nothing yet checks that the whole object fits inside it, or that a
-  // MIME field block's length stays inside the heap. Both checks are left for a separate change.
+  // The loop condition keeps each object's start inside the heap, but nothing yet checks that the whole object, by
+  // its m_length, ends before m_free_start. A MIME field block's unmarshal also bounds its slot loop by that same
+  // m_length, and checks only that each slot starts inside the block.
   char    *obj_data = hh->m_data_start;
   intptr_t offset   = (intptr_t)hh;
 
