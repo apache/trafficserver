@@ -54,6 +54,11 @@ urtest:
       - metric: proxy.process.http.cache_hit_fresh
         value: 2
         delay: 0
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'the key is being stored, so the uncacheable memo forgot it'
+            description: 'Storing the remembered URL drops it from the memo'
 
 sessions:
 - transactions:

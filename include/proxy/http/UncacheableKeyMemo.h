@@ -39,8 +39,10 @@
 
     A key is remembered only once it answers uncacheable twice within one ttl of the first
     answer. The first answer leaves a seen-once entry, so a stream of URLs each asked for once
-    keeps at most one repeatedly requested key per set out of the memory at a time. Those
-    repeated keys are the ones that pile up behind the lock.
+    churns through the seen-once entries and pushes out at most one remembered key per set at
+    a time. Those remembered keys are the ones that pile up behind the lock. A repeated key that
+    has answered only once can still be pushed out before its second answer, which the
+    evictions count shows.
 
     The table is split into sets of four entries, one cache line each, picked by the low bits of
     the second 64-bit slice of the key's hash. An entry keeps the first slice as a tag, with the
@@ -61,9 +63,9 @@ class UncacheableKeyMemo
 {
 public:
   static constexpr unsigned WAYS            = 4;
-  static_assert(WAYS > 0, "victim selection needs at least one entry per set");
   static constexpr uint32_t DEFAULT_ENTRIES = 1u << 16;
   static constexpr uint32_t MAX_ENTRIES     = 1u << 24;
+  static_assert(WAYS > 0, "victim selection needs at least one entry per set");
 
   /// What a call to remember() did.
   enum class Remembered {
@@ -100,7 +102,7 @@ public:
   Outcome remember(CryptoHash const &key, ink_hrtime now, ink_hrtime ttl);
 
   /// Drop every entry for @a key, remembered or seen once. Other keys in its set are left alone.
-  /// @return @c true if an entry was dropped.
+  /// @return @c true if an entry for @a key, live or expired, was dropped.
   bool forget(CryptoHash const &key);
 
 private:

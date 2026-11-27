@@ -117,7 +117,7 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     memo->forget(key);
     CHECK_FALSE(memo->contains(key, now));
     memo->remember(other, now, ttl);
-    memo->forget(other);
+    CHECK(memo->forget(other));
     CHECK(memo->remember(other, now, ttl).what == Remembered::SEEN_ONCE);
   }
 

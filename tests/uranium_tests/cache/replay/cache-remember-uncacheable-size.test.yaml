@@ -79,7 +79,7 @@ urtest:
               - expression: 'a seen-once key in the uncacheable memo made room'
                 description: 'The evictions case is traced'
               - expression: 'still uncacheable, remembered for another 60 s'
-                description: 'A renewal after a deferred miss is traced'
+                description: 'A renewal after a miss that skipped the lock is traced'
 
     # Rounded up to 8 with a warning. Two sets, so where each URL lands depends
     # on its hash. Four URLs always fit, so at least four are admitted.

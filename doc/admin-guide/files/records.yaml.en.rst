@@ -3995,8 +3995,9 @@ Dynamic Content & Content Negotiation
        URLs seen uncacheable once that were displaced by another URL before they could
        answer a second time. URLs asked for once are expected to land here, so a high count
        alone says nothing about the size. If URLs you know are requested again and again keep
-       waiting on the write lock (``hits`` does not grow with their traffic while ``evictions``
-       climbs), they may be pushed out between their two answers: raise
+       waiting on the write lock (``hits`` stays low next to their traffic while ``evictions``
+       climbs, unless :ts:cv:`proxy.config.http.cache.defer_write_on_miss` is on), they may be
+       pushed out between their two answers: raise
        :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` and check whether
        ``admits`` and ``hits`` rise.
 
