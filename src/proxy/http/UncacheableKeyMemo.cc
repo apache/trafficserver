@@ -26,7 +26,6 @@
 #include "tscore/ink_assert.h"
 #include "tsutil/DbgCtl.h"
 
-#include <bit>
 #include <cinttypes>
 #include <limits>
 #include <new>
@@ -76,7 +75,13 @@ UncacheableKeyMemo::entries_for(int64_t requested)
   if (requested >= MAX_ENTRIES) {
     return MAX_ENTRIES;
   }
-  return std::bit_ceil(static_cast<uint32_t>(requested));
+  // A loop rather than std::bit_ceil, which some supported standard libraries lack. WAYS and
+  // MAX_ENTRIES are powers of two, so this stops at the smallest one at or above requested.
+  uint32_t entries = WAYS;
+  while (entries < requested) {
+    entries <<= 1;
+  }
+  return entries;
 }
 
 UncacheableKeyMemo::UncacheableKeyMemo(uint32_t entries)
