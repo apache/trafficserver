@@ -3998,8 +3998,9 @@ Dynamic Content & Content Negotiation
        waiting on the write lock (``hits`` stays low next to their traffic while ``evictions``
        climbs), they may be pushed out between their two answers: raise
        :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` and check whether
-       ``admits`` and ``hits`` rise. With :ts:cv:`proxy.config.http.cache.defer_write_on_miss`
-       on, no miss waits on the lock and ``hits`` stays at zero, so this check does not apply.
+       ``admits`` and ``hits`` rise. Transactions with
+       :ts:cv:`proxy.config.http.cache.defer_write_on_miss` on never wait on the lock and are
+       never counted in ``hits``, so this check applies only to traffic without it.
 
     ``proxy.process.http.cache.remember_uncacheable.set_full``
        Remembered URLs pushed out to make room, because every URL sharing their place in the
