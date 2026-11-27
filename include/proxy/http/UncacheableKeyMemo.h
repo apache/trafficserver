@@ -96,7 +96,7 @@ public:
 
   /// The process's memo, built on the first call. HttpConfig::startup() calls it when
   /// records.yaml turns remember_uncacheable on; otherwise only a transaction with it on calls
-  /// it, so a process that never turns it on never allocates it.
+  /// it, so a process that never turns it on never allocates it. A failed allocation is Fatal.
   static UncacheableKeyMemo &instance();
 
   uint32_t

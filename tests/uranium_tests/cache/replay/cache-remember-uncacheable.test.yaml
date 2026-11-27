@@ -89,9 +89,8 @@ urtest:
     # Sets nothing, so it also checks that the default leaves the memory off
     # and never builds it: every miss takes the lock before the origin. The
     # third /nostore request finds the second writing, retries the read until
-    # its retries run out, then loses the write lock. The last /nostore
-    # request shows that the second's answer, fetched under the lock, was not
-    # stored.
+    # its retries run out, then loses the write lock. The last /nostore request
+    # shows that the second's answer, fetched under the lock, was not stored.
     - name: memo-off
       ats:
         metric_checks:

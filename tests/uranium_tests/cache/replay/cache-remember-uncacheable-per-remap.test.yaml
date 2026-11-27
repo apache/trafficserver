@@ -16,19 +16,18 @@
 
 # remember_uncacheable is off by default and the rule for on.example.com turns
 # it on. Both rules map to the same origin URL, so they share a cache key. A
-# first no-store answer through off.example.com must not count as a sighting:
-# had it counted, the second on request would already be a hit. Two no-store
-# answers through on.example.com then remember /k, building the memory on that
-# first use. A miss on /k through off.example.com must still take the write
-# lock, so it is not a hit. A last miss through on.example.com is one, which
-# shows /k stayed remembered while the off request ran. Had either off request
-# read or written the memory, hits would be 2.
+# first no-store answer through off.example.com must not build the memory, so
+# the first request through on.example.com builds it. Two no-store answers
+# through on.example.com remember /k. A second miss on /k through
+# off.example.com must still take the write lock, so it is not a hit. A last
+# miss through on.example.com is one, which shows /k stayed remembered while
+# that off request ran. Had that off request read the memory, hits would be 2.
 
 meta:
   version: "1.0"
 
 urtest:
-  description: 'A remap rule with remember_uncacheable off does not use what a rule with it on remembered'
+  description: 'A remap rule with remember_uncacheable off neither uses nor adds to what a rule with it on remembered'
   requires:
     plugins: ["conf_remap.so"]
 
@@ -61,15 +60,16 @@ urtest:
     log_validation:
       traffic_out:
         contains:
-          - expression: 'START HttpTransact::StartRemapRequest.*built the uncacheable memo with 65536 entries'
+          - expression: 'START HttpTransact::StartRemapRequest.*START HttpTransact::StartRemapRequest.*built the uncacheable memo with 65536 entries'
             multiline: true
-            description: 'A transaction through the conf_remap rule built the memory, not startup'
+            description: 'The first transaction through the conf_remap rule built the memory, not startup or the off rule'
           - expression: 'remembering the key as uncacheable for 60 s'
             description: 'The conf_remap value turned the memory on'
 
 sessions:
 - transactions:
-  # remember_uncacheable is off for this rule: the answer is not a sighting.
+  # remember_uncacheable is off for this rule: this transaction does not build
+  # the memory.
   - client-request:
       method: GET
       url: /k
@@ -153,7 +153,7 @@ sessions:
       headers:
         fields:
         - [Host, off.example.com]
-        - [uuid, off-first]
+        - [uuid, off-second]
     server-response:
       status: 200
       reason: OK
@@ -161,7 +161,7 @@ sessions:
         fields:
         - [Content-Length, "3"]
         - [Cache-Control, "no-store"]
-        - [X-Response, off-first]
+        - [X-Response, off-second]
       content:
         encoding: plain
         data: xxx
@@ -169,7 +169,7 @@ sessions:
       status: 200
       headers:
         fields:
-        - [X-Response, {value: off-first, as: equal}]
+        - [X-Response, {value: off-second, as: equal}]
 
   # /k is still remembered, so this miss is the one hit.
   - client-request:
