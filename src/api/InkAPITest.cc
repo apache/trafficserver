@@ -6125,6 +6125,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       if (TSMBufferDestroy(bufp2) == TS_ERROR) {
         SDK_RPRINT(test, "TSMimeHdrCopy", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
       }
+      bufp2 = nullptr;
     } else {
       if (TSMimeHdrCopy(bufp2, mime_hdr_loc2, bufp1, mime_hdr_loc1) == TS_ERROR) {
         SDK_RPRINT(test, "TSMimeHdrCopy", "TestCase1", TC_FAIL, "TSMimeHdrCopy returns TS_ERROR");
@@ -6308,7 +6309,8 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrFieldCopy", "TestCase1", TC_FAIL, "Unable to run test as bufp2 might not have been created");
   }
 
-  if ((TSMimeHdrDestroy(bufp1, mime_hdr_loc1) == TS_ERROR) || (TSMimeHdrDestroy(bufp2, mime_hdr_loc2) == TS_ERROR) ||
+  if ((TSMimeHdrDestroy(bufp1, mime_hdr_loc1) == TS_ERROR) ||
+      (bufp2 != nullptr && TSMimeHdrDestroy(bufp2, mime_hdr_loc2) == TS_ERROR) ||
       (TSMimeHdrDestroy(bufp3, mime_hdr_loc3) == TS_ERROR)) {
     SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMimeHdrDestroy returns TS_ERROR");
   }
@@ -6318,7 +6320,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     test_passed_handle_mloc_release = false;
   }
 
-  if (TSHandleMLocRelease(bufp2, TS_NULL_MLOC, mime_hdr_loc2) == TS_ERROR) {
+  if (bufp2 != nullptr && TSHandleMLocRelease(bufp2, TS_NULL_MLOC, mime_hdr_loc2) == TS_ERROR) {
     SDK_RPRINT(test, "TSHandleMLocRelease", "TestCase11|12|13", TC_FAIL, "Unable to release mime_hdr_loc2 to Mime Hdrs");
     test_passed_handle_mloc_release = false;
   }
@@ -6332,7 +6334,7 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMBufferDestroy(bufp1) returns TS_ERROR");
   }
 
-  if (TSMBufferDestroy(bufp2) == TS_ERROR) {
+  if (bufp2 != nullptr && TSMBufferDestroy(bufp2) == TS_ERROR) {
     SDK_RPRINT(test, "", "TestCase", TC_FAIL, "TSMBufferDestroy(bufp2) returns TS_ERROR");
   }
 

@@ -141,6 +141,5 @@ public:
   static void set_on_reconfigure_callback(std::function<void()> cb);
 
 private:
-  static int                   _configid;
-  static std::function<void()> on_reconfigure;
+  static int _configid;
 };
