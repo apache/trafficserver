@@ -270,6 +270,7 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     memo->remember(key, now, std::numeric_limits<ink_hrtime>::max());
     CHECK(memo->contains(key, std::numeric_limits<ink_hrtime>::max() - 1));
   }
+
   SECTION("a full set whose entries never expire still makes room")
   {
     ink_hrtime const forever = std::numeric_limits<ink_hrtime>::max();
@@ -288,6 +289,7 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     CHECK(outcome.what == Remembered::SEEN_ONCE);
     CHECK(outcome.displaced);
     CHECK_FALSE(outcome.evicted);
+    CHECK(memo->remember(in_set(9, 8), now, forever).what == Remembered::ADMITTED);
   }
 
   SECTION("a full set gives up the remembered key closest to expiry, whatever its ttl")
@@ -300,6 +302,16 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     admit(in_set(4, 7), now + HRTIME_SECONDS(5));
     CHECK(memo->remember(in_set(9, 7), now + HRTIME_SECONDS(6), ttl).displaced);
     CHECK(memo->contains(in_set(1, 7), now + HRTIME_SECONDS(6)));
+    CHECK_FALSE(memo->contains(in_set(2, 7), now + HRTIME_SECONDS(6)));
+    CHECK(memo->contains(in_set(3, 7), now + HRTIME_SECONDS(6)));
+    CHECK(memo->contains(in_set(4, 7), now + HRTIME_SECONDS(6)));
+  }
+
+  SECTION("a renewal with a shorter ttl brings the expiry in")
+  {
+    admit(key, now);
+    CHECK(memo->remember(key, now + 1, HRTIME_SECONDS(1)).what == Remembered::RENEWED);
+    CHECK_FALSE(memo->contains(key, now + 1 + HRTIME_SECONDS(1)));
   }
 
   SECTION("an expired seen-once entry of another key is taken without counting")

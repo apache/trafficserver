@@ -3595,9 +3595,9 @@ HttpTransact::uncacheable_memo_key(State *s, CryptoHash &hash)
 
 /** Whether a miss should fetch from the origin before taking the cache write lock.
 
-    Always when configured so, otherwise when this key recently produced two uncacheable
-    responses within one ttl: waiting on the write lock would buy nothing, as nothing gets stored. A
-    transaction that already holds the lock, as a followed redirect can, keeps using it.
+    Always when configured so, otherwise when this key is remembered as uncacheable: waiting
+    on the write lock would buy nothing, as nothing gets stored. A transaction that already
+    holds the lock, as a followed redirect can, keeps using it.
  */
 bool
 HttpTransact::should_defer_cache_write(State *s)
@@ -3651,8 +3651,7 @@ HttpTransact::can_remember_uncacheable(State *s)
   return true;
 }
 
-/** Note that the origin's response kept this key from being stored; the second such response
-    within the ttl remembers it. */
+/** Note a qualifying uncacheable response for this key; the second within the ttl remembers it. */
 void
 HttpTransact::remember_uncacheable_response(State *s)
 {
@@ -3695,6 +3694,7 @@ HttpTransact::forget_uncacheable_key(State *s)
 {
   CryptoHash hash;
   if (uncacheableKeyMemo != nullptr && s->txn_conf->cache_remember_uncacheable > 0 && uncacheable_memo_key(s, hash)) {
+    TxnDbg(dbg_ctl_http_trans, "the key is being stored, so the uncacheable memo forgets it");
     uncacheableKeyMemo->forget(hash);
   }
 }

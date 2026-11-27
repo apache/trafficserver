@@ -1,6 +1,6 @@
 /** @file
 
-  Remembers cache keys whose last origin response could not be stored.
+  Remembers cache keys whose origin responses could not be stored.
 
   @section license License
 
@@ -39,8 +39,8 @@
 
     A key is remembered only once it answers uncacheable twice within one ttl of the first
     answer. The first answer leaves a seen-once entry, so a stream of URLs that are each asked
-    for once can push out at most one key per set of the ones asked for again and again, which
-    are the ones that pile up behind the lock.
+    for once can hold at most one key per set out of the memory at a time, of the ones asked for
+    again and again, which are the ones that pile up behind the lock.
 
     The table is split into sets of four entries, one cache line each, picked by the low bits of
     the second 64-bit slice of the key's hash. An entry keeps the first slice as a tag, with the
@@ -49,7 +49,7 @@
     expiry, and only when all four hold live remembered keys, the remembered one closest to
     expiry. With one ttl for every key, that is the one renewed longest ago. So once a set is
     full of remembered keys, keys asked for once displace one of them and then churn through
-    that entry, while the keys asked for most often stay put.
+    that entry, while the keys renewed most recently stay put.
 
     Readers and writers use plain atomics with no lock, so two keys written into one entry at
     the same time can leave one key's tag next to the other's expiry until the entry is written
@@ -61,6 +61,7 @@ class UncacheableKeyMemo
 {
 public:
   static constexpr unsigned WAYS            = 4;
+  static_assert(WAYS > 0, "victim selection needs at least one entry per set");
   static constexpr uint32_t DEFAULT_ENTRIES = 1u << 16;
   static constexpr uint32_t MAX_ENTRIES     = 1u << 24;
 

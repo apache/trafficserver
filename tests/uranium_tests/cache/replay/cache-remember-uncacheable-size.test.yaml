@@ -14,15 +14,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# The size setting is read at startup and its stats are counted. With four
+# The size setting is read at startup and the memory's stats are counted. With four
 # entries the memory is a single set, so where every URL goes is known.
 #
 # /a to /d each answer no-store twice and fill the set with remembered URLs.
 # /e then answers once: nothing is empty, expired or seen once, so the
 # remembered URL closest to expiry, /a, makes room (set_full). /f answers once
-# and takes the place of /e, seen once and still live (evictions). /b is still
-# remembered, so its miss skips the lock (hits). /a was pushed out, so its miss
-# takes the lock, and its answer takes the place of /f (evictions again).
+# and takes the place of /e, seen once and still live (evictions). /a was
+# pushed out, so its next miss takes the lock and its answer takes the place of
+# /f (evictions again); one more answer remembers /a again (a fifth admit). /b
+# was not pushed out, so its miss skips the lock (hits) and its answer renews
+# it. Had /b been pushed out instead, /a would count two hits and four admits.
 
 meta:
   version: "1.0"
@@ -55,7 +57,7 @@ urtest:
           proxy.config.http.cache.remember_uncacheable_entries: 4
         metric_checks:
           - metric: proxy.process.http.cache.remember_uncacheable.admits
-            value: 4
+            value: 5
           - metric: proxy.process.http.cache.remember_uncacheable.set_full
             value: 1
           - metric: proxy.process.http.cache.remember_uncacheable.evictions
@@ -69,16 +71,21 @@ urtest:
             excludes:
               - expression: 'is not a power of two'
                 description: 'A power of two is used as given'
+          traffic_out:
+            contains:
+              - expression: 'a remembered key in a full uncacheable memo set made room'
+                description: 'The set_full case is traced'
+              - expression: 'a seen-once key in the uncacheable memo made room'
+                description: 'The evictions case is traced'
+              - expression: 'still uncacheable, remembered for another 60 s'
+                description: 'A renewal is traced'
 
     # Rounded up to 8 with a warning. Two sets, so where each URL lands depends
-    # on its hash; only the counts that do not depend on that are checked.
+    # on its hash and the counts are not checked.
     - name: rounded
       ats:
         records_config:
           proxy.config.http.cache.remember_uncacheable_entries: 5
-        metric_checks:
-          - metric: proxy.process.http.cache.remember_uncacheable.admits
-            value: 4
         log_validation:
           diags_log:
             contains:
@@ -359,33 +366,6 @@ sessions:
 
   - client-request:
       method: GET
-      url: /b
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, b-3]
-
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "3"]
-        - [Cache-Control, "no-store"]
-        - [X-Response, b-3]
-      content:
-        encoding: plain
-        data: xxx
-
-    proxy-response:
-      status: 200
-      headers:
-        fields:
-        - [X-Response, {value: b-3, as: equal}]
-
-  - client-request:
-      method: GET
       url: /a
       version: '1.1'
       headers:
@@ -410,3 +390,57 @@ sessions:
       headers:
         fields:
         - [X-Response, {value: a-3, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /a
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, a-4]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, a-4]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: a-4, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /b
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, b-3]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, b-3]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: b-3, as: equal}]

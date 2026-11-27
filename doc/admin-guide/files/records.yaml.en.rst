@@ -3994,9 +3994,9 @@ Dynamic Content & Content Negotiation
     ``proxy.process.http.cache.remember_uncacheable.evictions``
        URLs seen uncacheable once that were displaced by another URL before they could
        answer a second time. URLs asked for once are expected to land here, so a high count
-       alone says nothing about the size. If it is high and the origin still sees repeated
-       requests for uncacheable URLs that ``admits`` does not reflect, those URLs may be
-       displaced between their answers: raise
+       alone says nothing about the size. If URLs you know are requested again and again never
+       show up as remembered (``admits`` stays flat while the origin keeps seeing them), they
+       may be pushed out between their two answers: raise
        :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` and check whether
        ``admits`` and ``hits`` rise.
 

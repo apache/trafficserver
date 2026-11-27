@@ -1,6 +1,6 @@
 /** @file
 
-  Remembers cache keys whose last origin response could not be stored.
+  Remembers cache keys whose origin responses could not be stored.
 
   @section license License
 
@@ -22,6 +22,7 @@
  */
 
 #include "proxy/http/UncacheableKeyMemo.h"
+#include "tscore/ink_assert.h"
 
 #include <bit>
 #include <limits>
@@ -93,7 +94,7 @@ UncacheableKeyMemo::remember(CryptoHash const &key, ink_hrtime now, ink_hrtime t
     if ((have & ~ADMITTED) != tag) {
       continue;
     }
-    // A sighting that lapsed starts over, so admission takes two within one lifetime.
+    // A sighting that lapsed starts over, so admission takes two within one ttl.
     Remembered what = Remembered::SEEN_ONCE;
     uint64_t   next = tag;
     if (entry.until.load(std::memory_order_relaxed) > now) {
@@ -140,6 +141,7 @@ UncacheableKeyMemo::remember(CryptoHash const &key, ink_hrtime now, ink_hrtime t
     victim            = remembered;
     outcome.displaced = true;
   }
+  ink_assert(victim != nullptr);
   victim->until.store(until, std::memory_order_relaxed);
   victim->tag.store(tag, std::memory_order_release);
   return outcome;
@@ -149,8 +151,8 @@ void
 UncacheableKeyMemo::forget(CryptoHash const &key)
 {
   uint64_t const tag = tag_of(key);
-  // Every matching entry goes, since racing first answers can leave a key in two of them, and
-  // a lost exchange means the key was written meanwhile, so it is tried again while it matches.
+  // Every matching entry goes, since racing first answers can leave a key in two of them. A
+  // failed exchange reloads the tag, and the entry is retried while it still holds this key.
   for (Entry &entry : set_of(key).ways) {
     uint64_t have = entry.tag.load(std::memory_order_relaxed);
     while ((have & ~ADMITTED) == tag && !entry.tag.compare_exchange_weak(have, 0, std::memory_order_relaxed)) {}
