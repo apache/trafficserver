@@ -399,6 +399,12 @@ returning it to the default of 1 costs nothing and restores accuracy.
 Plugins
 -------
 
+The :ref:`admin-plugins-access_control` plugin now supports path-prefix scope
+enforcement using the ``scope`` claim in access tokens. Scope enforcement is
+disabled by default for backward compatibility with deployments issuing tokens
+with non-path scopes. To enable scope enforcement, pass ``--enforce-scope=true``
+as a plugin parameter.
+
 The :ref:`admin-plugins-stats-over-http` plugin prints gauge values as signed
 integers in its JSON, CSV and Prometheus output. Earlier versions printed a
 negative gauge as an unsigned value, for example ``18446744073709551574`` for
