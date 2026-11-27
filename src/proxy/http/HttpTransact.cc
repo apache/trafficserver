@@ -3595,18 +3595,15 @@ HttpTransact::uncacheable_memo_key(State *s, CryptoHash &hash)
 
 /** Whether a miss should fetch from the origin before taking the cache write lock.
 
-    Always when configured so, otherwise when this key is remembered as uncacheable: waiting
-    on the write lock would buy nothing, as nothing gets stored. A transaction that already
-    holds the lock, as a followed redirect can, keeps using it.
+    Only when this key is remembered as uncacheable: waiting on the write lock would buy
+    nothing, as nothing gets stored. A transaction that already holds the lock, as a followed
+    redirect can, keeps using it.
  */
 bool
 HttpTransact::should_defer_cache_write(State *s)
 {
   if (s->cache_info.write_lock_state == CacheWriteLock_t::SUCCESS) {
     return false;
-  }
-  if (s->txn_conf->cache_defer_write_on_miss) {
-    return true;
   }
   if (s->txn_conf->cache_remember_uncacheable <= 0) {
     return false;

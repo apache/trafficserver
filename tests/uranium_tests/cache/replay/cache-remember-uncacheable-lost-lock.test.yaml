@@ -14,17 +14,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# With defer_write_on_miss on, every miss goes to the origin before taking the
-# cache write lock. A cacheable response is then stored and the next request
-# hits; a no-store response is not stored; a miss that loses the lock after
-# its response arrived serves that response uncached, and the URL is stored
-# by the next miss instead. The sessions run one after another.
+# A remembered miss that loses the cache write lock serves the response it
+# already has, whatever open_write_fail_action says. With the lock eagerly
+# taken, fail action 1 answers that miss with a 502; here it must not. Two
+# no-store answers make /lost remembered. The third miss goes to the origin
+# without the lock, gets a cacheable answer and is denied the late lock by the
+# X-Fail-Cache-Write rule, which reports the loss without going to the cache,
+# so both variants reach the same lost-lock case. Nothing was stored, so /lost
+# stays remembered: the fourth miss also skips the lock, stores the answer and
+# clears the memory, and the fifth request hits.
 
 meta:
   version: "1.0"
 
 urtest:
-  description: 'defer_write_on_miss takes the cache write lock after the response headers'
+  description: 'A remembered miss that loses the write lock ignores open_write_fail_action'
 
   server:
     name: 'server'
@@ -41,8 +45,8 @@ urtest:
     records_config:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: 'http_trans|http_cache'
-      proxy.config.http.cache.defer_write_on_miss: 1
       proxy.config.http.cache.remember_uncacheable: 10
+      proxy.config.http.cache.max_open_read_retries: 2
     remap_config:
       - from: "http://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
@@ -50,158 +54,41 @@ urtest:
           - name: header_rewrite.so
             args: ['cache-write-lock-fail-write.conf']
 
-    # Deferred: both /cacheable misses are one (the second is a hit), all three
-    # /nostore requests, and both /lost misses. The first /lost miss is denied
-    # the lock by the X-Fail-Cache-Write rule. The /nostore answers still teach
-    # the memo, so the second admits it, but the third miss, deferred by the
-    # setting, does not read it and is no memo hit.
+    # The third and fourth misses skip the lock; the fifth request is a hit.
     metric_checks:
       - metric: proxy.process.http.cache.remember_uncacheable.admits
         value: 1
       - metric: proxy.process.http.cache.remember_uncacheable.hits
-        value: 0
-        delay: 0
-      - metric: proxy.process.http.cache.remember_uncacheable.evictions
-        value: 0
-        delay: 0
-      - metric: proxy.process.http.cache.remember_uncacheable.set_full
-        value: 0
+        value: 2
         delay: 0
       - metric: proxy.process.http.cache_open_write_deferred
-        value: 6
+        value: 2
+        delay: 0
       - metric: proxy.process.http.cache_open_write_fail_count
         value: 1
         delay: 0
       - metric: proxy.process.http.cache_hit_fresh
-        value: 2
+        value: 1
         delay: 0
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: '\[hdcwc\] cache write lock failed'
+            description: 'The remembered miss lost the late write lock'
+          - expression: 'the key is being stored, so the uncacheable memo forgot it'
+            description: 'The next remembered miss stored the URL and dropped it from the memo'
+
+  variants:
+    - name: error-on-miss
+      ats:
+        records_config:
+          proxy.config.http.cache.open_write_fail_action: 1
+    - name: read-retry
+      ats:
+        records_config:
+          proxy.config.http.cache.open_write_fail_action: 5
 
 sessions:
-- transactions:
-  - client-request:
-      method: GET
-      url: /cacheable
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, cacheable-first]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "3"]
-        - [Cache-Control, "max-age=300"]
-        - [X-Response, first]
-      content:
-        encoding: plain
-        data: xxx
-    proxy-response:
-      status: 200
-      headers:
-        fields:
-        - [X-Response, {value: first, as: equal}]
-
-  - client-request:
-      delay: 500ms
-      method: GET
-      url: /cacheable
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, cacheable-second]
-    server-response:
-      status: 400
-      reason: Bad Request
-      headers:
-        fields:
-        - [Content-Length, "0"]
-    proxy-response:
-      status: 200
-      headers:
-        fields:
-        - [X-Response, {value: first, as: equal}]
-
-- transactions:
-  - client-request:
-      method: GET
-      url: /nostore
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, nostore-first]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "3"]
-        - [Cache-Control, "no-store"]
-        - [X-Response, first]
-      content:
-        encoding: plain
-        data: xxx
-    proxy-response:
-      status: 200
-      headers:
-        fields:
-        - [X-Response, {value: first, as: equal}]
-
-  - client-request:
-      delay: 500ms
-      method: GET
-      url: /nostore
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, nostore-second]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "3"]
-        - [Cache-Control, "no-store"]
-        - [X-Response, second]
-      content:
-        encoding: plain
-        data: xxx
-    proxy-response:
-      status: 200
-      headers:
-        fields:
-        - [X-Response, {value: second, as: equal}]
-
-  - client-request:
-      delay: 500ms
-      method: GET
-      url: /nostore
-      version: '1.1'
-      headers:
-        fields:
-        - [Host, example.com]
-        - [uuid, nostore-third]
-    server-response:
-      status: 200
-      reason: OK
-      headers:
-        fields:
-        - [Content-Length, "3"]
-        - [Cache-Control, "no-store"]
-        - [X-Response, third]
-      content:
-        encoding: plain
-        data: xxx
-    proxy-response:
-      status: 200
-      headers:
-        fields:
-        - [X-Response, {value: third, as: equal}]
-
 - transactions:
   - client-request:
       method: GET
@@ -210,7 +97,6 @@ sessions:
       headers:
         fields:
         - [Host, example.com]
-        - [X-Fail-Cache-Write, "1"]
         - [uuid, lost-first]
     server-response:
       status: 200
@@ -218,7 +104,7 @@ sessions:
       headers:
         fields:
         - [Content-Length, "3"]
-        - [Cache-Control, "max-age=300"]
+        - [Cache-Control, "no-store"]
         - [X-Response, first]
       content:
         encoding: plain
@@ -228,7 +114,6 @@ sessions:
       headers:
         fields:
         - [X-Response, {value: first, as: equal}]
-
   - client-request:
       delay: 500ms
       method: GET
@@ -244,7 +129,7 @@ sessions:
       headers:
         fields:
         - [Content-Length, "3"]
-        - [Cache-Control, "max-age=300"]
+        - [Cache-Control, "no-store"]
         - [X-Response, second]
       content:
         encoding: plain
@@ -254,7 +139,6 @@ sessions:
       headers:
         fields:
         - [X-Response, {value: second, as: equal}]
-
   - client-request:
       delay: 500ms
       method: GET
@@ -263,7 +147,58 @@ sessions:
       headers:
         fields:
         - [Host, example.com]
+        - [X-Fail-Cache-Write, "1"]
         - [uuid, lost-third]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, third]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: third, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-fourth]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, fourth]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: fourth, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-fifth]
     server-response:
       status: 400
       reason: Bad Request
@@ -274,4 +209,4 @@ sessions:
       status: 200
       headers:
         fields:
-        - [X-Response, {value: second, as: equal}]
+        - [X-Response, {value: fourth, as: equal}]

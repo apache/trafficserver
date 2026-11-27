@@ -204,7 +204,6 @@ TSOverridableConfigKey Value                                               Confi
 :enumerator:`TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS`        :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`
 :enumerator:`TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE_PERCENT`                 :ts:cv:`proxy.config.http.cache.max_stale_age_percent`
 :enumerator:`TS_CONFIG_HTTP_REJECT_HEAD_WITH_CONTENT`                    :ts:cv:`proxy.config.http.reject_head_with_content`
-:enumerator:`TS_CONFIG_HTTP_CACHE_DEFER_WRITE_ON_MISS`                   :ts:cv:`proxy.config.http.cache.defer_write_on_miss`
 :enumerator:`TS_CONFIG_HTTP_CACHE_REMEMBER_UNCACHEABLE`                  :ts:cv:`proxy.config.http.cache.remember_uncacheable`
 ======================================================================== ====================================================================
 

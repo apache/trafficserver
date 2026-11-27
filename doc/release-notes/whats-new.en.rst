@@ -47,9 +47,8 @@ Configuration
   that time is remembered, and misses on it go to the origin before taking the
   cache write lock, so concurrent requests for uncacheable content no longer
   wait on each other. Requests for other URLs are collapsed as before. Added
-  :ts:cv:`proxy.config.http.cache.defer_write_on_miss` to apply the same to
-  every miss, :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` to
-  size the memory, and the metrics ``proxy.process.http.cache_open_write_deferred``
+  :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` to size the
+  memory, and the metrics ``proxy.process.http.cache_open_write_deferred``
   and ``proxy.process.http.cache.remember_uncacheable.*``.
 * Added :ts:cv:`proxy.config.regex.anchor_policy_rules` to require that a regex
   driving a security or routing decision match the whole subject. Disabled by

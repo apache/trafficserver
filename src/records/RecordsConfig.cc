@@ -646,12 +646,6 @@ static constexpr RecordElement RecordsConfig[] =
   //       #  6 - retry cache read on write lock failure, if retries exhausted serve stale if allowed, otherwise goto origin
   {RECT_CONFIG, "proxy.config.http.cache.open_write_fail_action", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  //       #  defer_write_on_miss:
-  //       #  0 - a miss takes the cache write lock before going to the origin
-  //       #  1 - a miss goes to the origin first and takes the lock only for a cacheable response;
-  //       #      concurrent misses on a cacheable URL are then not collapsed
-  {RECT_CONFIG, "proxy.config.http.cache.defer_write_on_miss", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   //       #  remember_uncacheable: seconds a URL whose last origin response was uncacheable
   //       #  skips the cache write lock on a miss. 0 turns it off.
   {RECT_CONFIG, "proxy.config.http.cache.remember_uncacheable", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-86400]", RECA_NULL}

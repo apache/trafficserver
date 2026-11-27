@@ -86,9 +86,6 @@ records:
 # https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-cache-when-to-revalidate
       when_to_revalidate: 0
 
-# https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-cache-defer-write-on-miss
-      defer_write_on_miss: 0
-
 # https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-cache-remember-uncacheable
       remember_uncacheable: 10
 

@@ -897,8 +897,6 @@ it go to the origin without the write lock for that long, renewed by every furth
 uncacheable response to a plain ``GET`` miss, and take the lock only if a response
 turns out to be cacheable after all. Requests for every other object are collapsed
 as before, and a stored response clears the memory for its object.
-:ts:cv:`proxy.config.http.cache.defer_write_on_miss` applies the same treatment to
-every miss, for traffic that is mostly unique or mostly uncacheable.
 
 Open Write Fail Action
 ----------------------

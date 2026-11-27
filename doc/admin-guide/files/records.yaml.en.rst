@@ -3981,21 +3981,10 @@ Dynamic Content & Content Negotiation
     ``proxy.process.http.cache_open_write_fail_count``. The memory holds
     :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` URLs.
 
-    These metrics show how the memory is doing. Transactions with
-    :ts:cv:`proxy.config.http.cache.defer_write_on_miss` on go to the origin without reading
-    the memory and take the lock only for a cacheable answer, so they never count in ``hits``.
-    While :ts:cv:`proxy.config.http.cache.remember_uncacheable` is on for them, their
-    uncacheable answers are still noted: they count in ``admits``, ``evictions`` and
-    ``set_full`` and take room other URLs could use. With
-    :ts:cv:`proxy.config.http.cache.defer_write_on_miss` on for all traffic the memory is never
-    read, so set :ts:cv:`proxy.config.http.cache.remember_uncacheable` to ``0``. Where only
-    some traffic defers, turn :ts:cv:`proxy.config.http.cache.remember_uncacheable` off for
-    that same traffic, or judge a size change by ``hits`` and read the other three counters as
-    including the deferred traffic.
+    These metrics show how the memory is doing.
 
     ``proxy.process.http.cache.remember_uncacheable.hits``
-       Misses that skipped the write lock because their URL was remembered. Misses deferred by
-       :ts:cv:`proxy.config.http.cache.defer_write_on_miss` are not counted here.
+       Misses that skipped the write lock because their URL was remembered.
 
     ``proxy.process.http.cache.remember_uncacheable.admits``
        Times a URL answered uncacheable a second time and became remembered. A URL that lapses
@@ -4025,19 +4014,6 @@ Dynamic Content & Content Negotiation
     default uses 1 MiB. A value that is not a power of two is rounded up to one, with a
     warning. The minimum is ``4`` and the maximum is ``16777216``, which uses 256 MiB. Takes
     effect on restart.
-
-.. ts:cv:: CONFIG proxy.config.http.cache.defer_write_on_miss INT 0
-   :reloadable:
-   :overridable:
-
-    When set to ``1``, every cache miss goes to the origin without first taking the cache write
-    lock, as :ts:cv:`proxy.config.http.cache.remember_uncacheable` does for URLs known to be
-    uncacheable. The lock is taken once the response headers show that the response is
-    cacheable. Concurrent misses for the same URL are then not collapsed onto one origin
-    fetch: each one fetches from the origin until the first response is in the cache, and a
-    miss that loses the late lock serves its response rather than apply
-    :ts:cv:`proxy.config.http.cache.open_write_fail_action`. Suited to traffic that is mostly
-    unique or mostly uncacheable.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
