@@ -22,27 +22,40 @@ ATS to call abort_tunnel() while the transform entry is still in the vc_table.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import argparse
 import socket
 import sys
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('host', nargs='?', default='127.0.0.1', help='Target host address')
+    parser.add_argument('port', nargs='?', type=int, default=8080, help='Target TCP port')
+    parser.add_argument('--content-length', type=int, default=100000, help='Declared Content-Length in bytes')
+    parser.add_argument('--send-bytes', type=int, default=4096, help='Number of body bytes to send')
+    return parser.parse_args()
+
+
 def main() -> int:
     """Run the client."""
-    host = sys.argv[1] if len(sys.argv) > 1 else '127.0.0.1'
-    port = int(sys.argv[2]) if len(sys.argv) > 2 else 8080
+    args = parse_args()
 
     request = (
-        'POST / HTTP/1.1\r\nHost: quick.server.com\r\nContent-Type: application/octet-stream\r\nContent-Length: 100000\r\n\r\n'
+        f'POST / HTTP/1.1\r\n'
+        f'Host: quick.server.com\r\n'
+        f'Content-Type: application/octet-stream\r\n'
+        f'Content-Length: {args.content_length}\r\n\r\n'
     ).encode()
 
-    partial_body = b'x' * 4096
+    partial_body = b'x' * args.send_bytes
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(5)
     try:
-        sock.connect((host, port))
+        sock.connect((args.host, args.port))
         sock.sendall(request + partial_body)
-        print(f'Sent POST headers (Content-Length: 100000) + {len(partial_body)} bytes')
+        print(f'Sent POST headers (Content-Length: {args.content_length}) + {len(partial_body)} bytes')
 
         try:
             response = sock.recv(4096)

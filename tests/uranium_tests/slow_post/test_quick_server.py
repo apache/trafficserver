@@ -35,15 +35,17 @@ class QuickServerCase:
     drain_request: bool
     abort_response_headers: bool
     use_request_transform: bool = False
+    buffer_request_transform: bool = False
 
     @property
     def name(self) -> str:
         """Name."""
+        transform_mode = "buffered" if self.buffer_request_transform else ("on" if self.use_request_transform else "off")
         return (
             f"client-{'abort' if self.abort_request else 'finish'}-"
             f"origin-{'drain' if self.drain_request else 'close'}-"
             f"headers-{'abort' if self.abort_response_headers else 'complete'}-"
-            f"transform-{'on' if self.use_request_transform else 'off'}"
+            f"transform-{transform_mode}"
         )
 
 
@@ -53,7 +55,10 @@ CASES = tuple(
     for drain_request in (True, False)
     for abort_response_headers in (True, False)
 )
-CASES += (QuickServerCase(False, False, False, use_request_transform=True),)
+CASES += (
+    QuickServerCase(False, False, False, use_request_transform=True),
+    QuickServerCase(False, False, False, use_request_transform=True, buffer_request_transform=True),
+)
 
 
 def python_environment() -> dict[str, str]:
@@ -108,7 +113,8 @@ def configure_ats(ats_factory: ATSFactory, *, _case: QuickServerCase, _origin_po
     )
     if _case.use_request_transform:
         ats.copy_custom_plugin("{AtsTestPluginsDir}/tunnel_transform.so")
-        ats.plugin_config.add_line("tunnel_transform.so request_hdr")
+        plugin_args = "request_hdr buffer" if _case.buffer_request_transform else "request_hdr"
+        ats.plugin_config.add_line(f"tunnel_transform.so {plugin_args}")
     return ats
 
 
@@ -122,7 +128,9 @@ def configure_client(services: ServiceFactory, *, _ats: ATS, _case: QuickServerC
 
     script = "partial_post_client.py" if _case.use_request_transform else "slow_post_client.py"
     command: list[str | Path] = [sys.executable, TEST_DIRECTORY / script, "127.0.0.1", str(_ats.http_port)]
-    if not _case.use_request_transform and not _case.abort_request:
+    if _case.buffer_request_transform:
+        command.extend(["--content-length", "8388608", "--send-bytes", "8388608"])
+    elif not _case.use_request_transform and not _case.abort_request:
         command.append("--finish-request")
     return services.process("client", command, environment=python_environment())
 

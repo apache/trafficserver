@@ -2206,14 +2206,26 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     // If there is a post body in transit, give up on it
     if (tunnel.is_tunnel_alive()) {
+      bool is_post_transform_open = false;
+
+      if (post_transform_info.entry != nullptr && post_transform_info.entry->in_tunnel) {
+        VConnection        *tvc = post_transform_info.entry->vc;
+        HttpTunnelConsumer *c   = tunnel.get_consumer(tvc);
+        HttpTunnelProducer *p   = tunnel.get_producer(tvc);
+
+        is_post_transform_open = (c != nullptr && c->alive) || (p != nullptr && p->alive);
+      }
       tunnel.abort_tunnel();
-      // abort_tunnel() cancels I/O but does not close VCs or clean up
-      // vc_table entries.  When a request transform is active the
-      // post_transform_info entry still references the TransformVConnection
-      // with in_tunnel=true, which causes cleanup_entry() to skip
-      // do_io_close() — leaking the VC.  Close it explicitly here.
+      // abort_tunnel() cancels I/O and resets the tunnel without closing VCs or
+      // cleaning up vc_table entries.  Close the request transform VC only if
+      // at least one side of it was still alive in the tunnel; when both sides
+      // have already finished, the tunnel handlers have already closed (and
+      // possibly deleted) the TransformVConnection while the server consumer
+      // was still draining to the origin.
       if (post_transform_info.entry != nullptr) {
-        post_transform_info.entry->vc->do_io_close();
+        if (is_post_transform_open) {
+          post_transform_info.entry->vc->do_io_close();
+        }
         vc_table.cleanup_entry(post_transform_info.entry);
         post_transform_info.entry = nullptr;
         // .vc stays non-null so transform_cleanup() skips the already-closed chain.

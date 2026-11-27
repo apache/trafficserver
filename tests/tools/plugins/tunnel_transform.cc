@@ -3,10 +3,12 @@
   Null transform plugin for request and/or response body content.
 
   Modes (selected by plugin argument):
-    (default)      — hook at TS_HTTP_TUNNEL_START_HOOK, add both request
-                     and response transforms (original behavior)
-    request_hdr    — hook at TS_HTTP_READ_REQUEST_HDR_HOOK, add only the
-                     request transform
+    (default)           — hook at TS_HTTP_TUNNEL_START_HOOK, add both request
+                          and response transforms (original behavior)
+    request_hdr         — hook at TS_HTTP_READ_REQUEST_HDR_HOOK, add only the
+                          request transform
+    request_hdr buffer  — same as request_hdr, but buffer the full request body
+                          before writing any output downstream
 
   @section license License
 
@@ -38,11 +40,12 @@
 static const char PLUGIN_TAG[] = PLUGIN_NAME;
 static DbgCtl     plugin_ctl{PLUGIN_TAG};
 
-static int  stat_ua_bytes_sent = 0; // number of bytes seen by the transform from UA to OS
-static int  stat_os_bytes_sent = 0; // number of bytes seen by the transform from OS to UA
-static int  stat_error         = 0;
-static int  stat_test_done     = 0;
-static bool request_hdr_mode   = false; // when true, hook at READ_REQUEST_HDR and request transform only
+static int  stat_ua_bytes_sent  = 0; // number of bytes seen by the transform from UA to OS
+static int  stat_os_bytes_sent  = 0; // number of bytes seen by the transform from OS to UA
+static int  stat_error          = 0;
+static int  stat_test_done      = 0;
+static bool request_hdr_mode    = false; // when true, hook at READ_REQUEST_HDR and request transform only
+static bool buffer_request_mode = false; // when true, buffer the full request body before writing downstream
 
 typedef struct {
   TSVIO            output_vio;
@@ -106,11 +109,13 @@ handle_transform(TSCont contp, bool forward)
     data                = my_data_alloc();
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
-    Dbg(plugin_ctl, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
-    // A request transform must report a real content length — INT64_MAX
-    // makes state_request_wait_for_transform_read() fail the transaction.
-    int64_t nbytes   = (request_hdr_mode && TSVIONBytesGet(input_vio) > 0) ? TSVIONBytesGet(input_vio) : INT64_MAX;
-    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, nbytes);
+    if (!(buffer_request_mode && forward)) {
+      Dbg(plugin_ctl, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
+      // A request transform must report a real content length — INT64_MAX
+      // makes state_request_wait_for_transform_read() fail the transaction.
+      int64_t nbytes   = (request_hdr_mode && TSVIONBytesGet(input_vio) > 0) ? TSVIONBytesGet(input_vio) : INT64_MAX;
+      data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, nbytes);
+    }
     TSContDataSet(contp, data);
   }
 
@@ -125,8 +130,12 @@ handle_transform(TSCont contp, bool forward)
   buf_test = TSVIOBufferGet(input_vio);
 
   if (!buf_test) {
-    TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
-    TSVIOReenable(data->output_vio);
+    if (!data->output_vio) {
+      data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONDoneGet(input_vio));
+    } else {
+      TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
+      TSVIOReenable(data->output_vio);
+    }
     return;
   }
 
@@ -149,7 +158,7 @@ handle_transform(TSCont contp, bool forward)
 
     if (towrite > 0) {
       /* Copy the data from the read buffer to the output buffer. */
-      TSIOBufferCopy(TSVIOBufferGet(data->output_vio), TSVIOReaderGet(input_vio), towrite, 0);
+      TSIOBufferCopy(data->output_buffer, TSVIOReaderGet(input_vio), towrite, 0);
 
       /* Tell the read buffer that we have read the data and are no
        * longer interested in it.
@@ -178,7 +187,9 @@ handle_transform(TSCont contp, bool forward)
        * the output connection and allow it to consume data from the
        * output buffer.
        */
-      TSVIOReenable(data->output_vio);
+      if (data->output_vio) {
+        TSVIOReenable(data->output_vio);
+      }
 
       /* Call back the input VIO continuation to let it know that we
        * are ready for more data.
@@ -192,8 +203,12 @@ handle_transform(TSCont contp, bool forward)
      * is done reading. We then reenable the output connection so
      * that it can consume the data we just gave it.
      */
-    TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
-    TSVIOReenable(data->output_vio);
+    if (!data->output_vio) {
+      data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, TSVIONDoneGet(input_vio));
+    } else {
+      TSVIONBytesSet(data->output_vio, TSVIONDoneGet(input_vio));
+      TSVIOReenable(data->output_vio);
+    }
 
     /* Call back the input VIO continuation to let it know that we
      * have completed the write operation.
@@ -330,10 +345,14 @@ TSPluginInit(int argc, const char **argv)
     goto Lerror;
   }
 
-  if (argc > 1 && strcmp(argv[1], "request_hdr") == 0) {
-    request_hdr_mode = true;
+  for (int i = 1; i < argc; ++i) {
+    if (strcmp(argv[i], "request_hdr") == 0) {
+      request_hdr_mode = true;
+    } else if (strcmp(argv[i], "buffer") == 0) {
+      buffer_request_mode = true;
+    }
   }
-  Dbg(plugin_ctl, "mode: %s", request_hdr_mode ? "request_hdr" : "tunnel_start");
+  Dbg(plugin_ctl, "mode: %s (buffer=%d)", request_hdr_mode ? "request_hdr" : "tunnel_start", buffer_request_mode);
 
   stat_ua_bytes_sent =
     TSStatCreate("tunnel_transform.ua.bytes_sent", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
