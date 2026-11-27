@@ -2223,6 +2223,30 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     }
   }
 
+  SECTION("Test accept match on counted header values")
+  {
+    // Header values live in the header heap without a terminator, so the
+    // bytes after a value must not be taken as its q parameter. Only the
+    // counted "fr;q" / "utf-8;q" prefix is the value; its empty q means 1.0.
+    int   I = 0, L = 0;
+    float Q;
+
+    std::string_view const lang_buf{"fr;q=0.5"};
+    StrList                lang_list(false);
+    HttpCompat::parse_comma_list(&lang_list, lang_buf.data(), 4);
+    Q = HttpCompat::match_accept_language("fr", 2, &lang_list, &L, &I);
+    CHECK(Q == 1.0);
+    CHECK(L == 2);
+    CHECK(I == 1);
+
+    std::string_view const charset_buf{"utf-8;q=0.5"};
+    StrList                charset_list(false);
+    HttpCompat::parse_comma_list(&charset_list, charset_buf.data(), 7);
+    Q = HttpCompat::match_accept_charset("utf-8", 5, &charset_list, &I);
+    CHECK(Q == 1.0);
+    CHECK(I == 1);
+  }
+
   SECTION("Test comma vals")
   {
     static struct {
