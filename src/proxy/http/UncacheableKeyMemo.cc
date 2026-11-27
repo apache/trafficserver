@@ -22,12 +22,14 @@
  */
 
 #include "proxy/http/UncacheableKeyMemo.h"
+#include "tscore/Diags.h"
 #include "tscore/ink_assert.h"
 #include "tsutil/DbgCtl.h"
 
 #include <bit>
 #include <cinttypes>
 #include <limits>
+#include <new>
 
 namespace
 {
@@ -49,8 +51,16 @@ UncacheableKeyMemo::instance()
   // Held by pointer and never freed, so no exit-time destructor runs while event threads may
   // still be reading it.
   static UncacheableKeyMemo *const memo = [] {
+    UncacheableKeyMemo *built_memo = nullptr;
+    try {
+      built_memo = new UncacheableKeyMemo(configured_entries);
+    } catch (std::bad_alloc const &) {
+      // Name the setting, since the default abort message would not say what failed or how to fix it.
+      Fatal("could not allocate the remember_uncacheable memo of %" PRIu32 " entries (%" PRIu64 " bytes); lower "
+            "proxy.config.http.cache.remember_uncacheable_entries",
+            configured_entries, static_cast<uint64_t>(configured_entries) * sizeof(Entry));
+    }
     built.store(true, std::memory_order_relaxed);
-    auto *built_memo = new UncacheableKeyMemo(configured_entries);
     Dbg(dbg_ctl_http_cache, "built the uncacheable memo with %" PRIu32 " entries", built_memo->entries());
     return built_memo;
   }();

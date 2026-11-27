@@ -897,7 +897,8 @@ uncacheable twice within that time, misses on it go to the origin without the
 write lock for that long, renewed by every further uncacheable response to a
 plain ``GET`` miss, and take the lock only if a response turns out to be
 cacheable after all. Requests for every other object are still collapsed, and a
-stored response clears the memory for its object.
+response stored by a transaction with the setting on clears the memory for its
+object.
 
 Open Write Fail Action
 ----------------------

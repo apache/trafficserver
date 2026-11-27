@@ -89,12 +89,14 @@ public:
   /// A memo of @a entries keys, rounded as entries_for() rounds.
   explicit UncacheableKeyMemo(uint32_t entries = DEFAULT_ENTRIES);
 
-  /// Set how many entries the process's memo gets when instance() builds it. Startup calls this
-  /// before any transaction runs, since a call after the memo is built has no effect.
+  /// Set how many entries the process's memo gets when instance() builds it. HttpConfig::startup()
+  /// calls this before it can call instance(); a later call has no effect and asserts in a debug
+  /// build.
   static void configure(uint32_t entries);
 
-  /// The process's memo, built on the first call. Only transactions with remember_uncacheable on
-  /// call it, so a process that never turns it on never allocates it.
+  /// The process's memo, built on the first call. HttpConfig::startup() calls it when
+  /// records.yaml turns remember_uncacheable on; otherwise only a transaction with it on calls
+  /// it, so a process that never turns it on never allocates it.
   static UncacheableKeyMemo &instance();
 
   uint32_t

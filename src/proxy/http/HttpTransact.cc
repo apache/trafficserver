@@ -3600,7 +3600,7 @@ HttpTransact::uncacheable_memo_key(State *s, CryptoHash &hash)
     lock is taken once it arrives. A yes increments
     proxy.process.http.cache.remember_uncacheable.hits. A transaction that already holds the lock,
     as a followed redirect can, keeps using it. The caller tests is_remember_uncacheable_on() first,
-    since this builds the memo on first use.
+    since this may build the memo.
  */
 bool
 HttpTransact::should_defer_cache_write(State *s)

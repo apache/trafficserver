@@ -81,13 +81,17 @@ urtest:
                 description: "No request waits on a cache lock retry timer"
             contains:
               - expression: "built the uncacheable memo with 65536 entries"
-                description: "The memory is built, so the exclude in memo-off can see it"
+                description: "The build is logged, which shows the memo-off exclude can match"
+              - expression: '\A(?:(?!START HttpTransact::StartRemapRequest).)*built the uncacheable memo with 65536 entries'
+                multiline: true
+                description: "Startup builds the memory before the first transaction"
 
     # Sets nothing, so it also checks that the default leaves the memory off
     # and never builds it: every miss takes the lock before the origin. The
     # third /nostore request finds the second writing, retries the read until
-    # its retries run out, then loses the write lock. The last /nostore request shows that the
-    # second's answer, fetched under the lock, was not stored.
+    # its retries run out, then loses the write lock. The last /nostore
+    # request shows that the second's answer, fetched under the lock, was not
+    # stored.
     - name: memo-off
       ats:
         metric_checks:

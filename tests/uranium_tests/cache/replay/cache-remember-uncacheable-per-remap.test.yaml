@@ -15,12 +15,14 @@
 #  limitations under the License.
 
 # remember_uncacheable is off by default and the rule for on.example.com turns
-# it on. Both rules map to the same origin URL, so they share a cache key. Two
-# no-store answers through on.example.com remember /k, building the memory on
-# that first use. A miss on /k through off.example.com must still take the
-# write lock, so it is not a hit. A last miss through on.example.com is one,
-# which shows /k stayed remembered while the off request ran. Had the off
-# request read the memory, hits would be 2.
+# it on. Both rules map to the same origin URL, so they share a cache key. A
+# first no-store answer through off.example.com must not count as a sighting:
+# had it counted, the second on request would already be a hit. Two no-store
+# answers through on.example.com then remember /k, building the memory on that
+# first use. A miss on /k through off.example.com must still take the write
+# lock, so it is not a hit. A last miss through on.example.com is one, which
+# shows /k stayed remembered while the off request ran. Had either off request
+# read or written the memory, hits would be 2.
 
 meta:
   version: "1.0"
@@ -59,13 +61,40 @@ urtest:
     log_validation:
       traffic_out:
         contains:
-          - expression: 'built the uncacheable memo with 65536 entries'
-            description: 'The remap rule built the memory with the global setting off'
+          - expression: 'START HttpTransact::StartRemapRequest.*built the uncacheable memo with 65536 entries'
+            multiline: true
+            description: 'A transaction through the conf_remap rule built the memory, not startup'
           - expression: 'remembering the key as uncacheable for 60 s'
             description: 'The conf_remap value turned the memory on'
 
 sessions:
 - transactions:
+  # remember_uncacheable is off for this rule: the answer is not a sighting.
+  - client-request:
+      method: GET
+      url: /k
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, off.example.com]
+        - [uuid, off-zero]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, off-zero]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: off-zero, as: equal}]
+
   - client-request:
       method: GET
       url: /k

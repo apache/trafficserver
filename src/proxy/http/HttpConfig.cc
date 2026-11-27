@@ -1177,8 +1177,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
   HttpEstablishStaticConfigLongLong(c.oride.cache_remember_uncacheable, "proxy.config.http.cache.remember_uncacheable");
   if (c.oride.cache_remember_uncacheable > 0) {
-    // On in records.yaml: build the memo now, so a failed allocation stops startup rather than a
-    // transaction, and the first transactions do not wait while it is zeroed.
+    // On in records.yaml: build the memo here, so a failed allocation fails startup instead of
+    // the process under traffic, and the first transactions do not wait while it is zeroed.
     UncacheableKeyMemo::instance();
   }
 
