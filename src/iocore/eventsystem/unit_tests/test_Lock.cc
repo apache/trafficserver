@@ -398,3 +398,63 @@ TEST_CASE("MUTEX_RELEASE on a null WEAK_MUTEX_TRY_LOCK guard clears is_locked() 
 
   REQUIRE_FALSE(guard.is_locked());
 }
+
+TEST_CASE("hand_off keeps the mutex held and the next MUTEX_TRY_LOCK adopts the hold instead of nesting", "[inkevent][lock]")
+{
+  Ptr<ProxyMutex> m{new_ProxyMutex()};
+  EThread        *t = this_ethread();
+
+  {
+    MUTEX_TRY_LOCK(giver, m, t);
+    REQUIRE(giver.hand_off());
+    REQUIRE_FALSE(giver.is_locked());
+  }
+  REQUIRE(m->thread_holding == t);
+  REQUIRE(m->nthread_holding == 1);
+  REQUIRE(m->adopt_pending);
+
+  {
+    MUTEX_TRY_LOCK(taker, m, t);
+    REQUIRE(taker.is_locked());
+    REQUIRE(m->nthread_holding == 1);
+    REQUIRE_FALSE(m->adopt_pending);
+  }
+  REQUIRE(m->thread_holding == nullptr);
+  REQUIRE(m->nthread_holding == 0);
+
+  Mutex_release_unadopted(m.get(), t); // nothing left to release
+  REQUIRE(m->thread_holding == nullptr);
+}
+
+TEST_CASE("Mutex_release_unadopted releases a handed-off hold that no lock adopted", "[inkevent][lock]")
+{
+  Ptr<ProxyMutex> m{new_ProxyMutex()};
+  EThread        *t = this_ethread();
+
+  {
+    MUTEX_TRY_LOCK(giver, m, t);
+    REQUIRE(giver.hand_off());
+  }
+  REQUIRE(m->thread_holding == t);
+
+  Mutex_release_unadopted(m.get(), t);
+  REQUIRE(m->thread_holding == nullptr);
+  REQUIRE(m->nthread_holding == 0);
+  REQUIRE_FALSE(m->adopt_pending);
+}
+
+TEST_CASE("hand_off of a nested hold releases it as usual", "[inkevent][lock]")
+{
+  Ptr<ProxyMutex> m{new_ProxyMutex()};
+  EThread        *t = this_ethread();
+
+  MUTEX_TRY_LOCK(outer, m, t);
+  {
+    MUTEX_TRY_LOCK(inner, m, t);
+    REQUIRE(m->nthread_holding == 2);
+    REQUIRE_FALSE(inner.hand_off());
+    REQUIRE_FALSE(inner.is_locked());
+  }
+  REQUIRE(m->nthread_holding == 1);
+  REQUIRE_FALSE(m->adopt_pending);
+}

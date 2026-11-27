@@ -179,6 +179,12 @@ public:
 
   int nthread_holding;
 
+  /** Set while a hold taken by one handler waits to be taken over by the next handler on the same thread (see
+      MutexTryLock::hand_off). That handler's first lock of the mutex adopts the hold instead of nesting, so it still
+      controls when the mutex is released. Written only by the holding thread.
+   */
+  bool adopt_pending = false;
+
 #ifdef DEBUG
   ink_hrtime     hold_time;
   SourceLocation srcloc;
@@ -283,6 +289,9 @@ Mutex_trylock(
     m->taken++;
 #endif // MAX_LOCK_TAKEN
 #endif // DEBUG
+  } else if (m->adopt_pending) {
+    m->adopt_pending = false;
+    return true;
   }
 #ifdef DEBUG
 #ifdef LOCK_CONTENTION_PROFILING
@@ -330,6 +339,9 @@ Mutex_lock(
     m->taken++;
 #endif // MAX_LOCK_TAKEN
 #endif // DEBUG
+  } else if (m->adopt_pending) {
+    m->adopt_pending = false;
+    return true;
   }
 #ifdef DEBUG
 #ifdef LOCK_CONTENTION_PROFILING
@@ -384,6 +396,20 @@ inline void
 Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
 {
   Mutex_unlock(m.get(), t);
+}
+
+/** Release a hold handed off with MutexTryLock::hand_off that no handler adopted.
+
+  Call once the handler the hold was handed to returns, and before code that must not run under @a m, since a handler
+  can return or call out without ever locking @a m.
+ */
+inline void
+Mutex_release_unadopted(ProxyMutex *m, EThread *t)
+{
+  if (m->thread_holding == t && m->adopt_pending) {
+    m->adopt_pending = false;
+    Mutex_unlock(m, t);
+  }
 }
 
 class WeakMutexLock
@@ -634,6 +660,25 @@ public:
       Mutex_unlock(m, m->thread_holding);
     }
     lock_acquired = false;
+  }
+
+  /** Leave the mutex held for the next handler this thread runs, whose first lock of it adopts the hold.
+
+    Only an outermost hold is handed off; a nested one is released as usual. The caller calls Mutex_release_unadopted
+    once the handler returns, for handlers that end without locking the mutex.
+
+    @return Whether the hold was handed off.
+   */
+  bool
+  hand_off()
+  {
+    if (!lock_acquired || m->nthread_holding != 1) {
+      release();
+      return false;
+    }
+    m->adopt_pending = true;
+    lock_acquired    = false;
+    return true;
   }
 
   bool
