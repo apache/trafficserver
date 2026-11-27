@@ -960,7 +960,7 @@ HttpConfig::startup()
     RecInt const requested =
       RecGetRecordInt("proxy.config.http.cache.remember_uncacheable_entries").value_or(UncacheableKeyMemo::DEFAULT_ENTRIES);
     uint32_t const entries = UncacheableKeyMemo::entries_for(requested);
-    uncacheable_key_memo_configure(entries);
+    UncacheableKeyMemo::configure(entries);
     if (entries != requested) {
       Warning("proxy.config.http.cache.remember_uncacheable_entries %" PRId64 " is not a power of two; using %" PRIu32, requested,
               entries);
@@ -1176,6 +1176,11 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
   HttpEstablishStaticConfigLongLong(c.oride.cache_remember_uncacheable, "proxy.config.http.cache.remember_uncacheable");
+  if (c.oride.cache_remember_uncacheable > 0) {
+    // On in records.yaml: build the memo now, so a failed allocation stops startup rather than a
+    // transaction, and the first transactions do not wait while it is zeroed.
+    UncacheableKeyMemo::instance();
+  }
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");

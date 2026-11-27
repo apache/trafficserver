@@ -3599,16 +3599,18 @@ HttpTransact::uncacheable_memo_key(State *s, CryptoHash &hash)
     wasted, since the response is expected to be uncacheable again. If it turns out cacheable, the
     lock is taken once it arrives. A yes increments
     proxy.process.http.cache.remember_uncacheable.hits. A transaction that already holds the lock,
-    as a followed redirect can, keeps using it.
+    as a followed redirect can, keeps using it. The caller tests is_remember_uncacheable_on() first,
+    since this builds the memo on first use.
  */
 bool
 HttpTransact::should_defer_cache_write(State *s)
 {
+  ink_assert(is_remember_uncacheable_on(s));
   if (s->cache_info.write_lock_state == CacheWriteLock_t::SUCCESS) {
     return false;
   }
   CryptoHash hash;
-  if (!uncacheable_memo_key(s, hash) || !uncacheable_key_memo().contains(hash, ink_get_hrtime())) {
+  if (!uncacheable_memo_key(s, hash) || !UncacheableKeyMemo::instance().contains(hash, ink_get_hrtime())) {
     return false;
   }
   Metrics::Counter::increment(http_rsb.remember_uncacheable_hits);
@@ -3624,9 +3626,9 @@ HttpTransact::should_defer_cache_write(State *s)
 bool
 HttpTransact::can_remember_uncacheable(State *s)
 {
-  if (s->txn_conf->cache_remember_uncacheable <= 0 || s->cache_lookup_result != CacheLookupResult_t::MISS ||
-      s->method != HTTP_WKSIDX_GET || s->api_server_response_no_store || s->cache_control.never_cache ||
-      s->state_machine->is_redirect_required()) {
+  ink_assert(is_remember_uncacheable_on(s));
+  if (s->cache_lookup_result != CacheLookupResult_t::MISS || s->method != HTTP_WKSIDX_GET || s->api_server_response_no_store ||
+      s->cache_control.never_cache || s->state_machine->is_redirect_required()) {
     return false;
   }
   // A client no-store keeps the response out only when the configuration honors it.
@@ -3658,7 +3660,8 @@ HttpTransact::remember_uncacheable_response(State *s)
   }
   // A plugin override skips the records.yaml range check, so cap it here before it is scaled to nanoseconds.
   int64_t const                     seconds = std::min<int64_t>(s->txn_conf->cache_remember_uncacheable, 86400);
-  UncacheableKeyMemo::Outcome const outcome = uncacheable_key_memo().remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
+  UncacheableKeyMemo::Outcome const outcome =
+    UncacheableKeyMemo::instance().remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
   switch (outcome.what) {
   case UncacheableKeyMemo::Remembered::SEEN_ONCE:
     TxnDbg(dbg_ctl_http_trans, "uncacheable key seen once, remembered on a second answer within %" PRId64 " s", seconds);
@@ -3687,9 +3690,10 @@ HttpTransact::remember_uncacheable_response(State *s)
 void
 HttpTransact::forget_uncacheable_key(State *s)
 {
+  ink_assert(is_remember_uncacheable_on(s));
   CryptoHash hash;
-  if (s->txn_conf->cache_remember_uncacheable > 0 && uncacheable_memo_key(s, hash)) {
-    if (uncacheable_key_memo().forget(hash)) {
+  if (uncacheable_memo_key(s, hash)) {
+    if (UncacheableKeyMemo::instance().forget(hash)) {
       TxnDbg(dbg_ctl_http_trans, "the key is being stored, so the uncacheable memo forgot it");
     }
   }
@@ -3774,7 +3778,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   } else if (s->cache_open_write_deferred) {
     // The DNS lookup brought this miss back here; the decision below was made on the first pass.
     s->cache_info.action = CacheAction_t::NO_ACTION;
-  } else if (remember_uncacheable_on(s) && should_defer_cache_write(s)) {
+  } else if (is_remember_uncacheable_on(s) && should_defer_cache_write(s)) {
     // Go to the origin without the write lock and take it only if the response
     // turns out to be cacheable. Concurrent misses on this key are not collapsed.
     s->cache_open_write_deferred = true;
@@ -5029,14 +5033,14 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     } else if (s->cache_info.action == CacheAction_t::WRITE) {
       if (!cacheable) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
-        if (remember_uncacheable_on(s)) {
+        if (is_remember_uncacheable_on(s)) {
           remember_uncacheable_response(s);
         }
       } else if (s->method == HTTP_WKSIDX_HEAD) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
       } else {
         s->cache_info.action = CacheAction_t::WRITE;
-        if (remember_uncacheable_on(s)) {
+        if (is_remember_uncacheable_on(s)) {
           forget_uncacheable_key(s);
         }
         auto *client_request = &s->hdr_info.client_request;
@@ -5265,8 +5269,11 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
       s->cache_info.write_lock_state = CacheWriteLock_t::INIT;
       TRANSACT_RETURN(StateMachineAction_t::CACHE_ISSUE_WRITE, handle_deferred_cache_write_complete);
     }
-    remember_uncacheable_response(s);
-  } else if (remember_uncacheable_on(s) && s->txn_conf->cache_http && can_remember_uncacheable(s) &&
+    // A plugin may have turned the setting off since the miss was deferred.
+    if (is_remember_uncacheable_on(s)) {
+      remember_uncacheable_response(s);
+    }
+  } else if (is_remember_uncacheable_on(s) && s->txn_conf->cache_http && can_remember_uncacheable(s) &&
              !is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response)) {
     // A miss that lost the write lock to another transaction still counts as a sighting of an
     // uncacheable key, so a later miss on it need not queue for the lock.

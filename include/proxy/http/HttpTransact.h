@@ -1038,10 +1038,11 @@ public:
   static void handle_cache_write_lock_go_to_origin_continue(State *s);
   static void handle_deferred_cache_write_complete(State *s);
   static bool uncacheable_memo_key(State *s, CryptoHash &hash);
-  /// Whether remember_uncacheable is on for this transaction. Each use of the memo is behind
-  /// this one test, so a transaction with it off does no other memo work.
+  /// Whether remember_uncacheable is on for this transaction. Every call into the memo functions
+  /// below is behind this test, so a transaction with it off computes no memo key and never
+  /// builds or reads the memo.
   static bool
-  remember_uncacheable_on(State const *s)
+  is_remember_uncacheable_on(State const *s)
   {
     return s->txn_conf->cache_remember_uncacheable > 0;
   }

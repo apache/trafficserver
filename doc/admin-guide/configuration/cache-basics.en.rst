@@ -892,11 +892,12 @@ then the requests behind it sleep on the retry timers above and on
 for an uncacheable object effectively take turns.
 
 :ts:cv:`proxy.config.http.cache.remember_uncacheable`, off by default, breaks
-the turns when set to a number of seconds. Once an object has answered uncacheable twice within that time, misses on
-it go to the origin without the write lock for that long, renewed by every further
-uncacheable response to a plain ``GET`` miss, and take the lock only if a response
-turns out to be cacheable after all. Requests for every other object are still
-collapsed, and a stored response clears the memory for its object.
+the turns when set to a number of seconds. Once an object has answered
+uncacheable twice within that time, misses on it go to the origin without the
+write lock for that long, renewed by every further uncacheable response to a
+plain ``GET`` miss, and take the lock only if a response turns out to be
+cacheable after all. Requests for every other object are still collapsed, and a
+stored response clears the memory for its object.
 
 Open Write Fail Action
 ----------------------

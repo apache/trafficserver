@@ -3960,11 +3960,11 @@ Dynamic Content & Content Negotiation
     ones asked for repeatedly. Both answers must qualify the way a renewal does, described
     below. A cache miss on a remembered URL goes to the origin without first taking
     the cache write lock, and takes the lock only if the response turns out to be cacheable
-    after all. The URL is forgotten once a response for it is stored. Every further uncacheable
+    after all. The URL is forgotten once a transaction with this on stores a response for it. Every further uncacheable
     response to a plain ``GET`` miss renews the memory; error (4xx and 5xx) responses, range
     requests, other methods, and responses kept out of the cache by the request, a plugin or a
-    cache rule do not. ``0``, the default, turns the memory off, and a transaction with it
-    off does no work for it. The maximum is ``86400``.
+    cache rule do not. ``0``, the default, turns the memory off: a transaction with it off
+    neither looks up nor records its URL. The maximum is ``86400``.
 
     Without this, every miss takes the write lock before contacting the origin so that
     concurrent requests for the same URL wait for one origin fetch. For a URL whose responses
@@ -4014,9 +4014,10 @@ Dynamic Content & Content Negotiation
 
     How many URLs :ts:cv:`proxy.config.http.cache.remember_uncacheable` can hold at once,
     counting both remembered URLs and URLs seen uncacheable once. Each takes 16 bytes, so the
-    default uses 1 MiB, allocated the first time a transaction with
-    :ts:cv:`proxy.config.http.cache.remember_uncacheable` on uses it. A value that is not a
-    power of two is rounded up to one, with a
+    default uses 1 MiB. It is allocated at startup when
+    :ts:cv:`proxy.config.http.cache.remember_uncacheable` is on in :file:`records.yaml`, and
+    otherwise the first time a transaction with it on, through a remap rule or a plugin, needs
+    it. A value that is not a power of two is rounded up to one, with a
     warning. The minimum is ``4`` and the maximum is ``16777216``, which uses 256 MiB. Takes
     effect on restart.
 

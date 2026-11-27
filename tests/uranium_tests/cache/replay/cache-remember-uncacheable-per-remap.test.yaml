@@ -1,0 +1,169 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# remember_uncacheable is off by default and the rule for on.example.com turns
+# it on. Both rules map to the same origin URL, so they share a cache key. Two
+# no-store answers through on.example.com remember /k, building the memory on
+# that first use. A miss on /k through off.example.com must still take the
+# write lock, so it is not a hit. A last miss through on.example.com is one,
+# which shows /k stayed remembered while the off request ran. Had the off
+# request read the memory, hits would be 2.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'A remap rule with remember_uncacheable off does not use what a rule with it on remembered'
+  requires:
+    plugins: ["conf_remap.so"]
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+    remap_config:
+      - from: "http://on.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: conf_remap.so
+            args: ['proxy.config.http.cache.remember_uncacheable=60']
+      - from: "http://off.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    metric_checks:
+      - metric: proxy.process.http.cache.remember_uncacheable.admits
+        value: 1
+      - metric: proxy.process.http.cache.remember_uncacheable.hits
+        value: 1
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'built the uncacheable memo with 65536 entries'
+            description: 'The remap rule built the memory with the global setting off'
+          - expression: 'remembering the key as uncacheable for 60 s'
+            description: 'The conf_remap value turned the memory on'
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /k
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, on.example.com]
+        - [uuid, on-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, on-first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: on-first, as: equal}]
+  - client-request:
+      method: GET
+      url: /k
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, on.example.com]
+        - [uuid, on-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, on-second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: on-second, as: equal}]
+
+  # remember_uncacheable is off for this rule: the miss takes the write lock
+  # and is not a hit.
+  - client-request:
+      method: GET
+      url: /k
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, off.example.com]
+        - [uuid, off-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, off-first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: off-first, as: equal}]
+
+  # /k is still remembered, so this miss is the one hit.
+  - client-request:
+      method: GET
+      url: /k
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, on.example.com]
+        - [uuid, on-third]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, on-third]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: on-third, as: equal}]

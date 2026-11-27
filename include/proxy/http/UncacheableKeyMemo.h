@@ -89,6 +89,14 @@ public:
   /// A memo of @a entries keys, rounded as entries_for() rounds.
   explicit UncacheableKeyMemo(uint32_t entries = DEFAULT_ENTRIES);
 
+  /// Set how many entries the process's memo gets when instance() builds it. Startup calls this
+  /// before any transaction runs, since a call after the memo is built has no effect.
+  static void configure(uint32_t entries);
+
+  /// The process's memo, built on the first call. Only transactions with remember_uncacheable on
+  /// call it, so a process that never turns it on never allocates it.
+  static UncacheableKeyMemo &instance();
+
   uint32_t
   entries() const
   {
@@ -127,10 +135,3 @@ private:
   std::unique_ptr<Set[]> _sets;
   uint32_t               _set_mask;
 };
-
-/// Set the size of the process's memo, read from records.yaml at startup.
-void uncacheable_key_memo_configure(uint32_t entries);
-
-/// The process's memo. It is built on the first call, so a process that never turns
-/// remember_uncacheable on never allocates it.
-UncacheableKeyMemo &uncacheable_key_memo();

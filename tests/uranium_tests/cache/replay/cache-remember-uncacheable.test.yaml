@@ -79,11 +79,14 @@ urtest:
             excludes:
               - expression: "retrying cache open write|retrying cache open read"
                 description: "No request waits on a cache lock retry timer"
+            contains:
+              - expression: "built the uncacheable memo with 65536 entries"
+                description: "The memory is built, so the exclude in memo-off can see it"
 
-    # The default leaves the memory off, so every miss takes the lock before
-    # the origin, as on a build without it. The third /nostore request
-    # finds the second writing, retries the read until its retries run out,
-    # then loses the write lock. The last /nostore request shows that the
+    # Sets nothing, so it also checks that the default leaves the memory off
+    # and never builds it: every miss takes the lock before the origin. The
+    # third /nostore request finds the second writing, retries the read until
+    # its retries run out, then loses the write lock. The last /nostore request shows that the
     # second's answer, fetched under the lock, was not stored.
     - name: memo-off
       ats:
@@ -100,7 +103,13 @@ urtest:
             value: 1
         log_validation:
           traffic_out:
-            excludes: []
+            excludes:
+              - expression: "built the uncacheable memo"
+                description: "With the memory off it is never built"
+              - expression: "uncacheable key seen once|remembering the key as uncacheable|uncacheable memo forgot it"
+                description: "With the memory off nothing is remembered or forgotten"
+              - expression: "deferring the cache write until the response arrives"
+                description: "With the memory off no miss defers its cache write"
 
 sessions:
 - transactions:

@@ -23,26 +23,37 @@
 
 #include "proxy/http/UncacheableKeyMemo.h"
 #include "tscore/ink_assert.h"
+#include "tsutil/DbgCtl.h"
 
 #include <bit>
+#include <cinttypes>
 #include <limits>
 
 namespace
 {
-uint32_t memo_entries = UncacheableKeyMemo::DEFAULT_ENTRIES;
+DbgCtl            dbg_ctl_http_cache{"http_cache"};
+uint32_t          configured_entries = UncacheableKeyMemo::DEFAULT_ENTRIES;
+std::atomic<bool> built{false};
 } // namespace
 
 void
-uncacheable_key_memo_configure(uint32_t entries)
+UncacheableKeyMemo::configure(uint32_t entries)
 {
-  memo_entries = entries;
+  ink_assert(!built.load(std::memory_order_relaxed) || !"UncacheableKeyMemo configured after it was built");
+  configured_entries = entries;
 }
 
 UncacheableKeyMemo &
-uncacheable_key_memo()
+UncacheableKeyMemo::instance()
 {
-  // Never freed: transactions may still be reading it while the process exits.
-  static UncacheableKeyMemo *const memo = new UncacheableKeyMemo(memo_entries);
+  // Held by pointer and never freed, so no exit-time destructor runs while event threads may
+  // still be reading it.
+  static UncacheableKeyMemo *const memo = [] {
+    built.store(true, std::memory_order_relaxed);
+    auto *built_memo = new UncacheableKeyMemo(configured_entries);
+    Dbg(dbg_ctl_http_cache, "built the uncacheable memo with %" PRIu32 " entries", built_memo->entries());
+    return built_memo;
+  }();
   return *memo;
 }
 
