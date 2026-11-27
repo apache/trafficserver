@@ -277,6 +277,10 @@ QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket *udp_pac
       return;
     }
 
+    // quiche takes a non-empty original DCID as proof that this server sent a Retry and lifts the anti-amplification limit for
+    // the peer's address, so it may only come from a token validated above.
+    QUICConnectionId const retry_odcid = params->stateless_retry() ? retry_token.original_dcid() : QUICConnectionId::ZERO();
+
     QUICConnectionId new_cid = QUICConnectionId::random();
 
     QUICCertConfig::scoped_config server_cert;
@@ -284,7 +288,7 @@ QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket *udp_pac
     SSL                          *ssl         = SSL_new(default_ctx.get());
 
     quiche_conn *quiche_con = quiche_conn_new_with_tls(
-      new_cid, new_cid.length(), retry_token.original_dcid(), retry_token.original_dcid().length(), &udp_packet->to.sa,
+      new_cid, new_cid.length(), retry_odcid, retry_odcid.length(), &udp_packet->to.sa,
       udp_packet->to.isIp4() ? sizeof(udp_packet->to.sin) : sizeof(udp_packet->to.sin6), &udp_packet->from.sa,
       udp_packet->from.isIp4() ? sizeof(udp_packet->from.sin) : sizeof(udp_packet->from.sin6), &this->_quiche_config, ssl, true);
 
