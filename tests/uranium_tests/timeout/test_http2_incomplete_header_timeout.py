@@ -53,7 +53,7 @@ class IncompleteHeaderCase:
 
 CASES = (
     IncompleteHeaderCase("times-out", 3, "/incomplete", "incomplete_header", min_elapsed=2.5, max_elapsed=7, expect_timeout=True),
-    # A poll event on every ET_NET thread, as in a QUIC build, can run the FINI
+    # A poll event on every ET_NET thread, as in a quiche build, can run the FINI
     # the timeout schedules before the net handler writes the GOAWAY. The FINI
     # must then wait for the GOAWAY to be written before it closes.
     IncompleteHeaderCase(

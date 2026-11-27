@@ -1,10 +1,10 @@
 /** @file
 
-  Put a poll event on every ET_NET thread, the way a QUIC build does.
+  Put a poll event on every ET_NET thread, the way a quiche build does.
 
   A thread with a poll event runs its immediate events a second time before it
   does network I/O. Tests load this plugin to get that ordering on a build
-  without QUIC.
+  without quiche.
 
   @section license License
 

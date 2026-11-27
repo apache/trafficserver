@@ -1745,13 +1745,16 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     REMEMBER(event, this->recursion);
 
-    // On a thread with a poll event, such as the QUIC UDP poll, the event
-    // loop runs immediate events again before it does network I/O, so a
-    // scheduled FINI can run before the net handler has written the frames
-    // queued ahead of it. Closing then discards those frames. Flush, since
-    // frames sent with flush=false would otherwise wait for the retransmit
-    // timer, and wait for them 1 ms at a time, at most FINI_WRITE_WAIT_MAX
-    // times. This bounds the wait; it does not guarantee delivery.
+    // A FINI scheduled from a timed event, or from another immediate event
+    // in the same queue drain, can run before the net handler has written
+    // the frames queued ahead of it. A thread with a poll event, such as the
+    // quiche UDP poll, runs its immediate events again before it does network
+    // I/O. Closing then discards those frames. Flush first: DATA frames are
+    // queued with flush=false, and on a session a graceful shutdown already
+    // half-closed, the error sends no GOAWAY that would flush them, so they
+    // would wait for the retransmit timer. Then wait for them 1 ms at a time,
+    // at most FINI_WRITE_WAIT_MAX times. This bounds the wait; it does not
+    // guarantee delivery.
     if (scheduled_fini && this->session != nullptr && this->session->has_unsent_data()) {
       if (this->_fini_write_waits < FINI_WRITE_WAIT_MAX) {
         ++this->_fini_write_waits;
