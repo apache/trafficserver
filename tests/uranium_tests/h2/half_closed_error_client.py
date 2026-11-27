@@ -311,14 +311,17 @@ def run(args: argparse.Namespace) -> int:
         )
         return 1
     except (EOFError, ConnectionResetError, ssl.SSLError) as e:
-        print(f'FAIL: the connection ended before the session was half-closed: {type(e).__name__}: {e}', file=sys.stderr)
+        print(
+            f'FAIL: the connection ended before the PING: {type(e).__name__}: {e}; origin error: {origin.error}',
+            file=sys.stderr,
+        )
         return 1
     finally:
         origin.join()
 
     print(f'body={body!r}')
     # The retransmit timer would flush the DATA too, but only after the long
-    # write_time_threshold. A close that soon proves the FINI wrote it.
+    # write_time_threshold. A close that soon proves the timer did not.
     if close_delay > args.max_close_delay:
         print(f'FAIL: ATS took {close_delay:.2f}s to close after the PING', file=sys.stderr)
         return 1

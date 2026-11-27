@@ -22,16 +22,17 @@ import pytest
 from tools.uranium.services import ATS, ATSFactory, CommandResult, ProcessService, ServiceFactory, wait_for_file_lines
 
 TEST_DIRECTORY = Path(__file__).parent
-# Long enough that a DATA frame queued without a flush stays queued until the
-# connection error, so only the FINI's own flush can write it. The client
-# fails if the close takes more than 2 s after the error.
+# Long enough that the retransmit timer cannot write a DATA frame queued
+# without a flush before the session closes. The client fails if the close
+# takes more than 2 s after the error.
 WRITE_TIME_THRESHOLD_MS = 10000
 
 
-def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
+def configure_ats(ats_factory: ATSFactory, *, _origin_port: int, _poll_event: bool) -> ATS:
     """Shut sessions down gracefully and keep unflushed DATA frames queued.
 
     :param _origin_port: Port the client's origin listens on.
+    :param _poll_event: Whether to put a poll event on every ET_NET thread.
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
@@ -44,10 +45,13 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http2",
+            "proxy.config.diags.debug.tags": "http2|net_poll_event",
             "proxy.config.http2.write_time_threshold": WRITE_TIME_THRESHOLD_MS,
         }
     )
+    if _poll_event:
+        ats.copy_custom_plugin("{AtsTestPluginsDir}/net_poll_event.so")
+        ats.plugin_config.add_line("net_poll_event.so")
     ats.remap_config.add_line(
         f"map / http://127.0.0.1:{_origin_port} @plugin=header_rewrite.so @pparam={ats.config_directory / rule.name}"
     )
@@ -74,40 +78,51 @@ def configure_client(services: ServiceFactory, *, _ats: ATS, _origin_port: int) 
     )
 
 
-def verify(result: CommandResult, *, _ats: ATS) -> None:
+def verify(result: CommandResult, *, _ats: ATS, _poll_event: bool) -> None:
     """Require the queued DATA to reach the client before the session closes.
 
     :param _ats: Test-local ats configured by the test.
+    :param _poll_event: Whether every ET_NET thread has a poll event.
     :param result: Completed command result to validate.
     """
 
     assert result.returncode == 0, result.output
+    if _poll_event:
+        wait_for_file_lines(_ats.traffic_out, r"scheduled a poll event on [1-9][0-9]* ET_NET threads", 1)
     # The session was half-closed, and sent no GOAWAY for the error.
     assert "before error: GOAWAY error_code=0 last_stream_id=1 " in result.stdout, result.output
     assert "after error: GOAWAY" not in result.stdout, result.output
     assert "second part delivered" in result.stdout, result.output
     wait_for_file_lines(_ats.diags_log, r"HTTP/2 connection error code=0x01 .*ping id not 0", 1)
     # The FINI found the DATA frame still queued, and it was written in time.
-    # Without the flush the wait runs out. On a thread without a poll event
-    # the DATA can still leave afterwards, flushed with the RST_STREAM that
-    # cleanup_streams() sends, so there the give-up line is what shows it.
+    # Without the flush the wait runs out. With a poll event the DATA is then
+    # lost. Without one it can still leave afterwards, flushed with the
+    # RST_STREAM that cleanup_streams() sends, so there the give-up line is
+    # what shows it.
     wait_for_file_lines(_ats.traffic_out, r"waiting for queued frames to be written before closing", 1)
-    assert "bytes still unsent" not in _ats.traffic_out.read_text(errors="replace")
+    traffic_out = _ats.traffic_out.read_text(errors="replace")
+    gave_up = [line for line in traffic_out.splitlines() if "bytes still unsent" in line]
+    assert not gave_up, gave_up
 
 
-def test_http2_half_closed_connection_error(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+# The poll event, as on every ET_NET thread in a quiche build, runs the
+# session teardown before network I/O, so a DATA frame still queued then is
+# lost rather than written late.
+@pytest.mark.parametrize("poll_event", (False, True), ids=("plain", "poll-event"))
+def test_http2_half_closed_connection_error(poll_event: bool, ats_factory: ATSFactory, services: ServiceFactory) -> None:
     """A connection error on a half-closed session still writes the queued DATA.
 
     A connection error on a session that a graceful shutdown already
     half-closed sends no GOAWAY, so nothing flushes the DATA frames queued
     since. The FINI must flush them itself before it closes the session.
 
+    :param poll_event: Whether to put a poll event on every ET_NET thread.
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
     """
     _origin_port = services.allocate_port()
-    _ats = configure_ats(ats_factory, _origin_port=_origin_port)
+    _ats = configure_ats(ats_factory, _origin_port=_origin_port, _poll_event=poll_event)
     _client = configure_client(services, _ats=_ats, _origin_port=_origin_port)
 
     _ats.start()
-    verify(_client.run(timeout=30), _ats=_ats)
+    verify(_client.run(timeout=30), _ats=_ats, _poll_event=poll_event)

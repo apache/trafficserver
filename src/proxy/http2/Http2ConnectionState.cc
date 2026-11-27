@@ -1750,13 +1750,14 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     // queued ahead of it. On a thread with a poll event, such as the quiche
     // UDP poll, so does a FINI scheduled from a timed event, because that
     // thread runs its immediate events again before it does network I/O.
-    // Closing then discards those frames. Flush first: DATA frames that do
-    // not end their stream are queued with flush=false, and on a session a
-    // graceful shutdown already half-closed, the error sends no GOAWAY that
-    // would flush them. They would wait for the retransmit timer
-    // (write_time_threshold, 100 ms by default), long after this wait gives
-    // up. Then wait for them 1 ms at a time, at most FINI_WRITE_WAIT_MAX
-    // times. This bounds the wait; it does not guarantee delivery.
+    // Closing then discards those frames. Flush first: on a stream that is
+    // not a tunnel, every DATA frame but the last is queued with
+    // flush=false, and on a session a graceful shutdown already half-closed,
+    // the error sends no GOAWAY that would flush them. They would wait for
+    // the retransmit timer (write_time_threshold, 100 ms by default), long
+    // after this wait gives up. Then wait for them 1 ms at a time, at most
+    // FINI_WRITE_WAIT_MAX times. This bounds the wait; it does not guarantee
+    // delivery.
     if (scheduled_fini && this->session != nullptr && this->session->has_unsent_data()) {
       if (this->_fini_write_waits < FINI_WRITE_WAIT_MAX) {
         ++this->_fini_write_waits;
