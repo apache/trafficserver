@@ -128,5 +128,9 @@ private:
   uint32_t               _set_mask;
 };
 
-/// The process's memo, sized from records.yaml at startup.
-extern UncacheableKeyMemo *uncacheableKeyMemo;
+/// Set the size of the process's memo, read from records.yaml at startup.
+void uncacheable_key_memo_configure(uint32_t entries);
+
+/// The process's memo. It is built on the first call, so a process that never turns
+/// remember_uncacheable on never allocates it.
+UncacheableKeyMemo &uncacheable_key_memo();

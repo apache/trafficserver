@@ -3607,11 +3607,8 @@ HttpTransact::should_defer_cache_write(State *s)
   if (s->cache_info.write_lock_state == CacheWriteLock_t::SUCCESS) {
     return false;
   }
-  if (s->txn_conf->cache_remember_uncacheable <= 0) {
-    return false;
-  }
   CryptoHash hash;
-  if (uncacheableKeyMemo == nullptr || !uncacheable_memo_key(s, hash) || !uncacheableKeyMemo->contains(hash, ink_get_hrtime())) {
+  if (!uncacheable_memo_key(s, hash) || !uncacheable_key_memo().contains(hash, ink_get_hrtime())) {
     return false;
   }
   Metrics::Counter::increment(http_rsb.remember_uncacheable_hits);
@@ -3655,14 +3652,13 @@ void
 HttpTransact::remember_uncacheable_response(State *s)
 {
   CryptoHash hash;
-  if (uncacheableKeyMemo == nullptr || !can_remember_uncacheable(s) ||
-      HttpTransactHeaders::is_status_an_error_response(s->hdr_info.server_response.status_get()) ||
+  if (!can_remember_uncacheable(s) || HttpTransactHeaders::is_status_an_error_response(s->hdr_info.server_response.status_get()) ||
       !uncacheable_memo_key(s, hash)) {
     return;
   }
   // A plugin override skips the records.yaml range check, so cap it here before it is scaled to nanoseconds.
   int64_t const                     seconds = std::min<int64_t>(s->txn_conf->cache_remember_uncacheable, 86400);
-  UncacheableKeyMemo::Outcome const outcome = uncacheableKeyMemo->remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
+  UncacheableKeyMemo::Outcome const outcome = uncacheable_key_memo().remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
   switch (outcome.what) {
   case UncacheableKeyMemo::Remembered::SEEN_ONCE:
     TxnDbg(dbg_ctl_http_trans, "uncacheable key seen once, remembered on a second answer within %" PRId64 " s", seconds);
@@ -3692,8 +3688,8 @@ void
 HttpTransact::forget_uncacheable_key(State *s)
 {
   CryptoHash hash;
-  if (uncacheableKeyMemo != nullptr && s->txn_conf->cache_remember_uncacheable > 0 && uncacheable_memo_key(s, hash)) {
-    if (uncacheableKeyMemo->forget(hash)) {
+  if (s->txn_conf->cache_remember_uncacheable > 0 && uncacheable_memo_key(s, hash)) {
+    if (uncacheable_key_memo().forget(hash)) {
       TxnDbg(dbg_ctl_http_trans, "the key is being stored, so the uncacheable memo forgot it");
     }
   }
@@ -3778,7 +3774,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   } else if (s->cache_open_write_deferred) {
     // The DNS lookup brought this miss back here; the decision below was made on the first pass.
     s->cache_info.action = CacheAction_t::NO_ACTION;
-  } else if (should_defer_cache_write(s)) {
+  } else if (remember_uncacheable_on(s) && should_defer_cache_write(s)) {
     // Go to the origin without the write lock and take it only if the response
     // turns out to be cacheable. Concurrent misses on this key are not collapsed.
     s->cache_open_write_deferred = true;
@@ -5033,12 +5029,16 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     } else if (s->cache_info.action == CacheAction_t::WRITE) {
       if (!cacheable) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
-        remember_uncacheable_response(s);
+        if (remember_uncacheable_on(s)) {
+          remember_uncacheable_response(s);
+        }
       } else if (s->method == HTTP_WKSIDX_HEAD) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
       } else {
         s->cache_info.action = CacheAction_t::WRITE;
-        forget_uncacheable_key(s);
+        if (remember_uncacheable_on(s)) {
+          forget_uncacheable_key(s);
+        }
         auto *client_request = &s->hdr_info.client_request;
         if (client_request->presence(MIME_PRESENCE_RANGE) &&
             HttpTransactCache::validate_ifrange_header_if_any(client_request, base_response)) {
@@ -5266,7 +5266,7 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
       TRANSACT_RETURN(StateMachineAction_t::CACHE_ISSUE_WRITE, handle_deferred_cache_write_complete);
     }
     remember_uncacheable_response(s);
-  } else if (s->txn_conf->cache_http && can_remember_uncacheable(s) &&
+  } else if (remember_uncacheable_on(s) && s->txn_conf->cache_http && can_remember_uncacheable(s) &&
              !is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response)) {
     // A miss that lost the write lock to another transaction still counts as a sighting of an
     // uncacheable key, so a later miss on it need not queue for the lock.

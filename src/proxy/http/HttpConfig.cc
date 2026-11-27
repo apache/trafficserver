@@ -959,11 +959,11 @@ HttpConfig::startup()
   {
     RecInt const requested =
       RecGetRecordInt("proxy.config.http.cache.remember_uncacheable_entries").value_or(UncacheableKeyMemo::DEFAULT_ENTRIES);
-    // Never freed: transactions may still be reading it while the process exits.
-    uncacheableKeyMemo = new UncacheableKeyMemo(UncacheableKeyMemo::entries_for(requested));
-    if (uncacheableKeyMemo->entries() != requested) {
+    uint32_t const entries = UncacheableKeyMemo::entries_for(requested);
+    uncacheable_key_memo_configure(entries);
+    if (entries != requested) {
       Warning("proxy.config.http.cache.remember_uncacheable_entries %" PRId64 " is not a power of two; using %" PRIu32, requested,
-              uncacheableKeyMemo->entries());
+              entries);
     }
   }
 

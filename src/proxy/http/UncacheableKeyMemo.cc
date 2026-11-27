@@ -27,7 +27,24 @@
 #include <bit>
 #include <limits>
 
-UncacheableKeyMemo *uncacheableKeyMemo = nullptr;
+namespace
+{
+uint32_t memo_entries = UncacheableKeyMemo::DEFAULT_ENTRIES;
+} // namespace
+
+void
+uncacheable_key_memo_configure(uint32_t entries)
+{
+  memo_entries = entries;
+}
+
+UncacheableKeyMemo &
+uncacheable_key_memo()
+{
+  // Never freed: transactions may still be reading it while the process exits.
+  static UncacheableKeyMemo *const memo = new UncacheableKeyMemo(memo_entries);
+  return *memo;
+}
 
 uint32_t
 UncacheableKeyMemo::entries_for(int64_t requested)
