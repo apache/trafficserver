@@ -21,7 +21,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 import json
 import os
 import re
@@ -33,6 +33,15 @@ import errno
 import fcntl
 
 from .utils import version_tuple
+
+
+# Session-wide port allocation state, shared by xdist workers in the sandbox
+# root. The counter holds the most recently allocated port; the reservations
+# file lists the ports of tests that have not finished.
+PORT_COUNTER_NAME = ".port-counter"
+PORT_RESERVATIONS_NAME = ".port-reservations"
+PORT_RANGE_FIRST = 10001
+PORT_RANGE_LAST = 29999
 
 
 class RuntimeConfigError(ValueError):
@@ -53,6 +62,8 @@ class TestRuntime:
     # Library versions ATS was built with, keyed as traffic_layout --versions
     # reports them, e.g. "openssl_str" for the TLS library.
     versions: dict[str, str] = field(default_factory=dict)
+    # Ports the current test on this worker allocated, released after its teardown.
+    _held_ports: list[int] = field(default_factory=list, init=False, repr=False, compare=False)
 
     @classmethod
     def create(
@@ -114,31 +125,22 @@ class TestRuntime:
         return self.build_root / "tests" / "tools" / "plugins" / ".libs"
 
     def allocate_port(self, socket_type: int = socket.SOCK_STREAM) -> int:
-        """Allocate a unique available port across all xdist workers.
+        """Allocate a port no running test on any xdist worker holds.
+
+        The port stays reserved for the current test until release_ports()
+        runs after its teardown. Ports of finished tests are reused once the
+        cursor wraps around the range, so the range bounds how many ports
+        concurrently running tests hold rather than the session total.
 
         :param socket_type: Socket kind to probe, normally TCP or UDP.
         """
 
-        self.sandbox_root.mkdir(parents=True, exist_ok=True)
-        state_path = self.sandbox_root / ".port-counter"
-        try:
-            state = state_path.open("r+")
-        except FileNotFoundError:
-            raise RuntimeConfigError(f"Missing port counter {state_path}; the sandbox session must initialize it") from None
-        with state:
-            fcntl.flock(state, fcntl.LOCK_EX)
-            state.seek(0)
-            content = state.read().strip()
-            try:
-                candidate = int(content)
-                if not 10000 <= candidate <= 30000:
-                    raise ValueError
-            except ValueError:
-                raise RuntimeConfigError(f"Invalid port counter in {state_path}: {content!r}") from None
-            for _ in range(20000):
-                candidate += 1
-                if candidate >= 30000:
-                    break
+        with self._port_state() as (state, cursor, reserved):
+            candidate = cursor
+            for _ in range(PORT_RANGE_LAST - PORT_RANGE_FIRST + 1):
+                candidate = PORT_RANGE_FIRST if candidate >= PORT_RANGE_LAST else candidate + 1
+                if candidate in reserved:
+                    continue
                 with socket.socket(socket.AF_INET, socket_type) as probe:
                     try:
                         probe.bind(("127.0.0.1", candidate))
@@ -146,14 +148,76 @@ class TestRuntime:
                         if error.errno == errno.EADDRINUSE:
                             continue
                         raise RuntimeConfigError(f"Port probe for 127.0.0.1:{candidate} failed: {error}") from error
-                state.seek(0)
-                state.truncate()
-                state.write(str(candidate))
-                state.flush()
-                fcntl.flock(state, fcntl.LOCK_UN)
+                reserved.add(candidate)
+                self._held_ports.append(candidate)
+                self._write_port_state(state, candidate, reserved)
                 return candidate
-            fcntl.flock(state, fcntl.LOCK_UN)
-        raise RuntimeConfigError(f"Exhausted available test ports in 10001..29999; counter: {state_path}")
+        raise RuntimeConfigError(
+            f"Exhausted available test ports in {PORT_RANGE_FIRST}..{PORT_RANGE_LAST}; "
+            f"counter: {self.sandbox_root / PORT_COUNTER_NAME}"
+        )
+
+    def release_ports(self) -> None:
+        """Return the ports this worker's finished test allocated to the shared pool."""
+
+        if not self._held_ports:
+            return
+        with self._port_state() as (state, cursor, reserved):
+            reserved.difference_update(self._held_ports)
+            self._held_ports.clear()
+            self._write_port_state(state, cursor, reserved)
+
+    @contextmanager
+    def _port_state(self) -> Iterator[tuple[TextIO, int, set[int]]]:
+        """Hold the session port lock and yield the locked counter file, cursor, and reserved ports.
+
+        The cursor is the most recently allocated port. The reserved set holds
+        every port that a test on any worker has allocated and not yet released.
+        """
+
+        self.sandbox_root.mkdir(parents=True, exist_ok=True)
+        state_path = self.sandbox_root / PORT_COUNTER_NAME
+        try:
+            state = state_path.open("r+")
+        except FileNotFoundError:
+            raise RuntimeConfigError(f"Missing port counter {state_path}; the sandbox session must initialize it") from None
+        with state:
+            fcntl.flock(state, fcntl.LOCK_EX)
+            try:
+                content = state.read().strip()
+                try:
+                    cursor = int(content)
+                    if not PORT_RANGE_FIRST - 1 <= cursor <= PORT_RANGE_LAST:
+                        raise ValueError
+                except ValueError:
+                    raise RuntimeConfigError(f"Invalid port counter in {state_path}: {content!r}") from None
+                reservations_path = self.sandbox_root / PORT_RESERVATIONS_NAME
+                try:
+                    reserved = {int(line) for line in reservations_path.read_text().split()}
+                except FileNotFoundError:
+                    reserved = set()
+                except ValueError:
+                    raise RuntimeConfigError(f"Invalid port reservations in {reservations_path}") from None
+                yield state, cursor, reserved
+            finally:
+                fcntl.flock(state, fcntl.LOCK_UN)
+
+    def _write_port_state(self, state: TextIO, cursor: int, reserved: set[int]) -> None:
+        """Persist the port state while _port_state() holds the lock.
+
+        :param state: Locked counter file from _port_state().
+        :param cursor: Most recently allocated port.
+        :param reserved: Ports held by tests that have not finished.
+        """
+
+        reservations_path = self.sandbox_root / PORT_RESERVATIONS_NAME
+        temporary = reservations_path.with_name(reservations_path.name + ".tmp")
+        temporary.write_text("".join(f"{port}\n" for port in sorted(reserved)))
+        temporary.replace(reservations_path)
+        state.seek(0)
+        state.truncate()
+        state.write(str(cursor))
+        state.flush()
 
     @contextmanager
     def execution_lock(self, is_exclusive: bool) -> Iterator[None]:

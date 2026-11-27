@@ -207,7 +207,7 @@ def test_sandbox_rejects_overlong_filesystem_component(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("content", [None, "", "garbage", "9999", "30000"])
-def test_port_counter_rejects_missing_corrupt_or_exhausted_state(tmp_path: Path, content: str | None) -> None:
+def test_port_counter_rejects_missing_or_corrupt_state(tmp_path: Path, content: str | None) -> None:
     """Never recycle reservations when the session counter is damaged.
 
     :param tmp_path: Isolated session root.
@@ -220,6 +220,46 @@ def test_port_counter_rejects_missing_corrupt_or_exhausted_state(tmp_path: Path,
         counter.write_text(content)
     with pytest.raises(RuntimeConfigError, match=str(counter)):
         runtime.allocate_port()
+
+
+def test_port_counter_wraps_to_released_ports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reuse ports of finished tests instead of exhausting the range.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Treat every probed port as free.
+    """
+
+    monkeypatch.setattr(socket.socket, "bind", lambda *_args: None)
+    finished = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    running = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("29997")
+
+    assert finished.allocate_port() == 29998
+    finished.release_ports()
+    assert running.allocate_port() == 29999
+    assert running.allocate_port() == 10001
+    (tmp_path / ".port-counter").write_text("29997")
+    assert running.allocate_port() == 29998
+
+
+def test_port_counter_never_reuses_held_ports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Exhaust the range only when running tests hold every port.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Treat every probed port as free.
+    """
+
+    monkeypatch.setattr(socket.socket, "bind", lambda *_args: None)
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    counter = tmp_path / ".port-counter"
+    counter.write_text("10000")
+    (tmp_path / ".port-reservations").write_text("".join(f"{port}\n" for port in range(10001, 29999)))
+
+    assert runtime.allocate_port() == 29999
+    with pytest.raises(RuntimeConfigError, match="Exhausted"):
+        runtime.allocate_port()
+    runtime.release_ports()
+    assert runtime.allocate_port() == 29999
 
 
 @pytest.mark.parametrize("error_number", [errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOBUFS])
