@@ -467,7 +467,10 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
   } else if (ats_is_unix(ip)) {
     if (dest) {
       data._un._family = AF_UNIX;
-      strncpy(data._un._path, ats_unix_cast(ip)->sun_path, TS_UNIX_SIZE);
+      // Keep the field a terminated string, as UnAddr::_path is. A kernel sockaddr_un may fill sun_path with no terminator,
+      // and this field is the same size as sun_path, so such a path loses its last byte.
+      strncpy(data._un._path, ats_unix_cast(ip)->sun_path, TS_UNIX_SIZE - 1);
+      data._un._path[TS_UNIX_SIZE - 1] = '\0';
     }
     len = sizeof(data._un);
   } else {
