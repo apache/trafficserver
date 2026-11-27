@@ -455,6 +455,9 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.auto_delete_rolled_files",
     "proxy.config.log.rolling_max_count",
     "proxy.config.log.rolling_allow_empty",
+    "proxy.config.log.rolling_min_count",
+    "proxy.config.diags.logfile.rolling_min_count",
+    "proxy.config.output.logfile.rolling_min_count",
     "proxy.config.log.config.filename",
     "proxy.config.log.sampling_frequency",
     "proxy.config.log.file_stat_frequency",
@@ -470,7 +473,7 @@ LogConfig::register_config_callbacks()
     config::ConfigSource::FileOnly);
 
   for (unsigned i = 0; i < countof(names); ++i) {
-    registry.attach("logging", names[i]);
+    ink_assert(0 == registry.attach("logging", names[i]));
   }
 }
 
