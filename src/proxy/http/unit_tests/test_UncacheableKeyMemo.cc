@@ -113,7 +113,8 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
 
   SECTION("a forgotten key is gone, remembered or seen once")
   {
-    admit(key, now);
+    REQUIRE(admit(key, now) == Remembered::ADMITTED);
+    REQUIRE(memo->contains(key, now));
     CHECK(memo->forget(key));
     CHECK_FALSE(memo->contains(key, now));
     memo->remember(other, now, ttl);
