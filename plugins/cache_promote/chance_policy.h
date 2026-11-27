@@ -50,17 +50,13 @@ public:
   bool
   stats_add(const char *remap_id) override
   {
+    TSAssert(remap_id != nullptr);
     std::string_view                          remap_identifier = remap_id;
     const std::tuple<std::string_view, int *> stats[]          = {
       {"cache_hits",     &_cache_hits_id    },
       {"promoted",       &_promoted_id      },
       {"total_requests", &_total_requests_id},
     };
-
-    if (nullptr == remap_id) {
-      TSError("[%s] no remap identifier specified for stats, no stats will be used", PLUGIN_NAME);
-      return false;
-    }
 
     for (int ii = 0; ii < 3; ii++) {
       std::string_view name = std::get<0>(stats[ii]);

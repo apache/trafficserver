@@ -27,12 +27,52 @@
 #include "proxy/hdrs/MIME.h"
 #include "proxy/hdrs/URL.h"
 
+#include <algorithm>
+
 // using namespace ct;
 
 constexpr HdrHeapMarshalBlocks HTTP_ALT_MARSHAL_SIZE = swoc::round_up(sizeof(HTTPCacheAlt));
 
 namespace ct
 {
+namespace
+{
+  // Whether the n bytes at p all lie inside mem. An empty range never reads p, so it always fits.
+  bool
+  span_fits(swoc::MemSpan<char> const &mem, void const *p, size_t n)
+  {
+    if (n == 0) {
+      return true;
+    }
+    auto const begin = reinterpret_cast<uintptr_t>(mem.data());
+    auto const end   = begin + mem.size();
+    auto const addr  = reinterpret_cast<uintptr_t>(p);
+    return p != nullptr && begin <= addr && addr <= end && n <= end - addr;
+  }
+
+  // Whether obj is aligned for T and every byte of it lies inside mem, so its fields can be read.
+  template <typename T>
+  bool
+  object_fits(swoc::MemSpan<char> const &mem, T const *obj)
+  {
+    return obj != nullptr && reinterpret_cast<uintptr_t>(obj) % alignof(T) == 0 && span_fits(mem, obj, sizeof(T));
+  }
+
+  // The marshalled header heap at offset bytes into buf, whose alt_len bytes run from this alternate to the end of the
+  // document. nullptr when the heap would overlap the alternate's fixed part, is not aligned for HdrHeap, or leaves too
+  // few bytes for a whole HdrHeap header. On success room is set to the bytes from the heap to the end of buf.
+  HdrHeap *
+  heap_at(char *buf, int alt_len, intptr_t offset, int &room)
+  {
+    if (offset < static_cast<intptr_t>(sizeof(HTTPCacheAlt)) || offset > alt_len - static_cast<intptr_t>(sizeof(HdrHeap)) ||
+        reinterpret_cast<uintptr_t>(buf + offset) % alignof(HdrHeap) != 0) {
+      return nullptr;
+    }
+    room = alt_len - static_cast<int>(offset);
+    return reinterpret_cast<HdrHeap *>(buf + offset);
+  }
+} // namespace
+
 Errata
 CacheScan::Scan(bool search)
 {
@@ -188,6 +228,12 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 
   ink_assert(hh->m_free_start == nullptr);
 
+  // HdrHeap::marshal() always puts the objects right after the header, and the object walk below starts there.
+  if (reinterpret_cast<uintptr_t>(hh->m_data_start) != static_cast<uintptr_t>(HDR_HEAP_HDR_SIZE.value())) {
+    std::cerr << "m_data_start is not right after the heap header" << std::endl;
+    return zret;
+  }
+
   // Convert Heap offsets to pointers
   hh->m_data_start                 = (reinterpret_cast<char *>(hh)) + (intptr_t)hh->m_data_start;
   hh->m_free_start                 = (reinterpret_cast<char *>(hh)) + hh->m_size;
@@ -207,8 +253,13 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
     hh->m_ronly_heap[0].m_ref_count_ptr.swizzle(block_ref);
   }
 
-  // Loop over objects and swizzle there pointer to
+  // Loop over objects and swizzle their pointers to
   //  live offsets
+  //
+  // The loop condition keeps each object's start inside the heap, but nothing yet checks that the object fits before
+  // m_free_start, either at its m_length or at the size of the type the switch below treats it as. A MIME field
+  // block's unmarshal also checks only that each slot starts inside the block. A damaged heap can therefore make the
+  // swizzle below read and write past its end.
   char    *obj_data = hh->m_data_start;
   intptr_t offset   = (intptr_t)hh;
 
@@ -325,12 +376,18 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
 
   // request hdrs
 
-  HdrHeap *heap    = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
-  HTTPHdrImpl *hh  = nullptr;
-  int          tmp = 0;
-  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < orig_len) {
-    tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
-                          block_ref);
+  HdrHeap     *heap = nullptr;
+  HTTPHdrImpl *hh   = nullptr;
+  int          tmp  = 0;
+  int          room = 0;
+  if (alt->m_request_hdr.m_heap != nullptr) {
+    heap = heap_at(buf, orig_len, reinterpret_cast<intptr_t>(alt->m_request_hdr.m_heap), room);
+    if (heap == nullptr) {
+      zret.note("HTTPInfo::request header heap offset is invalid");
+      return zret;
+    }
+    tmp = this->unmarshal(heap, std::min(len, room), static_cast<int>(HdrHeapObjType::HTTP_HEADER),
+                          reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.note("HTTPInfo::request unmarshal failed");
       return zret;
@@ -344,10 +401,14 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
 
   // response hdrs
 
-  heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
-  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < orig_len) {
-    tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
-                          block_ref);
+  if (alt->m_response_hdr.m_heap != nullptr) {
+    heap = heap_at(buf, orig_len, reinterpret_cast<intptr_t>(alt->m_response_hdr.m_heap), room);
+    if (heap == nullptr) {
+      zret.note("HTTPInfo::response header heap offset is invalid");
+      return zret;
+    }
+    tmp = this->unmarshal(heap, std::min(len, room), static_cast<int>(HdrHeapObjType::HTTP_HEADER),
+                          reinterpret_cast<HdrHeapObjImpl **>(&hh), block_ref);
     if (hh == nullptr || tmp < 0) {
       zret.note("HTTPInfo::response unmarshal failed");
       return zret;
@@ -376,19 +437,18 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumb
   return zret;
 }
 
-// check if the url looks valid
+// Whether url is an aligned URL object wholly inside mem, with every component get_alternates() prints also inside mem.
 bool
 CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
 {
-  bool in_bound = false; // boolean to check if address in bound
-  if (!url->m_ptr_scheme) {
-    in_bound = true; // nullptr is valid
-  } else if (mem.contains(const_cast<char *>(url->m_ptr_scheme))) {
-    in_bound = true;
+  if (!object_fits(mem, url) || url->m_length == 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL) {
+    return false;
   }
 
-  return in_bound && mem.contains(reinterpret_cast<char *>(url)) &&
-         !(url == nullptr || url->m_length <= 0 || static_cast<HdrHeapObjType>(url->m_type) != HdrHeapObjType::URL);
+  // get_alternates() prints these components, so each must lie inside the document as well.
+  return span_fits(mem, url->m_ptr_scheme, url->m_len_scheme) && span_fits(mem, url->m_ptr_host, url->m_len_host) &&
+         span_fits(mem, url->m_ptr_port, url->m_len_port) && span_fits(mem, url->m_ptr_path, url->m_len_path) &&
+         span_fits(mem, url->m_ptr_query, url->m_len_query);
 }
 
 Errata
@@ -412,7 +472,7 @@ CacheScan::get_alternates(const char *buf, int length, bool search, ts::VersionN
       } else if (!a->m_request_hdr.m_http) {
         std::cerr << "no http object found in the request header object" << std::endl;
         return zret;
-      } else if (!doc_mem.contains(reinterpret_cast<char *>(a->m_request_hdr.m_http))) {
+      } else if (!object_fits(doc_mem, a->m_request_hdr.m_http)) {
         std::cerr << "out of bounds request header in the alternate" << std::endl;
         return zret;
       }

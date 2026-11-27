@@ -2479,6 +2479,7 @@ SSLMultiCertConfigLoader::_prep_ssl_ctx(const shared_SSLMultiCertConfigParams  &
 bool
 SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings)
 {
+  ink_assert(sslMultCertSettings);
   bool                                           retval = true;
   std::set<std::string>                          common_names;
   std::unordered_map<int, std::set<std::string>> unique_names;
@@ -2499,13 +2500,12 @@ SSLMultiCertConfigLoader::_store_ssl_ctx(SSLCertLookup *lookup, const shared_SSL
   // without the lock, allowing parallel cert loading across threads.
   std::lock_guard<std::mutex> lock(_loader_mutex);
 
-  if (sslMultCertSettings && sslMultCertSettings->rpk_enabled) {
+  if (sslMultCertSettings->rpk_enabled) {
     lookup->has_raw_public_keys = true;
   }
 
   for (const auto &loadingctx : ctxs) {
-    if (!sslMultCertSettings ||
-        !this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
+    if (!this->_store_single_ssl_ctx(lookup, sslMultCertSettings, shared_SSL_CTX{loadingctx.ctx, SSL_CTX_free}, loadingctx.ctx_type,
                                      common_names)) {
       if (!common_names.empty()) {
         std::string names;

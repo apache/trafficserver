@@ -257,12 +257,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       PluginDebug("Stripping token from upstream url to: %.*s", (int)mlen, strip_uri_start);
 
       TSParseResult parse_rc = TSUrlParse(rri->requestBufp, rri->requestUrl, &strip_uri_start, strip_uri_end);
-      if (map_url != nullptr) {
-        TSfree(map_url);
-      }
-      if (map_strip_uri != nullptr) {
-        TSfree(map_strip_uri);
-      }
+      TSfree(map_url);
+      TSfree(map_strip_uri);
 
       if (parse_rc != TS_PARSE_DONE) {
         PluginDebug("Error in TSUrlParse");
@@ -275,12 +271,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // Check auth_dir and pass through if configured
   if (uri_matches_auth_directive((struct config *)ih, url, url_ct)) {
     PluginDebug("Auth directive matched for %.*s", url_ct, url);
-    if (url != nullptr) {
-      TSfree((void *)url);
-    }
-    if (strip_uri != nullptr) {
-      TSfree(strip_uri);
-    }
+    TSfree((void *)url);
+    TSfree(strip_uri);
     return TSREMAP_NO_REMAP;
   }
 
@@ -318,9 +310,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     }
 
     TSfree((void *)url);
-    if (strip_uri != nullptr) {
-      TSfree(strip_uri);
-    }
+    TSfree(strip_uri);
     return status;
   }
 fail:

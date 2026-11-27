@@ -511,11 +511,7 @@ ts_lua_client_request_get_header_block(lua_State *L)
   TSIOBufferReaderFree(reader);
   TSIOBufferDestroy(output_buffer);
 
-  if (output_string && output_len) {
-    lua_pushlstring(L, output_string, output_len);
-  } else {
-    lua_pushnil(L);
-  }
+  lua_pushlstring(L, output_string, output_len);
 
   TSfree(output_string);
   return 1;
