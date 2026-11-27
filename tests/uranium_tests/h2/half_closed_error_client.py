@@ -22,6 +22,8 @@ write buffer, and no new GOAWAY is sent that would flush it.
 #  limitations under the License.
 
 import argparse
+from pathlib import Path
+import re
 import socket
 import ssl
 import sys
@@ -144,8 +146,10 @@ class Origin:
                 conn.sendall(SECOND_PART)
                 self.second_part_sent.set()
                 self.done.wait(self.timeout)
-        except (OSError, EOFError) as e:
-            self.error = str(e)
+        except Exception as e:
+            self.error = f'{type(e).__name__}: {e}'
+        finally:
+            # Set on failure too, so check error after waiting on it.
             self.second_part_sent.set()
 
 
@@ -187,7 +191,7 @@ def print_goaway(payload: bytes, when: str, start: float) -> Tuple[int, int]:
 def read_until_half_closed(sock: ssl.SSLSocket, start: float) -> bytes:
     '''Read frames until ATS sends the GOAWAY that half-closes the session.
 
-    A graceful shutdown sends a first GOAWAY with the largest stream id, then
+    A graceful shutdown sends a first GOAWAY with last stream id 2^31-1, then
     after about two seconds a second one with the last stream id it accepted,
     and from then on the session is half-closed.
 
@@ -204,6 +208,26 @@ def read_until_half_closed(sock: ssl.SSLSocket, start: float) -> bytes:
                 return body
         elif frame_type == FRAME_TYPE_DATA and stream_id == STREAM_ID:
             body += payload
+
+
+def wait_for_queued_data(traffic_out: Path, timeout: float) -> bool:
+    '''Wait until ATS logs that it queued the DATA frame for the second part.
+
+    The line is logged just before the frame is queued, under the session
+    lock the PING handler also needs, so the frame is queued before ATS can
+    act on the PING.
+
+    :param traffic_out: The ATS traffic.out file.
+    :param timeout: How long to wait, in seconds.
+    :return: Whether the line appeared in time.
+    '''
+    expression = re.compile(rf'\[{STREAM_ID}\] Send a DATA frame .* payload: +{len(SECOND_PART)} ')
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if traffic_out.exists() and expression.search(traffic_out.read_text(errors='replace')):
+            return True
+        time.sleep(0.05)
+    return False
 
 
 def read_until_closed(sock: ssl.SSLSocket, start: float) -> bytes:
@@ -268,21 +292,36 @@ def run(args: argparse.Namespace) -> int:
             if not origin.second_part_sent.wait(args.socket_timeout) or origin.error is not None:
                 print(f'FAIL: the origin did not send the second part: {origin.error}', file=sys.stderr)
                 return 1
-            time.sleep(args.settle)
+            if not wait_for_queued_data(args.traffic_out, args.socket_timeout):
+                print('FAIL: ATS did not log queuing the DATA frame for the second part', file=sys.stderr)
+                return 1
 
             # A PING on a stream other than 0 is a connection error. The
             # session already sent its last GOAWAY, so it sends no other.
             print(f'sending PING on stream {STREAM_ID} elapsed={time.monotonic() - start:.2f}')
+            ping_sent = time.monotonic()
             sock.sendall(make_frame(FRAME_TYPE_PING, 0, STREAM_ID, bytes(8)))
 
             body += read_until_closed(sock, start)
+            close_delay = time.monotonic() - ping_sent
     except socket.timeout:
-        print(f'FAIL: no progress from ATS within the {args.socket_timeout}s socket timeout', file=sys.stderr)
+        print(
+            f'FAIL: no progress from ATS within the {args.socket_timeout}s socket timeout; origin error: {origin.error}',
+            file=sys.stderr,
+        )
+        return 1
+    except (EOFError, ConnectionResetError, ssl.SSLError) as e:
+        print(f'FAIL: the connection ended before the session was half-closed: {type(e).__name__}: {e}', file=sys.stderr)
         return 1
     finally:
         origin.join()
 
     print(f'body={body!r}')
+    # The retransmit timer would flush the DATA too, but only after the long
+    # write_time_threshold. A close that soon proves the FINI wrote it.
+    if close_delay > args.max_close_delay:
+        print(f'FAIL: ATS took {close_delay:.2f}s to close after the PING', file=sys.stderr)
+        return 1
     if SECOND_PART not in body:
         print('FAIL: the DATA queued before the connection error was not delivered', file=sys.stderr)
         return 1
@@ -298,8 +337,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('ats_port', type=int, help='ATS TLS port')
     parser.add_argument('origin_port', type=int, help='port for the origin to listen on')
+    parser.add_argument('traffic_out', type=Path, help='ATS traffic.out, to see when ATS queues the second part')
     parser.add_argument(
-        '--settle', type=float, default=1.0, help='seconds to let ATS queue the second part before sending the PING'
+        '--max-close-delay', type=float, default=2.0, help='fail if ATS takes longer than this to close after the PING'
     )
     parser.add_argument('--socket-timeout', type=float, default=20.0, help='socket timeout in seconds')
     return parser.parse_args()

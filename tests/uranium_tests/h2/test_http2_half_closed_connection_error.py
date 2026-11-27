@@ -23,7 +23,8 @@ from tools.uranium.services import ATS, ATSFactory, CommandResult, ProcessServic
 
 TEST_DIRECTORY = Path(__file__).parent
 # Long enough that a DATA frame queued without a flush stays queued until the
-# connection error, so only the FINI's own flush can write it.
+# connection error, so only the FINI's own flush can write it. The client
+# fails if the close takes more than 2 s after the error.
 WRITE_TIME_THRESHOLD_MS = 10000
 
 
@@ -34,7 +35,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
     :param ats_factory: Factory for isolated Traffic Server instances.
     """
 
-    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False, disable_log_checks=True)
+    ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+    ats.allow_errors(r"HTTP/2 connection error code=0x01 .*ping id not 0")
     if not ats.plugin_exists("header_rewrite.so"):
         pytest.skip("header_rewrite.so is not installed")
     rule = TEST_DIRECTORY / "rules" / "graceful_shutdown.conf"
@@ -62,7 +64,13 @@ def configure_client(services: ServiceFactory, *, _ats: ATS, _origin_port: int) 
 
     return services.process(
         "client",
-        (sys.executable, TEST_DIRECTORY / "half_closed_error_client.py", str(_ats.https_port), str(_origin_port)),
+        (
+            sys.executable,
+            TEST_DIRECTORY / "half_closed_error_client.py",
+            str(_ats.https_port),
+            str(_origin_port),
+            _ats.traffic_out,
+        ),
     )
 
 
@@ -80,6 +88,9 @@ def verify(result: CommandResult, *, _ats: ATS) -> None:
     assert "second part delivered" in result.stdout, result.output
     wait_for_file_lines(_ats.diags_log, r"HTTP/2 connection error code=0x01 .*ping id not 0", 1)
     # The FINI found the DATA frame still queued, and it was written in time.
+    # Without the flush the wait runs out. On a thread without a poll event
+    # the DATA can still leave afterwards, flushed with the RST_STREAM that
+    # cleanup_streams() sends, so there the give-up line is what shows it.
     wait_for_file_lines(_ats.traffic_out, r"waiting for queued frames to be written before closing", 1)
     assert "bytes still unsent" not in _ats.traffic_out.read_text(errors="replace")
 
