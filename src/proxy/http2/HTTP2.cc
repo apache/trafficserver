@@ -508,7 +508,7 @@ uint32_t                            Http2::max_concurrent_streams_out = 100;
 uint32_t                            Http2::min_concurrent_streams_out = 10;
 uint32_t                            Http2::max_active_streams_out     = 0;
 uint32_t                            Http2::initial_window_size_out    = 65535;
-std::atomic<Http2FlowControlPolicy> Http2::flow_control_policy_out{Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM};
+std::atomic<Http2FlowControlPolicy> Http2::flow_control_policy_out{Http2FlowControlPolicy::LARGE_SESSION_AND_STATIC_STREAM};
 uint32_t                            Http2::no_activity_timeout_out = 120;
 
 float    Http2::stream_error_rate_threshold        = 0.1;
