@@ -51,5 +51,6 @@ private:
   HTTPHdr          _header; ///< HTTP header buffer for decoding
   VersionConverter _hvc;
 
-  int _on_qpack_decode_complete();
+  int  _on_qpack_decode_complete();
+  void _on_qpack_decode_failed(Http3ErrorCode error_code);
 };

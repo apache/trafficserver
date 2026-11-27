@@ -149,6 +149,12 @@ public:
   void do_io_close(int lerrno = -1) override;
   void on_header_decode_complete();
 
+  /** Report that the header block on this stream could not be decoded.
+   *
+   * @param[in] error_code The HTTP/3 or QPACK error the connection is closed with.
+   */
+  void on_header_decode_failed(Http3ErrorCode error_code);
+
   bool is_response_header_sent() const;
   bool is_response_body_sent() const;
 
@@ -169,6 +175,10 @@ private:
   Http3DataFramer           _data_framer;
   Http3HeaderVIOAdaptor     _header_handler;
   Http3StreamDataVIOAdaptor _data_handler;
+
+  // Set once a header decode failure has closed the connection. A decoder that has already failed returns the failure
+  // from decode() and also reports it asynchronously, and only the first report should act.
+  bool _header_decode_failed = false;
 };
 
 /**

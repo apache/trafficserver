@@ -35,9 +35,11 @@ public:
 
   void initialize();
 
-  uint32_t header_table_size() const;
+  // QPACK holds the dynamic table capacity and the blocked stream count in 16 bits. These return the configured values
+  // clamped to that range, so the SETTINGS we advertise and the limits our decoder enforces stay the same.
+  uint16_t header_table_size() const;
   uint32_t max_field_section_size() const;
-  uint32_t qpack_blocked_streams() const;
+  uint16_t qpack_blocked_streams() const;
   uint32_t num_placeholders() const;
   uint32_t max_settings() const;
 

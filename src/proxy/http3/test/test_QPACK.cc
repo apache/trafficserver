@@ -31,6 +31,7 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <vector>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
@@ -641,6 +642,36 @@ TEST_CASE("Decoding out-of-range static table indexes fails", "[qpack-decode]")
   CHECK(wait_for_event(event_handler, QPACK_EVENT_DECODE_FAILED));
 
   hdr.destroy();
+}
+
+TEST_CASE("The field section size limit counts 32 octets per field", "[qpack-decode]")
+{
+  // Static index 5 is "cookie" with an empty value: 6 octets of name and value, 38 with the per-field overhead. The limit
+  // is exactly the size of fields_within_limit cookies, so the passing case sits on it.
+  constexpr size_t   fields_within_limit    = 107;
+  constexpr uint32_t max_field_section_size = 38 * fields_within_limit;
+
+  auto decode_cookies = [](size_t count) {
+    QUICApplicationDriver driver;
+    QPACK                 qpack(driver.get_connection(), max_field_section_size, 0, 0, MAX_FIELD_SIZE);
+    TestQPACKEventHandler event_handler;
+    HTTPHdr               hdr;
+
+    // Required Insert Count 0, Delta Base 0, then one indexed static field line per cookie.
+    std::vector<uint8_t> header_block{0x00, 0x00};
+    header_block.insert(header_block.end(), count, 0xc5);
+
+    hdr.create(HTTPType::REQUEST);
+    CHECK(decode_on_event_thread(qpack, 1, header_block.data(), header_block.size(), hdr, &event_handler) == 0);
+    CHECK(event_handler.wait_for_events(1));
+    int const event = event_handler.last_event();
+    hdr.destroy();
+
+    return event;
+  };
+
+  CHECK(decode_cookies(fields_within_limit) == QPACK_EVENT_DECODE_COMPLETE);
+  CHECK(decode_cookies(fields_within_limit + 1) == QPACK_EVENT_DECODE_FIELD_SECTION_TOO_LARGE);
 }
 
 TEST_CASE("An out-of-range encoder stream name reference invalidates the decoder", "[qpack-decode]")
