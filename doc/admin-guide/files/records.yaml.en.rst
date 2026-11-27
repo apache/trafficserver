@@ -3996,10 +3996,10 @@ Dynamic Content & Content Negotiation
        answer a second time. URLs asked for once are expected to land here, so a high count
        alone says nothing about the size. If URLs you know are requested again and again keep
        waiting on the write lock (``hits`` stays low next to their traffic while ``evictions``
-       climbs, unless :ts:cv:`proxy.config.http.cache.defer_write_on_miss` is on), they may be
-       pushed out between their two answers: raise
+       climbs), they may be pushed out between their two answers: raise
        :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` and check whether
-       ``admits`` and ``hits`` rise.
+       ``admits`` and ``hits`` rise. With :ts:cv:`proxy.config.http.cache.defer_write_on_miss`
+       on, no miss waits on the lock and ``hits`` stays at zero, so this check does not apply.
 
     ``proxy.process.http.cache.remember_uncacheable.set_full``
        Remembered URLs pushed out to make room, because every URL sharing their place in the

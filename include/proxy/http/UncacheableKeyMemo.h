@@ -38,11 +38,11 @@
     while sparing uncacheable keys the lock and the waits behind it.
 
     A key is remembered only once it answers uncacheable twice within one ttl of the first
-    answer. The first answer leaves a seen-once entry, so a stream of URLs each asked for once
-    churns through the seen-once entries and pushes out at most one remembered key per set at
-    a time. Those remembered keys are the ones that pile up behind the lock. A repeated key that
-    has answered only once can still be pushed out before its second answer, which the
-    evictions count shows.
+    answer. Repeated keys are the ones that pile up behind the lock when they are not
+    remembered, and the first answer only takes a seen-once entry, so URLs asked for once cost a
+    set at most one remembered key at a time (see the victim order below). A repeated key that
+    has answered only once can still be pushed out before its second answer, which remember()
+    reports as Outcome::evicted.
 
     The table is split into sets of four entries, one cache line each, picked by the low bits of
     the second 64-bit slice of the key's hash. An entry keeps the first slice as a tag, with the
