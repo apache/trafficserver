@@ -22,8 +22,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from tools.uranium.process import ManagedProcess, ProcessError
+from tools.uranium.process import ManagedProcess, ProcessError, return_codes
 from tools.uranium.replay import ReplayTest
+from tools.uranium.services.ats import ATS
 from tools.uranium.services.process_service import ProcessService
 
 
@@ -39,8 +40,7 @@ def test_replay_file_checks_fail_on_bad_evidence(tmp_path: Path, check: dict[str
     evidence.write_text("right order\nwrong naming order\n")
     replay = object.__new__(ReplayTest)
     replay.spec = SimpleNamespace(urtest={"ats": {"file_checks": [{"path": str(evidence), "timeout": 0, **check}]}})
-    replay.ats_paths = {}
-    replay._replace_runtime_placeholders = lambda value, paths: value
+    replay.ats = SimpleNamespace(replace_placeholders=lambda value: value)
     with pytest.raises(AssertionError):
         replay._check_files()
 
@@ -187,24 +187,19 @@ def test_expected_return_codes_use_explicit_api(tmp_path: Path) -> None:
 def test_replay_return_codes_accept_procedural_sequences() -> None:
     """Preserve tuple return-code options supplied by procedural ATS tests."""
 
-    assert tuple(ReplayTest._return_codes({"return_code": (0, -2)})) == (0, -2)
+    assert return_codes({"return_code": (0, -2)}) == (0, -2)
+    assert return_codes({"return_code": 3}) == (3,)
+    assert return_codes({}) == (0,)
 
 
 def test_runtime_placeholders_are_replaced_in_structured_metadata(tmp_path: Path) -> None:
     """Render listener placeholders nested in structured ATS configuration."""
 
-    replay = object.__new__(ReplayTest)
-    replay.server_http_port = 12345
-    replay.server_extra_http_port = 12346
-    replay.server_https_port = 12347
-    replay.http_port = 12348
-    replay.https_port = 12349
-    replay.proxy_protocol_port = 12350
-    replay.proxy_protocol_https_port = 12351
-    replay.dns_port = 12352
-    replay.unused_port = 12353
-    replay.spec = SimpleNamespace(path=tmp_path / "example.test.yaml")
-    paths = {
+    ats = object.__new__(ATS)
+    ats._name = "ts"
+    ats._http_port, ats._https_port, ats._proxy_protocol_port, ats._proxy_protocol_https_port = 12348, 12349, 12350, 12351
+    ats._test_directory = tmp_path
+    ats._paths = {
         "root": tmp_path / "root",
         "config": tmp_path / "config",
         "log": tmp_path / "log",
@@ -212,15 +207,21 @@ def test_runtime_placeholders_are_replaced_in_structured_metadata(tmp_path: Path
         "storage": tmp_path / "storage",
         "ssl": tmp_path / "ssl",
     }
+    ats._placeholders = {}
+    ats.define_placeholders({"{DNS_PORT}": 12352})
     sni_yaml = {
         "sni": [
             {
                 "fqdn": "proxy.test",
                 "proxy_protocol_port": "{ATS_PROXY_PROTOCOL_PORT}",
+                "dns": "127.0.0.1:{DNS_PORT}",
+                "log": "{LOG_DIR}/sni.log",
             }
         ]
     }
 
-    rendered = replay._replace_runtime_placeholders(sni_yaml, paths)
+    rendered = ats.replace_placeholders(sni_yaml)
 
     assert rendered["sni"][0]["proxy_protocol_port"] == "12350"
+    assert rendered["sni"][0]["dns"] == "127.0.0.1:12352"
+    assert rendered["sni"][0]["log"] == f"{tmp_path / 'log'}/sni.log"

@@ -19,19 +19,25 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+import copy
+import grp
 import json
 import os
+import pwd
 import re
 import signal
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from typing import Any
 
-from ..config import ReplaySpec
-from ..process import ManagedProcess
-from ..replay import ReplayTest
+import yaml
+
+from ..process import ManagedProcess, return_codes
+from ..utils import tcp_open
+from .ats_config import ATSConfigError, format_plugin_entry, merge_flat_records, write_yaml
 from .context import CommandResult, ProceduralContext
 
 
@@ -93,7 +99,14 @@ class ConfigFile:
 
 
 class ATS:
-    """A pytest-owned Traffic Server process with staged configuration."""
+    """One Traffic Server instance: its sandboxed run root, configuration, process, and diagnostics.
+
+    Procedural tests stage configuration through attributes such as
+    ``records`` and ``remap_config``; direct replays hand over a
+    manifest's ``urtest.ats`` mapping through :meth:`from_manifest`. Both are
+    staged in that mapping's schema, so :meth:`start` builds every instance
+    the same way.
+    """
 
     _CONFIG_FILENAMES = {
         "cache_config": "cache.config",
@@ -117,6 +130,7 @@ class ATS:
         """
 
         self._context = context
+        self._test_directory = context.test_directory
         self._process_options = dict(process_options)
         return_code = self._process_options.pop("return_code", None)
         self._records: dict[str, object] = {}
@@ -124,17 +138,22 @@ class ATS:
         self._config: dict[str, Any] = {}
         if return_code is not None:
             self._config["return_code"] = return_code
-        spec = ReplaySpec(
-            path=context.test_path,
-            document={},
-            urtest={"server": {}, "client": {}, "ats": {}},
-        )
-        self._runner = ReplayTest(spec, context.runtime, f"{context.node_name}-{name}")
-        self._runner.sandbox = context.run_directory
+        runtime = context.runtime
+        self._http_port = runtime.allocate_port()
+        self._https_port = runtime.allocate_port()
+        self._proxy_protocol_port = runtime.allocate_port()
+        self._proxy_protocol_https_port = runtime.allocate_port()
+        self._manager_port = runtime.allocate_port()
+        self._admin_port = runtime.allocate_port()
+        self._ipv6_port = runtime.allocate_port()
+        self._ipv6_https_port = runtime.allocate_port()
         self._name = name
         self._root = context.run_directory / name
-        self._ipv6_port = context.runtime.allocate_port()
-        self._ipv6_https_port = context.runtime.allocate_port()
+        self._paths: dict[str, Path] = {}
+        self._environment: dict[str, str] | None = None
+        self._nameserver_port: int | None = None
+        self._placeholders: dict[str, str] = {}
+        self._temporary_directories: list[Path] = []
         self._process: ManagedProcess | None = None
         self._was_started = False
         self._exit_was_expected = False
@@ -142,6 +161,27 @@ class ATS:
         self._allow_fatal_diagnostics = False
         self._allowed_errors: list[re.Pattern[str]] = []
         self.records = RecordsConfig(self._records)
+
+    @classmethod
+    def from_manifest(cls, context: ProceduralContext, config: Mapping[str, Any], *, test_directory: Path) -> ATS:
+        """Create an unstarted instance configured by a replay manifest's ``urtest.ats`` mapping.
+
+        :param context: Runtime and the replay's sandbox, which holds this
+            instance's run root.
+        :param config: The manifest's ``urtest.ats`` mapping; it is copied, not
+            modified.
+        :param test_directory: Directory that relative manifest paths, such as
+            ``copy_to_config_dir`` entries, are resolved against.
+        """
+
+        settings = copy.deepcopy(dict(config))
+        ats = cls(context, str(settings.pop("name", "ts")), **settings.pop("process_config", {}))
+        ats._test_directory = test_directory
+        ats._records.update(settings.pop("records_config", {}))
+        ats._config.update(settings)
+        if "startup_failure" in settings:
+            ats._allow_fatal_diagnostics = True
+        return ats
 
     @property
     def name(self) -> str:
@@ -153,13 +193,13 @@ class ATS:
     def http_port(self) -> int:
         """Return the selected IPv4 HTTP port."""
 
-        return self._runner.http_port
+        return self._http_port
 
     @property
     def https_port(self) -> int:
         """Return the selected IPv4 TLS port."""
 
-        return self._runner.https_port
+        return self._https_port
 
     @property
     def ipv6_port(self) -> int:
@@ -177,13 +217,13 @@ class ATS:
     def proxy_protocol_port(self) -> int:
         """Return the selected clear-text Proxy Protocol port."""
 
-        return self._runner.proxy_protocol_port
+        return self._proxy_protocol_port
 
     @property
     def proxy_protocol_https_port(self) -> int:
         """Return the selected TLS Proxy Protocol port."""
 
-        return self._runner.proxy_protocol_https_port
+        return self._proxy_protocol_https_port
 
     @property
     def uds_path(self) -> str:
@@ -195,7 +235,7 @@ class ATS:
         if len(os.fsencode(path)) >= 104:
             if self._uds_directory is None:
                 self._uds_directory = Path(tempfile.mkdtemp(prefix="ats-uds-", dir="/tmp"))
-                self._runner._chown_for_ats(self._uds_directory)
+                chown_for_ats(self._uds_directory)
             path = self._uds_directory / "ats.sock"
         return str(path)
 
@@ -262,9 +302,9 @@ class ATS:
     def environment(self) -> dict[str, str]:
         """Return the environment used by ATS and its tools."""
 
-        if self._runner.ats_environment is None:
+        if self._environment is None:
             raise RuntimeError(f"{self.name} has not been started")
-        return self._runner.ats_environment
+        return self._environment
 
     def _line_config(self, name: str) -> ConfigFile:
         """Return the staged line-oriented configuration named by a key.
@@ -321,6 +361,12 @@ class ATS:
         return self._process is not None and self._process.return_code is None
 
     @property
+    def return_code(self) -> int | None:
+        """Return Traffic Server's exit status, or None while it runs or before it starts."""
+
+        return None if self._process is None else self._process.return_code
+
+    @property
     def process_output(self) -> str:
         """Return stdout and stderr captured outside ATS's bound traffic.out."""
 
@@ -340,8 +386,8 @@ class ATS:
             if "proxy.config.http.server_ports" in self._records:
                 server_ports = str(self._records["proxy.config.http.server_ports"])
             else:
-                # The defaults ReplayTest._start_ats writes, so the two cannot drift.
-                server_ports = self._runner._server_ports(
+                # The defaults _launch writes, so the two cannot drift.
+                server_ports = self._server_ports(
                     enable_tls=bool(self._process_options.get("enable_tls", False)),
                     enable_quic=bool(self._process_options.get("enable_quic", False)),
                     enable_proxy_protocol=bool(self._process_options.get("enable_proxy_protocol", False)),
@@ -357,8 +403,7 @@ class ATS:
             **{name: lines for name, lines in self._config_lines.items() if lines},
             **self._config,
         }
-        self._runner.spec.urtest["ats"] = ats_config
-        self._process = self._runner._start_ats()
+        self._process = self._launch(ats_config)
         self._was_started = True
 
     def expect_start_failure(self, expression: str, return_code: int | Sequence[int] = 33) -> None:
@@ -384,7 +429,7 @@ class ATS:
         :param path: Directory whose contents are handed to the ATS user.
         """
 
-        self._runner._chown_for_ats(path)
+        chown_for_ats(path)
 
     def allow_errors(self, expression: str) -> None:
         """Accept diags.log ``ERROR:`` lines matching a regular expression.
@@ -673,39 +718,461 @@ class ATS:
         filename = name if name.endswith(".so") else f"{name}.so"
         return (Path(self._context.runtime.layout["PLUGINDIR"]) / filename).is_file()
 
-    def close(self) -> None:
-        """Stop Traffic Server and validate its diagnostics.
+    def use_nameserver(self, port: int) -> None:
+        """Resolve hostnames through a test DNS server instead of the host's resolver.
 
-        Once :meth:`expect_start_failure` is called, no diagnostics are
-        checked, including whether diags.log exists. Otherwise fatal
-        diagnostics fail the test, as do errors not accepted by
-        :meth:`allow_errors` and unrecognized configuration values, unless
-        the instance was created with ``disable_log_checks=True``.
+        :param port: UDP port of a DNS server listening on 127.0.0.1.
         """
+
+        self._nameserver_port = port
+
+    def define_placeholders(self, values: Mapping[str, object]) -> None:
+        """Add owner-defined placeholders, such as an origin's port, to those :meth:`replace_placeholders` expands.
+
+        :param values: Placeholder markers, including their braces, mapped to
+            their replacement values.
+        """
+
+        self._placeholders.update({marker: str(value) for marker, value in values.items()})
+
+    def replace_placeholders(self, value: Any) -> Any:
+        """Expand this instance's ports, directories, and defined placeholders in configuration values.
+
+        :param value: A string, or a list or mapping nested with strings;
+            other values are returned unchanged.
+        """
+
+        if isinstance(value, Mapping):
+            return {key: self.replace_placeholders(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [self.replace_placeholders(item) for item in value]
+        if not isinstance(value, str):
+            return value
+        if not self._paths:
+            raise RuntimeError(f"{self.name} has no run root until it starts")
+        replacements = {
+            "{ATS_HTTP_PORT}": str(self.http_port),
+            "{ATS_HTTPS_PORT}": str(self.https_port),
+            "{ATS_PROXY_PROTOCOL_PORT}": str(self.proxy_protocol_port),
+            "{ATS_PROXY_PROTOCOL_HTTPS_PORT}": str(self.proxy_protocol_https_port),
+            "{ATS_ROOT}": str(self._paths["root"]),
+            "{CONFIG_DIR}": str(self._paths["config"]),
+            "{LOG_DIR}": str(self._paths["log"]),
+            "{RUNTIME_DIR}": str(self._paths["rpc_runtime"]),
+            "{STORAGE_DIR}": str(self._paths["storage"]),
+            "{ATS_SSL_DIR}": str(self._paths["ssl"]),
+            "{TEST_DIR}": str(self._test_directory),
+            "{PYTHON}": sys.executable,
+            **self._placeholders,
+        }
+        for marker, replacement in replacements.items():
+            value = value.replace(marker, replacement)
+        return value
+
+    def run_commands(self, commands: Sequence[object], phase: str) -> None:
+        """Run shell commands in this instance's run root, failing on the first that exits nonzero.
+
+        :param commands: Bash commands, expanded by :meth:`replace_placeholders`.
+        :param phase: Lifecycle phase named in failure messages.
+        """
+
+        for command in commands:
+            rendered = self.replace_placeholders(str(command))
+            result = self.run_shell(rendered)
+            if result.returncode != 0:
+                raise AssertionError(f"ATS {phase} command failed ({rendered}):\n{result.output}")
+
+    def validate_diagnostics(self) -> None:
+        """Fail on diagnostics that show Traffic Server misbehaved.
+
+        Once :meth:`expect_start_failure` is called, or a manifest declares
+        ``startup_failure``, no diagnostics are checked, including whether
+        diags.log exists. Otherwise fatal diagnostics fail the test, as do
+        errors not accepted by :meth:`allow_errors` and unrecognized
+        configuration values, unless the instance was created with
+        ``disable_log_checks=True``.
+        """
+
+        if not self._was_started or self._allow_fatal_diagnostics:
+            return
+        assert self.diags_log.is_file(), f"Missing ATS diagnostic log: {self.diags_log}"
+        content = self.diags_log.read_text(errors="replace")
+        lines = content.splitlines()
+        expressions = ["FATAL:"]
+        if not self._process_options.get("disable_log_checks", False):
+            expressions += ["ERROR:", "Unrecognized configuration value"]
+        for expression in expressions:
+            unexpected = [
+                line
+                for line in lines
+                if expression in line
+                and not (expression == "ERROR:" and any(allowed.search(line) for allowed in self._allowed_errors))
+            ]
+            if unexpected:
+                raise AssertionError(f"{self.name} emitted an unexpected {expression!r} diagnostic:\n{content}")
+
+    def remove_temporary_directories(self) -> None:
+        """Delete the short directories outside the sandbox that hold this instance's Unix sockets."""
+
+        for directory in self._temporary_directories:
+            shutil.rmtree(directory, ignore_errors=True)
+        self._temporary_directories.clear()
+        if self._uds_directory is not None:
+            shutil.rmtree(self._uds_directory, ignore_errors=True)
+            self._uds_directory = None
+
+    def close(self) -> None:
+        """Stop Traffic Server, validate its diagnostics, and remove its temporary directories."""
 
         try:
             self.stop()
-            if self._was_started and not self._allow_fatal_diagnostics:
-                assert self.diags_log.is_file(), f"Missing ATS diagnostic log: {self.diags_log}"
-                content = self.diags_log.read_text(errors="replace")
-                lines = content.splitlines()
-                expressions = ["FATAL:"]
-                if not self._process_options.get("disable_log_checks", False):
-                    expressions += ["ERROR:", "Unrecognized configuration value"]
-                for expression in expressions:
-                    unexpected = [
-                        line
-                        for line in lines
-                        if expression in line
-                        and not (expression == "ERROR:" and any(allowed.search(line) for allowed in self._allowed_errors))
-                    ]
-                    if unexpected:
-                        raise AssertionError(f"{self.name} emitted an unexpected {expression!r} diagnostic:\n{content}")
+            self.validate_diagnostics()
         finally:
-            for directory in self._runner._temporary_directories:
-                shutil.rmtree(directory, ignore_errors=True)
-            if self._uds_directory is not None:
-                shutil.rmtree(self._uds_directory, ignore_errors=True)
+            self.remove_temporary_directories()
+
+    def _launch(self, config: Mapping[str, Any]) -> ManagedProcess:
+        """Build the run root from staged configuration, start Traffic Server, and wait until it is ready.
+
+        :param config: Staged configuration in the schema of a manifest's
+            ``urtest.ats`` mapping.
+        """
+
+        runtime = self._context.runtime
+        process_config = dict(config.get("process_config", {}))
+        paths = self._prepare_tree()
+        enable_tls = bool(process_config.get("enable_tls", False))
+        enable_quic = bool(process_config.get("enable_quic", False))
+        enable_proxy_protocol = bool(process_config.get("enable_proxy_protocol", False))
+        enable_proxy_protocol_cp_src = bool(process_config.get("enable_proxy_protocol_cp_src", False))
+        enable_cache = bool(process_config.get("enable_cache", config.get("enable_cache", True)))
+        enable_cripts = bool(process_config.get("enable_cripts", False))
+
+        records: dict[str, Any] = {
+            "config_update_interval_ms": 20,
+            "http": {
+                "server_ports": self._server_ports(
+                    enable_tls,
+                    enable_quic,
+                    enable_proxy_protocol,
+                    enable_proxy_protocol_cp_src,
+                ),
+                "wait_for_cache": 1,
+            },
+        }
+        # ATS writes a log buffer when it is max_secs_per_buffer old, checked every
+        # periodic_tasks_interval, both 5 s by default. At 1 s each, an entry reaches disk within a
+        # few seconds, so a test can read its logs without a long wait.
+        records["log"] = {"max_secs_per_buffer": 1, "periodic_tasks_interval": 1}
+        if process_config.get("disable_log_rolling", True):
+            records["log"]["rolling_enabled"] = 0
+        if not enable_cache:
+            records["http"]["cache"] = {"http": 0}
+            records["http"].pop("wait_for_cache")
+        if enable_quic:
+            records.setdefault("udp", {})["threads"] = 1
+        if self._nameserver_port is not None:
+            records["dns"] = {"nameservers": f"127.0.0.1:{self._nameserver_port}", "resolv_conf": "NULL"}
+
+        if enable_tls:
+            self._configure_tls(config, records, paths)
+        elif config.get("copy_to_ssl_dir"):
+            self._copy_ssl_files(config, paths)
+        if enable_cripts:
+            compiler = paths["bin"] / "cripts_compiler.sh"
+            shutil.copy2(runtime.repository_root / "tools" / "cripts" / "compiler.sh", compiler)
+            compiler.chmod(0o755)
+            records.setdefault("plugin", {})["compiler_path"] = str(compiler)
+
+        configured_records = self.replace_placeholders(config.get("records_config", {}))
+        records_path = paths["config"] / "records.yaml"
+        write_yaml(records_path, merge_flat_records(configured_records, records))
+        for document in config.get("records_documents", []):
+            with records_path.open("a") as stream:
+                stream.write("---\n")
+                yaml.safe_dump(merge_flat_records(document, {}), stream, sort_keys=False)
+        self._write_configs(config, paths)
+
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "TS_ROOT": str(self._root),
+                "TS_RUNROOT": str(paths["config"] / "runroot.yaml"),
+                "PROXY_CONFIG_BIN_PATH": str(paths["bin"]),
+                "PROXY_CONFIG_CONFIG_DIR": str(paths["config"]),
+                "PROXY_CONFIG_BODY_FACTORY_TEMPLATE_SETS_DIR": str(paths["body_factory"]),
+                "PROXY_CONFIG_CACHE_DIR": str(paths["cache"]),
+                "PROXY_CONFIG_PLUGIN_PLUGIN_DIR": str(paths["plugin"]),
+                "PROXY_CONFIG_LOG_LOGFILE_DIR": str(paths["log"]),
+                "PROXY_CONFIG_LOCAL_STATE_DIR": str(paths["rpc_runtime"]),
+                "PROXY_CONFIG_SSL_DIR": str(paths["ssl"]),
+                "PROXY_CONFIG_STORAGE_DIR": str(paths["storage"]),
+                "PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT": str(self._manager_port),
+                "PROXY_CONFIG_ADMIN_SYNTHETIC_PORT": str(self._admin_port),
+                "PROXY_CONFIG_ADMIN_AUTOCONF_PORT": str(self._admin_port),
+                "PATH": str(paths["bin"]) + os.pathsep + os.environ.get("PATH", ""),
+            }
+        )
+        environment.update(
+            {str(name): self.replace_placeholders(str(value)) for name, value in config.get("environment", {}).items()}
+        )
+        for variable in config.get("unset_environment", []):
+            environment.pop(str(variable), None)
+        if enable_cripts:
+            environment["ATS_ROOT"] = runtime.layout["PREFIX"]
+        self._environment = environment
+        self.run_commands(config.get("pre_start_commands", []), "pre_start_commands")
+        traffic_out = paths["log"] / "traffic.out"
+        command: list[str | Path] = [paths["bin"] / "traffic_server"]
+        if process_config.get("capture_traffic_out", True):
+            command.extend(("--bind_stdout", traffic_out, "--bind_stderr", traffic_out))
+        command.extend(str(argument) for argument in process_config.get("server_args", []))
+        process = ManagedProcess(
+            self.name,
+            command,
+            self._root,
+            environment=environment,
+            expected_return_codes=return_codes(config),
+        )
+        chown_for_ats(self._root)
+        process.start()
+        # Owned before readiness so that stop() reaps a process that never becomes ready.
+        self._process = process
+        startup_timeout = float(config.get("startup_timeout", 60 if enable_cripts else 30))
+        diags_name = str(config.get("records_config", {}).get("proxy.config.diags.logfile.filename", "diags.log"))
+        readiness_paths = (
+            (traffic_out, process.stdout_path, process.stderr_path)
+            if diags_name in ("stdout", "stderr")
+            else (paths["log"] / diags_name,)
+        )
+        diags_log = readiness_paths[0]
+        if expected_failure := config.get("startup_failure"):
+            process.wait(timeout=startup_timeout)
+            self._exit_was_expected = True
+            output = "\n".join(
+                path.read_text(errors="replace")
+                for path in (diags_log, traffic_out, process.stdout_path, process.stderr_path)
+                if path.exists()
+            )
+            if re.search(str(expected_failure), output) is None:
+                raise AssertionError(f"{self.name} did not emit expected startup failure {expected_failure!r}:\n{output}")
+            return process
+        process.wait_until(
+            lambda: (
+                any(
+                    path.exists() and "NOTE: Traffic Server is fully initialized" in path.read_text(errors="replace")
+                    for path in readiness_paths
+                )
+                or (diags_name in ("stdout", "stderr") and tcp_open(self.http_port))
+            ),
+            startup_timeout,
+            "the fully initialized log message",
+        )
+        return process
+
+    def _prepare_tree(self) -> dict[str, Path]:
+        """Create the run root, linking installed programs and plugins and copying baseline configuration."""
+
+        runtime = self._context.runtime
+        root = self._root
+        names = ("bin", "config", "body_factory", "plugin", "log", "runtime", "ssl", "storage", "cache")
+        paths = {name: root / name for name in names}
+        paths["root"] = root
+        for path in paths.values():
+            path.mkdir(parents=True, exist_ok=True)
+        rpc_runtime = Path(tempfile.mkdtemp(prefix="ats-pytest-", dir="/tmp"))
+        self._temporary_directories.append(rpc_runtime)
+        paths["rpc_runtime"] = rpc_runtime
+        _link_directory(Path(runtime.layout["BINDIR"]), paths["bin"])
+        _link_directory(Path(runtime.layout["PLUGINDIR"]), paths["plugin"])
+        body_factory = Path(runtime.layout["SYSCONFDIR"]) / "body_factory"
+        if body_factory.is_dir():
+            shutil.copytree(body_factory, paths["body_factory"], dirs_exist_ok=True)
+        min_config = runtime.repository_root / "tests" / "tools" / "uranium" / "min_cfg"
+        for source in min_config.iterdir():
+            if source.is_file() and source.name != "readme.txt":
+                shutil.copy2(source, paths["config"] / source.name)
+        write_yaml(
+            paths["config"] / "runroot.yaml",
+            {
+                # Keep the JSON-RPC Unix socket below sockaddr_un.sun_path's
+                # small platform limit, even under a deeply nested CI sandbox.
+                "runtimedir": str(paths["rpc_runtime"]),
+                "cachedir": str(paths["cache"]),
+                "localstatedir": str(paths["runtime"]),
+                "bindir": str(paths["bin"]),
+                "prefix": str(root),
+                "logdir": str(paths["log"]),
+                "sysconfdir": str(paths["config"]),
+            },
+        )
+        chown_for_ats(paths["rpc_runtime"])
+        self._paths = paths
+        return paths
+
+    def _server_ports(
+        self,
+        enable_tls: bool,
+        enable_quic: bool,
+        enable_proxy_protocol: bool,
+        enable_proxy_protocol_cp_src: bool,
+    ) -> str:
+        """Return the default proxy.config.http.server_ports value for the enabled listeners.
+
+        :param enable_tls: Whether to listen for TLS on the HTTPS port.
+        :param enable_quic: Whether to listen for QUIC on the HTTPS port.
+        :param enable_proxy_protocol: Whether to add PROXY protocol listeners.
+        :param enable_proxy_protocol_cp_src: Whether those listeners take the
+            client address from the PROXY header.
+        """
+
+        value = str(self.http_port)
+        if enable_tls:
+            value += f" {self.https_port}:ssl"
+        if enable_quic:
+            value += f" {self.https_port}:quic"
+        if enable_proxy_protocol:
+            client_flag = ":pp-clnt" if enable_proxy_protocol_cp_src else ""
+            value += f" {self.proxy_protocol_port}:pp{client_flag}"
+            if enable_tls:
+                value += f" {self.proxy_protocol_https_port}:ssl:pp{client_flag}"
+        return value
+
+    def _configure_tls(self, config: Mapping[str, Any], records: dict[str, Any], paths: dict[str, Path]) -> None:
+        """Install inbound TLS material and point the TLS records at it.
+
+        :param config: Staged configuration in the ``urtest.ats`` schema.
+        :param records: Default records, updated with the TLS certificate paths.
+        :param paths: Run-root directories by role.
+        """
+
+        ssl_multicert = config.get("ssl_multicert_yaml")
+        if ssl_multicert is None:
+            for filename in ("server.pem", "server.key"):
+                shutil.copy2(self._context.runtime.test_tools / "ssl" / filename, paths["ssl"] / filename)
+            ssl_multicert = [
+                "ssl_multicert:",
+                "  - ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+                '    dest_ip: "*"',
+            ]
+        records.setdefault("ssl", {}).setdefault("server", {})["cert"] = {"path": str(paths["ssl"])}
+        records["ssl"]["server"]["private_key"] = {"path": str(paths["ssl"])}
+        self._copy_ssl_files(config, paths)
+        ssl_multicert_path = paths["config"] / "ssl_multicert.yaml"
+        if isinstance(ssl_multicert, Mapping):
+            write_yaml(ssl_multicert_path, ssl_multicert)
+        else:
+            ssl_multicert_path.write_text("\n".join(str(line) for line in ssl_multicert) + "\n")
+        if "sni_yaml" in config:
+            write_yaml(paths["config"] / "sni.yaml", self.replace_placeholders(config["sni_yaml"]))
+
+    def _copy_ssl_files(self, config: Mapping[str, Any], paths: dict[str, Path]) -> None:
+        """Copy test-owned TLS material for inbound or outbound TLS.
+
+        :param config: Staged configuration in the ``urtest.ats`` schema.
+        :param paths: Run-root directories by role.
+        """
+
+        for value in config.get("copy_to_ssl_dir", []):
+            source = (self._test_directory / str(value)).resolve()
+            if not source.is_file():
+                raise ATSConfigError(f"TLS file does not exist: {source}")
+            shutil.copy2(source, paths["ssl"] / source.name)
+
+    def _write_configs(self, config: Mapping[str, Any], paths: dict[str, Path]) -> None:
+        """Write plugin, remap, and the other staged configuration files into the run root.
+
+        :param config: Staged configuration in the ``urtest.ats`` schema.
+        :param paths: Run-root directories by role.
+        """
+
+        config_dir = paths["config"]
+        plugin_lines = [format_plugin_entry(self.replace_placeholders(entry)) for entry in config.get("plugin_config", [])]
+        (config_dir / "plugin.config").write_text("\n".join(plugin_lines) + ("\n" if plugin_lines else ""))
+        for plugin_value in config.get("copy_custom_plugin", []):
+            source = self._context.runtime.resolve_artifact(self._test_directory, str(plugin_value))
+            if not source.is_file():
+                raise ATSConfigError(f"Custom plugin does not exist: {source}")
+            destination = paths["plugin"] / source.name
+            if destination.exists() or destination.is_symlink():
+                destination.unlink()
+            shutil.copy2(source, destination)
+
+        for key, filename in (
+            ("parent_config", "parent.config"),
+            ("cache_config", "cache.config"),
+            ("hosting_config", "hosting.config"),
+            ("splitdns_config", "splitdns.config"),
+        ):
+            lines = [str(self.replace_placeholders(line)) for line in config.get(key, [])]
+            (config_dir / filename).write_text("\n".join(lines) + ("\n" if lines else ""))
+        if "logging_yaml" in config:
+            write_yaml(config_dir / "logging.yaml", config["logging_yaml"])
+        if "storage_yaml" in config:
+            write_yaml(config_dir / "storage.yaml", config["storage_yaml"])
+        if "storage_lines" in config:
+            (config_dir / "storage.yaml").write_text("\n".join(config["storage_lines"]) + "\n")
+        if "ssl_multicert_lines" in config:
+            (config_dir / "ssl_multicert.yaml").write_text("\n".join(config["ssl_multicert_lines"]) + "\n")
+        if "ip_allow_yaml" in config:
+            write_yaml(config_dir / "ip_allow.yaml", config["ip_allow_yaml"])
+        if "ip_allow_lines" in config:
+            (config_dir / "ip_allow.yaml").write_text("\n".join(config["ip_allow_lines"]) + "\n")
+        if "remap_yaml" in config:
+            write_yaml(config_dir / "remap.yaml", config["remap_yaml"])
+        if "remap_yaml_lines" in config:
+            lines = [str(self.replace_placeholders(line)) for line in config["remap_yaml_lines"]]
+            (config_dir / "remap.yaml").write_text("\n".join(lines) + "\n")
+
+        remap_lines = []
+        for entry in config.get("remap_config", []):
+            if isinstance(entry, str):
+                remap_lines.append(str(self.replace_placeholders(entry)))
+                continue
+            line = f"map {self.replace_placeholders(entry['from'])} {self.replace_placeholders(entry['to'])}"
+            for plugin in entry.get("plugins", []):
+                line += f" @plugin={plugin['name']}"
+                for argument in plugin.get("args", []):
+                    line += f" @pparam={self.replace_placeholders(argument)}"
+            for option in entry.get("options", []):
+                line += f" {self.replace_placeholders(option)}"
+            remap_lines.append(line)
+        (config_dir / "remap.config").write_text("\n".join(remap_lines) + ("\n" if remap_lines else ""))
+
+        for value in config.get("copy_to_config_dir", []):
+            if isinstance(value, Mapping):
+                source_value = str(value["source"])
+                destination_value = str(value.get("destination", Path(source_value).name))
+            else:
+                source_value = destination_value = str(value)
+            source = (self._test_directory / source_value).resolve()
+            destination = config_dir / destination_value
+            if source.is_dir():
+                shutil.copytree(source, destination, dirs_exist_ok=True)
+            else:
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(source, destination)
+        for value in config.get("template_to_config_dir", []):
+            source = (self._test_directory / str(value)).resolve()
+            if not source.is_file():
+                raise ATSConfigError(f"Configuration template does not exist: {source}")
+            destination = config_dir / Path(str(value)).name
+            rendered = self.replace_placeholders(source.read_text())
+            destination.write_text(rendered)
+        for filename in config.get("omit_config_files", []):
+            (config_dir / str(filename)).unlink(missing_ok=True)
+        for filename, content in config.get("inline_config_files", {}).items():
+            destination = config_dir / str(filename)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(str(self.replace_placeholders(content)))
+        for filename, content in config.get("inline_runtime_files", {}).items():
+            destination = paths["runtime"] / str(filename)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(str(self.replace_placeholders(content)))
+        for relative_path, content in config.get("body_factory_files", {}).items():
+            destination = paths["body_factory"] / str(relative_path)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_text(str(self.replace_placeholders(content)))
 
 
 class ATSFactory:
@@ -772,3 +1239,40 @@ class ATSFactory:
         self._names.clear()
         if failures:
             raise ExceptionGroup("Traffic Server cleanup failed", failures)
+
+
+def chown_for_ats(root: Path) -> None:
+    """Give @a root's tree to the unprivileged user Traffic Server drops to when tests run as root.
+
+    :param root: Directory whose contents Traffic Server must read and write.
+    """
+
+    if os.geteuid() != 0:
+        return
+    try:
+        uid = pwd.getpwnam("nobody").pw_uid
+        try:
+            gid = grp.getgrnam("nogroup").gr_gid
+        except KeyError:
+            gid = grp.getgrnam("nobody").gr_gid
+    except KeyError:
+        return
+    for directory, directories, files in os.walk(root):
+        os.chown(directory, uid, gid)
+        for name in [*directories, *files]:
+            path = Path(directory) / name
+            if not path.is_symlink():
+                os.chown(path, uid, gid)
+
+
+def _link_directory(source: Path, destination: Path) -> None:
+    """Symlink each entry of an installed directory into the run root, keeping entries already there.
+
+    :param source: Installed directory, such as the ATS bin or plugin directory.
+    :param destination: Run-root directory receiving the links.
+    """
+
+    for entry in source.iterdir():
+        target = destination / entry.name
+        if not target.exists():
+            target.symlink_to(entry, target_is_directory=entry.is_dir())

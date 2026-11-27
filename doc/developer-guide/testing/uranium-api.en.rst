@@ -62,9 +62,6 @@ fixture does not start ATS or a support process.
    * - ``procedural_context``
      - :class:`~tools.uranium.services.ProceduralContext`
      - Own the test's paths, runtime, and sandbox.
-   * - ``uranium_replay``
-     - ``Callable[[Path], None]``
-     - Execute a replay manifest and all variants inside a native test.
    * - ``uranium_test_runtime``
      - :class:`~tools.uranium.runtime.TestRuntime`
      - Share installed-tool paths, capabilities, and port allocation.
@@ -123,11 +120,6 @@ A service's ``run()`` waits for a one-shot command; ``start()`` launches a
 long-lived process. Check command results explicitly, or register stream
 expectations before running the service. Negative log assertions should inspect
 complete output after stopping the process, not an early positive-marker snapshot.
-
-``uranium_replay(path)`` accepts a ``pathlib.Path`` to a manifest. Each call
-and variant uses a distinct child of the native test's sandbox, preserving
-sibling services and earlier results. Replay-only scenarios should normally
-use direct ``*.test.yaml`` collection.
 
 Paths, cleanup, and parallel execution
 --------------------------------------
@@ -212,6 +204,9 @@ or a specific output marker before sending test traffic.
    :members:
 
 .. autoclass:: tools.uranium.services.VerifierServer
+   :members:
+
+.. autoclass:: tools.uranium.services.VerifierClient
    :members:
 
 Results and context

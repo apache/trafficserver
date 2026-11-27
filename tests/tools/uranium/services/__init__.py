@@ -28,7 +28,7 @@ from .origin import OriginServer
 from .process_service import ProcessService
 from .service_factory import ServiceFactory
 from .service_utils import send_tcp, wait_for_file_lines, wait_for_metric
-from .verifier import VerifierServer
+from .verifier import VerifierClient, VerifierServer
 
 __all__ = [
     "ATS",
@@ -43,6 +43,7 @@ __all__ = [
     "ProcessService",
     "RecordsConfig",
     "ServiceFactory",
+    "VerifierClient",
     "VerifierServer",
     "assert_matches_gold",
     "send_tcp",

@@ -19,9 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-import json
 import re
-import shlex
 import shutil
 import socket
 import subprocess
@@ -30,13 +28,13 @@ from typing import Any
 import pytest
 
 from ..process import ManagedProcess
-from ..utils import loopback_addresses, python_environment_executable, version_tuple
+from ..utils import python_environment_executable, version_tuple
 from .context import ProceduralContext
 from .dns import DNSServer
 from .httpbin import HttpBinServer
 from .origin import OriginServer
 from .process_service import ProcessService
-from .verifier import VerifierServer
+from .verifier import VerifierClient, VerifierServer
 
 
 class ServiceFactory:
@@ -154,30 +152,13 @@ class ServiceFactory:
         """Create a microDNS server.
 
         :param name: Unique support-process name within the scenario.
-        :param options: Listener port and default DNS response options.
+        :param options: ``port`` and ``default`` options for
+            :meth:`DNSServer.create`.
         """
 
         directory = self._directory(name)
-        port = int(options.pop("port", 0))
-        while not port:
-            candidate = self._context.runtime.allocate_port()
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
-                try:
-                    probe.bind(("127.0.0.1", candidate))
-                except OSError:
-                    continue
-            port = candidate
-        default = options.pop("default", None)
-        otherwise = [default] if isinstance(default, str) else default
-        zone_file = directory / "dns_file.json"
-        zone_file.write_text(json.dumps({"mappings": [], **({"otherwise": otherwise} if otherwise else {})}))
-        process = ManagedProcess(
-            name,
-            [python_environment_executable("microdns"), "INADDR_LOOPBACK", port, zone_file],
-            directory,
-            test_directory=self._context.test_directory,
-        )
-        return self._remember(DNSServer(process, port, zone_file))
+        service = DNSServer.create(self._context.runtime, name, directory, test_directory=self._context.test_directory, **options)
+        return self._remember(service)
 
     def httpbin(self, name: str, **options: Any) -> HttpBinServer:
         """Create a go-httpbin server.
@@ -201,85 +182,46 @@ class ServiceFactory:
 
         :param name: Unique support-process name within the scenario.
         :param replay_path: Replay file served by verifier-server.
-        :param options: Listener, TLS, verbosity, and command options.
+        :param options: Options for :meth:`VerifierServer.create`. One HTTP and
+            one HTTPS listener port are allocated unless ``http_ports`` or
+            ``https_ports`` is given.
         """
 
         directory = self._directory(name)
-        http_ports = list(options.pop("http_ports", [self._context.runtime.allocate_port()]))
-        https_ports = list(options.pop("https_ports", [self._context.runtime.allocate_port()]))
-        ssl_dir = self._context.runtime.test_tools / "proxy-verifier" / "ssl"
-        command: list[str | Path | int] = [self._context.runtime.verifier_bin / "verifier-server", "run"]
-        if http_ports:
-            command.extend(["--listen-http", loopback_addresses(http_ports)])
-        if https_ports:
-            command.extend(["--listen-https", loopback_addresses(https_ports)])
-            command.extend(
-                [
-                    "--server-cert",
-                    options.pop("ssl_cert", ssl_dir / "server.pem"),
-                    "--ca-certs",
-                    options.pop("ca_cert", ssl_dir / "ca.pem"),
-                ]
-            )
-        command.append(self._context.resolve_path(replay_path))
-        if options.pop("verbose", True):
-            command.extend(["--verbose", "diag"])
-        command.extend(shlex.split(str(options.pop("other_args", ""))))
-        process = ManagedProcess(name, command, directory, test_directory=self._context.test_directory)
-        return self._remember(VerifierServer(process, http_ports[0] if http_ports else 0, https_ports[0] if https_ports else 0))
+        runtime = self._context.runtime
+        options.setdefault("http_ports", [runtime.allocate_port()])
+        options.setdefault("https_ports", [runtime.allocate_port()])
+        service = VerifierServer.create(
+            runtime,
+            name,
+            directory,
+            self._context.resolve_path(replay_path),
+            test_directory=self._context.test_directory,
+            **options,
+        )
+        return self._remember(service)
 
-    def verifier_client(self, name: str, replay_path: str | Path, **options: Any) -> ProcessService:
+    def verifier_client(self, name: str, replay_path: str | Path, **options: Any) -> VerifierClient:
         """Create a Proxy Verifier client.
 
         :param name: Unique support-process name within the scenario.
         :param replay_path: Replay file sent by verifier-client.
-        :param options: Target ports, TLS, keys, and command options.
+        :param options: Options for :meth:`VerifierClient.create`, where
+            ``return_code`` may be one exit status or a sequence of them.
         """
 
         directory = self._directory(name)
-        http_ports = list(options.pop("http_ports", []))
-        https_ports = list(options.pop("https_ports", []))
-        http3_ports = list(options.pop("http3_ports", []))
-        command: list[str | Path] = [
-            self._context.runtime.verifier_bin / "verifier-client",
-            "run",
-            self._context.resolve_path(replay_path),
-        ]
-        if http_ports:
-            command.extend(["--connect-http", loopback_addresses(http_ports)])
-        if https_ports:
-            command.extend(["--connect-https", loopback_addresses(https_ports)])
-        if http3_ports:
-            command.extend(["--connect-http3", loopback_addresses(http3_ports)])
-        if https_ports or http3_ports:
-            ssl_dir = self._context.runtime.test_tools / "proxy-verifier" / "ssl"
-            command.extend(
-                [
-                    "--client-cert",
-                    options.pop("ssl_cert", ssl_dir / "client.pem"),
-                    "--ca-certs",
-                    options.pop("ca_cert", ssl_dir / "ca.pem"),
-                ]
-            )
-        keys = options.pop("keys", None)
-        if keys:
-            command.append("--keys")
-            command.extend(shlex.split(keys) if isinstance(keys, str) else [str(key) for key in keys])
-        if options.pop("verbose", True):
-            command.extend(["--verbose", "diag"])
-        poll_timeout = options.pop("poll_timeout", None)
-        if poll_timeout is not None:
-            command.extend(["--poll-timeout", str(poll_timeout)])
-        other_args = str(options.pop("other_args", ""))
-        command.extend(shlex.split(other_args))
-        if "thread-limit" not in other_args:
-            command.extend(["--thread-limit", "1"])
         return_code = options.pop("return_code", 0)
-        return_codes = return_code if isinstance(return_code, Sequence) and not isinstance(return_code, str) else [return_code]
-        process = ManagedProcess(name, command, directory, test_directory=self._context.test_directory)
-        reject = "" if options.pop("allow_errors", False) else "Violation|Invalid status"
-        service = ProcessService(process, reject_expression=reject)
-        service.expect_return_codes(*return_codes)
+        is_sequence = isinstance(return_code, Sequence) and not isinstance(return_code, str)
+        service = VerifierClient.create(
+            self._context.runtime,
+            name,
+            directory,
+            self._context.resolve_path(replay_path),
+            return_codes=return_code if is_sequence else [return_code],
+            test_directory=self._context.test_directory,
+            **options,
+        )
         return self._remember(service)
 
     def process(

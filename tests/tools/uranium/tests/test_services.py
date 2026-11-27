@@ -23,6 +23,7 @@ import os
 import subprocess
 import socket
 import errno
+import sys
 from typing import Any
 
 import pytest
@@ -30,8 +31,18 @@ import pytest
 from tools.uranium import services as service_api
 from tools.uranium.runtime import TestRuntime as UraniumRuntime
 from tools.uranium.runtime import RuntimeConfigError
-from tools.uranium.services import ATS, ATSFactory, Curl, ProceduralContext, ServiceFactory
-from tools.uranium.plugin import uranium_replay
+from tools.uranium.config import ReplaySpec
+from tools.uranium.process import ManagedProcess
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    Curl,
+    DNSServer,
+    ProceduralContext,
+    ProcessService,
+    ServiceFactory,
+    VerifierServer,
+)
 from tools.uranium.replay import ReplayTest
 
 
@@ -57,6 +68,7 @@ class FakeProcess:
     def __init__(self) -> None:
         self.return_code: int | None = None
         self.was_stopped = False
+        self.config: dict[str, Any] = {}
 
     def stop(self) -> None:
         self.was_stopped = True
@@ -84,7 +96,17 @@ def attach_process(ats: ATS) -> FakeProcess:
     process = FakeProcess()
     ats.log_directory.mkdir(parents=True, exist_ok=True)
     ats.diags_log.write_text("ATS initialized\n")
-    ats._runner._start_ats = lambda: process  # type: ignore[method-assign,return-value]
+
+    def launch(config: dict[str, Any]) -> FakeProcess:
+        """Record the staged configuration ATS would have materialized.
+
+        :param config: Configuration in the ``urtest.ats`` schema.
+        """
+
+        process.config = config
+        return process
+
+    ats._launch = launch  # type: ignore[method-assign,assignment]
     return process
 
 
@@ -104,6 +126,7 @@ def test_services_facade_reexports_focused_implementations() -> None:
         "ProcessService": "tools.uranium.services.process_service",
         "RecordsConfig": "tools.uranium.services.ats",
         "ServiceFactory": "tools.uranium.services.service_factory",
+        "VerifierClient": "tools.uranium.services.verifier",
         "VerifierServer": "tools.uranium.services.verifier",
         "assert_matches_gold": "tools.uranium.assertions",
         "send_tcp": "tools.uranium.services.service_utils",
@@ -255,41 +278,6 @@ def test_port_probe_retries_only_occupied_ports(tmp_path: Path, monkeypatch: pyt
         assert len(attempted) == 1
 
 
-def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Give each embedded replay its own directory under the native test.
-
-    :param tmp_path: Isolated session root.
-    :param monkeypatch: Replace network execution with evidence creation.
-    """
-
-    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
-    (tmp_path / ".port-counter").write_text("10000")
-    manifest = tmp_path / "example.yaml"
-    manifest.write_text(
-        "urtest:\n  description: example\n  server: {}\n  client: {}\n  ats: {}\n  variants:\n    - name: one\n    - name: two\n"
-    )
-    context = ProceduralContext.create(runtime, "native-test", manifest)
-    live = context.run_directory / "live-service"
-    live.mkdir()
-    (live / "log").write_text("do not delete")
-
-    def run(replay: ReplayTest) -> None:
-        """Materialize the replay sandbox without starting network services.
-
-        :param replay: Replay carrying the fixture's ownership information.
-        """
-
-        runtime.prepare_sandbox(replay.sandbox, parent=replay._sandbox_parent)
-        (replay.sandbox / "result").write_text(replay.spec.variant_name)
-
-    monkeypatch.setattr(ReplayTest, "run", run)
-    invoke = uranium_replay.__wrapped__(context)
-    invoke(manifest)
-    invoke(manifest)
-    assert (live / "log").read_text() == "do not delete"
-    assert sorted(path.read_text() for path in context.run_directory.glob("replay-*/result")) == ["one", "one", "two", "two"]
-
-
 def test_long_names_allow_both_unix_sockets(tmp_path: Path) -> None:
     """Bind the actual composed RPC and curl socket paths beneath long names.
 
@@ -304,7 +292,7 @@ def test_long_names_allow_both_unix_sockets(tmp_path: Path) -> None:
     ats._context.runtime.layout = {"BINDIR": str(installation), "PLUGINDIR": str(installation), "SYSCONFDIR": str(installation)}
     ats._context.runtime.repository_root = Path(__file__).parents[4]
     try:
-        paths = ats._runner._prepare_ats_tree(ats.run_directory)
+        paths = ats._prepare_tree()
         for path in (paths["rpc_runtime"] / "jsonrpc20.sock", Path(ats.uds_path)):
             assert len(os.fsencode(path)) < 104
             with socket.socket(socket.AF_UNIX) as listener:
@@ -331,7 +319,7 @@ def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
 
     ats.start()
     assert ats.is_running
-    assert ats._runner.spec.urtest["ats"]["records_config"] == {"proxy.config.http.server_ports": "12345"}
+    assert process.config["records_config"] == {"proxy.config.http.server_ports": "12345"}
 
     ats.close()
     assert process.was_stopped
@@ -364,14 +352,14 @@ def test_uds_mode_adds_the_socket_to_the_default_listeners(tmp_path: Path, optio
     """Without a configured server_ports, UDS mode keeps every default listener and adds the socket."""
 
     ats = make_uds_ats(tmp_path, **options)
-    attach_process(ats)
+    process = attach_process(ats)
 
     ats.start()
 
     expected = listeners.format(
         http=ats.http_port, https=ats.https_port, pp=ats.proxy_protocol_port, pp_https=ats.proxy_protocol_https_port
     )
-    assert ats._runner.spec.urtest["ats"]["records_config"]["proxy.config.http.server_ports"] == f"{expected} {ats.uds_path}"
+    assert process.config["records_config"]["proxy.config.http.server_ports"] == f"{expected} {ats.uds_path}"
     ats.close()
 
 
@@ -380,7 +368,7 @@ def test_uds_mode_adds_only_the_socket_to_configured_listeners(tmp_path: Path, w
     """A configured server_ports gets the socket once and none of the default TLS or PROXY protocol listeners."""
 
     ats = make_uds_ats(tmp_path, enable_tls=True, enable_proxy_protocol=True)
-    attach_process(ats)
+    process = attach_process(ats)
     configured = f"{ats.http_port} {ats.ipv6_port}:ipv6 {ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6"
     if with_socket:
         configured += f" {ats.uds_path}"
@@ -389,7 +377,7 @@ def test_uds_mode_adds_only_the_socket_to_configured_listeners(tmp_path: Path, w
     ats.start()
 
     expected = configured if with_socket else f"{configured} {ats.uds_path}"
-    assert ats._runner.spec.urtest["ats"]["records_config"]["proxy.config.http.server_ports"] == expected
+    assert process.config["records_config"]["proxy.config.http.server_ports"] == expected
     ats.close()
 
 
@@ -408,7 +396,7 @@ def test_ats_factory_owns_multiple_process_lifecycles(tmp_path: Path) -> None:
 
     first.start()
     second.start()
-    assert second._runner.spec.urtest["ats"]["process_config"] == {"enable_cache": False}
+    assert second_process.config["process_config"] == {"enable_cache": False}
     factory.close()
 
     assert first_process.was_stopped
@@ -696,3 +684,228 @@ def test_curl_accepts_seclevel_follows_the_active_tls_backend(
     monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
 
     assert Curl.accepts_seclevel() is expected
+
+
+def make_runtime(tmp_path: Path) -> UraniumRuntime:
+    """Create a real runtime whose port allocator works without an ATS installation.
+
+    :param tmp_path: Directory standing in for the source, build, and sandbox roots.
+    """
+
+    (tmp_path / ".port-counter").write_text("10000")
+    return UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+
+
+def make_replay(tmp_path: Path, urtest: dict[str, Any]) -> ReplayTest:
+    """Create a replay whose sandbox exists, without running it.
+
+    :param tmp_path: Directory holding the runtime roots and the manifest.
+    :param urtest: The manifest's ``urtest`` mapping.
+    """
+
+    manifest = tmp_path / "example.test.yaml"
+    manifest.write_text("sessions: []\n")
+    replay = ReplayTest(ReplaySpec(manifest, {}, urtest), make_runtime(tmp_path), "example")
+    replay.sandbox.mkdir()
+    return replay
+
+
+def normalized_command(service: ProcessService) -> list[str]:
+    """Return the service's command with its own output directory made generic.
+
+    :param service: Unstarted service whose command is compared.
+    """
+
+    directory = str(service.run_directory)
+    return [argument.replace(directory, "<run>") for argument in service.command]
+
+
+@pytest.mark.parametrize(
+    "module_name",
+    ["tools.uranium.services", "tools.uranium.services.ats", "tools.uranium.services.service_factory"],
+)
+def test_services_do_not_depend_on_higher_layers(module_name: str) -> None:
+    """Keep the services below the launcher, pytest plugin, manifest parser, and replay engine.
+
+    :param module_name: Service module imported into a fresh interpreter.
+    """
+
+    tests_directory = Path(__file__).resolve().parents[3]
+    higher_layers = ["tools.uranium.runner", "tools.uranium.plugin", "tools.uranium.config", "tools.uranium.replay"]
+    probe = (
+        f"import sys, {module_name}; "
+        f"loaded = [name for name in {higher_layers!r} if name in sys.modules]; "
+        "assert not loaded, loaded"
+    )
+    result = subprocess.run([sys.executable, "-c", probe], cwd=tests_directory, capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+
+
+def test_replay_and_procedural_tests_stage_ats_identically(tmp_path: Path) -> None:
+    """Hand ATS the same staged configuration whether a manifest or a procedural test configures it.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    """
+
+    manifest = {
+        "name": "ts",
+        "process_config": {"enable_tls": True},
+        "records_config": {"proxy.config.diags.debug.enabled": 1},
+        "remap_config": ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/"],
+    }
+    replay = make_replay(tmp_path, {"server": {}, "client": {}, "ats": manifest})
+    from_manifest = attach_process(replay.ats)
+
+    procedural = ATS(ProceduralContext.create(replay.runtime, "native", replay.spec.path), "ts", enable_tls=True)
+    from_methods = attach_process(procedural)
+    procedural.records.update({"proxy.config.diags.debug.enabled": 1})
+    procedural.remap_config.add_line("map / http://127.0.0.1:{SERVER_HTTP_PORT}/")
+
+    replay.ats.start()
+    procedural.start()
+
+    assert from_manifest.config == from_methods.config
+    assert replay.spec.urtest["ats"] == manifest, "staging must not modify the manifest"
+    assert replay.ats.run_directory == replay.sandbox / "ts"
+
+
+def test_manifest_startup_failure_skips_diagnostic_checks(tmp_path: Path) -> None:
+    """Treat a manifest's startup_failure like expect_start_failure, which expects fatal diagnostics.
+
+    :param tmp_path: Runtime roots and sandboxes.
+    """
+
+    ats = ATS.from_manifest(make_context(tmp_path), {"startup_failure": "bad config"}, test_directory=tmp_path)
+    process = attach_process(ats)
+    process.return_code = 33
+
+    ats.start()
+    ats.close()
+
+    assert process.was_stopped
+
+
+def test_replay_and_factory_build_the_same_verifier_client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Build one verifier-client command line whether a manifest or a procedural test asks for it.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    :param monkeypatch: Keep the replay from launching verifier-client.
+    """
+
+    monkeypatch.setattr(ProcessService, "run", lambda _service, timeout=60: None)
+    replay = make_replay(
+        tmp_path,
+        {
+            "server": {},
+            "client": {"process_config": {"http_ports": ["{ATS_PROXY_PROTOCOL_PORT}"], "keys": "1 2", "poll_timeout": 5}},
+            "ats": {"process_config": {"enable_tls": True, "enable_quic": True}},
+        },
+    )
+    from_replay = replay._run_verifier_client()
+
+    factory = ServiceFactory(ProceduralContext.create(replay.runtime, "native", replay.spec.path))
+    from_factory = factory.verifier_client(
+        "client",
+        replay.spec.path,
+        http_ports=[replay.ats.proxy_protocol_port],
+        https_ports=[replay.ats.https_port],
+        http3_ports=[replay.ats.https_port],
+        keys="1 2",
+        poll_timeout=5,
+    )
+
+    command = normalized_command(from_replay)
+    assert command == normalized_command(from_factory)
+    assert command[command.index("--connect-http") + 1] == f"127.0.0.1:{replay.ats.proxy_protocol_port}"
+    for flag in ("--connect-https", "--connect-http3", "--qlog-dir", "--tls-secrets-log-file"):
+        assert flag in command
+    # Anything after --keys would be read as another key.
+    assert command[-3:] == ["--keys", "1", "2"]
+    assert command[command.index("--thread-limit") + 1] == "1"
+
+
+def test_replay_and_factory_build_the_same_verifier_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Build one verifier-server command line whether a manifest or a procedural test asks for it.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    :param monkeypatch: Keep the replay from launching verifier-server.
+    """
+
+    monkeypatch.setattr(VerifierServer, "start", lambda _service: None)
+    replay = make_replay(
+        tmp_path,
+        {"server": {"process_config": {"listen_extra_http": True, "other_args": "--format '{url}'"}}, "client": {}, "ats": {}},
+    )
+    from_replay = replay._start_verifier_server()
+    assert from_replay is not None
+
+    factory = ServiceFactory(ProceduralContext.create(replay.runtime, "native", replay.spec.path))
+    from_factory = factory.verifier_server(
+        "server",
+        replay.spec.path,
+        http_ports=[replay.server_http_port, replay.server_extra_http_port],
+        https_ports=[replay.server_https_port],
+        other_args="--format '{url}'",
+    )
+
+    assert normalized_command(from_replay) == normalized_command(from_factory)
+    assert from_factory.http_port == replay.server_http_port
+    assert "--tls-secrets-log-file" in from_factory.command
+
+
+@pytest.mark.parametrize(
+    ("http_ports", "https_ports", "probed"),
+    [
+        pytest.param([1, 2], [3], [1, 2], id="every_clear_text_listener"),
+        pytest.param([], [3, 4], [3], id="first_tls_listener"),
+    ],
+)
+def test_verifier_server_waits_for_its_listeners(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, http_ports: list[int], https_ports: list[int], probed: list[int]
+) -> None:
+    """Wait for every clear-text listener, and probe a TLS listener only when no other exists.
+
+    :param tmp_path: Directory receiving the unlaunched server's output.
+    :param monkeypatch: Replace process launch and the TCP probe.
+    :param http_ports: Clear-text listener ports.
+    :param https_ports: TLS listener ports.
+    :param probed: Ports expected to be probed for readiness.
+    """
+
+    attempted: list[int] = []
+    monkeypatch.setattr(ManagedProcess, "start", lambda _process: None)
+    monkeypatch.setattr(ManagedProcess, "wait_until", lambda _process, ready, _timeout, _description: ready())
+    monkeypatch.setattr("tools.uranium.services.verifier.tcp_open", lambda port: attempted.append(port) or True)
+
+    server = VerifierServer.create(
+        make_runtime(tmp_path), "server", tmp_path, tmp_path / "replay.yaml", http_ports=http_ports, https_ports=https_ports
+    )
+    server.start()
+
+    assert attempted == probed
+
+
+def test_replay_and_factory_write_the_same_dns_zone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Write one zone document whether a manifest or a procedural test configures microDNS.
+
+    :param tmp_path: Runtime roots, manifest, and sandboxes.
+    :param monkeypatch: Keep microDNS from launching.
+    """
+
+    monkeypatch.setattr(DNSServer, "start", lambda _service: None)
+    replay = make_replay(
+        tmp_path,
+        {"dns": {"records": {"origin.test": ["127.0.0.1"], "root.test.": ["::1"]}}, "server": {}, "client": {}, "ats": {}},
+    )
+    from_replay = replay._start_dns()
+    assert from_replay is not None
+    assert replay.dns_port == from_replay.port
+
+    factory = ServiceFactory(ProceduralContext.create(replay.runtime, "native", replay.spec.path))
+    from_factory = factory.dns("dns", default="127.0.0.1")
+    from_factory.add_records({"origin.test": ["127.0.0.1"], "root.test.": "::1"})
+
+    zone = json.loads((from_replay.run_directory / "dns_file.json").read_text())
+    assert zone == json.loads((from_factory.run_directory / "dns_file.json").read_text())
+    assert zone == {"mappings": [{"origin.test.": ["127.0.0.1"]}, {"root.test.": ["::1"]}], "otherwise": ["127.0.0.1"]}
+    assert "otherwise" not in json.loads((factory.dns("refusing").run_directory / "dns_file.json").read_text())

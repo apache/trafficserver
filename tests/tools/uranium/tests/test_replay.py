@@ -18,12 +18,12 @@
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, call
-import subprocess
 
 import pytest
 import yaml
 
 from tools.uranium.replay import ReplayTest
+from tools.uranium.services import ATS, CommandResult
 
 
 @pytest.mark.parametrize("stop_after_client", [None, False, True])
@@ -35,27 +35,28 @@ def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_af
     """
     replay = Mock(spec=ReplayTest)
     server_config = {} if stop_after_client is None else {"stop_after_client": stop_after_client}
-    replay.spec = SimpleNamespace(urtest={"server": server_config, "client": {}})
+    replay.spec = SimpleNamespace(urtest={"server": server_config, "client": {}, "ats": {}})
+    replay.ats = Mock()
     replay.runtime = Mock()
     replay.runtime.requirement_failure.return_value = None
     replay.sandbox = tmp_path
-    replay._sandbox_parent = tmp_path.parent
     server = replay._start_verifier_server.return_value
-    replay.processes = [server]
-    replay._temporary_directories = []
     order = Mock()
     order.attach_mock(replay._validate_background_processes, "validate")
     order.attach_mock(server.stop, "stop")
     order.attach_mock(replay._check_metrics, "metrics")
+    order.attach_mock(replay._stop_processes, "teardown")
+    order.attach_mock(replay.ats.validate_diagnostics, "diagnostics")
 
     ReplayTest.run(replay)
 
-    replay.runtime.prepare_sandbox.assert_called_once_with(tmp_path, parent=tmp_path.parent)
-    expected = [call.validate(server, replay._start_ats.return_value)]
+    replay.runtime.prepare_sandbox.assert_called_once_with(tmp_path)
+    expected = [call.validate(server)]
     if stop_after_client:
         expected.append(call.stop())
-    expected.extend([call.metrics(), call.stop()])
+    expected.extend([call.metrics(), call.teardown(), call.diagnostics()])
     assert order.mock_calls == expected
+    replay.ats.remove_temporary_directories.assert_called_once_with()
 
 
 @pytest.mark.parametrize("custom_multicert", [False, True])
@@ -75,9 +76,9 @@ def test_tls_certificate_paths_use_the_sandbox(tmp_path: Path, custom_multicert:
     document = {"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "custom.pem", "ssl_key_name": "custom.key"}]}
     config = {"ssl_multicert_yaml": document} if custom_multicert else {}
     records = {}
-    replay = object.__new__(ReplayTest)
-    replay.runtime = SimpleNamespace(test_tools=tools)
-    replay._configure_tls(config, records, paths)
+    ats = object.__new__(ATS)
+    ats._context = SimpleNamespace(runtime=SimpleNamespace(test_tools=tools))
+    ats._configure_tls(config, records, paths)
     assert records["ssl"]["server"]["cert"]["path"] == str(paths["ssl"])
     assert records["ssl"]["server"]["private_key"]["path"] == str(paths["ssl"])
     if custom_multicert:
@@ -95,46 +96,30 @@ def test_metric_check_retries_until_the_value_matches(monkeypatch: pytest.Monkey
 
     replay = object.__new__(ReplayTest)
     replay.spec = SimpleNamespace(urtest={"ats": {"metric_checks": [{"metric": "proxy.process.test", "value": 2, "delay": 0}]}})
-    replay.ats_paths = {"bin": tmp_path}
-    replay.ats_environment = {}
     results = iter(
         [
-            subprocess.CompletedProcess([], 0, "proxy.process.test 1\n", ""),
-            subprocess.CompletedProcess([], 0, "proxy.process.test 2\n", ""),
+            CommandResult(("traffic_ctl",), 0, "proxy.process.test 1\n", ""),
+            CommandResult(("traffic_ctl",), 0, "proxy.process.test 2\n", ""),
         ]
     )
     calls = []
 
-    def read_metric(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+    def read_metric(*args: str, timeout: float) -> CommandResult:
         """Return the next simulated traffic_ctl result.
 
-        :param args: Positional arguments passed to subprocess.run.
-        :param kwargs: Keyword arguments passed to subprocess.run.
+        :param args: Arguments passed to traffic_ctl.
+        :param timeout: Seconds the read may take.
         """
 
-        calls.append((args, kwargs))
+        calls.append(args)
         return next(results)
 
-    monkeypatch.setattr("tools.uranium.replay.subprocess.run", read_metric)
+    replay.ats = SimpleNamespace(traffic_ctl=read_metric)
     monkeypatch.setattr("tools.uranium.replay.time.sleep", lambda _seconds: None)
 
     replay._check_metrics()
 
-    assert len(calls) == 2
-
-
-def test_missing_diags_log_has_an_assertion_message(tmp_path: Path) -> None:
-    """Report a missing ATS diagnostic log as a test assertion.
-
-    :param tmp_path: Stand-in ATS log directory without a diags.log file.
-    """
-
-    replay = object.__new__(ReplayTest)
-    replay.spec = SimpleNamespace(urtest={"ats": {}})
-    replay.ats_paths = {"log": tmp_path}
-
-    with pytest.raises(AssertionError, match="ATS diagnostic log does not exist"):
-        replay._validate_ats_logs()
+    assert calls == [("metric", "get", "proxy.process.test")] * 2
 
 
 def test_audited_replay_expectations_have_explicit_verification_rules() -> None:

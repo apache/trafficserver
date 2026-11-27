@@ -21,7 +21,8 @@ import ast
 import pytest
 import yaml
 
-from tools.uranium.config import ReplayConfigError, ReplaySpec, merge_flat_records, replace_server_ports
+from tools.uranium.config import ReplayConfigError, ReplaySpec
+from tools.uranium.services.ats_config import merge_flat_records
 
 
 @pytest.mark.parametrize(
@@ -318,9 +319,3 @@ def test_flat_records_merge_with_nested_defaults() -> None:
             "diags": {"debug": {"enabled": 1}},
         }
     }
-
-
-def test_server_port_substitution() -> None:
-    """Substitute both Proxy Verifier origin listener placeholders."""
-
-    assert replace_server_ports("http://host:{SERVER_HTTP_PORT}/{SERVER_HTTPS_PORT}", 1234, 5678) == "http://host:1234/5678"

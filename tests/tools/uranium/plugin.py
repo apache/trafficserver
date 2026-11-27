@@ -33,6 +33,7 @@ from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
 from .runtime import TestRuntime
 from .services.ats import ATS, ATSFactory
+from .services.ats_config import ATSConfigError
 from .services.context import ProceduralContext
 from .services.curl import Curl
 from .services.service_factory import ServiceFactory
@@ -279,7 +280,7 @@ class ReplayItem(pytest.Item):
     def repr_failure(self, excinfo: pytest.ExceptionInfo[BaseException], style: str | None = None) -> str:
         """Present system-test failures without pytest's internal collector frames."""
 
-        if isinstance(excinfo.value, (AssertionError, ProcessError, ReplayConfigError)):
+        if isinstance(excinfo.value, (AssertionError, ATSConfigError, ProcessError, ReplayConfigError)):
             return str(excinfo.value)
         return super().repr_failure(excinfo, style=style)
 
@@ -323,32 +324,6 @@ def uranium_test_runtime(pytestconfig: pytest.Config) -> TestRuntime:
     """Provide installed ATS paths and capabilities to handwritten tests."""
 
     return get_runtime(pytestconfig)
-
-
-@pytest.fixture
-def uranium_replay(procedural_context: ProceduralContext) -> Callable[[Path], None]:
-    """Return a helper that executes a replay file from a handwritten pytest test.
-
-    :param procedural_context: Owning native scenario and sandbox.
-    """
-
-    count = 0
-
-    def run(path: Path) -> None:
-        """Run variants in separate children without touching live sibling services.
-
-        :param path: Replay manifest selected by the native scenario.
-        """
-
-        nonlocal count
-        for spec in ReplaySpec.load_all(path):
-            count += 1
-            name = f"replay-{count}-{path.stem}"
-            if spec.variant_name:
-                name += f"-{spec.variant_name}"
-            ReplayTest(spec, procedural_context.runtime, name, sandbox_parent=procedural_context.run_directory).run()
-
-    return run
 
 
 @pytest.fixture
