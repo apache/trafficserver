@@ -37,24 +37,25 @@
     after all. That keeps concurrent misses on a cacheable key collapsed onto one origin fetch
     while sparing uncacheable keys the lock and the waits behind it.
 
-    A key is remembered only once it answers uncacheable twice within the memory's lifetime.
-    The first answer leaves a seen-once entry, so a stream of URLs that are each asked for once
-    cannot push out the ones asked for again and again, which are the ones that pile up behind
-    the lock.
+    A key is remembered only once it answers uncacheable twice within one ttl of the first
+    answer. The first answer leaves a seen-once entry, so a stream of URLs that are each asked
+    for once can push out at most one key per set of the ones asked for again and again, which
+    are the ones that pile up behind the lock.
 
     The table is split into sets of four entries, one cache line each, picked by the low bits of
     the second 64-bit slice of the key's hash. An entry keeps the first slice as a tag, with the
     low bit set so it is never zero and the next bit marking a remembered key, plus an expiry
-    time. A new key takes an empty or expired entry first, then the oldest seen-once entry, and
-    only when all four hold live remembered keys, the one renewed longest ago. A set therefore
-    keeps at most one seen-once key in front of its remembered ones: keys asked for once churn
-    through that entry, while the keys asked for most often stay put.
+    time. A new key takes an empty or expired entry first, then the seen-once entry closest to
+    expiry, and only when all four hold live remembered keys, the remembered one closest to
+    expiry. With one ttl for every key, that is the one renewed longest ago. So once a set is
+    full of remembered keys, keys asked for once displace one of them and then churn through
+    that entry, while the keys asked for most often stay put.
 
     Readers and writers use plain atomics with no lock, so two keys written into one entry at
     the same time can leave one key's tag next to the other's expiry until the entry is written
-    again. Any such mix-up costs little: a false positive sends one miss to the origin
-    uncollapsed, and a false negative makes one miss take the lock. Neither changes what gets
-    stored.
+    again, and two first answers for one key racing into a set can leave it in two entries.
+    Any such mix-up costs little: a false positive sends one miss to the origin uncollapsed,
+    and a false negative makes one miss take the lock. Neither changes what gets stored.
  */
 class UncacheableKeyMemo
 {
@@ -68,14 +69,14 @@ public:
     NOTHING,   ///< A non-positive ttl.
     SEEN_ONCE, ///< The key now has a seen-once entry.
     ADMITTED,  ///< A seen-once key answered uncacheable again and is now remembered.
-    RENEWED,   ///< An already remembered key had its expiry moved out.
+    RENEWED,   ///< An already remembered key had its expiry reset.
   };
 
   struct Outcome {
     Remembered what = Remembered::NOTHING;
     /// A live seen-once entry of another key was overwritten to make room.
     bool evicted = false;
-    /// Every entry held a live remembered key, and the one renewed longest ago made room.
+    /// Every entry held a live remembered key, and the one closest to expiry made room.
     bool displaced = false;
   };
 
@@ -97,7 +98,7 @@ public:
   /// Note that @a key answered uncacheable at @a now, for @a ttl. A non-positive @a ttl does nothing.
   Outcome remember(CryptoHash const &key, ink_hrtime now, ink_hrtime ttl);
 
-  /// Drop @a key, remembered or seen once. Other keys in its set are left alone.
+  /// Drop every entry for @a key, remembered or seen once. Other keys in its set are left alone.
   void forget(CryptoHash const &key);
 
 private:

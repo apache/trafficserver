@@ -43,9 +43,9 @@ Configuration
   ``HEAD`` request carrying ``Content-Length`` or ``Transfer-Encoding`` is
   refused. Enabled by default.
 * Added :ts:cv:`proxy.config.http.cache.remember_uncacheable`, on by default
-  for 10 seconds. A URL whose origin response could not be stored twice within
-  that time is remembered, and misses on it go to the origin before taking the cache write
-  lock, so concurrent requests for uncacheable content no longer wait on each
+  for 10 seconds. A URL whose origin responses are uncacheable twice within
+  that time is remembered, and misses on it go to the origin before taking the
+  cache write lock, so concurrent requests for uncacheable content no longer wait on each
   other. Requests for other URLs are collapsed as before. Added
   :ts:cv:`proxy.config.http.cache.defer_write_on_miss` to apply the same to
   every miss, :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` to

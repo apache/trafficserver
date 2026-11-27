@@ -183,6 +183,7 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + ttl, ttl);
     CHECK(outcome.what == Remembered::SEEN_ONCE);
     CHECK_FALSE(outcome.evicted);
+    CHECK_FALSE(outcome.displaced);
     CHECK(memo->remember(in_set(4, 7), now + ttl, ttl).what == Remembered::ADMITTED);
   }
 
@@ -195,6 +196,7 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + 3, ttl);
     CHECK(outcome.what == Remembered::SEEN_ONCE);
     CHECK(outcome.evicted);
+    CHECK_FALSE(outcome.displaced);
     // The younger seen-once key survived, the older one has to start over, and the remembered keys stayed.
     CHECK(memo->remember(in_set(4, 7), now + 4, ttl).what == Remembered::ADMITTED);
     CHECK(memo->remember(in_set(3, 7), now + 4, ttl).what == Remembered::SEEN_ONCE);
@@ -268,16 +270,63 @@ TEST_CASE("UncacheableKeyMemo", "[http][cache]")
     memo->remember(key, now, std::numeric_limits<ink_hrtime>::max());
     CHECK(memo->contains(key, std::numeric_limits<ink_hrtime>::max() - 1));
   }
+  SECTION("a full set whose entries never expire still makes room")
+  {
+    ink_hrtime const forever = std::numeric_limits<ink_hrtime>::max();
+    for (uint64_t t = 1; t <= 4; ++t) {
+      memo->remember(in_set(t, 7), now, forever);
+    }
+    UncacheableKeyMemo::Outcome outcome = memo->remember(in_set(9, 7), now, forever);
+    CHECK(outcome.what == Remembered::SEEN_ONCE);
+    CHECK(outcome.evicted);
+
+    for (uint64_t t = 1; t <= 4; ++t) {
+      memo->remember(in_set(t, 8), now, forever);
+      memo->remember(in_set(t, 8), now, forever);
+    }
+    outcome = memo->remember(in_set(9, 8), now, forever);
+    CHECK(outcome.what == Remembered::SEEN_ONCE);
+    CHECK(outcome.displaced);
+    CHECK_FALSE(outcome.evicted);
+  }
+
+  SECTION("a full set gives up the remembered key closest to expiry, whatever its ttl")
+  {
+    // Key 1 was renewed first but for longer, so key 2, renewed later for less, goes first.
+    memo->remember(in_set(1, 7), now, HRTIME_SECONDS(60));
+    memo->remember(in_set(1, 7), now, HRTIME_SECONDS(60));
+    admit(in_set(2, 7), now + HRTIME_SECONDS(5));
+    admit(in_set(3, 7), now + HRTIME_SECONDS(5));
+    admit(in_set(4, 7), now + HRTIME_SECONDS(5));
+    CHECK(memo->remember(in_set(9, 7), now + HRTIME_SECONDS(6), ttl).displaced);
+    CHECK(memo->contains(in_set(1, 7), now + HRTIME_SECONDS(6)));
+  }
+
+  SECTION("an expired seen-once entry of another key is taken without counting")
+  {
+    for (uint64_t t = 1; t <= 4; ++t) {
+      memo->remember(in_set(t, 7), now, ttl);
+    }
+    UncacheableKeyMemo::Outcome const outcome = memo->remember(in_set(9, 7), now + ttl, ttl);
+    CHECK(outcome.what == Remembered::SEEN_ONCE);
+    CHECK_FALSE(outcome.evicted);
+    CHECK_FALSE(outcome.displaced);
+  }
 }
 
 TEST_CASE("UncacheableKeyMemo size", "[http][cache]")
 {
+  CHECK(UncacheableKeyMemo::entries_for(-1) == UncacheableKeyMemo::WAYS);
   CHECK(UncacheableKeyMemo::entries_for(0) == UncacheableKeyMemo::WAYS);
+  CHECK(UncacheableKeyMemo::entries_for(4) == 4);
   CHECK(UncacheableKeyMemo::entries_for(5) == 8);
   CHECK(UncacheableKeyMemo::entries_for(65536) == 65536);
   CHECK(UncacheableKeyMemo::entries_for(65537) == 131072);
+  CHECK(UncacheableKeyMemo::entries_for(UncacheableKeyMemo::MAX_ENTRIES - 1) == UncacheableKeyMemo::MAX_ENTRIES);
+  CHECK(UncacheableKeyMemo::entries_for(UncacheableKeyMemo::MAX_ENTRIES) == UncacheableKeyMemo::MAX_ENTRIES);
   CHECK(UncacheableKeyMemo::entries_for(int64_t{1} << 40) == UncacheableKeyMemo::MAX_ENTRIES);
   CHECK(UncacheableKeyMemo{}.entries() == UncacheableKeyMemo::DEFAULT_ENTRIES);
+  CHECK(UncacheableKeyMemo{5}.entries() == 8);
 
   // One set: the fifth key pushes out the remembered key renewed longest ago.
   UncacheableKeyMemo small{4};

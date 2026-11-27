@@ -105,10 +105,10 @@ UncacheableKeyMemo::remember(CryptoHash const &key, ink_hrtime now, ink_hrtime t
     return {what, false};
   }
 
-  // An empty or expired entry costs nothing to take. Failing that, the oldest seen-once entry,
-  // and only when all four are remembered, the one renewed longest ago. Every miss on a
-  // remembered key renews it when its uncacheable response comes back, so the earliest expiry
-  // marks the key asked for least recently, without a write on the lookup path.
+  // An empty or expired entry costs nothing to take. Failing that, the seen-once entry closest
+  // to expiry, and only when all four are remembered, the remembered one closest to expiry.
+  // Each qualifying uncacheable response renews its key, so with one ttl for every key the
+  // earliest expiry marks the key asked for least recently, without a write on the lookup path.
   Entry     *empty         = nullptr;
   Entry     *seen_once     = nullptr;
   Entry     *remembered    = nullptr;
@@ -122,11 +122,11 @@ UncacheableKeyMemo::remember(CryptoHash const &key, ink_hrtime now, ink_hrtime t
       break;
     }
     if (!(have & ADMITTED)) {
-      if (have_until < seen_until) {
+      if (seen_once == nullptr || have_until < seen_until) {
         seen_once  = &entry;
         seen_until = have_until;
       }
-    } else if (have_until < remembered_at) {
+    } else if (remembered == nullptr || have_until < remembered_at) {
       remembered    = &entry;
       remembered_at = have_until;
     }
@@ -149,11 +149,10 @@ void
 UncacheableKeyMemo::forget(CryptoHash const &key)
 {
   uint64_t const tag = tag_of(key);
+  // Every matching entry goes, since racing first answers can leave a key in two of them, and
+  // a lost exchange means the key was written meanwhile, so it is tried again while it matches.
   for (Entry &entry : set_of(key).ways) {
     uint64_t have = entry.tag.load(std::memory_order_relaxed);
-    if ((have & ~ADMITTED) == tag) {
-      entry.tag.compare_exchange_strong(have, 0, std::memory_order_relaxed);
-      return;
-    }
+    while ((have & ~ADMITTED) == tag && !entry.tag.compare_exchange_weak(have, 0, std::memory_order_relaxed)) {}
   }
 }

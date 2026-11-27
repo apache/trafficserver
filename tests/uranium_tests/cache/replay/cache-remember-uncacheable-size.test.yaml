@@ -1,0 +1,412 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# The size setting is read at startup and its stats are counted. With four
+# entries the memory is a single set, so where every URL goes is known.
+#
+# /a to /d each answer no-store twice and fill the set with remembered URLs.
+# /e then answers once: nothing is empty, expired or seen once, so the
+# remembered URL closest to expiry, /a, makes room (set_full). /f answers once
+# and takes the place of /e, seen once and still live (evictions). /b is still
+# remembered, so its miss skips the lock (hits). /a was pushed out, so its miss
+# takes the lock, and its answer takes the place of /f (evictions again).
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'The uncacheable memory size is read at startup and its stats are counted'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.remember_uncacheable: 60
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+  variants:
+    - name: one-set
+      ats:
+        records_config:
+          proxy.config.http.cache.remember_uncacheable_entries: 4
+        metric_checks:
+          - metric: proxy.process.http.cache.remember_uncacheable.admits
+            value: 4
+          - metric: proxy.process.http.cache.remember_uncacheable.set_full
+            value: 1
+          - metric: proxy.process.http.cache.remember_uncacheable.evictions
+            value: 2
+          - metric: proxy.process.http.cache.remember_uncacheable.hits
+            value: 1
+          - metric: proxy.process.http.cache_open_write_deferred
+            value: 1
+        log_validation:
+          diags_log:
+            excludes:
+              - expression: 'is not a power of two'
+                description: 'A power of two is used as given'
+
+    # Rounded up to 8 with a warning. Two sets, so where each URL lands depends
+    # on its hash; only the counts that do not depend on that are checked.
+    - name: rounded
+      ats:
+        records_config:
+          proxy.config.http.cache.remember_uncacheable_entries: 5
+        metric_checks:
+          - metric: proxy.process.http.cache.remember_uncacheable.admits
+            value: 4
+        log_validation:
+          diags_log:
+            contains:
+              - expression: 'remember_uncacheable_entries 5 is not a power of two; using 8'
+                description: 'A size that is not a power of two is rounded up with a warning'
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /a
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, a-1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, a-1]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: a-1, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /a
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, a-2]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, a-2]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: a-2, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /b
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, b-1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, b-1]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: b-1, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /b
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, b-2]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, b-2]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: b-2, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /c
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, c-1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, c-1]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: c-1, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /c
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, c-2]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, c-2]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: c-2, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /d
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, d-1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, d-1]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: d-1, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /d
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, d-2]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, d-2]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: d-2, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /e
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, e-1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, e-1]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: e-1, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /f
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, f-1]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, f-1]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: f-1, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /b
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, b-3]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, b-3]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: b-3, as: equal}]
+
+  - client-request:
+      method: GET
+      url: /a
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, a-3]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, a-3]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: a-3, as: equal}]

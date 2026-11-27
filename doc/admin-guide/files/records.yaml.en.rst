@@ -3957,7 +3957,8 @@ Dynamic Content & Content Negotiation
     responses themselves: their ``Cache-Control`` directives, a missing validator or any other
     property of the response. A URL is remembered once it answers uncacheable a second time
     within this many seconds of the first, so URLs asked for only once do not crowd out the
-    ones asked for repeatedly. A cache miss on a remembered URL goes to the origin without first taking
+    ones asked for repeatedly. Both answers must qualify the way a renewal does, described
+    below. A cache miss on a remembered URL goes to the origin without first taking
     the cache write lock, and takes the lock only if the response turns out to be cacheable
     after all. The URL is forgotten once a response for it is stored. Every further uncacheable
     response to a plain ``GET`` miss renews the memory; error responses, range requests, other
@@ -3983,28 +3984,35 @@ Dynamic Content & Content Negotiation
     These metrics show how the memory is doing:
 
     ``proxy.process.http.cache.remember_uncacheable.hits``
-       Misses that skipped the write lock because their URL was remembered.
+       Misses that skipped the write lock because their URL was remembered. Misses deferred by
+       :ts:cv:`proxy.config.http.cache.defer_write_on_miss` are not counted here.
 
     ``proxy.process.http.cache.remember_uncacheable.admits``
-       URLs that answered uncacheable a second time and became remembered.
+       Times a URL answered uncacheable a second time and became remembered. A URL that lapses
+       and is remembered again counts again.
 
     ``proxy.process.http.cache.remember_uncacheable.evictions``
        URLs seen uncacheable once that were displaced by another URL before they could
-       answer a second time. URLs asked for once are expected to land here. When it grows
-       while ``hits`` stays low, URLs that are asked for again are being displaced too, and
-       a larger memory would help.
+       answer a second time. URLs asked for once are expected to land here, so a high count
+       alone says nothing about the size. If it is high and the origin still sees repeated
+       requests for uncacheable URLs that ``admits`` does not reflect, those URLs may be
+       displaced between their answers: raise
+       :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` and check whether
+       ``admits`` and ``hits`` rise.
 
     ``proxy.process.http.cache.remember_uncacheable.set_full``
        Remembered URLs pushed out to make room, because every URL sharing their place in the
-       memory was remembered and still live. The one asked for least recently goes. Any steady
-       rate means the memory is too small.
+       memory was remembered and still live. The one closest to expiry goes, which with one
+       ttl for every URL is the one asked for least recently. Any steady rate means the memory
+       is too small.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.remember_uncacheable_entries INT 65536
 
     How many URLs :ts:cv:`proxy.config.http.cache.remember_uncacheable` can hold at once,
     counting both remembered URLs and URLs seen uncacheable once. Each takes 16 bytes, so the
-    default uses 1 MiB. A value that is not a power of two is rounded up to one. The minimum
-    is ``4`` and the maximum is ``16777216``. Takes effect on restart.
+    default uses 1 MiB. A value that is not a power of two is rounded up to one, with a
+    warning. The minimum is ``4`` and the maximum is ``16777216``, which uses 256 MiB. Takes
+    effect on restart.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.defer_write_on_miss INT 0
    :reloadable:

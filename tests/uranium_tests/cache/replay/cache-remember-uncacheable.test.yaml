@@ -88,6 +88,10 @@ urtest:
         metric_checks:
           - metric: proxy.process.http.cache_open_write_deferred
             value: 0
+          - metric: proxy.process.http.cache.remember_uncacheable.admits
+            value: 0
+          - metric: proxy.process.http.cache.remember_uncacheable.hits
+            value: 0
           - metric: proxy.process.http.cache_open_write_fail_count
             value: 1
           - metric: proxy.process.cache.read_busy.failure
@@ -156,7 +160,7 @@ sessions:
 
 - transactions:
   - client-request:
-      delay: 600ms
+      delay: 1500ms
       method: GET
       url: /nostore
       version: '1.1'
@@ -186,7 +190,7 @@ sessions:
 
 - transactions:
   - client-request:
-      delay: 800ms
+      delay: 1700ms
       method: GET
       url: /nostore
       version: '1.1'
@@ -215,7 +219,7 @@ sessions:
 
 - transactions:
   - client-request:
-      delay: 3s
+      delay: 4500ms
       method: GET
       url: /cacheable
       version: '1.1'

@@ -3595,8 +3595,8 @@ HttpTransact::uncacheable_memo_key(State *s, CryptoHash &hash)
 
 /** Whether a miss should fetch from the origin before taking the cache write lock.
 
-    Always when configured so, otherwise when this key recently produced an uncacheable
-    response: waiting on the write lock would buy nothing, as nothing gets stored. A
+    Always when configured so, otherwise when this key recently produced two uncacheable
+    responses within one ttl: waiting on the write lock would buy nothing, as nothing gets stored. A
     transaction that already holds the lock, as a followed redirect can, keeps using it.
  */
 bool
@@ -3651,7 +3651,8 @@ HttpTransact::can_remember_uncacheable(State *s)
   return true;
 }
 
-/** Remember this key as uncacheable when the origin's response kept it from being stored. */
+/** Note that the origin's response kept this key from being stored; the second such response
+    within the ttl remembers it. */
 void
 HttpTransact::remember_uncacheable_response(State *s)
 {
@@ -3661,21 +3662,29 @@ HttpTransact::remember_uncacheable_response(State *s)
       !uncacheable_memo_key(s, hash)) {
     return;
   }
-  // A plugin override skips the records.yaml range check, so cap it there before it is scaled to nanoseconds.
+  // A plugin override skips the records.yaml range check, so cap it here before it is scaled to nanoseconds.
   int64_t const                     seconds = std::min<int64_t>(s->txn_conf->cache_remember_uncacheable, 86400);
   UncacheableKeyMemo::Outcome const outcome = uncacheableKeyMemo->remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
   switch (outcome.what) {
+  case UncacheableKeyMemo::Remembered::SEEN_ONCE:
+    TxnDbg(dbg_ctl_http_trans, "uncacheable key seen once, remembered on a second answer within %" PRId64 " s", seconds);
+    break;
   case UncacheableKeyMemo::Remembered::ADMITTED:
     TxnDbg(dbg_ctl_http_trans, "remembering the key as uncacheable for %" PRId64 " s", seconds);
     Metrics::Counter::increment(http_rsb.remember_uncacheable_admits);
     break;
-  default:
+  case UncacheableKeyMemo::Remembered::RENEWED:
+    TxnDbg(dbg_ctl_http_trans, "still uncacheable, remembered for another %" PRId64 " s", seconds);
+    break;
+  case UncacheableKeyMemo::Remembered::NOTHING:
     break;
   }
   if (outcome.evicted) {
+    TxnDbg(dbg_ctl_http_trans, "a seen-once key in the uncacheable memo made room");
     Metrics::Counter::increment(http_rsb.remember_uncacheable_evictions);
   }
   if (outcome.displaced) {
+    TxnDbg(dbg_ctl_http_trans, "a remembered key in a full uncacheable memo set made room");
     Metrics::Counter::increment(http_rsb.remember_uncacheable_set_full);
   }
 }
@@ -5260,8 +5269,8 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
     remember_uncacheable_response(s);
   } else if (s->txn_conf->cache_http && can_remember_uncacheable(s) &&
              !is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response)) {
-    // A miss that lost the write lock to another transaction still learns that the key is
-    // uncacheable, so the next miss on it need not queue for the lock.
+    // A miss that lost the write lock to another transaction still counts as a sighting of an
+    // uncacheable key, so a later miss on it need not queue for the lock.
     remember_uncacheable_response(s);
   }
 
