@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# A URL that has never answered uncacheable is not remembered, so two
-# overlapping misses on it still collapse: the second waits for the first's
-# origin fetch and is served from it, and the origin sees one request.
+# With the memory on, a URL that has never answered uncacheable is not
+# remembered, so two overlapping misses on it still collapse: the second waits
+# for the first's origin fetch and is served from it, and the origin sees one
+# request.
 
 meta:
   version: "1.0"
@@ -41,6 +42,7 @@ urtest:
       proxy.config.diags.debug.tags: 'http_trans|http_cache'
       proxy.config.http.cache.max_open_read_retries: 20
       proxy.config.http.cache.open_read_retry_time: 100
+      proxy.config.http.cache.remember_uncacheable: 60
     remap_config:
       - from: "http://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"

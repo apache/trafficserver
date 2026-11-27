@@ -648,7 +648,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   //       #  remember_uncacheable: seconds a URL that answered uncacheable twice within this time
   //       #  skips the cache write lock on a miss. 0 turns it off.
-  {RECT_CONFIG, "proxy.config.http.cache.remember_uncacheable", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-86400]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.cache.remember_uncacheable", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-86400]", RECA_NULL}
   ,
   //       #  remember_uncacheable_entries: how many URLs the memory above can hold, rounded up to a power of two.
   {RECT_CONFIG, "proxy.config.http.cache.remember_uncacheable_entries", RECD_INT, "65536", RECU_RESTART_TS, RR_NULL, RECC_INT, "[4-16777216]", RECA_NULL}

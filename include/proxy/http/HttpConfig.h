@@ -647,7 +647,7 @@ struct OverridableHttpConfigParams {
   MgmtByte cache_open_write_fail_action = 0;
 
   // Seconds a URL that answered uncacheable twice within this time skips the write lock on a miss; 0 turns it off.
-  MgmtInt cache_remember_uncacheable = 10;
+  MgmtInt cache_remember_uncacheable = 0;
 
   ////////////////////////
   // Check Post request //

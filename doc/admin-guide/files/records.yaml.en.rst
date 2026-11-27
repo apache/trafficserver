@@ -3948,7 +3948,7 @@ Dynamic Content & Content Negotiation
     This config is ignored when :ts:cv:`proxy.config.http.cache.open_write_fail_action` is
     set to ``5`` or ``6``.
 
-.. ts:cv:: CONFIG proxy.config.http.cache.remember_uncacheable INT 10
+.. ts:cv:: CONFIG proxy.config.http.cache.remember_uncacheable INT 0
    :reloadable:
    :overridable:
    :units: seconds
@@ -3963,7 +3963,8 @@ Dynamic Content & Content Negotiation
     after all. The URL is forgotten once a response for it is stored. Every further uncacheable
     response to a plain ``GET`` miss renews the memory; error (4xx and 5xx) responses, range
     requests, other methods, and responses kept out of the cache by the request, a plugin or a
-    cache rule do not. ``0`` turns the memory off. The maximum is ``86400``.
+    cache rule do not. ``0``, the default, turns the memory off, and a transaction with it
+    off does no work for it. The maximum is ``86400``.
 
     Without this, every miss takes the write lock before contacting the origin so that
     concurrent requests for the same URL wait for one origin fetch. For a URL whose responses
@@ -4013,7 +4014,9 @@ Dynamic Content & Content Negotiation
 
     How many URLs :ts:cv:`proxy.config.http.cache.remember_uncacheable` can hold at once,
     counting both remembered URLs and URLs seen uncacheable once. Each takes 16 bytes, so the
-    default uses 1 MiB. A value that is not a power of two is rounded up to one, with a
+    default uses 1 MiB, allocated the first time a transaction with
+    :ts:cv:`proxy.config.http.cache.remember_uncacheable` on uses it. A value that is not a
+    power of two is rounded up to one, with a
     warning. The minimum is ``4`` and the maximum is ``16777216``, which uses 256 MiB. Takes
     effect on restart.
 

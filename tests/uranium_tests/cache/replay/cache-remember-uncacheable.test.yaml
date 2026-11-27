@@ -80,14 +80,13 @@ urtest:
               - expression: "retrying cache open write|retrying cache open read"
                 description: "No request waits on a cache lock retry timer"
 
-    # Every miss takes the lock before the origin. The third /nostore request
+    # The default leaves the memory off, so every miss takes the lock before
+    # the origin, as on a build without it. The third /nostore request
     # finds the second writing, retries the read until its retries run out,
     # then loses the write lock. The last /nostore request shows that the
     # second's answer, fetched under the lock, was not stored.
     - name: memo-off
       ats:
-        records_config:
-          proxy.config.http.cache.remember_uncacheable: 0
         metric_checks:
           - metric: proxy.process.http.cache.remember_uncacheable.admits
             value: 0

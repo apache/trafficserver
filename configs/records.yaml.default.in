@@ -87,7 +87,7 @@ records:
       when_to_revalidate: 0
 
 # https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-cache-remember-uncacheable
-      remember_uncacheable: 10
+      remember_uncacheable: 0
 
 ##############################################################################
 # Origin server connect attempts. Docs:
