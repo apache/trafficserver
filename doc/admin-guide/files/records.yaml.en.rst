@@ -3983,14 +3983,15 @@ Dynamic Content & Content Negotiation
 
     These metrics show how the memory is doing. Transactions with
     :ts:cv:`proxy.config.http.cache.defer_write_on_miss` on go to the origin without reading
-    the memory and take the lock only for a cacheable answer, so they never count in ``hits``,
-    but while
-    :ts:cv:`proxy.config.http.cache.remember_uncacheable` is on for them their uncacheable
-    answers are still noted: they count in ``admits``, ``evictions`` and ``set_full`` and take
-    room other URLs could use. With it on for all traffic the memory is never read, so set
-    :ts:cv:`proxy.config.http.cache.remember_uncacheable` to ``0``. Where only some traffic has
-    it on, turn :ts:cv:`proxy.config.http.cache.remember_uncacheable` off for that traffic, or
-    judge a size change by ``hits`` and read the other three as including it.
+    the memory and take the lock only for a cacheable answer, so they never count in ``hits``.
+    While :ts:cv:`proxy.config.http.cache.remember_uncacheable` is on for them, their
+    uncacheable answers are still noted: they count in ``admits``, ``evictions`` and
+    ``set_full`` and take room other URLs could use. With
+    :ts:cv:`proxy.config.http.cache.defer_write_on_miss` on for all traffic the memory is never
+    read, so set :ts:cv:`proxy.config.http.cache.remember_uncacheable` to ``0``. Where only
+    some traffic defers, turn :ts:cv:`proxy.config.http.cache.remember_uncacheable` off for
+    that same traffic, or judge a size change by ``hits`` and read the other three counters as
+    including the deferred traffic.
 
     ``proxy.process.http.cache.remember_uncacheable.hits``
        Misses that skipped the write lock because their URL was remembered. Misses deferred by
@@ -4008,7 +4009,8 @@ Dynamic Content & Content Negotiation
        climbs), they may be pushed out between their two answers: raise
        :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` and check whether
        ``hits`` grows as a share of cache misses, comparing like windows before and after with
-       no other change in between.
+       no other change in between. The size takes effect on restart, which empties the memory,
+       so start the second window once it has refilled.
 
     ``proxy.process.http.cache.remember_uncacheable.set_full``
        Remembered URLs pushed out to make room, because every URL sharing their place in the

@@ -42,6 +42,7 @@ urtest:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: 'http_trans|http_cache'
       proxy.config.http.cache.defer_write_on_miss: 1
+      proxy.config.http.cache.remember_uncacheable: 10
     remap_config:
       - from: "http://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
@@ -49,18 +50,25 @@ urtest:
           - name: header_rewrite.so
             args: ['cache-write-lock-fail-write.conf']
 
-    # Deferred: both /cacheable misses are one (the second is a hit), both
+    # Deferred: both /cacheable misses are one (the second is a hit), all three
     # /nostore requests, and both /lost misses. The first /lost miss is denied
-    # the lock by the X-Fail-Cache-Write rule. The two /nostore answers still
-    # teach the memo, so /nostore is admitted, but no deferred miss reads it.
+    # the lock by the X-Fail-Cache-Write rule. The /nostore answers still teach
+    # the memo, so the second admits it, but the third miss, deferred by the
+    # setting, does not read it and is no memo hit.
     metric_checks:
       - metric: proxy.process.http.cache.remember_uncacheable.admits
         value: 1
       - metric: proxy.process.http.cache.remember_uncacheable.hits
         value: 0
         delay: 0
+      - metric: proxy.process.http.cache.remember_uncacheable.evictions
+        value: 0
+        delay: 0
+      - metric: proxy.process.http.cache.remember_uncacheable.set_full
+        value: 0
+        delay: 0
       - metric: proxy.process.http.cache_open_write_deferred
-        value: 5
+        value: 6
       - metric: proxy.process.http.cache_open_write_fail_count
         value: 1
         delay: 0
@@ -167,6 +175,32 @@ sessions:
       headers:
         fields:
         - [X-Response, {value: second, as: equal}]
+
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /nostore
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, nostore-third]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, third]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: third, as: equal}]
 
 - transactions:
   - client-request:
