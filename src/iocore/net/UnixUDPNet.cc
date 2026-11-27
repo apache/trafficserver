@@ -830,6 +830,7 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   PollCont          *pc         = nullptr;
   PollDescriptor    *pd         = nullptr;
   bool               need_bind  = true;
+  bool               txtime_enabled{false};
   UnixSocket         sock{fd};
 
   if (!sock.is_ok()) {
@@ -906,6 +907,8 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   sk_txtime.flags   = 0;
   if (setsockopt(sock.get_fd(), SOL_SOCKET, SO_TXTIME, &sk_txtime, sizeof(sk_txtime)) == -1) {
     Dbg(dbg_ctl_udpnet, "Failed to setsockopt SO_TXTIME. errno=%d", errno);
+  } else {
+    txtime_enabled = true;
   }
 #endif
   // If this is a class D address (i.e. multicast address), use REUSEADDR.
@@ -950,7 +953,8 @@ UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int fd, int s
   if (sock.getsockname(&myaddr.sa, &myaddr_len) < 0) {
     goto Lerror;
   }
-  n = new UnixUDPConnection(sock.get_fd());
+  n                 = new UnixUDPConnection(sock.get_fd());
+  n->txtime_enabled = txtime_enabled;
 
   Dbg(dbg_ctl_udpnet, "UDPNetProcessor::UDPBind: %p fd=%d", n, sock.get_fd());
   n->setBinding(&myaddr.sa);
@@ -1137,7 +1141,7 @@ UDPQueue::SendUDPPacket(UDPPacket *p)
 #endif // defined(SOL_UDP) || defined(HAVE_SO_TXTIME)
 
 #ifdef HAVE_SO_TXTIME
-  if (p->p.send_at.tv_sec > 0) {
+  if (p->p.send_at.tv_sec > 0 && static_cast<UDPConnectionInternal *>(p->p.conn)->txtime_enabled) {
     msg.msg_control    = msg_ctrl;
     msg.msg_controllen = CMSG_SPACE(sizeof(uint64_t));
     cm                 = CMSG_FIRSTHDR(&msg);
@@ -1344,7 +1348,7 @@ UDPQueue::SendMultipleUDPPackets(UDPPacket **p, uint16_t n)
     struct cmsghdr *cm = nullptr;
 #endif
 #ifdef HAVE_SO_TXTIME
-    if (packet->p.send_at.tv_sec > 0) { // if set?
+    if (packet->p.send_at.tv_sec > 0 && static_cast<UDPConnectionInternal *>(packet->p.conn)->txtime_enabled) {
       msg                 = &msgvec[vlen].msg_hdr;
       msg->msg_controllen = CMSG_SPACE(sizeof(uint64_t));
       msg->msg_control    = msg_ctrl;
