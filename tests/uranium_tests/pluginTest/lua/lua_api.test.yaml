@@ -225,7 +225,7 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: "initial:nil;set:success;get:192.0.2.100:2;", verify: {as: equal}}
+          content: {data: "initial:nil;set:success;get:192.0.2.100:TS_LUA_AF_INET;", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-verified-v6]]}}
         client-request:
@@ -236,7 +236,7 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 200
-          content: {data: "initial:nil;setv6:success;getv6:2001:db8::1:10;", verify: {as: equal}}
+          content: {data: "initial:nil;setv6:success;getv6:2001:db8::1:TS_LUA_AF_INET6;", verify: {as: equal}}
 
       - all: {headers: {fields: [[uuid, lua-verified-invalid]]}}
         client-request:
@@ -264,7 +264,7 @@ sessions:
         proxy-response:
           status: 200
           content:
-            data: "initial:nil;set:success;get:203.0.113.42:2;setv6:success;getv6:2001:db8::42:10;"
+            data: "initial:nil;set:success;get:203.0.113.42:TS_LUA_AF_INET;setv6:success;getv6:2001:db8::42:TS_LUA_AF_INET6;"
             verify: {as: equal}
 
       - all: {headers: {fields: [[uuid, lua-debug-tags]]}}
