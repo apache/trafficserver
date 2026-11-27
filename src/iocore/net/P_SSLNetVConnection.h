@@ -325,6 +325,12 @@ public:
   EThread        *getThreadForTLSEvents() override;
   Ptr<ProxyMutex> getMutexForTLSEvents() override;
 
+  bool
+  is_handshake_rejected() const override
+  {
+    return getSSLHandShakeRejected();
+  }
+
 protected:
   // UnixNetVConnection
   bool _isReadyToTransferData() const override;

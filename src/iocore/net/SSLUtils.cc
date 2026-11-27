@@ -776,8 +776,7 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
         }
       } while (es->resuming_client_hello_hooks());
     }
-    // QUIC never attaches a netvc to the SSL object, so look it up from the event support instead.
-    if (auto *netvc = dynamic_cast<SSLNetVConnection *>(es); netvc && netvc->getSSLHandShakeRejected()) {
+    if (es->is_handshake_rejected()) {
       return CLIENT_HELLO_ERROR;
     }
   } else {
@@ -883,7 +882,7 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
         // stop the accept processing
         if (!reenabled) {
           retval = -1; // Pause
-        } else if (sslnetvc && sslnetvc->getSSLHandShakeRejected()) {
+        } else if (tes->is_handshake_rejected()) {
           retval = 0; // A plugin rejected the handshake
         }
       }
