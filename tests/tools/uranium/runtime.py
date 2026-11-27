@@ -34,9 +34,39 @@ import fcntl
 
 from .utils import version_tuple
 
+# Test ports come from this range. The session seeds the counter one below it.
+FIRST_TEST_PORT = 10001
+LAST_TEST_PORT = 29999
+
+# microDNS listens on UDP and TCP at the same port.
+MICRODNS_SOCKET_TYPES = (socket.SOCK_DGRAM, socket.SOCK_STREAM)
+
+_SOCKET_TYPE_NAMES = {socket.SOCK_STREAM: "TCP", socket.SOCK_DGRAM: "UDP"}
+
 
 class RuntimeConfigError(ValueError):
     """Report an invalid Uranium test runtime."""
+
+
+def _is_port_free(port: int, socket_types: tuple[int, ...]) -> bool:
+    """Bind the loopback port for each socket type in turn, stopping at the first busy one.
+
+    :param port: Candidate port.
+    :param socket_types: Socket kinds the port must be free for.
+    :return: False when a bind reports the port in use.
+    :raises RuntimeConfigError: A bind failed for any other reason.
+    """
+
+    for socket_type in socket_types:
+        with socket.socket(socket.AF_INET, socket_type) as probe:
+            try:
+                probe.bind(("127.0.0.1", port))
+            except OSError as error:
+                if error.errno == errno.EADDRINUSE:
+                    return False
+                kind = _SOCKET_TYPE_NAMES.get(socket_type, str(socket_type))
+                raise RuntimeConfigError(f"{kind} port probe for 127.0.0.1:{port} failed: {error}") from error
+    return True
 
 
 @dataclass(frozen=True)
@@ -113,11 +143,21 @@ class TestRuntime:
 
         return self.build_root / "tests" / "tools" / "plugins" / ".libs"
 
-    def allocate_port(self, socket_type: int = socket.SOCK_STREAM) -> int:
-        """Allocate a unique available port across all xdist workers.
+    def allocate_port(self, *socket_types: int) -> int:
+        """Allocate an available port, shared across xdist workers.
 
-        :param socket_type: Socket kind to probe, normally TCP or UDP.
+        Numbers count up from the session seed and wrap from LAST_TEST_PORT back
+        to FIRST_TEST_PORT, so a number is not handed out twice until the counter
+        has gone once around the range. After a wrap the bind probe is the only
+        guard. It cannot see a port that a live test reserved but has not bound,
+        or one held only on IPv6 or only on a socket type not probed. A pass that
+        finds every other port busy ends by probing the port handed out last.
+
+        :param socket_types: Socket kinds the port must be free for, normally
+            TCP, UDP or both. TCP when none is given.
         """
+
+        socket_types = socket_types or (socket.SOCK_STREAM,)
 
         self.sandbox_root.mkdir(parents=True, exist_ok=True)
         state_path = self.sandbox_root / ".port-counter"
@@ -131,21 +171,14 @@ class TestRuntime:
             content = state.read().strip()
             try:
                 candidate = int(content)
-                if not 10000 <= candidate <= 30000:
+                if not FIRST_TEST_PORT - 1 <= candidate <= LAST_TEST_PORT:
                     raise ValueError
             except ValueError:
                 raise RuntimeConfigError(f"Invalid port counter in {state_path}: {content!r}") from None
-            for _ in range(20000):
-                candidate += 1
-                if candidate >= 30000:
-                    break
-                with socket.socket(socket.AF_INET, socket_type) as probe:
-                    try:
-                        probe.bind(("127.0.0.1", candidate))
-                    except OSError as error:
-                        if error.errno == errno.EADDRINUSE:
-                            continue
-                        raise RuntimeConfigError(f"Port probe for 127.0.0.1:{candidate} failed: {error}") from error
+            for _ in range(LAST_TEST_PORT - FIRST_TEST_PORT + 1):
+                candidate = candidate + 1 if candidate < LAST_TEST_PORT else FIRST_TEST_PORT
+                if not _is_port_free(candidate, socket_types):
+                    continue
                 state.seek(0)
                 state.truncate()
                 state.write(str(candidate))
@@ -153,7 +186,7 @@ class TestRuntime:
                 fcntl.flock(state, fcntl.LOCK_UN)
                 return candidate
             fcntl.flock(state, fcntl.LOCK_UN)
-        raise RuntimeConfigError(f"Exhausted available test ports in 10001..29999; counter: {state_path}")
+        raise RuntimeConfigError(f"Exhausted available test ports in {FIRST_TEST_PORT}..{LAST_TEST_PORT}; counter: {state_path}")
 
     @contextmanager
     def execution_lock(self, is_exclusive: bool) -> Iterator[None]:

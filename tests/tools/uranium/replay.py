@@ -40,7 +40,7 @@ import yaml
 from .assertions import assert_matches_gold
 from .config import ReplayConfigError, ReplaySpec, format_plugin_entry, merge_flat_records, write_yaml
 from .process import ManagedProcess
-from .runtime import TestRuntime
+from .runtime import MICRODNS_SOCKET_TYPES, TestRuntime
 from .utils import loopback_addresses, python_environment_executable, tcp_open
 
 
@@ -137,7 +137,7 @@ class ReplayTest:
         config = self.spec.urtest.get("dns")
         if config is None:
             return None
-        self.dns_port = self.runtime.allocate_port(socket.SOCK_DGRAM)
+        self.dns_port = self.runtime.allocate_port(*MICRODNS_SOCKET_TYPES)
         name = str(config.get("name", "dns"))
         directory = self.sandbox / name
         directory.mkdir()

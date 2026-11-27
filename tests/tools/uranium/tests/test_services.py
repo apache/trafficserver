@@ -206,20 +206,31 @@ def test_sandbox_rejects_overlong_filesystem_component(tmp_path: Path) -> None:
         runtime.prepare_sandbox(path)
 
 
-@pytest.mark.parametrize("content", [None, "", "garbage", "9999", "30000"])
-def test_port_counter_rejects_missing_corrupt_or_exhausted_state(tmp_path: Path, content: str | None) -> None:
-    """Never recycle reservations when the session counter is damaged.
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        (None, "Missing port counter"),
+        ("", "Invalid port counter"),
+        ("garbage", "Invalid port counter"),
+        ("9999", "Invalid port counter"),
+        ("30000", "Invalid port counter"),
+    ],
+)
+def test_port_counter_rejects_missing_corrupt_or_out_of_range_state(tmp_path: Path, content: str | None, message: str) -> None:
+    """Refuse to guess a restart point when the session counter is missing, corrupt or out of range.
 
     :param tmp_path: Isolated session root.
     :param content: Counter contents, or None to leave the file absent.
+    :param message: Text the error must contain.
     """
 
     runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
     counter = tmp_path / ".port-counter"
     if content is not None:
         counter.write_text(content)
-    with pytest.raises(RuntimeConfigError, match=str(counter)):
+    with pytest.raises(RuntimeConfigError, match=message) as error:
         runtime.allocate_port()
+    assert str(counter) in str(error.value)
 
 
 @pytest.mark.parametrize("error_number", [errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOBUFS])
@@ -253,6 +264,305 @@ def test_port_probe_retries_only_occupied_ports(tmp_path: Path, monkeypatch: pyt
         with pytest.raises(RuntimeConfigError, match="127.0.0.1:10001"):
             runtime.allocate_port()
         assert len(attempted) == 1
+
+
+def test_port_counter_wraps_after_the_last_port(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Start again from the bottom of the range after handing out the last port.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so the probe never touches real ports.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    counter = tmp_path / ".port-counter"
+    counter.write_text("29998")
+    monkeypatch.setattr(socket.socket, "bind", lambda probe, address: None)
+    assert [runtime.allocate_port() for _ in range(3)] == [29999, 10001, 10002]
+    assert counter.read_text() == "10002"
+
+
+def test_port_counter_skips_busy_ports_across_the_wrap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep skipping occupied ports when the search wraps from the top of the range to the bottom.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so only chosen ports read as occupied.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    counter = tmp_path / ".port-counter"
+    counter.write_text("29998")
+    attempted = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Report 29999 and 10001 as already in use.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        attempted.append(address[1])
+        if address[1] in (29999, 10001):
+            raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    assert runtime.allocate_port() == 10002
+    assert attempted == [29999, 10001, 10002]
+    assert counter.read_text() == "10002"
+
+
+def test_port_counter_reports_exhaustion_when_every_port_is_occupied(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail after one full pass instead of cycling forever when no port in the range is free.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding with an always-occupied probe.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("20000")
+    attempted = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Report every probed port as already in use.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        attempted.append(address[1])
+        raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    with pytest.raises(RuntimeConfigError, match="Exhausted available test ports"):
+        runtime.allocate_port()
+    # One pass in order: up to the top, wrap, then back to the counter's own value.
+    assert attempted == list(range(20001, 30000)) + list(range(10001, 20001))
+
+
+def make_allocating_factory(tmp_path: Path) -> ServiceFactory:
+    """Create a service factory whose ports come from a real counter seeded at 10000.
+
+    :param tmp_path: Isolated session root.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    test_path = tmp_path / "test_example.py"
+    test_path.touch()
+    run_directory = tmp_path / "run"
+    run_directory.mkdir()
+    return ServiceFactory(ProceduralContext(runtime, "test_example", test_path, run_directory))
+
+
+@pytest.mark.parametrize(
+    "busy_type, expected",
+    [
+        (
+            socket.SOCK_STREAM,
+            [
+                (socket.SOCK_DGRAM, 10001),
+                (socket.SOCK_STREAM, 10001),
+                (socket.SOCK_DGRAM, 10002),
+                (socket.SOCK_STREAM, 10002),
+            ],
+        ),
+        (
+            socket.SOCK_DGRAM,
+            [
+                (socket.SOCK_DGRAM, 10001),
+                (socket.SOCK_DGRAM, 10002),
+                (socket.SOCK_STREAM, 10002),
+            ],
+        ),
+    ],
+    ids=["tcp-busy", "udp-busy"],
+)
+def test_port_counter_probes_every_requested_socket_type(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, busy_type: int, expected: list[tuple[int, int]]
+) -> None:
+    """Hand out a port only when it is free for every socket type the caller will bind.
+
+    A port busy on the first type gets no probe on the second.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so 10001 reads as occupied on one type.
+    :param busy_type: Socket type on which 10001 is occupied.
+    :param expected: Probes in the order they must happen.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    attempted = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Report 10001 as already in use on the busy type.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        attempted.append((probe.type, address[1]))
+        if probe.type == busy_type and address[1] == 10001:
+            raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    assert runtime.allocate_port(socket.SOCK_DGRAM, socket.SOCK_STREAM) == 10002
+    assert attempted == expected
+
+
+def test_port_probe_reports_an_error_on_the_second_socket_type(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Raise a TCP probe error after a good UDP probe instead of treating the port as busy.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so UDP binds succeed and TCP binds are refused.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    attempted = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Refuse every TCP bind with an error that does not mean the port is in use.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        attempted.append((probe.type, address[1]))
+        if probe.type == socket.SOCK_STREAM:
+            raise OSError(errno.EACCES, os.strerror(errno.EACCES))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    with pytest.raises(RuntimeConfigError, match="TCP port probe for 127.0.0.1:10001 failed"):
+        runtime.allocate_port(socket.SOCK_DGRAM, socket.SOCK_STREAM)
+    assert attempted == [(socket.SOCK_DGRAM, 10001), (socket.SOCK_STREAM, 10001)]
+
+
+def test_port_counter_probes_tcp_by_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Probe TCP only when the caller names no socket type.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Record every bind.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    attempted = []
+    monkeypatch.setattr(socket.socket, "bind", lambda probe, address: attempted.append((probe.type, address[1])))
+    assert runtime.allocate_port() == 10001
+    assert attempted == [(socket.SOCK_STREAM, 10001)]
+
+
+def test_replay_dns_skips_a_port_that_is_busy_on_tcp(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give a replay's microDNS a port free on both UDP and TCP, the same as dns().
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Make 10001 busy on TCP and stop before microDNS starts.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    replay = object.__new__(ReplayTest)
+    replay.runtime = runtime
+    replay.spec = dataclasses.make_dataclass("Spec", ["urtest"])({"dns": {}})
+    replay.sandbox = tmp_path / "sandbox"
+    replay.sandbox.mkdir()
+    replay.processes = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Report 10001 as already in use on TCP.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        if probe.type == socket.SOCK_STREAM and address[1] == 10001:
+            raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
+
+    class Started(Exception):
+        """Stop _start_dns once it has its port."""
+
+    def start(_process: object) -> None:
+        """Stand in for starting microDNS.
+
+        :param _process: Managed microDNS process.
+        """
+
+        raise Started
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    monkeypatch.setattr("tools.uranium.replay.ManagedProcess.start", start)
+    with pytest.raises(Started):
+        replay._start_dns()
+    assert replay.dns_port == 10002
+
+
+def test_dns_skips_a_port_that_is_busy_on_tcp(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give microDNS a port free on both UDP and TCP, since it listens on both.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so 10001 reads as occupied on TCP only.
+    """
+
+    factory = make_allocating_factory(tmp_path)
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Report 10001 as already in use on TCP.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        if probe.type == socket.SOCK_STREAM and address[1] == 10001:
+            raise OSError(errno.EADDRINUSE, os.strerror(errno.EADDRINUSE))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    assert factory.dns("dns").port == 10002
+    assert (tmp_path / ".port-counter").read_text() == "10002"
+
+
+def test_dns_keeps_an_explicit_port_without_allocating(tmp_path: Path) -> None:
+    """Use the caller's port as is and leave the session counter alone.
+
+    :param tmp_path: Isolated session root.
+    """
+
+    factory = make_allocating_factory(tmp_path)
+    assert factory.dns("dns", port=12345).port == 12345
+    assert (tmp_path / ".port-counter").read_text() == "10000"
+
+
+def test_dns_reports_a_udp_probe_error_instead_of_retrying(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail at the first UDP probe error instead of drawing ports until one binds.
+
+    dns() must not retry on its own: the counter wraps, so a loop that skipped
+    every UDP error would never end.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding so UDP probes are refused and TCP probes succeed.
+    """
+
+    factory = make_allocating_factory(tmp_path)
+    udp_probes = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Refuse every UDP bind, and stop the test if a second port is tried.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        # Let TCP binds succeed, so only a UDP probe error can stop dns().
+        if probe.type != socket.SOCK_DGRAM:
+            return
+        udp_probes.append(address[1])
+        if len(udp_probes) > 1:
+            raise AssertionError(f"dns() kept drawing ports after a UDP probe error: {udp_probes}")
+        raise OSError(errno.EACCES, os.strerror(errno.EACCES))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    with pytest.raises(RuntimeConfigError, match="UDP port probe for 127.0.0.1:10001 failed"):
+        factory.dns("dns")
+    assert udp_probes == [10001]
 
 
 def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

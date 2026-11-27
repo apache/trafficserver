@@ -23,13 +23,13 @@ import json
 import re
 import shlex
 import shutil
-import socket
 import subprocess
 from typing import Any
 
 import pytest
 
 from ..process import ManagedProcess
+from ..runtime import MICRODNS_SOCKET_TYPES
 from ..utils import loopback_addresses, python_environment_executable, version_tuple
 from .context import ProceduralContext
 from .dns import DNSServer
@@ -65,14 +65,14 @@ class ServiceFactory:
         directory.mkdir(parents=True)
         return directory
 
-    def allocate_port(self, socket_type: int = socket.SOCK_STREAM) -> int:
-        """Reserve a listener port for a bespoke support process.
+    def allocate_port(self, *socket_types: int) -> int:
+        """Allocate a listener port for a bespoke support process.
 
-        :param socket_type: Socket type, normally ``SOCK_STREAM`` or
-            ``SOCK_DGRAM``.
+        :param socket_types: Socket kinds the port must be free for, normally
+            TCP, UDP or both. TCP when none is given.
         """
 
-        return self._context.runtime.allocate_port(socket_type)
+        return self._context.runtime.allocate_port(*socket_types)
 
     def resolve_path(self, value: str | Path) -> Path:
         """Resolve a source path, placeholder, or generated test artifact.
@@ -158,15 +158,7 @@ class ServiceFactory:
         """
 
         directory = self._directory(name)
-        port = int(options.pop("port", 0))
-        while not port:
-            candidate = self._context.runtime.allocate_port()
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
-                try:
-                    probe.bind(("127.0.0.1", candidate))
-                except OSError:
-                    continue
-            port = candidate
+        port = int(options.pop("port", 0)) or self._context.runtime.allocate_port(*MICRODNS_SOCKET_TYPES)
         default = options.pop("default", None)
         otherwise = [default] if isinstance(default, str) else default
         zone_file = directory / "dns_file.json"

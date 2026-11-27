@@ -35,7 +35,7 @@ class DNSServer(ProcessService):
         """Create a microDNS service.
 
         :param process: Managed microDNS process.
-        :param port: UDP listener port.
+        :param port: Listener port, on both UDP and TCP.
         :param zone_file: JSON zone document read by microDNS.
         """
 
