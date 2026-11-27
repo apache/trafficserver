@@ -46,6 +46,13 @@ The `strategies.yaml` is a YAML document with three top level namespaces: **host
 and **strategies**.  These name spaces may be in separate files.  When in separate files, use
 **#include filename** in the `strategies.yaml` so that they are concatenated by the strategy
 factory into a single YAML document in the order, **hosts**, **groups**, and the **strategies**.
+A relative included filename is resolved against the configuration directory, the same way
+:file:`remap.config` resolves its ``.include`` directive. For compatibility, a relative include that is
+missing from the configuration directory is retried relative to the install prefix, where earlier
+releases looked for it (for example, ``etc/trafficserver/strategy_hosts.yaml``). This
+compatibility behavior is deprecated, will be removed in ATS 12.0.0, and logs a warning naming the
+replacement spelling: a path relative to the configuration directory, or an absolute path for a file
+outside it.
 
 Alternatively if the config parameter `proxy.config.url_remap.strategies.filename` refers to
 a directory, the NextHopStrategyFactory will alphanumerically concatenate all files in that directory that end in `.yaml` by name into a single document stream for parsing.  The final document must be a valid `YAML` document with single `strategies` node and optionally a single `hosts` and `groups` node.  Any **#include filename** strings are ignored when reading `.yaml` files in a directory.
@@ -291,7 +298,7 @@ Each **strategy** in the list may using the following parameters:
 Example:
 ::
 
-  #include unit-tests/hosts.yaml
+  #include strategy_hosts.yaml
   #
   strategies:
     - strategy: 'strategy-1'
