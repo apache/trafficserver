@@ -158,6 +158,10 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *cache_open_write_begin_time;
   Metrics::Counter::AtomicType *cache_open_write_end_time;
   Metrics::Counter::AtomicType *cache_open_write_fail_count;
+  Metrics::Counter::AtomicType *remember_uncacheable_hits;
+  Metrics::Counter::AtomicType *remember_uncacheable_admits;
+  Metrics::Counter::AtomicType *remember_uncacheable_evictions;
+  Metrics::Counter::AtomicType *remember_uncacheable_set_full;
   Metrics::Counter::AtomicType *cache_read_error;
   Metrics::Counter::AtomicType *cache_read_errors;
   Metrics::Counter::AtomicType *cache_updates;
@@ -641,6 +645,9 @@ struct OverridableHttpConfigParams {
   MgmtByte no_dns_forward_to_parent      = 0;
 
   MgmtByte cache_open_write_fail_action = 0;
+
+  // Seconds a URL that answered uncacheable twice within this time skips the write lock on a miss; 0 turns it off.
+  MgmtInt cache_remember_uncacheable = 0;
 
   ////////////////////////
   // Check Post request //

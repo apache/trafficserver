@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <cstring>
 #include "proxy/http/HttpConfig.h"
+#include "proxy/http/UncacheableKeyMemo.h"
 #include "proxy/hdrs/HTTP.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/eventsystem/UnixSocket.h"
@@ -565,6 +566,11 @@ register_stat_callbacks()
   http_rsb.websocket_current_active_client_connections =
     Metrics::Gauge::createPtr("proxy.process.http.websocket.current_active_client_connections");
 
+  http_rsb.remember_uncacheable_hits      = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.hits");
+  http_rsb.remember_uncacheable_admits    = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.admits");
+  http_rsb.remember_uncacheable_evictions = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.evictions");
+  http_rsb.remember_uncacheable_set_full  = Metrics::Counter::createPtr("proxy.process.http.cache.remember_uncacheable.set_full");
+
   // Speed bucket stats for client and origin
   http_rsb.user_agent_speed_bytes_per_sec_100 =
     Metrics::Counter::createPtr("proxy.process.http.user_agent_speed_bytes_per_sec_100");
@@ -950,6 +956,17 @@ HttpConfig::startup()
 
   http_config_cont = new HttpConfigCont;
 
+  {
+    RecInt const requested =
+      RecGetRecordInt("proxy.config.http.cache.remember_uncacheable_entries").value_or(UncacheableKeyMemo::DEFAULT_ENTRIES);
+    uint32_t const entries = UncacheableKeyMemo::entries_for(requested);
+    UncacheableKeyMemo::configure(entries);
+    if (entries != requested) {
+      Warning("proxy.config.http.cache.remember_uncacheable_entries %" PRId64 " is not a power of two; using %" PRIu32, requested,
+              entries);
+    }
+  }
+
   HttpEstablishStaticConfigStringAlloc(c.proxy_hostname, "proxy.config.proxy_name");
   c.proxy_hostname_len = -1;
 
@@ -1158,6 +1175,12 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.disallow_post_100_continue, "proxy.config.http.disallow_post_100_continue");
 
   HttpEstablishStaticConfigByte(c.oride.cache_open_write_fail_action, "proxy.config.http.cache.open_write_fail_action");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_remember_uncacheable, "proxy.config.http.cache.remember_uncacheable");
+  if (c.oride.cache_remember_uncacheable > 0) {
+    // On in records.yaml: build the memo here, so a failed allocation fails startup instead of
+    // the process under traffic, and the first transactions do not wait while it is zeroed.
+    UncacheableKeyMemo::instance();
+  }
 
   HttpEstablishStaticConfigByte(c.oride.cache_when_to_revalidate, "proxy.config.http.cache.when_to_revalidate");
   HttpEstablishStaticConfigByte(c.oride.cache_required_headers, "proxy.config.http.cache.required_headers");
@@ -1513,6 +1536,7 @@ HttpConfig::reconfigure()
               params->oride.max_cache_open_write_retries);
     }
   }
+  params->oride.cache_remember_uncacheable = m_master.oride.cache_remember_uncacheable;
 
   params->oride.cache_when_to_revalidate = m_master.oride.cache_when_to_revalidate;
   params->max_post_size                  = m_master.max_post_size;

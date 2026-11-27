@@ -42,6 +42,14 @@ Configuration
 * Added :ts:cv:`proxy.config.http.reject_head_with_content` to control whether a
   ``HEAD`` request carrying ``Content-Length`` or ``Transfer-Encoding`` is
   refused. Enabled by default.
+* Added :ts:cv:`proxy.config.http.cache.remember_uncacheable`, off by default.
+  When it is set to a number of seconds, a URL whose origin responses are
+  uncacheable twice within that time is remembered, and misses on it go to the
+  origin before taking the cache write lock, so concurrent requests for
+  uncacheable content do not wait on each other. Requests for other URLs are
+  still collapsed. Added
+  :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` to size the
+  memory, and the metrics ``proxy.process.http.cache.remember_uncacheable.*``.
 * Added :ts:cv:`proxy.config.regex.anchor_policy_rules` to require that a regex
   driving a security or routing decision match the whole subject. Disabled by
   default; when disabled, each unanchored rule is named once at config load so

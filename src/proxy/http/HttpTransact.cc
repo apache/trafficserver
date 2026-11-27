@@ -41,6 +41,7 @@ using namespace std::literals;
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpCacheSM.h" //Added to get the scope of HttpCacheSM object - YTS Team, yamsat
 #include "proxy/http/HttpDebugNames.h"
+#include "proxy/http/UncacheableKeyMemo.h"
 #include <ctime>
 #include "tscore/ParseRules.h"
 #include "tscore/Filenames.h"
@@ -3511,6 +3512,194 @@ HttpTransact::handle_cache_write_lock_go_to_origin_continue(State *s)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Name       : handle_deferred_cache_write_complete
+// Description: Called when the late cache open-write for a deferred miss
+//              completes, whether or not it got the lock. The server
+//              response headers are already here.
+//
+// Possible Next States From Here:
+// - handle_cache_operation_on_forward_server_response (if cache write succeeded)
+// - handle_no_cache_operation_on_forward_server_response (if cache write failed)
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+HttpTransact::handle_deferred_cache_write_complete(State *s)
+{
+  TxnDbg(dbg_ctl_http_trans, "handle_deferred_cache_write_complete");
+  TxnDbg(dbg_ctl_http_seq, "Entering handle_deferred_cache_write_complete");
+
+  ink_assert(s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE);
+
+  switch (s->cache_info.write_lock_state) {
+  case CacheWriteLock_t::SUCCESS:
+    TxnDbg(dbg_ctl_http_trans, "[hdcwc] cache write lock acquired");
+    SET_UNPREPARE_CACHE_ACTION(s->cache_info);
+    handle_cache_operation_on_forward_server_response(s);
+    return;
+
+  case CacheWriteLock_t::FAIL:
+    // The response is already here, so serve it rather than apply the open write fail action.
+    // Drop the action too, or a later lookup on a redirect leg would still serve stale by it.
+    TxnDbg(dbg_ctl_http_trans, "[hdcwc] cache write lock failed, continuing without cache");
+    Metrics::Counter::increment(http_rsb.cache_open_write_fail_count);
+    s->cache_open_write_fail_action = static_cast<MgmtByte>(CacheOpenWriteFailAction_t::DEFAULT);
+    s->cache_info.action            = CacheAction_t::NO_ACTION;
+    s->cache_info.write_status      = CacheWriteStatus_t::LOCK_MISS;
+    break;
+
+  case CacheWriteLock_t::READ_RETRY:
+    // With fail actions 5 and 6 a lost lock comes back as a request for a fresh cache lookup. The
+    // response is already here, so serve it instead. HttpSM set the lookup result to NONE; plugins
+    // reading it after this point expect the miss it was.
+    TxnDbg(dbg_ctl_http_trans, "[hdcwc] cache write lock failed with a read retry fail action, continuing without cache");
+    Metrics::Counter::increment(http_rsb.cache_open_write_fail_count);
+    s->cache_open_write_fail_action = static_cast<MgmtByte>(CacheOpenWriteFailAction_t::DEFAULT);
+    s->cache_lookup_result          = CacheLookupResult_t::MISS;
+    s->cache_info.action            = CacheAction_t::NO_ACTION;
+    s->cache_info.write_status      = CacheWriteStatus_t::LOCK_MISS;
+    break;
+
+  case CacheWriteLock_t::INIT:
+  default:
+    ink_release_assert(0);
+    break;
+  }
+
+  handle_no_cache_operation_on_forward_server_response(s);
+}
+
+/** The key the response would be stored under, computed as the cache write computes it.
+
+    The key of the lookup is not reused because a compatibility lookup leaves the legacy key
+    behind, and a followed redirect stores under the original URL.
+ */
+bool
+HttpTransact::uncacheable_memo_key(State *s, CryptoHash &hash)
+{
+  URL *url = nullptr;
+  if (s->redirect_info.redirect_in_process) {
+    url = &s->redirect_info.original_url;
+  } else if (s->cache_info.original_url.valid()) {
+    url = &s->cache_info.original_url;
+  } else {
+    url = s->cache_info.lookup_url;
+  }
+  if (url == nullptr || !url->valid()) {
+    return false;
+  }
+  HttpCacheKey key;
+  s->state_machine->generate_cache_key(&key, url);
+  hash = key.hash;
+  return true;
+}
+
+/** Whether a miss should fetch from the origin before taking the cache write lock.
+
+    Yes when this key is remembered as uncacheable: waiting on the write lock would likely be
+    wasted, since the response is expected to be uncacheable again. If it turns out cacheable, the
+    lock is taken once it arrives. A yes increments
+    proxy.process.http.cache.remember_uncacheable.hits. A transaction that already holds the lock,
+    as a followed redirect can, keeps using it. The caller tests is_remember_uncacheable_on() first,
+    since this may build the memo.
+ */
+bool
+HttpTransact::should_defer_cache_write(State *s)
+{
+  ink_assert(is_remember_uncacheable_on(s));
+  if (s->cache_info.write_lock_state == CacheWriteLock_t::SUCCESS) {
+    return false;
+  }
+  CryptoHash hash;
+  if (!uncacheable_memo_key(s, hash) || !UncacheableKeyMemo::instance().contains(hash, ink_get_hrtime())) {
+    return false;
+  }
+  Metrics::Counter::increment(http_rsb.remember_uncacheable_hits);
+  return true;
+}
+
+/** Whether this transaction may teach the memo anything about its key.
+
+    Only a plain GET miss whose storability depends on the origin's response qualifies.
+    When the request itself, a plugin or a cache rule kept the response out of the cache,
+    the next request for the key may well be storable, so the key is left alone.
+ */
+bool
+HttpTransact::can_remember_uncacheable(State *s)
+{
+  ink_assert(is_remember_uncacheable_on(s));
+  if (s->cache_lookup_result != CacheLookupResult_t::MISS || s->method != HTTP_WKSIDX_GET || s->api_server_response_no_store ||
+      s->cache_control.never_cache || s->state_machine->is_redirect_required()) {
+    return false;
+  }
+  // A client no-store keeps the response out only when the configuration honors it.
+  if (!s->cache_info.directives.does_client_permit_storing && !s->cache_control.ignore_client_no_cache) {
+    return false;
+  }
+  HTTPHdr &request = s->hdr_info.client_request;
+  if (request.presence(MIME_PRESENCE_RANGE)) {
+    return false;
+  }
+  // Setting 1 of cache_responses_to_cookies is the only one that ignores a request Cookie.
+  if (request.presence(MIME_PRESENCE_COOKIE) && s->txn_conf->cache_responses_to_cookies != 1) {
+    return false;
+  }
+  if (s->client_info.is_transparent && !s->dns_info.cta_validated_p) {
+    return false;
+  }
+  return true;
+}
+
+/** Note a qualifying uncacheable response for this key; the second within the ttl remembers it. */
+void
+HttpTransact::remember_uncacheable_response(State *s)
+{
+  CryptoHash hash;
+  if (!can_remember_uncacheable(s) || HttpTransactHeaders::is_status_an_error_response(s->hdr_info.server_response.status_get()) ||
+      !uncacheable_memo_key(s, hash)) {
+    return;
+  }
+  // A plugin override skips the records.yaml range check, so cap it here before it is scaled to nanoseconds.
+  int64_t const                     seconds = std::min<int64_t>(s->txn_conf->cache_remember_uncacheable, 86400);
+  UncacheableKeyMemo::Outcome const outcome =
+    UncacheableKeyMemo::instance().remember(hash, ink_get_hrtime(), HRTIME_SECONDS(seconds));
+  switch (outcome.what) {
+  case UncacheableKeyMemo::Remembered::SEEN_ONCE:
+    TxnDbg(dbg_ctl_http_trans, "uncacheable key seen once, remembered on a second answer within %" PRId64 " s", seconds);
+    break;
+  case UncacheableKeyMemo::Remembered::ADMITTED:
+    TxnDbg(dbg_ctl_http_trans, "remembering the key as uncacheable for %" PRId64 " s", seconds);
+    Metrics::Counter::increment(http_rsb.remember_uncacheable_admits);
+    break;
+  case UncacheableKeyMemo::Remembered::RENEWED:
+    TxnDbg(dbg_ctl_http_trans, "still uncacheable, remembered for another %" PRId64 " s", seconds);
+    break;
+  case UncacheableKeyMemo::Remembered::NOTHING:
+    break;
+  }
+  if (outcome.evicted) {
+    TxnDbg(dbg_ctl_http_trans, "a seen-once key in the uncacheable memo made room");
+    Metrics::Counter::increment(http_rsb.remember_uncacheable_evictions);
+  }
+  if (outcome.displaced) {
+    TxnDbg(dbg_ctl_http_trans, "a remembered key in a full uncacheable memo set made room");
+    Metrics::Counter::increment(http_rsb.remember_uncacheable_set_full);
+  }
+}
+
+/** A key about to be stored is no longer uncacheable, whichever way its write lock was taken. */
+void
+HttpTransact::forget_uncacheable_key(State *s)
+{
+  ink_assert(is_remember_uncacheable_on(s));
+  CryptoHash hash;
+  if (uncacheable_memo_key(s, hash)) {
+    if (UncacheableKeyMemo::instance().forget(hash)) {
+      TxnDbg(dbg_ctl_http_trans, "the key is being stored, so the uncacheable memo forgot it");
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleCacheOpenReadMiss
 // Description: cache looked up, miss or hit, but needs authorization
 //
@@ -3586,6 +3775,15 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     // is still the same request, so keep the existing write lock instead of
     // re-preparing a write as if this were a redirect or a new cache miss.
     TxnDbg(dbg_ctl_http_trans, "Reusing existing cache write lock while retrying origin selection");
+  } else if (s->cache_open_write_deferred) {
+    // The DNS lookup brought this miss back here; the decision below was made on the first pass.
+    s->cache_info.action = CacheAction_t::NO_ACTION;
+  } else if (is_remember_uncacheable_on(s) && should_defer_cache_write(s)) {
+    // Go to the origin without the write lock and take it only if the response
+    // turns out to be cacheable. Concurrent misses on this key are not collapsed.
+    s->cache_open_write_deferred = true;
+    s->cache_info.action         = CacheAction_t::NO_ACTION;
+    TxnDbg(dbg_ctl_http_trans, "deferring the cache write until the response arrives");
   } else {
     HttpTransact::set_cache_prepare_write_action_for_new_request(s);
   }
@@ -3904,12 +4102,14 @@ HttpTransact::handle_response_from_parent(State *s)
     if (s->response_action.handled) {
       if (s->response_action.action.no_cache) {
         TxnDbg(dbg_ctl_http_trans, "plugin set response_action.no_cache, do not cache.");
-        s->cache_info.action = CacheAction_t::NO_ACTION;
+        s->cache_info.action         = CacheAction_t::NO_ACTION;
+        s->cache_open_write_deferred = false;
       }
     } else {
       if (s->parent_result.do_not_cache_response) {
         TxnDbg(dbg_ctl_http_trans, "response is from a next hop peer, do not cache.");
-        s->cache_info.action = CacheAction_t::NO_ACTION;
+        s->cache_info.action         = CacheAction_t::NO_ACTION;
+        s->cache_open_write_deferred = false;
       }
     }
     handle_forward_server_connection_open(s);
@@ -4833,10 +5033,16 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     } else if (s->cache_info.action == CacheAction_t::WRITE) {
       if (!cacheable) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
+        if (is_remember_uncacheable_on(s)) {
+          remember_uncacheable_response(s);
+        }
       } else if (s->method == HTTP_WKSIDX_HEAD) {
         s->cache_info.action = CacheAction_t::NO_ACTION;
       } else {
         s->cache_info.action = CacheAction_t::WRITE;
+        if (is_remember_uncacheable_on(s)) {
+          forget_uncacheable_key(s);
+        }
         auto *client_request = &s->hdr_info.client_request;
         if (client_request->presence(MIME_PRESENCE_RANGE) &&
             HttpTransactCache::validate_ifrange_header_if_any(client_request, base_response)) {
@@ -5051,6 +5257,29 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
   TxnDbg(dbg_ctl_http_trans, "(hncoofsr)");
   TxnDbg(dbg_ctl_http_seq, "Entering handle_no_cache_operation_on_forward_server_response");
 
+  bool const was_deferred = s->cache_open_write_deferred;
+  if (s->cache_open_write_deferred && s->txn_conf->cache_http) {
+    // The flag is cleared first so that a lost lock lands back here without deferring again.
+    s->cache_open_write_deferred = false;
+    bool cacheable               = is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response);
+    TxnDbg(dbg_ctl_http_trans, "[hncoofsr] deferred cache write, response %s cacheable", cacheable ? "is" : "is not");
+
+    if (cacheable) {
+      s->cache_info.action           = CacheAction_t::PREPARE_TO_WRITE;
+      s->cache_info.write_lock_state = CacheWriteLock_t::INIT;
+      TRANSACT_RETURN(StateMachineAction_t::CACHE_ISSUE_WRITE, handle_deferred_cache_write_complete);
+    }
+    // A plugin may have turned the setting off since the miss was deferred.
+    if (is_remember_uncacheable_on(s)) {
+      remember_uncacheable_response(s);
+    }
+  } else if (is_remember_uncacheable_on(s) && s->txn_conf->cache_http && can_remember_uncacheable(s) &&
+             !is_response_cacheable(s, &s->hdr_info.client_request, &s->hdr_info.server_response)) {
+    // A miss that lost the write lock to another transaction still counts as a sighting of an
+    // uncacheable key, so a later miss on it need not queue for the lock.
+    remember_uncacheable_response(s);
+  }
+
   bool        keep_alive = s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE;
   const char *warn_text  = nullptr;
 
@@ -5099,7 +5328,9 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
       s->next_action = StateMachineAction_t::SEND_ERROR_CACHE_NOOP;
     } else {
       s->already_downgraded = true;
-      s->next_action        = how_to_open_connection(s);
+      // The downgraded retry's response decides the deferred cache write afresh.
+      s->cache_open_write_deferred = was_deferred;
+      s->next_action               = how_to_open_connection(s);
     }
     return;
   case HTTPStatus::PARTIAL_CONTENT:

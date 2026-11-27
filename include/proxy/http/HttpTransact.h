@@ -29,6 +29,7 @@
 #include "tsutil/DbgCtl.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_platform.h"
+#include "tscore/CryptoHash.h"
 #include "iocore/hostdb/HostDB.h"
 #include "proxy/http/HttpConfig.h"
 #include "proxy/hdrs/HTTP.h"
@@ -698,6 +699,10 @@ public:
     bool is_method_stats_incremented        = false;
     bool skip_ip_allow_yaml                 = false;
 
+    /// True while a miss is at the origin without the cache write lock; cleared once the
+    /// response headers decide whether to take it.
+    bool cache_open_write_deferred = false;
+
     /// True if the response is cacheable because of negative caching configuration.
     ///
     /// This being true implies the following:
@@ -1031,6 +1036,20 @@ public:
   static void handle_cache_write_lock(State *s);
   static void handle_cache_write_lock_go_to_origin(State *s);
   static void handle_cache_write_lock_go_to_origin_continue(State *s);
+  static void handle_deferred_cache_write_complete(State *s);
+  /// Whether remember_uncacheable is on for this transaction. Every call into the memo functions
+  /// below is behind this test, so a transaction with it off computes no memo key and never
+  /// builds, reads or writes the memo.
+  static bool
+  is_remember_uncacheable_on(State const *s)
+  {
+    return s->txn_conf->cache_remember_uncacheable > 0;
+  }
+  static bool uncacheable_memo_key(State *s, CryptoHash &hash);
+  static bool should_defer_cache_write(State *s);
+  static bool can_remember_uncacheable(State *s);
+  static void remember_uncacheable_response(State *s);
+  static void forget_uncacheable_key(State *s);
   static void HandleResponse(State *s);
   static void HandleUpdateCachedObject(State *s);
   static void HandleUpdateCachedObjectContinue(State *s);

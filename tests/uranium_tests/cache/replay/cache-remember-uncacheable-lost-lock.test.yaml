@@ -1,0 +1,212 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# A miss on a remembered URL that loses the cache write lock serves the
+# response it already has, whatever open_write_fail_action says. With the lock
+# eagerly taken, fail action 1 answers that miss with a 502; here it must not.
+# Two no-store answers make /lost remembered. The third miss goes to the origin
+# without the lock, gets a cacheable answer and is denied the late lock by the
+# X-Fail-Cache-Write rule, which reports the loss without going to the cache,
+# so both variants reach the same lost-lock case. Nothing was stored, so /lost
+# stays remembered: the fourth miss also skips the lock and stores the answer,
+# which drops /lost from the memory, and the fifth request hits.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'A miss on a remembered URL that loses the write lock ignores open_write_fail_action'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    copy_to_config_dir:
+      - 'cache-write-lock-fail-write.conf'
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.remember_uncacheable: 10
+      proxy.config.http.cache.max_open_read_retries: 2
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: header_rewrite.so
+            args: ['cache-write-lock-fail-write.conf']
+
+    # The third and fourth misses skip the lock; the fifth request is a hit.
+    metric_checks:
+      - metric: proxy.process.http.cache.remember_uncacheable.admits
+        value: 1
+      - metric: proxy.process.http.cache.remember_uncacheable.hits
+        value: 2
+        delay: 0
+      - metric: proxy.process.http.cache_open_write_fail_count
+        value: 1
+        delay: 0
+      - metric: proxy.process.http.cache_hit_fresh
+        value: 1
+        delay: 0
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: '\[hdcwc\] cache write lock failed, continuing without cache'
+            description: 'The miss on the remembered URL lost the late write lock'
+          - expression: 'the key is being stored, so the uncacheable memo forgot it'
+            description: 'The next miss on the remembered URL stored it and dropped it from the memo'
+
+  variants:
+    - name: error-on-miss
+      ats:
+        records_config:
+          proxy.config.http.cache.open_write_fail_action: 1
+    # Fail action 5 also ends in a plain lost lock here: with no write retries
+    # left, HttpCacheSM reports the loss straight to HttpSM instead of retrying
+    # the read, and HttpSM records it as failed since no object was read.
+    - name: read-retry
+      ats:
+        records_config:
+          proxy.config.http.cache.open_write_fail_action: 5
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-first]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-second]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, second]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: second, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [X-Fail-Cache-Write, "1"]
+        - [uuid, lost-third]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, third]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: third, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-fourth]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, fourth]
+      content:
+        encoding: plain
+        data: xxx
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: fourth, as: equal}]
+  - client-request:
+      delay: 500ms
+      method: GET
+      url: /lost
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, lost-fifth]
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: fourth, as: equal}]

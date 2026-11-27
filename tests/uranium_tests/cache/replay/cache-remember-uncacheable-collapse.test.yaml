@@ -1,0 +1,107 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# With the memory on, a URL that has never answered uncacheable is not
+# remembered, so two overlapping misses on it still collapse: the second waits
+# for the first's origin fetch and is served from it, and the origin sees one
+# request.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Overlapping misses on a cacheable URL still collapse onto one origin fetch'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+    process_config:
+      run_parallel: true
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_trans|http_cache'
+      proxy.config.http.cache.max_open_read_retries: 20
+      proxy.config.http.cache.open_read_retry_time: 100
+      proxy.config.http.cache.remember_uncacheable: 60
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+    metric_checks:
+      - metric: proxy.process.http.cache.remember_uncacheable.hits
+        value: 0
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /collapse
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, collapse-first]
+
+    server-response:
+      delay: 1s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "max-age=300"]
+        - [X-Response, first]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
+
+- transactions:
+  - client-request:
+      delay: 300ms
+      method: GET
+      url: /collapse
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, collapse-second]
+
+    # Must not reach the origin.
+    server-response:
+      status: 400
+      reason: Bad Request
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: first, as: equal}]
