@@ -33,6 +33,10 @@
 #include "tscore/Layout.h"
 #include "swoc/MemSpan.h"
 
+#include <cerrno>
+#include <cstring>
+#include <type_traits>
+
 //-------------------------------------------------------------------------
 // RecMessageAlloc
 //-------------------------------------------------------------------------
@@ -170,50 +174,133 @@ RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record
 // RecMessageUnmarshalNext
 //-------------------------------------------------------------------------
 
+// The buffer comes from malloc, so an element offset that is a multiple of INK_MIN_ALIGN is enough to align both
+// structures read from it. The header size keeps every offset the writer produces a multiple too.
+static_assert(sizeof(RecMessageHdr) % INK_MIN_ALIGN == 0);
+static_assert(alignof(RecMessageEleHdr) <= INK_MIN_ALIGN && alignof(RecRecord) <= INK_MIN_ALIGN);
+static_assert(sizeof(RecMessageEleHdr) % alignof(RecRecord) == 0);
+
+namespace
+{
+// A message read back from records.snap is only as sound as the file, so every offset in it must land inside
+// the buffer, which is o_end bytes long.
+bool
+fits_in_message(const RecMessage *msg, intptr_t offset, intptr_t len)
+{
+  return offset >= msg->o_start && offset <= msg->o_end && len <= msg->o_end - offset;
+}
+
+// The string offsets are relative to the record and become pointers only once the string is known to end
+// inside the message.
+template <typename Char>
+bool
+resolve_string(RecMessage *msg, const RecRecord *r, Char *&str)
+{
+  if (str == nullptr) {
+    return true;
+  }
+
+  // Bound rel before adding it, so a wild offset from the file cannot overflow the sum. The writer puts every string
+  // after its record; a smaller offset lands in the record itself, whose string fields become pointers after this check.
+  intptr_t const rel = reinterpret_cast<intptr_t>(str);
+  if (rel < static_cast<intptr_t>(sizeof(RecRecord)) || rel > msg->o_end) {
+    return false;
+  }
+  intptr_t const offset = (reinterpret_cast<const char *>(r) - reinterpret_cast<const char *>(msg)) + rel;
+  if (!fits_in_message(msg, offset, 1)) {
+    return false;
+  }
+
+  char *p = reinterpret_cast<char *>(msg) + offset;
+  if (memchr(p, '\0', msg->o_end - offset) == nullptr) {
+    return false;
+  }
+  str = p;
+  return true;
+}
+
+// RecT and RecDataT have no fixed underlying type, so loading a field from the file as the enum is undefined when its
+// bytes hold a value outside the enum's range. Copy the bytes out as the underlying integer and check that instead.
+template <typename Enum>
+std::underlying_type_t<Enum>
+stored_value(const Enum *field)
+{
+  std::underlying_type_t<Enum> value;
+  std::memcpy(&value, field, sizeof(value));
+  return value;
+}
+} // namespace
+
 int
 RecMessageUnmarshalNext(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 {
   RecMessageEleHdr *eh;
   RecRecord        *r;
+  intptr_t          offset;
+  intptr_t const    ele_size = sizeof(RecMessageEleHdr) + sizeof(RecRecord);
+
+  auto corrupt = [](const char *why) {
+    Warning("Persistent statistics file records.snap is corrupted (%s). Ignoring the rest of the file\n", why);
+    return REC_ERR_FAIL;
+  };
 
   if (itr == nullptr) {
     if (msg->entries == 0) {
       return REC_ERR_FAIL;
-    } else {
-      eh = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + msg->o_start);
     }
+    offset = msg->o_start;
   } else {
     if (itr->next >= msg->entries) {
       return REC_ERR_FAIL;
     }
-    itr->ele_hdr  = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + itr->ele_hdr->o_next);
-    itr->next    += 1;
-    eh            = itr->ele_hdr;
+    // The next element must start after this element's header and record, or it would overlap a record whose
+    // string offsets have already been turned into pointers.
+    intptr_t const current = reinterpret_cast<char *>(itr->ele_hdr) - reinterpret_cast<char *>(msg);
+    offset                 = itr->ele_hdr->o_next;
+    if (offset < current + ele_size) {
+      return corrupt("element overlaps the previous one");
+    }
   }
 
-  ink_assert(eh->magic == REC_MESSAGE_ELE_MAGIC);
+  if (!fits_in_message(msg, offset, ele_size)) {
+    return corrupt("element outside the snapshot");
+  }
+  // The writer starts the first element right after the header and rounds every element up to INK_MIN_ALIGN. At
+  // any other offset the element header or the record behind it is read misaligned.
+  if (offset % INK_MIN_ALIGN != 0) {
+    return corrupt("misaligned element");
+  }
+  eh = reinterpret_cast<RecMessageEleHdr *>(reinterpret_cast<char *>(msg) + offset);
+  if (itr != nullptr) {
+    itr->ele_hdr  = eh;
+    itr->next    += 1;
+  }
 
   // If the file is corrupt, ignore the rest of the file.
   if (eh->magic != REC_MESSAGE_ELE_MAGIC) {
-    Warning("Persistent statistics file records.stat is corrupted. Ignoring the rest of the file\n");
-    return REC_ERR_FAIL;
+    return corrupt("bad element magic");
   }
 
   r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(eh) + sizeof(RecMessageEleHdr));
 
-  if (r->name) {
-    r->name = reinterpret_cast<char *>(r) + (intptr_t)(r->name);
+  // RecSyncStatsFile() writes only stats. RecReadStatsFile() would restore any other kind as a new record, where an
+  // unknown kind asserts in RecSetRecord() and a configuration kind aborts the later registration of that stat.
+  if (!REC_TYPE_IS_STAT(stored_value(&r->rec_type))) {
+    return corrupt("not a stat record");
   }
-  if (r->data_type == RECD_STRING) {
-    if (r->data.rec_string) {
-      r->data.rec_string = reinterpret_cast<char *>(r) + (intptr_t)(r->data.rec_string);
-    }
-    if (r->data_default.rec_string) {
-      r->data_default.rec_string = reinterpret_cast<char *>(r) + (intptr_t)(r->data_default.rec_string);
-    }
+  if (!resolve_string(msg, r, r->name)) {
+    return corrupt("bad record name");
   }
-  if (REC_TYPE_IS_CONFIG(r->rec_type) && (r->config_meta.check_expr)) {
-    r->config_meta.check_expr = reinterpret_cast<char *>(r) + (intptr_t)(r->config_meta.check_expr);
+  // For a name already in the table, RecSetRecord() reads RECD_NULL data as a string pointer, which the bytes from
+  // the file are not. RecDataSet() asserts on any type past RECD_COUNTER.
+  auto const data_type = stored_value(&r->data_type);
+  if (data_type <= RECD_NULL || data_type >= RECD_MAX) {
+    return corrupt("bad data type");
+  }
+  if (data_type == RECD_STRING) {
+    if (!resolve_string(msg, r, r->data.rec_string) || !resolve_string(msg, r, r->data_default.rec_string)) {
+      return corrupt("bad string value");
+    }
   }
 
   *record = r;
@@ -232,23 +319,52 @@ RecMessageReadFromDisk(const char *fpath)
   RecMessage   *msg = nullptr;
   RecHandle     h_file;
   int           bytes_read;
+  struct stat   file_stat;
+  const char   *why = nullptr;
 
   if ((h_file = RecFileOpenR(fpath)) == REC_HANDLE_INVALID) {
+    // No file is the normal state before the first snapshot is written.
+    if (errno != ENOENT) {
+      why = "cannot open it";
+    }
     goto Lerror;
   }
-  if (RecFileRead(h_file, reinterpret_cast<char *>(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL) {
+  if (RecSnapFileRead(h_file, reinterpret_cast<char *>(&msg_hdr), sizeof(RecMessageHdr), &bytes_read) == REC_ERR_FAIL ||
+      bytes_read != static_cast<int>(sizeof(RecMessageHdr))) {
+    why = "truncated header";
     goto Lerror;
   }
-  msg = static_cast<RecMessage *>(ats_malloc((msg_hdr.o_end - msg_hdr.o_start) + sizeof(RecMessageHdr)));
-  memcpy(msg, &msg_hdr, sizeof(RecMessageHdr));
-  if (RecSnapFileRead(h_file, reinterpret_cast<char *>(msg) + msg_hdr.o_start, msg_hdr.o_end - msg_hdr.o_start, &bytes_read) ==
-      REC_ERR_FAIL) {
+  if (fstat(h_file, &file_stat) != 0) {
+    why = "cannot stat it";
+    goto Lerror;
+  }
+  // RecMessageWriteToDisk() puts the message, header included, after the version bytes, with
+  // o_start at the end of the header and o_end at the end of the message.
+  if (msg_hdr.o_start != static_cast<int>(sizeof(RecMessageHdr)) || msg_hdr.o_end < msg_hdr.o_start ||
+      msg_hdr.o_end > file_stat.st_size - static_cast<off_t>(VERSION_HDR_SIZE)) {
+    why = "header does not match the file";
+    goto Lerror;
+  }
+  msg = static_cast<RecMessage *>(ats_malloc(msg_hdr.o_end));
+  if (RecSnapFileRead(h_file, reinterpret_cast<char *>(msg), msg_hdr.o_end, &bytes_read) == REC_ERR_FAIL ||
+      bytes_read != msg_hdr.o_end) {
+    why = "truncated message";
+    goto Lerror;
+  }
+  // Every later bound comes from the header in msg, so it must be the one checked above, not a copy of a file
+  // that changed between the two reads.
+  if (memcmp(msg, &msg_hdr, sizeof(msg_hdr)) != 0) {
+    why = "file changed while reading it";
     goto Lerror;
   }
 
   goto Ldone;
 
 Lerror:
+  // Without the snapshot no persistent stat is restored, so say why it was not used.
+  if (why != nullptr) {
+    Warning("Persistent statistics file %s is not usable (%s). No persistent statistics are restored", fpath, why);
+  }
   ats_free(msg);
   msg = nullptr;
 
