@@ -895,8 +895,8 @@ for an uncacheable object effectively take turns.
 the turns. Once an object has answered uncacheable twice within that time, misses on
 it go to the origin without the write lock for that long, renewed by every further
 uncacheable response to a plain ``GET`` miss, and take the lock only if a response
-turns out to be cacheable after all. Requests for every other object are collapsed
-as before, and a stored response clears the memory for its object.
+turns out to be cacheable after all. Requests for every other object are still
+collapsed, and a stored response clears the memory for its object.
 
 Open Write Fail Action
 ----------------------

@@ -21,13 +21,13 @@
 # The same sessions run twice. With the memory on, the overlapping no-store
 # requests neither lose the write lock nor wait behind a writer. With it off,
 # the third request waits behind the second as a busy reader and then loses
-# the lock, which is what every request did before.
+# the lock, which is what every miss does with the memory off.
 
 meta:
   version: "1.0"
 
 urtest:
-  description: 'Misses on a URL that just answered no-store skip the cache write lock'
+  description: 'Misses on a URL that answered no-store twice skip the cache write lock'
 
   server:
     name: 'server'
@@ -54,7 +54,8 @@ urtest:
     # that the response cannot be stored. The two that follow overlap on a slow
     # origin; neither takes the lock, so the third neither loses it nor waits
     # behind the second as a busy reader. The two /cacheable requests check
-    # that collapsing and caching still work.
+    # that collapsing and caching still work, and a last /nostore request, once
+    # the others are done, shows that neither no-store answer was stored.
     - name: memo-on
       ats:
         records_config:
@@ -63,7 +64,7 @@ urtest:
           - metric: proxy.process.http.cache.remember_uncacheable.admits
             value: 1
           - metric: proxy.process.http.cache.remember_uncacheable.hits
-            value: 2
+            value: 3
           - metric: proxy.process.http.cache_open_write_fail_count
             value: 0
           - metric: proxy.process.cache.read_busy.failure
@@ -265,3 +266,32 @@ sessions:
       headers:
         fields:
         - [X-Response, {value: cacheable-origin, as: equal}]
+
+- transactions:
+  - client-request:
+      delay: 6s
+      method: GET
+      url: /nostore
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, nostore-fourth]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "3"]
+        - [Cache-Control, "no-store"]
+        - [X-Response, fourth]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: fourth, as: equal}]

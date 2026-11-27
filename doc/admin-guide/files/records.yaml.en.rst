@@ -3972,7 +3972,7 @@ Dynamic Content & Content Negotiation
     (:ts:cv:`proxy.config.http.cache.open_read_retry_time`,
     :ts:cv:`proxy.config.cache.read_while_writer_retry.delay`) until the writer gives the lock
     up or their retries run out. Requests for a remembered URL skip the lock and the waits.
-    Requests for any other URL are collapsed as before, so a cacheable URL that becomes popular
+    Requests for any other URL are still collapsed, so a cacheable URL that becomes popular
     still costs one origin fetch. The cost of remembering is that a response that becomes
     cacheable while its URL is remembered is stored by the first request that sees it but is
     not collapsed, and a miss on a remembered URL is never subject to
@@ -3981,7 +3981,8 @@ Dynamic Content & Content Negotiation
     ``proxy.process.http.cache_open_write_fail_count``. The memory holds
     :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` URLs.
 
-    These metrics show how the memory is doing.
+    Four metrics show whether the memory saves lock waits and whether
+    :ts:cv:`proxy.config.http.cache.remember_uncacheable_entries` is large enough:
 
     ``proxy.process.http.cache.remember_uncacheable.hits``
        Misses that skipped the write lock because their URL was remembered.

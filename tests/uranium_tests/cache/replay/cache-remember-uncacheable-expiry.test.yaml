@@ -18,8 +18,7 @@
 # then becomes cacheable: the next miss skips the write lock but still stores
 # the cacheable response, and the request after that is a hit. /expire answers
 # no-store twice and is asked again after the memory has lapsed: that miss takes the
-# write lock as a plain miss would. On an unchanged build the counter is absent,
-# so this file documents the memory's lifecycle rather than catching the old wait.
+# write lock as a plain miss would.
 
 meta:
   version: "1.0"

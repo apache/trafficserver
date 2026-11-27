@@ -14,21 +14,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# A remembered miss that loses the cache write lock serves the response it
-# already has, whatever open_write_fail_action says. With the lock eagerly
-# taken, fail action 1 answers that miss with a 502; here it must not. Two
-# no-store answers make /lost remembered. The third miss goes to the origin
+# A miss on a remembered URL that loses the cache write lock serves the
+# response it already has, whatever open_write_fail_action says. With the lock
+# eagerly taken, fail action 1 answers that miss with a 502; here it must not.
+# Two no-store answers make /lost remembered. The third miss goes to the origin
 # without the lock, gets a cacheable answer and is denied the late lock by the
 # X-Fail-Cache-Write rule, which reports the loss without going to the cache,
 # so both variants reach the same lost-lock case. Nothing was stored, so /lost
-# stays remembered: the fourth miss also skips the lock, stores the answer and
-# clears the memory, and the fifth request hits.
+# stays remembered: the fourth miss also skips the lock and stores the answer,
+# which drops /lost from the memory, and the fifth request hits.
 
 meta:
   version: "1.0"
 
 urtest:
-  description: 'A remembered miss that loses the write lock ignores open_write_fail_action'
+  description: 'A miss on a remembered URL that loses the write lock ignores open_write_fail_action'
 
   server:
     name: 'server'
@@ -71,15 +71,16 @@ urtest:
       traffic_out:
         contains:
           - expression: '\[hdcwc\] cache write lock failed'
-            description: 'The remembered miss lost the late write lock'
+            description: 'The miss on the remembered URL lost the late write lock'
           - expression: 'the key is being stored, so the uncacheable memo forgot it'
-            description: 'The next remembered miss stored the URL and dropped it from the memo'
+            description: 'The next miss on the remembered URL stored it and dropped it from the memo'
 
   variants:
     - name: error-on-miss
       ats:
         records_config:
           proxy.config.http.cache.open_write_fail_action: 1
+    # Fail action 5 also ends in a plain lost lock here, as no object was read.
     - name: read-retry
       ats:
         records_config:
