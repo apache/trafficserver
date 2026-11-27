@@ -18,6 +18,8 @@
 
 #include "mp4_common.h"
 
+#include <string>
+
 static char *ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len);
 static int   mp4_handler(TSCont contp, TSEvent event, void *edata);
 static void  mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp);
@@ -69,8 +71,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   const char *val;
   int         ret;
   float       start;
-  char        buf[1024];
-  int         buf_len;
+  std::string new_query;
   int         left, right;
   TSMLoc      ae_field, range_field;
   TSCont      contp;
@@ -122,8 +123,10 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
     right--;
   }
 
-  buf_len = snprintf(buf, sizeof(buf), "%.*s%.*s", left, query, right, query + query_len - right);
-  TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, buf, buf_len);
+  new_query.reserve(left + right);
+  new_query.append(query, left);
+  new_query.append(query + query_len - right, right);
+  TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, new_query.data(), new_query.size());
 
   // remove Accept-Encoding
   ae_field = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
