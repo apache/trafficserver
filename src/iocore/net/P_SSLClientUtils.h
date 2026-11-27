@@ -106,11 +106,14 @@ OriginTrustedRPK origin_trusted_rpk(const char *txn_rpk_name, const char *txn_ca
 /** @return true if a raw public key origin connection may carry a request whose own connection
     would select the sni.yaml next-hop entry @a property_key.
 
-    When the request's policy is ENFORCED, the key the connection presented must be in the set the
-    request would pin now, as origin_trusted_rpk() selects it; a name says nothing about which set
-    that is. A connection whose own policy was DISABLED never compared its key with a set, so it has
-    no recorded key and fails that check. When the request's policy is PERMISSIVE or DISABLED, a new
-    handshake would accept the key regardless, so the connection may carry the request too.
+    When the request's policy is ENFORCED, the connection's handshake must have passed every check, and
+    the key it presented must be in the set the request would pin now, as origin_trusted_rpk() selects
+    it; a name says nothing about which set that is. A handshake that PERMISSIVE carried past a failed
+    check, including a key outside the set, leaves a verify result other than X509_V_OK, which a resumed
+    session keeps, so the connection fails even after a reload adds its key to the set. A connection
+    whose own policy was DISABLED never compared its key with a set, so it has no recorded key and fails
+    as well. When the request's policy is PERMISSIVE or DISABLED, a new handshake would accept the key
+    regardless, so the connection may carry the request too.
 
     @param netvc A pooled origin connection for which origin_presented_raw_public_key() is true.
     @param property_key The new request's key, from next_hop_property_key().

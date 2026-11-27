@@ -404,6 +404,31 @@ def inbound_handshakes(ats: ATS) -> int:
     return int(result.stdout.split()[-1])
 
 
+def origin_reuses(ats: ATS) -> int:
+    """Count the requests an ATS instance has sent over an origin connection taken from its session pool.
+
+    A refused handshake leaves no trace in the next hop's handshake count, so this is what tells a
+    request that opened a connection of its own from one that reused a pooled connection.
+
+    :param ats: Running Traffic Server instance.
+    """
+
+    result = ats.traffic_ctl("metric", "get", "proxy.process.http.origin.reuse")
+    assert result.returncode == 0, result.output
+    return int(result.stdout.split()[-1])
+
+
+def tls_errors(ats: ATS) -> int:
+    """Count the TLS failures an ATS instance has had, an outbound handshake it refused among them.
+
+    :param ats: Running Traffic Server instance.
+    """
+
+    result = ats.traffic_ctl("metric", "get", "proxy.process.ssl.ssl_error_ssl")
+    assert result.returncode == 0, result.output
+    return int(result.stdout.split()[-1])
+
+
 def origin_session_lookup_keys(log: Path, count: int) -> list[str]:
     """Wait for and return the edge's origin session cache lookup keys, oldest first.
 
@@ -1754,3 +1779,220 @@ def test_rpk_hop_resumed_disabled_connection_not_reused_when_enforced(
     assert result.returncode == 0, result.output
     assert "origin response" in result.output, "the ENFORCED request should succeed over a connection of its own"
     assert inbound_handshakes(parent) == 3, "the ENFORCED request must not reuse the connection that resumed under DISABLED"
+
+
+def configure_permissive_edge(
+    ats_factory: ATSFactory,
+    name: str,
+    parent: ATS,
+    pin_file: str,
+    *,
+    plugin: str | None = None,
+    tls_version: str = "1.3",
+    pin_source: str = "sni.yaml",
+) -> ATS:
+    """Configure an edge whose own policy is PERMISSIVE, with a rule that verifies under ENFORCED.
+
+    One thread keeps every request in reach of the pooled connection, and the origin session cache
+    lets a later connection resume the session of an earlier one.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param name: Unique ATS name within the test.
+    :param parent: Parent the edge forwards to.
+    :param pin_file: Trusted parent raw public keys.
+    :param plugin: plugin.config line for a test plugin to load, or None.
+    :param tls_version: The TLS version the hop to the parent is held to.
+    :param pin_source: "sni.yaml" to pin pin_file with verify_server_rpk_ca, or "records.yaml" to pin
+        it with proxy.config.ssl.client.CA.rpk.filename.
+    """
+
+    edge = configure_edge(
+        ats_factory,
+        name,
+        parent,
+        pin_file if pin_source == "sni.yaml" else None,
+        global_pin_file=pin_file if pin_source == "records.yaml" else None,
+        policy="PERMISSIVE",
+        plugin=plugin,
+        extra_remap_rules=[
+            f"map /enforced/ https://127.0.0.1:{parent.https_port}/ @plugin=conf_remap.so"
+            " @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED",
+            # The connection a request releases takes that request's idle timeout, so only the first
+            # connection leaves the pool quickly, and the one that resumes its session stays.
+            f"map /short-idle/ https://127.0.0.1:{parent.https_port}/ @plugin=conf_remap.so"
+            " @pparam=proxy.config.http.keep_alive_no_activity_timeout_out=2",
+        ],
+    )
+    edge.records.update(
+        {
+            "proxy.config.exec_thread.autoconfig.enabled": 0,
+            "proxy.config.exec_thread.limit": 1,
+            "proxy.config.ssl.origin_session_cache.enabled": 1,
+        }
+    )
+    limit_hop_tls_version(edge, tls_version)
+    return edge
+
+
+def pool_permissive_connection(curl: Curl, edge: ATS, handshake: str) -> None:
+    """Leave a connection opened under PERMISSIVE in the edge's pool, and show that it is reused.
+
+    :param curl: Curl command runner.
+    :param edge: Edge configured by configure_permissive_edge().
+    :param handshake: "full", or "resumed" for a pooled connection that resumed the session of an
+        earlier one, which runs no verify callback.
+    """
+
+    if handshake == "resumed":
+        first = curl.run(f"-k https://127.0.0.1:{edge.https_port}/short-idle/", timeout=30)
+        assert first.returncode == 0, first.output
+        assert "origin response" in first.output, "PERMISSIVE should accept the key"
+        wait_for_metric(edge, "proxy.process.http.current_server_connections", 0)
+    assert "origin response" in request_through(curl, edge).output, "PERMISSIVE should accept the key"
+    if handshake == "resumed":
+        wait_for_file_lines(edge.traffic_out, REUSED_ORIGIN_SESSION, 1)
+    reuses_before = origin_reuses(edge)
+    assert "origin response" in request_through(curl, edge).output
+    assert origin_reuses(edge) == reuses_before + 1, "a PERMISSIVE request should reuse the pooled connection"
+
+
+@pytest.mark.parametrize("tls_version", ("1.3", "1.2"))
+@pytest.mark.parametrize("handshake", ("full", "resumed"))
+@pytest.mark.parametrize("failure", ("weak_key", "hook_rejection"))
+def test_rpk_hop_warned_connection_not_reused_when_enforced(
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, failure: str, handshake: str, tls_version: str
+) -> None:
+    """A connection PERMISSIVE carried past a failed check other than the pin does not carry an ENFORCED request.
+
+    The key is in the pinned set either way. For weak_key it is below the edge's security level, which
+    OpenSSL reports before the pin decision; for hook_rejection, ssl_verify_test rejects every
+    connection that sends no SNI, as one toward an IP literal does. A new ENFORCED handshake refuses
+    the key in both cases, so the ENFORCED request must open a connection of its own and be refused.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    :param failure: The check that fails.
+    :param handshake: Whether the pooled connection came from a full handshake or a resumed one.
+    :param tls_version: The TLS version the hop to the parent is held to.
+    """
+
+    if failure == "weak_key" and "BoringSSL" in ats_factory.tls_library():
+        pytest.skip("BoringSSL has no security level to hold the key below")
+    if failure == "weak_key" and handshake == "resumed" and tls_version == "1.2":
+        pytest.skip("security level 3 disables TLS 1.2 session tickets, and the parent resumes no session by its ID")
+
+    origin = configure_origin(services)
+    if failure == "weak_key":
+        # server-foo.pem has a 2048-bit RSA key, which security level 3 refuses.
+        parent = configure_parent(
+            ats_factory, "parent_rpk", origin, rpk_enabled=True, server_cert="server-foo.pem", server_key="server-foo.key"
+        )
+        edge = configure_permissive_edge(ats_factory, "edge_weak_key", parent, "server-foo.pubkey.pem", tls_version=tls_version)
+        edge.copy_to_ssl(SSL_DIRECTORY / "server-foo.pubkey.pem")
+        edge.records.update({"proxy.config.ssl.client.cipher_suite": "DEFAULT:@SECLEVEL=3"})
+        warning = r"Origin raw public key failed verification\. Action=Continue"
+    else:
+        parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+        edge = configure_permissive_edge(
+            ats_factory,
+            "edge_hook_rejection",
+            parent,
+            "server.pubkey.pem",
+            plugin="ssl_verify_test.so -count=1",
+            tls_version=tls_version,
+        )
+        warning = r"TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check .* Action=Continue"
+    start_hop(origin, parent, edge)
+
+    pool_permissive_connection(curl, edge, handshake)
+    reuses_before = origin_reuses(edge)
+    errors_before = tls_errors(edge)
+    result = curl.run(f"-k https://127.0.0.1:{edge.https_port}/enforced/", timeout=30)
+    assert result.returncode == 0, result.output
+    reuses_after = origin_reuses(edge)
+    errors_after = tls_errors(edge)
+    stop_tiers(edge, parent)
+
+    assert_log_contains(edge.diags_log, warning, "the PERMISSIVE handshake must have continued past the failed check")
+    assert reuses_after == reuses_before, "an ENFORCED request must not reuse a connection that failed a check"
+    assert "origin response" not in result.output, "the ENFORCED request must not be served"
+    # Counted rather than read from the Terminate warning, which for a weak key is throttled after the Continue one.
+    assert errors_after > errors_before, "the ENFORCED request's own handshake must refuse the key"
+
+
+@pytest.mark.parametrize("pin_source", ("sni.yaml", "records.yaml"))
+@pytest.mark.parametrize("tls_version", ("1.3", "1.2"))
+@pytest.mark.parametrize("handshake", ("full", "resumed"))
+def test_rpk_hop_mismatched_connection_not_reused_after_key_added(
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, handshake: str, tls_version: str, pin_source: str
+) -> None:
+    """Adding a key to the pinned set does not let an ENFORCED request reuse a connection that key failed.
+
+    The connection was accepted under PERMISSIVE although its key was outside the set. After a reload
+    adds the key, a new ENFORCED handshake accepts it, so the ENFORCED request must be served over a
+    connection of its own rather than the one that failed.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    :param handshake: Whether the pooled connection came from a full handshake or a resumed one.
+    :param tls_version: The TLS version the hop to the parent is held to.
+    :param pin_source: Where the edge's pinned set is configured.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_permissive_edge(
+        ats_factory, "edge_key_added", parent, "server.wrongpubkey.pem", tls_version=tls_version, pin_source=pin_source
+    )
+    start_hop(origin, parent, edge)
+    pin_file = edge.ssl_directory / "server.wrongpubkey.pem"
+
+    pool_permissive_connection(curl, edge, handshake)
+    wait_for_file_lines(edge.traffic_out, PIN_MISMATCH, 1)
+    rewrite_watched_file(pin_file, WIDENED_PIN_SET)
+    statuses = reload_config(edge, "add-key")
+    assert PIN_RELOAD_TASK[pin_source] in statuses, statuses
+    # Without the connection still pooled after the reload, the ENFORCED request would open its own anyway.
+    reuses_before = origin_reuses(edge)
+    assert "origin response" in request_through(curl, edge).output
+    assert origin_reuses(edge) == reuses_before + 1, "the reload should leave the connection in the pool"
+    reuses_before = origin_reuses(edge)
+    handshakes_before = inbound_handshakes(parent)
+    result = curl.run(f"-k https://127.0.0.1:{edge.https_port}/enforced/", timeout=30)
+    assert result.returncode == 0, result.output
+
+    assert "origin response" in result.output, "the ENFORCED request should be served once its set trusts the key"
+    assert origin_reuses(edge) == reuses_before, "an ENFORCED request must not reuse a connection whose key failed the pin"
+    assert inbound_handshakes(parent) == handshakes_before + 1, "the ENFORCED request should open a connection of its own"
+
+
+@pytest.mark.parametrize("tls_version", ("1.3", "1.2"))
+@pytest.mark.parametrize("handshake", ("full", "resumed"))
+def test_rpk_hop_clean_permissive_connection_reused_when_enforced(
+    ats_factory: ATSFactory, services: ServiceFactory, curl: Curl, handshake: str, tls_version: str
+) -> None:
+    """A connection opened under PERMISSIVE that passed every check carries an ENFORCED request.
+
+    Its key is in the pinned set and nothing failed, so a new ENFORCED handshake would accept it too.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning support services and their cleanup.
+    :param curl: Curl command runner.
+    :param handshake: Whether the pooled connection came from a full handshake or a resumed one.
+    :param tls_version: The TLS version the hop to the parent is held to.
+    """
+
+    origin = configure_origin(services)
+    parent = configure_parent(ats_factory, "parent_rpk", origin, rpk_enabled=True)
+    edge = configure_permissive_edge(ats_factory, "edge_clean", parent, "server.pubkey.pem", tls_version=tls_version)
+    start_hop(origin, parent, edge)
+
+    pool_permissive_connection(curl, edge, handshake)
+    reuses_before = origin_reuses(edge)
+    result = curl.run(f"-k https://127.0.0.1:{edge.https_port}/enforced/", timeout=30)
+    assert result.returncode == 0, result.output
+
+    assert "origin response" in result.output, "the ENFORCED request should be served"
+    assert origin_reuses(edge) == reuses_before + 1, "the ENFORCED request should reuse the connection that passed every check"
