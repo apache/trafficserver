@@ -1722,11 +1722,14 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
+  bool scheduled_fini = false;
+
   if (edata == zombie_event) {
     // zombie session is still around. Assert
     ink_release_assert(zombie_event == nullptr);
   } else if (edata == fini_event) {
-    fini_event = nullptr;
+    fini_event     = nullptr;
+    scheduled_fini = true;
   } else if (edata == _priority_event) {
     _priority_event = nullptr;
   } else if (edata == _data_event) {
@@ -1741,6 +1744,31 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
   case HTTP2_SESSION_EVENT_FINI: {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     REMEMBER(event, this->recursion);
+
+    // On any thread, a FINI scheduled from another immediate event in the
+    // same queue drain runs before the net handler has written the frames
+    // queued ahead of it. On a thread with a poll event, such as the quiche
+    // UDP poll, so does a FINI scheduled from a timed event, because that
+    // thread runs its immediate events again before it does network I/O.
+    // Closing then discards those frames. Flush first: on a stream that is
+    // not a tunnel, every DATA frame but the last is queued with
+    // flush=false, and on a session a graceful shutdown already half-closed,
+    // the error sends no GOAWAY that would flush them. They would wait for
+    // the retransmit timer (write_time_threshold, 100 ms by default), long
+    // after this wait gives up. Then wait for them 1 ms at a time, at most
+    // FINI_WRITE_WAIT_MAX times. This bounds the wait; it does not guarantee
+    // delivery.
+    if (scheduled_fini && this->session != nullptr && this->session->has_unsent_data()) {
+      if (this->_fini_write_waits < FINI_WRITE_WAIT_MAX) {
+        ++this->_fini_write_waits;
+        Http2ConDebug(session, "waiting for queued frames to be written before closing (%d)", this->_fini_write_waits);
+        this->session->flush();
+        fini_event =
+          this_ethread()->schedule_in_local(static_cast<Continuation *>(this), HRTIME_MSECONDS(1), HTTP2_SESSION_EVENT_FINI);
+        break;
+      }
+      Http2ConDebug(session, "closing with %" PRId64 " bytes still unsent", this->session->unsent_bytes());
+    }
 
     ink_assert(this->fini_received == false);
     this->fini_received = true;

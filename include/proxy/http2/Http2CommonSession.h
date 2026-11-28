@@ -115,6 +115,8 @@ public:
 
   int64_t write_avail();
   bool    is_write_high_water() const;
+  bool    has_unsent_data() const;
+  int64_t unsent_bytes() const;
 
   virtual ProxySession *get_proxy_session() = 0;
 
