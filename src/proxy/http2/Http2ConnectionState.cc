@@ -491,7 +491,7 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
   // ATS advertises SETTINGS_MAX_HEADER_LIST_SIZE as a limit of total header blocks length. (Details in [RFC 7560] 10.5.1.)
   // Make it double to relax the limit in cases of 1) HPACK is used naively, or 2) Huffman Encoding generates large header blocks.
   // The total "decoded" header length is strictly checked by hpack_decode_header_block().
-  if (stream->header_blocks_length > std::max(Http2::max_header_list_size, Http2::max_header_list_size * 2)) {
+  if (stream->header_blocks_length > http2_max_header_blocks_length(Http2::max_header_list_size)) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "header blocks too large");
   }
@@ -1239,7 +1239,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
   // ATS advertises SETTINGS_MAX_HEADER_LIST_SIZE as a limit of total header blocks length. (Details in [RFC 7560] 10.5.1.)
   // Make it double to relax the limit in cases of 1) HPACK is used naively, or 2) Huffman Encoding generates large header blocks.
   // The total "decoded" header length is strictly checked by hpack_decode_header_block().
-  if (stream->header_blocks_length > std::max(Http2::max_header_list_size, Http2::max_header_list_size * 2)) {
+  if (stream->header_blocks_length > http2_max_header_blocks_length(Http2::max_header_list_size)) {
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_ENHANCE_YOUR_CALM,
                       "header blocks too large");
   }

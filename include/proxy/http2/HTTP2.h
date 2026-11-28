@@ -387,6 +387,14 @@ http2_continuation_length_would_overflow(uint32_t current_length, uint32_t paylo
   return current_length > UINT32_MAX - payload_length;
 }
 
+// The limit on the total length of the header blocks of one stream, which is
+// double @a max_header_list_size and saturates at UINT32_MAX.
+static inline uint32_t
+http2_max_header_blocks_length(uint32_t max_header_list_size)
+{
+  return max_header_list_size > UINT32_MAX / 2 ? UINT32_MAX : max_header_list_size * 2;
+}
+
 Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool, uint32_t,
                                           uint32_t, bool is_outbound = false);
 
