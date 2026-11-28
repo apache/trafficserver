@@ -264,6 +264,7 @@ public:
 class match_t
 {
 public:
+  /* buf must be NUL-terminated at buf[len]: strstr, strcasestr and regexec search up to the terminator, not len */
   virtual bool   find(const char *, size_t, size_t &, size_t &, const char *, std::string &) const = 0;
   virtual size_t cont_size() const                                                                 = 0;
   virtual ~match_t()                                                                               = default;
@@ -612,17 +613,16 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
     block = TSIOBufferReaderStart(reader);
     buf   = TSIOBufferBlockReadStart(block, reader, &nbytes);
 
-    if (contdata->contbuf.empty()) {
-      /* Use the data as-is */
-      buflen = nbytes;
-    } else {
-      contdata->contbuf.append(buf, nbytes);
-      buf    = contdata->contbuf.c_str();
-      buflen = contdata->contbuf.length();
-    }
-    keep = contdata->contbuf_sz;
+    /* Block data is not NUL-terminated, but the matchers and regexec scan for a terminator */
+    contdata->contbuf.append(buf, nbytes);
+    buf    = contdata->contbuf.c_str();
+    buflen = contdata->contbuf.length();
+    keep   = contdata->contbuf_sz;
   }
   size_t bytes_read = 0;
+
+  /* Bytes that can be passed on now; the last keep bytes wait for the next block */
+  size_t const avail = buflen > keep ? buflen - keep : 0;
 
   editset_t edits;
 
@@ -632,7 +632,7 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
 
   for (edit_p p = edits.begin(); p != edits.end(); ++p) {
     /* Preserve continuity buffer */
-    if (p->start >= buflen - keep) {
+    if (p->start >= avail) {
       break;
     }
 
@@ -662,14 +662,14 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
   contdata->bytes_in += bytes_read;
 
   /* data after the last edit */
-  if (bytes_read < buflen - keep) {
-    n                    = TSIOBufferWrite(contdata->out_buf, buf + bytes_read, buflen - bytes_read - keep);
+  if (bytes_read < avail) {
+    n                    = TSIOBufferWrite(contdata->out_buf, buf + bytes_read, avail - bytes_read);
     contdata->bytes_in  += n;
     contdata->bytes_out += n;
     bytes_read          += n;
   }
   /* reset buf to what we've not processed */
-  contdata->contbuf = buf + bytes_read;
+  contdata->contbuf.erase(0, bytes_read);
 
   return nbytes;
 }
