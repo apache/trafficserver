@@ -513,7 +513,8 @@ does not support RFC 7250 falls back to a normal certificate exchange, and the u
 checks apply.
 
 Replacing the file ``verify_server_rpk_ca`` or the record names and running
-:option:`traffic_ctl config reload` takes effect for requests that follow. An origin connection taken from the session pool, or an HTTP/2 connection shared with
+:option:`traffic_ctl config reload` takes effect for requests that follow. An origin connection
+taken from the session pool, or an HTTP/2 connection shared with
 requests that waited for it to open, carries a request verified under :code:`ENFORCED` only while
 the set that request would pin still contains the key the connection presented. Adding a key for
 rotation keeps existing connections, while removing a key retires the connections that presented it.
