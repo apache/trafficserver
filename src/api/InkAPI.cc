@@ -6646,6 +6646,10 @@ TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
   TSIOBufferSizeIndex buffer_index      = TSPluginVCIOBufferIndexGet(txnp);
   TSIOBufferWaterMark buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(txnp);
 
+  if (http_sm->plugin_tunnel != nullptr) {
+    http_sm->plugin_tunnel->kill_no_connect();
+  }
+
   http_sm->plugin_tunnel_type = HttpPluginTunnel_t::AS_SERVER;
   http_sm->plugin_tunnel      = PluginVCCore::alloc(reinterpret_cast<INKContInternal *>(contp), buffer_index, buffer_water_mark);
 }
@@ -6660,6 +6664,10 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
 
   TSIOBufferSizeIndex buffer_index      = TSPluginVCIOBufferIndexGet(txnp);
   TSIOBufferWaterMark buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(txnp);
+
+  if (http_sm->plugin_tunnel != nullptr) {
+    http_sm->plugin_tunnel->kill_no_connect();
+  }
 
   http_sm->plugin_tunnel_type = HttpPluginTunnel_t::AS_INTERCEPT;
   http_sm->plugin_tunnel      = PluginVCCore::alloc(reinterpret_cast<INKContInternal *>(contp), buffer_index, buffer_water_mark);

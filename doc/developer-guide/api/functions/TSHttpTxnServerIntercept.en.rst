@@ -59,7 +59,10 @@ to other protocols or to allow one to plugin to its own transport for the next h
 to the server. :func:`TSHttpTxnServerIntercept` overrides parent cache
 configuration.
 
-:func:`TSHttpTxnServerIntercept` must only be called once per transaction. The
+:func:`TSHttpTxnServerIntercept` must only be called once per transaction. If a
+plugin calls an intercept function again for the same transaction, the last
+call replaces the earlier one, and the continuation of the earlier call gets a
+:enumerator:`TS_EVENT_NET_ACCEPT_FAILED` event. The
 continuation :arg:`contp` must have been created with a valid :type:`TSMutex`.
 
 See Also
