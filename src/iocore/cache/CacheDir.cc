@@ -354,16 +354,30 @@ Directory::segment_links_valid(int s) const
   return walk(this->header->freelist[s]);
 }
 
+bool
+Directory::segment_offsets_valid(int s, off_t max_offset) const
+{
+  Dir    *seg     = this->get_segment(s);
+  int64_t entries = this->buckets * DIR_DEPTH;
+
+  for (int64_t i = 0; i < entries; i++) {
+    if (dir_offset(dir_in_seg(seg, i)) > max_offset) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
   Recovery only: cacheInitialized() stores the gauges afterwards, so init_segment() is not given the stripe to debit.
  */
 int
-Directory::clear_corrupt_segments()
+Directory::clear_corrupt_segments(off_t max_offset)
 {
   int cleared = 0;
   for (int s = 0; s < this->segments; s++) {
-    if (!this->segment_links_valid(s)) {
-      Dbg(dbg_ctl_cache_check_dir, "segment %d has corrupt links, clearing", s);
+    if (!this->segment_links_valid(s) || !this->segment_offsets_valid(s, max_offset)) {
+      Dbg(dbg_ctl_cache_check_dir, "segment %d has corrupt links or offsets, clearing", s);
       this->init_segment(s, nullptr);
       cleared++;
     }

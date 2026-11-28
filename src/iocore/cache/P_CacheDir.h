@@ -340,8 +340,11 @@ public:
    * yet deleting those entries pushes them back onto the same free list and loops it.
    */
   bool segment_links_valid(int s) const;
-  /// Wipes every segment failing segment_links_valid() and returns how many. Recovery only, like clear_range().
-  int clear_corrupt_segments();
+  /// Whether no entry of segment @a s has an offset above @a max_offset, the last block of the stripe.
+  bool segment_offsets_valid(int s, off_t max_offset) const;
+  /// Wipes every segment failing segment_links_valid() or segment_offsets_valid() and returns how many. Recovery only,
+  /// like clear_range().
+  int clear_corrupt_segments(off_t max_offset);
 
 private:
   void unlink_from_freelist(Dir *e, int s);

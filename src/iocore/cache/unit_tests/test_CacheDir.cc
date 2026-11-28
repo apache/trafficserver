@@ -163,7 +163,7 @@ public:
       stripe->directory.insert(&key, stripe, &dir);
     }
     // Full, healthy chains in every segment must not read as corrupt.
-    CHECK(stripe->directory.clear_corrupt_segments() == 0);
+    CHECK(stripe->directory.clear_corrupt_segments(DIR_OFFSET_MAX) == 0);
 
     Dir dir1;
     memset(static_cast<void *>(&dir1), 0, sizeof(dir1));
@@ -472,7 +472,7 @@ public:
       CHECK(!stripe->directory.segment_links_valid(s));
 
       stripe->directory.header->dirty = 0;
-      CHECK(stripe->directory.clear_corrupt_segments() == 1);
+      CHECK(stripe->directory.clear_corrupt_segments(DIR_OFFSET_MAX) == 1);
       CHECK(stripe->directory.header->dirty == 1);
       CHECK(stripe->directory.segment_links_valid(s));
       CHECK(dir_offset(head) == 0);
@@ -480,6 +480,33 @@ public:
 
       stripe->directory.clean_segment(s, stripe);
       CHECK(stripe->directory.segment_links_valid(s));
+    }
+    stripe->clear_dir();
+
+    // dir_valid() has no upper bound for an out of phase entry, so a corrupt entry can point past the stripe.
+    Dbg(dbg_ctl_cache_dir_test, "entry offset past the stripe test");
+    {
+      stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+
+      int         s          = 0;
+      const off_t data_end   = stripe->skip + stripe->len;
+      const off_t max_offset = (data_end - stripe->start + CACHE_BLOCK_SIZE - 1) / CACHE_BLOCK_SIZE;
+      Dir        *head       = dir_bucket(3, stripe->directory.get_segment(s));
+
+      dir_clear(head);
+      dir_set_offset(head, max_offset);
+      dir_set_phase(head, !stripe->directory.header->phase);
+      CHECK(stripe->vol_offset(head) < data_end);
+      CHECK(stripe->directory.segment_offsets_valid(s, max_offset));
+      CHECK(stripe->directory.clear_corrupt_segments(max_offset) == 0);
+
+      dir_set_offset(head, max_offset + 1);
+      REQUIRE(stripe->dir_valid(head));
+      CHECK(stripe->vol_offset(head) >= data_end);
+      CHECK(stripe->directory.segment_links_valid(s));
+      CHECK(!stripe->directory.segment_offsets_valid(s, max_offset));
+      CHECK(stripe->directory.clear_corrupt_segments(max_offset) == 1);
+      CHECK(dir_offset(head) == 0);
     }
     stripe->clear_dir();
 
