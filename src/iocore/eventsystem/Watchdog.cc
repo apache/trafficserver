@@ -32,6 +32,7 @@
 #include "tscore/ink_thread.h"
 #include "tsutil/DbgCtl.h"
 #include "tsutil/Metrics.h"
+#include "ts/ats_probe.h"
 
 #include <algorithm>
 #include <atomic>
@@ -341,6 +342,7 @@ Monitor::scan(std::chrono::steady_clock::time_point now)
       // Monitor thread is the sole reader (and warned_seq writer), so relaxed accesses are race-free.
       uint64_t warned_seq = t->heartbeat_state.warned_seq.load(std::memory_order_relaxed);
       if (warned_seq < seq_before) {
+        ATS_PROBE3(watchdog_thread_awake, i, t, std::chrono::nanoseconds{awake_duration}.count());
         if (_legacy) {
           // The deprecated timeout_ms warned here, and a config that still sets it gets what it asked for.
           Warning("Watchdog: [ET_NET %zu] has been awake for %lld ms", i,

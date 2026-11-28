@@ -70,3 +70,39 @@ Example with bpftrace
          exit();
       }
    }
+
+Event loop tracepoints
+======================
+
+These tracepoints show whether an ``ET_NET`` thread returns to its event loop. A tool that runs on the event
+thread gets the kernel thread ID from the probe context, for example the ``tid`` builtin in bpftrace. A thread
+named ``[ET_NET <n>]`` has index *n*.
+
+``eventloop_sleep(EThread *thread, int index, int64_t timeout_ns)``
+   The thread is about to block in its poll. ``timeout_ns`` is the longest time that it waits.
+
+``eventloop_wake(EThread *thread, int index, int64_t poll_ns, int ready)``
+   The thread returned from its poll. ``poll_ns`` is the time that it was in the poll, and ``ready`` is the
+   number of ready descriptors. The thread is awake until the next ``eventloop_sleep``.
+
+``watchdog_thread_awake(size_t index, EThread *thread, int64_t awake_ns)``
+   The watchdog found that thread ``index`` has been awake for ``awake_ns``, which is more than the watchdog
+   timeout, :ts:cv:`proxy.config.exec_thread.watchdog.timeout_shrink_ms` or the deprecated
+   :ts:cv:`proxy.config.exec_thread.watchdog.timeout_ms`. It fires on the watchdog thread, once for each long
+   loop iteration. It fires only when the watchdog is enabled.
+
+Each tracepoint fires at most once for each loop iteration.
+
+This script prints the kernel thread ID of each thread that the watchdog reports:
+
+.. code-block:: bash
+
+   #!/usr/bin/env bpftrace
+
+   usdt:/opt/ats/bin/traffic_server:trafficserver:eventloop_wake {
+      @tid_of[arg0] = tid;
+   }
+
+   usdt:/opt/ats/bin/traffic_server:trafficserver:watchdog_thread_awake {
+      printf("[ET_NET %d] tid %d awake %d ms\n", arg0, @tid_of[arg1], arg2 / 1000000);
+   }
