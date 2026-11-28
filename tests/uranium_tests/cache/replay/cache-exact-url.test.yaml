@@ -18,7 +18,7 @@ meta:
   version: "1.0"
 
 urtest:
-  description: 'Verify exact URL cache.config matching'
+  description: 'Verify exact URL cache.yaml matching'
 
   server:
     name: 'server'
@@ -36,8 +36,12 @@ urtest:
     remap_config:
       - from: "http://example.com/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
-    cache_config:
-      - "url=http://127.0.0.1:{SERVER_HTTP_PORT}/exact action=never-cache"
+    cache_yaml:
+      cache:
+        - match:
+            url: "http://127.0.0.1:{SERVER_HTTP_PORT}/exact"
+          action:
+            cache: never
 
 sessions:
 - transactions:

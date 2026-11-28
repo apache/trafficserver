@@ -59,7 +59,7 @@ To avoid that, however, required the new URL rewrite configuration to be much mo
 general such that it could perform the functions of these other configurations, including
 
 *  hosting.config
-*  cache.config
+*  cache.yaml
 *  parent.config
 *  The `header_rewrite` plugin.
 *  The `regex_remap` plugin.

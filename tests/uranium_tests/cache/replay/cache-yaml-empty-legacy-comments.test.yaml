@@ -1,0 +1,78 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Verify a comment-only cache.config beside a rule-free cache.yaml does not warn'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.http.cache.required_headers: 0
+      proxy.config.http.insert_age_in_response: 0
+
+    cache_yaml:
+      cache: []
+
+    # A stock cache.config holds only comments, so there is nothing to convert.
+    cache_config:
+      - '#'
+      - '# cache.config'
+      - ''
+      - '   # dest_domain=backend.example.com action=never-cache'
+
+    log_validation:
+      diags_log:
+        excludes:
+          - expression: 'has rules that are not being applied'
+            description: 'A cache.config without rules does not need converting'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          url: /object
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, first]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, "0"]
+        proxy-response:
+          status: 200

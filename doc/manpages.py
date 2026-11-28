@@ -44,6 +44,7 @@ man_pages = [
     # Add all files in the admin-guide/files directory to the list
     # of manual pages
     ('admin-guide/files/cache.config.en', 'cache.config', 'Traffic Server cache configuration file', None, '5'),
+    ('admin-guide/files/cache.yaml.en', 'cache.yaml', 'Traffic Server cache configuration file', None, '5'),
     ('admin-guide/files/hosting.config.en', 'hosting.config', 'Traffic Server domain hosting configuration file', None, '5'),
     ('admin-guide/files/ip_allow.yaml.en', 'ip_allow.yaml', 'Traffic Server IP access control configuration file', None, '5'),
     ('admin-guide/files/logging.yaml.en', 'logging.yaml', 'Traffic Server logging configuration file', None, '5'),

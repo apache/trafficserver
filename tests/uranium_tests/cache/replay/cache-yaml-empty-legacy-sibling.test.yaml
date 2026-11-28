@@ -1,0 +1,100 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: 'Verify a rule-free cache.yaml warns about an unconverted cache.config'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.http.cache.required_headers: 0
+      proxy.config.http.insert_age_in_response: 0
+
+    # This is the layout an upgrade produces: the installed default cache.yaml
+    # with no rules, still selected by default, beside the deployment's legacy
+    # cache.config.
+    cache_yaml:
+      cache: []
+
+    cache_config:
+      - '# Legacy rules from before the upgrade.'
+      - 'dest_domain=backend.example.com action=never-cache'
+
+    log_validation:
+      diags_log:
+        contains:
+          - expression: 'WARNING: Cache configuration \S+/cache\.yaml has no rules, but \S+/cache\.config has rules that are not being applied'
+            description: 'Name both files so the operator knows the legacy rules are ignored'
+          - expression: "traffic_ctl config convert cache cache\\.config cache\\.yaml"
+            description: 'Tell the operator how to convert the legacy rules'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - transactions:
+      # cache.yaml remains authoritative, so the legacy never-cache rule does
+      # not apply and the response is cached.
+      - client-request:
+          method: GET
+          url: /object
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, first]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, "0"]
+              - [Cache-Control, "max-age=300"]
+        proxy-response:
+          status: 200
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          url: /object
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, second]
+        proxy-request:
+          expect: absent
+        server-response:
+          status: 404
+          reason: Not Found
+        proxy-response:
+          status: 200
