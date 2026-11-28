@@ -375,8 +375,12 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
             stmt = None
             with self.trap(ctx):
                 stmt = self.symbol_resolver.op_to_hrw4u(cmd, args, self._section_label, op_state)
-            if stmt is not None:
-                self.emit(stmt + ";")
+            if stmt is None:
+                # Trap recorded an error; leave a breadcrumb and drop the operator.
+                skipped = " ".join([cmd or "", *args]).strip()
+                self.emit(f"# skipped: {skipped}")
+                return None
+            self.emit(stmt + ";")
 
             return None
 

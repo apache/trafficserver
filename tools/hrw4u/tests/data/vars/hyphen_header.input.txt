@@ -1,0 +1,5 @@
+REMAP {
+    if inbound.method == HEAD {
+        inbound.req.X-Blobstore-Authproxy-Head-Request = "true";
+    }
+}
