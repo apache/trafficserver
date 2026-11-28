@@ -1875,8 +1875,6 @@ mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrLis
   Str  *cell;
   char *new_value, *dest;
   int   i, new_value_len;
-  // This works, because all strings are from the same heap when it is "split" into the list.
-  HdrHeap::HeapGuard guard(heap, list->head->str);
 
   new_value_len = 0;
 
@@ -1919,6 +1917,11 @@ mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
   Str    *cell;
   StrList list(false);
 
+  // A coalesce in allocate_str() can free the heap of the old value, which the list cells point into,
+  // and the heap of the new piece.
+  HdrHeap::HeapGuard guard(heap, field->m_ptr_value);
+  HdrHeap::HeapGuard piece_guard(heap, new_piece.data());
+
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
 
@@ -1947,9 +1950,10 @@ mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
 void
 mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx)
 {
-  int     len;
-  Str    *cell;
-  StrList list(false);
+  int                len;
+  Str               *cell;
+  StrList            list(false);
+  HdrHeap::HeapGuard guard(heap, field->m_ptr_value);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
@@ -1993,9 +1997,11 @@ mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 void
 mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece)
 {
-  int     len;
-  Str    *cell, *prev;
-  StrList list(false);
+  int                len;
+  Str               *cell, *prev;
+  StrList            list(false);
+  HdrHeap::HeapGuard guard(heap, field->m_ptr_value);
+  HdrHeap::HeapGuard piece_guard(heap, new_piece.data());
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
@@ -2033,11 +2039,12 @@ mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 void
 mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, std::string_view new_piece)
 {
-  Str    *cell;
-  StrList list(false);
-  int     trimmed, len;
-  size_t  extended_len;
-  char   *dest, *temp_ptr, temp_buf[128];
+  Str               *cell;
+  StrList            list(false);
+  int                trimmed, len;
+  size_t             extended_len;
+  char              *dest, *temp_ptr, temp_buf[128];
+  HdrHeap::HeapGuard guard(heap, field->m_ptr_value);
 
   // (1) rip the value into tokens, keeping surrounding quotes, but not whitespace
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');

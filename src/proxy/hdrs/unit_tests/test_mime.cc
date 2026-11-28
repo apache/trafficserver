@@ -894,3 +894,38 @@ TEST_CASE("MimeParserStaleLastAttachedAcrossDestroyedHeader", "[proxy][mimeparse
 
   mime_parser_clear(&parser);
 }
+
+TEST_CASE("Comma value mutators keep their strings during a string heap coalesce", "[proxy][mime]")
+{
+  MIMEHdr hdr;
+  hdr.create(nullptr);
+
+  MIMEField *list  = hdr.field_create("X-List"sv);
+  MIMEField *lost  = hdr.field_create("X-Lost"sv);
+  MIMEField *piece = hdr.field_create("X-Piece"sv);
+  list->value_set(hdr.m_heap, hdr.m_mime, "a, b, c"sv);
+
+  // This value does not fit in the first string heap, so the piece goes into a second heap.
+  // When deleted, it leaves enough lost space to make the next string allocation coalesce.
+  lost->value_set(hdr.m_heap, hdr.m_mime, mime_filler(2000, 'v'));
+  piece->value_set(hdr.m_heap, hdr.m_mime, "z"sv);
+  hdr.field_delete(lost);
+
+  SECTION("set")
+  {
+    mime_field_value_set_comma_val(hdr.m_heap, hdr.m_mime, list, 0, piece->value_get());
+    CHECK(list->value_get() == "z, b, c"sv);
+  }
+  SECTION("insert")
+  {
+    mime_field_value_insert_comma_val(hdr.m_heap, hdr.m_mime, list, 0, piece->value_get());
+    CHECK(list->value_get() == "z, a, b, c"sv);
+  }
+  SECTION("extend")
+  {
+    mime_field_value_extend_comma_val(hdr.m_heap, hdr.m_mime, list, 0, piece->value_get());
+    CHECK(list->value_get() == "az, b, c"sv);
+  }
+
+  hdr.destroy();
+}
