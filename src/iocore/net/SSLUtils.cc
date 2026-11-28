@@ -2431,6 +2431,16 @@ SSLCreateServerContext(const SSLConfigParams *params, const SSLMultiCertConfigPa
           ctx = nullptr;
         }
       }
+      // Stapling was set up for the line's certificates; the replaced one must not keep its response, and the new one
+      // gets its own.
+      if (ctx && SSLConfigParams::ssl_ocsp_enabled) {
+        // The certificate just loaded is the context's current one.
+        X509 *cert = SSL_CTX_get0_certificate(ctx.get());
+        ssl_stapling_remove_replaced_certs(ctx.get());
+        if (!ssl_stapling_init_cert(ctx.get(), cert, cert_path, nullptr)) {
+          Warning("failed to configure SSL_CTX for OCSP Stapling info for certificate at %s", cert_path);
+        }
+      }
     }
   }
   return ctx.release();

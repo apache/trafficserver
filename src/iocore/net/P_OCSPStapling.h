@@ -25,6 +25,10 @@
 
 void ssl_stapling_ex_init();
 bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const char *rsp_file);
+// Stops stapling for the certificates of @a ctx that a certificate just loaded onto it replaced; on a context that serves
+// one certificate, that is all of them. Handshakes and the OCSP refresh read stapling state without a lock, so @a ctx must
+// not be in use yet.
+void ssl_stapling_remove_replaced_certs(SSL_CTX *ctx);
 
 enum class OCSPStatus {
   OCSP_OK,
