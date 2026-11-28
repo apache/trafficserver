@@ -50,17 +50,9 @@
 */
 
 // A weak version of the SCOPED_MUTEX_LOCK macro, allows the mutex to be a nullptr.
-#ifdef DEBUG
-#define WEAK_SCOPED_MUTEX_LOCK(_l, _m, _t) WeakMutexLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t);
-#else // DEBUG
 #define WEAK_SCOPED_MUTEX_LOCK(_l, _m, _t) WeakMutexLock _l(_m, _t);
-#endif // DEBUG
 
-#ifdef DEBUG
-#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#else // DEBUG
 #define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(_m, _t)
-#endif // DEBUG
 
 /**
   Attempts to acquire the lock to the ProxyMutex.
@@ -76,17 +68,9 @@
 
 */
 
-#ifdef DEBUG
-#define WEAK_MUTEX_TRY_LOCK(_l, _m, _t) WeakMutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t);
-#else // DEBUG
 #define WEAK_MUTEX_TRY_LOCK(_l, _m, _t) WeakMutexTryLock _l(_m, _t);
-#endif // DEBUG
 
-#ifdef DEBUG
-#define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#else // DEBUG
 #define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(_m, _t)
-#endif // DEBUG
 
 /**
   Releases the lock on a ProxyMutex.
@@ -104,17 +88,9 @@
 
 /////////////////////////////////////
 // DEPRECATED DEPRECATED DEPRECATED
-#ifdef DEBUG
-#define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#else
 #define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(_m, _t)
-#endif
 
-#ifdef DEBUG
-#define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(MakeSourceLocation(), (char *)nullptr, _m, _t)
-#else
 #define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(_m, _t)
-#endif // DEBUG
 
 #define MUTEX_UNTAKE_LOCK(_m, _t) Mutex_unlock(_m, _t)
 // DEPRECATED DEPRECATED DEPRECATED
@@ -123,10 +99,23 @@
 class EThread;
 using EThreadPtr = EThread *;
 
+/** Where a lock was taken, for the lock diagnostics in DEBUG builds. Empty in other builds, so it costs nothing. */
+#ifdef DEBUG
+using LockLocation = SourceLocation;
+#else
+struct LockLocation {
+  static constexpr LockLocation
+  current()
+  {
+    return {};
+  }
+};
+#endif
+
 #if DEBUG
-extern void lock_waiting(const SourceLocation &, const char *handler);
-extern void lock_holding(const SourceLocation &, const char *handler);
-extern void lock_taken(const SourceLocation &, const char *handler);
+extern void lock_waiting(const SourceLocation &);
+extern void lock_holding(const SourceLocation &);
+extern void lock_taken(const SourceLocation &);
 #endif
 
 /**
@@ -182,7 +171,6 @@ public:
 #ifdef DEBUG
   ink_hrtime     hold_time;
   SourceLocation srcloc;
-  const char    *handler;
 
 #ifdef MAX_LOCK_TAKEN
   int taken;
@@ -214,7 +202,6 @@ public:
     nthread_holding = 0;
 #ifdef DEBUG
     hold_time = 0;
-    handler   = nullptr;
 #ifdef MAX_LOCK_TAKEN
     taken = 0;
 #endif // MAX_LOCK_TAKEN
@@ -247,11 +234,7 @@ public:
 extern ClassAllocator<ProxyMutex, false> mutexAllocator;
 
 inline bool
-Mutex_trylock(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  ProxyMutex *m, EThread *t)
+Mutex_trylock(ProxyMutex *m, EThread *t, [[maybe_unused]] const LockLocation &location = LockLocation::current())
 {
   ink_assert(t != nullptr);
   ink_assert(t == reinterpret_cast<EThread *>(this_thread()));
@@ -264,7 +247,7 @@ Mutex_trylock(
       // below and clearing them in Mutex_unlock(). Any holder snapshot is stale
       // the instant it is taken anyway; lock_holding() still reports the holder
       // from Mutex_unlock(), where the fields are owned by the caller.
-      lock_waiting(location, ahandler);
+      lock_waiting(location);
 #ifdef LOCK_CONTENTION_PROFILING
       m->unsuccessful_nonblocking_acquires++;
       m->nonblocking_acquires++;
@@ -277,7 +260,6 @@ Mutex_trylock(
     m->thread_holding = t;
 #ifdef DEBUG
     m->srcloc    = location;
-    m->handler   = ahandler;
     m->hold_time = ink_get_hrtime();
 #ifdef MAX_LOCK_TAKEN
     m->taken++;
@@ -297,25 +279,13 @@ Mutex_trylock(
 }
 
 inline bool
-Mutex_trylock(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  Ptr<ProxyMutex> &m, EThread *t)
+Mutex_trylock(Ptr<ProxyMutex> &m, EThread *t, [[maybe_unused]] const LockLocation &location = LockLocation::current())
 {
-  return Mutex_trylock(
-#ifdef DEBUG
-    location, ahandler,
-#endif
-    m.get(), t);
+  return Mutex_trylock(m.get(), t, location);
 }
 
 inline int
-Mutex_lock(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  ProxyMutex *m, EThread *t)
+Mutex_lock(ProxyMutex *m, EThread *t, [[maybe_unused]] const LockLocation &location = LockLocation::current())
 {
   ink_assert(t != nullptr);
   if (m->thread_holding != t) {
@@ -324,7 +294,6 @@ Mutex_lock(
     ink_assert(m->thread_holding);
 #ifdef DEBUG
     m->srcloc    = location;
-    m->handler   = ahandler;
     m->hold_time = ink_get_hrtime();
 #ifdef MAX_LOCK_TAKEN
     m->taken++;
@@ -343,17 +312,9 @@ Mutex_lock(
 }
 
 inline int
-Mutex_lock(
-#ifdef DEBUG
-  const SourceLocation &location, const char *ahandler,
-#endif
-  Ptr<ProxyMutex> &m, EThread *t)
+Mutex_lock(Ptr<ProxyMutex> &m, EThread *t, [[maybe_unused]] const LockLocation &location = LockLocation::current())
 {
-  return Mutex_lock(
-#ifdef DEBUG
-    location, ahandler,
-#endif
-    m.get(), t);
+  return Mutex_lock(m.get(), t, location);
 }
 
 inline void
@@ -365,13 +326,12 @@ Mutex_unlock(ProxyMutex *m, EThread *t)
     if (!m->nthread_holding) {
 #ifdef DEBUG
       if (ink_get_hrtime() - m->hold_time > MAX_LOCK_TIME)
-        lock_holding(m->srcloc, m->handler);
+        lock_holding(m->srcloc);
 #ifdef MAX_LOCK_TAKEN
       if (m->taken > MAX_LOCK_TAKEN)
-        lock_taken(m->srcloc, m->handler);
+        lock_taken(m->srcloc);
 #endif // MAX_LOCK_TAKEN
-      m->srcloc  = SourceLocation(nullptr, nullptr, 0);
-      m->handler = nullptr;
+      m->srcloc = SourceLocation(nullptr, nullptr, 0);
 #endif // DEBUG
       ink_assert(m->thread_holding);
       m->thread_holding = nullptr;
@@ -395,19 +355,12 @@ private:
 public:
   WeakMutexLock() = default;
 
-  WeakMutexLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
-    Ptr<ProxyMutex> &am, EThread *t)
+  [[nodiscard]] WeakMutexLock(Ptr<ProxyMutex> &am, EThread *t,
+                              [[maybe_unused]] const LockLocation &location = LockLocation::current())
     : m(am), locked_p(true)
   {
     if (m.get()) {
-      Mutex_lock(
-#ifdef DEBUG
-        location, ahandler,
-#endif // DEBUG
-        m, t);
+      Mutex_lock(m, t, location);
     }
   }
 
@@ -448,18 +401,10 @@ private:
 public:
   MutexLock() = default;
 
-  MutexLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
-    Ptr<ProxyMutex> &am, EThread *t)
+  [[nodiscard]] MutexLock(Ptr<ProxyMutex> &am, EThread *t, [[maybe_unused]] const LockLocation &location = LockLocation::current())
     : m(am), locked_p(true)
   {
-    Mutex_lock(
-#ifdef DEBUG
-      location, ahandler,
-#endif // DEBUG
-      m, t);
+    Mutex_lock(m, t, location);
   }
 
   MutexLock(MutexLock &)                  = delete;
@@ -499,19 +444,12 @@ private:
 public:
   WeakMutexTryLock() = default;
 
-  WeakMutexTryLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
-    Ptr<ProxyMutex> &am, EThread *t)
+  [[nodiscard]] WeakMutexTryLock(Ptr<ProxyMutex> &am, EThread *t,
+                                 [[maybe_unused]] const LockLocation &location = LockLocation::current())
     : m(am)
   {
     if (m.get()) {
-      lock_acquired = Mutex_trylock(
-#ifdef DEBUG
-        location, ahandler,
-#endif // DEBUG
-        m, t);
+      lock_acquired = Mutex_trylock(m, t, location);
     } else {
       lock_acquired = true;
     }
@@ -583,18 +521,11 @@ private:
 public:
   MutexTryLock() = default;
 
-  MutexTryLock(
-#ifdef DEBUG
-    const SourceLocation &location, const char *ahandler,
-#endif // DEBUG
-    Ptr<ProxyMutex> &am, EThread *t)
+  [[nodiscard]] MutexTryLock(Ptr<ProxyMutex> &am, EThread *t,
+                             [[maybe_unused]] const LockLocation &location = LockLocation::current())
     : m(am)
   {
-    lock_acquired = Mutex_trylock(
-#ifdef DEBUG
-      location, ahandler,
-#endif // DEBUG
-      m, t);
+    lock_acquired = Mutex_trylock(m, t, location);
   }
 
   MutexTryLock(MutexTryLock &)                  = delete;
