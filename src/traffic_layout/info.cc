@@ -91,6 +91,14 @@ static constexpr int ts_has_cert_compression_zstd = 0;
 static constexpr int ts_has_cert_compression =
   ts_has_cert_compression_zlib | ts_has_cert_compression_brotli | ts_has_cert_compression_zstd;
 
+// Whether SSLGetNegotiatedSignatureAlgorithm can report the scheme that authenticated a full handshake, which %<cqssin>
+// logs. Keep in sync with the conditions in that function.
+#if HAVE_SSL_GET_SIGNATURE_ALGORITHM_USED || (HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS)
+static constexpr int ts_has_tls_negotiated_signature_algorithm = 1;
+#else
+static constexpr int ts_has_tls_negotiated_signature_algorithm = 0;
+#endif
+
 // Produce output about compile time features, useful for checking how things were built
 static void
 print_feature(std::string_view name, int value, bool json, bool last = false)
@@ -148,6 +156,7 @@ produce_features(bool json)
   print_feature("TS_HAS_CERT_COMPRESSION_ZLIB", ts_has_cert_compression_zlib, json);
   print_feature("TS_HAS_CERT_COMPRESSION_BROTLI", ts_has_cert_compression_brotli, json);
   print_feature("TS_HAS_CERT_COMPRESSION_ZSTD", ts_has_cert_compression_zstd, json);
+  print_feature("TS_HAS_TLS_NEGOTIATED_SIGNATURE_ALGORITHM", ts_has_tls_negotiated_signature_algorithm, json);
   print_feature("TS_HAS_CRIPTS", TS_HAS_CRIPTS, json);
 #ifdef F_GETPIPE_SZ
   print_feature("TS_HAS_PIPE_BUFFER_SIZE_CONFIG", 1, json);
