@@ -388,7 +388,7 @@ public:
     return _manage_object(logObject, true, maxConflicts);
   }
 
-  // return success
+  // return success. A retired manager does not release the object.
   bool unmanage_api_object(LogObject *logObject);
 
   // A retired manager accepts no more API objects, because a new LogConfig replaced its LogConfig.

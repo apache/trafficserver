@@ -1196,7 +1196,8 @@ LogObjectManager::unmanage_api_object(LogObject *logObject)
 
   auto index = std::find(this->_APIobjects.begin(), this->_APIobjects.end(), logObject);
 
-  if (index != this->_APIobjects.end()) {
+  // The manager of the new LogConfig also has the objects of a retired manager.
+  if (!_retired && index != this->_APIobjects.end()) {
     this->_APIobjects.erase(index);
 
     // Force a buffer flush, then schedule this LogObject to be deleted on the eventProcessor.
