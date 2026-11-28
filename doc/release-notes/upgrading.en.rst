@@ -65,6 +65,13 @@ Reaching a single metric by name is ``lookup()``.
 Spans handed out unnamed slots that only ``rename()`` could name, and
 ``rename()`` mutated a name that the lock free readers hand out views of.
 
+The :cpp:func:`TSStatCreate` function now supports
+:enumerator:`TS_RECORDDATATYPE_COUNTER` for creating counter statistics.
+Previously, unsupported record data types could result in a gauge statistic
+being created. These types now cause :cpp:func:`TSStatCreate` to return
+:code:`TS_ERROR`. Out-of-tree plugins that pass record data types other than
+:enumerator:`TS_RECORDDATATYPE_INT` or
+:enumerator:`TS_RECORDDATATYPE_COUNTER` should be updated accordingly.
 The overridable configuration key ``TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD`` and the
 Lua configuration key ``TS_LUA_CONFIG_HTTP_SLOW_LOG_THRESHOLD`` are gone. A
 plugin naming the first no longer compiles, and a Lua script naming the second
