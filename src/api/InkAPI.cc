@@ -8660,6 +8660,47 @@ TSVConnSslVerifyCTXGet(TSVConn sslp)
   return nullptr;
 }
 
+TSVConn
+TSSslPeerVerifyCTXVConnGet(TSSslPeerVerifyCTX ctx)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(ctx) == TS_SUCCESS);
+  return ctx != nullptr ? ctx->vc : nullptr;
+}
+
+TSSslPeerCredType
+TSSslPeerVerifyCTXCredTypeGet(TSSslPeerVerifyCTX ctx)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(ctx) == TS_SUCCESS);
+  return ctx != nullptr ? ctx->cred_type : TS_SSL_PEER_CRED_NONE;
+}
+
+TSSslVerifyCTX
+TSSslPeerVerifyCTXStoreCTXGet(TSSslPeerVerifyCTX ctx)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(ctx) == TS_SUCCESS);
+  if (ctx == nullptr || ctx->cred_type != TS_SSL_PEER_CRED_X509) {
+    return nullptr;
+  }
+  return reinterpret_cast<TSSslVerifyCTX>(ctx->store_ctx);
+}
+
+EVP_PKEY *
+TSSslPeerVerifyCTXPeerRPKGet(TSSslPeerVerifyCTX ctx)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(ctx) == TS_SUCCESS);
+  if (ctx == nullptr || ctx->cred_type != TS_SSL_PEER_CRED_RPK) {
+    return nullptr;
+  }
+  return ctx->peer_rpk;
+}
+
+int
+TSSslPeerVerifyCTXPreverifyGet(TSSslPeerVerifyCTX ctx)
+{
+  sdk_assert(sdk_sanity_check_null_ptr(ctx) == TS_SUCCESS);
+  return ctx != nullptr ? ctx->preverify_ok : 0;
+}
+
 TSSslContext
 TSSslContextFindByName(const char *name)
 {

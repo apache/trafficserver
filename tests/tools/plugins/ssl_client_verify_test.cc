@@ -104,8 +104,11 @@ CB_client_verify(TSCont cont, TSEvent event, void *edata)
   int count = reinterpret_cast<intptr_t>(TSContDataGet(cont));
 
   // Is this a good name or not?
-  TSEvent         reenable_event = TS_EVENT_CONTINUE;
-  X509_STORE_CTX *ctx            = reinterpret_cast<X509_STORE_CTX *>(TSVConnSslVerifyCTXGet(ssl_vc));
+  TSEvent reenable_event = TS_EVENT_CONTINUE;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+  X509_STORE_CTX *ctx = reinterpret_cast<X509_STORE_CTX *>(TSVConnSslVerifyCTXGet(ssl_vc));
+#pragma GCC diagnostic pop
   if (ctx) {
     STACK_OF(X509) *chain = X509_STORE_CTX_get1_chain(ctx);
     // X509 *cert = X509_STORE_CTX_get_current_cert(ctx);

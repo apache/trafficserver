@@ -1411,7 +1411,15 @@ TSSslConnection TSVConnSslConnectionGet(TSVConn sslp);
 /* Return the file descriptoer associated with the connection */
 int TSVConnFdGet(TSVConn sslp);
 /* Return the intermediate X509StoreCTX object that references the certificate being validated */
-TSSslVerifyCTX TSVConnSslVerifyCTXGet(TSVConn sslp);
+[[deprecated("Use TS_SSL_PEER_VERIFY_CLIENT_HOOK / TS_SSL_PEER_VERIFY_SERVER_HOOK and TSSslPeerVerifyCTX")]] TSSslVerifyCTX
+TSVConnSslVerifyCTXGet(TSVConn sslp);
+
+/* Accessors for TSSslPeerVerifyCTX (available during TS_SSL_PEER_VERIFY_CLIENT_HOOK and TS_SSL_PEER_VERIFY_SERVER_HOOK) */
+TSVConn           TSSslPeerVerifyCTXVConnGet(TSSslPeerVerifyCTX ctx);
+TSSslPeerCredType TSSslPeerVerifyCTXCredTypeGet(TSSslPeerVerifyCTX ctx);
+TSSslVerifyCTX    TSSslPeerVerifyCTXStoreCTXGet(TSSslPeerVerifyCTX ctx);
+EVP_PKEY         *TSSslPeerVerifyCTXPeerRPKGet(TSSslPeerVerifyCTX ctx);
+int               TSSslPeerVerifyCTXPreverifyGet(TSSslPeerVerifyCTX ctx);
 /*  Fetch a SSL context from the global lookup table */
 TSSslContext TSSslContextFindByName(const char *name);
 TSSslContext TSSslContextFindByAddr(struct sockaddr const *);

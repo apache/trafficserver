@@ -33,8 +33,19 @@
 
 #include "tscore/ink_hrtime.h"
 #include "iocore/net/SSLTypes.h"
+#include "ts/apidefs.h"
 
 using TLSHandle = SSL *;
+
+class NetVConnection;
+
+struct tsapi_ssl_peer_verify_ctx {
+  TSVConn           vc{nullptr};
+  TSSslPeerCredType cred_type{TS_SSL_PEER_CRED_NONE};
+  X509_STORE_CTX   *store_ctx{nullptr};
+  EVP_PKEY         *peer_rpk{nullptr};
+  int               preverify_ok{0};
+};
 
 class TLSBasicSupport
 {
@@ -113,6 +124,19 @@ public:
   bool set_groups_list(std::string const &groups_list);
 
   /**
+   * Give plugins access to peer credentials (X.509 certificate store context or
+   * RFC 7250 raw public key) during peer verification.
+   *
+   * @param[in] ctx X.509 store context if verifying an X.509 certificate, or nullptr.
+   * @param[in] peer_rpk The peer's raw public key if verifying an RPK, or nullptr.
+   * @param[in] cred_type The credential type presented by the peer.
+   * @param[in] preverify_ok TLS library verification result (1 if valid, 0 otherwise).
+   *
+   * @return 1 if verification was rejected by a plugin, 0 otherwise.
+   */
+  int verify_peer(X509_STORE_CTX *ctx, EVP_PKEY *peer_rpk, TSSslPeerCredType cred_type, int preverify_ok);
+
+  /**
    * Give the plugin access to the data structure passed in during the underlying
    * openssl callback so the plugin can make more detailed decisions about the
    * validity of the certificate in their cases.
@@ -132,6 +156,7 @@ protected:
   virtual bool             _is_tls_handshake_complete() const              = 0;
   virtual std::string      _get_tls_offered_signature_algorithms() const   = 0;
   virtual std::string      _get_tls_negotiated_signature_algorithm() const = 0;
+  virtual NetVConnection  *_get_netvc() const                              = 0;
 
   void _record_tls_handshake_begin_time();
   void _record_tls_handshake_end_time();
@@ -142,7 +167,8 @@ protected:
    *
    * @return 1 if verification failed
    */
-  virtual int _verify_certificate(X509_STORE_CTX *ctx) = 0;
+  virtual int _verify_certificate(X509_STORE_CTX *ctx)     = 0;
+  virtual int _verify_peer(tsapi_ssl_peer_verify_ctx &ctx) = 0;
 
 private:
   static int _ex_data_index;
