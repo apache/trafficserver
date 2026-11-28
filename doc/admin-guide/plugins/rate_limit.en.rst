@@ -269,7 +269,8 @@ and the following options:
 .. option:: percentage
 
    This is the minimum percentage of the ``limit`` that the pressure must be at, before
-   we start blocking IPs. The default is ``0.9`` which means ``90%`` of the limit.
+   we start blocking IPs. This is an integer percentage, and the default is ``90``,
+   which means ``90%`` of the limit.
 
 .. option:: max_age
 
