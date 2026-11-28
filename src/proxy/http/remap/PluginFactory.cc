@@ -219,6 +219,10 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
     if (nullptr != plugin) {
       bool loaded      = false;
       bool initialized = false;
+
+      // TSRemapInit can take and release a reference, for example with a thread that returns. This
+      // reference keeps the plugin until the first instance has its own reference.
+      plugin->acquire();
       {
         // TSRemapInit is plugin-global: hide the loading rule from the strategy APIs.
         UrlMappingInstanceScope const no_rule{nullptr};
@@ -235,6 +239,7 @@ PluginFactory::getRemapPlugin(const fs::path &configPath, int argc, char **argv,
             /* Plugin loading and instance init went fine. */
             _instList.append(inst);
           }
+          plugin->release();
         } else {
           /* Plugin DSO load succeeded but instance init failed. */
           PluginDbg(_dbg_ctl(), "plugin '%s' instance init failed", configPath.c_str());
