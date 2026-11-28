@@ -69,7 +69,7 @@ int            cplist_reconfigure();
 void           cplist_init();
 void           register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix);
 static void    cplist_update();
-static int     create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp);
+static int     create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp, int &next_disk);
 static int     fillExclusiveDisks(CacheVol *cp);
 static void    cplist_apply_config_settings(CacheVol *cp, const ConfigVol *config_vol);
 
@@ -840,6 +840,8 @@ CacheProcessor::diskInitialized()
 int
 cplist_reconfigure()
 {
+  int next_disk = 0;
+
   gnstripes = 0;
   if (config_volumes.num_volumes == 0) {
     /* only the http cache */
@@ -1010,7 +1012,7 @@ cplist_reconfigure()
         CacheVol *new_cp     = new CacheVol();
         new_cp->disk_stripes = static_cast<DiskStripe **>(ats_malloc(gndisks * sizeof(DiskStripe *)));
         memset(new_cp->disk_stripes, 0, gndisks * sizeof(DiskStripe *));
-        if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp)) {
+        if (create_volume(config_vol->number, size_in_blocks, config_vol->scheme, new_cp, next_disk)) {
           ats_free(new_cp->disk_stripes);
           new_cp->disk_stripes = nullptr;
           delete new_cp;
@@ -1094,7 +1096,7 @@ cplist_reconfigure()
       }
 
       if (size_to_alloc) {
-        if (create_volume(volume_number, size_to_alloc, cp->scheme, cp)) {
+        if (create_volume(volume_number, size_to_alloc, cp->scheme, cp, next_disk)) {
           return -1;
         }
       }
@@ -1336,12 +1338,11 @@ cplist_update()
 
 // This is some really bad code, and needs to be rewritten!
 int
-create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp)
+create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp, int &next_disk)
 {
-  static int curr_vol       = 0; // FIXME: this will not reinitialize correctly
-  off_t      to_create      = size_in_blocks;
-  off_t      blocks_per_vol = STRIPE_BLOCK_SIZE >> STORE_BLOCK_SHIFT;
-  int        full_disks     = 0;
+  off_t to_create      = size_in_blocks;
+  off_t blocks_per_vol = STRIPE_BLOCK_SIZE >> STORE_BLOCK_SHIFT;
+  int   full_disks     = 0;
 
   cp->vol_number = volume_number;
   cp->scheme     = scheme;
@@ -1353,7 +1354,7 @@ create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVo
   int *sp = new int[gndisks];
   memset(sp, 0, gndisks * sizeof(int));
 
-  int i = curr_vol;
+  int i = next_disk;
   while (size_in_blocks > 0) {
     if (gdisks[i]->free_space >= (sp[i] + blocks_per_vol)) {
       sp[i]          += blocks_per_vol;
@@ -1381,7 +1382,7 @@ create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVo
   }
   cp->vol_number = volume_number;
   cp->scheme     = scheme;
-  curr_vol       = i;
+  next_disk      = i;
   for (i = 0; i < gndisks; i++) {
     if (sp[i] > 0) {
       while (sp[i] > 0) {
