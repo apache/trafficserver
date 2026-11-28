@@ -112,6 +112,14 @@ public:
   void    ext_write_data(const void *data, size_t len);
   void    ext_set_user_data(void *data);
   void   *ext_get_user_data();
+
+  /// Returns the request body length declared by a Content-Length header added with ext_add_header().
+  int64_t
+  get_req_content_length() const
+  {
+    return req_content_length;
+  }
+
   bool
   get_internal_request()
   {
