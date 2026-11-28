@@ -16,8 +16,8 @@
 #  limitations under the License.
 r"""Every corpus input compiles the same way through both front ends.
 
-Nothing in the product calls `compile_to_conf` yet, so this is what says the resolved tree
-and its emitter are correct: the shipping CST emitter is the oracle and the whole corpus is
+The CLI compiles through `compile_to_conf`, and the CST emitter it replaced is kept as the
+oracle that says the resolved tree and its emitter are correct. The whole corpus is
 the input set -- successes, failures, and the sandbox fixtures under their own policies.
 A failure is compared on its diagnostics alone, because a run that reported an error
 writes no configuration.

@@ -45,8 +45,8 @@ from pathlib import Path
 import pytest
 from antlr4 import ParserRuleContext
 
-import ast_unparse
 import utils
+from hrw4u import ast_unparse
 from hrw4u.ast_visitor import ASTVisitor
 from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.visitor import HRW4UVisitor

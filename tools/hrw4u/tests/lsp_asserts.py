@@ -168,6 +168,23 @@ def assert_hover_contents(response: dict[str, Any] | None, expected_content: str
     return value
 
 
+def assert_definition_location(response: dict[str, Any] | None, context: str = "") -> dict[str, Any]:
+    """
+    Assert a definition request resolved to a single Location, and return it.
+    """
+    validated_response = assert_jsonrpc_ok(response, context=context)
+    result = validated_response["result"]
+
+    if not isinstance(result, dict) or "uri" not in result or "range" not in result:
+        raise AssertionError(
+            f"Result is not a Location{f' for {context}' if context else ''}\n"
+            f"Got: {type(result).__name__}: {result}\n"
+            f"Full response: {json.dumps(validated_response, indent=2)}"
+        )
+
+    return result
+
+
 def assert_completion_item_exists(items: list[dict[str, Any]], label: str, context: str = "") -> dict[str, Any]:
     """
     Assert that a completion item with the given label exists in the items list.
