@@ -83,7 +83,11 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
   if (vc->read.vio.cont && vc->read.vio.mutex == vc->read.vio.cont->mutex) {
-    vc->read.vio.cont->handleEvent(event, &vc->read.vio);
+    Continuation                *cont    = vc->read.vio.cont;
+    [[maybe_unused]] void const *handler = cont->handler.address();
+    ATS_PROBE5(vio_dispatch_begin, vc, cont, handler, event, VIO::READ);
+    cont->handleEvent(event, &vc->read.vio);
+    ATS_PROBE5(vio_dispatch_end, vc, cont, handler, event, VIO::READ);
   } else {
     if (vc->read.vio.cont) {
       Note("read_signal_and_update: mutexes are different? vc=%p, event=%d", vc, event);
@@ -118,7 +122,11 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
 {
   vc->recursion++;
   if (vc->write.vio.cont && vc->write.vio.mutex == vc->write.vio.cont->mutex) {
-    vc->write.vio.cont->handleEvent(event, &vc->write.vio);
+    Continuation                *cont    = vc->write.vio.cont;
+    [[maybe_unused]] void const *handler = cont->handler.address();
+    ATS_PROBE5(vio_dispatch_begin, vc, cont, handler, event, VIO::WRITE);
+    cont->handleEvent(event, &vc->write.vio);
+    ATS_PROBE5(vio_dispatch_end, vc, cont, handler, event, VIO::WRITE);
   } else {
     if (vc->write.vio.cont) {
       Note("write_signal_and_update: mutexes are different? vc=%p, event=%d", vc, event);
