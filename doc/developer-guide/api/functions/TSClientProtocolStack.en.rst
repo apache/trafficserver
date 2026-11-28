@@ -41,6 +41,10 @@ Synopsis
 
 .. function:: char const* TSHttpSsnClientProtocolStackContains(TSHttpSsn ssnp)
 
+.. function:: TSReturnCode TSVConnProtocolStackGet(TSVConn vconn, int count, char const** result, int* actual)
+
+.. function:: char const* TSVConnProtocolStackContains(TSVConn vconn, char const* tag)
+
 .. function:: char const* TSNormalizedProtocolTag(char const* tag)
 
 .. function:: char const* TSRegisterProtocolTag(char const* tag)
@@ -56,7 +60,10 @@ to retrieve the entire protocol stack for
 the origin server connection. :func:`TSHttpTxnClientProtocolStackContains`,
 :func:`TSHttpSsnClientProtocolStackContains`, and
 :func:`TSHttpTxnServerProtocolStackContains`  will check for a specific
-protocol :arg:`tag` being present in the stack.
+protocol :arg:`tag` being present in the stack. :func:`TSVConnProtocolStackGet` and
+:func:`TSVConnProtocolStackContains` do the same for the protocols of the net virtual connection
+:arg:`vconn`, which plugins have before there is a session, such as in a TLS handshake hook. Since the application protocol is not yet negotiated
+then, its stack starts at the transport, such as "quic,tls/1.3,udp,ipv4" for an HTTP/3 connection.
 
 Each protocol is represented by tag which is a null terminated string. A particular tag will always
 be returned as the same character pointer and so protocols can be reliably checked with pointer
@@ -67,7 +74,8 @@ normalized value. This is useful for plugins that provide custom protocols for u
 
 The protocols are ordered from higher level protocols to the lower level ones on which the higher
 operate. For instance a stack might look like "http/1.1,tls/1.2,tcp,ipv4". For
-:func:`TSHttpTxnClientProtocolStackGet`, :func:`TSHttpSsnClientProtocolStackGet`, and :func:`TSHttpTxnServerProtocolStackGet` these values
+:func:`TSHttpTxnClientProtocolStackGet`, :func:`TSHttpSsnClientProtocolStackGet`, :func:`TSHttpTxnServerProtocolStackGet`, and
+:func:`TSVConnProtocolStackGet` these values
 are placed in the array :arg:`result`. :arg:`count` is the maximum number of elements of
 :arg:`result` that may be modified by the function call. If :arg:`actual` is not :const:`nullptr` then
 the actual number of elements in the protocol stack will be returned. If this is equal or less than
@@ -76,10 +84,10 @@ the actual number of elements in the protocol stack will be returned. If this is
 be sufficient to hold all of the elements and the function called again with updated :arg:`count`
 and :arg:`result`. In practice the maximum number of elements is almost certain to be less
 than 10 which therefore should suffice. These functions return :const:`TS_SUCCESS` on success and
-:const:`TS_ERROR` on failure which should only occur if :arg:`txnp` or :arg:`ssnp` are invalid.
+:const:`TS_ERROR` on failure which should only occur if :arg:`txnp`, :arg:`ssnp`, or :arg:`vconn` are invalid.
 
-The :func:`TSHttpTxnClientProtocolStackContains`, :func:`TSHttpSsnClientProtocolStackContains`, and :func:`TSHttpTxnServerProtocolStackContains`
-functions are provided for the convenience when only the presence of a protocol is of interest, not
+The :func:`TSHttpTxnClientProtocolStackContains`, :func:`TSHttpSsnClientProtocolStackContains`,
+:func:`TSHttpTxnServerProtocolStackContains`, and :func:`TSVConnProtocolStackContains` functions are provided for the convenience when only the presence of a protocol is of interest, not
 its location or the presence of other protocols. These functions return :const:`nullptr` if the protocol
 :arg:`tag` is not present, and a pointer to the normalized tag if it is present. The strings are
 matched with an anchor prefix search, as with debug tags. For instance if :arg:`tag` is "tls" then it

@@ -129,8 +129,8 @@ def test_jax_fingerprint_log_field_http3(ats_factory: ATSFactory, services: Serv
     """Log the fields for HTTP/3 requests, including one the client gives up on, without crashing or leaking.
 
     The JA3 and JA4 instances hook SSN_START, which HTTP/3 sessions dispatch too. HTTP/3 sessions never
-    dispatch SSN_CLOSE, so the plugin keeps no session copies for them and JA4H is logged as ``-``. QUIC does
-    not run the client hello hook, so JA3 and JA4 are ``-`` as well.
+    dispatch SSN_CLOSE, so the plugin keeps no session copies for them and JA4H is logged as ``-``. QUIC runs
+    the client hello hook, so JA3 and JA4 are logged, with JA4 reporting the QUIC transport.
 
     :param ats_factory: Factory owning the QUIC proxy.
     :param services: Factory owning DNS and the origin.
@@ -162,7 +162,7 @@ def test_jax_fingerprint_log_field_http3(ats_factory: ATSFactory, services: Serv
     assert result.returncode == 28, result.output
     log = ats.log_directory / "jax_log_field.log"
     for path in ("h3-first", "h3-second", "h3-slow"):
-        wait_for_file_lines(log, rf"path={path} crc=\S+ ja3=- ja4=- ja4h=-$", 1)
+        wait_for_file_lines(log, rf"path={path} crc=\S+ ja3=[0-9a-f]{{32}} ja4=q13[0-9a-z_]+ ja4h=-$", 1)
     assert ats.is_running
     traffic = check_clean_shutdown(ats)
     assert "Not saving --log-field session copies on HQ session" in traffic
