@@ -1350,11 +1350,11 @@ ocsp_update()
                 if (stapling_refresh_response(cinf, &resp)) {
                   Dbg(dbg_ctl_ssl_ocsp, "Successfully refreshed OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
                   Metrics::Counter::increment(ssl_rsb.ocsp_refreshed_cert);
-                  cert_compress_invalidate_or_recompress(ctx.get());
+                  cert_compress_invalidate(ctx.get());
                 } else {
                   Error("Failed to refresh OCSP for %s certificate. url=%s", cinf->certname, cinf->uri);
                   Metrics::Counter::increment(ssl_rsb.ocsp_refresh_cert_failure);
-                  cert_compress_invalidate_or_recompress(ctx.get());
+                  cert_compress_invalidate(ctx.get());
                 }
               }
             }
