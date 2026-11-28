@@ -97,11 +97,44 @@ CacheVC::openReadFromWriterFailure(int event, Event *e)
   return EVENT_DONE;
 }
 
+namespace
+{
+// Holds the mutex of each writer whose state a reader examines. A writer changes that state under its own mutex only.
+class WriterLocks
+{
+public:
+  explicit WriterLocks(EThread *thread) : _thread(thread) {}
+  ~WriterLocks()
+  {
+    for (auto &m : _held) {
+      MUTEX_UNTAKE_LOCK(m, _thread);
+    }
+  }
+  WriterLocks(WriterLocks const &)            = delete;
+  WriterLocks &operator=(WriterLocks const &) = delete;
+
+  bool
+  try_lock(CacheVC *writer)
+  {
+    if (!MUTEX_TAKE_TRY_LOCK(writer->mutex, _thread)) {
+      return false;
+    }
+    _held.push_back(writer->mutex);
+    return true;
+  }
+
+private:
+  EThread                     *_thread;
+  std::vector<Ptr<ProxyMutex>> _held;
+};
+} // namespace
+
 int
 CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  intptr_t err = ECACHE_DOC_BUSY;
-  CacheVC *w   = nullptr;
+  intptr_t    err = ECACHE_DOC_BUSY;
+  CacheVC    *w   = nullptr;
+  WriterLocks writer_locks(mutex->thread_holding);
 
   ink_assert(stripe->mutex->thread_holding == mutex->thread_holding && write_vc == nullptr);
 
@@ -112,7 +145,15 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
   if (frag_type != CACHE_FRAG_TYPE_HTTP) {
     ink_assert(od->num_writers == 1);
     w = od->writers.head;
-    if (w->start_time > start_time || w->closed < 0) {
+    if (w->start_time > start_time) {
+      od = nullptr;
+      return EVENT_RETURN;
+    }
+    if (!writer_locks.try_lock(w)) {
+      od = nullptr;
+      return EVENT_RESTART;
+    }
+    if (w->closed < 0) {
       od = nullptr;
       return EVENT_RETURN;
     }
@@ -129,7 +170,15 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     // check if all the writers who came before this reader have
     // set the http_info.
     for (w = static_cast<CacheVC *>(od->writers.head); w; w = static_cast<CacheVC *>(w->opendir_link.next)) {
-      if (w->start_time > start_time || w->closed < 0) {
+      if (w->start_time > start_time) {
+        continue;
+      }
+      if (!writer_locks.try_lock(w)) {
+        od = nullptr;
+        vector.clear(false);
+        return EVENT_RESTART;
+      }
+      if (w->closed < 0) {
         continue;
       }
       if (!w->closed && !cache_config_read_while_writer) {
@@ -183,7 +232,7 @@ CacheVC::openReadChooseWriter(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSE
     }
     CacheHTTPInfo *obj = vector.get(alternate_index);
     for (w = static_cast<CacheVC *>(od->writers.head); w; w = static_cast<CacheVC *>(w->opendir_link.next)) {
-      if (obj->m_alt == w->alternate.m_alt) {
+      if (w->start_time <= start_time && obj->m_alt == w->alternate.m_alt) {
         write_vc = w;
         break;
       }
@@ -246,6 +295,10 @@ CacheVC::openReadFromWriter(int event, Event *e)
       MUTEX_RELEASE(lock);
       SET_HANDLER(&CacheVC::openReadStartHead);
       return openReadStartHead(event, e);
+    } else if (ret == EVENT_RESTART) {
+      ink_assert(!write_vc);
+      DDbg(dbg_ctl_cache_read_agg, "%p: key: %X lock miss", this, first_key.slice32(1));
+      VC_SCHED_WRITER_LOCK_RETRY();
     } else if (ret == EVENT_CONT) {
       ink_assert(!write_vc);
       if (writer_lock_retry < cache_config_read_while_writer_max_retries) {
@@ -269,8 +322,15 @@ CacheVC::openReadFromWriter(int event, Event *e)
   }
   OpenDirEntry *cod = od;
   od                = nullptr;
+  // The writer changes its state under its own mutex only.
+  CACHE_TRY_LOCK(writer_lock, write_vc->mutex, mutex->thread_holding);
+  if (!writer_lock.is_locked()) {
+    DDbg(dbg_ctl_cache_read_agg, "%p: key: %X lock miss", this, first_key.slice32(1));
+    VC_SCHED_WRITER_LOCK_RETRY();
+  }
   // someone is currently writing the document
   if (write_vc->closed < 0) {
+    MUTEX_RELEASE(writer_lock);
     MUTEX_RELEASE(lock);
     write_vc = nullptr;
     // writer aborted, continue as if there is no writer
@@ -282,18 +342,13 @@ CacheVC::openReadFromWriter(int event, Event *e)
   if (!write_vc->closed && !write_vc->fragment) {
     if (!cache_config_read_while_writer || frag_type != CACHE_FRAG_TYPE_HTTP ||
         writer_lock_retry >= cache_config_read_while_writer_max_retries) {
+      MUTEX_RELEASE(writer_lock);
       MUTEX_RELEASE(lock);
       return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, reinterpret_cast<Event *>(-err));
     }
     DDbg(dbg_ctl_cache_read_agg, "%p: key: %X writer: closed:%d, fragment:%d, retry: %d", this, first_key.slice32(1),
          write_vc->closed, write_vc->fragment, writer_lock_retry);
     VC_SCHED_WRITER_RETRY();
-  }
-
-  CACHE_TRY_LOCK(writer_lock, write_vc->mutex, mutex->thread_holding);
-  if (!writer_lock.is_locked()) {
-    DDbg(dbg_ctl_cache_read_agg, "%p: key: %X lock miss", this, first_key.slice32(1));
-    VC_SCHED_WRITER_LOCK_RETRY();
   }
   MUTEX_RELEASE(lock);
 
