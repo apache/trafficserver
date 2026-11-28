@@ -145,6 +145,18 @@ struct SSLCertLookup : public ConfigInfo {
   SSLCertContext *find(const IpEndpoint &address) const;
   SSLCertContext *find(const IpEndpoint &address, [[maybe_unused]] SSLCertContextType ctxType) const;
 
+  /** Find the certificate context for a client connecting to @a address.
+      Where each key type has its own context, a client classified as able to use an EC certificate is
+      looked up as by find(): an EC context for the address and port, else for the address alone, then
+      the same for RSA. A client classified as RSA-only gets the most specific entry for the address
+      (address and port before address alone), and that entry's RSA context if it has one, else its EC
+      one.
+      @param address The address the client connected to.
+      @param ctxType The key type the client was classified as; GENERIC where contexts are not split by key type.
+      @return @c A pointer to the matched context, @c nullptr if no match is found.
+  */
+  SSLCertContext *find_for_client(const IpEndpoint &address, SSLCertContextType ctxType) const;
+
   /** Find certificate context by name (FQDN).
       Exact matches have priority, then wildcards. Only destination based matches are checked.
       @return @c A pointer to the matched context, @c nullptr if no match is found.

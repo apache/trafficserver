@@ -1205,13 +1205,13 @@ QUICNetVConnection::_lookupContextByName(std::string const &servername, SSLCertC
 }
 
 shared_SSL_CTX
-QUICNetVConnection::_lookupContextByIP()
+QUICNetVConnection::_lookupContextByIP(SSLCertContextType ctxType)
 {
   shared_SSL_CTX                ctx = nullptr;
   QUICCertConfig::scoped_config lookup;
   QUICFiveTuple                 five_tuple = this->five_tuple();
   IpEndpoint                    ip         = five_tuple.destination();
-  SSLCertContext               *cc         = lookup->find(ip);
+  SSLCertContext               *cc         = lookup->find_for_client(ip, ctxType);
 
   if (cc && cc->getCtx()) {
     ctx = cc->getCtx();

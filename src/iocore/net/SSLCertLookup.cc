@@ -308,6 +308,37 @@ SSLCertLookup::find(const IpEndpoint &address) const
   return this->find(address, SSLCertContextType::RSA);
 }
 
+/// @return The context @a key names in @a rsa, else the one it names in @a ec, else nullptr.
+static SSLCertContext *
+lookup_rsa_then_ec(SSLContextStorage &rsa, SSLContextStorage &ec, const char *key)
+{
+  if (auto *cc = rsa.lookup(key)) {
+    return cc;
+  }
+  return ec.lookup(key);
+}
+
+SSLCertContext *
+SSLCertLookup::find_for_client(const IpEndpoint &address, SSLCertContextType ctxType) const
+{
+  if (ctxType != SSLCertContextType::RSA) {
+    return this->find(address);
+  }
+
+  // A client classified as RSA-only stays on the most specific entry and gets its EC context when it has
+  // no RSA one: only P-256 EC support is recognized, so the client may well be able to use it.
+  SSLAddressLookupKey key(address);
+
+  if (auto *cc = lookup_rsa_then_ec(*ssl_storage, *ec_storage, key.get())) {
+    return cc;
+  }
+  if (address.network_order_port()) {
+    key.split();
+    return lookup_rsa_then_ec(*ssl_storage, *ec_storage, key.get());
+  }
+  return nullptr;
+}
+
 SSLCertContext *
 SSLCertLookup::find(const IpEndpoint &address, [[maybe_unused]] SSLCertContextType ctxType) const
 {
