@@ -28,6 +28,7 @@
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include "shared/rpc/RPCRequests.h"
 
+#include <cstdio>
 #include <fstream>
 #include <utility>
 
@@ -40,7 +41,7 @@ const std::string STATUS_KEY{"status"};
 
 struct HostCmdInfo {
   TSHostStatus             type{TSHostStatus::TS_HOST_STATUS_INIT};
-  unsigned int             reasonType{0};
+  unsigned int             reasonType{Reason::MANUAL};
   std::vector<std::string> hosts;
   int                      time{0};
 };
@@ -51,6 +52,49 @@ DbgCtl dbg_ctl_host_statuses{"host_statuses"};
 
 swoc::Rv<YAML::Node> server_get_status(std::string_view const id, YAML::Node const &params);
 swoc::Rv<YAML::Node> server_set_status(std::string_view const id, YAML::Node const &params);
+
+std::string
+Reason::getReasonName(const unsigned int reason)
+{
+  if (reason == 0) {
+    return "none";
+  }
+
+  unsigned int const unknown = reason & ~ALL;
+
+  std::string reason_name;
+  auto        append = [&reason_name](std::string_view const name) {
+    if (!reason_name.empty()) {
+      reason_name += ",";
+    }
+    reason_name += name;
+  };
+
+  if ((reason & ALL) == ALL) {
+    append(ALL_REASON);
+  } else {
+    if (reason & ACTIVE) {
+      append(ACTIVE_REASON);
+    }
+    if (reason & LOCAL) {
+      append(LOCAL_REASON);
+    }
+    if (reason & MANUAL) {
+      append(MANUAL_REASON);
+    }
+    if (reason & SELF_DETECT) {
+      append(SELF_DETECT_REASON);
+    }
+  }
+
+  if (unknown != 0) {
+    char detail[64];
+    std::snprintf(detail, sizeof(detail), "unknown(0x%x)", unknown);
+    append(detail);
+  }
+
+  return reason_name;
+}
 
 HostStatRec::HostStatRec()
   : status(TS_HOST_STATUS_UP),
@@ -204,6 +248,9 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
   // update / insert status.
   // using the hash table pointer to store the TSHostStatus value.
   HostStatRec *host_stat = nullptr;
+  // Copied under the lock; the record may change once it is dropped.
+  TSHostStatus effective_status{TSHostStatus::TS_HOST_STATUS_INIT};
+  unsigned int remaining_reasons{0};
   {
     std::scoped_lock lock(host_status_rwlock);
 
@@ -281,14 +328,35 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       host_stat->status = status;
       Dbg(dbg_ctl_host_statuses, "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
     }
+    effective_status  = host_stat->status;
+    remaining_reasons = host_stat->reasons;
   }
 
-  // log it.
+  // Requested reasons are logged apart from the host's full set because down_time applies only to the
+  // requested ones, and an UP request clears only those, so the host recovers only when none remain.
+  auto reason_name    = Reason::getReasonName(reason);
+  auto remaining_name = Reason::getReasonName(remaining_reasons);
+
+  // Bits outside the tracked set match no branch above, so they change no state.
+  if (const unsigned int untracked = reason & ~Reason::ALL; untracked != 0) {
+    Warning("Host %.*s status request carries untracked reason bits 0x%x; they were ignored.", int(name.size()), name.data(),
+            untracked);
+  }
+
   if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
-    Note("Host %.*s has been marked down, down_time: %d - %s.", int(name.size()), name.data(), down_time,
-         down_time == 0 ? "indefinitely." : "seconds.");
+    char down_time_text[32];
+    if (down_time == 0) {
+      std::snprintf(down_time_text, sizeof(down_time_text), "indefinitely");
+    } else {
+      std::snprintf(down_time_text, sizeof(down_time_text), "%u seconds", down_time);
+    }
+    Note("Host %.*s has been marked down, down_time: %s, reasons: %s, all reasons: %s.", int(name.size()), name.data(),
+         down_time_text, reason_name.c_str(), remaining_name.c_str());
+  } else if (effective_status == TSHostStatus::TS_HOST_STATUS_UP) {
+    Note("Host %.*s has been marked up, cleared reasons: %s.", int(name.size()), name.data(), reason_name.c_str());
   } else {
-    Note("Host %.*s has been marked up.", int(name.size()), name.data());
+    Note("Host %.*s is still down, cleared reasons: %s, remaining reasons: %s.", int(name.size()), name.data(), reason_name.c_str(),
+         remaining_name.c_str());
   }
 }
 
