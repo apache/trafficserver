@@ -210,19 +210,6 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_RPK_UNTRUSTED);
       }
     }
-    // The hook runs for every key that reaches the pin decision, and may add rejection but cannot
-    // turn a failed pin match into acceptance.
-    TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
-    if (tbs == nullptr) {
-      Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
-      return false;
-    }
-    // No store context for the hook, as on BoringSSL: there is no certificate in it to inspect.
-    if (tbs->verify_certificate(nullptr) == 1) {
-      Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check for %s. Action=%s",
-              netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
-      return !enforce_mode;
-    }
     return pin_ok || !enforce_mode;
   }
 #endif
@@ -336,22 +323,10 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
     Dbg(dbg_ctl_ssl_verify, "Origin authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
     if (!pin_ok) {
       warn_origin_rpk_mismatch(enforce_mode, netvc);
-    }
-
-    // There is no X509_STORE_CTX to hand the hook for a raw public key, but the hook still runs on
-    // every raw public key attempt.
-    if (tbs->verify_certificate(nullptr) == 1) {
-      Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check for %s. Action=%s",
-              netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
       if (enforce_mode) {
         *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
         return ssl_verify_invalid;
       }
-      return ssl_verify_ok;
-    }
-    if (!pin_ok && enforce_mode) {
-      *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
-      return ssl_verify_invalid;
     }
     return ssl_verify_ok;
   }

@@ -1544,10 +1544,11 @@ def test_rpk_hop_outbound_x509_name_mismatch(ats_factory: ATSFactory, services: 
     )
 
 
-def test_rpk_hop_verify_server_hook_rejects_pinned_key(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """TS_EVENT_SSL_VERIFY_SERVER runs for a raw public key and can reject one that matched its pin.
+def test_rpk_hop_verify_server_hook_skipped_for_rpk(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """TS_SSL_VERIFY_SERVER_HOOK is certificate-only and is not invoked for a raw public key.
 
-    ssl_verify_test fails every connection that sends no SNI, as one toward an IP literal does.
+    ssl_verify_test would fail any connection that presents no certificate or sends no SNI,
+    but it must not run for a raw public key handshake.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -1562,24 +1563,24 @@ def test_rpk_hop_verify_server_hook_rejects_pinned_key(ats_factory: ATSFactory, 
     result = request_through(curl, edge)
     stop_tiers(edge, parent)
 
-    assert "origin response" not in result.output, "a plugin rejection must stop the request"
+    assert "origin response" in result.output, "legacy verify server hook must not run for raw public key"
     assert_log_contains(
         edge.traffic_out,
         "Origin authenticated with a raw public key .*pin match=yes",
-        "the pin must have matched, so that only the plugin rejected it",
+        "the pin must have matched",
     )
-    assert_log_contains(
+    assert_log_excludes(
         edge.diags_log,
         "TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check",
-        "the verify hook must run for a raw public key",
+        "the legacy verify hook must not run for a raw public key",
     )
 
 
-def test_rpk_hop_verify_client_hook_rejects_pinned_key(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """TS_EVENT_SSL_VERIFY_CLIENT runs for a raw public key and can reject one that matched its pin.
+def test_rpk_hop_verify_client_hook_skipped_for_rpk(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """TS_SSL_VERIFY_CLIENT_HOOK is certificate-only and is not invoked for a raw public key.
 
-    ssl_client_verify_test fails a connection with no certificate to check, which is what a raw
-    public key presents to it.
+    ssl_client_verify_test fails a connection with no certificate to check, but it must not run
+    for a raw public key handshake.
 
     :param ats_factory: Factory for isolated Traffic Server instances.
     :param services: Factory owning support services and their cleanup.
@@ -1602,16 +1603,16 @@ def test_rpk_hop_verify_client_hook_rejects_pinned_key(ats_factory: ATSFactory, 
     result = request_through(curl, edge)
     stop_tiers(edge, parent)
 
-    assert "origin response" not in result.output, "a plugin rejection must stop the request"
+    assert "origin response" in result.output, "legacy verify client hook must not run for raw public key"
     assert_log_contains(
         parent.traffic_out,
         "Client authenticated with a raw public key .*pin match=yes",
-        "the pin must have matched, so that only the plugin rejected it",
+        "the pin must have matched",
     )
-    assert_log_contains(
+    assert_log_excludes(
         parent.diags_log,
         "TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client raw public key check",
-        "the verify hook must run for a raw public key",
+        "the legacy verify hook must not run for a raw public key",
     )
 
 
