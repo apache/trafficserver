@@ -415,11 +415,18 @@ getCmcdNor(const TSMBuffer buffer, const TSMLoc hdrloc)
 
       if (0 == fv.compare(0, CmcdNorFieldPrefix.length(), CmcdNorFieldPrefix)) {
         fv.remove_prefix(CmcdNorFieldPrefix.length());
-        if (fv.front() == '"') {
+        if (!fv.empty() && fv.front() == '"') {
           fv.remove_prefix(1);
         }
-        if (fv.back() == '"') {
+        if (!fv.empty() && fv.back() == '"') {
           fv.remove_suffix(1);
+        }
+
+        // TSStringPercentDecode treats a zero length as a NUL-terminated
+        // string, and header values are not terminated.
+        if (fv.empty()) {
+          PrefetchDebug("Empty nor field, skipping");
+          continue;
         }
 
         PrefetchDebug("Extracted nor field: '%.*s'", (int)fv.length(), fv.data());
