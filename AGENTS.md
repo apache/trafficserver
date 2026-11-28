@@ -1,6 +1,8 @@
 # AGENTS.md
 
 This file provides guidance to coding agents working with this repository.
+The same guidance for Claude Code is in `.claude/CLAUDE.md`; keep the two in
+step.
 
 ## Project Overview
 
@@ -79,6 +81,45 @@ Unit tests are built into executables. Find the test binary and run it directly:
 # Unit tests are typically in build/src/<component>/
 ./build/src/tscore/test_tscore
 ```
+
+### Writing Catch2 Unit Tests
+
+When several cases exercise the same code with different inputs, write one
+parameterized test rather than repeating near-identical checks or looping over
+an array. Give each case a struct with a description field, drive the cases
+with `GENERATE`, and `CAPTURE` the description and key inputs so a failure
+names the case that broke. Name expected outcomes with `constexpr` constants
+instead of bare `true`/`false` or magic numbers, so each row reads on its own.
+Look for existing tests that repeat checks this way when you touch them.
+
+```cpp
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+
+constexpr bool ALLOW_MATCHES = true;  ///< The allow rule admits the method.
+constexpr bool ALLOW_MISSES  = false; ///< The allow rule does not admit the method.
+
+struct MethodCase {
+  char const *description; ///< What the case exercises.
+  char const *method;      ///< The request method as the client spelled it.
+  bool        is_allowed;  ///< Whether an allow rule for GET admits @c method.
+};
+
+TEST_CASE("Allow rules match the listed spelling exactly", "[acl]")
+{
+  auto const test = GENERATE(values<MethodCase>({
+    {"listed spelling", "GET", ALLOW_MATCHES},
+    {"lowercase",       "get", ALLOW_MISSES },
+  }));
+  CAPTURE(test.description, test.method);
+
+  CHECK(allow_rule_matches(test.method) == test.is_allowed);
+}
+```
+
+For a table defined elsewhere, use `GENERATE_REF(from_range(cases))` from
+`<catch2/generators/catch_generators_range.hpp>`. For a few plain values,
+`GENERATE(table<...>({...}))` with structured bindings also works.
 
 ### Uranium Tests (pytest)
 

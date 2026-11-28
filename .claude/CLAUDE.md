@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository. The same guidance for other coding agents is in
+`AGENTS.md`; keep the two in step.
 
 ## Project Overview
 
@@ -11,29 +13,185 @@ with a sophisticated plugin system.
 **Key Technologies:**
 - Language: C++20
 - Build System: CMake (migrated from autotools in v10)
-- Testing: Catch2 (unit tests) + AuTest Python framework (end-to-end tests)
+- Testing: Catch2 unit tests plus pytest Uranium replay and native scenario tests
 - Protocols: TLS, HTTP/1.1, HTTP/2, HTTP/3 (via Quiche)
 
-## Personal Preferences
+## Project Structure
 
-If `.claude/CLAUDE.local.md` sub-agent exists, load it for user-specific code style
-preferences and working conventions. This file is gitignored and optional.
+Core sources live in `src/` (for example `src/proxy`, `src/iocore`,
+`src/traffic_server`). Public headers are in `include/`. Built-in plugins are
+in `plugins/` and `plugins/experimental/`. Uranium tests are in `tests/`,
+especially `tests/uranium_tests/`. Build system files are in `cmake/` plus the
+top-level `CMakeLists.txt`, and docs are in `doc/`. Third party libraries that
+we include locally are in `lib/`.
 
 ## Build Commands
 
-Use the ats-build skill for building, testing, and formatting, unless instructed otherwise.
+Use the ats-build skill for building, testing, and formatting, unless
+instructed otherwise. Without it, this sequence covers most tasks:
 
-### Writing Autests
+```bash
+# Configure and build a dev tree.
+cmake --preset dev
+cmake --build build-dev
 
-**New tests should use the `Test.ATSReplayTest()` approach**, which references a
-`replay.yaml` file that describes the test configuration and traffic patterns
-using the Proxy Verifier format. This is simpler, more maintainable, and
-parseable by tools.
+# Run a focused unit test or test suite.
+ctest --test-dir build-dev -j4
 
-**For complete details on writing autests, see:**
-- `doc/developer-guide/testing/autests.en.rst` - Comprehensive guide to autest
+# Format before commit.
+cmake --build build-dev -t format
+```
+
+For environments using the default preset naming:
+
+```bash
+cmake --preset default
+cmake --build build-default
+ctest --test-dir build-default
+cmake --build build-default -t format
+```
+
+If this file drifts from current project conventions, run `/init` to
+re-bootstrap agent guidance, then keep repository-specific commands and rules
+below.
+
+## Personal Preferences
+
+If `.claude/CLAUDE.local.md` exists, load it for user-specific style preferences
+and working conventions. This file is optional and should stay untracked.
+
+### Key CMake Options
+- `BUILD_EXPERIMENTAL_PLUGINS=ON` - Enable experimental plugins
+- `ENABLE_QUICHE=ON` - QUIC/HTTP3 support
+- `ENABLE_CRIPTS=ON` - Cripts scripting API
+- `BUILD_REGRESSION_TESTING=ON` - Enable legacy test suite
+- `ENABLE_ASAN=ON` - Configure ASan instrumentation
+- `BUILD_TESTING=ON` - Enable building of the Catch2 tests
+
+## Testing
+
+### Unit Tests (Catch2)
+Built automatically with the project. Run via ctest:
+```bash
+ctest --test-dir build -j4
+```
+
+### Running a Single Unit Test
+Unit tests are built into executables. Find the test binary and run it directly:
+```bash
+# Unit tests are typically in build/src/<component>/
+./build/src/tscore/test_tscore
+```
+
+### Writing Catch2 Unit Tests
+
+When several cases exercise the same code with different inputs, write one
+parameterized test rather than repeating near-identical checks or looping over
+an array. Give each case a struct with a description field, drive the cases
+with `GENERATE`, and `CAPTURE` the description and key inputs so a failure
+names the case that broke. Name expected outcomes with `constexpr` constants
+instead of bare `true`/`false` or magic numbers, so each row reads on its own.
+Look for existing tests that repeat checks this way when you touch them.
+
+```cpp
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
+
+constexpr bool ALLOW_MATCHES = true;  ///< The allow rule admits the method.
+constexpr bool ALLOW_MISSES  = false; ///< The allow rule does not admit the method.
+
+struct MethodCase {
+  char const *description; ///< What the case exercises.
+  char const *method;      ///< The request method as the client spelled it.
+  bool        is_allowed;  ///< Whether an allow rule for GET admits @c method.
+};
+
+TEST_CASE("Allow rules match the listed spelling exactly", "[acl]")
+{
+  auto const test = GENERATE(values<MethodCase>({
+    {"listed spelling", "GET", ALLOW_MATCHES},
+    {"lowercase",       "get", ALLOW_MISSES },
+  }));
+  CAPTURE(test.description, test.method);
+
+  CHECK(allow_rule_matches(test.method) == test.is_allowed);
+}
+```
+
+For a table defined elsewhere, use `GENERATE_REF(from_range(cases))` from
+`<catch2/generators/catch_generators_range.hpp>`. For a few plain values,
+`GENERATE(table<...>({...}))` with structured bindings also works.
+
+### Uranium Tests (pytest)
+
+**Enable Uranium tests during configuration:**
+```bash
+cmake -B build -DENABLE_URTEST=ON
+cmake --build build
+cmake --install build
+```
+
+**Run all Uranium tests:**
+```bash
+cmake --build build -t urtest
+```
+
+**Run specific test(s):**
+```bash
+cd build/tests
+./urtest.sh -q -k <pytest_expression>
+```
+
+For example, to run items whose names contain `header_rewrite`:
+```bash
+./urtest.sh -q -k header_rewrite
+```
+
+Use pytest-xdist's `-n` option to run selected tests in parallel.
+
+```bash
+cd build/tests
+./urtest.sh -q -n 4 -k "header_rewrite or cache_control"
+```
+
+Most Uranium test coverage is in `tests/uranium_tests/`. The CI system uses the
+container image `ci.trafficserver.apache.org/ats/fedora:44` (Fedora version
+updated regularly). The source-tree `tests/urtest.sh` defaults to this image,
+using Apple container on macOS, Podman on Linux, or Docker as a fallback. It
+runs directly instead when it detects that it is already inside a container or
+the Fedora 44 test environment. Use `--run-in-container` or
+`--no-run-in-container` to override.
+
+### Writing Uranium Tests
+
+**New tests should normally be direct pytest replay tests.** Name the Proxy
+Verifier replay `<scenario>.test.yaml`; the file's `urtest` section describes
+DNS, server, client, and ATS setup, and pytest collects it without a companion
+`.test.py` wrapper. Run these with `cmake --build build -t urtest-replay`.
+
+If a direct replay test is not a good fit (say, the test needs a custom client), then
+write a plain `test_*` function taking the fixtures it needs. Use small helper
+functions or fixtures for repeated setup, and parametrization for variations.
+Keep classes for genuinely stateful clients or services, not mandatory scenario
+wrappers. See `doc/developer-guide/testing/uranium-api.en.rst` for fixture and
+service APIs.
+
+In native tests, launch Python helpers with `sys.executable` rather than a
+hardcoded `python3`, so the helper uses the same interpreter as pytest.
+
+Tests that are useful only when explicitly requested, such as privileged, very
+slow, or known-flaky diagnostic scenarios, use `@pytest.mark.manual`. Direct
+replay tests set `urtest.manual` to `true` or a reason string. They are skipped
+during normal runs. Enable them explicitly with `--run-manual` and normally
+select the intended test with `-k`:
+
+```bash
+./urtest.sh --run-manual -k ats_probe
+```
+
+**For complete details on writing Uranium tests, see:**
+- `doc/developer-guide/testing/uranium-tests.en.rst` - Comprehensive Uranium test guide
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier
-- AuTest framework: https://autestsuite.bitbucket.io/
 
 ## Development Workflow
 
@@ -43,17 +201,30 @@ Always format code before committing:
 cmake --build build -t format
 ```
 
+### Before Commit Checklist
+- Keep scope tight and avoid unrelated file churn.
+- Run formatter: `cmake --build build -t format` (or `build-dev` when used).
+- Run targeted tests for changed areas (or explain why tests were skipped).
+- Keep commit message body wrapped to 72 characters per line.
+- Describe why the change was needed, not only what changed.
+
+### Editing Safety
+- Do not revert unrelated working tree changes.
+- Prefer minimal diffs over broad refactors unless requested.
+- Do not edit generated artifacts unless the task explicitly requires it.
+- When touching behavior, add or update tests when practical.
+
 ### Git Workflow
-- Branch off `master` for all PRs
+- Branch off `master` for almost all PRs
 - PRs must pass all Jenkins CI jobs before merging
 - Use the GitHub PR workflow (not Jira)
 - Set appropriate labels: **Backport**, **WIP**, etc.
 
 ### Commit Message Format
-When Claude Code creates commits, start with a short summary line, use concise
-description (1-3 sentences) that focus on "why" rather than "what". If the PR
-fixes an issue, add a 'Fixes: #<issue_number>' line. Keep line lengths of the
-commit messages to 72 characters.
+When Claude Code creates commits, use a short imperative summary line (under 50
+characters when practical) plus concise body text (1-3 sentences) focused on
+"why" rather than only "what". If the PR fixes an issue, add 'Fixes:
+#<issue_number>'. Keep commit message body lines to 72 characters.
 
 ## Architecture Overview
 
@@ -192,12 +363,13 @@ URL", for example. These comment instructions apply to the whole code base,
 including production code, tests, Python, CMake and replay YAML files.
 
 ### Code Style
+- `.editorconfig` and `.clang-format` is the source of truth for baseline formatting rules.
 - C++20 standard (nothing from C++23 or later)
 - Use RAII principles
 - Prefer smart pointers for ownership
 - Don't use templates unless needed and appropriate
 - Run `cmake --build build -t format` before committing
-- Line length: 132 characters maximum
+- Source code line length: 132 characters maximum
 
 **C++ Formatting (Mozilla-based style):**
 - Indentation: 2 spaces for C/C++
@@ -210,6 +382,43 @@ including production code, tests, Python, CMake and replay YAML files.
 - CamelCase for classes: `HttpSM`, `NetVConnection`
 - snake_case for variables and functions: `server_entry`, `handle_api_return()`
 - UPPER_CASE for macros and constants: `HTTP_SM_SET_DEFAULT_HANDLER`
+- Private member variables use both `_` and `m_` prefixes in the source code;
+  be consistent with the surrounding code. For new files, prefer the `_` prefix
+  because that reflects the community consensus.
+- Boolean variables and functions returning boolean values are named as
+  predicates: use `was_modified` rather than `modified`.
+
+**Doxygen Comments:**
+
+When adding doxygen comments:
+
+- `@brief` is assumed for the first sentence, so give a brief summary right
+  after `/** ` without using `@brief`.
+- In the description of classes, functions, and member variables, convey the
+  responsibility of the item being described (its role and intent), not just
+  what the code obviously does.
+- Use `@a <name>` to reference a function argument by name in prose
+  (e.g. "If @a size is zero..."). Use `@c <text>` for inline code or
+  constants (e.g. `@c true`, `@c NULL`, `@c MyEnum::VALUE`).
+- Use `@ref`, `@see`, or `@sa` to cross-reference related types or functions
+  when that helps convey how items interact.
+- Use `@param` with `[in]`, `[out]`, or `[in,out]` to indicate the
+  parameter's direction, followed by a description of its meaning.
+- Use `@return` to describe the semantics of the returned value. Don't
+  restate the type; that is obvious from the signature and rendered docs.
+- Use `@note` for non-obvious caveats and `@warning` for hazards (e.g. lock
+  ordering, lifetime, or threading constraints).
+- Use `@code` ... `@endcode` for embedded usage examples.
+- For templates, document type parameters with `@tparam`.
+
+Conventions specific to this codebase:
+
+- Every new header file should start with a `/** @file` block (see existing
+  headers in `include/` for the standard license/section layout).
+- Prefer trailing briefs for data members and enumerators, e.g.
+  `int max_conns{0}; ///< Maximum concurrent connections.`
+- Use single-line `///` briefs for short function or type docs where a full
+  `/** ... */` block would be overkill.
 
 **Modern C++ Patterns (Preferred):**
 ```cpp
@@ -228,6 +437,12 @@ MIOBuffer *buffer = (MIOBuffer*)malloc(sizeof(MIOBuffer));
 ### Python Code Style (for tests and tools)
 - Python 3.11+ with proper type annotations
 - 4-space indentation, never TABs
+- Type annotations on all function signatures
+- Document every parameter in a function docstring with `:param <name>:`.
+  Include units and other constraints that are not evident from the type, such
+  as documenting timeout values in seconds.
+- Prefer f-strings over `str.format()` when building command lines, config lines,
+  and `Testers` expressions.
 
 ### Memory Management
 - Custom allocators supported (jemalloc, mimalloc)
@@ -254,10 +469,14 @@ MIOBuffer *buffer = (MIOBuffer*)malloc(sizeof(MIOBuffer));
 - `src/proxy/http/remap/RemapConfig.cc` - URL remapping logic
 - `include/ts/ts.h` - Plugin API
 
+## Security
+
+See [SECURITY.md](SECURITY.md) for the project's security policy, threat model,
+scope, and vulnerability reporting process.
+
 ## Resources
 
 - Official docs: https://trafficserver.apache.org/
 - Developer wiki: https://github.com/apache/trafficserver/wiki
 - CI dashboard: https://ci.trafficserver.apache.org/
-- AuTest framework: https://autestsuite.bitbucket.io/
 - Proxy Verifier: https://github.com/yahoo/proxy-verifier
