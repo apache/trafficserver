@@ -5283,8 +5283,11 @@ HttpTransact::handle_transform_cache_write(State *s)
 
   switch (s->cache_info.write_lock_state) {
   case CacheWriteLock_t::SUCCESS:
-    // We were able to get the lock for the URL vector in the cache
-    s->cache_info.transform_action = CacheAction_t::WRITE;
+    // We were able to get the lock for the URL vector in the cache. The source of
+    // the transform can fail while the open write is pending, and the state
+    // machine then clears cache_transformed. Do not store the transform of a
+    // truncated document.
+    s->cache_info.transform_action = s->api_info.cache_transformed ? CacheAction_t::WRITE : CacheAction_t::NO_ACTION;
     break;
   case CacheWriteLock_t::FAIL:
     // No write lock, ignore the cache
