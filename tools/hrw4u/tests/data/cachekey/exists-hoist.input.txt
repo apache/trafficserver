@@ -1,0 +1,7 @@
+CACHEKEY {
+    if inbound.req.Host == "a.example.com" {
+        cache.key.headers.exists("X-A", "X-B");
+    } else {
+        cache.key.headers.exists("X-A");
+    }
+}

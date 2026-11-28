@@ -11,3 +11,5 @@ http_cntl_valid_bools.input: hrw4u
 json-body.input: hrw4u
 # The reverse normalizes a bool argument's spelling (FALSE -> false)
 bool-spelling.input: hrw4u
+# cache.bypass() reverses to the set-config it lowers to
+cache-bypass.input: hrw4u

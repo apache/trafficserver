@@ -1,0 +1,11 @@
+SEND_RESPONSE {
+    inbound.resp.X-Served = "1";
+}
+
+CACHEKEY {
+    cache.key.headers.add("X-Region");
+}
+
+READ_RESPONSE {
+    outbound.resp.X-Origin = "1";
+}

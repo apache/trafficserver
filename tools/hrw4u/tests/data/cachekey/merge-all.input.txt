@@ -1,0 +1,9 @@
+CACHEKEY {
+    # Source order is not flag order: flags follow the statement table.
+    cache.key.cookies.add("session");
+    cache.key.headers.add("X-A");
+    cache.url.path = "";
+    cache.url.query.sort();
+    cache.url.query.remove("guid");
+    cache.url.pristine();
+}

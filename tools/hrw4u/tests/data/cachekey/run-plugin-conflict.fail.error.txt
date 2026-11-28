@@ -1,0 +1,1 @@
+tests/data/cachekey/run-plugin-conflict.fail.input.txt:2:4: error: run-plugin cachekey.so conflicts with CACHEKEY

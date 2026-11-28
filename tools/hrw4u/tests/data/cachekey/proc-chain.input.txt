@@ -1,0 +1,12 @@
+procedure local::by-host() {
+    if inbound.req.Host == "a.example.com" {
+        cache.key.headers.add("X-A");
+    } else {
+        cache.key.headers.add("X-B");
+    }
+}
+
+CACHEKEY {
+    cache.url.pristine();
+    local::by-host();
+}

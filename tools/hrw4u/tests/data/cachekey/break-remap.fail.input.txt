@@ -1,0 +1,9 @@
+CACHEKEY {
+    cache.url.pristine();
+}
+
+REMAP {
+    if inbound.req.X-Stop {
+        break;
+    }
+}

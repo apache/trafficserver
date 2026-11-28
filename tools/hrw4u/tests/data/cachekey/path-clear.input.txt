@@ -1,0 +1,3 @@
+CACHEKEY {
+    cache.url.path = "";
+}

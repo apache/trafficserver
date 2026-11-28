@@ -1,0 +1,1 @@
+tests/data/cachekey/fence-set-config.fail.input.txt:2:4: error: operator 'set-config' not allowed in CACHEKEY

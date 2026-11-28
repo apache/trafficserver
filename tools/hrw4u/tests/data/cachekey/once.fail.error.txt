@@ -1,0 +1,1 @@
+tests/data/cachekey/once.fail.input.txt:5:0: error: CACHEKEY may only appear once

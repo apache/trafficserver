@@ -1,0 +1,4 @@
+CACHEKEY {
+    cache.url.query.keep("q");
+    cache.url.query.remove("guid");
+}

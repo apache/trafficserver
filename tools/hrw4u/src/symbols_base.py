@@ -24,7 +24,7 @@ from typing import Any
 from hrw4u.debugging import Dbg
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
-from hrw4u.errors import SymbolResolutionError
+from hrw4u.errors import SectionAccessError, SymbolResolutionError
 from hrw4u.sandbox import SandboxConfig
 import hrw4u.tables as tables
 import hrw4u.types as types
@@ -76,7 +76,7 @@ class SymbolResolverBase:
 
     def validate_section_access(self, name: str, section: SectionType | None, allowed_sections: set[SectionType] | None) -> None:
         if section and allowed_sections and section not in allowed_sections:
-            raise SymbolResolutionError(name, f"{name} is not available in the {section.value} section")
+            raise SectionAccessError(name, f"{name} is not available in the {section.value} section")
 
     @lru_cache(maxsize=256)
     def _lookup_condition_cached(self, name: str) -> types.MapParams | None:

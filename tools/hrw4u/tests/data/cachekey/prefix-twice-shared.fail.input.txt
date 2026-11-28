@@ -1,0 +1,4 @@
+CACHEKEY {
+    cache.key.prefix = "a.example.com/443";
+    cache.key.prefix = "b.example.com/443";
+}

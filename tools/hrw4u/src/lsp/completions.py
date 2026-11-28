@@ -192,12 +192,14 @@ class CompletionBuilder:
     @classmethod
     def section_completion(cls, section: SectionType) -> CompletionItem:
         """Create completion item for sections."""
-        documentation = cls.create_markdown_doc(f"**{section.value}** - HRW4U Section\n\nMaps to ATS hook: `{section.hook_name}`")
+        documentation = cls.create_markdown_doc(
+            f"**{section.value}** - HRW4U Section\n\nMaps to ATS hook: `{section.hook_name}`{section.hook_note}"
+        )
 
         return CompletionItem(
             label=section.value,
             kind=LSPCompletionItemKind.KEYWORD,
-            detail=f"Hook: {section.hook_name}",
+            detail=f"Hook: {section.hook_name}{section.hook_note}",
             documentation=documentation,
             insert_text=f"{section.value} {{\n\t$0\n}}",
             insert_text_format=2,  # Snippet format
@@ -230,6 +232,7 @@ class CompletionProvider:
         """Get completions for operators and conditions with the given prefix."""
         completions = []
         seen_labels = set()
+        read_section = current_section and current_section.emits_as
 
         # Add condition completions
         for key, params in tables.CONDITION_MAP.items():
@@ -238,7 +241,7 @@ class CompletionProvider:
                 sections = params.sections if params else None
                 tag = params.target if params else None
 
-                item = self.builder.condition_completion(key, tag, sections, current_section, replacement_range)
+                item = self.builder.condition_completion(key, tag, sections, read_section, replacement_range)
                 if item:
                     completions.append(item.to_lsp_dict())
 

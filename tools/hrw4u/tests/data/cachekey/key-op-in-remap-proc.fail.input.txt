@@ -1,0 +1,7 @@
+procedure local::key() {
+    cache.key.headers.add("X-A");
+}
+
+REMAP {
+    local::key();
+}

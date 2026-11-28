@@ -52,6 +52,7 @@ fail" bool, because a duplicated warning, a dropped note or an error on the `if`
 of the `else` line leaves the config untouched and would pass a weaker assertion.
 """
 
+import re
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
@@ -83,6 +84,10 @@ class CstBug(Enum):
 
 CST_BUGS = {"procedures/wrong-arity": CstBug.RAISES}
 
+# Sema doesn't know the CACHEKEY section or its cache.key/cache.url statements yet. Strict, so
+# the cases fail here once Sema compiles them the same way, and this can go.
+SEMA_LACKS_CACHEKEY = re.compile(r"\bCACHEKEY\b|\bcache\.(key|url)\b")
+
 COLLECT_MODES = [pytest.param(True, id="collected"), pytest.param(False, id="stop-on-error")]
 
 
@@ -96,8 +101,15 @@ def _policy_for(input_file: Path) -> SandboxConfig | None:
     return None
 
 
+def _cachekey_xfail(input_file: Path) -> list[pytest.MarkDecorator]:
+    # The section denial fires in Sema's _section_of, before Sema reads the CACHEKEY body.
+    if _case_id(input_file) != "sandbox/denied-cachekey-section" and SEMA_LACKS_CACHEKEY.search(input_file.read_text()):
+        return [pytest.mark.xfail(strict=True, reason="Sema has no CACHEKEY yet")]
+    return []
+
+
 def _corpus() -> list[pytest.param]:
-    return [pytest.param(f, id=_case_id(f)) for f in sorted(Path("tests/data").glob("*/*.input.txt"))]
+    return [pytest.param(f, id=_case_id(f), marks=_cachekey_xfail(f)) for f in sorted(Path("tests/data").glob("*/*.input.txt"))]
 
 
 @dataclass(frozen=True)
